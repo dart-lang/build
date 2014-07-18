@@ -11,7 +11,7 @@ _TimeStampProvider _timer = new _TimeStampProvider();
 List _capturedArgs = [];
 
 class Mock {
-  List<RealCall> realCalls = [];
+  List<RealCall> _realCalls = [];
   List<CannedResponse> _responses = [];
   String _givenName = null;
   int _givenHashCode = null;
@@ -29,7 +29,7 @@ class Mock {
       _verifyCalls.add(new _VerifyCall(this, invocation));
       return null;
     }else{
-      realCalls.add(new RealCall(this, invocation));
+      _realCalls.add(new RealCall(this, invocation));
       var cannedResponse = _responses.lastWhere((cr)=>cr.matcher.matches(invocation), 
           orElse: _defaultResponse);
       var response = cannedResponse.response(invocation);
@@ -49,12 +49,12 @@ named(dynamic mock, {String name, int hashCode}) => mock
   .._givenName=name.._givenHashCode = hashCode;
 
 reset(var mock){
-  mock.realCalls.clear();
+  mock._realCalls.clear();
   mock._responses.clear();
 }
 
 clearInteractions(var mock){
-  mock.realCalls.clear();
+  mock._realCalls.clear();
 }
 
 class PostExpectation {  
@@ -226,7 +226,7 @@ class _VerifyCall {
   
   _VerifyCall(this.mock, this.verifyInvocation){
     var expectedMatcher = new InvocationMatcher(verifyInvocation);
-    matchingInvocations = mock.realCalls.where((RealCall recordedInvocation){
+    matchingInvocations = mock._realCalls.where((RealCall recordedInvocation){
       return !recordedInvocation.verified && expectedMatcher.matches(recordedInvocation.invocation);}).toList();
   }
   
@@ -237,14 +237,14 @@ class _VerifyCall {
   _checkWith(bool never){
     if(!never && matchingInvocations.isEmpty){
       var otherCallsText = "";
-      if(mock.realCalls.isNotEmpty){ 
+      if(mock._realCalls.isNotEmpty){ 
         otherCallsText = " All calls: ";
       }
-      var calls = mock.realCalls.join(", ");
+      var calls = mock._realCalls.join(", ");
       fail("No matching calls.$otherCallsText$calls");
     }
     if(never && matchingInvocations.isNotEmpty){
-      var calls = mock.realCalls.join(", ");
+      var calls = mock._realCalls.join(", ");
       fail("Unexpected calls. All calls: $calls");
     }
     matchingInvocations.forEach((inv){inv.verified=true;});
@@ -324,7 +324,7 @@ InOrderVerification get verifyInOrder {
         dt=matched.timeStamp;
       }else{
         Set<Mock> mocks = tmpVerifyCalls.map((_VerifyCall vc)=>vc.mock).toSet();
-        List<RealCall> allInvocations = mocks.expand((m)=>m.realCalls).toList(growable: false);
+        List<RealCall> allInvocations = mocks.expand((m)=>m._realCalls).toList(growable: false);
         allInvocations.sort((inv1, inv2)=>inv1.timeStamp.compareTo(inv2.timeStamp));
         String otherCalls = "";
         if(allInvocations.isNotEmpty){
@@ -338,15 +338,15 @@ InOrderVerification get verifyInOrder {
 }
 
 verifyNoMoreInteractions(var mock) {
-  var unverified = mock.realCalls.where((inv)=>!inv.verified).toList();
+  var unverified = mock._realCalls.where((inv)=>!inv.verified).toList();
   if(unverified.isNotEmpty){
     fail("No more calls expected, but following found: "+unverified.join());
   }  
 }
 
 verifyZeroInteractions(var mock) {
-  if(mock.realCalls.isNotEmpty){
-    fail("No interaction expected, but following found: "+mock.realCalls.join());
+  if(mock._realCalls.isNotEmpty){
+    fail("No interaction expected, but following found: "+mock._realCalls.join());
   }
 }
 
@@ -361,7 +361,7 @@ Expectation get when {
 }
 
 logInvocations(List<Mock> mocks){
-  List<RealCall> allInvocations = mocks.expand((m)=>m.realCalls).toList(growable: false);
+  List<RealCall> allInvocations = mocks.expand((m)=>m._realCalls).toList(growable: false);
   allInvocations.sort((inv1, inv2)=>inv1.timeStamp.compareTo(inv2.timeStamp));
   allInvocations.forEach((inv){
     print(inv.toString()); 

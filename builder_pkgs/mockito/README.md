@@ -11,6 +11,8 @@ Dart-mockito fixes it - stubbing and verifing are first-class citisens.
 
 ## Let's create mocks
 ```dart
+  import 'package:mockito/mockito.dart';
+
   //Real class
   class Cat {
     String sound() => "Meow";
