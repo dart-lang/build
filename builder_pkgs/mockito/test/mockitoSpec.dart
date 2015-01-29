@@ -12,6 +12,19 @@ class RealClass {
   }  
 }
 
+abstract class Foo {
+  String bar();
+}
+
+abstract class AbstractFoo implements Foo {
+  String bar() => baz();
+
+  String baz();
+}
+
+class MockFoo extends AbstractFoo with Mock {
+}
+
 class MockedClass extends Mock implements RealClass{}
 
 expectFail(String expectedMessage, expectedToFail()){
@@ -34,6 +47,14 @@ main(){
   
   setUp((){
     mock = new MockedClass();
+  });
+  
+  group("mixin support", (){
+    test("should work", (){
+      var foo = new MockFoo();
+      when(foo.baz()).thenReturn('baz');
+      expect(foo.bar(), 'baz');
+    });
   });
   
   group("when()", (){

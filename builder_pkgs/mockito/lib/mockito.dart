@@ -37,10 +37,10 @@ class Mock {
     }
   }
 
-  int get hashCode => _givenHashCode==null ? super.hashCode : _givenHashCode;
+  int get hashCode => _givenHashCode==null ? 0 : _givenHashCode;
   
   bool operator ==(other) => (_givenHashCode!=null && other is Mock) 
-      ? _givenHashCode==other._givenHashCode : super==other;
+      ? _givenHashCode==other._givenHashCode : identical(this, other);
 
   String toString() => _givenName != null ? _givenName : runtimeType.toString();  
 }
