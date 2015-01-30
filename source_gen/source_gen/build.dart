@@ -1,0 +1,9 @@
+library dart_source_gen.build_file;
+
+import 'package:dart_source_gen/build_helper.dart' as build_helper;
+
+import 'package:dart_source_gen/json_serial/json_generator.dart' as json;
+
+void main(List<String> args) {
+  build_helper.build(args, const [json.generator]);
+}
