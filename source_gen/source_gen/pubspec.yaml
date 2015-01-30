@@ -1,8 +1,8 @@
 name: source_gen
-version: 0.0.0
+version: 0.0.0+1
 author: Kevin Moore <kevmoo@google.com>
 description: A Dart source generation tool
-homepage: https://github.com/kevmoo/source_gen
+homepage: https://github.com/kevmoo/source_gen.dart
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:
