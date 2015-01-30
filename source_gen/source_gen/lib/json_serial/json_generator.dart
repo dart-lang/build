@@ -1,10 +1,10 @@
-library dart_source_gen.json_serial.generator;
+library source_gen.json_serial.generator;
 
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 
-import 'package:dart_source_gen/generator.dart';
-import 'package:dart_source_gen/annotations.dart';
+import 'package:source_gen/generator.dart';
+import 'package:source_gen/annotations.dart';
 
 import 'json_annotation.dart';
 

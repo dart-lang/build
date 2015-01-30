@@ -1,4 +1,4 @@
-library dart_source_gen;
+library source_gen;
 
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';

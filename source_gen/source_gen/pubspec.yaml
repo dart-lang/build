@@ -1,8 +1,8 @@
-name: dart_source_gen
-version: 0.0.1-dev
+name: source_gen
+version: 0.0.0
 author: Kevin Moore <kevmoo@google.com>
-description: A framework for code generation in Dart.
-homepage: https://github.com/kevmoo/dart_source_gen
+description: A Dart source generation tool
+homepage: https://github.com/kevmoo/source_gen
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:

@@ -1,7 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // 2015-01-30T19:46:32.455Z
 
-part of dart_source_gen.example.person;
+part of source_gen.example.person;
 
 abstract class _$_PersonSerializerMixin {
   String get firstName;

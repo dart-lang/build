@@ -1,4 +1,4 @@
-library dart_source_gen.annotations;
+library source_gen.annotations;
 
 abstract class GeneratorAnnotation {}
 

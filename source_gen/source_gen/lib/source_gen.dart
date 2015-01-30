@@ -1,4 +1,4 @@
-library dart_source_gen.generator;
+library source_gen.generator;
 
 import 'dart:async';
 import 'dart:io';

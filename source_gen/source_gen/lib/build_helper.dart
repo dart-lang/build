@@ -1,11 +1,11 @@
-library dart_source_gen.build_helper;
+library source_gen.build_helper;
 
 import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 
-import 'dart_source_gen.dart';
+import 'source_gen.dart';
 import 'generator.dart';
 
 void build(List<String> args, List<Generator> generators) {
