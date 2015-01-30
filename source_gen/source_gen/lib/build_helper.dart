@@ -18,7 +18,7 @@ void build(List<String> args, List<Generator> generators) {
   var changed = result['changed'] as String;
 
   // TODO override for dev
-  changed = 'test/test.dart';
+  changed = 'example/person.dart';
 
   if (changed != null) {
     generate(projPath, changed, generators).then((foo) {
