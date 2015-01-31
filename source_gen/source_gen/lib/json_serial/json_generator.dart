@@ -5,6 +5,7 @@ import 'package:analyzer/src/generated/ast.dart';
 
 import 'package:source_gen/generator.dart';
 import 'package:source_gen/annotations.dart';
+import 'package:source_gen/src/utils.dart';
 
 import 'json_annotation.dart';
 
@@ -15,7 +16,7 @@ class _JsonGenerator extends Generator {
 
   GeneratorAnnotation get annotation => const JsonSerializable();
 
-  String generateClassHelpers(
+  CompilationUnitMember generateClassHelpers(
       Annotation annotation, ClassDeclaration classDef) {
     var className = classDef.name.name;
 
@@ -30,7 +31,11 @@ class _JsonGenerator extends Generator {
       }
     }
 
-    return _populateTemplate(className, fieldMap);
+    var codeStr = _populateTemplate(className, fieldMap);
+
+    var unit = stringToCompilationUnit(codeStr);
+
+    return unit.declarations.single;
   }
 }
 

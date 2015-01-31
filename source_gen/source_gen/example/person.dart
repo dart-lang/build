@@ -10,6 +10,11 @@ class Person extends Object with _$_PersonSerializerMixin {
   DateTime dob;
 
   Person();
+}
 
-  factory Person.fromJson(json) => _$_PersonSerializerMixin.fromJson(json);
+@JsonSerializable()
+class Order {
+  int count;
+  int itemNumber;
+  bool isRush;
 }

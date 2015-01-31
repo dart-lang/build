@@ -10,7 +10,7 @@ abstract class Generator {
 
   GeneratorAnnotation get annotation;
 
-  String generateClassHelpers(
+  CompilationUnitMember generateClassHelpers(
       Annotation annotation, ClassDeclaration classDef) {
     throw new UnimplementedError();
   }

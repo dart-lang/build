@@ -7,18 +7,14 @@ import 'dart:mirrors';
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
-import 'package:analyzer/src/generated/engine.dart';
-import 'package:analyzer/src/generated/java_io.dart';
-import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
-import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
-
+import 'package:dart_style/src/dart_formatter.dart';
 import 'package:path/path.dart' as p;
 
 import 'generator.dart';
+import 'src/utils.dart';
 
-Future generate(
+Future<String> generate(
     String projectPath, String changed, List<Generator> generators) async {
   assert(p.isRelative(changed));
 
@@ -38,20 +34,65 @@ Future generate(
     return 'File does not exist';
   }
 
-  var context = _getContext(projectPath);
-
   var finder = _createFinderFromGenerators(generators);
 
-  var unit = _getUnit(fullPath, context);
+  var unit = getCompilationUnit(projectPath, fullPath);
 
-  var code = _generate(unit, finder);
+  var generatedOutputs = _generate(unit, finder);
 
   var lib = unit.element.library;
 
-  if (lib.name.isEmpty) {
-    return "Source library must have a name!";
+  var genFileName = _getGeterateFilePath(lib, projectPath);
+
+  var file = new File(genFileName);
+
+  var exists = await file.exists();
+
+  if (generatedOutputs.isEmpty && exists) {
+    await file.delete();
+    return 'Deleting $genFileName - nothing to do';
   }
 
+  var buffer = new StringBuffer();
+
+  buffer.writeln('part of ${lib.name};');
+  buffer.writeln();
+
+  for (_GeneratedOutput output in generatedOutputs) {
+    buffer.writeln('');
+    buffer.writeln('// @${output.annotation.name}');
+    buffer.writeln('// ${_getFriendlyName(output.sourceMember)}');
+
+    buffer.writeln(output.output.toSource());
+  }
+
+  var newContent = buffer.toString();
+
+  var existingLines = <String>[];
+  if (exists) {
+    existingLines = await file.readAsLines();
+  }
+
+  var existingContent = existingLines.skip(3).join('\n') + '\n';
+
+  var formatter = new DartFormatter();
+  newContent = formatter.format(newContent);
+
+  if (existingContent == newContent) {
+    return "No changes!";
+  }
+
+  var sink = file.openWrite(mode: FileMode.WRITE)
+    ..write(_getHeader())
+    ..write(newContent);
+
+  await sink.flush();
+  sink.close();
+
+  return "we got some stuff!";
+}
+
+String _getGeterateFilePath(LibraryElement lib, String projectPath) {
   var librarySource = lib.source as FileBasedSource;
 
   var libraryPath = p.fromUri(librarySource.uri);
@@ -66,48 +107,13 @@ Future generate(
 
   libFileName = p.basenameWithoutExtension(libFileName);
 
-  var genFileName = p.join(libraryDir, "${libFileName}.g.dart");
+  return p.join(libraryDir, "${libFileName}.g.dart");
+}
 
-  var file = new File(genFileName);
-
-  var exists = await file.exists();
-
-  if (code.isEmpty && exists) {
-    await file.delete();
-    return 'Deleting $genFileName - nothing to do';
-  }
-
-  var buffer = new StringBuffer();
-
-  buffer.writeln('part of ${lib.name};');
-  buffer.writeln();
-
-  for (var output in code) {
-    buffer.writeln(output.source);
-  }
-
-  var newContent = buffer.toString();
-
-  var existingLines = <String>[];
-  if (exists) {
-    existingLines = await file.readAsLines();
-  }
-
-  var existingContent = existingLines.skip(3).join('\n') + '\n';
-
-  if (existingContent == newContent) {
-    return "No changes!";
-  }
-
-  newContent = '''// GENERATED CODE - DO NOT MODIFY BY HAND
+String _getHeader() => '''// GENERATED CODE - DO NOT MODIFY BY HAND
 // ${new DateTime.now().toUtc().toIso8601String()}
 
-$newContent''';
-
-  await file.writeAsString(newContent);
-
-  return "we got some stuff!";
-}
+''';
 
 _Finder _createFinderFromGenerators(List<Generator> gens) {
   var map = <Symbol, Generator>{};
@@ -126,10 +132,8 @@ List<_GeneratedOutput> _generate(CompilationUnit unit, _Finder finder) {
   var code = <_GeneratedOutput>[];
 
   for (var du in unit.declarations) {
-    if (du is ClassDeclaration) {
-      var subCode = _processClassDeclarations(du, finder);
-      code.addAll(subCode);
-    }
+    var subCode = _processUnitMember(du, finder);
+    code.addAll(subCode);
   }
 
   return code;
@@ -137,8 +141,8 @@ List<_GeneratedOutput> _generate(CompilationUnit unit, _Finder finder) {
 
 typedef Generator _Finder(Symbol symbol);
 
-List<_GeneratedOutput<ClassDeclaration>> _processClassDeclarations(
-    ClassDeclaration decl, _Finder finder) {
+List<_GeneratedOutput> _processUnitMember(
+    CompilationUnitMember decl, _Finder finder) {
   var outputs = <_GeneratedOutput>[];
 
   for (Annotation ann in decl.metadata) {
@@ -147,10 +151,9 @@ List<_GeneratedOutput<ClassDeclaration>> _processClassDeclarations(
     var gen = finder(symbol);
     if (gen != null) {
       try {
-        var source = gen.generateClassHelpers(ann, decl);
-        if (source != null) {
-          outputs
-              .add(new _GeneratedOutput<ClassDeclaration>(decl, ann, source));
+        var generated = gen.generateClassHelpers(ann, decl);
+        if (generated != null) {
+          outputs.add(new _GeneratedOutput(decl, ann, generated));
         }
       } catch (e, stack) {
         print("Error while generating");
@@ -158,6 +161,7 @@ List<_GeneratedOutput<ClassDeclaration>> _processClassDeclarations(
         print("\tfrom $ann");
         print("\tfor $decl");
         print('\t$e');
+        print('\t$stack');
       }
     }
   }
@@ -165,12 +169,20 @@ List<_GeneratedOutput<ClassDeclaration>> _processClassDeclarations(
   return outputs;
 }
 
-class _GeneratedOutput<T extends CompilationUnitMember> {
-  final T declaration;
-  final Annotation annotation;
-  final String source;
+String _getFriendlyName(CompilationUnitMember member) {
+  if (member is ClassDeclaration) {
+    return 'class ${member.name.name}';
+  } else {
+    return 'UNKNOWN for ${member.runtimeType}';
+  }
+}
 
-  _GeneratedOutput(this.declaration, this.annotation, this.source);
+class _GeneratedOutput {
+  final CompilationUnitMember sourceMember;
+  final Annotation annotation;
+  final CompilationUnitMember output;
+
+  _GeneratedOutput(this.sourceMember, this.annotation, this.output);
 }
 
 Symbol _getSymbolForAnnotation(Annotation ann) {
@@ -178,28 +190,4 @@ Symbol _getSymbolForAnnotation(Annotation ann) {
   var annName = ann.name;
 
   return new Symbol("${libName}.${annName}");
-}
-
-AnalysisContext _getContext(String projectPath) {
-  JavaSystemIO.setProperty(
-      "com.google.dart.sdk", Platform.environment['DART_SDK']);
-  DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
-
-  var resolvers = [new DartUriResolver(sdk), new FileUriResolver()];
-
-  var packageRoot = p.join(projectPath, 'packages');
-
-  var packageDirectory = new JavaFile(packageRoot);
-  resolvers.add(new PackageUriResolver([packageDirectory]));
-
-  return AnalysisEngine.instance.createAnalysisContext()
-    ..sourceFactory = new SourceFactory(resolvers);
-}
-
-CompilationUnit _getUnit(String sourcePath, AnalysisContext context) {
-  Source source = new FileBasedSource.con1(new JavaFile(sourcePath));
-  ChangeSet changeSet = new ChangeSet()..addedSource(source);
-  context.applyChanges(changeSet);
-  LibraryElement libElement = context.computeLibraryElement(source);
-  return context.resolveCompilationUnit(source, libElement);
 }
