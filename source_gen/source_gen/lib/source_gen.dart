@@ -14,24 +14,24 @@ import 'package:path/path.dart' as p;
 import 'generator.dart';
 import 'src/utils.dart';
 
-Future<String> generate(
-    String projectPath, String changed, List<Generator> generators) async {
-  assert(p.isRelative(changed));
+Future<String> generate(String projectPath, String changeFilePath,
+    List<Generator> generators) async {
+  assert(p.isRelative(changeFilePath));
 
-  assert(p.isWithin(projectPath, changed));
+  assert(p.isWithin(projectPath, changeFilePath));
 
-  if (p.extension(changed) != '.dart') {
-    return 'not dart';
+  if (p.extension(changeFilePath) != '.dart') {
+    return 'Not a Dart file - ${changeFilePath}.';
   }
 
-  if (changed.endsWith('.g.dart')) {
-    return 'skipping generated dart file $changed';
+  if (changeFilePath.endsWith('.g.dart')) {
+    return 'Skipping generated Dart file ${changeFilePath}.';
   }
 
-  var fullPath = p.join(projectPath, changed);
+  var fullPath = p.join(projectPath, changeFilePath);
 
   if (!await FileSystemEntity.isFile(fullPath)) {
-    return 'File does not exist';
+    return 'File does not exist - ${changeFilePath}.';
   }
 
   var finder = _createFinderFromGenerators(generators);
@@ -40,9 +40,9 @@ Future<String> generate(
 
   var generatedOutputs = _generate(unit, finder);
 
-  var lib = unit.element.library;
+  var elementLibrary = unit.element.library;
 
-  var genFileName = _getGeterateFilePath(lib, projectPath);
+  var genFileName = _getGeterateFilePath(elementLibrary, projectPath);
 
   var file = new File(genFileName);
 
@@ -50,23 +50,24 @@ Future<String> generate(
 
   if (generatedOutputs.isEmpty && exists) {
     await file.delete();
-    return 'Deleting $genFileName - nothing to do';
+    return 'Deleting $genFileName - nothing to do.';
   }
 
-  var buffer = new StringBuffer();
+  var genPartContentBuffer = new StringBuffer();
 
-  buffer.writeln('part of ${lib.name};');
-  buffer.writeln();
+  genPartContentBuffer.writeln('part of ${elementLibrary.name};');
+  genPartContentBuffer.writeln();
 
   for (GeneratedOutput output in generatedOutputs) {
-    buffer.writeln('');
-    buffer.writeln('// @${output.annotation.name}');
-    buffer.writeln('// ${frieldlyNameForCompilationUnitMember(output.sourceMember)}');
+    genPartContentBuffer.writeln('');
+    genPartContentBuffer.writeln('// @${output.annotation.name}');
+    genPartContentBuffer.writeln(
+        '// ${frieldlyNameForCompilationUnitMember(output.sourceMember)}');
 
-    buffer.writeln(output.output.toSource());
+    genPartContentBuffer.writeln(output.output.toSource());
   }
 
-  var newContent = buffer.toString();
+  var genPartContent = genPartContentBuffer.toString();
 
   var existingLines = <String>[];
   if (exists) {
@@ -76,15 +77,15 @@ Future<String> generate(
   var existingContent = existingLines.skip(3).join('\n') + '\n';
 
   var formatter = new DartFormatter();
-  newContent = formatter.format(newContent);
+  genPartContent = formatter.format(genPartContent);
 
-  if (existingContent == newContent) {
+  if (existingContent == genPartContent) {
     return "No changes!";
   }
 
   var sink = file.openWrite(mode: FileMode.WRITE)
     ..write(_getHeader())
-    ..write(newContent);
+    ..write(genPartContent);
 
   await sink.flush();
   sink.close();

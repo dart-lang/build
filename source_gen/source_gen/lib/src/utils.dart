@@ -66,7 +66,6 @@ CompilationUnit getCompilationUnit(String projectPath, String sourcePath) {
   return context.resolveCompilationUnit(source, libElement);
 }
 
-
 String frieldlyNameForCompilationUnitMember(CompilationUnitMember member) {
   if (member is ClassDeclaration) {
     return 'class ${member.name.name}';
