@@ -65,3 +65,27 @@ CompilationUnit getCompilationUnit(String projectPath, String sourcePath) {
   LibraryElement libElement = context.computeLibraryElement(source);
   return context.resolveCompilationUnit(source, libElement);
 }
+
+
+String frieldlyNameForCompilationUnitMember(CompilationUnitMember member) {
+  if (member is ClassDeclaration) {
+    return 'class ${member.name.name}';
+  } else {
+    return 'UNKNOWN for ${member.runtimeType}';
+  }
+}
+
+class GeneratedOutput {
+  final CompilationUnitMember sourceMember;
+  final Annotation annotation;
+  final CompilationUnitMember output;
+
+  GeneratedOutput(this.sourceMember, this.annotation, this.output);
+}
+
+Symbol getSymbolForAnnotation(Annotation ann) {
+  var libName = ann.element.library.name;
+  var annName = ann.name;
+
+  return new Symbol("${libName}.${annName}");
+}

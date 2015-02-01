@@ -58,10 +58,10 @@ Future<String> generate(
   buffer.writeln('part of ${lib.name};');
   buffer.writeln();
 
-  for (_GeneratedOutput output in generatedOutputs) {
+  for (GeneratedOutput output in generatedOutputs) {
     buffer.writeln('');
     buffer.writeln('// @${output.annotation.name}');
-    buffer.writeln('// ${_getFriendlyName(output.sourceMember)}');
+    buffer.writeln('// ${frieldlyNameForCompilationUnitMember(output.sourceMember)}');
 
     buffer.writeln(output.output.toSource());
   }
@@ -128,8 +128,8 @@ _Finder _createFinderFromGenerators(List<Generator> gens) {
   return (Symbol s) => map[s];
 }
 
-List<_GeneratedOutput> _generate(CompilationUnit unit, _Finder finder) {
-  var code = <_GeneratedOutput>[];
+List<GeneratedOutput> _generate(CompilationUnit unit, _Finder finder) {
+  var code = <GeneratedOutput>[];
 
   for (var du in unit.declarations) {
     var subCode = _processUnitMember(du, finder);
@@ -141,19 +141,19 @@ List<_GeneratedOutput> _generate(CompilationUnit unit, _Finder finder) {
 
 typedef Generator _Finder(Symbol symbol);
 
-List<_GeneratedOutput> _processUnitMember(
+List<GeneratedOutput> _processUnitMember(
     CompilationUnitMember decl, _Finder finder) {
-  var outputs = <_GeneratedOutput>[];
+  var outputs = <GeneratedOutput>[];
 
   for (Annotation ann in decl.metadata) {
-    var symbol = _getSymbolForAnnotation(ann);
+    var symbol = getSymbolForAnnotation(ann);
 
     var gen = finder(symbol);
     if (gen != null) {
       try {
         var generated = gen.generateClassHelpers(ann, decl);
         if (generated != null) {
-          outputs.add(new _GeneratedOutput(decl, ann, generated));
+          outputs.add(new GeneratedOutput(decl, ann, generated));
         }
       } catch (e, stack) {
         print("Error while generating");
@@ -167,27 +167,4 @@ List<_GeneratedOutput> _processUnitMember(
   }
 
   return outputs;
-}
-
-String _getFriendlyName(CompilationUnitMember member) {
-  if (member is ClassDeclaration) {
-    return 'class ${member.name.name}';
-  } else {
-    return 'UNKNOWN for ${member.runtimeType}';
-  }
-}
-
-class _GeneratedOutput {
-  final CompilationUnitMember sourceMember;
-  final Annotation annotation;
-  final CompilationUnitMember output;
-
-  _GeneratedOutput(this.sourceMember, this.annotation, this.output);
-}
-
-Symbol _getSymbolForAnnotation(Annotation ann) {
-  var libName = ann.element.library.name;
-  var annName = ann.name;
-
-  return new Symbol("${libName}.${annName}");
 }
