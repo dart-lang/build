@@ -4,7 +4,7 @@ import 'dart:mirrors';
 
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/element.dart';
-import 'src/utils.dart';
+import 'utils.dart';
 
 abstract class Generator<T extends Element> {
   const Generator();

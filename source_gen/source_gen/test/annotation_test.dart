@@ -4,7 +4,7 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
 
-import 'package:source_gen/generator.dart' as gen;
+import 'package:source_gen/src/generator.dart' as gen;
 import 'package:source_gen/src/utils.dart';
 
 import 'package:source_gen/json_serial/json_annotation.dart';

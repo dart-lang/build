@@ -1,4 +1,4 @@
-library source_gen.generator;
+library source_gen.build_file_generator;
 
 import 'dart:async';
 import 'dart:io';
@@ -10,8 +10,9 @@ import 'package:analyzer/src/generated/source_io.dart';
 import 'package:dart_style/src/dart_formatter.dart';
 import 'package:path/path.dart' as p;
 
+import 'generated_output.dart';
 import 'generator.dart';
-import 'src/utils.dart';
+import 'utils.dart';
 
 Future<String> generate(String projectPath, String changeFilePath,
     List<Generator> generators) async {
@@ -137,12 +138,4 @@ List<GeneratedOutput> _processUnitMember(
   }
 
   return outputs;
-}
-
-class GeneratedOutput {
-  final CompilationUnitMember sourceMember;
-  final CompilationUnitMember output;
-  final Generator generator;
-
-  GeneratedOutput(this.sourceMember, this.generator, this.output);
 }
