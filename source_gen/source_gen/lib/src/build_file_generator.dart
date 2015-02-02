@@ -60,7 +60,7 @@ Future<String> generate(String projectPath, String changeFilePath,
     genPartContentBuffer.writeln('');
     genPartContentBuffer.writeln('// ${output.generator}');
     genPartContentBuffer.writeln(
-        '// ${frieldlyNameForCompilationUnitMember(output.sourceMember)}');
+        '// ${frieldlyNameForElement(output.sourceMember)}');
 
     genPartContentBuffer.writeln(output.output.toSource());
   }
@@ -119,23 +119,41 @@ List<GeneratedOutput> _generate(
   var code = <GeneratedOutput>[];
 
   for (var du in unit.declarations) {
-    var subCode = _processUnitMember(du, generators);
-    code.addAll(subCode);
+    for (var element in _getElements(du)) {
+      var subCode = _processUnitMember(element, generators);
+      code.addAll(subCode);
+    }
   }
 
   return code;
 }
 
 List<GeneratedOutput> _processUnitMember(
-    CompilationUnitMember decl, List<Generator> generators) {
+    Element element, List<Generator> generators) {
   var outputs = <GeneratedOutput>[];
 
+
   for (var gen in generators) {
-    var createdUnit = gen.generate(decl.element);
+
+    var createdUnit = gen.generate(element);
     if (createdUnit != null) {
-      outputs.add(new GeneratedOutput(decl, gen, createdUnit));
+      outputs.add(new GeneratedOutput(element, gen, createdUnit));
     }
   }
 
   return outputs;
+}
+
+List<Element> _getElements(CompilationUnitMember member) {
+  if (member is TopLevelVariableDeclaration) {
+    return member.variables.variables.map((v) => v.element).toList();
+  }
+  var element = member.element;
+
+  if (element == null) {
+    print([member, member.runtimeType, member.element]);
+    throw 'crap!';
+  }
+
+  return [element];
 }

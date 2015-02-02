@@ -139,12 +139,15 @@ CompilationUnit getCompilationUnit(String projectPath, String sourcePath) {
   return context.resolveCompilationUnit(source, libElement);
 }
 
-String frieldlyNameForCompilationUnitMember(CompilationUnitMember member) {
-  if (member is ClassDeclaration) {
-    return 'class ${member.name.name}';
-  } else {
-    return 'UNKNOWN for ${member.runtimeType}';
+String frieldlyNameForElement(Element member) {
+  var friendlyName = member.displayName;
+
+  if (friendlyName == null) {
+    print('Cannot get friendly name for $member - ${member.runtimeType}.');
+    throw 'boo!';
   }
+
+  return friendlyName;
 }
 
 Symbol getSymbolForAnnotation(Annotation ann) {
