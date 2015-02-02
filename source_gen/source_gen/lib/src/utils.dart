@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:analyzer/analyzer.dart';
-import 'package:analyzer/file_system/file_system.dart';
+import 'package:analyzer/file_system/file_system.dart' hide File;
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
@@ -36,13 +36,47 @@ bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
 
   var libOwner = classMirror.owner as LibraryMirror;
 
-  if (libOwner.uri.scheme != 'file') {
-    // TODO: support package scheme here...some how
-    throw new UnimplementedError(
-        "We only support 'file' scheme, not ${libOwner.uri.scheme}");
+  Uri libraryUri;
+
+  switch (libOwner.uri.scheme) {
+    case 'file':
+      libraryUri = libOwner.uri;
+      break;
+    case 'package':
+      libraryUri = _fileUriFromPackageUri(libOwner.uri);
+      break;
+    default:
+      throw new UnimplementedError('We do not support scheme ${libOwner.uri.scheme}.');
   }
 
-  return annotationSource.uri == libOwner.uri;
+  return annotationSource.uri == libraryUri;
+}
+
+Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
+  assert(libraryPackageUri.scheme == 'package');
+  var packageDir = _getPackageRoot();
+
+  var fullLibraryPath = p.join(packageDir, libraryPackageUri.path);
+
+  var file = new File(fullLibraryPath);
+
+  assert(file.existsSync());
+
+  var normalPath = file.resolveSymbolicLinksSync();
+
+  return new Uri.file(normalPath);
+}
+
+String _getPackageRoot() {
+  var dir = Platform.packageRoot;
+
+  if (dir.isEmpty) {
+    dir = p.join(p.current, 'packages');
+  }
+
+  assert(FileSystemEntity.isDirectorySync(dir));
+
+  return dir;
 }
 
 String _annotationClassName(ElementAnnotation annotation) {

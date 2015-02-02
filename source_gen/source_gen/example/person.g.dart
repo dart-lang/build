@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-02T21:20:44.694Z
+// 2015-02-02T21:42:35.259Z
 
 part of source_gen.example.person;
 
@@ -30,13 +30,13 @@ abstract class _$_PersonSerializerMixin {
 abstract class _$_OrderSerializerMixin {
   int get count;
   int get itemNumber;
-  bool get isRush;
+  bool get isRushed;
   static Order fromJson(Map<String, Object> json) {
     return new Order()
       ..count = json['count']
       ..itemNumber = json['itemNumber']
-      ..isRush = json['isRush'];
+      ..isRushed = json['isRushed'];
   }
   Map<String, Object> toJson() =>
-      {'count': count, 'itemNumber': itemNumber, 'isRush': isRush};
+      {'count': count, 'itemNumber': itemNumber, 'isRushed': isRushed};
 }

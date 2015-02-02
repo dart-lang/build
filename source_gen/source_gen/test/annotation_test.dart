@@ -1,12 +1,16 @@
 import 'dart:io';
 
+import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
-import 'package:source_gen/src/utils.dart';
-import 'package:analyzer/src/generated/element.dart';
-import 'annotation_test/annotations.dart' as defs;
 
 import 'package:source_gen/generator.dart' as gen;
+import 'package:source_gen/src/utils.dart';
+
+import 'package:source_gen/json_serial/json_annotation.dart';
+
+import 'annotation_test/annotations.dart' as defs;
+
 
 void main() {
   group('match annotations', () {
@@ -49,6 +53,15 @@ void main() {
       var matched =
           matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
       expect(matched, isFalse);
+    });
+
+    test('class annotated with type defined via package uri', () {
+      ClassElement annotatedClass =
+          _getAnnotationForClass(libElement, 'AnnotatedWithJson');
+      var annotation = annotatedClass.metadata.single;
+      var matched =
+          matchAnnotation(JsonSerializable, annotation);
+      expect(matched, isTrue);
     });
   });
 }

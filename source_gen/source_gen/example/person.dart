@@ -16,5 +16,5 @@ class Person extends Object with _$_PersonSerializerMixin {
 class Order {
   int count;
   int itemNumber;
-  bool isRush;
+  bool isRushed;
 }
