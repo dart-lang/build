@@ -1,6 +1,6 @@
 library source_gen.test.annotation_test.classes;
 
-import 'test_annotation_definitions.dart';
+import 'annotations.dart';
 
 part 'annotated_classes_part.dart';
 

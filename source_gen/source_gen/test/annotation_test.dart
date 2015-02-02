@@ -4,7 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
 import 'package:source_gen/src/utils.dart';
 import 'package:analyzer/src/generated/element.dart';
-import 'annotation_test/test_annotation_definitions.dart' as defs;
+import 'annotation_test/annotations.dart' as defs;
 
 import 'package:source_gen/generator.dart' as gen;
 
@@ -63,7 +63,7 @@ class _MyAnnotationGen
 
 LibraryElement _getTestLibElement() {
   var annotatedClassesFilePath =
-      p.join(_packagePath, 'test/annotation_test/test_annotated_classes.dart');
+      p.join(_packagePath, 'test/annotation_test/annotated_classes.dart');
   return getCompilationUnit(
       _packagePath, annotatedClassesFilePath).element.library;
 }
