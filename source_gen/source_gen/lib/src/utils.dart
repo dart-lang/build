@@ -46,7 +46,8 @@ bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
       libraryUri = _fileUriFromPackageUri(libOwner.uri);
       break;
     default:
-      throw new UnimplementedError('We do not support scheme ${libOwner.uri.scheme}.');
+      throw new UnimplementedError(
+          'We do not support scheme ${libOwner.uri.scheme}.');
   }
 
   return annotationSource.uri == libraryUri;

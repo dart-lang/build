@@ -11,7 +11,6 @@ import 'package:source_gen/json_serial/json_annotation.dart';
 
 import 'annotation_test/annotations.dart' as defs;
 
-
 void main() {
   group('match annotations', () {
     LibraryElement libElement;
@@ -59,8 +58,7 @@ void main() {
       ClassElement annotatedClass =
           _getAnnotationForClass(libElement, 'AnnotatedWithJson');
       var annotation = annotatedClass.metadata.single;
-      var matched =
-          matchAnnotation(JsonSerializable, annotation);
+      var matched = matchAnnotation(JsonSerializable, annotation);
       expect(matched, isTrue);
     });
   });
