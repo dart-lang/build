@@ -2,33 +2,31 @@ library source_gen.json_serial.generator;
 
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
-
+import 'package:analyzer/src/generated/element.dart';
 import 'package:source_gen/generator.dart';
-import 'package:source_gen/annotations.dart';
 import 'package:source_gen/src/utils.dart';
 
 import 'json_annotation.dart';
 
 const Generator generator = const _JsonGenerator();
 
-class _JsonGenerator extends Generator {
+class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   const _JsonGenerator();
 
-  GeneratorAnnotation get annotation => const JsonSerializable();
+  CompilationUnitMember generateForAnnotatedElement(
+      Element element, JsonSerializable annotation) {
+    if (element is ClassElement) {
+      return _generate(element);
+    }
+    return null;
+  }
 
-  CompilationUnitMember generateClassHelpers(
-      Annotation annotation, ClassDeclaration classDef) {
-    var className = classDef.name.name;
+  CompilationUnitMember _generate(ClassElement element) {
+    var className = element.displayName;
 
     var fieldMap = <String, String>{};
-    for (var member in classDef.members) {
-      if (member is FieldDeclaration) {
-        var fields = member.fields;
-        var typeName = fields.type.name.name;
-        for (var field in fields.variables) {
-          fieldMap[field.name.name] = typeName;
-        }
-      }
+    for (var member in element.fields) {
+      fieldMap[member.name] = member.type.name;
     }
 
     var codeStr = _populateTemplate(className, fieldMap);
@@ -37,6 +35,8 @@ class _JsonGenerator extends Generator {
 
     return unit.declarations.single;
   }
+
+  String toString() => 'Sample Json Generator';
 }
 
 String _populateTemplate(String className, Map<String, String> fields) {

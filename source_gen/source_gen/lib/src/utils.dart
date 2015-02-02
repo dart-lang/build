@@ -1,8 +1,11 @@
 library source_gen.utils;
 
 import 'dart:io';
+import 'dart:mirrors';
 
 import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/file_system/file_system.dart';
+import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
@@ -17,6 +20,40 @@ import 'package:analyzer/src/string_source.dart';
 import 'package:dart_style/src/error_listener.dart';
 import 'package:dart_style/src/source_code.dart';
 import 'package:path/path.dart' as p;
+
+bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
+  var classMirror = reflectClass(annotationType);
+  var classMirrorSymbol = classMirror.simpleName;
+
+  var annTypeName = _annotationClassName(annotation);
+  var annotationTypeSymbol = new Symbol(annTypeName);
+
+  if (classMirrorSymbol != annotationTypeSymbol) {
+    return false;
+  }
+
+  var annotationSource = annotation.element.source as FileBasedSource;
+
+  var libOwner = classMirror.owner as LibraryMirror;
+
+  if (libOwner.uri.scheme != 'file') {
+    // TODO: support package scheme here...some how
+    throw new UnimplementedError(
+        "We only support 'file' scheme, not ${libOwner.uri.scheme}");
+  }
+
+  return annotationSource.uri == libOwner.uri;
+}
+
+String _annotationClassName(ElementAnnotation annotation) {
+  var element = annotation.element;
+
+  if (element is ConstructorElementImpl) {
+    return element.returnType.name;
+  } else {
+    throw 'I cannot get the name for $annotation';
+  }
+}
 
 CompilationUnit stringToCompilationUnit(String sourceStr) {
   var source = new SourceCode(sourceStr);
@@ -44,7 +81,10 @@ AnalysisContext _getAnalysisContextForProjectPath(String projectPath) {
       "com.google.dart.sdk", Platform.environment['DART_SDK']);
   DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
 
-  var resolvers = [new DartUriResolver(sdk), new FileUriResolver()];
+  var resolvers = [
+    new DartUriResolver(sdk),
+    new ResourceUriResolver(PhysicalResourceProvider.INSTANCE)
+  ];
 
   var packageRoot = p.join(projectPath, 'packages');
 
@@ -57,11 +97,9 @@ AnalysisContext _getAnalysisContextForProjectPath(String projectPath) {
 
 CompilationUnit getCompilationUnit(String projectPath, String sourcePath) {
   Source source = new FileBasedSource.con1(new JavaFile(sourcePath));
-  ChangeSet changeSet = new ChangeSet()..addedSource(source);
 
   var context = _getAnalysisContextForProjectPath(projectPath);
 
-  context.applyChanges(changeSet);
   LibraryElement libElement = context.computeLibraryElement(source);
   return context.resolveCompilationUnit(source, libElement);
 }
@@ -72,14 +110,6 @@ String frieldlyNameForCompilationUnitMember(CompilationUnitMember member) {
   } else {
     return 'UNKNOWN for ${member.runtimeType}';
   }
-}
-
-class GeneratedOutput {
-  final CompilationUnitMember sourceMember;
-  final Annotation annotation;
-  final CompilationUnitMember output;
-
-  GeneratedOutput(this.sourceMember, this.annotation, this.output);
 }
 
 Symbol getSymbolForAnnotation(Annotation ann) {

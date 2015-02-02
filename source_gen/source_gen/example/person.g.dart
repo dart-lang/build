@@ -1,9 +1,9 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-01-31T02:29:32.757Z
+// 2015-02-02T21:20:44.694Z
 
 part of source_gen.example.person;
 
-// @JsonSerializable
+// Sample Json Generator
 // class Person
 abstract class _$_PersonSerializerMixin {
   String get firstName;
@@ -25,7 +25,7 @@ abstract class _$_PersonSerializerMixin {
   };
 }
 
-// @JsonSerializable
+// Sample Json Generator
 // class Order
 abstract class _$_OrderSerializerMixin {
   int get count;

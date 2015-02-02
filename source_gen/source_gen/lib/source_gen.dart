@@ -2,7 +2,6 @@ library source_gen.generator;
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:mirrors';
 
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
@@ -34,11 +33,9 @@ Future<String> generate(String projectPath, String changeFilePath,
     return 'File does not exist - ${changeFilePath}.';
   }
 
-  var finder = _createFinderFromGenerators(generators);
-
   var unit = getCompilationUnit(projectPath, fullPath);
 
-  var generatedOutputs = _generate(unit, finder);
+  var generatedOutputs = _generate(unit, generators);
 
   var elementLibrary = unit.element.library;
 
@@ -60,7 +57,7 @@ Future<String> generate(String projectPath, String changeFilePath,
 
   for (GeneratedOutput output in generatedOutputs) {
     genPartContentBuffer.writeln('');
-    genPartContentBuffer.writeln('// @${output.annotation.name}');
+    genPartContentBuffer.writeln('// ${output.generator}');
     genPartContentBuffer.writeln(
         '// ${frieldlyNameForCompilationUnitMember(output.sourceMember)}');
 
@@ -116,56 +113,36 @@ String _getHeader() => '''// GENERATED CODE - DO NOT MODIFY BY HAND
 
 ''';
 
-_Finder _createFinderFromGenerators(List<Generator> gens) {
-  var map = <Symbol, Generator>{};
-
-  for (var gen in gens) {
-    var annotation = gen.annotation;
-    var annoType = annotation.runtimeType;
-    var typeMirror = reflectType(annoType);
-    map[typeMirror.qualifiedName] = gen;
-  }
-
-  return (Symbol s) => map[s];
-}
-
-List<GeneratedOutput> _generate(CompilationUnit unit, _Finder finder) {
+List<GeneratedOutput> _generate(
+    CompilationUnit unit, List<Generator> generators) {
   var code = <GeneratedOutput>[];
 
   for (var du in unit.declarations) {
-    var subCode = _processUnitMember(du, finder);
+    var subCode = _processUnitMember(du, generators);
     code.addAll(subCode);
   }
 
   return code;
 }
 
-typedef Generator _Finder(Symbol symbol);
-
 List<GeneratedOutput> _processUnitMember(
-    CompilationUnitMember decl, _Finder finder) {
+    CompilationUnitMember decl, List<Generator> generators) {
   var outputs = <GeneratedOutput>[];
 
-  for (Annotation ann in decl.metadata) {
-    var symbol = getSymbolForAnnotation(ann);
-
-    var gen = finder(symbol);
-    if (gen != null) {
-      try {
-        var generated = gen.generateClassHelpers(ann, decl);
-        if (generated != null) {
-          outputs.add(new GeneratedOutput(decl, ann, generated));
-        }
-      } catch (e, stack) {
-        print("Error while generating");
-        print("\twith $gen");
-        print("\tfrom $ann");
-        print("\tfor $decl");
-        print('\t$e');
-        print('\t$stack');
-      }
+  for (var gen in generators) {
+    var createdUnit = gen.generate(decl.element);
+    if (createdUnit != null) {
+      outputs.add(new GeneratedOutput(decl, gen, createdUnit));
     }
   }
 
   return outputs;
+}
+
+class GeneratedOutput {
+  final CompilationUnitMember sourceMember;
+  final CompilationUnitMember output;
+  final Generator generator;
+
+  GeneratedOutput(this.sourceMember, this.generator, this.output);
 }
