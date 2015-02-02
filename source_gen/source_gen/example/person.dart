@@ -18,3 +18,7 @@ class Order {
   int itemNumber;
   bool isRushed;
 }
+
+// TODO: Handle InvalidGenerationSourceError correctly Issue #9
+// @JsonSerializable()
+// const testValue = 12345;

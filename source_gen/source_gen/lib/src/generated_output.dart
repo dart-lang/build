@@ -8,7 +8,7 @@ import 'generator.dart';
 
 class GeneratedOutput {
   final Element sourceMember;
-  final CompilationUnitMember output;
+  final AstNode output;
   final Generator generator;
 
   GeneratedOutput(this.sourceMember, this.generator, this.output);

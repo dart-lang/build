@@ -41,3 +41,9 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   CompilationUnitMember generateForAnnotatedElement(
       Element element, T annotation);
 }
+
+class InvalidGenerationSourceError {
+  final String message;
+
+  InvalidGenerationSourceError(this.message);
+}

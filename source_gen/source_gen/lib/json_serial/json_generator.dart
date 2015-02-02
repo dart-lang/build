@@ -3,6 +3,7 @@ library source_gen.json_serial.generator;
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
+
 import 'package:source_gen/src/generator.dart';
 import 'package:source_gen/src/utils.dart';
 
@@ -15,10 +16,11 @@ class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
 
   CompilationUnitMember generateForAnnotatedElement(
       Element element, JsonSerializable annotation) {
-    if (element is ClassElement) {
-      return _generate(element);
+    if (element is! ClassElement) {
+      throw new InvalidGenerationSourceError('Cannot target element $element.');
     }
-    return null;
+
+    return _generate(element);
   }
 
   CompilationUnitMember _generate(ClassElement element) {

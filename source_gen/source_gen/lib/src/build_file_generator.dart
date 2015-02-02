@@ -7,6 +7,7 @@ import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source_io.dart';
+import 'package:analyzer/src/generated/testing/token_factory.dart';
 import 'package:dart_style/src/dart_formatter.dart';
 import 'package:path/path.dart' as p;
 
@@ -59,8 +60,10 @@ Future<String> generate(String projectPath, String changeFilePath,
   for (GeneratedOutput output in generatedOutputs) {
     genPartContentBuffer.writeln('');
     genPartContentBuffer.writeln('// ${output.generator}');
-    genPartContentBuffer.writeln(
-        '// ${frieldlyNameForElement(output.sourceMember)}');
+    genPartContentBuffer
+        .writeln('// ${frieldlyNameForElement(output.sourceMember)}');
+
+    print(output.output.runtimeType);
 
     genPartContentBuffer.writeln(output.output.toSource());
   }
@@ -132,10 +135,16 @@ List<GeneratedOutput> _processUnitMember(
     Element element, List<Generator> generators) {
   var outputs = <GeneratedOutput>[];
 
-
   for (var gen in generators) {
+    AstNode createdUnit;
 
-    var createdUnit = gen.generate(element);
+    try {
+      createdUnit = gen.generate(element);
+    } on InvalidGenerationSourceError catch (e) {
+      // TODO: Handle InvalidGenerationSourceError correctly Issue #9
+      // NEEDED: https://github.com/dart-lang/dart_style/issues/157
+      throw e;
+    }
     if (createdUnit != null) {
       outputs.add(new GeneratedOutput(element, gen, createdUnit));
     }
