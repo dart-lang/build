@@ -99,7 +99,6 @@ CompilationUnit stringToCompilationUnit(String sourceStr) {
   var stringSource = new StringSource(source.text, source.uri);
   var scanner = new Scanner(stringSource, reader, errorListener);
   var startToken = scanner.tokenize();
-  var lineInfo = new LineInfo(scanner.lineStarts);
 
   errorListener.throwIfErrors();
 

@@ -4,10 +4,8 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
 
-import 'package:source_gen/src/generator.dart' as gen;
-import 'package:source_gen/src/utils.dart';
-
 import 'package:source_gen/json_serial/json_annotation.dart';
+import 'package:source_gen/src/utils.dart';
 
 import 'annotation_test/annotations.dart' as defs;
 
@@ -62,14 +60,6 @@ void main() {
       expect(matched, isTrue);
     });
   });
-}
-
-class _MyAnnotationGen
-    extends gen.GeneratorForAnnotation<defs.PublicAnnotationClass> {
-  _MyAnnotationGen();
-
-  generateForAnnotatedElement(
-      Element element, defs.PublicAnnotationClass annotation) {}
 }
 
 LibraryElement _getTestLibElement() {

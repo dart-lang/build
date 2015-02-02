@@ -7,7 +7,6 @@ import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source_io.dart';
-import 'package:analyzer/src/generated/testing/token_factory.dart';
 import 'package:dart_style/src/dart_formatter.dart';
 import 'package:path/path.dart' as p;
 

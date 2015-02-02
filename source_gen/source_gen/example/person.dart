@@ -13,7 +13,7 @@ class Person extends Object with _$_PersonSerializerMixin {
 }
 
 @JsonSerializable()
-class Order {
+class Order extends Object with _$_OrderSerializerMixin {
   int count;
   int itemNumber;
   bool isRushed;
