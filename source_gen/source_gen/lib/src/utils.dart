@@ -105,8 +105,6 @@ CompilationUnit stringToCompilationUnit(String sourceStr) {
 
   // Parse it.
   var parser = new Parser(stringSource, errorListener);
-  parser.parseAsync = true;
-  parser.parseEnum = true;
 
   return parser.parseCompilationUnit(startToken);
 }
