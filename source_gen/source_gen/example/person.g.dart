@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-03T04:14:24.191Z
+// 2015-02-03T04:22:09.747Z
 
 part of source_gen.example.person;
 
@@ -8,20 +8,19 @@ part of source_gen.example.person;
 // Target: class Person
 // **************************************************************************
 
-abstract class _$_PersonSerializerMixin {
+Person _$PersonFromJson(Map<String, Object> json) {
+  return new Person()
+    ..firstName = json['firstName']
+    ..middleName = json['middleName']
+    ..lastName = json['lastName']
+    ..dob = json['dob'];
+}
+
+abstract class _$PersonSerializerMixin {
   String get firstName;
   String get middleName;
   String get lastName;
   DateTime get dob;
-
-  static Person fromJson(Map<String, Object> json) {
-    return new Person()
-      ..firstName = json['firstName']
-      ..middleName = json['middleName']
-      ..lastName = json['lastName']
-      ..dob = json['dob'];
-  }
-
   Map<String, Object> toJson() => {
     'firstName': firstName,
     'middleName': middleName,
@@ -35,18 +34,17 @@ abstract class _$_PersonSerializerMixin {
 // Target: class Order
 // **************************************************************************
 
-abstract class _$_OrderSerializerMixin {
+Order _$OrderFromJson(Map<String, Object> json) {
+  return new Order()
+    ..count = json['count']
+    ..itemNumber = json['itemNumber']
+    ..isRushed = json['isRushed'];
+}
+
+abstract class _$OrderSerializerMixin {
   int get count;
   int get itemNumber;
   bool get isRushed;
-
-  static Order fromJson(Map<String, Object> json) {
-    return new Order()
-      ..count = json['count']
-      ..itemNumber = json['itemNumber']
-      ..isRushed = json['isRushed'];
-  }
-
   Map<String, Object> toJson() =>
       {'count': count, 'itemNumber': itemNumber, 'isRushed': isRushed};
 }

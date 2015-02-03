@@ -39,18 +39,16 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
 }
 
 String _populateTemplate(String className, Map<String, String> fields) {
+  var prefix = '_\$${className}';
+
   var buffer = new StringBuffer();
 
-  buffer.writeln('abstract class _\$_${className}SerializerMixin {');
-
-  // write fields
-  fields.forEach((k, v) {
-    buffer.writeln('  $v get $k;');
-  });
-
+  //
+  // Generate the static factory method
+  //
   // write static factory
   buffer.writeln();
-  buffer.writeln('  static $className fromJson(Map<String, Object> json) {');
+  buffer.writeln('$className ${prefix}FromJson(Map<String, Object> json) {');
   buffer.write('    return new $className()');
   if (fields.isEmpty) {
     buffer.writeln(';');
@@ -63,6 +61,16 @@ String _populateTemplate(String className, Map<String, String> fields) {
   }
   buffer.writeln('  }');
   buffer.writeln();
+
+  //
+  // Generate the mixin class
+  //
+  buffer.writeln('abstract class ${prefix}SerializerMixin {');
+
+  // write fields
+  fields.forEach((k, v) {
+    buffer.writeln('  $v get $k;');
+  });
 
   // write toJson method
   buffer.writeln('  Map<String, Object> toJson() => {');
