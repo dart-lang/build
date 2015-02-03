@@ -140,9 +140,7 @@ List<GeneratedOutput> _processUnitMember(
     try {
       createdUnit = gen.generate(element);
     } on InvalidGenerationSourceError catch (e) {
-      // TODO: Handle InvalidGenerationSourceError correctly Issue #9
-      // NEEDED: https://github.com/dart-lang/dart_style/issues/157
-      throw e;
+      createdUnit = '// TODO: ${e.message}';
     }
     if (createdUnit != null) {
       outputs.add(new GeneratedOutput(element, gen, createdUnit));

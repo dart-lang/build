@@ -38,8 +38,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     return generateForAnnotatedElement(element, annotationInstance);
   }
 
-  String generateForAnnotatedElement(
-      Element element, T annotation);
+  String generateForAnnotatedElement(Element element, T annotation);
 }
 
 class InvalidGenerationSourceError {

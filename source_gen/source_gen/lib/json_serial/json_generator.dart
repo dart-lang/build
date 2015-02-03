@@ -15,7 +15,8 @@ class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   String generateForAnnotatedElement(
       Element element, JsonSerializable annotation) {
     if (element is! ClassElement) {
-      throw new InvalidGenerationSourceError('Cannot target element $element.');
+      throw new InvalidGenerationSourceError(
+          'Generator cannot target $element.');
     }
 
     return _generate(element);

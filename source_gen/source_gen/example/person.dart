@@ -19,6 +19,5 @@ class Order extends Object with _$_OrderSerializerMixin {
   bool isRushed;
 }
 
-// TODO: Handle InvalidGenerationSourceError correctly Issue #9
-// @JsonSerializable()
-// const testValue = 12345;
+@JsonSerializable()
+const testValue = 12345;

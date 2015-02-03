@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-03T03:24:43.376Z
+// 2015-02-03T03:29:56.700Z
 
 part of source_gen.example.person;
 
@@ -44,3 +44,7 @@ abstract class _$_OrderSerializerMixin {
   Map<String, Object> toJson() =>
       {'count': count, 'itemNumber': itemNumber, 'isRushed': isRushed};
 }
+
+// Sample Json Generator
+// testValue
+// TODO: Generator cannot target dynamic testValue.
