@@ -17,15 +17,14 @@ import 'test_utils.dart';
 void main() {
   group('non-classes', () {
     test('const field', () {
-      var element = _getClassForCodeString(_classNoFieldsContent, 'theAnswer');
+      var element = _getClassForCodeString('theAnswer');
 
       expect(() => _generator.generate(element), throws);
       // TODO: validate the properties on the thrown error
     });
 
     test('method', () {
-      var element =
-          _getClassForCodeString(_classNoFieldsContent, 'annotatedMethod');
+      var element = _getClassForCodeString('annotatedMethod');
 
       expect(() => _generator.generate(element), throws);
       // TODO: validate the properties on the thrown error
@@ -33,7 +32,7 @@ void main() {
   });
 
   test('unannotated classes no-op', () {
-    var element = _getClassForCodeString(_classNoFieldsContent, 'NoAnnotation');
+    var element = _getClassForCodeString('NoAnnotation');
     var output = _generator.generate(element);
 
     expect(output, isNull);
@@ -41,7 +40,7 @@ void main() {
 
   group('valid inputs', () {
     test('class with no fields', () {
-      var element = _getClassForCodeString(_classNoFieldsContent, 'Person');
+      var element = _getClassForCodeString('Person');
       var output = _generator.generate(element);
 
       expect(output, isNotNull);
@@ -57,19 +56,19 @@ void main() {
 
 const _generator = const JsonGenerator();
 
-Element _getClassForCodeString(String source, String name) =>
-    _getElementsForCodeString(source).singleWhere((e) => e.name == name);
+Element _getClassForCodeString(String name) =>
+    _getElementsForCodeString().singleWhere((e) => e.name == name);
 
-Iterable<Element> _getElementsForCodeString(String source) {
-  var cu =
-      _getCompilationUnitForString(getPackagePath(), _classNoFieldsContent);
+Iterable<Element> _getElementsForCodeString() {
+  if (_compUnit == null) {
+    _compUnit = _getCompilationUnitForString(getPackagePath());
+  }
 
-  return getElementsFromCompilationUnit(cu);
+  return getElementsFromCompilationUnit(_compUnit);
 }
 
-CompilationUnit _getCompilationUnitForString(
-    String projectPath, String content) {
-  Source source = new StringSource(content, 'test content');
+CompilationUnit _getCompilationUnitForString(String projectPath) {
+  Source source = new StringSource(_testSource, 'test content');
 
   var context = getAnalysisContextForProjectPath(projectPath);
 
@@ -77,7 +76,9 @@ CompilationUnit _getCompilationUnitForString(
   return context.resolveCompilationUnit(source, libElement);
 }
 
-const _classNoFieldsContent = r'''
+CompilationUnit _compUnit;
+
+const _testSource = r'''
 import 'package:source_gen/json_serial/json_annotation.dart';
 
 @JsonSerializable()
