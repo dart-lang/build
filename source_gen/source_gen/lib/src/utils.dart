@@ -10,15 +10,10 @@ import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_io.dart';
-import 'package:analyzer/src/generated/parser.dart';
-import 'package:analyzer/src/generated/scanner.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
-import 'package:analyzer/src/string_source.dart';
-import 'package:dart_style/src/error_listener.dart';
-import 'package:dart_style/src/source_code.dart';
 import 'package:path/path.dart' as p;
 
 bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
@@ -88,24 +83,6 @@ String _annotationClassName(ElementAnnotation annotation) {
   } else {
     throw 'I cannot get the name for $annotation';
   }
-}
-
-CompilationUnit stringToCompilationUnit(String sourceStr) {
-  var source = new SourceCode(sourceStr);
-  var errorListener = new ErrorListener();
-
-  // Tokenize the source.
-  var reader = new CharSequenceReader(source.text);
-  var stringSource = new StringSource(source.text, source.uri);
-  var scanner = new Scanner(stringSource, reader, errorListener);
-  var startToken = scanner.tokenize();
-
-  errorListener.throwIfErrors();
-
-  // Parse it.
-  var parser = new Parser(stringSource, errorListener);
-
-  return parser.parseCompilationUnit(startToken);
 }
 
 AnalysisContext _getAnalysisContextForProjectPath(String projectPath) {
