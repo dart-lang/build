@@ -1,4 +1,4 @@
-import 'dart:io';
+library source_gen.test.annotation_test;
 
 import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
@@ -8,6 +8,8 @@ import 'package:source_gen/json_serial/json_annotation.dart';
 import 'package:source_gen/src/utils.dart';
 
 import 'annotation_test/annotations.dart' as defs;
+
+import 'test_utils.dart';
 
 void main() {
   group('match annotations', () {
@@ -64,9 +66,9 @@ void main() {
 
 LibraryElement _getTestLibElement() {
   var annotatedClassesFilePath =
-      p.join(_packagePath, 'test/annotation_test/annotated_classes.dart');
+      p.join(getPackagePath(), 'test/annotation_test/annotated_classes.dart');
   return getCompilationUnit(
-      _packagePath, annotatedClassesFilePath).element.library;
+      getPackagePath(), annotatedClassesFilePath).element.library;
 }
 
 ClassElement _getAnnotationForClass(LibraryElement lib, String className) {
@@ -74,14 +76,3 @@ ClassElement _getAnnotationForClass(LibraryElement lib, String className) {
       .expand((cu) => cu.types)
       .singleWhere((cd) => cd.name == className);
 }
-
-final _scriptPath = p.fromUri(Platform.script);
-
-final _packagePath = () {
-  var currentScriptPath = _scriptPath;
-
-  var testDir = p.dirname(currentScriptPath);
-  assert(p.basename(testDir) == 'test');
-
-  return p.dirname(testDir);
-}();
