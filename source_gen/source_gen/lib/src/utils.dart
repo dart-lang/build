@@ -113,20 +113,32 @@ CompilationUnit getCompilationUnit(String projectPath, String sourcePath) {
   return context.resolveCompilationUnit(source, libElement);
 }
 
-String frieldlyNameForElement(Element member) {
-  var friendlyName = member.displayName;
+String frieldlyNameForElement(Element element) {
+  var friendlyName = element.displayName;
 
   if (friendlyName == null) {
-    print('Cannot get friendly name for $member - ${member.runtimeType}.');
+    print('Cannot get friendly name for $element - ${element.runtimeType}.');
     throw 'boo!';
   }
 
-  return friendlyName;
-}
+  var names = <String>[friendlyName];
+  if (element is ClassElement) {
+    names.insert(0, 'class');
+    if (element.isAbstract) {
+      names.insert(0, 'abstract');
+    }
+  }
+  if (element is VariableElement) {
+    names.insert(0, element.type.toString());
 
-Symbol getSymbolForAnnotation(Annotation ann) {
-  var libName = ann.element.library.name;
-  var annName = ann.name;
+    if (element.isConst) {
+      names.insert(0, 'const');
+    }
 
-  return new Symbol("${libName}.${annName}");
+    if (element.isFinal) {
+      names.insert(0, 'final');
+    }
+  }
+
+  return names.join(' ');
 }

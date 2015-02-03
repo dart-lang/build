@@ -1,11 +1,11 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-03T03:47:52.943Z
+// 2015-02-03T04:14:24.191Z
 
 part of source_gen.example.person;
 
 // **************************************************************************
 // Generator: JsonGenerator
-// Target: Person
+// Target: class Person
 // **************************************************************************
 
 abstract class _$_PersonSerializerMixin {
@@ -32,7 +32,7 @@ abstract class _$_PersonSerializerMixin {
 
 // **************************************************************************
 // Generator: JsonGenerator
-// Target: Order
+// Target: class Order
 // **************************************************************************
 
 abstract class _$_OrderSerializerMixin {
@@ -53,8 +53,8 @@ abstract class _$_OrderSerializerMixin {
 
 // **************************************************************************
 // Generator: JsonGenerator
-// Target: testValue
+// Target: const dynamic testValue
 // **************************************************************************
 
-// ERROR: Generator cannot target testValue.
-// TODO: Remove the JsonSerializable annotation from testValue.
+// ERROR: Generator cannot target `const dynamic testValue`.
+// TODO: Remove the JsonSerializable annotation from `const dynamic testValue`.

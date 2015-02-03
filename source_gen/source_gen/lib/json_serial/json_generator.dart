@@ -16,8 +16,8 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
     if (element is! ClassElement) {
       var friendlyName = frieldlyNameForElement(element);
       throw new InvalidGenerationSourceError(
-          'Generator cannot target $friendlyName.',
-          todo: 'Remove the JsonSerializable annotation from $friendlyName.');
+          'Generator cannot target `$friendlyName`.',
+          todo: 'Remove the JsonSerializable annotation from `$friendlyName`.');
     }
 
     return _generate(element);
