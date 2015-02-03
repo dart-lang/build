@@ -2,20 +2,20 @@ library source_gen;
 
 import 'dart:mirrors';
 
-import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'utils.dart';
 
 abstract class Generator<T extends Element> {
   const Generator();
 
-  CompilationUnitMember generate(Element element);
+  String generate(Element element);
 }
 
 abstract class GeneratorForAnnotation<T> extends Generator {
   const GeneratorForAnnotation();
 
-  CompilationUnitMember generate(Element element) {
+  @override
+  String generate(Element element) {
     var matchingAnnotations =
         element.metadata.where((md) => matchAnnotation(T, md)).toList();
 
@@ -38,7 +38,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     return generateForAnnotatedElement(element, annotationInstance);
   }
 
-  CompilationUnitMember generateForAnnotatedElement(
+  String generateForAnnotatedElement(
       Element element, T annotation);
 }
 

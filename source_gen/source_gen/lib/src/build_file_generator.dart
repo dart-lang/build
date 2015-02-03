@@ -64,7 +64,7 @@ Future<String> generate(String projectPath, String changeFilePath,
 
     print(output.output.runtimeType);
 
-    genPartContentBuffer.writeln(output.output.toSource());
+    genPartContentBuffer.writeln(output.output);
   }
 
   var genPartContent = genPartContentBuffer.toString();
@@ -135,7 +135,7 @@ List<GeneratedOutput> _processUnitMember(
   var outputs = <GeneratedOutput>[];
 
   for (var gen in generators) {
-    AstNode createdUnit;
+    String createdUnit;
 
     try {
       createdUnit = gen.generate(element);

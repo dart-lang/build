@@ -1,11 +1,8 @@
 library source_gen.json_serial.generator;
 
-import 'package:analyzer/analyzer.dart';
-import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 
 import 'package:source_gen/src/generator.dart';
-import 'package:source_gen/src/utils.dart';
 
 import 'json_annotation.dart';
 
@@ -14,7 +11,8 @@ const Generator generator = const _JsonGenerator();
 class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   const _JsonGenerator();
 
-  CompilationUnitMember generateForAnnotatedElement(
+  @override
+  String generateForAnnotatedElement(
       Element element, JsonSerializable annotation) {
     if (element is! ClassElement) {
       throw new InvalidGenerationSourceError('Cannot target element $element.');
@@ -23,7 +21,7 @@ class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
     return _generate(element);
   }
 
-  CompilationUnitMember _generate(ClassElement element) {
+  String _generate(ClassElement element) {
     var className = element.displayName;
 
     var fieldMap = <String, String>{};
@@ -31,13 +29,10 @@ class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
       fieldMap[member.name] = member.type.name;
     }
 
-    var codeStr = _populateTemplate(className, fieldMap);
-
-    var unit = stringToCompilationUnit(codeStr);
-
-    return unit.declarations.single;
+    return _populateTemplate(className, fieldMap);
   }
 
+  @override
   String toString() => 'Sample Json Generator';
 }
 
@@ -69,9 +64,12 @@ String _populateTemplate(String className, Map<String, String> fields) {
 
   // write toJson method
   buffer.writeln('  Map<String, Object> toJson() => {');
+
+  var pairs = <String>[];
   fields.forEach((k, v) {
-    buffer.writeln("    '$k': $k,");
+    pairs.add("'$k': $k");
   });
+  buffer.writeln(pairs.join(','));
 
   buffer.writeln('  };');
 
