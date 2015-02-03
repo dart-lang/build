@@ -48,10 +48,6 @@ void main() {
       // TODO: test the actual output
     });
   });
-
-  test('class cannot be abstract', () {});
-
-  test('class must have a default ctor', () {});
 }
 
 const _generator = const JsonGenerator();
@@ -89,7 +85,6 @@ void annotatedMethod() => null;
 
 @JsonSerializable()
 class Person {
-  Person();
 }
 
 class NoAnnotation {

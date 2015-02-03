@@ -7,6 +7,8 @@ import 'package:source_gen/src/utils.dart';
 
 import 'json_annotation.dart';
 
+// TODO: assumes there is a empty, default ctor
+// TODO: assumes all fields are set-able
 class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   const JsonGenerator();
 
@@ -20,7 +22,9 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
           todo: 'Remove the JsonSerializable annotation from `$friendlyName`.');
     }
 
-    return _generate(element);
+    var classElement = element as ClassElement;
+
+    return _generate(classElement);
   }
 
   String _generate(ClassElement element) {
@@ -46,7 +50,6 @@ String _populateTemplate(String className, Map<String, String> fields) {
   //
   // Generate the static factory method
   //
-  // write static factory
   buffer.writeln();
   buffer.writeln('$className ${prefix}FromJson(Map<String, Object> json) {');
   buffer.write('    return new $className()');
