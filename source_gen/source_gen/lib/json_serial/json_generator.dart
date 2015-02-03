@@ -3,6 +3,7 @@ library source_gen.json_serial.generator;
 import 'package:analyzer/src/generated/element.dart';
 
 import 'package:source_gen/src/generator.dart';
+import 'package:source_gen/src/utils.dart';
 
 import 'json_annotation.dart';
 
@@ -13,8 +14,10 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   String generateForAnnotatedElement(
       Element element, JsonSerializable annotation) {
     if (element is! ClassElement) {
+      var friendlyName = frieldlyNameForElement(element);
       throw new InvalidGenerationSourceError(
-          'Generator cannot target $element.');
+          'Generator cannot target $friendlyName.',
+          todo: 'Remove the JsonSerializable annotation from $friendlyName.');
     }
 
     return _generate(element);

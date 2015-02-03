@@ -1,10 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-03T03:36:32.782Z
+// 2015-02-03T03:47:52.943Z
 
 part of source_gen.example.person;
 
+// **************************************************************************
 // Generator: JsonGenerator
 // Target: Person
+// **************************************************************************
+
 abstract class _$_PersonSerializerMixin {
   String get firstName;
   String get middleName;
@@ -27,8 +30,11 @@ abstract class _$_PersonSerializerMixin {
   };
 }
 
+// **************************************************************************
 // Generator: JsonGenerator
 // Target: Order
+// **************************************************************************
+
 abstract class _$_OrderSerializerMixin {
   int get count;
   int get itemNumber;
@@ -45,6 +51,10 @@ abstract class _$_OrderSerializerMixin {
       {'count': count, 'itemNumber': itemNumber, 'isRushed': isRushed};
 }
 
+// **************************************************************************
 // Generator: JsonGenerator
 // Target: testValue
-// TODO: Generator cannot target dynamic testValue.
+// **************************************************************************
+
+// ERROR: Generator cannot target testValue.
+// TODO: Remove the JsonSerializable annotation from testValue.

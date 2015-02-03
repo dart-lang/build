@@ -51,21 +51,24 @@ Future<String> generate(String projectPath, String changeFilePath,
     return 'Deleting $genFileName - nothing to do.';
   }
 
-  var genPartContentBuffer = new StringBuffer();
+  var contentBuffer = new StringBuffer();
 
-  genPartContentBuffer.writeln('part of ${elementLibrary.name};');
-  genPartContentBuffer.writeln();
+  contentBuffer.writeln('part of ${elementLibrary.name};');
+  contentBuffer.writeln();
 
   for (GeneratedOutput output in generatedOutputs) {
-    genPartContentBuffer.writeln('');
-    genPartContentBuffer.writeln('// Generator: ${output.generator}');
-    genPartContentBuffer
+    contentBuffer.writeln('');
+    contentBuffer.writeln(_headerLine);
+    contentBuffer.writeln('// Generator: ${output.generator}');
+    contentBuffer
         .writeln('// Target: ${frieldlyNameForElement(output.sourceMember)}');
+    contentBuffer.writeln(_headerLine);
+    contentBuffer.writeln('');
 
-    genPartContentBuffer.writeln(output.output);
+    contentBuffer.writeln(output.output);
   }
 
-  var genPartContent = genPartContentBuffer.toString();
+  var genPartContent = contentBuffer.toString();
 
   var existingLines = <String>[];
   if (exists) {
@@ -138,7 +141,11 @@ List<GeneratedOutput> _processUnitMember(
     try {
       createdUnit = gen.generate(element);
     } on InvalidGenerationSourceError catch (e) {
-      createdUnit = '// TODO: ${e.message}';
+      createdUnit = '// ERROR: ${e.message}';
+      if (e.todo != null) {
+        createdUnit = '''$createdUnit
+// TODO: ${e.todo}''';
+      }
     }
     if (createdUnit != null) {
       outputs.add(new GeneratedOutput(element, gen, createdUnit));
@@ -161,3 +168,5 @@ List<Element> _getElements(CompilationUnitMember member) {
 
   return [element];
 }
+
+final _headerLine = '// '.padRight(77, '*');

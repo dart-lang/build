@@ -43,6 +43,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
 class InvalidGenerationSourceError {
   final String message;
+  final String todo;
 
-  InvalidGenerationSourceError(this.message);
+  InvalidGenerationSourceError(this.message, {String todo})
+      : this.todo = todo == null ? '' : todo;
 }
