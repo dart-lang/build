@@ -58,9 +58,9 @@ Future<String> generate(String projectPath, String changeFilePath,
 
   for (GeneratedOutput output in generatedOutputs) {
     genPartContentBuffer.writeln('');
-    genPartContentBuffer.writeln('// ${output.generator}');
+    genPartContentBuffer.writeln('// Generator: ${output.generator}');
     genPartContentBuffer
-        .writeln('// ${frieldlyNameForElement(output.sourceMember)}');
+        .writeln('// Target: ${frieldlyNameForElement(output.sourceMember)}');
 
     genPartContentBuffer.writeln(output.output);
   }

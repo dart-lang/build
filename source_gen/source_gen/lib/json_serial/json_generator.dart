@@ -6,10 +6,8 @@ import 'package:source_gen/src/generator.dart';
 
 import 'json_annotation.dart';
 
-const Generator generator = const _JsonGenerator();
-
-class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
-  const _JsonGenerator();
+class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
+  const JsonGenerator();
 
   @override
   String generateForAnnotatedElement(
@@ -34,7 +32,7 @@ class _JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   }
 
   @override
-  String toString() => 'Sample Json Generator';
+  String toString() => 'JsonGenerator';
 }
 
 String _populateTemplate(String className, Map<String, String> fields) {
