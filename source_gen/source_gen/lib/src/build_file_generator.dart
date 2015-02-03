@@ -62,8 +62,6 @@ Future<String> generate(String projectPath, String changeFilePath,
     genPartContentBuffer
         .writeln('// ${frieldlyNameForElement(output.sourceMember)}');
 
-    print(output.output.runtimeType);
-
     genPartContentBuffer.writeln(output.output);
   }
 
