@@ -6,7 +6,7 @@ homepage: https://github.com/kevmoo/source_gen.dart
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:
-  analyzer: '>=0.23.0-dev <=0.23.0'
+  analyzer: '>=0.23.0 <0.24.0'
   args: '>=0.12.2+3 <0.13.0'
   dart_style:
     git:
