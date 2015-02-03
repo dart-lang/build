@@ -85,7 +85,7 @@ String _annotationClassName(ElementAnnotation annotation) {
   }
 }
 
-AnalysisContext _getAnalysisContextForProjectPath(String projectPath) {
+AnalysisContext getAnalysisContextForProjectPath(String projectPath) {
   JavaSystemIO.setProperty(
       "com.google.dart.sdk", Platform.environment['DART_SDK']);
   DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
@@ -107,7 +107,7 @@ AnalysisContext _getAnalysisContextForProjectPath(String projectPath) {
 CompilationUnit getCompilationUnit(String projectPath, String sourcePath) {
   Source source = new FileBasedSource.con1(new JavaFile(sourcePath));
 
-  var context = _getAnalysisContextForProjectPath(projectPath);
+  var context = getAnalysisContextForProjectPath(projectPath);
 
   LibraryElement libElement = context.computeLibraryElement(source);
   return context.resolveCompilationUnit(source, libElement);
@@ -141,4 +141,21 @@ String frieldlyNameForElement(Element element) {
   }
 
   return names.join(' ');
+}
+
+Iterable<Element> getElementsFromCompilationUnit(CompilationUnit unit) =>
+    unit.declarations.expand((compUnitMember) => _getElements(compUnitMember));
+
+Iterable<Element> _getElements(CompilationUnitMember member) {
+  if (member is TopLevelVariableDeclaration) {
+    return member.variables.variables.map((v) => v.element);
+  }
+  var element = member.element;
+
+  if (element == null) {
+    print([member, member.runtimeType, member.element]);
+    throw 'crap!';
+  }
+
+  return [element];
 }

@@ -121,11 +121,9 @@ List<GeneratedOutput> _generate(
     CompilationUnit unit, List<Generator> generators) {
   var code = <GeneratedOutput>[];
 
-  for (var du in unit.declarations) {
-    for (var element in _getElements(du)) {
-      var subCode = _processUnitMember(element, generators);
-      code.addAll(subCode);
-    }
+  for (var element in getElementsFromCompilationUnit(unit)) {
+    var subCode = _processUnitMember(element, generators);
+    code.addAll(subCode);
   }
 
   return code;
@@ -153,20 +151,6 @@ List<GeneratedOutput> _processUnitMember(
   }
 
   return outputs;
-}
-
-List<Element> _getElements(CompilationUnitMember member) {
-  if (member is TopLevelVariableDeclaration) {
-    return member.variables.variables.map((v) => v.element).toList();
-  }
-  var element = member.element;
-
-  if (element == null) {
-    print([member, member.runtimeType, member.element]);
-    throw 'crap!';
-  }
-
-  return [element];
 }
 
 final _headerLine = '// '.padRight(77, '*');
