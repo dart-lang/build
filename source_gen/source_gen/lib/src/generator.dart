@@ -20,10 +20,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
         element.metadata.where((md) => matchAnnotation(T, md)).toList();
 
     if (matchingAnnotations.isEmpty) {
-      print('no matches!');
       return null;
     } else if (matchingAnnotations.length > 1) {
-      print('too many matches!');
       throw 'cannot have more than one matching annotation';
     }
 
