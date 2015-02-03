@@ -27,7 +27,7 @@ void build(List<String> args, List<Generator> generators) {
     return;
   }
 
-  // TODO override for dev
+  // TODO: remove this override - only for development
   changed = 'example/person.dart';
 
   if (changed != null) {
