@@ -24,18 +24,12 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
 
     var classElement = element as ClassElement;
 
-    return _generate(classElement);
-  }
-
-  String _generate(ClassElement element) {
-    var className = element.displayName;
-
     var fieldMap = <String, String>{};
-    for (var member in element.fields) {
+    for (var member in classElement.fields) {
       fieldMap[member.name] = member.type.name;
     }
 
-    return _populateTemplate(className, fieldMap);
+    return _populateTemplate(classElement.displayName, fieldMap);
   }
 
   @override
