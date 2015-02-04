@@ -10,46 +10,41 @@ import 'package:scheduled_test/scheduled_test.dart';
 import 'package:source_gen/src/build_file_generator.dart';
 import 'package:source_gen/src/generator.dart';
 
-import 'test_utils.dart';
-
 void main() {
-  test('Simple Generator test', () {
-    String projectPath;
+  test('Simple Generator test', () async {
+    var dir = await _createTempDir(false);
 
-    schedule(() async {
-      var dir = await _createTempDir();
+    d.defaultRoot = dir.path;
 
-      d.defaultRoot = dir.path;
+    var projectPath = await _createPackageStub('pkg');
 
-      projectPath = await _createPackageStub('pkg');
-    });
+    var relativeFilePath = p.join('lib', 'test_lib.dart');
+    var output =
+        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
 
-    schedule(() async {
-      var filePath = p.join(projectPath, 'lib', 'person.dart');
-      var output =
-          await generate(getPackagePath(), filePath, [const _TestGenerator()]);
+    expect(output, isNotNull);
+    expect(output, isNotEmpty);
 
-      expect(output, isNotNull);
-      expect(output, isNotEmpty);
-    });
-
-    schedule(() async {
-      d
-          .dir('pkg', [
-        d.dir('lib', [
-          d.file('person.dart', _testLibContent),
-          d.matcherFile('person.g.dart', contains(_testGenPartContent))
-        ])
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContent),
+        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
       ])
-          .validate();
-    });
+    ])
+        .validate();
   });
 }
 
 /// Creates a package using [pkgName] an the current [d.defaultRoot].
 Future<String> _createPackageStub(String pkgName) async {
   await d
-      .dir(pkgName, [d.dir('lib', [d.file('person.dart', _testLibContent)])])
+      .dir(pkgName, [
+    d.dir('lib', [
+      d.file('test_lib.dart', _testLibContent),
+      d.file('test_lib_part.dart', _testLibPartContent),
+    ])
+  ])
       .create();
 
   var pkgPath = p.join(d.defaultRoot, pkgName);
@@ -85,15 +80,22 @@ class _TestGenerator extends Generator {
   String toString() => 'TestGenerator';
 }
 
-const _testLibContent = r'''library test_lib;
+const _testLibContent = r'''
+library test_lib;
+
+part 'test_part.dart';
+
 final int foo = 42;
 
-class Person extends Object with _$PersonSerializerMixin {
-  String firstName, middleName, lastName;
-  DateTime dob;
+class Person { }
+''';
 
-  Person();
-}
+const _testLibPartContent = r'''
+part of test_lib;
+
+final int bar = 42;
+
+class Customer { }
 ''';
 
 const _testGenPartContent = r'''part of test_lib;
