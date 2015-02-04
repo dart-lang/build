@@ -35,6 +35,31 @@ void main() {
     ])
         .validate();
   });
+
+  test('No-op generator produces no generated parts', () async {
+    var dir = await _createTempDir();
+
+    d.defaultRoot = dir.path;
+
+    var projectPath = await _createPackageStub('pkg');
+
+    var relativeFilePath = p.join('lib', 'test_lib.dart');
+    var output =
+        await generate(projectPath, relativeFilePath, [const _NoOpGenerator()]);
+
+    expect(output, isNotNull);
+    expect(output, isNotEmpty);
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContent),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.nothing('test_lib.g.dart')
+      ])
+    ])
+        .validate();
+  });
 }
 
 /// Creates a package using [pkgName] an the current [d.defaultRoot].
@@ -71,6 +96,13 @@ Future<Directory> _createTempDir([bool scheduleDelete = true]) async {
   return dir;
 }
 
+/// Doesn't generate output for any element
+class _NoOpGenerator extends Generator {
+  const _NoOpGenerator();
+  String generate(Element element) => null;
+}
+
+/// Generates a single-line comment for each element
 class _TestGenerator extends Generator {
   const _TestGenerator();
 

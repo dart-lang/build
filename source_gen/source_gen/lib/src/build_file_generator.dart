@@ -3,8 +3,6 @@ library source_gen.build_file_generator;
 import 'dart:async';
 import 'dart:io';
 
-import 'package:analyzer/analyzer.dart';
-import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:dart_style/src/dart_formatter.dart';
@@ -44,9 +42,13 @@ Future<String> generate(String projectPath, String changeFilePath,
 
   var exists = await file.exists();
 
-  if (generatedOutputs.isEmpty && exists) {
-    await file.delete();
-    return 'Deleting $genFileName - nothing to do.';
+  if (generatedOutputs.isEmpty) {
+    if (exists) {
+      await file.delete();
+      return 'Deleting $genFileName - nothing to do.';
+    } else {
+      return 'Nothing to generate';
+    }
   }
 
   var contentBuffer = new StringBuffer();
