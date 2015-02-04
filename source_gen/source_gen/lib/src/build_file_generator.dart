@@ -18,8 +18,6 @@ Future<String> generate(String projectPath, String changeFilePath,
     List<Generator> generators) async {
   assert(p.isRelative(changeFilePath));
 
-  assert(p.isWithin(projectPath, changeFilePath));
-
   if (p.extension(changeFilePath) != '.dart') {
     return 'Not a Dart file - ${changeFilePath}.';
   }
