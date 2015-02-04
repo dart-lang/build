@@ -24,9 +24,21 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
 
     var classElement = element as ClassElement;
 
+    var finalFields = new Set<String>();
+
     var fieldMap = <String, String>{};
-    for (var member in classElement.fields) {
-      fieldMap[member.name] = member.type.name;
+    for (FieldElement field in classElement.fields) {
+      if (field.isFinal) {
+        finalFields.add(field.name);
+      }
+      fieldMap[field.name] = field.type.name;
+    }
+
+    if (finalFields.isNotEmpty) {
+      var friendlyName = frieldlyNameForElement(element);
+      throw new InvalidGenerationSourceError(
+          'Generator cannot target `$friendlyName`.',
+          todo: 'Make the following fields writable: ${finalFields.join(', ')}.');
     }
 
     return _populateTemplate(classElement.displayName, fieldMap);

@@ -31,6 +31,11 @@ void main() {
     });
   });
 
+  test('class with final fields', () {
+    var element = _getClassForCodeString('FinalFields');
+    expect(() => _generator.generate(element), throws);
+  });
+
   test('unannotated classes no-op', () {
     var element = _getClassForCodeString('NoAnnotation');
     var output = _generator.generate(element);
@@ -88,5 +93,13 @@ class Person {
 }
 
 class NoAnnotation {
+}
+
+@JsonSerializable()
+class FinalFields {
+  final int a;
+  int get b => 4;
+
+  FinalFields(this.a);
 }
 ''';
