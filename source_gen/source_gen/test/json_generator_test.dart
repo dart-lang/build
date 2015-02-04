@@ -65,7 +65,7 @@ Iterable<Element> _getElementsForCodeString() {
     _compUnit = _getCompilationUnitForString(getPackagePath());
   }
 
-  return getElementsFromCompilationUnit(_compUnit);
+  return getElementsFromLibraryElement(_compUnit.element.library);
 }
 
 CompilationUnit _getCompilationUnitForString(String projectPath) {

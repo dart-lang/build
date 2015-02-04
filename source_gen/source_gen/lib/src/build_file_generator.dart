@@ -34,9 +34,9 @@ Future<String> generate(String projectPath, String changeFilePath,
 
   var unit = getCompilationUnit(projectPath, fullPath);
 
-  var generatedOutputs = _generate(unit, generators);
-
   var elementLibrary = unit.element.library;
+
+  var generatedOutputs = _generate(elementLibrary, generators);
 
   var genFileName = _getGeterateFilePath(elementLibrary, projectPath);
 
@@ -116,10 +116,10 @@ String _getHeader() => '''// GENERATED CODE - DO NOT MODIFY BY HAND
 ''';
 
 List<GeneratedOutput> _generate(
-    CompilationUnit unit, List<Generator> generators) {
+    LibraryElement unit, List<Generator> generators) {
   var code = <GeneratedOutput>[];
 
-  for (var element in getElementsFromCompilationUnit(unit)) {
+  for (var element in getElementsFromLibraryElement(unit)) {
     var subCode = _processUnitMember(element, generators);
     code.addAll(subCode);
   }

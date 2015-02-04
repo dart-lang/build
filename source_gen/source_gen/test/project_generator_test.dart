@@ -12,7 +12,7 @@ import 'package:source_gen/src/generator.dart';
 
 void main() {
   test('Simple Generator test', () async {
-    var dir = await _createTempDir(false);
+    var dir = await _createTempDir();
 
     d.defaultRoot = dir.path;
 
@@ -83,7 +83,7 @@ class _TestGenerator extends Generator {
 const _testLibContent = r'''
 library test_lib;
 
-part 'test_part.dart';
+part 'test_lib_part.dart';
 
 final int foo = 42;
 
@@ -113,4 +113,17 @@ const _testGenPartContent = r'''part of test_lib;
 // **************************************************************************
 
 // Code for Person
-''';
+
+// **************************************************************************
+// Generator: TestGenerator
+// Target: final int bar
+// **************************************************************************
+
+// Code for int bar
+
+// **************************************************************************
+// Generator: TestGenerator
+// Target: class Customer
+// **************************************************************************
+
+// Code for Customer''';

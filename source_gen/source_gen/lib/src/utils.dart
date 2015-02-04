@@ -143,8 +143,10 @@ String frieldlyNameForElement(Element element) {
   return names.join(' ');
 }
 
-Iterable<Element> getElementsFromCompilationUnit(CompilationUnit unit) =>
-    unit.declarations.expand((compUnitMember) => _getElements(compUnitMember));
+Iterable<Element> getElementsFromLibraryElement(LibraryElement unit) =>
+    unit.units
+        .expand((cu) => cu.unit.declarations)
+        .expand((compUnitMember) => _getElements(compUnitMember));
 
 Iterable<Element> _getElements(CompilationUnitMember member) {
   if (member is TopLevelVariableDeclaration) {
