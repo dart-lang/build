@@ -29,6 +29,7 @@ void main() {
         .dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
+        d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
       ])
     ])
