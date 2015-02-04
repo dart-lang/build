@@ -10,8 +10,7 @@ dependencies:
   args: '>=0.12.2+3 <0.13.0'
   dart_style:
     git:
-      ref: kev_version
-      url: https://github.com/kevmoo/dart_style
+      url: https://github.com/dart-lang/dart_style
   path: '>=1.3.2 <2.0.0'
 dev_dependencies:
   scheduled_test: '>=0.11.7 <0.12.0'
