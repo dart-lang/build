@@ -2,7 +2,7 @@ library source_gen.test.annotation_test;
 
 import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
-import 'package:unittest/unittest.dart';
+import 'package:scheduled_test/scheduled_test.dart';
 
 import 'package:source_gen/json_serial/json_annotation.dart';
 import 'package:source_gen/src/utils.dart';

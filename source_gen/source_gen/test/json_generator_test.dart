@@ -10,7 +10,7 @@ import 'package:analyzer/src/string_source.dart';
 import 'package:source_gen/src/utils.dart';
 import 'package:source_gen/json_serial/json_generator.dart';
 
-import 'package:unittest/unittest.dart';
+import 'package:scheduled_test/scheduled_test.dart';
 
 import 'test_utils.dart';
 
