@@ -10,9 +10,11 @@ import 'package:scheduled_test/scheduled_test.dart';
 import 'package:source_gen/src/build_file_generator.dart';
 import 'package:source_gen/src/generator.dart';
 
+import 'test_utils.dart';
+
 void main() {
   test('Simple Generator test', () async {
-    var dir = await _createTempDir();
+    var dir = await createTempDir();
 
     d.defaultRoot = dir.path;
 
@@ -37,7 +39,7 @@ void main() {
   });
 
   test('No-op generator produces no generated parts', () async {
-    var dir = await _createTempDir();
+    var dir = await createTempDir();
 
     d.defaultRoot = dir.path;
 
@@ -79,21 +81,6 @@ Future<String> _createPackageStub(String pkgName) async {
   assert(exists);
 
   return pkgPath;
-}
-
-Future<Directory> _createTempDir([bool scheduleDelete = true]) async {
-  var ticks = new DateTime.now().toUtc().millisecondsSinceEpoch;
-  var dir = await Directory.systemTemp.createTemp('source_gen.test.$ticks.');
-
-  currentSchedule.onComplete.schedule(() {
-    if (scheduleDelete) {
-      return dir.delete(recursive: true);
-    } else {
-      print('Not deleting $dir');
-    }
-  });
-
-  return dir;
 }
 
 /// Doesn't generate output for any element
