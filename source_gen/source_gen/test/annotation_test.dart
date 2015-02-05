@@ -71,8 +71,7 @@ LibraryElement _getTestLibElement() {
       getPackagePath(), annotatedClassesFilePath).element.library;
 }
 
-ClassElement _getAnnotationForClass(LibraryElement lib, String className) {
-  return lib.units
-      .expand((cu) => cu.types)
-      .singleWhere((cd) => cd.name == className);
-}
+ClassElement _getAnnotationForClass(LibraryElement lib, String className) =>
+    lib.units
+        .expand((cu) => cu.types)
+        .singleWhere((cd) => cd.name == className);

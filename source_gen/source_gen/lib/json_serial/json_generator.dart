@@ -57,8 +57,8 @@ String _populateTemplate(String className, Map<String, String> fields) {
   // Generate the static factory method
   //
   buffer.writeln();
-  buffer.writeln('$className ${prefix}FromJson(Map<String, Object> json) {');
-  buffer.write('    return new $className()');
+  buffer.writeln('$className ${prefix}FromJson(Map<String, Object> json) =>');
+  buffer.write('    new $className()');
   if (fields.isEmpty) {
     buffer.writeln(';');
   } else {
@@ -68,7 +68,6 @@ String _populateTemplate(String className, Map<String, String> fields) {
     });
     buffer.writeln(';');
   }
-  buffer.writeln('  }');
   buffer.writeln();
 
   //

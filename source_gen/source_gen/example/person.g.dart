@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-04T21:56:17.718Z
+// 2015-02-05T17:32:55.118Z
 
 part of source_gen.example.person;
 
@@ -8,13 +8,11 @@ part of source_gen.example.person;
 // Target: class Person
 // **************************************************************************
 
-Person _$PersonFromJson(Map<String, Object> json) {
-  return new Person()
-    ..firstName = json['firstName']
-    ..middleName = json['middleName']
-    ..lastName = json['lastName']
-    ..dob = json['dob'];
-}
+Person _$PersonFromJson(Map<String, Object> json) => new Person()
+  ..firstName = json['firstName']
+  ..middleName = json['middleName']
+  ..lastName = json['lastName']
+  ..dob = json['dob'];
 
 abstract class _$PersonSerializerMixin {
   String get firstName;
@@ -34,12 +32,10 @@ abstract class _$PersonSerializerMixin {
 // Target: class Order
 // **************************************************************************
 
-Order _$OrderFromJson(Map<String, Object> json) {
-  return new Order()
-    ..count = json['count']
-    ..itemNumber = json['itemNumber']
-    ..isRushed = json['isRushed'];
-}
+Order _$OrderFromJson(Map<String, Object> json) => new Order()
+  ..count = json['count']
+  ..itemNumber = json['itemNumber']
+  ..isRushed = json['isRushed'];
 
 abstract class _$OrderSerializerMixin {
   int get count;
