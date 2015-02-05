@@ -70,12 +70,11 @@ Future<String> generate(String projectPath, String changeFilePath,
 
   var genPartContent = contentBuffer.toString();
 
-  var existingLines = <String>[];
-  if (exists) {
-    existingLines = await file.readAsLines();
-  }
+  var existingContent = '';
 
-  var existingContent = existingLines.skip(3).join('\n') + '\n';
+  if (exists) {
+    existingContent = findPartOf(await file.readAsString());
+  }
 
   var formatter = new DartFormatter();
   genPartContent = formatter.format(genPartContent);

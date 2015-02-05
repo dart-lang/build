@@ -3,7 +3,6 @@ library source_gen.utils;
 import 'dart:io';
 import 'dart:mirrors';
 
-import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/file_system/file_system.dart' hide File;
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/generated/ast.dart';
@@ -15,6 +14,7 @@ import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
+import 'package:string_scanner/string_scanner.dart';
 
 bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
   var classMirror = reflectClass(annotationType);
@@ -161,3 +161,18 @@ Iterable<Element> _getElements(CompilationUnitMember member) {
 
   return [element];
 }
+
+// TODO(kevmoo) Use the analyzer parser
+String findPartOf(String source) {
+  var scanner = new StringScanner(source);
+
+  while (scanner.scan(_commentLineRegexp));
+
+  if (scanner.scan('part of')) {
+    return source.substring(scanner.lastMatch.start);
+  }
+
+  return null;
+}
+
+final _commentLineRegexp = new RegExp('(//.*|\w*)[\r\n]+');

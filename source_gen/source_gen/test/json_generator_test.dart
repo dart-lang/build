@@ -1,6 +1,5 @@
 library source_gen.test.json_generator_test;
 
-import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source.dart';
