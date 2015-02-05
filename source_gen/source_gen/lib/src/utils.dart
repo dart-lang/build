@@ -117,8 +117,8 @@ String frieldlyNameForElement(Element element) {
   var friendlyName = element.displayName;
 
   if (friendlyName == null) {
-    print('Cannot get friendly name for $element - ${element.runtimeType}.');
-    throw 'boo!';
+    throw new ArgumentError(
+        'Cannot get friendly name for $element - ${element.runtimeType}.');
   }
 
   var names = <String>[friendlyName];
