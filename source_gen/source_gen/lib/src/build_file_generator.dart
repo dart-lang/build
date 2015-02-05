@@ -30,9 +30,8 @@ Future<String> generate(String projectPath, String changeFilePath,
     return 'File does not exist - ${changeFilePath}.';
   }
 
-  var unit = getCompilationUnit(projectPath, fullPath);
-
-  var elementLibrary = unit.element.library;
+  var elementLibrary =
+      getLibraryElementFromCompilationUnit(projectPath, fullPath);
 
   var generatedOutputs = _generate(elementLibrary, generators);
 

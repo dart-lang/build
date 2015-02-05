@@ -100,7 +100,6 @@ void main() {
       ])
     ])
         .validate();
-
   });
 }
 
