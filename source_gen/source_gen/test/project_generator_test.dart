@@ -94,7 +94,10 @@ class _TestGenerator extends Generator {
   const _TestGenerator();
 
   String generate(Element element) {
-    return '// Code for $element';
+    if (element is ClassElement) {
+      return '// Code for $element';
+    }
+    return null;
   }
 
   String toString() => 'TestGenerator';
@@ -122,24 +125,10 @@ const _testGenPartContent = r'''part of test_lib;
 
 // **************************************************************************
 // Generator: TestGenerator
-// Target: final int foo
-// **************************************************************************
-
-// Code for int foo
-
-// **************************************************************************
-// Generator: TestGenerator
 // Target: class Person
 // **************************************************************************
 
 // Code for Person
-
-// **************************************************************************
-// Generator: TestGenerator
-// Target: final int bar
-// **************************************************************************
-
-// Code for int bar
 
 // **************************************************************************
 // Generator: TestGenerator
