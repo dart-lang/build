@@ -12,7 +12,6 @@ part of foo;''');
   });
 
   test('more thing', () {
-
     var index = findPartOf('''
 
 // that two blank linse
@@ -25,7 +24,6 @@ class bar{}''');
   });
 
   test("another", () {
-
     var index = findPartOf('//\n//\n\n');
     expect(index, null);
   });
