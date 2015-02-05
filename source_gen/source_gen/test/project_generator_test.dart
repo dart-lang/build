@@ -13,35 +13,10 @@ import 'package:source_gen/src/generator.dart';
 import 'test_utils.dart';
 
 void main() {
-  test('Simple Generator test', () async {
-    var dir = await createTempDir();
-
-    d.defaultRoot = dir.path;
-
-    var projectPath = await _createPackageStub('pkg');
-
-    var relativeFilePath = p.join('lib', 'test_lib.dart');
-    var output =
-        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
-
-    expect(output, isNotNull);
-    expect(output, isNotEmpty);
-
-    await d
-        .dir('pkg', [
-      d.dir('lib', [
-        d.file('test_lib.dart', _testLibContent),
-        d.file('test_lib_part.dart', _testLibPartContent),
-        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
-      ])
-    ])
-        .validate();
-  });
+  test('Simple Generator test', _simpleTest);
 
   test('No-op generator produces no generated parts', () async {
-    var dir = await createTempDir();
-
-    d.defaultRoot = dir.path;
+    await _doSetup();
 
     var projectPath = await _createPackageStub('pkg');
 
@@ -49,8 +24,7 @@ void main() {
     var output =
         await generate(projectPath, relativeFilePath, [const _NoOpGenerator()]);
 
-    expect(output, isNotNull);
-    expect(output, isNotEmpty);
+    expect(output, "Nothing to generate");
 
     await d
         .dir('pkg', [
@@ -62,6 +36,101 @@ void main() {
     ])
         .validate();
   });
+
+  test('Track changes', () async {
+    var projectPath = await _simpleTest();
+
+    //
+    // run generate again: no change
+    //
+    var relativeFilePath = p.join('lib', 'test_lib.dart');
+    var output =
+        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+
+    expect(output, "No change: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContent),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+      ])
+    ])
+        .validate();
+
+    //
+    // change classes to remove one class: updated
+    //
+    await new File(p.join(projectPath, 'lib', 'test_lib.dart'))
+        .writeAsString(_testLibContentNoClass);
+
+    output =
+        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+
+    expect(output, "Updated: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContentNoClass),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.matcherFile('test_lib.g.dart', contains(_testGenPartContentNoPerson))
+      ])
+    ])
+        .validate();
+
+    //
+    // change classes add classes back: created
+    //
+    await new File(p.join(projectPath, 'lib', 'test_lib_part.dart'))
+        .writeAsString(_testLibPartContentNoClass);
+
+    output =
+        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+
+    expect(output, "Deleted: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContentNoClass),
+        d.file('test_lib_part.dart', _testLibPartContentNoClass),
+        d.nothing('test_lib.g.dart')
+      ])
+    ])
+        .validate();
+
+  });
+}
+
+Future _doSetup() async {
+  var dir = await createTempDir();
+  d.defaultRoot = dir.path;
+}
+
+Future<String> _simpleTest() async {
+  await _doSetup();
+
+  var projectPath = await _createPackageStub('pkg');
+
+  var relativeFilePath = p.join('lib', 'test_lib.dart');
+  var output =
+      await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+
+  expect(output, "Created: 'lib/test_lib.g.dart'");
+
+  await d
+      .dir('pkg', [
+    d.dir('lib', [
+      d.file('test_lib.dart', _testLibContent),
+      d.file('test_lib_part.dart', _testLibPartContent),
+      d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+    ])
+  ])
+      .validate();
+
+  return projectPath;
 }
 
 /// Creates a package using [pkgName] an the current [d.defaultRoot].
@@ -113,12 +182,26 @@ final int foo = 42;
 class Person { }
 ''';
 
+const _testLibContentNoClass = r'''
+library test_lib;
+
+part 'test_lib_part.dart';
+
+final int foo = 42;
+''';
+
 const _testLibPartContent = r'''
 part of test_lib;
 
 final int bar = 42;
 
 class Customer { }
+''';
+
+const _testLibPartContentNoClass = r'''
+part of test_lib;
+
+final int bar = 42;
 ''';
 
 const _testGenPartContent = r'''part of test_lib;
@@ -129,6 +212,15 @@ const _testGenPartContent = r'''part of test_lib;
 // **************************************************************************
 
 // Code for Person
+
+// **************************************************************************
+// Generator: TestGenerator
+// Target: class Customer
+// **************************************************************************
+
+// Code for Customer''';
+
+const _testGenPartContentNoPerson = r'''part of test_lib;
 
 // **************************************************************************
 // Generator: TestGenerator

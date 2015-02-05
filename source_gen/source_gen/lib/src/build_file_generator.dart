@@ -42,10 +42,11 @@ Future<String> generate(String projectPath, String changeFilePath,
 
   var exists = await file.exists();
 
+  var relativeName = p.relative(genFileName, from: projectPath);
   if (generatedOutputs.isEmpty) {
     if (exists) {
       await file.delete();
-      return 'Deleting $genFileName - nothing to do.';
+      return "Deleted: '$relativeName'";
     } else {
       return 'Nothing to generate';
     }
@@ -80,7 +81,7 @@ Future<String> generate(String projectPath, String changeFilePath,
   genPartContent = formatter.format(genPartContent);
 
   if (existingContent == genPartContent) {
-    return "No changes!";
+    return "No change: '$relativeName'";
   }
 
   var sink = file.openWrite(mode: FileMode.WRITE)
@@ -90,7 +91,11 @@ Future<String> generate(String projectPath, String changeFilePath,
   await sink.flush();
   sink.close();
 
-  return "we got some stuff!";
+  if (exists) {
+    return "Updated: '$relativeName'";
+  } else {
+    return "Created: '$relativeName'";
+  }
 }
 
 String _getGeterateFilePath(LibraryElement lib, String projectPath) {
