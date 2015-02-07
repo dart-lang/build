@@ -15,23 +15,20 @@ void build(List<String> args, List<Generator> generators) {
 
   var result = parser.parse(args);
 
-  var changed = result['changed'] as String;
+  var changed = result['changed'] as List;
 
-  if (changed == null) {
+  changed.removeWhere((changed) => changed.endsWith('.g.dart'));
+
+  if (changed.isEmpty) {
     print('nothing changed!');
     return;
   }
 
-  if (changed.endsWith('.g.dart')) {
-    print("skipping generated file $changed");
-    return;
-  }
-
   // TODO: remove this override - only for development
-  changed = 'example/person.dart';
+  changed = ['example/person.dart'];
 
-  if (changed != null) {
-    generate(projPath, changed, generators).then((foo) {
+  if (changed.isNotEmpty) {
+    generate(projPath, changed.first, generators).then((foo) {
       print(foo);
     });
   }
@@ -39,7 +36,7 @@ void build(List<String> args, List<Generator> generators) {
 
 ArgParser _getParser() => new ArgParser()
   ..addFlag('machine', defaultsTo: false)
-  ..addOption('changed')
+  ..addOption('changed', allowMultiple: true)
   ..addFlag('full', defaultsTo: false)
   ..addFlag('clean', defaultsTo: false)
-  ..addOption('removed');
+  ..addOption('removed', allowMultiple: true);
