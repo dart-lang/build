@@ -16,11 +16,10 @@ void main() {
     LibraryElement libElement;
 
     setUp(() {
-      libElement = _getTestLibElement();
+      if (libElement == null) {
+        libElement = _getTestLibElement();
+      }
     });
-
-    // name: same, different
-    // annotation location: same lib, same lib + part, different lib
 
     test('annotated with class', () {
       var annotatedClass = _getAnnotationForClass(libElement, 'CtorNoParams');
