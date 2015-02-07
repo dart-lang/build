@@ -14,6 +14,7 @@ import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
+import 'package:cli_util/cli_util.dart' as cli;
 import 'package:path/path.dart' as p;
 
 bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
@@ -86,8 +87,10 @@ String _annotationClassName(ElementAnnotation annotation) {
 }
 
 AnalysisContext getAnalysisContextForProjectPath(String projectPath) {
-  JavaSystemIO.setProperty(
-      "com.google.dart.sdk", Platform.environment['DART_SDK']);
+  // TODO: fail more clearly if this...fails
+  var sdkPath = cli.getSdkDir().path;
+
+  JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
   DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
 
   var packageRoot = p.join(projectPath, 'packages');
