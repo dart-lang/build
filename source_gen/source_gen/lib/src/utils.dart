@@ -90,15 +90,15 @@ AnalysisContext getAnalysisContextForProjectPath(String projectPath) {
       "com.google.dart.sdk", Platform.environment['DART_SDK']);
   DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
 
-  var resolvers = [
-    new DartUriResolver(sdk),
-    new ResourceUriResolver(PhysicalResourceProvider.INSTANCE)
-  ];
-
   var packageRoot = p.join(projectPath, 'packages');
 
   var packageDirectory = new JavaFile(packageRoot);
-  resolvers.add(new PackageUriResolver([packageDirectory]));
+
+  var resolvers = [
+    new DartUriResolver(sdk),
+    new ResourceUriResolver(PhysicalResourceProvider.INSTANCE),
+    new PackageUriResolver([packageDirectory])
+  ];
 
   return AnalysisEngine.instance.createAnalysisContext()
     ..sourceFactory = new SourceFactory(resolvers);
