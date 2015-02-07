@@ -7,7 +7,7 @@ import 'package:scheduled_test/scheduled_test.dart';
 import 'package:source_gen/json_serial/json_annotation.dart';
 import 'package:source_gen/src/utils.dart';
 
-import 'annotation_test/annotations.dart' as defs;
+import 'test_files/annotations.dart' as defs;
 
 import 'test_utils.dart';
 
@@ -66,7 +66,7 @@ void main() {
 
 LibraryElement _getTestLibElement() {
   var annotatedClassesFilePath =
-      p.join(getPackagePath(), 'test/annotation_test/annotated_classes.dart');
+      p.join(getPackagePath(), 'test/test_files/annotated_classes.dart');
   return getLibraryElementFromCompilationUnit(
       getPackagePath(), annotatedClassesFilePath);
 }
