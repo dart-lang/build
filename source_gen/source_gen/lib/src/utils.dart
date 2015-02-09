@@ -1,5 +1,6 @@
 library source_gen.utils;
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:mirrors';
 
@@ -86,6 +87,21 @@ String _annotationClassName(ElementAnnotation annotation) {
   }
 }
 
+/// [dartFiles] is a [Stream] of paths to [.dart] files.
+Stream<LibraryElement> getLibraryElements(
+    Stream<String> dartFiles, AnalysisContext context) => dartFiles
+    .map((path) => _getLibraryElement(path, context))
+    .where((lib) => lib != null);
+
+// may return `null` if [path] doesn't refer to a library.
+LibraryElement _getLibraryElement(String path, AnalysisContext context) {
+  Source source = new FileBasedSource.con1(new JavaFile(path));
+  if (context.computeKindOf(source) == SourceKind.LIBRARY) {
+    return context.computeLibraryElement(source);
+  }
+  return null;
+}
+
 AnalysisContext getAnalysisContextForProjectPath(String projectPath) {
   // TODO: fail more clearly if this...fails
   var sdkPath = cli.getSdkDir().path;
@@ -115,7 +131,18 @@ CompilationUnit _getCompilationUnit(
     AnalysisContext context, String sourcePath) {
   Source source = new FileBasedSource.con1(new JavaFile(sourcePath));
 
-  LibraryElement libElement = context.computeLibraryElement(source);
+  var librarySources = context.getLibrariesContaining(source);
+
+  if (librarySources.length > 1) {
+    throw new ArgumentError('Found more than one library for $sourcePath.');
+  }
+
+  LibraryElement libElement;
+  if (librarySources.isEmpty) {
+    libElement = context.computeLibraryElement(source);
+  } else {
+    libElement = context.computeLibraryElement(librarySources.single);
+  }
   return context.resolveCompilationUnit(source, libElement);
 }
 
@@ -162,7 +189,7 @@ Iterable<Element> _getElements(CompilationUnitMember member) {
 
   if (element == null) {
     print([member, member.runtimeType, member.element]);
-    throw 'crap!';
+    throw new Exception('Could not find any elements for the provided unit.');
   }
 
   return [element];
