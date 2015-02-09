@@ -66,8 +66,10 @@ void main() {
 LibraryElement _getTestLibElement() {
   var annotatedClassesFilePath =
       p.join(getPackagePath(), 'test/test_files/annotated_classes.dart');
-  return getLibraryElementFromCompilationUnit(
-      getPackagePath(), annotatedClassesFilePath);
+  var context = getAnalysisContextForProjectPath(getPackagePath());
+
+  return getLibraryElementForSourceFile(
+      context, annotatedClassesFilePath);
 }
 
 ClassElement _getAnnotationForClass(LibraryElement lib, String className) =>

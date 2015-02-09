@@ -30,12 +30,18 @@ Future<String> generate(String projectPath, String changeFilePath,
     return 'File does not exist - ${changeFilePath}.';
   }
 
-  var elementLibrary =
-      getLibraryElementFromCompilationUnit(projectPath, fullPath);
+  var context = getAnalysisContextForProjectPath(projectPath);
 
-  var generatedOutputs = _generate(elementLibrary, generators);
+  var elementLibrary = getLibraryElementForSourceFile(context, fullPath);
 
-  var genFileName = _getGeterateFilePath(elementLibrary, projectPath);
+  return generateForLibrary(elementLibrary, projectPath, generators);
+}
+
+Future<String> generateForLibrary(LibraryElement library, String projectPath,
+    List<Generator> generators) async {
+  var generatedOutputs = _generate(library, generators);
+
+  var genFileName = _getGeterateFilePath(library, projectPath);
 
   var file = new File(genFileName);
 
@@ -53,7 +59,7 @@ Future<String> generate(String projectPath, String changeFilePath,
 
   var contentBuffer = new StringBuffer();
 
-  contentBuffer.writeln('part of ${elementLibrary.name};');
+  contentBuffer.writeln('part of ${library.name};');
   contentBuffer.writeln();
 
   for (GeneratedOutput output in generatedOutputs) {

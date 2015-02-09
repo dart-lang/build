@@ -107,14 +107,13 @@ AnalysisContext getAnalysisContextForProjectPath(String projectPath) {
     ..sourceFactory = new SourceFactory(resolvers);
 }
 
-LibraryElement getLibraryElementFromCompilationUnit(
-        String projectPath, String sourcePath) =>
-    _getCompilationUnit(projectPath, sourcePath).element.library;
+LibraryElement getLibraryElementForSourceFile(
+        AnalysisContext context, String sourcePath) =>
+    _getCompilationUnit(context, sourcePath).element.library;
 
-CompilationUnit _getCompilationUnit(String projectPath, String sourcePath) {
+CompilationUnit _getCompilationUnit(
+    AnalysisContext context, String sourcePath) {
   Source source = new FileBasedSource.con1(new JavaFile(sourcePath));
-
-  var context = getAnalysisContextForProjectPath(projectPath);
 
   LibraryElement libElement = context.computeLibraryElement(source);
   return context.resolveCompilationUnit(source, libElement);
