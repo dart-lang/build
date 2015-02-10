@@ -5,8 +5,8 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 
+import 'src/generate.dart';
 import 'src/generator.dart';
-import 'src/build_file_generator.dart';
 
 void build(List<String> args, List<Generator> generators) {
   var projPath = p.dirname(p.fromUri(Platform.script));
