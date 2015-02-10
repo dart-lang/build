@@ -18,6 +18,10 @@ Future<String> generate(
     {List<String> librarySearchPaths}) async {
   assert(p.isRelative(changeFilePath));
 
+  if (librarySearchPaths == null) {
+    librarySearchPaths = const ['lib'];
+  }
+
   if (p.extension(changeFilePath) != '.dart') {
     return 'Not a Dart file - ${changeFilePath}.';
   }
@@ -37,6 +41,11 @@ Future<String> generate(
 
   var elementLibrary =
       getLibraryElementForSourceFile(context, dartFileFullPath);
+
+  if (elementLibrary == null) {
+    return "No library found for '$changeFilePath'. "
+        "It may not be in the search path.";
+  }
 
   return generateForLibrary(elementLibrary, projectPath, generators);
 }

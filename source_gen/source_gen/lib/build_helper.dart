@@ -8,7 +8,8 @@ import 'package:path/path.dart' as p;
 import 'src/generate.dart';
 import 'src/generator.dart';
 
-void build(List<String> args, List<Generator> generators) {
+void build(List<String> args, List<Generator> generators,
+    {List<String> librarySearchPaths}) {
   var projPath = p.dirname(p.fromUri(Platform.script));
 
   var parser = _getParser();
@@ -25,8 +26,9 @@ void build(List<String> args, List<Generator> generators) {
   }
 
   if (changed.isNotEmpty) {
-    generate(projPath, changed.first, generators).then((foo) {
-      print(foo);
+    generate(projPath, changed.first, generators,
+        librarySearchPaths: librarySearchPaths).then((message) {
+      print(message);
     });
   }
 }

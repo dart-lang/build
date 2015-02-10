@@ -128,7 +128,8 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
   var context = AnalysisEngine.instance.createAnalysisContext()
     ..sourceFactory = new SourceFactory(resolvers);
 
-  var foundFiles = await getDartFiles(projectPath, searchList: librarySearchPaths);
+  var foundFiles =
+      await getDartFiles(projectPath, searchList: librarySearchPaths);
 
   // ensures all libraries defined by the set of files are resolved
   getLibraryElements(foundFiles, context).toList();
@@ -137,26 +138,22 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
 }
 
 LibraryElement getLibraryElementForSourceFile(
-        AnalysisContext context, String sourcePath) =>
-    _getCompilationUnit(context, sourcePath).element.library;
-
-CompilationUnit _getCompilationUnit(
     AnalysisContext context, String sourcePath) {
   Source source = new FileBasedSource.con1(new JavaFile(sourcePath));
 
-  var librarySources = context.getLibrariesContaining(source);
+  var libs = context.getLibrariesContaining(source);
 
-  if (librarySources.length > 1) {
-    throw new ArgumentError('Found more than one library for $sourcePath.');
+  if (libs.length > 1) {
+    throw "We don't support multiple libraries for a source.";
   }
 
-  LibraryElement libElement;
-  if (librarySources.isEmpty) {
-    libElement = context.computeLibraryElement(source);
-  } else {
-    libElement = context.computeLibraryElement(librarySources.single);
+  if (libs.isEmpty) {
+    return null;
   }
-  return context.resolveCompilationUnit(source, libElement);
+
+  var libSource = libs.single;
+
+  return context.getLibraryElement(libSource);
 }
 
 String frieldlyNameForElement(Element element) {
