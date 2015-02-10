@@ -24,9 +24,6 @@ void build(List<String> args, List<Generator> generators) {
     return;
   }
 
-  // TODO: remove this override - only for development
-  changed = ['example/person.dart'];
-
   if (changed.isNotEmpty) {
     generate(projPath, changed.first, generators).then((foo) {
       print(foo);
