@@ -128,7 +128,7 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
   var context = AnalysisEngine.instance.createAnalysisContext()
     ..sourceFactory = new SourceFactory(resolvers);
 
-  var foundFiles = await getFiles(projectPath, searchList: librarySearchPaths);
+  var foundFiles = await getDartFiles(projectPath, searchList: librarySearchPaths);
 
   // ensures all libraries defined by the set of files are resolved
   getLibraryElements(foundFiles, context).toList();

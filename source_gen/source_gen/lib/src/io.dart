@@ -11,7 +11,19 @@ import 'package:path/path.dart' as p;
 /// [searchList] is a list of relative paths within [directoryPath].
 /// Returned results will be those files that match file paths or are within
 /// directories defined in the list.
-Future<List<String>> getFiles(String directoryPath, {List<String> searchList}) {
+Future<List<String>> getDartFiles(String directoryPath, {List<String> searchList}) {
+  return getFiles(directoryPath, searchList: searchList)
+      .where((path) => p.extension(path) == '.dart')
+      .toList();
+}
+
+/// Skips symbolic links and any item in [directryPath] recursively that begins
+/// with `.`.
+///
+/// [searchList] is a list of relative paths within [directoryPath].
+/// Returned results will be those files that match file paths or are within
+/// directories defined in the list.
+Stream<String> getFiles(String directoryPath, {List<String> searchList}) {
   var controller = new StreamController<String>();
   if (searchList == null) {
     searchList = <String>[];
@@ -39,7 +51,7 @@ Future<List<String>> getFiles(String directoryPath, {List<String> searchList}) {
     controller.close();
   });
 
-  return controller.stream.toList();
+  return controller.stream;
 }
 
 Future<Map<String, FileSystemEntityType>> _expandSearchList(

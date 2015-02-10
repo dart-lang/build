@@ -10,7 +10,7 @@ void main() {
   test('find files', () {
     var testFilesPath = p.join(getPackagePath(), 'test', 'test_files');
 
-    return getFiles(testFilesPath).then((files) {
+    return getDartFiles(testFilesPath).then((files) {
       expect(files, hasLength(4));
     });
   });
@@ -19,7 +19,7 @@ void main() {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
     var files =
-        await getFiles(testFilesPath, searchList: ['test_files']);
+        await getDartFiles(testFilesPath, searchList: ['test_files']);
 
     expect(files, hasLength(4));
   });
@@ -27,7 +27,7 @@ void main() {
   test('search with one sub directory and one file', () async {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
-    var files = await getFiles(testFilesPath,
+    var files = await getDartFiles(testFilesPath,
         searchList: ['test_files', 'io_test.dart']);
 
     expect(files, hasLength(5));
@@ -37,7 +37,7 @@ void main() {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
     var files =
-        await getFiles(testFilesPath, searchList: ['io_test.dart']);
+        await getDartFiles(testFilesPath, searchList: ['io_test.dart']);
 
     expect(files, hasLength(1));
   });
@@ -45,7 +45,7 @@ void main() {
   test('search with none existent file', () async {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
-    var files = await getFiles(testFilesPath, searchList: ['no_file_here.dart']);
+    var files = await getDartFiles(testFilesPath, searchList: ['no_file_here.dart']);
 
     expect(files, hasLength(0));
   });
@@ -55,7 +55,7 @@ void main() {
       var testFilesPath = p.join(getPackagePath());
 
       var caught = false;
-      return getFiles(testFilesPath, searchList: ['test', 'test/io_test.dart'])
+      return getDartFiles(testFilesPath, searchList: ['test', 'test/io_test.dart'])
 
           .catchError((error) {
         expect(error, isArgumentError);
@@ -69,7 +69,7 @@ void main() {
       var testFilesPath = p.join(getPackagePath());
 
       var caught = false;
-      return getFiles(testFilesPath, searchList: ['test', 'test/test_files'])
+      return getDartFiles(testFilesPath, searchList: ['test', 'test/test_files'])
           .catchError((error) {
         expect(error, isArgumentError);
         caught = true;
@@ -82,7 +82,7 @@ void main() {
       var testFilesPath = p.join(getPackagePath());
 
       var caught = false;
-      return getFiles(testFilesPath, searchList: ['test/io_test.dart', 'test'])
+      return getDartFiles(testFilesPath, searchList: ['test/io_test.dart', 'test'])
           .catchError((error) {
         expect(error, isArgumentError);
         caught = true;
@@ -95,7 +95,7 @@ void main() {
       var testFilesPath = p.join(getPackagePath());
 
       var caught = false;
-      return getFiles(testFilesPath, searchList: ['test/test_files', 'test'])
+      return getDartFiles(testFilesPath, searchList: ['test/test_files', 'test'])
           .catchError((error) {
         expect(error, isArgumentError);
         caught = true;
