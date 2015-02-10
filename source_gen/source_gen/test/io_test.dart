@@ -10,7 +10,7 @@ void main() {
   test('find files', () {
     var testFilesPath = p.join(getPackagePath(), 'test', 'test_files');
 
-    return getFiles(testFilesPath).toList().then((files) {
+    return getFiles(testFilesPath).then((files) {
       expect(files, hasLength(4));
     });
   });
@@ -19,7 +19,7 @@ void main() {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
     var files =
-        await getFiles(testFilesPath, searchList: ['test_files']).toList();
+        await getFiles(testFilesPath, searchList: ['test_files']);
 
     expect(files, hasLength(4));
   });
@@ -28,7 +28,7 @@ void main() {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
     var files = await getFiles(testFilesPath,
-        searchList: ['test_files', 'io_test.dart']).toList();
+        searchList: ['test_files', 'io_test.dart']);
 
     expect(files, hasLength(5));
   });
@@ -37,7 +37,7 @@ void main() {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
     var files =
-        await getFiles(testFilesPath, searchList: ['io_test.dart']).toList();
+        await getFiles(testFilesPath, searchList: ['io_test.dart']);
 
     expect(files, hasLength(1));
   });
@@ -45,8 +45,7 @@ void main() {
   test('search with none existent file', () async {
     var testFilesPath = p.join(getPackagePath(), 'test');
 
-    var files = await getFiles(testFilesPath, searchList: ['no_file_here.dart'])
-        .toList();
+    var files = await getFiles(testFilesPath, searchList: ['no_file_here.dart']);
 
     expect(files, hasLength(0));
   });
@@ -57,7 +56,7 @@ void main() {
 
       var caught = false;
       return getFiles(testFilesPath, searchList: ['test', 'test/io_test.dart'])
-          .toList()
+
           .catchError((error) {
         expect(error, isArgumentError);
         caught = true;
@@ -71,7 +70,6 @@ void main() {
 
       var caught = false;
       return getFiles(testFilesPath, searchList: ['test', 'test/test_files'])
-          .toList()
           .catchError((error) {
         expect(error, isArgumentError);
         caught = true;
@@ -85,7 +83,6 @@ void main() {
 
       var caught = false;
       return getFiles(testFilesPath, searchList: ['test/io_test.dart', 'test'])
-          .toList()
           .catchError((error) {
         expect(error, isArgumentError);
         caught = true;
@@ -99,7 +96,6 @@ void main() {
 
       var caught = false;
       return getFiles(testFilesPath, searchList: ['test/test_files', 'test'])
-          .toList()
           .catchError((error) {
         expect(error, isArgumentError);
         caught = true;

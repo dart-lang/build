@@ -90,8 +90,8 @@ String _annotationClassName(ElementAnnotation annotation) {
 }
 
 /// [dartFiles] is a [Stream] of paths to [.dart] files.
-Stream<LibraryElement> getLibraryElements(
-    Stream<String> dartFiles, AnalysisContext context) => dartFiles
+Iterable<LibraryElement> getLibraryElements(
+    List<String> dartFiles, AnalysisContext context) => dartFiles
     .map((path) => _getLibraryElement(path, context))
     .where((lib) => lib != null);
 
@@ -128,9 +128,10 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
   var context = AnalysisEngine.instance.createAnalysisContext()
     ..sourceFactory = new SourceFactory(resolvers);
 
-  var foundFilesStream = getFiles(projectPath, searchList: librarySearchPaths);
+  var foundFiles = await getFiles(projectPath, searchList: librarySearchPaths);
 
-  await getLibraryElements(foundFilesStream, context).drain();
+  // ensures all libraries defined by the set of files are resolved
+  getLibraryElements(foundFiles, context).toList();
 
   return context;
 }

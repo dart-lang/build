@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p;
 /// [searchList] is a list of relative paths within [directoryPath].
 /// Returned results will be those files that match file paths or are within
 /// directories defined in the list.
-Stream<String> getFiles(String directoryPath, {List<String> searchList}) {
+Future<List<String>> getFiles(String directoryPath, {List<String> searchList}) {
   var controller = new StreamController<String>();
   if (searchList == null) {
     searchList = <String>[];
@@ -39,7 +39,7 @@ Stream<String> getFiles(String directoryPath, {List<String> searchList}) {
     controller.close();
   });
 
-  return controller.stream;
+  return controller.stream.toList();
 }
 
 Future<Map<String, FileSystemEntityType>> _expandSearchList(
