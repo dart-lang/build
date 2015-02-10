@@ -11,7 +11,8 @@ import 'package:path/path.dart' as p;
 /// [searchList] is a list of relative paths within [directoryPath].
 /// Returned results will be those files that match file paths or are within
 /// directories defined in the list.
-Future<List<String>> getDartFiles(String directoryPath, {List<String> searchList}) {
+Future<List<String>> getDartFiles(String directoryPath,
+    {List<String> searchList}) {
   return getFiles(directoryPath, searchList: searchList)
       .where((path) => p.extension(path) == '.dart')
       .toList();
