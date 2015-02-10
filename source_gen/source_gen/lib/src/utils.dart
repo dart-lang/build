@@ -114,9 +114,9 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
   JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
   DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
 
-  var packageRoot = p.join(projectPath, 'packages');
+  var packagesPath = p.join(projectPath, 'packages');
 
-  var packageDirectory = new JavaFile(packageRoot);
+  var packageDirectory = new JavaFile(packagesPath);
 
   // TODO(kevmoo): Can we get of one of these?
   var resolvers = [
