@@ -62,7 +62,7 @@ void main() {
     //
     // change classes to remove one class: updated
     //
-    await new File(p.join(projectPath, 'lib', 'test_lib.dart'))
+    await new File(p.join(projectPath, relativeFilePath))
         .writeAsString(_testLibContentNoClass);
 
     output =
@@ -83,11 +83,12 @@ void main() {
     //
     // change classes add classes back: created
     //
-    await new File(p.join(projectPath, 'lib', 'test_lib_part.dart'))
+    var partRelativeFilePath = p.join('lib', 'test_lib_part.dart');
+    await new File(p.join(projectPath, partRelativeFilePath))
         .writeAsString(_testLibPartContentNoClass);
 
-    output =
-        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+    output = await generate(
+        projectPath, partRelativeFilePath, [const _TestGenerator()]);
 
     expect(output, "Deleted: 'lib/test_lib.g.dart'");
 

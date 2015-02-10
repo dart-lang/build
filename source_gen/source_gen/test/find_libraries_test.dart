@@ -1,12 +1,9 @@
 library source_gen.test.find_libraries;
 
-import 'dart:async';
-
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
-import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 
 import 'test_utils.dart';
@@ -17,7 +14,10 @@ void main() {
 
     setUp(() async {
       if (context == null) {
-        context = await _getContext();
+        context = await getAnalysisContextForProjectPath(getPackagePath(),
+            librarySearchPaths: [
+          p.join(getPackagePath(), 'test', 'test_files')
+        ]);
       }
     });
 
@@ -35,18 +35,6 @@ void main() {
       });
     });
   });
-}
-
-Future<AnalysisContext> _getContext() async {
-  var context = getAnalysisContextForProjectPath(getPackagePath());
-
-  var testFilesPath = p.join(getPackagePath(), 'test', 'test_files');
-
-  await getLibraryElements(getFiles(testFilesPath), context).drain();
-
-  expect(context != null, isTrue);
-
-  return context;
 }
 
 String _testFilePath(String name) =>

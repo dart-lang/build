@@ -1,5 +1,7 @@
 library source_gen.test.json_generator_test;
 
+import 'dart:async';
+
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source.dart';
@@ -14,37 +16,41 @@ import 'package:scheduled_test/scheduled_test.dart';
 import 'test_utils.dart';
 
 void main() {
+  setUp(() {
+    currentSchedule.timeout = const Duration(seconds: 10);
+  });
+
   group('non-classes', () {
-    test('const field', () {
-      var element = _getClassForCodeString('theAnswer');
+    test('const field', () async {
+      var element = await _getClassForCodeString('theAnswer');
 
       expect(() => _generator.generate(element), throws);
       // TODO: validate the properties on the thrown error
     });
 
-    test('method', () {
-      var element = _getClassForCodeString('annotatedMethod');
+    test('method', () async {
+      var element = await _getClassForCodeString('annotatedMethod');
 
       expect(() => _generator.generate(element), throws);
       // TODO: validate the properties on the thrown error
     });
   });
 
-  test('class with final fields', () {
-    var element = _getClassForCodeString('FinalFields');
+  test('class with final fields', () async {
+    var element = await _getClassForCodeString('FinalFields');
     expect(() => _generator.generate(element), throws);
   });
 
-  test('unannotated classes no-op', () {
-    var element = _getClassForCodeString('NoAnnotation');
+  test('unannotated classes no-op', () async {
+    var element = await _getClassForCodeString('NoAnnotation');
     var output = _generator.generate(element);
 
     expect(output, isNull);
   });
 
   group('valid inputs', () {
-    test('class with no fields', () {
-      var element = _getClassForCodeString('Person');
+    test('class with no fields', () async {
+      var element = await _getClassForCodeString('Person');
       var output = _generator.generate(element);
 
       expect(output, isNotNull);
@@ -56,21 +62,24 @@ void main() {
 
 const _generator = const JsonGenerator();
 
-Element _getClassForCodeString(String name) =>
-    _getElementsForCodeString().singleWhere((e) => e.name == name);
+Future<Element> _getClassForCodeString(String name) async {
+  var elements = await _getElementsForCodeString();
 
-Iterable<Element> _getElementsForCodeString() {
+  return elements.singleWhere((e) => e.name == name);
+}
+
+Future<List<Element>> _getElementsForCodeString() async {
   if (_compUnit == null) {
-    _compUnit = _getCompilationUnitForString(getPackagePath());
+    _compUnit = await _getCompilationUnitForString(getPackagePath());
   }
 
   return getElementsFromLibraryElement(_compUnit.element.library);
 }
 
-CompilationUnit _getCompilationUnitForString(String projectPath) {
+Future<CompilationUnit> _getCompilationUnitForString(String projectPath) async {
   Source source = new StringSource(_testSource, 'test content');
 
-  var context = getAnalysisContextForProjectPath(projectPath);
+  var context = await getAnalysisContextForProjectPath(projectPath);
 
   LibraryElement libElement = context.computeLibraryElement(source);
   return context.resolveCompilationUnit(source, libElement);

@@ -18,6 +18,8 @@ import 'package:analyzer/src/generated/source_io.dart';
 import 'package:cli_util/cli_util.dart' as cli;
 import 'package:path/path.dart' as p;
 
+import 'io.dart';
+
 bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
   var classMirror = reflectClass(annotationType);
   var classMirrorSymbol = classMirror.simpleName;
@@ -102,7 +104,10 @@ LibraryElement _getLibraryElement(String path, AnalysisContext context) {
   return null;
 }
 
-AnalysisContext getAnalysisContextForProjectPath(String projectPath) {
+/// [librarySearchPaths] is an optional list of relative paths to dart files
+/// and directories.
+Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
+    {List<String> librarySearchPaths}) async {
   // TODO: fail more clearly if this...fails
   var sdkPath = cli.getSdkDir().path;
 
@@ -113,14 +118,21 @@ AnalysisContext getAnalysisContextForProjectPath(String projectPath) {
 
   var packageDirectory = new JavaFile(packageRoot);
 
+  // TODO(kevmoo): Can we get of one of these?
   var resolvers = [
     new DartUriResolver(sdk),
     new ResourceUriResolver(PhysicalResourceProvider.INSTANCE),
     new PackageUriResolver([packageDirectory])
   ];
 
-  return AnalysisEngine.instance.createAnalysisContext()
+  var context = AnalysisEngine.instance.createAnalysisContext()
     ..sourceFactory = new SourceFactory(resolvers);
+
+  var foundFilesStream = getFiles(projectPath, searchList: librarySearchPaths);
+
+  await getLibraryElements(foundFilesStream, context).drain();
+
+  return context;
 }
 
 LibraryElement getLibraryElementForSourceFile(

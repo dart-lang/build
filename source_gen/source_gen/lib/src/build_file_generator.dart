@@ -12,8 +12,10 @@ import 'generated_output.dart';
 import 'generator.dart';
 import 'utils.dart';
 
-Future<String> generate(String projectPath, String changeFilePath,
-    List<Generator> generators) async {
+/// If [librarySearchPaths] is not provided, `['lib']` is used.
+Future<String> generate(
+    String projectPath, String changeFilePath, List<Generator> generators,
+    {List<String> librarySearchPaths}) async {
   assert(p.isRelative(changeFilePath));
 
   if (p.extension(changeFilePath) != '.dart') {
@@ -24,15 +26,17 @@ Future<String> generate(String projectPath, String changeFilePath,
     return 'Skipping generated Dart file ${changeFilePath}.';
   }
 
-  var fullPath = p.join(projectPath, changeFilePath);
+  var dartFileFullPath = p.join(projectPath, changeFilePath);
 
-  if (!await FileSystemEntity.isFile(fullPath)) {
+  if (!await FileSystemEntity.isFile(dartFileFullPath)) {
     return 'File does not exist - ${changeFilePath}.';
   }
 
-  var context = getAnalysisContextForProjectPath(projectPath);
+  var context = await getAnalysisContextForProjectPath(projectPath,
+      librarySearchPaths: librarySearchPaths);
 
-  var elementLibrary = getLibraryElementForSourceFile(context, fullPath);
+  var elementLibrary =
+      getLibraryElementForSourceFile(context, dartFileFullPath);
 
   return generateForLibrary(elementLibrary, projectPath, generators);
 }

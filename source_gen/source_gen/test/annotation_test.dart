@@ -1,8 +1,10 @@
 library source_gen.test.annotation_test;
 
+import 'dart:async';
+
 import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
-import 'package:scheduled_test/scheduled_test.dart';
+import 'package:unittest/unittest.dart';
 
 import 'package:source_gen/json_serial/json_annotation.dart';
 import 'package:source_gen/src/utils.dart';
@@ -15,9 +17,9 @@ void main() {
   group('match annotations', () {
     LibraryElement libElement;
 
-    setUp(() {
+    setUp(() async {
       if (libElement == null) {
-        libElement = _getTestLibElement();
+        libElement = await _getTestLibElement();
       }
     });
 
@@ -63,10 +65,14 @@ void main() {
   });
 }
 
-LibraryElement _getTestLibElement() {
+Future<LibraryElement> _getTestLibElement() async {
+  var testFilesRelativePath = p.join('test', 'test_files');
+
+  var context = await getAnalysisContextForProjectPath(getPackagePath(),
+      librarySearchPaths: [testFilesRelativePath]);
+
   var annotatedClassesFilePath =
-      p.join(getPackagePath(), 'test/test_files/annotated_classes.dart');
-  var context = getAnalysisContextForProjectPath(getPackagePath());
+      p.join(getPackagePath(), testFilesRelativePath, 'annotated_classes.dart');
 
   return getLibraryElementForSourceFile(context, annotatedClassesFilePath);
 }
