@@ -33,18 +33,20 @@ Set<LibraryElement> getLibraries(
   });
 }
 
-bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
+bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
   var classMirror = reflectClass(annotationType);
   var classMirrorSymbol = classMirror.simpleName;
 
-  var annTypeName = _annotationClassName(annotation);
+  var annotationValueType = annotation.evaluationResult.value.type;
+
+  var annTypeName = annotationValueType.name;
   var annotationTypeSymbol = new Symbol(annTypeName);
 
   if (classMirrorSymbol != annotationTypeSymbol) {
     return false;
   }
 
-  var annotationSource = annotation.element.source as FileBasedSource;
+  var annotationSource = annotationValueType.element.source as FileBasedSource;
 
   var libOwner = classMirror.owner as LibraryMirror;
 
@@ -216,16 +218,6 @@ String _getPackageRoot() {
   assert(FileSystemEntity.isDirectorySync(dir));
 
   return dir;
-}
-
-String _annotationClassName(ElementAnnotation annotation) {
-  var element = annotation.element;
-
-  if (element is ConstructorElementImpl) {
-    return element.returnType.name;
-  } else {
-    throw new Exception('Cannot get the name for "$annotation" (${element.runtimeType}).');
-  }
 }
 
 // may return `null` if [path] doesn't refer to a library.

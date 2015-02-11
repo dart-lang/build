@@ -21,8 +21,8 @@ void main() {
     var projectPath = await _createPackageStub('pkg');
 
     var relativeFilePath = p.join('lib', 'test_lib.dart');
-    var output =
-        await generate(projectPath, [relativeFilePath], [const _NoOpGenerator()]);
+    var output = await generate(
+        projectPath, [relativeFilePath], [const _NoOpGenerator()]);
 
     expect(output, "Nothing to generate");
 
@@ -44,8 +44,8 @@ void main() {
     // run generate again: no change
     //
     var relativeFilePath = p.join('lib', 'test_lib.dart');
-    var output =
-        await generate(projectPath, [relativeFilePath], [const _TestGenerator()]);
+    var output = await generate(
+        projectPath, [relativeFilePath], [const _TestGenerator()]);
 
     expect(output, "No change: 'lib/test_lib.g.dart'");
 
@@ -65,8 +65,8 @@ void main() {
     await new File(p.join(projectPath, relativeFilePath))
         .writeAsString(_testLibContentNoClass);
 
-    output =
-        await generate(projectPath, [relativeFilePath], [const _TestGenerator()]);
+    output = await generate(
+        projectPath, [relativeFilePath], [const _TestGenerator()]);
 
     expect(output, "Updated: 'lib/test_lib.g.dart'");
 

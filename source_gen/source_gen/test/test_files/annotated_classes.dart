@@ -15,3 +15,15 @@ class CtorNoParams {}
 
 @JsonSerializable()
 class AnnotatedWithJson {}
+
+@localTypedAnnotation
+class WithLocalTypedField {}
+
+@localUntypedAnnotation
+class WithLocalUntypedField {}
+
+@typedAnnotation
+class WithTypedField {}
+
+@untypedAnnotation
+class WithUntypedField {}

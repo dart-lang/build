@@ -14,15 +14,47 @@ import 'test_files/annotations.dart' as defs;
 import 'test_utils.dart';
 
 void main() {
-  group('match annotations', () {
-    LibraryElement libElement;
+  LibraryElement libElement;
 
-    setUp(() async {
-      if (libElement == null) {
-        libElement = await _getTestLibElement();
-      }
+  setUp(() async {
+    if (libElement == null) {
+      libElement = await _getTestLibElement();
+    }
+  });
+
+  group('with field annotations', () {
+    test('annotated with typed field', () {
+      var annotatedClass = _getAnnotationForClass(libElement, 'WithTypedField');
+      var annotation = annotatedClass.metadata.single;
+      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+      expect(matched, isTrue);
     });
 
+    test('annotated with untyped field', () {
+      var annotatedClass =
+          _getAnnotationForClass(libElement, 'WithUntypedField');
+      var annotation = annotatedClass.metadata.single;
+      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+      expect(matched, isTrue);
+    });
+
+    test('annotated with local typed field', () {
+      var annotatedClass = _getAnnotationForClass(libElement, 'WithLocalTypedField');
+      var annotation = annotatedClass.metadata.single;
+      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+      expect(matched, isTrue);
+    });
+
+    test('annotated with local untyped field', () {
+      var annotatedClass =
+          _getAnnotationForClass(libElement, 'WithLocalUntypedField');
+      var annotation = annotatedClass.metadata.single;
+      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+      expect(matched, isTrue);
+    });
+  });
+
+  group('with class annotations', () {
     test('annotated with class', () {
       var annotatedClass = _getAnnotationForClass(libElement, 'CtorNoParams');
       var annotation = annotatedClass.metadata.single;
