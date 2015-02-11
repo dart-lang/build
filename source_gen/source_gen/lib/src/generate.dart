@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 
 import 'generated_output.dart';
 import 'generator.dart';
+import 'io.dart';
 import 'utils.dart';
 
 /// [changeFilePaths] must be relative to [projectPath].
@@ -22,8 +23,8 @@ Future<String> generate(String projectPath, List<String> changeFilePaths,
   }
 
   changeFilePaths = changeFilePaths
-      .where((path) => p.extension(path) == '.dart')
-      .where((path) => !path.endsWith('.g.dart'))
+      .where(pathToDartFile)
+      .where((path) => !isGeneratedFile(path))
       .map((path) => p.join(projectPath, path))
       .where((path) => FileSystemEntity.isFileSync(path))
       .toList();
@@ -124,13 +125,13 @@ String _getGeterateFilePath(LibraryElement lib, String projectPath) {
 
   var libraryDir = p.dirname(libraryPath);
   var libFileName = p.basename(libraryPath);
-  assert(p.extension(libFileName) == '.dart');
+  assert(pathToDartFile(libFileName));
 
   assert(libFileName.indexOf('.') == libFileName.length - 5);
 
   libFileName = p.basenameWithoutExtension(libFileName);
 
-  return p.join(libraryDir, "${libFileName}.g.dart");
+  return p.join(libraryDir, "${libFileName}${generatedExtension}");
 }
 
 String _getHeader() => '''// GENERATED CODE - DO NOT MODIFY BY HAND

@@ -5,6 +5,12 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+bool pathToDartFile(String path) => p.extension(path) == '.dart';
+
+bool isGeneratedFile(String path) => path.endsWith(generatedExtension);
+
+const generatedExtension = '.g.dart';
+
 /// Skips symbolic links and any item in [directryPath] recursively that begins
 /// with `.`.
 ///
@@ -14,7 +20,7 @@ import 'package:path/path.dart' as p;
 Future<List<String>> getDartFiles(String directoryPath,
     {List<String> searchList}) {
   return getFiles(directoryPath, searchList: searchList)
-      .where((path) => p.extension(path) == '.dart')
+      .where(pathToDartFile)
       .toList();
 }
 

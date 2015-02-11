@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 
+import 'src/io.dart';
 import 'src/generate.dart';
 import 'src/generator.dart';
 
@@ -18,7 +19,7 @@ void build(List<String> args, List<Generator> generators,
 
   var changed = result['changed'] as List<String>;
 
-  changed.removeWhere((changed) => changed.endsWith('.g.dart'));
+  changed.removeWhere(isGeneratedFile);
 
   if (changed.isEmpty) {
     print('nothing changed!');
