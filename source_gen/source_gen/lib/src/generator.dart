@@ -31,7 +31,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     // TODO: actually construct the annotation from analyzer arguments
     // var matchingAnnotation = matchingAnnotations.single;
     var annotationInstance =
-        classMirror.newInstance(new Symbol(''), []).reflectee as T;
+        classMirror.newInstance(const Symbol(''), []).reflectee as T;
 
     return generateForAnnotatedElement(element, annotationInstance);
   }
