@@ -41,15 +41,21 @@ Future<String> generate(
   var context = await getAnalysisContextForProjectPath(projectPath,
       librarySearchPaths: librarySearchPaths);
 
-  var elementLibrary =
-      getLibraryElementForSourceFile(context, dartFileFullPath);
+  var libs = getLibraries(context, [dartFileFullPath]);
 
-  if (elementLibrary == null) {
+  if (libs.isEmpty) {
     return "No library found for '$changeFilePath'. "
         "It may not be in the search path.";
   }
 
-  return generateForLibrary(elementLibrary, projectPath, generators);
+  var messages = <String>[];
+
+  await Future.forEach(libs, (elementLibrary) async {
+    var msg = await generateForLibrary(elementLibrary, projectPath, generators);
+    messages.add(msg);
+  });
+
+  return messages.join('\n');
 }
 
 Future<String> generateForLibrary(LibraryElement library, String projectPath,
