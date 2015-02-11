@@ -12,6 +12,8 @@ import 'generated_output.dart';
 import 'generator.dart';
 import 'utils.dart';
 
+/// [changeFilePath] must be a path relative to [projectPath]
+///
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
 Future<String> generate(
     String projectPath, String changeFilePath, List<Generator> generators,

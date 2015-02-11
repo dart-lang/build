@@ -52,57 +52,11 @@ bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
   return annotationSource.uri == libraryUri;
 }
 
-Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
-  assert(libraryPackageUri.scheme == 'package');
-  var packageDir = _getPackageRoot();
-
-  var fullLibraryPath = p.join(packageDir, libraryPackageUri.path);
-
-  var file = new File(fullLibraryPath);
-
-  assert(file.existsSync());
-
-  var normalPath = file.resolveSymbolicLinksSync();
-
-  return new Uri.file(normalPath);
-}
-
-String _getPackageRoot() {
-  var dir = Platform.packageRoot;
-
-  if (dir.isEmpty) {
-    dir = p.join(p.current, 'packages');
-  }
-
-  assert(FileSystemEntity.isDirectorySync(dir));
-
-  return dir;
-}
-
-String _annotationClassName(ElementAnnotation annotation) {
-  var element = annotation.element;
-
-  if (element is ConstructorElementImpl) {
-    return element.returnType.name;
-  } else {
-    throw 'I cannot get the name for $annotation';
-  }
-}
-
 /// [dartFiles] is a [Stream] of paths to [.dart] files.
 Iterable<LibraryElement> getLibraryElements(
     List<String> dartFiles, AnalysisContext context) => dartFiles
     .map((path) => _getLibraryElement(path, context))
     .where((lib) => lib != null);
-
-// may return `null` if [path] doesn't refer to a library.
-LibraryElement _getLibraryElement(String path, AnalysisContext context) {
-  Source source = new FileBasedSource.con1(new JavaFile(path));
-  if (context.computeKindOf(source) == SourceKind.LIBRARY) {
-    return context.computeLibraryElement(source);
-  }
-  return null;
-}
 
 /// [librarySearchPaths] is an optional list of relative paths to dart files
 /// and directories.
@@ -224,4 +178,48 @@ String findPartOf(String source) {
   }
 }
 
-final _commentLineRegexp = new RegExp('(//.*|\w*)[\r\n]+');
+Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
+  assert(libraryPackageUri.scheme == 'package');
+  var packageDir = _getPackageRoot();
+
+  var fullLibraryPath = p.join(packageDir, libraryPackageUri.path);
+
+  var file = new File(fullLibraryPath);
+
+  assert(file.existsSync());
+
+  var normalPath = file.resolveSymbolicLinksSync();
+
+  return new Uri.file(normalPath);
+}
+
+String _getPackageRoot() {
+  var dir = Platform.packageRoot;
+
+  if (dir.isEmpty) {
+    dir = p.join(p.current, 'packages');
+  }
+
+  assert(FileSystemEntity.isDirectorySync(dir));
+
+  return dir;
+}
+
+String _annotationClassName(ElementAnnotation annotation) {
+  var element = annotation.element;
+
+  if (element is ConstructorElementImpl) {
+    return element.returnType.name;
+  } else {
+    throw 'I cannot get the name for $annotation';
+  }
+}
+
+// may return `null` if [path] doesn't refer to a library.
+LibraryElement _getLibraryElement(String path, AnalysisContext context) {
+  Source source = new FileBasedSource.con1(new JavaFile(path));
+  if (context.computeKindOf(source) == SourceKind.LIBRARY) {
+    return context.computeLibraryElement(source);
+  }
+  return null;
+}
