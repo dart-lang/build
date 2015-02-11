@@ -22,7 +22,7 @@ void main() {
 
     var relativeFilePath = p.join('lib', 'test_lib.dart');
     var output =
-        await generate(projectPath, relativeFilePath, [const _NoOpGenerator()]);
+        await generate(projectPath, [relativeFilePath], [const _NoOpGenerator()]);
 
     expect(output, "Nothing to generate");
 
@@ -45,7 +45,7 @@ void main() {
     //
     var relativeFilePath = p.join('lib', 'test_lib.dart');
     var output =
-        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+        await generate(projectPath, [relativeFilePath], [const _TestGenerator()]);
 
     expect(output, "No change: 'lib/test_lib.g.dart'");
 
@@ -66,7 +66,7 @@ void main() {
         .writeAsString(_testLibContentNoClass);
 
     output =
-        await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+        await generate(projectPath, [relativeFilePath], [const _TestGenerator()]);
 
     expect(output, "Updated: 'lib/test_lib.g.dart'");
 
@@ -88,7 +88,7 @@ void main() {
         .writeAsString(_testLibPartContentNoClass);
 
     output = await generate(
-        projectPath, partRelativeFilePath, [const _TestGenerator()]);
+        projectPath, [partRelativeFilePath], [const _TestGenerator()]);
 
     expect(output, "Deleted: 'lib/test_lib.g.dart'");
 
@@ -116,7 +116,7 @@ Future<String> _simpleTest() async {
 
   var relativeFilePath = p.join('lib', 'test_lib.dart');
   var output =
-      await generate(projectPath, relativeFilePath, [const _TestGenerator()]);
+      await generate(projectPath, [relativeFilePath], [const _TestGenerator()]);
 
   expect(output, "Created: 'lib/test_lib.g.dart'");
 

@@ -16,7 +16,7 @@ void build(List<String> args, List<Generator> generators,
 
   var result = parser.parse(args);
 
-  var changed = result['changed'] as List;
+  var changed = result['changed'] as List<String>;
 
   changed.removeWhere((changed) => changed.endsWith('.g.dart'));
 
@@ -26,7 +26,7 @@ void build(List<String> args, List<Generator> generators,
   }
 
   if (changed.isNotEmpty) {
-    generate(projPath, changed.first, generators,
+    generate(projPath, changed, generators,
         librarySearchPaths: librarySearchPaths).then((message) {
       print(message);
     });

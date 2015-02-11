@@ -12,40 +12,31 @@ import 'generated_output.dart';
 import 'generator.dart';
 import 'utils.dart';
 
-/// [changeFilePath] must be a path relative to [projectPath]
+/// [changeFilePaths] must be relative to [projectPath].
 ///
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
 Future<String> generate(
-    String projectPath, String changeFilePath, List<Generator> generators,
+    String projectPath, List<String> changeFilePaths, List<Generator> generators,
     {List<String> librarySearchPaths}) async {
-  assert(p.isRelative(changeFilePath));
-
   if (librarySearchPaths == null) {
     librarySearchPaths = const ['lib'];
   }
 
-  if (p.extension(changeFilePath) != '.dart') {
-    return 'Not a Dart file - ${changeFilePath}.';
-  }
-
-  if (changeFilePath.endsWith('.g.dart')) {
-    return 'Skipping generated Dart file ${changeFilePath}.';
-  }
-
-  var dartFileFullPath = p.join(projectPath, changeFilePath);
-
-  if (!await FileSystemEntity.isFile(dartFileFullPath)) {
-    return 'File does not exist - ${changeFilePath}.';
-  }
+  changeFilePaths = changeFilePaths.where((path) => p.extension(path) == '.dart')
+      .where((path) => !path.endsWith('.g.dart'))
+      .map((path) => p.join(projectPath, path))
+      .where((path) => FileSystemEntity.isFileSync(path))
+      .toList();
 
   var context = await getAnalysisContextForProjectPath(projectPath,
       librarySearchPaths: librarySearchPaths);
 
-  var libs = getLibraries(context, [dartFileFullPath]);
+  var libs = getLibraries(context, changeFilePaths);
 
   if (libs.isEmpty) {
-    return "No library found for '$changeFilePath'. "
-        "It may not be in the search path.";
+    return "No libraries found for provided paths:\n"
+        "${changeFilePaths.join(', ')}\n"
+        "They may not be in the search path.";
   }
 
   var messages = <String>[];
