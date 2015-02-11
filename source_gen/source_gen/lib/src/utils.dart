@@ -224,7 +224,7 @@ String _annotationClassName(ElementAnnotation annotation) {
   if (element is ConstructorElementImpl) {
     return element.returnType.name;
   } else {
-    throw 'I cannot get the name for $annotation';
+    throw new Exception('Cannot get the name for "$annotation" (${element.runtimeType}).');
   }
 }
 
