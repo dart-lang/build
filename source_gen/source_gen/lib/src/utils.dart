@@ -21,7 +21,7 @@ import 'package:path/path.dart' as p;
 import 'io.dart';
 
 Set<LibraryElement> getLibraries(
-    AnalysisContext context, List<String> filePaths) {
+    AnalysisContext context, Iterable<String> filePaths) {
   return filePaths.fold(new Set<LibraryElement>(), (set, path) {
     var elementLibrary = getLibraryElementForSourceFile(context, path);
 

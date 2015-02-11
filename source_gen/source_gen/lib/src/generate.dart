@@ -22,17 +22,16 @@ Future<String> generate(String projectPath, List<String> changeFilePaths,
     librarySearchPaths = const ['lib'];
   }
 
-  changeFilePaths = changeFilePaths
+  var fullPaths = changeFilePaths
       .where(pathToDartFile)
       .where((path) => !isGeneratedFile(path))
       .map((path) => p.join(projectPath, path))
-      .where((path) => FileSystemEntity.isFileSync(path))
-      .toList();
+      .where((path) => FileSystemEntity.isFileSync(path));
 
   var context = await getAnalysisContextForProjectPath(projectPath,
       librarySearchPaths: librarySearchPaths);
 
-  var libs = getLibraries(context, changeFilePaths);
+  var libs = getLibraries(context, fullPaths);
 
   if (libs.isEmpty) {
     return "No libraries found for provided paths:\n"
