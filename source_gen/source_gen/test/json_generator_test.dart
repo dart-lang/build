@@ -102,6 +102,9 @@ void annotatedMethod() => null;
 
 @JsonSerializable()
 class Person {
+  String firstName, lastName;
+  int height;
+  DateTime dateOfBirth;
 }
 
 class NoAnnotation {
