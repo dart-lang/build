@@ -18,8 +18,6 @@ import 'package:analyzer/src/generated/source_io.dart';
 import 'package:cli_util/cli_util.dart' as cli;
 import 'package:path/path.dart' as p;
 
-import 'io.dart';
-
 Set<LibraryElement> getLibraries(
     AnalysisContext context, Iterable<String> filePaths) {
   return filePaths.fold(new Set<LibraryElement>(), (set, path) {
@@ -73,10 +71,9 @@ Iterable<LibraryElement> getLibraryElements(
     .map((path) => _getLibraryElement(path, context))
     .where((lib) => lib != null);
 
-/// [librarySearchPaths] is an optional list of relative paths to dart files
-/// and directories.
-Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
-    {List<String> librarySearchPaths}) async {
+/// [foundFiles] is the list of files to consider for the context.
+Future<AnalysisContext> getAnalysisContextForProjectPath(
+    String projectPath, List<String> foundFiles) async {
   // TODO: fail more clearly if this...fails
   var sdkPath = cli.getSdkDir().path;
 
@@ -96,9 +93,6 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(String projectPath,
 
   var context = AnalysisEngine.instance.createAnalysisContext()
     ..sourceFactory = new SourceFactory(resolvers);
-
-  var foundFiles =
-      await getDartFiles(projectPath, searchList: librarySearchPaths);
 
   // ensures all libraries defined by the set of files are resolved
   getLibraryElements(foundFiles, context).toList();

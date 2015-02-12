@@ -4,6 +4,7 @@ import 'package:analyzer/src/generated/engine.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
+import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 
 import 'test_utils.dart';
@@ -14,8 +15,11 @@ void main() {
 
     setUp(() async {
       if (ctx == null) {
-        ctx = await getAnalysisContextForProjectPath(getPackagePath(),
-            librarySearchPaths: ['test/test_files']);
+        var projectPath = getPackagePath();
+        var foundFiles = await getDartFiles(projectPath,
+            searchList: [p.join(getPackagePath(), 'test', 'test_files')]);
+
+        ctx = await getAnalysisContextForProjectPath(projectPath, foundFiles);
       }
     });
 

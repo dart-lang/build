@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
 
 import 'package:source_gen/json_serial/json_annotation.dart';
+import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 
 import 'test_files/annotations.dart' as defs;
@@ -101,8 +102,12 @@ void main() {
 Future<LibraryElement> _getTestLibElement() async {
   var testFilesRelativePath = p.join('test', 'test_files');
 
-  var context = await getAnalysisContextForProjectPath(getPackagePath(),
-      librarySearchPaths: [testFilesRelativePath]);
+  var projectPath = getPackagePath();
+
+  var foundFiles =
+      await getDartFiles(projectPath, searchList: [testFilesRelativePath]);
+
+  var context = await getAnalysisContextForProjectPath(projectPath, foundFiles);
 
   var annotatedClassesFilePath =
       p.join(getPackagePath(), testFilesRelativePath, 'annotated_classes.dart');

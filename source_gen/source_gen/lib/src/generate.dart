@@ -28,8 +28,10 @@ Future<String> generate(String projectPath, List<Generator> generators,
       .map((path) => p.join(projectPath, path))
       .where((path) => FileSystemEntity.isFileSync(path));
 
-  var context = await getAnalysisContextForProjectPath(projectPath,
-      librarySearchPaths: librarySearchPaths);
+  var foundFiles =
+      await getDartFiles(projectPath, searchList: librarySearchPaths);
+
+  var context = await getAnalysisContextForProjectPath(projectPath, foundFiles);
 
   var libs = getLibraries(context, fullPaths);
 

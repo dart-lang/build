@@ -7,11 +7,12 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:analyzer/src/string_source.dart';
+import 'package:path/path.dart' as p;
+import 'package:scheduled_test/scheduled_test.dart';
 
+import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 import 'package:source_gen/json_serial/json_generator.dart';
-
-import 'package:scheduled_test/scheduled_test.dart';
 
 import 'test_utils.dart';
 
@@ -79,7 +80,10 @@ Future<List<Element>> _getElementsForCodeString() async {
 Future<CompilationUnit> _getCompilationUnitForString(String projectPath) async {
   Source source = new StringSource(_testSource, 'test content');
 
-  var context = await getAnalysisContextForProjectPath(projectPath);
+  var foundFiles = await getDartFiles(projectPath,
+      searchList: [p.join(getPackagePath(), 'test', 'test_files')]);
+
+  var context = await getAnalysisContextForProjectPath(projectPath, foundFiles);
 
   LibraryElement libElement = context.computeLibraryElement(source);
   return context.resolveCompilationUnit(source, libElement);
