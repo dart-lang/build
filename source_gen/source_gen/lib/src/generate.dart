@@ -17,7 +17,7 @@ import 'utils.dart';
 ///
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
 Future<String> generate(String projectPath, List<Generator> generators,
-    List<String> changeFilePaths, {List<String> librarySearchPaths}) async {
+    {List<String> changeFilePaths, List<String> librarySearchPaths}) async {
   if (librarySearchPaths == null) {
     librarySearchPaths = const ['lib'];
   }

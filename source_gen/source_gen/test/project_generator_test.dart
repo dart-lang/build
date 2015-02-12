@@ -21,8 +21,8 @@ void main() {
     var projectPath = await _createPackageStub('pkg');
 
     var relativeFilePath = p.join('lib', 'test_lib.dart');
-    var output = await generate(
-        projectPath, [const _NoOpGenerator()], [relativeFilePath]);
+    var output = await generate(projectPath, [const _NoOpGenerator()],
+        changeFilePaths: [relativeFilePath]);
 
     expect(output, "Nothing to generate");
 
@@ -44,8 +44,8 @@ void main() {
     // run generate again: no change
     //
     var relativeFilePath = p.join('lib', 'test_lib.dart');
-    var output = await generate(
-        projectPath, [const _TestGenerator()], [relativeFilePath]);
+    var output = await generate(projectPath, [const _TestGenerator()],
+        changeFilePaths: [relativeFilePath]);
 
     expect(output, "No change: 'lib/test_lib.g.dart'");
 
@@ -65,8 +65,8 @@ void main() {
     await new File(p.join(projectPath, relativeFilePath))
         .writeAsString(_testLibContentNoClass);
 
-    output = await generate(
-        projectPath, [const _TestGenerator()], [relativeFilePath]);
+    output = await generate(projectPath, [const _TestGenerator()],
+        changeFilePaths: [relativeFilePath]);
 
     expect(output, "Updated: 'lib/test_lib.g.dart'");
 
@@ -87,8 +87,8 @@ void main() {
     await new File(p.join(projectPath, partRelativeFilePath))
         .writeAsString(_testLibPartContentNoClass);
 
-    output = await generate(
-        projectPath, [const _TestGenerator()], [partRelativeFilePath]);
+    output = await generate(projectPath, [const _TestGenerator()],
+        changeFilePaths: [partRelativeFilePath]);
 
     expect(output, "Deleted: 'lib/test_lib.g.dart'");
 
@@ -115,8 +115,8 @@ Future _simpleTest() async {
   var projectPath = await _createPackageStub('pkg');
 
   var relativeFilePath = p.join('lib', 'test_lib.dart');
-  var output =
-      await generate(projectPath, [const _TestGenerator()], [relativeFilePath]);
+  var output = await generate(projectPath, [const _TestGenerator()],
+      changeFilePaths: [relativeFilePath]);
 
   expect(output, "Created: 'lib/test_lib.g.dart'");
 

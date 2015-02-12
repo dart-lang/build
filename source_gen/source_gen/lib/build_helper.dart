@@ -38,8 +38,8 @@ Future<String> _buildForChanges(
     return "Skipping generated files.";
   }
 
-  return await generate(projPath, generators, changed,
-      librarySearchPaths: librarySearchPaths);
+  return await generate(projPath, generators,
+      changeFilePaths: changed, librarySearchPaths: librarySearchPaths);
 }
 
 String get projPath => p.dirname(p.fromUri(Platform.script));
