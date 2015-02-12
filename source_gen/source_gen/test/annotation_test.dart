@@ -39,7 +39,8 @@ void main() {
     });
 
     test('annotated with local typed field', () {
-      var annotatedClass = _getAnnotationForClass(libElement, 'WithLocalTypedField');
+      var annotatedClass =
+          _getAnnotationForClass(libElement, 'WithLocalTypedField');
       var annotation = annotatedClass.metadata.single;
       var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
       expect(matched, isTrue);
