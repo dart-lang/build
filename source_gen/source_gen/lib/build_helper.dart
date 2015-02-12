@@ -1,7 +1,6 @@
 library source_gen.build_helper;
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
@@ -10,11 +9,15 @@ import 'src/io.dart';
 import 'src/generate.dart';
 import 'src/generator.dart';
 
+/// If [projectPath] is not provided, the current working directory is used.
 Future<String> build(List<String> args, List<Generator> generators,
-    {List<String> librarySearchPaths}) async {
-  var parser = _getParser();
+    {List<String> librarySearchPaths, String projectPath}) async {
+  if (generators == null || generators.isEmpty) {
+    throw new ArgumentError.value(
+        generators, 'generators', 'Must provide at least one generator.');
+  }
 
-  var result = parser.parse(args);
+  var result = _getParser().parse(args);
 
   List<String> changed = null;
 
@@ -32,15 +35,17 @@ Future<String> build(List<String> args, List<Generator> generators,
     }
   }
 
-  return generate(projPath, generators,
+  if (projectPath == null) {
+    projectPath = p.current;
+  }
+
+  return generate(projectPath, generators,
       changeFilePaths: changed, librarySearchPaths: librarySearchPaths);
 }
 
-String get projPath => p.dirname(p.fromUri(Platform.script));
-
 ArgParser _getParser() => new ArgParser()
+  ..addFlag('clean', defaultsTo: false)
+  ..addFlag('full', defaultsTo: false)
   ..addFlag('machine', defaultsTo: false)
   ..addOption('changed', allowMultiple: true)
-  ..addFlag('full', defaultsTo: false)
-  ..addFlag('clean', defaultsTo: false)
   ..addOption('removed', allowMultiple: true);
