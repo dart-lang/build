@@ -1,4 +1,4 @@
-library source_gen.test.project_generator_test;
+library source_gen.test.generate_test;
 
 import 'dart:async';
 import 'dart:io';
