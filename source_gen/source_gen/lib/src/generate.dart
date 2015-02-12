@@ -35,7 +35,7 @@ Future<String> generate(String projectPath, List<String> changeFilePaths,
 
   if (libs.isEmpty) {
     return "No libraries found for provided paths:\n"
-        "${changeFilePaths.join(', ')}\n"
+        "${changeFilePaths.map((p) => "  $p").join(', ')}\n"
         "They may not be in the search path.";
   }
 
