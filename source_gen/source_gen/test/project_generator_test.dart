@@ -22,7 +22,7 @@ void main() {
 
     var relativeFilePath = p.join('lib', 'test_lib.dart');
     var output = await generate(
-        projectPath, [relativeFilePath], [const _NoOpGenerator()]);
+        projectPath, [const _NoOpGenerator()], [relativeFilePath]);
 
     expect(output, "Nothing to generate");
 
@@ -45,7 +45,7 @@ void main() {
     //
     var relativeFilePath = p.join('lib', 'test_lib.dart');
     var output = await generate(
-        projectPath, [relativeFilePath], [const _TestGenerator()]);
+        projectPath, [const _TestGenerator()], [relativeFilePath]);
 
     expect(output, "No change: 'lib/test_lib.g.dart'");
 
@@ -66,7 +66,7 @@ void main() {
         .writeAsString(_testLibContentNoClass);
 
     output = await generate(
-        projectPath, [relativeFilePath], [const _TestGenerator()]);
+        projectPath, [const _TestGenerator()], [relativeFilePath]);
 
     expect(output, "Updated: 'lib/test_lib.g.dart'");
 
@@ -88,7 +88,7 @@ void main() {
         .writeAsString(_testLibPartContentNoClass);
 
     output = await generate(
-        projectPath, [partRelativeFilePath], [const _TestGenerator()]);
+        projectPath, [const _TestGenerator()], [partRelativeFilePath]);
 
     expect(output, "Deleted: 'lib/test_lib.g.dart'");
 
@@ -109,14 +109,14 @@ Future _doSetup() async {
   d.defaultRoot = dir.path;
 }
 
-Future<String> _simpleTest() async {
+Future _simpleTest() async {
   await _doSetup();
 
   var projectPath = await _createPackageStub('pkg');
 
   var relativeFilePath = p.join('lib', 'test_lib.dart');
   var output =
-      await generate(projectPath, [relativeFilePath], [const _TestGenerator()]);
+      await generate(projectPath, [const _TestGenerator()], [relativeFilePath]);
 
   expect(output, "Created: 'lib/test_lib.g.dart'");
 
@@ -134,7 +134,7 @@ Future<String> _simpleTest() async {
 }
 
 /// Creates a package using [pkgName] an the current [d.defaultRoot].
-Future<String> _createPackageStub(String pkgName) async {
+Future _createPackageStub(String pkgName) async {
   await d
       .dir(pkgName, [
     d.dir('lib', [

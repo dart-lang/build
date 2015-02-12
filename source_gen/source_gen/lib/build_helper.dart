@@ -38,7 +38,7 @@ Future<String> _buildForChanges(
     return "Skipping generated files.";
   }
 
-  return await generate(projPath, changed, generators,
+  return await generate(projPath, generators, changed,
       librarySearchPaths: librarySearchPaths);
 }
 

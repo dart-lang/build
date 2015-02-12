@@ -16,8 +16,8 @@ import 'utils.dart';
 /// [changeFilePaths] must be relative to [projectPath].
 ///
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
-Future<String> generate(String projectPath, List<String> changeFilePaths,
-    List<Generator> generators, {List<String> librarySearchPaths}) async {
+Future<String> generate(String projectPath, List<Generator> generators,
+    List<String> changeFilePaths, {List<String> librarySearchPaths}) async {
   if (librarySearchPaths == null) {
     librarySearchPaths = const ['lib'];
   }
