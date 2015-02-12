@@ -13,7 +13,10 @@ import 'generator.dart';
 import 'io.dart';
 import 'utils.dart';
 
-/// [changeFilePaths] must be relative to [projectPath].
+/// Updates generated code for [projectPath] with the provided [generators].
+///
+/// [changeFilePaths] and [librarySearchPaths] must be relative to
+/// [projectPath].
 ///
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
 Future<String> generate(String projectPath, List<Generator> generators,

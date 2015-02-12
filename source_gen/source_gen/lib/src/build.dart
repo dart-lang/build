@@ -9,6 +9,9 @@ import 'io.dart';
 import 'generate.dart';
 import 'generator.dart';
 
+/// Designed to be called from a `build.dart` file in the root of your project
+/// to coordinate code generation with Dart tools.
+///
 /// If [projectPath] is not provided, the current working directory is used.
 Future<String> build(List<String> args, List<Generator> generators,
     {List<String> librarySearchPaths, String projectPath}) async {
