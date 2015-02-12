@@ -18,8 +18,22 @@ import 'utils.dart';
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
 Future<String> generate(String projectPath, List<Generator> generators,
     {List<String> changeFilePaths, List<String> librarySearchPaths}) async {
+  if (changeFilePaths == null || changeFilePaths.isEmpty) {
+    if (librarySearchPaths != null && librarySearchPaths.isEmpty) {
+      return "Can't hang, yo. You give me nothing!";
+    }
+  }
+
   if (librarySearchPaths == null) {
     librarySearchPaths = const ['lib'];
+  }
+
+  var foundFiles =
+      await getDartFiles(projectPath, searchList: librarySearchPaths);
+
+  if (changeFilePaths == null || changeFilePaths.isEmpty) {
+    changeFilePaths =
+        foundFiles.map((path) => p.relative(path, from: projectPath)).toList();
   }
 
   var fullPaths = changeFilePaths
@@ -27,9 +41,6 @@ Future<String> generate(String projectPath, List<Generator> generators,
       .where((path) => !isGeneratedFile(path))
       .map((path) => p.join(projectPath, path))
       .where((path) => FileSystemEntity.isFileSync(path));
-
-  var foundFiles =
-      await getDartFiles(projectPath, searchList: librarySearchPaths);
 
   var context = await getAnalysisContextForProjectPath(projectPath, foundFiles);
 

@@ -16,29 +16,23 @@ Future<String> build(List<String> args, List<Generator> generators,
 
   var result = parser.parse(args);
 
+  List<String> changed = null;
+
   if (result['machine']) {
-    return _buildForChanges(result['changed'], generators,
-        librarySearchPaths: librarySearchPaths);
+    changed = result['changed'];
+
+    if (changed.isEmpty) {
+      return "No files changed.";
+    }
+
+    changed = changed.where((path) => !isGeneratedFile(path)).toList();
+
+    if (changed.isEmpty) {
+      return "Skipping generated files.";
+    }
   }
 
-  exitCode = 1;
-  return "Only support machine builds at the moment.";
-}
-
-Future<String> _buildForChanges(
-    List<String> changed, List<Generator> generators,
-    {List<String> librarySearchPaths}) async {
-  if (changed.isEmpty) {
-    return "No files changed.";
-  }
-
-  changed = changed.where((path) => !isGeneratedFile(path)).toList();
-
-  if (changed.isEmpty) {
-    return "Skipping generated files.";
-  }
-
-  return await generate(projPath, generators,
+  return generate(projPath, generators,
       changeFilePaths: changed, librarySearchPaths: librarySearchPaths);
 }
 
