@@ -1,13 +1,13 @@
-library source_gen.build_helper;
+library source_gen.build;
 
 import 'dart:async';
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 
-import 'src/io.dart';
-import 'src/generate.dart';
-import 'src/generator.dart';
+import 'io.dart';
+import 'generate.dart';
+import 'generator.dart';
 
 /// If [projectPath] is not provided, the current working directory is used.
 Future<String> build(List<String> args, List<Generator> generators,

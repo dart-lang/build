@@ -55,14 +55,15 @@ Future<String> generate(String projectPath, List<Generator> generators,
   var messages = <String>[];
 
   await Future.forEach(libs, (elementLibrary) async {
-    var msg = await generateForLibrary(elementLibrary, projectPath, generators);
+    var msg =
+        await _generateForLibrary(elementLibrary, projectPath, generators);
     messages.add(msg);
   });
 
   return messages.join('\n');
 }
 
-Future<String> generateForLibrary(LibraryElement library, String projectPath,
+Future<String> _generateForLibrary(LibraryElement library, String projectPath,
     List<Generator> generators) async {
   var generatedOutputs = _generate(library, generators);
 
