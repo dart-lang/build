@@ -1,5 +1,6 @@
 library source_gen.build_helper;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -9,30 +10,39 @@ import 'src/io.dart';
 import 'src/generate.dart';
 import 'src/generator.dart';
 
-void build(List<String> args, List<Generator> generators,
-    {List<String> librarySearchPaths}) {
-  var projPath = p.dirname(p.fromUri(Platform.script));
-
+Future<String> build(List<String> args, List<Generator> generators,
+    {List<String> librarySearchPaths}) async {
   var parser = _getParser();
 
   var result = parser.parse(args);
 
-  var changed = result['changed'] as List<String>;
+  if (result['machine']) {
+    return _buildForChanges(result['changed'], generators,
+        librarySearchPaths: librarySearchPaths);
+  }
 
-  changed.removeWhere(isGeneratedFile);
+  exitCode = 1;
+  return "Only support machine builds at the moment.";
+}
+
+Future<String> _buildForChanges(
+    List<String> changed, List<Generator> generators,
+    {List<String> librarySearchPaths}) async {
+  if (changed.isEmpty) {
+    return "No files changed.";
+  }
+
+  changed = changed.where((path) => !isGeneratedFile(path)).toList();
 
   if (changed.isEmpty) {
-    print('nothing changed!');
-    return;
+    return "Skipping generated files.";
   }
 
-  if (changed.isNotEmpty) {
-    generate(projPath, changed, generators,
-        librarySearchPaths: librarySearchPaths).then((message) {
-      print(message);
-    });
-  }
+  return await generate(projPath, changed, generators,
+      librarySearchPaths: librarySearchPaths);
 }
+
+String get projPath => p.dirname(p.fromUri(Platform.script));
 
 ArgParser _getParser() => new ArgParser()
   ..addFlag('machine', defaultsTo: false)
