@@ -1,5 +1,6 @@
 library source_gen.json_serial.generator;
 
+import 'dart:async';
 import 'package:analyzer/src/generated/element.dart';
 
 import 'package:source_gen/src/generator.dart';
@@ -13,8 +14,8 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   const JsonGenerator();
 
   @override
-  String generateForAnnotatedElement(
-      Element element, JsonSerializable annotation) {
+  Future<String> generateForAnnotatedElement(
+      Element element, JsonSerializable annotation) async {
     if (element is! ClassElement) {
       var friendlyName = frieldlyNameForElement(element);
       throw new InvalidGenerationSourceError(

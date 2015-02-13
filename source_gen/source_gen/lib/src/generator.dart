@@ -1,5 +1,6 @@
 library source_gen;
 
+import 'dart:async';
 import 'dart:mirrors';
 
 import 'package:analyzer/src/generated/element.dart';
@@ -8,14 +9,14 @@ import 'utils.dart';
 abstract class Generator {
   const Generator();
 
-  String generate(Element element);
+  Future<String> generate(Element element);
 }
 
 abstract class GeneratorForAnnotation<T> extends Generator {
   const GeneratorForAnnotation();
 
   @override
-  String generate(Element element) {
+  Future<String> generate(Element element) {
     var matchingAnnotations =
         element.metadata.where((md) => matchAnnotation(T, md)).toList();
 
@@ -36,7 +37,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     return generateForAnnotatedElement(element, annotationInstance);
   }
 
-  String generateForAnnotatedElement(Element element, T annotation);
+  Future<String> generateForAnnotatedElement(Element element, T annotation);
 }
 
 class InvalidGenerationSourceError {

@@ -179,14 +179,14 @@ Future _createPackageStub(String pkgName) async {
 /// Doesn't generate output for any element
 class _NoOpGenerator extends Generator {
   const _NoOpGenerator();
-  String generate(Element element) => null;
+  Future<String> generate(Element element) => null;
 }
 
 /// Generates a single-line comment for each element
 class _TestGenerator extends Generator {
   const _TestGenerator();
 
-  String generate(Element element) {
+  Future<String> generate(Element element) async {
     if (element is ClassElement) {
       return '// Code for $element';
     }

@@ -25,21 +25,21 @@ void main() {
     test('const field', () async {
       var element = await _getClassForCodeString('theAnswer');
 
-      expect(() => _generator.generate(element), throws);
+      expect(_generator.generate(element), throws);
       // TODO: validate the properties on the thrown error
     });
 
     test('method', () async {
       var element = await _getClassForCodeString('annotatedMethod');
 
-      expect(() => _generator.generate(element), throws);
+      expect(_generator.generate(element), throws);
       // TODO: validate the properties on the thrown error
     });
   });
 
   test('class with final fields', () async {
     var element = await _getClassForCodeString('FinalFields');
-    expect(() => _generator.generate(element), throws);
+    expect(_generator.generate(element), throws);
   });
 
   test('unannotated classes no-op', () async {
@@ -52,7 +52,7 @@ void main() {
   group('valid inputs', () {
     test('class with no fields', () async {
       var element = await _getClassForCodeString('Person');
-      var output = _generator.generate(element);
+      var output = await _generator.generate(element);
 
       expect(output, isNotNull);
 

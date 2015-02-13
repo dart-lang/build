@@ -68,7 +68,7 @@ Future<String> generate(String projectPath, List<Generator> generators,
 
 Future<String> _generateForLibrary(LibraryElement library, String projectPath,
     List<Generator> generators) async {
-  var generatedOutputs = _generate(library, generators);
+  var generatedOutputs = await _generate(library, generators);
 
   var genFileName = _getGeterateFilePath(library, projectPath);
 
@@ -155,27 +155,29 @@ String _getHeader() => '''// GENERATED CODE - DO NOT MODIFY BY HAND
 
 ''';
 
-List<GeneratedOutput> _generate(
-    LibraryElement unit, List<Generator> generators) {
+// TODO(kevmoo) make this a Stream
+Future<List<GeneratedOutput>> _generate(
+    LibraryElement unit, List<Generator> generators) async {
   var code = <GeneratedOutput>[];
 
   for (var element in getElementsFromLibraryElement(unit)) {
-    var subCode = _processUnitMember(element, generators);
+    var subCode = await _processUnitMember(element, generators);
     code.addAll(subCode);
   }
 
   return code;
 }
 
-List<GeneratedOutput> _processUnitMember(
-    Element element, List<Generator> generators) {
+// TODO(kevmoo) make this a Stream
+Future<List<GeneratedOutput>> _processUnitMember(
+    Element element, List<Generator> generators) async {
   var outputs = <GeneratedOutput>[];
 
   for (var gen in generators) {
     String createdUnit;
 
     try {
-      createdUnit = gen.generate(element);
+      createdUnit = await gen.generate(element);
     } on InvalidGenerationSourceError catch (e) {
       createdUnit = '// ERROR: ${e.message}';
       if (e.todo != null) {
