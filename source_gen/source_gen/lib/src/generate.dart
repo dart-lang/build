@@ -68,7 +68,7 @@ Future<String> generate(String projectPath, List<Generator> generators,
 
 Future<String> _generateForLibrary(LibraryElement library, String projectPath,
     List<Generator> generators) async {
-  var generatedOutputs = await _generate(library, generators);
+  var generatedOutputs = await _generate(library, generators).toList();
 
   var genFileName = _getGeterateFilePath(library, projectPath);
 
@@ -155,25 +155,24 @@ String _getHeader() => '''// GENERATED CODE - DO NOT MODIFY BY HAND
 
 ''';
 
-// TODO(kevmoo) make this a Stream
-Future<List<GeneratedOutput>> _generate(
-    LibraryElement unit, List<Generator> generators) async {
-  var code = <GeneratedOutput>[];
+// TODO(kevmoo) using async* when we can
+Stream<GeneratedOutput> _generate(
+    LibraryElement unit, List<Generator> generators) {
+  var controller = new StreamController<GeneratedOutput>();
 
-  for (var element in getElementsFromLibraryElement(unit)) {
-    var subCode = await _processUnitMember(element, generators);
-    code.addAll(subCode);
-  }
+  Future.forEach(getElementsFromLibraryElement(unit), (element) async {
+    return controller.addStream(_processUnitMember(element, generators));
+  }).whenComplete(() => controller.close());
 
-  return code;
+  return controller.stream;
 }
 
-// TODO(kevmoo) make this a Stream
-Future<List<GeneratedOutput>> _processUnitMember(
-    Element element, List<Generator> generators) async {
-  var outputs = <GeneratedOutput>[];
+// TODO(kevmoo) use async* when we can
+Stream<GeneratedOutput> _processUnitMember(
+    Element element, List<Generator> generators) {
+  var controller = new StreamController<GeneratedOutput>();
 
-  for (var gen in generators) {
+  Future.forEach(generators, (gen) async {
     String createdUnit;
 
     try {
@@ -185,12 +184,13 @@ Future<List<GeneratedOutput>> _processUnitMember(
 // TODO: ${e.todo}''';
       }
     }
-    if (createdUnit != null) {
-      outputs.add(new GeneratedOutput(element, gen, createdUnit));
-    }
-  }
 
-  return outputs;
+    if (createdUnit != null) {
+      controller.add(new GeneratedOutput(element, gen, createdUnit));
+    }
+  }).whenComplete(() => controller.close());
+
+  return controller.stream;
 }
 
 final _headerLine = '// '.padRight(77, '*');
