@@ -4,7 +4,8 @@ import 'dart:async';
 import 'dart:mirrors';
 
 import 'package:analyzer/src/generated/element.dart';
-import 'utils.dart';
+
+import 'annotation.dart';
 
 abstract class Generator {
   const Generator();

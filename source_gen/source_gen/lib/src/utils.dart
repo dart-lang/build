@@ -1,8 +1,6 @@
 library source_gen.utils;
 
 import 'dart:async';
-import 'dart:io';
-import 'dart:mirrors';
 
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/file_system/file_system.dart' hide File;
@@ -29,40 +27,6 @@ Set<LibraryElement> getLibraries(
 
     return set;
   });
-}
-
-bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
-  var classMirror = reflectClass(annotationType);
-  var classMirrorSymbol = classMirror.simpleName;
-
-  var annotationValueType = annotation.evaluationResult.value.type;
-
-  var annTypeName = annotationValueType.name;
-  var annotationTypeSymbol = new Symbol(annTypeName);
-
-  if (classMirrorSymbol != annotationTypeSymbol) {
-    return false;
-  }
-
-  var annotationSource = annotationValueType.element.source as FileBasedSource;
-
-  var libOwner = classMirror.owner as LibraryMirror;
-
-  Uri libraryUri;
-
-  switch (libOwner.uri.scheme) {
-    case 'file':
-      libraryUri = libOwner.uri;
-      break;
-    case 'package':
-      libraryUri = _fileUriFromPackageUri(libOwner.uri);
-      break;
-    default:
-      throw new UnimplementedError(
-          'We do not support scheme ${libOwner.uri.scheme}.');
-  }
-
-  return annotationSource.uri == libraryUri;
 }
 
 /// [dartFiles] is a [Stream] of paths to [.dart] files.
@@ -185,33 +149,6 @@ String findPartOf(String source) {
   } on AnalyzerErrorGroup catch (e) {
     return null;
   }
-}
-
-Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
-  assert(libraryPackageUri.scheme == 'package');
-  var packageDir = _getPackageRoot();
-
-  var fullLibraryPath = p.join(packageDir, libraryPackageUri.path);
-
-  var file = new File(fullLibraryPath);
-
-  assert(file.existsSync());
-
-  var normalPath = file.resolveSymbolicLinksSync();
-
-  return new Uri.file(normalPath);
-}
-
-String _getPackageRoot() {
-  var dir = Platform.packageRoot;
-
-  if (dir.isEmpty) {
-    dir = p.join(p.current, 'packages');
-  }
-
-  assert(FileSystemEntity.isDirectorySync(dir));
-
-  return dir;
 }
 
 // may return `null` if [path] doesn't refer to a library.
