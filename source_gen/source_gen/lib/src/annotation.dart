@@ -7,6 +7,31 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
 
+dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
+  var value = annotation.evaluationResult.value;
+
+  ParameterizedType type = value.type;
+
+  var system = currentMirrorSystem();
+
+  // find library
+  var libElement = type.element.library;
+  var libNameSymbol = new Symbol(libElement.name);
+  var libMirror = system.findLibrary(libNameSymbol);
+
+  // find class symbol
+  var typeNameSymbol = new Symbol(type.name);
+  var valueDeclaration = libMirror.declarations[typeNameSymbol];
+
+  InstanceMirror mirror;
+  if (valueDeclaration is ClassMirror) {
+    mirror = valueDeclaration.newInstance(const Symbol(''), const []);
+  } else {
+    throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
+  }
+  return mirror.reflectee;
+}
+
 bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
   var classMirror = reflectClass(annotationType);
   var classMirrorSymbol = classMirror.simpleName;

@@ -16,6 +16,8 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   @override
   Future<String> generateForAnnotatedElement(
       Element element, JsonSerializable annotation) async {
+    assert(annotation != null);
+
     if (element is! ClassElement) {
       var friendlyName = frieldlyNameForElement(element);
       throw new InvalidGenerationSourceError(

@@ -1,7 +1,6 @@
 library source_gen.generator_for_annotation;
 
 import 'dart:async';
-import 'dart:mirrors';
 
 import 'package:analyzer/src/generated/element.dart';
 
@@ -22,13 +21,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
       throw 'cannot have more than one matching annotation';
     }
 
-    // now we need to create the instance!
-    var classMirror = reflectClass(T);
-
-    // TODO: actually construct the annotation from analyzer arguments
-    // var matchingAnnotation = matchingAnnotations.single;
-    var annotationInstance =
-        classMirror.newInstance(const Symbol(''), []).reflectee as T;
+    var annotationInstance = instantiateAnnotation(matchingAnnotations.single) as T;
 
     return generateForAnnotatedElement(element, annotationInstance);
   }
