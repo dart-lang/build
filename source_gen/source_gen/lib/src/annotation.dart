@@ -8,10 +8,44 @@ import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
 
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
-  var value = annotation.evaluationResult.value;
+  var element = annotation.element;
 
-  ParameterizedType type = value.type;
+  if (element is ConstructorElementImpl) {
+    return _createFromConstructor(element);
+  }
 
+  var valueDeclaration =
+      _getDeclMirrorFromType(annotation.evaluationResult.value.type);
+
+  // try with the instance magic
+  InstanceMirror mirror;
+  if (valueDeclaration is ClassMirror) {
+    mirror = valueDeclaration.newInstance(const Symbol(''), const []);
+  } else {
+    throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
+  }
+  return mirror.reflectee;
+}
+
+dynamic _createFromConstructor(ConstructorElementImpl ctor) {
+  var declMirror =
+      _getDeclMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
+
+  var ctorDecl = ctor.node;
+
+  Symbol ctorName;
+  if (ctorDecl.name == null) {
+    ctorName = const Symbol('');
+  } else {
+    ctorName = new Symbol(ctorDecl.name.name);
+  }
+
+  // figure out which ctor was used!
+  var instanceMirror = declMirror.newInstance(ctorName, const []);
+  return instanceMirror.reflectee;
+}
+
+DeclarationMirror _getDeclMirrorFromType(InterfaceType type) {
   var system = currentMirrorSystem();
 
   // find library
@@ -21,15 +55,7 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
 
   // find class symbol
   var typeNameSymbol = new Symbol(type.name);
-  var valueDeclaration = libMirror.declarations[typeNameSymbol];
-
-  InstanceMirror mirror;
-  if (valueDeclaration is ClassMirror) {
-    mirror = valueDeclaration.newInstance(const Symbol(''), const []);
-  } else {
-    throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
-  }
-  return mirror.reflectee;
+  return libMirror.declarations[typeNameSymbol];
 }
 
 bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {

@@ -21,7 +21,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
       throw 'cannot have more than one matching annotation';
     }
 
-    var annotationInstance = instantiateAnnotation(matchingAnnotations.single) as T;
+    var annotationInstance =
+        instantiateAnnotation(matchingAnnotations.single) as T;
 
     return generateForAnnotatedElement(element, annotationInstance);
   }

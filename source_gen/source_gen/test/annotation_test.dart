@@ -24,78 +24,138 @@ void main() {
     }
   });
 
-  group('with field annotations', () {
-    test('annotated with typed field', () {
-      var annotatedClass = _getAnnotationForClass(libElement, 'WithTypedField');
-      var annotation = annotatedClass.metadata.single;
-      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
-      expect(matched, isTrue);
+  group('create', () {
+    group('with field annotations', () {
+      test('annotated with typed field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithTypedField');
+        var annotation = annotatedClass.metadata.single;
+        var instance = instantiateAnnotation(annotation);
+        expect(instance is defs.PublicAnnotationClass, isTrue);
+        expect(instance.anInt, 0);
+      });
+
+      test('annotated with untyped field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithUntypedField');
+        var annotation = annotatedClass.metadata.single;
+        var instance = instantiateAnnotation(annotation);
+        expect(instance is defs.PublicAnnotationClass, isTrue);
+        expect(instance.anInt, 0);
+      });
+
+      test('annotated with local typed field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithLocalTypedField');
+        var annotation = annotatedClass.metadata.single;
+        var instance = instantiateAnnotation(annotation);
+        expect(instance is defs.PublicAnnotationClass, isTrue);
+        expect(instance.anInt, 0);
+      });
+
+      test('annotated with local untyped field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithLocalUntypedField');
+        var annotation = annotatedClass.metadata.single;
+        var instance = instantiateAnnotation(annotation);
+        expect(instance is defs.PublicAnnotationClass, isTrue);
+        expect(instance.anInt, 0);
+      });
     });
 
-    test('annotated with untyped field', () {
-      var annotatedClass =
-          _getAnnotationForClass(libElement, 'WithUntypedField');
-      var annotation = annotatedClass.metadata.single;
-      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
-      expect(matched, isTrue);
-    });
-
-    test('annotated with local typed field', () {
-      var annotatedClass =
-          _getAnnotationForClass(libElement, 'WithLocalTypedField');
-      var annotation = annotatedClass.metadata.single;
-      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
-      expect(matched, isTrue);
-    });
-
-    test('annotated with local untyped field', () {
-      var annotatedClass =
-          _getAnnotationForClass(libElement, 'WithLocalUntypedField');
-      var annotation = annotatedClass.metadata.single;
-      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
-      expect(matched, isTrue);
-    });
-  });
-
-  group('with class annotations', () {
     test('annotated with class', () {
       var annotatedClass = _getAnnotationForClass(libElement, 'CtorNoParams');
       var annotation = annotatedClass.metadata.single;
-      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
-      expect(matched, isTrue);
+      var instance = instantiateAnnotation(annotation);
+      expect(instance is defs.PublicAnnotationClass, isTrue);
+      expect(instance.anInt, 0);
     });
 
-    test('annotated with class in a part', () {
-      ClassElement annotatedClass =
-          _getAnnotationForClass(libElement, 'CtorNoParamsInPart');
+    test('annotated with class using a non-default ctor', () {
+      var annotatedClass =
+          _getAnnotationForClass(libElement, 'NonDefaultCtorNoParams');
       var annotation = annotatedClass.metadata.single;
-      var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
-      expect(matched, isTrue);
+      var instance = instantiateAnnotation(annotation);
+      expect(instance is defs.PublicAnnotationClass, isTrue);
+      expect(instance.anInt, 1);
+    });
+  });
+
+  group('matchAnnotation', () {
+    group('with field annotations', () {
+      test('annotated with typed field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithTypedField');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+        expect(matched, isTrue);
+      });
+
+      test('annotated with untyped field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithUntypedField');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+        expect(matched, isTrue);
+      });
+
+      test('annotated with local typed field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithLocalTypedField');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+        expect(matched, isTrue);
+      });
+
+      test('annotated with local untyped field', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'WithLocalUntypedField');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+        expect(matched, isTrue);
+      });
     });
 
-    test('class in a part annotated with class', () {
-      var annotatedClass = _getAnnotationForClass(libElement, 'CtorNoParams');
-      var annotation = annotatedClass.metadata.single;
-      var matched =
-          matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
-      expect(matched, isFalse, reason: 'not annotated with that type');
-    });
+    group('with class annotations', () {
+      test('annotated with class', () {
+        var annotatedClass = _getAnnotationForClass(libElement, 'CtorNoParams');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+        expect(matched, isTrue);
+      });
 
-    test('class in a part annotated with class in a part', () {
-      ClassElement annotatedClass =
-          _getAnnotationForClass(libElement, 'CtorNoParamsInPart');
-      var annotation = annotatedClass.metadata.single;
-      var matched =
-          matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
-      expect(matched, isFalse);
-    });
+      test('annotated with class in a part', () {
+        ClassElement annotatedClass =
+            _getAnnotationForClass(libElement, 'CtorNoParamsInPart');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+        expect(matched, isTrue);
+      });
 
-    test('class annotated with type defined via package uri', () {
-      ClassElement annotatedClass =
-          _getAnnotationForClass(libElement, 'AnnotatedWithJson');
-      var annotation = annotatedClass.metadata.single;
-      var matched = matchAnnotation(JsonSerializable, annotation);
-      expect(matched, isTrue);
+      test('class in a part annotated with class', () {
+        var annotatedClass = _getAnnotationForClass(libElement, 'CtorNoParams');
+        var annotation = annotatedClass.metadata.single;
+        var matched =
+            matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
+        expect(matched, isFalse, reason: 'not annotated with that type');
+      });
+
+      test('class in a part annotated with class in a part', () {
+        ClassElement annotatedClass =
+            _getAnnotationForClass(libElement, 'CtorNoParamsInPart');
+        var annotation = annotatedClass.metadata.single;
+        var matched =
+            matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
+        expect(matched, isFalse);
+      });
+
+      test('class annotated with type defined via package uri', () {
+        ClassElement annotatedClass =
+            _getAnnotationForClass(libElement, 'AnnotatedWithJson');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(JsonSerializable, annotation);
+        expect(matched, isTrue);
+      });
     });
   });
 }

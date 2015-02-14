@@ -13,6 +13,9 @@ const PublicAnnotationClass localTypedAnnotation =
 @PublicAnnotationClass()
 class CtorNoParams {}
 
+@PublicAnnotationClass.withAnIntAsOne()
+class NonDefaultCtorNoParams {}
+
 @JsonSerializable()
 class AnnotatedWithJson {}
 

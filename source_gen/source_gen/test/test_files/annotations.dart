@@ -17,4 +17,10 @@ class PublicAnnotationClass {
         aString = 'str',
         aListOfInt = const [1, 2, 3],
         aBool = false;
+
+  const PublicAnnotationClass.withAnIntAsOne()
+      : anInt = 1,
+        aString = 'str',
+        aListOfInt = const [1, 2, 3],
+        aBool = false;
 }
