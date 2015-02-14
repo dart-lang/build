@@ -1,6 +1,7 @@
 ##0.1.0
-
 * **BREAKING** `Generator.generate` is now async – returns `Future<String>`
+
+* Big update to `README.md`.
 
 ##0.0.1
 

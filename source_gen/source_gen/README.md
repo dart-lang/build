@@ -3,7 +3,7 @@
 [![Coverage Status](https://coveralls.io/repos/kevmoo/source_gen.dart/badge.svg)](https://coveralls.io/r/kevmoo/source_gen.dart)
 [![Stories in Ready](https://badge.waffle.io/kevmoo/source_gen.dart.png?label=ready&title=Ready)](https://waffle.io/kevmoo/source_gen.dart)
 
-Easily generate boiler-plate source code for your Dart libraries.
+*Automatically generate source code for your Dart libraries.*
 
 `source_gen` provides:
 * A **tool** for generating code that is part of your Dart project.
