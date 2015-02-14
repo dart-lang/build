@@ -12,24 +12,6 @@ Easily generate boiler-plate source code for your Dart libraries.
 * A **convention** for human and tool generated Dart code to coexist with clean
   seperation.
 
-## source_gen vs Dart Transformers
-[Transformers][] are often used create and modify code and assets as part
-of a Dart project.
-
-Transformers allow modification of existing code and encapsulates changes by
-having developers use `pub` commands – `run`, `serve`, and `build`.
-
-`source_gen` provides a different model. Code is generated and updated
-as part of a project. It is designed to create *part* files that agument
-developer maintained Dart libraries.
-
-Generated code **MAY** be checked in as part of our project source,
-although the decision may vary depending on project needs.
-
-Generated code **SHOULD** be included when publishing a project as a *pub
-package*. The fact that `source_gen` is used in a package is an *implementation
-detail*.
-
 ## Example
 
 Given a library `person.dart`:
@@ -98,7 +80,25 @@ You can invoke this script directly. It also understands the
 
 See [build.dart][] in the repository for an example.
 
-[Transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
+## source_gen vs Dart Transformers
+[Dart Transformers][] are often used create and modify code and assets as part
+of a Dart project.
+
+Transformers allow modification of existing code and encapsulates changes by
+having developers use `pub` commands – `run`, `serve`, and `build`.
+
+`source_gen` provides a different model. Code is generated and updated
+as part of a project. It is designed to create *part* files that agument
+developer maintained Dart libraries.
+
+Generated code **MAY** be checked in as part of our project source,
+although the decision may vary depending on project needs.
+
+Generated code **SHOULD** be included when publishing a project as a *pub
+package*. The fact that `source_gen` is used in a package is an *implementation
+detail*.
+
+[Dart Transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
 [example code]: https://github.com/kevmoo/source_gen.dart/tree/master/example
 [Trivial example]: https://github.com/kevmoo/source_gen.dart/blob/master/test/src/class_comment_generator.dart
 [JsonGenerator]: https://github.com/kevmoo/source_gen.dart/blob/master/lib/json_serial/json_generator.dart
