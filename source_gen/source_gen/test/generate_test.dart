@@ -7,8 +7,7 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
 import 'package:scheduled_test/descriptor.dart' as d;
 import 'package:scheduled_test/scheduled_test.dart';
-import 'package:source_gen/src/generate.dart';
-import 'package:source_gen/src/generator.dart';
+import 'package:source_gen/source_gen.dart';
 
 import 'test_utils.dart';
 

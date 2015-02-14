@@ -3,7 +3,7 @@ library source_gen.json_serial.generator;
 import 'dart:async';
 import 'package:analyzer/src/generated/element.dart';
 
-import 'package:source_gen/src/generator.dart';
+import 'package:source_gen/source_gen.dart';
 import 'package:source_gen/src/utils.dart';
 
 import 'json_annotation.dart';
