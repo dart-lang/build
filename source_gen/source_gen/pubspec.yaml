@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.1.0-dev
+version: 0.1.0
 author: Kevin Moore <kevmoo@google.com>
 description: A source generation tool for Dart
 homepage: https://github.com/kevmoo/source_gen.dart
