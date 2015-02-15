@@ -3,6 +3,8 @@ library source_gen.annotation;
 import 'dart:io';
 import 'dart:mirrors';
 
+import 'package:analyzer/src/generated/ast.dart';
+import 'package:analyzer/src/generated/constant.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
@@ -11,7 +13,7 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var element = annotation.element;
 
   if (element is ConstructorElementImpl) {
-    return _createFromConstructor(element);
+    return _createFromConstructor(element, annotation.evaluationResult.value);
   }
 
   var valueDeclaration =
@@ -27,11 +29,30 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   return mirror.reflectee;
 }
 
-dynamic _createFromConstructor(ConstructorElementImpl ctor) {
-  var declMirror =
-      _getDeclMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
-
+dynamic _createFromConstructor(
+    ConstructorElementImpl ctor, DartObjectImpl obj) {
   var ctorDecl = ctor.node;
+
+  var positionalArgs = [];
+  for (var p in ctorDecl.parameters.parameterElements) {
+    var paramName = p.name;
+
+    // Trying to find the relationship between the ctor argument name and the
+    // field assigned in the object. Then we can take the field value and
+    // set it as the argument value
+    var initializer = ctor.constantInitializers.singleWhere((ci) {
+      if (ci.expression is SimpleIdentifier) {
+        return ci.expression.name == paramName;
+      }
+      return false;
+    }) as ConstructorFieldInitializer;
+
+    // get the field value now
+    var fieldName = initializer.fieldName.name;
+    var fieldValue = obj.fields[fieldName];
+
+    positionalArgs.add(fieldValue.value);
+  }
 
   Symbol ctorName;
   if (ctorDecl.name == null) {
@@ -40,8 +61,11 @@ dynamic _createFromConstructor(ConstructorElementImpl ctor) {
     ctorName = new Symbol(ctorDecl.name.name);
   }
 
+  var declMirror =
+      _getDeclMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
+
   // figure out which ctor was used!
-  var instanceMirror = declMirror.newInstance(ctorName, const []);
+  var instanceMirror = declMirror.newInstance(ctorName, positionalArgs);
   return instanceMirror.reflectee;
 }
 

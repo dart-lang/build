@@ -23,4 +23,10 @@ class PublicAnnotationClass {
         aString = 'str',
         aListOfInt = const [1, 2, 3],
         aBool = false;
+
+  const PublicAnnotationClass.withPositionalArgs(int intVal)
+      : anInt = intVal,
+        aString = 'str',
+        aListOfInt = const [1, 2, 3],
+        aBool = false;
 }

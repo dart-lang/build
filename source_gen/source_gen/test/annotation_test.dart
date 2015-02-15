@@ -79,6 +79,15 @@ void main() {
       expect(instance is defs.PublicAnnotationClass, isTrue);
       expect(instance.anInt, 1);
     });
+
+    test('using a non-default ctor with potional args', () {
+      var annotatedClass = _getAnnotationForClass(
+          libElement, 'NonDefaultCtorWithPositionalParams');
+      var annotation = annotatedClass.metadata.single;
+      var instance = instantiateAnnotation(annotation);
+      expect(instance is defs.PublicAnnotationClass, isTrue);
+      expect(instance.anInt, 42);
+    });
   });
 
   group('matchAnnotation', () {
