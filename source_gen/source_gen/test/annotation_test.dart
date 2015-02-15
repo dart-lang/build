@@ -84,9 +84,10 @@ void main() {
       var annotatedClass = _getAnnotationForClass(
           libElement, 'NonDefaultCtorWithPositionalParams');
       var annotation = annotatedClass.metadata.single;
-      var instance = instantiateAnnotation(annotation);
-      expect(instance is defs.PublicAnnotationClass, isTrue);
+      var instance =
+          instantiateAnnotation(annotation) as defs.PublicAnnotationClass;
       expect(instance.anInt, 42);
+      expect(instance.aString, 'custom value');
     });
   });
 

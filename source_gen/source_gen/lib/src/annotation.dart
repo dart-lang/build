@@ -36,21 +36,27 @@ dynamic _createFromConstructor(
   var positionalArgs = [];
   for (var p in ctorDecl.parameters.parameterElements) {
     var paramName = p.name;
+    String fieldName;
+    if (p is FieldFormalParameterElementImpl) {
+      fieldName = p.name;
+    } else {
 
-    // Trying to find the relationship between the ctor argument name and the
-    // field assigned in the object. Then we can take the field value and
-    // set it as the argument value
-    var initializer = ctor.constantInitializers.singleWhere((ci) {
-      if (ci.expression is SimpleIdentifier) {
-        return ci.expression.name == paramName;
-      }
-      return false;
-    }) as ConstructorFieldInitializer;
+      // Trying to find the relationship between the ctor argument name and the
+      // field assigned in the object. Then we can take the field value and
+      // set it as the argument value
+      var initializer = ctor.constantInitializers.singleWhere((ci) {
+        if (ci.expression is SimpleIdentifier) {
+          return ci.expression.name == paramName;
+        }
 
-    // get the field value now
-    var fieldName = initializer.fieldName.name;
+        return false;
+      }) as ConstructorFieldInitializer;
+
+      // get the field value now
+      fieldName = initializer.fieldName.name;
+    }
+
     var fieldValue = obj.fields[fieldName];
-
     positionalArgs.add(fieldValue.value);
   }
 

@@ -16,7 +16,7 @@ class CtorNoParams {}
 @PublicAnnotationClass.withAnIntAsOne()
 class NonDefaultCtorNoParams {}
 
-@PublicAnnotationClass.withPositionalArgs(42)
+@PublicAnnotationClass.withPositionalArgs(42, 'custom value')
 class NonDefaultCtorWithPositionalParams {}
 
 @JsonSerializable()
