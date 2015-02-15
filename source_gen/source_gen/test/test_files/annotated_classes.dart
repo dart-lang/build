@@ -19,8 +19,15 @@ class NonDefaultCtorNoParams {}
 @PublicAnnotationClass.withPositionalArgs(42, 'custom value')
 class NonDefaultCtorWithPositionalParams {}
 
-@PublicAnnotationClass.withPositionalArgs(43, 'another value', boolArg: true)
+@PublicAnnotationClass.withPositionalArgs(43, 'another value',
+    boolArg: true, listArg: const [5, 6, 7])
 class NonDefaultCtorWithPositionalAndNamedParams {}
+
+@PublicAnnotationClass.withKids()
+class WithNestedObjects {}
+
+@objectAnnotation
+class WithSymbol {}
 
 @JsonSerializable()
 class AnnotatedWithJson {}
@@ -36,3 +43,6 @@ class WithTypedField {}
 
 @untypedAnnotation
 class WithUntypedField {}
+
+@untypedAnnotationWithNonDefaultCtor
+class WithAFieldFromNonDefaultCtor {}

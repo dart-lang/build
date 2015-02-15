@@ -91,6 +91,7 @@ void main() {
       expect(instance.anInt, 42);
       expect(instance.aString, 'custom value');
       expect(instance.aBool, isFalse);
+      expect(instance.aList, [2, 3, 4]);
     });
 
     test('using a non-default ctor with potional and named args', () {
@@ -102,6 +103,39 @@ void main() {
       expect(instance.anInt, 43);
       expect(instance.aString, 'another value');
       expect(instance.aBool, isTrue);
+      expect(instance.aList, [5, 6, 7]);
+      expect(instance.child1, isNull);
+      expect(instance.child2, isNull);
+    });
+
+    test('with nested objects', () {
+      var annotatedClass =
+          _getAnnotationForClass(libElement, 'WithNestedObjects');
+      var annotation = annotatedClass.metadata.single;
+      var instance =
+          instantiateAnnotation(annotation) as defs.PublicAnnotationClass;
+      expect(instance.child1, const defs.PublicAnnotationClass());
+      expect(
+          instance.child2, const defs.PublicAnnotationClass.withAnIntAsOne());
+    });
+
+    test('with built-in Symbol', () {
+      var annotatedClass = _getAnnotationForClass(libElement, 'WithSymbol');
+      var annotation = annotatedClass.metadata.single;
+      var instance = instantiateAnnotation(annotation);
+      expect(instance, defs.objectAnnotation);
+    });
+
+    test('with a field using non-default ctor', () {
+      var annotatedClass =
+          _getAnnotationForClass(libElement, 'WithAFieldFromNonDefaultCtor');
+      var annotation = annotatedClass.metadata.single;
+      var instance =
+          instantiateAnnotation(annotation) as defs.PublicAnnotationClass;
+      expect(instance.anInt, defs.untypedAnnotationWithNonDefaultCtor.anInt);
+      expect(
+          instance.aString, defs.untypedAnnotationWithNonDefaultCtor.aString);
+      expect(instance.aBool, defs.untypedAnnotationWithNonDefaultCtor.aBool);
     });
   });
 

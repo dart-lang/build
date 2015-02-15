@@ -11,23 +11,27 @@ import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:path/path.dart' as p;
 
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
+  var annotationObjectImpl = annotation.evaluationResult.value;
+  if (annotationObjectImpl.hasExactValue) {
+    return annotationObjectImpl.value;
+  }
+
   var element = annotation.element;
 
+  if (element is PropertyAccessorElementImpl) {
+    var initializer =
+        element.variable.node.initializer as InstanceCreationExpression;
+    element = initializer.staticElement;
+  }
+
   if (element is ConstructorElementImpl) {
-    return _createFromConstructor(element, annotation.evaluationResult.value);
+    return _createFromConstructor(element, annotationObjectImpl);
   }
 
   var valueDeclaration =
       _getDeclMirrorFromType(annotation.evaluationResult.value.type);
 
-  // try with the instance magic
-  InstanceMirror mirror;
-  if (valueDeclaration is ClassMirror) {
-    mirror = valueDeclaration.newInstance(const Symbol(''), const []);
-  } else {
-    throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
-  }
-  return mirror.reflectee;
+  throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
 }
 
 dynamic _createFromConstructor(
@@ -47,22 +51,28 @@ dynamic _createFromConstructor(
       // field assigned in the object. Then we can take the field value and
       // set it as the argument value
       var initializer = ctor.constantInitializers.singleWhere((ci) {
-        if (ci.expression is SimpleIdentifier) {
-          return ci.expression.name == paramName;
+        var expression = ci.expression;
+        if (expression is SimpleIdentifier) {
+          return expression.name == paramName;
         }
 
-        return false;
+        if (expression is NullLiteral) {
+          return false;
+        }
+
+        throw "${ctor.enclosingElement.type} is too complex. "
+            "We don't support initializers of type '${expression.runtimeType}'.";
       }) as ConstructorFieldInitializer;
 
       // get the field value now
       fieldName = initializer.fieldName.name;
     }
 
-    var fieldValue = obj.fields[fieldName];
+    var fieldObjectImpl = obj.fields[fieldName];
     if (p.parameterKind == ParameterKind.NAMED) {
-      namedArgs[new Symbol(p.name)] = fieldValue.value;
+      namedArgs[new Symbol(p.name)] = fieldObjectImpl.value;
     } else {
-      positionalArgs.add(fieldValue.value);
+      positionalArgs.add(fieldObjectImpl.value);
     }
   }
 
