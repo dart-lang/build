@@ -19,6 +19,9 @@ class NonDefaultCtorNoParams {}
 @PublicAnnotationClass.withPositionalArgs(42, 'custom value')
 class NonDefaultCtorWithPositionalParams {}
 
+@PublicAnnotationClass.withPositionalArgs(43, 'another value', boolArg: true)
+class NonDefaultCtorWithPositionalAndNamedParams {}
+
 @JsonSerializable()
 class AnnotatedWithJson {}
 

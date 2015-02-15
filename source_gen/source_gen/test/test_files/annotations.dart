@@ -24,8 +24,9 @@ class PublicAnnotationClass {
         aListOfInt = const [1, 2, 3],
         aBool = false;
 
-  const PublicAnnotationClass.withPositionalArgs(int intVal, this.aString)
-      : anInt = intVal,
+  const PublicAnnotationClass.withPositionalArgs(int intArg, this.aString,
+      {bool boolArg: false})
+      : anInt = intArg,
         aListOfInt = const [1, 2, 3],
-        aBool = false;
+        aBool = boolArg;
 }

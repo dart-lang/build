@@ -7,6 +7,7 @@ import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/constant.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source_io.dart';
+import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:path/path.dart' as p;
 
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
@@ -34,6 +35,7 @@ dynamic _createFromConstructor(
   var ctorDecl = ctor.node;
 
   var positionalArgs = [];
+  var namedArgs = <Symbol, dynamic>{};
   for (var p in ctorDecl.parameters.parameterElements) {
     var paramName = p.name;
     String fieldName;
@@ -57,7 +59,11 @@ dynamic _createFromConstructor(
     }
 
     var fieldValue = obj.fields[fieldName];
-    positionalArgs.add(fieldValue.value);
+    if (p.parameterKind == ParameterKind.NAMED) {
+      namedArgs[new Symbol(p.name)] = fieldValue.value;
+    } else {
+      positionalArgs.add(fieldValue.value);
+    }
   }
 
   Symbol ctorName;
@@ -71,7 +77,8 @@ dynamic _createFromConstructor(
       _getDeclMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
 
   // figure out which ctor was used!
-  var instanceMirror = declMirror.newInstance(ctorName, positionalArgs);
+  var instanceMirror =
+      declMirror.newInstance(ctorName, positionalArgs, namedArgs);
   return instanceMirror.reflectee;
 }
 

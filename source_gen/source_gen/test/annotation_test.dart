@@ -69,6 +69,7 @@ void main() {
       var instance = instantiateAnnotation(annotation);
       expect(instance is defs.PublicAnnotationClass, isTrue);
       expect(instance.anInt, 0);
+      expect(instance.aBool, isFalse);
     });
 
     test('annotated with class using a non-default ctor', () {
@@ -78,6 +79,7 @@ void main() {
       var instance = instantiateAnnotation(annotation);
       expect(instance is defs.PublicAnnotationClass, isTrue);
       expect(instance.anInt, 1);
+      expect(instance.aBool, isFalse);
     });
 
     test('using a non-default ctor with potional args', () {
@@ -88,6 +90,18 @@ void main() {
           instantiateAnnotation(annotation) as defs.PublicAnnotationClass;
       expect(instance.anInt, 42);
       expect(instance.aString, 'custom value');
+      expect(instance.aBool, isFalse);
+    });
+
+    test('using a non-default ctor with potional and named args', () {
+      var annotatedClass = _getAnnotationForClass(
+          libElement, 'NonDefaultCtorWithPositionalAndNamedParams');
+      var annotation = annotatedClass.metadata.single;
+      var instance =
+          instantiateAnnotation(annotation) as defs.PublicAnnotationClass;
+      expect(instance.anInt, 43);
+      expect(instance.aString, 'another value');
+      expect(instance.aBool, isTrue);
     });
   });
 
