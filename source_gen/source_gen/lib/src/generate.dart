@@ -173,21 +173,14 @@ Stream<GeneratedOutput> _processUnitMember(
   var controller = new StreamController<GeneratedOutput>();
 
   Future.forEach(generators, (gen) async {
-    String createdUnit;
-
     try {
-      createdUnit = await gen.generate(element);
-    } on InvalidGenerationSourceError catch (e) {
-      // TODO: handle multi-line message and/or todo
-      createdUnit = '// ERROR: ${e.message}';
-      if (e.todo != null) {
-        createdUnit = '''$createdUnit
-// TODO: ${e.todo}''';
-      }
-    }
+      var createdUnit = await gen.generate(element);
 
-    if (createdUnit != null) {
-      controller.add(new GeneratedOutput(element, gen, createdUnit));
+      if (createdUnit != null) {
+        controller.add(new GeneratedOutput(element, gen, createdUnit));
+      }
+    } catch (e, stack) {
+      controller.add(new GeneratedOutput.fromError(element, gen, e, stack));
     }
   }).whenComplete(() => controller.close());
 

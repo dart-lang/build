@@ -126,6 +126,49 @@ void main() {
     ])
         .validate();
   });
+
+  test('handle generator errors well', () async {
+    await _doSetup();
+
+    var projectPath = await _createPackageStub('pkg');
+
+    var relativeFilePath = p.join('lib', 'test_lib.dart');
+    var output = await generate(projectPath, [const ClassCommentGenerator()],
+        changeFilePaths: [relativeFilePath]);
+
+    expect(output, "Created: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContent),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+      ])
+    ])
+        .validate();
+
+    //
+    // change classes to remove one class: updated
+    //
+    await new File(p.join(projectPath, relativeFilePath))
+        .writeAsString(_testLibContentWithError);
+
+    output = await generate(projectPath, [const ClassCommentGenerator()],
+        changeFilePaths: [relativeFilePath]);
+
+    expect(output, "Updated: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContentWithError),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.matcherFile('test_lib.g.dart', contains(_testGenPartContentError))
+      ])
+    ])
+        .validate();
+  });
 }
 
 Future _doSetup() async {
@@ -200,6 +243,14 @@ part 'test_lib_part.dart';
 final int foo = 42;
 ''';
 
+const _testLibContentWithError = r'''
+library test_lib;
+
+part 'test_lib_part.dart';
+
+class MyError { }
+''';
+
 const _testLibPartContent = r'''
 part of test_lib;
 
@@ -238,3 +289,8 @@ const _testGenPartContentNoPerson = r'''part of test_lib;
 // **************************************************************************
 
 // Code for Customer''';
+
+const _testGenPartContentError = r'''
+// Error: Invalid argument (element): We don't support class names with the word 'Error'.
+//        Try renaming the class.: Instance of 'ClassElementImpl'
+''';

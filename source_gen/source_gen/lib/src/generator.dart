@@ -16,4 +16,7 @@ class InvalidGenerationSourceError {
 
   InvalidGenerationSourceError(this.message, {String todo})
       : this.todo = todo == null ? '' : todo;
+
+  @override
+  String toString() => message;
 }
