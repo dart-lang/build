@@ -1,4 +1,13 @@
-language: dart
-script: ./tool/travis.sh
-dart:
-  - dev
+env:
+  global:
+  - ARCH=linux-x64
+  matrix:
+  - DART_CHANNEL=dev
+
+before_install:
+- ./tool/install_dart.sh ${DART_CHANNEL} ${ARCH}
+- export PATH=$PATH:$PWD/dart-sdk/bin
+- pub install
+
+script:
+- ./tool/travis.sh
