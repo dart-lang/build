@@ -6,6 +6,7 @@
 release [here](https://www.dartlang.org/tools/download-archive/).**
 
 `source_gen` provides:
+
 * A **tool** for generating code that is part of your Dart project.
 * A **framework** for creating and using multiple code generators in a single
   project.
@@ -66,7 +67,7 @@ See the [example code][] in the `source_gen` GitHub repo.
 Extend the `Generator` class to plug into `source_gen`.
 
 * [Trivial example][]
-* [JsonGenerator][]
+* [Included generators][]
 
 ## Running generators
 
@@ -101,7 +102,7 @@ detail*.
 [Dart Transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
 [example code]: https://github.com/kevmoo/source_gen.dart/tree/master/example
 [Trivial example]: https://github.com/kevmoo/source_gen.dart/blob/master/test/src/class_comment_generator.dart
-[JsonGenerator]: https://github.com/kevmoo/source_gen.dart/blob/master/lib/json_serial/json_generator.dart
+[Included generators]: https://github.com/kevmoo/source_gen.dart/tree/master/lib/generators
 [build.dart]: https://github.com/kevmoo/source_gen.dart/blob/master/build.dart
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
 [build]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_build
