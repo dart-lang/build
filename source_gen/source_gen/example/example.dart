@@ -1,8 +1,8 @@
-library source_gen.example.person;
+library source_gen.example.example;
 
 import 'package:source_gen/json_serial/json_annotation.dart';
 
-part 'person.g.dart';
+part 'example.g.dart';
 
 @JsonSerializable()
 class Person extends Object with _$PersonSerializerMixin {

@@ -1,7 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-10T16:07:01.811Z
+// 2015-02-16T01:28:06.435Z
 
-part of source_gen.example.person;
+part of source_gen.example.example;
 
 // **************************************************************************
 // Generator: JsonGenerator
