@@ -8,7 +8,6 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
-//import 'package:source_gen/src/utils.dart';
 
 import 'json_literal.dart';
 
