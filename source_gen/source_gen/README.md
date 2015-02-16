@@ -15,47 +15,53 @@ release [here](https://www.dartlang.org/tools/download-archive/).**
 
 ## Example
 
-Given a library `person.dart`:
+Given a library `example.dart`:
 
 ```dart
-library source_gen.example.person;
+library source_gen.example.example;
 
-import 'package:source_gen/json_serial/json_annotation.dart';
+import 'package:source_gen/generators/json_serializable.dart';
 
-part 'person.g.dart';
+part 'example.g.dart';
 
 @JsonSerializable()
 class Person extends Object with _$PersonSerializerMixin {
-  String firstName, middleName, lastName;
-  DateTime dob;
+  final String firstName, middleName, lastName;
+  final DateTime dateOfBirth;
 
-  Person();
+  Person(this.firstName, this.lastName, {this.middleName, this.dateOfBirth});
 
   factory Person.fromJson(json) => _$PersonFromJson(json);
 }
 ```
 
-`source_gen` creates the corresponding part `person.g.dart`:
+`source_gen` creates the corresponding part `example.g.dart`:
 
 ```dart
-part of source_gen.example.person;
+part of source_gen.example.example;
 
-Person _$PersonFromJson(Map<String, Object> json) => new Person()
-  ..firstName = json['firstName']
-  ..middleName = json['middleName']
-  ..lastName = json['lastName']
-  ..dob = json['dob'];
+// **************************************************************************
+// Generator: JsonGenerator
+// Target: class Person
+// **************************************************************************
+
+Person _$PersonFromJson(Map<String, Object> json) => new Person(
+    json['firstName'], json['lastName'],
+    middleName: json['middleName'],
+    dateOfBirth: json.containsKey('dateOfBirth')
+        ? DateTime.parse(json['dateOfBirth'])
+        : null);
 
 abstract class _$PersonSerializerMixin {
   String get firstName;
   String get middleName;
   String get lastName;
-  DateTime get dob;
+  DateTime get dateOfBirth;
   Map<String, Object> toJson() => {
     'firstName': firstName,
     'middleName': middleName,
     'lastName': lastName,
-    'dob': dob
+    'dateOfBirth': dateOfBirth == null ? null : dateOfBirth.toIso8601String()
   };
 }
 ```

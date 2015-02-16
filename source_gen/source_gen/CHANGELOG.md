@@ -1,10 +1,14 @@
+##0.2.0+1
+* Updated `README.md` with new examples.
+* Fixed sub-bullet indenting in `CHANGELOG.md`.
+
 ##0.2.0
 * **BREAKING** Moved and renamed JSON serialization classes.
 * Added a `JsonLiteral` generator.
 * Improved handling and reporting of Generator errors.
 * `JsonGenerator`
-  * Learned how to use constructor arguments.
-  * Learned how to properly handle `DateTime`.
+    * Learned how to use constructor arguments.
+    * Learned how to properly handle `DateTime`.
 
 ##0.1.1
 * Support for parameterized annotations.
