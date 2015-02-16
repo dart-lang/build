@@ -1,6 +1,7 @@
 library source_gen.example.example;
 
 import 'package:source_gen/generators/json_serializable.dart';
+import 'package:source_gen/generators/json_literal.dart';
 
 part 'example.g.dart';
 
@@ -33,3 +34,6 @@ class Item extends Object {
 
   factory Item.fromJson(Map<String, Object> json) => _$ItemFromJson(json);
 }
+
+@JsonLiteral('data.json')
+Map get glossaryData => _$glossaryDataJsonLiteral;

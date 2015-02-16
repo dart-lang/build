@@ -2,6 +2,8 @@
 
 * **BREAKING** Moved and renamed JSON serialization classes.
 
+* Added a `JsonLiteral` generator.
+
 ##0.1.1
 
 * Support for parameterized annotations.
