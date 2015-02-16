@@ -10,7 +10,8 @@ import 'json_serializable.dart';
 
 // TODO: assumes there is a empty, default ctor
 // TODO: assumes all fields are set-able
-class JsonSerializableGenerator extends GeneratorForAnnotation<JsonSerializable> {
+class JsonSerializableGenerator
+    extends GeneratorForAnnotation<JsonSerializable> {
   const JsonSerializableGenerator();
 
   @override
