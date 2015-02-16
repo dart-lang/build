@@ -38,8 +38,6 @@ String _outputFromError(Object error) {
     _commentWithHeader(_todoHeader, error.todo, buffer);
   }
 
-  print(buffer.toString());
-
   return buffer.toString();
 }
 

@@ -12,6 +12,12 @@ class ClassCommentGenerator extends Generator {
   @override
   Future<String> generate(Element element) async {
     if (element is ClassElement) {
+      if (element.displayName.contains('GoodError')) {
+        throw new InvalidGenerationSourceError(
+            "Don't use classes with the word 'Error' in the name",
+            todo: "Rename ${element.displayName} to something else.");
+      }
+
       if (element.displayName.contains('Error')) {
         throw new ArgumentError.value(element, 'element',
             "We don't support class names with the word 'Error'.\n" "Try renaming the class.");

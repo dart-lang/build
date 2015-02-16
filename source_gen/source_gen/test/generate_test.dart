@@ -249,6 +249,8 @@ library test_lib;
 part 'test_lib_part.dart';
 
 class MyError { }
+
+class MyGoodError { }
 ''';
 
 const _testLibPartContent = r'''
@@ -291,6 +293,19 @@ const _testGenPartContentNoPerson = r'''part of test_lib;
 // Code for Customer''';
 
 const _testGenPartContentError = r'''
+// **************************************************************************
+// Generator: ClassCommentGenerator
+// Target: class MyError
+// **************************************************************************
+
 // Error: Invalid argument (element): We don't support class names with the word 'Error'.
 //        Try renaming the class.: Instance of 'ClassElementImpl'
+
+// **************************************************************************
+// Generator: ClassCommentGenerator
+// Target: class MyGoodError
+// **************************************************************************
+
+// Error: Don't use classes with the word 'Error' in the name
+// TODO: Rename MyGoodError to something else.
 ''';
