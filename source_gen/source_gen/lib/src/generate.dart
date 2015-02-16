@@ -178,6 +178,7 @@ Stream<GeneratedOutput> _processUnitMember(
     try {
       createdUnit = await gen.generate(element);
     } on InvalidGenerationSourceError catch (e) {
+      // TODO: handle multi-line message and/or todo
       createdUnit = '// ERROR: ${e.message}';
       if (e.todo != null) {
         createdUnit = '''$createdUnit
