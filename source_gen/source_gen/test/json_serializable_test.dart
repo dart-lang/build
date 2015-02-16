@@ -25,21 +25,21 @@ void main() {
     test('const field', () async {
       var element = await _getClassForCodeString('theAnswer');
 
-      expect(_generator.generate(element), throws);
+      expect(_generator.generate(element), throwsInvalidGenerationSourceError);
       // TODO: validate the properties on the thrown error
     });
 
     test('method', () async {
       var element = await _getClassForCodeString('annotatedMethod');
 
-      expect(_generator.generate(element), throws);
+      expect(_generator.generate(element), throwsInvalidGenerationSourceError);
       // TODO: validate the properties on the thrown error
     });
   });
 
   test('class with final fields', () async {
     var element = await _getClassForCodeString('FinalFields');
-    expect(_generator.generate(element), throws);
+    expect(_generator.generate(element), throwsInvalidGenerationSourceError);
   });
 
   test('unannotated classes no-op', () async {

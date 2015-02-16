@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:scheduled_test/scheduled_test.dart';
+import 'package:source_gen/source_gen.dart';
 
 String _scriptPath() => p.fromUri(Platform.script);
 
@@ -28,4 +29,17 @@ Future<Directory> createTempDir([bool scheduleDelete = true]) async {
   });
 
   return dir;
+}
+
+const Matcher throwsInvalidGenerationSourceError =
+    const Throws(isInvalidGenerationSourceError);
+
+const Matcher isInvalidGenerationSourceError =
+    const _InvalidGenerationSourceError();
+
+class _InvalidGenerationSourceError extends TypeMatcher {
+  const _InvalidGenerationSourceError() : super("InvalidGenerationSourceError");
+
+  @override
+  bool matches(item, Map matchState) => item is InvalidGenerationSourceError;
 }
