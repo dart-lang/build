@@ -7,25 +7,27 @@ part 'example.g.dart';
 
 @JsonSerializable()
 class Person extends Object with _$PersonSerializerMixin {
-  String firstName, middleName, lastName;
-  DateTime dob;
+  final String firstName, middleName, lastName;
+  final DateTime dateOfBirth;
 
-  Person();
+  Person(this.firstName, this.lastName, {this.middleName, this.dateOfBirth});
 
   factory Person.fromJson(json) => _$PersonFromJson(json);
 }
 
-@JsonSerializable(createFactory: false)
+@JsonSerializable()
 class Order extends Object with _$OrderSerializerMixin {
   int count;
   int itemNumber;
   bool isRushed;
 
   Order();
+
+  factory Order.fromJson(json) => _$OrderFromJson(json);
 }
 
 @JsonSerializable(createToJson: false)
-class Item extends Object {
+class Item {
   int count;
   int itemNumber;
   bool isRushed;

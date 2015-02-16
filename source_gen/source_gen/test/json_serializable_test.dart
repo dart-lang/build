@@ -58,6 +58,13 @@ void main() {
 
       // TODO: test the actual output
     });
+
+    test('class with ctor params', () async {
+      var element = await _getClassForCodeString('Order');
+      var output = await _generator.generate(element);
+
+      expect(output, isNotNull);
+    });
   });
 }
 
@@ -105,6 +112,15 @@ class Person {
   String firstName, lastName;
   int height;
   DateTime dateOfBirth;
+}
+
+@JsonSerializable()
+class Order {
+  final String firstName, lastName;
+  int height;
+  DateTime dateOfBirth;
+
+  Order(this.height, String firstName, [this.lastName]);
 }
 
 class NoAnnotation {

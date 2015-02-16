@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-16T18:15:06.117Z
+// 2015-02-16T23:03:38.487Z
 
 part of source_gen.example.example;
 
@@ -8,22 +8,23 @@ part of source_gen.example.example;
 // Target: class Person
 // **************************************************************************
 
-Person _$PersonFromJson(Map<String, Object> json) => new Person()
-  ..firstName = json['firstName']
-  ..middleName = json['middleName']
-  ..lastName = json['lastName']
-  ..dob = json['dob'];
+Person _$PersonFromJson(Map<String, Object> json) => new Person(
+    json['firstName'], json['lastName'],
+    middleName: json['middleName'],
+    dateOfBirth: json.containsKey('dateOfBirth')
+        ? DateTime.parse(json['dateOfBirth'])
+        : null);
 
 abstract class _$PersonSerializerMixin {
   String get firstName;
   String get middleName;
   String get lastName;
-  DateTime get dob;
+  DateTime get dateOfBirth;
   Map<String, Object> toJson() => {
     'firstName': firstName,
     'middleName': middleName,
     'lastName': lastName,
-    'dob': dob
+    'dateOfBirth': dateOfBirth == null ? null : dateOfBirth.toIso8601String()
   };
 }
 
@@ -31,6 +32,11 @@ abstract class _$PersonSerializerMixin {
 // Generator: JsonGenerator
 // Target: class Order
 // **************************************************************************
+
+Order _$OrderFromJson(Map<String, Object> json) => new Order()
+  ..count = json['count']
+  ..itemNumber = json['itemNumber']
+  ..isRushed = json['isRushed'];
 
 abstract class _$OrderSerializerMixin {
   int get count;

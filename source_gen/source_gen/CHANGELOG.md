@@ -2,9 +2,11 @@
 * **BREAKING** Moved and renamed JSON serialization classes.
 * Added a `JsonLiteral` generator.
 * Improved handling and reporting of Generator errors.
+* `JsonGenerator`
+  * Learned how to use constructor arguments.
+  * Learned how to properly handle `DateTime`.
 
 ##0.1.1
-
 * Support for parameterized annotations.
 * Add named arguments to `JsonGenerator`.
 
