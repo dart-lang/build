@@ -78,7 +78,6 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
 
   var packageDirectory = new JavaFile(packagesPath);
 
-  // TODO(kevmoo): Can we get of one of these?
   var resolvers = [
     new DartUriResolver(sdk),
     new ResourceUriResolver(PhysicalResourceProvider.INSTANCE),
