@@ -12,7 +12,7 @@ import 'package:scheduled_test/scheduled_test.dart';
 
 import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
-import 'package:source_gen/json_serial/json_generator.dart';
+import 'package:source_gen/generators/json_serializable_generator.dart';
 
 import 'test_utils.dart';
 
@@ -61,7 +61,7 @@ void main() {
   });
 }
 
-const _generator = const JsonGenerator();
+const _generator = const JsonSerializableGenerator();
 
 Future<Element> _getClassForCodeString(String name) async {
   var elements = await _getElementsForCodeString();
@@ -92,7 +92,7 @@ Future<CompilationUnit> _getCompilationUnitForString(String projectPath) async {
 CompilationUnit _compUnit;
 
 const _testSource = r'''
-import 'package:source_gen/json_serial/json_annotation.dart';
+import 'package:source_gen/generators/json_serializable.dart';
 
 @JsonSerializable()
 const theAnswer = 42;

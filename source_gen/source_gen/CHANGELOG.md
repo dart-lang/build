@@ -1,3 +1,7 @@
+##0.2.0
+
+* **BREAKING** Moved and renamed JSON serialization classes.
+
 ##0.1.1
 
 * Support for parameterized annotations.

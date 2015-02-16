@@ -6,7 +6,7 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
 import 'package:unittest/unittest.dart';
 
-import 'package:source_gen/json_serial/json_annotation.dart';
+import 'package:source_gen/generators/json_serializable.dart';
 import 'package:source_gen/src/annotation.dart';
 import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';

@@ -6,12 +6,12 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_gen/src/utils.dart';
 
-import 'json_annotation.dart';
+import 'json_serializable.dart';
 
 // TODO: assumes there is a empty, default ctor
 // TODO: assumes all fields are set-able
-class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
-  const JsonGenerator();
+class JsonSerializableGenerator extends GeneratorForAnnotation<JsonSerializable> {
+  const JsonSerializableGenerator();
 
   @override
   Future<String> generateForAnnotatedElement(

@@ -1,6 +1,6 @@
 library source_gen.example.example;
 
-import 'package:source_gen/json_serial/json_annotation.dart';
+import 'package:source_gen/generators/json_serializable.dart';
 
 part 'example.g.dart';
 
