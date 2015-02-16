@@ -16,8 +16,6 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
   @override
   Future<String> generateForAnnotatedElement(
       Element element, JsonSerializable annotation) async {
-    assert(annotation != null);
-
     if (element is! ClassElement) {
       var friendlyName = frieldlyNameForElement(element);
       throw new InvalidGenerationSourceError(
@@ -44,57 +42,63 @@ class JsonGenerator extends GeneratorForAnnotation<JsonSerializable> {
           todo: 'Make the following fields writable: ${finalFields.join(', ')}.');
     }
 
-    return _populateTemplate(classElement.displayName, fieldMap);
+    return _populateTemplate(classElement.displayName, fieldMap, annotation);
   }
 
   @override
   String toString() => 'JsonGenerator';
 }
 
-String _populateTemplate(String className, Map<String, String> fields) {
+String _populateTemplate(
+    String className, Map<String, String> fields, JsonSerializable annotation) {
   var prefix = '_\$${className}';
 
   var buffer = new StringBuffer();
 
-  //
-  // Generate the static factory method
-  //
-  buffer.writeln();
-  buffer.writeln('$className ${prefix}FromJson(Map<String, Object> json) =>');
-  buffer.write('    new $className()');
-  if (fields.isEmpty) {
-    buffer.writeln(';');
-  } else {
-    fields.forEach((name, type) {
-      buffer.writeln();
-      buffer.write("      ..${name} = json['$name']");
-    });
-    buffer.writeln(';');
+  if (annotation.createFactory) {
+
+    //
+    // Generate the static factory method
+    //
+    buffer.writeln();
+    buffer.writeln('$className ${prefix}FromJson(Map<String, Object> json) =>');
+    buffer.write('    new $className()');
+    if (fields.isEmpty) {
+      buffer.writeln(';');
+    } else {
+      fields.forEach((name, type) {
+        buffer.writeln();
+        buffer.write("      ..${name} = json['$name']");
+      });
+      buffer.writeln(';');
+    }
+    buffer.writeln();
   }
-  buffer.writeln();
 
-  //
-  // Generate the mixin class
-  //
-  buffer.writeln('abstract class ${prefix}SerializerMixin {');
+  if (annotation.createToJson) {
+    //
+    // Generate the mixin class
+    //
+    buffer.writeln('abstract class ${prefix}SerializerMixin {');
 
-  // write fields
-  fields.forEach((k, v) {
-    buffer.writeln('  $v get $k;');
-  });
+    // write fields
+    fields.forEach((k, v) {
+      buffer.writeln('  $v get $k;');
+    });
 
-  // write toJson method
-  buffer.writeln('  Map<String, Object> toJson() => {');
+    // write toJson method
+    buffer.writeln('  Map<String, Object> toJson() => {');
 
-  var pairs = <String>[];
-  fields.forEach((k, v) {
-    pairs.add("'$k': $k");
-  });
-  buffer.writeln(pairs.join(','));
+    var pairs = <String>[];
+    fields.forEach((k, v) {
+      pairs.add("'$k': $k");
+    });
+    buffer.writeln(pairs.join(','));
 
-  buffer.writeln('  };');
+    buffer.writeln('  };');
 
-  buffer.write('}');
+    buffer.write('}');
+  }
 
   return buffer.toString();
 }

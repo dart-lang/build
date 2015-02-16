@@ -4,5 +4,10 @@
 library source_gen.json_serial.annotation;
 
 class JsonSerializable {
-  const JsonSerializable();
+  final bool createFactory;
+  final bool createToJson;
+
+  const JsonSerializable({bool createFactory: true, bool createToJson: true})
+      : this.createFactory = createFactory,
+        this.createToJson = createToJson;
 }

@@ -1,3 +1,9 @@
+##0.1.1
+
+* Support for parameterized annotations.
+
+* Add named arguments to `JsonGenerator`.
+
 ##0.1.0+1
 
 * `README.md` updates.

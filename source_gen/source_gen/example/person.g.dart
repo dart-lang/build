@@ -32,11 +32,6 @@ abstract class _$PersonSerializerMixin {
 // Target: class Order
 // **************************************************************************
 
-Order _$OrderFromJson(Map<String, Object> json) => new Order()
-  ..count = json['count']
-  ..itemNumber = json['itemNumber']
-  ..isRushed = json['isRushed'];
-
 abstract class _$OrderSerializerMixin {
   int get count;
   int get itemNumber;
@@ -47,8 +42,10 @@ abstract class _$OrderSerializerMixin {
 
 // **************************************************************************
 // Generator: JsonGenerator
-// Target: const dynamic testValue
+// Target: class Item
 // **************************************************************************
 
-// ERROR: Generator cannot target `const dynamic testValue`.
-// TODO: Remove the JsonSerializable annotation from `const dynamic testValue`.
+Item _$ItemFromJson(Map<String, Object> json) => new Item()
+  ..count = json['count']
+  ..itemNumber = json['itemNumber']
+  ..isRushed = json['isRushed'];
