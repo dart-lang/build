@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fast fail the script on failures.   
-set -e -x
+set -e
 
 # Run the tests.
 dart --checked test/test_all.dart
