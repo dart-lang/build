@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.1.1-dev
+version: 0.1.1
 author: Kevin Moore <kevmoo@google.com>
 description: Automatic sourcecode generation for Dart
 homepage: https://github.com/kevmoo/source_gen.dart
