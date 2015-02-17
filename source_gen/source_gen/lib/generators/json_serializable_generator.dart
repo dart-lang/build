@@ -57,7 +57,7 @@ class JsonSerializableGenerator
       });
 
       // write toJson method
-      buffer.writeln('  Map<String, Object> toJson() => {');
+      buffer.writeln('  Map<String, dynamic> toJson() => <String, dynamic>{');
 
       var pairs = <String>[];
       fields.forEach((name, field) {
@@ -116,7 +116,7 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
     throw new InvalidGenerationSourceError(
         'Generator cannot target `$className`.',
         todo: 'Make the following fields writable or add them to the '
-          'constructor with matching names: '
+        'constructor with matching names: '
         '${finalFields.map((field) => field.name).join(', ')}.');
   }
 
@@ -124,15 +124,17 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
   // Generate the static factory method
   //
   buffer.writeln();
-  buffer.writeln('$className ${prefix}FromJson(Map<String, Object> json) =>');
+  buffer.writeln('$className ${prefix}FromJson(Map json) =>');
   buffer.write('    new $className(');
   buffer.writeAll(
-      ctorArguments.map((name) => _jsonMapAccessToField(name, fields[name])), ', ');
+      ctorArguments.map((name) => _jsonMapAccessToField(name, fields[name])),
+      ', ');
   if (ctorArguments.isNotEmpty && ctorNamedArguments.isNotEmpty) {
     buffer.write(', ');
   }
-  buffer.writeAll(
-      ctorNamedArguments.map((name) => '$name: ' + _jsonMapAccessToField(name, fields[name])), ', ');
+  buffer.writeAll(ctorNamedArguments
+          .map((name) => '$name: ' + _jsonMapAccessToField(name, fields[name])),
+      ', ');
 
   buffer.write(')');
   if (fieldsToSet.isEmpty) {
@@ -164,7 +166,7 @@ String _jsonMapAccessToField(String name, FieldElement field) {
   if (_isDartDateTime(field.type)) {
     // TODO: this does not take into account that dart:core could be
     // imported with another name
-    return "json.containsKey('$name') ? DateTime.parse($result) : null";
+    return "json['$name'] == null ? null : DateTime.parse($result)";
   }
 
   return result;

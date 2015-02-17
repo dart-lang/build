@@ -1,3 +1,9 @@
+##0.2.0+2
+
+* Tweaks to `JsonGenerator` to address 
+  [#31](https://github.com/kevmoo/source_gen.dart/issues/31) and
+  [#32](https://github.com/kevmoo/source_gen.dart/issues/32)
+
 ##0.2.0+1
 * Updated `README.md` with new examples.
 * Fixed sub-bullet indenting in `CHANGELOG.md`.

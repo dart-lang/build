@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-16T23:03:38.487Z
+// 2015-02-17T02:42:45.875Z
 
 part of source_gen.example.example;
 
@@ -8,19 +8,19 @@ part of source_gen.example.example;
 // Target: class Person
 // **************************************************************************
 
-Person _$PersonFromJson(Map<String, Object> json) => new Person(
+Person _$PersonFromJson(Map json) => new Person(
     json['firstName'], json['lastName'],
     middleName: json['middleName'],
-    dateOfBirth: json.containsKey('dateOfBirth')
-        ? DateTime.parse(json['dateOfBirth'])
-        : null);
+    dateOfBirth: json['dateOfBirth'] == null
+        ? null
+        : DateTime.parse(json['dateOfBirth']));
 
 abstract class _$PersonSerializerMixin {
   String get firstName;
   String get middleName;
   String get lastName;
   DateTime get dateOfBirth;
-  Map<String, Object> toJson() => {
+  Map<String, dynamic> toJson() => <String, dynamic>{
     'firstName': firstName,
     'middleName': middleName,
     'lastName': lastName,
@@ -33,7 +33,7 @@ abstract class _$PersonSerializerMixin {
 // Target: class Order
 // **************************************************************************
 
-Order _$OrderFromJson(Map<String, Object> json) => new Order()
+Order _$OrderFromJson(Map json) => new Order()
   ..count = json['count']
   ..itemNumber = json['itemNumber']
   ..isRushed = json['isRushed'];
@@ -42,8 +42,11 @@ abstract class _$OrderSerializerMixin {
   int get count;
   int get itemNumber;
   bool get isRushed;
-  Map<String, Object> toJson() =>
-      {'count': count, 'itemNumber': itemNumber, 'isRushed': isRushed};
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'count': count,
+    'itemNumber': itemNumber,
+    'isRushed': isRushed
+  };
 }
 
 // **************************************************************************
@@ -51,7 +54,7 @@ abstract class _$OrderSerializerMixin {
 // Target: class Item
 // **************************************************************************
 
-Item _$ItemFromJson(Map<String, Object> json) => new Item()
+Item _$ItemFromJson(Map json) => new Item()
   ..count = json['count']
   ..itemNumber = json['itemNumber']
   ..isRushed = json['isRushed'];
