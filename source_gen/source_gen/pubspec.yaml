@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.2.0+2
+version: 0.2.1-dev
 author: Kevin Moore <kevmoo@google.com>
 description: Automatic sourcecode generation for Dart
 homepage: https://github.com/kevmoo/source_gen.dart
@@ -9,8 +9,7 @@ dependencies:
   analyzer: '^0.23.0'
   args: '^0.12.2+3'
   cli_util: '^0.0.1'
-  dart_style:
-    git: https://github.com/dart-lang/dart_style
+  dart_style: '0.1.5'
   path: '^1.3.2'
 dev_dependencies:
   scheduled_test: '^0.11.7'
