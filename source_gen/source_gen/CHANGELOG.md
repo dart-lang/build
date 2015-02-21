@@ -1,3 +1,10 @@
+##0.2.1
+
+* Fixed critical bug affecting annotation matching.
+  [#35](https://github.com/kevmoo/source_gen.dart/issues/35)
+  
+* Started using published `dart_style` package.
+
 ##0.2.0+2
 
 * Tweaks to `JsonGenerator` to address 
