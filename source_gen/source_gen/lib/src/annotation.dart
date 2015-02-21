@@ -120,30 +120,22 @@ bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
 
   var annotationSource = annotationValueType.element.source as FileBasedSource;
 
-  var libOwner = classMirror.owner as LibraryMirror;
+  var libOwnerUri = (classMirror.owner as LibraryMirror).uri;
+  var annotationSourceUri = annotationSource.uri;
 
-  Uri libraryUri;
+  if (annotationSourceUri.scheme == 'file' && libOwnerUri.scheme == 'package') {
+    // try to turn the libOwnerUri into a file uri
 
-  switch (libOwner.uri.scheme) {
-    case 'file':
-      libraryUri = libOwner.uri;
-      break;
-    case 'package':
-      libraryUri = _fileUriFromPackageUri(libOwner.uri);
-      break;
-    default:
-      throw new UnimplementedError(
-          'We do not support scheme ${libOwner.uri.scheme}.');
+    libOwnerUri = _fileUriFromPackageUri(libOwnerUri);
   }
 
-  return annotationSource.uri == libraryUri;
+  return annotationSource.uri == libOwnerUri;
 }
 
 Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
   assert(libraryPackageUri.scheme == 'package');
-  var packageDir = getPackageRoot();
 
-  var fullLibraryPath = p.join(packageDir, libraryPackageUri.path);
+  var fullLibraryPath = p.join(_packageRoot, libraryPackageUri.path);
 
   var file = new File(fullLibraryPath);
 
@@ -154,14 +146,18 @@ Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
   return new Uri.file(normalPath);
 }
 
-String getPackageRoot() {
-  var dir = Platform.packageRoot;
+String get _packageRoot {
+  if (_packageRootCache == null) {
+    var dir = Platform.packageRoot;
 
-  if (dir.isEmpty) {
-    dir = p.join(p.current, 'packages');
+    if (dir.isEmpty) {
+      dir = p.join(p.current, 'packages');
+    }
+
+    assert(FileSystemEntity.isDirectorySync(dir));
+    _packageRootCache = dir;
   }
-
-  assert(FileSystemEntity.isDirectorySync(dir));
-
-  return dir;
+  return _packageRootCache;
 }
+
+String _packageRootCache;
