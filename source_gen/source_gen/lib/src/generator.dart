@@ -7,7 +7,7 @@ import 'package:analyzer/src/generated/element.dart';
 abstract class Generator {
   const Generator();
 
-  Future<String> generate(Element element);
+  Future<String> generate(Element element) => null;
 }
 
 class InvalidGenerationSourceError {

@@ -17,6 +17,14 @@ import 'src/class_comment_generator.dart';
 void main() {
   test('Simple Generator test', _simpleTest);
 
+  test('Simple Generator test for library', () => _generateTest(
+      const ClassCommentGenerator(forClasses: false, forLibrary: true),
+      _testGenPartContentForLibrary));
+
+  test('Simple Generator test for classes and library', () => _generateTest(
+      const ClassCommentGenerator(forClasses: true, forLibrary: true),
+      _testGenPartContentForClassesAndLibrary));
+
   test('full build without change set', () async {
     await _doSetup();
 
@@ -177,13 +185,17 @@ Future _doSetup() async {
   d.defaultRoot = dir.path;
 }
 
-Future _simpleTest() async {
+Future _simpleTest() => _generateTest(
+    const ClassCommentGenerator(forClasses: true, forLibrary: false),
+    _testGenPartContent);
+
+Future _generateTest(ClassCommentGenerator gen, String expectedContent) async {
   await _doSetup();
 
   var projectPath = await _createPackageStub('pkg');
 
   var relativeFilePath = p.join('lib', 'test_lib.dart');
-  var output = await generate(projectPath, [const ClassCommentGenerator()],
+  var output = await generate(projectPath, [gen],
       changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
   expect(output, "Created: 'lib/test_lib.g.dart'");
@@ -193,7 +205,7 @@ Future _simpleTest() async {
     d.dir('lib', [
       d.file('test_lib.dart', _testLibContent),
       d.file('test_lib_part.dart', _testLibPartContent),
-      d.matcherFile('test_lib.g.dart', _testGenPartContent)
+      d.matcherFile('test_lib.g.dart', expectedContent)
     ])
   ])
       .validate();
@@ -271,6 +283,46 @@ final int bar = 42;
 const _testGenPartContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of test_lib;
+
+// **************************************************************************
+// Generator: ClassCommentGenerator
+// Target: class Person
+// **************************************************************************
+
+// Code for Person
+
+// **************************************************************************
+// Generator: ClassCommentGenerator
+// Target: class Customer
+// **************************************************************************
+
+// Code for Customer
+''';
+
+const _testGenPartContentForLibrary =
+    r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of test_lib;
+
+// **************************************************************************
+// Generator: ClassCommentGenerator
+// Target: library test_lib
+// **************************************************************************
+
+// Code for test_lib
+''';
+
+const _testGenPartContentForClassesAndLibrary =
+    r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of test_lib;
+
+// **************************************************************************
+// Generator: ClassCommentGenerator
+// Target: library test_lib
+// **************************************************************************
+
+// Code for test_lib
 
 // **************************************************************************
 // Generator: ClassCommentGenerator

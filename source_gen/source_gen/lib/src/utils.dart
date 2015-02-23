@@ -61,6 +61,9 @@ String frieldlyNameForElement(Element element) {
       names.insert(0, 'final');
     }
   }
+  if (element is LibraryElement) {
+    names.insert(0, 'library');
+  }
 
   return names.join(' ');
 }
@@ -93,10 +96,16 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
   return context;
 }
 
-Iterable<Element> getElementsFromLibraryElement(LibraryElement unit) =>
-    unit.units
-        .expand((cu) => cu.unit.declarations)
-        .expand((compUnitMember) => _getElements(compUnitMember));
+/// Returns all of the declarations in [unit], including [unit] as the first
+/// item.
+Iterable<Element> getElementsFromLibraryElement(LibraryElement unit) sync* {
+  yield unit;
+  for (var cu in unit.units) {
+    for (var compUnitMember in cu.unit.declarations) {
+      yield* _getElements(compUnitMember);
+    }
+  }
+}
 
 Set<LibraryElement> getLibraries(
     AnalysisContext context, Iterable<String> filePaths) {

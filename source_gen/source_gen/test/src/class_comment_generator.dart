@@ -7,11 +7,13 @@ import 'package:source_gen/source_gen.dart';
 
 /// Generates a single-line comment for each class
 class ClassCommentGenerator extends Generator {
-  const ClassCommentGenerator();
+  final bool forClasses, forLibrary;
+
+  const ClassCommentGenerator({this.forClasses: true, this.forLibrary: false});
 
   @override
   Future<String> generate(Element element) async {
-    if (element is ClassElement) {
+    if (forClasses && element is ClassElement) {
       if (element.displayName.contains('GoodError')) {
         throw new InvalidGenerationSourceError(
             "Don't use classes with the word 'Error' in the name",
@@ -23,6 +25,10 @@ class ClassCommentGenerator extends Generator {
             "We don't support class names with the word 'Error'.\n" "Try renaming the class.");
       }
 
+      return '// Code for $element';
+    }
+
+    if (forLibrary && element is LibraryElement) {
       return '// Code for $element';
     }
     return null;
