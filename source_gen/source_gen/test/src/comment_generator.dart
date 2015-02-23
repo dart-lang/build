@@ -1,4 +1,4 @@
-library source_gen.test.class_comment_generator;
+library source_gen.test.comment_generator;
 
 import 'dart:async';
 
@@ -6,10 +6,10 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:source_gen/source_gen.dart';
 
 /// Generates a single-line comment for each class
-class ClassCommentGenerator extends Generator {
+class CommentGenerator extends Generator {
   final bool forClasses, forLibrary;
 
-  const ClassCommentGenerator({this.forClasses: true, this.forLibrary: false});
+  const CommentGenerator({this.forClasses: true, this.forLibrary: false});
 
   @override
   Future<String> generate(Element element) async {
@@ -34,5 +34,5 @@ class ClassCommentGenerator extends Generator {
     return null;
   }
 
-  String toString() => 'ClassCommentGenerator';
+  String toString() => 'CommentGenerator';
 }
