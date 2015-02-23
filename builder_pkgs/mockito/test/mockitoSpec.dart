@@ -142,6 +142,11 @@ main(){
       when(mock.methodWithoutArgs()).thenReturn("B");
       expect(mock.methodWithoutArgs(), equals("B"));
     });  
+    test("should mock method with calculated result", (){
+      when(mock.methodWithNormalArgs(argThat(equals(43)))).thenReturn("43");
+      when(mock.methodWithNormalArgs(argThat(equals(42)))).thenReturn("42");
+      expect(mock.methodWithNormalArgs(43), equals("43"));
+    });
     
   });
 
