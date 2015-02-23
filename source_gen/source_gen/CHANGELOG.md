@@ -1,3 +1,7 @@
+##0.2.2
+
+* Added `omitGeneateTimestamp` named argument to `generate` method.
+
 ##0.2.1
 
 * Fixed critical bug affecting annotation matching.

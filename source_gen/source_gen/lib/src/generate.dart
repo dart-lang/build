@@ -19,8 +19,16 @@ import 'utils.dart';
 /// [projectPath].
 ///
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
+///
+/// if [omitGeneateTimestamp] is `true`, no timestamp will be added to the
+/// output. The default value is `false`.
 Future<String> generate(String projectPath, List<Generator> generators,
-    {List<String> changeFilePaths, List<String> librarySearchPaths}) async {
+    {List<String> changeFilePaths, List<String> librarySearchPaths,
+    bool omitGeneateTimestamp}) async {
+  if (omitGeneateTimestamp == null) {
+    omitGeneateTimestamp = false;
+  }
+
   if (changeFilePaths == null || changeFilePaths.isEmpty) {
     if (librarySearchPaths != null && librarySearchPaths.isEmpty) {
       return "Can't hang, yo. You give me nothing!";
@@ -58,8 +66,8 @@ Future<String> generate(String projectPath, List<Generator> generators,
   var messages = <String>[];
 
   await Future.forEach(libs, (elementLibrary) async {
-    var msg =
-        await _generateForLibrary(elementLibrary, projectPath, generators);
+    var msg = await _generateForLibrary(
+        elementLibrary, projectPath, generators, !omitGeneateTimestamp);
     messages.add(msg);
   });
 
@@ -67,7 +75,7 @@ Future<String> generate(String projectPath, List<Generator> generators,
 }
 
 Future<String> _generateForLibrary(LibraryElement library, String projectPath,
-    List<Generator> generators) async {
+    List<Generator> generators, bool includeTimestamp) async {
   var generatedOutputs = await _generate(library, generators).toList();
 
   var genFileName = _getGeterateFilePath(library, projectPath);
@@ -119,7 +127,7 @@ Future<String> _generateForLibrary(LibraryElement library, String projectPath,
   }
 
   var sink = file.openWrite(mode: FileMode.WRITE)
-    ..write(_getHeader())
+    ..write(_getHeader(includeTimestamp))
     ..write(genPartContent);
 
   await sink.flush();
@@ -150,10 +158,17 @@ String _getGeterateFilePath(LibraryElement lib, String projectPath) {
   return p.join(libraryDir, "${libFileName}${generatedExtension}");
 }
 
-String _getHeader() => '''// GENERATED CODE - DO NOT MODIFY BY HAND
-// ${new DateTime.now().toUtc().toIso8601String()}
+String _getHeader(bool includeTimestamp) {
+  var buffer = new StringBuffer('// GENERATED CODE - DO NOT MODIFY BY HAND');
+  buffer.writeln();
 
-''';
+  if (includeTimestamp) {
+    buffer.writeln("// ${new DateTime.now().toUtc().toIso8601String()}");
+  }
+
+  buffer.writeln();
+  return buffer.toString();
+}
 
 // TODO(kevmoo) using async* when we can
 Stream<GeneratedOutput> _generate(

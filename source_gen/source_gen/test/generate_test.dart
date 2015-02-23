@@ -22,7 +22,8 @@ void main() {
 
     var projectPath = await _createPackageStub('pkg');
 
-    var output = await generate(projectPath, [const ClassCommentGenerator()]);
+    var output = await generate(projectPath, [const ClassCommentGenerator()],
+        omitGeneateTimestamp: true);
 
     expect(output, "Created: 'lib/test_lib.g.dart'");
 
@@ -31,7 +32,7 @@ void main() {
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
-        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+        d.matcherFile('test_lib.g.dart', _testGenPartContent)
       ])
     ])
         .validate();
@@ -78,7 +79,7 @@ void main() {
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
-        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+        d.matcherFile('test_lib.g.dart', _testGenPartContent)
       ])
     ])
         .validate();
@@ -90,7 +91,7 @@ void main() {
         .writeAsString(_testLibContentNoClass);
 
     output = await generate(projectPath, [const ClassCommentGenerator()],
-        changeFilePaths: [relativeFilePath]);
+        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
     expect(output, "Updated: 'lib/test_lib.g.dart'");
 
@@ -99,7 +100,7 @@ void main() {
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContentNoClass),
         d.file('test_lib_part.dart', _testLibPartContent),
-        d.matcherFile('test_lib.g.dart', contains(_testGenPartContentNoPerson))
+        d.matcherFile('test_lib.g.dart', _testGenPartContentNoPerson)
       ])
     ])
         .validate();
@@ -134,7 +135,7 @@ void main() {
 
     var relativeFilePath = p.join('lib', 'test_lib.dart');
     var output = await generate(projectPath, [const ClassCommentGenerator()],
-        changeFilePaths: [relativeFilePath]);
+        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
     expect(output, "Created: 'lib/test_lib.g.dart'");
 
@@ -143,7 +144,7 @@ void main() {
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
-        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+        d.matcherFile('test_lib.g.dart', _testGenPartContent)
       ])
     ])
         .validate();
@@ -155,7 +156,7 @@ void main() {
         .writeAsString(_testLibContentWithError);
 
     output = await generate(projectPath, [const ClassCommentGenerator()],
-        changeFilePaths: [relativeFilePath]);
+        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
     expect(output, "Updated: 'lib/test_lib.g.dart'");
 
@@ -164,7 +165,7 @@ void main() {
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContentWithError),
         d.file('test_lib_part.dart', _testLibPartContent),
-        d.matcherFile('test_lib.g.dart', contains(_testGenPartContentError))
+        d.matcherFile('test_lib.g.dart', _testGenPartContentError)
       ])
     ])
         .validate();
@@ -183,7 +184,7 @@ Future _simpleTest() async {
 
   var relativeFilePath = p.join('lib', 'test_lib.dart');
   var output = await generate(projectPath, [const ClassCommentGenerator()],
-      changeFilePaths: [relativeFilePath]);
+      changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
   expect(output, "Created: 'lib/test_lib.g.dart'");
 
@@ -192,7 +193,7 @@ Future _simpleTest() async {
     d.dir('lib', [
       d.file('test_lib.dart', _testLibContent),
       d.file('test_lib_part.dart', _testLibPartContent),
-      d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+      d.matcherFile('test_lib.g.dart', _testGenPartContent)
     ])
   ])
       .validate();
@@ -267,7 +268,9 @@ part of test_lib;
 final int bar = 42;
 ''';
 
-const _testGenPartContent = r'''part of test_lib;
+const _testGenPartContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of test_lib;
 
 // **************************************************************************
 // Generator: ClassCommentGenerator
@@ -281,18 +284,26 @@ const _testGenPartContent = r'''part of test_lib;
 // Target: class Customer
 // **************************************************************************
 
-// Code for Customer''';
+// Code for Customer
+''';
 
-const _testGenPartContentNoPerson = r'''part of test_lib;
+const _testGenPartContentNoPerson =
+    r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of test_lib;
 
 // **************************************************************************
 // Generator: ClassCommentGenerator
 // Target: class Customer
 // **************************************************************************
 
-// Code for Customer''';
+// Code for Customer
+''';
 
-const _testGenPartContentError = r'''
+const _testGenPartContentError = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of test_lib;
+
 // **************************************************************************
 // Generator: ClassCommentGenerator
 // Target: class MyError
@@ -308,4 +319,11 @@ const _testGenPartContentError = r'''
 
 // Error: Don't use classes with the word 'Error' in the name
 // TODO: Rename MyGoodError to something else.
+
+// **************************************************************************
+// Generator: ClassCommentGenerator
+// Target: class Customer
+// **************************************************************************
+
+// Code for Customer
 ''';
