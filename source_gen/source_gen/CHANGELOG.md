@@ -2,6 +2,8 @@
 
 * Added `omitGeneateTimestamp` named argument to `generate` method.
 
+* `Generator.generate` is now called with the `LibraryElement`, too.
+
 ##0.2.1
 
 * Fixed critical bug affecting annotation matching.
