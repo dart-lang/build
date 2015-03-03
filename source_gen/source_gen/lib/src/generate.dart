@@ -170,36 +170,26 @@ String _getHeader(bool includeTimestamp) {
   return buffer.toString();
 }
 
-// TODO(kevmoo) using async* when we can
 Stream<GeneratedOutput> _generate(
-    LibraryElement unit, List<Generator> generators) {
-  var controller = new StreamController<GeneratedOutput>();
-
-  Future.forEach(getElementsFromLibraryElement(unit), (element) async {
-    return controller.addStream(_processUnitMember(element, generators));
-  }).whenComplete(() => controller.close());
-
-  return controller.stream;
+    LibraryElement unit, List<Generator> generators) async* {
+  for (var element in getElementsFromLibraryElement(unit)) {
+    yield* _processUnitMember(element, generators);
+  }
 }
 
-// TODO(kevmoo) use async* when we can
 Stream<GeneratedOutput> _processUnitMember(
-    Element element, List<Generator> generators) {
-  var controller = new StreamController<GeneratedOutput>();
-
-  Future.forEach(generators, (gen) async {
+    Element element, List<Generator> generators) async* {
+  for (var gen in generators) {
     try {
       var createdUnit = await gen.generate(element);
 
       if (createdUnit != null) {
-        controller.add(new GeneratedOutput(element, gen, createdUnit));
+        yield new GeneratedOutput(element, gen, createdUnit);
       }
     } catch (e, stack) {
-      controller.add(new GeneratedOutput.fromError(element, gen, e, stack));
+      yield new GeneratedOutput.fromError(element, gen, e, stack);
     }
-  }).whenComplete(() => controller.close());
-
-  return controller.stream;
+  }
 }
 
 final _headerLine = '// '.padRight(77, '*');
