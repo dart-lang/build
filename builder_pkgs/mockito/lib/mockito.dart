@@ -148,7 +148,7 @@ class InvocationMatcher {
 
   bool isMatchingArg(roleArg, actArg) {
     if(roleArg is _ArgMatcher){
-      return roleArg._matcher==null || roleArg._matcher.matches(actArg, null);
+      return roleArg._matcher==null || roleArg._matcher.matches(actArg, {});
 //    } else if(roleArg is Mock){
 //      return identical(roleArg, actArg);
     }else{  
