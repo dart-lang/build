@@ -23,7 +23,7 @@ import 'utils.dart';
 /// if [omitGeneateTimestamp] is `true`, no timestamp will be added to the
 /// output. The default value is `false`.
 Future<String> generate(String projectPath, List<Generator> generators,
-    {List<String> changeFilePaths, List<String> librarySearchPaths,
+    {Iterable<String> changeFilePaths, List<String> librarySearchPaths,
     bool omitGeneateTimestamp}) async {
   if (omitGeneateTimestamp == null) {
     omitGeneateTimestamp = false;
@@ -45,6 +45,15 @@ Future<String> generate(String projectPath, List<Generator> generators,
   if (changeFilePaths == null || changeFilePaths.isEmpty) {
     changeFilePaths =
         foundFiles.map((path) => p.relative(path, from: projectPath)).toList();
+  }
+
+  // If any generator specifies that it tracks a non-Dart source file, include
+  // all files next to any changed file.
+  // TODO: test this feature set
+  var includeDir = generators
+      .any((g) => g.associatedFileSet == AssociatedFileSet.sameDirectory);
+  if (includeDir) {
+    changeFilePaths = expandFileListToIncludePeers(changeFilePaths);
   }
 
   var fullPaths = changeFilePaths

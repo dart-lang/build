@@ -1,3 +1,9 @@
+##0.2.4
+
+* Added `associatedFileSet` to `Generator`. Allows a generator to specify
+  that changes to any file in a directory next to a Dart source file can
+  initiate a generation run.
+
 ##0.2.3
 
 * Use `async *`. Requires SDK >= `1.9.0-dev.10`

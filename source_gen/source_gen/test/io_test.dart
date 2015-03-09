@@ -7,6 +7,18 @@ import 'package:path/path.dart' as p;
 import 'test_utils.dart';
 
 void main() {
+  test('expandFileListToIncludePeers', () {
+    var examplePath = p.join(getPackagePath(), 'example');
+    var jsonPath = p.join(examplePath, 'data.json');
+
+    var things = expandFileListToIncludePeers([jsonPath])
+        .map((path) => p.relative(path, from: examplePath))
+        .toList();
+
+    expect(things,
+        unorderedEquals(['data.json', 'example.dart', 'example.g.dart']));
+  });
+
   test('find files', () {
     var testFilesPath = p.join(getPackagePath(), 'test', 'test_files');
 

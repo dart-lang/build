@@ -12,8 +12,16 @@ import 'package:source_gen/source_gen.dart';
 import 'json_literal.dart';
 
 class JsonLiteralGenerator extends GeneratorForAnnotation<JsonLiteral> {
-  const JsonLiteralGenerator();
+  @override
+  final AssociatedFileSet associatedFileSet;
 
+  /// If [associatedFileSet] is not set, the default value of
+  /// [AssociatedFileSet.sameDirectory] is used.
+  const JsonLiteralGenerator(
+      {AssociatedFileSet associatedFileSet: AssociatedFileSet.sameDirectory})
+      : this.associatedFileSet = associatedFileSet;
+
+  @override
   Future<String> generateForAnnotatedElement(
       Element element, JsonLiteral annotation) async {
     if (p.isAbsolute(annotation.path)) {

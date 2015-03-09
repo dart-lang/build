@@ -121,3 +121,16 @@ Future _populateFiles(
     }
   }).drain();
 }
+
+/// Returns a new list of files that includes [paths] plus all files in the same
+/// directory as each file in [paths], without duplicates.
+Iterable<String> expandFileListToIncludePeers(Iterable<String> paths) sync* {
+  var dirs = paths.map((path) => p.dirname(path)).toSet();
+
+  for (var d in dirs) {
+    var dir = new Directory(d);
+    for (var f in dir.listSync().where((fse) => fse is File)) {
+      yield f.path;
+    }
+  }
+}
