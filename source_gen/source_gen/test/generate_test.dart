@@ -17,7 +17,7 @@ import 'src/comment_generator.dart';
 void main() {
   test('Simple Generator test', _simpleTest);
 
-  solo_test('Bad generated source', () async {
+  test('Bad generated source', () async {
     await _doSetup();
 
     var projectPath = await _createPackageStub('pkg');
