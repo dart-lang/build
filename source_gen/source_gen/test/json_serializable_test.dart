@@ -17,10 +17,6 @@ import 'package:source_gen/generators/json_serializable_generator.dart';
 import 'test_utils.dart';
 
 void main() {
-  setUp(() {
-    currentSchedule.timeout = const Duration(seconds: 10);
-  });
-
   group('non-classes', () {
     test('const field', () async {
       var element = await _getClassForCodeString('theAnswer');
