@@ -143,7 +143,7 @@ void main() {
         .writeAsString(_testLibPartContentNoClass);
 
     output = await generate(projectPath, [const CommentGenerator()],
-        changeFilePaths: [partRelativeFilePath]);
+        changeFilePaths: [partRelativeFilePath], omitGeneateTimestamp: true);
 
     expect(output, "Deleted: 'lib/test_lib.g.dart'");
 
@@ -153,6 +153,73 @@ void main() {
         d.file('test_lib.dart', _testLibContentNoClass),
         d.file('test_lib_part.dart', _testLibPartContentNoClass),
         d.nothing('test_lib.g.dart')
+      ])
+    ])
+        .validate();
+
+    //
+    // change unrelated file: no change
+    //
+    var randomFilePath = p.join('lib', 'sample_file.txt');
+    await new File(p.join(projectPath, randomFilePath))
+        .writeAsString(_testOtherFileContent);
+
+    output = await generate(projectPath, [const CommentGenerator()],
+        changeFilePaths: [partRelativeFilePath], omitGeneateTimestamp: true);
+
+    expect(output, "Nothing to generate");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContentNoClass),
+        d.file('test_lib_part.dart', _testLibPartContentNoClass),
+        d.file('sample_file.txt', _testOtherFileContent),
+        d.nothing('test_lib.g.dart')
+      ])
+    ])
+        .validate();
+  });
+
+  test('Track changes with sameDirectory fileSet', () async {
+    var projectPath = await _simpleTest();
+
+    //
+    // run generate again: no change
+    //
+    var relativeFilePath = p.join('lib', 'test_lib.dart');
+    var output = await generate(projectPath, [const CommentGenerator()],
+        changeFilePaths: [relativeFilePath]);
+
+    expect(output, "No change: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContent),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
+      ])
+    ])
+        .validate();
+
+    //
+    // change associated file in directory: updated
+    //
+    await new File(p.join(projectPath, relativeFilePath))
+        .writeAsString(_testLibContentNoClass);
+
+    output = await generate(projectPath, [const CommentGenerator()],
+        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+
+    expect(output, "Updated: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContentNoClass),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.matcherFile('test_lib.g.dart', contains(_testGenPartContentNoPerson))
       ])
     ])
         .validate();
@@ -310,6 +377,10 @@ const _testLibPartContentNoClass = r'''
 part of test_lib;
 
 final int bar = 42;
+''';
+
+const _testOtherFileContent = r'''
+just using this for file size
 ''';
 
 const _testGenPartContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
