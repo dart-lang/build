@@ -17,6 +17,28 @@ import 'src/comment_generator.dart';
 void main() {
   test('Simple Generator test', _simpleTest);
 
+  solo_test('Bad generated source', () async {
+    await _doSetup();
+
+    var projectPath = await _createPackageStub('pkg');
+
+    var relativeFilePath = p.join('lib', 'test_lib.dart');
+    var output = await generate(projectPath, [const _BadOutputGenerator()],
+        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+
+    expect(output, "Created: 'lib/test_lib.g.dart'");
+
+    await d
+        .dir('pkg', [
+      d.dir('lib', [
+        d.file('test_lib.dart', _testLibContent),
+        d.file('test_lib_part.dart', _testLibPartContent),
+        d.matcherFile('test_lib.g.dart', contains('not valid code!'))
+      ])
+    ])
+        .validate();
+  });
+
   test('Simple Generator test for library', () => _generateTest(
       const CommentGenerator(forClasses: false, forLibrary: true),
       _testGenPartContentForLibrary));
@@ -236,6 +258,16 @@ Future _createPackageStub(String pkgName) async {
 class _NoOpGenerator extends Generator {
   const _NoOpGenerator();
   Future<String> generate(Element element) => null;
+}
+
+class _BadOutputGenerator extends Generator {
+  const _BadOutputGenerator();
+  Future<String> generate(Element element) async {
+    if (element is LibraryElement) {
+      return 'not valid code!';
+    }
+    return null;
+  }
 }
 
 const _testLibContent = r'''

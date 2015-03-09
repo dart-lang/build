@@ -1,3 +1,9 @@
+##0.2.3
+
+* Use `async *`. Requires SDK >= `1.9.0-dev.10`
+
+* Protect against crash during code format.
+
 ##0.2.2
 
 * Added `omitGeneateTimestamp` named argument to `generate` method.

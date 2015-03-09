@@ -120,7 +120,16 @@ Future<String> _generateForLibrary(LibraryElement library, String projectPath,
   }
 
   var formatter = new DartFormatter();
-  genPartContent = formatter.format(genPartContent);
+  try {
+    genPartContent = formatter.format(genPartContent);
+  } catch (e, stack) {
+    print("""Error formatting the generated source code.
+This may indicate an issue in the generated code or in the formatter.
+Please check the generated code and file an issue on source_gen
+if approppriate.""");
+    print(e);
+    print(stack);
+  }
 
   if (existingContent == genPartContent) {
     return "No change: '$relativeName'";
