@@ -1,4 +1,6 @@
-##0.2.5
+##0.3.0
+
+* **BREAKING** Returning a descriptive value from `generate`.
 
 * `JsonSerializable`: Handle `dynamic` and `var` as field types.
 

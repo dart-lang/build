@@ -1,6 +1,7 @@
 library source_gen.generate;
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:analyzer/src/generated/element.dart';
@@ -13,6 +14,62 @@ import 'generator.dart';
 import 'io.dart';
 import 'utils.dart';
 
+enum GenerationResultKind { noChangesOrLibraries, noLibrariesFound, okay }
+
+class GenerationResult {
+  final GenerationResultKind kind;
+  final String message;
+  final List<LibraryGenerationResult> results;
+
+  const GenerationResult.noChangesOrLibraries()
+      : kind = GenerationResultKind.noChangesOrLibraries,
+        message = 'changeFilePaths and librarySearchPaths are empty.',
+        results = const <LibraryGenerationResult>[];
+
+  GenerationResult.noLibrariesFound(Iterable<String> changeFilePaths)
+      : kind = GenerationResultKind.noLibrariesFound,
+        message = "No libraries found for provided paths:\n"
+        "  ${changeFilePaths.map((p) => "$p").join(', ')}\n"
+        "They may not be in the search path.",
+        results = const <LibraryGenerationResult>[];
+
+  GenerationResult.okay(Iterable<LibraryGenerationResult> results)
+      : this.kind = GenerationResultKind.okay,
+        this.message = 'Generated libraries: ${results.join(', ')}',
+        this.results = new UnmodifiableListView<LibraryGenerationResult>(
+            results);
+
+  String toString() => message;
+}
+
+enum LibraryGenerationResultKind { created, updated, noop, noChange, deleted }
+
+class LibraryGenerationResult {
+  final LibraryGenerationResultKind kind;
+  final String generatedFilePath;
+
+  const LibraryGenerationResult.noop()
+      : this.kind = LibraryGenerationResultKind.noop,
+        this.generatedFilePath = null;
+
+  const LibraryGenerationResult.created(this.generatedFilePath)
+      : kind = LibraryGenerationResultKind.created;
+  const LibraryGenerationResult.updated(this.generatedFilePath)
+      : kind = LibraryGenerationResultKind.updated;
+  const LibraryGenerationResult.noChange(this.generatedFilePath)
+      : kind = LibraryGenerationResultKind.noChange;
+  const LibraryGenerationResult.deleted(this.generatedFilePath)
+      : kind = LibraryGenerationResultKind.deleted;
+
+  @override
+  String toString() => '$kind - $generatedFilePath';
+
+  @override
+  bool operator ==(other) => other is LibraryGenerationResult &&
+      other.kind == kind &&
+      other.generatedFilePath == generatedFilePath;
+}
+
 /// Updates generated code for [projectPath] with the provided [generators].
 ///
 /// [changeFilePaths] and [librarySearchPaths] must be relative to
@@ -22,7 +79,8 @@ import 'utils.dart';
 ///
 /// if [omitGeneateTimestamp] is `true`, no timestamp will be added to the
 /// output. The default value is `false`.
-Future<String> generate(String projectPath, List<Generator> generators,
+Future<GenerationResult> generate(
+    String projectPath, List<Generator> generators,
     {Iterable<String> changeFilePaths, List<String> librarySearchPaths,
     bool omitGeneateTimestamp}) async {
   if (omitGeneateTimestamp == null) {
@@ -31,7 +89,7 @@ Future<String> generate(String projectPath, List<Generator> generators,
 
   if (changeFilePaths == null || changeFilePaths.isEmpty) {
     if (librarySearchPaths != null && librarySearchPaths.isEmpty) {
-      return "Can't hang, yo. You give me nothing!";
+      return const GenerationResult.noChangesOrLibraries();
     }
   }
 
@@ -67,24 +125,23 @@ Future<String> generate(String projectPath, List<Generator> generators,
   var libs = getLibraries(context, fullPaths);
 
   if (libs.isEmpty) {
-    return "No libraries found for provided paths:\n"
-        "  ${changeFilePaths.map((p) => "$p").join(', ')}\n"
-        "They may not be in the search path.";
+    return new GenerationResult.noLibrariesFound(changeFilePaths);
   }
 
-  var messages = <String>[];
+  var results = <LibraryGenerationResult>[];
 
   await Future.forEach(libs, (elementLibrary) async {
     var msg = await _generateForLibrary(
         elementLibrary, projectPath, generators, !omitGeneateTimestamp);
-    messages.add(msg);
+    results.add(msg);
   });
 
-  return messages.join('\n');
+  return new GenerationResult.okay(results);
 }
 
-Future<String> _generateForLibrary(LibraryElement library, String projectPath,
-    List<Generator> generators, bool includeTimestamp) async {
+Future<LibraryGenerationResult> _generateForLibrary(LibraryElement library,
+    String projectPath, List<Generator> generators,
+    bool includeTimestamp) async {
   var generatedOutputs = await _generate(library, generators).toList();
 
   var genFileName = _getGeterateFilePath(library, projectPath);
@@ -97,9 +154,9 @@ Future<String> _generateForLibrary(LibraryElement library, String projectPath,
   if (generatedOutputs.isEmpty) {
     if (exists) {
       await file.delete();
-      return "Deleted: '$relativeName'";
+      return new LibraryGenerationResult.deleted(relativeName);
     } else {
-      return 'Nothing to generate';
+      return const LibraryGenerationResult.noop();
     }
   }
 
@@ -141,7 +198,7 @@ if approppriate.""");
   }
 
   if (existingContent == genPartContent) {
-    return "No change: '$relativeName'";
+    return new LibraryGenerationResult.noChange(relativeName);
   }
 
   var sink = file.openWrite(mode: FileMode.WRITE)
@@ -152,9 +209,9 @@ if approppriate.""");
   sink.close();
 
   if (exists) {
-    return "Updated: '$relativeName'";
+    return new LibraryGenerationResult.updated(relativeName);
   } else {
-    return "Created: '$relativeName'";
+    return new LibraryGenerationResult.created(relativeName);
   }
 }
 

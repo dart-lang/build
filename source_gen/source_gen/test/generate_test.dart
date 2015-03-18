@@ -26,7 +26,9 @@ void main() {
     var output = await generate(projectPath, [const _BadOutputGenerator()],
         changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
-    expect(output, "Created: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -55,7 +57,9 @@ void main() {
     var output = await generate(projectPath, [const CommentGenerator()],
         omitGeneateTimestamp: true);
 
-    expect(output, "Created: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -79,7 +83,8 @@ void main() {
     var output = await generate(projectPath, [const _NoOpGenerator()],
         changeFilePaths: [relativeFilePath]);
 
-    expect(output, "Nothing to generate");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single, const LibraryGenerationResult.noop());
 
     await d
         .dir('pkg', [
@@ -102,7 +107,9 @@ void main() {
     var output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [relativeFilePath]);
 
-    expect(output, "No change: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.noChange('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -123,7 +130,9 @@ void main() {
     output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
-    expect(output, "Updated: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.updated('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -145,7 +154,9 @@ void main() {
     output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [partRelativeFilePath], omitGeneateTimestamp: true);
 
-    expect(output, "Deleted: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.deleted('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -167,7 +178,8 @@ void main() {
     output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [partRelativeFilePath], omitGeneateTimestamp: true);
 
-    expect(output, "Nothing to generate");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single, const LibraryGenerationResult.noop());
 
     await d
         .dir('pkg', [
@@ -191,7 +203,9 @@ void main() {
     var output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [relativeFilePath]);
 
-    expect(output, "No change: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.noChange('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -212,7 +226,9 @@ void main() {
     output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
-    expect(output, "Updated: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.updated('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -234,7 +250,9 @@ void main() {
     var output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
-    expect(output, "Created: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -255,7 +273,9 @@ void main() {
     output = await generate(projectPath, [const CommentGenerator()],
         changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
-    expect(output, "Updated: 'lib/test_lib.g.dart'");
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.updated('lib/test_lib.g.dart'));
 
     await d
         .dir('pkg', [
@@ -287,7 +307,9 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
   var output = await generate(projectPath, [gen],
       changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
 
-  expect(output, "Created: 'lib/test_lib.g.dart'");
+  expect(output.kind, GenerationResultKind.okay);
+  expect(output.results.single,
+      const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
   await d
       .dir('pkg', [

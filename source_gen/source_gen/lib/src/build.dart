@@ -42,8 +42,10 @@ Future<String> build(List<String> args, List<Generator> generators,
     projectPath = p.current;
   }
 
-  return generate(projectPath, generators,
+  var genResult = await generate(projectPath, generators,
       changeFilePaths: changed, librarySearchPaths: librarySearchPaths);
+
+  return genResult.toString();
 }
 
 ArgParser _getParser() => new ArgParser()
