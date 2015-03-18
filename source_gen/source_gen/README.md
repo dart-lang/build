@@ -83,12 +83,12 @@ Alternatively, you can create a `build.dart` file which calls the [build]
 method.
 
 You can invoke this script directly. It also understands the 
-[Dart Editor build system][] so code is updated as your modify files.
+[Dart Editor build system][] so code is updated as you modify files.
 
 See [build.dart][] in the repository for an example.
 
 ## source_gen vs Dart Transformers
-[Dart Transformers][] are often used create and modify code and assets as part
+[Dart Transformers][] are often used to create and modify code and assets as part
 of a Dart project.
 
 Transformers allow modification of existing code and encapsulates changes by
