@@ -1,3 +1,7 @@
+##0.2.5
+
+* `JsonSerializable`: Handle `dynamic` and `var` as field types.
+
 ##0.2.4
 
 * Added `associatedFileSet` to `Generator`. Allows a generator to specify

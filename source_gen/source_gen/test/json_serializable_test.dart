@@ -108,6 +108,8 @@ class Person {
   String firstName, lastName;
   int height;
   DateTime dateOfBirth;
+  dynamic dynamicType;
+  var varType;
 }
 
 @JsonSerializable()

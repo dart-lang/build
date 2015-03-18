@@ -173,5 +173,7 @@ String _jsonMapAccessToField(String name, FieldElement field) {
 }
 
 bool _isDartDateTime(DartType type) {
-  return type.element.library.isDartCore && type.name == 'DateTime';
+  return type.element.library != null &&
+      type.element.library.isDartCore &&
+      type.name == 'DateTime';
 }
