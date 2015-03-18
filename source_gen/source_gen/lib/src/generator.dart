@@ -14,6 +14,9 @@ abstract class Generator {
   AssociatedFileSet get associatedFileSet => AssociatedFileSet.sameLibrary;
 
   Future<String> generate(Element element) => null;
+
+  @override
+  String toString() => this.runtimeType.toString();
 }
 
 class InvalidGenerationSourceError {

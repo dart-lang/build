@@ -1,10 +1,10 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-02-17T02:42:45.875Z
+// 2015-03-18T19:37:31.504Z
 
 part of source_gen.example.example;
 
 // **************************************************************************
-// Generator: JsonGenerator
+// Generator: JsonSerializableGenerator
 // Target: class Person
 // **************************************************************************
 
@@ -29,7 +29,7 @@ abstract class _$PersonSerializerMixin {
 }
 
 // **************************************************************************
-// Generator: JsonGenerator
+// Generator: JsonSerializableGenerator
 // Target: class Order
 // **************************************************************************
 
@@ -50,7 +50,7 @@ abstract class _$OrderSerializerMixin {
 }
 
 // **************************************************************************
-// Generator: JsonGenerator
+// Generator: JsonSerializableGenerator
 // Target: class Item
 // **************************************************************************
 
@@ -60,7 +60,7 @@ Item _$ItemFromJson(Map json) => new Item()
   ..isRushed = json['isRushed'];
 
 // **************************************************************************
-// Generator: Instance of 'JsonLiteralGenerator'
+// Generator: JsonLiteralGenerator
 // Target: glossaryData
 // **************************************************************************
 

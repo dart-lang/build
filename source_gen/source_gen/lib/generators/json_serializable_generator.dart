@@ -72,9 +72,6 @@ class JsonSerializableGenerator
 
     return buffer.toString();
   }
-
-  @override
-  String toString() => 'JsonGenerator';
 }
 
 void _writeFactory(StringBuffer buffer, ClassElement classElement,
