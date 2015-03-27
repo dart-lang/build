@@ -2,6 +2,8 @@
 
 * **BREAKING** Returning a descriptive value from `generate`.
 
+* **BREAKING** Fixed incorrectly named argument `omitGenerateTimestamp`.
+
 * `JsonSerializable`: Handle `dynamic` and `var` as field types.
 
 ##0.2.4
@@ -18,7 +20,8 @@
 
 ##0.2.2
 
-* Added `omitGeneateTimestamp` named argument to `generate` method.
+* Added `omitGenerateTimestamp` (incorrectly spelled) named argument to 
+  `generate` method.
 
 * `Generator.generate` is now called with the `LibraryElement`, too.
 
@@ -48,7 +51,7 @@
     * Learned how to properly handle `DateTime`.
 
 ##0.1.1
-* Support for parameterized annotations.
+* Support for parametrized annotations.
 * Add named arguments to `JsonGenerator`.
 
 ##0.1.0+1

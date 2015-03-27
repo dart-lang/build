@@ -11,7 +11,7 @@ bool isGeneratedFile(String path) => path.endsWith(generatedExtension);
 
 const generatedExtension = '.g.dart';
 
-/// Skips symbolic links and any item in [directryPath] recursively that begins
+/// Skips symbolic links and any item in [directoryPath] recursively that begins
 /// with `.`.
 ///
 /// [searchList] is a list of relative paths within [directoryPath].
@@ -24,7 +24,7 @@ Future<List<String>> getDartFiles(String directoryPath,
       .toList();
 }
 
-/// Skips symbolic links and any item in [directryPath] recursively that begins
+/// Skips symbolic links and any item in [directoryPath] recursively that begins
 /// with `.`.
 ///
 /// [searchList] is a list of relative paths within [directoryPath].

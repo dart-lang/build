@@ -21,14 +21,14 @@ import 'utils.dart';
 ///
 /// If [librarySearchPaths] is not provided, `['lib']` is used.
 ///
-/// if [omitGeneateTimestamp] is `true`, no timestamp will be added to the
+/// if [omitGenerateTimestamp] is `true`, no timestamp will be added to the
 /// output. The default value is `false`.
 Future<GenerationResult> generate(
     String projectPath, List<Generator> generators,
     {Iterable<String> changeFilePaths, List<String> librarySearchPaths,
-    bool omitGeneateTimestamp}) async {
-  if (omitGeneateTimestamp == null) {
-    omitGeneateTimestamp = false;
+    bool omitGenerateTimestamp}) async {
+  if (omitGenerateTimestamp == null) {
+    omitGenerateTimestamp = false;
   }
 
   if (changeFilePaths == null || changeFilePaths.isEmpty) {
@@ -76,7 +76,7 @@ Future<GenerationResult> generate(
 
   await Future.forEach(libs, (elementLibrary) async {
     var msg = await _generateForLibrary(
-        elementLibrary, projectPath, generators, !omitGeneateTimestamp);
+        elementLibrary, projectPath, generators, !omitGenerateTimestamp);
     results.add(msg);
   });
 
@@ -88,7 +88,7 @@ Future<LibraryGenerationResult> _generateForLibrary(LibraryElement library,
     bool includeTimestamp) async {
   var generatedOutputs = await _generate(library, generators).toList();
 
-  var genFileName = _getGeterateFilePath(library, projectPath);
+  var genFileName = _getGeneratedFilePath(library, projectPath);
 
   var file = new File(genFileName);
 
@@ -114,7 +114,7 @@ Future<LibraryGenerationResult> _generateForLibrary(LibraryElement library,
     contentBuffer.writeln(_headerLine);
     contentBuffer.writeln('// Generator: ${output.generator}');
     contentBuffer
-        .writeln('// Target: ${frieldlyNameForElement(output.sourceMember)}');
+        .writeln('// Target: ${friendlyNameForElement(output.sourceMember)}');
     contentBuffer.writeln(_headerLine);
     contentBuffer.writeln('');
 
@@ -159,7 +159,7 @@ if approppriate.""");
   }
 }
 
-String _getGeterateFilePath(LibraryElement lib, String projectPath) {
+String _getGeneratedFilePath(LibraryElement lib, String projectPath) {
   var libraryPath = getFileBasedSourcePath(lib.source as FileBasedSource);
 
   assert(p.isWithin(projectPath, libraryPath));

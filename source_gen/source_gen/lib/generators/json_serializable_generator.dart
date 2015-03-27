@@ -18,7 +18,7 @@ class JsonSerializableGenerator
   Future<String> generateForAnnotatedElement(
       Element element, JsonSerializable annotation) async {
     if (element is! ClassElement) {
-      var friendlyName = frieldlyNameForElement(element);
+      var friendlyName = friendlyNameForElement(element);
       throw new InvalidGenerationSourceError(
           'Generator cannot target `$friendlyName`.',
           todo: 'Remove the JsonSerializable annotation from `$friendlyName`.');

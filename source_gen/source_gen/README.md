@@ -11,7 +11,7 @@ release [here](https://www.dartlang.org/tools/download-archive/).**
 * A **framework** for creating and using multiple code generators in a single
   project.
 * A **convention** for human and tool generated Dart code to coexist with clean
-  seperation.
+  separation.
 
 ## Example
 
@@ -95,7 +95,7 @@ Transformers allow modification of existing code and encapsulates changes by
 having developers use `pub` commands – `run`, `serve`, and `build`.
 
 `source_gen` provides a different model. Code is generated and updated
-as part of a project. It is designed to create *part* files that agument
+as part of a project. It is designed to create *part* files that augment
 developer maintained Dart libraries.
 
 Generated code **MAY** be checked in as part of our project source,

@@ -35,7 +35,7 @@ String findPartOf(String source) {
   }
 }
 
-String frieldlyNameForElement(Element element) {
+String friendlyNameForElement(Element element) {
   var friendlyName = element.displayName;
 
   if (friendlyName == null) {

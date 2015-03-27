@@ -24,7 +24,7 @@ void main() {
 
     var relativeFilePath = p.join('lib', 'test_lib.dart');
     var output = await generate(projectPath, [const _BadOutputGenerator()],
-        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+        changeFilePaths: [relativeFilePath], omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single,
@@ -55,7 +55,7 @@ void main() {
     var projectPath = await _createPackageStub('pkg');
 
     var output = await generate(projectPath, [const CommentGenerator()],
-        omitGeneateTimestamp: true);
+        omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single,
@@ -128,7 +128,7 @@ void main() {
         .writeAsString(_testLibContentNoClass);
 
     output = await generate(projectPath, [const CommentGenerator()],
-        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+        changeFilePaths: [relativeFilePath], omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single,
@@ -152,7 +152,7 @@ void main() {
         .writeAsString(_testLibPartContentNoClass);
 
     output = await generate(projectPath, [const CommentGenerator()],
-        changeFilePaths: [partRelativeFilePath], omitGeneateTimestamp: true);
+        changeFilePaths: [partRelativeFilePath], omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single,
@@ -176,7 +176,7 @@ void main() {
         .writeAsString(_testOtherFileContent);
 
     output = await generate(projectPath, [const CommentGenerator()],
-        changeFilePaths: [partRelativeFilePath], omitGeneateTimestamp: true);
+        changeFilePaths: [partRelativeFilePath], omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single, const LibraryGenerationResult.noop());
@@ -224,7 +224,7 @@ void main() {
         .writeAsString(_testLibContentNoClass);
 
     output = await generate(projectPath, [const CommentGenerator()],
-        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+        changeFilePaths: [relativeFilePath], omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single,
@@ -248,7 +248,7 @@ void main() {
 
     var relativeFilePath = p.join('lib', 'test_lib.dart');
     var output = await generate(projectPath, [const CommentGenerator()],
-        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+        changeFilePaths: [relativeFilePath], omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single,
@@ -271,7 +271,7 @@ void main() {
         .writeAsString(_testLibContentWithError);
 
     output = await generate(projectPath, [const CommentGenerator()],
-        changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+        changeFilePaths: [relativeFilePath], omitGenerateTimestamp: true);
 
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single,
@@ -305,7 +305,7 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
 
   var relativeFilePath = p.join('lib', 'test_lib.dart');
   var output = await generate(projectPath, [gen],
-      changeFilePaths: [relativeFilePath], omitGeneateTimestamp: true);
+      changeFilePaths: [relativeFilePath], omitGenerateTimestamp: true);
 
   expect(output.kind, GenerationResultKind.okay);
   expect(output.results.single,
