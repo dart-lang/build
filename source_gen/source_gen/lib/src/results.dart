@@ -57,4 +57,3 @@ class LibraryGenerationResult {
       other.kind == kind &&
       other.generatedFilePath == generatedFilePath;
 }
-

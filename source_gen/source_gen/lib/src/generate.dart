@@ -167,7 +167,7 @@ String _getGeterateFilePath(LibraryElement lib, String projectPath) {
   var libraryDir = p.dirname(libraryPath);
   var libFileName = p.basename(libraryPath);
   assert(pathToDartFile(libFileName));
-  
+
   libFileName = p.basenameWithoutExtension(libFileName);
 
   return p.join(libraryDir, "${libFileName}${generatedExtension}");
