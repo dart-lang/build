@@ -160,18 +160,14 @@ if approppriate.""");
 }
 
 String _getGeterateFilePath(LibraryElement lib, String projectPath) {
-  var librarySource = lib.source as FileBasedSource;
-
-  var libraryPath = p.fromUri(librarySource.uri);
+  var libraryPath = getFileBasedSourcePath(lib.source as FileBasedSource);
 
   assert(p.isWithin(projectPath, libraryPath));
 
   var libraryDir = p.dirname(libraryPath);
   var libFileName = p.basename(libraryPath);
   assert(pathToDartFile(libFileName));
-
-  assert(libFileName.indexOf('.') == libFileName.length - 5);
-
+  
   libFileName = p.basenameWithoutExtension(libFileName);
 
   return p.join(libraryDir, "${libFileName}${generatedExtension}");

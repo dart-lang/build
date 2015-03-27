@@ -161,6 +161,10 @@ LibraryElement _getLibraryElement(String path, AnalysisContext context) {
   return null;
 }
 
+String getFileBasedSourcePath(FileBasedSource source) {
+  return p.fromUri(source.uri);
+}
+
 // may return `null` if [path] doesn't refer to a library.
 /// [dartFiles] is a [Stream] of paths to [.dart] files.
 Iterable<LibraryElement> _getLibraryElements(
