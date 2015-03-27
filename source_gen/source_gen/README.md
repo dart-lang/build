@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/kevmoo/source_gen.dart.svg?branch=master)](https://travis-ci.org/kevmoo/source_gen.dart)
-[![Coverage Status](https://coveralls.io/repos/kevmoo/source_gen.dart/badge.svg?branch=master)](https://coveralls.io/r/kevmoo/source_gen.dart?branch=master)
+[![Coverage Status](https://coveralls.io/repos/kevmoo/source_gen.dart/badge.svg?branch=master)](https://coveralls.io/r/kevmoo/source_gen.dart)
 [![Stories in Ready](https://badge.waffle.io/kevmoo/source_gen.dart.png?label=ready&title=Ready)](https://waffle.io/kevmoo/source_gen.dart)
 
 **NOTE: Dart 1.9 is required to use this package. You can download a Dev channel 
