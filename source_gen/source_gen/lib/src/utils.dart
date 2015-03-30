@@ -87,7 +87,12 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
     new PackageUriResolver([packageDirectory])
   ];
 
+  // TODO: Remove this once dartbug.com/23017 is fixed
+  // See source_gen bug https://github.com/kevmoo/source_gen.dart/issues/46
+  var options = new AnalysisOptionsImpl()..cacheSize = 256;
+
   var context = AnalysisEngine.instance.createAnalysisContext()
+    ..analysisOptions = (options)
     ..sourceFactory = new SourceFactory(resolvers);
 
   // ensures all libraries defined by the set of files are resolved
