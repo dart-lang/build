@@ -2,6 +2,8 @@
 [![Coverage Status](https://coveralls.io/repos/kevmoo/source_gen.dart/badge.svg?branch=master)](https://coveralls.io/r/kevmoo/source_gen.dart)
 [![Stories in Ready](https://badge.waffle.io/kevmoo/source_gen.dart.png?label=ready&title=Ready)](https://waffle.io/kevmoo/source_gen.dart)
 
+_**Highly experimental. Expect breaking changes.**_
+
 `source_gen` provides:
 
 * A **tool** for generating code that is part of your Dart project.
