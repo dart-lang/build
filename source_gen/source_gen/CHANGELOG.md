@@ -1,3 +1,7 @@
+##0.3.0+1
+
+* Updates for move to `dart-lang` org on GitHub.
+
 ##0.3.0
 
 * **BREAKING** Returning a descriptive value from `generate`.
@@ -28,15 +32,15 @@
 ##0.2.1
 
 * Fixed critical bug affecting annotation matching.
-  [#35](https://github.com/kevmoo/source_gen.dart/issues/35)
+  [#35](https://github.com/dart-lang/source_gen/issues/35)
   
 * Started using published `dart_style` package.
 
 ##0.2.0+2
 
 * Tweaks to `JsonGenerator` to address 
-  [#31](https://github.com/kevmoo/source_gen.dart/issues/31) and
-  [#32](https://github.com/kevmoo/source_gen.dart/issues/32)
+  [#31](https://github.com/dart-lang/source_gen/issues/31) and
+  [#32](https://github.com/dart-lang/source_gen/issues/32)
 
 ##0.2.0+1
 * Updated `README.md` with new examples.

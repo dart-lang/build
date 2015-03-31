@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/kevmoo/source_gen.dart.svg?branch=master)](https://travis-ci.org/kevmoo/source_gen.dart)
-[![Coverage Status](https://coveralls.io/repos/kevmoo/source_gen.dart/badge.svg?branch=master)](https://coveralls.io/r/kevmoo/source_gen.dart)
-[![Stories in Ready](https://badge.waffle.io/kevmoo/source_gen.dart.png?label=ready&title=Ready)](https://waffle.io/kevmoo/source_gen.dart)
+[![Build Status](https://travis-ci.org/dart-lang/source_gen.svg?branch=master)](https://travis-ci.org/dart-lang/source_gen)
+[![Coverage Status](https://coveralls.io/repos/dart-lang/source_gen/badge.svg?branch=master)](https://coveralls.io/r/dart-lang/source_gen)
+[![Stories in Ready](https://badge.waffle.io/dart-lang/source_gen.png?label=ready&title=Ready)](https://waffle.io/dart-lang/source_gen)
 
 _**Highly experimental. Expect breaking changes.**_
 
@@ -105,10 +105,10 @@ package*. The fact that `source_gen` is used in a package is an *implementation
 detail*.
 
 [Dart Transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
-[example code]: https://github.com/kevmoo/source_gen.dart/tree/master/example
-[Trivial example]: https://github.com/kevmoo/source_gen.dart/blob/master/test/src/class_comment_generator.dart
-[Included generators]: https://github.com/kevmoo/source_gen.dart/tree/master/lib/generators
-[build.dart]: https://github.com/kevmoo/source_gen.dart/blob/master/build.dart
+[example code]: https://github.com/dart-lang/source_gen/tree/master/example
+[Trivial example]: https://github.com/dart-lang/source_gen/blob/master/test/src/class_comment_generator.dart
+[Included generators]: https://github.com/dart-lang/source_gen/tree/master/lib/generators
+[build.dart]: https://github.com/dart-lang/source_gen/blob/master/build.dart
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
 [build]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_build
 [Dart Editor build system]: https://www.dartlang.org/tools/editor/build.html

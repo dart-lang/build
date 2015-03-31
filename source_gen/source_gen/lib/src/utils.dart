@@ -92,7 +92,7 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
   ];
 
   // TODO: Remove this once dartbug.com/23017 is fixed
-  // See source_gen bug https://github.com/kevmoo/source_gen.dart/issues/46
+  // See source_gen bug https://github.com/dart-lang/source_gen/issues/46
   var options = new AnalysisOptionsImpl()..cacheSize = 256;
 
   var context = AnalysisEngine.instance.createAnalysisContext()
