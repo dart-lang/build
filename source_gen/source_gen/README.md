@@ -106,7 +106,7 @@ detail*.
 
 [Dart Transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
 [example code]: https://github.com/dart-lang/source_gen/tree/master/example
-[Trivial example]: https://github.com/dart-lang/source_gen/blob/master/test/src/class_comment_generator.dart
+[Trivial example]: https://github.com/dart-lang/source_gen/blob/master/test/src/comment_generator.dart
 [Included generators]: https://github.com/dart-lang/source_gen/tree/master/lib/generators
 [build.dart]: https://github.com/dart-lang/source_gen/blob/master/build.dart
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate

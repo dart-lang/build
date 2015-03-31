@@ -1,3 +1,7 @@
+##0.3.0+2
+
+* Fixed `README.md`.
+
 ##0.3.0+1
 
 * Updates for move to `dart-lang` org on GitHub.
