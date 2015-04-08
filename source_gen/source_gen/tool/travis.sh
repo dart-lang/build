@@ -3,6 +3,8 @@
 # Fast fail the script on failures.   
 set -e
 
+$(dirname -- "$0")/ensure_dartfmt.sh
+
 # Run the tests.
 dart --checked test/test_all.dart
 
