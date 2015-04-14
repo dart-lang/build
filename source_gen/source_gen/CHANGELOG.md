@@ -1,3 +1,8 @@
+##0.4.0
+
+* Analysis no longer parses function bodies. This greatly speeds up generation,
+  but it could break any usage that needs function bodies.
+
 ##0.3.0+2
 
 * Fixed `README.md`.

@@ -93,10 +93,12 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
 
   // TODO: Remove this once dartbug.com/23017 is fixed
   // See source_gen bug https://github.com/dart-lang/source_gen/issues/46
-  var options = new AnalysisOptionsImpl()..cacheSize = 256;
+  var options = new AnalysisOptionsImpl()
+    ..cacheSize = 256
+    ..analyzeFunctionBodies = false;
 
   var context = AnalysisEngine.instance.createAnalysisContext()
-    ..analysisOptions = (options)
+    ..analysisOptions = options
     ..sourceFactory = new SourceFactory(resolvers);
 
   // ensures all libraries defined by the set of files are resolved
