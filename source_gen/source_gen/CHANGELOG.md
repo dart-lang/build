@@ -1,3 +1,7 @@
+##0.4.0+1
+
+* Support the latest release of `analyzer` and `args`.
+
 ##0.4.0
 
 * Analysis no longer parses function bodies. This greatly speeds up generation,
