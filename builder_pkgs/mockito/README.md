@@ -3,11 +3,11 @@ dart-mockito
 
 Mock library for Dart inspired by [Mockito](https://code.google.com/p/mockito/).
 
-Current mock libraries suffer from specifing method names as strings, which cause a lot of problems:
+Current mock libraries suffer from specifying method names as strings, which cause a lot of problems:
   * Poor refactoring support: rename method and you need manually search/replace it's usage in when/verify clauses.
   * Poor support from IDE: no code-completion, no hints on argument types, can't jump to definition
 
-Dart-mockito fixes it - stubbing and verifing are first-class citizens.
+Dart-mockito fixes it - stubbing and verifying are first-class citizens.
 
 ## Let's create mocks
 ```dart
