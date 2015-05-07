@@ -7,7 +7,7 @@ Current mock libraries suffer from specifing method names as strings, which caus
   * Poor refactoring support: rename method and you need manually search/replace it's usage in when/verify clauses.
   * Poor support from IDE: no code-completion, no hints on argument types, can't jump to definition
 
-Dart-mockito fixes it - stubbing and verifing are first-class citisens.
+Dart-mockito fixes it - stubbing and verifing are first-class citizens.
 
 ## Let's create mocks
 ```dart
