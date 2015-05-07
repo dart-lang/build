@@ -1,6 +1,7 @@
 library mockito;
 
 import 'package:matcher/matcher.dart';
+import 'package:test/test.dart';
 import 'dart:mirrors';
 
 bool _whenInProgress = false; 
