@@ -20,10 +20,10 @@ Dart-mockito fixes it - stubbing and verifying are first-class citizens.
     void sleep(){}
     int lives = 9;
   }
-  
+
   //Mock class
   class MockCat extends Mock implements Cat{}
-  
+
   //mock creation
   var cat = new MockCat();
 ```
@@ -44,7 +44,7 @@ Once created, mock will remember all interactions. Then you can selectively veri
   //stubbing - before execution
   when(cat.sound()).thenReturn("Purr");
   expect(cat.sound(), "Purr");
-  //you can call it again 
+  //you can call it again
   expect(cat.sound(), "Purr");
   //let's change stub
   when(cat.sound()).thenReturn("Meow");
@@ -53,7 +53,7 @@ Once created, mock will remember all interactions. Then you can selectively veri
   when(cat.lives).thenReturn(9);
   expect(cat.lives, 9);
 ```
-  
+
 By default, for all methods that return value, mock returns null.
 Stubbing can be overridden: for example common stubbing can go to fixture setup but the test methods can override it. Please note that overridding stubbing is a potential code smell that points out too much stubbing.
 Once stubbed, the method will always return stubbed value regardless of how many times it is called.
