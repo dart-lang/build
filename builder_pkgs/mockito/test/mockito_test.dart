@@ -22,9 +22,13 @@ abstract class AbstractFoo implements Foo {
   String baz();
 }
 
-class MockFoo extends AbstractFoo with Mock {}
+class MockFoo extends AbstractFoo with Mock {
+  noSuchMethod(i) => super.noSuchMethod(i);
+}
 
-class MockedClass extends Mock implements RealClass {}
+class MockedClass extends Mock implements RealClass {
+  noSuchMethod(i) => super.noSuchMethod(i);
+}
 
 expectFail(String expectedMessage, expectedToFail()) {
   try {
@@ -41,7 +45,7 @@ expectFail(String expectedMessage, expectedToFail()) {
   }
 }
 
-main() {
+void main() {
   RealClass mock;
 
   setUp(() {
@@ -102,7 +106,7 @@ main() {
       expect(mock.getter, equals("A"));
     });
     test("should mock hashCode", () {
-      named(mock, hashCode: 42);
+      named(mock as Mock, hashCode: 42);
       expect(mock.hashCode, equals(42));
     });
     test("should have hashCode when it is not mocked", () {
@@ -116,12 +120,12 @@ main() {
       expect(mock.toString(), equals("MockedClass"));
     });
     test("should have toString as name when it is not mocked", () {
-      named(mock, name: "Cat");
+      named(mock as Mock, name: "Cat");
       expect(mock.toString(), equals("Cat"));
     });
     test("should mock equals between mocks when givenHashCode is equals", () {
       var anotherMock = named(new MockedClass(), hashCode: 42);
-      named(mock, hashCode: 42);
+      named(mock as Mock, hashCode: 42);
       expect(mock == anotherMock, isTrue);
     });
     test("should use identical equality between it is not mocked", () {
@@ -213,7 +217,6 @@ main() {
     test("should mock method with argument matcher and capturer", () {
       mock.methodWithNormalArgs(50);
       mock.methodWithNormalArgs(100);
-      var captured = 0;
       expect(verify(mock.methodWithNormalArgs(
           captureThat(greaterThan(75)))).captured.single, equals(100));
       expect(verify(mock
@@ -318,14 +321,14 @@ main() {
 
   group("verifyZeroInteractions()", () {
     test("never touched pass", () {
-      verifyZeroInteractions(mock);
+      verifyZeroInteractions(mock as Mock);
     });
     test("any touch fails", () {
       mock.methodWithoutArgs();
       expectFail(
           "No interaction expected, but following found: MockedClass.methodWithoutArgs()",
           () {
-        verifyZeroInteractions(mock);
+        verifyZeroInteractions(mock as Mock);
       });
     });
     test("verifired call fails", () {
@@ -334,26 +337,26 @@ main() {
       expectFail(
           "No interaction expected, but following found: [VERIFIED] MockedClass.methodWithoutArgs()",
           () {
-        verifyZeroInteractions(mock);
+        verifyZeroInteractions(mock as Mock);
       });
     });
   });
   group("verifyNoMoreInteractions()", () {
     test("never touched pass", () {
-      verifyNoMoreInteractions(mock);
+      verifyNoMoreInteractions(mock as Mock);
     });
     test("any unverified touch fails", () {
       mock.methodWithoutArgs();
       expectFail(
           "No more calls expected, but following found: MockedClass.methodWithoutArgs()",
           () {
-        verifyNoMoreInteractions(mock);
+        verifyNoMoreInteractions(mock as Mock);
       });
     });
     test("verified touch passes", () {
       mock.methodWithoutArgs();
       verify(mock.methodWithoutArgs());
-      verifyNoMoreInteractions(mock);
+      verifyNoMoreInteractions(mock as Mock);
     });
   });
   group("verifyInOrder()", () {
