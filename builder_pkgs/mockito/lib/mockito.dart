@@ -1,18 +1,20 @@
 library mockito;
 
-import 'package:test/test.dart';
 import 'dart:mirrors';
+
+import 'package:test/test.dart';
+
+final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
+final _TimeStampProvider _timer = new _TimeStampProvider();
+final List _capturedArgs = [];
 
 bool _whenInProgress = false;
 bool _verificationInProgress = false;
 _WhenCall _whenCall = null;
-List<_VerifyCall> _verifyCalls = [];
-_TimeStampProvider _timer = new _TimeStampProvider();
-List _capturedArgs = [];
 
 class Mock {
-  List<RealCall> _realCalls = [];
-  List<CannedResponse> _responses = [];
+  final List<RealCall> _realCalls = <RealCall>[];
+  final List<CannedResponse> _responses = <CannedResponse>[];
   String _givenName = null;
   int _givenHashCode = null;
   var _defaultResponse = () => new CannedResponse(null, (_) => null);
@@ -46,16 +48,16 @@ class Mock {
   String toString() => _givenName != null ? _givenName : runtimeType.toString();
 }
 
-named(dynamic mock, {String name, int hashCode}) => mock
+named(Mock mock, {String name, int hashCode}) => mock
   .._givenName = name
   .._givenHashCode = hashCode;
 
-reset(var mock) {
+void reset(Mock mock) {
   mock._realCalls.clear();
   mock._responses.clear();
 }
 
-clearInteractions(var mock) {
+void clearInteractions(Mock mock) {
   mock._realCalls.clear();
 }
 
@@ -85,7 +87,7 @@ class PostExpectation {
 }
 
 class InvocationMatcher {
-  Invocation roleInvocation;
+  final Invocation roleInvocation;
 
   InvocationMatcher(this.roleInvocation);
 
@@ -223,8 +225,8 @@ class RealCall {
 }
 
 class _WhenCall {
-  Mock mock;
-  Invocation whenInvocation;
+  final Mock mock;
+  final Invocation whenInvocation;
   _WhenCall(this.mock, this.whenInvocation);
 
   void _setExpected(Answering answer) {
@@ -234,8 +236,8 @@ class _WhenCall {
 }
 
 class _VerifyCall {
-  Mock mock;
-  Invocation verifyInvocation;
+  final Mock mock;
+  final Invocation verifyInvocation;
   List<RealCall> matchingInvocations;
 
   _VerifyCall(this.mock, this.verifyInvocation) {
@@ -246,13 +248,13 @@ class _VerifyCall {
     }).toList();
   }
 
-  _findAfter(DateTime dt) {
+  RealCall _findAfter(DateTime dt) {
     return matchingInvocations.firstWhere(
         (inv) => !inv.verified && inv.timeStamp.isAfter(dt),
         orElse: () => null);
   }
 
-  _checkWith(bool never) {
+  void _checkWith(bool never) {
     if (!never && matchingInvocations.isEmpty) {
       var otherCallsText = "";
       if (mock._realCalls.isNotEmpty) {
@@ -272,8 +274,8 @@ class _VerifyCall {
 }
 
 class _ArgMatcher {
-  Matcher _matcher;
-  bool _capture;
+  final Matcher _matcher;
+  final bool _capture;
 
   _ArgMatcher(this._matcher, this._capture);
 }
@@ -364,14 +366,14 @@ InOrderVerification get verifyInOrder {
   };
 }
 
-verifyNoMoreInteractions(var mock) {
+void verifyNoMoreInteractions(Mock mock) {
   var unverified = mock._realCalls.where((inv) => !inv.verified).toList();
   if (unverified.isNotEmpty) {
     fail("No more calls expected, but following found: " + unverified.join());
   }
 }
 
-verifyZeroInteractions(var mock) {
+void verifyZeroInteractions(Mock mock) {
   if (mock._realCalls.isNotEmpty) {
     fail("No interaction expected, but following found: " +
         mock._realCalls.join());
@@ -388,7 +390,7 @@ Expectation get when {
   };
 }
 
-logInvocations(List<Mock> mocks) {
+void logInvocations(List<Mock> mocks) {
   List<RealCall> allInvocations =
       mocks.expand((m) => m._realCalls).toList(growable: false);
   allInvocations.sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
