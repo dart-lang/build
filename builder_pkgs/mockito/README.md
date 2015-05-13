@@ -19,7 +19,10 @@ class Cat {
 }
 
 //Mock class
-class MockCat extends Mock implements Cat{}
+class MockCat extends Mock implements Cat{
+  //this tells Dart analyzer you meant not to implement all methods, and not to hint/warn that methods are missing 
+  noSuchMethod(i) => super.noSuchMethod(i);
+}
 
 //mock creation
 var cat = new MockCat();
