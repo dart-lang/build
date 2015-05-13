@@ -59,6 +59,13 @@ clearInteractions(var mock) {
   mock._realCalls.clear();
 }
 
+dynamic spy(dynamic mock, dynamic spiedObject) {
+  var mirror = reflect(spiedObject);
+  mock._defaultResponse = () => new CannedResponse(
+      null, (Invocation realInvocation) => mirror.delegate(realInvocation));
+  return mock;
+}
+
 class PostExpectation {
   thenReturn(expected) {
     return _completeWhen((_) => expected);

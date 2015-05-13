@@ -48,6 +48,25 @@ main() {
     mock = new MockedClass();
   });
 
+  group("spy", () {
+    setUp(() {
+      mock = spy(new MockedClass(), new RealClass());
+    });
+
+    test("should delegate to real object by default", () {
+      expect(mock.methodWithoutArgs(), 'Real');
+    });
+    test("should record interactions delegated to real object", () {
+      mock.methodWithoutArgs();
+      verify(mock.methodWithoutArgs());
+    });
+    test("should behave as mock when expectation are set", () {
+      when(mock.methodWithoutArgs()).thenReturn('Spied');
+      expect(mock.methodWithoutArgs(), 'Spied');
+    });
+  });
+
+
   group("mixin support", () {
     test("should work", () {
       var foo = new MockFoo();
