@@ -1,11 +1,9 @@
 name: mockito
-version: 0.10.0
+version: 0.10.1
 author: Dmitriy Fibulwinter <fibulwinter@gmail.com>
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/fibulwinter/dart-mockito
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:
-  matcher: '>=0.12.0 <1.0.0'
-dev_dependencies:
-  test: '>=0.12.0 <1.0.0'
+  test: '>=0.12.0 <0.13.0'

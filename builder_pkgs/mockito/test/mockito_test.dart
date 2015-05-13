@@ -41,7 +41,7 @@ expectFail(String expectedMessage, expectedToFail()) {
   }
 }
 
-main() {
+void main() {
   RealClass mock;
 
   setUp(() {
@@ -232,7 +232,6 @@ main() {
     test("should mock method with argument matcher and capturer", () {
       mock.methodWithNormalArgs(50);
       mock.methodWithNormalArgs(100);
-      var captured = 0;
       expect(verify(mock.methodWithNormalArgs(
           captureThat(greaterThan(75)))).captured.single, equals(100));
       expect(verify(mock
