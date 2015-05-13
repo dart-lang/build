@@ -4,13 +4,13 @@ import 'dart:mirrors';
 
 import 'package:test/test.dart';
 
-final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
-final _TimeStampProvider _timer = new _TimeStampProvider();
-final List _capturedArgs = [];
 
 bool _whenInProgress = false;
 bool _verificationInProgress = false;
 _WhenCall _whenCall = null;
+final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
+final _TimeStampProvider _timer = new _TimeStampProvider();
+final List _capturedArgs = [];
 
 class Mock {
   final List<RealCall> _realCalls = <RealCall>[];
@@ -48,16 +48,16 @@ class Mock {
   String toString() => _givenName != null ? _givenName : runtimeType.toString();
 }
 
-named(Mock mock, {String name, int hashCode}) => mock
+named(var mock, {String name, int hashCode}) => mock
   .._givenName = name
   .._givenHashCode = hashCode;
 
-void reset(Mock mock) {
+void reset(var mock) {
   mock._realCalls.clear();
   mock._responses.clear();
 }
 
-void clearInteractions(Mock mock) {
+void clearInteractions(var mock) {
   mock._realCalls.clear();
 }
 
@@ -366,14 +366,14 @@ InOrderVerification get verifyInOrder {
   };
 }
 
-void verifyNoMoreInteractions(Mock mock) {
+void verifyNoMoreInteractions(var mock) {
   var unverified = mock._realCalls.where((inv) => !inv.verified).toList();
   if (unverified.isNotEmpty) {
     fail("No more calls expected, but following found: " + unverified.join());
   }
 }
 
-void verifyZeroInteractions(Mock mock) {
+void verifyZeroInteractions(var mock) {
   if (mock._realCalls.isNotEmpty) {
     fail("No interaction expected, but following found: " +
         mock._realCalls.join());

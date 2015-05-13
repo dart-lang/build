@@ -22,13 +22,9 @@ abstract class AbstractFoo implements Foo {
   String baz();
 }
 
-class MockFoo extends AbstractFoo with Mock {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockFoo extends AbstractFoo with Mock {}
 
-class MockedClass extends Mock implements RealClass {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockedClass extends Mock implements RealClass {}
 
 expectFail(String expectedMessage, expectedToFail()) {
   try {
@@ -125,7 +121,7 @@ void main() {
       expect(mock.getter, equals("A"));
     });
     test("should mock hashCode", () {
-      named(mock as Mock, hashCode: 42);
+      named(mock, hashCode: 42);
       expect(mock.hashCode, equals(42));
     });
     test("should have hashCode when it is not mocked", () {
@@ -139,12 +135,12 @@ void main() {
       expect(mock.toString(), equals("MockedClass"));
     });
     test("should have toString as name when it is not mocked", () {
-      named(mock as Mock, name: "Cat");
+      named(mock, name: "Cat");
       expect(mock.toString(), equals("Cat"));
     });
     test("should mock equals between mocks when givenHashCode is equals", () {
       var anotherMock = named(new MockedClass(), hashCode: 42);
-      named(mock as Mock, hashCode: 42);
+      named(mock, hashCode: 42);
       expect(mock == anotherMock, isTrue);
     });
     test("should use identical equality between it is not mocked", () {
@@ -340,14 +336,14 @@ void main() {
 
   group("verifyZeroInteractions()", () {
     test("never touched pass", () {
-      verifyZeroInteractions(mock as Mock);
+      verifyZeroInteractions(mock);
     });
     test("any touch fails", () {
       mock.methodWithoutArgs();
       expectFail(
           "No interaction expected, but following found: MockedClass.methodWithoutArgs()",
           () {
-        verifyZeroInteractions(mock as Mock);
+        verifyZeroInteractions(mock);
       });
     });
     test("verifired call fails", () {
@@ -356,26 +352,26 @@ void main() {
       expectFail(
           "No interaction expected, but following found: [VERIFIED] MockedClass.methodWithoutArgs()",
           () {
-        verifyZeroInteractions(mock as Mock);
+        verifyZeroInteractions(mock);
       });
     });
   });
   group("verifyNoMoreInteractions()", () {
     test("never touched pass", () {
-      verifyNoMoreInteractions(mock as Mock);
+      verifyNoMoreInteractions(mock);
     });
     test("any unverified touch fails", () {
       mock.methodWithoutArgs();
       expectFail(
           "No more calls expected, but following found: MockedClass.methodWithoutArgs()",
           () {
-        verifyNoMoreInteractions(mock as Mock);
+        verifyNoMoreInteractions(mock);
       });
     });
     test("verified touch passes", () {
       mock.methodWithoutArgs();
       verify(mock.methodWithoutArgs());
-      verifyNoMoreInteractions(mock as Mock);
+      verifyNoMoreInteractions(mock);
     });
   });
   group("verifyInOrder()", () {
