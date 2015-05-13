@@ -1,5 +1,7 @@
 Mock library for Dart inspired by [Mockito](https://code.google.com/p/mockito/).
 
+[![Pub](https://img.shields.io/pub/v/mockito.svg)]()
+
 Current mock libraries suffer from specifying method names as strings, which cause a lot of problems:
   * Poor refactoring support: rename method and you need manually search/replace it's usage in when/verify clauses.
   * Poor support from IDE: no code-completion, no hints on argument types, can't jump to definition
