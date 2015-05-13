@@ -127,3 +127,14 @@ Verification in order is flexible - you don't have to verify all interactions on
   cat.eatFood("Fish");
   expect(verify(cat.eatFood(captureThat(startsWith("F")).captured, ["Fish"]);
 ```
+## Spy
+```dart
+  //spy creation
+  var cat = spy(new MockCat(), new Cat());
+  //stubbing - before execution
+  when(cat.sound()).thenReturn("Purr");
+  //using mocked interaction
+  expect(cat.sound(), "Purr");  
+  //using real object
+  expect(cat.lives, 9);   
+```
