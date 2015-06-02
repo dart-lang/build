@@ -7,3 +7,6 @@ const PublicAnnotationClass localTypedAnnotationInPart =
 
 @PublicAnnotationClass()
 class CtorNoParamsInPart {}
+
+@PublicAnnotationClassInPart()
+class CtorNoParamsFromPartInPart {}

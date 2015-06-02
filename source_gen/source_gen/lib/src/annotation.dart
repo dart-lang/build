@@ -122,18 +122,20 @@ bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
     return false;
   }
 
-  var annotationSource = annotationValueType.element.source as FileBasedSource;
+  var annotationLibSource =
+      annotationValueType.element.library.source as FileBasedSource;
 
   var libOwnerUri = (classMirror.owner as LibraryMirror).uri;
-  var annotationSourceUri = annotationSource.uri;
+  var annotationLibSourceUri = annotationLibSource.uri;
 
-  if (annotationSourceUri.scheme == 'file' && libOwnerUri.scheme == 'package') {
+  if (annotationLibSourceUri.scheme == 'file' &&
+      libOwnerUri.scheme == 'package') {
     // try to turn the libOwnerUri into a file uri
 
     libOwnerUri = _fileUriFromPackageUri(libOwnerUri);
   }
 
-  return annotationSource.uri == libOwnerUri;
+  return annotationLibSource.uri == libOwnerUri;
 }
 
 Uri _fileUriFromPackageUri(Uri libraryPackageUri) {

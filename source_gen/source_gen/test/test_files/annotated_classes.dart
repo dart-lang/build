@@ -13,6 +13,12 @@ const PublicAnnotationClass localTypedAnnotation =
 @PublicAnnotationClass()
 class CtorNoParams {}
 
+@OtherPublicAnnotationClass()
+class OtherClassCtorNoParams {}
+
+@PublicAnnotationClassInPart()
+class CtorNoParamsFromPart {}
+
 @PublicAnnotationClass.withAnIntAsOne()
 class NonDefaultCtorNoParams {}
 
