@@ -34,7 +34,7 @@ String findPartOf(String source) {
     var offset = partOf.offset;
 
     return source.substring(offset);
-  } on AnalyzerErrorGroup catch (e) {
+  } on AnalyzerErrorGroup {
     return null;
   }
 }
