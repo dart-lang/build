@@ -11,14 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:scheduled_test/scheduled_test.dart';
 import 'package:source_gen/source_gen.dart';
 
-String _scriptPath() => p.fromUri(Platform.script);
-
-String getPackagePath() {
-  var testDir = p.dirname(_scriptPath());
-  assert(p.basename(testDir) == 'test');
-
-  return p.dirname(testDir);
-}
+String getPackagePath() => p.current;
 
 Future<Directory> createTempDir([bool scheduleDelete = true]) async {
   var ticks = new DateTime.now().toUtc().millisecondsSinceEpoch;

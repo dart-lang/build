@@ -242,7 +242,7 @@ Future<LibraryElement> _getTestLibElement() async {
   var context = await getAnalysisContextForProjectPath(projectPath, foundFiles);
 
   var annotatedClassesFilePath =
-      p.join(getPackagePath(), testFilesRelativePath, 'annotated_classes.dart');
+      p.join(projectPath, testFilesRelativePath, 'annotated_classes.dart');
 
   return getLibraryElementForSourceFile(context, annotatedClassesFilePath);
 }

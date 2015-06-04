@@ -160,6 +160,9 @@ String get _packageRoot {
       dir = p.join(p.current, 'packages');
     }
 
+    // Handle the case where we're running via pub and dir is a file: URI
+    dir = p.prettyUri(dir);
+
     assert(FileSystemEntity.isDirectorySync(dir));
     _packageRootCache = dir;
   }
