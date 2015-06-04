@@ -54,6 +54,10 @@ class PublicAnnotationClass {
         child2 = const PublicAnnotationClass.withAnIntAsOne();
 }
 
+class OtherPublicAnnotationClass {
+  const OtherPublicAnnotationClass();
+}
+
 const objectAnnotation = const {
   'int': 1,
   'bool': true,

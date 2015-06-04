@@ -186,29 +186,38 @@ void main() {
         expect(matched, isTrue);
       });
 
+      test('not annotated with specified class', () {
+        var annotatedClass =
+            _getAnnotationForClass(libElement, 'OtherClassCtorNoParams');
+        var annotation = annotatedClass.metadata.single;
+        var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
+        expect(matched, isFalse, reason: 'not annotated with that type');
+      });
+
       test('annotated with class in a part', () {
         ClassElement annotatedClass =
+            _getAnnotationForClass(libElement, 'CtorNoParamsFromPartInPart');
+        var annotation = annotatedClass.metadata.single;
+        var matched =
+            matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
+        expect(matched, isTrue);
+      });
+
+      test('class in a part annotated with class', () {
+        var annotatedClass =
             _getAnnotationForClass(libElement, 'CtorNoParamsInPart');
         var annotation = annotatedClass.metadata.single;
         var matched = matchAnnotation(defs.PublicAnnotationClass, annotation);
         expect(matched, isTrue);
       });
 
-      test('class in a part annotated with class', () {
-        var annotatedClass = _getAnnotationForClass(libElement, 'CtorNoParams');
-        var annotation = annotatedClass.metadata.single;
-        var matched =
-            matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
-        expect(matched, isFalse, reason: 'not annotated with that type');
-      });
-
       test('class in a part annotated with class in a part', () {
         ClassElement annotatedClass =
-            _getAnnotationForClass(libElement, 'CtorNoParamsInPart');
+            _getAnnotationForClass(libElement, 'CtorNoParamsFromPartInPart');
         var annotation = annotatedClass.metadata.single;
         var matched =
             matchAnnotation(defs.PublicAnnotationClassInPart, annotation);
-        expect(matched, isFalse);
+        expect(matched, isTrue);
       });
 
       test('class annotated with type defined via package uri', () {
