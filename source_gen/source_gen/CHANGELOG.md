@@ -1,3 +1,7 @@
+##0.4.1
+
+* Match annotations defined in parts. *Thanks, [Greg](https://github.com/greglittlefield-wf)!*
+
 ##0.4.0+1
 
 * Support the latest release of `analyzer` and `args`.
