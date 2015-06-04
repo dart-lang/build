@@ -11,7 +11,7 @@ import 'json_serializable_test.dart' as json_generator;
 import 'generate_test.dart' as project_generator;
 import 'utils_test.dart' as utils;
 
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('annotation', annotation.main);

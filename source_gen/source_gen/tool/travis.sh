@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Fast fail the script on failures.   
+# Fast fail the script on failures.
 set -e
 
 $(dirname -- "$0")/ensure_dartfmt.sh
 
 # Run the tests.
-dart --checked test/test_all.dart
+pub run test
 
 # Run the build.dart file - just to make sure it works
 dart --checked build.dart
@@ -15,7 +15,6 @@ dart --checked build.dart
 if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
   pub global activate dart_coveralls
   pub global run dart_coveralls report \
-    --token $COVERALLS_TOKEN \
     --retry 2 \
     --exclude-test-files \
     test/test_all.dart

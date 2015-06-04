@@ -4,9 +4,9 @@
 
 library source_gen.test.io_test;
 
-import 'package:unittest/unittest.dart';
-import 'package:source_gen/src/io.dart';
 import 'package:path/path.dart' as p;
+import 'package:source_gen/src/io.dart';
+import 'package:test/test.dart';
 
 import 'test_utils.dart';
 

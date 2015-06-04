@@ -8,7 +8,7 @@ import 'dart:async';
 
 import 'package:analyzer/src/generated/element.dart';
 import 'package:path/path.dart' as p;
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 import 'package:source_gen/generators/json_serializable.dart';
 import 'package:source_gen/src/annotation.dart';
