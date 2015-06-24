@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-03-18T19:37:31.504Z
+// 2015-06-24T03:27:46.394Z
 
 part of source_gen.example.example;
 
@@ -36,16 +36,19 @@ abstract class _$PersonSerializerMixin {
 Order _$OrderFromJson(Map json) => new Order()
   ..count = json['count']
   ..itemNumber = json['itemNumber']
-  ..isRushed = json['isRushed'];
+  ..isRushed = json['isRushed']
+  ..item = json['item'] == null ? null : new Item.fromJson(json['item']);
 
 abstract class _$OrderSerializerMixin {
   int get count;
   int get itemNumber;
   bool get isRushed;
+  Item get item;
   Map<String, dynamic> toJson() => <String, dynamic>{
     'count': count,
     'itemNumber': itemNumber,
-    'isRushed': isRushed
+    'isRushed': isRushed,
+    'item': item
   };
 }
 

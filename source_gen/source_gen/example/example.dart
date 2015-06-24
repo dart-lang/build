@@ -24,6 +24,7 @@ class Order extends Object with _$OrderSerializerMixin {
   int count;
   int itemNumber;
   bool isRushed;
+  Item item;
 
   Order();
 

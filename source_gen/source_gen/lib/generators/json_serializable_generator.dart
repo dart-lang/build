@@ -87,7 +87,7 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
 
   // Get the default constructor
   // TODO: allow overriding the ctor used for the factory
-  var ctor = classElement.constructors.singleWhere((ce) => ce.name == '');
+  var ctor = classElement.unnamedConstructor;
 
   var ctorArguments = <String>[];
   var ctorNamedArguments = <String>[];
@@ -152,13 +152,11 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
 }
 
 String _fieldToJsonMapValue(String name, FieldElement field) {
-  var result = name;
-
   if (_isDartDateTime(field.type)) {
     return "$name == null ? null : ${name}.toIso8601String()";
   }
 
-  return result;
+  return name;
 }
 
 String _jsonMapAccessToField(String name, FieldElement field) {
@@ -167,10 +165,30 @@ String _jsonMapAccessToField(String name, FieldElement field) {
   if (_isDartDateTime(field.type)) {
     // TODO: this does not take into account that dart:core could be
     // imported with another name
-    return "json['$name'] == null ? null : DateTime.parse($result)";
+    return "$result == null ? null : DateTime.parse($result)";
+  }
+
+  if (_hasFromJsonCtor(field.type)) {
+    // TODO: the type could be imported from a library with a prefix!
+    return "$result == null ? null : new ${field.type.name}.fromJson($result)";
   }
 
   return result;
+}
+
+bool _hasFromJsonCtor(DartType type) {
+  if (type is! InterfaceType) return false;
+
+  var classElement = type.element as ClassElement;
+
+  for (var ctor in classElement.constructors) {
+    if (ctor.name == 'fromJson') {
+      // TODO: validate that there are the right number and type of arguments
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool _isDartDateTime(DartType type) {

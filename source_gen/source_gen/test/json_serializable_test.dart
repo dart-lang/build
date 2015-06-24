@@ -57,6 +57,7 @@ void main() {
       expect(output, isNotNull);
 
       // TODO: test the actual output
+      // print(output);
     });
 
     test('class with ctor params', () async {
@@ -64,6 +65,18 @@ void main() {
       var output = await _generator.generate(element);
 
       expect(output, isNotNull);
+
+      // TODO: test the actual output
+      // print(output);
+    });
+
+    test('class with child json-able object', () async {
+      var element = await _getClassForCodeString('ParentObject');
+      var output = await _generator.generate(element);
+
+      expect(output, isNotNull);
+
+      expect(output, contains('new ChildObject.fromJson'));
     });
   });
 }
@@ -134,5 +147,20 @@ class FinalFields {
   int get b => 4;
 
   FinalFields(this.a);
+}
+
+@JsonSerializable()
+class ParentObject {
+  int number;
+  String str;
+  ChildObject child;
+}
+
+@JsonSerializable()
+class ChildObject {
+  int number;
+  String str;
+
+  factory ChildObject.fromJson(json) => null;
 }
 ''';

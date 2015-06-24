@@ -1,3 +1,7 @@
+##0.4.2
+
+* Use `fromJson` if it's defined in a child field.
+
 ##0.4.1
 
 * Match annotations defined in parts. *Thanks, [Greg](https://github.com/greglittlefield-wf)!*
