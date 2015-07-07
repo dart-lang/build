@@ -133,7 +133,7 @@ Set<LibraryElement> getLibraries(
 
 LibraryElement getLibraryElementForSourceFile(
     AnalysisContext context, String sourcePath) {
-  Source source = new FileBasedSource.con1(new JavaFile(sourcePath));
+  Source source = new FileBasedSource(new JavaFile(sourcePath));
 
   var libs = context.getLibrariesContaining(source);
 
@@ -165,7 +165,7 @@ Iterable<Element> _getElements(CompilationUnitMember member) {
 }
 
 LibraryElement _getLibraryElement(String path, AnalysisContext context) {
-  Source source = new FileBasedSource.con1(new JavaFile(path));
+  Source source = new FileBasedSource(new JavaFile(path));
   if (context.computeKindOf(source) == SourceKind.LIBRARY) {
     return context.computeLibraryElement(source);
   }
