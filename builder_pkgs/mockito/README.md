@@ -141,3 +141,30 @@ expect(cat.sound(), "Purr");
 //using real object
 expect(cat.lives, 9);   
 ```
+## How it works
+The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to catch
+all method invocations, and returns the value that you have configured beforehand with
+`when()` calls.
+
+The implementation of `when()` is a bit more tricky. Take this example:
+
+```dart
+//unstubbed methods return null
+expect(cat.sound(), nullValue);
+//stubbing - before execution
+when(cat.sound()).thenReturn("Purr");
+```
+
+Since `cat.sound()` returns `null`, how can the `when()` call configure it?
+
+It works, because `when` is not a function, but a top level getter that _returns_ a function.
+Before returning the function, it sets a flag (`_whenInProgress`), so that all `Mock` objects
+know to return a "matcher" (internally `_WhenCall`) instead of the expected value. As soon as
+the function has been invoked `_whenInProgress` is set back to `false` and Mock objects behave
+as normal.
+
+> Be careful never to write `when;` (without the function call) anywhere. This would set
+> `_whenInProgress` to `true`, and the next mock invocation will return an unexpected value.
+
+You can look at the `when` and `Mock.noSuchMethod` implementations to see how it's done.
+It's very straightforward.
