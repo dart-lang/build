@@ -163,8 +163,29 @@ know to return a "matcher" (internally `_WhenCall`) instead of the expected valu
 the function has been invoked `_whenInProgress` is set back to `false` and Mock objects behave
 as normal.
 
-> Be careful never to write `when;` (without the function call) anywhere. This would set
+> **Be careful** never to write `when;` (without the function call) anywhere. This would set
 > `_whenInProgress` to `true`, and the next mock invocation will return an unexpected value.
+
+The same goes for "chaining" mock objects in a test call. This will fail:
+
+```dart
+var mockUtils = new MockUtils();
+var mockStringUtils = new MockStringUtils();
+// Setting up mockUtils.stringUtils to return a mock StringUtils implementation
+when(mockUtils.stringUtils).thenReturn(mockStringUtils);
+
+// Some tests
+
+// FAILS!
+verify(mockUtils.stringUtils.uppercase()).called(1);
+// Instead use this:
+verify(mockStringUtils.uppercase()).called(1);
+```
+
+This fails, because `verify` sets an internal flag, so mock objects don't return their mocked
+values anymore but their matchers. So `mockUtils.stringUtils` will *not* return the mocked
+`stringUtils` object you put inside.
+
 
 You can look at the `when` and `Mock.noSuchMethod` implementations to see how it's done.
 It's very straightforward.
