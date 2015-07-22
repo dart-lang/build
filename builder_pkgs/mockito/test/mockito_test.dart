@@ -6,6 +6,7 @@ class RealClass {
   String methodWithNormalArgs(int x) => "Real";
   String methodWithPositionalArgs(int x, [int y]) => "Real";
   String methodWithNamedArgs(int x, {int y}) => "Real";
+  String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
   String get getter => "Real";
   void set setter(String arg) {
     throw new StateError("I must be mocked");
@@ -111,6 +112,17 @@ void main() {
       when(mock.methodWithNormalArgs(any)).thenReturn("A lot!");
       expect(mock.methodWithNormalArgs(100), equals("A lot!"));
       expect(mock.methodWithNormalArgs(101), equals("A lot!"));
+    });
+    test("should mock method with multiple named args and matchers", (){
+      when(mock.methodWithTwoNamedArgs(any, y: any)).thenReturn("x y");
+      when(mock.methodWithTwoNamedArgs(any, z: any)).thenReturn("x z");
+      expect(mock.methodWithTwoNamedArgs(42), isNull);
+      expect(mock.methodWithTwoNamedArgs(42, y:18), equals("x y"));
+      expect(mock.methodWithTwoNamedArgs(42, z:17), equals("x z"));
+      expect(mock.methodWithTwoNamedArgs(42, y:18, z:17), isNull);
+      when(mock.methodWithTwoNamedArgs(any, y: any, z: any))
+          .thenReturn("x y z");
+      expect(mock.methodWithTwoNamedArgs(42, y:18, z:17), equals("x y z"));
     });
     test("should mock method with mix of argument matchers and real things",
         () {

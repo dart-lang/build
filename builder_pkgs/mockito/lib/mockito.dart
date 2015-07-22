@@ -149,6 +149,12 @@ class InvocationMatcher {
       }
       index++;
     }
+    Set roleKeys = roleInvocation.namedArguments.keys.toSet();
+    Set actKeys = invocation.namedArguments.keys.toSet();
+    if (roleKeys.difference(actKeys).isNotEmpty ||
+        actKeys.difference(roleKeys).isNotEmpty) {
+      return false;
+    }
     for (var roleKey in roleInvocation.namedArguments.keys) {
       var roleArg = roleInvocation.namedArguments[roleKey];
       var actArg = invocation.namedArguments[roleKey];
@@ -161,7 +167,7 @@ class InvocationMatcher {
 
   bool isMatchingArg(roleArg, actArg) {
     if (roleArg is _ArgMatcher) {
-      return roleArg._matcher == null || roleArg._matcher.matches(actArg, {});
+      return roleArg._matcher.matches(actArg, {});
 //    } else if(roleArg is Mock){
 //      return identical(roleArg, actArg);
     } else {
@@ -280,8 +286,8 @@ class _ArgMatcher {
   _ArgMatcher(this._matcher, this._capture);
 }
 
-get any => new _ArgMatcher(null, false);
-get captureAny => new _ArgMatcher(null, true);
+get any => new _ArgMatcher(anything, false);
+get captureAny => new _ArgMatcher(anything, true);
 captureThat(Matcher matcher) => new _ArgMatcher(matcher, true);
 argThat(Matcher matcher) => new _ArgMatcher(matcher, false);
 
