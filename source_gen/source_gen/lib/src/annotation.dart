@@ -23,8 +23,8 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var element = annotation.element;
 
   if (element is PropertyAccessorElementImpl) {
-    var initializer =
-        element.variable.node.initializer as InstanceCreationExpression;
+    var initializer = element.variable
+        .computeNode().initializer as InstanceCreationExpression;
     element = initializer.staticElement;
   }
 
@@ -40,7 +40,7 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
 
 dynamic _createFromConstructor(
     ConstructorElementImpl ctor, DartObjectImpl obj) {
-  var ctorDecl = ctor.node;
+  var ctorDecl = ctor.computeNode();
 
   var positionalArgs = [];
   var namedArgs = <Symbol, dynamic>{};
