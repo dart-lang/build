@@ -1,3 +1,10 @@
+##0.4.3
+
+* Require Dart `1.12`.
+
+* Add implicit support for `.packages`. If the file exists, it is used.
+  If not, we fall back to using the `packages` directory.
+
 ##0.4.2
 
 * Use `fromJson` if it's defined in a child field.

@@ -5,10 +5,13 @@
 library source_gen.utils;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/file_system/file_system.dart' hide File;
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/source/package_map_provider.dart';
+import 'package:analyzer/source/pub_package_map_provider.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
@@ -19,6 +22,7 @@ import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:cli_util/cli_util.dart' as cli;
 import 'package:path/path.dart' as p;
+import 'package:analyzer/source/package_map_resolver.dart';
 
 String findPartOf(String source) {
   try {
@@ -81,14 +85,12 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
   JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
   DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
 
-  var packagesPath = p.join(projectPath, 'packages');
-
-  var packageDirectory = new JavaFile(packagesPath);
+  var packageResolver = _getPackageResolver(projectPath);
 
   var resolvers = [
     new DartUriResolver(sdk),
     new ResourceUriResolver(PhysicalResourceProvider.INSTANCE),
-    new PackageUriResolver([packageDirectory])
+    packageResolver
   ];
 
   // TODO: Remove this once dartbug.com/23017 is fixed
@@ -105,6 +107,30 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
   _getLibraryElements(foundFiles, context).toList();
 
   return context;
+}
+
+UriResolver _getPackageResolver(String projectPath) {
+  // is there a .packages file? If yes, use that!
+
+  var dotPackagesPath = p.join(projectPath, '.packages');
+
+  if (FileSystemEntity.isFileSync(dotPackagesPath)) {
+    PubPackageMapProvider pubPackageMapProvider = new PubPackageMapProvider(
+        PhysicalResourceProvider.INSTANCE, DirectoryBasedDartSdk.defaultSdk);
+    PackageMapInfo packageMapInfo = pubPackageMapProvider
+        .computePackageMap(PhysicalResourceProvider.INSTANCE.getResource('.'));
+    Map<String, List<Folder>> packageMap = packageMapInfo.packageMap;
+    if (packageMap != null) {
+      return new PackageMapUriResolver(
+          PhysicalResourceProvider.INSTANCE, packageMap);
+    }
+  }
+
+  var packagesPath = p.join(projectPath, 'packages');
+
+  var packageDirectory = new JavaFile(packagesPath);
+
+  return new PackageUriResolver([packageDirectory]);
 }
 
 /// Returns all of the declarations in [unit], including [unit] as the first
