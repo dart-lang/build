@@ -34,24 +34,26 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', contains('not valid code!'))
       ])
-    ])
-        .validate();
+    ]).validate();
   });
 
-  test('Simple Generator test for library', () => _generateTest(
-      const CommentGenerator(forClasses: false, forLibrary: true),
-      _testGenPartContentForLibrary));
+  test(
+      'Simple Generator test for library',
+      () => _generateTest(
+          const CommentGenerator(forClasses: false, forLibrary: true),
+          _testGenPartContentForLibrary));
 
-  test('Simple Generator test for classes and library', () => _generateTest(
-      const CommentGenerator(forClasses: true, forLibrary: true),
-      _testGenPartContentForClassesAndLibrary));
+  test(
+      'Simple Generator test for classes and library',
+      () => _generateTest(
+          const CommentGenerator(forClasses: true, forLibrary: true),
+          _testGenPartContentForClassesAndLibrary));
 
   test('full build without change set', () async {
     await _doSetup();
@@ -65,15 +67,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', _testGenPartContent)
       ])
-    ])
-        .validate();
+    ]).validate();
 
     return projectPath;
   });
@@ -90,15 +90,13 @@ void main() {
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single, const LibraryGenerationResult.noop());
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.nothing('test_lib.g.dart')
       ])
-    ])
-        .validate();
+    ]).validate();
   });
 
   test('Track changes', () async {
@@ -115,15 +113,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.noChange('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', _testGenPartContent)
       ])
-    ])
-        .validate();
+    ]).validate();
 
     //
     // change classes to remove one class: updated
@@ -138,15 +134,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.updated('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContentNoClass),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', _testGenPartContentNoPerson)
       ])
-    ])
-        .validate();
+    ]).validate();
 
     //
     // change classes add classes back: created
@@ -162,15 +156,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.deleted('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContentNoClass),
         d.file('test_lib_part.dart', _testLibPartContentNoClass),
         d.nothing('test_lib.g.dart')
       ])
-    ])
-        .validate();
+    ]).validate();
 
     //
     // change unrelated file: no change
@@ -185,16 +177,14 @@ void main() {
     expect(output.kind, GenerationResultKind.okay);
     expect(output.results.single, const LibraryGenerationResult.noop());
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContentNoClass),
         d.file('test_lib_part.dart', _testLibPartContentNoClass),
         d.file('sample_file.txt', _testOtherFileContent),
         d.nothing('test_lib.g.dart')
       ])
-    ])
-        .validate();
+    ]).validate();
   });
 
   test('Track changes with sameDirectory fileSet', () async {
@@ -211,15 +201,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.noChange('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', contains(_testGenPartContent))
       ])
-    ])
-        .validate();
+    ]).validate();
 
     //
     // change associated file in directory: updated
@@ -234,15 +222,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.updated('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContentNoClass),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', contains(_testGenPartContentNoPerson))
       ])
-    ])
-        .validate();
+    ]).validate();
   });
 
   test('handle generator errors well', () async {
@@ -258,15 +244,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContent),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', _testGenPartContent)
       ])
-    ])
-        .validate();
+    ]).validate();
 
     //
     // change classes to remove one class: updated
@@ -281,15 +265,13 @@ void main() {
     expect(output.results.single,
         const LibraryGenerationResult.updated('lib/test_lib.g.dart'));
 
-    await d
-        .dir('pkg', [
+    await d.dir('pkg', [
       d.dir('lib', [
         d.file('test_lib.dart', _testLibContentWithError),
         d.file('test_lib_part.dart', _testLibPartContent),
         d.matcherFile('test_lib.g.dart', _testGenPartContentError)
       ])
-    ])
-        .validate();
+    ]).validate();
   });
 }
 
@@ -315,29 +297,25 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
   expect(output.results.single,
       const LibraryGenerationResult.created('lib/test_lib.g.dart'));
 
-  await d
-      .dir('pkg', [
+  await d.dir('pkg', [
     d.dir('lib', [
       d.file('test_lib.dart', _testLibContent),
       d.file('test_lib_part.dart', _testLibPartContent),
       d.matcherFile('test_lib.g.dart', expectedContent)
     ])
-  ])
-      .validate();
+  ]).validate();
 
   return projectPath;
 }
 
 /// Creates a package using [pkgName] an the current [d.defaultRoot].
 Future _createPackageStub(String pkgName) async {
-  await d
-      .dir(pkgName, [
+  await d.dir(pkgName, [
     d.dir('lib', [
       d.file('test_lib.dart', _testLibContent),
       d.file('test_lib_part.dart', _testLibPartContent),
     ])
-  ])
-      .create();
+  ]).create();
 
   var pkgPath = p.join(d.defaultRoot, pkgName);
   var exists = await FileSystemEntity.isDirectory(pkgPath);

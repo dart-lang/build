@@ -21,15 +21,15 @@ class GenerationResult {
   GenerationResult.noLibrariesFound(Iterable<String> changeFilePaths)
       : kind = GenerationResultKind.noLibrariesFound,
         message = "No libraries found for provided paths:\n"
-        "  ${changeFilePaths.map((p) => "$p").join(', ')}\n"
-        "They may not be in the search path.",
+            "  ${changeFilePaths.map((p) => "$p").join(', ')}\n"
+            "They may not be in the search path.",
         results = const <LibraryGenerationResult>[];
 
   GenerationResult.okay(Iterable<LibraryGenerationResult> results)
       : this.kind = GenerationResultKind.okay,
         this.message = 'Generated libraries: ${results.join(', ')}',
-        this.results = new UnmodifiableListView<LibraryGenerationResult>(
-            results);
+        this.results =
+            new UnmodifiableListView<LibraryGenerationResult>(results);
 
   String toString() => message;
 }

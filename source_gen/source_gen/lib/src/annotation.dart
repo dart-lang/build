@@ -23,8 +23,8 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var element = annotation.element;
 
   if (element is PropertyAccessorElementImpl) {
-    var initializer = element.variable
-        .computeNode().initializer as InstanceCreationExpression;
+    var initializer = element.variable.computeNode().initializer
+        as InstanceCreationExpression;
     element = initializer.staticElement;
   }
 
@@ -50,7 +50,6 @@ dynamic _createFromConstructor(
     if (p is FieldFormalParameterElementImpl) {
       fieldName = p.name;
     } else {
-
       // Trying to find the relationship between the ctor argument name and the
       // field assigned in the object. Then we can take the field value and
       // set it as the argument value

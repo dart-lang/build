@@ -12,7 +12,9 @@ void main(List<String> args) {
   build(args, const [
     const json.JsonSerializableGenerator(),
     const literal.JsonLiteralGenerator()
-  ], librarySearchPaths: ['example']).then((msg) {
+  ], librarySearchPaths: [
+    'example'
+  ]).then((msg) {
     print(msg);
   });
 }

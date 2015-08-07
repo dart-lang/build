@@ -37,6 +37,7 @@ class InvalidGenerationSourceError {
 enum AssociatedFileSet {
   /// Only run incremental generation when a source file in the library changes.
   sameLibrary,
+
   /// Run incremental generation when a source file in the library changes or
   /// if a file in the same directory as a library source file changes.
   sameDirectory

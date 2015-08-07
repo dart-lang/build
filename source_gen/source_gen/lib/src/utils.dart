@@ -28,8 +28,8 @@ String findPartOf(String source) {
   try {
     var unit = parseCompilationUnit(source);
 
-    var partOf = unit.directives.firstWhere((d) => d is PartOfDirective,
-        orElse: () => null);
+    var partOf = unit.directives
+        .firstWhere((d) => d is PartOfDirective, orElse: () => null);
 
     if (partOf == null) {
       return null;
@@ -205,6 +205,7 @@ String getFileBasedSourcePath(FileBasedSource source) {
 // may return `null` if [path] doesn't refer to a library.
 /// [dartFiles] is a [Stream] of paths to [.dart] files.
 Iterable<LibraryElement> _getLibraryElements(
-    List<String> dartFiles, AnalysisContext context) => dartFiles
-    .map((path) => _getLibraryElement(path, context))
-    .where((lib) => lib != null);
+        List<String> dartFiles, AnalysisContext context) =>
+    dartFiles
+        .map((path) => _getLibraryElement(path, context))
+        .where((lib) => lib != null);

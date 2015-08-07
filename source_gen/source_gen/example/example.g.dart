@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-06-24T03:27:46.394Z
+// 2015-08-07T18:22:04.454Z
 
 part of source_gen.example.example;
 
@@ -21,11 +21,12 @@ abstract class _$PersonSerializerMixin {
   String get lastName;
   DateTime get dateOfBirth;
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'firstName': firstName,
-    'middleName': middleName,
-    'lastName': lastName,
-    'dateOfBirth': dateOfBirth == null ? null : dateOfBirth.toIso8601String()
-  };
+        'firstName': firstName,
+        'middleName': middleName,
+        'lastName': lastName,
+        'dateOfBirth':
+            dateOfBirth == null ? null : dateOfBirth.toIso8601String()
+      };
 }
 
 // **************************************************************************
@@ -45,11 +46,11 @@ abstract class _$OrderSerializerMixin {
   bool get isRushed;
   Item get item;
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'count': count,
-    'itemNumber': itemNumber,
-    'isRushed': isRushed,
-    'item': item
-  };
+        'count': count,
+        'itemNumber': itemNumber,
+        'isRushed': isRushed,
+        'item': item
+      };
 }
 
 // **************************************************************************

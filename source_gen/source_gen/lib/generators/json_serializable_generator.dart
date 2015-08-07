@@ -33,8 +33,8 @@ class JsonSerializableGenerator
 
     // Get all of the fields that need to be assigned
     // TODO: support overriding the field set with an annotation option
-    var fields = classElement.fields.fold(<String, FieldElement>{},
-        (map, field) {
+    var fields =
+        classElement.fields.fold(<String, FieldElement>{}, (map, field) {
       map[field.name] = field;
       return map;
     }) as Map<String, FieldElement>;
@@ -117,8 +117,8 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
     throw new InvalidGenerationSourceError(
         'Generator cannot target `$className`.',
         todo: 'Make the following fields writable or add them to the '
-        'constructor with matching names: '
-        '${finalFields.map((field) => field.name).join(', ')}.');
+            'constructor with matching names: '
+            '${finalFields.map((field) => field.name).join(', ')}.');
   }
 
   //
@@ -133,7 +133,8 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
   if (ctorArguments.isNotEmpty && ctorNamedArguments.isNotEmpty) {
     buffer.write(', ');
   }
-  buffer.writeAll(ctorNamedArguments
+  buffer.writeAll(
+      ctorNamedArguments
           .map((name) => '$name: ' + _jsonMapAccessToField(name, fields[name])),
       ', ');
 

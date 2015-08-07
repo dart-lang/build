@@ -29,7 +29,8 @@ import 'utils.dart';
 /// output. The default value is `false`.
 Future<GenerationResult> generate(
     String projectPath, List<Generator> generators,
-    {Iterable<String> changeFilePaths, List<String> librarySearchPaths,
+    {Iterable<String> changeFilePaths,
+    List<String> librarySearchPaths,
     bool omitGenerateTimestamp}) async {
   if (omitGenerateTimestamp == null) {
     omitGenerateTimestamp = false;
@@ -87,8 +88,10 @@ Future<GenerationResult> generate(
   return new GenerationResult.okay(results);
 }
 
-Future<LibraryGenerationResult> _generateForLibrary(LibraryElement library,
-    String projectPath, List<Generator> generators,
+Future<LibraryGenerationResult> _generateForLibrary(
+    LibraryElement library,
+    String projectPath,
+    List<Generator> generators,
     bool includeTimestamp) async {
   var generatedOutputs = await _generate(library, generators).toList();
 

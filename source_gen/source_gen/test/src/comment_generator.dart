@@ -21,8 +21,11 @@ class CommentGenerator extends Generator {
       }
 
       if (element.displayName.contains('Error')) {
-        throw new ArgumentError.value(element, 'element',
-            "We don't support class names with the word 'Error'.\n" "Try renaming the class.");
+        throw new ArgumentError.value(
+            element,
+            'element',
+            "We don't support class names with the word 'Error'.\n"
+            "Try renaming the class.");
       }
 
       return '// Code for $element';

@@ -247,7 +247,5 @@ Future<LibraryElement> _getTestLibElement() async {
   return getLibraryElementForSourceFile(context, annotatedClassesFilePath);
 }
 
-ClassElement _getAnnotationForClass(LibraryElement lib, String className) =>
-    lib.units
-        .expand((cu) => cu.types)
-        .singleWhere((cd) => cd.name == className);
+ClassElement _getAnnotationForClass(LibraryElement lib, String className) => lib
+    .units.expand((cu) => cu.types).singleWhere((cd) => cd.name == className);
