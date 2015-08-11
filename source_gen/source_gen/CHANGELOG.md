@@ -4,6 +4,8 @@
 
 * Add implicit support for `.packages`. If the file exists, it is used.
   If not, we fall back to using the `packages` directory.
+  
+* Support the latest releases of `analyzer` and `dart_style` packages.
 
 ##0.4.2
 
