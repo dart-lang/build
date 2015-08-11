@@ -30,7 +30,7 @@ void main() {
   test('find files', () async {
     var testFilesPath = p.join(getPackagePath(), 'test', 'test_files');
 
-    var files = getDartFiles(testFilesPath);
+    var files = await getDartFiles(testFilesPath);
     expect(files, hasLength(4));
   });
 
