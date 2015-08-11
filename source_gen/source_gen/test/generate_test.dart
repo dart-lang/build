@@ -308,7 +308,7 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
   return projectPath;
 }
 
-/// Creates a package using [pkgName] an the current [d.defaultRoot].
+/// Creates a package using [pkgName] and the current [d.defaultRoot].
 Future _createPackageStub(String pkgName) async {
   await d.dir(pkgName, [
     d.dir('lib', [
