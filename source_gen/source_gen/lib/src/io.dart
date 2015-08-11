@@ -22,10 +22,10 @@ const generatedExtension = '.g.dart';
 /// Returned results will be those files that match file paths or are within
 /// directories defined in the list.
 Future<List<String>> getDartFiles(String directoryPath,
-    {List<String> searchList}) {
-  return getFiles(directoryPath, searchList: searchList)
-      .where(pathToDartFile)
-      .toList();
+    {List<String> searchList, bool followLinks: false}) {
+  return getFiles(directoryPath,
+      searchList: searchList,
+      followLinks: followLinks).where(pathToDartFile).toList();
 }
 
 /// Skips symbolic links and any item in [directoryPath] recursively that begins
@@ -34,7 +34,8 @@ Future<List<String>> getDartFiles(String directoryPath,
 /// [searchList] is a list of relative paths within [directoryPath].
 /// Returned results will be those files that match file paths or are within
 /// directories defined in the list.
-Stream<String> getFiles(String directoryPath, {List<String> searchList}) {
+Stream<String> getFiles(String directoryPath,
+    {List<String> searchList, bool followLinks: false}) {
   var controller = new StreamController<String>();
   if (searchList == null) {
     searchList = <String>[];
@@ -54,7 +55,7 @@ Stream<String> getFiles(String directoryPath, {List<String> searchList}) {
     await Future.forEach(searchDirs, (path) {
       var rootDir = new Directory(path);
 
-      return _populateFiles(rootDir, controller);
+      return _populateFiles(rootDir, controller, followLinks: followLinks);
     });
   }).catchError((error, stack) {
     controller.addError(error, stack);
@@ -111,9 +112,11 @@ Future<Map<String, FileSystemEntityType>> _expandSearchList(
   return items;
 }
 
-Future _populateFiles(
-    Directory directory, StreamController<String> controller) async {
-  return directory.list(recursive: false, followLinks: false).asyncMap((fse) {
+Future _populateFiles(Directory directory, StreamController<String> controller,
+    {bool followLinks: false}) async {
+  return directory
+      .list(recursive: false, followLinks: followLinks)
+      .asyncMap((fse) {
     if (p.basename(fse.path).startsWith('.')) {
       return null;
     }
@@ -121,7 +124,7 @@ Future _populateFiles(
     if (fse is File) {
       controller.add(fse.path);
     } else if (fse is Directory) {
-      return _populateFiles(fse, controller);
+      return _populateFiles(fse, controller, followLinks: followLinks);
     }
   }).drain();
 }

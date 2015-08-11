@@ -4,9 +4,13 @@
 
 library source_gen.test.io_test;
 
+import 'dart:async';
+import 'dart:io';
+
 import 'package:path/path.dart' as p;
+import 'package:scheduled_test/descriptor.dart' as d;
+import 'package:scheduled_test/scheduled_test.dart';
 import 'package:source_gen/src/io.dart';
-import 'package:test/test.dart';
 
 import 'test_utils.dart';
 
@@ -117,4 +121,57 @@ void main() {
       });
     });
   });
+
+  group('symbolic links', () {
+    setUp(() {
+      schedule(() async {
+        await _doSetup();
+
+        await d.dir('root', [
+          d.file('file.dart', '// cool!'),
+          d.dir('sub', [d.file('subfile.dart')])
+        ]).create();
+
+        await d.dir('link_content', [d.file('link_content.dart')]).create();
+
+        // create the link!
+        var link = new Link(p.join(d.defaultRoot, 'root', 'link'));
+        await link.create(p.join(d.defaultRoot, 'link_content'));
+      });
+    });
+
+    test("are not traversed by default", () {
+      schedule(() async {
+        var root = p.join(d.defaultRoot, 'root');
+        var files = await getDartFiles(root);
+
+        files = files.map((path) => p.relative(path, from: root)).toList();
+
+        expect(files,
+            unorderedEquals(['file.dart', p.join('sub', 'subfile.dart')]));
+      });
+    });
+
+    test("are traversed when requested", () {
+      schedule(() async {
+        var root = p.join(d.defaultRoot, 'root');
+        var files = await getDartFiles(root, followLinks: true);
+
+        files = files.map((path) => p.relative(path, from: root)).toList();
+
+        expect(
+            files,
+            unorderedEquals([
+              'file.dart',
+              p.join('sub', 'subfile.dart'),
+              p.join('link', 'link_content.dart')
+            ]));
+      });
+    });
+  });
+}
+
+Future _doSetup() async {
+  var dir = await createTempDir();
+  d.defaultRoot = dir.path;
 }
