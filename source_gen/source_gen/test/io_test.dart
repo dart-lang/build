@@ -23,12 +23,11 @@ void main() {
         unorderedEquals(['data.json', 'example.dart', 'example.g.dart']));
   });
 
-  test('find files', () {
+  test('find files', () async {
     var testFilesPath = p.join(getPackagePath(), 'test', 'test_files');
 
-    return getDartFiles(testFilesPath).then((files) {
-      expect(files, hasLength(4));
-    });
+    var files = getDartFiles(testFilesPath);
+    expect(files, hasLength(4));
   });
 
   test('search with one sub directory', () async {
