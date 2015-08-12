@@ -1,3 +1,7 @@
+##0.4.3+1
+
+* Update tests to use a more reliable method to find the current package root.
+
 ##0.4.3
 
 * Require Dart `1.12`.

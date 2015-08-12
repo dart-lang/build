@@ -6,12 +6,25 @@ library source_gen.test.utils;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:mirrors';
 
 import 'package:path/path.dart' as p;
 import 'package:scheduled_test/scheduled_test.dart';
 import 'package:source_gen/source_gen.dart';
 
-String getPackagePath() => p.current;
+String _packagePathCache;
+
+String getPackagePath() {
+  // TODO(kevmoo) - ideally we'd have a more clean way to do this
+  // See https://github.com/dart-lang/sdk/issues/23990
+  if (_packagePathCache == null) {
+    var currentFilePath =
+        currentMirrorSystem().findLibrary(#source_gen.test.utils).uri.path;
+
+    _packagePathCache = p.normalize(p.join(p.dirname(currentFilePath), '..'));
+  }
+  return _packagePathCache;
+}
 
 Future<Directory> createTempDir([bool scheduleDelete = true]) async {
   var ticks = new DateTime.now().toUtc().millisecondsSinceEpoch;
