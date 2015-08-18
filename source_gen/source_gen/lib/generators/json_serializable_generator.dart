@@ -154,7 +154,7 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
 
 String _fieldToJsonMapValue(String name, FieldElement field) {
   if (_isDartDateTime(field.type)) {
-    return "$name == null ? null : ${name}.toIso8601String()";
+    return "$name?.toIso8601String()";
   }
 
   return name;

@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-08-07T18:22:04.454Z
+// 2015-08-18T19:41:07.944Z
 
 part of source_gen.example.example;
 
@@ -24,8 +24,7 @@ abstract class _$PersonSerializerMixin {
         'firstName': firstName,
         'middleName': middleName,
         'lastName': lastName,
-        'dateOfBirth':
-            dateOfBirth == null ? null : dateOfBirth.toIso8601String()
+        'dateOfBirth': dateOfBirth?.toIso8601String()
       };
 }
 
