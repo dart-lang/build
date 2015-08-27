@@ -79,11 +79,11 @@ Future<GenerationResult> generate(
 
   var results = <LibraryGenerationResult>[];
 
-  await Future.forEach(libs, (elementLibrary) async {
+  for (var elementLibrary in libs) {
     var msg = await _generateForLibrary(
         elementLibrary, projectPath, generators, !omitGenerateTimestamp);
     results.add(msg);
-  });
+  }
 
   return new GenerationResult.okay(results);
 }
