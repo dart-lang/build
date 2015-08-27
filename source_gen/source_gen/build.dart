@@ -13,7 +13,8 @@ void main(List<String> args) {
     const json.JsonSerializableGenerator(),
     const literal.JsonLiteralGenerator()
   ], librarySearchPaths: [
-    'example'
+    'example',
+    'test/test_files/json_test_example.dart'
   ]).then((msg) {
     print(msg);
   });
