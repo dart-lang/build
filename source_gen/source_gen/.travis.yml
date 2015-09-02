@@ -1,7 +1,6 @@
 language: dart
 sudo: false
 dart:
+  - stable
   - dev
-  # Disabling stable builds until 1.12 is released
-  # - stable
 script: ./tool/travis.sh
