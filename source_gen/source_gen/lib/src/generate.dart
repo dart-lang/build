@@ -31,9 +31,14 @@ Future<GenerationResult> generate(
     String projectPath, List<Generator> generators,
     {Iterable<String> changeFilePaths,
     List<String> librarySearchPaths,
-    bool omitGenerateTimestamp}) async {
+    bool omitGenerateTimestamp,
+    bool followLinks}) async {
   if (omitGenerateTimestamp == null) {
     omitGenerateTimestamp = false;
+  }
+
+  if (followLinks == null) {
+    followLinks = false;
   }
 
   if (changeFilePaths == null || changeFilePaths.isEmpty) {
@@ -46,8 +51,8 @@ Future<GenerationResult> generate(
     librarySearchPaths = const ['lib'];
   }
 
-  var foundFiles =
-      await getDartFiles(projectPath, searchList: librarySearchPaths);
+  var foundFiles = await getDartFiles(projectPath,
+      searchList: librarySearchPaths, followLinks: followLinks);
 
   if (changeFilePaths == null || changeFilePaths.isEmpty) {
     changeFilePaths =
