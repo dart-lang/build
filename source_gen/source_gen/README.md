@@ -82,7 +82,8 @@ Alternatively, you can create a `build.dart` file which calls the [build]
 method.
 
 You can invoke this script directly. It also understands the 
-[Dart Editor build system][] so code is updated as you modify files.
+[Dart Editor build system][] so code is updated as you modify files. *Tips*: You
+can use the [build_system package][] to enjoy this automatic workflow.
 
 See [build.dart][] in the repository for an example.
 
@@ -112,3 +113,4 @@ detail*.
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
 [build]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_build
 [Dart Editor build system]: https://www.dartlang.org/tools/editor/build.html
+[build_system package]: https://pub.dartlang.org/packages/build_system
