@@ -18,7 +18,10 @@ import 'generator.dart';
 ///
 /// If [projectPath] is not provided, the current working directory is used.
 Future<String> build(List<String> args, List<Generator> generators,
-    {List<String> librarySearchPaths, String projectPath}) async {
+    {List<String> librarySearchPaths,
+    String projectPath,
+    bool omitGenerateTimestamp,
+    bool followLinks}) async {
   if (generators == null || generators.isEmpty) {
     throw new ArgumentError.value(
         generators, 'generators', 'Must provide at least one generator.');
@@ -47,7 +50,10 @@ Future<String> build(List<String> args, List<Generator> generators,
   }
 
   var genResult = await generate(projectPath, generators,
-      changeFilePaths: changed, librarySearchPaths: librarySearchPaths);
+      changeFilePaths: changed,
+      librarySearchPaths: librarySearchPaths,
+      omitGenerateTimestamp: omitGenerateTimestamp,
+      followLinks: followLinks);
 
   return genResult.toString();
 }

@@ -1,3 +1,9 @@
+##0.4.4
+
+* Added `omitGenerateTimestamp` and `followLinks` named args to `build`.
+
+* Added `followLinks` to `generate`.
+
 ##0.4.3+1
 
 * Update tests to use a more reliable method to find the current package root.

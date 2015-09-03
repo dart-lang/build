@@ -273,6 +273,46 @@ void main() {
       ])
     ]).validate();
   });
+
+  test('links are not followed by default', () async {
+    await _doSetup();
+
+    var projectPath = await _createPackageStub('pkg');
+
+    // Replace a source file with a link to the same content.
+    final link = '$projectPath/lib/test_lib.dart';
+    final linkTarget = '$projectPath/link_target';
+    new File(link).renameSync(linkTarget);
+    new Link(link).createSync(linkTarget);
+
+    var output = await generate(projectPath, [const CommentGenerator()],
+        omitGenerateTimestamp: true);
+
+    expect(output.kind, GenerationResultKind.noLibrariesFound);
+
+    return projectPath;
+  });
+
+  test('links are followed if followLinks is true', () async {
+    await _doSetup();
+
+    var projectPath = await _createPackageStub('pkg');
+
+    // Replace a source file with a link to the same content.
+    final link = '$projectPath/lib/test_lib.dart';
+    final linkTarget = '$projectPath/link_target';
+    new File(link).renameSync(linkTarget);
+    new Link(link).createSync(linkTarget);
+
+    var output = await generate(projectPath, [const CommentGenerator()],
+        omitGenerateTimestamp: true, followLinks: true);
+
+    expect(output.kind, GenerationResultKind.okay);
+    expect(output.results.single,
+        const LibraryGenerationResult.created('lib/test_lib.g.dart'));
+
+    return projectPath;
+  });
 }
 
 Future _doSetup() async {
