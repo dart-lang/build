@@ -78,11 +78,11 @@ Extend the `Generator` class to plug into `source_gen`.
 
 Create a script that invokes the [generate][] method.
 
-Alternatively, you can create a `build.dart` file which calls the [build] 
-method.
+Alternatively, you can create a `build.dart` file which calls the [build]
+method. You can use the [build_system package][] to enjoy this automatic workflow.
 
-You can invoke this script directly. It also understands the 
-[Dart Editor build system][] so code is updated as you modify files.
+*Note: The original design was meant to work with the
+[Dart Editor build system][]. Dart Editor is unsupported as of Dart 1.11.*
 
 See [build.dart][] in the repository for an example.
 
@@ -112,3 +112,4 @@ detail*.
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
 [build]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_build
 [Dart Editor build system]: https://www.dartlang.org/tools/editor/build.html
+[build_system package]: https://pub.dartlang.org/packages/build_system
