@@ -17,6 +17,7 @@ import 'package:mockito/mockito.dart';
 class Cat {
   String sound() => "Meow";
   bool eatFood(String food, {bool hungry}) => true;
+  int walk(List<String> places);
   void sleep(){}
   int lives = 9;
 }
@@ -66,20 +67,25 @@ Last stubbing is more important - when you stubbed the same method with the same
 ```dart
 //you can use arguments itself...
 when(cat.eatFood("fish")).thenReturn(true);
+//..or collections
+when(cat.walk(["roof","tree"])).thenReturn(2);
 //..or matchers
 when(cat.eatFood(argThat(startsWith("dry"))).thenReturn(false);
 //..or mix aguments with matchers
 when(cat.eatFood(argThat(startsWith("dry")), true).thenReturn(true);
 expect(cat.eatFood("fish"), isTrue);
+expect(cat.walk(["roof","tree"]), equals(2));
 expect(cat.eatFood("dry food"), isFalse);
 expect(cat.eatFood("dry food", hungry: true), isTrue);
 //you can also verify using an argument matcher
 verify(cat.eatFood("fish"));
+verify(cat.walk(["roof","tree"]));
 verify(cat.eatFood(argThat(contains("food"))));
 //you can verify setters
 cat.lives = 9;
 verify(cat.lives=9);
 ```
+By default equals matcher is used to argument matching (since 0.11.0). It simplifies matching for collections as arguments. If you need more strict matching consider use `argThat(identical(arg))`.
 Argument matchers allow flexible verification or stubbing
 
 ## Verifying exact number of invocations / at least x / never

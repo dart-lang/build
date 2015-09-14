@@ -1,3 +1,7 @@
+## 0.11.0
+
+* Equality matcher used by default to simplify matching collections as arguments. Should be non-breaking change in most cases, otherwise consider using `argThat(identical(arg))`.
+
 ## 0.10.0
 
 * Added support for spy.

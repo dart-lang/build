@@ -171,7 +171,7 @@ class InvocationMatcher {
 //    } else if(roleArg is Mock){
 //      return identical(roleArg, actArg);
     } else {
-      return roleArg == actArg;
+      return equals(roleArg).matches(actArg, {});
     }
   }
 }

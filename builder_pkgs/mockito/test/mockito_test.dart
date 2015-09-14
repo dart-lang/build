@@ -4,9 +4,11 @@ import 'package:mockito/mockito.dart';
 class RealClass {
   String methodWithoutArgs() => "Real";
   String methodWithNormalArgs(int x) => "Real";
+  String methodWithListArgs(List<int> x) => "Real";
   String methodWithPositionalArgs(int x, [int y]) => "Real";
   String methodWithNamedArgs(int x, {int y}) => "Real";
   String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
+  String methodWithObjArgs(RealClass x) => "Real";
   String get getter => "Real";
   void set setter(String arg) {
     throw new StateError("I must be mocked");
@@ -90,6 +92,12 @@ void main() {
       expect(mock.methodWithNormalArgs(43), isNull);
       expect(mock.methodWithNormalArgs(42), equals("Ultimate Answer"));
     });
+    test("should mock method with mock args", () {
+      var m1 = new MockedClass();
+      when(mock.methodWithObjArgs(m1)).thenReturn("Ultimate Answer");
+      expect(mock.methodWithObjArgs(new MockedClass()), isNull);
+      expect(mock.methodWithObjArgs(m1), equals("Ultimate Answer"));
+    });
     test("should mock method with positional args", () {
       when(mock.methodWithPositionalArgs(42, 17)).thenReturn("Answer and...");
       expect(mock.methodWithPositionalArgs(42), isNull);
@@ -102,6 +110,11 @@ void main() {
       expect(mock.methodWithNamedArgs(42, y: 18), isNull);
       expect(mock.methodWithNamedArgs(42, y: 17), equals("Why answer?"));
     });
+    test("should mock method with List args", () {
+      when(mock.methodWithListArgs([42])).thenReturn("Ultimate answer");
+      expect(mock.methodWithListArgs([43]), isNull);
+      expect(mock.methodWithListArgs([42]), equals("Ultimate answer"));
+    });
     test("should mock method with argument matcher", () {
       when(mock.methodWithNormalArgs(argThat(greaterThan(100))))
           .thenReturn("A lot!");
@@ -112,6 +125,11 @@ void main() {
       when(mock.methodWithNormalArgs(any)).thenReturn("A lot!");
       expect(mock.methodWithNormalArgs(100), equals("A lot!"));
       expect(mock.methodWithNormalArgs(101), equals("A lot!"));
+    });
+    test("should mock method with any list argument matcher", () {
+      when(mock.methodWithListArgs(any)).thenReturn("A lot!");
+      expect(mock.methodWithListArgs([42]), equals("A lot!"));
+      expect(mock.methodWithListArgs([43]), equals("A lot!"));
     });
     test("should mock method with multiple named args and matchers", (){
       when(mock.methodWithTwoNamedArgs(any, y: any)).thenReturn("x y");
@@ -229,6 +247,25 @@ void main() {
         verify(mock.methodWithNamedArgs(42, y: 18));
       });
       verify(mock.methodWithNamedArgs(42, y: 17));
+    });
+    test("should mock method with mock args", () {
+      var m1 = named(new MockedClass(), name: "m1");
+      mock.methodWithObjArgs(m1);
+      expectFail(
+          "No matching calls. All calls: MockedClass.methodWithObjArgs(m1)",
+              () {
+            verify(mock.methodWithObjArgs(new MockedClass()));
+          });
+      verify(mock.methodWithObjArgs(m1));
+    });
+    test("should mock method with list args", () {
+      mock.methodWithListArgs([42]);
+      expectFail(
+          "No matching calls. All calls: MockedClass.methodWithListArgs([42])",
+          () {
+        verify(mock.methodWithListArgs([43]));
+      });
+      verify(mock.methodWithListArgs([42]));
     });
     test("should mock method with argument matcher", () {
       mock.methodWithNormalArgs(100);
@@ -438,6 +475,10 @@ void main() {
       mock.methodWithNormalArgs(42);
       expect(verify(mock.methodWithNormalArgs(captureAny)).captured.single,
           equals(42));
+    });
+    test("should captureOut list arguments", () {
+      mock.methodWithListArgs([42]);
+      expect(verify(mock.methodWithListArgs(captureAny)).captured.single, equals([42]));
     });
     test("should captureOut multiple arguments", () {
       mock.methodWithPositionalArgs(1, 2);
