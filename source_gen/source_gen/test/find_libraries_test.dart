@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@TestOn('!browser')
 library source_gen.test.find_libraries;
 
 import 'package:analyzer/src/generated/engine.dart';

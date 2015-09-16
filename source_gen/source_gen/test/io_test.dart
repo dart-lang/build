@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@TestOn('!browser')
 library source_gen.test.io_test;
 
 import 'dart:async';
@@ -31,7 +32,7 @@ void main() {
     var testFilesPath = p.join(getPackagePath(), 'test', 'test_files');
 
     var files = await getDartFiles(testFilesPath);
-    expect(files, hasLength(4));
+    expect(files, hasLength(6));
   });
 
   test('search with one sub directory', () async {
@@ -39,7 +40,7 @@ void main() {
 
     var files = await getDartFiles(testFilesPath, searchList: ['test_files']);
 
-    expect(files, hasLength(4));
+    expect(files, hasLength(6));
   });
 
   test('search with one sub directory and one file', () async {
@@ -48,7 +49,7 @@ void main() {
     var files = await getDartFiles(testFilesPath,
         searchList: ['test_files', 'io_test.dart']);
 
-    expect(files, hasLength(5));
+    expect(files, hasLength(7));
   });
 
   test('search with one file', () async {
