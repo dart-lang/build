@@ -4,12 +4,16 @@
 
 library source_gen.results;
 
+import 'generated_output.dart';
+
 enum GenerationResultKind { noChangesOrLibraries, noLibrariesFound, okay }
 
 class GenerationResult {
   final GenerationResultKind kind;
   final String message;
   final List<LibraryGenerationResult> results;
+
+  bool get hasErrors => results.any((result) => result.hasErrors);
 
   const GenerationResult.noChangesOrLibraries()
       : kind = GenerationResultKind.noChangesOrLibraries,
@@ -36,18 +40,25 @@ enum LibraryGenerationResultKind { created, updated, noop, noChange, deleted }
 class LibraryGenerationResult {
   final LibraryGenerationResultKind kind;
   final String generatedFilePath;
+  final List<GeneratedOutput> outputs;
 
-  const LibraryGenerationResult.noop()
+  bool get hasErrors => outputs.any((genOutput) => genOutput.isError);
+
+  const LibraryGenerationResult.noop([this.outputs = const <GeneratedOutput>[]])
       : this.kind = LibraryGenerationResultKind.noop,
         this.generatedFilePath = null;
 
-  const LibraryGenerationResult.created(this.generatedFilePath)
+  const LibraryGenerationResult.created(this.generatedFilePath,
+      [this.outputs = const <GeneratedOutput>[]])
       : kind = LibraryGenerationResultKind.created;
-  const LibraryGenerationResult.updated(this.generatedFilePath)
+  const LibraryGenerationResult.updated(this.generatedFilePath,
+      [this.outputs = const <GeneratedOutput>[]])
       : kind = LibraryGenerationResultKind.updated;
-  const LibraryGenerationResult.noChange(this.generatedFilePath)
+  const LibraryGenerationResult.noChange(this.generatedFilePath,
+      [this.outputs = const <GeneratedOutput>[]])
       : kind = LibraryGenerationResultKind.noChange;
-  const LibraryGenerationResult.deleted(this.generatedFilePath)
+  const LibraryGenerationResult.deleted(this.generatedFilePath,
+      [this.outputs = const <GeneratedOutput>[]])
       : kind = LibraryGenerationResultKind.deleted;
 
   @override

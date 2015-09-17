@@ -110,9 +110,10 @@ Future<LibraryGenerationResult> _generateForLibrary(
   if (generatedOutputs.isEmpty) {
     if (exists) {
       await file.delete();
-      return new LibraryGenerationResult.deleted(relativeName);
+      return new LibraryGenerationResult.deleted(
+          relativeName, generatedOutputs);
     } else {
-      return const LibraryGenerationResult.noop();
+      return new LibraryGenerationResult.noop(generatedOutputs);
     }
   }
 
@@ -154,7 +155,7 @@ if approppriate.""");
   }
 
   if (existingContent == genPartContent) {
-    return new LibraryGenerationResult.noChange(relativeName);
+    return new LibraryGenerationResult.noChange(relativeName, generatedOutputs);
   }
 
   var sink = file.openWrite(mode: FileMode.WRITE)
@@ -165,9 +166,9 @@ if approppriate.""");
   sink.close();
 
   if (exists) {
-    return new LibraryGenerationResult.updated(relativeName);
+    return new LibraryGenerationResult.updated(relativeName, generatedOutputs);
   } else {
-    return new LibraryGenerationResult.created(relativeName);
+    return new LibraryGenerationResult.created(relativeName, generatedOutputs);
   }
 }
 

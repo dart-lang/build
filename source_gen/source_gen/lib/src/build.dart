@@ -55,6 +55,22 @@ Future<String> build(List<String> args, List<Generator> generators,
       omitGenerateTimestamp: omitGenerateTimestamp,
       followLinks: followLinks);
 
+  if (genResult.hasErrors) {
+    var buffer = new StringBuffer();
+    for (var result in genResult.results) {
+      buffer.writeln(result.generatedFilePath);
+      buffer.writeln('  ${result.kind}');
+      for (var r in result.outputs) {
+        if (r.isError) {
+          buffer.writeln('    ${r.error}');
+          buffer.writeln(r.stackTrace);
+        }
+      }
+    }
+
+    return buffer.toString();
+  }
+
   return genResult.toString();
 }
 
