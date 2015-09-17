@@ -236,28 +236,32 @@ bool _hasFromJsonCtor(DartType type) {
 }
 
 DartType _getIterableGenericType(InterfaceTypeImpl type) {
-  // We want to find the type parameter to Iterable<T> – but a clever subclass
-  // may not have a type-argument itself (or my have different type params)
-  // TODO: dig in and find the type-param for Iterable
-  //       don't assume that the only type arg is the type passed to Iterable
-  return type.typeArguments.single;
+  var iterableThing = _typeTest(type, _isDartIterable);
+
+  return iterableThing.typeArguments.single;
 }
 
-bool _implementsDartList(DartType type) {
-  if (_isDartList(type)) {
-    return true;
-  }
+bool _implementsDartList(DartType type) => _typeTest(type, _isDartList) != null;
+
+DartType _typeTest(DartType type, bool tester(DartType)) {
+  if (tester(type)) return type;
 
   if (type is InterfaceType) {
-    if (type.interfaces.any(_isDartList)) {
-      return true;
+    var items = type.interfaces.where(tester).toList();
+
+    if (items.length > 1) {
+      throw 'weird - more than 1 interface matches the type test - $items';
+    }
+
+    if (items.length == 1) {
+      return items.single;
     }
 
     if (type.superclass != null) {
-      return _implementsDartList(type.superclass);
+      return _typeTest(type.superclass, tester);
     }
   }
-  return false;
+  return null;
 }
 
 bool _isDartIterable(DartType type) {
