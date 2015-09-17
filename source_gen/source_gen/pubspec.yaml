@@ -4,7 +4,7 @@ author: Dart Team <misc@dartlang.org>
 description: Automatic sourcecode generation for Dart
 homepage: https://github.com/dart-lang/source_gen
 environment:
-  sdk: '>=1.12.0-dev.1.0 <2.0.0'
+  sdk: '>=1.12.0 <2.0.0'
 dependencies:
   analyzer: '>=0.25.2 <0.27.0'
   args: '>=0.12.2+3 <0.14.0'
