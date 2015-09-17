@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-09-17T17:58:53.918Z
+// 2015-09-17T18:09:54.669Z
 
 part of source_gen.test.example;
 
@@ -33,9 +33,8 @@ abstract class _$PersonSerializerMixin {
 // Target: class Order
 // **************************************************************************
 
-Order _$OrderFromJson(Map json) => new Order(json['items']
-    ?.map((item) => item == null ? null : new Item.fromJson(item))
-    .toList())
+Order _$OrderFromJson(Map json) => new Order(
+    json['items']?.map((item) => item == null ? null : new Item.fromJson(item)))
   ..count = json['count']
   ..isRushed = json['isRushed'];
 
