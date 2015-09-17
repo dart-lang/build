@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-09-17T18:09:54.669Z
+// 2015-09-17T19:31:45.509Z
 
 part of source_gen.test.example;
 
@@ -34,7 +34,7 @@ abstract class _$PersonSerializerMixin {
 // **************************************************************************
 
 Order _$OrderFromJson(Map json) => new Order(
-    json['items']?.map((item) => item == null ? null : new Item.fromJson(item)))
+    json['items']?.map((v0) => v0 == null ? null : new Item.fromJson(v0)))
   ..count = json['count']
   ..isRushed = json['isRushed'];
 
@@ -51,12 +51,20 @@ abstract class _$OrderSerializerMixin {
 // Target: class Item
 // **************************************************************************
 
-Item _$ItemFromJson(Map json) =>
-    new Item(json['price'])..itemNumber = json['itemNumber'];
+Item _$ItemFromJson(Map json) => new Item(json['price'])
+  ..itemNumber = json['itemNumber']
+  ..saleDates = json['saleDates']
+      ?.map((v0) => v0 == null ? null : DateTime.parse(v0))
+      .toList();
 
 abstract class _$ItemSerializerMixin {
   int get price;
   int get itemNumber;
-  Map<String, dynamic> toJson() =>
-      <String, dynamic>{'price': price, 'itemNumber': itemNumber};
+  List get saleDates;
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'price': price,
+        'itemNumber': itemNumber,
+        'saleDates': new List.generate(
+            saleDates.length, (int i0) => saleDates[i0]?.toIso8601String())
+      };
 }

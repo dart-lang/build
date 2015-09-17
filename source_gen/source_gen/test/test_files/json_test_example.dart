@@ -42,18 +42,21 @@ class Order extends Object with _$OrderSerializerMixin {
   bool operator ==(other) => other is Order &&
       count == other.count &&
       isRushed == other.isRushed &&
-      const ListEquality().equals(items, other.items);
+      const DeepCollectionEquality().equals(items, other.items);
 }
 
 @JsonSerializable()
 class Item extends Object with _$ItemSerializerMixin {
   final int price;
   int itemNumber;
+  List<DateTime> saleDates;
 
   Item([this.price]);
 
   factory Item.fromJson(Map<String, Object> json) => _$ItemFromJson(json);
 
-  bool operator ==(other) =>
-      other is Item && price == other.price && itemNumber == other.itemNumber;
+  bool operator ==(other) => other is Item &&
+      price == other.price &&
+      itemNumber == other.itemNumber &&
+      const DeepCollectionEquality().equals(saleDates, other.saleDates);
 }

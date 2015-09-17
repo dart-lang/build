@@ -86,7 +86,7 @@ void main() {
 
       expect(output, isNotNull);
 
-      expect(output, contains('new List.from'));
+      expect(output, contains('.toList()'));
       expect(output, contains('new ChildObject.fromJson'));
     });
 
@@ -97,7 +97,7 @@ void main() {
 
       expect(output, isNotNull);
 
-      expect(output, contains('json[\'children\'];'));
+      expect(output, contains('json[\'children\']?.map('));
     });
   });
 }

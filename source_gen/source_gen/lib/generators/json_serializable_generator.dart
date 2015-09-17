@@ -65,7 +65,7 @@ class JsonSerializableGenerator
 
       var pairs = <String>[];
       fields.forEach((name, field) {
-        pairs.add("'$name': ${_fieldToJsonMapValue(name, field)}");
+        pairs.add("'$name': ${_fieldToJsonMapValue(name, field.type)}");
       });
       buffer.writeln(pairs.join(','));
 
@@ -154,8 +154,24 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
   buffer.writeln();
 }
 
-String _fieldToJsonMapValue(String name, FieldElement field) {
-  if (_isDartDateTime(field.type)) {
+String _fieldToJsonMapValue(String name, DartType fieldType, [int depth = 0]) {
+  if (_hasFromJsonCtor(fieldType)) {
+    return name;
+  }
+
+  if (_implementsDartList(fieldType)) {
+    var indexVal = "i${depth}";
+
+    var substitute = '${name}[$indexVal]';
+    var subFieldValue = _fieldToJsonMapValue(
+        substitute, _getIterableGenericType(fieldType), depth + 1);
+    if (subFieldValue != substitute) {
+      // TODO: the type could be imported from a library with a prefix!
+      return "new List.generate(${name}.length, (int $indexVal) => $subFieldValue)";
+    }
+  }
+
+  if (_isDartDateTime(fieldType)) {
     return "$name?.toIso8601String()";
   }
 
@@ -165,8 +181,11 @@ String _fieldToJsonMapValue(String name, FieldElement field) {
 String _jsonMapAccessToField(String name, FieldElement field,
     [ParameterElement ctorParam]) {
   var result = "json['$name']";
+  return _writeAccessToVar(result, field.type, ctorParam: ctorParam);
+}
 
-  var searchType = field.type;
+String _writeAccessToVar(String varExpression, DartType searchType,
+    {ParameterElement ctorParam, int depth: 0}) {
   if (ctorParam != null) {
     searchType = ctorParam.type;
   }
@@ -174,31 +193,31 @@ String _jsonMapAccessToField(String name, FieldElement field,
   if (_isDartDateTime(searchType)) {
     // TODO: this does not take into account that dart:core could be
     // imported with another name
-    return "$result == null ? null : DateTime.parse($result)";
+    return "$varExpression == null ? null : DateTime.parse($varExpression)";
   }
 
   if (_hasFromJsonCtor(searchType)) {
     // TODO: the type could be imported from a library with a prefix!
-    return "$result == null ? null : new ${searchType.name}.fromJson($result)";
+    return "$varExpression == null ? null : new ${searchType.name}.fromJson($varExpression)";
   }
 
   if (_isDartIterable(searchType) || _isDartList(searchType)) {
-    var listType = _listTypeWithFromJsonCtor(searchType);
+    var iterableGenericType = _getIterableGenericType(searchType);
 
-    if (listType != null) {
-      var output = "$result?.map((item) =>"
-          "item == null ? null : new ${listType.name}.fromJson(item)"
-          ")";
+    var itemVal = "v$depth";
 
-      if (_isDartList(searchType)) {
-        output += ".toList()";
-      }
+    var output = "$varExpression?.map(($itemVal) =>"
+        "${_writeAccessToVar(itemVal, iterableGenericType, depth: depth+1)}"
+        ")";
 
-      return output;
+    if (_isDartList(searchType)) {
+      output += ".toList()";
     }
+
+    return output;
   }
 
-  return result;
+  return varExpression;
 }
 
 bool _hasFromJsonCtor(DartType type) {
@@ -216,14 +235,29 @@ bool _hasFromJsonCtor(DartType type) {
   return false;
 }
 
-DartType _listTypeWithFromJsonCtor(DartType type) {
-  if (type is ParameterizedType) {
-    var listType = type.typeArguments.single;
-    if (_hasFromJsonCtor(listType)) {
-      return listType;
+DartType _getIterableGenericType(InterfaceTypeImpl type) {
+  // We want to find the type parameter to Iterable<T> – but a clever subclass
+  // may not have a type-argument itself (or my have different type params)
+  // TODO: dig in and find the type-param for Iterable
+  //       don't assume that the only type arg is the type passed to Iterable
+  return type.typeArguments.single;
+}
+
+bool _implementsDartList(DartType type) {
+  if (_isDartList(type)) {
+    return true;
+  }
+
+  if (type is InterfaceType) {
+    if (type.interfaces.any(_isDartList)) {
+      return true;
+    }
+
+    if (type.superclass != null) {
+      return _implementsDartList(type.superclass);
     }
   }
-  return null;
+  return false;
 }
 
 bool _isDartIterable(DartType type) {

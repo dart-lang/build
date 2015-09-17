@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-08-18T19:54:59.372Z
+// 2015-09-17T19:30:18.983Z
 
 part of source_gen.example.example;
 
@@ -15,7 +15,7 @@ Person _$PersonFromJson(Map json) => new Person(
         ? null
         : DateTime.parse(json['dateOfBirth']))
   ..orders = json['orders']
-      ?.map((item) => item == null ? null : new Order.fromJson(item))
+      ?.map((v0) => v0 == null ? null : new Order.fromJson(v0))
       .toList();
 
 abstract class _$PersonSerializerMixin {

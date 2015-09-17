@@ -53,7 +53,11 @@ void main() {
     });
 
     test("simple", () {
-      roundTripOrder(new Order(<Item>[new Item(24)..itemNumber = 42])
+      roundTripOrder(new Order(<Item>[
+        new Item(24)
+          ..itemNumber = 42
+          ..saleDates = [new DateTime.now()]
+      ])
         ..count = 42
         ..isRushed = true);
     });
@@ -61,19 +65,22 @@ void main() {
 }
 
 void _roundTripObject(object, factory(json)) {
-  var json;
-  try {
-    json = JSON.encode(object.toJson());
-  } on JsonUnsupportedObjectError catch (e) {
-    print(e.cause);
-    rethrow;
-  }
+  var json = _loudEncode(object);
 
   var person2 = factory(JSON.decode(json));
 
   expect(person2, equals(object));
 
-  var json2 = JSON.encode(person2.toJson());
+  var json2 = _loudEncode(person2);
 
   expect(json2, equals(json));
+}
+
+_loudEncode(object) {
+  try {
+    return JSON.encode(object.toJson());
+  } on JsonUnsupportedObjectError catch (e) {
+    print(e.cause);
+    rethrow;
+  }
 }
