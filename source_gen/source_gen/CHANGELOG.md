@@ -1,3 +1,7 @@
+## 0.4.5
+
+* `JsonSerializable`: add support for `List` values.
+
 ## 0.4.4+1
 
 * Updated `README.md` to highlight the `build_system` package and deemphasize Dart Ediotr.

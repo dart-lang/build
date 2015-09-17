@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-09-16T21:34:57.658Z
+// 2015-09-17T17:58:53.918Z
 
 part of source_gen.test.example;
 
@@ -33,17 +33,18 @@ abstract class _$PersonSerializerMixin {
 // Target: class Order
 // **************************************************************************
 
-Order _$OrderFromJson(Map json) => new Order()
+Order _$OrderFromJson(Map json) => new Order(json['items']
+    ?.map((item) => item == null ? null : new Item.fromJson(item))
+    .toList())
   ..count = json['count']
-  ..isRushed = json['isRushed']
-  ..item = json['item'] == null ? null : new Item.fromJson(json['item']);
+  ..isRushed = json['isRushed'];
 
 abstract class _$OrderSerializerMixin {
   int get count;
   bool get isRushed;
-  Item get item;
+  UnmodifiableListView get items;
   Map<String, dynamic> toJson() =>
-      <String, dynamic>{'count': count, 'isRushed': isRushed, 'item': item};
+      <String, dynamic>{'count': count, 'isRushed': isRushed, 'items': items};
 }
 
 // **************************************************************************

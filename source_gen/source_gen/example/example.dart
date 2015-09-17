@@ -13,6 +13,7 @@ part 'example.g.dart';
 class Person extends Object with _$PersonSerializerMixin {
   final String firstName, middleName, lastName;
   final DateTime dateOfBirth;
+  List<Order> orders;
 
   Person(this.firstName, this.lastName, {this.middleName, this.dateOfBirth});
 

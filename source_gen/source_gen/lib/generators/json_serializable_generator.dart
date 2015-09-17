@@ -89,8 +89,8 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
   // TODO: allow overriding the ctor used for the factory
   var ctor = classElement.unnamedConstructor;
 
-  var ctorArguments = <String>[];
-  var ctorNamedArguments = <String>[];
+  var ctorArguments = <ParameterElement>[];
+  var ctorNamedArguments = <ParameterElement>[];
 
   for (var arg in ctor.parameters) {
     var field = fields[arg.name];
@@ -104,9 +104,9 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
 
     // TODO: validate that the types match!
     if (arg.parameterKind == ParameterKind.NAMED) {
-      ctorNamedArguments.add(arg.name);
+      ctorNamedArguments.add(arg);
     } else {
-      ctorArguments.add(arg.name);
+      ctorArguments.add(arg);
     }
     fieldsToSet.remove(arg.name);
   }
@@ -128,14 +128,16 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
   buffer.writeln('$className ${prefix}FromJson(Map json) =>');
   buffer.write('    new $className(');
   buffer.writeAll(
-      ctorArguments.map((name) => _jsonMapAccessToField(name, fields[name])),
+      ctorArguments.map((paramElement) => _jsonMapAccessToField(
+          paramElement.name, fields[paramElement.name], paramElement)),
       ', ');
   if (ctorArguments.isNotEmpty && ctorNamedArguments.isNotEmpty) {
     buffer.write(', ');
   }
   buffer.writeAll(
-      ctorNamedArguments
-          .map((name) => '$name: ' + _jsonMapAccessToField(name, fields[name])),
+      ctorNamedArguments.map((paramElement) => '${paramElement.name}: ' +
+          _jsonMapAccessToField(
+              paramElement.name, fields[paramElement.name], paramElement)),
       ', ');
 
   buffer.write(')');
@@ -160,18 +162,40 @@ String _fieldToJsonMapValue(String name, FieldElement field) {
   return name;
 }
 
-String _jsonMapAccessToField(String name, FieldElement field) {
+String _jsonMapAccessToField(String name, FieldElement field,
+    [ParameterElement ctorParam]) {
   var result = "json['$name']";
 
-  if (_isDartDateTime(field.type)) {
+  var searchType = field.type;
+  if (ctorParam != null) {
+    searchType = ctorParam.type;
+  }
+
+  if (_isDartDateTime(searchType)) {
     // TODO: this does not take into account that dart:core could be
     // imported with another name
     return "$result == null ? null : DateTime.parse($result)";
   }
 
-  if (_hasFromJsonCtor(field.type)) {
+  if (_hasFromJsonCtor(searchType)) {
     // TODO: the type could be imported from a library with a prefix!
-    return "$result == null ? null : new ${field.type.name}.fromJson($result)";
+    return "$result == null ? null : new ${searchType.name}.fromJson($result)";
+  }
+
+  if (_isDartIterable(searchType) || _isDartList(searchType)) {
+    var listType = _listTypeWithFromJsonCtor(searchType);
+
+    if (listType != null) {
+      var output = "$result?.map((item) =>"
+          "item == null ? null : new ${listType.name}.fromJson(item)"
+          ")";
+
+      if (_isDartList(searchType)) {
+        output += ".toList()";
+      }
+
+      return output;
+    }
   }
 
   return result;
@@ -190,6 +214,28 @@ bool _hasFromJsonCtor(DartType type) {
   }
 
   return false;
+}
+
+DartType _listTypeWithFromJsonCtor(DartType type) {
+  if (type is ParameterizedType) {
+    var listType = type.typeArguments.single;
+    if (_hasFromJsonCtor(listType)) {
+      return listType;
+    }
+  }
+  return null;
+}
+
+bool _isDartIterable(DartType type) {
+  return type.element.library != null &&
+      type.element.library.isDartCore &&
+      type.name == 'Iterable';
+}
+
+bool _isDartList(DartType type) {
+  return type.element.library != null &&
+      type.element.library.isDartCore &&
+      type.name == 'List';
 }
 
 bool _isDartDateTime(DartType type) {

@@ -47,17 +47,15 @@ void main() {
     });
 
     test("empty", () {
-      roundTripOrder(new Order()
+      roundTripOrder(new Order(const [])
         ..count = 0
-        ..isRushed = false
-        ..item = (new Item(0)..itemNumber = 0));
+        ..isRushed = false);
     });
 
     test("simple", () {
-      roundTripOrder(new Order()
+      roundTripOrder(new Order(<Item>[new Item(24)..itemNumber = 42])
         ..count = 42
-        ..isRushed = true
-        ..item = (new Item(13)..itemNumber = 72));
+        ..isRushed = true);
     });
   });
 }

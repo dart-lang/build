@@ -12,5 +12,6 @@ dependencies:
   dart_style: '>=0.1.7 <0.3.0'
   path: ^1.3.2
 dev_dependencies:
+  collection: ^1.1.2
   scheduled_test: ^0.12.0
   test: ^0.12.3

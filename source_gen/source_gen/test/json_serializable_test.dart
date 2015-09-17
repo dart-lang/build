@@ -79,6 +79,26 @@ void main() {
 
       expect(output, contains('new ChildObject.fromJson'));
     });
+
+    test('class with child list of json-able objects', () async {
+      var element = await _getClassForCodeString('ParentObjectWithChildren');
+      var output = await _generator.generate(element);
+
+      expect(output, isNotNull);
+
+      expect(output, contains('new List.from'));
+      expect(output, contains('new ChildObject.fromJson'));
+    });
+
+    test('class with child list of dynamic objects is left alone', () async {
+      var element =
+          await _getClassForCodeString('ParentObjectWithDynamicChildren');
+      var output = await _generator.generate(element);
+
+      expect(output, isNotNull);
+
+      expect(output, contains('json[\'children\'];'));
+    });
   });
 }
 
@@ -163,5 +183,19 @@ class ChildObject {
   String str;
 
   factory ChildObject.fromJson(json) => null;
+}
+
+@JsonSerializable()
+class ParentObjectWithChildren {
+  int number;
+  String str;
+  List<ChildObject> children;
+}
+
+@JsonSerializable()
+class ParentObjectWithDynamicChildren {
+  int number;
+  String str;
+  List<dynamic> children;
 }
 ''';

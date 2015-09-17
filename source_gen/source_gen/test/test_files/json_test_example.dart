@@ -4,6 +4,9 @@
 
 library source_gen.test.example;
 
+import 'dart:collection';
+
+import 'package:collection/equality.dart';
 import 'package:source_gen/generators/json_serializable.dart';
 
 part 'json_test_example.g.dart';
@@ -28,16 +31,18 @@ class Person extends Object with _$PersonSerializerMixin {
 class Order extends Object with _$OrderSerializerMixin {
   int count;
   bool isRushed;
-  Item item;
+  final UnmodifiableListView<Item> items;
 
-  Order();
+  Order([Iterable<Item> items])
+      : this.items = new UnmodifiableListView<Item>(
+            new List<Item>.unmodifiable(items ?? const []));
 
   factory Order.fromJson(json) => _$OrderFromJson(json);
 
   bool operator ==(other) => other is Order &&
       count == other.count &&
       isRushed == other.isRushed &&
-      item == other.item;
+      const ListEquality().equals(items, other.items);
 }
 
 @JsonSerializable()
