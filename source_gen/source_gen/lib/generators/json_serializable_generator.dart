@@ -167,7 +167,7 @@ String _fieldToJsonMapValue(String name, DartType fieldType, [int depth = 0]) {
         substitute, _getIterableGenericType(fieldType), depth + 1);
     if (subFieldValue != substitute) {
       // TODO: the type could be imported from a library with a prefix!
-      return "new List.generate(${name}.length, (int $indexVal) => $subFieldValue)";
+      return "${name} == null ? null : new List.generate(${name}.length, (int $indexVal) => $subFieldValue)";
     }
   }
 

@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-09-17T19:31:45.509Z
+// 2015-09-17T21:07:16.190Z
 
 part of source_gen.test.example;
 
@@ -64,7 +64,9 @@ abstract class _$ItemSerializerMixin {
   Map<String, dynamic> toJson() => <String, dynamic>{
         'price': price,
         'itemNumber': itemNumber,
-        'saleDates': new List.generate(
-            saleDates.length, (int i0) => saleDates[i0]?.toIso8601String())
+        'saleDates': saleDates == null
+            ? null
+            : new List.generate(
+                saleDates.length, (int i0) => saleDates[i0]?.toIso8601String())
       };
 }
