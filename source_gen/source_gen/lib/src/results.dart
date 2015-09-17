@@ -4,8 +4,6 @@
 
 library source_gen.results;
 
-import 'dart:collection';
-
 enum GenerationResultKind { noChangesOrLibraries, noLibrariesFound, okay }
 
 class GenerationResult {
@@ -28,8 +26,7 @@ class GenerationResult {
   GenerationResult.okay(Iterable<LibraryGenerationResult> results)
       : this.kind = GenerationResultKind.okay,
         this.message = 'Generated libraries: ${results.join(', ')}',
-        this.results =
-            new UnmodifiableListView<LibraryGenerationResult>(results);
+        this.results = new List.unmodifiable(results);
 
   String toString() => message;
 }
