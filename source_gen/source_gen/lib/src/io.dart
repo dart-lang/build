@@ -22,11 +22,10 @@ const generatedExtension = '.g.dart';
 /// Returned results will be those files that match file paths or are within
 /// directories defined in the list.
 Future<List<String>> getDartFiles(String directoryPath,
-    {List<String> searchList, bool followLinks: false}) {
-  return getFiles(directoryPath,
-      searchList: searchList,
-      followLinks: followLinks).where(pathToDartFile).toList();
-}
+        {List<String> searchList, bool followLinks: false}) =>
+    getFiles(directoryPath, searchList: searchList, followLinks: followLinks)
+        .where(pathToDartFile)
+        .toList();
 
 /// Skips symbolic links and any item in [directoryPath] recursively that begins
 /// with `.`.
@@ -35,35 +34,29 @@ Future<List<String>> getDartFiles(String directoryPath,
 /// Returned results will be those files that match file paths or are within
 /// directories defined in the list.
 Stream<String> getFiles(String directoryPath,
-    {List<String> searchList, bool followLinks: false}) {
-  var controller = new StreamController<String>();
+    {List<String> searchList, bool followLinks: false}) async* {
   if (searchList == null) {
     searchList = <String>[];
   }
 
-  _expandSearchList(directoryPath, searchList).then((map) async {
-    var searchDirs = <String>[];
+  var map = await _expandSearchList(directoryPath, searchList);
+  var searchDirs = <String>[];
 
-    map.forEach((path, type) {
-      if (type == FileSystemEntityType.FILE) {
-        controller.add(path);
-      } else {
-        searchDirs.add(path);
-      }
-    });
+  for (var path in map.keys) {
+    var type = map[path];
 
-    await Future.forEach(searchDirs, (path) {
-      var rootDir = new Directory(path);
+    if (type == FileSystemEntityType.FILE) {
+      yield path;
+    } else {
+      searchDirs.add(path);
+    }
+  }
 
-      return _populateFiles(rootDir, controller, followLinks: followLinks);
-    });
-  }).catchError((error, stack) {
-    controller.addError(error, stack);
-  }).whenComplete(() {
-    controller.close();
-  });
+  for (var path in searchDirs) {
+    var rootDir = new Directory(path);
 
-  return controller.stream;
+    yield* _populateFiles(rootDir, followLinks: followLinks);
+  }
 }
 
 Future<Map<String, FileSystemEntityType>> _expandSearchList(
@@ -78,12 +71,12 @@ Future<Map<String, FileSystemEntityType>> _expandSearchList(
 
   var items = <String, FileSystemEntityType>{};
 
-  await Future.forEach(searchPaths, (path) async {
+  for (var path in searchPaths) {
     var type = await FileSystemEntity.type(path);
 
     if (type != FileSystemEntityType.FILE &&
         type != FileSystemEntityType.DIRECTORY) {
-      return;
+      continue;
     }
 
     /// If there is overlap with the provided paths, just fail.
@@ -107,26 +100,25 @@ Future<Map<String, FileSystemEntityType>> _expandSearchList(
     });
 
     items[path] = type;
-  });
+  }
 
   return items;
 }
 
-Future _populateFiles(Directory directory, StreamController<String> controller,
-    {bool followLinks: false}) async {
-  return directory
-      .list(recursive: false, followLinks: followLinks)
-      .asyncMap((fse) {
+Stream<String> _populateFiles(Directory directory,
+    {bool followLinks: false}) async* {
+  await for (var fse
+      in directory.list(recursive: false, followLinks: followLinks)) {
     if (p.basename(fse.path).startsWith('.')) {
-      return null;
+      continue;
     }
 
     if (fse is File) {
-      controller.add(fse.path);
+      yield fse.path;
     } else if (fse is Directory) {
-      return _populateFiles(fse, controller, followLinks: followLinks);
+      yield* _populateFiles(fse, followLinks: followLinks);
     }
-  }).drain();
+  }
 }
 
 /// Returns a new list of files that includes [paths] plus all files in the same
