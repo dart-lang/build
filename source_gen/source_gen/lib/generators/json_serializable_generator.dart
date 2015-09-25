@@ -211,7 +211,7 @@ String _writeAccessToVar(String varExpression, DartType searchType,
         ")";
 
     if (_isDartList(searchType)) {
-      output += ".toList()";
+      output += "?.toList()";
     }
 
     return output;
