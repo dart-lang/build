@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-09-17T21:07:16.190Z
+// 2015-09-27T18:05:29.785Z
 
 part of source_gen.test.example;
 
@@ -55,7 +55,7 @@ Item _$ItemFromJson(Map json) => new Item(json['price'])
   ..itemNumber = json['itemNumber']
   ..saleDates = json['saleDates']
       ?.map((v0) => v0 == null ? null : DateTime.parse(v0))
-      .toList();
+      ?.toList();
 
 abstract class _$ItemSerializerMixin {
   int get price;

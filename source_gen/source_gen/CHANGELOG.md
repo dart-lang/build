@@ -1,3 +1,7 @@
+## 0.4.5+1
+
+* Handle `null` values for `List` properties.
+
 ## 0.4.5
 
 * `JsonSerializable`: add support for `List` values.

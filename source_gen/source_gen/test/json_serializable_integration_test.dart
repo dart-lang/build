@@ -35,6 +35,12 @@ void main() {
       roundTripPerson(new Person('a', 'b',
           middleName: 'c', dateOfBirth: new DateTime.now().toUtc()));
     });
+
+    test('empty json', () {
+      var person = new Person.fromJson({});
+      expect(person.dateOfBirth, isNull);
+      roundTripPerson(person);
+    });
   });
 
   group('Order', () {
@@ -60,6 +66,24 @@ void main() {
       ])
         ..count = 42
         ..isRushed = true);
+    });
+
+    test('empty json', () {
+      var order = new Order.fromJson({});
+      expect(order.items, isEmpty);
+      roundTripOrder(order);
+    });
+  });
+
+  group('Item', () {
+    roundTripItem(Item p) {
+      _roundTripObject(p, (json) => new Item.fromJson(json));
+    }
+
+    test('empty json', () {
+      var item = new Item.fromJson({});
+      expect(item.saleDates, isNull);
+      roundTripItem(item);
     });
   });
 }
