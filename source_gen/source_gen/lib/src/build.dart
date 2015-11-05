@@ -5,12 +5,14 @@
 library source_gen.build;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 
 import 'io.dart';
 import 'generate.dart';
+import 'generated_output.dart';
 import 'generator.dart';
 
 /// Designed to be called from a `build.dart` file in the root of your project
@@ -61,9 +63,9 @@ Future<String> build(List<String> args, List<Generator> generators,
       buffer.writeln(result.generatedFilePath);
       buffer.writeln('  ${result.kind}');
       for (var r in result.outputs) {
-        if (r.isError) {
-          buffer.writeln('    ${r.error}');
-          buffer.writeln(r.stackTrace);
+        var indent = ' ' * 4;
+        for (var errorLine in _getErrorLines(r)) {
+          buffer.writeln(indent + errorLine);
         }
       }
     }
@@ -72,6 +74,23 @@ Future<String> build(List<String> args, List<Generator> generators,
   }
 
   return genResult.toString();
+}
+
+Iterable<String> _getErrorLines(GeneratedOutput out) sync* {
+  if (out.isError) {
+    yield* LineSplitter.split(out.error.toString());
+
+    if (out.error is InvalidGenerationSourceError) {
+      var err = out.error as InvalidGenerationSourceError;
+      if (err.todo.isNotEmpty) {
+        yield* LineSplitter.split(err.todo);
+      }
+    }
+
+    if (out.stackTrace != null) {
+      yield* LineSplitter.split(out.stackTrace.toString());
+    }
+  }
 }
 
 ArgParser _getParser() => new ArgParser()

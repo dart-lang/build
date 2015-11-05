@@ -1,3 +1,7 @@
+## 0.4.6-dev
+
+* Improved output of generation errors and stack traces.
+
 ## 0.4.5+1
 
 * Handle `null` values for `List` properties.
