@@ -1,4 +1,6 @@
-## 0.4.6-dev
+## 0.4.6
+
+* `JsonSerializable`: Added `JsonKey` annotation. 
 
 * Improved output of generation errors and stack traces.
 

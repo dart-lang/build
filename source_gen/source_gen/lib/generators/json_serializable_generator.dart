@@ -10,6 +10,7 @@ import 'package:analyzer/src/generated/utilities_dart.dart';
 
 import 'package:source_gen/source_gen.dart';
 import 'package:source_gen/src/utils.dart';
+import 'package:source_gen/src/annotation.dart';
 
 import 'json_serializable.dart';
 
@@ -65,7 +66,8 @@ class JsonSerializableGenerator
 
       var pairs = <String>[];
       fields.forEach((name, field) {
-        pairs.add("'$name': ${_fieldToJsonMapValue(name, field.type)}");
+        pairs.add(
+            "'${_fieldToAnnotatedMapValue(name, field)}': ${_fieldToJsonMapValue(name, field.type)}");
       });
       buffer.writeln(pairs.join(','));
 
@@ -154,6 +156,17 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
   buffer.writeln();
 }
 
+String _fieldToAnnotatedMapValue(String defaultValue, FieldElement field) {
+  var metadata = field.metadata;
+  var jsonKey = metadata.firstWhere((m) => matchAnnotation(JsonKey, m),
+      orElse: () => null);
+  if (jsonKey != null) {
+    var jsonName = jsonKey.constantValue.getField('jsonName').toStringValue();
+    return jsonName;
+  }
+  return defaultValue;
+}
+
 String _fieldToJsonMapValue(String name, DartType fieldType, [int depth = 0]) {
   if (_hasFromJsonCtor(fieldType)) {
     return name;
@@ -180,6 +193,7 @@ String _fieldToJsonMapValue(String name, DartType fieldType, [int depth = 0]) {
 
 String _jsonMapAccessToField(String name, FieldElement field,
     [ParameterElement ctorParam]) {
+  name = _fieldToAnnotatedMapValue(name, field);
   var result = "json['$name']";
   return _writeAccessToVar(result, field.type, ctorParam: ctorParam);
 }

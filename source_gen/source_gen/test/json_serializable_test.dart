@@ -100,6 +100,14 @@ void main() {
       expect(output, contains('json[\'children\']?.map('));
     });
   });
+
+  test('reads JsonKey annotations', () async {
+    var element = await _getClassForCodeString('Person');
+    var output = await _generator.generate(element);
+
+    expect(output, contains("'h': height,"));
+    expect(output, contains("..height = json['h']"));
+  });
 }
 
 const _generator = const JsonSerializableGenerator();
@@ -144,6 +152,7 @@ void annotatedMethod() => null;
 @JsonSerializable()
 class Person {
   String firstName, lastName;
+  @JsonKey("h")
   int height;
   DateTime dateOfBirth;
   dynamic dynamicType;

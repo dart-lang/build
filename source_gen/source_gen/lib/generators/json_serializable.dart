@@ -15,3 +15,12 @@ class JsonSerializable {
       : this.createFactory = createFactory,
         this.createToJson = createToJson;
 }
+
+/// Customizes the name of the JSON key for a field.
+///
+/// If ommitted, the resulting JSON key will be the
+/// name of the field defined on the class.
+class JsonKey {
+  final String jsonName;
+  const JsonKey(this.jsonName);
+}
