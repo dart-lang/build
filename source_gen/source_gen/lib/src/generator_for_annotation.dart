@@ -28,6 +28,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     var annotationInstance =
         instantiateAnnotation(matchingAnnotations.single) as T;
 
+    assert(annotationInstance != null);
+
     return generateForAnnotatedElement(element, annotationInstance);
   }
 
