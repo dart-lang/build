@@ -6,7 +6,9 @@ homepage: https://github.com/dart-lang/source_gen
 environment:
   sdk: '>=1.12.0 <2.0.0'
 dependencies:
-  analyzer: '>=0.25.2 <0.27.0'
+  # Currently broken on recent pkg/analyzer releases
+  # see https://github.com/dart-lang/source_gen/issues/67
+  analyzer: '>=0.25.2 <0.26.1+14'
   args: '>=0.12.2+3 <0.14.0'
   cli_util: ^0.0.1
   dart_style: '>=0.1.7 <0.3.0'
