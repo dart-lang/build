@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2015-09-27T18:05:29.846Z
+// 2015-11-16T21:30:24.516Z
 
 part of source_gen.example.example;
 
@@ -11,9 +11,9 @@ part of source_gen.example.example;
 Person _$PersonFromJson(Map json) => new Person(
     json['firstName'], json['lastName'],
     middleName: json['middleName'],
-    dateOfBirth: json['dateOfBirth'] == null
+    dateOfBirth: json['date-of-birth'] == null
         ? null
-        : DateTime.parse(json['dateOfBirth']))
+        : DateTime.parse(json['date-of-birth']))
   ..orders = json['orders']
       ?.map((v0) => v0 == null ? null : new Order.fromJson(v0))
       ?.toList();
@@ -28,7 +28,7 @@ abstract class _$PersonSerializerMixin {
         'firstName': firstName,
         'middleName': middleName,
         'lastName': lastName,
-        'dateOfBirth': dateOfBirth?.toIso8601String(),
+        'date-of-birth': dateOfBirth?.toIso8601String(),
         'orders': orders
       };
 }

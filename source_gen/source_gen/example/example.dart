@@ -12,6 +12,8 @@ part 'example.g.dart';
 @JsonSerializable()
 class Person extends Object with _$PersonSerializerMixin {
   final String firstName, middleName, lastName;
+
+  @JsonKey('date-of-birth')
   final DateTime dateOfBirth;
   List<Order> orders;
 
