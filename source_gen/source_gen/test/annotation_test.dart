@@ -7,7 +7,10 @@ library source_gen.test.annotation_test;
 
 import 'dart:async';
 
+import 'package:analyzer/src/generated/constant.dart';
 import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/src/generated/source.dart';
+import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -221,12 +224,25 @@ void main() {
         expect(matched, isTrue);
       });
 
-      test('class annotated with type defined via package uri', () {
-        ClassElement annotatedClass =
-            _getAnnotationForClass(libElement, 'AnnotatedWithJson');
-        var annotation = annotatedClass.metadata.single;
-        var matched = matchAnnotation(JsonSerializable, annotation);
-        expect(matched, isTrue);
+      group('class annotated with type defined via package uri', () {
+        test('When running on a normal file system', () {
+          ClassElement annotatedClass =
+              _getAnnotationForClass(libElement, 'AnnotatedWithJson');
+          var annotation = annotatedClass.metadata.single;
+          var matched = matchAnnotation(JsonSerializable, annotation);
+          expect(matched, isTrue);
+        });
+
+        test('When running in barback', () {
+          var annotation = _mockElementAnnotation(
+              'JsonSerializable',
+              new Uri(
+                  scheme: 'asset',
+                  path: 'source_gen/lib/generators/json_serializable.dart'));
+
+          var matched = matchAnnotation(JsonSerializable, annotation);
+          expect(matched, isTrue);
+        });
       });
     });
   });
@@ -250,3 +266,39 @@ Future<LibraryElement> _getTestLibElement() async {
 
 ClassElement _getAnnotationForClass(LibraryElement lib, String className) => lib
     .units.expand((cu) => cu.types).singleWhere((cd) => cd.name == className);
+
+/// Returns a mock [ElementAnnotationImpl] whose
+/// `evaluationResult.value.type.element.library.source` is `libraryUri` and
+/// whose `evaluationResult.value.type.name` is `typeName`.
+ElementAnnotationImpl _mockElementAnnotation(String typeName, Uri libraryUri) {
+  var annotation = new MockElementAnnotationImpl();
+  var result = new MockEvaluationResultImpl();
+  var value = new MockDartObjectImpl();
+  var type = new MockParameterizedType();
+  var element = new MockElement();
+  var library = new MockLibraryElement();
+  var source = new MockSource();
+  when(annotation.evaluationResult).thenReturn(result);
+  when(result.value).thenReturn(value);
+  when(value.type).thenReturn(type);
+  when(type.name).thenReturn(typeName);
+  when(type.element).thenReturn(element);
+  when(element.library).thenReturn(library);
+  when(library.source).thenReturn(source);
+  when(source.uri).thenReturn(libraryUri);
+  return annotation;
+}
+
+class MockElementAnnotationImpl extends Mock implements ElementAnnotationImpl {}
+
+class MockEvaluationResultImpl extends Mock implements EvaluationResultImpl {}
+
+class MockDartObjectImpl extends Mock implements DartObjectImpl {}
+
+class MockParameterizedType extends Mock implements ParameterizedType {}
+
+class MockElement extends Mock implements Element {}
+
+class MockLibraryElement extends Mock implements LibraryElement {}
+
+class MockSource extends Mock implements Source {}

@@ -121,8 +121,7 @@ bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
     return false;
   }
 
-  var annotationLibSource =
-      annotationValueType.element.library.source as FileBasedSource;
+  var annotationLibSource = annotationValueType.element.library.source;
 
   var libOwnerUri = (classMirror.owner as LibraryMirror).uri;
   var annotationLibSourceUri = annotationLibSource.uri;
@@ -130,8 +129,11 @@ bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
   if (annotationLibSourceUri.scheme == 'file' &&
       libOwnerUri.scheme == 'package') {
     // try to turn the libOwnerUri into a file uri
-
     libOwnerUri = _fileUriFromPackageUri(libOwnerUri);
+  } else if (annotationLibSourceUri.scheme == 'asset' &&
+      libOwnerUri.scheme == 'package') {
+    // try to turn the libOwnerUri into a asset uri
+    libOwnerUri = _assetUriFromPackageUri(libOwnerUri);
   }
 
   return annotationLibSource.uri == libOwnerUri;
@@ -149,6 +151,16 @@ Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
   var normalPath = file.resolveSymbolicLinksSync();
 
   return new Uri.file(normalPath);
+}
+
+Uri _assetUriFromPackageUri(Uri libraryPackageUri) {
+  assert(libraryPackageUri.scheme == 'package');
+  var originalSegments = libraryPackageUri.pathSegments;
+  var newSegments = [originalSegments[0]]
+    ..add('lib')
+    ..addAll(originalSegments.getRange(1, originalSegments.length));
+
+  return new Uri(scheme: 'asset', pathSegments: newSegments);
 }
 
 String get _packageRoot {
