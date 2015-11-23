@@ -4,6 +4,8 @@
 
 * Improved output of generation errors and stack traces.
 
+* Require `analyzer '^0.26.2'`.
+
 ## 0.4.5+1
 
 * Handle `null` values for `List` properties.

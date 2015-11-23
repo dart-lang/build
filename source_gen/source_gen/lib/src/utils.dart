@@ -173,6 +173,8 @@ LibraryElement getLibraryElementForSourceFile(
 
   var libSource = libs.single;
 
+  // using `getLibraryElement` because the library should already be computed
+  // If not, it's a bug in usage
   return context.getLibraryElement(libSource);
 }
 
@@ -193,7 +195,11 @@ Iterable<Element> _getElements(CompilationUnitMember member) {
 LibraryElement _getLibraryElement(String path, AnalysisContext context) {
   Source source = new FileBasedSource(new JavaFile(path));
   if (context.computeKindOf(source) == SourceKind.LIBRARY) {
-    return context.computeLibraryElement(source);
+    LibraryElement libraryElement = context.computeLibraryElement(source);
+    // TODO: remove work-around once pkg/analyzer issues is fixed
+    //       https://github.com/dart-lang/sdk/issues/24890
+    context.resolveCompilationUnit(source, libraryElement);
+    return libraryElement;
   }
   return null;
 }
