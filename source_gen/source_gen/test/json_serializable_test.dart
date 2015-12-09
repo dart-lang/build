@@ -40,7 +40,8 @@ void main() {
 
   test('class with final fields', () async {
     var element = await _getClassForCodeString('FinalFields');
-    expect(_generator.generate(element), throwsInvalidGenerationSourceError);
+    var generateResult = await _generator.generate(element);
+    expect(generateResult, contains("Map<String, dynamic> toJson()"));
   });
 
   test('unannotated classes no-op', () async {

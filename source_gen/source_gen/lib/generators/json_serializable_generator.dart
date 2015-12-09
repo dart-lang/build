@@ -47,7 +47,13 @@ class JsonSerializableGenerator
     var buffer = new StringBuffer();
 
     if (annotation.createFactory) {
-      _writeFactory(buffer, classElement, fields, prefix);
+      var toSkip = _writeFactory(buffer, classElement, fields, prefix);
+
+      // If there are fields that are final – that are not set via the generated
+      // constructor, then don't output them when generating the `toJson` call.
+      for (var field in toSkip) {
+        fields.remove(field.name);
+      }
     }
 
     if (annotation.createToJson) {
@@ -80,7 +86,8 @@ class JsonSerializableGenerator
   }
 }
 
-void _writeFactory(StringBuffer buffer, ClassElement classElement,
+/// Returns the set of fields that are not written to via constructors.
+Set<FieldElement> _writeFactory(StringBuffer buffer, ClassElement classElement,
     Map<String, FieldElement> fields, String prefix) {
   // creating a copy so it can be mutated
   var fieldsToSet = new Map<String, FieldElement>.from(fields);
@@ -114,14 +121,12 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
     fieldsToSet.remove(arg.name);
   }
 
+  // these are fields to skip – now to find them
   var finalFields = fieldsToSet.values.where((field) => field.isFinal).toSet();
 
-  if (finalFields.isNotEmpty) {
-    throw new InvalidGenerationSourceError(
-        'Generator cannot target `$className`.',
-        todo: 'Make the following fields writable or add them to the '
-            'constructor with matching names: '
-            '${finalFields.map((field) => field.name).join(', ')}.');
+  for (var finalField in finalFields) {
+    var value = fieldsToSet.remove(finalField.name);
+    assert(value == finalField);
   }
 
   //
@@ -155,6 +160,8 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
     buffer.writeln(';');
   }
   buffer.writeln();
+
+  return finalFields;
 }
 
 String _fieldToAnnotatedMapValue(String defaultValue, FieldElement field) {

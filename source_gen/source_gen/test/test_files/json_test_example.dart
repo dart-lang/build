@@ -33,6 +33,8 @@ class Order extends Object with _$OrderSerializerMixin {
   bool isRushed;
   final UnmodifiableListView<Item> items;
 
+  int get price => items.fold(0, (item, total) => item.price + total);
+
   Order([Iterable<Item> items])
       : this.items = new UnmodifiableListView<Item>(
             new List<Item>.unmodifiable(items ?? const []));

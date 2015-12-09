@@ -1,3 +1,7 @@
+## 0.4.7
+
+* `JsonSerializableGenerator` now supports classes with read-only properties.
+
 ## 0.4.6
 
 * `JsonSerializable`: Added `JsonKey` annotation. 
