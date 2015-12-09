@@ -66,8 +66,8 @@ class JsonSerializableGenerator
 
       var pairs = <String>[];
       fields.forEach((name, field) {
-        pairs.add(
-            "'${_fieldToAnnotatedMapValue(name, field)}': ${_fieldToJsonMapValue(name, field.type)}");
+        pairs.add("'${_fieldToAnnotatedMapValue(name, field)}': "
+            "${_fieldToJsonMapValue(name, field.type)}");
       });
       buffer.writeln(pairs.join(','));
 
@@ -99,7 +99,8 @@ void _writeFactory(StringBuffer buffer, ClassElement classElement,
 
     if (field == null) {
       if (arg.parameterKind == ParameterKind.REQUIRED) {
-        throw 'Cannot populate the required constructor argument: ${arg.displayName}.';
+        throw 'Cannot populate the required constructor argument: '
+            '${arg.displayName}.';
       }
       continue;
     }
@@ -180,7 +181,8 @@ String _fieldToJsonMapValue(String name, DartType fieldType, [int depth = 0]) {
         substitute, _getIterableGenericType(fieldType), depth + 1);
     if (subFieldValue != substitute) {
       // TODO: the type could be imported from a library with a prefix!
-      return "${name} == null ? null : new List.generate(${name}.length, (int $indexVal) => $subFieldValue)";
+      return "${name} == null ? null : "
+          "new List.generate(${name}.length, (int $indexVal) => $subFieldValue)";
     }
   }
 
@@ -212,7 +214,8 @@ String _writeAccessToVar(String varExpression, DartType searchType,
 
   if (_hasFromJsonCtor(searchType)) {
     // TODO: the type could be imported from a library with a prefix!
-    return "$varExpression == null ? null : new ${searchType.name}.fromJson($varExpression)";
+    return "$varExpression == null ? null : "
+        "new ${searchType.name}.fromJson($varExpression)";
   }
 
   if (_isDartIterable(searchType) || _isDartList(searchType)) {
