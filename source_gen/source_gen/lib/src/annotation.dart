@@ -10,14 +10,16 @@ import 'dart:mirrors';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/constant.dart';
 import 'package:analyzer/src/generated/element.dart';
-import 'package:analyzer/src/generated/source_io.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:path/path.dart' as p;
 
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var annotationObjectImpl = annotation.evaluationResult.value;
-  if (annotationObjectImpl.hasExactValue) {
-    return annotationObjectImpl.value;
+  if (annotationObjectImpl.hasKnownValue) {
+    dynamic value = getValue(annotationObjectImpl);
+    if (value != null) {
+      return value;
+    }
   }
 
   var element = annotation.element;
@@ -36,6 +38,34 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
       _getDeclMirrorFromType(annotation.evaluationResult.value.type);
 
   throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
+}
+
+dynamic getValue(DartObject object) {
+  if (object.isNull) {
+    return null;
+  }
+  dynamic value = object.toBoolValue() ??
+      object.toDoubleValue() ??
+      object.toIntValue() ??
+      object.toStringValue();
+  if (value == null) {
+    value = object.toListValue();
+    if (value != null) {
+      return value.map((DartObject element) => getValue(element)).toList();
+    }
+    Map<DartObject, DartObject> map = object.toMapValue();
+    if (map != null) {
+      Map result = {};
+      map.forEach((DartObject key, DartObject value) {
+        dynamic mappedKey = getValue(key);
+        if (mappedKey != null) {
+          result[mappedKey] = getValue(value);
+        }
+      });
+      return result;
+    }
+  }
+  return value;
 }
 
 dynamic _createFromConstructor(
@@ -73,9 +103,9 @@ dynamic _createFromConstructor(
 
     var fieldObjectImpl = obj.fields[fieldName];
     if (p.parameterKind == ParameterKind.NAMED) {
-      namedArgs[new Symbol(p.name)] = fieldObjectImpl.value;
+      namedArgs[new Symbol(p.name)] = getValue(fieldObjectImpl);
     } else {
-      positionalArgs.add(fieldObjectImpl.value);
+      positionalArgs.add(getValue(fieldObjectImpl));
     }
   }
 

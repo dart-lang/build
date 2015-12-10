@@ -93,6 +93,8 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
     packageResolver
   ];
 
+  AnalysisEngine.instance.processRequiredPlugins();
+
   // TODO: Remove this once dartbug.com/23017 is fixed
   // See source_gen bug https://github.com/dart-lang/source_gen/issues/46
   var options = new AnalysisOptionsImpl()

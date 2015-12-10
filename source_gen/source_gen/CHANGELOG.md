@@ -1,3 +1,7 @@
+## 0.4.7+1
+
+* Upgrade to `analyzer '^0.27.0'`.
+
 ## 0.4.7
 
 * `JsonSerializableGenerator` now supports classes with read-only properties.
