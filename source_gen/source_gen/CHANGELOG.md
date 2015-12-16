@@ -1,3 +1,7 @@
+## 0.4.7+2
+
+* Upgrade to `analyzer '^0.27.1'` and removed a work-around for a fixed `analyzer` issue.
+
 ## 0.4.7+1
 
 * Upgrade to `analyzer '^0.27.0'`.

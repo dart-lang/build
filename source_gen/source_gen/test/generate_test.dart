@@ -437,14 +437,14 @@ part of test_lib;
 // Target: class Person
 // **************************************************************************
 
-// Code for Person
+// Code for "class Person"
 
 // **************************************************************************
 // Generator: CommentGenerator
 // Target: class Customer
 // **************************************************************************
 
-// Code for Customer
+// Code for "class Customer"
 ''';
 
 const _testGenPartContentForLibrary =
@@ -457,7 +457,7 @@ part of test_lib;
 // Target: library test_lib
 // **************************************************************************
 
-// Code for test_lib
+// Code for "test_lib"
 ''';
 
 const _testGenPartContentForClassesAndLibrary =
@@ -470,21 +470,21 @@ part of test_lib;
 // Target: library test_lib
 // **************************************************************************
 
-// Code for test_lib
+// Code for "test_lib"
 
 // **************************************************************************
 // Generator: CommentGenerator
 // Target: class Person
 // **************************************************************************
 
-// Code for Person
+// Code for "class Person"
 
 // **************************************************************************
 // Generator: CommentGenerator
 // Target: class Customer
 // **************************************************************************
 
-// Code for Customer
+// Code for "class Customer"
 ''';
 
 const _testGenPartContentNoPerson =
@@ -497,7 +497,7 @@ part of test_lib;
 // Target: class Customer
 // **************************************************************************
 
-// Code for Customer
+// Code for "class Customer"
 ''';
 
 const _testGenPartContentError = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
@@ -525,5 +525,5 @@ part of test_lib;
 // Target: class Customer
 // **************************************************************************
 
-// Code for Customer
+// Code for "class Customer"
 ''';

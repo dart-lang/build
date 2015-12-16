@@ -28,11 +28,11 @@ class CommentGenerator extends Generator {
             "Try renaming the class.");
       }
 
-      return '// Code for $element';
+      return '// Code for "$element"';
     }
 
     if (forLibrary && element is LibraryElement) {
-      return '// Code for $element';
+      return '// Code for "$element"';
     }
     return null;
   }
