@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var annotationObjectImpl = annotation.evaluationResult.value;
   if (annotationObjectImpl.hasKnownValue) {
-    dynamic value = getValue(annotationObjectImpl);
+    dynamic value = _getValue(annotationObjectImpl);
     if (value != null) {
       return value;
     }
@@ -40,7 +40,7 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
 }
 
-dynamic getValue(DartObject object) {
+dynamic _getValue(DartObject object) {
   if (object.isNull) {
     return null;
   }
@@ -51,15 +51,15 @@ dynamic getValue(DartObject object) {
   if (value == null) {
     value = object.toListValue();
     if (value != null) {
-      return value.map((DartObject element) => getValue(element)).toList();
+      return value.map((DartObject element) => _getValue(element)).toList();
     }
     Map<DartObject, DartObject> map = object.toMapValue();
     if (map != null) {
       Map result = {};
       map.forEach((DartObject key, DartObject value) {
-        dynamic mappedKey = getValue(key);
+        dynamic mappedKey = _getValue(key);
         if (mappedKey != null) {
-          result[mappedKey] = getValue(value);
+          result[mappedKey] = _getValue(value);
         }
       });
       return result;
@@ -103,9 +103,9 @@ dynamic _createFromConstructor(
 
     var fieldObjectImpl = obj.fields[fieldName];
     if (p.parameterKind == ParameterKind.NAMED) {
-      namedArgs[new Symbol(p.name)] = getValue(fieldObjectImpl);
+      namedArgs[new Symbol(p.name)] = _getValue(fieldObjectImpl);
     } else {
-      positionalArgs.add(getValue(fieldObjectImpl));
+      positionalArgs.add(_getValue(fieldObjectImpl));
     }
   }
 
