@@ -4,6 +4,8 @@
 
 library source_gen.test.annotation_test.defs;
 
+import 'dart:collection' as collection;
+
 part 'annotation_part.dart';
 
 const untypedAnnotation = const PublicAnnotationClass();
@@ -65,5 +67,8 @@ const objectAnnotation = const {
   'symbol': #foo,
   'double': 3.14,
   'null': null,
-  'String': 'a string'
+  'String': 'a string',
+  'core type': bool,
+  'imported sdk type': collection.Maps,
+  'non-core type': OtherPublicAnnotationClass
 };

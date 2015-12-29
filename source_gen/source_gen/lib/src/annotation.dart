@@ -17,10 +17,11 @@ import 'package:path/path.dart' as p;
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var annotationObjectImpl = annotation.evaluationResult.value;
   if (annotationObjectImpl.hasKnownValue) {
-    dynamic value = _getValue(
-        annotationObjectImpl, annotation.element.context.typeProvider);
-    if (value != null) {
-      return value;
+    try {
+      return _getValue(
+          annotationObjectImpl, annotation.element.context.typeProvider);
+    } on CannotCreateFromAnnotationException catch (_) {
+      // NOOP
     }
   }
 
@@ -68,8 +69,16 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
   }
 
   if (object.type == typeProvider.typeType) {
+    var typeData = object.toTypeValue();
+
+    if (typeData is InterfaceTypeImpl) {
+      var declarationMirror = _getDeclMirrorFromType(typeData) as ClassMirror;
+
+      return declarationMirror.reflectedType;
+    }
+
     throw new ArgumentError.value(
-        object, 'object', "We don't support `type` annotations yet.");
+        object, 'object', "Provided type value is not supported.");
   }
 
   var listValue = object.toListValue();
@@ -91,8 +100,18 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
     return result;
   }
 
-  return null;
+  throw new CannotCreateFromAnnotationException._(object);
 }
+
+class CannotCreateFromAnnotationException {
+  final DartObject object;
+
+  CannotCreateFromAnnotationException._(this.object);
+
+  String toString() => "Cannot create object from $object";
+}
+
+final _cannotCreate = new Object();
 
 dynamic _createFromConstructor(
     ConstructorElementImpl ctor, DartObjectImpl obj) {

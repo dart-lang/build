@@ -1,3 +1,7 @@
+## 0.4.8
+
+* Added support for `Symbol` and `Type` in annotations.
+
 ## 0.4.7+2
 
 * Upgrade to `analyzer '^0.27.1'` and removed a work-around for a fixed `analyzer` issue.
