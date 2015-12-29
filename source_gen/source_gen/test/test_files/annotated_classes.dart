@@ -33,7 +33,7 @@ class NonDefaultCtorWithPositionalAndNamedParams {}
 class WithNestedObjects {}
 
 @objectAnnotation
-class WithSymbol {}
+class WithConstMapLiteral {}
 
 @JsonSerializable()
 class AnnotatedWithJson {}

@@ -106,8 +106,9 @@ void main() {
           instance.child2, const defs.PublicAnnotationClass.withAnIntAsOne());
     });
 
-    test('with built-in Symbol', () {
-      var instance = _getInstantiatedAnnotation(libElement, 'WithSymbol');
+    test('with constant map literal', () {
+      var instance =
+          _getInstantiatedAnnotation(libElement, 'WithConstMapLiteral');
       expect(instance, defs.objectAnnotation);
     });
 
