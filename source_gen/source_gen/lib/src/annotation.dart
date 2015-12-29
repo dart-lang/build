@@ -11,12 +11,14 @@ import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/constant.dart';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
+import 'package:analyzer/src/generated/resolver.dart';
 import 'package:path/path.dart' as p;
 
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var annotationObjectImpl = annotation.evaluationResult.value;
   if (annotationObjectImpl.hasKnownValue) {
-    dynamic value = _getValue(annotationObjectImpl);
+    dynamic value = _getValue(
+        annotationObjectImpl, annotation.element.context.typeProvider);
     if (value != null) {
       return value;
     }
@@ -40,32 +42,56 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
 }
 
-dynamic _getValue(DartObject object) {
+dynamic _getValue(DartObject object, TypeProvider typeProvider) {
   if (object.isNull) {
     return null;
   }
-  dynamic value = object.toBoolValue() ??
-      object.toDoubleValue() ??
-      object.toIntValue() ??
-      object.toStringValue();
-  if (value == null) {
-    value = object.toListValue();
-    if (value != null) {
-      return value.map((DartObject element) => _getValue(element)).toList();
-    }
-    Map<DartObject, DartObject> map = object.toMapValue();
-    if (map != null) {
-      Map result = {};
-      map.forEach((DartObject key, DartObject value) {
-        dynamic mappedKey = _getValue(key);
-        if (mappedKey != null) {
-          result[mappedKey] = _getValue(value);
-        }
-      });
-      return result;
-    }
+
+  if (object.type == typeProvider.boolType) {
+    return object.toBoolValue();
   }
-  return value;
+
+  if (object.type == typeProvider.intType) {
+    return object.toIntValue();
+  }
+
+  if (object.type == typeProvider.stringType) {
+    return object.toStringValue();
+  }
+
+  if (object.type == typeProvider.doubleType) {
+    return object.toDoubleValue();
+  }
+
+  if (object.type == typeProvider.symbolType) {
+    return new Symbol(object.toSymbolValue());
+  }
+
+  if (object.type == typeProvider.typeType) {
+    throw new ArgumentError.value(
+        object, 'object', "We don't support `type` annotations yet.");
+  }
+
+  var listValue = object.toListValue();
+  if (listValue != null) {
+    return listValue
+        .map((DartObject element) => _getValue(element, typeProvider))
+        .toList();
+  }
+
+  var mapValue = object.toMapValue();
+  if (mapValue != null) {
+    var result = {};
+    mapValue.forEach((DartObject key, DartObject value) {
+      dynamic mappedKey = _getValue(key, typeProvider);
+      if (mappedKey != null) {
+        result[mappedKey] = _getValue(value, typeProvider);
+      }
+    });
+    return result;
+  }
+
+  return null;
 }
 
 dynamic _createFromConstructor(
@@ -101,11 +127,13 @@ dynamic _createFromConstructor(
       fieldName = initializer.fieldName.name;
     }
 
+    var typeProvider = ctor.context.typeProvider;
+
     var fieldObjectImpl = obj.fields[fieldName];
     if (p.parameterKind == ParameterKind.NAMED) {
-      namedArgs[new Symbol(p.name)] = _getValue(fieldObjectImpl);
+      namedArgs[new Symbol(p.name)] = _getValue(fieldObjectImpl, typeProvider);
     } else {
-      positionalArgs.add(_getValue(fieldObjectImpl));
+      positionalArgs.add(_getValue(fieldObjectImpl, typeProvider));
     }
   }
 

@@ -61,5 +61,9 @@ class OtherPublicAnnotationClass {
 const objectAnnotation = const {
   'int': 1,
   'bool': true,
-  'list': const [1, 2, 3]
+  'list': const [1, 2, 3],
+  'symbol': #foo,
+  'double': 3.14,
+  'null': null,
+  'String': 'a string'
 };
