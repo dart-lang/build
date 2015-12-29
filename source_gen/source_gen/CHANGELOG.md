@@ -2,6 +2,8 @@
 
 * Added support for `Symbol` and `Type` in annotations.
 
+* Improved error output when unable to create an instance from an annotation.
+
 ## 0.4.7+2
 
 * Upgrade to `analyzer '^0.27.1'` and removed a work-around for a fixed `analyzer` issue.

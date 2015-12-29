@@ -16,12 +16,14 @@ import 'package:path/path.dart' as p;
 
 dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var annotationObjectImpl = annotation.evaluationResult.value;
-  if (annotationObjectImpl.hasKnownValue) {
-    try {
-      return _getValue(
-          annotationObjectImpl, annotation.element.context.typeProvider);
-    } on CannotCreateFromAnnotationException catch (_) {
-      // NOOP
+  try {
+    return _getValue(
+        annotationObjectImpl, annotation.element.context.typeProvider);
+  } on CannotCreateFromAnnotationException catch (e) {
+    if (e.innerException != null) {
+      // If there was a issue creating a nested object, there's not much we
+      // can do.
+      rethrow;
     }
   }
 
@@ -81,23 +83,27 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
         object, 'object', "Provided type value is not supported.");
   }
 
-  var listValue = object.toListValue();
-  if (listValue != null) {
-    return listValue
-        .map((DartObject element) => _getValue(element, typeProvider))
-        .toList();
-  }
+  try {
+    var listValue = object.toListValue();
+    if (listValue != null) {
+      return listValue
+          .map((DartObject element) => _getValue(element, typeProvider))
+          .toList();
+    }
 
-  var mapValue = object.toMapValue();
-  if (mapValue != null) {
-    var result = {};
-    mapValue.forEach((DartObject key, DartObject value) {
-      dynamic mappedKey = _getValue(key, typeProvider);
-      if (mappedKey != null) {
-        result[mappedKey] = _getValue(value, typeProvider);
-      }
-    });
-    return result;
+    var mapValue = object.toMapValue();
+    if (mapValue != null) {
+      var result = {};
+      mapValue.forEach((DartObject key, DartObject value) {
+        dynamic mappedKey = _getValue(key, typeProvider);
+        if (mappedKey != null) {
+          result[mappedKey] = _getValue(value, typeProvider);
+        }
+      });
+      return result;
+    }
+  } on CannotCreateFromAnnotationException catch (e) {
+    throw new CannotCreateFromAnnotationException._(object, e);
   }
 
   throw new CannotCreateFromAnnotationException._(object);
@@ -105,10 +111,20 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
 
 class CannotCreateFromAnnotationException {
   final DartObject object;
+  final CannotCreateFromAnnotationException innerException;
 
-  CannotCreateFromAnnotationException._(this.object);
+  CannotCreateFromAnnotationException._(this.object, [this.innerException]);
 
-  String toString() => "Cannot create object from $object";
+  String toString() {
+    var buffer = new StringBuffer("Cannot create object from ${object}");
+
+    if (innerException != null) {
+      buffer.writeln();
+      buffer.write('due to inner object: $innerException');
+    }
+
+    return buffer.toString();
+  }
 }
 
 final _cannotCreate = new Object();
