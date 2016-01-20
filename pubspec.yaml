@@ -1,0 +1,11 @@
+name: build
+version: 0.1.0
+description: A build system for Dart.
+author: Dart Team <misc@dartlang.org>
+homepage: https://github.com/dart-lang/build
+
+environment:
+  sdk: '>=1.9.1 <2.0.0'
+
+dev_dependencies:
+  test: ^0.12.0
