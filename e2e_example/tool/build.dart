@@ -3,22 +3,21 @@
 // BSD-style license that can be found in the LICENSE file.
 library build.example.generate;
 
-// import 'package:build/build.dart';
-import '../lib/build.dart';
+import 'package:build/build.dart';
 
-import 'copy_builder.dart';
+import 'package:e2e_example/copy_builder.dart';
 
 main() async {
   var phase = new Phase([
     new CopyBuilder()
   ], [
-    new InputSet('build', filePatterns: ['example/*.dart'])
+    new InputSet('e2e_example', filePatterns: ['example/*.txt'])
   ]);
 
   var result = await build([
     [phase]
   ]);
-  
+
   if (result.status == BuildStatus.Success) {
     print('''
 Build Succeeded!

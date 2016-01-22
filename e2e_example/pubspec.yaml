@@ -1,0 +1,13 @@
+name: e2e_example
+version: 0.1.0
+
+environment:
+  sdk: '>=1.9.1 <2.0.0'
+
+dependencies:
+  build:
+    path: ../
+
+transformers:
+- e2e_example:
+    $include: 'example/*.txt'

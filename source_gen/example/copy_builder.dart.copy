@@ -5,8 +5,7 @@ library build.example.copy_builder;
 
 import 'dart:async';
 
-// import 'package:build/build.dart';
-import '../lib/build.dart';
+import 'package:build/build.dart';
 
 // Makes copies of things!
 class CopyBuilder extends Builder {
