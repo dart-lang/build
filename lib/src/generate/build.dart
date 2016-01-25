@@ -148,4 +148,4 @@ class _SimpleAssetWriter implements AssetWriter {
   }
 }
 
-AssetWriter _writer = new _SimpleAssetWriter('source_gen');
+AssetWriter _writer = new _SimpleAssetWriter('generated');

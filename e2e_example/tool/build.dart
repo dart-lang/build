@@ -11,7 +11,7 @@ main() async {
   var phase = new Phase([
     new CopyBuilder()
   ], [
-    new InputSet('e2e_example', filePatterns: ['example/*.txt'])
+    new InputSet('e2e_example', filePatterns: ['web/*.txt'])
   ]);
 
   var result = await build([
