@@ -8,15 +8,15 @@ import 'package:build/build.dart';
 import 'package:e2e_example/copy_builder.dart';
 
 main() async {
-  var phase = new Phase([
-    new CopyBuilder()
-  ], [
-    new InputSet('e2e_example', filePatterns: ['web/*.txt'])
-  ]);
+  /// Builds a full package dependency graph for the current package.
+  var graph = new PackageGraph.forThisPackage();
 
-  var result = await build([
-    [phase]
-  ]);
+  /// Give [Builder]s access to a [PackageGraph] so they can choose which
+  /// packages to run on. This simplifies user code a lot, and helps to mitigate
+  /// the transitive deps issue.
+  var phases = CopyBuilder.buildPhases(graph);
+
+  var result = await build([phases]);
 
   if (result.status == BuildStatus.Success) {
     print('''

@@ -100,8 +100,8 @@ Set<File> _filesMatching(InputSet inputSet) {
 
   var files = new Set<File>();
   for (var pattern in inputSet.filePatterns) {
-    files.addAll(
-        new Glob(pattern).listSync(followLinks: false).where((e) => e is File));
+    files.addAll(new Glob(pattern).listSync(followLinks: false).where(
+        (e) => e is File && !_ignoredDirs.contains(path.split(e.path)[1])));
   }
   return files;
 }
@@ -149,3 +149,5 @@ class _SimpleAssetWriter implements AssetWriter {
 }
 
 AssetWriter _writer = new _SimpleAssetWriter('generated');
+
+const _ignoredDirs = const ['generated', 'build', 'packages'];

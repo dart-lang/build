@@ -11,4 +11,5 @@ export 'src/generate/build_result.dart';
 export 'src/generate/build.dart';
 export 'src/generate/input_set.dart';
 export 'src/generate/phase.dart';
+export 'src/package_graph/package_graph.dart';
 export 'src/transformer/transformer.dart';
