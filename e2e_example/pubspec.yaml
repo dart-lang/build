@@ -10,4 +10,4 @@ dependencies:
 
 transformers:
 - e2e_example:
-    $include: 'example/*.txt'
+    $include: 'web/*.txt'
