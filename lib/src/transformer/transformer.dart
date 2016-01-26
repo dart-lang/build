@@ -1,8 +1,6 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-library build.src.transformer.transformer;
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -89,7 +87,8 @@ build.AssetId _toBuildAssetId(barback.AssetId id) =>
     new build.AssetId(id.package, id.path);
 
 barback.Asset _toBarbackAsset(build.Asset asset) =>
-    new barback.Asset.fromString(_toBarbackAssetId(asset.id), asset.contents);
+    new barback.Asset.fromString(
+        _toBarbackAssetId(asset.id), asset.stringContents);
 
 Future<build.Asset> _toBuildAsset(barback.Asset asset) async =>
     new build.Asset(_toBuildAssetId(asset.id), await asset.readAsString());

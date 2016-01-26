@@ -1,8 +1,6 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-library build.src.generate.generate;
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -56,11 +54,8 @@ void _validatePhases(List<List<Phase>> phaseGroups) {
   }
 }
 
-/// Validates the phases, for now that just means making sure they are all only
-/// running on the current package.
-///
-/// Returns a [Future<BuildResult>] which completes once all [Phase]s are done
-/// running.
+/// Runs the [phaseGroups] and returns a [Future<BuildResult>] which completes
+/// once all [Phase]s are done.
 Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
   var outputs = [];
   for (var group in phaseGroups) {
@@ -69,7 +64,9 @@ Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
       for (var builder in phase.builders) {
         // TODO(jakemac): Optimize, we can run all the builders in a phase
         // at the same time instead of sequentially.
-        await _runBuilder(builder, inputs, outputs);
+        await for (var output in _runBuilder(builder, inputs)) {
+          outputs.add(output);
+        }
       }
     }
   }
@@ -99,16 +96,15 @@ Set<File> _filesMatching(InputSet inputSet) {
   }
 
   var files = new Set<File>();
-  for (var pattern in inputSet.filePatterns) {
-    files.addAll(new Glob(pattern).listSync(followLinks: false).where(
+  for (var glob in inputSet.globs) {
+    files.addAll(glob.listSync(followLinks: false).where(
         (e) => e is File && !_ignoredDirs.contains(path.split(e.path)[1])));
   }
   return files;
 }
 
 /// Runs [builder] with [inputs] as inputs.
-Future _runBuilder(
-    Builder builder, List<AssetId> inputs, List<Asset> outputs) async {
+Stream<Asset> _runBuilder(Builder builder, List<AssetId> inputs) async* {
   for (var input in inputs) {
     var expectedOutputs = builder.declareOutputs(input);
     var inputAsset = new Asset(input, await _reader.readAsString(input));
@@ -116,13 +112,17 @@ Future _runBuilder(
         new BuildStep(inputAsset, expectedOutputs, _reader, _writer);
     await builder.build(buildStep);
     await buildStep.outputsCompleted;
-    outputs.addAll(buildStep.outputs);
+    for (var output in buildStep.outputs) {
+      yield output;
+    }
   }
 }
 
 /// Very simple [AssetReader], only works on local package and assumes you are
 /// running from the root of the package.
 class _SimpleAssetReader implements AssetReader {
+  const _SimpleAssetReader();
+
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     assert(id.package == _localPackageName);
@@ -130,24 +130,24 @@ class _SimpleAssetReader implements AssetReader {
   }
 }
 
-AssetReader _reader = new _SimpleAssetReader();
+const AssetReader _reader = const _SimpleAssetReader();
 
 /// Very simple [AssetWriter], only works on local package and assumes you are
 /// running from the root of the package.
 class _SimpleAssetWriter implements AssetWriter {
   final _outputDir;
 
-  _SimpleAssetWriter(this._outputDir);
+  const _SimpleAssetWriter(this._outputDir);
 
   @override
   Future writeAsString(Asset asset, {Encoding encoding: UTF8}) async {
     assert(asset.id.package == _localPackageName);
     var file = new File(path.join(_outputDir, asset.id.path));
     await file.create(recursive: true);
-    await file.writeAsString(asset.contents, encoding: encoding);
+    await file.writeAsString(asset.stringContents, encoding: encoding);
   }
 }
 
-AssetWriter _writer = new _SimpleAssetWriter('generated');
+const AssetWriter _writer = const _SimpleAssetWriter('generated');
 
 const _ignoredDirs = const ['generated', 'build', 'packages'];
