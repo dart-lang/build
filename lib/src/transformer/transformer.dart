@@ -12,7 +12,7 @@ import '../asset/id.dart' as build;
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../builder/builder.dart';
-import '../builder/build_step.dart';
+import '../builder/build_step_impl.dart';
 
 abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
   List<Builder> get builders;
@@ -35,7 +35,7 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
       var expected = _expectedOutputs(transform.primaryInput.id, [builder]);
       if (expected.isEmpty) continue;
 
-      var buildStep = new BuildStep(input, expected, reader, writer);
+      var buildStep = new BuildStepImpl(input, expected, reader, writer);
       futures.add(builder.build(buildStep));
     }
 

@@ -14,7 +14,7 @@ import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../builder/builder.dart';
-import '../builder/build_step.dart';
+import '../builder/build_step_impl.dart';
 import 'build_result.dart';
 import 'input_set.dart';
 import 'phase.dart';
@@ -109,7 +109,7 @@ Stream<Asset> _runBuilder(Builder builder, List<AssetId> inputs) async* {
     var expectedOutputs = builder.declareOutputs(input);
     var inputAsset = new Asset(input, await _reader.readAsString(input));
     var buildStep =
-        new BuildStep(inputAsset, expectedOutputs, _reader, _writer);
+        new BuildStepImpl(inputAsset, expectedOutputs, _reader, _writer);
     await builder.build(buildStep);
     await buildStep.outputsCompleted;
     for (var output in buildStep.outputs) {
