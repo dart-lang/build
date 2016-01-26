@@ -27,11 +27,6 @@ class BuildStepImpl implements BuildStep {
   final List<Asset> _outputs = [];
 
   /// A future that completes once all outputs current are done writing.
-  ///
-  /// TODO(jakemac): This is not typically needed inside of a Builder, we could
-  /// consider moving it out to a separate class which wraps a [BuildStep] and
-  /// this future? Another option would be an `Output` class which wraps an
-  /// [Asset] and a [Future] that completes once its done writing.
   Future get outputsCompleted => _outputsCompleted;
   Future _outputsCompleted = new Future(() {});
 
