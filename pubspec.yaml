@@ -16,3 +16,4 @@ dependencies:
 
 dev_dependencies:
   test: ^0.12.0
+  transformer_test: ^0.1.0

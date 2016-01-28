@@ -42,7 +42,7 @@ class BuildStepImpl implements BuildStep {
   final AssetWriter _writer;
 
   BuildStepImpl(
-      this.input, List<AssetId> expectedOutputs, this._reader, this._writer)
+      this.input, Iterable<AssetId> expectedOutputs, this._reader, this._writer)
       : expectedOutputs = new List.unmodifiable(expectedOutputs) {
     /// The [input] is always a dependency.
     _dependencies.add(input.id);
