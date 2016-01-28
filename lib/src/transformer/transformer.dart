@@ -17,7 +17,10 @@ import '../builder/build_step_impl.dart';
 /// A [Transformer] which runs multiple [Builder]s.
 /// Extend this class and define the [builders] getter to create a [Transformer]
 /// out of your custom [Builder]s.
-abstract class BuilderTransformer implements Transformer {
+///
+/// By default all [BuilderTransformer]s are [DeclaringTransformer]s. If you
+/// wish to run as a [LazyTransformer], simply mix that into your class as well.
+abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
   /// The only thing you need to implement when extending this class. This
   /// declares which builders should be ran.
   ///
@@ -70,6 +73,13 @@ abstract class BuilderTransformer implements Transformer {
       await builder.build(buildStep);
       await buildStep.outputsCompleted;
     }));
+  }
+
+  @override
+  void declareOutputs(DeclaringTransform transform) {
+    for (var outputId in _expectedOutputs(transform.primaryId, builders)) {
+      transform.declareOutput(_toBarbackAssetId(outputId));
+    }
   }
 }
 
