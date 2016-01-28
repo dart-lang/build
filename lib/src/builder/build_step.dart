@@ -9,9 +9,9 @@ import '../asset/id.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// it also handles tracking of dependencies.
-class BuildStep {
+abstract class BuildStep {
   /// The primary input for this build step.
-  final Asset input;
+  Asset get input;
 
   /// Reads an [Asset] by [id] as a [String] using [encoding].
   ///
