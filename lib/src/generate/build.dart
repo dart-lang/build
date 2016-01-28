@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
