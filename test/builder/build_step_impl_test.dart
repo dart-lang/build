@@ -35,10 +35,6 @@ main() {
         var a2 = makeAssetId();
         await buildStep.readAsString(a2);
         expect(buildStep.dependencies, [primary.id, a1, a2]);
-
-        var a3 = makeAssetId();
-        await buildStep.readAsString(a3, trackAsDependency: false);
-        expect(buildStep.dependencies.contains(a3), isFalse);
       });
 
       test('tracks dependencies on hasInput', () async {
@@ -50,22 +46,6 @@ main() {
 
         var a2 = makeAssetId();
         await buildStep.hasInput(a2);
-        expect(buildStep.dependencies, [primary.id, a1, a2]);
-
-        var a3 = makeAssetId();
-        await buildStep.hasInput(a3, trackAsDependency: false);
-        expect(buildStep.dependencies.contains(a3), isFalse);
-      });
-
-      test('addDependency adds dependencies', () {
-        expect(buildStep.dependencies, [primary.id]);
-
-        var a1 = makeAssetId();
-        buildStep.addDependency(a1);
-        expect(buildStep.dependencies, [primary.id, a1]);
-
-        var a2 = makeAssetId();
-        buildStep.addDependency(a2);
         expect(buildStep.dependencies, [primary.id, a1, a2]);
       });
 

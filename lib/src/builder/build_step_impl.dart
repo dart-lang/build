@@ -50,22 +50,15 @@ class BuildStepImpl implements BuildStep {
   }
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
-  ///
-  /// If [trackAsDependency] is true, then [id] will be marked as a dependency
-  /// of all [expectedOutputs].
-  Future<bool> hasInput(AssetId id, {bool trackAsDependency: true}) {
-    if (trackAsDependency) _dependencies.add(id);
+  Future<bool> hasInput(AssetId id) {
+    _dependencies.add(id);
     return _reader.hasInput(id);
   }
 
   /// Reads an [Asset] by [id] as a [String] using [encoding].
-  ///
-  /// If [trackAsDependency] is true, then [id] will be marked as a dependency
-  /// of all [expectedOutputs].
   @override
-  Future<String> readAsString(AssetId id,
-      {Encoding encoding: UTF8, bool trackAsDependency: true}) {
-    if (trackAsDependency) _dependencies.add(id);
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+    _dependencies.add(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
@@ -82,13 +75,5 @@ class BuildStepImpl implements BuildStep {
     _outputs.add(asset);
     var done = _writer.writeAsString(asset, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);
-  }
-
-  /// Explicitly adds [id] as a dependency of all [expectedOutputs]. This is
-  /// not generally necessary unless forcing `trackAsDependency: false` when
-  /// calling [readAsString].
-  @override
-  void addDependency(AssetId id) {
-    _dependencies.add(id);
   }
 }

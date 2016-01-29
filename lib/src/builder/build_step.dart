@@ -14,24 +14,12 @@ abstract class BuildStep {
   Asset get input;
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
-  ///
-  /// If [trackAsDependency] is true, then [id] will be marked as a dependency
-  /// of all [expectedOutputs].
-  Future<bool> hasInput(AssetId id, {bool trackAsDependency: true});
+  Future<bool> hasInput(AssetId id);
 
   /// Reads an [Asset] by [id] as a [String] using [encoding].
-  ///
-  /// If [trackAsDependency] is true, then [id] will be marked as a dependency
-  /// of all [expectedOutputs].
-  Future<String> readAsString(AssetId id,
-      {Encoding encoding: UTF8, bool trackAsDependency: true});
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
   /// Outputs an [Asset] using the current [AssetWriter], and adds [asset] to
   /// [outputs].
   void writeAsString(Asset asset, {Encoding encoding: UTF8});
-
-  /// Explicitly adds [id] as a dependency of all [expectedOutputs]. This is
-  /// not generally necessary unless forcing `trackAsDependency: false` when
-  /// calling [readAsString].
-  void addDependency(AssetId id);
 }
