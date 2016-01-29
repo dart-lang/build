@@ -123,6 +123,12 @@ class _SimpleAssetReader implements AssetReader {
   const _SimpleAssetReader();
 
   @override
+  Future<bool> hasInput(AssetId id) async {
+    assert(id.package == _localPackageName);
+    return new File(id.path).exists();
+  }
+
+  @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     assert(id.package == _localPackageName);
     return new File(id.path).readAsString(encoding: encoding);
