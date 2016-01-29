@@ -8,4 +8,6 @@ import 'id.dart';
 
 abstract class AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
+
+  Future<bool> hasInput(AssetId id);
 }

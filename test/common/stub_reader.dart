@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'package:build/build.dart';
 
 class StubAssetReader implements AssetReader {
+  Future<bool> hasInput(AssetId id) => new Future.value(null);
+
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
       new Future.value(null);
 }

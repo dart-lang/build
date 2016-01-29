@@ -13,6 +13,12 @@ abstract class BuildStep {
   /// The primary input for this build step.
   Asset get input;
 
+  /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
+  ///
+  /// If [trackAsDependency] is true, then [id] will be marked as a dependency
+  /// of all [expectedOutputs].
+  Future<bool> hasInput(AssetId id, {bool trackAsDependency: true});
+
   /// Reads an [Asset] by [id] as a [String] using [encoding].
   ///
   /// If [trackAsDependency] is true, then [id] will be marked as a dependency

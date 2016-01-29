@@ -90,6 +90,10 @@ class _TransformAssetReader implements AssetReader {
   _TransformAssetReader(this.transform);
 
   @override
+  Future<bool> hasInput(build.AssetId id) =>
+      transform.hasInput(_toBarbackAssetId(id));
+
+  @override
   Future<String> readAsString(build.AssetId id, {Encoding encoding: UTF8}) =>
       transform.readInputAsString(_toBarbackAssetId(id), encoding: encoding);
 }

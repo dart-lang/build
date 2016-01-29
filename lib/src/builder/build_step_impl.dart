@@ -49,6 +49,15 @@ class BuildStepImpl implements BuildStep {
     _dependencies.add(input.id);
   }
 
+  /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
+  ///
+  /// If [trackAsDependency] is true, then [id] will be marked as a dependency
+  /// of all [expectedOutputs].
+  Future<bool> hasInput(AssetId id, {bool trackAsDependency: true}) {
+    if (trackAsDependency) _dependencies.add(id);
+    return _reader.hasInput(id);
+  }
+
   /// Reads an [Asset] by [id] as a [String] using [encoding].
   ///
   /// If [trackAsDependency] is true, then [id] will be marked as a dependency
