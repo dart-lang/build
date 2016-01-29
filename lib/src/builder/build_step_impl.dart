@@ -10,6 +10,7 @@ import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import 'build_step.dart';
+import 'exceptions.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// its expected and real outputs. It also handles tracking of dependencies.
@@ -61,8 +62,14 @@ class BuildStepImpl implements BuildStep {
 
   /// Outputs an [Asset] using the current [AssetWriter], and adds [asset] to
   /// [outputs].
+  ///
+  /// Throws an [UnexpectedOutputException] if [asset] is not in
+  /// [expectedOutputs].
   @override
   void writeAsString(Asset asset, {Encoding encoding: UTF8}) {
+    if (!expectedOutputs.any((id) => id == asset.id)) {
+      throw new UnexpectedOutputException(asset);
+    }
     _outputs.add(asset);
     var done = _writer.writeAsString(asset, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);

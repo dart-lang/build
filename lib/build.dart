@@ -2,9 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 export 'src/asset/asset.dart';
+export 'src/asset/exceptions.dart';
 export 'src/asset/id.dart';
+export 'src/asset/reader.dart';
+export 'src/asset/writer.dart';
 export 'src/builder/build_step.dart';
 export 'src/builder/builder.dart';
+export 'src/builder/exceptions.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/build.dart';
 export 'src/generate/input_set.dart';
