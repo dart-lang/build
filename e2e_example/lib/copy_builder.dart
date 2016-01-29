@@ -4,6 +4,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build/src/generate/input_set.dart';
+import 'package:build/src/generate/phase.dart';
 
 // Makes copies of things!
 class CopyBuilder extends Builder {
