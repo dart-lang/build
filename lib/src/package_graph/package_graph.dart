@@ -10,23 +10,11 @@ class PackageGraph {
   /// The root application package.
   final PackageNode root;
 
-  /// All the package dependencies of [root], transitive and direct.
-  Set<PackageNode> get allPackages {
-    var seen = new Set<PackageNode>()..add(root);
+  /// All [PackageNodes] indexed by package name.
+  final Map<String, PackageNode> allPackages;
 
-    void addDeps(PackageNode package) {
-      for (var dep in package.dependencies) {
-        if (seen.contains(dep)) continue;
-        seen.add(dep);
-        addDeps(dep);
-      }
-    }
-    addDeps(root);
-
-    return seen;
-  }
-
-  PackageGraph._(this.root);
+  PackageGraph._(this.root, Map<String, PackageNode> allPackages)
+      : allPackages = new Map.unmodifiable(allPackages);
 
   /// Creates a [PackageGraph] for the package in which you are currently
   /// running.
@@ -34,14 +22,16 @@ class PackageGraph {
     /// Read in the pubspec file and parse it as yaml.
     var pubspec = new File('pubspec.yaml');
     if (!pubspec.existsSync()) {
-      throw 'Unable to generate package graph, no `pubspec.yaml` found.';
+      throw 'Unable to generate package graph, no `pubspec.yaml` found. '
+          'This program must be ran from the root directory of your package.';
     }
     var yaml = loadYaml(pubspec.readAsStringSync());
 
     /// Read in the `.packages` file to get the locations of all packages.
     var packagesFile = new File('.packages');
     if (!packagesFile.existsSync()) {
-      throw 'Unable to generate package graph, no `.packages` found.';
+      throw 'Unable to generate package graph, no `.packages` found. '
+          'This program must be ran from the root directory of your package.';
     }
     var packageLocations = <String, Uri>{};
     packagesFile.readAsLinesSync().skip(1).forEach((line) {
@@ -63,7 +53,8 @@ class PackageGraph {
         {bool isRoot: false}) {
       var name = yaml['name'];
       assert(!nodes.containsKey(name));
-      var node = new PackageNode._(name, yaml['version'], type);
+      var node = new PackageNode._(
+          name, yaml['version'], type, packageLocations[name]);
       nodes[name] = node;
 
       _depsFromYaml(yaml, withOverrides: isRoot).forEach((name, source) {
@@ -79,12 +70,15 @@ class PackageGraph {
     }
 
     var root = addNodeAndDeps(yaml, PackageDependencyType.Path, isRoot: true);
-    return new PackageGraph._(root);
+    return new PackageGraph._(root, nodes);
   }
+
+  /// Shorthand to get a package by name.
+  PackageNode operator[] (String packageName) => allPackages[packageName];
 
   String toString() {
     var buffer = new StringBuffer();
-    for (var package in allPackages) {
+    for (var package in allPackages.values) {
       buffer.writeln('$package');
     }
     return buffer.toString();
@@ -106,12 +100,16 @@ class PackageNode {
   final List<PackageNode> _dependencies = [];
   Iterable<PackageNode> get dependencies => _dependencies.toList();
 
-  PackageNode._(this.name, this.version, this.dependencyType);
+  /// The location of the current version of this package.
+  final Uri location;
+
+  PackageNode._(this.name, this.version, this.dependencyType, this.location);
 
   String toString() => '''
   $name:
     version: $version
     type: $dependencyType
+    location: $location
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
 }
 
