@@ -1,0 +1,8 @@
+name: basic_pkg
+version: 1.0.0
+dependencies:
+  a: 2.0.0
+  b:
+    git: git://github.com/b/b.git
+  c:
+    path: pkg/c

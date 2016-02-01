@@ -4,4 +4,5 @@ build/
 .pub/
 pubspec.lock
 
-generated
+# Include .packages files from tests which are hand coded
+!test/package_graph/**/.packages
