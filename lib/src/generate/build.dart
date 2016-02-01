@@ -2,32 +2,61 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
 import '../asset/asset.dart';
+import '../asset/file_based.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../builder/builder.dart';
 import '../builder/build_step_impl.dart';
+import '../package_graph/package_graph.dart';
 import 'build_result.dart';
 import 'input_set.dart';
 import 'phase.dart';
 
 /// Runs all of the [Phases] in [phaseGroups].
-Future<BuildResult> build(List<List<Phase>> phaseGroups) async {
-  try {
+///
+/// A [packageGraph] may be supplied, otherwise one will be constructed using
+/// [PackageGraph.forThisPackage]. The default functionality assumes you are
+/// running in the root directory of a package, with both a `pubspec.yaml` and
+/// `.packages` file present.
+///
+/// A [reader] and [writer] may also be supplied, which can read/write assets
+/// to arbitrary locations or file systems. By default they will write to the
+/// current directory, and will use the `packageGraph` to know where to read
+/// files from.
+Future<BuildResult> build(List<List<Phase>> phaseGroups,
+    {PackageGraph packageGraph, AssetReader reader, AssetWriter writer}) async {
+  packageGraph ??= new PackageGraph.forThisPackage();
+  reader ??= new FileBasedAssetReader(packageGraph);
+  writer ??= new FileBasedAssetWriter(packageGraph);
+  return runZoned(() {
     _validatePhases(phaseGroups);
     return _runPhases(phaseGroups);
-  } catch (e, s) {
+  }, onError: (e, s) {
     return new BuildResult(BuildStatus.Failure, BuildType.Full, [],
         exception: e, stackTrace: s);
-  }
+  }, zoneValues: {
+    _assetReaderKey: reader,
+    _assetWriterKey: writer,
+    _packageGraphKey: packageGraph,
+  });
 }
+
+/// Keys for reading zone local values.
+Symbol _assetReaderKey = #buildAssetReader;
+Symbol _assetWriterKey = #buildAssetWriter;
+Symbol _packageGraphKey = #buildPackageGraph;
+
+/// Getters for zone local values.
+AssetReader get _reader => Zone.current[_assetReaderKey];
+AssetWriter get _writer => Zone.current[_assetWriterKey];
+PackageGraph get _packageGraph => Zone.current[_packageGraphKey];
 
 /// The local package name from your pubspec.
 final String _localPackageName = () {
@@ -89,18 +118,15 @@ List<AssetId> _assetIdsFor(List<InputSet> inputSets) {
 
 /// Returns all files matching [inputSet].
 Set<File> _filesMatching(InputSet inputSet) {
-  if (inputSet.package != _localPackageName) {
-    throw new UnimplementedError('Running on packages other than the '
-        'local package is not yet supported');
-  }
-
   var files = new Set<File>();
+  var root = _packageGraph[inputSet.package].location.toFilePath();
   for (var glob in inputSet.globs) {
-    files.addAll(glob.listSync(followLinks: false).where(
+    files.addAll(glob.listSync(followLinks: false, root: root).where(
         (e) => e is File && !_ignoredDirs.contains(path.split(e.path)[1])));
   }
   return files;
 }
+const _ignoredDirs = const ['build'];
 
 /// Runs [builder] with [inputs] as inputs.
 Stream<Asset> _runBuilder(Builder builder, List<AssetId> inputs) async* {
@@ -116,43 +142,3 @@ Stream<Asset> _runBuilder(Builder builder, List<AssetId> inputs) async* {
     }
   }
 }
-
-/// Very simple [AssetReader], only works on local package and assumes you are
-/// running from the root of the package.
-class _SimpleAssetReader implements AssetReader {
-  const _SimpleAssetReader();
-
-  @override
-  Future<bool> hasInput(AssetId id) async {
-    assert(id.package == _localPackageName);
-    return new File(id.path).exists();
-  }
-
-  @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
-    assert(id.package == _localPackageName);
-    return new File(id.path).readAsString(encoding: encoding);
-  }
-}
-
-const AssetReader _reader = const _SimpleAssetReader();
-
-/// Very simple [AssetWriter], only works on local package and assumes you are
-/// running from the root of the package.
-class _SimpleAssetWriter implements AssetWriter {
-  final _outputDir;
-
-  const _SimpleAssetWriter(this._outputDir);
-
-  @override
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) async {
-    assert(asset.id.package == _localPackageName);
-    var file = new File(path.join(_outputDir, asset.id.path));
-    await file.create(recursive: true);
-    await file.writeAsString(asset.stringContents, encoding: encoding);
-  }
-}
-
-const AssetWriter _writer = const _SimpleAssetWriter('generated');
-
-const _ignoredDirs = const ['generated', 'build', 'packages'];
