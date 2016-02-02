@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:yaml/yaml.dart';
 
 import '../asset/asset.dart';
 import '../asset/file_based.dart';
@@ -27,9 +26,9 @@ import 'phase.dart';
 /// `.packages` file present.
 ///
 /// A [reader] and [writer] may also be supplied, which can read/write assets
-/// to arbitrary locations or file systems. By default they will write to the
-/// current directory, and will use the `packageGraph` to know where to read
-/// files from.
+/// to arbitrary locations or file systems. By default they will write directly
+/// to the root package directory, and will use the [packageGraph] to know where
+/// to read files from.
 Future<BuildResult> build(List<List<Phase>> phaseGroups,
     {PackageGraph packageGraph, AssetReader reader, AssetWriter writer}) async {
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -57,20 +56,6 @@ Symbol _packageGraphKey = #buildPackageGraph;
 AssetReader get _reader => Zone.current[_assetReaderKey];
 AssetWriter get _writer => Zone.current[_assetWriterKey];
 PackageGraph get _packageGraph => Zone.current[_packageGraphKey];
-
-/// The local package name from your pubspec.
-final String _localPackageName = () {
-  var pubspec = new File('pubspec.yaml');
-  if (!pubspec.existsSync()) {
-    throw 'Build scripts must be invoked from the top level package directory, '
-        'which must contain a pubspec.yaml';
-  }
-  var yaml = loadYaml(pubspec.readAsStringSync()) as YamlMap;
-  if (yaml['name'] == null) {
-    throw 'You must have a `name` specified in your pubspec.yaml file.';
-  }
-  return yaml['name'];
-}();
 
 /// Validates the phases.
 void _validatePhases(List<List<Phase>> phaseGroups) {
