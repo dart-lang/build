@@ -8,9 +8,13 @@ environment:
   sdk: '>=1.9.1 <2.0.0'
 
 dependencies:
+  analyzer: ^0.27.1
   barback: ^0.15.0
+  code_transformers: ^0.4.0
   glob: ^1.1.0
   path: ^1.1.0
+  source_maps: '>=0.9.4 <0.11.0'
+  source_span: '>=1.0.0 <2.0.0'
   stack_trace: ^1.6.0
   yaml: ^2.1.0
 

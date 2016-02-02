@@ -13,6 +13,7 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../builder/builder.dart';
 import '../builder/build_step_impl.dart';
+import '../util/barback.dart';
 
 /// A [Transformer] which runs multiple [Builder]s.
 /// Extend this class and define the [builders] getter to create a [Transformer]
@@ -39,7 +40,7 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   Future apply(Transform transform) async {
-    var input = await _toBuildAsset(transform.primaryInput);
+    var input = await toBuildAsset(transform.primaryInput);
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 
@@ -56,8 +57,8 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
       var preExistingFiles = [];
       for (var output in expected) {
         if (!allExpected.add(output) ||
-            await transform.hasInput(_toBarbackAssetId(output))) {
-          preExistingFiles.add(_toBarbackAssetId(output));
+            await transform.hasInput(toBarbackAssetId(output))) {
+          preExistingFiles.add(toBarbackAssetId(output));
         }
       }
       if (preExistingFiles.isNotEmpty) {
@@ -78,7 +79,7 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
   @override
   void declareOutputs(DeclaringTransform transform) {
     for (var outputId in _expectedOutputs(transform.primaryId, builders)) {
-      transform.declareOutput(_toBarbackAssetId(outputId));
+      transform.declareOutput(toBarbackAssetId(outputId));
     }
   }
 }
@@ -91,11 +92,11 @@ class _TransformAssetReader implements AssetReader {
 
   @override
   Future<bool> hasInput(build.AssetId id) =>
-      transform.hasInput(_toBarbackAssetId(id));
+      transform.hasInput(toBarbackAssetId(id));
 
   @override
   Future<String> readAsString(build.AssetId id, {Encoding encoding: UTF8}) =>
-      transform.readInputAsString(_toBarbackAssetId(id), encoding: encoding);
+      transform.readInputAsString(toBarbackAssetId(id), encoding: encoding);
 }
 
 /// Very simple [AssetWriter] which uses a [Transform].
@@ -106,7 +107,7 @@ class _TransformAssetWriter implements AssetWriter {
 
   @override
   Future writeAsString(build.Asset asset, {Encoding encoding: UTF8}) {
-    transform.addOutput(_toBarbackAsset(asset));
+    transform.addOutput(toBarbackAsset(asset));
     return new Future.value(null);
   }
 }
@@ -115,19 +116,6 @@ class _TransformAssetWriter implements AssetWriter {
 Iterable<build.AssetId> _expectedOutputs(
     barback.AssetId id, Iterable<Builder> builders) sync* {
   for (var builder in builders) {
-    yield* builder.declareOutputs(_toBuildAssetId(id));
+    yield* builder.declareOutputs(toBuildAssetId(id));
   }
 }
-
-barback.AssetId _toBarbackAssetId(build.AssetId id) =>
-    new barback.AssetId(id.package, id.path);
-
-build.AssetId _toBuildAssetId(barback.AssetId id) =>
-    new build.AssetId(id.package, id.path);
-
-barback.Asset _toBarbackAsset(build.Asset asset) =>
-    new barback.Asset.fromString(
-        _toBarbackAssetId(asset.id), asset.stringContents);
-
-Future<build.Asset> _toBuildAsset(barback.Asset asset) async =>
-    new build.Asset(_toBuildAssetId(asset.id), await asset.readAsString());

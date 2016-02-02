@@ -5,16 +5,23 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:code_transformers/resolver.dart' as code_transformers;
+
+import '../analyzer/resolver.dart';
 import '../asset/asset.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../util/barback.dart';
 import 'build_step.dart';
 import 'exceptions.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// its expected and real outputs. It also handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
+  static code_transformers.Resolvers _resolvers =
+      new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
+
   /// The primary input for this build step.
   @override
   final Asset input;
@@ -76,4 +83,8 @@ class BuildStepImpl implements BuildStep {
     var done = _writer.writeAsString(asset, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);
   }
+
+  /// Resolves [id] and returns a [Future<Resolver>] once that is done.
+  Future<Resolver> resolve(AssetId id) async => new Resolver(
+      await _resolvers.get(toBarbackTransform(this), [toBarbackAssetId(id)]));
 }

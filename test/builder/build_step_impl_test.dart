@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+import 'dart:async';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
@@ -105,6 +106,39 @@ main() {
         expect(buildStep.outputs[0].id, outputId);
         expect(buildStep.outputs[0].stringContents, 'AB');
         expect(writer.assets[outputId], 'AB');
+      });
+
+      group('resolve', () {
+        test('can resolve assets', () async {
+          var inputs = makeAssets({
+            'a|web/a.dart': '''
+              library a;
+
+              import 'b.dart';
+            ''',
+            'a|web/b.dart': '''
+              library b;
+            ''',
+          });
+          addAssets(inputs.values, writer);
+
+          var primary = makeAssetId('a|web/a.dart');
+          var buildStep =
+              new BuildStepImpl(inputs[primary], [], reader, writer);
+          var resolver = await buildStep.resolve(primary);
+
+          var aLib = resolver.getLibrary(primary);
+          expect(aLib.name, 'a');
+          expect(aLib.importedLibraries.length, 2);
+          expect(aLib.importedLibraries.any((library) => library.name == 'b'),
+              isTrue);
+
+          var bLib = resolver.getLibraryByName('b');
+          expect(bLib.name, 'b');
+          expect(bLib.importedLibraries.length, 1);
+
+          resolver.release();
+        });
       });
     });
   });

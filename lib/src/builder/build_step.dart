@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../analyzer/resolver.dart';
 import '../asset/asset.dart';
 import '../asset/id.dart';
 
@@ -22,4 +23,8 @@ abstract class BuildStep {
   /// Outputs an [Asset] using the current [AssetWriter], and adds [asset] to
   /// [outputs].
   void writeAsString(Asset asset, {Encoding encoding: UTF8});
+
+  /// Gives a [Resolver] for [id]. This must be released when it is done being
+  /// used.
+  Future<Resolver> resolve(id);
 }
