@@ -2,20 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
-import 'dart:async';
 import 'dart:io';
 
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
+
 import '../common/common.dart';
 
+final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
+
 main() async {
-  final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
-  final assetNotFoundException = new isInstanceOf<AssetNotFoundException>();
-  final invalidInputException = new isInstanceOf<InvalidInputException>();
-  final invalidOutputException = new isInstanceOf<InvalidOutputException>();
-  final packageNotFoundException = new isInstanceOf<PackageNotFoundException>();
 
   group('FileBasedAssetReader', () {
     final reader = new FileBasedAssetReader(packageGraph);
