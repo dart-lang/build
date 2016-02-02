@@ -21,7 +21,7 @@ main() async {
   });
 
   group('basic package ', () {
-    var basicPkgPath = 'test/package_graph/basic_pkg';
+    var basicPkgPath = 'test/fixtures/basic_pkg';
 
     setUp(() async {
       graph = await new PackageGraph.forPath(basicPkgPath);
@@ -58,11 +58,12 @@ main() async {
   });
 
   test('missing pubspec throws on create', () {
-    expect(() => new PackageGraph.forPath('no_pubspec'), throws);
+    expect(() => new PackageGraph.forPath('test/fixtures/no_pubspec'), throws);
   });
 
   test('missing .packages file throws on create', () {
-    expect(() => new PackageGraph.forPath('no_packages_file'), throws);
+    expect(() => new PackageGraph.forPath('test/fixtures/no_packages_file'),
+        throws);
   });
 }
 

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 export 'src/asset/asset.dart';
 export 'src/asset/exceptions.dart';
+export 'src/asset/file_based.dart';
 export 'src/asset/id.dart';
 export 'src/asset/reader.dart';
 export 'src/asset/writer.dart';

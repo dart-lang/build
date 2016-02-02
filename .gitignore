@@ -5,4 +5,4 @@ build/
 pubspec.lock
 
 # Include .packages files from tests which are hand coded
-!test/package_graph/**/.packages
+!test/fixtures/**/.packages

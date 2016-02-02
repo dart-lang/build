@@ -28,5 +28,16 @@ class InvalidOutputException implements Exception {
   InvalidOutputException(this.asset);
 
   @override
-  String toString() => 'InvalidOutputException: $asset';
+  String toString() => 'InvalidOutputException: $asset\n'
+      'Files may only be output in the root (application) package.';
+}
+
+class InvalidInputException implements Exception {
+  final AssetId assetId;
+
+  InvalidInputException(this.assetId);
+
+  @override
+  String toString() => 'InvalidInputException: $assetId\n'
+      'For package dependencies, only files under `lib` may be used as inputs.';
 }

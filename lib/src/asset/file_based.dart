@@ -23,15 +23,28 @@ class FileBasedAssetReader implements AssetReader {
   FileBasedAssetReader(this.packageGraph);
 
   @override
-  Future<bool> hasInput(AssetId id) => _fileFor(id, packageGraph).exists();
+  Future<bool> hasInput(AssetId id) async {
+    _checkInput(id);
+    return _fileFor(id, packageGraph).exists();
+  }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
+    _checkInput(id);
+
     var file = await _fileFor(id, packageGraph);
     if (!await file.exists()) {
       throw new AssetNotFoundException(id);
     }
     return file.readAsString(encoding: encoding);
+  }
+
+  /// Checks that [id] is a valid input, and throws an [InvalidInputException]
+  /// if its not.
+  void _checkInput(AssetId id) {
+    if (id.package != packageGraph.root.name && !id.path.startsWith('lib/')) {
+      throw new InvalidInputException(id);
+    }
   }
 }
 
@@ -43,17 +56,14 @@ class FileBasedAssetWriter implements AssetWriter {
   FileBasedAssetWriter(this.packageGraph);
 
   @override
-  // Not using async/await here so that the first check can throw synchronously
-  // which helps with debugging.
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
+  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) async {
     if (asset.id.package != packageGraph.root.name) {
       throw new InvalidOutputException(asset);
     }
 
     var file = _fileFor(asset.id, packageGraph);
-    return file.create(recursive: true).then((_) {
-      return file.writeAsString(asset.stringContents, encoding: encoding);
-    });
+    await file.create(recursive: true);
+    await file.writeAsString(asset.stringContents, encoding: encoding);
   }
 }
 
