@@ -95,9 +95,9 @@ class BuildStepImpl implements BuildStep {
   Future<Resolver> resolve(AssetId id) async => new Resolver(
       await _resolvers.get(toBarbackTransform(this), [toBarbackAssetId(id)]));
 
-  /// Should be called after [build] has completed. This will wait until for
+  /// Should be called after `build` has completed. This will wait until for
   /// [_outputsCompleted] and will also close the [logger].
-  Future finalize() async {
+  Future complete() async {
     await _outputsCompleted;
     await _logger?.clearListeners();
   }

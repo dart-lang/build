@@ -61,7 +61,7 @@ main() {
         buildStep.writeAsString(a2);
         expect(buildStep.outputs, [a1, a2]);
 
-        expect(buildStep.finalize(), completes);
+        expect(buildStep.complete(), completes);
       });
 
       test('doesnt allow non-expected outputs', () {
@@ -113,7 +113,7 @@ main() {
             inputs[new AssetId.parse(primary)], [outputId], reader, writer);
 
         await fileCombiner.build(buildStep);
-        await buildStep.finalize();
+        await buildStep.complete();
 
         // All the assets should be read and marked as deps, except [unUsed].
         expect(buildStep.dependencies,

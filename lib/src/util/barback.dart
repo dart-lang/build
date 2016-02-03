@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:barback/barback.dart' as barback;
+import 'package:logging/logging.dart';
 
 import '../asset/asset.dart' as build;
 import '../asset/id.dart' as build;
@@ -35,33 +36,7 @@ class BuildStepTransform implements barback.Transform {
 
   @override
   barback.TransformLogger get logger {
-    _logger ??= new barback.TransformLogger((asset, level, message, span) {
-      var buffer = new StringBuffer();
-      if (asset != null) {
-        buffer.write('From $asset');
-        if (span != null) {
-          buffer.write('()$span)');
-        }
-        buffer.write(': ');
-      }
-      buffer.write(message);
-      switch (level) {
-        case barback.LogLevel.FINE:
-          buildStep.logger.fine(message);
-          break;
-        case barback.LogLevel.INFO:
-          buildStep.logger.info(message);
-          break;
-        case barback.LogLevel.WARNING:
-          buildStep.logger.warning(message);
-          break;
-        case barback.LogLevel.ERROR:
-          buildStep.logger.severe(message);
-          break;
-        default:
-          throw 'Unrecognized LogLevel $level.';
-      }
-    });
+    _logger ??= toTransformLogger(buildStep.logger);
     return _logger;
   }
 
@@ -93,4 +68,29 @@ class BuildStepTransform implements barback.Transform {
 
   @override
   void consumePrimary() => throw new UnimplementedError();
+}
+
+
+const _barbackLevelToLoggingLevel = const {
+  barback.LogLevel.FINE: Level.FINE,
+  barback.LogLevel.INFO: Level.INFO,
+  barback.LogLevel.WARNING: Level.WARNING,
+  barback.LogLevel.ERROR: Level.SEVERE,
+};
+
+barback.TransformLogger toTransformLogger(Logger logger) {
+  return new barback.TransformLogger((asset, level, message, span) {
+    var buffer = new StringBuffer();
+    if (asset != null) {
+      buffer.write('From $asset');
+      if (span != null) {
+        buffer.write('()$span)');
+      }
+      buffer.write(': ');
+    }
+    buffer.write(message);
+    var logLevel = _barbackLevelToLoggingLevel[level];
+    if (logLevel == null) throw 'Unrecognized LogLevel $level.';
+    logger.log(logLevel, buffer);
+  });
 }

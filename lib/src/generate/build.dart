@@ -135,7 +135,7 @@ Stream<Asset> _runBuilder(Builder builder, List<AssetId> inputs) async* {
     var buildStep =
         new BuildStepImpl(inputAsset, expectedOutputs, _reader, _writer);
     await builder.build(buildStep);
-    await buildStep.finalize();
+    await buildStep.complete();
     for (var output in buildStep.outputs) {
       yield output;
     }

@@ -30,7 +30,7 @@ main() {
       buildStep.logger.onRecord.listen(logs.add);
     }
     await builder.build(buildStep);
-    await buildStep.finalize();
+    await buildStep.complete();
     if (messages != null) {
       expect(logs.map((l) => l.toString()), messages);
     }

@@ -72,7 +72,7 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
       // Run the build step.
       var buildStep = new BuildStepImpl(input, expected, reader, writer);
       await builder.build(buildStep);
-      await buildStep.finalize();
+      await buildStep.complete();
     }));
   }
 
