@@ -6,6 +6,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:code_transformers/resolver.dart' as code_transformers;
+import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/asset.dart';
@@ -30,12 +31,18 @@ class BuildStepImpl implements BuildStep {
   /// step.
   final List<AssetId> expectedOutputs;
 
+  /// The [Logger] for this [BuildStep].
+  Logger get logger {
+    _logger ??= new Logger(input.id.toString());
+    return _logger;
+  }
+  Logger _logger;
+
   /// The actual outputs of this build step.
   UnmodifiableListView<Asset> get outputs => new UnmodifiableListView(_outputs);
   final List<Asset> _outputs = [];
 
   /// A future that completes once all outputs current are done writing.
-  Future get outputsCompleted => _outputsCompleted;
   Future _outputsCompleted = new Future(() {});
 
   /// The dependencies read in during this build step.
@@ -87,4 +94,11 @@ class BuildStepImpl implements BuildStep {
   /// Resolves [id] and returns a [Future<Resolver>] once that is done.
   Future<Resolver> resolve(AssetId id) async => new Resolver(
       await _resolvers.get(toBarbackTransform(this), [toBarbackAssetId(id)]));
+
+  /// Should be called after [build] has completed. This will wait until for
+  /// [_outputsCompleted] and will also close the [logger].
+  Future finalize() async {
+    await _outputsCompleted;
+    await _logger?.clearListeners();
+  }
 }

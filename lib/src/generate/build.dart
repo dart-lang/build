@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
 import '../asset/asset.dart';
@@ -29,12 +30,22 @@ import 'phase.dart';
 /// to arbitrary locations or file systems. By default they will write directly
 /// to the root package directory, and will use the [packageGraph] to know where
 /// to read files from.
+///
+/// Logging may be customized by passing a custom [logLevel] below which logs
+/// will be ignored, as well as an [onLog] handler which defaults to [print].
 Future<BuildResult> build(List<List<Phase>> phaseGroups,
-    {PackageGraph packageGraph, AssetReader reader, AssetWriter writer}) async {
+    {PackageGraph packageGraph,
+    AssetReader reader,
+    AssetWriter writer,
+    Level logLevel: Level.ALL,
+    onLog(LogRecord)}) async {
+  Logger.root.level = logLevel;
+  onLog ??= print;
+  var logListener = Logger.root.onRecord.listen(onLog);
   packageGraph ??= new PackageGraph.forThisPackage();
   reader ??= new FileBasedAssetReader(packageGraph);
   writer ??= new FileBasedAssetWriter(packageGraph);
-  return runZoned(() {
+  var result = runZoned(() {
     _validatePhases(phaseGroups);
     return _runPhases(phaseGroups);
   }, onError: (e, s) {
@@ -45,6 +56,8 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
     _assetWriterKey: writer,
     _packageGraphKey: packageGraph,
   });
+  await logListener.cancel();
+  return result;
 }
 
 /// Keys for reading zone local values.
@@ -111,6 +124,7 @@ Set<File> _filesMatching(InputSet inputSet) {
   }
   return files;
 }
+
 const _ignoredDirs = const ['build'];
 
 /// Runs [builder] with [inputs] as inputs.
@@ -121,7 +135,7 @@ Stream<Asset> _runBuilder(Builder builder, List<AssetId> inputs) async* {
     var buildStep =
         new BuildStepImpl(inputAsset, expectedOutputs, _reader, _writer);
     await builder.build(buildStep);
-    await buildStep.outputsCompleted;
+    await buildStep.finalize();
     for (var output in buildStep.outputs) {
       yield output;
     }

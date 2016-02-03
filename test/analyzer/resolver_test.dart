@@ -17,7 +17,7 @@ import '../common/common.dart';
 main() {
   var entryPoint = makeAssetId('a|web/main.dart');
   Future validateResolver(
-      {Map<String, String> inputs, validator(Resolver)}) async {
+      {Map<String, String> inputs, validator(Resolver), List messages: const []}) async {
     var writer = new InMemoryAssetWriter();
     var reader = new InMemoryAssetReader(writer.assets);
     var assets = makeAssets(inputs);
@@ -25,7 +25,15 @@ main() {
 
     var builder = new TestBuilder(validator);
     var buildStep = new BuildStepImpl(assets[entryPoint], [], reader, writer);
+    var logs = [];
+    if (messages != null) {
+      buildStep.logger.onRecord.listen(logs.add);
+    }
     await builder.build(buildStep);
+    await buildStep.finalize();
+    if (messages != null) {
+      expect(logs.map((l) => l.toString()), messages);
+    }
   }
 
   group('Resolver', () {
@@ -156,18 +164,18 @@ main() {
     });
 
     test('should fail on absolute URIs', () {
-      // var warningPrefix = 'warning: absolute paths not allowed';
+      var warningMessage = 'absolute paths not allowed:';
       return validateResolver(inputs: {
         'a|web/main.dart': '''
               import '/b.dart';
 
               main() {
               } ''',
-      }, /*messages: [
+      }, messages: [
         // First from the AST walker
-        '$warningPrefix: "/b.dart" (web/main.dart 0 14)',
-        '$warningPrefix: "/b.dart"',
-      ],*/
+        '[WARNING] a|web/main.dart: $warningMessage "/b.dart"',
+        '[WARNING] a|web/main.dart: $warningMessage "/b.dart"',
+      ],
           validator: (resolver) {
         var lib = resolver.getLibrary(entryPoint);
         expect(lib.importedLibraries.length, 1);

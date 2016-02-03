@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/asset.dart';
@@ -13,6 +14,9 @@ import '../asset/id.dart';
 abstract class BuildStep {
   /// The primary input for this build step.
   Asset get input;
+
+  // A [Logger] for this [BuildStep].
+  Logger get logger;
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
   Future<bool> hasInput(AssetId id);

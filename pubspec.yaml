@@ -11,6 +11,7 @@ dependencies:
   analyzer: ^0.27.1
   barback: ^0.15.0
   code_transformers: ^0.4.0
+  logging: ^0.11.2
   glob: ^1.1.0
   path: ^1.1.0
   source_maps: '>=0.9.4 <0.11.0'

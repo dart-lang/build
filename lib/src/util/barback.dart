@@ -34,20 +34,38 @@ class BuildStepTransform implements barback.Transform {
   barback.Asset get primaryInput => toBarbackAsset(buildStep.input);
 
   @override
-  barback.TransformLogger get logger =>
-      new barback.TransformLogger((asset, level, message, span) {
-        var buffer = new StringBuffer();
-        buffer.write('$level: ');
-        if (asset != null) {
-          buffer.write('From $asset');
-          if (span != null) {
-            buffer.write('()$span)');
-          }
-          buffer.write(': ');
+  barback.TransformLogger get logger {
+    _logger ??= new barback.TransformLogger((asset, level, message, span) {
+      var buffer = new StringBuffer();
+      if (asset != null) {
+        buffer.write('From $asset');
+        if (span != null) {
+          buffer.write('()$span)');
         }
-        buffer.write(message);
-        print(buffer);
-      });
+        buffer.write(': ');
+      }
+      buffer.write(message);
+      switch (level) {
+        case barback.LogLevel.FINE:
+          buildStep.logger.fine(message);
+          break;
+        case barback.LogLevel.INFO:
+          buildStep.logger.info(message);
+          break;
+        case barback.LogLevel.WARNING:
+          buildStep.logger.warning(message);
+          break;
+        case barback.LogLevel.ERROR:
+          buildStep.logger.severe(message);
+          break;
+        default:
+          throw 'Unrecognized LogLevel $level.';
+      }
+    });
+    return _logger;
+  }
+
+  barback.TransformLogger _logger;
 
   @override
   Future<barback.Asset> getInput(barback.AssetId id, {Encoding encoding}) =>

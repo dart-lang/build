@@ -2,11 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
-import 'dart:async';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
+import 'package:logging/logging.dart';
 
 import '../common/common.dart';
 
@@ -61,13 +61,30 @@ main() {
         buildStep.writeAsString(a2);
         expect(buildStep.outputs, [a1, a2]);
 
-        expect(buildStep.outputsCompleted, completes);
+        expect(buildStep.finalize(), completes);
       });
 
       test('doesnt allow non-expected outputs', () {
         var asset = makeAsset();
         expect(() => buildStep.writeAsString(asset),
             throwsA(new isInstanceOf<UnexpectedOutputException>()));
+      });
+
+      test('has a useable logger', () async {
+        Logger.root.level = Level.ALL;
+        var logger = buildStep.logger;
+        expect(logger.fullName, primary.id.toString());
+        var logs = [];
+        var listener = logger.onRecord.listen(logs.add);
+        logger.fine('hello');
+        logger.warning('world');
+        logger.severe('goodbye');
+        await listener.cancel();
+        expect(logs.map((l) => l.toString()), [
+          '[FINE] ${primary.id}: hello',
+          '[WARNING] ${primary.id}: world',
+          '[SEVERE] ${primary.id}: goodbye',
+        ]);
       });
     });
 
@@ -96,7 +113,7 @@ main() {
             inputs[new AssetId.parse(primary)], [outputId], reader, writer);
 
         await fileCombiner.build(buildStep);
-        await buildStep.outputsCompleted;
+        await buildStep.finalize();
 
         // All the assets should be read and marked as deps, except [unUsed].
         expect(buildStep.dependencies,
