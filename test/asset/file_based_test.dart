@@ -12,7 +12,7 @@ import '../common/common.dart';
 
 final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
 
-main() async {
+main() {
 
   group('FileBasedAssetReader', () {
     final reader = new FileBasedAssetReader(packageGraph);

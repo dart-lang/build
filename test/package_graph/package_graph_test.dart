@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 
-main() async {
+main() {
   PackageGraph graph;
 
   group('forThisPackage ', () {
