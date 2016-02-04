@@ -8,6 +8,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
 import '../asset/asset.dart';
+import '../asset/cache.dart';
 import '../asset/file_based.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
@@ -43,8 +44,11 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
   onLog ??= print;
   var logListener = Logger.root.onRecord.listen(onLog);
   packageGraph ??= new PackageGraph.forThisPackage();
-  reader ??= new FileBasedAssetReader(packageGraph);
-  writer ??= new FileBasedAssetWriter(packageGraph);
+  var cache = new AssetCache();
+  reader ??=
+      new CachedAssetReader(cache, new FileBasedAssetReader(packageGraph));
+  writer ??=
+      new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
   var result = runZoned(() {
     _validatePhases(phaseGroups);
     return _runPhases(phaseGroups);
