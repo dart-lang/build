@@ -17,6 +17,24 @@ class PackageGraph {
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
       : allPackages = new Map.unmodifiable(allPackages);
 
+  /// Creates a [PackageGraph] given the [root] [PackageNode].
+  factory PackageGraph.fromRoot(PackageNode root) {
+    final allPackages = <String, PackageNode>{
+      root.name: root,
+    };
+
+    addDeps(PackageNode package) {
+      for (var dep in package.dependencies) {
+        if (allPackages.containsKey(dep.name)) continue;
+        allPackages[dep.name] = dep;
+        addDeps(dep);
+      }
+    }
+    addDeps(root);
+
+    return new PackageGraph._(root, allPackages);
+  }
+
   /// Creates a [PackageGraph] for the package whose top level directory lives
   /// at [packagePath] (no trailing slash).
   factory PackageGraph.forPath(String packagePath) {
@@ -62,7 +80,7 @@ class PackageGraph {
         {bool isRoot: false}) {
       var name = yaml['name'];
       assert(!nodes.containsKey(name));
-      var node = new PackageNode._(
+      var node = new PackageNode(
           name, yaml['version'], type, packageLocations[name]);
       nodes[name] = node;
 
@@ -74,7 +92,7 @@ class PackageGraph {
           var pubspec = _pubspecForUri(packageLocations[name]);
           dep = addNodeAndDeps(pubspec, _dependencyType(rootDeps[name]));
         }
-        node._dependencies.add(dep);
+        node.dependencies.add(dep);
       });
 
       return node;
@@ -113,13 +131,12 @@ class PackageNode {
   final PackageDependencyType dependencyType;
 
   /// All the packages that this package directly depends on.
-  final List<PackageNode> _dependencies = [];
-  Iterable<PackageNode> get dependencies => _dependencies.toList();
+  final List<PackageNode> dependencies = [];
 
   /// The location of the current version of this package.
   final Uri location;
 
-  PackageNode._(this.name, this.version, this.dependencyType, this.location);
+  PackageNode(this.name, this.version, this.dependencyType, this.location);
 
   String toString() => '''
   $name:

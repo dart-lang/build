@@ -9,61 +9,76 @@ import 'package:build/build.dart';
 main() {
   PackageGraph graph;
 
-  group('forThisPackage ', () {
-    setUp(() async {
-      graph = await new PackageGraph.forThisPackage();
-    });
+  group('PackageGraph', () {
+    group('forThisPackage ', () {
+      setUp(() async {
+        graph = await new PackageGraph.forThisPackage();
+      });
 
-    test('root', () {
-      expectPkg(
-          graph.root, 'build', isNotEmpty, PackageDependencyType.Path, './');
-    });
-  });
-
-  group('basic package ', () {
-    var basicPkgPath = 'test/fixtures/basic_pkg';
-
-    setUp(() async {
-      graph = await new PackageGraph.forPath(basicPkgPath);
-    });
-
-    test('allPackages', () {
-      expect(graph.allPackages, {
-        'a': graph['a'],
-        'b': graph['b'],
-        'c': graph['c'],
-        'basic_pkg': graph['basic_pkg'],
+      test('root', () {
+        expectPkg(
+            graph.root, 'build', isNotEmpty, PackageDependencyType.Path, './');
       });
     });
 
-    test('root', () {
-      expectPkg(graph.root, 'basic_pkg', '1.0.0', PackageDependencyType.Path,
-          basicPkgPath, [graph['a'], graph['b'], graph['c']]);
+    group('basic package ', () {
+      var basicPkgPath = 'test/fixtures/basic_pkg';
+
+      setUp(() async {
+        graph = await new PackageGraph.forPath(basicPkgPath);
+      });
+
+      test('allPackages', () {
+        expect(graph.allPackages, {
+          'a': graph['a'],
+          'b': graph['b'],
+          'c': graph['c'],
+          'basic_pkg': graph['basic_pkg'],
+        });
+      });
+
+      test('root', () {
+        expectPkg(graph.root, 'basic_pkg', '1.0.0', PackageDependencyType.Path,
+            basicPkgPath, [graph['a'], graph['b'], graph['c']]);
+      });
+
+      test('pub dependency', () {
+        expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.Pub,
+            '$basicPkgPath/pkg/a/', [graph['b'], graph['c']]);
+      });
+
+      test('git dependency', () {
+        expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.Github,
+            '$basicPkgPath/pkg/b/', [graph['c']]);
+      });
+
+      test('path dependency', () {
+        expectPkg(graph['c'], 'c', '4.0.0', PackageDependencyType.Path,
+            '$basicPkgPath/pkg/c/', [graph['basic_pkg']]);
+      });
     });
 
-    test('pub dependency', () {
-      expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.Pub,
-          '$basicPkgPath/pkg/a/', [graph['b'], graph['c']]);
+    test('custom creation via fromRoot', () {
+      var a = new PackageNode('a', '1.0.0', PackageDependencyType.Path, null);
+      var b = new PackageNode('b', '1.0.0', PackageDependencyType.Pub, null);
+      var c = new PackageNode('c', '1.0.0', PackageDependencyType.Pub, null);
+      var d = new PackageNode('d', '1.0.0', PackageDependencyType.Pub, null);
+      a.dependencies.addAll([b, d]);
+      b.dependencies.add(c);
+      var graph = new PackageGraph.fromRoot(a);
+      expect(graph.root, a);
+      expect(graph.allPackages, {'a': a, 'b': b, 'c': c, 'd': d});
     });
 
-    test('git dependency', () {
-      expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.Github,
-          '$basicPkgPath/pkg/b/', [graph['c']]);
+    test('missing pubspec throws on create', () {
+      expect(
+          () => new PackageGraph.forPath('test/fixtures/no_pubspec'), throws);
     });
 
-    test('path dependency', () {
-      expectPkg(graph['c'], 'c', '4.0.0', PackageDependencyType.Path,
-          '$basicPkgPath/pkg/c/', [graph['basic_pkg']]);
+    test('missing .packages file throws on create', () {
+      expect(() => new PackageGraph.forPath('test/fixtures/no_packages_file'),
+          throws);
     });
-  });
-
-  test('missing pubspec throws on create', () {
-    expect(() => new PackageGraph.forPath('test/fixtures/no_pubspec'), throws);
-  });
-
-  test('missing .packages file throws on create', () {
-    expect(() => new PackageGraph.forPath('test/fixtures/no_packages_file'),
-        throws);
   });
 }
 

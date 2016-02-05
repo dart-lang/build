@@ -15,7 +15,7 @@ abstract class BuildStep {
   /// The primary input for this build step.
   Asset get input;
 
-  // A [Logger] for this [BuildStep].
+  /// A [Logger] for this [BuildStep].
   Logger get logger;
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
