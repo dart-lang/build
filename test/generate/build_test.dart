@@ -16,8 +16,8 @@ main() {
             new Phase([new CopyBuilder()], [new InputSet('a')]),
           ]
         ];
-        await testPhases(phases, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b',},
-            outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b',});
+        await testPhases(phases, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+            outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
       test('one phase, one builder, one-to-many outputs', () async {
@@ -102,8 +102,8 @@ main() {
                 [new CopyBuilder(outputPackage: 'a')], [new InputSet('b')]),
           ]
         ];
-        await testPhases(phases, {'b|web/b.txt': 'b', 'b|lib/b.txt': 'b',},
-            outputs: {'a|lib/b.txt.copy': 'b',});
+        await testPhases(phases, {'b|web/b.txt': 'b', 'b|lib/b.txt': 'b'},
+            outputs: {'a|lib/b.txt.copy': 'b'});
       });
 
       test('can\'t output files in non-root packages', () async {
@@ -112,7 +112,7 @@ main() {
             new Phase([new CopyBuilder()], [new InputSet('b')]),
           ]
         ];
-        await testPhases(phases, {'b|lib/b.txt': 'b',},
+        await testPhases(phases, {'b|lib/b.txt': 'b'},
             outputs: {}, status: BuildStatus.Failure);
       },
           skip: 'Failing, InMemoryAssetWriter doesn\'t throw. Need to handle '
@@ -172,7 +172,8 @@ main() {
             'the BuildStep level.');
   });
 
-  test('outputs from builds shouldn\'t be inputs to later ones', () {},
+  test('outputs from previous full builds shouldn\'t be inputs to later ones',
+      () {},
       skip: 'Unimplemented');
 }
 
@@ -214,7 +215,8 @@ testPhases(List<List<Phase>> phases, Map<String, String> inputs,
       /// Check that the assets exist in [result.outputs].
       var actual = result.outputs
           .firstWhere((output) => output.id == asset.id, orElse: () => null);
-      expect(actual, isNotNull);
+      expect(actual, isNotNull,
+          reason: 'Expected to find ${asset.id} in ${result.outputs}.');
       expect(asset, equalsAsset(actual));
     });
 

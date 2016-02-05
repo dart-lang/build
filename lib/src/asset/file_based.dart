@@ -56,10 +56,12 @@ class FileBasedAssetReader implements AssetReader {
       var packageNode = packageGraph[inputSet.package];
       var packagePath = packageNode.location.toFilePath();
       for (var glob in inputSet.globs) {
-        var files = glob.listSync(followLinks: false, root: packagePath).where(
-            (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]));
-        for (var file in files) {
-          var id = _fileToAssetId(file, packageNode);
+        var fileStream = glob
+            .list(followLinks: false, root: packagePath)
+            .where((e) =>
+                e is File && !ignoredDirs.contains(path.split(e.path)[1]));
+        await for (var entity in fileStream) {
+          var id = _fileToAssetId(entity, packageNode);
           if (!seenAssets.add(id)) continue;
           yield id;
         }
