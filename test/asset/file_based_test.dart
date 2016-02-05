@@ -15,7 +15,7 @@ final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
 main() {
 
   group('FileBasedAssetReader', () {
-    final reader = new FileBasedAssetReader(packageGraph);
+    final reader = new FileBasedAssetReader(packageGraph, ignoredDirs: ['pkg']);
 
     test('can read any application package files', () async {
       expect(await reader.readAsString(makeAssetId('basic_pkg|hello.txt')),
@@ -65,6 +65,29 @@ main() {
           throwsA(assetNotFoundException));
       expect(reader.readAsString(makeAssetId('foo|lib/bar.txt')),
           throwsA(packageNotFoundException));
+    });
+
+    test('can list files based on simple InputSets', () async {
+      var inputSets = [
+        new InputSet('basic_pkg'),
+        new InputSet('a'),
+      ];
+      expect(await reader.listAssetIds(inputSets).toList(), unorderedEquals([
+        makeAssetId('basic_pkg|lib/hello.txt'),
+        makeAssetId('basic_pkg|web/hello.txt'),
+        makeAssetId('a|lib/a.txt'),
+      ]));
+    }, skip: 'Fails for multiple reasons.');
+
+    test('can list files based on InputSets with globs', () async {
+      var inputSets = [
+        new InputSet('basic_pkg', filePatterns: ['web/*.txt']),
+        new InputSet('a', filePatterns: ['lib/*']),
+      ];
+      expect(await reader.listAssetIds(inputSets).toList(), unorderedEquals([
+        makeAssetId('basic_pkg|web/hello.txt'),
+        makeAssetId('a|lib/a.txt'),
+      ]));
     });
   });
 
