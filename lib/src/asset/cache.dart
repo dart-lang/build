@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../generate/input_set.dart';
 import 'asset.dart';
 import 'id.dart';
 import 'reader.dart';
@@ -74,6 +75,10 @@ class CachedAssetReader extends AssetReader {
     });
     return _pendingReads[id];
   }
+
+  @override
+  Stream<AssetId> listAssetIds(List<InputSet> inputSets) =>
+      _reader.listAssetIds(inputSets);
 }
 
 /// An [AssetWriter] which takes both an [AssetCache] and an [AssetWriter]. It

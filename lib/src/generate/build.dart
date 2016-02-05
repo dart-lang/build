@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -17,7 +16,6 @@ import '../builder/builder.dart';
 import '../builder/build_step_impl.dart';
 import '../package_graph/package_graph.dart';
 import 'build_result.dart';
-import 'input_set.dart';
 import 'phase.dart';
 
 /// Runs all of the [Phases] in [phaseGroups].
@@ -43,6 +41,7 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
   Logger.root.level = logLevel;
   onLog ??= print;
   var logListener = Logger.root.onRecord.listen(onLog);
+  // No need to create a package graph if we were supplied a reader/writer.
   packageGraph ??= new PackageGraph.forThisPackage();
   var cache = new AssetCache();
   reader ??=
@@ -50,7 +49,6 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
   writer ??=
       new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
   var result = runZoned(() {
-    _validatePhases(phaseGroups);
     return _runPhases(phaseGroups);
   }, onError: (e, s) {
     return new BuildResult(BuildStatus.Failure, BuildType.Full, [],
@@ -74,23 +72,14 @@ AssetReader get _reader => Zone.current[_assetReaderKey];
 AssetWriter get _writer => Zone.current[_assetWriterKey];
 PackageGraph get _packageGraph => Zone.current[_packageGraphKey];
 
-/// Validates the phases.
-void _validatePhases(List<List<Phase>> phaseGroups) {
-  if (phaseGroups.length > 1) {
-    // Don't support using generated files as inputs yet, so we only support
-    // one phase.
-    throw new UnimplementedError(
-        'Only one phase group is currently supported.');
-  }
-}
-
 /// Runs the [phaseGroups] and returns a [Future<BuildResult>] which completes
 /// once all [Phase]s are done.
 Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
   var outputs = [];
   for (var group in phaseGroups) {
     for (var phase in group) {
-      var inputs = _assetIdsFor(phase.inputSets);
+      var inputs = (await _reader.listAssetIds(phase.inputSets).toList())
+          .where(_isValidInput);
       for (var builder in phase.builders) {
         // TODO(jakemac): Optimize, we can run all the builders in a phase
         // at the same time instead of sequentially.
@@ -103,36 +92,17 @@ Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
   return new BuildResult(BuildStatus.Success, BuildType.Full, outputs);
 }
 
-/// Gets all [AssetId]s matching [inputSets] in the current package.
-List<AssetId> _assetIdsFor(List<InputSet> inputSets) {
-  var ids = [];
-  for (var inputSet in inputSets) {
-    var files = _filesMatching(inputSet);
-    for (var file in files) {
-      var segments = file.uri.pathSegments;
-      var newPath = path.joinAll(segments.getRange(
-          segments.indexOf(inputSet.package) + 1, segments.length));
-      ids.add(new AssetId(inputSet.package, newPath));
-    }
-  }
-  return ids;
+/// Checks if an [input] is valid.
+bool _isValidInput(AssetId input) {
+  var parts = path.split(input.path);
+  // Files must be in a top level directory.
+  if (parts.length == 1) return false;
+  if (input.package != _packageGraph.root.name) return parts[0] == 'lib';
+  return true;
 }
-
-/// Returns all files matching [inputSet].
-Set<File> _filesMatching(InputSet inputSet) {
-  var files = new Set<File>();
-  var root = _packageGraph[inputSet.package].location.toFilePath();
-  for (var glob in inputSet.globs) {
-    files.addAll(glob.listSync(followLinks: false, root: root).where(
-        (e) => e is File && !_ignoredDirs.contains(path.split(e.path)[1])));
-  }
-  return files;
-}
-
-const _ignoredDirs = const ['build'];
 
 /// Runs [builder] with [inputs] as inputs.
-Stream<Asset> _runBuilder(Builder builder, List<AssetId> inputs) async* {
+Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> inputs) async* {
   for (var input in inputs) {
     var expectedOutputs = builder.declareOutputs(input);
     var inputAsset = new Asset(input, await _reader.readAsString(input));

@@ -9,8 +9,8 @@ class BuildResult {
   /// The status of this build.
   final BuildStatus status;
 
-  /// The [Exception] that was thrown during this build if it failed.
-  final Exception exception;
+  /// The error that was thrown during this build if it failed.
+  final Object exception;
 
   /// The [StackTrace] for [exception] if non-null.
   final StackTrace stackTrace;

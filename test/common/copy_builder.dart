@@ -6,9 +6,11 @@ import 'dart:async';
 import 'package:build/build.dart';
 
 class CopyBuilder implements Builder {
-  int numCopies;
+  final int numCopies;
+  final String extension;
+  final String outputPackage;
 
-  CopyBuilder({this.numCopies: 1});
+  CopyBuilder({this.numCopies: 1, this.extension: 'copy', this.outputPackage});
 
   Future build(BuildStep buildStep) async {
     var ids = declareOutputs(buildStep.input.id);
@@ -24,7 +26,11 @@ class CopyBuilder implements Builder {
     }
     return outputs;
   }
-}
 
-AssetId _copiedAssetId(AssetId inputId, int copyNum) =>
-    inputId.addExtension('.copy${copyNum == null ? '' : '.$copyNum'}');
+  AssetId _copiedAssetId(AssetId inputId, int copyNum) {
+    var withExtension = inputId
+        .addExtension('.$extension${copyNum == null ? '' : '.$copyNum'}');
+    if (outputPackage == null) return withExtension;
+    return new AssetId(outputPackage, withExtension.path);
+  }
+}

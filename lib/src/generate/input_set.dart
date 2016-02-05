@@ -17,6 +17,11 @@ class InputSet {
   final List<Glob> globs;
 
   InputSet(this.package, {Iterable<String> filePatterns})
-      : this.globs = new List.unmodifiable(
-            filePatterns.map((pattern) => new Glob(pattern)));
+      : this.globs = _globsFor(filePatterns);
+}
+
+List<Glob> _globsFor(Iterable<String> filePatterns) {
+  filePatterns ??= ['**/*'];
+  return new List.unmodifiable(
+      filePatterns.map((pattern) => new Glob(pattern)));
 }

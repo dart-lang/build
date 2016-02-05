@@ -97,6 +97,10 @@ class _TransformAssetReader implements AssetReader {
   @override
   Future<String> readAsString(build.AssetId id, {Encoding encoding: UTF8}) =>
       transform.readInputAsString(toBarbackAssetId(id), encoding: encoding);
+
+  @override
+  /// No way to implement this, but luckily its not necessary.
+  Stream<build.AssetId> listAssetIds(_) => throw new UnimplementedError();
 }
 
 /// Very simple [AssetWriter] which uses a [Transform].

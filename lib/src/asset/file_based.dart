@@ -12,6 +12,7 @@ import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../generate/input_set.dart';
 import '../package_graph/package_graph.dart';
 import 'exceptions.dart';
 
@@ -19,8 +20,9 @@ import 'exceptions.dart';
 /// files from disk.
 class FileBasedAssetReader implements AssetReader {
   final PackageGraph packageGraph;
+  final ignoredDirs;
 
-  FileBasedAssetReader(this.packageGraph);
+  FileBasedAssetReader(this.packageGraph, {this.ignoredDirs: const ['build']});
 
   @override
   Future<bool> hasInput(AssetId id) async {
@@ -46,6 +48,35 @@ class FileBasedAssetReader implements AssetReader {
       throw new InvalidInputException(id);
     }
   }
+
+  /// Searches for all [AssetId]s matching [inputSet]s.
+  Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets) async* {
+    var seenAssets = new Set<AssetId>();
+    for (var inputSet in inputSets) {
+      var packageNode = packageGraph[inputSet.package];
+      var packagePath = packageNode.location.toFilePath();
+      for (var glob in inputSet.globs) {
+        var files = glob.listSync(followLinks: false, root: packagePath).where(
+            (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]));
+        for (var file in files) {
+          var id = _fileToAssetId(file, packageNode);
+          if (!seenAssets.add(id)) continue;
+          yield id;
+        }
+      }
+    }
+  }
+}
+
+/// Creates an [AssetId] for [file], which is a part of [packageNode].
+AssetId _fileToAssetId(File file, PackageNode packageNode) {
+  var filePath = path.normalize(file.absolute.path);
+  var packageUri = packageNode.location;
+  var packagePath = path.normalize(packageUri.isAbsolute
+      ? packageUri.toFilePath()
+      : path.absolute(packageUri.toFilePath()));
+  var relativePath = path.relative(filePath, from: packagePath);
+  return new AssetId(packageNode.name, relativePath);
 }
 
 /// Basic [AssetWriter] which uses a [PackageGraph] to look up where to write
