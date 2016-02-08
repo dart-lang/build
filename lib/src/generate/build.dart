@@ -16,6 +16,7 @@ import '../builder/builder.dart';
 import '../builder/build_step_impl.dart';
 import '../package_graph/package_graph.dart';
 import 'build_result.dart';
+import 'input_set.dart';
 import 'phase.dart';
 
 /// Runs all of the [Phases] in [phaseGroups].
@@ -75,21 +76,69 @@ PackageGraph get _packageGraph => Zone.current[_packageGraphKey];
 /// Runs the [phaseGroups] and returns a [Future<BuildResult>] which completes
 /// once all [Phase]s are done.
 Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
-  var outputs = [];
+  final allInputs = await _allInputs(phaseGroups);
+  final outputs = <Asset>[];
   for (var group in phaseGroups) {
+    final groupOutputs = <Asset>[];
     for (var phase in group) {
-      var inputs = (await _reader.listAssetIds(phase.inputSets).toList())
-          .where(_isValidInput);
+      var inputs = _matchingInputs(allInputs, phase.inputSets);
       for (var builder in phase.builders) {
         // TODO(jakemac): Optimize, we can run all the builders in a phase
         // at the same time instead of sequentially.
         await for (var output in _runBuilder(builder, inputs)) {
+          groupOutputs.add(output);
           outputs.add(output);
         }
       }
     }
+    /// Once the group is done, add all outputs so they can be used in the next
+    /// phase.
+    for (var output in groupOutputs) {
+      allInputs.putIfAbsent(output.id.package, () => new Set<AssetId>());
+      allInputs[output.id.package].add(output.id);
+    }
   }
   return new BuildResult(BuildStatus.Success, BuildType.Full, outputs);
+}
+
+/// Returns a map of all the available inputs by package.
+Future<Map<String, Set<AssetId>>> _allInputs(
+    List<List<Phase>> phaseGroups) async {
+  final packages = new Set<String>();
+  for (var group in phaseGroups) {
+    for (var phase in group) {
+      for (var inputSet in phase.inputSets) {
+        packages.add(inputSet.package);
+      }
+    }
+  }
+
+  var inputSets = packages.map((package) => new InputSet(package));
+  var allInputs = await _reader.listAssetIds(inputSets).toList();
+  var inputsByPackage = {};
+  for (var input in allInputs) {
+    inputsByPackage.putIfAbsent(input.package, () => new Set<AssetId>());
+
+    if (_isValidInput(input)) {
+      inputsByPackage[input.package].add(input);
+    }
+  }
+  return inputsByPackage;
+}
+
+/// Gets a list of all inputs matching [inputSets] given [allInputs].
+Set<AssetId> _matchingInputs(
+    Map<String, Set<AssetId>> inputsByPackage, Iterable<InputSet> inputSets) {
+  var inputs = new Set<AssetId>();
+  for (var inputSet in inputSets) {
+    assert(inputsByPackage.containsKey(inputSet.package));
+    for (var input in inputsByPackage[inputSet.package]) {
+      if (inputSet.globs.any((g) => g.matches(input.path))) {
+        inputs.add(input);
+      }
+    }
+  }
+  return inputs;
 }
 
 /// Checks if an [input] is valid.

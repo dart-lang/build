@@ -58,7 +58,7 @@ main() {
           'a|lib/b.txt.copy.0': 'b',
           'a|lib/b.txt.copy.1': 'b',
         });
-      }, skip: 'Failing, outputs from phases in same group are available');
+      });
 
       test('multiple phases, multiple builders', () async {
         var phases = [
@@ -174,7 +174,7 @@ main() {
 
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
       () {},
-      skip: 'Unimplemented');
+      skip: 'Unimplemented: https://github.com/dart-lang/build/issues/34');
 }
 
 testPhases(List<List<Phase>> phases, Map<String, String> inputs,
