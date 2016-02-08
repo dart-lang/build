@@ -158,7 +158,8 @@ Future _deletePreviousOutputs(List<List<Phase>> phaseGroups) async {
         done = true;
         break;
       case 'n':
-        done = true;
+        stdout.writeln('Exiting...');
+        exit(1);
         break;
       case 'l':
         for (var output in conflictingOutputs) {
