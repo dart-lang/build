@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -51,26 +52,24 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
   writer ??=
       new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
 
-  /// Asset containing previous build outputs.
-  var buildOuputsId =
-      new AssetId(packageGraph.root.name, '.build/build_outputs.json');
-
   /// Run the build in a zone.
   var result = await runZoned(() async {
     try {
-      /// Read in previous build_outputs file, and delete them all.
-      if (await _reader.hasInput(buildOuputsId)) {
-        var previousOutputs =
-            JSON.decode(await _reader.readAsString(buildOuputsId));
-        await writer.delete(buildOuputsId);
-        await Future.wait(previousOutputs.map((output) {
-          return writer.delete(new AssetId.deserialize(output));
-        }));
-      }
+      /// Delete all previous outputs!
+      await _deletePreviousOutputs(phaseGroups);
 
       /// Run a fresh build.
-      return _runPhases(phaseGroups);
-    } catch(e, s) {
+      var result = await _runPhases(phaseGroups);
+
+      // Write out the new build_outputs file.
+      var buildOutputsAsset = new Asset(
+          _buildOutputsId,
+          JSON.encode(
+              result.outputs.map((output) => output.id.serialize()).toList()));
+      await writer.writeAsString(buildOutputsAsset);
+
+      return result;
+    } catch (e, s) {
       return new BuildResult(BuildStatus.Failure, BuildType.Full, [],
           exception: e, stackTrace: s);
     }
@@ -81,11 +80,6 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
   });
 
   await logListener.cancel();
-
-  // Write out the new build_outputs file.
-  var buildOutputsAsset = new Asset(buildOuputsId,
-      JSON.encode(result.outputs.map((output) => output.id.serialize()).toList()));
-  await writer.writeAsString(buildOutputsAsset);
 
   return result;
 }
@@ -99,6 +93,83 @@ Symbol _packageGraphKey = #buildPackageGraph;
 AssetReader get _reader => Zone.current[_assetReaderKey];
 AssetWriter get _writer => Zone.current[_assetWriterKey];
 PackageGraph get _packageGraph => Zone.current[_packageGraphKey];
+
+/// Asset containing previous build outputs.
+AssetId get _buildOutputsId =>
+    new AssetId(_packageGraph.root.name, '.build/build_outputs.json');
+
+/// Deletes all previous output files.
+Future _deletePreviousOutputs(List<List<Phase>> phaseGroups) async {
+  if (await _reader.hasInput(_buildOutputsId)) {
+    // Cache file exists, just delete all outputs contained in it.
+    var previousOutputs =
+        JSON.decode(await _reader.readAsString(_buildOutputsId));
+    await _writer.delete(_buildOutputsId);
+    await Future.wait(previousOutputs.map((output) {
+      return _writer.delete(new AssetId.deserialize(output));
+    }));
+    return;
+  }
+
+  // No cache file exists, run `declareOutputs` on all phases and collect all
+  // outputs which conflict with existing assets.
+  final allInputs = await _allInputs(phaseGroups);
+  final conflictingOutputs = new Set<AssetId>();
+  for (var group in phaseGroups) {
+    final groupOutputIds = <AssetId>[];
+    for (var phase in group) {
+      var inputs = _matchingInputs(allInputs, phase.inputSets);
+      for (var input in inputs) {
+        for (var builder in phase.builders) {
+          var outputs = builder.declareOutputs(input);
+          groupOutputIds.addAll(outputs);
+          for (var output in outputs) {
+            if (allInputs[output.package]?.contains(output) == true) {
+              conflictingOutputs.add(output);
+            }
+          }
+        }
+      }
+    }
+    /// Once the group is done, add all outputs so they can be used in the next
+    /// phase.
+    for (var outputId in groupOutputIds) {
+      allInputs.putIfAbsent(outputId.package, () => new Set<AssetId>());
+      allInputs[outputId.package].add(outputId);
+    }
+  }
+
+  // Check conflictingOuputs, prompt user to delete files.
+  if (conflictingOutputs.isEmpty) return;
+
+  stdout.writeln('Found ${conflictingOutputs.length} declared outputs '
+      'which already exist on disk. This is likely because the `.build` '
+      'folder was deleted.');
+  var done = false;
+  while(!done) {
+    stdout.write('Delete these files (y/n) (or list them (l))?: ');
+    var input = stdin.readLineSync();
+    switch(input) {
+      case 'y':
+        stdout.writeln('Deleting files...');
+        await Future.wait(conflictingOutputs.map((output) {
+          return _writer.delete(output);
+        }));
+        done = true;
+        break;
+      case 'n':
+        done = true;
+        break;
+      case 'l':
+        for (var output in conflictingOutputs) {
+          stdout.writeln(output);
+        }
+        break;
+      default:
+        stdout.writeln('Unrecognized option $input, (y/n/l) expected.');
+    }
+  }
+}
 
 /// Runs the [phaseGroups] and returns a [Future<BuildResult>] which completes
 /// once all [Phase]s are done.

@@ -1,7 +1,9 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:test/test.dart';
 
@@ -211,6 +213,30 @@ main() {
     // Second run, should have no extra outputs.
     await testPhases(phases, inputs, outputs: outputs, writer: writer);
   });
+
+  test('can recover from a deleted build_outputs.json cache', () async {
+    var phases = [
+      [
+        new Phase([new CopyBuilder()], [new InputSet('a')]),
+      ]
+    ];
+    final writer = new InMemoryAssetWriter();
+    var inputs = {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
+    var outputs = {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'};
+    // First run, nothing special.
+    await testPhases(phases, inputs, outputs: outputs, writer: writer);
+
+    // Delete the `build_outputs.json` file!
+    var outputId = makeAssetId('a|.build/build_outputs.json');
+    await writer.delete(outputId);
+
+    // Second run, should have no extra outputs.
+    var done = testPhases(phases, inputs, outputs: outputs, writer: writer);
+    // Should block on user input.
+    await new Future.delayed(new Duration(seconds: 1));
+    // Now it should complete!
+    await done;
+  }, skip: 'Need to manually add a `y` to stdin for this test to run.');
 }
 
 testPhases(List<List<Phase>> phases, Map<String, String> inputs,
@@ -222,6 +248,7 @@ testPhases(List<List<Phase>> phases, Map<String, String> inputs,
   writer ??= new InMemoryAssetWriter();
   final actualAssets = writer.assets;
   final reader = new InMemoryAssetReader(actualAssets);
+
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAsset(serializedId, contents));
   });
@@ -233,7 +260,9 @@ testPhases(List<List<Phase>> phases, Map<String, String> inputs,
 
   var result = await build(phases,
       reader: reader, writer: writer, packageGraph: packageGraph);
-  expect(result.status, status);
+  expect(result.status, status,
+      reason: 'Exception:\n${result.exception}\n'
+          'Stack Trace:\n${result.stackTrace}');
   if (exceptionMatcher != null) {
     expect(result.exception, exceptionMatcher);
   }
