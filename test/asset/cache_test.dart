@@ -170,5 +170,12 @@ main() {
       await writer.writeAsString(a);
       expect(() => writer.writeAsString(a), throwsArgumentError);
     });
+
+    test('delete deletes from cache and writer', () async {
+      await writer.writeAsString(a);
+      await writer.delete(a.id);
+      expect(cache.get(a.id), isNull);
+      expect(childWriterAssets[a.id], isNull);
+    });
   });
 }

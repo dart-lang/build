@@ -69,15 +69,15 @@ main() {
 
     test('can list files based on simple InputSets', () async {
       var inputSets = [
-        new InputSet('basic_pkg'),
-        new InputSet('a'),
+        new InputSet('basic_pkg', filePatterns: ['{lib,web}/**']),
+        new InputSet('a', filePatterns: ['lib/**']),
       ];
       expect(await reader.listAssetIds(inputSets).toList(), unorderedEquals([
         makeAssetId('basic_pkg|lib/hello.txt'),
         makeAssetId('basic_pkg|web/hello.txt'),
         makeAssetId('a|lib/a.txt'),
       ]));
-    }, skip: 'Fails for multiple reasons.');
+    });
 
     test('can list files based on InputSets with globs', () async {
       var inputSets = [
@@ -94,14 +94,16 @@ main() {
   group('FileBasedAssetWriter', () {
     final writer = new FileBasedAssetWriter(packageGraph);
 
-    test('can output files in the application package', () async {
+    test('can output and delete files in the application package', () async {
       var asset = makeAsset('basic_pkg|test_file.txt', 'test');
       await writer.writeAsString(asset);
       var id = asset.id;
       var file = new File('test/fixtures/${id.package}/${id.path}');
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), 'test');
-      await file.delete();
+
+      await writer.delete(asset.id);
+      expect(await file.exists(), isFalse);
     });
 
     test('can\'t output files in package dependencies', () async {
@@ -112,6 +114,16 @@ main() {
     test('can\'t output files in arbitrary packages', () async {
       var asset = makeAsset('foo|bar.txt');
       expect(writer.writeAsString(asset), throwsA(invalidOutputException));
+    });
+
+    test('can\'t delete files in package dependencies', () async {
+      var id = makeAssetId('a|test.txt');
+      expect(writer.delete(id), throws);
+    });
+
+    test('can\'t delete files in arbitrary dependencies', () async {
+      var id = makeAssetId('foo|test.txt');
+      expect(writer.delete(id), throws);
     });
   });
 }

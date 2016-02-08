@@ -14,4 +14,8 @@ class InMemoryAssetWriter implements AssetWriter {
   Future writeAsString(Asset asset, {Encoding encoding: UTF8}) async {
     assets[asset.id] = asset.stringContents;
   }
+
+  Future delete(AssetId id) async {
+    assets.remove(id);
+  }
 }

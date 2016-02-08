@@ -99,6 +99,7 @@ class _TransformAssetReader implements AssetReader {
       transform.readInputAsString(toBarbackAssetId(id), encoding: encoding);
 
   @override
+
   /// No way to implement this, but luckily its not necessary.
   Stream<build.AssetId> listAssetIds(_) => throw new UnimplementedError();
 }
@@ -114,6 +115,10 @@ class _TransformAssetWriter implements AssetWriter {
     transform.addOutput(toBarbackAsset(asset));
     return new Future.value(null);
   }
+
+  @override
+  Future delete(build.AssetId id) =>
+      throw new UnsupportedError('_TransformAssetWriter can\'t delete files.');
 }
 
 /// All the expected outputs for [id] given [builders].

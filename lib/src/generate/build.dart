@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -49,17 +50,43 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
       new CachedAssetReader(cache, new FileBasedAssetReader(packageGraph));
   writer ??=
       new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
-  var result = runZoned(() {
-    return _runPhases(phaseGroups);
-  }, onError: (e, s) {
-    return new BuildResult(BuildStatus.Failure, BuildType.Full, [],
-        exception: e, stackTrace: s);
+
+  /// Asset containing previous build outputs.
+  var buildOuputsId =
+      new AssetId(packageGraph.root.name, '.build/build_outputs.json');
+
+  /// Run the build in a zone.
+  var result = await runZoned(() async {
+    try {
+      /// Read in previous build_outputs file, and delete them all.
+      if (await _reader.hasInput(buildOuputsId)) {
+        var previousOutputs =
+            JSON.decode(await _reader.readAsString(buildOuputsId));
+        await writer.delete(buildOuputsId);
+        await Future.wait(previousOutputs.map((output) {
+          return writer.delete(new AssetId.deserialize(output));
+        }));
+      }
+
+      /// Run a fresh build.
+      return _runPhases(phaseGroups);
+    } catch(e, s) {
+      return new BuildResult(BuildStatus.Failure, BuildType.Full, [],
+          exception: e, stackTrace: s);
+    }
   }, zoneValues: {
     _assetReaderKey: reader,
     _assetWriterKey: writer,
     _packageGraphKey: packageGraph,
   });
+
   await logListener.cancel();
+
+  // Write out the new build_outputs file.
+  var buildOutputsAsset = new Asset(buildOuputsId,
+      JSON.encode(result.outputs.map((output) => output.id.serialize()).toList()));
+  await writer.writeAsString(buildOutputsAsset);
+
   return result;
 }
 
@@ -91,6 +118,7 @@ Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
         }
       }
     }
+
     /// Once the group is done, add all outputs so they can be used in the next
     /// phase.
     for (var output in groupOutputs) {

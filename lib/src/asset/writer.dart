@@ -5,7 +5,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'asset.dart';
+import 'id.dart';
 
 abstract class AssetWriter {
   Future writeAsString(Asset asset, {Encoding encoding: UTF8});
+
+  Future delete(AssetId id);
 }

@@ -9,4 +9,6 @@ import 'package:build/build.dart';
 class StubAssetWriter implements AssetWriter {
   Future writeAsString(Asset asset, {Encoding encoding: UTF8}) =>
       new Future.value(null);
+
+  Future delete(AssetId id) => new Future.value(null);
 }

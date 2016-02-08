@@ -1,6 +1,8 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:convert';
+
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
@@ -172,17 +174,52 @@ main() {
             'the BuildStep level.');
   });
 
+  test('tracks previous outputs in a build_outputs.json file', () async {
+    var phases = [
+      [
+        new Phase([new CopyBuilder()], [new InputSet('a')]),
+      ]
+    ];
+    final writer = new InMemoryAssetWriter();
+    await testPhases(phases, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+        outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
+        writer: writer);
+
+    var outputId = makeAssetId('a|.build/build_outputs.json');
+    expect(writer.assets, contains(outputId));
+    var outputs = JSON.decode(writer.assets[outputId]);
+    expect(
+        outputs,
+        unorderedEquals([
+          ['a', 'web/a.txt.copy'],
+          ['a', 'lib/b.txt.copy'],
+        ]));
+  });
+
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
-      () {},
-      skip: 'Unimplemented: https://github.com/dart-lang/build/issues/34');
+      () async {
+    var phases = [
+      [
+        new Phase([new CopyBuilder()], [new InputSet('a')]),
+      ]
+    ];
+    final writer = new InMemoryAssetWriter();
+    var inputs = {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
+    var outputs = {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'};
+    // First run, nothing special.
+    await testPhases(phases, inputs, outputs: outputs, writer: writer);
+    // Second run, should have no extra outputs.
+    await testPhases(phases, inputs, outputs: outputs, writer: writer);
+  });
 }
 
 testPhases(List<List<Phase>> phases, Map<String, String> inputs,
     {Map<String, String> outputs,
     PackageGraph packageGraph,
     BuildStatus status: BuildStatus.Success,
-    exceptionMatcher}) async {
-  final writer = new InMemoryAssetWriter();
+    exceptionMatcher,
+    InMemoryAssetWriter writer}) async {
+  writer ??= new InMemoryAssetWriter();
   final actualAssets = writer.assets;
   final reader = new InMemoryAssetReader(actualAssets);
   inputs.forEach((serializedId, contents) {

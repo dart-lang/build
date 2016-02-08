@@ -97,4 +97,10 @@ class CachedAssetWriter extends AssetWriter {
     _cache.put(asset);
     return _writer.writeAsString(asset, encoding: encoding);
   }
+
+  @override
+  Future delete(AssetId id) {
+    _cache.remove(id);
+    return _writer.delete(id);
+  }
 }
