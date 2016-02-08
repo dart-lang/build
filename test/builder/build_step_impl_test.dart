@@ -23,7 +23,8 @@ main() {
         reader = new StubAssetReader();
         writer = new StubAssetWriter();
         primary = makeAsset();
-        buildStep = new BuildStepImpl(primary, [], reader, writer);
+        buildStep =
+            new BuildStepImpl(primary, [], reader, writer, primary.id.package);
       });
 
       test('tracks dependencies on read', () async {
@@ -53,7 +54,8 @@ main() {
       test('tracks outputs', () async {
         var a1 = makeAsset();
         var a2 = makeAsset();
-        buildStep = new BuildStepImpl(primary, [a1.id, a2.id], reader, writer);
+        buildStep = new BuildStepImpl(
+            primary, [a1.id, a2.id], reader, writer, primary.id.package);
 
         buildStep.writeAsString(a1);
         expect(buildStep.outputs, [a1]);
@@ -86,6 +88,33 @@ main() {
           '[SEVERE] ${primary.id}: goodbye',
         ]);
       });
+
+      test('hasInput throws invalidInputExceptions', () async {
+        expect(() => buildStep.hasInput(makeAssetId('b|web/a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.hasInput(makeAssetId('b|a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.hasInput(makeAssetId('foo|bar.txt')),
+            throwsA(invalidInputException));
+      });
+
+      test('readAsString throws InvalidInputExceptions', () async {
+        expect(() => buildStep.readAsString(makeAssetId('b|web/a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.readAsString(makeAssetId('b|a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.readAsString(makeAssetId('foo|bar.txt')),
+            throwsA(invalidInputException));
+      });
+
+      test('writeAsString throws InvalidOutputExceptions', () async {
+        var a1 = makeAsset('b|test.txt');
+        expect(
+            () => buildStep.writeAsString(a1), throwsA(invalidOutputException));
+        var a2 = makeAsset('foo|bar.txt');
+        expect(
+            () => buildStep.writeAsString(a2), throwsA(invalidOutputException));
+      });
     });
 
     group('with in memory file system', () {
@@ -109,8 +138,8 @@ main() {
         });
         addAssets(inputs.values, writer);
         var outputId = new AssetId.parse('$primary.combined');
-        var buildStep = new BuildStepImpl(
-            inputs[new AssetId.parse(primary)], [outputId], reader, writer);
+        var buildStep = new BuildStepImpl(inputs[new AssetId.parse(primary)],
+            [outputId], reader, writer, 'a');
 
         await fileCombiner.build(buildStep);
         await buildStep.complete();
@@ -140,8 +169,8 @@ main() {
           addAssets(inputs.values, writer);
 
           var primary = makeAssetId('a|web/a.dart');
-          var buildStep =
-              new BuildStepImpl(inputs[primary], [], reader, writer);
+          var buildStep = new BuildStepImpl(
+              inputs[primary], [], reader, writer, primary.package);
           var resolver = await buildStep.resolve(primary);
 
           var aLib = resolver.getLibrary(primary);

@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
 import '../asset/asset.dart';
+import '../asset/exceptions.dart';
 import '../asset/cache.dart';
 import '../asset/file_based.dart';
 import '../asset/id.dart';
@@ -131,6 +132,7 @@ Future _deletePreviousOutputs(List<List<Phase>> phaseGroups) async {
         }
       }
     }
+
     /// Once the group is done, add all outputs so they can be used in the next
     /// phase.
     for (var outputId in groupOutputIds) {
@@ -146,10 +148,10 @@ Future _deletePreviousOutputs(List<List<Phase>> phaseGroups) async {
       'which already exist on disk. This is likely because the `.build` '
       'folder was deleted.');
   var done = false;
-  while(!done) {
+  while (!done) {
     stdout.write('Delete these files (y/n) (or list them (l))?: ');
     var input = stdin.readLineSync();
-    switch(input) {
+    switch (input) {
       case 'y':
         stdout.writeln('Deleting files...');
         await Future.wait(conflictingOutputs.map((output) {
@@ -184,7 +186,7 @@ Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
       for (var builder in phase.builders) {
         // TODO(jakemac): Optimize, we can run all the builders in a phase
         // at the same time instead of sequentially.
-        await for (var output in _runBuilder(builder, inputs)) {
+        await for (var output in _runBuilder(builder, inputs, allInputs)) {
           groupOutputs.add(output);
           outputs.add(output);
         }
@@ -251,12 +253,23 @@ bool _isValidInput(AssetId input) {
 }
 
 /// Runs [builder] with [inputs] as inputs.
-Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> inputs) async* {
-  for (var input in inputs) {
+Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
+    Map<String, Set<AssetId>> allInputs) async* {
+  for (var input in primaryInputs) {
     var expectedOutputs = builder.declareOutputs(input);
+    /// Validate [expectedOutputs].
+    for (var output in expectedOutputs) {
+      if (output.package != _packageGraph.root.name) {
+        throw new InvalidOutputException(new Asset(output, ''));
+      }
+      if (allInputs[output.package]?.contains(output) == true) {
+        throw new InvalidOutputException(new Asset(output, ''));
+      }
+    }
+
     var inputAsset = new Asset(input, await _reader.readAsString(input));
-    var buildStep =
-        new BuildStepImpl(inputAsset, expectedOutputs, _reader, _writer);
+    var buildStep = new BuildStepImpl(
+        inputAsset, expectedOutputs, _reader, _writer, _packageGraph.root.name);
     await builder.build(buildStep);
     await buildStep.complete();
     for (var output in buildStep.outputs) {

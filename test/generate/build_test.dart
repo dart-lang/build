@@ -118,9 +118,7 @@ main() {
         ];
         await testPhases(phases, {'b|lib/b.txt': 'b'},
             outputs: {}, status: BuildStatus.Failure);
-      },
-          skip: 'Failing, InMemoryAssetWriter doesn\'t throw. Need to handle '
-              'this in BuildStep instead of AssetWriter.');
+      });
     });
 
     test('multiple phases, inputs from multiple packages', () async {
@@ -168,12 +166,16 @@ main() {
           new Phase([new CopyBuilder()], [new InputSet('a')]),
         ]
       ];
-      await testPhases(phases, {'a|lib/a.txt': 'a', 'a|lib/a.txt.copy': 'a'},
+      await testPhases(
+          phases,
+          {
+            'a|lib/a.txt': 'a',
+            'a|lib/a.txt.copy': 'a',
+            'a|.build/build_outputs.json': '[]',
+          },
           status: BuildStatus.Failure,
           exceptionMatcher: invalidOutputException);
-    },
-        skip: 'InMemoryAssetWriter doesn\'t check this, should be handled at '
-            'the BuildStep level.');
+    });
   });
 
   test('tracks previous outputs in a build_outputs.json file', () async {

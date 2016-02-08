@@ -10,6 +10,7 @@ import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/asset.dart';
+import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -20,6 +21,7 @@ import 'exceptions.dart';
 /// A single step in the build processes. This represents a single input and
 /// its expected and real outputs. It also handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
+  /// Single `_resolvers` instance for all [BuildStepImpl]s
   static code_transformers.Resolvers _resolvers =
       new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
 
@@ -36,6 +38,7 @@ class BuildStepImpl implements BuildStep {
     _logger ??= new Logger(input.id.toString());
     return _logger;
   }
+
   Logger _logger;
 
   /// The actual outputs of this build step.
@@ -56,8 +59,11 @@ class BuildStepImpl implements BuildStep {
   /// Used internally for writing files.
   final AssetWriter _writer;
 
-  BuildStepImpl(
-      this.input, Iterable<AssetId> expectedOutputs, this._reader, this._writer)
+  /// The current root package, used for input/output validation.
+  final String _rootPackage;
+
+  BuildStepImpl(this.input, Iterable<AssetId> expectedOutputs, this._reader,
+      this._writer, this._rootPackage)
       : expectedOutputs = new List.unmodifiable(expectedOutputs) {
     /// The [input] is always a dependency.
     _dependencies.add(input.id);
@@ -65,6 +71,7 @@ class BuildStepImpl implements BuildStep {
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
   Future<bool> hasInput(AssetId id) {
+    _checkInput(id);
     _dependencies.add(id);
     return _reader.hasInput(id);
   }
@@ -72,6 +79,7 @@ class BuildStepImpl implements BuildStep {
   /// Reads an [Asset] by [id] as a [String] using [encoding].
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+    _checkInput(id);
     _dependencies.add(id);
     return _reader.readAsString(id, encoding: encoding);
   }
@@ -83,9 +91,7 @@ class BuildStepImpl implements BuildStep {
   /// [expectedOutputs].
   @override
   void writeAsString(Asset asset, {Encoding encoding: UTF8}) {
-    if (!expectedOutputs.any((id) => id == asset.id)) {
-      throw new UnexpectedOutputException(asset);
-    }
+    _checkOutput(asset);
     _outputs.add(asset);
     var done = _writer.writeAsString(asset, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);
@@ -100,5 +106,24 @@ class BuildStepImpl implements BuildStep {
   Future complete() async {
     await _outputsCompleted;
     await _logger?.clearListeners();
+  }
+
+  /// Checks that [id] is a valid input, and throws an [InvalidInputException]
+  /// if its not.
+  void _checkInput(AssetId id) {
+    if (id.package != _rootPackage && !id.path.startsWith('lib/')) {
+      throw new InvalidInputException(id);
+    }
+  }
+
+  /// Checks that [asset] is a valid output, and throws an
+  /// [InvalidOutputException] or [UnexcpectedOutputException] if it's not.
+  void _checkOutput(Asset asset) {
+    if (asset.id.package != _rootPackage) {
+      throw new InvalidOutputException(asset);
+    }
+    if (!expectedOutputs.any((id) => id == asset.id)) {
+      throw new UnexpectedOutputException(asset);
+    }
   }
 }

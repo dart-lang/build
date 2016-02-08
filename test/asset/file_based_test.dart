@@ -26,12 +26,8 @@ main() {
           'world\n');
     });
 
-    test('can only read package dependency files in the lib dir', () async {
+    test('can read package dependency files in the lib dir', () async {
       expect(await reader.readAsString(makeAssetId('a|lib/a.txt')), 'A\n');
-      expect(reader.readAsString(makeAssetId('a|web/a.txt')),
-          throwsA(invalidInputException));
-      expect(reader.readAsString(makeAssetId('a|a.txt')),
-          throwsA(invalidInputException));
     });
 
     test('can check for existence of any application package files', () async {
@@ -46,16 +42,10 @@ main() {
           await reader.hasInput(makeAssetId('basic_pkg|lib/a.txt')), isFalse);
     });
 
-    test('can only check for existence of package dependency files in lib',
+    test('can check for existence of package dependency files in lib',
         () async {
       expect(await reader.hasInput(makeAssetId('a|lib/a.txt')), isTrue);
       expect(await reader.hasInput(makeAssetId('a|lib/b.txt')), isFalse);
-      expect(reader.hasInput(makeAssetId('a|web/a.txt')),
-          throwsA(invalidInputException));
-      expect(reader.hasInput(makeAssetId('a|a.txt')),
-          throwsA(invalidInputException));
-      expect(reader.hasInput(makeAssetId('foo|bar.txt')),
-          throwsA(invalidInputException));
     });
 
     test('throws when attempting to read a non-existent file', () async {
@@ -104,26 +94,6 @@ main() {
 
       await writer.delete(asset.id);
       expect(await file.exists(), isFalse);
-    });
-
-    test('can\'t output files in package dependencies', () async {
-      var asset = makeAsset('a|test.txt');
-      expect(writer.writeAsString(asset), throwsA(invalidOutputException));
-    });
-
-    test('can\'t output files in arbitrary packages', () async {
-      var asset = makeAsset('foo|bar.txt');
-      expect(writer.writeAsString(asset), throwsA(invalidOutputException));
-    });
-
-    test('can\'t delete files in package dependencies', () async {
-      var id = makeAssetId('a|test.txt');
-      expect(writer.delete(id), throws);
-    });
-
-    test('can\'t delete files in arbitrary dependencies', () async {
-      var id = makeAssetId('foo|test.txt');
-      expect(writer.delete(id), throws);
     });
   });
 }

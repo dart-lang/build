@@ -17,14 +17,17 @@ import '../common/common.dart';
 main() {
   var entryPoint = makeAssetId('a|web/main.dart');
   Future validateResolver(
-      {Map<String, String> inputs, validator(Resolver), List messages: const []}) async {
+      {Map<String, String> inputs,
+      validator(Resolver),
+      List messages: const []}) async {
     var writer = new InMemoryAssetWriter();
     var reader = new InMemoryAssetReader(writer.assets);
     var assets = makeAssets(inputs);
     addAssets(assets.values, writer);
 
     var builder = new TestBuilder(validator);
-    var buildStep = new BuildStepImpl(assets[entryPoint], [], reader, writer);
+    var buildStep =
+        new BuildStepImpl(assets[entryPoint], [], reader, writer, 'a');
     var logs = [];
     if (messages != null) {
       buildStep.logger.onRecord.listen(logs.add);
@@ -175,8 +178,7 @@ main() {
         // First from the AST walker
         '[WARNING] a|web/main.dart: $warningMessage "/b.dart"',
         '[WARNING] a|web/main.dart: $warningMessage "/b.dart"',
-      ],
-          validator: (resolver) {
+      ], validator: (resolver) {
         var lib = resolver.getLibrary(entryPoint);
         expect(lib.importedLibraries.length, 1);
       });
