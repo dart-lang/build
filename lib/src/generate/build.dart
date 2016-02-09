@@ -15,6 +15,8 @@ import '../asset/file_based.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
 import '../builder/builder.dart';
 import '../builder/build_step_impl.dart';
 import '../package_graph/package_graph.dart';
@@ -45,7 +47,6 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
   Logger.root.level = logLevel;
   onLog ??= print;
   var logListener = Logger.root.onRecord.listen(onLog);
-  // No need to create a package graph if we were supplied a reader/writer.
   packageGraph ??= new PackageGraph.forThisPackage();
   var cache = new AssetCache();
   reader ??=
@@ -75,6 +76,7 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
           exception: e, stackTrace: s);
     }
   }, zoneValues: {
+    _assetGraphKey: new AssetGraph(),
     _assetReaderKey: reader,
     _assetWriterKey: writer,
     _packageGraphKey: packageGraph,
@@ -86,11 +88,13 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
 }
 
 /// Keys for reading zone local values.
+Symbol _assetGraphKey = #buildAssetGraph;
 Symbol _assetReaderKey = #buildAssetReader;
 Symbol _assetWriterKey = #buildAssetWriter;
 Symbol _packageGraphKey = #buildPackageGraph;
 
 /// Getters for zone local values.
+AssetGraph get _assetGraph => Zone.current[_assetGraphKey];
 AssetReader get _reader => Zone.current[_assetReaderKey];
 AssetWriter get _writer => Zone.current[_assetWriterKey];
 PackageGraph get _packageGraph => Zone.current[_packageGraphKey];
@@ -123,6 +127,7 @@ Future _deletePreviousOutputs(List<List<Phase>> phaseGroups) async {
       for (var input in inputs) {
         for (var builder in phase.builders) {
           var outputs = builder.declareOutputs(input);
+
           groupOutputIds.addAll(outputs);
           for (var output in outputs) {
             if (allInputs[output.package]?.contains(output) == true) {
@@ -179,6 +184,7 @@ Future _deletePreviousOutputs(List<List<Phase>> phaseGroups) async {
 Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
   final allInputs = await _allInputs(phaseGroups);
   final outputs = <Asset>[];
+  int phaseGroupNum = 0;
   for (var group in phaseGroups) {
     final groupOutputs = <Asset>[];
     for (var phase in group) {
@@ -186,7 +192,8 @@ Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
       for (var builder in phase.builders) {
         // TODO(jakemac): Optimize, we can run all the builders in a phase
         // at the same time instead of sequentially.
-        await for (var output in _runBuilder(builder, inputs, allInputs)) {
+        await for (var output
+            in _runBuilder(builder, inputs, allInputs, phaseGroupNum)) {
           groupOutputs.add(output);
           outputs.add(output);
         }
@@ -199,6 +206,7 @@ Future<BuildResult> _runPhases(List<List<Phase>> phaseGroups) async {
       allInputs.putIfAbsent(output.id.package, () => new Set<AssetId>());
       allInputs[output.id.package].add(output.id);
     }
+    phaseGroupNum++;
   }
   return new BuildResult(BuildStatus.Success, BuildType.Full, outputs);
 }
@@ -254,9 +262,10 @@ bool _isValidInput(AssetId input) {
 
 /// Runs [builder] with [inputs] as inputs.
 Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
-    Map<String, Set<AssetId>> allInputs) async* {
+    Map<String, Set<AssetId>> allInputs, int phaseGroupNum) async* {
   for (var input in primaryInputs) {
     var expectedOutputs = builder.declareOutputs(input);
+
     /// Validate [expectedOutputs].
     for (var output in expectedOutputs) {
       if (output.package != _packageGraph.root.name) {
@@ -267,11 +276,37 @@ Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
       }
     }
 
+    /// Add nodes to the [AssetGraph] for [expectedOutputs] and [input].
+    var inputNode = _assetGraph.addIfAbsent(input, () => new AssetNode(input));
+    for (var output in expectedOutputs) {
+      inputNode.outputs.add(output);
+      _assetGraph.addIfAbsent(
+          output,
+          () => new GeneratedAssetNode(
+              builder, input, phaseGroupNum, true, output));
+    }
+
+    /// Skip the build step if none of the outputs need updating.
+    var skipBuild = !expectedOutputs.any((output) =>
+        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
+    if (skipBuild) continue;
+
     var inputAsset = new Asset(input, await _reader.readAsString(input));
-    var buildStep = new BuildStepImpl(
-        inputAsset, expectedOutputs, _reader, _writer, _packageGraph.root.name);
+    var buildStep = new BuildStepImpl(inputAsset, expectedOutputs, _reader,
+        _writer, _packageGraph.root.name);
     await builder.build(buildStep);
     await buildStep.complete();
+
+    /// Update the asset graph based on the dependencies discovered.
+    for (var dependency in buildStep.dependencies) {
+      var dependencyNode =
+          _assetGraph.addIfAbsent(dependency, () => new AssetNode(dependency));
+
+      /// We care about all [expectedOutputs], not just real outputs.
+      dependencyNode.outputs.addAll(expectedOutputs);
+    }
+
+    /// Yield the outputs.
     for (var output in buildStep.outputs) {
       yield output;
     }

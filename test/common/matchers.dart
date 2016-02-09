@@ -4,8 +4,11 @@
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
+import 'package:build/src/asset_graph/exceptions.dart';
 
 final assetNotFoundException = new isInstanceOf<AssetNotFoundException>();
+final duplicateAssetNodeException =
+    new isInstanceOf<DuplicateAssetNodeException>();
 final invalidInputException = new isInstanceOf<InvalidInputException>();
 final invalidOutputException = new isInstanceOf<InvalidOutputException>();
 final packageNotFoundException = new isInstanceOf<PackageNotFoundException>();
