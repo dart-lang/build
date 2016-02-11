@@ -17,6 +17,7 @@ dependencies:
   source_maps: '>=0.9.4 <0.11.0'
   source_span: '>=1.0.0 <2.0.0'
   stack_trace: ^1.6.0
+  watcher: ^0.9.7
   yaml: ^2.1.0
 
 dev_dependencies:

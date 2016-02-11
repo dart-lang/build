@@ -77,7 +77,7 @@ class CachedAssetReader extends AssetReader {
   }
 
   @override
-  Stream<AssetId> listAssetIds(List<InputSet> inputSets) =>
+  Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets) =>
       _reader.listAssetIds(inputSets);
 }
 

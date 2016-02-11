@@ -14,7 +14,7 @@ main() async {
   /// the transitive deps issue.
   var phases = CopyBuilder.buildPhases(graph);
 
-  var result = await build([phases]);
-
-  print(result);
+  await for (var result in watch([phases])) {
+    print(result);
+  }
 }

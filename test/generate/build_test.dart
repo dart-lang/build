@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
@@ -260,7 +261,7 @@ testPhases(List<List<Phase>> phases, Map<String, String> inputs,
   }
 
   var result = await build(phases,
-      reader: reader, writer: writer, packageGraph: packageGraph);
+      reader: reader, writer: writer, packageGraph: packageGraph, logLevel: Level.OFF);
   expect(result.status, status,
       reason: 'Exception:\n${result.exception}\n'
           'Stack Trace:\n${result.stackTrace}');
@@ -268,26 +269,5 @@ testPhases(List<List<Phase>> phases, Map<String, String> inputs,
     expect(result.exception, exceptionMatcher);
   }
 
-  if (outputs != null) {
-    var remainingOutputIds =
-        new List.from(result.outputs.map((asset) => asset.id));
-    outputs.forEach((serializedId, contents) {
-      var asset = makeAsset(serializedId, contents);
-      remainingOutputIds.remove(asset.id);
-
-      /// Check that the writer wrote the assets
-      expect(actualAssets, contains(asset.id));
-      expect(actualAssets[asset.id], asset.stringContents);
-
-      /// Check that the assets exist in [result.outputs].
-      var actual = result.outputs
-          .firstWhere((output) => output.id == asset.id, orElse: () => null);
-      expect(actual, isNotNull,
-          reason: 'Expected to find ${asset.id} in ${result.outputs}.');
-      expect(asset, equalsAsset(actual));
-    });
-
-    expect(remainingOutputIds, isEmpty,
-        reason: 'Unexpected outputs found `$remainingOutputIds`.');
-  }
+  checkOutputs(outputs, result, actualAssets);
 }

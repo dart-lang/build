@@ -12,5 +12,5 @@ abstract class AssetReader {
 
   Future<bool> hasInput(AssetId id);
 
-  Stream<AssetId> listAssetIds(List<InputSet> inputSets);
+  Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets);
 }

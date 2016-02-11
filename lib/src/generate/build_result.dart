@@ -24,6 +24,25 @@ class BuildResult {
   BuildResult(this.status, this.buildType, List<Asset> outputs,
       {this.exception, this.stackTrace})
       : outputs = new List.unmodifiable(outputs);
+
+  String toString() {
+    if (status == BuildStatus.Success) {
+      return '''
+
+Build Succeeded!
+Type: ${buildType}
+''';
+    } else {
+      return '''
+
+Build Failed :(
+Type: ${buildType}
+Exception: ${exception}
+Stack Trace:
+${stackTrace}
+''';
+    }
+  }
 }
 
 /// The status of a build.
