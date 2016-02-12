@@ -35,17 +35,15 @@ main() {
         var results = [];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
-        await wait(200);
-        expect(results.length, 1);
-        checkOutputs({'a|web/a.txt.copy': 'a',}, results[0], writer.assets);
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
         FakeWatcher
             .notifyWatchers(new WatchEvent(ChangeType.MODIFY, 'a/web/a.txt'));
 
-        await wait(200);
-        expect(results.length, 2);
-        checkOutputs({'a|web/a.txt.copy': 'b',}, results[1], writer.assets);
+        result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
       });
 
       test('rebuilds on new files', () async {
@@ -58,18 +56,16 @@ main() {
         var results = [];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
-        await wait(200);
-        expect(results.length, 1);
-        checkOutputs({'a|web/a.txt.copy': 'a',}, results[0], writer.assets);
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/b.txt', 'b'));
         FakeWatcher
             .notifyWatchers(new WatchEvent(ChangeType.ADD, 'a/web/b.txt'));
 
-        await wait(200);
-        expect(results.length, 2);
+        result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
-            results[1], writer.assets);
+            result, writer.assets);
       });
 
       test('rebuilds on deleted files', () async {
@@ -83,18 +79,16 @@ main() {
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b',}, writer)
             .listen(results.add);
 
-        await wait(200);
-        expect(results.length, 1);
+        var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
-            results[0], writer.assets);
+            result, writer.assets);
 
         await writer.delete(makeAssetId('a|web/a.txt'));
         FakeWatcher
             .notifyWatchers(new WatchEvent(ChangeType.REMOVE, 'a/web/a.txt'));
 
-        await wait(200);
-        expect(results.length, 2);
-        checkOutputs({'a|web/b.txt.copy': 'b',}, results[1], writer.assets);
+        result = await nextResult(results);
+        checkOutputs({'a|web/b.txt.copy': 'b',}, result, writer.assets);
       });
     });
   });
@@ -128,6 +122,7 @@ Stream<BuildResult> startWatch(List<List<Phase>> phases,
 /// Tells the program to stop watching files and terminate.
 Future terminateWatch() {
   assert(_terminateWatchController != null);
+
   /// Can add any type of event.
   _terminateWatchController.add(null);
   return _terminateWatchController.close();
@@ -164,4 +159,18 @@ class FakeWatcher implements DirectoryWatcher {
       }
     }
   }
+}
+
+Future<BuildResult> nextResult(results) {
+  var done = new Completer();
+  var startingLength = results.length;
+  () async {
+    while (results.length == startingLength) {
+      await wait(10);
+    }
+    expect(results.length, startingLength + 1,
+        reason: 'Got two build results but only expected one');
+    done.complete(results.last);
+  }();
+  return done.future;
 }
