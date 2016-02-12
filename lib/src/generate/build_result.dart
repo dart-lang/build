@@ -25,6 +25,7 @@ class BuildResult {
       {this.exception, this.stackTrace})
       : outputs = new List.unmodifiable(outputs);
 
+  @override
   String toString() {
     if (status == BuildStatus.Success) {
       return '''

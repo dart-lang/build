@@ -14,8 +14,9 @@ import '../asset_graph/graph.dart';
 import '../package_graph/package_graph.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
-import 'phase.dart';
 import 'directory_watcher_factory.dart';
+import 'phase.dart';
+import 'watch_impl.dart';
 
 /// Runs all of the [Phases] in [phaseGroups].
 ///
@@ -52,28 +53,21 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
       new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
 
   var buildImpl = new BuildImpl(
-      cache, new AssetGraph(), reader, writer, packageGraph, phaseGroups);
+      new AssetGraph(), reader, writer, packageGraph, phaseGroups);
 
   /// Run the build!
   var futureResult = buildImpl.runBuild();
 
-  // Handle the first SIGINT, and shut down gracefully.
-  terminateEventStream ??= ProcessSignal.SIGINT.watch();
-  int numEventsSeen = 0;
-  var terminateListener = terminateEventStream.listen((_) {
-    numEventsSeen++;
-    if (numEventsSeen == 1) {
-      new Logger('Build').info('Waiting for build to finish...');
-    } else {
-      exit(2);
-    }
+  // Stop doing new builds when told to terminate.
+  var listener = _setupTerminateLogic(terminateEventStream, () {
+    new Logger('Build').info('Waiting for build to finish...');
+    return futureResult;
   });
 
-  return futureResult.then((result) async {
-    await logListener.cancel();
-    await terminateListener.cancel();
-    return result;
-  });
+  var result = await futureResult;
+  listener.cancel();
+  logListener.cancel();
+  return result;
 }
 
 /// Same as [build], except it watches the file system and re-runs builds
@@ -102,7 +96,7 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
     Stream terminateEventStream}) {
   // We never cancel this listener in watch mode, because we never exit unless
   // forced to.
-  _setupLogging(logLevel: logLevel, onLog: onLog);
+  var logListener = _setupLogging(logLevel: logLevel, onLog: onLog);
   packageGraph ??= new PackageGraph.forThisPackage();
   var cache = new AssetCache();
   reader ??=
@@ -115,23 +109,33 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
 
   var resultStream = watchImpl.runWatch();
 
-  // Handle the first SIGINT, and shut down gracefully. Second one causes a
-  // full shutdown.
+  // Stop doing new builds when told to terminate.
+  _setupTerminateLogic(terminateEventStream, () async {
+    await watchImpl.terminate();
+    logListener.cancel();
+  });
+
+  return resultStream;
+}
+
+/// Given [terminateEventStream], call [onTerminate] the first time an event is
+/// seen. If a second event is recieved, simply exit.
+StreamSubscription _setupTerminateLogic(Stream terminateEventStream,
+    Future onTerminate()) {
   terminateEventStream ??= ProcessSignal.SIGINT.watch();
   int numEventsSeen = 0;
   var terminateListener;
   terminateListener = terminateEventStream.listen((_) {
     numEventsSeen++;
     if (numEventsSeen == 1) {
-      watchImpl.terminate().then((_) {
+      onTerminate().then((_) {
         terminateListener.cancel();
       });
     } else {
       exit(2);
     }
   });
-
-  return resultStream;
+  return terminateListener;
 }
 
 StreamSubscription _setupLogging({Level logLevel, onLog(LogRecord)}) {

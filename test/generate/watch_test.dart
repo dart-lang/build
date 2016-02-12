@@ -8,9 +8,6 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import 'package:build/build.dart';
-import 'package:build/src/asset/cache.dart';
-import 'package:build/src/asset_graph/graph.dart';
-import 'package:build/src/generate/build_impl.dart';
 
 import '../common/common.dart';
 

@@ -7,7 +7,6 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:watcher/watcher.dart';
 
 import '../asset/asset.dart';
 import '../asset/cache.dart';
@@ -21,14 +20,12 @@ import '../builder/builder.dart';
 import '../builder/build_step_impl.dart';
 import '../package_graph/package_graph.dart';
 import 'build_result.dart';
-import 'directory_watcher_factory.dart';
 import 'exceptions.dart';
 import 'input_set.dart';
 import 'phase.dart';
 
 /// Class which manages running builds.
 class BuildImpl {
-  final AssetCache _cache;
   final AssetGraph _assetGraph;
   final AssetReader _reader;
   final AssetWriter _writer;
@@ -38,7 +35,7 @@ class BuildImpl {
   bool _buildRunning = false;
   final _logger = new Logger('Build');
 
-  BuildImpl(this._cache, this._assetGraph, this._reader, this._writer,
+  BuildImpl(this._assetGraph, this._reader, this._writer,
       this._packageGraph, this._phaseGroups);
 
   /// Runs a build
@@ -149,7 +146,7 @@ class BuildImpl {
     while (!done) {
       stdout.write('Delete these files (y/n) (or list them (l))?: ');
       var input = stdin.readLineSync();
-      switch (input) {
+      switch (input.toLowerCase()) {
         case 'y':
           stdout.writeln('Deleting files...');
           await Future.wait(conflictingOutputs.map((output) {
@@ -303,161 +300,5 @@ class BuildImpl {
         yield output;
       }
     }
-  }
-}
-
-/// Extends [BuildImpl] to add the [runWatch] method, which watches all
-/// inputs for changes.
-class WatchImpl extends BuildImpl {
-  /// Injectable factory for creating directory watchers.
-  final DirectoryWatcherFactory _directoryWatcherFactory;
-
-  /// Delay to wait for more file watcher events.
-  final Duration _debounceDelay;
-
-  /// Whether or not we are currently watching and running builds.
-  bool _runningWatch = false;
-
-  /// Controller for the results stream.
-  StreamController<BuildResult> _resultStreamController;
-
-  /// All file listeners currently set up.
-  final _allListeners = <StreamSubscription>[];
-
-  /// A future that completes when the current build is done.
-  Future _currentBuild;
-
-  /// Whether or not another build is scheduled.
-  bool _nextBuildScheduled;
-
-  /// Whether we are in the process of terminating.
-  bool _terminating = false;
-
-  WatchImpl(
-      this._directoryWatcherFactory,
-      this._debounceDelay,
-      AssetCache cache,
-      AssetGraph assetGraph,
-      AssetReader reader,
-      AssetWriter writer,
-      PackageGraph packageGraph,
-      List<List<Phase>> phaseGroups)
-      : super(cache, assetGraph, reader, writer, packageGraph, phaseGroups);
-
-  /// Completes after the current build is done, and stops further builds from
-  /// happening.
-  Future terminate() async {
-    assert(_terminating == false);
-    _terminating = true;
-    _logger.info('Terminating watchers, no futher builds will be scheduled.');
-    _nextBuildScheduled = false;
-    for (var listener in _allListeners) {
-      await listener.cancel();
-    }
-    _allListeners.clear();
-    if (_currentBuild != null) {
-      _logger.info('Waiting for ongoing build to finish.');
-      await _currentBuild;
-    }
-    await _resultStreamController.close();
-    _terminating = false;
-    _logger.info('Build watching terminated.');
-  }
-
-  /// Runs a build any time relevant files change.
-  ///
-  /// Only one build will run at a time, and changes are batched.
-  Stream<BuildResult> runWatch() {
-    assert(_runningWatch == false);
-    _runningWatch = true;
-    _resultStreamController = new StreamController<BuildResult>();
-    _nextBuildScheduled = false;
-    var updatedInputs = new Set<AssetId>();
-
-    doBuild([bool force = false]) {
-      // Don't schedule more builds if we are turning down.
-      if (_terminating) return;
-
-      if (_currentBuild != null) {
-        if (_nextBuildScheduled == false) {
-          _logger.info('Scheduling next build');
-          _nextBuildScheduled = true;
-        }
-        return;
-      }
-      assert(_nextBuildScheduled == false);
-
-      /// Remove any updates that were generated outputs or otherwise not
-      /// interesting.
-      updatedInputs.removeWhere(_shouldSkipInput);
-      if (updatedInputs.isEmpty && !force) {
-        return;
-      }
-
-      _logger.info('Preparing for next build');
-      _logger.info('Clearing cache for invalidated assets');
-      void clearNodeAndDeps(AssetId id) {
-        var node = _assetGraph.get(id);
-        if (node == null) return;
-        _cache.remove(id);
-        for (var output in node.outputs) {
-          clearNodeAndDeps(output);
-        }
-      }
-      for (var input in updatedInputs) {
-        clearNodeAndDeps(input);
-      }
-      updatedInputs.clear();
-
-      _logger.info('Starting build');
-      _currentBuild = runBuild();
-      _currentBuild.then((result) {
-        if (result.status == BuildStatus.Success) {
-          _logger.info('Build completed successfully');
-        } else {
-          _logger.warning('Build failed');
-        }
-        _resultStreamController.add(result);
-        _currentBuild = null;
-        if (_nextBuildScheduled) {
-          _nextBuildScheduled = false;
-          doBuild();
-        }
-      });
-    }
-
-    Timer buildTimer;
-    scheduleBuild() {
-      if (buildTimer?.isActive == true) buildTimer.cancel();
-      buildTimer = new Timer(_debounceDelay, doBuild);
-    }
-
-    final watchers = <DirectoryWatcher>[];
-    _logger.info('Setting up file watchers');
-    for (var package in _packageGraph.allPackages.values) {
-      _logger.fine('Setting up watcher at ${package.location.toFilePath()}');
-      var watcher = _directoryWatcherFactory(package.location.toFilePath());
-      watchers.add(watcher);
-      _allListeners.add(watcher.events.listen((WatchEvent e) {
-        _logger.fine('Got WatchEvent for path ${e.path}');
-        var id = new AssetId(package.name, path.normalize(e.path));
-        updatedInputs.add(id);
-        scheduleBuild();
-      }));
-    }
-
-    Future.wait(watchers.map((w) => w.ready)).then((_) {
-      // Schedule the first build!
-      doBuild(true);
-    });
-
-    return _resultStreamController.stream;
-  }
-
-  /// Checks if we should skip a watch event for this [id].
-  bool _shouldSkipInput(AssetId id) {
-    if (id.path.startsWith('.build')) return true;
-    var node = _assetGraph.get(id);
-    return node is GeneratedAssetNode;
   }
 }
