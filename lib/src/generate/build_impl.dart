@@ -9,7 +9,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
 import '../asset/asset.dart';
-import '../asset/cache.dart';
 import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
@@ -85,15 +84,21 @@ class BuildImpl {
   /// Deletes all previous output files.
   Future _deletePreviousOutputs() async {
     if (await _reader.hasInput(_buildOutputsId)) {
-      // Cache file exists, just delete all outputs contained in it.
+      /// Cache file exists, delete all outputs which don't appear in the
+      /// [_assetGraph], or are marked as needing an update.
+      ///
+      /// Removes all files from [_inputsByPackage] regardless of state.
       var previousOutputs =
           JSON.decode(await _reader.readAsString(_buildOutputsId));
       await _writer.delete(_buildOutputsId);
       _inputsByPackage[_buildOutputsId.package]?.remove(_buildOutputsId);
-      await Future.wait(previousOutputs.map((output) {
+      await Future.wait(previousOutputs.map((output) async {
         var outputId = new AssetId.deserialize(output);
         _inputsByPackage[outputId.package]?.remove(outputId);
-        return _writer.delete(outputId);
+        var node = _assetGraph.get(outputId);
+        if (node == null || (node as GeneratedAssetNode).needsUpdate) {
+          await _writer.delete(outputId);
+        }
       }));
       return;
     }
@@ -176,15 +181,18 @@ class BuildImpl {
     final outputs = <Asset>[];
     int phaseGroupNum = 0;
     for (var group in _phaseGroups) {
-      final groupOutputs = <Asset>[];
+      /// Collects all the ids for files which are output by this stage. This
+      /// also includes files which didn't get regenerated because they weren't,
+      /// dirty unlike [outputs] which only gets files which were explicitly
+      /// generated in this build.
+      final groupOutputIds = new Set<AssetId>();
       for (var phase in group) {
         var inputs = _matchingInputs(phase.inputSets);
         for (var builder in phase.builders) {
           // TODO(jakemac): Optimize, we can run all the builders in a phase
           // at the same time instead of sequentially.
           await for (var output
-              in _runBuilder(builder, inputs, phaseGroupNum)) {
-            groupOutputs.add(output);
+              in _runBuilder(builder, inputs, phaseGroupNum, groupOutputIds)) {
             outputs.add(output);
           }
         }
@@ -192,10 +200,10 @@ class BuildImpl {
 
       /// Once the group is done, add all outputs so they can be used in the next
       /// phase.
-      for (var output in groupOutputs) {
+      for (var outputId in groupOutputIds) {
         _inputsByPackage.putIfAbsent(
-            output.id.package, () => new Set<AssetId>());
-        _inputsByPackage[output.id.package].add(output.id);
+            outputId.package, () => new Set<AssetId>());
+        _inputsByPackage[outputId.package].add(outputId);
       }
       phaseGroupNum++;
     }
@@ -250,7 +258,7 @@ class BuildImpl {
 
   /// Runs [builder] with [inputs] as inputs.
   Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
-      int phaseGroupNum) async* {
+      int phaseGroupNum, Set<AssetId> groupOutputs) async* {
     for (var input in primaryInputs) {
       var expectedOutputs = builder.declareOutputs(input);
 
@@ -278,13 +286,28 @@ class BuildImpl {
       /// Skip the build step if none of the outputs need updating.
       var skipBuild = !expectedOutputs.any((output) =>
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
-      if (skipBuild) continue;
+      if (skipBuild) {
+        /// If we skip the build, we still need to add the ids as outputs for
+        /// any files which were output last time, so they can be used by
+        /// subsequent phases.
+        for (var output in expectedOutputs) {
+          if (await _reader.hasInput(output)) {
+            groupOutputs.add(output);
+          }
+        }
+        continue;
+      }
 
       var inputAsset = new Asset(input, await _reader.readAsString(input));
       var buildStep = new BuildStepImpl(inputAsset, expectedOutputs, _reader,
           _writer, _packageGraph.root.name);
       await builder.build(buildStep);
       await buildStep.complete();
+
+      /// Mark all outputs as no longer needing an update.
+      for (var output in expectedOutputs) {
+        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate = false;
+      }
 
       /// Update the asset graph based on the dependencies discovered.
       for (var dependency in buildStep.dependencies) {
@@ -297,6 +320,7 @@ class BuildImpl {
 
       /// Yield the outputs.
       for (var output in buildStep.outputs) {
+        groupOutputs.add(output.id);
         yield output;
       }
     }

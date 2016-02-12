@@ -6,16 +6,33 @@ import 'dart:async';
 import 'package:build/build.dart';
 
 class CopyBuilder implements Builder {
+  /// If > 0, then multiple copies will be output, using the copy number as an
+  /// additional extension.
   final int numCopies;
+
+  /// The file extension to add to files.
   final String extension;
+
+  /// The package in which to output files.
   final String outputPackage;
 
-  CopyBuilder({this.numCopies: 1, this.extension: 'copy', this.outputPackage});
+  /// Copies content from this asset into all files, instead of the primary
+  /// asset.
+  final AssetId copyFromAsset;
+
+  CopyBuilder(
+      {this.numCopies: 1,
+      this.extension: 'copy',
+      this.outputPackage,
+      this.copyFromAsset});
 
   Future build(BuildStep buildStep) async {
     var ids = declareOutputs(buildStep.input.id);
     for (var id in ids) {
-      buildStep.writeAsString(new Asset(id, buildStep.input.stringContents));
+      var content = copyFromAsset == null
+          ? buildStep.input.stringContents
+          : await buildStep.readAsString(copyFromAsset);
+      buildStep.writeAsString(new Asset(id, content));
     }
   }
 

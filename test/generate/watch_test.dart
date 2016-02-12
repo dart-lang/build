@@ -64,8 +64,9 @@ main() {
             .notifyWatchers(new WatchEvent(ChangeType.ADD, 'a/web/b.txt'));
 
         result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
-            result, writer.assets);
+        checkOutputs({'a|web/b.txt.copy': 'b',}, result, writer.assets);
+        // Previous outputs should still exist.
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')], 'a');
       });
 
       test('rebuilds on deleted files', () async {
@@ -88,7 +89,185 @@ main() {
             .notifyWatchers(new WatchEvent(ChangeType.REMOVE, 'a/web/a.txt'));
 
         result = await nextResult(results);
-        checkOutputs({'a|web/b.txt.copy': 'b',}, result, writer.assets);
+
+        // Shouldn't rebuild anything, no outputs.
+        checkOutputs({}, result, writer.assets);
+
+        // The old output file should no longer exist either.
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
+        // Previous outputs should still exist.
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')], 'b');
+      });
+    });
+
+    group('multiple phases', () {
+      test('edits propagate through all phases', () async {
+        var phases = [
+          [
+            new Phase([new CopyBuilder()], [new InputSet('a')]),
+          ],
+          [
+            new Phase([
+              new CopyBuilder()
+            ], [
+              new InputSet('a', filePatterns: ['**/*.copy'])
+            ]),
+          ]
+        ];
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
+            result, writer.assets);
+
+        await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.MODIFY, 'a/web/a.txt'));
+
+        result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
+            result, writer.assets);
+      });
+
+      test('adds propagate through all phases', () async {
+        var phases = [
+          [
+            new Phase([new CopyBuilder()], [new InputSet('a')]),
+          ],
+          [
+            new Phase([
+              new CopyBuilder()
+            ], [
+              new InputSet('a', filePatterns: ['**/*.copy'])
+            ]),
+          ]
+        ];
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
+            result, writer.assets);
+
+        await writer.writeAsString(makeAsset('a|web/b.txt', 'b'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.ADD, 'a/web/b.txt'));
+
+        result = await nextResult(results);
+        checkOutputs({'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
+            result, writer.assets);
+        // Previous outputs should still exist.
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')], 'a');
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')], 'a');
+      });
+
+      test('deletes propagate through all phases', () async {
+        var phases = [
+          [
+            new Phase([new CopyBuilder()], [new InputSet('a')]),
+          ],
+          [
+            new Phase([
+              new CopyBuilder()
+            ], [
+              new InputSet('a', filePatterns: ['**/*.copy'])
+            ]),
+          ]
+        ];
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
+            .listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+          'a|web/a.txt.copy.copy': 'a',
+          'a|web/b.txt.copy': 'b',
+          'a|web/b.txt.copy.copy': 'b'
+        }, result, writer.assets);
+
+        await writer.delete(makeAssetId('a|web/a.txt'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.REMOVE, 'a/web/a.txt'));
+
+        result = await nextResult(results);
+        // Shouldn't rebuild anything, no outputs.
+        checkOutputs({}, result, writer.assets);
+
+        // Derived outputs should no longer exist.
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')], isNull);
+        // Other outputs should still exist.
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')], 'b');
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')], 'b');
+      });
+    });
+
+    /// Tests for updates
+    group('secondary dependency', () {
+      test('of an output file is edited', () async {
+        var phases = [
+          [
+            new Phase([
+              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt'))
+            ], [
+              new InputSet('a', filePatterns: ['web/a.txt'])
+            ]),
+          ],
+        ];
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
+            .listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'b'}, result, writer.assets);
+
+        await writer.writeAsString(makeAsset('a|web/b.txt', 'c'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.MODIFY, 'a/web/b.txt'));
+
+        result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'c'}, result, writer.assets);
+      });
+
+      test(
+          'of an output which is derived from another generated file is edited',
+          () async {
+        var phases = [
+          [
+            new Phase([
+              new CopyBuilder()
+            ], [
+              new InputSet('a', filePatterns: ['web/a.txt'])
+            ]),
+          ],
+          [
+            new Phase([
+              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt'))
+            ], [
+              new InputSet('a', filePatterns: ['web/a.txt.copy'])
+            ]),
+          ],
+        ];
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
+            .listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'b'}, result, writer.assets);
+
+        await writer.writeAsString(makeAsset('a|web/b.txt', 'c'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.MODIFY, 'a/web/b.txt'));
+
+        result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy.copy': 'c'}, result, writer.assets);
       });
     });
   });

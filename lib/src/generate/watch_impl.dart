@@ -138,6 +138,7 @@ class WatchImpl {
       void clearNodeAndDeps(AssetId id) {
         var node = _assetGraph.get(id);
         if (node == null) return;
+        if (node is GeneratedAssetNode) node.needsUpdate = true;
         _assetCache.remove(id);
         for (var output in node.outputs) {
           clearNodeAndDeps(output);
