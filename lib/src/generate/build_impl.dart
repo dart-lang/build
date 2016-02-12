@@ -330,6 +330,9 @@ class WatchImpl extends BuildImpl {
   /// Whether or not another build is scheduled.
   bool _nextBuildScheduled;
 
+  /// Whether we are in the process of terminating.
+  bool _terminating = false;
+
   WatchImpl(
       this._directoryWatcherFactory,
       this._debounceDelay,
@@ -344,10 +347,10 @@ class WatchImpl extends BuildImpl {
   /// Completes after the current build is done, and stops further builds from
   /// happening.
   Future terminate() async {
-    assert(_runningWatch == true);
+    assert(_terminating == false);
+    _terminating = true;
     _logger.info('Terminating watchers, no futher builds will be scheduled.');
     _nextBuildScheduled = false;
-    _runningWatch = false;
     for (var listener in _allListeners) {
       await listener.cancel();
     }
@@ -357,6 +360,7 @@ class WatchImpl extends BuildImpl {
       await _currentBuild;
     }
     await _resultStreamController.close();
+    _terminating = false;
     _logger.info('Build watching terminated.');
   }
 
@@ -372,7 +376,7 @@ class WatchImpl extends BuildImpl {
 
     doBuild([bool force = false]) {
       // Don't schedule more builds if we are turning down.
-      if (!_runningWatch) return;
+      if (_terminating) return;
 
       if (_currentBuild != null) {
         if (_nextBuildScheduled == false) {
