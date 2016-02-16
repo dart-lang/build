@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+- Exposed the top level `watch` function. This can be used to watch the file
+  system and run incremental rebuilds on changes.
+  - Initial build is still non-incremental.
+
 ## 0.1.1
 
 - Exposed the top level `build` function. This can be used to run builds.
