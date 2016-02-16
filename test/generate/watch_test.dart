@@ -98,6 +98,35 @@ main() {
         // Previous outputs should still exist.
         expect(writer.assets[makeAssetId('a|web/b.txt.copy')], 'b');
       });
+
+      test('rebuilds properly update build_outputs.json', () async {
+        var phases = [
+          [
+            new Phase([new CopyBuilder()], [new InputSet('a')]),
+          ]
+        ];
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
+            .listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
+            result, writer.assets);
+
+        await writer.writeAsString(makeAsset('a|web/c.txt', 'c'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.ADD, 'a/web/c.txt'));
+        await writer.delete(makeAssetId('a|web/a.txt'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.REMOVE, 'a/web/a.txt'));
+
+        result = await nextResult(results);
+        checkOutputs({'a|web/c.txt.copy': 'c'}, result, writer.assets);
+
+        expect(writer.assets[makeAssetId('a|.build/build_outputs.json')],
+            '[["a","web/b.txt.copy"],["a","web/c.txt.copy"]]');
+      });
     });
 
     group('multiple phases', () {
@@ -260,7 +289,8 @@ main() {
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'b'}, result, writer.assets);
+        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'b'},
+            result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/b.txt', 'c'));
         FakeWatcher

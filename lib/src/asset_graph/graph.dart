@@ -36,6 +36,9 @@ class AssetGraph {
   /// Removes [node] from the graph.
   AssetNode remove(AssetId id) => _nodesById.remove(id);
 
+  /// Gets all nodes in the graph.
+  Iterable<AssetNode> get allNodes => _nodesById.values;
+
   @override
   toString() => _nodesById.values.toList().toString();
 }

@@ -111,7 +111,7 @@ class WatchImpl {
     _runningWatch = true;
     _resultStreamController = new StreamController<BuildResult>();
     _nextBuildScheduled = false;
-    var updatedInputs = new Set<AssetId>();
+    var updatedInputs = new Map<AssetId, ChangeType>();
 
     doBuild([bool force = false]) {
       // Don't schedule more builds if we are turning down.
@@ -128,24 +128,32 @@ class WatchImpl {
 
       /// Remove any updates that were generated outputs or otherwise not
       /// interesting.
-      updatedInputs.removeWhere(_shouldSkipInput);
+      var updatesToRemove = updatedInputs.keys.where(_shouldSkipInput).toList();
+      updatesToRemove.forEach(updatedInputs.remove);
       if (updatedInputs.isEmpty && !force) {
         return;
       }
 
       _logger.info('Preparing for next build');
       _logger.info('Clearing cache for invalidated assets');
-      void clearNodeAndDeps(AssetId id) {
+      void clearNodeAndDeps(AssetId id, ChangeType rootChangeType) {
         var node = _assetGraph.get(id);
         if (node == null) return;
-        if (node is GeneratedAssetNode) node.needsUpdate = true;
+        if (node is GeneratedAssetNode) {
+          node.needsUpdate = true;
+        }
         _assetCache.remove(id);
         for (var output in node.outputs) {
-          clearNodeAndDeps(output);
+          clearNodeAndDeps(output, rootChangeType);
+        }
+
+        /// For deletes, prune the graph.
+        if (rootChangeType == ChangeType.REMOVE) {
+          _assetGraph.remove(id);
         }
       }
-      for (var input in updatedInputs) {
-        clearNodeAndDeps(input);
+      for (var input in updatedInputs.keys) {
+        clearNodeAndDeps(input, updatedInputs[input]);
       }
       updatedInputs.clear();
 
@@ -181,7 +189,7 @@ class WatchImpl {
       _allListeners.add(watcher.events.listen((WatchEvent e) {
         _logger.fine('Got WatchEvent for path ${e.path}');
         var id = new AssetId(package.name, path.normalize(e.path));
-        updatedInputs.add(id);
+        updatedInputs[id] = e.type;
         scheduleBuild();
       }));
     }

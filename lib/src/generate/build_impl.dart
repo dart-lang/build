@@ -34,8 +34,8 @@ class BuildImpl {
   bool _buildRunning = false;
   final _logger = new Logger('Build');
 
-  BuildImpl(this._assetGraph, this._reader, this._writer,
-      this._packageGraph, this._phaseGroups);
+  BuildImpl(this._assetGraph, this._reader, this._writer, this._packageGraph,
+      this._phaseGroups);
 
   /// Runs a build
   ///
@@ -61,11 +61,13 @@ class BuildImpl {
       _logger.info('Running build phases');
       var result = await _runPhases();
 
-      // Write out the new build_outputs file.
+      /// Write out the new build_outputs file.
+      var allOuputs = _assetGraph.allNodes
+          .where((node) => node is GeneratedAssetNode && node.wasOutput);
       var buildOutputsAsset = new Asset(
           _buildOutputsId,
           JSON.encode(
-              result.outputs.map((output) => output.id.serialize()).toList()));
+              allOuputs.map((output) => output.id.serialize()).toList()));
       await _writer.writeAsString(buildOutputsAsset);
 
       return result;
@@ -280,7 +282,7 @@ class BuildImpl {
         _assetGraph.addIfAbsent(
             output,
             () => new GeneratedAssetNode(
-                builder, input, phaseGroupNum, true, output));
+                builder, input, phaseGroupNum, true, false, output));
       }
 
       /// Skip the build step if none of the outputs need updating.
@@ -291,7 +293,7 @@ class BuildImpl {
         /// any files which were output last time, so they can be used by
         /// subsequent phases.
         for (var output in expectedOutputs) {
-          if (await _reader.hasInput(output)) {
+          if ((_assetGraph.get(output) as GeneratedAssetNode).wasOutput) {
             groupOutputs.add(output);
           }
         }
@@ -304,9 +306,12 @@ class BuildImpl {
       await builder.build(buildStep);
       await buildStep.complete();
 
-      /// Mark all outputs as no longer needing an update.
+      /// Mark all outputs as no longer needing an update, and mark `wasOutput`
+      /// as `false` for now (this will get reset to true later one).
       for (var output in expectedOutputs) {
-        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate = false;
+        (_assetGraph.get(output) as GeneratedAssetNode)
+          ..needsUpdate = false
+          ..wasOutput = false;
       }
 
       /// Update the asset graph based on the dependencies discovered.
@@ -314,12 +319,14 @@ class BuildImpl {
         var dependencyNode = _assetGraph.addIfAbsent(
             dependency, () => new AssetNode(dependency));
 
-        /// We care about all [expectedOutputs], not just real outputs.
+        /// We care about all [expectedOutputs], not just real outputs. Updates
+        /// to dependencies may cause a file to be output which wasn't before.
         dependencyNode.outputs.addAll(expectedOutputs);
       }
 
       /// Yield the outputs.
       for (var output in buildStep.outputs) {
+        (_assetGraph.get(output.id) as GeneratedAssetNode).wasOutput = true;
         groupOutputs.add(output.id);
         yield output;
       }

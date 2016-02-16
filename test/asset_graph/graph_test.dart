@@ -34,17 +34,19 @@ main() {
       return node;
     }
 
-    test('add, contains, get', () {
+    test('add, contains, get, allNodes', () {
+      var expectedNodes = [];
       for (int i = 0; i < 5; i++) {
-        testAddNode();
+        expectedNodes.add(testAddNode());
       }
+      expect(graph.allNodes, unorderedEquals(expectedNodes));
     });
 
     test('addIfAbsent', () {
       var node = makeAssetNode();
       expect(graph.addIfAbsent(node.id, () => node), same(node));
       expect(graph.contains(node.id), isTrue);
-      
+
       var otherNode = new AssetNode(node.id);
       expect(graph.addIfAbsent(otherNode.id, () => otherNode), same(node));
       expect(graph.contains(otherNode.id), isTrue);

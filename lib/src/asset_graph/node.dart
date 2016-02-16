@@ -34,8 +34,11 @@ class GeneratedAssetNode extends AssetNode {
   /// Whether or not this asset needs to be updated.
   bool needsUpdate;
 
+  /// Whether the asset was actually output.
+  bool wasOutput;
+
   GeneratedAssetNode(this.builder, this.primaryInput, this.generatingPhaseGroup,
-      this.needsUpdate, AssetId id)
+      this.needsUpdate, this.wasOutput, AssetId id)
       : super(id);
 
   @override
