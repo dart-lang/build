@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import '../asset/id.dart';
-import '../builder/builder.dart';
 
 /// A node in the asset graph.
 ///
@@ -16,20 +15,33 @@ class AssetNode {
 
   AssetNode(this.id);
 
+  factory AssetNode.deserialize(List serializedNode) {
+    var node;
+    if (serializedNode.length == 2) {
+      node = new AssetNode(new AssetId.deserialize(serializedNode[0]));
+    } else if (serializedNode.length == 4) {
+      node = new GeneratedAssetNode.deserialize(serializedNode);
+    } else {
+      throw new ArgumentError(
+          'Unrecognized serialization format! $serializedNode');
+    }
+
+    node.outputs.addAll(serializedNode[1]
+        .map((serializedOutput) => new AssetId.deserialize(serializedOutput)));
+    return node;
+  }
+
+  List serialize() =>
+      [id.serialize(), outputs.map((id) => id.serialize()).toList()];
+
   @override
   String toString() => 'AssetNode: $id';
 }
 
 /// A generated node in the asset graph.
 class GeneratedAssetNode extends AssetNode {
-  /// The builder which generated this node.
-  final Builder builder;
-
   /// The primary input which generated this node.
   final AssetId primaryInput;
-
-  /// The phase group number which generates this asset.
-  final int generatingPhaseGroup;
 
   /// Whether or not this asset needs to be updated.
   bool needsUpdate;
@@ -37,11 +49,22 @@ class GeneratedAssetNode extends AssetNode {
   /// Whether the asset was actually output.
   bool wasOutput;
 
-  GeneratedAssetNode(this.builder, this.primaryInput, this.generatingPhaseGroup,
-      this.needsUpdate, this.wasOutput, AssetId id)
+  GeneratedAssetNode(
+      this.primaryInput, this.needsUpdate, this.wasOutput, AssetId id)
       : super(id);
 
+  factory GeneratedAssetNode.deserialize(List serialized) {
+    var node = new GeneratedAssetNode(new AssetId.deserialize(serialized[2]),
+        false, serialized[3], new AssetId.deserialize(serialized[0]));
+    node.outputs.addAll(serialized[1]
+        .map((serializedOutput) => new AssetId.deserialize(serializedOutput)));
+    return node;
+  }
+
   @override
-  toString() => 'GeneratedAssetNode: $id generated for input $primaryInput to '
-      '$builder in phase group $generatingPhaseGroup.';
+  List serialize() =>
+      super.serialize()..addAll([primaryInput.serialize(), wasOutput]);
+
+  @override
+  toString() => 'GeneratedAssetNode: $id generated from input $primaryInput.';
 }

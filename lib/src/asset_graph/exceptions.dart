@@ -11,3 +11,14 @@ class DuplicateAssetNodeException implements Exception {
   @override
   String toString() => 'DuplicateAssetNodeError: $assetNode';
 }
+
+class AssetGraphVersionException implements Exception {
+  final int versionSeen;
+  final int currentVersion;
+
+  AssetGraphVersionException(this.versionSeen, this.currentVersion);
+
+  @override
+  String toString() => 'AssetGraphVersionException: saw version $versionSeen '
+      'but the current version is $currentVersion.';
+}

@@ -1,6 +1,8 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:convert';
+
 import 'package:test/test.dart';
 
 import 'package:build/src/asset_graph/graph.dart';
@@ -77,6 +79,31 @@ main() {
       // Can be added back
       graph.add(nodes[1]);
       expectNodeExists(nodes[1]);
+    });
+
+    test('serialize/deserialize', () {
+      for (int n = 0; n < 5; n++) {
+        var node = makeAssetNode();
+        graph.add(node);
+        for (int g = 0; g < 5 - n; g++) {
+          var generatedNode =
+              new GeneratedAssetNode(node.id, false, g % 2 == 0, makeAssetId());
+          node.outputs.add(generatedNode.id);
+          graph.add(generatedNode);
+        }
+      }
+
+      var encoded = JSON.encode(graph.serialize());
+      var decoded = new AssetGraph.deserialize(JSON.decode(encoded));
+      expect(graph, equalsAssetGraph(decoded));
+    });
+
+    test('Throws an AssetGraphVersionError if versions dont match up', () {
+      var serialized = graph.serialize();
+      serialized['version'] = -1;
+      var encoded = JSON.encode(serialized);
+      expect(() => new AssetGraph.deserialize(JSON.decode(encoded)),
+          throwsA(assetGraphVersionException));
     });
   });
 }

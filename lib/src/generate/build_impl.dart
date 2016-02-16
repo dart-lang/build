@@ -281,8 +281,7 @@ class BuildImpl {
         inputNode.outputs.add(output);
         _assetGraph.addIfAbsent(
             output,
-            () => new GeneratedAssetNode(
-                builder, input, phaseGroupNum, true, false, output));
+            () => new GeneratedAssetNode(input, true, false, output));
       }
 
       /// Skip the build step if none of the outputs need updating.

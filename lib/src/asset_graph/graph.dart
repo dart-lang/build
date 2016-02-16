@@ -12,6 +12,32 @@ class AssetGraph {
 
   AssetGraph();
 
+  /// Part of the serialized graph, used to ensure versioning constraints.
+  ///
+  /// This should be incremented any time the serialize/deserialize methods
+  /// change on this class or [AssetNode].
+  static get _version => 1;
+
+  /// Deserializes this graph.
+  factory AssetGraph.deserialize(Map serializedGraph) {
+    if (serializedGraph['version'] != AssetGraph._version) {
+      throw new AssetGraphVersionException(
+          serializedGraph['version'], _version);
+    }
+
+    var graph = new AssetGraph();
+    for (var serializedItem in serializedGraph['nodes']) {
+      graph.add(new AssetNode.deserialize(serializedItem));
+    }
+    return graph;
+  }
+
+  /// Puts this graph into a serializable form.
+  Map serialize() => {
+        'version': _version,
+        'nodes': allNodes.map((node) => node.serialize()).toList(),
+      };
+
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) => _nodesById.containsKey(id);
 
