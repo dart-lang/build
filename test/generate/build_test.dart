@@ -8,6 +8,7 @@ import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
+import 'package:build/src/asset_graph/graph.dart';
 
 import '../common/common.dart';
 
@@ -166,19 +167,20 @@ main() {
           new Phase([new CopyBuilder()], [new InputSet('a')]),
         ]
       ];
+      var emptyGraph = new AssetGraph();
       await testPhases(
           phases,
           {
             'a|lib/a.txt': 'a',
             'a|lib/a.txt.copy': 'a',
-            'a|.build/build_outputs.json': '[]',
+            'a|.build/asset_graph.json': JSON.encode(emptyGraph.serialize()),
           },
           status: BuildStatus.Failure,
           exceptionMatcher: invalidOutputException);
     });
   });
 
-  test('tracks previous outputs in a build_outputs.json file', () async {
+  test('tracks dependency graph in a asset_graph.json file', () async {
     var phases = [
       [
         new Phase([new CopyBuilder()], [new InputSet('a')]),
@@ -189,15 +191,20 @@ main() {
         outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         writer: writer);
 
-    var outputId = makeAssetId('a|.build/build_outputs.json');
-    expect(writer.assets, contains(outputId));
-    var outputs = JSON.decode(writer.assets[outputId]);
-    expect(
-        outputs,
-        unorderedEquals([
-          ['a', 'web/a.txt.copy'],
-          ['a', 'lib/b.txt.copy'],
-        ]));
+    var graphId = makeAssetId('a|.build/asset_graph.json');
+    expect(writer.assets, contains(graphId));
+    var cachedGraph =
+        new AssetGraph.deserialize(JSON.decode(writer.assets[graphId]));
+
+    var expectedGraph = new AssetGraph();
+    var aCopyNode = makeAssetNode('a|web/a.txt.copy');
+    expectedGraph.add(aCopyNode);
+    expectedGraph.add(makeAssetNode('a|web/a.txt', [aCopyNode.id]));
+    var bCopyNode = makeAssetNode('a|lib/b.txt.copy');
+    expectedGraph.add(bCopyNode);
+    expectedGraph.add(makeAssetNode('a|lib/b.txt', [bCopyNode.id]));
+
+    expect(cachedGraph, equalsAssetGraph(expectedGraph));
   });
 
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
@@ -216,7 +223,7 @@ main() {
     await testPhases(phases, inputs, outputs: outputs, writer: writer);
   });
 
-  test('can recover from a deleted build_outputs.json cache', () async {
+  test('can recover from a deleted asset_graph.json cache', () async {
     var phases = [
       [
         new Phase([new CopyBuilder()], [new InputSet('a')]),
@@ -228,8 +235,8 @@ main() {
     // First run, nothing special.
     await testPhases(phases, inputs, outputs: outputs, writer: writer);
 
-    // Delete the `build_outputs.json` file!
-    var outputId = makeAssetId('a|.build/build_outputs.json');
+    // Delete the `asset_graph.json` file!
+    var outputId = makeAssetId('a|.build/asset_graph.json');
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
@@ -261,7 +268,10 @@ testPhases(List<List<Phase>> phases, Map<String, String> inputs,
   }
 
   var result = await build(phases,
-      reader: reader, writer: writer, packageGraph: packageGraph, logLevel: Level.OFF);
+      reader: reader,
+      writer: writer,
+      packageGraph: packageGraph,
+      logLevel: Level.OFF);
   expect(result.status, status,
       reason: 'Exception:\n${result.exception}\n'
           'Stack Trace:\n${result.stackTrace}');

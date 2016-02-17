@@ -10,7 +10,6 @@ import '../asset/cache.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../asset_graph/graph.dart';
 import '../package_graph/package_graph.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
@@ -52,8 +51,7 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
   writer ??=
       new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
 
-  var buildImpl = new BuildImpl(
-      new AssetGraph(), reader, writer, packageGraph, phaseGroups);
+  var buildImpl = new BuildImpl(reader, writer, packageGraph, phaseGroups);
 
   /// Run the build!
   var futureResult = buildImpl.runBuild();
@@ -105,7 +103,7 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
       new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
   directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
   var watchImpl = new WatchImpl(directoryWatcherFactory, debounceDelay, cache,
-      new AssetGraph(), reader, writer, packageGraph, phaseGroups);
+      reader, writer, packageGraph, phaseGroups);
 
   var resultStream = watchImpl.runWatch();
 
@@ -120,8 +118,8 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
 
 /// Given [terminateEventStream], call [onTerminate] the first time an event is
 /// seen. If a second event is recieved, simply exit.
-StreamSubscription _setupTerminateLogic(Stream terminateEventStream,
-    Future onTerminate()) {
+StreamSubscription _setupTerminateLogic(
+    Stream terminateEventStream, Future onTerminate()) {
   terminateEventStream ??= ProcessSignal.SIGINT.watch();
   int numEventsSeen = 0;
   var terminateListener;

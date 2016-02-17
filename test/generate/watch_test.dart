@@ -2,12 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import 'package:build/build.dart';
+import 'package:build/src/asset_graph/graph.dart';
 
 import '../common/common.dart';
 
@@ -99,7 +101,7 @@ main() {
         expect(writer.assets[makeAssetId('a|web/b.txt.copy')], 'b');
       });
 
-      test('rebuilds properly update build_outputs.json', () async {
+      test('rebuilds properly update asset_graph.json', () async {
         var phases = [
           [
             new Phase([new CopyBuilder()], [new InputSet('a')]),
@@ -124,8 +126,18 @@ main() {
         result = await nextResult(results);
         checkOutputs({'a|web/c.txt.copy': 'c'}, result, writer.assets);
 
-        expect(writer.assets[makeAssetId('a|.build/build_outputs.json')],
-            '[["a","web/b.txt.copy"],["a","web/c.txt.copy"]]');
+        var cachedGraph = new AssetGraph.deserialize(JSON
+            .decode(writer.assets[makeAssetId('a|.build/asset_graph.json')]));
+
+        var expectedGraph = new AssetGraph();
+        var bCopyNode = makeAssetNode('a|web/b.txt.copy');
+        expectedGraph.add(bCopyNode);
+        expectedGraph.add(makeAssetNode('a|web/b.txt', [bCopyNode.id]));
+        var cCopyNode = makeAssetNode('a|web/c.txt.copy');
+        expectedGraph.add(cCopyNode);
+        expectedGraph.add(makeAssetNode('a|web/c.txt', [cCopyNode.id]));
+
+        expect(cachedGraph, equalsAssetGraph(expectedGraph));
       });
     });
 

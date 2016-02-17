@@ -13,6 +13,7 @@ import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../builder/builder.dart';
@@ -25,7 +26,9 @@ import 'phase.dart';
 
 /// Class which manages running builds.
 class BuildImpl {
-  final AssetGraph _assetGraph;
+  AssetGraph _assetGraph;
+  AssetGraph get assetGraph => _assetGraph;
+
   final AssetReader _reader;
   final AssetWriter _writer;
   final PackageGraph _packageGraph;
@@ -34,8 +37,7 @@ class BuildImpl {
   bool _buildRunning = false;
   final _logger = new Logger('Build');
 
-  BuildImpl(this._assetGraph, this._reader, this._writer, this._packageGraph,
-      this._phaseGroups);
+  BuildImpl(this._reader, this._writer, this._packageGraph, this._phaseGroups);
 
   /// Runs a build
   ///
@@ -49,6 +51,12 @@ class BuildImpl {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
 
+      /// Initialize the [assetGraph] if its not yet set up.
+      if (_assetGraph == null) {
+        _logger.info('Reading cached dependency graph');
+        _assetGraph = await _readAssetGraph();
+      }
+
       /// Wait while all inputs are collected.
       _logger.info('Initializing inputs');
       await _initializeInputsByPackage();
@@ -61,14 +69,10 @@ class BuildImpl {
       _logger.info('Running build phases');
       var result = await _runPhases();
 
-      /// Write out the new build_outputs file.
-      var allOuputs = _assetGraph.allNodes
-          .where((node) => node is GeneratedAssetNode && node.wasOutput);
-      var buildOutputsAsset = new Asset(
-          _buildOutputsId,
-          JSON.encode(
-              allOuputs.map((output) => output.id.serialize()).toList()));
-      await _writer.writeAsString(buildOutputsAsset);
+      /// Write out the dependency graph file.
+      var assetGraphAsset =
+          new Asset(_assetGraphId, JSON.encode(_assetGraph.serialize()));
+      await _writer.writeAsString(assetGraphAsset);
 
       return result;
     } catch (e, s) {
@@ -79,27 +83,45 @@ class BuildImpl {
     }
   }
 
-  /// Asset containing previous build outputs.
-  AssetId get _buildOutputsId =>
-      new AssetId(_packageGraph.root.name, '.build/build_outputs.json');
+  /// Asset containing previous asset dependency graph.
+  AssetId get _assetGraphId =>
+      new AssetId(_packageGraph.root.name, '.build/asset_graph.json');
+
+  /// Reads in the [assetGraph] from disk.
+  Future<AssetGraph> _readAssetGraph() async {
+    if (!await _reader.hasInput(_assetGraphId)) return new AssetGraph();
+    try {
+      _logger.info('Reading cached asset graph.');
+      var graph = new AssetGraph.deserialize(
+          JSON.decode(await _reader.readAsString(_assetGraphId)));
+      /// TODO(jakemac): Only invalidate nodes which need invalidating, which
+      /// will give us incremental builds on startup.
+      graph.allNodes.where((node) => node is GeneratedAssetNode)
+          .forEach((node) => node.needsUpdate = true);
+      return graph;
+    } on AssetGraphVersionException catch (_) {
+      /// Start fresh if the cached asset_graph version doesn't match up with
+      /// the current version. We don't currently support old graph versions.
+      _logger.info('Throwing away cached asset graph due to version mismatch.');
+      return new AssetGraph();
+    }
+  }
 
   /// Deletes all previous output files.
   Future _deletePreviousOutputs() async {
-    if (await _reader.hasInput(_buildOutputsId)) {
-      /// Cache file exists, delete all outputs which don't appear in the
-      /// [_assetGraph], or are marked as needing an update.
-      ///
-      /// Removes all files from [_inputsByPackage] regardless of state.
-      var previousOutputs =
-          JSON.decode(await _reader.readAsString(_buildOutputsId));
-      await _writer.delete(_buildOutputsId);
-      _inputsByPackage[_buildOutputsId.package]?.remove(_buildOutputsId);
-      await Future.wait(previousOutputs.map((output) async {
-        var outputId = new AssetId.deserialize(output);
-        _inputsByPackage[outputId.package]?.remove(outputId);
-        var node = _assetGraph.get(outputId);
-        if (node == null || (node as GeneratedAssetNode).needsUpdate) {
-          await _writer.delete(outputId);
+    /// TODO(jakemac): need a cleaner way of telling if the current graph was
+    /// generated from cache or if its just a brand new graph.
+    if (await _reader.hasInput(_assetGraphId)) {
+      await _writer.delete(_assetGraphId);
+      _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
+      /// Remove all output nodes from [_inputsByPackage], and delete all assets
+      /// that need updates.
+      await Future.wait(_assetGraph.allNodes
+          .where((node) => node is GeneratedAssetNode)
+          .map((node) async {
+        _inputsByPackage[node.id.package]?.remove(node.id);
+        if (node.needsUpdate) {
+          await _writer.delete(node.id);
         }
       }));
       return;
@@ -280,8 +302,7 @@ class BuildImpl {
       for (var output in expectedOutputs) {
         inputNode.outputs.add(output);
         _assetGraph.addIfAbsent(
-            output,
-            () => new GeneratedAssetNode(input, true, false, output));
+            output, () => new GeneratedAssetNode(input, true, false, output));
       }
 
       /// Skip the build step if none of the outputs need updating.

@@ -28,8 +28,8 @@ class WatchImpl {
   /// The [AssetCache] being used for builds.
   final AssetCache _assetCache;
 
-  /// The [AssetGraph] being managed by [_buildImpl]
-  final AssetGraph _assetGraph;
+  /// The [AssetGraph] being shared with [_buildImpl]
+  AssetGraph get _assetGraph => _buildImpl.assetGraph;
 
   /// The [BuildImpl] being used to run builds.
   final BuildImpl _buildImpl;
@@ -40,14 +40,17 @@ class WatchImpl {
   /// Injectable factory for creating directory watchers.
   final DirectoryWatcherFactory _directoryWatcherFactory;
 
+  /// A logger to use!
+  final _logger = new Logger('Watch');
+
   /// The [PackageGraph] for the current program.
   final PackageGraph _packageGraph;
 
+  /// Shared [AssetWriter] with [_buildImpl]
+  final AssetWriter _writer;
+
   /// A future that completes when the current build is done.
   Future _currentBuild;
-
-  /// A logger to use!
-  final _logger = new Logger('Watch');
 
   /// Whether or not another build is scheduled.
   bool _nextBuildScheduled;
@@ -65,15 +68,13 @@ class WatchImpl {
       this._directoryWatcherFactory,
       this._debounceDelay,
       this._assetCache,
-      AssetGraph assetGraph,
       AssetReader reader,
       AssetWriter writer,
       PackageGraph packageGraph,
       List<List<Phase>> phaseGroups)
-      : _assetGraph = assetGraph,
-        _packageGraph = packageGraph,
-        _buildImpl = new BuildImpl(
-            assetGraph, reader, writer, packageGraph, phaseGroups);
+      : _packageGraph = packageGraph,
+        _writer = writer,
+        _buildImpl = new BuildImpl(reader, writer, packageGraph, phaseGroups);
 
   /// Completes after the current build is done, and stops further builds from
   /// happening.
@@ -126,51 +127,64 @@ class WatchImpl {
       }
       assert(_nextBuildScheduled == false);
 
-      /// Remove any updates that were generated outputs or otherwise not
-      /// interesting.
-      var updatesToRemove = updatedInputs.keys.where(_shouldSkipInput).toList();
-      updatesToRemove.forEach(updatedInputs.remove);
-      if (updatedInputs.isEmpty && !force) {
+      /// Copy [updatedInputs] so that it doesn't get modified after this point.
+      /// Any further updates will be scheduled for the next build.
+      ///
+      /// Only copy the "interesting" outputs.
+      var updatedInputsCopy = <AssetId, ChangeType>{};
+      updatedInputs.forEach((input, changeType) {
+        if (_shouldSkipInput(input)) return;
+        updatedInputsCopy[input] = changeType;
+      });
+      updatedInputs.clear();
+      if (updatedInputsCopy.isEmpty && !force) {
         return;
       }
 
       _logger.info('Preparing for next build');
-      _logger.info('Clearing cache for invalidated assets');
-      void clearNodeAndDeps(AssetId id, ChangeType rootChangeType) {
+      Future clearNodeAndDeps(
+          AssetId id, AssetId primaryInput, ChangeType rootChangeType) async {
         var node = _assetGraph.get(id);
         if (node == null) return;
-        if (node is GeneratedAssetNode) {
-          node.needsUpdate = true;
-        }
         _assetCache.remove(id);
-        for (var output in node.outputs) {
-          clearNodeAndDeps(output, rootChangeType);
-        }
+
+        /// Update all ouputs of this asset as well.
+        await Future.wait(node.outputs.map((output) =>
+            clearNodeAndDeps(output, primaryInput, rootChangeType)));
 
         /// For deletes, prune the graph.
-        if (rootChangeType == ChangeType.REMOVE) {
+        if (id == primaryInput && rootChangeType == ChangeType.REMOVE) {
           _assetGraph.remove(id);
         }
+        if (node is GeneratedAssetNode) {
+          node.needsUpdate = true;
+          if (rootChangeType == ChangeType.REMOVE &&
+              node.primaryInput == primaryInput) {
+            _assetGraph.remove(id);
+            await _writer.delete(id);
+          }
+        }
       }
-      for (var input in updatedInputs.keys) {
-        clearNodeAndDeps(input, updatedInputs[input]);
-      }
-      updatedInputs.clear();
 
-      _logger.info('Starting build');
-      _currentBuild = _buildImpl.runBuild();
-      _currentBuild.then((result) {
-        if (result.status == BuildStatus.Success) {
-          _logger.info('Build completed successfully');
-        } else {
-          _logger.warning('Build failed');
-        }
-        _resultStreamController.add(result);
-        _currentBuild = null;
-        if (_nextBuildScheduled) {
-          _nextBuildScheduled = false;
-          doBuild();
-        }
+      Future
+          .wait(updatedInputsCopy.keys.map((input) =>
+              clearNodeAndDeps(input, input, updatedInputsCopy[input])))
+          .then((_) {
+        _logger.info('Starting build');
+        _currentBuild = _buildImpl.runBuild();
+        _currentBuild.then((result) {
+          if (result.status == BuildStatus.Success) {
+            _logger.info('Build completed successfully');
+          } else {
+            _logger.warning('Build failed');
+          }
+          _resultStreamController.add(result);
+          _currentBuild = null;
+          if (_nextBuildScheduled) {
+            _nextBuildScheduled = false;
+            doBuild();
+          }
+        });
       });
     }
 
@@ -189,6 +203,10 @@ class WatchImpl {
       _allListeners.add(watcher.events.listen((WatchEvent e) {
         _logger.fine('Got WatchEvent for path ${e.path}');
         var id = new AssetId(package.name, path.normalize(e.path));
+        var node = _assetGraph.get(id);
+        // Short circuit for deletes of nodes that aren't in the graph.
+        if (e.type == ChangeType.REMOVE && node == null) return;
+
         updatedInputs[id] = e.type;
         scheduleBuild();
       }));

@@ -35,5 +35,8 @@ void addAssets(Iterable<Asset> assets, InMemoryAssetWriter writer) {
   }
 }
 
-AssetNode makeAssetNode([String assetIdString]) =>
-    new AssetNode(makeAssetId(assetIdString));
+AssetNode makeAssetNode([String assetIdString, List<AssetId> outputs]) {
+  var node = new AssetNode(makeAssetId(assetIdString));
+  if (outputs != null) node.outputs.addAll(outputs);
+  return node;
+}
