@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 
 import 'assets.dart';
 import 'matchers.dart';
+import 'in_memory_writer.dart';
 
 export 'assets.dart';
 export 'copy_builder.dart';
@@ -24,7 +25,7 @@ Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 
 void checkOutputs(Map<String, String> outputs, BuildResult result,
-    [Map<AssetId, String> actualAssets]) {
+    [Map<AssetId, DatedString> actualAssets]) {
   if (outputs != null) {
     var remainingOutputIds =
         new List.from(result.outputs.map((asset) => asset.id));
@@ -35,7 +36,7 @@ void checkOutputs(Map<String, String> outputs, BuildResult result,
       /// Check that the writer wrote the assets
       if (actualAssets != null) {
         expect(actualAssets, contains(asset.id));
-        expect(actualAssets[asset.id], asset.stringContents);
+        expect(actualAssets[asset.id].value, asset.stringContents);
       }
 
       /// Check that the assets exist in [result.outputs].

@@ -68,7 +68,7 @@ main() {
         result = await nextResult(results);
         checkOutputs({'a|web/b.txt.copy': 'b',}, result, writer.assets);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy')], 'a');
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].value, 'a');
       });
 
       test('rebuilds on deleted files', () async {
@@ -98,7 +98,7 @@ main() {
         // The old output file should no longer exist either.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy')], 'b');
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].value, 'b');
       });
 
       test('rebuilds properly update asset_graph.json', () async {
@@ -126,8 +126,8 @@ main() {
         result = await nextResult(results);
         checkOutputs({'a|web/c.txt.copy': 'c'}, result, writer.assets);
 
-        var cachedGraph = new AssetGraph.deserialize(JSON
-            .decode(writer.assets[makeAssetId('a|.build/asset_graph.json')]));
+        var cachedGraph = new AssetGraph.deserialize(JSON.decode(
+            writer.assets[makeAssetId('a|.build/asset_graph.json')].value));
 
         var expectedGraph = new AssetGraph();
         var bCopyNode = makeAssetNode('a|web/b.txt.copy');
@@ -201,8 +201,8 @@ main() {
         checkOutputs({'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
             result, writer.assets);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy')], 'a');
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')], 'a');
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].value, 'a');
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')].value, 'a');
       });
 
       test('deletes propagate through all phases', () async {
@@ -243,8 +243,8 @@ main() {
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')], isNull);
         // Other outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy')], 'b');
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')], 'b');
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].value, 'b');
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')].value, 'b');
       });
     });
 

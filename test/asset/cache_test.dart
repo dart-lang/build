@@ -65,7 +65,7 @@ main() {
   group('CachedAssetReader', () {
     CachedAssetReader reader;
     InMemoryAssetReader childReader;
-    Map<AssetId, String> childReaderAssets;
+    Map<AssetId, DatedString> childReaderAssets;
 
     setUp(() {
       cache = new AssetCache();
@@ -78,18 +78,18 @@ main() {
       expect(a.stringContents, isNot(otherA.stringContents));
       expect(a.id, otherA.id);
 
-      childReaderAssets[otherA.id] = otherA.stringContents;
+      childReaderAssets[otherA.id] = new DatedString(otherA.stringContents);
       cache.put(a);
       expect(await reader.readAsString(a.id), a.stringContents);
     });
 
     test('falls back on the childReader', () async {
-      childReaderAssets[a.id] = a.stringContents;
+      childReaderAssets[a.id] = new DatedString(a.stringContents);
       expect(await reader.readAsString(a.id), a.stringContents);
     });
 
     test('reads add values to the cache', () async {
-      childReaderAssets[a.id] = a.stringContents;
+      childReaderAssets[a.id] = new DatedString(a.stringContents);
       await reader.readAsString(a.id);
       expect(cache.get(a.id), equalsAsset(a));
       childReaderAssets.remove(a.id);
@@ -100,7 +100,7 @@ main() {
       expect(await reader.hasInput(a.id), isFalse);
       cache.put(a);
       expect(await reader.hasInput(a.id), isTrue);
-      childReaderAssets[a.id] = a.stringContents;
+      childReaderAssets[a.id] = new DatedString(a.stringContents);
       expect(await reader.hasInput(a.id), isTrue);
       cache.remove(a.id);
       expect(await reader.hasInput(a.id), isTrue);
@@ -109,7 +109,7 @@ main() {
     });
 
     test('Multiple readAsString calls wait on the same future', () async {
-      childReaderAssets[a.id] = a.stringContents;
+      childReaderAssets[a.id] = new DatedString(a.stringContents);
       var futures = [];
       futures.add(reader.readAsString(a.id));
       futures.add(reader.readAsString(a.id));
@@ -121,7 +121,7 @@ main() {
     });
 
     test('Multiple hasInput calls return the same future', () async {
-      childReaderAssets[a.id] = a.stringContents;
+      childReaderAssets[a.id] = new DatedString(a.stringContents);
       var futures = [];
       futures.add(reader.hasInput(a.id));
       futures.add(reader.hasInput(a.id));
@@ -136,7 +136,7 @@ main() {
   group('CachedAssetWriter', () {
     CachedAssetWriter writer;
     InMemoryAssetWriter childWriter;
-    Map<AssetId, String> childWriterAssets;
+    Map<AssetId, DatedString> childWriterAssets;
 
     setUp(() {
       cache = new AssetCache();
@@ -154,11 +154,11 @@ main() {
     test('writes to the cache and the child writer', () async {
       await writer.writeAsString(a);
       expect(cache.get(a.id), a);
-      expect(childWriterAssets[a.id], a.stringContents);
+      expect(childWriterAssets[a.id].value, a.stringContents);
 
       await writer.writeAsString(b);
       expect(cache.get(b.id), b);
-      expect(childWriterAssets[b.id], b.stringContents);
+      expect(childWriterAssets[b.id].value, b.stringContents);
     });
 
     test('multiple sync writes for the same asset throws', () async {

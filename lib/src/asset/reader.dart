@@ -7,10 +7,17 @@ import 'dart:convert';
 import '../generate/input_set.dart';
 import 'id.dart';
 
+/// Abstract interface for reading assets.
 abstract class AssetReader {
+  /// Asynchronously reads [id], and returns it as a [String].
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
+  /// Asynchronously checks if [id] exists.
   Future<bool> hasInput(AssetId id);
 
+  /// Gets a [Stream<AssetId>] of all assets available matching [inputSets].
   Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets);
+
+  /// Asynchonously gets the last modified [DateTime] of [id].
+  Future<DateTime> lastModified(AssetId id);
 }

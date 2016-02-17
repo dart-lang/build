@@ -6,8 +6,10 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 
+import 'in_memory_writer.dart';
+
 class InMemoryAssetReader implements AssetReader {
-  final Map<AssetId, String> assets;
+  final Map<AssetId, DatedString> assets;
 
   InMemoryAssetReader(this.assets);
 
@@ -19,7 +21,7 @@ class InMemoryAssetReader implements AssetReader {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!await hasInput(id)) throw new AssetNotFoundException(id);
-    return assets[id];
+    return assets[id].value;
   }
 
   @override
@@ -31,5 +33,11 @@ class InMemoryAssetReader implements AssetReader {
       });
       if (matches) yield id;
     }
+  }
+
+  @override
+  Future<DateTime> lastModified(AssetId id) async {
+    if (!await hasInput(id)) throw new AssetNotFoundException(id);
+    return assets[id].date;
   }
 }

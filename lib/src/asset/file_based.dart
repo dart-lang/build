@@ -55,6 +55,14 @@ class FileBasedAssetReader implements AssetReader {
       }
     }
   }
+
+  Future<DateTime> lastModified(AssetId id) async {
+    var file = await _fileFor(id, packageGraph);
+    if (!await file.exists()) {
+      throw new AssetNotFoundException(id);
+    }
+    return file.lastModified();
+  }
 }
 
 /// Creates an [AssetId] for [file], which is a part of [packageNode].

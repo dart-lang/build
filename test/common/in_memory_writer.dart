@@ -7,15 +7,23 @@ import 'dart:convert';
 import 'package:build/build.dart';
 
 class InMemoryAssetWriter implements AssetWriter {
-  final Map<AssetId, String> assets = {};
+  final Map<AssetId, DatedString> assets = {};
 
   InMemoryAssetWriter();
 
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) async {
-    assets[asset.id] = asset.stringContents;
+  Future writeAsString(Asset asset,
+      {Encoding encoding: UTF8, DateTime lastModified}) async {
+    assets[asset.id] = new DatedString(asset.stringContents, lastModified);
   }
 
   Future delete(AssetId id) async {
     assets.remove(id);
   }
+}
+
+class DatedString {
+  final String value;
+  final DateTime date;
+
+  DatedString(this.value, [DateTime date]) : date = date ?? new DateTime.now();
 }

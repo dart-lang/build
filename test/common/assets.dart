@@ -31,7 +31,7 @@ Map<AssetId, Asset> makeAssets(Map<String, String> assetsMap) {
 
 void addAssets(Iterable<Asset> assets, InMemoryAssetWriter writer) {
   for (var asset in assets) {
-    writer.assets[asset.id] = asset.stringContents;
+    writer.assets[asset.id] = new DatedString(asset.stringContents);
   }
 }
 

@@ -14,5 +14,9 @@ class StubAssetReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
       new Future.value(null);
 
+  @override
   Stream<AssetId> listAssetIds(_) async* {}
+
+  @override
+  Future<DateTime> lastModified(AssetId id) => new Future.value(null);
 }

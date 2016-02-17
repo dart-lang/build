@@ -194,7 +194,7 @@ main() {
     var graphId = makeAssetId('a|.build/asset_graph.json');
     expect(writer.assets, contains(graphId));
     var cachedGraph =
-        new AssetGraph.deserialize(JSON.decode(writer.assets[graphId]));
+        new AssetGraph.deserialize(JSON.decode(writer.assets[graphId].value));
 
     var expectedGraph = new AssetGraph();
     var aCopyNode = makeAssetNode('a|web/a.txt.copy');

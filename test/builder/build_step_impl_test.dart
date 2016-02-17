@@ -151,7 +151,7 @@ main() {
         // One output.
         expect(buildStep.outputs[0].id, outputId);
         expect(buildStep.outputs[0].stringContents, 'AB');
-        expect(writer.assets[outputId], 'AB');
+        expect(writer.assets[outputId].value, 'AB');
       });
 
       group('resolve', () {

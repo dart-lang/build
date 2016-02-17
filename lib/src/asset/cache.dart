@@ -79,6 +79,9 @@ class CachedAssetReader extends AssetReader {
   @override
   Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets) =>
       _reader.listAssetIds(inputSets);
+
+  @override
+  Future<DateTime> lastModified(AssetId id) => _reader.lastModified(id);
 }
 
 /// An [AssetWriter] which takes both an [AssetCache] and an [AssetWriter]. It
