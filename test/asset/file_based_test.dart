@@ -13,7 +13,6 @@ import '../common/common.dart';
 final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
 
 main() {
-
   group('FileBasedAssetReader', () {
     final reader = new FileBasedAssetReader(packageGraph, ignoredDirs: ['pkg']);
 
@@ -62,11 +61,13 @@ main() {
         new InputSet('basic_pkg', filePatterns: ['{lib,web}/**']),
         new InputSet('a', filePatterns: ['lib/**']),
       ];
-      expect(await reader.listAssetIds(inputSets).toList(), unorderedEquals([
-        makeAssetId('basic_pkg|lib/hello.txt'),
-        makeAssetId('basic_pkg|web/hello.txt'),
-        makeAssetId('a|lib/a.txt'),
-      ]));
+      expect(
+          await reader.listAssetIds(inputSets).toList(),
+          unorderedEquals([
+            makeAssetId('basic_pkg|lib/hello.txt'),
+            makeAssetId('basic_pkg|web/hello.txt'),
+            makeAssetId('a|lib/a.txt'),
+          ]));
     });
 
     test('can list files based on InputSets with globs', () async {
@@ -74,10 +75,22 @@ main() {
         new InputSet('basic_pkg', filePatterns: ['web/*.txt']),
         new InputSet('a', filePatterns: ['lib/*']),
       ];
-      expect(await reader.listAssetIds(inputSets).toList(), unorderedEquals([
-        makeAssetId('basic_pkg|web/hello.txt'),
-        makeAssetId('a|lib/a.txt'),
-      ]));
+      expect(
+          await reader.listAssetIds(inputSets).toList(),
+          unorderedEquals([
+            makeAssetId('basic_pkg|web/hello.txt'),
+            makeAssetId('a|lib/a.txt'),
+          ]));
+    });
+
+    test('can get lastModified time for files', () async {
+      expect(await reader.lastModified(makeAssetId('basic_pkg|hello.txt')),
+          new isInstanceOf<DateTime>());
+    });
+
+    test('lastModified throws AssetNotFoundException appropriately', () async {
+      expect(reader.lastModified(makeAssetId('basic_pkg|foo.txt')),
+          throwsA(assetNotFoundException));
     });
   });
 

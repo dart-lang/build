@@ -131,6 +131,14 @@ main() {
       // Subsequent calls should not return the same future.
       expect(reader.hasInput(a.id), isNot(futures[0]));
     });
+
+    test('lastModified uses the reader', () async {
+      expect(reader.lastModified(a.id), throwsA(assetNotFoundException));
+
+      var time = new DateTime.now();
+      childReaderAssets[b.id] = new DatedString(b.stringContents, time);
+      expect(await reader.lastModified(b.id), time);
+    });
   });
 
   group('CachedAssetWriter', () {
