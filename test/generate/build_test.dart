@@ -9,19 +9,22 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 import 'package:build/src/asset_graph/graph.dart';
+import 'package:build/src/asset_graph/node.dart';
 
 import '../common/common.dart';
 
 main() {
+  /// Basic phases/phase groups which get used in many tests
+  final copyAPhase = new Phase([new CopyBuilder()], [new InputSet('a')]);
+  final copyAPhaseGroup = [
+    [copyAPhase]
+  ];
+
   group('build', () {
     group('with root package inputs', () {
       test('one phase, one builder, one-to-one outputs', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ]
-        ];
-        await testPhases(phases, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+        await testPhases(
+            copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
@@ -67,9 +70,7 @@ main() {
 
       test('multiple phases, multiple builders', () async {
         var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ],
+          [copyAPhase],
           [
             new Phase([
               new CopyBuilder(extension: 'clone')
@@ -125,7 +126,7 @@ main() {
     test('multiple phases, inputs from multiple packages', () async {
       var phases = [
         [
-          new Phase([new CopyBuilder()], [new InputSet('a')]),
+          copyAPhase,
           new Phase([
             new CopyBuilder(extension: 'clone', outputPackage: 'a')
           ], [
@@ -162,14 +163,9 @@ main() {
 
   group('errors', () {
     test('when overwriting files', () async {
-      var phases = [
-        [
-          new Phase([new CopyBuilder()], [new InputSet('a')]),
-        ]
-      ];
       var emptyGraph = new AssetGraph();
       await testPhases(
-          phases,
+          copyAPhaseGroup,
           {
             'a|lib/a.txt': 'a',
             'a|lib/a.txt.copy': 'a',
@@ -181,13 +177,8 @@ main() {
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
-    var phases = [
-      [
-        new Phase([new CopyBuilder()], [new InputSet('a')]),
-      ]
-    ];
     final writer = new InMemoryAssetWriter();
-    await testPhases(phases, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+    await testPhases(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
         outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         writer: writer);
 
@@ -209,43 +200,152 @@ main() {
 
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
       () async {
-    var phases = [
-      [
-        new Phase([new CopyBuilder()], [new InputSet('a')]),
-      ]
-    ];
     final writer = new InMemoryAssetWriter();
     var inputs = {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
     var outputs = {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'};
     // First run, nothing special.
-    await testPhases(phases, inputs, outputs: outputs, writer: writer);
+    await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
     // Second run, should have no extra outputs.
-    await testPhases(phases, inputs, outputs: outputs, writer: writer);
+    await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
   });
 
   test('can recover from a deleted asset_graph.json cache', () async {
-    var phases = [
-      [
-        new Phase([new CopyBuilder()], [new InputSet('a')]),
-      ]
-    ];
     final writer = new InMemoryAssetWriter();
     var inputs = {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
     var outputs = {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'};
     // First run, nothing special.
-    await testPhases(phases, inputs, outputs: outputs, writer: writer);
+    await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
 
     // Delete the `asset_graph.json` file!
     var outputId = makeAssetId('a|.build/asset_graph.json');
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
-    var done = testPhases(phases, inputs, outputs: outputs, writer: writer);
+    var done =
+        testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
     // Should block on user input.
     await new Future.delayed(new Duration(seconds: 1));
     // Now it should complete!
     await done;
   }, skip: 'Need to manually add a `y` to stdin for this test to run.');
+
+  group('incremental builds with cached graph', () {
+    test('one new asset, one modified asset, one unchanged asset', () async {
+      var graph = new AssetGraph();
+      var bId = makeAssetId('a|lib/b.txt');
+      var bCopyNode = new GeneratedAssetNode(
+          bId, false, true, makeAssetId('a|lib/b.txt.copy'));
+      graph.add(bCopyNode);
+      var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id]);
+      graph.add(bNode);
+
+      var writer = new InMemoryAssetWriter();
+      writer.writeAsString(makeAsset('a|lib/b.txt', 'b'),
+          lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
+      await testPhases(copyAPhaseGroup, {
+        'a|web/a.txt': 'a',
+        'a|lib/b.txt.copy': 'b',
+        'a|lib/c.txt': 'c',
+        'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+      }, outputs: {
+        'a|web/a.txt.copy': 'a',
+        'a|lib/c.txt.copy': 'c',
+      });
+    });
+
+    test('invalidates generated assets based on graph age', () async {
+      var phases = [
+        [copyAPhase],
+        [
+          new Phase([
+            new CopyBuilder(extension: 'clone')
+          ], [
+            new InputSet('a', filePatterns: ['**/*.txt.copy'])
+          ])
+        ],
+      ];
+
+      var graph = new AssetGraph()
+        ..validAsOf = new DateTime.now().subtract(new Duration(days: 1));
+
+      var aCloneNode = new GeneratedAssetNode(makeAssetId('a|lib/a.txt.copy'),
+          false, true, makeAssetId('a|lib/a.txt.copy.clone'));
+      graph.add(aCloneNode);
+      var aCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/a.txt'), false,
+          true, makeAssetId('a|lib/a.txt.copy'))..outputs.add(aCloneNode.id);
+      graph.add(aCopyNode);
+      var aNode = makeAssetNode('a|lib/a.txt', [aCopyNode.id]);
+      graph.add(aNode);
+
+      var bCloneNode = new GeneratedAssetNode(makeAssetId('a|lib/b.txt.copy'),
+          false, true, makeAssetId('a|lib/b.txt.copy.clone'));
+      graph.add(bCloneNode);
+      var bCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/b.txt'), false,
+          true, makeAssetId('a|lib/b.txt.copy'))..outputs.add(bCloneNode.id);
+      graph.add(bCopyNode);
+      var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id]);
+      graph.add(bNode);
+
+      var writer = new InMemoryAssetWriter();
+      writer.writeAsString(makeAsset('a|lib/b.txt', 'b'),
+          lastModified: graph.validAsOf.subtract(new Duration(days: 1)));
+      await testPhases(
+          phases,
+          {
+            'a|lib/a.txt': 'b',
+            'a|lib/a.txt.copy': 'a',
+            'a|lib/a.txt.copy.clone': 'a',
+            'a|lib/b.txt.copy': 'b',
+            'a|lib/b.txt.copy.clone': 'b',
+            'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+          },
+          outputs: {'a|lib/a.txt.copy': 'b', 'a|lib/a.txt.copy.clone': 'b',},
+          writer: writer);
+    });
+
+    test('graph/file system get cleaned up for deleted inputs', () async {
+      var phases = [
+        [copyAPhase],
+        [
+          new Phase([
+            new CopyBuilder(extension: 'clone')
+          ], [
+            new InputSet('a', filePatterns: ['**/*.txt.copy'])
+          ])
+        ],
+      ];
+      var graph = new AssetGraph();
+      var aCloneNode = new GeneratedAssetNode(makeAssetId('a|lib/a.txt.copy'),
+          false, true, makeAssetId('a|lib/a.txt.copy.clone'));
+      graph.add(aCloneNode);
+      var aCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/a.txt'), false,
+          true, makeAssetId('a|lib/a.txt.copy'))..outputs.add(aCloneNode.id);
+      graph.add(aCopyNode);
+      var aNode = makeAssetNode('a|lib/a.txt', [aCopyNode.id]);
+      graph.add(aNode);
+
+      var writer = new InMemoryAssetWriter();
+      await testPhases(
+          phases,
+          {
+            'a|lib/a.txt.copy': 'a',
+            'a|lib/a.txt.copy.clone': 'a',
+            'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+          },
+          outputs: {},
+          writer: writer);
+
+      /// Should be deleted using the writer, and removed from the new graph.
+      var newGraph = new AssetGraph.deserialize(JSON.decode(
+          writer.assets[makeAssetId('a|.build/asset_graph.json')].value));
+      expect(newGraph.contains(aNode.id), isFalse);
+      expect(newGraph.contains(aCopyNode.id), isFalse);
+      expect(newGraph.contains(aCloneNode.id), isFalse);
+      expect(writer.assets.containsKey(aNode.id), isFalse);
+      expect(writer.assets.containsKey(aCopyNode.id), isFalse);
+      expect(writer.assets.containsKey(aCloneNode.id), isFalse);
+    });
+  });
 }
 
 testPhases(List<List<Phase>> phases, Map<String, String> inputs,

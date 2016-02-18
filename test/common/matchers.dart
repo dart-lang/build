@@ -35,17 +35,22 @@ class _AssetMatcher extends Matcher {
       description.addDescriptionOf(_expected);
 }
 
-equalsAssetGraph(AssetGraph expected) => new _AssetGraphMatcher(expected);
+equalsAssetGraph(AssetGraph expected, {bool checkValidAsOf}) =>
+    new _AssetGraphMatcher(expected, checkValidAsOf ?? false);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
+  final bool _checkValidAsOf;
 
-  const _AssetGraphMatcher(this._expected);
+  const _AssetGraphMatcher(this._expected, this._checkValidAsOf);
 
   @override
   bool matches(item, _) {
     if (item is! AssetGraph) return false;
     if (item.allNodes.length != _expected.allNodes.length) return false;
+    if (_checkValidAsOf && (item.validAsOf != _expected.validAsOf)) {
+      return false;
+    }
     for (var node in item.allNodes) {
       var expectedNode = _expected.get(node.id);
       if (expectedNode == null || expectedNode.id != node.id) return false;

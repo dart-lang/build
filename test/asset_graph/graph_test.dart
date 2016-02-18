@@ -15,7 +15,7 @@ main() {
     AssetGraph graph;
 
     setUp(() {
-      graph = new AssetGraph();
+      graph = new AssetGraph()..validAsOf = new DateTime.now();
     });
 
     void expectNodeDoesNotExist(AssetNode node) {

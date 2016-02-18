@@ -25,9 +25,6 @@ class WatchImpl {
   /// All file listeners currently set up.
   final _allListeners = <StreamSubscription>[];
 
-  /// The [AssetCache] being used for builds.
-  final AssetCache _assetCache;
-
   /// The [AssetGraph] being shared with [_buildImpl]
   AssetGraph get _assetGraph => _buildImpl.assetGraph;
 
@@ -67,7 +64,6 @@ class WatchImpl {
   WatchImpl(
       this._directoryWatcherFactory,
       this._debounceDelay,
-      this._assetCache,
       AssetReader reader,
       AssetWriter writer,
       PackageGraph packageGraph,
@@ -127,6 +123,10 @@ class WatchImpl {
       }
       assert(_nextBuildScheduled == false);
 
+      /// Any updates after this point should cause updates to the [AssetGraph]
+      /// for later builds.
+      var validAsOf = new DateTime.now();
+
       /// Copy [updatedInputs] so that it doesn't get modified after this point.
       /// Any further updates will be scheduled for the next build.
       ///
@@ -142,49 +142,21 @@ class WatchImpl {
       }
 
       _logger.info('Preparing for next build');
-      Future clearNodeAndDeps(
-          AssetId id, AssetId primaryInput, ChangeType rootChangeType) async {
-        var node = _assetGraph.get(id);
-        if (node == null) return;
-        _assetCache.remove(id);
-
-        /// Update all ouputs of this asset as well.
-        await Future.wait(node.outputs.map((output) =>
-            clearNodeAndDeps(output, primaryInput, rootChangeType)));
-
-        /// For deletes, prune the graph.
-        if (id == primaryInput && rootChangeType == ChangeType.REMOVE) {
-          _assetGraph.remove(id);
+      _logger.info('Starting build');
+      _currentBuild =
+          _buildImpl.runBuild(validAsOf: validAsOf, updates: updatedInputsCopy);
+      _currentBuild.then((result) {
+        if (result.status == BuildStatus.Success) {
+          _logger.info('Build completed successfully');
+        } else {
+          _logger.warning('Build failed');
         }
-        if (node is GeneratedAssetNode) {
-          node.needsUpdate = true;
-          if (rootChangeType == ChangeType.REMOVE &&
-              node.primaryInput == primaryInput) {
-            _assetGraph.remove(id);
-            await _writer.delete(id);
-          }
+        _resultStreamController.add(result);
+        _currentBuild = null;
+        if (_nextBuildScheduled) {
+          _nextBuildScheduled = false;
+          doBuild();
         }
-      }
-
-      Future
-          .wait(updatedInputsCopy.keys.map((input) =>
-              clearNodeAndDeps(input, input, updatedInputsCopy[input])))
-          .then((_) {
-        _logger.info('Starting build');
-        _currentBuild = _buildImpl.runBuild();
-        _currentBuild.then((result) {
-          if (result.status == BuildStatus.Success) {
-            _logger.info('Build completed successfully');
-          } else {
-            _logger.warning('Build failed');
-          }
-          _resultStreamController.add(result);
-          _currentBuild = null;
-          if (_nextBuildScheduled) {
-            _nextBuildScheduled = false;
-            doBuild();
-          }
-        });
       });
     }
 

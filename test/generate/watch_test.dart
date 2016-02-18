@@ -16,6 +16,12 @@ import '../common/common.dart';
 final _watchers = <DirectoryWatcher>[];
 
 main() {
+  /// Basic phases/phase groups which get used in many tests
+  final copyAPhase = new Phase([new CopyBuilder()], [new InputSet('a')]);
+  final copyAPhaseGroup = [
+    [copyAPhase]
+  ];
+
   group('watch', () {
     setUp(() {
       _terminateWatchController = new StreamController();
@@ -28,14 +34,10 @@ main() {
 
     group('simple', () {
       test('rebuilds on file updates', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ]
-        ];
         var writer = new InMemoryAssetWriter();
         var results = [];
-        startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
+        startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
+            .listen(results.add);
 
         var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
@@ -49,14 +51,10 @@ main() {
       });
 
       test('rebuilds on new files', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ]
-        ];
         var writer = new InMemoryAssetWriter();
         var results = [];
-        startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
+        startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
+            .listen(results.add);
 
         var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
@@ -72,14 +70,10 @@ main() {
       });
 
       test('rebuilds on deleted files', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ]
-        ];
         var writer = new InMemoryAssetWriter();
         var results = [];
-        startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b',}, writer)
+        startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b',},
+                writer)
             .listen(results.add);
 
         var result = await nextResult(results);
@@ -102,14 +96,10 @@ main() {
       });
 
       test('rebuilds properly update asset_graph.json', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ]
-        ];
         var writer = new InMemoryAssetWriter();
         var results = [];
-        startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
+        startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'},
+                writer)
             .listen(results.add);
 
         var result = await nextResult(results);
@@ -144,9 +134,7 @@ main() {
     group('multiple phases', () {
       test('edits propagate through all phases', () async {
         var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ],
+          [copyAPhase],
           [
             new Phase([
               new CopyBuilder()
@@ -174,9 +162,7 @@ main() {
 
       test('adds propagate through all phases', () async {
         var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ],
+          [copyAPhase],
           [
             new Phase([
               new CopyBuilder()
@@ -207,9 +193,7 @@ main() {
 
       test('deletes propagate through all phases', () async {
         var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('a')]),
-          ],
+          [copyAPhase],
           [
             new Phase([
               new CopyBuilder()

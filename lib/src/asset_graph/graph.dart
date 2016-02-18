@@ -10,13 +10,21 @@ class AssetGraph {
   /// All the [AssetNode]s in the system, indexed by [AssetId].
   final _nodesById = <AssetId, AssetNode>{};
 
+  /// This represents start time of the most recent build which created this
+  /// graph. Any assets which have been updated after this time should be
+  /// invalidated on subsequent builds.
+  ///
+  /// This is initialized to a very old value, and should be set to a real
+  /// value if you want incremental rebuilds.
+  DateTime validAsOf = new DateTime.fromMillisecondsSinceEpoch(0);
+
   AssetGraph();
 
   /// Part of the serialized graph, used to ensure versioning constraints.
   ///
   /// This should be incremented any time the serialize/deserialize methods
   /// change on this class or [AssetNode].
-  static get _version => 1;
+  static int get _version => 2;
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(Map serializedGraph) {
@@ -29,6 +37,8 @@ class AssetGraph {
     for (var serializedItem in serializedGraph['nodes']) {
       graph.add(new AssetNode.deserialize(serializedItem));
     }
+    graph.validAsOf =
+        new DateTime.fromMillisecondsSinceEpoch(serializedGraph['validAsOf']);
     return graph;
   }
 
@@ -36,6 +46,7 @@ class AssetGraph {
   Map serialize() => {
         'version': _version,
         'nodes': allNodes.map((node) => node.serialize()).toList(),
+        'validAsOf': validAsOf.millisecondsSinceEpoch,
       };
 
   /// Checks if [id] exists in the graph.
@@ -66,5 +77,5 @@ class AssetGraph {
   Iterable<AssetNode> get allNodes => _nodesById.values;
 
   @override
-  toString() => _nodesById.values.toList().toString();
+  toString() => 'validAsOf: $validAsOf\n${_nodesById.values.toList()}';
 }

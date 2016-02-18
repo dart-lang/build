@@ -7,10 +7,12 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:watcher/watcher.dart';
 
 import '../asset/asset.dart';
 import '../asset/exceptions.dart';
 import '../asset/id.dart';
+import '../asset/cache.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
@@ -46,7 +48,14 @@ class BuildImpl {
   /// [BuildStatus.Failure]. The exception and stack trace that caused the failure
   /// will be available as [BuildResult#exception] and [BuildResult#stackTrace]
   /// respectively.
-  Future<BuildResult> runBuild() async {
+  ///
+  /// The [validAsOf] date is assigned to [AssetGraph#validAsOf] and marks
+  /// a point in time after which any updates to files should invalidate the
+  /// graph for future builds.
+  Future<BuildResult> runBuild(
+      {DateTime validAsOf, Map<AssetId, ChangeType> updates}) async {
+    validAsOf ??= new DateTime.now();
+    updates ??= <AssetId, ChangeType>{};
     try {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
@@ -55,7 +64,17 @@ class BuildImpl {
       if (_assetGraph == null) {
         _logger.info('Reading cached dependency graph');
         _assetGraph = await _readAssetGraph();
+
+        /// Collect updates since the asset graph was last created. This only
+        /// handles updates and deletes, not adds. We list the file system for
+        /// all inputs later on (in [_initializeInputsByPackage]).
+        updates.addAll(await _getUpdates());
       }
+
+      /// Applies all [updates] to the [_assetGraph] as well as doing other
+      /// necessary cleanup.
+      await _updateWithChanges(updates);
+      _assetGraph.validAsOf = validAsOf;
 
       /// Wait while all inputs are collected.
       _logger.info('Initializing inputs');
@@ -91,14 +110,8 @@ class BuildImpl {
   Future<AssetGraph> _readAssetGraph() async {
     if (!await _reader.hasInput(_assetGraphId)) return new AssetGraph();
     try {
-      _logger.info('Reading cached asset graph.');
-      var graph = new AssetGraph.deserialize(
+      return new AssetGraph.deserialize(
           JSON.decode(await _reader.readAsString(_assetGraphId)));
-      /// TODO(jakemac): Only invalidate nodes which need invalidating, which
-      /// will give us incremental builds on startup.
-      graph.allNodes.where((node) => node is GeneratedAssetNode)
-          .forEach((node) => node.needsUpdate = true);
-      return graph;
     } on AssetGraphVersionException catch (_) {
       /// Start fresh if the cached asset_graph version doesn't match up with
       /// the current version. We don't currently support old graph versions.
@@ -107,13 +120,67 @@ class BuildImpl {
     }
   }
 
-  /// Deletes all previous output files.
+  /// Creates and returns a map of updates to assets based on [_assetGraph].
+  Future<Map<AssetId, ChangeType>> _getUpdates() async {
+    /// Collect updates to the graph based on any changed assets.
+    var updates = <AssetId, ChangeType>{};
+    await Future.wait(_assetGraph.allNodes
+        .where((node) => node is! GeneratedAssetNode)
+        .map((node) async {
+      if (await _reader.hasInput(node.id)) {
+        var lastModified = await _reader.lastModified(node.id);
+        if (lastModified.compareTo(_assetGraph.validAsOf) > 0) {
+          updates[node.id] = ChangeType.MODIFY;
+        }
+      } else {
+        updates[node.id] = ChangeType.REMOVE;
+      }
+    }));
+    return updates;
+  }
+
+  /// Applies all [updates] to the [_assetGraph] as well as doing other
+  /// necessary cleanup such as clearing caches for [CachedAssetReader]s and
+  /// deleting outputs as necessary.
+  Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
+    Future clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
+        {AssetId parent}) async {
+      var node = _assetGraph.get(id);
+      if (node == null) return;
+      if (_reader is CachedAssetReader) {
+        (_reader as CachedAssetReader).evictFromCache(id);
+      }
+
+      /// Update all ouputs of this asset as well.
+      await Future.wait(node.outputs.map((output) =>
+          clearNodeAndDeps(output, rootChangeType, parent: node.id)));
+
+      /// For deletes, prune the graph.
+      if (parent == null && rootChangeType == ChangeType.REMOVE) {
+        _assetGraph.remove(id);
+      }
+      if (node is GeneratedAssetNode) {
+        node.needsUpdate = true;
+        if (rootChangeType == ChangeType.REMOVE &&
+            node.primaryInput == parent) {
+          _assetGraph.remove(id);
+          await _writer.delete(id);
+        }
+      }
+    }
+
+    await Future.wait(
+        updates.keys.map((input) => clearNodeAndDeps(input, updates[input])));
+  }
+
+  /// Deletes all previous output files that are in need of an update.
   Future _deletePreviousOutputs() async {
     /// TODO(jakemac): need a cleaner way of telling if the current graph was
     /// generated from cache or if its just a brand new graph.
     if (await _reader.hasInput(_assetGraphId)) {
       await _writer.delete(_assetGraphId);
       _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
+
       /// Remove all output nodes from [_inputsByPackage], and delete all assets
       /// that need updates.
       await Future.wait(_assetGraph.allNodes

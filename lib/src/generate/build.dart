@@ -102,8 +102,8 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
   writer ??=
       new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
   directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
-  var watchImpl = new WatchImpl(directoryWatcherFactory, debounceDelay, cache,
-      reader, writer, packageGraph, phaseGroups);
+  var watchImpl = new WatchImpl(directoryWatcherFactory, debounceDelay, reader,
+      writer, packageGraph, phaseGroups);
 
   var resultStream = watchImpl.runWatch();
 

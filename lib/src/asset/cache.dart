@@ -49,6 +49,11 @@ class CachedAssetReader extends AssetReader {
 
   CachedAssetReader(this._cache, this._reader);
 
+  /// Evicts [id] from the underlying cache.
+  void evictFromCache(AssetId id) {
+    _cache.remove(id);
+  }
+
   @override
   Future<bool> hasInput(AssetId id) {
     if (_cache.contains(id)) return new Future.value(true);
