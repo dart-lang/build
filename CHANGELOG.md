@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+- Builds are now fully incremental, even on startup.
+  - Builds will be invalidated if the build script or any of its dependencies
+    are updated since there is no way of knowing how that would affect things.
+- Added `lastModified` to `AssetReader` (only matters if you implement it).
+
 ## 0.1.2
 - Exposed the top level `watch` function. This can be used to watch the file
   system and run incremental rebuilds on changes.
