@@ -129,6 +129,27 @@ main() {
 
         expect(cachedGraph, equalsAssetGraph(expectedGraph));
       });
+
+      test('build fails if script is updated after the first build starts',
+          () async {
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
+            .listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
+
+        /// Pretend like a part of the dart script got updated.
+        await writer.writeAsString(makeAsset('test|lib/test.dart', ''),
+            lastModified: new DateTime.now().add(new Duration(days: 1)));
+        await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
+        FakeWatcher
+            .notifyWatchers(new WatchEvent(ChangeType.MODIFY, 'a/web/a.txt'));
+
+        result = await nextResult(results);
+        expect(result.status, BuildStatus.Failure);
+      });
     });
 
     group('multiple phases', () {

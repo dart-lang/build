@@ -40,6 +40,8 @@ class BuildImpl {
   bool _buildRunning = false;
   final _logger = new Logger('Build');
 
+  bool _isFirstBuild = true;
+
   BuildImpl(this._reader, this._writer, this._packageGraph, this._phaseGroups);
 
   /// Runs a build
@@ -57,6 +59,9 @@ class BuildImpl {
       {DateTime validAsOf, Map<AssetId, ChangeType> updates}) async {
     validAsOf ??= new DateTime.now();
     updates ??= <AssetId, ChangeType>{};
+
+    /// Assume incremental, change if necessary.
+    var buildType = BuildType.Incremental;
     try {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
@@ -72,20 +77,40 @@ class BuildImpl {
         updates.addAll(await _getUpdates());
       }
 
+      /// If the build script gets updated, we need to either fully invalidate
+      /// the graph (if the script current running is up to date), or we need to
+      /// terminate and ask the user to restart the script (if the currently
+      /// running script is out of date).
+      ///
+      /// The [_isFirstBuild] flag is used as a proxy for "has this script
+      /// been updated since it started running".
+      ///
+      /// TODO(jakemac): Come up with a better way of telling if the script
+      /// has been updated since it started running.
+      _logger.info('Checking if the build script has been updated');
+      if (await _buildScriptUpdated()) {
+        buildType = BuildType.Full;
+        if (_isFirstBuild) {
+          _logger.info('Invalidating asset graph due to build script update');
+          _assetGraph.allNodes
+              .where((node) => node is GeneratedAssetNode)
+              .forEach(
+                  (node) => (node as GeneratedAssetNode).needsUpdate = true);
+        } else {
+          var message = 'Build abandoned due to change to the build script or '
+              'one of its dependencies. This could be caused by a pub get or '
+              'any other change. Please terminate the build script and restart '
+              'it.';
+          _logger.warning(message);
+          return new BuildResult(BuildStatus.Failure, buildType, [],
+              exception: message);
+        }
+      }
+
       /// Applies all [updates] to the [_assetGraph] as well as doing other
       /// necessary cleanup.
       _logger.info('Updating dependency graph with changes since last build.');
       await _updateWithChanges(updates);
-
-      /// Sometimes we need to fully invalidate the graph, such as when the
-      /// build script itself is updated.
-      _logger.info('Checking if asset graph needs to be rebuilt');
-      if (await _shouldInvalidateAssetGraph()) {
-        _logger.info('Invalidating asset graph due to build script update');
-        _assetGraph.allNodes
-            .where((node) => node is GeneratedAssetNode)
-            .forEach((node) => (node as GeneratedAssetNode).needsUpdate = true);
-      }
 
       /// Wait while all inputs are collected.
       _logger.info('Initializing inputs');
@@ -108,10 +133,11 @@ class BuildImpl {
 
       return result;
     } catch (e, s) {
-      return new BuildResult(BuildStatus.Failure, BuildType.Full, [],
+      return new BuildResult(BuildStatus.Failure, buildType, [],
           exception: e, stackTrace: s);
     } finally {
       _buildRunning = false;
+      _isFirstBuild = false;
     }
   }
 
@@ -133,13 +159,12 @@ class BuildImpl {
     }
   }
 
-  /// Checks if the [_assetGraph] needs to be completely invalidated.
-  ///
-  /// For now this just means looking at the current running program, and seeing
-  /// if any of its sources are newer than the asset graph itself.
-  Future<bool> _shouldInvalidateAssetGraph() async {
+  /// Checks if the current running program has been updated since the asset
+  /// graph was last built.
+  Future<bool> _buildScriptUpdated() async {
     var completer = new Completer<bool>();
-    Future.wait(currentMirrorSystem().libraries.keys.map((Uri uri) async {
+    Future
+        .wait(currentMirrorSystem().libraries.keys.map((Uri uri) async {
       /// Short-circuit
       if (completer.isCompleted) return;
       var lastModified;
@@ -162,11 +187,11 @@ class BuildImpl {
           lastModified = await file.lastModified();
           break;
         case 'data':
+
           /// Test runner uses a `data` scheme, don't invalidate for those.
           if (uri.path.contains('package:test')) return;
           continue unknownUri;
-        unknownUri:
-        default:
+        unknownUri: default:
           _logger.info('Unrecognized uri scheme `${uri.scheme}` found for '
               'library in build script, falling back on full rebuild.');
           if (!completer.isCompleted) completer.complete(true);
@@ -176,7 +201,8 @@ class BuildImpl {
       if (lastModified.compareTo(_assetGraph.validAsOf) > 0) {
         if (!completer.isCompleted) completer.complete(true);
       }
-    })).then((_) {
+    }))
+        .then((_) {
       if (!completer.isCompleted) completer.complete(false);
     });
     return completer.future;
