@@ -265,8 +265,7 @@ main() {
         ],
       ];
 
-      var graph = new AssetGraph()
-        ..validAsOf = new DateTime.now().subtract(new Duration(days: 1));
+      var graph = new AssetGraph()..validAsOf = new DateTime.now();
 
       var aCloneNode = new GeneratedAssetNode(makeAssetId('a|lib/a.txt.copy'),
           false, true, makeAssetId('a|lib/a.txt.copy.clone'));
@@ -344,6 +343,29 @@ main() {
       expect(writer.assets.containsKey(aNode.id), isFalse);
       expect(writer.assets.containsKey(aCopyNode.id), isFalse);
       expect(writer.assets.containsKey(aCloneNode.id), isFalse);
+    });
+
+    test('invalidates graph if build script updates', () async {
+      var graph = new AssetGraph();
+      var aId = makeAssetId('a|web/a.txt');
+      var aCopyNode = new GeneratedAssetNode(
+          aId, false, true, makeAssetId('a|web/a.txt.copy'));
+      graph.add(aCopyNode);
+      var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
+      graph.add(aNode);
+
+      var writer = new InMemoryAssetWriter();
+      /// Spoof the `package:test/test.dart` import and pretend its newer than
+      /// the current graph to cause a rebuild.
+      writer.writeAsString(makeAsset('test|lib/test.dart', ''),
+          lastModified: graph.validAsOf.add(new Duration(hours: 1)));
+      await testPhases(copyAPhaseGroup, {
+        'a|web/a.txt': 'a',
+        'a|web/a.txt.copy': 'a',
+        'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+      }, outputs: {
+        'a|web/a.txt.copy': 'a',
+      });
     });
   });
 }

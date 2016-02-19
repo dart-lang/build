@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:mirrors';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -73,8 +74,18 @@ class BuildImpl {
 
       /// Applies all [updates] to the [_assetGraph] as well as doing other
       /// necessary cleanup.
+      _logger.info('Updating dependency graph with changes since last build.');
       await _updateWithChanges(updates);
-      _assetGraph.validAsOf = validAsOf;
+
+      /// Sometimes we need to fully invalidate the graph, such as when the
+      /// build script itself is updated.
+      _logger.info('Checking if asset graph needs to be rebuilt');
+      if (await _shouldInvalidateAssetGraph()) {
+        _logger.info('Invalidating asset graph due to build script update');
+        _assetGraph.allNodes
+            .where((node) => node is GeneratedAssetNode)
+            .forEach((node) => (node as GeneratedAssetNode).needsUpdate = true);
+      }
 
       /// Wait while all inputs are collected.
       _logger.info('Initializing inputs');
@@ -89,6 +100,8 @@ class BuildImpl {
       var result = await _runPhases();
 
       /// Write out the dependency graph file.
+      _logger.info('Caching finalized dependency graph');
+      _assetGraph.validAsOf = validAsOf;
       var assetGraphAsset =
           new Asset(_assetGraphId, JSON.encode(_assetGraph.serialize()));
       await _writer.writeAsString(assetGraphAsset);
@@ -118,6 +131,55 @@ class BuildImpl {
       _logger.info('Throwing away cached asset graph due to version mismatch.');
       return new AssetGraph();
     }
+  }
+
+  /// Checks if the [_assetGraph] needs to be completely invalidated.
+  ///
+  /// For now this just means looking at the current running program, and seeing
+  /// if any of its sources are newer than the asset graph itself.
+  Future<bool> _shouldInvalidateAssetGraph() async {
+    var completer = new Completer<bool>();
+    Future.wait(currentMirrorSystem().libraries.keys.map((Uri uri) async {
+      /// Short-circuit
+      if (completer.isCompleted) return;
+      var lastModified;
+      switch (uri.scheme) {
+        case 'dart':
+          return;
+        case 'package':
+          var parts = uri.pathSegments;
+          var id = new AssetId(
+              parts[0],
+              path.url
+                  .joinAll(['lib']..addAll(parts.getRange(1, parts.length))));
+          lastModified = await _reader.lastModified(id);
+          break;
+        case 'file':
+
+          /// TODO(jakemac): Probably shouldn't use dart:io directly, but its
+          /// definitely the easiest solution and should be fine.
+          var file = new File.fromUri(uri);
+          lastModified = await file.lastModified();
+          break;
+        case 'data':
+          /// Test runner uses a `data` scheme, don't invalidate for those.
+          if (uri.path.contains('package:test')) return;
+          continue unknownUri;
+        unknownUri:
+        default:
+          _logger.info('Unrecognized uri scheme `${uri.scheme}` found for '
+              'library in build script, falling back on full rebuild.');
+          if (!completer.isCompleted) completer.complete(true);
+          return;
+      }
+      assert(lastModified != null);
+      if (lastModified.compareTo(_assetGraph.validAsOf) > 0) {
+        if (!completer.isCompleted) completer.complete(true);
+      }
+    })).then((_) {
+      if (!completer.isCompleted) completer.complete(false);
+    });
+    return completer.future;
   }
 
   /// Creates and returns a map of updates to assets based on [_assetGraph].

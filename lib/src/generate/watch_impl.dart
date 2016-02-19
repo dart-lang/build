@@ -7,7 +7,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';
 
-import '../asset/cache.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';

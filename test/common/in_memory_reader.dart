@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:mirrors';
 
 import 'package:build/build.dart';
 
@@ -35,9 +36,25 @@ class InMemoryAssetReader implements AssetReader {
     }
   }
 
+  final Map<Uri, LibraryMirror> _allLibraries = currentMirrorSystem().libraries;
+
   @override
   Future<DateTime> lastModified(AssetId id) async {
-    if (!await hasInput(id)) throw new AssetNotFoundException(id);
+    if (!assets.containsKey(id)) {
+      /// Support reading files imported by the test script as well. Also
+      /// pretend like they are very old so that builds don't get invalidated.
+      ///
+      /// Overridden values in [assets] will take precedence.
+      var uri = new Uri(
+          scheme: 'package',
+          path: '${id.package}/${id.path.replaceFirst("lib/", "")}');
+      if (_allLibraries[uri] != null) {
+        return new DateTime.fromMillisecondsSinceEpoch(0);
+      }
+
+      throw new AssetNotFoundException(id);
+    }
+
     return assets[id].date;
   }
 }
