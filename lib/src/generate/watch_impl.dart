@@ -142,11 +142,6 @@ class WatchImpl {
       _currentBuild =
           _buildImpl.runBuild(validAsOf: validAsOf, updates: updatedInputsCopy);
       _currentBuild.then((result) {
-        if (result.status == BuildStatus.Success) {
-          _logger.info('Build completed successfully');
-        } else {
-          _logger.warning('Build failed');
-        }
         _resultStreamController.add(result);
         _currentBuild = null;
         if (_nextBuildScheduled) {
@@ -169,7 +164,7 @@ class WatchImpl {
       var watcher = _directoryWatcherFactory(package.location.toFilePath());
       watchers.add(watcher);
       _allListeners.add(watcher.events.listen((WatchEvent e) {
-        _logger.fine('Got WatchEvent for path ${e.path}');
+        _logger.finest('Got WatchEvent for path ${e.path}');
         var id = new AssetId(package.name, path.normalize(e.path));
         var node = _assetGraph.get(id);
         // Short circuit for deletes of nodes that aren't in the graph.

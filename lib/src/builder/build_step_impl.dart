@@ -102,10 +102,9 @@ class BuildStepImpl implements BuildStep {
       await _resolvers.get(toBarbackTransform(this), [toBarbackAssetId(id)]));
 
   /// Should be called after `build` has completed. This will wait until for
-  /// [_outputsCompleted] and will also close the [logger].
+  /// [_outputsCompleted].
   Future complete() async {
     await _outputsCompleted;
-    await _logger?.clearListeners();
   }
 
   /// Checks that [id] is a valid input, and throws an [InvalidInputException]

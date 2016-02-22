@@ -105,7 +105,7 @@ class BuildImpl {
               'one of its dependencies. This could be caused by a pub get or '
               'any other change. Please terminate the build script and restart '
               'it.';
-          _logger.warning(message);
+          _logger.severe(message);
           return new BuildResult(BuildStatus.Failure, buildType, [],
               exception: message);
         }
@@ -135,8 +135,10 @@ class BuildImpl {
           new Asset(_assetGraphId, JSON.encode(_assetGraph.serialize()));
       await _writer.writeAsString(assetGraphAsset);
 
+      _logger.info('Build succeeded');
       return result;
     } catch (e, s) {
+      _logger.severe('Build failed: $e\n\n$s');
       return new BuildResult(BuildStatus.Failure, buildType, [],
           exception: e, stackTrace: s);
     } finally {

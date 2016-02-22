@@ -48,7 +48,23 @@ class BuildOptions {
     /// Set up logging
     logLevel ??= Level.INFO;
     Logger.root.level = logLevel;
-    onLog ??= stdout.writeln;
+    onLog ??= (LogRecord record) {
+      var color;
+      if (record.level < Level.WARNING) {
+        color = _cyan;
+      } else if (record.level < Level.SEVERE) {
+        color = _yellow;
+      } else {
+        color = _red;
+      }
+      var message = '$color[${record.level}]$_endColor ${record.loggerName}: '
+          '${record.message}\n';
+      if (record.level >= Level.SEVERE) {
+        stderr.write(message);
+      } else {
+        stdout.write(message);
+      }
+    };
     logListener = Logger.root.onRecord.listen(onLog);
 
     /// Set up other defaults.
@@ -67,3 +83,8 @@ class BuildOptions {
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
   }
 }
+
+final _cyan = '\u001b[36m';
+final _yellow = '\u001b[33m';
+final _red = '\u001b[31m';
+final _endColor = '\u001b[0m';
