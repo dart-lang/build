@@ -13,8 +13,6 @@ import 'package:build/src/asset_graph/graph.dart';
 
 import '../common/common.dart';
 
-final _watchers = <DirectoryWatcher>[];
-
 main() {
   /// Basic phases/phase groups which get used in many tests
   final copyAPhase = new Phase([new CopyBuilder()], [new InputSet('a')]);
@@ -28,7 +26,7 @@ main() {
     });
 
     tearDown(() {
-      _watchers.clear();
+      FakeWatcher.watchers.clear();
       return terminateWatch();
     });
 
@@ -352,51 +350,4 @@ Future terminateWatch() {
   /// Can add any type of event.
   _terminateWatchController.add(null);
   return _terminateWatchController.close();
-}
-
-/// A fake [DirectoryWatcher].
-///
-/// Use the static [FakeWatcher#notifyPath] method to add events.
-class FakeWatcher implements DirectoryWatcher {
-  String get directory => path;
-  final String path;
-
-  FakeWatcher(this.path) {
-    watchers.add(this);
-  }
-
-  final _eventsController = new StreamController<WatchEvent>();
-  Stream<WatchEvent> get events => _eventsController.stream;
-
-  Future get ready => new Future(() {});
-
-  bool get isReady => true;
-
-  /// All watchers.
-  static final watchers = <FakeWatcher>[];
-
-  /// Notify all active watchers of [event] if their [FakeWatcher#path] matches.
-  /// The path will also be adjusted to remove the path.
-  static notifyWatchers(WatchEvent event) {
-    for (var watcher in watchers) {
-      if (event.path.startsWith(watcher.path)) {
-        watcher._eventsController.add(new WatchEvent(
-            event.type, event.path.replaceFirst(watcher.path, '')));
-      }
-    }
-  }
-}
-
-Future<BuildResult> nextResult(results) {
-  var done = new Completer();
-  var startingLength = results.length;
-  () async {
-    while (results.length == startingLength) {
-      await wait(10);
-    }
-    expect(results.length, startingLength + 1,
-        reason: 'Got two build results but only expected one');
-    done.complete(results.last);
-  }();
-  return done.future;
 }

@@ -5,9 +5,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
+import 'package:shelf/shelf.dart';
 
-import '../asset/cache.dart';
-import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../package_graph/package_graph.dart';
@@ -15,6 +14,7 @@ import '../server/server.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
+import 'options.dart';
 import 'phase.dart';
 import 'watch_impl.dart';
 
@@ -44,15 +44,13 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
     Level logLevel,
     onLog(LogRecord),
     Stream terminateEventStream}) async {
-  var logListener = _setupLogging(logLevel: logLevel, onLog: onLog);
-  packageGraph ??= new PackageGraph.forThisPackage();
-  var cache = new AssetCache();
-  reader ??=
-      new CachedAssetReader(cache, new FileBasedAssetReader(packageGraph));
-  writer ??=
-      new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
-
-  var buildImpl = new BuildImpl(reader, writer, packageGraph, phaseGroups);
+  var options = new BuildOptions(
+      packageGraph: packageGraph,
+      reader: reader,
+      writer: writer,
+      logLevel: logLevel,
+      onLog: onLog);
+  var buildImpl = new BuildImpl(options, phaseGroups);
 
   /// Run the build!
   var futureResult = buildImpl.runBuild();
@@ -65,7 +63,7 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
 
   var result = await futureResult;
   listener.cancel();
-  logListener.cancel();
+  options.logListener.cancel();
   return result;
 }
 
@@ -90,66 +88,72 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
     AssetWriter writer,
     Level logLevel,
     onLog(LogRecord),
-    Duration debounceDelay: const Duration(milliseconds: 250),
+    Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
     Stream terminateEventStream}) {
-  // We never cancel this listener in watch mode, because we never exit unless
-  // forced to.
-  var logListener = _setupLogging(logLevel: logLevel, onLog: onLog);
-  packageGraph ??= new PackageGraph.forThisPackage();
-  var cache = new AssetCache();
-  reader ??=
-      new CachedAssetReader(cache, new FileBasedAssetReader(packageGraph));
-  writer ??=
-      new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
-  directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
-  var watchImpl = new WatchImpl(directoryWatcherFactory, debounceDelay, reader,
-      writer, packageGraph, phaseGroups);
+  var options = new BuildOptions(
+      packageGraph: packageGraph,
+      reader: reader,
+      writer: writer,
+      logLevel: logLevel,
+      onLog: onLog,
+      debounceDelay: debounceDelay,
+      directoryWatcherFactory: directoryWatcherFactory);
+  var watchImpl = new WatchImpl(options, phaseGroups);
 
   var resultStream = watchImpl.runWatch();
 
   // Stop doing new builds when told to terminate.
   _setupTerminateLogic(terminateEventStream, () async {
     await watchImpl.terminate();
-    logListener.cancel();
+    options.logListener.cancel();
   });
 
   return resultStream;
 }
 
-/// Same as [watch], except it also provides a server. This server will block
-/// all requests if a build is current in process.
+/// Same as [watch], except it also provides a server.
+///
+/// This server will block all requests if a build is current in process.
+///
+/// By default a static server will be set up to serve [directory] at
+/// [address]:[port], but instead a [requestHandler] may be provided for custom
+/// behavior.
 Stream<BuildResult> serve(List<List<Phase>> phaseGroups,
     {PackageGraph packageGraph,
     AssetReader reader,
     AssetWriter writer,
     Level logLevel,
     onLog(LogRecord),
-    Duration debounceDelay: const Duration(milliseconds: 250),
+    Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
-    Stream terminateEventStream}) {
-  // We never cancel this listener in watch mode, because we never exit unless
-  // forced to.
-  var logListener = _setupLogging(logLevel: logLevel, onLog: onLog);
-  packageGraph ??= new PackageGraph.forThisPackage();
-  var cache = new AssetCache();
-  reader ??=
-      new CachedAssetReader(cache, new FileBasedAssetReader(packageGraph));
-  writer ??=
-      new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
-  directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
-  var watchImpl = new WatchImpl(directoryWatcherFactory, debounceDelay, reader,
-      writer, packageGraph, phaseGroups);
+    Stream terminateEventStream,
+    String directory,
+    String address,
+    int port,
+    Handler requestHandler}) {
+  var options = new BuildOptions(
+      packageGraph: packageGraph,
+      reader: reader,
+      writer: writer,
+      logLevel: logLevel,
+      onLog: onLog,
+      debounceDelay: debounceDelay,
+      directoryWatcherFactory: directoryWatcherFactory,
+      directory: directory,
+      address: address,
+      port: port);
+  var watchImpl = new WatchImpl(options, phaseGroups);
 
   var resultStream = watchImpl.runWatch();
-
-  startServer(watchImpl);
+  var serverStarted = startServer(watchImpl, options);
 
   // Stop doing new builds when told to terminate.
   _setupTerminateLogic(terminateEventStream, () async {
     await watchImpl.terminate();
+    await serverStarted;
     await stopServer();
-    logListener.cancel();
+    options.logListener.cancel();
   });
 
   return resultStream;
@@ -173,11 +177,4 @@ StreamSubscription _setupTerminateLogic(
     }
   });
   return terminateListener;
-}
-
-StreamSubscription _setupLogging({Level logLevel, onLog(LogRecord)}) {
-  logLevel ??= Level.INFO;
-  Logger.root.level = logLevel;
-  onLog ??= stdout.writeln;
-  return Logger.root.onRecord.listen(onLog);
 }

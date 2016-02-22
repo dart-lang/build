@@ -7,34 +7,42 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_static/shelf_static.dart';
 
+import '../generate/options.dart';
 import '../generate/watch_impl.dart';
 
-HttpServer _server;
+/// The actual [HttpServer] in use.
+Future<HttpServer> _futureServer;
 
-Future startServer(WatchImpl watchImpl,
-    {String directory: '.',
-    String address: 'localhost',
-    int port: 8000}) async {
-  if (_server != null) {
+/// Public for testing purposes only :(. This file is not directly exported
+/// though so it is effectively package private.
+Handler blockingHandler;
+
+/// Starts a server which blocks on any ongoing builds.
+Future<HttpServer> startServer(WatchImpl watchImpl, BuildOptions options) {
+  if (_futureServer != null) {
     throw new StateError('Server already running.');
   }
 
   try {
-    var staticHandler = createStaticHandler(directory,
-        defaultDocument: 'index.html', listDirectories: true);
-    var blockingHandler = (Request request) async {
+    blockingHandler = (Request request) async {
       if (watchImpl.currentBuild != null) await watchImpl.currentBuild;
-      return staticHandler(request);
+      return options.requestHandler(request);
     };
-    _server = await serve(blockingHandler, address, port);
+    _futureServer = serve(blockingHandler, options.address, options.port);
+    return _futureServer;
   } catch (e, s) {
     stderr.writeln('Error setting up server: $e\n\n$s');
+    return new Future.value(null);
   }
 }
 
 Future stopServer() {
-  if (_server == null) {
+  if (_futureServer == null) {
     throw new StateError('Server not running.');
   }
-  return _server.close();
+  return _futureServer.then((server) {
+    server.close();
+    _futureServer = null;
+    blockingHandler = null;
+  });
 }

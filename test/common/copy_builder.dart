@@ -20,13 +20,20 @@ class CopyBuilder implements Builder {
   /// asset.
   final AssetId copyFromAsset;
 
+  /// No `build` step will complete until this future completes. It may be
+  /// re-assigned in between builds.
+  Future blockUntil;
+
   CopyBuilder(
       {this.numCopies: 1,
       this.extension: 'copy',
       this.outputPackage,
-      this.copyFromAsset});
+      this.copyFromAsset,
+      this.blockUntil});
 
   Future build(BuildStep buildStep) async {
+    if (blockUntil != null) await blockUntil;
+
     var ids = declareOutputs(buildStep.input.id);
     for (var id in ids) {
       var content = copyFromAsset == null

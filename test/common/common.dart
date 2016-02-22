@@ -13,6 +13,7 @@ import 'in_memory_writer.dart';
 
 export 'assets.dart';
 export 'copy_builder.dart';
+export 'fake_watcher.dart';
 export 'file_combiner_builder.dart';
 export 'in_memory_reader.dart';
 export 'in_memory_writer.dart';
@@ -50,4 +51,18 @@ void checkOutputs(Map<String, String> outputs, BuildResult result,
     expect(remainingOutputIds, isEmpty,
         reason: 'Unexpected outputs found `$remainingOutputIds`.');
   }
+}
+
+Future<BuildResult> nextResult(results) {
+  var done = new Completer();
+  var startingLength = results.length;
+  () async {
+    while (results.length == startingLength) {
+      await wait(10);
+    }
+    expect(results.length, startingLength + 1,
+        reason: 'Got two build results but only expected one');
+    done.complete(results.last);
+  }();
+  return done.future;
 }

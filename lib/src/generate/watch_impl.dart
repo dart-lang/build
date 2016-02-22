@@ -8,7 +8,6 @@ import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';
 
 import '../asset/id.dart';
-import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
@@ -16,6 +15,7 @@ import '../package_graph/package_graph.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
+import 'options.dart';
 import 'phase.dart';
 
 /// Watches all inputs for changes, and uses a [BuildImpl] to rerun builds as
@@ -61,16 +61,12 @@ class WatchImpl {
   /// Whether we are in the process of terminating.
   bool _terminating = false;
 
-  WatchImpl(
-      this._directoryWatcherFactory,
-      this._debounceDelay,
-      AssetReader reader,
-      AssetWriter writer,
-      PackageGraph packageGraph,
-      List<List<Phase>> phaseGroups)
-      : _packageGraph = packageGraph,
-        _writer = writer,
-        _buildImpl = new BuildImpl(reader, writer, packageGraph, phaseGroups);
+  WatchImpl(BuildOptions options, List<List<Phase>> phaseGroups)
+      : _directoryWatcherFactory = options.directoryWatcherFactory,
+        _debounceDelay = options.debounceDelay,
+        _writer = options.writer,
+        _packageGraph = options.packageGraph,
+        _buildImpl = new BuildImpl(options, phaseGroups);
 
   /// Completes after the current build is done, and stops further builds from
   /// happening.

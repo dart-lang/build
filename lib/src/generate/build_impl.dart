@@ -25,6 +25,7 @@ import '../package_graph/package_graph.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
 import 'input_set.dart';
+import 'options.dart';
 import 'phase.dart';
 
 /// Class which manages running builds.
@@ -42,7 +43,10 @@ class BuildImpl {
 
   bool _isFirstBuild = true;
 
-  BuildImpl(this._reader, this._writer, this._packageGraph, this._phaseGroups);
+  BuildImpl(BuildOptions options, this._phaseGroups)
+      : _reader = options.reader,
+        _writer = options.writer,
+        _packageGraph = options.packageGraph;
 
   /// Runs a build
   ///
