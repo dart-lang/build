@@ -47,6 +47,7 @@ class WatchImpl {
 
   /// A future that completes when the current build is done.
   Future _currentBuild;
+  Future get currentBuild => _currentBuild;
 
   /// Whether or not another build is scheduled.
   bool _nextBuildScheduled;

@@ -11,6 +11,7 @@ import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../package_graph/package_graph.dart';
+import '../server/server.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
@@ -110,6 +111,44 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
   // Stop doing new builds when told to terminate.
   _setupTerminateLogic(terminateEventStream, () async {
     await watchImpl.terminate();
+    logListener.cancel();
+  });
+
+  return resultStream;
+}
+
+/// Same as [watch], except it also provides a server. This server will block
+/// all requests if a build is current in process.
+Stream<BuildResult> serve(List<List<Phase>> phaseGroups,
+    {PackageGraph packageGraph,
+    AssetReader reader,
+    AssetWriter writer,
+    Level logLevel,
+    onLog(LogRecord),
+    Duration debounceDelay: const Duration(milliseconds: 250),
+    DirectoryWatcherFactory directoryWatcherFactory,
+    Stream terminateEventStream}) {
+  // We never cancel this listener in watch mode, because we never exit unless
+  // forced to.
+  var logListener = _setupLogging(logLevel: logLevel, onLog: onLog);
+  packageGraph ??= new PackageGraph.forThisPackage();
+  var cache = new AssetCache();
+  reader ??=
+      new CachedAssetReader(cache, new FileBasedAssetReader(packageGraph));
+  writer ??=
+      new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
+  directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
+  var watchImpl = new WatchImpl(directoryWatcherFactory, debounceDelay, reader,
+      writer, packageGraph, phaseGroups);
+
+  var resultStream = watchImpl.runWatch();
+
+  startServer(watchImpl);
+
+  // Stop doing new builds when told to terminate.
+  _setupTerminateLogic(terminateEventStream, () async {
+    await watchImpl.terminate();
+    await stopServer();
     logListener.cancel();
   });
 
