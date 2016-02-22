@@ -84,7 +84,7 @@ class BuildOptions {
   }
 }
 
-final _cyan = '\u001b[36m';
-final _yellow = '\u001b[33m';
-final _red = '\u001b[31m';
-final _endColor = '\u001b[0m';
+final _cyan = Platform.isWindows ? '' : '\u001b[36m';
+final _yellow = Platform.isWindows ? '' : '\u001b[33m';
+final _red = Platform.isWindows ? '' : '\u001b[31m';
+final _endColor = Platform.isWindows ? '' : '\u001b[0m';

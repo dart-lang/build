@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
-import 'package:shelf_static/shelf_static.dart';
 
 import '../generate/options.dart';
 import '../generate/watch_impl.dart';
