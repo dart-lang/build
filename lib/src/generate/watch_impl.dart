@@ -87,9 +87,12 @@ class WatchImpl {
       _logger.info('Waiting for ongoing build to finish.');
       await _currentBuild;
     }
-    await _resultStreamController.close();
+    if (_resultStreamController.hasListener) {
+      _logger.info('Closing build result stream.');
+      await _resultStreamController.close();
+    }
     _terminating = false;
-    _logger.info('Build watching terminated.');
+    _logger.info('Build watching terminated, safe to exit.');
   }
 
   /// Runs a build any time relevant files change.
@@ -142,7 +145,9 @@ class WatchImpl {
       _currentBuild =
           _buildImpl.runBuild(validAsOf: validAsOf, updates: updatedInputsCopy);
       _currentBuild.then((result) {
-        _resultStreamController.add(result);
+        if (_resultStreamController.hasListener) {
+          _resultStreamController.add(result);
+        }
         _currentBuild = null;
         if (_nextBuildScheduled) {
           _nextBuildScheduled = false;

@@ -237,10 +237,14 @@ class BuildImpl {
   /// necessary cleanup such as clearing caches for [CachedAssetReader]s and
   /// deleting outputs as necessary.
   Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
+    var seen = new Set<AssetId>();
     Future clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
         {AssetId parent}) async {
+      if (seen.contains(id)) return;
+      seen.add(id);
       var node = _assetGraph.get(id);
       if (node == null) return;
+      
       if (_reader is CachedAssetReader) {
         (_reader as CachedAssetReader).evictFromCache(id);
       }

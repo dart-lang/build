@@ -43,13 +43,15 @@ class BuildStepTransform implements barback.Transform {
   barback.TransformLogger _logger;
 
   @override
-  Future<barback.Asset> getInput(barback.AssetId id, {Encoding encoding}) =>
-      throw new UnimplementedError();
+  Future<barback.Asset> getInput(barback.AssetId id,
+          {Encoding encoding: UTF8}) async =>
+      new barback.Asset.fromString(
+          id, await readInputAsString(id, encoding: encoding));
 
   @override
-  Future<String> readInputAsString(barback.AssetId id, {Encoding encoding}) {
-    return buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
-  }
+  Future<String> readInputAsString(barback.AssetId id,
+          {Encoding encoding: UTF8}) =>
+      buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
 
   @override
   Stream<List<int>> readInput(barback.AssetId id) =>
@@ -69,7 +71,6 @@ class BuildStepTransform implements barback.Transform {
   @override
   void consumePrimary() => throw new UnimplementedError();
 }
-
 
 const _barbackLevelToLoggingLevel = const {
   barback.LogLevel.FINE: Level.FINE,

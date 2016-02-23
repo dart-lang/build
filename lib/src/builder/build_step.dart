@@ -30,5 +30,5 @@ abstract class BuildStep {
 
   /// Gives a [Resolver] for [id]. This must be released when it is done being
   /// used.
-  Future<Resolver> resolve(id);
+  Future<Resolver> resolve(AssetId id);
 }
