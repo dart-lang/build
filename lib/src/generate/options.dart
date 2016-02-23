@@ -58,7 +58,8 @@ class BuildOptions {
         color = _red;
       }
       var message = '$color[${record.level}]$_endColor ${record.loggerName}: '
-          '${record.message}\n';
+          '${record.message}${record.error != null ? "\n${record.error}" : ""}'
+          '${record.stackTrace != null ? "\n${record.stackTrace}" : ""}\n';
       if (record.level >= Level.SEVERE) {
         stderr.write(message);
       } else {
