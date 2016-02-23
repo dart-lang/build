@@ -4,13 +4,11 @@
 
 library source_gen.test.utils;
 
-import 'dart:async';
-import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:path/path.dart' as p;
-import 'package:scheduled_test/scheduled_test.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:test/test.dart';
 
 String _packagePathCache;
 
@@ -24,21 +22,6 @@ String getPackagePath() {
     _packagePathCache = p.normalize(p.join(p.dirname(currentFilePath), '..'));
   }
   return _packagePathCache;
-}
-
-Future<Directory> createTempDir([bool scheduleDelete = true]) async {
-  var ticks = new DateTime.now().toUtc().millisecondsSinceEpoch;
-  var dir = await Directory.systemTemp.createTemp('source_gen.test.$ticks.');
-
-  currentSchedule.onComplete.schedule(() {
-    if (scheduleDelete) {
-      return dir.delete(recursive: true);
-    } else {
-      print('Not deleting $dir');
-    }
-  });
-
-  return dir;
 }
 
 const Matcher throwsInvalidGenerationSourceError =

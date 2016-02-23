@@ -16,11 +16,11 @@ import 'package:test/test.dart';
 
 import 'package:source_gen/generators/json_serializable.dart';
 import 'package:source_gen/src/annotation.dart';
-import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 
 import 'test_files/annotations.dart' as defs;
 
+import 'src/io.dart';
 import 'test_utils.dart';
 
 void main() {

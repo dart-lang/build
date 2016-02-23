@@ -9,9 +9,9 @@ import 'package:analyzer/src/generated/engine.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
-import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 
+import 'src/io.dart';
 import 'test_utils.dart';
 
 void main() {

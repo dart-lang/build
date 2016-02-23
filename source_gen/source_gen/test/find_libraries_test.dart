@@ -8,10 +8,10 @@ library source_gen.test.find_libraries;
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
-import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 import 'package:test/test.dart';
 
+import 'src/io.dart';
 import 'test_utils.dart';
 
 void main() {

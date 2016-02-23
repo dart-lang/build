@@ -12,7 +12,7 @@ class CommentGenerator extends Generator {
   const CommentGenerator({this.forClasses: true, this.forLibrary: false});
 
   @override
-  Future<String> generate(Element element) async {
+  Future<String> generate(Element element, _) async {
     if (forClasses && element is ClassElement) {
       if (element.displayName.contains('GoodError')) {
         throw new InvalidGenerationSourceError(

@@ -7,17 +7,12 @@ library source_gen.generator;
 import 'dart:async';
 
 import 'package:analyzer/src/generated/element.dart';
+import 'package:build/build.dart';
 
 abstract class Generator {
   const Generator();
 
-  /// The files to track when doing incremental generation.
-  ///
-  /// By default, incremental generation is only done on a library if a source
-  /// file in that library is changes. [AssociatedFiles.sameLibrary]
-  AssociatedFileSet get associatedFileSet => AssociatedFileSet.sameLibrary;
-
-  Future<String> generate(Element element) => null;
+  Future<String> generate(Element element, BuildStep buildStep) => null;
 
   @override
   String toString() => this.runtimeType.toString();
@@ -32,13 +27,4 @@ class InvalidGenerationSourceError {
 
   @override
   String toString() => message;
-}
-
-enum AssociatedFileSet {
-  /// Only run incremental generation when a source file in the library changes.
-  sameLibrary,
-
-  /// Run incremental generation when a source file in the library changes or
-  /// if a file in the same directory as a library source file changes.
-  sameDirectory
 }

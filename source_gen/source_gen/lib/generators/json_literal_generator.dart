@@ -6,45 +6,28 @@ library source_gen.example.json_literal_generator;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:analyzer/src/generated/element.dart';
-import 'package:analyzer/src/generated/source_io.dart';
+import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 
 import 'json_literal.dart';
 
 class JsonLiteralGenerator extends GeneratorForAnnotation<JsonLiteral> {
-  @override
-  final AssociatedFileSet associatedFileSet;
-
-  /// If [associatedFileSet] is not set, the default value of
-  /// [AssociatedFileSet.sameDirectory] is used.
-  const JsonLiteralGenerator(
-      {AssociatedFileSet associatedFileSet: AssociatedFileSet.sameDirectory})
-      : this.associatedFileSet = associatedFileSet;
+  const JsonLiteralGenerator();
 
   @override
   Future<String> generateForAnnotatedElement(
-      Element element, JsonLiteral annotation) async {
+      Element element, JsonLiteral annotation, BuildStep buildStep) async {
     if (p.isAbsolute(annotation.path)) {
       throw 'must be relative path to the source file';
     }
 
-    var source = element.source as FileBasedSource;
-    var sourcePath = source.file.getAbsolutePath();
-
-    var sourcePathDir = p.dirname(sourcePath);
-
-    var filePath = p.join(sourcePathDir, annotation.path);
-
-    if (!await FileSystemEntity.isFile(filePath)) {
-      throw 'Not a file! - $filePath';
-    }
-
-    var file = new File(filePath);
-    var content = await JSON.decode(await file.readAsString());
+    var sourcePathDir = p.dirname(buildStep.input.id.path);
+    var fileId = new AssetId(
+        buildStep.input.id.package, p.join(sourcePathDir, annotation.path));
+    var content = JSON.decode(await buildStep.readAsString(fileId));
 
     var thing = JSON.encode(content);
 

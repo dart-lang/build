@@ -21,7 +21,7 @@ class JsonSerializableGenerator
 
   @override
   Future<String> generateForAnnotatedElement(
-      Element element, JsonSerializable annotation) async {
+      Element element, JsonSerializable annotation, _) async {
     if (element is! ClassElement) {
       var friendlyName = friendlyNameForElement(element);
       throw new InvalidGenerationSourceError(

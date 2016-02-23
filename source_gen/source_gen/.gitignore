@@ -1,5 +1,5 @@
-.buildlog
-pubspec.lock
-packages
-.pub
+.dart_tool
 .packages
+.pub
+packages
+pubspec.lock

@@ -1,3 +1,23 @@
+## 0.5.0
+
+* **Breaking**: Switch to the `build` package for running `Generator`s. This
+  means that the top level `build` and `generate` functions are no longer
+  available, and have been replaced by the top level `build`, `watch`, and
+  `serve` functions from the `build` package, and the `GeneratorBuilder` class.
+  See `tool/build.dart`, `tool/watch.dart`, and `tool/phases.dart` for usage.
+
+  * Note that the `build` package is experimental, and likely to change.
+
+* **Breaking**: The build package provides an abstraction for reading/writing
+  files via the `BuildStep` class, and that is now also provided to
+  `Generator#generate` and `GeneratorForAnnotation#generateForAnnotatedElement`
+  as a second argument.
+
+* There is no longer a need to specify the files related to an individual
+  generator via `AssociatedFileSet`. Simply use the `BuildStep` instance to read
+  and write files and the `build` package will track any files you read in and
+  run incremental rebuilds as necessary.
+
 ## 0.4.8
 
 * Added support for `Symbol` and `Type` in annotations.
@@ -18,7 +38,7 @@
 
 ## 0.4.6
 
-* `JsonSerializable`: Added `JsonKey` annotation. 
+* `JsonSerializable`: Added `JsonKey` annotation.
 
 * Improved output of generation errors and stack traces.
 

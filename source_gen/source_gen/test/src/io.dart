@@ -1,8 +1,7 @@
 // Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
-library source_gen.io;
+library source_gen.test.src.io;
 
 import 'dart:async';
 import 'dart:io';
@@ -10,10 +9,6 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 bool pathToDartFile(String path) => p.extension(path) == '.dart';
-
-bool isGeneratedFile(String path) => path.endsWith(generatedExtension);
-
-const generatedExtension = '.g.dart';
 
 /// Skips symbolic links and any item in [directoryPath] recursively that begins
 /// with `.`.
@@ -117,19 +112,6 @@ Stream<String> _populateFiles(Directory directory,
       yield fse.path;
     } else if (fse is Directory) {
       yield* _populateFiles(fse, followLinks: followLinks);
-    }
-  }
-}
-
-/// Returns a new list of files that includes [paths] plus all files in the same
-/// directory as each file in [paths], without duplicates.
-Iterable<String> expandFileListToIncludePeers(Iterable<String> paths) sync* {
-  var dirs = paths.map((path) => p.dirname(path)).toSet();
-
-  for (var d in dirs) {
-    var dir = new Directory(d);
-    for (var f in dir.listSync().where((fse) => fse is File)) {
-      yield f.path;
     }
   }
 }

@@ -7,6 +7,7 @@ library source_gen.generator_for_annotation;
 import 'dart:async';
 
 import 'package:analyzer/src/generated/element.dart';
+import 'package:build/build.dart';
 
 import 'annotation.dart';
 import 'generator.dart';
@@ -15,7 +16,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   const GeneratorForAnnotation();
 
   @override
-  Future<String> generate(Element element) {
+  Future<String> generate(Element element, BuildStep buildStep) {
     var matchingAnnotations =
         element.metadata.where((md) => matchAnnotation(T, md)).toList();
 
@@ -30,8 +31,9 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
     assert(annotationInstance != null);
 
-    return generateForAnnotatedElement(element, annotationInstance);
+    return generateForAnnotatedElement(element, annotationInstance, buildStep);
   }
 
-  Future<String> generateForAnnotatedElement(Element element, T annotation);
+  Future<String> generateForAnnotatedElement(
+      Element element, T annotation, BuildStep buildStep);
 }

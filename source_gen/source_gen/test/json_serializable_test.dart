@@ -13,12 +13,12 @@ import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:analyzer/src/string_source.dart';
 import 'package:path/path.dart' as p;
-import 'package:scheduled_test/scheduled_test.dart';
+import 'package:test/test.dart';
 
-import 'package:source_gen/src/io.dart';
 import 'package:source_gen/src/utils.dart';
 import 'package:source_gen/generators/json_serializable_generator.dart';
 
+import 'src/io.dart';
 import 'test_utils.dart';
 
 void main() {
@@ -26,27 +26,29 @@ void main() {
     test('const field', () async {
       var element = await _getClassForCodeString('theAnswer');
 
-      expect(_generator.generate(element), throwsInvalidGenerationSourceError);
+      expect(_generator.generate(element, null),
+          throwsInvalidGenerationSourceError);
       // TODO: validate the properties on the thrown error
     });
 
     test('method', () async {
       var element = await _getClassForCodeString('annotatedMethod');
 
-      expect(_generator.generate(element), throwsInvalidGenerationSourceError);
+      expect(_generator.generate(element, null),
+          throwsInvalidGenerationSourceError);
       // TODO: validate the properties on the thrown error
     });
   });
 
   test('class with final fields', () async {
     var element = await _getClassForCodeString('FinalFields');
-    var generateResult = await _generator.generate(element);
+    var generateResult = await _generator.generate(element, null);
     expect(generateResult, contains("Map<String, dynamic> toJson()"));
   });
 
   test('unannotated classes no-op', () async {
     var element = await _getClassForCodeString('NoAnnotation');
-    var output = _generator.generate(element);
+    var output = _generator.generate(element, null);
 
     expect(output, isNull);
   });
@@ -54,7 +56,7 @@ void main() {
   group('valid inputs', () {
     test('class with no fields', () async {
       var element = await _getClassForCodeString('Person');
-      var output = await _generator.generate(element);
+      var output = await _generator.generate(element, null);
 
       expect(output, isNotNull);
 
@@ -64,7 +66,7 @@ void main() {
 
     test('class with ctor params', () async {
       var element = await _getClassForCodeString('Order');
-      var output = await _generator.generate(element);
+      var output = await _generator.generate(element, null);
 
       expect(output, isNotNull);
 
@@ -74,7 +76,7 @@ void main() {
 
     test('class with child json-able object', () async {
       var element = await _getClassForCodeString('ParentObject');
-      var output = await _generator.generate(element);
+      var output = await _generator.generate(element, null);
 
       expect(output, isNotNull);
 
@@ -83,7 +85,7 @@ void main() {
 
     test('class with child list of json-able objects', () async {
       var element = await _getClassForCodeString('ParentObjectWithChildren');
-      var output = await _generator.generate(element);
+      var output = await _generator.generate(element, null);
 
       expect(output, isNotNull);
 
@@ -94,7 +96,7 @@ void main() {
     test('class with child list of dynamic objects is left alone', () async {
       var element =
           await _getClassForCodeString('ParentObjectWithDynamicChildren');
-      var output = await _generator.generate(element);
+      var output = await _generator.generate(element, null);
 
       expect(output, isNotNull);
 
@@ -104,7 +106,7 @@ void main() {
 
   test('reads JsonKey annotations', () async {
     var element = await _getClassForCodeString('Person');
-    var output = await _generator.generate(element);
+    var output = await _generator.generate(element, null);
 
     expect(output, contains("'h': height,"));
     expect(output, contains("..height = json['h']"));

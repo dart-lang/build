@@ -5,19 +5,17 @@
 library source_gen.test.test_all;
 
 import 'annotation_test.dart' as annotation;
+import 'builder_test.dart' as builder;
 import 'find_libraries_test.dart' as find_libraries;
-import 'io_test.dart' as io;
 import 'json_serializable_test.dart' as json_generator;
-import 'generate_test.dart' as project_generator;
 import 'utils_test.dart' as utils;
 
 import 'package:test/test.dart';
 
 void main() {
   group('annotation', annotation.main);
+  group('builder', builder.main);
   group('find_libraries', find_libraries.main);
-  group('io', io.main);
   group('json_generator', json_generator.main);
-  group('project_generator', project_generator.main);
   group('utils', utils.main);
 }
