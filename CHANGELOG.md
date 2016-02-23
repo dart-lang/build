@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+- Added top level `serve` function.
+  - Just like `watch`, but it provides a server which blocks on any ongoing
+    builds before responding to requests.
+- Minor bug fixes.
+
 ## 0.1.3
 - Builds are now fully incremental, even on startup.
   - Builds will be invalidated if the build script or any of its dependencies
