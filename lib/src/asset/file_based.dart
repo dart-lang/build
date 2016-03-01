@@ -22,7 +22,8 @@ class FileBasedAssetReader implements AssetReader {
   final PackageGraph packageGraph;
   final ignoredDirs;
 
-  FileBasedAssetReader(this.packageGraph, {this.ignoredDirs: const ['build']});
+  FileBasedAssetReader(this.packageGraph,
+      {this.ignoredDirs: const ['build', 'packages', '.pub']});
 
   @override
   Future<bool> hasInput(AssetId id) async {

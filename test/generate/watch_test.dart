@@ -249,6 +249,35 @@ main() {
         expect(writer.assets[makeAssetId('a|web/b.txt.copy')].value, 'b');
         expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')].value, 'b');
       });
+
+      test('deleted generated outputs are regenerated', () async {
+        var phases = [
+          [copyAPhase],
+          [
+            new Phase([
+              new CopyBuilder()
+            ], [
+              new InputSet('a', filePatterns: ['**/*.copy'])
+            ]),
+          ]
+        ];
+        var writer = new InMemoryAssetWriter();
+        var results = [];
+        startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
+
+        var result = await nextResult(results);
+        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a',},
+            result, writer.assets);
+
+        await writer.delete(makeAssetId('a|web/a.txt.copy'));
+        FakeWatcher.notifyWatchers(
+            new WatchEvent(ChangeType.REMOVE, 'a/web/a.txt.copy'));
+
+        result = await nextResult(results);
+        // Should rebuild the generated asset and its outputs.
+        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a',},
+            result, writer.assets);
+      });
     });
 
     /// Tests for updates

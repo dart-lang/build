@@ -5,7 +5,7 @@
 import 'package:test/test.dart';
 import 'package:transformer_test/utils.dart';
 
-import '../common/common.dart';
+import '../common/common.dart' hide testPhases;
 
 main() {
   var singleCopyTransformer =

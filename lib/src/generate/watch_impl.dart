@@ -132,7 +132,7 @@ class WatchImpl {
       /// Only copy the "interesting" outputs.
       var updatedInputsCopy = <AssetId, ChangeType>{};
       updatedInputs.forEach((input, changeType) {
-        if (_shouldSkipInput(input)) return;
+        if (_shouldSkipInput(input, changeType)) return;
         updatedInputsCopy[input] = changeType;
       });
       updatedInputs.clear();
@@ -189,9 +189,9 @@ class WatchImpl {
   }
 
   /// Checks if we should skip a watch event for this [id].
-  bool _shouldSkipInput(AssetId id) {
+  bool _shouldSkipInput(AssetId id, ChangeType type) {
     if (id.path.startsWith('.build')) return true;
     var node = _assetGraph.get(id);
-    return node is GeneratedAssetNode;
+    return node is GeneratedAssetNode && type != ChangeType.REMOVE;
   }
 }

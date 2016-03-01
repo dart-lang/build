@@ -8,6 +8,7 @@ import 'dart:mirrors';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/asset.dart';
@@ -66,7 +67,8 @@ class BuildImpl {
 
     /// Assume incremental, change if necessary.
     var buildType = BuildType.Incremental;
-    try {
+    var done = new Completer();
+    Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
 
@@ -106,8 +108,9 @@ class BuildImpl {
               'any other change. Please terminate the build script and restart '
               'it.';
           _logger.severe(message);
-          return new BuildResult(BuildStatus.Failure, buildType, [],
-              exception: message);
+          done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
+              exception: message));
+          return;
         }
       }
 
@@ -136,15 +139,16 @@ class BuildImpl {
       await _writer.writeAsString(assetGraphAsset);
 
       _logger.info('Build succeeded');
-      return result;
-    } catch (e, s) {
-      _logger.severe('Build failed: $e\n\n$s');
-      return new BuildResult(BuildStatus.Failure, buildType, [],
-          exception: e, stackTrace: s);
-    } finally {
-      _buildRunning = false;
-      _isFirstBuild = false;
-    }
+      done.complete(result);
+    }, onError: (e, Chain chain) {
+      _logger.severe('Build failed: $e\n\n${chain.terse}');
+      done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
+          exception: e, stackTrace: chain.toTrace()));
+    });
+    var result = await done.future;
+    _buildRunning = false;
+    _isFirstBuild = false;
+    return result;
   }
 
   /// Asset containing previous asset dependency graph.
@@ -219,15 +223,22 @@ class BuildImpl {
     /// Collect updates to the graph based on any changed assets.
     var updates = <AssetId, ChangeType>{};
     await Future.wait(_assetGraph.allNodes
-        .where((node) => node is! GeneratedAssetNode)
+        .where((node) => node is! GeneratedAssetNode || node.wasOutput)
         .map((node) async {
-      if (await _reader.hasInput(node.id)) {
-        var lastModified = await _reader.lastModified(node.id);
-        if (lastModified.compareTo(_assetGraph.validAsOf) > 0) {
-          updates[node.id] = ChangeType.MODIFY;
-        }
-      } else {
+      var exists = await _reader.hasInput(node.id);
+      if (!exists) {
         updates[node.id] = ChangeType.REMOVE;
+        return;
+      }
+      // Only handle deletes for generated assets, their modified timestamp
+      // is always newer than the asset graph.
+      //
+      // TODO(jakemac): https://github.com/dart-lang/build/issues/61
+      if (node is GeneratedAssetNode) return;
+
+      var lastModified = await _reader.lastModified(node.id);
+      if (lastModified.compareTo(_assetGraph.validAsOf) > 0) {
+        updates[node.id] = ChangeType.MODIFY;
       }
     }));
     return updates;
@@ -244,7 +255,7 @@ class BuildImpl {
       seen.add(id);
       var node = _assetGraph.get(id);
       if (node == null) return;
-      
+
       if (_reader is CachedAssetReader) {
         (_reader as CachedAssetReader).evictFromCache(id);
       }

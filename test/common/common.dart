@@ -6,9 +6,11 @@ import 'dart:async';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
+import 'package:logging/logging.dart';
 
 import 'assets.dart';
 import 'matchers.dart';
+import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 
 export 'assets.dart';
@@ -65,4 +67,38 @@ Future<BuildResult> nextResult(results) {
     done.complete(results.last);
   }();
   return done.future;
+}
+
+testPhases(List<List<Phase>> phases, Map<String, String> inputs,
+    {Map<String, String> outputs,
+    PackageGraph packageGraph,
+    BuildStatus status: BuildStatus.Success,
+    exceptionMatcher,
+    InMemoryAssetWriter writer}) async {
+  writer ??= new InMemoryAssetWriter();
+  final actualAssets = writer.assets;
+  final reader = new InMemoryAssetReader(actualAssets);
+
+  inputs.forEach((serializedId, contents) {
+    writer.writeAsString(makeAsset(serializedId, contents));
+  });
+
+  if (packageGraph == null) {
+    var rootPackage = new PackageNode('a', null, null, null);
+    packageGraph = new PackageGraph.fromRoot(rootPackage);
+  }
+
+  var result = await build(phases,
+      reader: reader,
+      writer: writer,
+      packageGraph: packageGraph,
+      logLevel: Level.OFF);
+  expect(result.status, status,
+      reason: 'Exception:\n${result.exception}\n'
+          'Stack Trace:\n${result.stackTrace}');
+  if (exceptionMatcher != null) {
+    expect(result.exception, exceptionMatcher);
+  }
+
+  checkOutputs(outputs, result, actualAssets);
 }

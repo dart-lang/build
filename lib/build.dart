@@ -11,6 +11,7 @@ export 'src/asset/writer.dart';
 export 'src/builder/build_step.dart';
 export 'src/builder/builder.dart';
 export 'src/builder/exceptions.dart';
+export 'src/builder/transformer_builder.dart';
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/input_set.dart';
