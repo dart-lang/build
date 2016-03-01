@@ -58,6 +58,44 @@ main() {
       });
     });
 
+    group('package with dev dependencies', () {
+      var withDevDepsPkgPath = 'test/fixtures/with_dev_deps';
+
+      setUp(() async {
+        graph = await new PackageGraph.forPath(withDevDepsPkgPath);
+      });
+
+      test('allPackages contains dev deps of root pkg, but not others', () {
+        // Package `c` is a dev dep of package `a` so it shouldn't be present
+        // while package `b` is a dev dep of the root package so it should be.
+        expect(graph.allPackages, {
+          'a': graph['a'],
+          'b': graph['b'],
+          'with_dev_deps': graph['with_dev_deps'],
+        });
+      });
+
+      test('dev deps are contained in deps of root pkg, but not others', () {
+        // Package `b` shows as a dep because this is the root package.
+        expectPkg(
+            graph.root,
+            'with_dev_deps',
+            '1.0.0',
+            PackageDependencyType.Path,
+            withDevDepsPkgPath,
+            [graph['a'], graph['b']]);
+
+        // Package `c` does not appear because this is not the root package.
+        expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.Pub,
+            '$withDevDepsPkgPath/pkg/a/', []);
+
+        expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.Pub,
+            '$withDevDepsPkgPath/pkg/b/', []);
+
+        expect(graph['c'], isNull);
+      });
+    });
+
     test('custom creation via fromRoot', () {
       var a = new PackageNode('a', '1.0.0', PackageDependencyType.Path, null);
       var b = new PackageNode('b', '1.0.0', PackageDependencyType.Pub, null);

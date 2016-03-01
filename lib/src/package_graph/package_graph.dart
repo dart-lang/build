@@ -84,7 +84,7 @@ class PackageGraph {
           name, yaml['version'], type, packageLocations[name]);
       nodes[name] = node;
 
-      var deps = _depsFromYaml(yaml, withOverrides: isRoot);
+      var deps = _depsFromYaml(yaml, isRoot: isRoot);
       if (isRoot) rootDeps = deps;
       deps.forEach((name, source) {
         var dep = nodes[name];
@@ -168,9 +168,10 @@ PackageDependencyType _dependencyType(source) {
 }
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
-Map<String, YamlMap> _depsFromYaml(YamlMap yaml, {bool withOverrides: false}) {
-  var deps = new Map.from(yaml['dependencies'] as YamlMap ?? {});
-  if (withOverrides) {
+Map<String, YamlMap> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
+  var deps = new Map.from(yaml['dependencies'] ?? {});
+  if (isRoot) {
+    deps.addAll(new Map.from(yaml['dev_dependencies'] ?? {}));
     yaml['dependency_overrides']?.forEach((dep, source) {
       deps[dep] = source;
     });
