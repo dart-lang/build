@@ -354,6 +354,7 @@ main() {
       graph.add(aNode);
 
       var writer = new InMemoryAssetWriter();
+
       /// Spoof the `package:test/test.dart` import and pretend its newer than
       /// the current graph to cause a rebuild.
       writer.writeAsString(makeAsset('test|lib/test.dart', ''),

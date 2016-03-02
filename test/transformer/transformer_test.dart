@@ -75,34 +75,43 @@ main() {
     'a|web/a.txt.copy.1': 'hello',
   });
 
-  testPhases('cant overwrite files', [
-    [singleCopyTransformer]
-  ], {
-    'a|web/a.txt': 'hello',
-    'a|web/a.txt.copy': 'hello',
-  }, {}, messages: [
-    _fileExistsError("CopyBuilder", ["a|web/a.txt.copy"]),
-  ], expectBarbackErrors: true);
+  testPhases(
+      'cant overwrite files',
+      [
+        [singleCopyTransformer]
+      ],
+      {'a|web/a.txt': 'hello', 'a|web/a.txt.copy': 'hello'},
+      {},
+      messages: [
+        _fileExistsError("CopyBuilder", ["a|web/a.txt.copy"]),
+      ],
+      expectBarbackErrors: true);
 
   // Gives a barback error only, we can't detect this situation.
-  testPhases('builders in the same phase can\'t output the same file', [
-    [singleCopyTransformer, new GenericBuilderTransformer([new CopyBuilder()])]
-  ], {
-    'a|web/a.txt': 'hello',
-  }, {
-    'a|web/a.txt.copy': 'hello',
-  }, expectBarbackErrors: true);
+  testPhases(
+      'builders in the same phase can\'t output the same file',
+      [
+        [
+          singleCopyTransformer,
+          new GenericBuilderTransformer([new CopyBuilder()])
+        ]
+      ],
+      {'a|web/a.txt': 'hello',},
+      {'a|web/a.txt.copy': 'hello'},
+      expectBarbackErrors: true);
 
-  testPhases('builders in separate phases can\'t output the same file', [
-    [singleCopyTransformer],
-    [singleCopyTransformer],
-  ], {
-    'a|web/a.txt': 'hello',
-  }, {
-    'a|web/a.txt.copy': 'hello',
-  }, messages: [
-    _fileExistsError("CopyBuilder", ["a|web/a.txt.copy"]),
-  ], expectBarbackErrors: true);
+  testPhases(
+      'builders in separate phases can\'t output the same file',
+      [
+        [singleCopyTransformer],
+        [singleCopyTransformer],
+      ],
+      {'a|web/a.txt': 'hello'},
+      {'a|web/a.txt.copy': 'hello'},
+      messages: [
+        _fileExistsError("CopyBuilder", ["a|web/a.txt.copy"]),
+      ],
+      expectBarbackErrors: true);
 }
 
 String _fileExistsError(String builder, List<String> files) {

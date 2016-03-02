@@ -51,14 +51,14 @@ main() {
   });
 
   test("equals another ID with the same package and path", () {
-    expect(new AssetId.parse("foo|asset.txt"), equals(
-           new AssetId.parse("foo|asset.txt")));
+    expect(new AssetId.parse("foo|asset.txt"),
+        equals(new AssetId.parse("foo|asset.txt")));
 
-    expect(new AssetId.parse("foo|asset.txt"), isNot(equals(
-        new AssetId.parse("bar|asset.txt"))));
+    expect(new AssetId.parse("foo|asset.txt"),
+        isNot(equals(new AssetId.parse("bar|asset.txt"))));
 
-    expect(new AssetId.parse("foo|asset.txt"), isNot(equals(
-        new AssetId.parse("bar|other.txt"))));
+    expect(new AssetId.parse("foo|asset.txt"),
+        isNot(equals(new AssetId.parse("bar|other.txt"))));
   });
 
   test("identical assets are treated as the same in a Map/Set", () {

@@ -19,9 +19,7 @@ class PackageGraph {
 
   /// Creates a [PackageGraph] given the [root] [PackageNode].
   factory PackageGraph.fromRoot(PackageNode root) {
-    final allPackages = <String, PackageNode>{
-      root.name: root,
-    };
+    final allPackages = <String, PackageNode>{root.name: root};
 
     addDeps(PackageNode package) {
       for (var dep in package.dependencies) {
@@ -80,8 +78,8 @@ class PackageGraph {
         {bool isRoot: false}) {
       var name = yaml['name'];
       assert(!nodes.containsKey(name));
-      var node = new PackageNode(
-          name, yaml['version'], type, packageLocations[name]);
+      var node =
+          new PackageNode(name, yaml['version'], type, packageLocations[name]);
       nodes[name] = node;
 
       var deps = _depsFromYaml(yaml, isRoot: isRoot);

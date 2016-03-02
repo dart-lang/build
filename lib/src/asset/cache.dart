@@ -42,8 +42,10 @@ class AssetCache {
 class CachedAssetReader extends AssetReader {
   final AssetCache _cache;
   final AssetReader _reader;
+
   /// Cache of ongoing reads by [AssetId].
   final _pendingReads = <AssetId, Future<String>>{};
+
   /// Cache of ongoing hasInput checks by [AssetId].
   final _pendingHasInputChecks = <AssetId, Future<bool>>{};
 

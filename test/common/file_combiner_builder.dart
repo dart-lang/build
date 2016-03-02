@@ -24,5 +24,4 @@ class FileCombinerBuilder implements Builder {
   }
 }
 
-AssetId _combinedAssetId(AssetId inputId) =>
-    inputId.addExtension('.combined');
+AssetId _combinedAssetId(AssetId inputId) => inputId.addExtension('.combined');

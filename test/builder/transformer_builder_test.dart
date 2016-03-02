@@ -13,17 +13,18 @@ import '../common/common.dart';
 
 main() {
   test('basic test', () {
-    final copyTransformerBuilder = new TransformerBuilder(new CopyTransformer());
-    final phases = [[new Phase([copyTransformerBuilder], [new InputSet('a')])]];
+    final copyTransformerBuilder =
+        new TransformerBuilder(new CopyTransformer());
+    final phases = [
+      [
+        new Phase([copyTransformerBuilder], [new InputSet('a')])
+      ]
+    ];
 
-    testPhases(phases, {
-      'a|web/a.txt': 'a',
-    }, outputs: {
-      'a|web/a.txt.copy': 'a',
-    });
+    testPhases(phases, {'a|web/a.txt': 'a',},
+        outputs: {'a|web/a.txt.copy': 'a',});
   });
 }
-
 
 class CopyTransformer extends barback.Transformer
     with barback.DeclaringTransformer {
