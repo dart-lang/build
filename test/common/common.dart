@@ -9,17 +9,17 @@ import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
 import 'assets.dart';
-import 'matchers.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
+import 'matchers.dart';
 
 export 'assets.dart';
 export 'copy_builder.dart';
 export 'fake_watcher.dart';
 export 'file_combiner_builder.dart';
+export 'generic_builder_transformer.dart';
 export 'in_memory_reader.dart';
 export 'in_memory_writer.dart';
-export 'generic_builder_transformer.dart';
 export 'matchers.dart';
 export 'stub_reader.dart';
 export 'stub_writer.dart';

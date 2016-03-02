@@ -11,8 +11,8 @@ import '../asset/asset.dart' as build;
 import '../asset/id.dart' as build;
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../builder/builder.dart';
 import '../builder/build_step_impl.dart';
+import '../builder/builder.dart';
 import '../util/barback.dart';
 
 /// A [Transformer] which runs multiple [Builder]s.
