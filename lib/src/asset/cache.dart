@@ -60,12 +60,11 @@ class CachedAssetReader extends AssetReader {
   Future<bool> hasInput(AssetId id) {
     if (_cache.contains(id)) return new Future.value(true);
 
-    _pendingHasInputChecks.putIfAbsent(id, () async {
+    return _pendingHasInputChecks.putIfAbsent(id, () async {
       var exists = await _reader.hasInput(id);
       _pendingHasInputChecks.remove(id);
       return exists;
     });
-    return _pendingHasInputChecks[id];
   }
 
   @override
@@ -74,13 +73,12 @@ class CachedAssetReader extends AssetReader {
       return new Future.value(_cache.get(id).stringContents);
     }
 
-    _pendingReads.putIfAbsent(id, () async {
+    return _pendingReads.putIfAbsent(id, () async {
       var content = await _reader.readAsString(id, encoding: encoding);
       _cache.put(new Asset(id, content));
       _pendingReads.remove(id);
       return content;
     });
-    return _pendingReads[id];
   }
 
   @override
