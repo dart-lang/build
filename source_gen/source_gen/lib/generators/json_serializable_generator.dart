@@ -143,7 +143,8 @@ Set<FieldElement> _writeFactory(StringBuffer buffer, ClassElement classElement,
     buffer.write(', ');
   }
   buffer.writeAll(
-      ctorNamedArguments.map((paramElement) => '${paramElement.name}: ' +
+      ctorNamedArguments.map((paramElement) =>
+          '${paramElement.name}: ' +
           _jsonMapAccessToField(
               paramElement.name, fields[paramElement.name], paramElement)),
       ', ');

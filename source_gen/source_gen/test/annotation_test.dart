@@ -230,8 +230,10 @@ dynamic _getInstantiatedAnnotation(LibraryElement lib, String className) =>
 ElementAnnotation _getClassAnnotation(LibraryElement lib, String className) =>
     _getAnnotatedClass(lib, className).metadata.single;
 
-ClassElement _getAnnotatedClass(LibraryElement lib, String className) => lib
-    .units.expand((cu) => cu.types).singleWhere((cd) => cd.name == className);
+ClassElement _getAnnotatedClass(LibraryElement lib, String className) =>
+    lib.units
+        .expand((cu) => cu.types)
+        .singleWhere((cd) => cd.name == className);
 
 /// Returns a mock [ElementAnnotationImpl] whose
 /// `evaluationResult.value.type.element.library.source` is `libraryUri` and

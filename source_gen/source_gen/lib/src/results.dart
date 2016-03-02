@@ -65,7 +65,8 @@ class LibraryGenerationResult {
   String toString() => '$kind - $generatedFilePath';
 
   @override
-  bool operator ==(other) => other is LibraryGenerationResult &&
+  bool operator ==(other) =>
+      other is LibraryGenerationResult &&
       other.kind == kind &&
       other.generatedFilePath == generatedFilePath;
 }

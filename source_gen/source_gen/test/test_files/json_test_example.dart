@@ -20,7 +20,8 @@ class Person extends Object with _$PersonSerializerMixin {
 
   factory Person.fromJson(json) => _$PersonFromJson(json);
 
-  bool operator ==(other) => other is Person &&
+  bool operator ==(other) =>
+      other is Person &&
       firstName == other.firstName &&
       middleName == other.middleName &&
       lastName == other.lastName &&
@@ -41,7 +42,8 @@ class Order extends Object with _$OrderSerializerMixin {
 
   factory Order.fromJson(json) => _$OrderFromJson(json);
 
-  bool operator ==(other) => other is Order &&
+  bool operator ==(other) =>
+      other is Order &&
       count == other.count &&
       isRushed == other.isRushed &&
       const DeepCollectionEquality().equals(items, other.items);
@@ -57,7 +59,8 @@ class Item extends Object with _$ItemSerializerMixin {
 
   factory Item.fromJson(Map<String, Object> json) => _$ItemFromJson(json);
 
-  bool operator ==(other) => other is Item &&
+  bool operator ==(other) =>
+      other is Item &&
       price == other.price &&
       itemNumber == other.itemNumber &&
       const DeepCollectionEquality().equals(saleDates, other.saleDates);
