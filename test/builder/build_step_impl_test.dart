@@ -76,7 +76,7 @@ main() {
         Logger.root.level = Level.ALL;
         var logger = buildStep.logger;
         expect(logger.fullName, primary.id.toString());
-        var logs = [];
+        var logs = <LogRecord>[];
         var listener = logger.onRecord.listen(logs.add);
         logger.fine('hello');
         logger.warning('world');

@@ -10,6 +10,8 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/util/barback.dart';
 
+import 'package:logging/logging.dart';
+
 import '../common/common.dart';
 
 // Ported from
@@ -18,7 +20,7 @@ main() {
   var entryPoint = makeAssetId('a|web/main.dart');
   Future validateResolver(
       {Map<String, String> inputs,
-      validator(Resolver),
+      validator(Resolver resolver),
       List messages: const []}) async {
     var writer = new InMemoryAssetWriter();
     var reader = new InMemoryAssetReader(writer.assets);
@@ -28,7 +30,7 @@ main() {
     var builder = new TestBuilder(validator);
     var buildStep =
         new BuildStepImpl(assets[entryPoint], [], reader, writer, 'a');
-    var logs = [];
+    var logs = <LogRecord>[];
     if (messages != null) {
       buildStep.logger.onRecord.listen(logs.add);
     }

@@ -33,7 +33,7 @@ main() {
     group('simple', () {
       test('rebuilds on file updates', () async {
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
             .listen(results.add);
 
@@ -50,7 +50,7 @@ main() {
 
       test('rebuilds on new files', () async {
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
             .listen(results.add);
 
@@ -69,7 +69,7 @@ main() {
 
       test('rebuilds on deleted files', () async {
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b',},
                 writer)
             .listen(results.add);
@@ -95,7 +95,7 @@ main() {
 
       test('rebuilds properly update asset_graph.json', () async {
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'},
                 writer)
             .listen(results.add);
@@ -131,7 +131,7 @@ main() {
       test('build fails if script is updated after the first build starts',
           () async {
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
             .listen(results.add);
 
@@ -163,7 +163,7 @@ main() {
           ]
         ];
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
         var result = await nextResult(results);
@@ -191,7 +191,7 @@ main() {
           ]
         ];
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
         var result = await nextResult(results);
@@ -222,7 +222,7 @@ main() {
           ]
         ];
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
             .listen(results.add);
 
@@ -262,7 +262,7 @@ main() {
           ]
         ];
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
         var result = await nextResult(results);
@@ -293,7 +293,7 @@ main() {
           ],
         ];
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
             .listen(results.add);
 
@@ -328,7 +328,7 @@ main() {
           ],
         ];
         var writer = new InMemoryAssetWriter();
-        var results = [];
+        var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
             .listen(results.add);
 
@@ -360,7 +360,7 @@ Stream<BuildResult> startWatch(List<List<Phase>> phases,
   final reader = new InMemoryAssetReader(actualAssets);
   final rootPackage = new PackageNode('a', null, null, new Uri.file('a/'));
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
-  final watcherFactory = (path) => new FakeWatcher(path);
+  final watcherFactory = (String path) => new FakeWatcher(path);
 
   return watch(phases,
       debounceDelay: _debounceDelay,

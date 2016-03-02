@@ -110,7 +110,7 @@ main() {
 
     test('Multiple readAsString calls wait on the same future', () async {
       childReaderAssets[a.id] = new DatedString(a.stringContents);
-      var futures = [];
+      var futures = <Future>[];
       futures.add(reader.readAsString(a.id));
       futures.add(reader.readAsString(a.id));
       expect(futures[0], futures[1]);
@@ -122,7 +122,7 @@ main() {
 
     test('Multiple hasInput calls return the same future', () async {
       childReaderAssets[a.id] = new DatedString(a.stringContents);
-      var futures = [];
+      var futures = <Future>[];
       futures.add(reader.hasInput(a.id));
       futures.add(reader.hasInput(a.id));
       expect(futures[0], futures[1]);

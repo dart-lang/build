@@ -38,7 +38,7 @@ main() {
     });
 
     test('does basic builds', () async {
-      var results = [];
+      var results = <BuildResult>[];
       startServe(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
           .listen(results.add);
       var result = await nextResult(results);
@@ -56,7 +56,7 @@ main() {
       var buildBlocker1 = new Completer();
       copyBuilder.blockUntil = buildBlocker1.future;
 
-      var results = [];
+      var results = <BuildResult>[];
       startServe(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
           .listen(results.add);
       // Give the build enough time to get started.
@@ -117,7 +117,7 @@ Stream<BuildResult> startServe(List<List<Phase>> phases,
   final reader = new InMemoryAssetReader(actualAssets);
   final rootPackage = new PackageNode('a', null, null, new Uri.file('a/'));
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
-  final watcherFactory = (path) => new FakeWatcher(path);
+  final watcherFactory = (String path) => new FakeWatcher(path);
 
   return serve(phases,
       debounceDelay: _debounceDelay,

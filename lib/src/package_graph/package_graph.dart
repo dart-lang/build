@@ -166,8 +166,8 @@ PackageDependencyType _dependencyType(source) {
 }
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
-Map<String, YamlMap> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
-  var deps = new Map.from(yaml['dependencies'] ?? {});
+Map<String, dynamic> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
+  var deps = new Map<String, dynamic>.from(yaml['dependencies'] ?? {});
   if (isRoot) {
     deps.addAll(new Map.from(yaml['dev_dependencies'] ?? {}));
     yaml['dependency_overrides']?.forEach((dep, source) {

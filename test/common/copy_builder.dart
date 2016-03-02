@@ -44,7 +44,7 @@ class CopyBuilder implements Builder {
   }
 
   List<AssetId> declareOutputs(AssetId input) {
-    var outputs = [];
+    var outputs = <AssetId>[];
     for (int i = 0; i < numCopies; i++) {
       outputs.add(_copiedAssetId(input, numCopies == 1 ? null : i));
     }

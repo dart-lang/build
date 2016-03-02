@@ -56,7 +56,7 @@ void checkOutputs(Map<String, String> outputs, BuildResult result,
 }
 
 Future<BuildResult> nextResult(results) {
-  var done = new Completer();
+  var done = new Completer<BuildResult>();
   var startingLength = results.length;
   () async {
     while (results.length == startingLength) {

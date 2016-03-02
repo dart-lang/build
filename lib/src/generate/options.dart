@@ -37,7 +37,7 @@ class BuildOptions {
       {this.debounceDelay,
       this.directoryWatcherFactory,
       Level logLevel,
-      onLog(LogRecord),
+      onLog(LogRecord record),
       this.packageGraph,
       this.reader,
       this.writer,

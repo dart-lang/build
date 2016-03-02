@@ -58,10 +58,13 @@ class _AssetGraphMatcher extends Matcher {
         return false;
       }
       if (item is GeneratedAssetNode) {
-        if (expectedNode is! GeneratedAssetNode) return false;
-        if (item.primaryInput != expectedNode.primaryInput) return false;
-        if (item.needsUpdate != expectedNode.needsUpdate) return false;
-        if (item.wasOutput != expectedNode.wasOutput) return false;
+        if (expectedNode is GeneratedAssetNode) {
+          if (item.primaryInput != expectedNode.primaryInput) return false;
+          if (item.needsUpdate != expectedNode.needsUpdate) return false;
+          if (item.wasOutput != expectedNode.wasOutput) return false;
+        } else {
+          return false;
+        }
       }
     }
     return true;
