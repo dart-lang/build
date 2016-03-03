@@ -61,12 +61,12 @@ class WatchImpl {
   /// Whether we are in the process of terminating.
   bool _terminating = false;
 
-  WatchImpl(BuildOptions options, List<List<Phase>> phaseGroups)
+  WatchImpl(BuildOptions options, PhaseGroup phaseGroup)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         _writer = options.writer,
         _packageGraph = options.packageGraph,
-        _buildImpl = new BuildImpl(options, phaseGroups);
+        _buildImpl = new BuildImpl(options, phaseGroup);
 
   /// Completes after the current build is done, and stops further builds from
   /// happening.

@@ -37,17 +37,18 @@ class BuildImpl {
   final AssetReader _reader;
   final AssetWriter _writer;
   final PackageGraph _packageGraph;
-  final List<List<Phase>> _phaseGroups;
+  final List<List<BuildAction>> _buildActions;
   final _inputsByPackage = <String, Set<AssetId>>{};
   bool _buildRunning = false;
   final _logger = new Logger('Build');
 
   bool _isFirstBuild = true;
 
-  BuildImpl(BuildOptions options, this._phaseGroups)
+  BuildImpl(BuildOptions options, PhaseGroup phaseGroup)
       : _reader = options.reader,
         _writer = options.writer,
-        _packageGraph = options.packageGraph;
+        _packageGraph = options.packageGraph,
+        _buildActions = phaseGroup.buildActions;
 
   /// Runs a build
   ///
@@ -313,20 +314,17 @@ class BuildImpl {
     // No cache file exists, run `declareOutputs` on all phases and collect all
     // outputs which conflict with existing assets.
     final conflictingOutputs = new Set<AssetId>();
-    for (var group in _phaseGroups) {
+    for (var phase in _buildActions) {
       final groupOutputIds = <AssetId>[];
-      for (var phase in group) {
-        var inputs = _matchingInputs(phase.inputSets);
+      for (var action in phase) {
+        var inputs = _matchingInputs(action.inputSet);
         for (var input in inputs) {
-          for (var builder in phase.builders) {
-            var outputs = builder.declareOutputs(input);
+          var outputs = action.builder.declareOutputs(input);
 
-            groupOutputIds.addAll(outputs);
-            for (var output in outputs) {
-              if (tempInputsByPackage[output.package]?.contains(output) ==
-                  true) {
-                conflictingOutputs.add(output);
-              }
+          groupOutputIds.addAll(outputs);
+          for (var output in outputs) {
+            if (tempInputsByPackage[output.package]?.contains(output) == true) {
+              conflictingOutputs.add(output);
             }
           }
         }
@@ -375,37 +373,33 @@ class BuildImpl {
     }
   }
 
-  /// Runs the [_phaseGroups] and returns a [Future<BuildResult>] which
-  /// completes once all [Phase]s are done.
+  /// Runs the [Phase]s in [_buildActions] and returns a [Future<BuildResult>]
+  /// which completes once all [BuildAction]s are done.
   Future<BuildResult> _runPhases() async {
     final outputs = <Asset>[];
-    int phaseGroupNum = 0;
-    for (var group in _phaseGroups) {
+    for (var phase in _buildActions) {
       /// Collects all the ids for files which are output by this stage. This
       /// also includes files which didn't get regenerated because they weren't,
       /// dirty unlike [outputs] which only gets files which were explicitly
       /// generated in this build.
-      final groupOutputIds = new Set<AssetId>();
-      for (var phase in group) {
-        var inputs = _matchingInputs(phase.inputSets);
-        for (var builder in phase.builders) {
-          // TODO(jakemac): Optimize, we can run all the builders in a phase
-          // at the same time instead of sequentially.
-          await for (var output
-              in _runBuilder(builder, inputs, phaseGroupNum, groupOutputIds)) {
-            outputs.add(output);
-          }
+      final phaseOutputIds = new Set<AssetId>();
+      for (var action in phase) {
+        var inputs = _matchingInputs(action.inputSet);
+        // TODO(jakemac): Optimize, we can run all the builders in a phase
+        // at the same time instead of sequentially.
+        await for (var output
+            in _runBuilder(action.builder, inputs, phaseOutputIds)) {
+          outputs.add(output);
         }
       }
 
       /// Once the group is done, add all outputs so they can be used in the next
       /// phase.
-      for (var outputId in groupOutputIds) {
+      for (var outputId in phaseOutputIds) {
         _inputsByPackage.putIfAbsent(
             outputId.package, () => new Set<AssetId>());
         _inputsByPackage[outputId.package].add(outputId);
       }
-      phaseGroupNum++;
     }
     return new BuildResult(BuildStatus.Success, BuildType.Full, outputs);
   }
@@ -413,15 +407,14 @@ class BuildImpl {
   /// Initializes the map of all the available inputs by package.
   Future _initializeInputsByPackage() async {
     final packages = new Set<String>();
-    for (var group in _phaseGroups) {
-      for (var phase in group) {
-        for (var inputSet in phase.inputSets) {
-          packages.add(inputSet.package);
-        }
+    for (var phase in _buildActions) {
+      for (var action in phase) {
+        packages.add(action.inputSet.package);
       }
     }
 
-    var inputSets = packages.map((package) => new InputSet(package));
+    var inputSets = packages.map((package) => new InputSet(
+        package, [package == _packageGraph.root.name ? '**/*' : 'lib/**']));
     var allInputs = await _reader.listAssetIds(inputSets).toList();
     _inputsByPackage.clear();
     for (var input in allInputs) {
@@ -434,14 +427,12 @@ class BuildImpl {
   }
 
   /// Gets a list of all inputs matching [inputSets].
-  Set<AssetId> _matchingInputs(Iterable<InputSet> inputSets) {
+  Set<AssetId> _matchingInputs(InputSet inputSet) {
     var inputs = new Set<AssetId>();
-    for (var inputSet in inputSets) {
-      assert(_inputsByPackage.containsKey(inputSet.package));
-      for (var input in _inputsByPackage[inputSet.package]) {
-        if (inputSet.globs.any((g) => g.matches(input.path))) {
-          inputs.add(input);
-        }
+    assert(_inputsByPackage.containsKey(inputSet.package));
+    for (var input in _inputsByPackage[inputSet.package]) {
+      if (inputSet.globs.any((g) => g.matches(input.path))) {
+        inputs.add(input);
       }
     }
     return inputs;
@@ -458,7 +449,7 @@ class BuildImpl {
 
   /// Runs [builder] with [inputs] as inputs.
   Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
-      int phaseGroupNum, Set<AssetId> groupOutputs) async* {
+      Set<AssetId> groupOutputs) async* {
     for (var input in primaryInputs) {
       var expectedOutputs = builder.declareOutputs(input);
 

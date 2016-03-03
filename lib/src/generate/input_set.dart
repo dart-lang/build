@@ -16,12 +16,17 @@ class InputSet {
   /// listed.
   final List<Glob> globs;
 
-  InputSet(this.package, {Iterable<String> filePatterns})
-      : this.globs = _globsFor(filePatterns);
-}
+  InputSet(this.package, Iterable<String> globs)
+      : this.globs =
+            new List.unmodifiable(globs.map((pattern) => new Glob(pattern)));
 
-List<Glob> _globsFor(Iterable<String> filePatterns) {
-  filePatterns ??= ['**/*'];
-  return new List.unmodifiable(
-      filePatterns.map((pattern) => new Glob(pattern)));
+  String toString() {
+    var buffer = new StringBuffer()
+      ..write('InputSet: package `$package` with globs');
+    for (var glob in globs) {
+      buffer.write(' `${glob.pattern}`');
+    }
+    buffer.writeln('');
+    return buffer.toString();
+  }
 }

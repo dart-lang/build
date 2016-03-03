@@ -20,13 +20,9 @@ class CopyBuilder extends Builder {
   List<AssetId> declareOutputs(AssetId inputId) => [_copiedAssetId(inputId)];
 
   /// Only runs on the root package, and copies all *.txt files.
-  static List<Phase> buildPhases(PackageGraph graph) {
-    var phase = new Phase([
-      new CopyBuilder()
-    ], [
-      new InputSet(graph.root.name, filePatterns: ['**/*.txt'])
-    ]);
-    return [phase];
+  static void addPhases(PhaseGroup group, PackageGraph graph) {
+    group.newPhase().addAction(
+        new CopyBuilder(), new InputSet(graph.root.name, ['**/*.txt']));
   }
 }
 

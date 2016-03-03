@@ -18,7 +18,7 @@ main() {
     InMemoryAssetWriter writer;
     CopyBuilder copyBuilder;
     Phase copyAPhase;
-    List<List<Phase>> copyAPhaseGroup;
+    PhaseGroup copyAPhaseGroup;
 
     setUp(() {
       _terminateServeController = new StreamController();
@@ -26,10 +26,9 @@ main() {
 
       /// Basic phases/phase groups which get used in many tests
       copyBuilder = new CopyBuilder();
-      copyAPhase = new Phase([copyBuilder], [new InputSet('a')]);
-      copyAPhaseGroup = [
-        [copyAPhase]
-      ];
+      copyAPhase = new Phase()
+        ..addAction(copyBuilder, new InputSet('a', ['**/*']));
+      copyAPhaseGroup = new PhaseGroup()..addPhase(copyAPhase);
     });
 
     tearDown(() async {
@@ -108,7 +107,7 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
-Stream<BuildResult> startServe(List<List<Phase>> phases,
+Stream<BuildResult> startServe(PhaseGroup phases,
     Map<String, String> inputs, InMemoryAssetWriter writer) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAsset(serializedId, contents));

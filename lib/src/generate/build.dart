@@ -37,7 +37,7 @@ import 'watch_impl.dart';
 /// By default the [ProcessSignal.SIGINT] stream is used. In this mode, it
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
-Future<BuildResult> build(List<List<Phase>> phaseGroups,
+Future<BuildResult> build(PhaseGroup phaseGroup,
     {PackageGraph packageGraph,
     AssetReader reader,
     AssetWriter writer,
@@ -50,7 +50,7 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
       writer: writer,
       logLevel: logLevel,
       onLog: onLog);
-  var buildImpl = new BuildImpl(options, phaseGroups);
+  var buildImpl = new BuildImpl(options, phaseGroup);
 
   /// Run the build!
   var futureResult = buildImpl.runBuild();
@@ -82,7 +82,7 @@ Future<BuildResult> build(List<List<Phase>> phaseGroups,
 /// first event will allow any ongoing builds to finish, and then the program
 ///  will complete normally. Subsequent events are not handled (and will
 ///  typically cause a shutdown).
-Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
+Stream<BuildResult> watch(PhaseGroup phaseGroup,
     {PackageGraph packageGraph,
     AssetReader reader,
     AssetWriter writer,
@@ -99,7 +99,7 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
       onLog: onLog,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory);
-  var watchImpl = new WatchImpl(options, phaseGroups);
+  var watchImpl = new WatchImpl(options, phaseGroup);
 
   var resultStream = watchImpl.runWatch();
 
@@ -119,7 +119,7 @@ Stream<BuildResult> watch(List<List<Phase>> phaseGroups,
 /// By default a static server will be set up to serve [directory] at
 /// [address]:[port], but instead a [requestHandler] may be provided for custom
 /// behavior.
-Stream<BuildResult> serve(List<List<Phase>> phaseGroups,
+Stream<BuildResult> serve(PhaseGroup phaseGroup,
     {PackageGraph packageGraph,
     AssetReader reader,
     AssetWriter writer,
@@ -143,7 +143,7 @@ Stream<BuildResult> serve(List<List<Phase>> phaseGroups,
       directory: directory,
       address: address,
       port: port);
-  var watchImpl = new WatchImpl(options, phaseGroups);
+  var watchImpl = new WatchImpl(options, phaseGroup);
 
   var resultStream = watchImpl.runWatch();
   var serverStarted = startServer(watchImpl, options);

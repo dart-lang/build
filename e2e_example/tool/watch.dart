@@ -10,13 +10,14 @@ import 'package:e2e_example/copy_builder.dart';
 main() async {
   /// Builds a full package dependency graph for the current package.
   var graph = new PackageGraph.forThisPackage();
+  var phases = new PhaseGroup();
 
   /// Give [Builder]s access to a [PackageGraph] so they can choose which
   /// packages to run on. This simplifies user code a lot, and helps to mitigate
   /// the transitive deps issue.
-  var phases = CopyBuilder.buildPhases(graph);
+  CopyBuilder.addPhases(phases, graph);
 
-  await for (var result in watch([phases])) {
+  await for (var result in watch(phases)) {
     if (result.status == BuildStatus.Success) {
       stdout.writeln(result);
     } else {

@@ -14,10 +14,9 @@ import '../common/common.dart';
 
 main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyAPhase = new Phase([new CopyBuilder()], [new InputSet('a')]);
-  final copyAPhaseGroup = [
-    [copyAPhase]
-  ];
+  final aFiles = new InputSet('a', ['**/*']);
+  final copyAPhase = new Phase()..addAction(new CopyBuilder(), aFiles);
+  final copyAPhaseGroup = new PhaseGroup()..addPhase(copyAPhase);
 
   group('build', () {
     group('with root package inputs', () {
@@ -28,11 +27,8 @@ main() {
       });
 
       test('one phase, one builder, one-to-many outputs', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder(numCopies: 2)], [new InputSet('a')]),
-          ]
-        ];
+        var phases =
+            new PhaseGroup.singleAction(new CopyBuilder(numCopies: 2), aFiles);
         await testPhases(phases, {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
@@ -45,13 +41,12 @@ main() {
       });
 
       test('one phase, multiple builders', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder(), new CopyBuilder(extension: 'clone')],
-                [new InputSet('a')]),
-            new Phase([new CopyBuilder(numCopies: 2)], [new InputSet('a')]),
-          ]
-        ];
+        var phases = new PhaseGroup();
+        phases.newPhase()
+          ..addAction(new CopyBuilder(), aFiles)
+          ..addAction(new CopyBuilder(extension: 'clone'), aFiles)
+          ..addAction(new CopyBuilder(numCopies: 2), aFiles);
+
         await testPhases(phases, {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
@@ -68,23 +63,13 @@ main() {
       });
 
       test('multiple phases, multiple builders', () async {
-        var phases = [
-          [copyAPhase],
-          [
-            new Phase([
-              new CopyBuilder(extension: 'clone')
-            ], [
-              new InputSet('a', filePatterns: ['**/*.txt'])
-            ]),
-          ],
-          [
-            new Phase([
-              new CopyBuilder(numCopies: 2)
-            ], [
-              new InputSet('a', filePatterns: ['web/*.txt.clone'])
-            ]),
-          ]
-        ];
+        var phases = new PhaseGroup();
+        phases.addPhase(copyAPhase);
+        phases.newPhase().addAction(new CopyBuilder(extension: 'clone'),
+            new InputSet('a', ['**/*.txt']));
+        phases.newPhase().addAction(new CopyBuilder(numCopies: 2),
+            new InputSet('a', ['web/*.txt.clone']));
+
         await testPhases(phases, {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
@@ -101,46 +86,33 @@ main() {
 
     group('inputs from other packages', () {
       test('only gets inputs from lib, can output to root package', () async {
-        var phases = [
-          [
-            new Phase(
-                [new CopyBuilder(outputPackage: 'a')], [new InputSet('b')]),
-          ]
-        ];
+        var phases = new PhaseGroup.singleAction(
+            new CopyBuilder(outputPackage: 'a'), new InputSet('b', ['**/*']));
+
         await testPhases(phases, {'b|web/b.txt': 'b', 'b|lib/b.txt': 'b'},
             outputs: {'a|lib/b.txt.copy': 'b'});
       });
 
       test('can\'t output files in non-root packages', () async {
-        var phases = [
-          [
-            new Phase([new CopyBuilder()], [new InputSet('b')]),
-          ]
-        ];
+        var phases = new PhaseGroup.singleAction(
+            new CopyBuilder(), new InputSet('b', ['**/*']));
+
         await testPhases(phases, {'b|lib/b.txt': 'b'},
             outputs: {}, status: BuildStatus.Failure);
       });
     });
 
     test('multiple phases, inputs from multiple packages', () async {
-      var phases = [
-        [
-          copyAPhase,
-          new Phase([
-            new CopyBuilder(extension: 'clone', outputPackage: 'a')
-          ], [
-            new InputSet('b', filePatterns: ['**/*.txt']),
-          ]),
-        ],
-        [
-          new Phase([
-            new CopyBuilder(numCopies: 2, outputPackage: 'a')
-          ], [
-            new InputSet('a', filePatterns: ['lib/*.txt.*']),
-            new InputSet('b', filePatterns: ['**/*.dart']),
-          ]),
-        ]
-      ];
+      var phases = new PhaseGroup();
+      phases.newPhase()
+        ..addAction(new CopyBuilder(), aFiles)
+        ..addAction(new CopyBuilder(extension: 'clone', outputPackage: 'a'),
+            new InputSet('b', ['**/*.txt']));
+      var twoCopyBuilder = new CopyBuilder(numCopies: 2, outputPackage: 'a');
+      phases.newPhase()
+        ..addAction(twoCopyBuilder, new InputSet('a', ['lib/*.txt.*']))
+        ..addAction(twoCopyBuilder, new InputSet('b', ['**/*.dart']));
+
       await testPhases(phases, {
         'a|web/1.txt': '1',
         'a|lib/2.txt': '2',
@@ -253,16 +225,11 @@ main() {
     });
 
     test('invalidates generated assets based on graph age', () async {
-      var phases = [
-        [copyAPhase],
-        [
-          new Phase([
-            new CopyBuilder(extension: 'clone')
-          ], [
-            new InputSet('a', filePatterns: ['**/*.txt.copy'])
-          ])
-        ],
-      ];
+      var phases = new PhaseGroup();
+      phases.addPhase(copyAPhase);
+      phases.newPhase()
+        ..addAction(new CopyBuilder(extension: 'clone'),
+            new InputSet('a', ['**/*.txt.copy']));
 
       var graph = new AssetGraph()..validAsOf = new DateTime.now();
 
@@ -302,16 +269,12 @@ main() {
     });
 
     test('graph/file system get cleaned up for deleted inputs', () async {
-      var phases = [
-        [copyAPhase],
-        [
-          new Phase([
-            new CopyBuilder(extension: 'clone')
-          ], [
-            new InputSet('a', filePatterns: ['**/*.txt.copy'])
-          ])
-        ],
-      ];
+      var phases = new PhaseGroup();
+      phases.addPhase(copyAPhase);
+      phases.newPhase()
+        ..addAction(new CopyBuilder(extension: 'clone'),
+            new InputSet('a', ['**/*.txt.copy']));
+
       var graph = new AssetGraph();
       var aCloneNode = new GeneratedAssetNode(makeAssetId('a|lib/a.txt.copy'),
           false, true, makeAssetId('a|lib/a.txt.copy.clone'));

@@ -69,7 +69,7 @@ Future<BuildResult> nextResult(results) {
   return done.future;
 }
 
-testPhases(List<List<Phase>> phases, Map<String, String> inputs,
+testPhases(PhaseGroup phases, Map<String, String> inputs,
     {Map<String, String> outputs,
     PackageGraph packageGraph,
     BuildStatus status: BuildStatus.Success,

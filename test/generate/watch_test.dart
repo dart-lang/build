@@ -15,10 +15,9 @@ import '../common/common.dart';
 
 main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyAPhase = new Phase([new CopyBuilder()], [new InputSet('a')]);
-  final copyAPhaseGroup = [
-    [copyAPhase]
-  ];
+  final copyAPhase = new Phase()
+    ..addAction(new CopyBuilder(), new InputSet('a', ['**/*']));
+  final copyAPhaseGroup = new PhaseGroup()..addPhase(copyAPhase);
 
   group('watch', () {
     setUp(() {
@@ -152,16 +151,11 @@ main() {
 
     group('multiple phases', () {
       test('edits propagate through all phases', () async {
-        var phases = [
-          [copyAPhase],
-          [
-            new Phase([
-              new CopyBuilder()
-            ], [
-              new InputSet('a', filePatterns: ['**/*.copy'])
-            ]),
-          ]
-        ];
+        var phases = new PhaseGroup();
+        phases.addPhase(copyAPhase);
+        phases.newPhase()
+          ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
+
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
@@ -180,16 +174,11 @@ main() {
       });
 
       test('adds propagate through all phases', () async {
-        var phases = [
-          [copyAPhase],
-          [
-            new Phase([
-              new CopyBuilder()
-            ], [
-              new InputSet('a', filePatterns: ['**/*.copy'])
-            ]),
-          ]
-        ];
+        var phases = new PhaseGroup();
+        phases.addPhase(copyAPhase);
+        phases.newPhase()
+          ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
+
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
@@ -211,16 +200,11 @@ main() {
       });
 
       test('deletes propagate through all phases', () async {
-        var phases = [
-          [copyAPhase],
-          [
-            new Phase([
-              new CopyBuilder()
-            ], [
-              new InputSet('a', filePatterns: ['**/*.copy'])
-            ]),
-          ]
-        ];
+        var phases = new PhaseGroup();
+        phases.addPhase(copyAPhase);
+        phases.newPhase()
+          ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
+
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
@@ -251,16 +235,11 @@ main() {
       });
 
       test('deleted generated outputs are regenerated', () async {
-        var phases = [
-          [copyAPhase],
-          [
-            new Phase([
-              new CopyBuilder()
-            ], [
-              new InputSet('a', filePatterns: ['**/*.copy'])
-            ]),
-          ]
-        ];
+        var phases = new PhaseGroup();
+        phases.addPhase(copyAPhase);
+        phases.newPhase()
+          ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
+
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
@@ -283,15 +262,10 @@ main() {
     /// Tests for updates
     group('secondary dependency', () {
       test('of an output file is edited', () async {
-        var phases = [
-          [
-            new Phase([
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt'))
-            ], [
-              new InputSet('a', filePatterns: ['web/a.txt'])
-            ]),
-          ],
-        ];
+        var phases = new PhaseGroup.singleAction(
+            new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
+            new InputSet('a', ['web/a.txt']));
+
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
@@ -311,22 +285,14 @@ main() {
       test(
           'of an output which is derived from another generated file is edited',
           () async {
-        var phases = [
-          [
-            new Phase([
-              new CopyBuilder()
-            ], [
-              new InputSet('a', filePatterns: ['web/a.txt'])
-            ]),
-          ],
-          [
-            new Phase([
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt'))
-            ], [
-              new InputSet('a', filePatterns: ['web/a.txt.copy'])
-            ]),
-          ],
-        ];
+        var phases = new PhaseGroup();
+        phases
+            .newPhase()
+            .addAction(new CopyBuilder(), new InputSet('a', ['web/a.txt']));
+        phases.newPhase().addAction(
+            new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
+            new InputSet('a', ['web/a.txt.copy']));
+
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
@@ -351,8 +317,8 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateWatchController;
 
 /// Start watching files and running builds.
-Stream<BuildResult> startWatch(List<List<Phase>> phases,
-    Map<String, String> inputs, InMemoryAssetWriter writer) {
+Stream<BuildResult> startWatch(
+    PhaseGroup phases, Map<String, String> inputs, InMemoryAssetWriter writer) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAsset(serializedId, contents));
   });

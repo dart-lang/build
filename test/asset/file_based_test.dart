@@ -58,8 +58,8 @@ main() {
 
     test('can list files based on simple InputSets', () async {
       var inputSets = [
-        new InputSet('basic_pkg', filePatterns: ['{lib,web}/**']),
-        new InputSet('a', filePatterns: ['lib/**']),
+        new InputSet('basic_pkg', ['{lib,web}/**']),
+        new InputSet('a', ['lib/**']),
       ];
       expect(
           await reader.listAssetIds(inputSets).toList(),
@@ -72,8 +72,8 @@ main() {
 
     test('can list files based on InputSets with globs', () async {
       var inputSets = [
-        new InputSet('basic_pkg', filePatterns: ['web/*.txt']),
-        new InputSet('a', filePatterns: ['lib/*']),
+        new InputSet('basic_pkg', ['web/*.txt']),
+        new InputSet('a', ['lib/*']),
       ];
       expect(
           await reader.listAssetIds(inputSets).toList(),
