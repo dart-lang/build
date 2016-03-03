@@ -344,7 +344,8 @@ class BuildImpl {
 
     stdout.writeln('Found ${conflictingOutputs.length} declared outputs '
         'which already exist on disk. This is likely because the `.build` '
-        'folder was deleted.');
+        'folder was deleted, or you are submitting generated files to your '
+        'source repository.');
     var done = false;
     while (!done) {
       stdout.write('Delete these files (y/n) (or list them (l))?: ');
