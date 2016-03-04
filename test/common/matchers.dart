@@ -25,7 +25,8 @@ class _AssetMatcher extends Matcher {
   const _AssetMatcher(this._expected);
 
   @override
-  bool matches(item, _) => item is Asset &&
+  bool matches(item, _) =>
+      item is Asset &&
       item.id == _expected.id &&
       item.stringContents == _expected.stringContents;
 

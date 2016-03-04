@@ -70,7 +70,8 @@ main() {
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b',},
-            writer).listen(results.add);
+                writer)
+            .listen(results.add);
 
         var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
@@ -95,7 +96,8 @@ main() {
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'},
-            writer).listen(results.add);
+                writer)
+            .listen(results.add);
 
         var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
