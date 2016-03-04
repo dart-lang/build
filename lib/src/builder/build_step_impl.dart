@@ -99,8 +99,10 @@ class BuildStepImpl implements BuildStep {
   }
 
   /// Resolves [id] and returns a [Future<Resolver>] once that is done.
-  Future<Resolver> resolve(AssetId id) async => new Resolver(
-      await _resolvers.get(toBarbackTransform(this), [toBarbackAssetId(id)]));
+  @override
+  Future<Resolver> resolve(AssetId id, {bool resolveAllConstants}) async =>
+      new Resolver(await _resolvers.get(toBarbackTransform(this),
+          [toBarbackAssetId(id)], resolveAllConstants));
 
   /// Should be called after `build` has completed. This will wait until for
   /// [_outputsCompleted].

@@ -26,10 +26,15 @@ class Resolver {
   ///
   /// [release] must be called when done handling this [Resolver] to allow it
   /// to be used by later phases.
+  ///
+  /// If you pass a value of [false] for [resolveAllConstants], then constants
+  /// will only be resolved in [entryPoints], and not any other libraries. This
+  /// gives a significant speed boost, at the cost of not being able to assume
+  /// all constants are already resolved.
   Future<Resolver> resolve(BuildStep buildStep,
-      [List<AssetId> entryPoints]) async {
+      {List<AssetId> entryPoints, bool resolveAllConstants}) async {
     return new Resolver(await resolver.resolve(toBarbackTransform(buildStep),
-        entryPoints?.map(toBarbackAssetId)?.toList()));
+        entryPoints?.map(toBarbackAssetId)?.toList(), resolveAllConstants));
   }
 
   /// Release this resolver so it can be updated by following build steps.

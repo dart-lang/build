@@ -31,5 +31,10 @@ abstract class BuildStep {
 
   /// Gives a [Resolver] for [id]. This must be released when it is done being
   /// used.
-  Future<Resolver> resolve(AssetId id);
+  ///
+  /// If you pass a value of [false] for [resolveAllConstants], then constants
+  /// will only be resolved in [id], and not any other libraries. This gives a
+  /// significant speed boost, at the cost of not being able to assume all
+  /// constants are already resolved.
+  Future<Resolver> resolve(AssetId id, {bool resolveAllConstants});
 }
