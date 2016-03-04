@@ -10,7 +10,7 @@ environment:
 dependencies:
   analyzer: ^0.27.1
   barback: ^0.15.0
-  code_transformers: ^0.4.0
+  code_transformers: ^0.4.1
   logging: ^0.11.2
   glob: ^1.1.0
   path: ^1.1.0

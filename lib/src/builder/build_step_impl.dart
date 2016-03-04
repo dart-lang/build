@@ -23,7 +23,8 @@ import 'exceptions.dart';
 class BuildStepImpl implements BuildStep {
   /// Single `_resolvers` instance for all [BuildStepImpl]s
   static code_transformers.Resolvers _resolvers =
-      new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
+      new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
+          useSharedSources: true);
 
   /// The primary input for this build step.
   @override
