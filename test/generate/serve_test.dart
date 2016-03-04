@@ -107,8 +107,8 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
-Stream<BuildResult> startServe(PhaseGroup phases,
-    Map<String, String> inputs, InMemoryAssetWriter writer) {
+Stream<BuildResult> startServe(
+    PhaseGroup phases, Map<String, String> inputs, InMemoryAssetWriter writer) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAsset(serializedId, contents));
   });
