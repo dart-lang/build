@@ -384,15 +384,14 @@ class BuildImpl {
       /// dirty unlike [outputs] which only gets files which were explicitly
       /// generated in this build.
       final phaseOutputIds = new Set<AssetId>();
-      for (var action in phase) {
+
+      await Future.wait(phase.map((action) async {
         var inputs = _matchingInputs(action.inputSet);
-        // TODO(jakemac): Optimize, we can run all the builders in a phase
-        // at the same time instead of sequentially.
         await for (var output
             in _runBuilder(action.builder, inputs, phaseOutputIds)) {
           outputs.add(output);
         }
-      }
+      }));
 
       /// Once the group is done, add all outputs so they can be used in the next
       /// phase.
