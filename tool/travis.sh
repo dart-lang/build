@@ -7,9 +7,11 @@
 # Fast fail the script on failures.
 set -e
 
-# Verify that the libraries are error free.
-dartanalyzer --fatal-warnings \
-  lib/build.dart
+# Verify that the libraries are error free, requires some strong mode changes
+# that are only in the dev channel right now though.
+if [ "$TRAVIS_DART_VERSION" != "stable" ]; then
+  dartanalyzer --fatal-warnings lib/build.dart
+fi
 
 # Run the tests.
 pub run test

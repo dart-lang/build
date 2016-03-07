@@ -224,7 +224,9 @@ class BuildImpl {
     /// Collect updates to the graph based on any changed assets.
     var updates = <AssetId, ChangeType>{};
     await Future.wait(_assetGraph.allNodes
-        .where((node) => node is! GeneratedAssetNode || node.wasOutput)
+        .where((node) =>
+            node is! GeneratedAssetNode ||
+            (node as GeneratedAssetNode).wasOutput)
         .map((node) async {
       var exists = await _reader.hasInput(node.id);
       if (!exists) {
@@ -297,7 +299,7 @@ class BuildImpl {
           .where((node) => node is GeneratedAssetNode)
           .map((node) async {
         _inputsByPackage[node.id.package]?.remove(node.id);
-        if (node.needsUpdate) {
+        if ((node as GeneratedAssetNode).needsUpdate) {
           await _writer.delete(node.id);
         }
       }));
@@ -353,7 +355,7 @@ class BuildImpl {
       switch (input.toLowerCase()) {
         case 'y':
           stdout.writeln('Deleting files...');
-          await Future.wait(conflictingOutputs.map((output) {
+          await Future.wait(conflictingOutputs.map/*<Future>*/((output) {
             _inputsByPackage[output.package]?.remove(output);
             return _writer.delete(output);
           }));

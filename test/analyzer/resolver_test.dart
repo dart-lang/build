@@ -46,8 +46,8 @@ main() {
       return validateResolver(
           inputs: {'a|web/main.dart': ' main() {}',},
           validator: (resolver) {
-            var source =
-                resolver.resolver.sources[toBarbackAssetId(entryPoint)];
+            var source = (resolver.resolver as dynamic).sources[
+                toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 1);
 
             var lib = resolver.getLibrary(entryPoint);
@@ -62,8 +62,8 @@ main() {
                 } ''',
           },
           validator: (resolver) {
-            var source =
-                resolver.resolver.sources[toBarbackAssetId(entryPoint)];
+            var source = (resolver.resolver as dynamic).sources[
+                toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 2);
 
             var lib = resolver.getLibrary(entryPoint);
@@ -303,7 +303,7 @@ main() {
               expect(uri.toString(), 'package:a/a.dart');
 
               // Make sure that we haven't leaked any sources.
-              expect(resolver.resolver.sources.length, 2);
+              expect((resolver.resolver as dynamic).sources.length, 2);
             });
       });
     });

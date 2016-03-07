@@ -62,11 +62,11 @@ class CachedAssetReader extends AssetReader {
   Future<bool> hasInput(AssetId id) {
     try {
       if (_cache.contains(id)) return new Future.value(true);
-
       return _pendingHasInputChecks.putIfAbsent(id, () async {
         try {
-          return await _reader.hasInput(id);
+          return _reader.hasInput(id);
         } finally {
+          // Make sure we always remove the pending check
           _pendingHasInputChecks.remove(id);
         }
       });

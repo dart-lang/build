@@ -57,7 +57,7 @@ main() {
     });
 
     test('can list files based on simple InputSets', () async {
-      var inputSets = [
+      var inputSets = <InputSet>[
         new InputSet('basic_pkg', ['{lib,web}/**']),
         new InputSet('a', ['lib/**']),
       ];
@@ -71,7 +71,7 @@ main() {
     });
 
     test('can list files based on InputSets with globs', () async {
-      var inputSets = [
+      var inputSets = <InputSet>[
         new InputSet('basic_pkg', ['web/*.txt']),
         new InputSet('a', ['lib/*']),
       ];

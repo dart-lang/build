@@ -172,8 +172,11 @@ main() {
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
       () async {
     final writer = new InMemoryAssetWriter();
-    var inputs = {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
-    var outputs = {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'};
+    var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
+    var outputs = <String, String>{
+      'a|web/a.txt.copy': 'a',
+      'a|lib/b.txt.copy': 'b'
+    };
     // First run, nothing special.
     await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
     // Second run, should have no extra outputs.
@@ -182,8 +185,11 @@ main() {
 
   test('can recover from a deleted asset_graph.json cache', () async {
     final writer = new InMemoryAssetWriter();
-    var inputs = {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
-    var outputs = {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'};
+    var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
+    var outputs = <String, String>{
+      'a|web/a.txt.copy': 'a',
+      'a|lib/b.txt.copy': 'b'
+    };
     // First run, nothing special.
     await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
 

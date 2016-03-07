@@ -1,3 +1,2 @@
 analyzer:
-# disabling strong-mode until all errors and warnings are resolved
-#  strong-mode: true
+ strong-mode: true

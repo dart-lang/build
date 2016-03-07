@@ -56,7 +56,7 @@ class GeneratedAssetNode extends AssetNode {
   factory GeneratedAssetNode.deserialize(List serialized) {
     var node = new GeneratedAssetNode(new AssetId.deserialize(serialized[2]),
         false, serialized[3], new AssetId.deserialize(serialized[0]));
-    node.outputs.addAll(serialized[1]
+    node.outputs.addAll((serialized[1] as Iterable)
         .map((serializedOutput) => new AssetId.deserialize(serializedOutput)));
     return node;
   }
