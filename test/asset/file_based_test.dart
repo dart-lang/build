@@ -4,13 +4,16 @@
 @TestOn('vm')
 import 'dart:io';
 
+import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 
 import '../common/common.dart';
 
-final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
+final packageGraph =
+    new PackageGraph.forPath('test/fixtures/basic_pkg');
+final newLine = Platform.isWindows ? '\r\n' :  '\n';
 
 main() {
   group('FileBasedAssetReader', () {
@@ -18,15 +21,15 @@ main() {
 
     test('can read any application package files', () async {
       expect(await reader.readAsString(makeAssetId('basic_pkg|hello.txt')),
-          'world\n');
+          'world$newLine');
       expect(await reader.readAsString(makeAssetId('basic_pkg|lib/hello.txt')),
-          'world\n');
+          'world$newLine');
       expect(await reader.readAsString(makeAssetId('basic_pkg|web/hello.txt')),
-          'world\n');
+          'world$newLine');
     });
 
     test('can read package dependency files in the lib dir', () async {
-      expect(await reader.readAsString(makeAssetId('a|lib/a.txt')), 'A\n');
+      expect(await reader.readAsString(makeAssetId('a|lib/a.txt')), 'A$newLine');
     });
 
     test('can check for existence of any application package files', () async {
@@ -101,7 +104,7 @@ main() {
       var asset = makeAsset('basic_pkg|test_file.txt', 'test');
       await writer.writeAsString(asset);
       var id = asset.id;
-      var file = new File('test/fixtures/${id.package}/${id.path}');
+      var file = new File(path.join('test', 'fixtures', id.package, id.path));
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), 'test');
 

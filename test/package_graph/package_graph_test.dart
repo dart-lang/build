@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
@@ -44,17 +45,17 @@ main() {
 
       test('pub dependency', () {
         expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.Pub,
-            '$basicPkgPath/pkg/a/', [graph['b'], graph['c']]);
+            '$basicPkgPath/pkg/a', [graph['b'], graph['c']]);
       });
 
       test('git dependency', () {
         expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.Github,
-            '$basicPkgPath/pkg/b/', [graph['c']]);
+            '$basicPkgPath/pkg/b', [graph['c']]);
       });
 
       test('path dependency', () {
         expectPkg(graph['c'], 'c', '4.0.0', PackageDependencyType.Path,
-            '$basicPkgPath/pkg/c/', [graph['basic_pkg']]);
+            '$basicPkgPath/pkg/c', [graph['basic_pkg']]);
       });
     });
 
@@ -87,10 +88,10 @@ main() {
 
         // Package `c` does not appear because this is not the root package.
         expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.Pub,
-            '$withDevDepsPkgPath/pkg/a/', []);
+            '$withDevDepsPkgPath/pkg/a', []);
 
         expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.Pub,
-            '$withDevDepsPkgPath/pkg/b/', []);
+            '$withDevDepsPkgPath/pkg/b', []);
 
         expect(graph['c'], isNull);
       });
@@ -110,11 +111,15 @@ main() {
 
     test('missing pubspec throws on create', () {
       expect(
-          () => new PackageGraph.forPath('test/fixtures/no_pubspec'), throws);
+          () => new PackageGraph.forPath(
+              path.join('test', 'fixtures', 'no_pubspec')),
+          throws);
     });
 
     test('missing .packages file throws on create', () {
-      expect(() => new PackageGraph.forPath('test/fixtures/no_packages_file'),
+      expect(
+          () => new PackageGraph.forPath(
+              path.join('test', 'fixtures', 'no_packages_file')),
           throws);
     });
   });

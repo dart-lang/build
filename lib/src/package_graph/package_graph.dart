@@ -54,9 +54,13 @@ class PackageGraph {
     packagesFile.readAsLinesSync().skip(1).forEach((line) {
       var firstColon = line.indexOf(':');
       var name = line.substring(0, firstColon);
-      assert(line.endsWith('lib${Platform.pathSeparator}'));
+      assert(line.endsWith('lib/'));
       // Start after package_name:, and strip out trailing `lib` dir.
       var uriString = line.substring(firstColon + 1, line.length - 4);
+      // Strip the trailing slash, if present.
+      if (uriString.endsWith('/')) {
+        uriString = uriString.substring(0, uriString.length - 1);
+      }
       var uri;
       try {
         uri = Uri.parse(uriString);
