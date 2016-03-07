@@ -139,6 +139,23 @@ main() {
       childReaderAssets[b.id] = new DatedString(b.stringContents, time);
       expect(await reader.lastModified(b.id), time);
     });
+
+    group('async methods will never throw synchronously', () {
+      var cache = new _ThrowingCache();
+      var reader = new CachedAssetReader(cache, childReader);
+
+      test('hasInput', () {
+        return reader.hasInput(a.id).then((_) {
+          throw 'future should not succeed';
+        }, onError: (_) {});
+      });
+
+      test('readAsString', () {
+        return reader.readAsString(a.id).then((_) {
+          throw 'future should not succeed';
+        }, onError: (_) {});
+      });
+    });
   });
 
   group('CachedAssetWriter', () {
@@ -171,12 +188,12 @@ main() {
 
     test('multiple sync writes for the same asset throws', () async {
       writer.writeAsString(a);
-      expect(() => writer.writeAsString(a), throwsArgumentError);
+      expect(writer.writeAsString(a), throwsArgumentError);
     });
 
     test('multiple async writes for the same asset throws', () async {
       await writer.writeAsString(a);
-      expect(() => writer.writeAsString(a), throwsArgumentError);
+      expect(writer.writeAsString(a), throwsArgumentError);
     });
 
     test('delete deletes from cache and writer', () async {
@@ -185,5 +202,36 @@ main() {
       expect(cache.get(a.id), isNull);
       expect(childWriterAssets[a.id], isNull);
     });
+
+    group('async methods will never throw synchronously', () {
+      var cache = new _ThrowingCache();
+      var writer = new CachedAssetWriter(cache, childWriter);
+
+      test('delete', () {
+        return writer.delete(a.id).then((_) {
+          throw 'future should not succeed';
+        }, onError: (_) {});
+      });
+
+      test('writeAsString', () {
+        return writer.writeAsString(a).then((_) {
+          throw 'future should not succeed';
+        }, onError: (_) {});
+      });
+    });
   });
+}
+
+class _ThrowingCache implements AssetCache {
+  @override
+  bool contains(AssetId id) => throw new UnimplementedError();
+
+  @override
+  Asset remove(AssetId id) => throw new UnimplementedError();
+
+  @override
+  Asset get(AssetId id) => throw new UnimplementedError();
+
+  @override
+  void put(Asset id, {bool overwrite: false}) => throw new UnimplementedError();
 }

@@ -57,28 +57,46 @@ class CachedAssetReader extends AssetReader {
   }
 
   @override
+  // Can't use async keyword here because we need to update
+  // `_pendingHasInputChecks` synchronously.
   Future<bool> hasInput(AssetId id) {
-    if (_cache.contains(id)) return new Future.value(true);
+    try {
+      if (_cache.contains(id)) return new Future.value(true);
 
-    return _pendingHasInputChecks.putIfAbsent(id, () async {
-      var exists = await _reader.hasInput(id);
-      _pendingHasInputChecks.remove(id);
-      return exists;
-    });
+      return _pendingHasInputChecks.putIfAbsent(id, () async {
+        try {
+          return await _reader.hasInput(id);
+        } finally {
+          _pendingHasInputChecks.remove(id);
+        }
+      });
+    } catch (e, s) {
+      return new Future.error(e, s);
+    }
   }
 
   @override
+  // Can't use async keyword here because we need to update
+  // `_pendingReads` synchronously.
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
-    if (_cache.contains(id)) {
-      return new Future.value(_cache.get(id).stringContents);
-    }
+    try {
+      if (_cache.contains(id)) {
+        return new Future.value(_cache.get(id).stringContents);
+      }
 
-    return _pendingReads.putIfAbsent(id, () async {
-      var content = await _reader.readAsString(id, encoding: encoding);
-      _cache.put(new Asset(id, content));
-      _pendingReads.remove(id);
-      return content;
-    });
+      return _pendingReads.putIfAbsent(id, () async {
+        try {
+          var content = await _reader.readAsString(id, encoding: encoding);
+          _cache.put(new Asset(id, content));
+          return content;
+        } finally {
+          // Make sure we always remove the pending read
+          _pendingReads.remove(id);
+        }
+      });
+    } catch (e, s) {
+      return new Future.error(e, s);
+    }
   }
 
   @override
@@ -101,14 +119,26 @@ class CachedAssetWriter extends AssetWriter {
   CachedAssetWriter(this._cache, this._writer);
 
   @override
+  // Can't use async keyword here because we need to update `_cache`
+  // synchronously.
   Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
-    _cache.put(asset);
-    return _writer.writeAsString(asset, encoding: encoding);
+    try {
+      _cache.put(asset);
+      return _writer.writeAsString(asset, encoding: encoding);
+    } catch (e, s) {
+      return new Future.error(e, s);
+    }
   }
 
   @override
+  // Can't use async keyword here because we need to update `_cache`
+  // synchronously.
   Future delete(AssetId id) {
-    _cache.remove(id);
-    return _writer.delete(id);
+    try {
+      _cache.remove(id);
+      return _writer.delete(id);
+    } catch (e, s) {
+      return new Future.error(e, s);
+    }
   }
 }
