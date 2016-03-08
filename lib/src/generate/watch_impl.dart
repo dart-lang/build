@@ -92,7 +92,7 @@ class WatchImpl {
       await _resultStreamController.close();
     }
     _terminating = false;
-    _logger.info('Build watching terminated, safe to exit.');
+    _logger.info('Build watching terminated, safe to exit.\n');
   }
 
   /// Runs a build any time relevant files change.

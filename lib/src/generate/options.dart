@@ -57,9 +57,11 @@ class BuildOptions {
       } else {
         color = _red;
       }
-      var message = '$color[${record.level}]$_endColor ${record.loggerName}: '
+      var message = '${Platform.isWindows ? '' : '\x1b[2K\r'}'
+          '$color[${record.level}]$_endColor ${record.loggerName}: '
           '${record.message}${record.error != null ? "\n${record.error}" : ""}'
-          '${record.stackTrace != null ? "\n${record.stackTrace}" : ""}\n';
+          '${record.stackTrace != null ? "\n${record.stackTrace}" : ""}'
+          '${record.level > Level.INFO || Platform.isWindows ? '\n' : ''}';
       if (record.level >= Level.SEVERE) {
         stderr.write(message);
       } else {

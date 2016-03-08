@@ -17,11 +17,5 @@ main() async {
   /// the transitive deps issue.
   CopyBuilder.addPhases(phases, graph);
 
-  await for (var result in watch(phases)) {
-    if (result.status == BuildStatus.Success) {
-      stdout.writeln(result);
-    } else {
-      stderr.writeln(result);
-    }
-  }
+  watch(phases);
 }

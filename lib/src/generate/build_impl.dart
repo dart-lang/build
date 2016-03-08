@@ -65,6 +65,7 @@ class BuildImpl {
       {DateTime validAsOf, Map<AssetId, ChangeType> updates}) async {
     validAsOf ??= new DateTime.now();
     updates ??= <AssetId, ChangeType>{};
+    var watch = new Stopwatch()..start();
 
     /// Assume incremental, change if necessary.
     var buildType = BuildType.Incremental;
@@ -104,13 +105,11 @@ class BuildImpl {
               .forEach(
                   (node) => (node as GeneratedAssetNode).needsUpdate = true);
         } else {
-          var message = 'Build abandoned due to change to the build script or '
-              'one of its dependencies. This could be caused by a pub get or '
-              'any other change. Please terminate the build script and restart '
-              'it.';
-          _logger.severe(message);
           done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
-              exception: message));
+              exception: 'Build abandoned due to change to the build script or '
+                  'one of its dependencies. This could be caused by a pub get '
+                  'or any other change. Please terminate the build script and '
+                  'restart it.'));
           return;
         }
       }
@@ -139,16 +138,23 @@ class BuildImpl {
           new Asset(_assetGraphId, JSON.encode(_assetGraph.serialize()));
       await _writer.writeAsString(assetGraphAsset);
 
-      _logger.info('Build succeeded');
       done.complete(result);
     }, onError: (e, Chain chain) {
-      _logger.severe('Build failed: $e\n\n${chain.terse}');
       done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
           exception: e, stackTrace: chain.toTrace()));
     });
     var result = await done.future;
     _buildRunning = false;
     _isFirstBuild = false;
+    if (result.status == BuildStatus.Success) {
+      _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
+          '${result.outputs.length} outputs\n');
+    } else {
+      var stackTraceString =
+          result.stackTrace != null ? '\n\n${result.stackTrace}' : '';
+      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms:'
+          '${result.exception}$stackTraceString\n');
+    }
     return result;
   }
 
@@ -344,13 +350,13 @@ class BuildImpl {
     // Check conflictingOuputs, prompt user to delete files.
     if (conflictingOutputs.isEmpty) return;
 
-    stdout.writeln('Found ${conflictingOutputs.length} declared outputs '
+    stdout.writeln('\n\nFound ${conflictingOutputs.length} declared outputs '
         'which already exist on disk. This is likely because the `.build` '
         'folder was deleted, or you are submitting generated files to your '
         'source repository.');
     var done = false;
     while (!done) {
-      stdout.write('Delete these files (y/n) (or list them (l))?: ');
+      stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
       var input = stdin.readLineSync();
       switch (input.toLowerCase()) {
         case 'y':
