@@ -31,8 +31,7 @@ class FakeWatcher implements DirectoryWatcher {
   static notifyWatchers(WatchEvent event) {
     for (var watcher in watchers) {
       if (event.path.startsWith(watcher.path)) {
-        watcher._eventsController.add(new WatchEvent(
-            event.type, event.path.replaceFirst(watcher.path, '')));
+        watcher._eventsController.add(new WatchEvent(event.type, event.path));
       }
     }
   }

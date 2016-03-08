@@ -41,8 +41,8 @@ main() {
         checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.MODIFY, path.join('a', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
@@ -59,7 +59,7 @@ main() {
 
         await writer.writeAsString(makeAsset('a|web/b.txt', 'b'));
         FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.ADD, path.join('a', 'web', 'b.txt')));
+            new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/b.txt.copy': 'b',}, result, writer.assets);
@@ -79,8 +79,8 @@ main() {
             result, writer.assets);
 
         await writer.delete(makeAssetId('a|web/a.txt'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.REMOVE, path.join('a', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
 
@@ -106,10 +106,10 @@ main() {
 
         await writer.writeAsString(makeAsset('a|web/c.txt', 'c'));
         FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.ADD, path.join('a', 'web', 'c.txt')));
+            new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'c.txt')));
         await writer.delete(makeAssetId('a|web/a.txt'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.REMOVE, path.join('a', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/c.txt.copy': 'c'}, result, writer.assets);
@@ -142,11 +142,44 @@ main() {
         await writer.writeAsString(makeAsset('test|lib/test.dart', ''),
             lastModified: new DateTime.now().add(new Duration(days: 1)));
         await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.MODIFY, path.join('a', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
         expect(result.status, BuildStatus.Failure);
+      });
+
+      test('ignores events from nested packages', () async {
+        var writer = new InMemoryAssetWriter();
+        var results = <BuildResult>[];
+        var packageA = new PackageNode(
+            'a', '0.1.0', PackageDependencyType.Path, new Uri.file('a/'));
+        var packageB = new PackageNode(
+            'b', '0.1.0', PackageDependencyType.Path, new Uri.file('a/b/'));
+        packageA.dependencies.add(packageB);
+        var packageGraph = new PackageGraph.fromRoot(packageA);
+
+        startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'b|web/b.txt': 'b'},
+                writer,
+                packageGraph: packageGraph)
+            .listen(results.add);
+
+        var result = await nextResult(results);
+        // Should ignore the files under the `b` package, even though they
+        // match the input set.
+        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
+
+        await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
+        await writer.writeAsString(makeAsset('b|web/b.txt', 'c'));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'b', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
+
+        result = await nextResult(results);
+        // Ignores the modifcation under the `b` package, even though it
+        // matches the input set.
+        checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
       });
     });
 
@@ -166,8 +199,8 @@ main() {
             result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.MODIFY, path.join('a', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
@@ -190,7 +223,7 @@ main() {
 
         await writer.writeAsString(makeAsset('a|web/b.txt', 'b'));
         FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.ADD, path.join('a', 'web', 'b.txt')));
+            new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
@@ -220,8 +253,8 @@ main() {
         }, result, writer.assets);
 
         await writer.delete(makeAssetId('a|web/a.txt'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.REMOVE, path.join('a', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
         // Shouldn't rebuild anything, no outputs.
@@ -251,7 +284,7 @@ main() {
 
         await writer.delete(makeAssetId('a|web/a.txt.copy'));
         FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.REMOVE, path.join('a', 'web', 'a.txt.copy')));
+            ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt.copy')));
 
         result = await nextResult(results);
         // Should rebuild the generated asset and its outputs.
@@ -276,8 +309,8 @@ main() {
         checkOutputs({'a|web/a.txt.copy': 'b'}, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/b.txt', 'c'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.MODIFY, path.join('a', 'web', 'b.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'c'}, result, writer.assets);
@@ -304,8 +337,8 @@ main() {
             result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/b.txt', 'c'));
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.MODIFY, path.join('a', 'web', 'b.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy.copy': 'c'}, result, writer.assets);
@@ -319,14 +352,17 @@ StreamController _terminateWatchController;
 
 /// Start watching files and running builds.
 Stream<BuildResult> startWatch(
-    PhaseGroup phases, Map<String, String> inputs, InMemoryAssetWriter writer) {
+    PhaseGroup phases, Map<String, String> inputs, InMemoryAssetWriter writer,
+    {PackageGraph packageGraph}) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAsset(serializedId, contents));
   });
   final actualAssets = writer.assets;
   final reader = new InMemoryAssetReader(actualAssets);
-  final rootPackage = new PackageNode('a', null, null, new Uri.file('a/'));
-  final packageGraph = new PackageGraph.fromRoot(rootPackage);
+  if (packageGraph == null) {
+    packageGraph ??= new PackageGraph.fromRoot(
+        new PackageNode('a', null, null, new Uri.file('a/')));
+  }
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   return watch(phases,

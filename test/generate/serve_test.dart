@@ -45,8 +45,8 @@ main() {
       checkOutputs({'a|web/a.txt.copy': 'a'}, result, writer.assets);
 
       await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
-      FakeWatcher.notifyWatchers(
-          new WatchEvent(ChangeType.MODIFY, path.join('a', 'web', 'a.txt')));
+      FakeWatcher.notifyWatchers(new WatchEvent(
+          ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
       result = await nextResult(results);
       checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
@@ -83,8 +83,8 @@ main() {
       /// Make an edit to force another build, and we should block again.
       copyBuilder.blockUntil = buildBlocker2.future;
       await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
-      FakeWatcher.notifyWatchers(
-          new WatchEvent(ChangeType.MODIFY, path.join('a', 'web', 'a.txt')));
+      FakeWatcher.notifyWatchers(new WatchEvent(
+          ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
       // Give the build enough time to get started.
       await wait(500);
       var done = new Completer();

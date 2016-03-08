@@ -164,13 +164,34 @@ class WatchImpl {
 
     final watchers = <DirectoryWatcher>[];
     _logger.info('Setting up file watchers');
+
+    // Collect absolute file paths for all the packages. This needs to happen
+    // before setting up the watchers.
+    final absolutePackagePaths = <PackageNode, String>{};
     for (var package in _packageGraph.allPackages.values) {
-      _logger.fine('Setting up watcher at ${package.location.toFilePath()}');
-      var watcher = _directoryWatcherFactory(package.location.toFilePath());
+      absolutePackagePaths[package] =
+          path.normalize(path.absolute(package.location.toFilePath()));
+    }
+
+    // Set up watchers for all the packages
+    for (var package in _packageGraph.allPackages.values) {
+      var absolutePackagePath = absolutePackagePaths[package];
+      _logger.fine('Setting up watcher at $absolutePackagePath');
+
+      // Ignore all subfolders which are other packages.
+      var pathsToIgnore = absolutePackagePaths.values.where((path) =>
+          path != absolutePackagePath && path.startsWith(absolutePackagePath));
+
+      var watcher = _directoryWatcherFactory(absolutePackagePath);
       watchers.add(watcher);
       _allListeners.add(watcher.events.listen((WatchEvent e) {
-        _logger.finest('Got WatchEvent for path ${e.path}');
-        var id = new AssetId(package.name, path.normalize(e.path));
+        // Check for ignored paths and immediately bail.
+        if (pathsToIgnore.any((path) => e.path.startsWith(path))) return;
+
+        var relativePath = path.relative(e.path, from: absolutePackagePath);
+        _logger.finest(
+            'Got ${e.type} event for path $relativePath from ${watcher.path}');
+        var id = new AssetId(package.name, relativePath);
         var node = _assetGraph.get(id);
         // Short circuit for deletes of nodes that aren't in the graph.
         if (e.type == ChangeType.REMOVE && node == null) return;
