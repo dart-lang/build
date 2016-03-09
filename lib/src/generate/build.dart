@@ -155,7 +155,7 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
     await watchImpl.terminate();
   }, cancelWhen: watchImpl.onTerminated);
 
-  watchImpl.onTerminated.then((_) async{
+  watchImpl.onTerminated.then((_) async {
     await serverStarted;
     await stopServer();
     options.logListener.cancel();
@@ -167,7 +167,8 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
 /// Given [terminateEventStream], call [onTerminate] the first time an event is
 /// seen. If a second event is recieved, simply exit.
 StreamSubscription _setupTerminateLogic(
-    Stream terminateEventStream, Future onTerminate(), {Future cancelWhen}) {
+    Stream terminateEventStream, Future onTerminate(),
+    {Future cancelWhen}) {
   terminateEventStream ??= ProcessSignal.SIGINT.watch();
   int numEventsSeen = 0;
   var terminateListener;

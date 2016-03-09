@@ -11,9 +11,8 @@ import 'package:build/build.dart';
 
 import '../common/common.dart';
 
-final packageGraph =
-    new PackageGraph.forPath('test/fixtures/basic_pkg');
-final newLine = Platform.isWindows ? '\r\n' :  '\n';
+final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
+final newLine = Platform.isWindows ? '\r\n' : '\n';
 
 main() {
   group('FileBasedAssetReader', () {
@@ -29,7 +28,8 @@ main() {
     });
 
     test('can read package dependency files in the lib dir', () async {
-      expect(await reader.readAsString(makeAssetId('a|lib/a.txt')), 'A$newLine');
+      expect(
+          await reader.readAsString(makeAssetId('a|lib/a.txt')), 'A$newLine');
     });
 
     test('can check for existence of any application package files', () async {

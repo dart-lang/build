@@ -109,7 +109,7 @@ class BuildImpl {
                     (node) => (node as GeneratedAssetNode).needsUpdate = true);
           } else {
             done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
-              exception: new BuildScriptUpdatedException()));
+                exception: new BuildScriptUpdatedException()));
           }
         }
       });
@@ -133,8 +133,7 @@ class BuildImpl {
       });
 
       /// Run a fresh build.
-      var result =
-          await logWithTime(_logger, 'Running build', _runPhases);
+      var result = await logWithTime(_logger, 'Running build', _runPhases);
 
       /// Write out the dependency graph file.
       await logWithTime(_logger, 'Caching finalized dependency graph',
