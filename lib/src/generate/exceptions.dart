@@ -8,3 +8,12 @@ class ConcurrentBuildException implements Exception {
   String toString() =>
       'ConcurrentBuildException: Only one build may be running at a time.';
 }
+
+class BuildScriptUpdatedException implements Exception {
+  const BuildScriptUpdatedException();
+
+  @override
+  String toString() => 'Build abandoned due to change to the build script or '
+      'one of its dependencies. This could be caused by a pub get or any other '
+      'change. Please restart the build script.';
+}

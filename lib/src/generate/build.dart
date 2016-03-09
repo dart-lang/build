@@ -56,13 +56,12 @@ Future<BuildResult> build(PhaseGroup phaseGroup,
   var futureResult = buildImpl.runBuild();
 
   // Stop doing new builds when told to terminate.
-  var listener = _setupTerminateLogic(terminateEventStream, () {
+  _setupTerminateLogic(terminateEventStream, () {
     new Logger('Build').info('Waiting for build to finish...');
     return futureResult;
-  });
+  }, cancelWhen: futureResult);
 
   var result = await futureResult;
-  listener.cancel();
   options.logListener.cancel();
   return result;
 }
@@ -106,6 +105,9 @@ Stream<BuildResult> watch(PhaseGroup phaseGroup,
   // Stop doing new builds when told to terminate.
   _setupTerminateLogic(terminateEventStream, () async {
     await watchImpl.terminate();
+  }, cancelWhen: watchImpl.onTerminated);
+
+  watchImpl.onTerminated.then((_) {
     options.logListener.cancel();
   });
 
@@ -151,6 +153,9 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
   // Stop doing new builds when told to terminate.
   _setupTerminateLogic(terminateEventStream, () async {
     await watchImpl.terminate();
+  }, cancelWhen: watchImpl.onTerminated);
+
+  watchImpl.onTerminated.then((_) async{
     await serverStarted;
     await stopServer();
     options.logListener.cancel();
@@ -162,7 +167,7 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
 /// Given [terminateEventStream], call [onTerminate] the first time an event is
 /// seen. If a second event is recieved, simply exit.
 StreamSubscription _setupTerminateLogic(
-    Stream terminateEventStream, Future onTerminate()) {
+    Stream terminateEventStream, Future onTerminate(), {Future cancelWhen}) {
   terminateEventStream ??= ProcessSignal.SIGINT.watch();
   int numEventsSeen = 0;
   var terminateListener;
@@ -175,6 +180,10 @@ StreamSubscription _setupTerminateLogic(
     } else {
       exit(2);
     }
+  });
+
+  cancelWhen?.then((_) {
+    terminateListener.cancel();
   });
   return terminateListener;
 }

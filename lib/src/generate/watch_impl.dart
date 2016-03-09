@@ -11,10 +11,12 @@ import '../asset/id.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
+import 'exceptions.dart';
 import 'options.dart';
 import 'phase.dart';
 
@@ -46,8 +48,8 @@ class WatchImpl {
   final AssetWriter _writer;
 
   /// A future that completes when the current build is done.
-  Future _currentBuild;
-  Future get currentBuild => _currentBuild;
+  Future<BuildResult> _currentBuild;
+  Future<BuildResult> get currentBuild => _currentBuild;
 
   /// Whether or not another build is scheduled.
   bool _nextBuildScheduled;
@@ -61,6 +63,9 @@ class WatchImpl {
   /// Whether we are in the process of terminating.
   bool _terminating = false;
 
+  Completer _onTerminatedCompleter = new Completer();
+  Future get onTerminated => _onTerminatedCompleter.future;
+
   WatchImpl(BuildOptions options, PhaseGroup phaseGroup)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
@@ -71,7 +76,10 @@ class WatchImpl {
   /// Completes after the current build is done, and stops further builds from
   /// happening.
   Future terminate() async {
-    if (_terminating) throw new StateError('Already terminating.');
+    if (_terminating) {
+      _logger.warning('Already terminating.');
+      return;
+    }
     if (_resultStreamController == null) {
       throw new StateError('`terminate` called before `runWatch`');
     }
@@ -93,6 +101,7 @@ class WatchImpl {
     }
     _terminating = false;
     _logger.info('Build watching terminated, safe to exit.\n');
+    _onTerminatedCompleter.complete();
   }
 
   /// Runs a build any time relevant files change.
@@ -140,11 +149,17 @@ class WatchImpl {
         return;
       }
 
-      _logger.info('Preparing for next build');
-      _logger.info('Starting build');
+      _logger.info('Starting next build');
       _currentBuild =
           _buildImpl.runBuild(validAsOf: validAsOf, updates: updatedInputsCopy);
       _currentBuild.then((result) {
+        // Terminate the watcher if the build script is updated, there is no
+        // need to continue listening.
+        if (result.status == BuildStatus.Failure &&
+            result.exception is BuildScriptUpdatedException) {
+          terminate();
+        }
+
         if (_resultStreamController.hasListener) {
           _resultStreamController.add(result);
         }
@@ -162,46 +177,48 @@ class WatchImpl {
       buildTimer = new Timer(_debounceDelay, doBuild);
     }
 
-    final watchers = <DirectoryWatcher>[];
-    _logger.info('Setting up file watchers');
+    logWithTime(_logger, 'Setting up file watchers', () {
+      final watchers = <DirectoryWatcher>[];
 
-    // Collect absolute file paths for all the packages. This needs to happen
-    // before setting up the watchers.
-    final absolutePackagePaths = <PackageNode, String>{};
-    for (var package in _packageGraph.allPackages.values) {
-      absolutePackagePaths[package] =
-          path.normalize(path.absolute(package.location.toFilePath()));
-    }
+      // Collect absolute file paths for all the packages. This needs to happen
+      // before setting up the watchers.
+      final absolutePackagePaths = <PackageNode, String>{};
+      for (var package in _packageGraph.allPackages.values) {
+        absolutePackagePaths[package] =
+            path.normalize(path.absolute(package.location.toFilePath()));
+      }
 
-    // Set up watchers for all the packages
-    for (var package in _packageGraph.allPackages.values) {
-      var absolutePackagePath = absolutePackagePaths[package];
-      _logger.fine('Setting up watcher at $absolutePackagePath');
+      // Set up watchers for all the packages
+      for (var package in _packageGraph.allPackages.values) {
+        var absolutePackagePath = absolutePackagePaths[package];
+        _logger.fine('Setting up watcher at $absolutePackagePath');
 
-      // Ignore all subfolders which are other packages.
-      var pathsToIgnore = absolutePackagePaths.values.where((path) =>
-          path != absolutePackagePath && path.startsWith(absolutePackagePath));
+        // Ignore all subfolders which are other packages.
+        var pathsToIgnore = absolutePackagePaths.values.where((path) =>
+            path != absolutePackagePath &&
+            path.startsWith(absolutePackagePath));
 
-      var watcher = _directoryWatcherFactory(absolutePackagePath);
-      watchers.add(watcher);
-      _allListeners.add(watcher.events.listen((WatchEvent e) {
-        // Check for ignored paths and immediately bail.
-        if (pathsToIgnore.any((path) => e.path.startsWith(path))) return;
+        var watcher = _directoryWatcherFactory(absolutePackagePath);
+        watchers.add(watcher);
+        _allListeners.add(watcher.events.listen((WatchEvent e) {
+          // Check for ignored paths and immediately bail.
+          if (pathsToIgnore.any((path) => e.path.startsWith(path))) return;
 
-        var relativePath = path.relative(e.path, from: absolutePackagePath);
-        _logger.finest(
-            'Got ${e.type} event for path $relativePath from ${watcher.path}');
-        var id = new AssetId(package.name, relativePath);
-        var node = _assetGraph.get(id);
-        // Short circuit for deletes of nodes that aren't in the graph.
-        if (e.type == ChangeType.REMOVE && node == null) return;
+          var relativePath = path.relative(e.path, from: absolutePackagePath);
+          _logger.finest(
+              'Got ${e.type} event for path $relativePath from ${watcher.path}');
+          var id = new AssetId(package.name, relativePath);
+          var node = _assetGraph.get(id);
+          // Short circuit for deletes of nodes that aren't in the graph.
+          if (e.type == ChangeType.REMOVE && node == null) return;
 
-        updatedInputs[id] = e.type;
-        scheduleBuild();
-      }));
-    }
+          updatedInputs[id] = e.type;
+          scheduleBuild();
+        }));
+      }
 
-    Future.wait(watchers.map((w) => w.ready)).then((_) {
+      return Future.wait(watchers.map((w) => w.ready));
+    }).then((_) {
       // Schedule the first build!
       doBuild(true);
     });

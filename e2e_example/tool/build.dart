@@ -1,8 +1,6 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'dart:io';
-
 import 'package:build/build.dart';
 
 import 'package:e2e_example/copy_builder.dart';
@@ -17,11 +15,5 @@ main() async {
   /// the transitive deps issue.
   CopyBuilder.addPhases(phases, graph);
 
-  var result = await build(phases);
-
-  if (result.status == BuildStatus.Success) {
-    stdout.writeln(result);
-  } else {
-    stderr.writeln(result);
-  }
+  await build(phases);
 }

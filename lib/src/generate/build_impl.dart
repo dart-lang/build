@@ -22,6 +22,7 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../builder/build_step_impl.dart';
 import '../builder/builder.dart';
+import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
@@ -76,13 +77,14 @@ class BuildImpl {
 
       /// Initialize the [assetGraph] if its not yet set up.
       if (_assetGraph == null) {
-        _logger.info('Reading cached dependency graph');
-        _assetGraph = await _readAssetGraph();
+        await logWithTime(_logger, 'Reading cached dependency graph', () async {
+          _assetGraph = await _readAssetGraph();
 
-        /// Collect updates since the asset graph was last created. This only
-        /// handles updates and deletes, not adds. We list the file system for
-        /// all inputs later on (in [_initializeInputsByPackage]).
-        updates.addAll(await _getUpdates());
+          /// Collect updates since the asset graph was last created. This only
+          /// handles updates and deletes, not adds. We list the file system for
+          /// all inputs later on (in [_initializeInputsByPackage]).
+          updates.addAll(await _getUpdates());
+        });
       }
 
       /// If the build script gets updated, we need to either fully invalidate
@@ -95,48 +97,53 @@ class BuildImpl {
       ///
       /// TODO(jakemac): Come up with a better way of telling if the script
       /// has been updated since it started running.
-      _logger.info('Checking if the build script has been updated');
-      if (await _buildScriptUpdated()) {
-        buildType = BuildType.Full;
-        if (_isFirstBuild) {
-          _logger.info('Invalidating asset graph due to build script update');
-          _assetGraph.allNodes
-              .where((node) => node is GeneratedAssetNode)
-              .forEach(
-                  (node) => (node as GeneratedAssetNode).needsUpdate = true);
-        } else {
-          done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
-              exception: 'Build abandoned due to change to the build script or '
-                  'one of its dependencies. This could be caused by a pub get '
-                  'or any other change. Please terminate the build script and '
-                  'restart it.'));
-          return;
+      await logWithTime(_logger, 'Checking build script for updates', () async {
+        if (await _buildScriptUpdated()) {
+          buildType = BuildType.Full;
+          if (_isFirstBuild) {
+            _logger
+                .warning('Invalidating asset graph due to build script update');
+            _assetGraph.allNodes
+                .where((node) => node is GeneratedAssetNode)
+                .forEach(
+                    (node) => (node as GeneratedAssetNode).needsUpdate = true);
+          } else {
+            done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
+              exception: new BuildScriptUpdatedException()));
+          }
         }
-      }
+      });
+      // Bail if the previous step completed the build.
+      if (done.isCompleted) return;
 
-      /// Applies all [updates] to the [_assetGraph] as well as doing other
-      /// necessary cleanup.
-      _logger.info('Updating dependency graph with changes since last build.');
-      await _updateWithChanges(updates);
+      await logWithTime(_logger, 'Finalizing build setup', () async {
+        /// Applies all [updates] to the [_assetGraph] as well as doing other
+        /// necessary cleanup.
+        _logger
+            .info('Updating dependency graph with changes since last build.');
+        await _updateWithChanges(updates);
 
-      /// Wait while all inputs are collected.
-      _logger.info('Initializing inputs');
-      await _initializeInputsByPackage();
+        /// Wait while all inputs are collected.
+        _logger.info('Initializing inputs');
+        await _initializeInputsByPackage();
 
-      /// Delete all previous outputs!
-      _logger.info('Deleting previous outputs');
-      await _deletePreviousOutputs();
+        /// Delete all previous outputs!
+        _logger.info('Deleting previous outputs');
+        await _deletePreviousOutputs();
+      });
 
       /// Run a fresh build.
-      _logger.info('Running build phases');
-      var result = await _runPhases();
+      var result =
+          await logWithTime(_logger, 'Running build', _runPhases);
 
       /// Write out the dependency graph file.
-      _logger.info('Caching finalized dependency graph');
-      _assetGraph.validAsOf = validAsOf;
-      var assetGraphAsset =
-          new Asset(_assetGraphId, JSON.encode(_assetGraph.serialize()));
-      await _writer.writeAsString(assetGraphAsset);
+      await logWithTime(_logger, 'Caching finalized dependency graph',
+          () async {
+        _assetGraph.validAsOf = validAsOf;
+        var assetGraphAsset =
+            new Asset(_assetGraphId, JSON.encode(_assetGraph.serialize()));
+        await _writer.writeAsString(assetGraphAsset);
+      });
 
       done.complete(result);
     }, onError: (e, Chain chain) {
@@ -148,12 +155,14 @@ class BuildImpl {
     _isFirstBuild = false;
     if (result.status == BuildStatus.Success) {
       _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
-          '${result.outputs.length} outputs\n');
+          '${result.outputs.length} outputs\n\n');
     } else {
+      var exceptionString =
+          result.exception != null ? '\n${result.exception}' : '';
       var stackTraceString =
-          result.stackTrace != null ? '\n\n${result.stackTrace}' : '';
-      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms:'
-          '${result.exception}$stackTraceString\n');
+          result.stackTrace != null ? '\n${result.stackTrace}' : '';
+      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms'
+          '$exceptionString$stackTraceString\n');
     }
     return result;
   }
