@@ -228,7 +228,7 @@ class WatchImpl {
 
   /// Checks if we should skip a watch event for this [id].
   bool _shouldSkipInput(AssetId id, ChangeType type) {
-    if (id.path.contains('.build/')) return true;
+    if (id.path.contains('.dart_tool/build/')) return true;
     var node = _assetGraph.get(id);
     return node is GeneratedAssetNode && type != ChangeType.REMOVE;
   }

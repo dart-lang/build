@@ -103,9 +103,9 @@ Outputs from previous builds will not be treated as inputs to later ones.
 
 ### Source control
 
-This package creates a top level `.build` folder in your package, which should
-not be submitted to your source control repo (likely this just means adding
-'.build' to your '.gitignore' file).
+This package creates a top level `.dart_tool` folder in your package, which
+should not be submitted to your source control repo (likely this just means
+adding '.dart_tool' to your '.gitignore' file).
 
 When it comes to generated files it is generally best to not submit them to
 source control, but a specific `Builder` may provide a recommendation otherwise.

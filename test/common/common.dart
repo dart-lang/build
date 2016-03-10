@@ -24,6 +24,8 @@ export 'matchers.dart';
 export 'stub_reader.dart';
 export 'stub_writer.dart';
 
+final String assetGraphPath = '.dart_tool/build/asset_graph.json';
+
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 

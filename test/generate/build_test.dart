@@ -140,7 +140,8 @@ main() {
           {
             'a|lib/a.txt': 'a',
             'a|lib/a.txt.copy': 'a',
-            'a|.build/asset_graph.json': JSON.encode(emptyGraph.serialize()),
+            'a|$assetGraphPath':
+                JSON.encode(emptyGraph.serialize()),
           },
           status: BuildStatus.Failure,
           exceptionMatcher: invalidOutputException);
@@ -153,7 +154,7 @@ main() {
         outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         writer: writer);
 
-    var graphId = makeAssetId('a|.build/asset_graph.json');
+    var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
     var cachedGraph =
         new AssetGraph.deserialize(JSON.decode(writer.assets[graphId].value));
@@ -194,7 +195,7 @@ main() {
     await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
 
     // Delete the `asset_graph.json` file!
-    var outputId = makeAssetId('a|.build/asset_graph.json');
+    var outputId = makeAssetId('a|$assetGraphPath');
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
@@ -223,7 +224,7 @@ main() {
         'a|web/a.txt': 'a',
         'a|lib/b.txt.copy': 'b',
         'a|lib/c.txt': 'c',
-        'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+        'a|$assetGraphPath': JSON.encode(graph.serialize()),
       }, outputs: {
         'a|web/a.txt.copy': 'a',
         'a|lib/c.txt.copy': 'c',
@@ -268,7 +269,8 @@ main() {
             'a|lib/a.txt.copy.clone': 'a',
             'a|lib/b.txt.copy': 'b',
             'a|lib/b.txt.copy.clone': 'b',
-            'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+            'a|$assetGraphPath':
+                JSON.encode(graph.serialize()),
           },
           outputs: {'a|lib/a.txt.copy': 'b', 'a|lib/a.txt.copy.clone': 'b',},
           writer: writer);
@@ -297,14 +299,15 @@ main() {
           {
             'a|lib/a.txt.copy': 'a',
             'a|lib/a.txt.copy.clone': 'a',
-            'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+            'a|$assetGraphPath':
+                JSON.encode(graph.serialize()),
           },
           outputs: {},
           writer: writer);
 
       /// Should be deleted using the writer, and removed from the new graph.
-      var newGraph = new AssetGraph.deserialize(JSON.decode(
-          writer.assets[makeAssetId('a|.build/asset_graph.json')].value));
+      var newGraph = new AssetGraph.deserialize(JSON.decode(writer
+          .assets[makeAssetId('a|$assetGraphPath')].value));
       expect(newGraph.contains(aNode.id), isFalse);
       expect(newGraph.contains(aCopyNode.id), isFalse);
       expect(newGraph.contains(aCloneNode.id), isFalse);
@@ -331,7 +334,7 @@ main() {
       await testPhases(copyAPhaseGroup, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
-        'a|.build/asset_graph.json': JSON.encode(graph.serialize()),
+        'a|$assetGraphPath': JSON.encode(graph.serialize()),
       }, outputs: {
         'a|web/a.txt.copy': 'a',
       });

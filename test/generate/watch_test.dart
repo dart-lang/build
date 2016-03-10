@@ -114,8 +114,8 @@ main() {
         result = await nextResult(results);
         checkOutputs({'a|web/c.txt.copy': 'c'}, result, writer.assets);
 
-        var cachedGraph = new AssetGraph.deserialize(JSON.decode(
-            writer.assets[makeAssetId('a|.build/asset_graph.json')].value));
+        var cachedGraph = new AssetGraph.deserialize(JSON.decode(writer
+            .assets[makeAssetId('a|$assetGraphPath')].value));
 
         var expectedGraph = new AssetGraph();
         var bCopyNode = makeAssetNode('a|web/b.txt.copy');

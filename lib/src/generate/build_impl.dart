@@ -168,7 +168,7 @@ class BuildImpl {
 
   /// Asset containing previous asset dependency graph.
   AssetId get _assetGraphId =>
-      new AssetId(_packageGraph.root.name, '.build/asset_graph.json');
+      new AssetId(_packageGraph.root.name, '.dart_tool/build/asset_graph.json');
 
   /// Reads in the [assetGraph] from disk.
   Future<AssetGraph> _readAssetGraph() async {
@@ -359,9 +359,9 @@ class BuildImpl {
     if (conflictingOutputs.isEmpty) return;
 
     stdout.writeln('\n\nFound ${conflictingOutputs.length} declared outputs '
-        'which already exist on disk. This is likely because the `.build` '
-        'folder was deleted, or you are submitting generated files to your '
-        'source repository.');
+        'which already exist on disk. This is likely because the'
+        '`.dart_tool/build` folder was deleted, or you are submitting generated '
+        'files to your source repository.');
     var done = false;
     while (!done) {
       stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
