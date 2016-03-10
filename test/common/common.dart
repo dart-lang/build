@@ -13,6 +13,8 @@ import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'matchers.dart';
 
+export 'package:build/src/util/constants.dart';
+
 export 'assets.dart';
 export 'copy_builder.dart';
 export 'fake_watcher.dart';
@@ -23,8 +25,6 @@ export 'in_memory_writer.dart';
 export 'matchers.dart';
 export 'stub_reader.dart';
 export 'stub_writer.dart';
-
-final String assetGraphPath = '.dart_tool/build/asset_graph.json';
 
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));

@@ -24,6 +24,7 @@ import '../builder/build_step_impl.dart';
 import '../builder/builder.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
+import '../util/constants.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
 import 'input_set.dart';
@@ -32,24 +33,26 @@ import 'phase.dart';
 
 /// Class which manages running builds.
 class BuildImpl {
-  AssetGraph _assetGraph;
-  AssetGraph get assetGraph => _assetGraph;
-
-  final AssetReader _reader;
-  final AssetWriter _writer;
-  final PackageGraph _packageGraph;
+  final AssetId _assetGraphId;
   final List<List<BuildAction>> _buildActions;
   final _inputsByPackage = <String, Set<AssetId>>{};
-  bool _buildRunning = false;
   final _logger = new Logger('Build');
+  final PackageGraph _packageGraph;
+  final AssetReader _reader;
+  final AssetWriter _writer;
 
+  AssetGraph _assetGraph;
+  AssetGraph get assetGraph => _assetGraph;
+  bool _buildRunning = false;
   bool _isFirstBuild = true;
 
   BuildImpl(BuildOptions options, PhaseGroup phaseGroup)
-      : _reader = options.reader,
-        _writer = options.writer,
+      : _assetGraphId =
+            new AssetId(options.packageGraph.root.name, assetGraphPath),
+        _buildActions = phaseGroup.buildActions,
         _packageGraph = options.packageGraph,
-        _buildActions = phaseGroup.buildActions;
+        _reader = options.reader,
+        _writer = options.writer;
 
   /// Runs a build
   ///
@@ -165,10 +168,6 @@ class BuildImpl {
     }
     return result;
   }
-
-  /// Asset containing previous asset dependency graph.
-  AssetId get _assetGraphId =>
-      new AssetId(_packageGraph.root.name, '.dart_tool/build/asset_graph.json');
 
   /// Reads in the [assetGraph] from disk.
   Future<AssetGraph> _readAssetGraph() async {
@@ -360,7 +359,7 @@ class BuildImpl {
 
     stdout.writeln('\n\nFound ${conflictingOutputs.length} declared outputs '
         'which already exist on disk. This is likely because the'
-        '`.dart_tool/build` folder was deleted, or you are submitting generated '
+        '`$cacheDir` folder was deleted, or you are submitting generated '
         'files to your source repository.');
     var done = false;
     while (!done) {

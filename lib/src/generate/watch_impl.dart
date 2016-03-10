@@ -13,6 +13,7 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
+import '../util/constants.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
@@ -228,7 +229,7 @@ class WatchImpl {
 
   /// Checks if we should skip a watch event for this [id].
   bool _shouldSkipInput(AssetId id, ChangeType type) {
-    if (id.path.contains('.dart_tool/build/')) return true;
+    if (id.path.contains(cacheDir)) return true;
     var node = _assetGraph.get(id);
     return node is GeneratedAssetNode && type != ChangeType.REMOVE;
   }
