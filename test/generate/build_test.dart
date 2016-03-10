@@ -140,8 +140,7 @@ main() {
           {
             'a|lib/a.txt': 'a',
             'a|lib/a.txt.copy': 'a',
-            'a|$assetGraphPath':
-                JSON.encode(emptyGraph.serialize()),
+            'a|$assetGraphPath': JSON.encode(emptyGraph.serialize()),
           },
           status: BuildStatus.Failure,
           exceptionMatcher: invalidOutputException);
@@ -269,8 +268,7 @@ main() {
             'a|lib/a.txt.copy.clone': 'a',
             'a|lib/b.txt.copy': 'b',
             'a|lib/b.txt.copy.clone': 'b',
-            'a|$assetGraphPath':
-                JSON.encode(graph.serialize()),
+            'a|$assetGraphPath': JSON.encode(graph.serialize()),
           },
           outputs: {'a|lib/a.txt.copy': 'b', 'a|lib/a.txt.copy.clone': 'b',},
           writer: writer);
@@ -299,15 +297,14 @@ main() {
           {
             'a|lib/a.txt.copy': 'a',
             'a|lib/a.txt.copy.clone': 'a',
-            'a|$assetGraphPath':
-                JSON.encode(graph.serialize()),
+            'a|$assetGraphPath': JSON.encode(graph.serialize()),
           },
           outputs: {},
           writer: writer);
 
       /// Should be deleted using the writer, and removed from the new graph.
-      var newGraph = new AssetGraph.deserialize(JSON.decode(writer
-          .assets[makeAssetId('a|$assetGraphPath')].value));
+      var newGraph = new AssetGraph.deserialize(
+          JSON.decode(writer.assets[makeAssetId('a|$assetGraphPath')].value));
       expect(newGraph.contains(aNode.id), isFalse);
       expect(newGraph.contains(aCopyNode.id), isFalse);
       expect(newGraph.contains(aCloneNode.id), isFalse);
