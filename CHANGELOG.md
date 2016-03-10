@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+- Updated the top level classes to take a `PhaseGroup` instead of a
+  `List<List<Phase>>`.
+- Added logic to handle nested package directories.
+- Basic windows support added, although it may still be unstable.
+- Significantly increased the resolving speed by using the same sources cache.
+- Added a basic README.
+- Moved the `.build` folder to `.dart_tool/build`. Other packages in the future
+  may also use this folder.
+
 ## 0.1.4
 - Added top level `serve` function.
   - Just like `watch`, but it provides a server which blocks on any ongoing
