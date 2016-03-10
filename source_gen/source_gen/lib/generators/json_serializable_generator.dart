@@ -269,7 +269,7 @@ DartType _getIterableGenericType(InterfaceTypeImpl type) {
 bool _implementsDartList(DartType type) => _typeTest(type, _isDartList) != null;
 
 ParameterizedType _typeTest(
-    ParameterizedType type, bool tester(ParameterizedType type)) {
+    DartType type, bool tester(ParameterizedType type)) {
   if (tester(type)) return type;
 
   if (type is InterfaceType) {
