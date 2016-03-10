@@ -1,5 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2016-03-10T22:34:15.527866Z
+// 2016-03-10T19:38:54.159274Z
 
 part of source_gen.example.example;
 
@@ -14,7 +14,7 @@ Person _$PersonFromJson(Map json) => new Person(
     dateOfBirth: json['date-of-birth'] == null
         ? null
         : DateTime.parse(json['date-of-birth']))
-  ..orders = json['orders']
+  ..orders = (json['orders'] as List)
       ?.map((v0) => v0 == null ? null : new Order.fromJson(v0))
       ?.toList();
 

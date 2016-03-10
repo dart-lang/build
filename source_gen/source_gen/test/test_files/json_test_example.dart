@@ -18,7 +18,7 @@ class Person extends Object with _$PersonSerializerMixin {
 
   Person(this.firstName, this.lastName, {this.middleName, this.dateOfBirth});
 
-  factory Person.fromJson(json) => _$PersonFromJson(json);
+  factory Person.fromJson(Map json) => _$PersonFromJson(json);
 
   bool operator ==(other) =>
       other is Person &&
@@ -34,7 +34,7 @@ class Order extends Object with _$OrderSerializerMixin {
   bool isRushed;
   final UnmodifiableListView<Item> items;
 
-  int get price => items.fold(0, (item, total) => item.price + total);
+  int get price => items.fold(0, (total, item) => item.price + total);
 
   Order([Iterable<Item> items])
       : this.items = new UnmodifiableListView<Item>(
@@ -57,7 +57,7 @@ class Item extends Object with _$ItemSerializerMixin {
 
   Item([this.price]);
 
-  factory Item.fromJson(Map<String, Object> json) => _$ItemFromJson(json);
+  factory Item.fromJson(json) => _$ItemFromJson(json);
 
   bool operator ==(other) =>
       other is Item &&

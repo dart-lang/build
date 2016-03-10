@@ -30,8 +30,10 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
   var element = annotation.element;
 
   if (element is PropertyAccessorElementImpl) {
-    var initializer = element.variable.computeNode().initializer
-        as InstanceCreationExpression;
+    var initializer = ((element as PropertyAccessorElementImpl)
+            .variable
+            .computeNode() as VariableDeclaration)
+        .initializer as InstanceCreationExpression;
     element = initializer.staticElement;
   }
 
@@ -145,7 +147,7 @@ dynamic _createFromConstructor(
       // field assigned in the object. Then we can take the field value and
       // set it as the argument value
       var initializer = ctor.constantInitializers.singleWhere((ci) {
-        var expression = ci.expression;
+        var expression = (ci as ConstructorFieldInitializer).expression;
         if (expression is SimpleIdentifier) {
           return expression.name == paramName;
         }

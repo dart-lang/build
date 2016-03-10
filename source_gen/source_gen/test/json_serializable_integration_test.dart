@@ -88,10 +88,10 @@ void main() {
   });
 }
 
-void _roundTripObject(object, factory(json)) {
+void _roundTripObject(object, factory(Map<String, dynamic> json)) {
   var json = _loudEncode(object);
 
-  var person2 = factory(JSON.decode(json));
+  var person2 = factory(JSON.decode(json) as Map<String, dynamic>);
 
   expect(person2, equals(object));
 

@@ -42,7 +42,7 @@ class Item {
 
   Item();
 
-  factory Item.fromJson(Map<String, Object> json) => _$ItemFromJson(json);
+  factory Item.fromJson(json) => _$ItemFromJson(json);
 }
 
 @JsonLiteral('data.json')

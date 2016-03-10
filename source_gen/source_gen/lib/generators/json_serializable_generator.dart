@@ -34,11 +34,11 @@ class JsonSerializableGenerator
 
     // Get all of the fields that need to be assigned
     // TODO: support overriding the field set with an annotation option
-    var fields =
-        classElement.fields.fold(<String, FieldElement>{}, (map, field) {
+    var fields = classElement.fields.fold(<String, FieldElement>{},
+        (Map<String, FieldElement> map, field) {
       map[field.name] = field;
       return map;
-    }) as Map<String, FieldElement>;
+    });
 
     // Get the constructor to use for the factory
 
@@ -231,7 +231,7 @@ String _writeAccessToVar(String varExpression, DartType searchType,
 
     var itemVal = "v$depth";
 
-    var output = "$varExpression?.map(($itemVal) =>"
+    var output = "($varExpression as List)?.map(($itemVal) =>"
         "${_writeAccessToVar(itemVal, iterableGenericType, depth: depth+1)}"
         ")";
 
@@ -268,7 +268,8 @@ DartType _getIterableGenericType(InterfaceTypeImpl type) {
 
 bool _implementsDartList(DartType type) => _typeTest(type, _isDartList) != null;
 
-DartType _typeTest(DartType type, bool tester(DartType)) {
+ParameterizedType _typeTest(
+    ParameterizedType type, bool tester(ParameterizedType type)) {
   if (tester(type)) return type;
 
   if (type is InterfaceType) {
