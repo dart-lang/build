@@ -59,11 +59,11 @@ class BuildOptions {
       } else {
         color = _red;
       }
-      var message = '${Platform.isWindows ? '' : '\x1b[2K\r'}'
+      var message = '${_isPosixTerminal ? '\x1b[2K\r' : ''}'
           '$color[${record.level}]$_endColor ${record.loggerName}: '
           '${record.message}${record.error != null ? "\n${record.error}" : ""}'
           '${record.stackTrace != null ? "\n${record.stackTrace}" : ""}'
-          '${record.level > Level.INFO || Platform.isWindows ? '\n' : ''}';
+          '${record.level > Level.INFO || !_isPosixTerminal ? '\n' : ''}';
       if (record.level >= Level.SEVERE) {
         stderr.write(message);
       } else {
@@ -90,7 +90,9 @@ class BuildOptions {
   }
 }
 
-final _cyan = Platform.isWindows ? '' : '\u001b[36m';
-final _yellow = Platform.isWindows ? '' : '\u001b[33m';
-final _red = Platform.isWindows ? '' : '\u001b[31m';
-final _endColor = Platform.isWindows ? '' : '\u001b[0m';
+final _cyan = _isPosixTerminal ? '\u001b[36m' : '';
+final _yellow = _isPosixTerminal ? '\u001b[33m' : '';
+final _red = _isPosixTerminal ? '\u001b[31m' : '';
+final _endColor = _isPosixTerminal ? '\u001b[0m' : '';
+final _isPosixTerminal =
+    !Platform.isWindows && stdioType(stdout) == StdioType.TERMINAL;
