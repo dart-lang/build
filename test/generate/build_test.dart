@@ -198,13 +198,13 @@ main() {
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
-    var done =
-        testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
+    var done = testPhases(copyAPhaseGroup, inputs,
+        outputs: outputs, writer: writer, deleteFilesByDefault: true);
     // Should block on user input.
     await new Future.delayed(new Duration(seconds: 1));
     // Now it should complete!
     await done;
-  }, skip: 'Need to manually add a `y` to stdin for this test to run.');
+  });
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {

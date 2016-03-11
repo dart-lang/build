@@ -22,6 +22,7 @@ class BuildOptions {
   PackageGraph packageGraph;
   AssetReader reader;
   AssetWriter writer;
+  bool deleteFilesByDefault;
 
   /// Watch mode options.
   Duration debounceDelay;
@@ -34,17 +35,18 @@ class BuildOptions {
   Handler requestHandler;
 
   BuildOptions(
-      {this.debounceDelay,
+      {this.address,
+      this.debounceDelay,
+      this.deleteFilesByDefault,
+      this.directory,
       this.directoryWatcherFactory,
       Level logLevel,
       onLog(LogRecord record),
       this.packageGraph,
-      this.reader,
-      this.writer,
-      this.directory,
-      this.address,
       this.port,
-      this.requestHandler}) {
+      this.reader,
+      this.requestHandler,
+      this.writer}) {
     /// Set up logging
     logLevel ??= Level.INFO;
     Logger.root.level = logLevel;
@@ -84,6 +86,7 @@ class BuildOptions {
     writer ??=
         new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
+    deleteFilesByDefault ??= false;
   }
 }
 

@@ -35,6 +35,7 @@ import 'phase.dart';
 class BuildImpl {
   final AssetId _assetGraphId;
   final List<List<BuildAction>> _buildActions;
+  final bool _deleteFilesByDefault;
   final _inputsByPackage = <String, Set<AssetId>>{};
   final _logger = new Logger('Build');
   final PackageGraph _packageGraph;
@@ -50,6 +51,7 @@ class BuildImpl {
       : _assetGraphId =
             new AssetId(options.packageGraph.root.name, assetGraphPath),
         _buildActions = phaseGroup.buildActions,
+        _deleteFilesByDefault = options.deleteFilesByDefault,
         _packageGraph = options.packageGraph,
         _reader = options.reader,
         _writer = options.writer;
@@ -77,16 +79,22 @@ class BuildImpl {
     Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
+      var isNewAssetGraph = false;
 
       /// Initialize the [assetGraph] if its not yet set up.
       if (_assetGraph == null) {
         await logWithTime(_logger, 'Reading cached dependency graph', () async {
           _assetGraph = await _readAssetGraph();
-
-          /// Collect updates since the asset graph was last created. This only
-          /// handles updates and deletes, not adds. We list the file system for
-          /// all inputs later on (in [_initializeInputsByPackage]).
-          updates.addAll(await _getUpdates());
+          if (_assetGraph.allNodes.isEmpty &&
+              !(await _reader.hasInput(_assetGraphId))) {
+            isNewAssetGraph = true;
+            buildType = BuildType.Full;
+          } else {
+            /// Collect updates since the asset graph was last created. This only
+            /// handles updates and deletes, not adds. We list the file system for
+            /// all inputs later on (in [_initializeInputsByPackage]).
+            updates.addAll(await _getUpdates());
+          }
         });
       }
 
@@ -97,27 +105,27 @@ class BuildImpl {
       ///
       /// The [_isFirstBuild] flag is used as a proxy for "has this script
       /// been updated since it started running".
-      ///
-      /// TODO(jakemac): Come up with a better way of telling if the script
-      /// has been updated since it started running.
-      await logWithTime(_logger, 'Checking build script for updates', () async {
-        if (await _buildScriptUpdated()) {
-          buildType = BuildType.Full;
-          if (_isFirstBuild) {
-            _logger
-                .warning('Invalidating asset graph due to build script update');
-            _assetGraph.allNodes
-                .where((node) => node is GeneratedAssetNode)
-                .forEach(
-                    (node) => (node as GeneratedAssetNode).needsUpdate = true);
-          } else {
-            done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
-                exception: new BuildScriptUpdatedException()));
+      if (!isNewAssetGraph) {
+        await logWithTime(_logger, 'Checking build script for updates',
+            () async {
+          if (await _buildScriptUpdated()) {
+            buildType = BuildType.Full;
+            if (_isFirstBuild) {
+              _logger.warning(
+                  'Invalidating asset graph due to build script update');
+              _assetGraph.allNodes
+                  .where((node) => node is GeneratedAssetNode)
+                  .forEach((node) =>
+                      (node as GeneratedAssetNode).needsUpdate = true);
+            } else {
+              done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
+                  exception: new BuildScriptUpdatedException()));
+            }
           }
-        }
-      });
-      // Bail if the previous step completed the build.
-      if (done.isCompleted) return;
+        });
+        // Bail if the previous step completed the build.
+        if (done.isCompleted) return;
+      }
 
       await logWithTime(_logger, 'Finalizing build setup', () async {
         /// Applies all [updates] to the [_assetGraph] as well as doing other
@@ -132,7 +140,7 @@ class BuildImpl {
 
         /// Delete all previous outputs!
         _logger.info('Deleting previous outputs');
-        await _deletePreviousOutputs();
+        await _deletePreviousOutputs(isNewAssetGraph);
       });
 
       /// Run a fresh build.
@@ -185,6 +193,9 @@ class BuildImpl {
 
   /// Checks if the current running program has been updated since the asset
   /// graph was last built.
+  ///
+  /// TODO(jakemac): Come up with a better way of telling if the script
+  /// has been updated since it started running.
   Future<bool> _buildScriptUpdated() async {
     var completer = new Completer<bool>();
     Future
@@ -299,10 +310,8 @@ class BuildImpl {
   }
 
   /// Deletes all previous output files that are in need of an update.
-  Future _deletePreviousOutputs() async {
-    /// TODO(jakemac): need a cleaner way of telling if the current graph was
-    /// generated from cache or if its just a brand new graph.
-    if (await _reader.hasInput(_assetGraphId)) {
+  Future _deletePreviousOutputs(bool isNewAssetGraph) async {
+    if (!isNewAssetGraph) {
       await _writer.delete(_assetGraphId);
       _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
 
@@ -357,6 +366,20 @@ class BuildImpl {
     // Check conflictingOuputs, prompt user to delete files.
     if (conflictingOutputs.isEmpty) return;
 
+    Future deleteConflictingOutputs() {
+      return Future.wait(conflictingOutputs.map/*<Future>*/((output) {
+        _inputsByPackage[output.package]?.remove(output);
+        return _writer.delete(output);
+      }));
+    }
+
+    // Skip the prompt if using this option.
+    if (_deleteFilesByDefault) {
+      await deleteConflictingOutputs();
+      return;
+    }
+
+    // Prompt the user to delete files that are declared as outputs.
     stdout.writeln('\n\nFound ${conflictingOutputs.length} declared outputs '
         'which already exist on disk. This is likely because the'
         '`$cacheDir` folder was deleted, or you are submitting generated '
@@ -368,10 +391,7 @@ class BuildImpl {
       switch (input.toLowerCase()) {
         case 'y':
           stdout.writeln('Deleting files...');
-          await Future.wait(conflictingOutputs.map/*<Future>*/((output) {
-            _inputsByPackage[output.package]?.remove(output);
-            return _writer.delete(output);
-          }));
+          await deleteConflictingOutputs();
           done = true;
           break;
         case 'n':
