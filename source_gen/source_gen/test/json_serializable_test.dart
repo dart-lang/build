@@ -100,7 +100,7 @@ void main() {
 
       expect(output, isNotNull);
 
-      expect(output, contains('json[\'children\']?.map('));
+      expect(output, contains('(json[\'children\'] as List)?.map('));
     });
   });
 
