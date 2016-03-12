@@ -10,7 +10,7 @@ set -e
 pub run test
 
 # Run the build.dart file - just to make sure it works
-echo y | dart --checked build.dart
+dart --checked build.dart
 
 # Install dart_coveralls; gather and send coverage data.
 if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
