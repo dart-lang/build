@@ -12,6 +12,8 @@
   files via the `BuildStep` class, and that is now also provided to
   `Generator#generate` and `GeneratorForAnnotation#generateForAnnotatedElement`
   as a second argument.
+  
+* Timestamps are no longer included in generated code.
 
 * There is no longer a need to specify the files related to an individual
   generator via `AssociatedFileSet`. Simply use the `BuildStep` instance to read
@@ -26,7 +28,8 @@
 
 ## 0.4.7+2
 
-* Upgrade to `analyzer '^0.27.1'` and removed a work-around for a fixed `analyzer` issue.
+* Upgrade to `analyzer '^0.27.1'` and removed a work-around for a fixed 
+  `analyzer` issue.
 
 ## 0.4.7+1
 
@@ -54,7 +57,8 @@
 
 ## 0.4.4+1
 
-* Updated `README.md` to highlight the `build_system` package and deemphasize Dart Ediotr.
+* Updated `README.md` to highlight the `build_system` package and de-emphasize
+  Dart Editor.
 
 ## 0.4.4
 

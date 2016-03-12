@@ -1,5 +1,4 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// 2016-03-10T19:38:54.159274Z
 
 part of source_gen.example.example;
 

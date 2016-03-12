@@ -13,11 +13,9 @@ import 'utils.dart';
 
 class GeneratorBuilder extends Builder {
   final List<Generator> generators;
-  final bool omitGenerateTimestamp;
   final String generatedExtension;
 
-  GeneratorBuilder(this.generators,
-      {this.omitGenerateTimestamp: false, this.generatedExtension: '.g.dart'}) {
+  GeneratorBuilder(this.generators, {this.generatedExtension: '.g.dart'}) {
     // TODO: validate that generatedExtension starts with a `.'
     //       not null, empty, etc
   }
@@ -27,7 +25,7 @@ class GeneratorBuilder extends Builder {
     var id = buildStep.input.id;
     var resolver = await buildStep.resolve(id, resolveAllConstants: false);
     var lib = resolver.getLibrary(id);
-    await _generateForLibrary(lib, !omitGenerateTimestamp, buildStep);
+    await _generateForLibrary(lib, buildStep);
     resolver.release();
   }
 
@@ -40,8 +38,8 @@ class GeneratorBuilder extends Builder {
   AssetId _generatedFile(AssetId input) =>
       input.changeExtension(generatedExtension);
 
-  Future _generateForLibrary(LibraryElement library, bool includeTimestamp,
-      BuildStep buildStep) async {
+  Future _generateForLibrary(
+      LibraryElement library, BuildStep buildStep) async {
     buildStep.logger.fine('Running $generators for ${buildStep.input.id}');
     var generatedOutputs =
         await _generate(library, generators, buildStep).toList();
@@ -82,21 +80,8 @@ if approppriate.""",
     }
 
     var outputId = _generatedFile(buildStep.input.id);
-    var output =
-        new Asset(outputId, '${_getHeader(includeTimestamp)}$genPartContent');
+    var output = new Asset(outputId, '$_topHeader$genPartContent');
     buildStep.writeAsString(output);
-  }
-
-  String _getHeader(bool includeTimestamp) {
-    var buffer = new StringBuffer('// GENERATED CODE - DO NOT MODIFY BY HAND');
-    buffer.writeln();
-
-    if (includeTimestamp) {
-      buffer.writeln("// ${new DateTime.now().toUtc().toIso8601String()}");
-    }
-
-    buffer.writeln();
-    return buffer.toString();
   }
 }
 
@@ -124,5 +109,9 @@ Stream<GeneratedOutput> _processUnitMember(
     }
   }
 }
+
+const _topHeader = '''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+''';
 
 final _headerLine = '// '.padRight(77, '*');

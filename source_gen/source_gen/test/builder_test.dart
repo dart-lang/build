@@ -20,8 +20,7 @@ void main() {
   test('Bad generated source', () async {
     var srcs = _createPackageStub(pkgName);
     var phaseGroup = new PhaseGroup.singleAction(
-        new GeneratorBuilder([const _BadOutputGenerator()],
-            omitGenerateTimestamp: true),
+        new GeneratorBuilder([const _BadOutputGenerator()]),
         new InputSet(pkgName, ['lib/test_lib.dart']));
 
     await testPhases(phaseGroup, pkgName, srcs,
@@ -53,8 +52,7 @@ void main() {
     var srcs =
         _createPackageStub(pkgName, testLibContent: _testLibContentWithError);
     var phaseGroup = new PhaseGroup.singleAction(
-        new GeneratorBuilder([const CommentGenerator()],
-            omitGenerateTimestamp: true),
+        new GeneratorBuilder([const CommentGenerator()]),
         new InputSet(pkgName, ['lib/test_lib.dart']));
     await testPhases(phaseGroup, pkgName, srcs,
         {'$pkgName|lib/test_lib.g.dart': _testGenPartContentError,});
@@ -67,8 +65,7 @@ Future _simpleTest() => _generateTest(
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
   var srcs = await _createPackageStub(pkgName);
-  var phaseGroup = new PhaseGroup.singleAction(
-      new GeneratorBuilder([gen], omitGenerateTimestamp: true),
+  var phaseGroup = new PhaseGroup.singleAction(new GeneratorBuilder([gen]),
       new InputSet(pkgName, ['lib/test_lib.dart']));
 
   await testPhases(phaseGroup, pkgName, srcs,
