@@ -12,7 +12,7 @@ are a few key differences that make this package better for some use cases.
 ### Outputs
 
 Pub will only ever output files into your `build` directory, and pub serve only
-ever outputs them into an in memory file system. With the `build` package, you
+ever outputs them into an in-memory file system. With the `build` package, you
 can output files anywhere in the current package.
 
 This enables you to generate dart files which are imported by your project,
