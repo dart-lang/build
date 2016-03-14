@@ -167,10 +167,17 @@ class BuildImpl {
       _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
           '${result.outputs.length} outputs\n\n');
     } else {
+      if (result.exception is FatalBuildException) {
+        exitCode = 1;
+      }
       var exceptionString =
           result.exception != null ? '\n${result.exception}' : '';
+      /// For a [FatalBuildException], the message is more important than the
+      /// stack trace so we hide it (at least for now).
       var stackTraceString =
-          result.stackTrace != null ? '\n${result.stackTrace}' : '';
+          result.stackTrace != null && result.exception is! FatalBuildException
+              ? '\n${result.stackTrace}'
+              : '';
       _logger.severe('Failed after ${watch.elapsedMilliseconds}ms'
           '$exceptionString$stackTraceString\n');
     }
@@ -375,15 +382,27 @@ class BuildImpl {
 
     // Skip the prompt if using this option.
     if (_deleteFilesByDefault) {
+      _logger.info('Deleting ${conflictingOutputs.length} declared outputs '
+          'which already existed on disk.');
       await deleteConflictingOutputs();
       return;
     }
 
     // Prompt the user to delete files that are declared as outputs.
-    stdout.writeln('\n\nFound ${conflictingOutputs.length} declared outputs '
+    _logger.warning('Found ${conflictingOutputs.length} declared outputs '
         'which already exist on disk. This is likely because the'
         '`$cacheDir` folder was deleted, or you are submitting generated '
         'files to your source repository.');
+
+    // If not in a standard terminal then we just exit, since there is no way
+    // for the user to provide a yes/no answer.
+    if (stdioType(stdin) != StdioType.TERMINAL) {
+      throw new UnexpectedExistingOutputsException();
+    }
+
+    // Give a little extra space after the last message, need to make it clear
+    // this is a prompt.
+    stdout.writeln();
     var done = false;
     while (!done) {
       stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
@@ -395,8 +414,7 @@ class BuildImpl {
           done = true;
           break;
         case 'n':
-          stdout.writeln('Exiting...');
-          exit(1);
+          throw new UnexpectedExistingOutputsException();
           break;
         case 'l':
           for (var output in conflictingOutputs) {

@@ -157,7 +157,7 @@ class WatchImpl {
         // Terminate the watcher if the build script is updated, there is no
         // need to continue listening.
         if (result.status == BuildStatus.Failure &&
-            result.exception is BuildScriptUpdatedException) {
+            result.exception is FatalBuildException) {
           terminate();
         }
 
