@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1
+- Added the `deleteFilesByDefault` option to all top level methods. This will
+  skip the prompt to delete files, and instead act as if you responded `y`.
+  - Also by default in a non-console environment the prompt no longer exists and
+    it will instead just exit with an error.
+- Added support for multiple build scripts. Each script now has its own asset
+  graph based on a hash of the script uri.
+  - You need to be careful here, as you can get in an infinite loop if two
+    separate build scripts keep triggering updates for each other.
+  - There is no explicit link between multiple scripts, so they operate as if
+    all changes from other scripts were user edits. This will usually just do
+    the "right thing", but may result in undesired behavior in some
+    circumstances.
+- Improved logging for non-posix consoles.
+
 ## 0.2.0
 - Updated the top level classes to take a `PhaseGroup` instead of a
   `List<List<Phase>>`.
