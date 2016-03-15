@@ -8,5 +8,5 @@ import 'package:build/build.dart';
 import 'phases.dart';
 
 main() async {
-  build(phases, deleteFilesByDefault: true);
+  await build(phases, deleteFilesByDefault: true);
 }
