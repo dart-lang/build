@@ -1,5 +1,5 @@
 name: build
-version: 0.2.1
+version: 0.2.0
 description: A build system for Dart.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
@@ -11,7 +11,7 @@ dependencies:
   analyzer: ^0.27.1
   barback: ^0.15.0
   code_transformers: ^0.4.1
-  crypto: 0.9.1
+  crypto: ^0.9.1
   logging: ^0.11.2
   glob: ^1.1.0
   path: ^1.1.0
