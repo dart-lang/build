@@ -6,10 +6,10 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 
 /// Relative path to the asset graph from the root package dir.
-final assetGraphPath = '$cacheDir/${scriptHash}/asset_graph.json';
+final String assetGraphPath = '$cacheDir/$scriptHash/asset_graph.json';
 
 /// Relative path to the cache directory from the root package dir.
-const cacheDir = '.dart_tool/build';
+const String cacheDir = '.dart_tool/build';
 
 final String scriptHash = () {
   var hasher = new MD5();

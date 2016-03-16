@@ -20,7 +20,7 @@ import 'exceptions.dart';
 /// files from disk.
 class FileBasedAssetReader implements AssetReader {
   final PackageGraph packageGraph;
-  final ignoredDirs;
+  final List<String> ignoredDirs;
 
   FileBasedAssetReader(this.packageGraph,
       {this.ignoredDirs: const ['build', 'packages', '.pub']});
@@ -40,6 +40,7 @@ class FileBasedAssetReader implements AssetReader {
   }
 
   /// Searches for all [AssetId]s matching [inputSet]s.
+  @override
   Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets) async* {
     var seenAssets = new Set<AssetId>();
     for (var inputSet in inputSets) {
@@ -57,6 +58,7 @@ class FileBasedAssetReader implements AssetReader {
     }
   }
 
+  @override
   Future<DateTime> lastModified(AssetId id) async {
     var file = await _fileFor(id, packageGraph);
     if (!await file.exists()) {
@@ -92,7 +94,7 @@ class FileBasedAssetWriter implements AssetWriter {
   }
 
   @override
-  delete(AssetId id) async {
+  Future delete(AssetId id) async {
     assert(id.package == packageGraph.root.name);
 
     var file = _fileFor(id, packageGraph);

@@ -57,7 +57,7 @@ void checkOutputs(Map<String, String> outputs, BuildResult result,
   }
 }
 
-Future<BuildResult> nextResult(results) {
+Future<BuildResult> nextResult(List results) {
   var done = new Completer<BuildResult>();
   var startingLength = results.length;
   () async {
@@ -71,12 +71,12 @@ Future<BuildResult> nextResult(results) {
   return done.future;
 }
 
-testPhases(PhaseGroup phases, Map<String, String> inputs,
+Future testPhases(PhaseGroup phases, Map<String, String> inputs,
     {bool deleteFilesByDefault,
     Map<String, String> outputs,
     PackageGraph packageGraph,
     BuildStatus status: BuildStatus.Success,
-    exceptionMatcher,
+    Matcher exceptionMatcher,
     InMemoryAssetWriter writer}) async {
   writer ??= new InMemoryAssetWriter();
   final actualAssets = writer.assets;

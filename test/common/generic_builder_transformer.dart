@@ -4,6 +4,7 @@
 import 'package:build/build.dart';
 
 class GenericBuilderTransformer extends BuilderTransformer {
+  @override
   final List<Builder> builders;
 
   GenericBuilderTransformer(this.builders);

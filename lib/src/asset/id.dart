@@ -65,11 +65,14 @@ class AssetId implements Comparable<AssetId> {
         path = data[1];
 
   /// Returns `true` of [other] is an [AssetId] with the same package and path.
-  operator ==(other) =>
+  @override
+  bool operator ==(Object other) =>
       other is AssetId && package == other.package && path == other.path;
 
+  @override
   int get hashCode => package.hashCode ^ path.hashCode;
 
+  @override
   int compareTo(AssetId other) {
     var packageComp = package.compareTo(other.package);
     if (packageComp != 0) return packageComp;
@@ -86,11 +89,12 @@ class AssetId implements Comparable<AssetId> {
   AssetId changeExtension(String newExtension) =>
       new AssetId(package, pathos.withoutExtension(path) + newExtension);
 
+  @override
   String toString() => "$package|$path";
 
   /// Serializes this [AssetId] to an object that can be sent across isolates
   /// and passed to [deserialize].
-  serialize() => [package, path];
+  Object serialize() => [package, path];
 }
 
 String _normalizePath(String path) {

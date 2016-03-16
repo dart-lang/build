@@ -8,16 +8,19 @@ import 'package:build/src/asset_graph/exceptions.dart';
 import 'package:build/src/asset_graph/graph.dart';
 import 'package:build/src/asset_graph/node.dart';
 
-final assetGraphVersionException =
+final Matcher assetGraphVersionException =
     new isInstanceOf<AssetGraphVersionException>();
-final assetNotFoundException = new isInstanceOf<AssetNotFoundException>();
-final duplicateAssetNodeException =
+final Matcher assetNotFoundException =
+    new isInstanceOf<AssetNotFoundException>();
+final Matcher duplicateAssetNodeException =
     new isInstanceOf<DuplicateAssetNodeException>();
-final invalidInputException = new isInstanceOf<InvalidInputException>();
-final invalidOutputException = new isInstanceOf<InvalidOutputException>();
-final packageNotFoundException = new isInstanceOf<PackageNotFoundException>();
+final Matcher invalidInputException = new isInstanceOf<InvalidInputException>();
+final Matcher invalidOutputException =
+    new isInstanceOf<InvalidOutputException>();
+final Matcher packageNotFoundException =
+    new isInstanceOf<PackageNotFoundException>();
 
-equalsAsset(Asset expected) => new _AssetMatcher(expected);
+Matcher equalsAsset(Asset expected) => new _AssetMatcher(expected);
 
 class _AssetMatcher extends Matcher {
   final Asset _expected;
@@ -25,7 +28,7 @@ class _AssetMatcher extends Matcher {
   const _AssetMatcher(this._expected);
 
   @override
-  bool matches(item, _) =>
+  bool matches(Object item, _) =>
       item is Asset &&
       item.id == _expected.id &&
       item.stringContents == _expected.stringContents;
@@ -35,7 +38,7 @@ class _AssetMatcher extends Matcher {
       description.addDescriptionOf(_expected);
 }
 
-equalsAssetGraph(AssetGraph expected, {bool checkValidAsOf}) =>
+Matcher equalsAssetGraph(AssetGraph expected, {bool checkValidAsOf}) =>
     new _AssetGraphMatcher(expected, checkValidAsOf ?? false);
 
 class _AssetGraphMatcher extends Matcher {
@@ -45,7 +48,7 @@ class _AssetGraphMatcher extends Matcher {
   const _AssetGraphMatcher(this._expected, this._checkValidAsOf);
 
   @override
-  bool matches(item, _) {
+  bool matches(dynamic item, _) {
     if (item is! AssetGraph) return false;
     if (item.allNodes.length != _expected.allNodes.length) return false;
     if (_checkValidAsOf && (item.validAsOf != _expected.validAsOf)) {

@@ -14,7 +14,7 @@ import 'package:build/src/server/server.dart' as server;
 
 import '../common/common.dart';
 
-main() {
+void main() {
   group('serve', () {
     InMemoryAssetWriter writer;
     CopyBuilder copyBuilder;

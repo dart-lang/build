@@ -7,8 +7,10 @@ import 'dart:convert';
 import 'package:build/build.dart';
 
 class StubAssetWriter implements AssetWriter {
+  @override
   Future writeAsString(Asset asset, {Encoding encoding: UTF8}) =>
       new Future.value(null);
 
+  @override
   Future delete(AssetId id) => new Future.value(null);
 }

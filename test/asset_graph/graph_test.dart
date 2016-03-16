@@ -10,7 +10,7 @@ import 'package:build/src/asset_graph/node.dart';
 
 import '../common/common.dart';
 
-main() {
+void main() {
   group('AssetGraph', () {
     AssetGraph graph;
 

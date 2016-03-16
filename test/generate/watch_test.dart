@@ -14,7 +14,7 @@ import 'package:build/src/asset_graph/graph.dart';
 
 import '../common/common.dart';
 
-main() {
+void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyAPhase = new Phase()
     ..addAction(new CopyBuilder(), new InputSet('a', ['**/*']));

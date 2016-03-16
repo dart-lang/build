@@ -21,7 +21,7 @@ class PackageGraph {
   factory PackageGraph.fromRoot(PackageNode root) {
     final allPackages = <String, PackageNode>{root.name: root};
 
-    addDeps(PackageNode package) {
+    void addDeps(PackageNode package) {
       for (var dep in package.dependencies) {
         if (allPackages.containsKey(dep.name)) continue;
         allPackages[dep.name] = dep;
@@ -112,6 +112,7 @@ class PackageGraph {
   /// Shorthand to get a package by name.
   PackageNode operator [](String packageName) => allPackages[packageName];
 
+  @override
   String toString() {
     var buffer = new StringBuffer();
     for (var package in allPackages.values) {
@@ -140,6 +141,7 @@ class PackageNode {
 
   PackageNode(this.name, this.version, this.dependencyType, this.location);
 
+  @override
   String toString() => '''
   $name:
     version: $version

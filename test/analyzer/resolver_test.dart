@@ -15,7 +15,7 @@ import '../common/common.dart';
 
 // Ported from
 // https://github.com/dart-lang/code_transformers/blob/master/test/resolver_test.dart
-main() {
+void main() {
   var entryPoint = makeAssetId('a|web/main.dart');
   Future validateResolver(
       {Map<String, String> inputs,
@@ -355,9 +355,11 @@ class TestBuilder extends Builder {
 
   TestBuilder(this.validator);
 
-  List<AssetId> declareOutputs(idOrAsset) => [];
+  @override
+  List<AssetId> declareOutputs(AssetId idOrAsset) => [];
 
-  build(BuildStep buildStep) async {
+  @override
+  Future build(BuildStep buildStep) async {
     var resolver = await buildStep.resolve(buildStep.input.id);
     try {
       validator(resolver);

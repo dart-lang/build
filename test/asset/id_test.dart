@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'package:build/build.dart';
 
 // Forked from `barback/test/asset_id_test.dart`.
-main() {
+void main() {
   group("constructor", () {
     test("normalizes the path", () {
       var id = new AssetId("app", r"path/././/to/drop/..//asset.txt");

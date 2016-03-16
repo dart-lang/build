@@ -77,5 +77,5 @@ class AssetGraph {
   Iterable<AssetNode> get allNodes => _nodesById.values;
 
   @override
-  toString() => 'validAsOf: $validAsOf\n${_nodesById.values.toList()}';
+  String toString() => 'validAsOf: $validAsOf\n${_nodesById.values.toList()}';
 }

@@ -11,11 +11,13 @@ class InMemoryAssetWriter implements AssetWriter {
 
   InMemoryAssetWriter();
 
+  @override
   Future writeAsString(Asset asset,
       {Encoding encoding: UTF8, DateTime lastModified}) async {
     assets[asset.id] = new DatedString(asset.stringContents, lastModified);
   }
 
+  @override
   Future delete(AssetId id) async {
     assets.remove(id);
   }

@@ -7,7 +7,7 @@ import 'package:transformer_test/utils.dart';
 
 import '../common/common.dart' hide testPhases;
 
-main() {
+void main() {
   var singleCopyTransformer =
       new GenericBuilderTransformer([new CopyBuilder()]);
   var multiCopyTransformer =

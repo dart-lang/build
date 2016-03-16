@@ -20,6 +20,7 @@ class InputSet {
       : this.globs =
             new List.unmodifiable(globs.map((pattern) => new Glob(pattern)));
 
+  @override
   String toString() {
     var buffer = new StringBuffer()
       ..write('InputSet: package `$package` with globs');

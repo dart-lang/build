@@ -13,5 +13,6 @@ class Asset {
 
   Asset(this.id, this.stringContents);
 
+  @override
   String toString() => 'Asset: $id';
 }

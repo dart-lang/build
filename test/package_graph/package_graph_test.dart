@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 
-main() {
+void main() {
   PackageGraph graph;
 
   group('PackageGraph', () {
@@ -125,7 +125,8 @@ main() {
   });
 }
 
-void expectPkg(PackageNode node, name, version, type, location,
+void expectPkg(PackageNode node, String name, dynamic version,
+    PackageDependencyType type, String location,
     [Iterable<PackageNode> dependencies]) {
   expect(node.name, name);
   expect(node.version, version);

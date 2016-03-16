@@ -31,16 +31,16 @@ class BuildResult {
       return '''
 
 Build Succeeded!
-Type: ${buildType}
+Type: $buildType
 ''';
     } else {
       return '''
 
 Build Failed :(
-Type: ${buildType}
-Exception: ${exception}
+Type: $buildType
+Exception: $exception
 Stack Trace:
-${stackTrace}
+$stackTrace
 ''';
     }
   }

@@ -12,7 +12,7 @@ import 'package:build/src/asset_graph/node.dart';
 
 import '../common/common.dart';
 
-main() {
+void main() {
   /// Basic phases/phase groups which get used in many tests
   final aFiles = new InputSet('a', ['**/*']);
   final copyAPhase = new Phase()..addAction(new CopyBuilder(), aFiles);

@@ -172,6 +172,7 @@ class BuildImpl {
       }
       var exceptionString =
           result.exception != null ? '\n${result.exception}' : '';
+
       /// For a [FatalBuildException], the message is more important than the
       /// stack trace so we hide it (at least for now).
       var stackTraceString =

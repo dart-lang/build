@@ -25,7 +25,7 @@ class Phase {
   List<BuildAction> get actions => new List.unmodifiable(_actions);
 
   /// Creates a new [BuildAction] and adds it to this [Phase].
-  addAction(Builder builder, InputSet inputSet) {
+  void addAction(Builder builder, InputSet inputSet) {
     _actions.add(new BuildAction._(builder, inputSet));
   }
 }
@@ -59,6 +59,7 @@ class PhaseGroup {
     _phases.add(phase);
   }
 
+  @override
   String toString() {
     var buffer = new StringBuffer();
     for (int i = 0; i < _phases.length; i++) {

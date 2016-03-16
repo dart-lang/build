@@ -9,7 +9,10 @@ import 'package:watcher/watcher.dart';
 ///
 /// Use the static [FakeWatcher#notifyPath] method to add events.
 class FakeWatcher implements DirectoryWatcher {
+  @override
   String get directory => path;
+
+  @override
   final String path;
 
   FakeWatcher(this.path) {
@@ -17,18 +20,22 @@ class FakeWatcher implements DirectoryWatcher {
   }
 
   final _eventsController = new StreamController<WatchEvent>();
+
+  @override
   Stream<WatchEvent> get events => _eventsController.stream;
 
+  @override
   Future get ready => new Future(() {});
 
+  @override
   bool get isReady => true;
 
   /// All watchers.
-  static final watchers = <FakeWatcher>[];
+  static final List<FakeWatcher> watchers = <FakeWatcher>[];
 
   /// Notify all active watchers of [event] if their [FakeWatcher#path] matches.
   /// The path will also be adjusted to remove the path.
-  static notifyWatchers(WatchEvent event) {
+  static void notifyWatchers(WatchEvent event) {
     for (var watcher in watchers) {
       if (event.path.startsWith(watcher.path)) {
         watcher._eventsController.add(new WatchEvent(event.type, event.path));

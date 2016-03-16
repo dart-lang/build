@@ -11,7 +11,7 @@ class AssetNode {
   final AssetId id;
 
   /// The [AssetId]s of all generated assets which depend on this node.
-  final outputs = new Set<AssetId>();
+  final Set<AssetId> outputs = new Set<AssetId>();
 
   AssetNode(this.id);
 
@@ -66,5 +66,6 @@ class GeneratedAssetNode extends AssetNode {
       super.serialize()..addAll([primaryInput.serialize(), wasOutput]);
 
   @override
-  toString() => 'GeneratedAssetNode: $id generated from input $primaryInput.';
+  String toString() =>
+      'GeneratedAssetNode: $id generated from input $primaryInput.';
 }

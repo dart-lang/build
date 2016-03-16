@@ -11,10 +11,11 @@ import 'package:build/build.dart';
 
 import '../common/common.dart';
 
-final packageGraph = new PackageGraph.forPath('test/fixtures/basic_pkg');
-final newLine = Platform.isWindows ? '\r\n' : '\n';
+final PackageGraph packageGraph =
+    new PackageGraph.forPath('test/fixtures/basic_pkg');
+final String newLine = Platform.isWindows ? '\r\n' : '\n';
 
-main() {
+void main() {
   group('FileBasedAssetReader', () {
     final reader = new FileBasedAssetReader(packageGraph, ignoredDirs: ['pkg']);
 

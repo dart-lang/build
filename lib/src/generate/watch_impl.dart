@@ -119,7 +119,7 @@ class WatchImpl {
     _nextBuildScheduled = false;
     var updatedInputs = new Map<AssetId, ChangeType>();
 
-    doBuild([bool force = false]) {
+    void doBuild([bool force = false]) {
       // Don't schedule more builds if we are turning down.
       if (_terminating) return;
 
@@ -173,7 +173,7 @@ class WatchImpl {
     }
 
     Timer buildTimer;
-    scheduleBuild() {
+    void scheduleBuild() {
       if (buildTimer?.isActive == true) buildTimer.cancel();
       buildTimer = new Timer(_debounceDelay, doBuild);
     }

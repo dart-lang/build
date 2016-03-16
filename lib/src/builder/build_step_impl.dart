@@ -35,6 +35,7 @@ class BuildStepImpl implements BuildStep {
   final List<AssetId> expectedOutputs;
 
   /// The [Logger] for this [BuildStep].
+  @override
   Logger get logger {
     _logger ??= new Logger(input.id.toString());
     return _logger;
@@ -71,6 +72,7 @@ class BuildStepImpl implements BuildStep {
   }
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
+  @override
   Future<bool> hasInput(AssetId id) {
     _checkInput(id);
     _dependencies.add(id);

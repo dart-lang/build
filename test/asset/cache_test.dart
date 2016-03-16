@@ -11,7 +11,7 @@ import 'package:build/src/asset/cache.dart';
 
 import '../common/common.dart';
 
-main() {
+void main() {
   AssetCache cache;
   final a = makeAsset();
   final b = makeAsset();

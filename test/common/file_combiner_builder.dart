@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 /// Takes an input file which points at a bunch of other files, and then it
 /// writes an `$input.combined` file which concats all the files.
 class FileCombinerBuilder implements Builder {
+  @override
   Future build(BuildStep buildStep) async {
     var lines = buildStep.input.stringContents.split('\n');
     var content = new StringBuffer();
@@ -19,6 +20,7 @@ class FileCombinerBuilder implements Builder {
     buildStep.writeAsString(new Asset(outputId, content.toString()));
   }
 
+  @override
   List<AssetId> declareOutputs(AssetId input) {
     return [_combinedAssetId(input)];
   }

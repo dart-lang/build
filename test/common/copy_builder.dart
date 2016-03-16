@@ -31,6 +31,7 @@ class CopyBuilder implements Builder {
       this.copyFromAsset,
       this.blockUntil});
 
+  @override
   Future build(BuildStep buildStep) async {
     if (blockUntil != null) await blockUntil;
 
@@ -43,6 +44,7 @@ class CopyBuilder implements Builder {
     }
   }
 
+  @override
   List<AssetId> declareOutputs(AssetId input) {
     var outputs = <AssetId>[];
     for (int i = 0; i < numCopies; i++) {

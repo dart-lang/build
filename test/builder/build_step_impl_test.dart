@@ -10,7 +10,7 @@ import 'package:build/src/builder/build_step_impl.dart';
 
 import '../common/common.dart';
 
-main() {
+void main() {
   group('BuildStepImpl ', () {
     AssetWriter writer;
     AssetReader reader;

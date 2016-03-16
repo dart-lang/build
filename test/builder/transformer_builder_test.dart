@@ -11,7 +11,7 @@ import 'package:build/build.dart';
 
 import '../common/common.dart';
 
-main() {
+void main() {
   test('basic test', () {
     final copyTransformerBuilder =
         new TransformerBuilder(new CopyTransformer());
