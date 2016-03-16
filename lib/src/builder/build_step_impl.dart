@@ -119,7 +119,7 @@ class BuildStepImpl implements BuildStep {
   }
 
   /// Checks that [asset] is a valid output, and throws an
-  /// [InvalidOutputException] or [UnexcpectedOutputException] if it's not.
+  /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(Asset asset) {
     if (asset.id.package != _rootPackage) {
       throw new InvalidOutputException(asset);

@@ -17,18 +17,18 @@ import 'directory_watcher_factory.dart';
 
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
-  /// Build mode options.
+  // Build mode options.
   StreamSubscription logListener;
   PackageGraph packageGraph;
   AssetReader reader;
   AssetWriter writer;
   bool deleteFilesByDefault;
 
-  /// Watch mode options.
+  // Watch mode options.
   Duration debounceDelay;
   DirectoryWatcherFactory directoryWatcherFactory;
 
-  /// Server options.
+  // Server options.
   int port;
   String address;
   String directory;

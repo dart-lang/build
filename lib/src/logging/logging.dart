@@ -8,7 +8,7 @@ import 'package:logging/logging.dart';
 
 /// Calls [logger#info] with [description] before and after calling [action]
 /// and waiting for the returned future to complete. The 2nd log message will
-/// have the ellapsed time appended.
+/// have the elapsed time appended.
 ///
 /// This function also appends a newline after the 2nd log (unless on windows)
 /// to ensure that it does not get overwritten by later log messages.

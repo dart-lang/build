@@ -18,6 +18,6 @@ abstract class AssetReader {
   /// Gets a [Stream<AssetId>] of all assets available matching [inputSets].
   Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets);
 
-  /// Asynchonously gets the last modified [DateTime] of [id].
+  /// Asynchronously gets the last modified [DateTime] of [id].
   Future<DateTime> lastModified(AssetId id);
 }

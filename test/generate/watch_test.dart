@@ -177,7 +177,7 @@ main() {
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
-        // Ignores the modifcation under the `b` package, even though it
+        // Ignores the modification under the `b` package, even though it
         // matches the input set.
         checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
       });

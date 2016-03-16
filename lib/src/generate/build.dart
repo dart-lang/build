@@ -82,7 +82,7 @@ Future<BuildResult> build(PhaseGroup phaseGroup,
 /// The [directoryWatcherFactory] allows you to inject a way of creating custom
 /// [DirectoryWatcher]s. By default a normal [DirectoryWatcher] will be used.
 ///
-/// The [teminateEventStream] is a stream which can send termination events.
+/// The [terminateEventStream] is a stream which can send termination events.
 /// By default the [ProcessSignal.SIGINT] stream is used. In this mode, the
 /// first event will allow any ongoing builds to finish, and then the program
 ///  will complete normally. Subsequent events are not handled (and will
@@ -175,7 +175,7 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
 }
 
 /// Given [terminateEventStream], call [onTerminate] the first time an event is
-/// seen. If a second event is recieved, simply exit.
+/// seen. If a second event is received, simply exit.
 StreamSubscription _setupTerminateLogic(
     Stream terminateEventStream, Future onTerminate(),
     {Future cancelWhen}) {

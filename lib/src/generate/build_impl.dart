@@ -191,8 +191,8 @@ class BuildImpl {
       return new AssetGraph.deserialize(
           JSON.decode(await _reader.readAsString(_assetGraphId)));
     } on AssetGraphVersionException catch (_) {
-      /// Start fresh if the cached asset_graph version doesn't match up with
-      /// the current version. We don't currently support old graph versions.
+      // Start fresh if the cached asset_graph version doesn't match up with
+      // the current version. We don't currently support old graph versions.
       _logger.info('Throwing away cached asset graph due to version mismatch.');
       return new AssetGraph();
     }
@@ -207,7 +207,7 @@ class BuildImpl {
     var completer = new Completer<bool>();
     Future
         .wait(currentMirrorSystem().libraries.keys.map((Uri uri) async {
-      /// Short-circuit
+      // Short-circuit
       if (completer.isCompleted) return;
       var lastModified;
       switch (uri.scheme) {
@@ -223,14 +223,14 @@ class BuildImpl {
           break;
         case 'file':
 
-          /// TODO(jakemac): Probably shouldn't use dart:io directly, but its
-          /// definitely the easiest solution and should be fine.
+          // TODO(jakemac): Probably shouldn't use dart:io directly, but its
+          // definitely the easiest solution and should be fine.
           var file = new File.fromUri(uri);
           lastModified = await file.lastModified();
           break;
         case 'data':
 
-          /// Test runner uses a `data` scheme, don't invalidate for those.
+          // Test runner uses a `data` scheme, don't invalidate for those.
           if (uri.path.contains('package:test')) return;
           continue unknownUri;
         unknownUri: default:
@@ -252,7 +252,7 @@ class BuildImpl {
 
   /// Creates and returns a map of updates to assets based on [_assetGraph].
   Future<Map<AssetId, ChangeType>> _getUpdates() async {
-    /// Collect updates to the graph based on any changed assets.
+    // Collect updates to the graph based on any changed assets.
     var updates = <AssetId, ChangeType>{};
     await Future.wait(_assetGraph.allNodes
         .where((node) =>
@@ -294,11 +294,11 @@ class BuildImpl {
         (_reader as CachedAssetReader).evictFromCache(id);
       }
 
-      /// Update all ouputs of this asset as well.
+      // Update all outputs of this asset as well.
       await Future.wait(node.outputs.map((output) =>
           clearNodeAndDeps(output, rootChangeType, parent: node.id)));
 
-      /// For deletes, prune the graph.
+      // For deletes, prune the graph.
       if (parent == null && rootChangeType == ChangeType.REMOVE) {
         _assetGraph.remove(id);
       }
@@ -322,8 +322,8 @@ class BuildImpl {
       await _writer.delete(_assetGraphId);
       _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
 
-      /// Remove all output nodes from [_inputsByPackage], and delete all assets
-      /// that need updates.
+      // Remove all output nodes from [_inputsByPackage], and delete all assets
+      // that need updates.
       await Future.wait(_assetGraph.allNodes
           .where((node) => node is GeneratedAssetNode)
           .map((node) async {
@@ -361,8 +361,8 @@ class BuildImpl {
         }
       }
 
-      /// Once the group is done, add all outputs so they can be used in the next
-      /// phase.
+      // Once the group is done, add all outputs so they can be used in the next
+      // phase.
       for (var outputId in groupOutputIds) {
         tempInputsByPackage.putIfAbsent(
             outputId.package, () => new Set<AssetId>());
@@ -370,7 +370,7 @@ class BuildImpl {
       }
     }
 
-    // Check conflictingOuputs, prompt user to delete files.
+    // Check conflictingOutputs, prompt user to delete files.
     if (conflictingOutputs.isEmpty) return;
 
     Future deleteConflictingOutputs() {
@@ -432,10 +432,10 @@ class BuildImpl {
   Future<BuildResult> _runPhases() async {
     final outputs = <Asset>[];
     for (var phase in _buildActions) {
-      /// Collects all the ids for files which are output by this stage. This
-      /// also includes files which didn't get regenerated because they weren't,
-      /// dirty unlike [outputs] which only gets files which were explicitly
-      /// generated in this build.
+      // Collects all the ids for files which are output by this stage. This
+      // also includes files which didn't get regenerated because they weren't,
+      // dirty unlike [outputs] which only gets files which were explicitly
+      // generated in this build.
       final phaseOutputIds = new Set<AssetId>();
 
       await Future.wait(phase.map((action) async {
