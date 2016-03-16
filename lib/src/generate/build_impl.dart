@@ -75,7 +75,7 @@ class BuildImpl {
 
     /// Assume incremental, change if necessary.
     var buildType = BuildType.Incremental;
-    var done = new Completer();
+    var done = new Completer<BuildResult>();
     Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
