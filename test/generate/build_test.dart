@@ -98,7 +98,7 @@ void main() {
             new CopyBuilder(), new InputSet('b', ['**/*']));
 
         await testPhases(phases, {'b|lib/b.txt': 'b'},
-            outputs: {}, status: BuildStatus.Failure);
+            outputs: {}, status: BuildStatus.failure);
       });
     });
 
@@ -142,7 +142,7 @@ void main() {
             'a|lib/a.txt.copy': 'a',
             'a|$assetGraphPath': JSON.encode(emptyGraph.serialize()),
           },
-          status: BuildStatus.Failure,
+          status: BuildStatus.failure,
           exceptionMatcher: invalidOutputException);
     });
   });

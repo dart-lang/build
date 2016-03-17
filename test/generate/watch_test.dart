@@ -146,16 +146,16 @@ void main() {
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
-        expect(result.status, BuildStatus.Failure);
+        expect(result.status, BuildStatus.failure);
       });
 
       test('ignores events from nested packages', () async {
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
         var packageA = new PackageNode(
-            'a', '0.1.0', PackageDependencyType.Path, new Uri.file('a/'));
+            'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'));
         var packageB = new PackageNode(
-            'b', '0.1.0', PackageDependencyType.Path, new Uri.file('a/b/'));
+            'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
         packageA.dependencies.add(packageB);
         var packageGraph = new PackageGraph.fromRoot(packageA);
 

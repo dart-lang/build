@@ -60,7 +60,7 @@ class BuildImpl {
   ///
   /// The returned [Future] is guaranteed to complete with a [BuildResult]. If
   /// an exception is thrown by any phase, [BuildResult#status] will be set to
-  /// [BuildStatus.Failure]. The exception and stack trace that caused the failure
+  /// [BuildStatus.failure]. The exception and stack trace that caused the failure
   /// will be available as [BuildResult#exception] and [BuildResult#stackTrace]
   /// respectively.
   ///
@@ -74,7 +74,7 @@ class BuildImpl {
     var watch = new Stopwatch()..start();
 
     /// Assume incremental, change if necessary.
-    var buildType = BuildType.Incremental;
+    var buildType = BuildType.incremental;
     var done = new Completer<BuildResult>();
     Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
@@ -88,7 +88,7 @@ class BuildImpl {
           if (_assetGraph.allNodes.isEmpty &&
               !(await _reader.hasInput(_assetGraphId))) {
             isNewAssetGraph = true;
-            buildType = BuildType.Full;
+            buildType = BuildType.full;
           } else {
             /// Collect updates since the asset graph was last created. This only
             /// handles updates and deletes, not adds. We list the file system for
@@ -109,7 +109,7 @@ class BuildImpl {
         await logWithTime(_logger, 'Checking build script for updates',
             () async {
           if (await _buildScriptUpdated()) {
-            buildType = BuildType.Full;
+            buildType = BuildType.full;
             if (_isFirstBuild) {
               _logger.warning(
                   'Invalidating asset graph due to build script update');
@@ -118,7 +118,7 @@ class BuildImpl {
                   .forEach((node) =>
                       (node as GeneratedAssetNode).needsUpdate = true);
             } else {
-              done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
+              done.complete(new BuildResult(BuildStatus.failure, buildType, [],
                   exception: new BuildScriptUpdatedException()));
             }
           }
@@ -157,13 +157,13 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
-      done.complete(new BuildResult(BuildStatus.Failure, buildType, [],
+      done.complete(new BuildResult(BuildStatus.failure, buildType, [],
           exception: e, stackTrace: chain.toTrace()));
     });
     var result = await done.future;
     _buildRunning = false;
     _isFirstBuild = false;
-    if (result.status == BuildStatus.Success) {
+    if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
           '${result.outputs.length} outputs\n\n');
     } else {
@@ -455,7 +455,7 @@ class BuildImpl {
         _inputsByPackage[outputId.package].add(outputId);
       }
     }
-    return new BuildResult(BuildStatus.Success, BuildType.Full, outputs);
+    return new BuildResult(BuildStatus.success, BuildType.full, outputs);
   }
 
   /// Initializes the map of all the available inputs by package.

@@ -75,7 +75,7 @@ Future testPhases(PhaseGroup phases, Map<String, String> inputs,
     {bool deleteFilesByDefault,
     Map<String, String> outputs,
     PackageGraph packageGraph,
-    BuildStatus status: BuildStatus.Success,
+    BuildStatus status: BuildStatus.success,
     Matcher exceptionMatcher,
     InMemoryAssetWriter writer}) async {
   writer ??= new InMemoryAssetWriter();

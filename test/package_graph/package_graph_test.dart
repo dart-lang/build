@@ -18,7 +18,7 @@ void main() {
 
       test('root', () {
         expectPkg(
-            graph.root, 'build', isNotEmpty, PackageDependencyType.Path, './');
+            graph.root, 'build', isNotEmpty, PackageDependencyType.path, './');
       });
     });
 
@@ -39,22 +39,22 @@ void main() {
       });
 
       test('root', () {
-        expectPkg(graph.root, 'basic_pkg', '1.0.0', PackageDependencyType.Path,
+        expectPkg(graph.root, 'basic_pkg', '1.0.0', PackageDependencyType.path,
             basicPkgPath, [graph['a'], graph['b'], graph['c']]);
       });
 
       test('pub dependency', () {
-        expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.Pub,
+        expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.pub,
             '$basicPkgPath/pkg/a', [graph['b'], graph['c']]);
       });
 
       test('git dependency', () {
-        expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.Github,
+        expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.github,
             '$basicPkgPath/pkg/b', [graph['c']]);
       });
 
       test('path dependency', () {
-        expectPkg(graph['c'], 'c', '4.0.0', PackageDependencyType.Path,
+        expectPkg(graph['c'], 'c', '4.0.0', PackageDependencyType.path,
             '$basicPkgPath/pkg/c', [graph['basic_pkg']]);
       });
     });
@@ -82,15 +82,15 @@ void main() {
             graph.root,
             'with_dev_deps',
             '1.0.0',
-            PackageDependencyType.Path,
+            PackageDependencyType.path,
             withDevDepsPkgPath,
             [graph['a'], graph['b']]);
 
         // Package `c` does not appear because this is not the root package.
-        expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.Pub,
+        expectPkg(graph['a'], 'a', '2.0.0', PackageDependencyType.pub,
             '$withDevDepsPkgPath/pkg/a', []);
 
-        expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.Pub,
+        expectPkg(graph['b'], 'b', '3.0.0', PackageDependencyType.pub,
             '$withDevDepsPkgPath/pkg/b', []);
 
         expect(graph['c'], isNull);
@@ -98,10 +98,10 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      var a = new PackageNode('a', '1.0.0', PackageDependencyType.Path, null);
-      var b = new PackageNode('b', '1.0.0', PackageDependencyType.Pub, null);
-      var c = new PackageNode('c', '1.0.0', PackageDependencyType.Pub, null);
-      var d = new PackageNode('d', '1.0.0', PackageDependencyType.Pub, null);
+      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
+      var b = new PackageNode('b', '1.0.0', PackageDependencyType.pub, null);
+      var c = new PackageNode('c', '1.0.0', PackageDependencyType.pub, null);
+      var d = new PackageNode('d', '1.0.0', PackageDependencyType.pub, null);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
       var graph = new PackageGraph.fromRoot(a);

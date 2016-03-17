@@ -101,7 +101,7 @@ class PackageGraph {
     }
 
     var root =
-        addNodeAndDeps(rootYaml, PackageDependencyType.Path, isRoot: true);
+        addNodeAndDeps(rootYaml, PackageDependencyType.path, isRoot: true);
     return new PackageGraph._(root, nodes);
   }
 
@@ -152,10 +152,10 @@ class PackageNode {
 
 /// The type of dependency being used. This dictates how the package should be
 /// watched for changes.
-enum PackageDependencyType { Pub, Github, Path, }
+enum PackageDependencyType { pub, github, path }
 
 PackageDependencyType _dependencyType(source) {
-  if (source is String || source == null) return PackageDependencyType.Pub;
+  if (source is String || source == null) return PackageDependencyType.pub;
 
   assert(source is YamlMap);
   assert(source.keys.length == 1);
@@ -163,9 +163,9 @@ PackageDependencyType _dependencyType(source) {
   var typeString = source.keys.first;
   switch (typeString) {
     case 'git':
-      return PackageDependencyType.Github;
+      return PackageDependencyType.github;
     case 'path':
-      return PackageDependencyType.Path;
+      return PackageDependencyType.path;
     default:
       throw 'Unrecognized package dependency type `$typeString`';
   }

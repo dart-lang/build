@@ -27,7 +27,7 @@ class BuildResult {
 
   @override
   String toString() {
-    if (status == BuildStatus.Success) {
+    if (status == BuildStatus.success) {
       return '''
 
 Build Succeeded!
@@ -47,7 +47,7 @@ $stackTrace
 }
 
 /// The status of a build.
-enum BuildStatus { Success, Failure, }
+enum BuildStatus { success, failure, }
 
 /// The type of a build.
-enum BuildType { Incremental, Full }
+enum BuildType { incremental, full }

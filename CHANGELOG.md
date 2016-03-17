@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+- **BREAKING** Renamed values of three enums to be lower-case:
+  `BuildType`, `BuildStatus`, and `PackageDependencyType`.
+
 ## 0.2.1
 - Added the `deleteFilesByDefault` option to all top level methods. This will
   skip the prompt to delete files, and instead act as if you responded `y`.
