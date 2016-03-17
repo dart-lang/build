@@ -5,12 +5,12 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
+import 'package:watcher/watcher.dart';
 
 import 'package:build/build.dart';
 import 'package:build/src/server/server.dart' as server;
-import 'package:shelf/shelf.dart';
-import 'package:watcher/watcher.dart';
 
 import '../common/common.dart';
 

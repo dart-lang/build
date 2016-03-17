@@ -3,10 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
-import 'package:logging/logging.dart';
 
 import 'assets.dart';
 import 'in_memory_reader.dart';

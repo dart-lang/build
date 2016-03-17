@@ -4,13 +4,12 @@
 @TestOn('vm')
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/util/barback.dart';
-
-import 'package:logging/logging.dart';
 
 import '../common/common.dart';
 
