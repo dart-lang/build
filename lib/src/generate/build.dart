@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:code_transformers/resolver.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
@@ -48,6 +49,7 @@ Future<BuildResult> build(PhaseGroup phaseGroup,
     AssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
+    Resolvers resolvers,
     Stream terminateEventStream}) async {
   var options = new BuildOptions(
       deleteFilesByDefault: deleteFilesByDefault,
@@ -55,7 +57,8 @@ Future<BuildResult> build(PhaseGroup phaseGroup,
       reader: reader,
       writer: writer,
       logLevel: logLevel,
-      onLog: onLog);
+      onLog: onLog,
+      resolvers: resolvers);
   var buildImpl = new BuildImpl(options, phaseGroup);
 
   /// Run the build!
@@ -94,6 +97,7 @@ Stream<BuildResult> watch(PhaseGroup phaseGroup,
     AssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
+    Resolvers resolvers,
     Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
     Stream terminateEventStream}) {
@@ -104,6 +108,7 @@ Stream<BuildResult> watch(PhaseGroup phaseGroup,
       writer: writer,
       logLevel: logLevel,
       onLog: onLog,
+      resolvers: resolvers,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory);
   var watchImpl = new WatchImpl(options, phaseGroup);
@@ -136,6 +141,7 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
     AssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
+    Resolvers resolvers,
     Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
     Stream terminateEventStream,
@@ -150,6 +156,7 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
       writer: writer,
       logLevel: logLevel,
       onLog: onLog,
+      resolvers: resolvers,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory,
       directory: directory,

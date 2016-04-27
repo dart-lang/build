@@ -36,5 +36,6 @@ abstract class BuildStep {
   /// will only be resolved in [id], and not any other libraries. This gives a
   /// significant speed boost, at the cost of not being able to assume all
   /// constants are already resolved.
-  Future<Resolver> resolve(AssetId id, {bool resolveAllConstants});
+  Future<Resolver> resolve(AssetId id,
+      {bool resolveAllConstants, List<AssetId> entryPoints});
 }

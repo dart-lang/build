@@ -279,34 +279,6 @@ void main() {
           });
     });
 
-    test('deleted files should be removed', () {
-      return validateResolver(
-          inputs: {
-            'a|web/main.dart': '''import 'package:a/a.dart';''',
-            'a|lib/a.dart': '''import 'package:a/b.dart';''',
-            'a|lib/b.dart': '''class Engine{}''',
-          },
-          validator: (resolver) {
-            var engine = resolver.getType('Engine');
-            var uri = resolver.getImportUri(engine.library);
-            expect(uri.toString(), 'package:a/b.dart');
-          }).then((_) {
-        return validateResolver(
-            inputs: {
-              'a|web/main.dart': '''import 'package:a/a.dart';''',
-              'a|lib/a.dart': '''lib a;\n class Engine{}'''
-            },
-            validator: (resolver) {
-              var engine = resolver.getType('Engine');
-              var uri = resolver.getImportUri(engine.library);
-              expect(uri.toString(), 'package:a/a.dart');
-
-              // Make sure that we haven't leaked any sources.
-              expect((resolver.resolver as dynamic).sources.length, 2);
-            });
-      });
-    });
-
     test('handles circular imports', () {
       return validateResolver(
           inputs: {

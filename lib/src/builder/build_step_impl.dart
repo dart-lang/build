@@ -21,8 +21,8 @@ import 'exceptions.dart';
 /// A single step in the build processes. This represents a single input and
 /// its expected and real outputs. It also handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
-  /// Single `_resolvers` instance for all [BuildStepImpl]s
-  static code_transformers.Resolvers _resolvers =
+  /// Single `resolvers` instance for all [BuildStepImpl]s
+  static code_transformers.Resolvers resolvers =
       new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
           useSharedSources: true);
 
@@ -102,9 +102,13 @@ class BuildStepImpl implements BuildStep {
 
   /// Resolves [id] and returns a [Future<Resolver>] once that is done.
   @override
-  Future<Resolver> resolve(AssetId id, {bool resolveAllConstants}) async =>
-      new Resolver(await _resolvers.get(toBarbackTransform(this),
-          [toBarbackAssetId(id)], resolveAllConstants));
+  Future<Resolver> resolve(AssetId id,
+      {bool resolveAllConstants, List<AssetId> entryPoints}) async {
+    entryPoints ??= [];
+    if (!entryPoints.contains(id)) entryPoints.add(id);
+    return new Resolver(await resolvers.get(toBarbackTransform(this),
+        entryPoints.map(toBarbackAssetId).toList(), resolveAllConstants));
+  }
 
   /// Should be called after `build` has completed. This will wait until for
   /// [_outputsCompleted].
