@@ -3,6 +3,9 @@
 ## 0.3.0
 - **BREAKING** Renamed values of three enums to be lower-case:
   `BuildType`, `BuildStatus`, and `PackageDependencyType`.
+- Updated to crypto ^1.0.0.
+- Added option to resolve additional entry points in `buildStep.resolve`.
+- Added option to pass in a custom `Resolvers` instance.
 
 ## 0.2.1
 - Added the `deleteFilesByDefault` option to all top level methods. This will

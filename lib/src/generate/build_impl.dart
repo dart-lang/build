@@ -54,7 +54,9 @@ class BuildImpl {
         _deleteFilesByDefault = options.deleteFilesByDefault,
         _packageGraph = options.packageGraph,
         _reader = options.reader,
-        _writer = options.writer;
+        _writer = options.writer {
+    if (options.resolvers != null) BuildStepImpl.resolvers = options.resolvers;
+  }
 
   /// Runs a build
   ///
@@ -471,9 +473,14 @@ class BuildImpl {
         package, [package == _packageGraph.root.name ? '**/*' : 'lib/**']));
     var allInputs = await _reader.listAssetIds(inputSets).toList();
     _inputsByPackage.clear();
-    for (var input in allInputs) {
-      _inputsByPackage.putIfAbsent(input.package, () => new Set<AssetId>());
 
+    // Initialize the set of inputs for each package.
+    for (var package in packages) {
+      _inputsByPackage[package] = new Set<AssetId>();
+    }
+
+    // Populate the inputs for each package.
+    for (var input in allInputs) {
       if (_isValidInput(input)) {
         _inputsByPackage[input.package].add(input);
       }

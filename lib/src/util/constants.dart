@@ -11,8 +11,5 @@ final String assetGraphPath = '$cacheDir/$scriptHash/asset_graph.json';
 /// Relative path to the cache directory from the root package dir.
 const String cacheDir = '.dart_tool/build';
 
-final String scriptHash = () {
-  var hasher = new MD5();
-  hasher.add(Platform.script.path.codeUnits);
-  return CryptoUtils.bytesToHex(hasher.close());
-}();
+final String scriptHash =
+    md5.convert(Platform.script.path.codeUnits).toString();
