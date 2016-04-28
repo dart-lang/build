@@ -7,16 +7,15 @@ library source_gen.test.json_generator_test;
 
 import 'dart:async';
 
-import 'package:analyzer/src/generated/ast.dart';
-import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:analyzer/src/string_source.dart';
 import 'package:path/path.dart' as p;
-import 'package:test/test.dart';
-
-import 'package:source_gen/src/utils.dart';
 import 'package:source_gen/generators/json_serializable_generator.dart';
+import 'package:source_gen/src/utils.dart';
+import 'package:test/test.dart';
 
 import 'src/io.dart';
 import 'test_utils.dart';

@@ -7,20 +7,21 @@ library source_gen.test.annotation_test;
 
 import 'dart:async';
 
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
+
 import 'package:analyzer/src/generated/constant.dart';
-import 'package:analyzer/src/generated/element.dart';
+//import 'package:analyzer/src/generated/element.dart' show ElementAnnotationImpl;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as p;
-import 'package:test/test.dart';
-
 import 'package:source_gen/generators/json_serializable.dart';
 import 'package:source_gen/src/annotation.dart';
 import 'package:source_gen/src/utils.dart';
-
-import 'test_files/annotations.dart' as defs;
+import 'package:test/test.dart';
 
 import 'src/io.dart';
+import 'test_files/annotations.dart' as defs;
 import 'test_utils.dart';
 
 void main() {
@@ -238,16 +239,14 @@ ClassElement _getAnnotatedClass(LibraryElement lib, String className) =>
 /// Returns a mock [ElementAnnotationImpl] whose
 /// `evaluationResult.value.type.element.library.source` is `libraryUri` and
 /// whose `evaluationResult.value.type.name` is `typeName`.
-ElementAnnotationImpl _mockElementAnnotation(String typeName, Uri libraryUri) {
-  var annotation = new MockElementAnnotationImpl();
-  var result = new MockEvaluationResultImpl();
-  var value = new MockDartObjectImpl();
+ElementAnnotation _mockElementAnnotation(String typeName, Uri libraryUri) {
+  var annotation = new MockElementAnnotation();
+  var value = new MockDartObject();
   var type = new MockParameterizedType();
   var element = new MockElement();
   var library = new MockLibraryElement();
   var source = new MockSource();
-  when(annotation.evaluationResult).thenReturn(result);
-  when(result.value).thenReturn(value);
+  when(annotation.constantValue).thenReturn(value);
   when(value.type).thenReturn(type);
   when(type.name).thenReturn(typeName);
   when(type.element).thenReturn(element);
@@ -257,11 +256,9 @@ ElementAnnotationImpl _mockElementAnnotation(String typeName, Uri libraryUri) {
   return annotation;
 }
 
-class MockElementAnnotationImpl extends Mock implements ElementAnnotationImpl {}
+class MockElementAnnotation extends Mock implements ElementAnnotation {}
 
-class MockEvaluationResultImpl extends Mock implements EvaluationResultImpl {}
-
-class MockDartObjectImpl extends Mock implements DartObjectImpl {}
+class MockDartObject extends Mock implements DartObject {}
 
 class MockParameterizedType extends Mock implements ParameterizedType {}
 

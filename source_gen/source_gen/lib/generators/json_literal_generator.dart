@@ -7,7 +7,7 @@ library source_gen.example.json_literal_generator;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';

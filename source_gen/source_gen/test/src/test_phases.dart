@@ -6,10 +6,9 @@
 
 import 'dart:async';
 
-import 'package:test/test.dart';
-
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
+import 'package:test/test.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
@@ -32,7 +31,7 @@ Future testPhases(PhaseGroup phases, String rootPackage,
       packageGraph: packageGraph,
       logLevel: Level.OFF);
 
-  expect(result.status, BuildStatus.Success,
+  expect(result.status, BuildStatus.success,
       reason: 'Exception:\n${result.exception}\n'
           'Stack Trace:\n${result.stackTrace}');
 

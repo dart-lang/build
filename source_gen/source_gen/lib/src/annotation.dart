@@ -7,18 +7,20 @@ library source_gen.annotation;
 import 'dart:io';
 import 'dart:mirrors';
 
-import 'package:analyzer/src/generated/ast.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/generated/constant.dart';
-import 'package:analyzer/src/generated/element.dart';
-import 'package:analyzer/src/generated/utilities_dart.dart';
+import 'package:analyzer/src/generated/element.dart'
+    show ConstructorElementImpl;
 import 'package:analyzer/src/generated/resolver.dart';
+import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:path/path.dart' as p;
 
-dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
-  var annotationObjectImpl = annotation.evaluationResult.value;
+dynamic instantiateAnnotation(ElementAnnotation annotation) {
+  var annotationObject = annotation.constantValue;
   try {
-    return _getValue(
-        annotationObjectImpl, annotation.element.context.typeProvider);
+    return _getValue(annotationObject, annotation.element.context.typeProvider);
   } on CannotCreateFromAnnotationException catch (e) {
     if (e.innerException != null) {
       // If there was a issue creating a nested object, there's not much we
@@ -29,20 +31,19 @@ dynamic instantiateAnnotation(ElementAnnotationImpl annotation) {
 
   var element = annotation.element;
 
-  if (element is PropertyAccessorElementImpl) {
-    var initializer = ((element as PropertyAccessorElementImpl)
+  if (element is PropertyAccessorElement) {
+    var initializer = ((element as PropertyAccessorElement)
             .variable
             .computeNode() as VariableDeclaration)
         .initializer as InstanceCreationExpression;
     element = initializer.staticElement;
   }
 
-  if (element is ConstructorElementImpl) {
-    return _createFromConstructor(element, annotationObjectImpl);
+  if (element is ConstructorElement) {
+    return _createFromConstructor(element, annotationObject);
   }
 
-  var valueDeclaration =
-      _getDeclMirrorFromType(annotation.evaluationResult.value.type);
+  var valueDeclaration = _getDeclMirrorFromType(annotation.constantValue.type);
 
   throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
 }
@@ -75,7 +76,7 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
   if (object.type == typeProvider.typeType) {
     var typeData = object.toTypeValue();
 
-    if (typeData is InterfaceTypeImpl) {
+    if (typeData is InterfaceType) {
       var declarationMirror = _getDeclMirrorFromType(typeData) as ClassMirror;
 
       return declarationMirror.reflectedType;
@@ -140,12 +141,13 @@ dynamic _createFromConstructor(
   for (var p in ctorDecl.parameters.parameterElements) {
     var paramName = p.name;
     String fieldName;
-    if (p is FieldFormalParameterElementImpl) {
+    if (p is FieldFormalParameterElement) {
       fieldName = p.name;
     } else {
       // Trying to find the relationship between the ctor argument name and the
       // field assigned in the object. Then we can take the field value and
       // set it as the argument value
+
       var initializer = ctor.constantInitializers.singleWhere((ci) {
         var expression = (ci as ConstructorFieldInitializer).expression;
         if (expression is SimpleIdentifier) {
@@ -203,11 +205,11 @@ DeclarationMirror _getDeclMirrorFromType(InterfaceType type) {
   return libMirror.declarations[typeNameSymbol];
 }
 
-bool matchAnnotation(Type annotationType, ElementAnnotationImpl annotation) {
+bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
   var classMirror = reflectClass(annotationType);
   var classMirrorSymbol = classMirror.simpleName;
 
-  var annotationValueType = annotation.evaluationResult.value.type;
+  var annotationValueType = annotation.constantValue.type;
 
   var annTypeName = annotationValueType.name;
   var annotationTypeSymbol = new Symbol(annTypeName);

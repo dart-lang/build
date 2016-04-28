@@ -1,3 +1,7 @@
+## 0.5.0+1
+
+* Support the latest version of `pkg/build`.
+
 ## 0.5.0
 
 * **Breaking**: Switch to the `build` package for running `Generator`s. This

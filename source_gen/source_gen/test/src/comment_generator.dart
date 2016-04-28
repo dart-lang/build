@@ -2,7 +2,7 @@ library source_gen.test.comment_generator;
 
 import 'dart:async';
 
-import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:source_gen/source_gen.dart';
 
 /// Generates a single-line comment for each class

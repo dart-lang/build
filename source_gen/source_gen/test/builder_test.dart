@@ -4,12 +4,11 @@
 @TestOn('vm')
 import 'dart:async';
 
-import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:test/test.dart';
-
 import 'package:source_gen/builder.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:test/test.dart';
 
 import 'src/comment_generator.dart';
 import 'src/test_phases.dart';

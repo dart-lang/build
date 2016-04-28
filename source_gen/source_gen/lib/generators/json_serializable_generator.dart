@@ -5,12 +5,13 @@
 library source_gen.json_serial.generator;
 
 import 'dart:async';
-import 'package:analyzer/src/generated/element.dart';
-import 'package:analyzer/src/generated/utilities_dart.dart';
 
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:source_gen/src/utils.dart';
 import 'package:source_gen/src/annotation.dart';
+import 'package:source_gen/src/utils.dart';
 
 import 'json_serializable.dart';
 
@@ -260,7 +261,7 @@ bool _hasFromJsonCtor(DartType type) {
   return false;
 }
 
-DartType _getIterableGenericType(InterfaceTypeImpl type) {
+DartType _getIterableGenericType(InterfaceType type) {
   var iterableThing = _typeTest(type, _isDartIterable);
 
   return iterableThing.typeArguments.single;
