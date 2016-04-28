@@ -195,8 +195,6 @@ void main() {
               } ''',
           },
           messages: [
-            // First from the AST walker
-            '[WARNING] a|web/main.dart: $warningMessage "/b.dart"',
             '[WARNING] a|web/main.dart: $warningMessage "/b.dart"',
           ],
           validator: (resolver) {
