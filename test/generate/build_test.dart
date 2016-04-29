@@ -82,6 +82,19 @@ void main() {
           'a|web/a.txt.clone.copy.1': 'a',
         });
       });
+
+      test('early step touches a not-yet-generated asset', () async {
+        var phases = new PhaseGroup();
+        phases.newPhase()
+          ..addAction(
+              new CopyBuilder(touchAsset: new AssetId('a', 'lib/a.txt.copy')),
+              new InputSet('a', ['lib/b.txt']));
+        phases.newPhase()
+          ..addAction(new CopyBuilder(), new InputSet('a', ['lib/a.txt']));
+
+        await testPhases(phases, {'a|lib/a.txt': 'a', 'a|lib/b.txt': 'b',},
+            outputs: {'a|lib/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b',});
+      });
     });
 
     group('inputs from other packages', () {

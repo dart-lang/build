@@ -529,8 +529,13 @@ class BuildImpl {
           _assetGraph.addIfAbsent(input, () => new AssetNode(input));
       for (var output in expectedOutputs) {
         inputNode.outputs.add(output);
-        _assetGraph.addIfAbsent(
-            output, () => new GeneratedAssetNode(input, true, false, output));
+        var existing = _assetGraph.get(output);
+        /// If its null or of type [AssetNode], then insert a
+        /// [GeneratedAssetNode].
+        if (existing is! GeneratedAssetNode) {
+          _assetGraph.remove(output);
+          _assetGraph.add(new GeneratedAssetNode(input, true, false, output));
+        }
       }
 
       /// Skip the build step if none of the outputs need updating.
