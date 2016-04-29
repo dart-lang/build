@@ -20,6 +20,9 @@ class CopyBuilder implements Builder {
   /// asset.
   final AssetId copyFromAsset;
 
+  /// Will touch this asset, so that it becomes a dependency.
+  final AssetId touchAsset;
+
   /// No `build` step will complete until this future completes. It may be
   /// re-assigned in between builds.
   Future blockUntil;
@@ -29,6 +32,7 @@ class CopyBuilder implements Builder {
       this.extension: 'copy',
       this.outputPackage,
       this.copyFromAsset,
+      this.touchAsset,
       this.blockUntil});
 
   @override
@@ -42,6 +46,8 @@ class CopyBuilder implements Builder {
           : await buildStep.readAsString(copyFromAsset);
       buildStep.writeAsString(new Asset(id, content));
     }
+
+    if (touchAsset != null) await buildStep.hasInput(touchAsset);
   }
 
   @override

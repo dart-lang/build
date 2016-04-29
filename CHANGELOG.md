@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0+1
+- Fix an AssetGraph bug where generated nodes might be created as non-generated
+  nodes if they are attempted to be read from previous build steps.
+
 ## 0.3.0
 - **BREAKING** Renamed values of three enums to be lower-case:
   `BuildType`, `BuildStatus`, and `PackageDependencyType`.
