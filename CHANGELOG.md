@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0+2
+- Enable serving files outside the server root by default (enables serving
+  files from other packages). 
+
 ## 0.3.0+1
 - Fix an AssetGraph bug where generated nodes might be created as non-generated
   nodes if they are attempted to be read from previous build steps.
