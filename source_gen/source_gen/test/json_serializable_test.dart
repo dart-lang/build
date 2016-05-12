@@ -115,17 +115,12 @@ void main() {
 const _generator = const JsonSerializableGenerator();
 
 Future<Element> _getClassForCodeString(String name) async {
-  var elements = await _getElementsForCodeString();
-
-  return elements.singleWhere((e) => e.name == name);
-}
-
-Future<List<Element>> _getElementsForCodeString() async {
   if (_compUnit == null) {
     _compUnit = await _getCompilationUnitForString(getPackagePath());
   }
 
-  return getElementsFromLibraryElement(_compUnit.element.library);
+  return getElementsFromLibraryElement(_compUnit.element.library)
+      .singleWhere((e) => e.name == name);
 }
 
 Future<CompilationUnit> _getCompilationUnitForString(String projectPath) async {
