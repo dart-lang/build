@@ -4,8 +4,8 @@
 import 'dart:async';
 
 import 'package:analyzer/analyzer.dart' show Expression;
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/src/generated/constant.dart' show EvaluationResult;
-import 'package:analyzer/src/generated/element.dart';
 import 'package:code_transformers/resolver.dart' as code_transformers
     show Resolver;
 import 'package:source_maps/refactor.dart';
