@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'copy_builder.dart';
 
 class CopyTransformer extends BuilderTransformer {
+  @override
   final List<Builder> builders = [new CopyBuilder()];
 
   CopyTransformer.asPlugin(_);

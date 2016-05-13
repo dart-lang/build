@@ -1,0 +1,9 @@
+name: build_test
+description: Utilities for writing unit tests of Builders.
+version: 0.1.0
+dependencies:
+  build:
+    path: ../
+  logging: ^0.11.2
+  test: ^0.12.0
+  watcher: ^0.9.7

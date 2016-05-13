@@ -4,7 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:barback/barback.dart' as barback show Asset, AssetId;
+import 'package:barback/barback.dart' as barback show AssetId;
 import 'package:barback/barback.dart' hide Asset, AssetId;
 
 import '../asset/asset.dart' as build;
