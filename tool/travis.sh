@@ -14,7 +14,7 @@ if [ "$TRAVIS_DART_VERSION" != "stable" ]; then
 fi
 
 # Run the tests.
-pub run test
+pub run test --verbose
 
 # Install dart_coveralls; gather and send coverage data.
 if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
