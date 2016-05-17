@@ -1,7 +1,8 @@
 language: dart
 
 dart:
-  - dev
+  # TODO(jakemac): https://github.com/dart-lang/pub/issues/1416
+  # - dev
   - stable
 
 script: ./tool/travis.sh
