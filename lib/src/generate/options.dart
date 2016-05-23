@@ -79,8 +79,9 @@ class BuildOptions {
     address ??= 'localhost';
     directory ??= '.';
     port ??= 8000;
-    requestHandler ??= createStaticHandler(
-        directory, defaultDocument: 'index.html', listDirectories: true,
+    requestHandler ??= createStaticHandler(directory,
+        defaultDocument: 'index.html',
+        listDirectories: true,
         serveFilesOutsidePath: true);
     debounceDelay ??= const Duration(milliseconds: 250);
     packageGraph ??= new PackageGraph.forThisPackage();

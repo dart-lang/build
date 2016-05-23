@@ -521,8 +521,8 @@ class BuildImpl {
               'Files may only be output in the root (application) package.');
         }
         if (_inputsByPackage[output.package]?.contains(output) == true) {
-          throw new InvalidOutputException(new Asset(output, ''),
-              'Cannot overwrite inputs.');
+          throw new InvalidOutputException(
+              new Asset(output, ''), 'Cannot overwrite inputs.');
         }
       }
 
@@ -532,6 +532,7 @@ class BuildImpl {
       for (var output in expectedOutputs) {
         inputNode.outputs.add(output);
         var existing = _assetGraph.get(output);
+
         /// If its null or of type [AssetNode], then insert a
         /// [GeneratedAssetNode].
         if (existing is! GeneratedAssetNode) {
