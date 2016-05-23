@@ -24,12 +24,12 @@ class PackageNotFoundException implements Exception {
 
 class InvalidOutputException implements Exception {
   final Asset asset;
+  final String message;
 
-  InvalidOutputException(this.asset);
+  InvalidOutputException(this.asset, this.message);
 
   @override
-  String toString() => 'InvalidOutputException: $asset\n'
-      'Files may only be output in the root (application) package.';
+  String toString() => 'InvalidOutputException: $asset\n$message';
 }
 
 class InvalidInputException implements Exception {

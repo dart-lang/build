@@ -128,7 +128,8 @@ class BuildStepImpl implements BuildStep {
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(Asset asset) {
     if (asset.id.package != _rootPackage) {
-      throw new InvalidOutputException(asset);
+      throw new InvalidOutputException(
+          asset, 'Files may only be output in the root (application) package.');
     }
     if (!expectedOutputs.any((id) => id == asset.id)) {
       throw new UnexpectedOutputException(asset);
