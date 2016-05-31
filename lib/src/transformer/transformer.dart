@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:barback/barback.dart' as barback show AssetId;
 import 'package:barback/barback.dart' hide Asset, AssetId;
+import 'package:logging/logging.dart';
 
 import '../asset/asset.dart' as build;
 import '../asset/id.dart' as build;
@@ -72,8 +73,21 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
       // Run the build step.
       var buildStep =
           new BuildStepImpl(input, expected, reader, writer, input.id.package);
+      Logger.root.level = Level.ALL;
+      var logSubscription = buildStep.logger.onRecord.listen((LogRecord log) {
+        if (log.level <= Level.CONFIG) {
+          transform.logger.fine(log.message);
+        } else if (log.level <= Level.INFO) {
+          transform.logger.info(log.message);
+        } else if (log.level <= Level.WARNING) {
+          transform.logger.warning(log.message);
+        } else {
+          transform.logger.error(log.message);
+        }
+      });
       await builder.build(buildStep);
       await buildStep.complete();
+      await logSubscription.cancel();
     }));
   }
 

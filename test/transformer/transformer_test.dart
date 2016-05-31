@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+import 'dart:async';
+
+import 'package:build/build.dart';
 import 'package:test/test.dart';
 import 'package:transformer_test/utils.dart';
 
@@ -112,6 +115,28 @@ void main() {
         _fileExistsError("CopyBuilder", ["a|web/a.txt.copy"]),
       ],
       expectBarbackErrors: true);
+
+  testPhases('loggers log errors', [
+    [
+      new GenericBuilderTransformer([new LoggingCopyBuilder()])
+    ],
+  ], {
+    'a|web/a.txt': 'hello',
+  }, {}, messages: [
+    'warning: Warning!',
+    'error: Error!',
+  ]);
+}
+
+class LoggingCopyBuilder extends CopyBuilder {
+  LoggingCopyBuilder() : super();
+
+  @override
+  Future build(BuildStep buildStep) async {
+    await super.build(buildStep);
+    buildStep.logger.warning('Warning!');
+    buildStep.logger.severe('Error!');
+  }
 }
 
 String _fileExistsError(String builder, List<String> files) {
