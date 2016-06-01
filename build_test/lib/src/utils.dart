@@ -11,32 +11,37 @@ import 'package:build/build.dart';
 import 'assets.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
-import 'matchers.dart';
 
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 
-void checkOutputs(Map<String, String> outputs, BuildResult result,
+void checkOutputs(
+    Map<String, /*String|Matcher*/ dynamic> outputs, BuildResult result,
     [Map<AssetId, DatedString> actualAssets]) {
   if (outputs != null) {
     var remainingOutputIds =
         new List.from(result.outputs.map((asset) => asset.id));
-    outputs.forEach((serializedId, contents) {
-      var asset = makeAsset(serializedId, contents);
-      remainingOutputIds.remove(asset.id);
+    outputs.forEach((serializedId, contentsMatcher) {
+      assert(contentsMatcher is String || contentsMatcher is Matcher);
+
+      var assetId = makeAssetId(serializedId);
+      remainingOutputIds.remove(assetId);
 
       /// Check that the writer wrote the assets
       if (actualAssets != null) {
-        expect(actualAssets, contains(asset.id));
-        expect(actualAssets[asset.id].value, asset.stringContents);
+        expect(actualAssets, contains(assetId));
+        expect(actualAssets[assetId].value, contentsMatcher,
+            reason: 'Unexpected content for $assetId.');
       }
 
       /// Check that the assets exist in [result.outputs].
       var actual = result.outputs
-          .firstWhere((output) => output.id == asset.id, orElse: () => null);
+          .firstWhere((output) => output.id == assetId, orElse: () => null);
       expect(actual, isNotNull,
-          reason: 'Expected to find ${asset.id} in ${result.outputs}.');
-      expect(asset, equalsAsset(actual));
+          reason: 'Expected to find $assetId in ${result.outputs}.');
+      expect(actual.id, assetId);
+      expect(actual.stringContents, contentsMatcher,
+          reason: 'Unexpected content for $assetId in result.outputs.');
     });
 
     expect(remainingOutputIds, isEmpty,
