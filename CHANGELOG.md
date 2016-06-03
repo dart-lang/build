@@ -3,6 +3,8 @@
 ## 0.3.0+5
 - Fix duplicate logs issue when running as a BuilderTransformer.  
 
+- Support `crypto` 2.0.0.
+
 ## 0.3.0+4
 - Add error and stack trace to log messages from the BuilderTransformer.
 
