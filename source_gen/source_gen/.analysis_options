@@ -1,3 +1,2 @@
 analyzer:
-# Not enabling this yet – need a fix in Mockito
-# strong-mode: true
+ strong-mode: true

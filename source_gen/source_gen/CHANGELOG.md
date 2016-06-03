@@ -1,3 +1,9 @@
+## 0.5.0+2
+
+* Remove an outdated work-around.
+
+* Make strong-mode clean.
+
 ## 0.5.0+1
 
 * Support the latest version of `pkg/build`.
