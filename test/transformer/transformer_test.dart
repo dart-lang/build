@@ -123,8 +123,10 @@ void main() {
   ], {
     'a|web/a.txt': 'hello',
   }, {}, messages: [
-    'warning: Warning!',
-    'error: Error!',
+    allOf(startsWith('warning: Warning!'), contains('SomeError'),
+        contains('LoggingCopyBuilder.build')),
+    allOf(startsWith('error: Error!'), contains('SomeError'),
+        contains('LoggingCopyBuilder.build')),
   ]);
 }
 
@@ -134,8 +136,12 @@ class LoggingCopyBuilder extends CopyBuilder {
   @override
   Future build(BuildStep buildStep) async {
     await super.build(buildStep);
-    buildStep.logger.warning('Warning!');
-    buildStep.logger.severe('Error!');
+    try {
+      throw 'SomeError';
+    } catch (e, s) {
+      buildStep.logger.warning('Warning!', e, s);
+      buildStep.logger.severe('Error!', e, s);
+    }
   }
 }
 

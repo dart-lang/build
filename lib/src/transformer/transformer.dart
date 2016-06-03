@@ -76,19 +76,31 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
       Logger.root.level = Level.ALL;
       var logSubscription = buildStep.logger.onRecord.listen((LogRecord log) {
         if (log.level <= Level.CONFIG) {
-          transform.logger.fine(log.message);
+          transform.logger.fine(_logRecordToMessage(log));
         } else if (log.level <= Level.INFO) {
-          transform.logger.info(log.message);
+          transform.logger.info(_logRecordToMessage(log));
         } else if (log.level <= Level.WARNING) {
-          transform.logger.warning(log.message);
+          transform.logger.warning(_logRecordToMessage(log));
         } else {
-          transform.logger.error(log.message);
+          transform.logger.error(_logRecordToMessage(log));
         }
       });
       await builder.build(buildStep);
       await buildStep.complete();
       await logSubscription.cancel();
     }));
+  }
+
+  String _logRecordToMessage(LogRecord log) {
+    var buffer = new StringBuffer();
+    buffer.write(log.message);
+    if (log.error != null) {
+      buffer.write('\nError: ${log.error}');
+    }
+    if (log.stackTrace != null) {
+      buffer.write('\nStack Trace:\n${log.stackTrace}');
+    }
+    return buffer.toString();
   }
 
   @override
