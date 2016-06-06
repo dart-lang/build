@@ -54,6 +54,7 @@ void _commentWithHeader(String header, String content, StringSink buffer) {
   var blankPrefix = ''.padLeft(header.length, ' ');
   for (var i = 1; i < lines.length; i++) {
     buffer.writeAll([_commentPrefix, blankPrefix, lines[i]]);
+    buffer.writeln();
   }
 }
 
