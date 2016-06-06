@@ -95,8 +95,7 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
 
   AnalysisEngine.instance.processRequiredPlugins();
 
-  var options = new AnalysisOptionsImpl()
-    ..analyzeFunctionBodies = false;
+  var options = new AnalysisOptionsImpl()..analyzeFunctionBodies = false;
 
   var context = AnalysisEngine.instance.createAnalysisContext()
     ..analysisOptions = options

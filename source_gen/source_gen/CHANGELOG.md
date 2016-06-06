@@ -1,3 +1,7 @@
+## 0.5.0+3
+
+* Fixed multi-line error output.
+
 ## 0.5.0+2
 
 * Remove an outdated work-around.
