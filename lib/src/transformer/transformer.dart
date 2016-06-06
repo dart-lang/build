@@ -75,6 +75,8 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
           new BuildStepImpl(input, expected, reader, writer, input.id.package);
       Logger.root.level = Level.ALL;
       var logSubscription = buildStep.logger.onRecord.listen((LogRecord log) {
+        if (log.loggerName != buildStep.logger.fullName) return;
+
         if (log.level <= Level.CONFIG) {
           transform.logger.fine(_logRecordToMessage(log));
         } else if (log.level <= Level.INFO) {

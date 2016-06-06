@@ -1,7 +1,10 @@
 # Changelog
 
+## 0.3.0+5
+- Fix duplicate logs issue when running as a BuilderTransformer.  
+
 ## 0.3.0+4
-- Add error and stack trace to log nessages from the BuilderTransformer.
+- Add error and stack trace to log messages from the BuilderTransformer.
 
 ## 0.3.0+3
 - Fixed BuilderTransformer so that logs are passed on to the TransformLogger.

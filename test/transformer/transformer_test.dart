@@ -121,8 +121,13 @@ void main() {
       new GenericBuilderTransformer([new LoggingCopyBuilder()])
     ],
   ], {
-    'a|web/a.txt': 'hello',
+    'a|web/a.txt': 'a',
+    'a|web/b.txt': 'b',
   }, {}, messages: [
+    allOf(startsWith('warning: Warning!'), contains('SomeError'),
+        contains('LoggingCopyBuilder.build')),
+    allOf(startsWith('error: Error!'), contains('SomeError'),
+        contains('LoggingCopyBuilder.build')),
     allOf(startsWith('warning: Warning!'), contains('SomeError'),
         contains('LoggingCopyBuilder.build')),
     allOf(startsWith('error: Error!'), contains('SomeError'),
