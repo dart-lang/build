@@ -10,6 +10,8 @@ _WhenCall _whenCall = null;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
 final _TimeStampProvider _timer = new _TimeStampProvider();
 final List _capturedArgs = [];
+final List<_ArgMatcher> _typedArgs = <_ArgMatcher>[];
+final Map<String, _ArgMatcher> _typedNamedArgs = <String, _ArgMatcher>{};
 
 // Hidden from the public API, used by spy.dart.
 void setDefaultResponse(Mock mock, dynamic defaultResponse) {
@@ -31,6 +33,9 @@ class Mock {
   }
 
   dynamic noSuchMethod(Invocation invocation) {
+    if (_typedArgs.isNotEmpty || _typedNamedArgs.isNotEmpty) {
+      invocation = _reconstituteInvocation(invocation);
+    }
     if (_whenInProgress) {
       _whenCall = new _WhenCall(this, invocation);
       return null;
@@ -53,6 +58,132 @@ class Mock {
       : identical(this, other);
 
   String toString() => _givenName != null ? _givenName : runtimeType.toString();
+}
+
+// Return a new [Invocation], reconstituted from [invocation], [_typedArgs],
+// and [_typedNamedArgs].
+Invocation _reconstituteInvocation(Invocation invocation) {
+  var newInvocation = new FakeInvocation(invocation);
+  return newInvocation;
+}
+
+/// An Invocation implementation that allows all attributes to be passed into
+/// the constructor.
+class FakeInvocation extends Invocation {
+  final Symbol memberName;
+  final Map<Symbol, dynamic> namedArguments;
+  final List<dynamic> positionalArguments;
+  final bool isGetter;
+  final bool isMethod;
+  final bool isSetter;
+
+  factory FakeInvocation(Invocation invocation) {
+    if (_typedArgs.isEmpty && _typedNamedArgs.isEmpty) {
+      throw new StateError("FakeInvocation called when no typed calls have been saved.");
+    }
+
+    // Handle named arguments first, so that we can provide useful errors for
+    // the various bad states. If all is well with the named arguments, then we
+    // can process the positional arguments, and resort to more general errors
+    // if the state is still bad.
+    var namedArguments = _reconstituteNamedArgs(invocation);
+    var positionalArguments = _reconstitutePositionalArgs(invocation);
+
+    _typedArgs.clear();
+    _typedNamedArgs.clear();
+
+    return new FakeInvocation._(
+        invocation.memberName,
+        positionalArguments,
+        namedArguments,
+        invocation.isGetter,
+        invocation.isMethod,
+        invocation.isSetter);
+  }
+
+  static Map<Symbol,dynamic> _reconstituteNamedArgs(Invocation invocation) {
+    var namedArguments = <Symbol, dynamic>{};
+    var _typedNamedArgSymbols = _typedNamedArgs.keys.map((name) => new Symbol(name));
+    invocation.namedArguments.forEach((name, arg) {
+      if (arg == null) {
+        if (!_typedNamedArgSymbols.contains(name)) {
+          // Incorrect usage of [typed], something like:
+          // `when(obj.fn(a: typed(any)))`.
+          throw new ArgumentError(
+              'A typed argument was passed in as a named argument named "$name", '
+              'but did not a value for its name. Each typed argument that is '
+              'passed as a named argument needs to specify the `name` argument. '
+              'For example: `when(obj.fn(x: typed(any, name: "x")))`.');
+        }
+      } else {
+        // Add each real named argument that was _not_ passed with [typed].
+        namedArguments[name] = arg;
+      }
+    });
+
+    _typedNamedArgs.forEach((name, arg) {
+      Symbol nameSymbol = new Symbol(name);
+      if (!invocation.namedArguments.containsKey(nameSymbol)) {
+        // Incorrect usage of [name], something like:
+        // `when(obj.fn(typed(any, name: 'a')))`.
+        throw new ArgumentError(
+            'A typed argument was declared with name $name, but was not passed '
+            'as an argument named $name.');
+      }
+      if (invocation.namedArguments[nameSymbol] != null) {
+        // Incorrect usage of [name], something like:
+        // `when(obj.fn(a: typed(any, name: 'b'), b: "string"))`.
+        throw new ArgumentError(
+            'A typed argument was declared with name $name, but a different '
+            'value (${invocation.namedArguments[nameSymbol]}) was passed as '
+            '$name.');
+      }
+      namedArguments[nameSymbol] = arg;
+    });
+
+    return namedArguments;
+  }
+
+  static List<dynamic> _reconstitutePositionalArgs(Invocation invocation) {
+    var positionalArguments = <dynamic>[];
+    var nullPositionalArguments =
+        invocation.positionalArguments.where((arg) => arg == null);
+    if (_typedArgs.length != nullPositionalArguments.length) {
+      throw new ArgumentError(
+          'null arguments are not allowed alongside typed(); use '
+          '"typed(eq(null))"');
+    }
+    int i = 0;
+    int j = 0;
+    while (i < _typedArgs.length && j < invocation.positionalArguments.length) {
+      var arg = _typedArgs[i];
+      if (invocation.positionalArguments[j] == null) {
+        // [typed] was used; add the [_ArgMatcher] given to [typed].
+        positionalArguments.add(arg);
+        i++;
+        j++;
+      } else {
+        // [typed] was not used; add the [_ArgMatcher] from [invocation].
+        positionalArguments.add(invocation.positionalArguments[j]);
+        j++;
+      }
+    }
+    while (j < invocation.positionalArguments.length) {
+      // Some trailing non-[typed] arguments.
+      positionalArguments.add(invocation.positionalArguments[j]);
+      j++;
+    }
+
+    return positionalArguments;
+  }
+
+  FakeInvocation._(
+      this.memberName,
+      this.positionalArguments,
+      this.namedArguments,
+      this.isGetter,
+      this.isMethod,
+      this.isSetter);
 }
 
 named(var mock, {String name, int hashCode}) => mock
@@ -300,6 +431,15 @@ get captureAny => new _ArgMatcher(anything, true);
 captureThat(Matcher matcher) => new _ArgMatcher(matcher, true);
 argThat(Matcher matcher) => new _ArgMatcher(matcher, false);
 
+/*=T*/ typed/*<T>*/(_ArgMatcher matcher, {String name}) {
+  if (name == null) {
+    _typedArgs.add(matcher);
+  } else {
+    _typedNamedArgs[name] = matcher;
+  }
+  return null;
+}
+
 class VerificationResult {
   List captured = [];
   int callCount;
@@ -412,4 +552,15 @@ void logInvocations(List<Mock> mocks) {
   allInvocations.forEach((inv) {
     print(inv.toString());
   });
+}
+
+/// Should only be used during Mockito testing.
+void resetMockitoState() {
+  _whenInProgress = false;
+  _verificationInProgress = false;
+  _whenCall = null;
+  _verifyCalls.clear();
+  _capturedArgs.clear();
+  _typedArgs.clear();
+  _typedNamedArgs.clear();
 }

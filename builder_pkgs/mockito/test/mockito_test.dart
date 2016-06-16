@@ -9,6 +9,14 @@ class RealClass {
   String methodWithNamedArgs(int x, {int y}) => "Real";
   String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
   String methodWithObjArgs(RealClass x) => "Real";
+  // "SpecialArgs" here means type-parameterized args. But that makes for a long
+  // method name.
+  String methodWithSpecialArgs(
+      List<int> w, List<int> x, [List<int> y, List<int> z]) => "Real";
+  // "SpecialNamedArgs" here means type-parameterized, named args. But that
+  // makes for a long method name.
+  String methodWithSpecialNamedArgs(List<int> w, List<int> x, {List<int> y, List<int> z}) =>
+      "Real";
   String get getter => "Real";
   void set setter(String arg) {
     throw new StateError("I must be mocked");
@@ -53,6 +61,12 @@ void main() {
 
   setUp(() {
     mock = new MockedClass();
+  });
+
+  tearDown(() {
+    // In some of the tests that expect an Error to be thrown, Mockito's
+    // global state can become invalid. Reset it.
+    resetMockitoState();
   });
 
   group("spy", () {
@@ -204,6 +218,96 @@ void main() {
       when(mock.methodWithNormalArgs(argThat(equals(42)))).thenReturn("42");
       expect(mock.methodWithNormalArgs(43), equals("43"));
     });
+    test("should mock method with typed arg matchers", () {
+      when(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any), typed/*<List<int>>*/(any)))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialArgs([42], [43]), equals("A lot!"));
+      expect(mock.methodWithSpecialArgs([43], [44]), equals("A lot!"));
+    });
+    test("should mock method with an optional typed arg matcher", () {
+      when(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any),
+          typed/*<List<int>>*/(any),
+          typed/*<List<int>>*/(any)))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialArgs([42], [43], [44]), equals("A lot!"));
+    });
+    test("should mock method with an optional typed arg matcher and an optional real arg", () {
+      when(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any),
+          typed/*<List<int>>*/(any),
+          [44],
+          typed/*<List<int>>*/(any)))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialArgs([42], [43], [44], [45]), equals("A lot!"));
+    });
+    test("should mock method with only some typed arg matchers", () {
+      when(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any), [43], typed/*<List<int>>*/(any)))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialArgs([42], [43], [44]), equals("A lot!"));
+      when(mock.methodWithSpecialArgs(typed/*<List<int>>*/(any), [43]))
+          .thenReturn("A bunch!");
+      expect(mock.methodWithSpecialArgs([42], [43]), equals("A bunch!"));
+    });
+    test("should throw when [typed] used alongside [null].", () {
+      expect(() => when(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any), null, typed/*<List<int>>*/(any))),
+          throwsArgumentError);
+      expect(() => when(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any), typed/*<List<int>>*/(any), null)),
+          throwsArgumentError);
+    });
+    test("should mock method when [typed] used alongside matched [null].", () {
+      when(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any), argThat(equals(null)), typed/*<List<int>>*/(any)))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialArgs([42], null, [44]), equals("A lot!"));
+    });
+    test("should mock method with named, typed arg matcher", () {
+      when(mock.methodWithSpecialNamedArgs(
+          typed/*<List<int>>*/(any), [43], y: typed/*<List<int>>*/(any, name: "y")))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialNamedArgs([42], [43], y: [44]), equals("A lot!"));
+    });
+    test("should mock method with named, typed arg matcher and an arg matcher", () {
+      when(
+          mock.methodWithSpecialNamedArgs(
+              typed/*<List<int>>*/(any),
+              [43],
+              y: typed/*<List<int>>*/(any, name: "y"),
+              z: argThat(contains(45))))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialNamedArgs([42], [43], y: [44], z: [45]),
+          equals("A lot!"));
+    });
+    test("should mock method with named, typed arg matcher and a regular arg", () {
+      when(
+          mock.methodWithSpecialNamedArgs(
+              typed/*<List<int>>*/(any),
+              [43],
+              y: typed/*<List<int>>*/(any, name: "y"),
+              z: [45]))
+          .thenReturn("A lot!");
+      expect(mock.methodWithSpecialNamedArgs([42], [43], y: [44], z: [45]),
+          equals("A lot!"));
+    });
+    test("should throw when [typed] used as a named arg, without `name:`", () {
+      expect(() => when(mock.methodWithSpecialNamedArgs(
+          typed/*<List<int>>*/(any), [43], y: typed/*<List<int>>*/(any))),
+          throwsArgumentError);
+    });
+    test("should throw when [typed] used as a positional arg, with `name:`", () {
+      expect(() => when(mock.methodWithSpecialNamedArgs(
+          typed/*<List<int>>*/(any), typed/*<List<int>>*/(any, name: "y"))),
+          throwsArgumentError);
+    });
+    test("should throw when [typed] used as a named arg, with the wrong `name:`", () {
+      expect(() => when(mock.methodWithSpecialNamedArgs(
+          typed/*<List<int>>*/(any), [43], y: typed/*<List<int>>*/(any, name: "z"))),
+          throwsArgumentError);
+    });
   });
 
   group("verify()", () {
@@ -318,6 +422,18 @@ void main() {
         verify(mock.setter = "B");
       });
       verify(mock.setter = "A");
+    });
+    test("should verify method with typed arg matchers", () {
+      mock.methodWithSpecialArgs([42], [43]);
+      verify(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(any), typed/*<List<int>>*/(any)));
+    });
+    test("should verify method with argument capturer", () {
+      mock.methodWithSpecialArgs([50], [17]);
+      mock.methodWithSpecialArgs([100], [17]);
+      expect(verify(mock.methodWithSpecialArgs(
+          typed/*<List<int>>*/(captureAny), [17])).captured,
+          equals([[50], [100]]));
     });
   });
   group("verify() qualifies", () {
@@ -478,7 +594,9 @@ void main() {
     });
     test("should captureOut list arguments", () {
       mock.methodWithListArgs([42]);
-      expect(verify(mock.methodWithListArgs(captureAny)).captured.single, equals([42]));
+      expect(verify(
+          mock.methodWithListArgs(captureAny)).captured.single,
+          equals([42]));
     });
     test("should captureOut multiple arguments", () {
       mock.methodWithPositionalArgs(1, 2);

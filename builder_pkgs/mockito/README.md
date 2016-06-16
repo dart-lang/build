@@ -126,11 +126,11 @@ verifyNoMoreInteractions(cat);
 ```dart
 //simple capture
 cat.eatFood("Fish");
-expect(verify(cat.eatFood(capture)).captured.single, "Fish");
+expect(verify(cat.eatFood(captureAny)).captured.single, "Fish");
 //capture multiple calls
 cat.eatFood("Milk");
 cat.eatFood("Fish");
-expect(verify(cat.eatFood(capture)).captured, ["Milk", "Fish"]);
+expect(verify(cat.eatFood(captureAny)).captured, ["Milk", "Fish"]);
 //conditional capture
 cat.eatFood("Milk");
 cat.eatFood("Fish");
@@ -147,6 +147,91 @@ expect(cat.sound(), "Purr");
 //using real object
 expect(cat.lives, 9);   
 ```
+
+## Strong mode compliance
+
+Unfortunately, the use of the arg matchers in mock method calls (like `cat.eatFood(any)`)
+violates the [Strong mode] type system. Specifically, if the method signature of a mocked
+method has a parameter with a parameterized type (like `List<int>`), then passing `any` or
+`argThat` will result in a Strong mode warning:
+
+> [warning] Unsound implicit cast from dynamic to List&lt;int>
+
+In order to write Strong mode-compliant tests with Mockito, you might need to use `typed`,
+annotating it with a type parameter comment. Let's use a slightly different `Cat` class to
+show some examples:
+
+```dart
+class Cat {
+  bool eatFood(List<String> foods, [List<String> mixins]) => true;
+  int walk(List<String> places, {Map<String, String> gaits}) => 0;
+}
+
+class MockCat extends Mock implements Cat {}
+
+var cat = new MockCat();
+```
+
+OK, what if we try to stub using `any`:
+
+```dart
+when(cat.eatFood(any)).thenReturn(true);
+```
+
+Let's analyze this code:
+
+```
+$ dartanalyzer --strong test/cat_test.dart
+Analyzing [lib/cat_test.dart]...
+[warning] Unsound implicit cast from dynamic to List<String> (test/cat_test.dart, line 12, col 20)
+1 warning found.
+```
+
+This code is not Strong mode-compliant. Let's change it to use `typed`:
+
+```dart
+when(cat.eatFood(typed/*<List<String>>*/(any)))
+```
+
+```
+$ dartanalyzer --strong test/cat_test.dart
+Analyzing [lib/cat_test.dart]...
+No issues found
+```
+
+Great! A little ugly, but it works. Here are some more examples:
+
+```dart
+when(cat.eatFood(typed/*<List<String>>*/(any), typed/*<List<String>>*/(any)))
+    .thenReturn(true);
+when(cat.eatFood(typed/*<List<String>>*/(argThat(contains("fish")))))
+    .thenReturn(true);
+```
+
+Named args require one more component: `typed` needs to know what named argument it is
+being passed into:
+
+```dart
+when(cat.walk(
+    typed/*<List<String>>*/(any),
+    gaits: typed/*<Map<String, String>>*/(any), name: 'gaits')).thenReturn(true);
+```
+
+Note the `name` argument. Mockito should fail gracefully if you forget to name a `typed`
+call passed in as a named argument, or name the argument incorrectly.
+
+One more note about the `typed` API: you cannot mix `typed` arguments with `null`
+arguments:
+
+```dart
+when(cat.eatFood(null, typed/*<List<String>>*/(any))).thenReturn(true) // Throws!
+when(cat.eatFood(
+    argThat(equals(null)),
+    typed/*<List<String>>*/(any))).thenReturn(true); // Works.
+```
+
+[Strong mode]: https://github.com/dart-lang/dev_compiler/blob/master/STRONG_MODE.md
+
 ## How it works
 The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to catch
 all method invocations, and returns the value that you have configured beforehand with
