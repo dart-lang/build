@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0+6
+- Convert `packages` paths in the file watcher to their absolute paths. This
+  fixes [#109](https://github.com/dart-lang/build/issues/109).
+
 ## 0.3.0+5
 - Fix duplicate logs issue when running as a BuilderTransformer.  
 
