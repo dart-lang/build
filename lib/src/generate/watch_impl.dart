@@ -195,17 +195,45 @@ class WatchImpl {
         _logger.fine('Setting up watcher at $absolutePackagePath');
 
         // Ignore all subfolders which are other packages.
-        var pathsToIgnore = absolutePackagePaths.values.where((path) =>
-            path != absolutePackagePath &&
-            path.startsWith(absolutePackagePath));
+        var pathsToIgnore = absolutePackagePaths.values
+            .where((path) =>
+                path != absolutePackagePath &&
+                path.startsWith(absolutePackagePath))
+            .toList();
 
         var watcher = _directoryWatcherFactory(absolutePackagePath);
         watchers.add(watcher);
         _allListeners.add(watcher.events.listen((WatchEvent e) {
-          // Check for ignored paths and immediately bail.
-          if (pathsToIgnore.any((path) => e.path.startsWith(path))) return;
+          var changePath = e.path;
 
-          var relativePath = path.relative(e.path, from: absolutePackagePath);
+          // Convert `packages` paths to absolute paths.
+          () {
+            var changePathParts = path.split(changePath);
+            var packagesIndex = changePathParts.indexOf('packages');
+            if (packagesIndex != -1) {
+              if (changePathParts.length < packagesIndex + 2) {
+                _logger.severe('Invalid change path: $changePath');
+                return;
+              }
+
+              var packageName = changePathParts[packagesIndex + 1];
+              var packageNode = _packageGraph[packageName];
+              if (packageNode == null) {
+                _logger.severe('Got update for invalid package: $packageName');
+                return;
+              }
+              var packagePath = absolutePackagePaths[packageNode];
+              var libPath = path.joinAll(['lib']
+                ..addAll(changePathParts.getRange(
+                    packagesIndex + 2, changePathParts.length)));
+              changePath = path.join(packagePath, libPath);
+            }
+          }();
+
+          // Check for ignored paths and immediately bail.
+          if (pathsToIgnore.any((path) => changePath.startsWith(path))) return;
+
+          var relativePath = path.relative(changePath, from: absolutePackagePath);
           _logger.finest(
               'Got ${e.type} event for path $relativePath from ${watcher.path}');
           var id = new AssetId(package.name, relativePath);
