@@ -192,8 +192,8 @@ void main() {
         checkOutputs({'a|lib/a.txt.copy': 'a',}, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|lib/a.txt', 'b'));
-        FakeWatcher.notifyWatchers(new WatchEvent(ChangeType.MODIFY,
-            path.absolute('a', 'packages', 'a', 'a.txt')));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'packages', 'a', 'a.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|lib/a.txt.copy': 'b',}, result, writer.assets);
