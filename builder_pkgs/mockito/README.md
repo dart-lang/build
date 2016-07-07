@@ -190,7 +190,7 @@ Analyzing [lib/cat_test.dart]...
 This code is not Strong mode-compliant. Let's change it to use `typed`:
 
 ```dart
-when(cat.eatFood(typed/*<List<String>>*/(any)))
+when(cat.eatFood(typed(any)))
 ```
 
 ```
@@ -202,32 +202,29 @@ No issues found
 Great! A little ugly, but it works. Here are some more examples:
 
 ```dart
-when(cat.eatFood(typed/*<List<String>>*/(any), typed/*<List<String>>*/(any)))
-    .thenReturn(true);
-when(cat.eatFood(typed/*<List<String>>*/(argThat(contains("fish")))))
-    .thenReturn(true);
+when(cat.eatFood(typed(any), typed(any))).thenReturn(true);
+when(cat.eatFood(typed(argThat(contains("fish"))))).thenReturn(true);
 ```
 
 Named args require one more component: `typed` needs to know what named argument it is
 being passed into:
 
 ```dart
-when(cat.walk(
-    typed/*<List<String>>*/(any),
-    gaits: typed/*<Map<String, String>>*/(any), name: 'gaits')).thenReturn(true);
+when(cat.walk(typed(any), gaits: typed(any, named: 'gaits')))
+    .thenReturn(true);
 ```
 
-Note the `name` argument. Mockito should fail gracefully if you forget to name a `typed`
+Note the `named` argument. Mockito should fail gracefully if you forget to name a `typed`
 call passed in as a named argument, or name the argument incorrectly.
 
 One more note about the `typed` API: you cannot mix `typed` arguments with `null`
 arguments:
 
 ```dart
-when(cat.eatFood(null, typed/*<List<String>>*/(any))).thenReturn(true) // Throws!
+when(cat.eatFood(null, typed(any))).thenReturn(true); // Throws!
 when(cat.eatFood(
     argThat(equals(null)),
-    typed/*<List<String>>*/(any))).thenReturn(true); // Works.
+    typed(any))).thenReturn(true); // Works.
 ```
 
 [Strong mode]: https://github.com/dart-lang/dev_compiler/blob/master/STRONG_MODE.md

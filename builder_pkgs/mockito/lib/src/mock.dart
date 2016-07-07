@@ -34,7 +34,7 @@ class Mock {
 
   dynamic noSuchMethod(Invocation invocation) {
     if (_typedArgs.isNotEmpty || _typedNamedArgs.isNotEmpty) {
-      invocation = _reconstituteInvocation(invocation);
+      invocation = new _InvocationForTypedArguments(invocation);
     }
     if (_whenInProgress) {
       _whenCall = new _WhenCall(this, invocation);
@@ -60,16 +60,9 @@ class Mock {
   String toString() => _givenName != null ? _givenName : runtimeType.toString();
 }
 
-// Return a new [Invocation], reconstituted from [invocation], [_typedArgs],
-// and [_typedNamedArgs].
-Invocation _reconstituteInvocation(Invocation invocation) {
-  var newInvocation = new FakeInvocation(invocation);
-  return newInvocation;
-}
-
-/// An Invocation implementation that allows all attributes to be passed into
-/// the constructor.
-class FakeInvocation extends Invocation {
+/// An Invocation implementation that takes arguments from [_typedArgs] and
+/// [_typedNamedArgs].
+class _InvocationForTypedArguments extends Invocation {
   final Symbol memberName;
   final Map<Symbol, dynamic> namedArguments;
   final List<dynamic> positionalArguments;
@@ -77,9 +70,10 @@ class FakeInvocation extends Invocation {
   final bool isMethod;
   final bool isSetter;
 
-  factory FakeInvocation(Invocation invocation) {
+  factory _InvocationForTypedArguments(Invocation invocation) {
     if (_typedArgs.isEmpty && _typedNamedArgs.isEmpty) {
-      throw new StateError("FakeInvocation called when no typed calls have been saved.");
+      throw new StateError(
+          "_InvocationForTypedArguments called when no typed calls have been saved.");
     }
 
     // Handle named arguments first, so that we can provide useful errors for
@@ -92,7 +86,7 @@ class FakeInvocation extends Invocation {
     _typedArgs.clear();
     _typedNamedArgs.clear();
 
-    return new FakeInvocation._(
+    return new _InvocationForTypedArguments._(
         invocation.memberName,
         positionalArguments,
         namedArguments,
@@ -101,9 +95,17 @@ class FakeInvocation extends Invocation {
         invocation.isSetter);
   }
 
+  // Reconstitutes the named arguments in an invocation from [_typedNamedArgs].
+  //
+  // The namedArguments in [invocation] which are null should be represented
+  // by a stored value in [_typedNamedArgs]. The null presumably came from
+  // [typed].
   static Map<Symbol,dynamic> _reconstituteNamedArgs(Invocation invocation) {
     var namedArguments = <Symbol, dynamic>{};
     var _typedNamedArgSymbols = _typedNamedArgs.keys.map((name) => new Symbol(name));
+
+    // Iterate through [invocation]'s named args, validate them, and add them
+    // to the return map.
     invocation.namedArguments.forEach((name, arg) {
       if (arg == null) {
         if (!_typedNamedArgSymbols.contains(name)) {
@@ -111,9 +113,9 @@ class FakeInvocation extends Invocation {
           // `when(obj.fn(a: typed(any)))`.
           throw new ArgumentError(
               'A typed argument was passed in as a named argument named "$name", '
-              'but did not a value for its name. Each typed argument that is '
-              'passed as a named argument needs to specify the `name` argument. '
-              'For example: `when(obj.fn(x: typed(any, name: "x")))`.');
+              'but did not pass a value for `named`. Each typed argument that is '
+              'passed as a named argument needs to specify the `named` argument. '
+              'For example: `when(obj.fn(x: typed(any, named: "x")))`.');
         }
       } else {
         // Add each real named argument that was _not_ passed with [typed].
@@ -121,22 +123,24 @@ class FakeInvocation extends Invocation {
       }
     });
 
+    // Iterate through the stored named args (stored with [typed]), validate
+    // them, and add them to the return map.
     _typedNamedArgs.forEach((name, arg) {
       Symbol nameSymbol = new Symbol(name);
       if (!invocation.namedArguments.containsKey(nameSymbol)) {
-        // Incorrect usage of [name], something like:
-        // `when(obj.fn(typed(any, name: 'a')))`.
         throw new ArgumentError(
-            'A typed argument was declared with name $name, but was not passed '
-            'as an argument named $name.');
+            'A typed argument was declared as named $name, but was not passed '
+            'as an argument named $name.\n\n'
+            'BAD:  when(obj.fn(typed(any, named: "a")))\n'
+            'GOOD: when(obj.fn(a: typed(any, named: "a")))');
       }
       if (invocation.namedArguments[nameSymbol] != null) {
-        // Incorrect usage of [name], something like:
-        // `when(obj.fn(a: typed(any, name: 'b'), b: "string"))`.
         throw new ArgumentError(
-            'A typed argument was declared with name $name, but a different '
+            'A typed argument was declared as named $name, but a different '
             'value (${invocation.namedArguments[nameSymbol]}) was passed as '
-            '$name.');
+            '$name.\n\n'
+            'BAD:  when(obj.fn(b: typed(any, name: "a")))\n'
+            'GOOD: when(obj.fn(b: typed(any, name: "b")))');
       }
       namedArguments[nameSymbol] = arg;
     });
@@ -153,31 +157,32 @@ class FakeInvocation extends Invocation {
           'null arguments are not allowed alongside typed(); use '
           '"typed(eq(null))"');
     }
-    int i = 0;
-    int j = 0;
-    while (i < _typedArgs.length && j < invocation.positionalArguments.length) {
-      var arg = _typedArgs[i];
-      if (invocation.positionalArguments[j] == null) {
+    int typedIndex = 0;
+    int positionalIndex = 0;
+    while (typedIndex < _typedArgs.length &&
+        positionalIndex < invocation.positionalArguments.length) {
+      var arg = _typedArgs[typedIndex];
+      if (invocation.positionalArguments[positionalIndex] == null) {
         // [typed] was used; add the [_ArgMatcher] given to [typed].
         positionalArguments.add(arg);
-        i++;
-        j++;
+        typedIndex++;
+        positionalIndex++;
       } else {
         // [typed] was not used; add the [_ArgMatcher] from [invocation].
-        positionalArguments.add(invocation.positionalArguments[j]);
-        j++;
+        positionalArguments.add(invocation.positionalArguments[positionalIndex]);
+        positionalIndex++;
       }
     }
-    while (j < invocation.positionalArguments.length) {
+    while (positionalIndex < invocation.positionalArguments.length) {
       // Some trailing non-[typed] arguments.
-      positionalArguments.add(invocation.positionalArguments[j]);
-      j++;
+      positionalArguments.add(invocation.positionalArguments[positionalIndex]);
+      positionalIndex++;
     }
 
     return positionalArguments;
   }
 
-  FakeInvocation._(
+  _InvocationForTypedArguments._(
       this.memberName,
       this.positionalArguments,
       this.namedArguments,
@@ -431,11 +436,11 @@ get captureAny => new _ArgMatcher(anything, true);
 captureThat(Matcher matcher) => new _ArgMatcher(matcher, true);
 argThat(Matcher matcher) => new _ArgMatcher(matcher, false);
 
-/*=T*/ typed/*<T>*/(_ArgMatcher matcher, {String name}) {
-  if (name == null) {
+/*=T*/ typed/*<T>*/(_ArgMatcher matcher, {String named}) {
+  if (named == null) {
     _typedArgs.add(matcher);
   } else {
-    _typedNamedArgs[name] = matcher;
+    _typedNamedArgs[named] = matcher;
   }
   return null;
 }
