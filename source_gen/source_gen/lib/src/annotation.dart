@@ -43,7 +43,8 @@ dynamic instantiateAnnotation(ElementAnnotation annotation) {
     return _createFromConstructor(element, annotationObject);
   }
 
-  var valueDeclaration = _getDeclMirrorFromType(annotation.constantValue.type);
+  var valueDeclaration =
+      _getDeclarationMirrorFromType(annotation.constantValue.type);
 
   throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
 }
@@ -77,7 +78,8 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
     var typeData = object.toTypeValue();
 
     if (typeData is InterfaceType) {
-      var declarationMirror = _getDeclMirrorFromType(typeData) as ClassMirror;
+      var declarationMirror =
+          _getDeclarationMirrorFromType(typeData) as ClassMirror;
 
       return declarationMirror.reflectedType;
     }
@@ -134,11 +136,11 @@ final _cannotCreate = new Object();
 
 dynamic _createFromConstructor(
     ConstructorElementImpl ctor, DartObjectImpl obj) {
-  var ctorDecl = ctor.computeNode();
+  var ctorDeclaration = ctor.computeNode();
 
   var positionalArgs = [];
   var namedArgs = <Symbol, dynamic>{};
-  for (var p in ctorDecl.parameters.parameterElements) {
+  for (var p in ctorDeclaration.parameters.parameterElements) {
     var paramName = p.name;
     String fieldName;
     if (p is FieldFormalParameterElement) {
@@ -177,22 +179,22 @@ dynamic _createFromConstructor(
   }
 
   Symbol ctorName;
-  if (ctorDecl.name == null) {
+  if (ctorDeclaration.name == null) {
     ctorName = const Symbol('');
   } else {
-    ctorName = new Symbol(ctorDecl.name.name);
+    ctorName = new Symbol(ctorDeclaration.name.name);
   }
 
-  var declMirror =
-      _getDeclMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
+  var declarationMirror =
+      _getDeclarationMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
 
   // figure out which ctor was used!
   var instanceMirror =
-      declMirror.newInstance(ctorName, positionalArgs, namedArgs);
+      declarationMirror.newInstance(ctorName, positionalArgs, namedArgs);
   return instanceMirror.reflectee;
 }
 
-DeclarationMirror _getDeclMirrorFromType(InterfaceType type) {
+DeclarationMirror _getDeclarationMirrorFromType(InterfaceType type) {
   var system = currentMirrorSystem();
 
   // find library
