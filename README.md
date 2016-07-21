@@ -1,6 +1,6 @@
 # [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build) [![Coverage Status](https://coveralls.io/repos/dart-lang/build/badge.svg?branch=master)](https://coveralls.io/r/dart-lang/build)
 
-This package provides an way of generating files using Dart code, outside of
+This package provides a way of generating files using Dart code, outside of
 `pub`. These files are generated directly on disk in the current package folder,
 and rebuilds are _incremental_.
 
