@@ -26,6 +26,41 @@ void main() {
         {'$pkgName|lib/test_lib.g.dart': contains('not valid code!'),});
   });
 
+  test('Generate standalone output file', () async {
+    var srcs = _createPackageStub(pkgName);
+    var phaseGroup = new PhaseGroup.singleAction(
+        new GeneratorBuilder([const CommentGenerator()], isStandalone: true),
+        new InputSet(pkgName, ['lib/test_lib.dart']));
+    await testPhases(phaseGroup, pkgName, srcs,
+        {'$pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,});
+  });
+
+  test('Generate explicitly non-standalone output file', () async {
+    var srcs = _createPackageStub(pkgName);
+    var phaseGroup = new PhaseGroup.singleAction(
+        new GeneratorBuilder([const CommentGenerator()], isStandalone: false),
+        new InputSet(pkgName, ['lib/test_lib.dart']));
+    await testPhases(phaseGroup, pkgName, srcs,
+        {'$pkgName|lib/test_lib.g.dart': _testGenPartContent,});
+  });
+
+  test('Expect error when multiple generators used on a standalone builder',
+      () async {
+    expect(
+        () => new GeneratorBuilder(
+            [const CommentGenerator(), const _NoOpGenerator()],
+            isStandalone: true),
+        throwsA(new isInstanceOf<ArgumentError>()));
+  });
+
+  test('Expect no error when multiple generators used on nonstandalone builder',
+      () async {
+    expect(
+        () => new GeneratorBuilder(
+            [const CommentGenerator(), const _NoOpGenerator()]),
+        returnsNormally);
+  });
+
   test(
       'Simple Generator test for library',
       () => _generateTest(
@@ -149,6 +184,23 @@ part of test_lib;
 // **************************************************************************
 
 // Code for "test_lib"
+''';
+
+const _testGenStandaloneContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// **************************************************************************
+// Generator: CommentGenerator
+// Target: class Person
+// **************************************************************************
+
+// Code for "class Person"
+
+// **************************************************************************
+// Generator: CommentGenerator
+// Target: class Customer
+// **************************************************************************
+
+// Code for "class Customer"
 ''';
 
 const _testGenPartContentForClassesAndLibrary =

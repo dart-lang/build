@@ -14,10 +14,16 @@ import 'utils.dart';
 class GeneratorBuilder extends Builder {
   final List<Generator> generators;
   final String generatedExtension;
+  final bool isStandalone;
 
-  GeneratorBuilder(this.generators, {this.generatedExtension: '.g.dart'}) {
+  GeneratorBuilder(this.generators,
+      {this.generatedExtension: '.g.dart', this.isStandalone: false}) {
     // TODO: validate that generatedExtension starts with a `.'
     //       not null, empty, etc
+    if (this.isStandalone && this.generators.length > 1) {
+      throw new ArgumentError(
+          'Only one generator can be used to generate a standalone file.');
+    }
   }
 
   @override
@@ -49,8 +55,10 @@ class GeneratorBuilder extends Builder {
 
     var contentBuffer = new StringBuffer();
 
-    contentBuffer.writeln('part of ${library.name};');
-    contentBuffer.writeln();
+    if (!isStandalone) {
+      contentBuffer.writeln('part of ${library.name};');
+      contentBuffer.writeln();
+    }
 
     for (GeneratedOutput output in generatedOutputs) {
       contentBuffer.writeln('');
