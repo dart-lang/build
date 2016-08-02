@@ -1,3 +1,5 @@
+// This file is intentionally separated from 'mock.dart' in order to avoid
+// bringing in the mirrors dependency into mockito_no_mirrors.dart.
 import 'dart:mirrors';
 
 import 'mock.dart' show CannedResponse, setDefaultResponse;
