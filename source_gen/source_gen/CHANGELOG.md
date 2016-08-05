@@ -1,3 +1,8 @@
+## 0.5.1
+
+* Added GeneratorBuilder option isStandalone to generate files that aren't 
+  part of source file.
+
 ## 0.5.0+3
 
 * Fixed multi-line error output.
