@@ -26,3 +26,6 @@ if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
     tool/test_all.dart
   rm tool/test_all.dart
 fi
+
+# Run package:build_test tests
+(cd build_test; pub get && pub run test)
