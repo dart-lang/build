@@ -224,59 +224,6 @@ void main() {
           });
     });
 
-    test('should resolve types and library uris', () {
-      return validateResolver(
-          inputs: {
-            'a|web/main.dart': '''
-              import 'dart:core';
-              import 'package:a/a.dart';
-              import 'package:a/b.dart';
-              import 'sub_dir/d.dart';
-              class Foo {}
-              ''',
-            'a|lib/a.dart': 'library a.a;\n import "package:a/c.dart";',
-            'a|lib/b.dart': 'library a.b;\n import "c.dart";',
-            'a|lib/c.dart': '''
-                library a.c;
-                class Bar {}
-                ''',
-            'a|web/sub_dir/d.dart': '''
-                library a.web.sub_dir.d;
-                class Baz{}
-                ''',
-          },
-          validator: (resolver) {
-            var a = resolver.getLibraryByName('a.a');
-            expect(a, isNotNull);
-            expect(resolver.getImportUri(a).toString(), 'package:a/a.dart');
-            expect(resolver.getLibraryByUri(Uri.parse('package:a/a.dart')), a);
-
-            var main = resolver.getLibraryByName('');
-            expect(main, isNotNull);
-            expect(resolver.getImportUri(main), isNull);
-
-            var fooType = resolver.getType('Foo');
-            expect(fooType, isNotNull);
-            expect(fooType.library, main);
-
-            var barType = resolver.getType('a.c.Bar');
-            expect(barType, isNotNull);
-            expect(resolver.getImportUri(barType.library).toString(),
-                'package:a/c.dart');
-            expect(resolver.getSourceAssetId(barType),
-                new AssetId('a', 'lib/c.dart'));
-
-            var bazType = resolver.getType('a.web.sub_dir.d.Baz');
-            expect(bazType, isNotNull);
-            expect(resolver.getImportUri(bazType.library), isNull);
-            expect(
-                resolver
-                    .getImportUri(bazType.library, from: entryPoint)
-                    .toString(),
-                'sub_dir/d.dart');
-          });
-    });
-
     test('handles circular imports', () {
       return validateResolver(
           inputs: {
