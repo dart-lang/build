@@ -85,7 +85,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
             expect(libA.getType('Foo'), isNull);
           });
@@ -106,7 +106,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
             expect(libA.getType('Foo'), isNotNull);
           });
@@ -126,7 +126,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
             expect(libB.getType('Foo'), isNull);
           });
@@ -143,7 +143,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 1);
+            expect(lib.importedLibraries, hasLength(2));
           });
     });
 
@@ -163,7 +163,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
             expect(libB.getType('Bar'), isNotNull);
           });
@@ -180,7 +180,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 1);
+            expect(lib.importedLibraries, hasLength(2));
           });
     });
 
@@ -199,7 +199,7 @@ void main() {
           ],
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 1);
+            expect(lib.importedLibraries, hasLength(2));
           });
     });
 
