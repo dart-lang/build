@@ -27,8 +27,8 @@ void main() {
     addAssets(assets.values, writer);
 
     var builder = new TestBuilder(validator);
-    var buildStep =
-        new BuildStepImpl(assets[entryPoint], [], reader, writer, 'a');
+    var buildStep = new BuildStepImpl(
+        assets[entryPoint], [], reader, writer, 'a', const Resolvers());
     var logs = <LogRecord>[];
     if (messages != null) {
       buildStep.logger.onRecord.listen(logs.add);

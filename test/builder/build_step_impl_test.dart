@@ -23,8 +23,8 @@ void main() {
         reader = new StubAssetReader();
         writer = new StubAssetWriter();
         primary = makeAsset();
-        buildStep =
-            new BuildStepImpl(primary, [], reader, writer, primary.id.package);
+        buildStep = new BuildStepImpl(
+            primary, [], reader, writer, primary.id.package, const Resolvers());
       });
 
       test('tracks dependencies on read', () async {
@@ -54,8 +54,8 @@ void main() {
       test('tracks outputs', () async {
         var a1 = makeAsset();
         var a2 = makeAsset();
-        buildStep = new BuildStepImpl(
-            primary, [a1.id, a2.id], reader, writer, primary.id.package);
+        buildStep = new BuildStepImpl(primary, [a1.id, a2.id], reader, writer,
+            primary.id.package, const Resolvers());
 
         buildStep.writeAsString(a1);
         expect(buildStep.outputs, [a1]);
@@ -139,7 +139,7 @@ void main() {
         addAssets(inputs.values, writer);
         var outputId = new AssetId.parse('$primary.combined');
         var buildStep = new BuildStepImpl(inputs[new AssetId.parse(primary)],
-            [outputId], reader, writer, 'a');
+            [outputId], reader, writer, 'a', const Resolvers());
 
         await fileCombiner.build(buildStep);
         await buildStep.complete();
@@ -169,8 +169,8 @@ void main() {
           addAssets(inputs.values, writer);
 
           var primary = makeAssetId('a|web/a.dart');
-          var buildStep = new BuildStepImpl(
-              inputs[primary], [], reader, writer, primary.package);
+          var buildStep = new BuildStepImpl(inputs[primary], [], reader, writer,
+              primary.package, const Resolvers());
           var resolver = await buildStep.resolve(primary);
 
           var aLib = resolver.getLibrary(primary);

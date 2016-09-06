@@ -8,6 +8,7 @@ import 'package:barback/barback.dart' as barback show AssetId;
 import 'package:barback/barback.dart' hide Asset, AssetId;
 import 'package:logging/logging.dart';
 
+import '../analyzer/resolver.dart';
 import '../asset/asset.dart' as build;
 import '../asset/id.dart' as build;
 import '../asset/reader.dart';
@@ -23,6 +24,11 @@ import '../util/barback.dart';
 /// By default all [BuilderTransformer]s are [DeclaringTransformer]s. If you
 /// wish to run as a [LazyTransformer], simply mix that into your class as well.
 abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
+  final Resolvers _resolvers;
+
+  BuilderTransformer({Resolvers resolvers: const Resolvers()})
+      : this._resolvers = resolvers;
+
   /// The only thing you need to implement when extending this class. This
   /// declares which builders should be ran.
   ///
@@ -71,8 +77,8 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
       }
 
       // Run the build step.
-      var buildStep =
-          new BuildStepImpl(input, expected, reader, writer, input.id.package);
+      var buildStep = new BuildStepImpl(
+          input, expected, reader, writer, input.id.package, _resolvers);
       Logger.root.level = Level.ALL;
       var logSubscription = buildStep.logger.onRecord.listen((LogRecord log) {
         if (log.loggerName != buildStep.logger.fullName) return;

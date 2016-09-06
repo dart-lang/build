@@ -1,11 +1,14 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:async';
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_transformers/resolver.dart' as code_transformers
-    show Resolver;
+    show Resolver, Resolvers, dartSdkDirectory;
 
 import '../asset/id.dart';
+import '../builder/build_step.dart';
 import '../util/barback.dart';
 
 class Resolver {
@@ -33,5 +36,17 @@ class Resolver {
   /// library can be found.
   LibraryElement getLibraryByName(String libraryName) =>
       resolver.getLibraryByName(libraryName);
+}
 
+class Resolvers {
+  static final code_transformers.Resolvers _resolvers =
+      new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
+          useSharedSources: true);
+
+  const Resolvers();
+
+  Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
+          bool resolveAllConstants) async =>
+      new Resolver(await _resolvers.get(toBarbackTransform(buildStep),
+          entryPoints.map(toBarbackAssetId).toList(), resolveAllConstants));
 }
