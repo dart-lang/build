@@ -4,6 +4,8 @@
 @TestOn('vm')
 import 'dart:async';
 
+import 'package:code_transformers/resolver.dart' as code_transformers
+    show Resolver, Resolvers, dartSdkDirectory;
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -13,10 +15,31 @@ import 'package:build/src/util/barback.dart';
 
 import '../common/common.dart';
 
+class ResolversSpy implements Resolvers {
+  code_transformers.Resolver lastResolved;
+  static final code_transformers.Resolvers _resolvers =
+      new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
+          useSharedSources: true);
+
+  Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
+      bool resolveAllConstants) async {
+    lastResolved = await _resolvers.get(toBarbackTransform(buildStep),
+        entryPoints.map(toBarbackAssetId).toList(), resolveAllConstants);
+    return new Resolver(lastResolved);
+  }
+}
+
 // Ported from
 // https://github.com/dart-lang/code_transformers/blob/master/test/resolver_test.dart
 void main() {
   var entryPoint = makeAssetId('a|web/main.dart');
+
+  ResolversSpy _resolvers;
+
+  setUp(() {
+    _resolvers = new ResolversSpy();
+  });
+
   Future validateResolver(
       {Map<String, String> inputs,
       validator(Resolver resolver),
@@ -28,7 +51,7 @@ void main() {
 
     var builder = new TestBuilder(validator);
     var buildStep = new BuildStepImpl(
-        assets[entryPoint], [], reader, writer, 'a', const Resolvers());
+        assets[entryPoint], [], reader, writer, 'a', _resolvers);
     var logs = <LogRecord>[];
     if (messages != null) {
       buildStep.logger.onRecord.listen(logs.add);
@@ -45,7 +68,7 @@ void main() {
       return validateResolver(
           inputs: {'a|web/main.dart': ' main() {}',},
           validator: (resolver) {
-            var source = (resolver.resolver as dynamic).sources[
+            var source = (_resolvers.lastResolved as dynamic).sources[
                 toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 1);
 
@@ -61,7 +84,7 @@ void main() {
                 } ''',
           },
           validator: (resolver) {
-            var source = (resolver.resolver as dynamic).sources[
+            var source = (_resolvers.lastResolved as dynamic).sources[
                 toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 2);
 
