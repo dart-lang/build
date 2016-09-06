@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 export 'src/assets.dart';
 export 'src/fake_watcher.dart';
-export 'src/generic_builder_transformer.dart';
 export 'src/in_memory_reader.dart';
 export 'src/in_memory_writer.dart';
 export 'src/matchers.dart';
