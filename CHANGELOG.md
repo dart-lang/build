@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+- **BREAKING** BuilderTransformer must be constructed with a List<Builder>
+  rather than inherit and override.
+- Simplifies Resolver interface so it is possible to add implementations which
+  are less complex than the one from code_transformers.
+- Adds a Resolvers class and support for overriding the concrete Resolver that
+  is used by build steps.
+- Updates some test expectations to match the new behavior of analyzer.
+
 ## 0.3.0+6
 - Convert `packages` paths in the file watcher to their absolute paths. This
   fixes [#109](https://github.com/dart-lang/build/issues/109).
