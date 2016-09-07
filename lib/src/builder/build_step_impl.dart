@@ -13,7 +13,6 @@ import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../util/barback.dart';
 import 'build_step.dart';
 import 'exceptions.dart';
 
