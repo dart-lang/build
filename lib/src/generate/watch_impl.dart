@@ -8,7 +8,6 @@ import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';
 
 import '../asset/id.dart';
-import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/logging.dart';
@@ -45,9 +44,6 @@ class WatchImpl {
   /// The [PackageGraph] for the current program.
   final PackageGraph _packageGraph;
 
-  /// Shared [AssetWriter] with [_buildImpl]
-  final AssetWriter _writer;
-
   /// A future that completes when the current build is done.
   Future<BuildResult> _currentBuild;
   Future<BuildResult> get currentBuild => _currentBuild;
@@ -70,7 +66,6 @@ class WatchImpl {
   WatchImpl(BuildOptions options, PhaseGroup phaseGroup)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
-        _writer = options.writer,
         _packageGraph = options.packageGraph,
         _buildImpl = new BuildImpl(options, phaseGroup);
 
