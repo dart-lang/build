@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:code_transformers/resolver.dart' as code_transformers;
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
@@ -14,17 +13,13 @@ import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../util/barback.dart';
 import 'build_step.dart';
 import 'exceptions.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// its expected and real outputs. It also handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
-  /// Single `resolvers` instance for all [BuildStepImpl]s
-  static code_transformers.Resolvers resolvers =
-      new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
-          useSharedSources: true);
+  final Resolvers _resolvers;
 
   /// The primary input for this build step.
   @override
@@ -65,7 +60,7 @@ class BuildStepImpl implements BuildStep {
   final String _rootPackage;
 
   BuildStepImpl(this.input, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage)
+      this._writer, this._rootPackage, this._resolvers)
       : expectedOutputs = new List.unmodifiable(expectedOutputs) {
     /// The [input] is always a dependency.
     _dependencies.add(input.id);
@@ -106,8 +101,7 @@ class BuildStepImpl implements BuildStep {
       {bool resolveAllConstants, List<AssetId> entryPoints}) async {
     entryPoints ??= [];
     if (!entryPoints.contains(id)) entryPoints.add(id);
-    return new Resolver(await resolvers.get(toBarbackTransform(this),
-        entryPoints.map(toBarbackAssetId).toList(), resolveAllConstants));
+    return _resolvers.get(this, entryPoints, resolveAllConstants);
   }
 
   /// Should be called after `build` has completed. This will wait until for

@@ -8,6 +8,7 @@ import 'package:barback/barback.dart' as barback show AssetId;
 import 'package:barback/barback.dart' hide Asset, AssetId;
 import 'package:logging/logging.dart';
 
+import '../analyzer/resolver.dart';
 import '../asset/asset.dart' as build;
 import '../asset/id.dart' as build;
 import '../asset/reader.dart';
@@ -17,20 +18,23 @@ import '../builder/builder.dart';
 import '../util/barback.dart';
 
 /// A [Transformer] which runs multiple [Builder]s.
-/// Extend this class and define the [builders] getter to create a [Transformer]
-/// out of your custom [Builder]s.
 ///
 /// By default all [BuilderTransformer]s are [DeclaringTransformer]s. If you
-/// wish to run as a [LazyTransformer], simply mix that into your class as well.
-abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
-  /// The only thing you need to implement when extending this class. This
-  /// declares which builders should be ran.
+/// wish to run as a [LazyTransformer], extend this class and mix in
+/// LazyTransformer.
+class BuilderTransformer implements Transformer, DeclaringTransformer {
+  /// The builders that will run during this Transformer step.
   ///
   /// **Note**: All [builders] are ran in the same phase, and there are no
   /// ordering guarantees. Thus, none of the [builders] can use the outputs of
   /// other [builders]. In order to do this you must create a [TransformerGroup]
   /// with multiple [BuilderTransformer]s.
-  List<Builder> get builders;
+  final List<Builder> builders;
+
+  final Resolvers _resolvers;
+
+  BuilderTransformer(this.builders, {Resolvers resolvers: const Resolvers()})
+      : this._resolvers = resolvers;
 
   @override
   String get allowedExtensions => null;
@@ -71,8 +75,8 @@ abstract class BuilderTransformer implements Transformer, DeclaringTransformer {
       }
 
       // Run the build step.
-      var buildStep =
-          new BuildStepImpl(input, expected, reader, writer, input.id.package);
+      var buildStep = new BuildStepImpl(
+          input, expected, reader, writer, input.id.package, _resolvers);
       Logger.root.level = Level.ALL;
       var logSubscription = buildStep.logger.onRecord.listen((LogRecord log) {
         if (log.loggerName != buildStep.logger.fullName) return;

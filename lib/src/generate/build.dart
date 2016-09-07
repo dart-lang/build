@@ -4,10 +4,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:code_transformers/resolver.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
+import '../analyzer/resolver.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../package_graph/package_graph.dart';

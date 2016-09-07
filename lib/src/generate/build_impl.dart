@@ -11,6 +11,7 @@ import 'package:path/path.dart' as path;
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
+import '../analyzer/resolver.dart';
 import '../asset/asset.dart';
 import '../asset/cache.dart';
 import '../asset/exceptions.dart';
@@ -41,6 +42,7 @@ class BuildImpl {
   final PackageGraph _packageGraph;
   final AssetReader _reader;
   final AssetWriter _writer;
+  final Resolvers _resolvers;
 
   AssetGraph _assetGraph;
   AssetGraph get assetGraph => _assetGraph;
@@ -54,9 +56,8 @@ class BuildImpl {
         _deleteFilesByDefault = options.deleteFilesByDefault,
         _packageGraph = options.packageGraph,
         _reader = options.reader,
-        _writer = options.writer {
-    if (options.resolvers != null) BuildStepImpl.resolvers = options.resolvers;
-  }
+        _writer = options.writer,
+        _resolvers = options.resolvers ?? const Resolvers();
 
   /// Runs a build
   ///
@@ -558,7 +559,7 @@ class BuildImpl {
 
       var inputAsset = new Asset(input, await _reader.readAsString(input));
       var buildStep = new BuildStepImpl(inputAsset, expectedOutputs, _reader,
-          _writer, _packageGraph.root.name);
+          _writer, _packageGraph.root.name, _resolvers);
       await builder.build(buildStep);
       await buildStep.complete();
 

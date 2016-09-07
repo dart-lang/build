@@ -4,6 +4,8 @@
 @TestOn('vm')
 import 'dart:async';
 
+import 'package:code_transformers/resolver.dart' as code_transformers
+    show Resolver, Resolvers, dartSdkDirectory;
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -13,10 +15,31 @@ import 'package:build/src/util/barback.dart';
 
 import '../common/common.dart';
 
+class ResolversSpy implements Resolvers {
+  code_transformers.Resolver lastResolved;
+  static final code_transformers.Resolvers _resolvers =
+      new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
+          useSharedSources: true);
+
+  Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
+      bool resolveAllConstants) async {
+    lastResolved = await _resolvers.get(toBarbackTransform(buildStep),
+        entryPoints.map(toBarbackAssetId).toList(), resolveAllConstants);
+    return new Resolver(lastResolved);
+  }
+}
+
 // Ported from
 // https://github.com/dart-lang/code_transformers/blob/master/test/resolver_test.dart
 void main() {
   var entryPoint = makeAssetId('a|web/main.dart');
+
+  ResolversSpy _resolvers;
+
+  setUp(() {
+    _resolvers = new ResolversSpy();
+  });
+
   Future validateResolver(
       {Map<String, String> inputs,
       validator(Resolver resolver),
@@ -27,8 +50,8 @@ void main() {
     addAssets(assets.values, writer);
 
     var builder = new TestBuilder(validator);
-    var buildStep =
-        new BuildStepImpl(assets[entryPoint], [], reader, writer, 'a');
+    var buildStep = new BuildStepImpl(
+        assets[entryPoint], [], reader, writer, 'a', _resolvers);
     var logs = <LogRecord>[];
     if (messages != null) {
       buildStep.logger.onRecord.listen(logs.add);
@@ -45,7 +68,7 @@ void main() {
       return validateResolver(
           inputs: {'a|web/main.dart': ' main() {}',},
           validator: (resolver) {
-            var source = (resolver.resolver as dynamic).sources[
+            var source = (_resolvers.lastResolved as dynamic).sources[
                 toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 1);
 
@@ -61,7 +84,7 @@ void main() {
                 } ''',
           },
           validator: (resolver) {
-            var source = (resolver.resolver as dynamic).sources[
+            var source = (_resolvers.lastResolved as dynamic).sources[
                 toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 2);
 
@@ -85,7 +108,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
             expect(libA.getType('Foo'), isNull);
           });
@@ -106,7 +129,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
             expect(libA.getType('Foo'), isNotNull);
           });
@@ -126,7 +149,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
             expect(libB.getType('Foo'), isNull);
           });
@@ -143,7 +166,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 1);
+            expect(lib.importedLibraries, hasLength(2));
           });
     });
 
@@ -163,7 +186,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 2);
+            expect(lib.importedLibraries, hasLength(2));
             var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
             expect(libB.getType('Bar'), isNotNull);
           });
@@ -180,7 +203,7 @@ void main() {
           },
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 1);
+            expect(lib.importedLibraries, hasLength(2));
           });
     });
 
@@ -199,7 +222,7 @@ void main() {
           ],
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
-            expect(lib.importedLibraries.length, 1);
+            expect(lib.importedLibraries, hasLength(2));
           });
     });
 
@@ -221,59 +244,6 @@ void main() {
             var libs = resolver.libraries.where((l) => !l.isInSdk);
             expect(libs.map((l) => l.name),
                 unorderedEquals(['a.main', 'a.a', 'a.b', 'a.c', 'a.d',]));
-          });
-    });
-
-    test('should resolve types and library uris', () {
-      return validateResolver(
-          inputs: {
-            'a|web/main.dart': '''
-              import 'dart:core';
-              import 'package:a/a.dart';
-              import 'package:a/b.dart';
-              import 'sub_dir/d.dart';
-              class Foo {}
-              ''',
-            'a|lib/a.dart': 'library a.a;\n import "package:a/c.dart";',
-            'a|lib/b.dart': 'library a.b;\n import "c.dart";',
-            'a|lib/c.dart': '''
-                library a.c;
-                class Bar {}
-                ''',
-            'a|web/sub_dir/d.dart': '''
-                library a.web.sub_dir.d;
-                class Baz{}
-                ''',
-          },
-          validator: (resolver) {
-            var a = resolver.getLibraryByName('a.a');
-            expect(a, isNotNull);
-            expect(resolver.getImportUri(a).toString(), 'package:a/a.dart');
-            expect(resolver.getLibraryByUri(Uri.parse('package:a/a.dart')), a);
-
-            var main = resolver.getLibraryByName('');
-            expect(main, isNotNull);
-            expect(resolver.getImportUri(main), isNull);
-
-            var fooType = resolver.getType('Foo');
-            expect(fooType, isNotNull);
-            expect(fooType.library, main);
-
-            var barType = resolver.getType('a.c.Bar');
-            expect(barType, isNotNull);
-            expect(resolver.getImportUri(barType.library).toString(),
-                'package:a/c.dart');
-            expect(resolver.getSourceAssetId(barType),
-                new AssetId('a', 'lib/c.dart'));
-
-            var bazType = resolver.getType('a.web.sub_dir.d.Baz');
-            expect(bazType, isNotNull);
-            expect(resolver.getImportUri(bazType.library), isNull);
-            expect(
-                resolver
-                    .getImportUri(bazType.library, from: entryPoint)
-                    .toString(),
-                'sub_dir/d.dart');
           });
     });
 

@@ -11,11 +11,10 @@ import 'package:transformer_test/utils.dart';
 import '../common/common.dart' hide testPhases;
 
 void main() {
-  var singleCopyTransformer =
-      new GenericBuilderTransformer([new CopyBuilder()]);
+  var singleCopyTransformer = new BuilderTransformer([new CopyBuilder()]);
   var multiCopyTransformer =
-      new GenericBuilderTransformer([new CopyBuilder(numCopies: 2)]);
-  var singleAndMultiCopyTransformer = new GenericBuilderTransformer(
+      new BuilderTransformer([new CopyBuilder(numCopies: 2)]);
+  var singleAndMultiCopyTransformer = new BuilderTransformer(
       [new CopyBuilder(), new CopyBuilder(numCopies: 2)]);
 
   testPhases('single builder, single output', [
@@ -47,7 +46,7 @@ void main() {
 
   testPhases('multiple builders, same outputs', [
     [
-      new GenericBuilderTransformer([new CopyBuilder(), new CopyBuilder()])
+      new BuilderTransformer([new CopyBuilder(), new CopyBuilder()])
     ],
   ], {
     'a|web/a.txt': 'hello',
@@ -96,7 +95,7 @@ void main() {
       [
         [
           singleCopyTransformer,
-          new GenericBuilderTransformer([new CopyBuilder()])
+          new BuilderTransformer([new CopyBuilder()])
         ]
       ],
       {'a|web/a.txt': 'hello',},
@@ -118,7 +117,7 @@ void main() {
 
   testPhases('loggers log errors', [
     [
-      new GenericBuilderTransformer([new LoggingCopyBuilder()])
+      new BuilderTransformer([new LoggingCopyBuilder()])
     ],
   ], {
     'a|web/a.txt': 'a',

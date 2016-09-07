@@ -4,11 +4,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:code_transformers/resolver.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_static/shelf_static.dart';
 
+import '../analyzer/resolver.dart';
 import '../asset/cache.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
