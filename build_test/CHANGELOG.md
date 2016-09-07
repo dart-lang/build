@@ -1,3 +1,9 @@
+## 0.2.0
+
+- Upgrade build package to 0.4.0
+- Delete now unnecessary `GenericBuilderTransformer` and use
+  `BuilderTransformer` in the tests.
+
 ## 0.1.2
 
 - Add `logLevel` and `onLog` named args to `testPhases`. These can be used
