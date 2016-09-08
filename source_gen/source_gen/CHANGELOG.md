@@ -1,3 +1,7 @@
+## 0.5.1+1
+
+* Support the latest version of `build` package.
+
 ## 0.5.1
 
 * Added GeneratorBuilder option isStandalone to generate files that aren't 
