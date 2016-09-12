@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.1
+- Support analyzer 0.28.x
+
 ## 0.4.0
 - **BREAKING** BuilderTransformer must be constructed with a List<Builder>
   rather than inherit and override.
@@ -14,7 +17,7 @@
   fixes [#109](https://github.com/dart-lang/build/issues/109).
 
 ## 0.3.0+5
-- Fix duplicate logs issue when running as a BuilderTransformer.  
+- Fix duplicate logs issue when running as a BuilderTransformer.
 
 - Support `crypto` 2.0.0.
 
