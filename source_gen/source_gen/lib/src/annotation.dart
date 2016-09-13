@@ -211,7 +211,11 @@ bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
   var classMirror = reflectClass(annotationType);
   var classMirrorSymbol = classMirror.simpleName;
 
-  var annotationValueType = annotation.constantValue.type;
+  var annotationValueType = annotation.constantValue?.type;
+  if (annotationValueType == null) {
+      throw new ArgumentError.value(annotation, 'annotation',
+          'Could not determine type of annotation. Are you missing a dependency?');
+  }
 
   var annTypeName = annotationValueType.name;
   var annotationTypeSymbol = new Symbol(annTypeName);
