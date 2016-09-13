@@ -1,3 +1,7 @@
+## 0.5.1+2
+
+* Avoid calling `computeNode()` while instantiating annotation values
+
 ## 0.5.1+1
 
 * Support the latest version of `build` package.

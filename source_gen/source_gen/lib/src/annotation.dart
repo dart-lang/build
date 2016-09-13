@@ -10,9 +10,8 @@ import 'dart:mirrors';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/generated/constant.dart';
-import 'package:analyzer/src/generated/element.dart'
-    show ConstructorElementImpl;
 import 'package:analyzer/src/generated/resolver.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:path/path.dart' as p;
@@ -32,11 +31,13 @@ dynamic instantiateAnnotation(ElementAnnotation annotation) {
   var element = annotation.element;
 
   if (element is PropertyAccessorElement) {
-    var initializer = ((element as PropertyAccessorElement)
-            .variable
-            .computeNode() as VariableDeclaration)
-        .initializer as InstanceCreationExpression;
-    element = initializer.staticElement;
+    var variable = (element as PropertyAccessorElement).variable;
+    if (variable is ConstVariableElement) {
+      var expression = (variable as ConstVariableElement).constantInitializer;
+      if (expression is InstanceCreationExpression) {
+        element = expression.staticElement;
+      }
+    }
   }
 
   if (element is ConstructorElement) {
@@ -136,11 +137,9 @@ final _cannotCreate = new Object();
 
 dynamic _createFromConstructor(
     ConstructorElementImpl ctor, DartObjectImpl obj) {
-  var ctorDeclaration = ctor.computeNode();
-
   var positionalArgs = [];
   var namedArgs = <Symbol, dynamic>{};
-  for (var p in ctorDeclaration.parameters.parameterElements) {
+  for (var p in ctor.parameters) {
     var paramName = p.name;
     String fieldName;
     if (p is FieldFormalParameterElement) {
@@ -178,12 +177,7 @@ dynamic _createFromConstructor(
     }
   }
 
-  Symbol ctorName;
-  if (ctorDeclaration.name == null) {
-    ctorName = const Symbol('');
-  } else {
-    ctorName = new Symbol(ctorDeclaration.name.name);
-  }
+  var ctorName = new Symbol(ctor.name ?? '');
 
   var declarationMirror =
       _getDeclarationMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
