@@ -15,10 +15,10 @@ import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/source/package_map_provider.dart';
 import 'package:analyzer/source/package_map_resolver.dart';
 import 'package:analyzer/source/pub_package_map_provider.dart';
+import 'package:analyzer/src/dart/sdk/sdk.dart' show FolderBasedDartSdk;
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
-import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:cli_util/cli_util.dart' as cli;
@@ -83,9 +83,11 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
   var sdkPath = cli.getSdkDir().path;
 
   JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
-  DartSdk sdk = DirectoryBasedDartSdk.defaultSdk;
+  var resourceProvider = PhysicalResourceProvider.INSTANCE;
+  DartSdk sdk = new FolderBasedDartSdk(
+      resourceProvider, resourceProvider.getFolder(sdkPath));
 
-  var packageResolver = _getPackageResolver(projectPath);
+  var packageResolver = _getPackageResolver(projectPath, sdk);
 
   var resolvers = [
     new DartUriResolver(sdk),
@@ -107,14 +109,14 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
   return context;
 }
 
-UriResolver _getPackageResolver(String projectPath) {
+UriResolver _getPackageResolver(String projectPath, DartSdk sdk) {
   // is there a .packages file? If yes, use that!
 
   var dotPackagesPath = p.join(projectPath, '.packages');
 
   if (FileSystemEntity.isFileSync(dotPackagesPath)) {
-    PubPackageMapProvider pubPackageMapProvider = new PubPackageMapProvider(
-        PhysicalResourceProvider.INSTANCE, DirectoryBasedDartSdk.defaultSdk);
+    PubPackageMapProvider pubPackageMapProvider =
+        new PubPackageMapProvider(PhysicalResourceProvider.INSTANCE, sdk);
     PackageMapInfo packageMapInfo = pubPackageMapProvider
         .computePackageMap(PhysicalResourceProvider.INSTANCE.getResource('.'));
     Map<String, List<Folder>> packageMap = packageMapInfo.packageMap;

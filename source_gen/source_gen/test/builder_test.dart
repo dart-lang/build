@@ -22,8 +22,9 @@ void main() {
         new GeneratorBuilder([const _BadOutputGenerator()]),
         new InputSet(pkgName, ['lib/test_lib.dart']));
 
-    await testPhases(phaseGroup, pkgName, srcs,
-        {'$pkgName|lib/test_lib.g.dart': contains('not valid code!'),});
+    await testPhases(phaseGroup, pkgName, srcs, {
+      '$pkgName|lib/test_lib.g.dart': contains('not valid code!'),
+    });
   });
 
   test('Generate standalone output file', () async {
@@ -31,8 +32,9 @@ void main() {
     var phaseGroup = new PhaseGroup.singleAction(
         new GeneratorBuilder([const CommentGenerator()], isStandalone: true),
         new InputSet(pkgName, ['lib/test_lib.dart']));
-    await testPhases(phaseGroup, pkgName, srcs,
-        {'$pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,});
+    await testPhases(phaseGroup, pkgName, srcs, {
+      '$pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,
+    });
   });
 
   test('Generate explicitly non-standalone output file', () async {
@@ -40,8 +42,9 @@ void main() {
     var phaseGroup = new PhaseGroup.singleAction(
         new GeneratorBuilder([const CommentGenerator()], isStandalone: false),
         new InputSet(pkgName, ['lib/test_lib.dart']));
-    await testPhases(phaseGroup, pkgName, srcs,
-        {'$pkgName|lib/test_lib.g.dart': _testGenPartContent,});
+    await testPhases(phaseGroup, pkgName, srcs, {
+      '$pkgName|lib/test_lib.g.dart': _testGenPartContent,
+    });
   });
 
   test('Expect error when multiple generators used on a standalone builder',
@@ -88,8 +91,9 @@ void main() {
     var phaseGroup = new PhaseGroup.singleAction(
         new GeneratorBuilder([const CommentGenerator()]),
         new InputSet(pkgName, ['lib/test_lib.dart']));
-    await testPhases(phaseGroup, pkgName, srcs,
-        {'$pkgName|lib/test_lib.g.dart': _testGenPartContentError,});
+    await testPhases(phaseGroup, pkgName, srcs, {
+      '$pkgName|lib/test_lib.g.dart': _testGenPartContentError,
+    });
   });
 }
 
@@ -102,8 +106,9 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
   var phaseGroup = new PhaseGroup.singleAction(new GeneratorBuilder([gen]),
       new InputSet(pkgName, ['lib/test_lib.dart']));
 
-  await testPhases(phaseGroup, pkgName, srcs,
-      {'$pkgName|lib/test_lib.g.dart': expectedContent,});
+  await testPhases(phaseGroup, pkgName, srcs, {
+    '$pkgName|lib/test_lib.g.dart': expectedContent,
+  });
 }
 
 /// Creates a package using [pkgName].

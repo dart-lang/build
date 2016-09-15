@@ -6,7 +6,6 @@
 library source_gen.test.find_libraries;
 
 import 'package:analyzer/src/generated/engine.dart';
-import 'package:analyzer/src/generated/source_io.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/src/utils.dart';
 import 'package:test/test.dart';
@@ -35,12 +34,10 @@ void main() {
         var fullInputPath = _testFilePath(inputPath);
 
         var libElement = getLibraryElementForSourceFile(context, fullInputPath);
-
-        var libSource = libElement.source as FileBasedSource;
-
+        
         var fullLibPath = _testFilePath(expectedLibPath);
 
-        expect(p.fromUri(libSource.uri), fullLibPath);
+        expect(p.fromUri(libElement.source.uri), fullLibPath);
       });
     });
   });

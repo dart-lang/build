@@ -207,8 +207,8 @@ bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
 
   var annotationValueType = annotation.constantValue?.type;
   if (annotationValueType == null) {
-      throw new ArgumentError.value(annotation, 'annotation',
-          'Could not determine type of annotation. Are you missing a dependency?');
+    throw new ArgumentError.value(annotation, 'annotation',
+        'Could not determine type of annotation. Are you missing a dependency?');
   }
 
   var annTypeName = annotationValueType.name;
