@@ -197,6 +197,10 @@ void main() {
       expect(mock == mock, isTrue);
     });
     //no need to mock setter, except if we will have spies later...
+    test("should mock method with thrown result", () {
+      when(mock.methodWithNormalArgs(any)).thenThrow(new StateError('Boo'));
+      expect(() => mock.methodWithNormalArgs(42), throwsStateError);
+    });
     test("should mock method with calculated result", () {
       when(mock.methodWithNormalArgs(any)).thenAnswer(
           (Invocation inv) => inv.positionalArguments[0].toString());
