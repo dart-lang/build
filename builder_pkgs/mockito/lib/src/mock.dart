@@ -437,11 +437,22 @@ class _ArgMatcher {
   _ArgMatcher(this._matcher, this._capture);
 }
 
+/// An argument matcher that matches any argument passed in "this" position.
 get any => new _ArgMatcher(anything, false);
+
+/// An argument matcher that matches any argument passed in "this" position, and
+/// captures the argument for later access with `captured`.
 get captureAny => new _ArgMatcher(anything, true);
-captureThat(Matcher matcher) => new _ArgMatcher(matcher, true);
+
+/// An argument matcher that matches an argument that matches [matcher].
 argThat(Matcher matcher) => new _ArgMatcher(matcher, false);
 
+/// An argument matcher that matches an argument that matches [matcher], and
+/// captures the argument for later access with `captured`.
+captureThat(Matcher matcher) => new _ArgMatcher(matcher, true);
+
+/// A Strong-mode safe argument matcher that wraps other argument matchers.
+/// See the README for a full explanation.
 /*=T*/ typed/*<T>*/(_ArgMatcher matcher, {String named}) {
   if (named == null) {
     _typedArgs.add(matcher);

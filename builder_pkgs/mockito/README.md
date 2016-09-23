@@ -23,10 +23,7 @@ class Cat {
 }
 
 //Mock class
-class MockCat extends Mock implements Cat{
-  //this tells Dart analyzer you meant not to implement all methods, and not to hint/warn that methods are missing 
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockCat extends Mock implements Cat {}
 
 //mock creation
 var cat = new MockCat();
@@ -59,6 +56,11 @@ expect(cat.lives, 9);
 //you can stub a method to throw
 when(cat.lives).thenThrow(new RangeError('Boo'));
 expect(() => cat.lives, throwsRangeError);
+//we can calculate a response at call time:
+var responses = ["Purr", "Meow"];
+when(cat.sound()).thenAnswer(() => responses.removeAt(0));
+expect(cat.sound(), "Purr");
+expect(cat.sound(), "Meow");
 ```
 
 By default, for all methods that return value, mock returns null.
