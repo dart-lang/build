@@ -56,6 +56,9 @@ expect(cat.sound(), "Meow");
 //you can stub getters
 when(cat.lives).thenReturn(9);
 expect(cat.lives, 9);
+//you can stub a method to throw
+when(cat.lives).thenThrow(new RangeError('Boo'));
+expect(() => cat.lives, throwsRangeError);
 ```
 
 By default, for all methods that return value, mock returns null.

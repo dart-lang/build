@@ -209,6 +209,12 @@ class PostExpectation {
     return _completeWhen((_) => expected);
   }
 
+  thenThrow(throwable) {
+    return _completeWhen((_) {
+      throw throwable;
+    });
+  }
+
   thenAnswer(Answering answer) {
     return _completeWhen(answer);
   }
