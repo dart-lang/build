@@ -1,3 +1,9 @@
+## 1.0.1
+
+* Add a new `thenThrow` method to the API.
+* Document `thenAnswer` in the README.
+* Add more dartdoc.
+
 ## 1.0.0
 
 * Add a new `typed` API that is compatible with Dart Dev Compiler; documented in
