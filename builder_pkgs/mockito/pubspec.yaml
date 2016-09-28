@@ -10,5 +10,5 @@ homepage: https://github.com/fibulwinter/dart-mockito
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:
-  meta:
+  meta: '>=1.0.4 <2.0.0'
   test: '>=0.12.0 <0.13.0'
