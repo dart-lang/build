@@ -33,13 +33,9 @@ abstract class AbstractFoo implements Foo {
   String baz();
 }
 
-class MockFoo extends AbstractFoo with Mock {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockFoo extends AbstractFoo with Mock {}
 
-class MockedClass extends Mock implements RealClass {
-  noSuchMethod(i) => super.noSuchMethod(i);
-}
+class MockedClass extends Mock implements RealClass {}
 
 expectFail(String expectedMessage, expectedToFail()) {
   try {
