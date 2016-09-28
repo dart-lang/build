@@ -2,6 +2,7 @@
 // lib/mockito_no_mirrors.dart, which is used for Dart AOT projects such as
 // Flutter.
 
+import 'package:meta/meta.dart';
 import 'package:test/test.dart';
 
 bool _whenInProgress = false;
@@ -14,28 +15,64 @@ final List<_ArgMatcher> _typedArgs = <_ArgMatcher>[];
 final Map<String, _ArgMatcher> _typedNamedArgs = <String, _ArgMatcher>{};
 
 // Hidden from the public API, used by spy.dart.
-void setDefaultResponse(Mock mock, dynamic defaultResponse) {
+void setDefaultResponse(Mock mock, CannedResponse defaultResponse()) {
   mock._defaultResponse = defaultResponse;
 }
 
+/// Extend or mixin this class to mark the implementation as a [Mock].
+///
+/// A mocked class implements all fields and methods with a default
+/// implementation that does not throw a [NoSuchMethodError], and may be further
+/// customized at runtime to define how it may behave using [when].
+///
+/// __Example use__:
+///   // Real class.
+///   class Cat {
+///     String getSound() => 'Meow';
+///   }
+///
+///   // Mock class.
+///   class MockCat extends Mock implements Cat {}
+///
+///   void main() {
+///     // Create a new mocked Cat at runtime.
+///     var cat = new MockCat();
+///
+///     // When 'getSound' is called, return 'Woof'
+///     when(cat.getSound()).thenReturn('Woof');
+///
+///     // Try making a Cat sound...
+///     print(cat.getSound()); // Prints 'Woof'
+///   }
+///
+/// **WARNING**: [Mock] uses [noSuchMethod](goo.gl/r3IQUH), which is a _form_ of
+/// runtime reflection, and causes sub-standard code to be generated. As such,
+/// [Mock] should strictly _not_ be used in any production code, especially if
+/// used within the context of Dart for Web (dart2js/ddc) and Dart for Mobile
+/// (flutter).
 class Mock {
-  static var _nullResponse = () => new CannedResponse(null, (_) => null);
+  static CannedResponse _nullResponse() {
+    return new CannedResponse(null, (_) => null);
+  }
 
   final List<RealCall> _realCalls = <RealCall>[];
   final List<CannedResponse> _responses = <CannedResponse>[];
   String _givenName = null;
   int _givenHashCode = null;
 
-  var _defaultResponse = _nullResponse;
+  _ReturnsCannedResponse _defaultResponse = _nullResponse;
 
   void _setExpected(CannedResponse cannedResponse) {
     _responses.add(cannedResponse);
   }
 
-  dynamic noSuchMethod(Invocation invocation) {
-    if (_typedArgs.isNotEmpty || _typedNamedArgs.isNotEmpty) {
-      invocation = new _InvocationForTypedArguments(invocation);
-    }
+  @override
+  @visibleForTesting
+  noSuchMethod(Invocation invocation) {
+    // noSuchMethod is that 'magic' that allows us to ignore implementing fields
+    // and methods and instead define them later at compile-time per instance.
+    // See "Emulating Functions and Interactions" on dartlang.org: goo.gl/r3IQUH
+    invocation = _useTypedInvocationIfSet(invocation);
     if (_whenInProgress) {
       _whenCall = new _WhenCall(this, invocation);
       return null;
@@ -58,6 +95,18 @@ class Mock {
       : identical(this, other);
 
   String toString() => _givenName != null ? _givenName : runtimeType.toString();
+}
+
+typedef CannedResponse _ReturnsCannedResponse();
+
+// When using the typed() matcher, we transform our invocation to have knowledge
+// of which arguments are wrapped with typed() and which ones are not. Otherwise
+// we just use the existing invocation object.
+Invocation _useTypedInvocationIfSet(Invocation invocation) {
+  if (_typedArgs.isNotEmpty || _typedNamedArgs.isNotEmpty) {
+    invocation = new _InvocationForTypedArguments(invocation);
+  }
+  return invocation;
 }
 
 /// An Invocation implementation that takes arguments from [_typedArgs] and
