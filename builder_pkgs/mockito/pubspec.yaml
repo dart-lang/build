@@ -1,5 +1,5 @@
 name: mockito
-version: 1.0.0
+version: 1.0.1
 author: Dmitriy Fibulwinter <fibulwinter@gmail.com>
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/fibulwinter/dart-mockito
