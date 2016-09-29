@@ -82,7 +82,8 @@ class Mock {
     } else {
       _realCalls.add(new RealCall(this, invocation));
       var cannedResponse = _responses.lastWhere(
-          (cr) => cr.matcher.matches(invocation), orElse: _defaultResponse);
+          (cr) => cr.matcher.matches(invocation),
+          orElse: _defaultResponse);
       var response = cannedResponse.response(invocation);
       return response;
     }
@@ -149,9 +150,10 @@ class _InvocationForTypedArguments extends Invocation {
   // The namedArguments in [invocation] which are null should be represented
   // by a stored value in [_typedNamedArgs]. The null presumably came from
   // [typed].
-  static Map<Symbol,dynamic> _reconstituteNamedArgs(Invocation invocation) {
+  static Map<Symbol, dynamic> _reconstituteNamedArgs(Invocation invocation) {
     var namedArguments = <Symbol, dynamic>{};
-    var _typedNamedArgSymbols = _typedNamedArgs.keys.map((name) => new Symbol(name));
+    var _typedNamedArgSymbols =
+        _typedNamedArgs.keys.map((name) => new Symbol(name));
 
     // Iterate through [invocation]'s named args, validate them, and add them
     // to the return map.
@@ -218,7 +220,8 @@ class _InvocationForTypedArguments extends Invocation {
         positionalIndex++;
       } else {
         // [typed] was not used; add the [_ArgMatcher] from [invocation].
-        positionalArguments.add(invocation.positionalArguments[positionalIndex]);
+        positionalArguments
+            .add(invocation.positionalArguments[positionalIndex]);
         positionalIndex++;
       }
     }
@@ -231,13 +234,8 @@ class _InvocationForTypedArguments extends Invocation {
     return positionalArguments;
   }
 
-  _InvocationForTypedArguments._(
-      this.memberName,
-      this.positionalArguments,
-      this.namedArguments,
-      this.isGetter,
-      this.isMethod,
-      this.isSetter);
+  _InvocationForTypedArguments._(this.memberName, this.positionalArguments,
+      this.namedArguments, this.isGetter, this.isMethod, this.isSetter);
 }
 
 named(var mock, {String name, int hashCode}) => mock
@@ -359,8 +357,6 @@ class InvocationMatcher {
   bool isMatchingArg(roleArg, actArg) {
     if (roleArg is _ArgMatcher) {
       return roleArg._matcher.matches(actArg, {});
-//    } else if(roleArg is Mock){
-//      return identical(roleArg, actArg);
     } else {
       return equals(roleArg).matches(actArg, {});
     }
@@ -387,47 +383,49 @@ class _TimeStampProvider {
 }
 
 class RealCall {
+  final Mock mock;
+  final Invocation invocation;
+  final DateTime timeStamp;
+
+  bool verified = false;
+
+  RealCall(this.mock, this.invocation) : timeStamp = _timer.now();
+
+  String toString() {
+    var args = invocation.positionalArguments
+        .map((v) => v == null ? "null" : v.toString())
+        .join(", ");
+    if (invocation.namedArguments.isNotEmpty) {
+      var namedArgs = invocation.namedArguments.keys
+          .map((key) =>
+              "${_symbolToString(key)}: ${invocation.namedArguments[key]}")
+          .join(", ");
+      args += ", {$namedArgs}";
+    }
+
+    var method = _symbolToString(invocation.memberName);
+    if (invocation.isMethod) {
+      method = "$method($args)";
+    } else if (invocation.isGetter) {
+      method = "$method";
+    } else if (invocation.isSetter) {
+      method = "$method=$args";
+    } else {
+      throw new StateError(
+          'Invocation should be getter, setter or a method call.');
+    }
+
+    var verifiedText = verified ? "[VERIFIED] " : "";
+    return "$verifiedText$mock.$method";
+  }
+
   // This used to use MirrorSystem, which cleans up the Symbol() wrapper.
   // Since this toString method is just used in Mockito's own tests, it's not
   // a big deal to massage the toString a bit.
   //
   // Input: Symbol("someMethodName")
-  static String _symbolToString(Symbol symbol) {
-    return symbol.toString().split('"')[1];
-  }
-
-  DateTime _timeStamp;
-  final Mock mock;
-  final Invocation invocation;
-  bool verified = false;
-  RealCall(this.mock, this.invocation) {
-    _timeStamp = _timer.now();
-  }
-
-  DateTime get timeStamp => _timeStamp;
-
-  String toString() {
-    var verifiedText = verified ? "[VERIFIED] " : "";
-    List<String> posArgs = invocation.positionalArguments
-        .map((v) => v == null ? "null" : v.toString())
-        .toList();
-    List<String> mapArgList = invocation.namedArguments.keys.map((key) {
-      return "${_symbolToString(key)}: ${invocation.namedArguments[key]}";
-    }).toList(growable: false);
-    if (mapArgList.isNotEmpty) {
-      posArgs.add("{${mapArgList.join(", ")}}");
-    }
-    String args = posArgs.join(", ");
-    String method = _symbolToString(invocation.memberName);
-    if (invocation.isMethod) {
-      method = ".$method($args)";
-    } else if (invocation.isGetter) {
-      method = ".$method";
-    } else {
-      method = ".$method=$args";
-    }
-    return "$verifiedText$mock$method";
-  }
+  static String _symbolToString(Symbol symbol) =>
+      symbol.toString().split('"')[1];
 }
 
 class _WhenCall {
@@ -528,15 +526,15 @@ class VerificationResult {
 
 typedef dynamic Answering(Invocation realInvocation);
 
-typedef VerificationResult Verification(matchingInvocations);
+typedef VerificationResult _Verification(matchingInvocations);
 
-typedef void InOrderVerification(recordedInvocations);
+typedef void _InOrderVerification(List<dynamic> recordedInvocations);
 
-Verification get verifyNever => _makeVerify(true);
+_Verification get verifyNever => _makeVerify(true);
 
-Verification get verify => _makeVerify(false);
+_Verification get verify => _makeVerify(false);
 
-Verification _makeVerify(bool never) {
+_Verification _makeVerify(bool never) {
   if (_verifyCalls.isNotEmpty) {
     throw new StateError(_verifyCalls.join());
   }
@@ -546,7 +544,7 @@ Verification _makeVerify(bool never) {
     if (_verifyCalls.length == 1) {
       _VerifyCall verifyCall = _verifyCalls.removeLast();
       var result =
-      new VerificationResult(verifyCall.matchingInvocations.length);
+          new VerificationResult(verifyCall.matchingInvocations.length);
       verifyCall._checkWith(never);
       return result;
     } else {
@@ -555,12 +553,12 @@ Verification _makeVerify(bool never) {
   };
 }
 
-InOrderVerification get verifyInOrder {
+_InOrderVerification get verifyInOrder {
   if (_verifyCalls.isNotEmpty) {
     throw new StateError(_verifyCalls.join());
   }
   _verificationInProgress = true;
-  return (verifyCalls) {
+  return (List<dynamic> _) {
     _verificationInProgress = false;
     DateTime dt = new DateTime.fromMillisecondsSinceEpoch(0);
     var tmpVerifyCalls = new List.from(_verifyCalls);
@@ -573,9 +571,9 @@ InOrderVerification get verifyInOrder {
         dt = matched.timeStamp;
       } else {
         Set<Mock> mocks =
-        tmpVerifyCalls.map((_VerifyCall vc) => vc.mock).toSet();
+            tmpVerifyCalls.map((_VerifyCall vc) => vc.mock).toSet();
         List<RealCall> allInvocations =
-        mocks.expand((m) => m._realCalls).toList(growable: false);
+            mocks.expand((m) => m._realCalls).toList(growable: false);
         allInvocations
             .sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
         String otherCalls = "";
@@ -586,9 +584,9 @@ InOrderVerification get verifyInOrder {
             "Matching call #${tmpVerifyCalls.indexOf(verifyCall)} not found.$otherCalls");
       }
     }
-    matchedCalls.forEach((rc) {
-      rc.verified = true;
-    });
+    for (var call in matchedCalls) {
+      call.verified = true;
+    }
   };
 }
 
@@ -618,14 +616,14 @@ Expectation get when {
 
 void logInvocations(List<Mock> mocks) {
   List<RealCall> allInvocations =
-  mocks.expand((m) => m._realCalls).toList(growable: false);
+      mocks.expand((m) => m._realCalls).toList(growable: false);
   allInvocations.sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
   allInvocations.forEach((inv) {
     print(inv.toString());
   });
 }
 
-/// Should only be used during Mockito testing.
+/// Only for mockito testing.
 void resetMockitoState() {
   _whenInProgress = false;
   _verificationInProgress = false;
