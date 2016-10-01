@@ -17,12 +17,12 @@ import 'package:meta/meta.dart';
 /// get a handle to attempted [Invocation] objects and then compared against
 /// what a user expects to be called.
 Matcher invokes(
-    Symbol memberName, {
-    List positionalArguments: const [],
-    Map<Symbol, dynamic> namedArguments: const {},
-    bool isGetter: false,
-    bool isSetter: false,
-    }) {
+  Symbol memberName, {
+  List positionalArguments: const [],
+  Map<Symbol, dynamic> namedArguments: const {},
+  bool isGetter: false,
+  bool isSetter: false,
+}) {
   if (isGetter && isSetter) {
     throw new ArgumentError('Cannot set isGetter and iSetter');
   }
@@ -33,12 +33,12 @@ Matcher invokes(
     throw new ArgumentError.notNull('namedArguments');
   }
   return new _InvocationMatcher(new _InvocationSignature(
-      memberName: memberName,
-      positionalArguments: positionalArguments,
-      namedArguments: namedArguments,
-      isGetter: isGetter,
-      isSetter: isSetter,
-      ));
+    memberName: memberName,
+    positionalArguments: positionalArguments,
+    namedArguments: namedArguments,
+    isGetter: isGetter,
+    isSetter: isSetter,
+  ));
 }
 
 /// Returns a matcher that matches the name and arguments of an [invocation].
@@ -64,11 +64,11 @@ class _InvocationSignature extends Invocation {
   final bool isSetter;
 
   _InvocationSignature({
-  @required this.memberName,
-  this.positionalArguments: const [],
-  this.namedArguments: const {},
-  this.isGetter: false,
-  this.isSetter: false,
+    @required this.memberName,
+    this.positionalArguments: const [],
+    this.namedArguments: const {},
+    this.isGetter: false,
+    this.isSetter: false,
   });
 
   @override
@@ -77,6 +77,7 @@ class _InvocationSignature extends Invocation {
 
 class _InvocationMatcher implements Matcher {
   static Description _describeInvocation(Description d, Invocation invocation) {
+    // For a getter or a setter, just return get <member> or set <member> <arg>.
     if (invocation.isAccessor) {
       d = d
           .add(invocation.isGetter ? 'get ' : 'set ')
@@ -86,6 +87,7 @@ class _InvocationMatcher implements Matcher {
       }
       return d;
     }
+    // For a method, return <member>(<args>).
     d = d
         .add(_symbolToString(invocation.memberName))
         .add('(')
@@ -94,12 +96,14 @@ class _InvocationMatcher implements Matcher {
         invocation.namedArguments.isNotEmpty) {
       d = d.add(', ');
     }
+    // Also added named arguments, if any.
     return d.addAll('', ', ', '', _namedArgsAndValues(invocation)).add(')');
   }
 
+  // Returns named arguments as an iterable of '<name>: <value>'.
   static Iterable<String> _namedArgsAndValues(Invocation invocation) =>
       invocation.namedArguments.keys.map/*<String>*/((name) =>
-      '${_symbolToString(name)}: ${invocation.namedArguments[name]}');
+          '${_symbolToString(name)}: ${invocation.namedArguments[name]}');
 
   // This will give is a mangled symbol in dart2js/aot with minification
   // enabled, but it's safe to assume very few people will use the invocation
@@ -134,13 +138,13 @@ class _InvocationMatcher implements Matcher {
   @override
   bool matches(item, _) =>
       item is Invocation &&
-          _invocation.memberName == item.memberName &&
-          _invocation.isSetter == item.isSetter &&
-          _invocation.isGetter == item.isGetter &&
-          const ListEquality(const _MatcherEquality())
-              .equals(_invocation.positionalArguments, item.positionalArguments) &&
-          const MapEquality(values: const _MatcherEquality())
-              .equals(_invocation.namedArguments, item.namedArguments);
+      _invocation.memberName == item.memberName &&
+      _invocation.isSetter == item.isSetter &&
+      _invocation.isGetter == item.isGetter &&
+      const ListEquality(const _MatcherEquality())
+          .equals(_invocation.positionalArguments, item.positionalArguments) &&
+      const MapEquality(values: const _MatcherEquality())
+          .equals(_invocation.namedArguments, item.namedArguments);
 }
 
 class _MatcherEquality extends DefaultEquality /* <Matcher | E> */ {

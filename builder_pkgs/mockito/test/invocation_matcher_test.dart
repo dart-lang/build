@@ -1,7 +1,3 @@
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'package:mockito/src/invocation_matcher.dart';
 import 'package:test/test.dart';
 
@@ -17,12 +13,12 @@ void main() {
       var call3 = stub.say('Guten Tag');
       shouldPass(call1, isInvocation(call2));
       shouldFail(
-          call1,
-          isInvocation(call3),
-          "Expected: say('Guten Tag') "
-              "Actual: <Instance of '${call3.runtimeType}'> "
-              "Which: Does not match say('Hello')",
-          );
+        call1,
+        isInvocation(call3),
+        "Expected: say('Guten Tag') "
+            "Actual: <Instance of '${call3.runtimeType}'> "
+            "Which: Does not match say('Hello')",
+      );
     });
 
     test('named arguments', () {
@@ -31,12 +27,12 @@ void main() {
       var call3 = stub.eat('Chicken', alsoDrink: false);
       shouldPass(call1, isInvocation(call2));
       shouldFail(
-          call1,
-          isInvocation(call3),
-          "Expected: eat('Chicken', 'alsoDrink: false') "
-              "Actual: <Instance of '${call3.runtimeType}'> "
-              "Which: Does not match eat('Chicken', 'alsoDrink: true')",
-          );
+        call1,
+        isInvocation(call3),
+        "Expected: eat('Chicken', 'alsoDrink: false') "
+            "Actual: <Instance of '${call3.runtimeType}'> "
+            "Which: Does not match eat('Chicken', 'alsoDrink: true')",
+      );
     });
 
     test('optional arguments', () {
@@ -45,12 +41,12 @@ void main() {
       var call3 = stub.lie(false);
       shouldPass(call1, isInvocation(call2));
       shouldFail(
-          call1,
-          isInvocation(call3),
-          "Expected: lie(<false>) "
-              "Actual: <Instance of '${call3.runtimeType}'> "
-              "Which: Does not match lie(<true>)",
-          );
+        call1,
+        isInvocation(call3),
+        "Expected: lie(<false>) "
+            "Actual: <Instance of '${call3.runtimeType}'> "
+            "Which: Does not match lie(<true>)",
+      );
     });
 
     test('getter', () {
@@ -60,12 +56,12 @@ void main() {
       var call3 = Stub.lastInvocation;
       shouldPass(call1, isInvocation(call2));
       shouldFail(
-          call1,
-          isInvocation(call3),
-          "Expected: set value= <true> "
-              "Actual: <Instance of '${call3.runtimeType}'> "
-              "Which: Does not match get value",
-          );
+        call1,
+        isInvocation(call3),
+        "Expected: set value= <true> "
+            "Actual: <Instance of '${call3.runtimeType}'> "
+            "Which: Does not match get value",
+      );
     });
 
     test('setter', () {
@@ -77,12 +73,12 @@ void main() {
       var call3 = Stub.lastInvocation;
       shouldPass(call1, isInvocation(call2));
       shouldFail(
-          call1,
-          isInvocation(call3),
-          "Expected: set value= <false> "
-              "Actual: <Instance of '${call3.runtimeType}'> "
-              "Which: Does not match set value= <true>",
-          );
+        call1,
+        isInvocation(call3),
+        "Expected: set value= <false> "
+            "Actual: <Instance of '${call3.runtimeType}'> "
+            "Which: Does not match set value= <true>",
+      );
     });
   });
 
@@ -92,12 +88,12 @@ void main() {
       shouldPass(call, invokes(#say, positionalArguments: ['Hello']));
       shouldPass(call, invokes(#say, positionalArguments: [anything]));
       shouldFail(
-          call,
-          invokes(#say, positionalArguments: [isNull]),
-          "Expected: say(null) "
-              "Actual: <Instance of '${call.runtimeType}'> "
-              "Which: Does not match say('Hello')",
-          );
+        call,
+        invokes(#say, positionalArguments: [isNull]),
+        "Expected: say(null) "
+            "Actual: <Instance of '${call.runtimeType}'> "
+            "Which: Does not match say('Hello')",
+      );
     });
 
     test('named arguments', () {
@@ -105,12 +101,12 @@ void main() {
       shouldPass(call, invokes(#fly, namedArguments: {#miles: 10}));
       shouldPass(call, invokes(#fly, namedArguments: {#miles: greaterThan(5)}));
       shouldFail(
-          call,
-          invokes(#fly, namedArguments: {#miles: 11}),
-          "Expected: fly('miles: 11') "
-              "Actual: <Instance of '${call.runtimeType}'> "
-              "Which: Does not match fly('miles: 10')",
-          );
+        call,
+        invokes(#fly, namedArguments: {#miles: 11}),
+        "Expected: fly('miles: 11') "
+            "Actual: <Instance of '${call.runtimeType}'> "
+            "Which: Does not match fly('miles: 10')",
+      );
     });
   });
 }
