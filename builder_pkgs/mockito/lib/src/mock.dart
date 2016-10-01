@@ -82,7 +82,8 @@ class Mock {
     } else {
       _realCalls.add(new RealCall(this, invocation));
       var cannedResponse = _responses.lastWhere(
-          (cr) => cr.matcher.matches(invocation), orElse: _defaultResponse);
+          (cr) => cr.matcher.matches(invocation),
+          orElse: _defaultResponse);
       var response = cannedResponse.response(invocation);
       return response;
     }
@@ -149,9 +150,10 @@ class _InvocationForTypedArguments extends Invocation {
   // The namedArguments in [invocation] which are null should be represented
   // by a stored value in [_typedNamedArgs]. The null presumably came from
   // [typed].
-  static Map<Symbol,dynamic> _reconstituteNamedArgs(Invocation invocation) {
+  static Map<Symbol, dynamic> _reconstituteNamedArgs(Invocation invocation) {
     var namedArguments = <Symbol, dynamic>{};
-    var _typedNamedArgSymbols = _typedNamedArgs.keys.map((name) => new Symbol(name));
+    var _typedNamedArgSymbols =
+        _typedNamedArgs.keys.map((name) => new Symbol(name));
 
     // Iterate through [invocation]'s named args, validate them, and add them
     // to the return map.
@@ -218,7 +220,8 @@ class _InvocationForTypedArguments extends Invocation {
         positionalIndex++;
       } else {
         // [typed] was not used; add the [_ArgMatcher] from [invocation].
-        positionalArguments.add(invocation.positionalArguments[positionalIndex]);
+        positionalArguments
+            .add(invocation.positionalArguments[positionalIndex]);
         positionalIndex++;
       }
     }
@@ -231,13 +234,8 @@ class _InvocationForTypedArguments extends Invocation {
     return positionalArguments;
   }
 
-  _InvocationForTypedArguments._(
-      this.memberName,
-      this.positionalArguments,
-      this.namedArguments,
-      this.isGetter,
-      this.isMethod,
-      this.isSetter);
+  _InvocationForTypedArguments._(this.memberName, this.positionalArguments,
+      this.namedArguments, this.isGetter, this.isMethod, this.isSetter);
 }
 
 named(var mock, {String name, int hashCode}) => mock
@@ -546,7 +544,7 @@ Verification _makeVerify(bool never) {
     if (_verifyCalls.length == 1) {
       _VerifyCall verifyCall = _verifyCalls.removeLast();
       var result =
-      new VerificationResult(verifyCall.matchingInvocations.length);
+          new VerificationResult(verifyCall.matchingInvocations.length);
       verifyCall._checkWith(never);
       return result;
     } else {
@@ -573,9 +571,9 @@ InOrderVerification get verifyInOrder {
         dt = matched.timeStamp;
       } else {
         Set<Mock> mocks =
-        tmpVerifyCalls.map((_VerifyCall vc) => vc.mock).toSet();
+            tmpVerifyCalls.map((_VerifyCall vc) => vc.mock).toSet();
         List<RealCall> allInvocations =
-        mocks.expand((m) => m._realCalls).toList(growable: false);
+            mocks.expand((m) => m._realCalls).toList(growable: false);
         allInvocations
             .sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
         String otherCalls = "";
@@ -618,7 +616,7 @@ Expectation get when {
 
 void logInvocations(List<Mock> mocks) {
   List<RealCall> allInvocations =
-  mocks.expand((m) => m._realCalls).toList(growable: false);
+      mocks.expand((m) => m._realCalls).toList(growable: false);
   allInvocations.sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
   allInvocations.forEach((inv) {
     print(inv.toString());
