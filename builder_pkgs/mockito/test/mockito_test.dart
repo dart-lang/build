@@ -13,11 +13,13 @@ class RealClass {
   String methodWithObjArgs(RealClass x) => "Real";
   // "SpecialArgs" here means type-parameterized args. But that makes for a long
   // method name.
-  String typeParameterizedFn(
-      List<int> w, List<int> x, [List<int> y, List<int> z]) => "Real";
+  String typeParameterizedFn(List<int> w, List<int> x,
+          [List<int> y, List<int> z]) =>
+      "Real";
   // "SpecialNamedArgs" here means type-parameterized, named args. But that
   // makes for a long method name.
-  String typeParameterizedNamedFn(List<int> w, List<int> x, {List<int> y, List<int> z}) =>
+  String typeParameterizedNamedFn(List<int> w, List<int> x,
+          {List<int> y, List<int> z}) =>
       "Real";
   String get getter => "Real";
   void set setter(String arg) {
@@ -85,7 +87,6 @@ void main() {
     });
   });
 
-
   group("mixin support", () {
     test("should work", () {
       var foo = new MockFoo();
@@ -143,16 +144,16 @@ void main() {
       expect(mock.methodWithListArgs([42]), equals("A lot!"));
       expect(mock.methodWithListArgs([43]), equals("A lot!"));
     });
-    test("should mock method with multiple named args and matchers", (){
+    test("should mock method with multiple named args and matchers", () {
       when(mock.methodWithTwoNamedArgs(any, y: any)).thenReturn("x y");
       when(mock.methodWithTwoNamedArgs(any, z: any)).thenReturn("x z");
       expect(mock.methodWithTwoNamedArgs(42), isNull);
-      expect(mock.methodWithTwoNamedArgs(42, y:18), equals("x y"));
-      expect(mock.methodWithTwoNamedArgs(42, z:17), equals("x z"));
-      expect(mock.methodWithTwoNamedArgs(42, y:18, z:17), isNull);
+      expect(mock.methodWithTwoNamedArgs(42, y: 18), equals("x y"));
+      expect(mock.methodWithTwoNamedArgs(42, z: 17), equals("x z"));
+      expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
       when(mock.methodWithTwoNamedArgs(any, y: any, z: any))
           .thenReturn("x y z");
-      expect(mock.methodWithTwoNamedArgs(42, y:18, z:17), equals("x y z"));
+      expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), equals("x y z"));
     });
     test("should mock method with mix of argument matchers and real things",
         () {
@@ -231,17 +232,19 @@ void main() {
           .thenReturn("A lot!");
       expect(mock.typeParameterizedFn([42], [43], [44]), equals("A lot!"));
     });
-    test("should mock method with an optional typed arg matcher and an optional real arg", () {
+    test(
+        "should mock method with an optional typed arg matcher and an optional real arg",
+        () {
       when(mock.typeParameterizedFn(typed(any), typed(any), [44], typed(any)))
           .thenReturn("A lot!");
-      expect(mock.typeParameterizedFn([42], [43], [44], [45]), equals("A lot!"));
+      expect(
+          mock.typeParameterizedFn([42], [43], [44], [45]), equals("A lot!"));
     });
     test("should mock method with only some typed arg matchers", () {
       when(mock.typeParameterizedFn(typed(any), [43], typed(any)))
           .thenReturn("A lot!");
       expect(mock.typeParameterizedFn([42], [43], [44]), equals("A lot!"));
-      when(mock.typeParameterizedFn(typed(any), [43]))
-          .thenReturn("A bunch!");
+      when(mock.typeParameterizedFn(typed(any), [43])).thenReturn("A bunch!");
       expect(mock.typeParameterizedFn([42], [43]), equals("A bunch!"));
     });
     test("should throw when [typed] used alongside [null].", () {
@@ -252,47 +255,51 @@ void main() {
     });
     test("should mock method when [typed] used alongside matched [null].", () {
       when(mock.typeParameterizedFn(
-          typed(any), argThat(equals(null)), typed(any)))
+              typed(any), argThat(equals(null)), typed(any)))
           .thenReturn("A lot!");
       expect(mock.typeParameterizedFn([42], null, [44]), equals("A lot!"));
     });
     test("should mock method with named, typed arg matcher", () {
-      when(mock.typeParameterizedNamedFn(
-          typed(any), [43], y: typed(any, named: "y")))
+      when(mock.typeParameterizedNamedFn(typed(any), [43],
+              y: typed(any, named: "y")))
           .thenReturn("A lot!");
-      expect(mock.typeParameterizedNamedFn([42], [43], y: [44]), equals("A lot!"));
+      expect(
+          mock.typeParameterizedNamedFn([42], [43], y: [44]), equals("A lot!"));
     });
-    test("should mock method with named, typed arg matcher and an arg matcher", () {
-      when(
-          mock.typeParameterizedNamedFn(
-              typed(any), [43],
+    test("should mock method with named, typed arg matcher and an arg matcher",
+        () {
+      when(mock.typeParameterizedNamedFn(typed(any), [43],
               y: typed(any, named: "y"), z: argThat(contains(45))))
           .thenReturn("A lot!");
       expect(mock.typeParameterizedNamedFn([42], [43], y: [44], z: [45]),
           equals("A lot!"));
     });
-    test("should mock method with named, typed arg matcher and a regular arg", () {
-      when(
-          mock.typeParameterizedNamedFn(
-              typed(any), [43],
-              y: typed(any, named: "y"), z: [45]))
-          .thenReturn("A lot!");
+    test("should mock method with named, typed arg matcher and a regular arg",
+        () {
+      when(mock.typeParameterizedNamedFn(typed(any), [43],
+          y: typed(any, named: "y"), z: [45])).thenReturn("A lot!");
       expect(mock.typeParameterizedNamedFn([42], [43], y: [44], z: [45]),
           equals("A lot!"));
     });
     test("should throw when [typed] used as a named arg, without `named:`", () {
-      expect(() => when(mock.typeParameterizedNamedFn(
-          typed(any), [43], y: typed(any))),
+      expect(
+          () => when(
+              mock.typeParameterizedNamedFn(typed(any), [43], y: typed(any))),
           throwsArgumentError);
     });
-    test("should throw when [typed] used as a positional arg, with `named:`", () {
-      expect(() => when(mock.typeParameterizedNamedFn(
-          typed(any), typed(any, named: "y"))),
+    test("should throw when [typed] used as a positional arg, with `named:`",
+        () {
+      expect(
+          () => when(mock.typeParameterizedNamedFn(
+              typed(any), typed(any, named: "y"))),
           throwsArgumentError);
     });
-    test("should throw when [typed] used as a named arg, with the wrong `named:`", () {
-      expect(() => when(mock.typeParameterizedNamedFn(
-          typed(any), [43], y: typed(any, named: "z"))),
+    test(
+        "should throw when [typed] used as a named arg, with the wrong `named:`",
+        () {
+      expect(
+          () => when(mock.typeParameterizedNamedFn(typed(any), [43],
+              y: typed(any, named: "z"))),
           throwsArgumentError);
     });
   });
@@ -344,9 +351,9 @@ void main() {
       mock.methodWithObjArgs(m1);
       expectFail(
           "No matching calls. All calls: MockedClass.methodWithObjArgs(m1)",
-              () {
-            verify(mock.methodWithObjArgs(new MockedClass()));
-          });
+          () {
+        verify(mock.methodWithObjArgs(new MockedClass()));
+      });
       verify(mock.methodWithObjArgs(m1));
     });
     test("should mock method with list args", () {
@@ -376,10 +383,15 @@ void main() {
     test("should mock method with argument matcher and capturer", () {
       mock.methodWithNormalArgs(50);
       mock.methodWithNormalArgs(100);
-      expect(verify(mock.methodWithNormalArgs(
-          captureThat(greaterThan(75)))).captured.single, equals(100));
-      expect(verify(mock
-              .methodWithNormalArgs(captureThat(lessThan(75)))).captured.single,
+      expect(
+          verify(mock.methodWithNormalArgs(captureThat(greaterThan(75))))
+              .captured
+              .single,
+          equals(100));
+      expect(
+          verify(mock.methodWithNormalArgs(captureThat(lessThan(75))))
+              .captured
+              .single,
           equals(50));
     });
     test("should mock method with mix of argument matchers and real things",
@@ -417,9 +429,12 @@ void main() {
     test("should verify method with argument capturer", () {
       mock.typeParameterizedFn([50], [17]);
       mock.typeParameterizedFn([100], [17]);
-      expect(verify(mock.typeParameterizedFn(
-          typed(captureAny), [17])).captured,
-          equals([[50], [100]]));
+      expect(
+          verify(mock.typeParameterizedFn(typed(captureAny), [17])).captured,
+          equals([
+            [50],
+            [100]
+          ]));
     });
   });
   group("verify() qualifies", () {
@@ -580,21 +595,22 @@ void main() {
     });
     test("should captureOut list arguments", () {
       mock.methodWithListArgs([42]);
-      expect(verify(
-          mock.methodWithListArgs(captureAny)).captured.single,
+      expect(verify(mock.methodWithListArgs(captureAny)).captured.single,
           equals([42]));
     });
     test("should captureOut multiple arguments", () {
       mock.methodWithPositionalArgs(1, 2);
-      expect(verify(
-              mock.methodWithPositionalArgs(captureAny, captureAny)).captured,
+      expect(
+          verify(mock.methodWithPositionalArgs(captureAny, captureAny))
+              .captured,
           equals([1, 2]));
     });
     test("should captureOut with matching arguments", () {
       mock.methodWithPositionalArgs(1);
       mock.methodWithPositionalArgs(2, 3);
-      expect(verify(
-              mock.methodWithPositionalArgs(captureAny, captureAny)).captured,
+      expect(
+          verify(mock.methodWithPositionalArgs(captureAny, captureAny))
+              .captured,
           equals([2, 3]));
     });
     test("should captureOut multiple invocations", () {
