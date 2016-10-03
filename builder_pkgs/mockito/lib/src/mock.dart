@@ -526,15 +526,15 @@ class VerificationResult {
 
 typedef dynamic Answering(Invocation realInvocation);
 
-typedef VerificationResult _Verification(matchingInvocations);
+typedef VerificationResult Verification(matchingInvocations);
 
 typedef void _InOrderVerification(List<dynamic> recordedInvocations);
 
-_Verification get verifyNever => _makeVerify(true);
+Verification get verifyNever => _makeVerify(true);
 
-_Verification get verify => _makeVerify(false);
+Verification get verify => _makeVerify(false);
 
-_Verification _makeVerify(bool never) {
+Verification _makeVerify(bool never) {
   if (_verifyCalls.isNotEmpty) {
     throw new StateError(_verifyCalls.join());
   }

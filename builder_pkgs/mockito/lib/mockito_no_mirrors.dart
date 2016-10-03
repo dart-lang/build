@@ -21,6 +21,7 @@ export 'src/mock.dart'
         verifyNoMoreInteractions,
         verifyZeroInteractions,
         VerificationResult,
+        Verification,
 
         // -- misc
         clearInteractions,
