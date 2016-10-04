@@ -1,2 +1,2 @@
-export 'src/mock.dart' hide setDefaultResponse;
-export 'src/spy.dart';
+export 'mockito_no_mirrors.dart';
+export 'src/spy.dart' show spy;

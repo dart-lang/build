@@ -357,8 +357,6 @@ class InvocationMatcher {
   bool isMatchingArg(roleArg, actArg) {
     if (roleArg is _ArgMatcher) {
       return roleArg._matcher.matches(actArg, {});
-//    } else if(roleArg is Mock){
-//      return identical(roleArg, actArg);
     } else {
       return equals(roleArg).matches(actArg, {});
     }
@@ -385,47 +383,49 @@ class _TimeStampProvider {
 }
 
 class RealCall {
+  final Mock mock;
+  final Invocation invocation;
+  final DateTime timeStamp;
+
+  bool verified = false;
+
+  RealCall(this.mock, this.invocation) : timeStamp = _timer.now();
+
+  String toString() {
+    var args = invocation.positionalArguments
+        .map((v) => v == null ? "null" : v.toString())
+        .join(", ");
+    if (invocation.namedArguments.isNotEmpty) {
+      var namedArgs = invocation.namedArguments.keys
+          .map((key) =>
+              "${_symbolToString(key)}: ${invocation.namedArguments[key]}")
+          .join(", ");
+      args += ", {$namedArgs}";
+    }
+
+    var method = _symbolToString(invocation.memberName);
+    if (invocation.isMethod) {
+      method = "$method($args)";
+    } else if (invocation.isGetter) {
+      method = "$method";
+    } else if (invocation.isSetter) {
+      method = "$method=$args";
+    } else {
+      throw new StateError(
+          'Invocation should be getter, setter or a method call.');
+    }
+
+    var verifiedText = verified ? "[VERIFIED] " : "";
+    return "$verifiedText$mock.$method";
+  }
+
   // This used to use MirrorSystem, which cleans up the Symbol() wrapper.
   // Since this toString method is just used in Mockito's own tests, it's not
   // a big deal to massage the toString a bit.
   //
   // Input: Symbol("someMethodName")
-  static String _symbolToString(Symbol symbol) {
-    return symbol.toString().split('"')[1];
-  }
-
-  DateTime _timeStamp;
-  final Mock mock;
-  final Invocation invocation;
-  bool verified = false;
-  RealCall(this.mock, this.invocation) {
-    _timeStamp = _timer.now();
-  }
-
-  DateTime get timeStamp => _timeStamp;
-
-  String toString() {
-    var verifiedText = verified ? "[VERIFIED] " : "";
-    List<String> posArgs = invocation.positionalArguments
-        .map((v) => v == null ? "null" : v.toString())
-        .toList();
-    List<String> mapArgList = invocation.namedArguments.keys.map((key) {
-      return "${_symbolToString(key)}: ${invocation.namedArguments[key]}";
-    }).toList(growable: false);
-    if (mapArgList.isNotEmpty) {
-      posArgs.add("{${mapArgList.join(", ")}}");
-    }
-    String args = posArgs.join(", ");
-    String method = _symbolToString(invocation.memberName);
-    if (invocation.isMethod) {
-      method = ".$method($args)";
-    } else if (invocation.isGetter) {
-      method = ".$method";
-    } else {
-      method = ".$method=$args";
-    }
-    return "$verifiedText$mock$method";
-  }
+  static String _symbolToString(Symbol symbol) =>
+      symbol.toString().split('"')[1];
 }
 
 class _WhenCall {
@@ -528,7 +528,7 @@ typedef dynamic Answering(Invocation realInvocation);
 
 typedef VerificationResult Verification(matchingInvocations);
 
-typedef void InOrderVerification(recordedInvocations);
+typedef void _InOrderVerification(List<dynamic> recordedInvocations);
 
 Verification get verifyNever => _makeVerify(true);
 
@@ -553,12 +553,12 @@ Verification _makeVerify(bool never) {
   };
 }
 
-InOrderVerification get verifyInOrder {
+_InOrderVerification get verifyInOrder {
   if (_verifyCalls.isNotEmpty) {
     throw new StateError(_verifyCalls.join());
   }
   _verificationInProgress = true;
-  return (verifyCalls) {
+  return (List<dynamic> _) {
     _verificationInProgress = false;
     DateTime dt = new DateTime.fromMillisecondsSinceEpoch(0);
     var tmpVerifyCalls = new List.from(_verifyCalls);
@@ -584,9 +584,9 @@ InOrderVerification get verifyInOrder {
             "Matching call #${tmpVerifyCalls.indexOf(verifyCall)} not found.$otherCalls");
       }
     }
-    matchedCalls.forEach((rc) {
-      rc.verified = true;
-    });
+    for (var call in matchedCalls) {
+      call.verified = true;
+    }
   };
 }
 
@@ -623,7 +623,7 @@ void logInvocations(List<Mock> mocks) {
   });
 }
 
-/// Should only be used during Mockito testing.
+/// Only for mockito testing.
 void resetMockitoState() {
   _whenInProgress = false;
   _verificationInProgress = false;

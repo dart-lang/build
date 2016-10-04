@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
-import 'package:mockito/mockito.dart';
+
+import 'package:mockito/src/mock.dart';
+import 'package:mockito/src/spy.dart';
 
 class RealClass {
   String methodWithoutArgs() => "Real";
