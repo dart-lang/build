@@ -121,12 +121,14 @@ Verification in order is flexible - you don't have to verify all interactions on
 ```dart
   verifyZeroInteractions(cat);
 ```
+
 ## Finding redundant invocations
 ```dart
 cat.sound();
 verify(cat.sound());
 verifyNoMoreInteractions(cat);
 ```
+
 ## Capturing arguments for further assertions
 ```dart
 //simple capture
@@ -141,6 +143,22 @@ cat.eatFood("Milk");
 cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureThat(startsWith("F")).captured, ["Fish"]);
 ```
+
+## Resetting mocks
+```dart
+//clearing collected interactions
+cat.eatFood("Fish");
+clearInteractions(cat);
+cat.eatFood("Fish");
+verify(cat.eatFood("Fish")).called(1);
+//resetting stubs and collected interactions
+when(cat.eatFood("Fish")).thenReturn(true);
+cat.eatFood("Fish");
+reset(cat);
+when(cat.eatFood(any)).thenReturn(false);
+expect(cat.eatFood("Fish"), false);
+```
+
 ## Spy
 ```dart
 //spy creation
@@ -151,6 +169,12 @@ when(cat.sound()).thenReturn("Purr");
 expect(cat.sound(), "Purr");  
 //using real object
 expect(cat.lives, 9);   
+```
+
+## Debugging
+```dart
+//printing all collected invocations of any mock methods of a list of mock objects
+logInvocations([catOne, catTwo]);
 ```
 
 ## Strong mode compliance

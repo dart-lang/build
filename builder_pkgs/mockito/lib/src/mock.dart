@@ -242,11 +242,13 @@ named(var mock, {String name, int hashCode}) => mock
   .._givenName = name
   .._givenHashCode = hashCode;
 
+/// Clear stubs of, and collected interactions with [mock].
 void reset(var mock) {
   mock._realCalls.clear();
   mock._responses.clear();
 }
 
+/// Clear the collected interactions with [mock].
 void clearInteractions(var mock) {
   mock._realCalls.clear();
 }
@@ -614,6 +616,7 @@ Expectation get when {
   };
 }
 
+/// Print all collected invocations of any mock methods of [mocks].
 void logInvocations(List<Mock> mocks) {
   List<RealCall> allInvocations =
       mocks.expand((m) => m._realCalls).toList(growable: false);
