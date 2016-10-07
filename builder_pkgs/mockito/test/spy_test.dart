@@ -1,5 +1,5 @@
 import 'package:mockito/src/mock.dart' show resetMockitoState;
-import 'package:mockito/deprecated.dart';
+import 'package:mockito/mirrors.dart';
 import 'package:test/test.dart';
 
 import 'mockito_test.dart' show MockedClass, RealClass;
@@ -19,7 +19,7 @@ void main() {
 
   group("spy", () {
     setUp(() {
-      mock = spy(new MockedClass(), new RealClass());
+      mock = spy/*<RealClass>*/(new MockedClass(), new RealClass());
     });
 
     test("should delegate to real object by default", () {

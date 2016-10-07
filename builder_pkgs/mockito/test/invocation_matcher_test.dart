@@ -54,7 +54,7 @@ void main() {
       var call2 = stub.value;
       stub.value = true;
       var call3 = Stub.lastInvocation;
-      shouldPass(call1, isInvocation(call2));
+      shouldPass(call1, isInvocation(call2 as Invocation));
       shouldFail(
         call1,
         isInvocation(call3),
