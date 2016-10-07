@@ -1,3 +1,10 @@
+## 2.0.0-dev
+
+* Deprecated usage of `spy` and any `dart:mirrors` based API. Users may
+  import as `package:mockito/deprecated.dart` until the 2.0.0 final
+  release.
+* Deprecated `mockito_no_mirrors.dart`; replace with `mockito.dart`.
+
 ## 1.0.1
 
 * Add a new `thenThrow` method to the API.
