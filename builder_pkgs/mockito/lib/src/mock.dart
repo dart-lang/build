@@ -1,6 +1,5 @@
 // Warning: Do not import dart:mirrors in this library, as it's exported via
-// lib/mockito_no_mirrors.dart, which is used for Dart AOT projects such as
-// Flutter.
+// lib/mockito.dart, which is used for Dart AOT projects such as Flutter.
 
 import 'package:meta/meta.dart';
 import 'package:test/test.dart';

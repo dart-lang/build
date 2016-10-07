@@ -1,11 +1,17 @@
 // This file is intentionally separated from 'mock.dart' in order to avoid
-// bringing in the mirrors dependency into mockito_no_mirrors.dart.
+// bringing in the mirrors dependency into mockito.dart.
 import 'dart:mirrors';
 
-import 'mock.dart' show CannedResponse, setDefaultResponse;
+import 'mock.dart' show CannedResponse, Mock, setDefaultResponse;
 
-dynamic spy(dynamic mock, dynamic spiedObject) {
-  var mirror = reflect(spiedObject);
+/// Sets the default response of [mock] to be delegated to [spyOn].
+///
+/// __Example use__:
+///     var mockAnimal = new MockAnimal();
+///     var realAnimal = new RealAnimal();
+///     spy(mockAnimal, realAnimal);
+/*=E*/ spy/*<E>*/(Mock mock, Object /*=E*/ spyOn) {
+  var mirror = reflect(spyOn);
   setDefaultResponse(
       mock,
       () => new CannedResponse(null,

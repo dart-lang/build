@@ -1,3 +1,10 @@
+## 2.0.0-dev
+
+* Remove export of `spy` and any `dart:mirrors` based API from
+  `mockito.dart`. Users may import as `package:mockito/mirrors.dart`
+  going forward.
+* Deprecated `mockito_no_mirrors.dart`; replace with `mockito.dart`.
+
 ## 1.0.1
 
 * Add a new `thenThrow` method to the API.
