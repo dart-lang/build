@@ -115,6 +115,9 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
       transform.declareOutput(toBarbackAssetId(outputId));
     }
   }
+
+  @override
+  String toString() => 'BuilderTransformer: [$builders]';
 }
 
 /// Very simple [AssetReader] which uses a [Transform].
