@@ -1,4 +1,5 @@
-# Changelog
+## 0.4.1+1
+- Support analyzer 0.29.x
 
 ## 0.4.1
 - Support analyzer 0.28.x
