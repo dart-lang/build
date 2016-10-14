@@ -21,6 +21,7 @@ class ResolversSpy implements Resolvers {
       new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
           useSharedSources: true);
 
+  @override
   Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
       bool resolveAllConstants) async {
     lastResolved = await _resolvers.get(toBarbackTransform(buildStep),
