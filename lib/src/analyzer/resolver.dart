@@ -40,8 +40,7 @@ class Resolver {
 
 class Resolvers {
   static final code_transformers.Resolvers _resolvers =
-      new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
-          useSharedSources: true);
+      new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
 
   const Resolvers();
 
