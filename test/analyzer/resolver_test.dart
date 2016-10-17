@@ -18,8 +18,7 @@ import '../common/common.dart';
 class ResolversSpy implements Resolvers {
   code_transformers.Resolver lastResolved;
   static final code_transformers.Resolvers _resolvers =
-      new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
-          useSharedSources: true);
+      new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
 
   @override
   Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
