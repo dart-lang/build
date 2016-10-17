@@ -1,3 +1,7 @@
+## 0.4.1+2
+- Stop using removed argument `useSharedSources` when constructing Resolvers
+- Support code_transformers 0.5.x
+
 ## 0.4.1+1
 - Support analyzer 0.29.x
 
