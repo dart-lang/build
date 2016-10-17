@@ -34,7 +34,7 @@ void main() {
         var fullInputPath = _testFilePath(inputPath);
 
         var libElement = getLibraryElementForSourceFile(context, fullInputPath);
-        
+
         var fullLibPath = _testFilePath(expectedLibPath);
 
         expect(p.fromUri(libElement.source.uri), fullLibPath);
