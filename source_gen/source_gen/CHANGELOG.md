@@ -1,3 +1,7 @@
+## 0.5.1+4
+
+* Support `package:analyzer` 0.29.0
+
 ## 0.5.1+3
 
 * Upgrade to be compatible with the breaking changes in analyzer 0.28.0
