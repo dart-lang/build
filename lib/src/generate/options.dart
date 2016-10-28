@@ -53,27 +53,7 @@ class BuildOptions {
     /// Set up logging
     logLevel ??= Level.INFO;
     Logger.root.level = logLevel;
-    onLog ??= (LogRecord record) {
-      var color;
-      if (record.level < Level.WARNING) {
-        color = _cyan;
-      } else if (record.level < Level.SEVERE) {
-        color = _yellow;
-      } else {
-        color = _red;
-      }
-      var message = '${_isPosixTerminal ? '\x1b[2K\r' : ''}'
-          '$color[${record.level}]$_endColor ${record.loggerName}: '
-          '${record.message}${record.error != null ? "\n${record.error}" : ""}'
-          '${record.stackTrace != null ? "\n${record.stackTrace}" : ""}'
-          '${record.level > Level.INFO || !_isPosixTerminal ? '\n' : ''}';
-      if (record.level >= Level.SEVERE) {
-        stderr.write(message);
-      } else {
-        stdout.write(message);
-      }
-    };
-    logListener = Logger.root.onRecord.listen(onLog);
+    logListener = Logger.root.onRecord.listen(onLog ?? _defaultLogListener);
 
     /// Set up other defaults.
     address ??= 'localhost';
@@ -101,3 +81,24 @@ final _red = _isPosixTerminal ? '\u001b[31m' : '';
 final _endColor = _isPosixTerminal ? '\u001b[0m' : '';
 final _isPosixTerminal =
     !Platform.isWindows && stdioType(stdout) == StdioType.TERMINAL;
+
+void _defaultLogListener(LogRecord record) {
+  var color;
+  if (record.level < Level.WARNING) {
+    color = _cyan;
+  } else if (record.level < Level.SEVERE) {
+    color = _yellow;
+  } else {
+    color = _red;
+  }
+  var message = '${_isPosixTerminal ? '\x1b[2K\r' : ''}'
+      '$color[${record.level}]$_endColor ${record.loggerName}: '
+      '${record.message}${record.error != null ? "\n${record.error}" : ""}'
+      '${record.stackTrace != null ? "\n${record.stackTrace}" : ""}'
+      '${record.level > Level.INFO || !_isPosixTerminal ? '\n' : ''}';
+  if (record.level >= Level.SEVERE) {
+    stderr.write(message);
+  } else {
+    stdout.write(message);
+  }
+}
