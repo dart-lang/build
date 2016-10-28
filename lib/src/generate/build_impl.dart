@@ -171,19 +171,11 @@ class BuildImpl {
           '${result.outputs.length} outputs\n\n');
     } else {
       if (result.exception is FatalBuildException) {
+        // TODO(???) Really bad idea. Should not set exit codes in libraries!
         exitCode = 1;
       }
-      var exceptionString =
-          result.exception != null ? '\n${result.exception}' : '';
-
-      /// For a [FatalBuildException], the message is more important than the
-      /// stack trace so we hide it (at least for now).
-      var stackTraceString =
-          result.stackTrace != null && result.exception is! FatalBuildException
-              ? '\n${result.stackTrace}'
-              : '';
-      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms'
-          '$exceptionString$stackTraceString\n');
+      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms',
+          result.exception, result.stackTrace);
     }
     return result;
   }
