@@ -66,7 +66,9 @@ void main() {
   group('Resolver', () {
     test('should handle initial files', () {
       return validateResolver(
-          inputs: {'a|web/main.dart': ' main() {}',},
+          inputs: {
+            'a|web/main.dart': ' main() {}',
+          },
           validator: (resolver) {
             var source = (_resolvers.lastResolved as dynamic).sources[
                 toBarbackAssetId(entryPoint)];
@@ -242,8 +244,15 @@ void main() {
           },
           validator: (resolver) {
             var libs = resolver.libraries.where((l) => !l.isInSdk);
-            expect(libs.map((l) => l.name),
-                unorderedEquals(['a.main', 'a.a', 'a.b', 'a.c', 'a.d',]));
+            expect(
+                libs.map((l) => l.name),
+                unorderedEquals([
+                  'a.main',
+                  'a.a',
+                  'a.b',
+                  'a.c',
+                  'a.d',
+                ]));
           });
     });
 

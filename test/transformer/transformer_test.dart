@@ -98,7 +98,9 @@ void main() {
           new BuilderTransformer([new CopyBuilder()])
         ]
       ],
-      {'a|web/a.txt': 'hello',},
+      {
+        'a|web/a.txt': 'hello',
+      },
       {'a|web/a.txt.copy': 'hello'},
       expectBarbackErrors: true);
 

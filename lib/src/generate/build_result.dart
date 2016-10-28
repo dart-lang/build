@@ -47,7 +47,10 @@ $stackTrace
 }
 
 /// The status of a build.
-enum BuildStatus { success, failure, }
+enum BuildStatus {
+  success,
+  failure,
+}
 
 /// The type of a build.
 enum BuildType { incremental, full }

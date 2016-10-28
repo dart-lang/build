@@ -49,7 +49,9 @@ void main() {
           ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
       result = await nextResult(results);
-      checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
+      checkOutputs({
+        'a|web/a.txt.copy': 'b',
+      }, result, writer.assets);
     });
 
     test('blocks serving files until the build is done', () async {
@@ -96,7 +98,9 @@ void main() {
       await wait(250);
       buildBlocker2.complete();
       result = await nextResult(results);
-      checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
+      checkOutputs({
+        'a|web/a.txt.copy': 'b',
+      }, result, writer.assets);
 
       /// Make sure we actually see the final request finish.
       return done.future;

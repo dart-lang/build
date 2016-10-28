@@ -237,7 +237,8 @@ class BuildImpl {
           // Test runner uses a `data` scheme, don't invalidate for those.
           if (uri.path.contains('package:test')) return;
           continue unknownUri;
-        unknownUri: default:
+        unknownUri:
+        default:
           _logger.info('Unrecognized uri scheme `${uri.scheme}` found for '
               'library in build script, falling back on full rebuild.');
           if (!completer.isCompleted) completer.complete(true);

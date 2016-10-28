@@ -38,14 +38,18 @@ void main() {
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+        }, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'b',
+        }, result, writer.assets);
       });
 
       test('rebuilds on new files', () async {
@@ -55,14 +59,18 @@ void main() {
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+        }, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/b.txt', 'b'));
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
-        checkOutputs({'a|web/b.txt.copy': 'b',}, result, writer.assets);
+        checkOutputs({
+          'a|web/b.txt.copy': 'b',
+        }, result, writer.assets);
         // Previous outputs should still exist.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')].value, 'a');
       });
@@ -70,13 +78,20 @@ void main() {
       test('rebuilds on deleted files', () async {
         var writer = new InMemoryAssetWriter();
         var results = <BuildResult>[];
-        startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b',},
+        startWatch(
+                copyAPhaseGroup,
+                {
+                  'a|web/a.txt': 'a',
+                  'a|web/b.txt': 'b',
+                },
                 writer)
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
-            result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+          'a|web/b.txt.copy': 'b',
+        }, result, writer.assets);
 
         await writer.delete(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(new WatchEvent(
@@ -101,8 +116,10 @@ void main() {
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b',},
-            result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+          'a|web/b.txt.copy': 'b',
+        }, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/c.txt', 'c'));
         FakeWatcher.notifyWatchers(
@@ -136,7 +153,9 @@ void main() {
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+        }, result, writer.assets);
 
         /// Pretend like a part of the dart script got updated.
         await writer.writeAsString(makeAsset('test|lib/test.dart', ''),
@@ -167,7 +186,9 @@ void main() {
         var result = await nextResult(results);
         // Should ignore the files under the `b` package, even though they
         // match the input set.
-        checkOutputs({'a|web/a.txt.copy': 'a',}, result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+        }, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
         await writer.writeAsString(makeAsset('b|web/b.txt', 'c'));
@@ -179,7 +200,9 @@ void main() {
         result = await nextResult(results);
         // Ignores the modification under the `b` package, even though it
         // matches the input set.
-        checkOutputs({'a|web/a.txt.copy': 'b',}, result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'b',
+        }, result, writer.assets);
       });
 
       test('converts packages paths to absolute ones', () async {
@@ -189,14 +212,18 @@ void main() {
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|lib/a.txt.copy': 'a',}, result, writer.assets);
+        checkOutputs({
+          'a|lib/a.txt.copy': 'a',
+        }, result, writer.assets);
 
         await writer.writeAsString(makeAsset('a|lib/a.txt', 'b'));
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'packages', 'a', 'a.txt')));
 
         result = await nextResult(results);
-        checkOutputs({'a|lib/a.txt.copy': 'b',}, result, writer.assets);
+        checkOutputs({
+          'a|lib/a.txt.copy': 'b',
+        }, result, writer.assets);
       });
     });
 
@@ -296,8 +323,10 @@ void main() {
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a',},
-            result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+          'a|web/a.txt.copy.copy': 'a',
+        }, result, writer.assets);
 
         await writer.delete(makeAssetId('a|web/a.txt.copy'));
         FakeWatcher.notifyWatchers(new WatchEvent(
@@ -305,8 +334,10 @@ void main() {
 
         result = await nextResult(results);
         // Should rebuild the generated asset and its outputs.
-        checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a',},
-            result, writer.assets);
+        checkOutputs({
+          'a|web/a.txt.copy': 'a',
+          'a|web/a.txt.copy.copy': 'a',
+        }, result, writer.assets);
       });
     });
 

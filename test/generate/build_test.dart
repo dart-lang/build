@@ -92,8 +92,13 @@ void main() {
         phases.newPhase()
           ..addAction(new CopyBuilder(), new InputSet('a', ['lib/a.txt']));
 
-        await testPhases(phases, {'a|lib/a.txt': 'a', 'a|lib/b.txt': 'b',},
-            outputs: {'a|lib/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b',});
+        await testPhases(phases, {
+          'a|lib/a.txt': 'a',
+          'a|lib/b.txt': 'b',
+        }, outputs: {
+          'a|lib/a.txt.copy': 'a',
+          'a|lib/b.txt.copy': 'b',
+        });
       });
     });
 
@@ -283,7 +288,10 @@ void main() {
             'a|lib/b.txt.copy.clone': 'b',
             'a|$assetGraphPath': JSON.encode(graph.serialize()),
           },
-          outputs: {'a|lib/a.txt.copy': 'b', 'a|lib/a.txt.copy.clone': 'b',},
+          outputs: {
+            'a|lib/a.txt.copy': 'b',
+            'a|lib/a.txt.copy.clone': 'b',
+          },
           writer: writer);
     });
 

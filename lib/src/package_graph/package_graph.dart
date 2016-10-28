@@ -28,6 +28,7 @@ class PackageGraph {
         addDeps(dep);
       }
     }
+
     addDeps(root);
 
     return new PackageGraph._(root, allPackages);

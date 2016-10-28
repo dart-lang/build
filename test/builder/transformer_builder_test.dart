@@ -18,8 +18,11 @@ void main() {
     final phases = new PhaseGroup.singleAction(
         copyTransformerBuilder, new InputSet('a', ['web/*.txt']));
 
-    testPhases(phases, {'a|web/a.txt': 'a',},
-        outputs: {'a|web/a.txt.copy': 'a',});
+    testPhases(phases, {
+      'a|web/a.txt': 'a',
+    }, outputs: {
+      'a|web/a.txt.copy': 'a',
+    });
   });
 }
 
