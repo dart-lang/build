@@ -45,6 +45,10 @@ class FileBasedAssetReader implements AssetReader {
     var seenAssets = new Set<AssetId>();
     for (var inputSet in inputSets) {
       var packageNode = packageGraph[inputSet.package];
+      if (packageNode == null) {
+        throw new ArgumentError(
+            "Could not find inputSet.package '${inputSet.package}'.");
+      }
       var packagePath = packageNode.location.toFilePath();
       for (var glob in inputSet.globs) {
         var fileStream = glob.list(followLinks: false, root: packagePath).where(
