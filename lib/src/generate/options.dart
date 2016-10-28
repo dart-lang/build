@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_static/shelf_static.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/cache.dart';
@@ -91,11 +92,29 @@ void _defaultLogListener(LogRecord record) {
   } else {
     color = _red;
   }
-  var message = '${_isPosixTerminal ? '\x1b[2K\r' : ''}'
+  var header = '${_isPosixTerminal ? '\x1b[2K\r' : ''}'
       '$color[${record.level}]$_endColor ${record.loggerName}: '
-      '${record.message}${record.error != null ? "\n${record.error}" : ""}'
-      '${record.stackTrace != null ? "\n${record.stackTrace}" : ""}'
-      '${record.level > Level.INFO || !_isPosixTerminal ? '\n' : ''}';
+      '${record.message}';
+  var lines = <Object>[header];
+
+  if (record.error != null) {
+    lines.add(record.error);
+  }
+
+  if (record.stackTrace != null) {
+    if (record.stackTrace is Trace) {
+      lines.add((record.stackTrace as Trace).terse);
+    } else {
+      lines.add(record.stackTrace);
+    }
+  }
+
+  if (record.level > Level.INFO || !_isPosixTerminal) {
+    lines.add('');
+  }
+
+  var message = lines.join('\n');
+
   if (record.level >= Level.SEVERE) {
     stderr.write(message);
   } else {
