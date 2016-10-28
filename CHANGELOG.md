@@ -1,3 +1,9 @@
+## 0.4.1+3
+
+- With the default logger, print exceptions with a terse stack trace.
+- Provide a better error when an inputSet package cannot be found.
+- Fix `dev_dependencies` so tests run.
+
 ## 0.4.1+2
 - Stop using removed argument `useSharedSources` when constructing Resolvers
 - Support code_transformers 0.5.x
