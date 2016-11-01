@@ -1,3 +1,7 @@
+## 0.5.1+5
+
+* Remove "experimental" comment in `README.md`.
+
 ## 0.5.1+4
 
 * Support `package:analyzer` 0.29.0

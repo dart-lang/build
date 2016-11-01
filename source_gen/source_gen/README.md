@@ -1,8 +1,6 @@
 [![Build Status](https://travis-ci.org/dart-lang/source_gen.svg?branch=master)](https://travis-ci.org/dart-lang/source_gen)
 [![Coverage Status](https://coveralls.io/repos/dart-lang/source_gen/badge.svg?branch=master)](https://coveralls.io/r/dart-lang/source_gen)
 
-_**Highly experimental. Expect breaking changes.**_
-
 `source_gen` provides:
 
 * A **tool** for generating code that is part of your Dart project.
