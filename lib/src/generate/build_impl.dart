@@ -256,7 +256,12 @@ class BuildImpl {
             node is! GeneratedAssetNode ||
             (node as GeneratedAssetNode).wasOutput)
         .map((node) async {
-      var exists = await _reader.hasInput(node.id);
+      bool exists;
+      try {
+        exists = await _reader.hasInput(node.id);
+      } on PackageNotFoundException catch(_) {
+        exists = false;
+      }
       if (!exists) {
         updates[node.id] = ChangeType.REMOVE;
         return;

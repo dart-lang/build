@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 
 import 'package:e2e_example/copy_builder.dart';
+import 'package:e2e_example/packages_dir_builder.dart';
 
 Future main() async {
   /// Builds a full package dependency graph for the current package.
@@ -16,6 +17,9 @@ Future main() async {
   /// packages to run on. This simplifies user code a lot, and helps to mitigate
   /// the transitive deps issue.
   CopyBuilder.addPhases(phases, graph);
+
+  /// Adds all the phases necessary to copy all files into a fake packages dir!
+  PackagesDirBuilder.addPhases(phases, graph);
 
   watch(phases);
 }
