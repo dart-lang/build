@@ -47,13 +47,17 @@ class FileBasedAssetReader implements AssetReader {
       var packageNode = packageGraph[inputSet.package];
       if (packageNode == null) {
         throw new ArgumentError(
-            "Could not find inputSet.package '${inputSet.package}'.");
+            "Could not find package '${inputSet.package}' which was listed as "
+            "an input. Please ensure you have that package in your deps, or "
+            "remove it from your input sets.");
       }
       var packagePath = packageNode.location.toFilePath();
       for (var glob in inputSet.globs) {
         var fileStream = glob.list(followLinks: false, root: packagePath).where(
             (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]));
         await for (var entity in fileStream) {
+          // TODO(jakemac): Where do these files come from???
+          if (path.basename(entity.path).startsWith('._')) continue;
           var id = _fileToAssetId(entity, packageNode);
           if (!seenAssets.add(id)) continue;
           yield id;
