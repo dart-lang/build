@@ -26,7 +26,6 @@ class PackagesDirBuilder extends Builder {
   @override
   List<AssetId> declareOutputs(AssetId inputId) => [_copiedAssetId(inputId)];
 
-  /// Only runs on the root package, and copies all *.txt files.
   static void addPhases(PhaseGroup group, PackageGraph graph) {
     var builder = new PackagesDirBuilder(graph.root.name, 'web');
     var phase = group.newPhase();
