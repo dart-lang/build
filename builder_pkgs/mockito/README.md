@@ -306,3 +306,5 @@ values anymore but their matchers. So `mockUtils.stringUtils` will *not* return 
 
 You can look at the `when` and `Mock.noSuchMethod` implementations to see how it's done.
 It's very straightforward.
+
+**NOTE:** This is not an official Google product
