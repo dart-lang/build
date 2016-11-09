@@ -1,3 +1,8 @@
+## 0.5.0
+
+- **BREAKING** BuilderTransformer must be constructed with a single Builder. Use
+  the MultiplexingBuilder to cover cases with a list of builders
+
 ## 0.4.1+3
 
 - With the default logger, print exceptions with a terse stack trace.
