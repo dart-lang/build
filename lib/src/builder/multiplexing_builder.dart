@@ -26,7 +26,8 @@ class MultiplexingBuilder implements Builder {
   /// If multiple builders declare the same output it will appear in this List
   /// more than once. This should be considered an error.
   @override
-  List<AssetId> declareOutputs(AssetId inputId) => _collectOutputs(inputId);
+  List<AssetId> declareOutputs(AssetId inputId) =>
+      _collectOutputs(inputId).toList();
 
   Iterable<AssetId> _collectOutputs(AssetId id) sync* {
     for (var builder in _builders) {
