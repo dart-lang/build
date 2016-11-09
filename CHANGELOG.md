@@ -2,6 +2,9 @@
 
 - **BREAKING** BuilderTransformer must be constructed with a single Builder. Use
   the MultiplexingBuilder to cover cases with a list of builders
+- When using a MultiplexingBuilder if multiple Builders have overlapping outputs
+  the entire step will not run rather than running builders up to the point
+  where there is an overlap
 
 ## 0.4.1+3
 
