@@ -53,7 +53,8 @@ void main() {
   ], {
     'a|web/a.txt': 'hello',
   }, {}, messages: [
-    _fileExistsError('CopyBuilder', ['a|web/a.txt.copy']),
+    _fileExistsError(
+        '${[new CopyBuilder(), new CopyBuilder()]}', ['a|web/a.txt.copy']),
   ]);
 
   testPhases('multiple phases', [
@@ -87,7 +88,7 @@ void main() {
       {'a|web/a.txt': 'hello', 'a|web/a.txt.copy': 'hello'},
       {},
       messages: [
-        _fileExistsError("CopyBuilder", ["a|web/a.txt.copy"]),
+        _fileExistsError('${new CopyBuilder()}', ['a|web/a.txt.copy']),
       ],
       expectBarbackErrors: true);
 
@@ -112,7 +113,7 @@ void main() {
       {'a|web/a.txt': 'hello'},
       {'a|web/a.txt.copy': 'hello'},
       messages: [
-        _fileExistsError("CopyBuilder", ["a|web/a.txt.copy"]),
+        _fileExistsError('${new CopyBuilder()}', ['a|web/a.txt.copy']),
       ],
       expectBarbackErrors: true);
 
@@ -149,7 +150,7 @@ class LoggingCopyBuilder extends CopyBuilder {
 }
 
 String _fileExistsError(String builder, List<String> files) {
-  return "error: Builder `Instance of '$builder'` declared outputs "
-      "`$files` but those files already exist. That build step has been "
+  return "error: Builder `$builder` declared outputs "
+      "`$files` but those files already exist. This build step has been "
       "skipped.";
 }
