@@ -7,5 +7,5 @@ import 'copy_builder.dart';
 
 /// A pub compatible Transformer built on top of [BuilderTransformer].
 class CopyTransformer extends BuilderTransformer {
-  CopyTransformer.asPlugin(_) : super([new CopyBuilder()]);
+  CopyTransformer.asPlugin(_) : super(new CopyBuilder());
 }
