@@ -1,3 +1,7 @@
+## 0.2.0+1
+
+- Forwards compatible version bump in package:build
+
 ## 0.2.0
 
 - Upgrade build package to 0.4.0
