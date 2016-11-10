@@ -17,23 +17,16 @@ import '../builder/build_step_impl.dart';
 import '../builder/builder.dart';
 import '../util/barback.dart';
 
-/// A [Transformer] which runs multiple [Builder]s.
+/// A [Transformer] which runs a single [Builder] with a new [BuildStep].
 ///
 /// By default all [BuilderTransformer]s are [DeclaringTransformer]s. If you
 /// wish to run as a [LazyTransformer], extend this class and mix in
 /// LazyTransformer.
 class BuilderTransformer implements Transformer, DeclaringTransformer {
-  /// The builders that will run during this Transformer step.
-  ///
-  /// **Note**: All [builders] are ran in the same phase, and there are no
-  /// ordering guarantees. Thus, none of the [builders] can use the outputs of
-  /// other [builders]. In order to do this you must create a [TransformerGroup]
-  /// with multiple [BuilderTransformer]s.
-  final List<Builder> builders;
-
+  final Builder _builder;
   final Resolvers _resolvers;
 
-  BuilderTransformer(this.builders, {Resolvers resolvers: const Resolvers()})
+  BuilderTransformer(this._builder, {Resolvers resolvers: const Resolvers()})
       : this._resolvers = resolvers;
 
   @override
@@ -41,7 +34,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   bool isPrimary(barback.AssetId id) =>
-      _expectedOutputs(id, builders).isNotEmpty;
+      _builder.declareOutputs(toBuildAssetId(id)).isNotEmpty;
 
   @override
   Future apply(Transform transform) async {
@@ -49,52 +42,47 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 
-    // Tracks all the expected outputs for each builder to make sure they don't
-    // overlap.
-    var allExpected = new Set<build.AssetId>();
+    var expected =
+        _builder.declareOutputs(toBuildAssetId(transform.primaryInput.id));
+    if (expected.isEmpty) return;
 
-    // Run all builders at the same time.
-    await Future.wait(builders.map((builder) async {
-      var expected = _expectedOutputs(transform.primaryInput.id, [builder]);
-      if (expected.isEmpty) return;
-
-      // Check that no expected outputs already exist.
-      var preExistingFiles = [];
-      for (var output in expected) {
-        if (!allExpected.add(output) ||
-            await transform.hasInput(toBarbackAssetId(output))) {
-          preExistingFiles.add(toBarbackAssetId(output));
-        }
+    // Check for overlapping outputs.
+    var uniqueExpected = new Set<build.AssetId>();
+    var preExistingFiles = [];
+    for (var output in expected) {
+      if (!uniqueExpected.add(output) ||
+          await transform.hasInput(toBarbackAssetId(output))) {
+        preExistingFiles.add(toBarbackAssetId(output));
       }
-      if (preExistingFiles.isNotEmpty) {
-        transform.logger.error(
-            'Builder `$builder` declared outputs `$preExistingFiles` but those '
-            'files already exist. That build step has been skipped.',
-            asset: transform.primaryInput.id);
-        return;
+    }
+    if (preExistingFiles.isNotEmpty) {
+      transform.logger.error(
+          'Builder `$_builder` declared outputs `$preExistingFiles` but those '
+          'files already exist. This build step has been skipped.',
+          asset: transform.primaryInput.id);
+      return;
+    }
+
+    // Run the build step.
+    var buildStep = new BuildStepImpl(
+        input, expected, reader, writer, input.id.package, _resolvers);
+    Logger.root.level = Level.ALL;
+    var logSubscription = buildStep.logger.onRecord.listen((LogRecord log) {
+      if (log.loggerName != buildStep.logger.fullName) return;
+
+      if (log.level <= Level.CONFIG) {
+        transform.logger.fine(_logRecordToMessage(log));
+      } else if (log.level <= Level.INFO) {
+        transform.logger.info(_logRecordToMessage(log));
+      } else if (log.level <= Level.WARNING) {
+        transform.logger.warning(_logRecordToMessage(log));
+      } else {
+        transform.logger.error(_logRecordToMessage(log));
       }
-
-      // Run the build step.
-      var buildStep = new BuildStepImpl(
-          input, expected, reader, writer, input.id.package, _resolvers);
-      Logger.root.level = Level.ALL;
-      var logSubscription = buildStep.logger.onRecord.listen((LogRecord log) {
-        if (log.loggerName != buildStep.logger.fullName) return;
-
-        if (log.level <= Level.CONFIG) {
-          transform.logger.fine(_logRecordToMessage(log));
-        } else if (log.level <= Level.INFO) {
-          transform.logger.info(_logRecordToMessage(log));
-        } else if (log.level <= Level.WARNING) {
-          transform.logger.warning(_logRecordToMessage(log));
-        } else {
-          transform.logger.error(_logRecordToMessage(log));
-        }
-      });
-      await builder.build(buildStep);
-      await buildStep.complete();
-      await logSubscription.cancel();
-    }));
+    });
+    await _builder.build(buildStep);
+    await buildStep.complete();
+    await logSubscription.cancel();
   }
 
   String _logRecordToMessage(LogRecord log) {
@@ -111,13 +99,12 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   void declareOutputs(DeclaringTransform transform) {
-    for (var outputId in _expectedOutputs(transform.primaryId, builders)) {
-      transform.declareOutput(toBarbackAssetId(outputId));
-    }
+    var outputs = _builder.declareOutputs(toBuildAssetId(transform.primaryId));
+    outputs.map(toBarbackAssetId).forEach(transform.declareOutput);
   }
 
   @override
-  String toString() => 'BuilderTransformer: [$builders]';
+  String toString() => 'BuilderTransformer: $_builder';
 }
 
 /// Very simple [AssetReader] which uses a [Transform].
@@ -158,12 +145,4 @@ class _TransformAssetWriter implements AssetWriter {
   @override
   Future delete(build.AssetId id) =>
       throw new UnsupportedError('_TransformAssetWriter can\'t delete files.');
-}
-
-/// All the expected outputs for [id] given [builders].
-Iterable<build.AssetId> _expectedOutputs(
-    barback.AssetId id, Iterable<Builder> builders) sync* {
-  for (var builder in builders) {
-    yield* builder.declareOutputs(toBuildAssetId(id));
-  }
 }
