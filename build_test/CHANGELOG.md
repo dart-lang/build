@@ -1,3 +1,7 @@
+## 0.2.0+1
+
+- Support `pkg/build` v0.5.0
+
 ## 0.2.0
 
 - Upgrade build package to 0.4.0
