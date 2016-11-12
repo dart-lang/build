@@ -1,3 +1,7 @@
+## 0.5.1+6
+
+* Support the latest version of `pkg/build`.
+
 ## 0.5.1+5
 
 * Remove "experimental" comment in `README.md`.
