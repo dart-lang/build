@@ -7,11 +7,9 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-
-import 'in_memory_reader.dart';
-import 'in_memory_writer.dart';
 
 Future testPhases(PhaseGroup phases, String rootPackage,
     Map<String, String> inputs, Map<String, dynamic> outputs) async {
