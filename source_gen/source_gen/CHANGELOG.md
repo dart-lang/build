@@ -1,3 +1,7 @@
+## 0.5.2-dev
+
+* Use library URIs (not names) to look up annotations in the mirror system.
+
 ## 0.5.1+7
 
 * Generate valid strong-mode code for typed lists.

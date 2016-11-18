@@ -192,9 +192,22 @@ DeclarationMirror _getDeclarationMirrorFromType(InterfaceType type) {
   var system = currentMirrorSystem();
 
   // find library
-  var libElement = type.element.library;
-  var libNameSymbol = new Symbol(libElement.name);
-  var libMirror = system.findLibrary(libNameSymbol);
+  var libraryUri = type.element.library.librarySource.uri;
+
+  if (libraryUri.scheme == 'asset') {
+    // see if it looks like a package
+    var segs = libraryUri.pathSegments.toList();
+    if (segs.length >= 2 && segs[1] == 'lib') {
+      segs.removeAt(1);
+      libraryUri = new Uri(scheme: 'package', pathSegments: segs);
+    } else {
+      // TODO: we should support this. Just would take some time.
+      throw new UnsupportedError('Generator annotations must be defined within '
+          'a package lib directory.');
+    }
+  }
+
+  var libMirror = system.libraries[libraryUri];
 
   // find class symbol
   var typeNameSymbol = new Symbol(type.name);
