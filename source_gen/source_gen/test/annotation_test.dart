@@ -236,7 +236,7 @@ ClassElement _getAnnotatedClass(LibraryElement lib, String className) =>
         .expand((cu) => cu.types)
         .singleWhere((cd) => cd.name == className);
 
-/// Returns a mock [ElementAnnotationImpl] whose
+/// Returns a mock [MockElementAnnotation] whose
 /// `evaluationResult.value.type.element.library.source` is `libraryUri` and
 /// whose `evaluationResult.value.type.name` is `typeName`.
 ElementAnnotation _mockElementAnnotation(String typeName, Uri libraryUri) {

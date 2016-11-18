@@ -102,7 +102,7 @@ Future _simpleTest() => _generateTest(
     _testGenPartContent);
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
-  var srcs = await _createPackageStub(pkgName);
+  var srcs = _createPackageStub(pkgName);
   var phaseGroup = new PhaseGroup.singleAction(new GeneratorBuilder([gen]),
       new InputSet(pkgName, ['lib/test_lib.dart']));
 

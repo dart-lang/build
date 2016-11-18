@@ -43,7 +43,7 @@ void checkOutputs(Map<String, dynamic> outputs, BuildResult result) {
     var id = new AssetId.parse(serializedId);
     remainingOutputIds.remove(id);
 
-    /// Check that the assets exist in [result.outputs].
+    // Check that the assets exist in [result.outputs].
     var actual = result.outputs
         .firstWhere((output) => output.id == id, orElse: () => null);
     expect(actual, isNotNull,
