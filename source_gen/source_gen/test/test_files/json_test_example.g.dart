@@ -7,12 +7,12 @@ part of source_gen.test.example;
 // Target: class Person
 // **************************************************************************
 
-Person _$PersonFromJson(Map json) => new Person(
-    json['firstName'], json['lastName'],
-    middleName: json['middleName'],
-    dateOfBirth: json['dateOfBirth'] == null
-        ? null
-        : DateTime.parse(json['dateOfBirth']));
+Person _$PersonFromJson(Map json) =>
+    new Person(json['firstName'] as String, json['lastName'] as String,
+        middleName: json['middleName'] as String,
+        dateOfBirth: json['dateOfBirth'] == null
+            ? null
+            : DateTime.parse(json['dateOfBirth']));
 
 abstract class _$PersonSerializerMixin {
   String get firstName;
@@ -34,8 +34,8 @@ abstract class _$PersonSerializerMixin {
 
 Order _$OrderFromJson(Map json) => new Order((json['items'] as List)
     ?.map((v0) => v0 == null ? null : new Item.fromJson(v0)))
-  ..count = json['count']
-  ..isRushed = json['isRushed'];
+  ..count = json['count'] as int
+  ..isRushed = json['isRushed'] as bool;
 
 abstract class _$OrderSerializerMixin {
   int get count;
@@ -50,22 +50,25 @@ abstract class _$OrderSerializerMixin {
 // Target: class Item
 // **************************************************************************
 
-Item _$ItemFromJson(Map json) => new Item(json['price'])
-  ..itemNumber = json['itemNumber']
+Item _$ItemFromJson(Map json) => new Item(json['price'] as int)
+  ..itemNumber = json['itemNumber'] as int
   ..saleDates = (json['saleDates'] as List)
       ?.map((v0) => v0 == null ? null : DateTime.parse(v0))
-      ?.toList();
+      ?.toList()
+  ..rates = (json['rates'] as List)?.map((v0) => v0 as int)?.toList();
 
 abstract class _$ItemSerializerMixin {
   int get price;
   int get itemNumber;
   List get saleDates;
+  List get rates;
   Map<String, dynamic> toJson() => <String, dynamic>{
         'price': price,
         'itemNumber': itemNumber,
         'saleDates': saleDates == null
             ? null
             : new List.generate(
-                saleDates.length, (int i0) => saleDates[i0]?.toIso8601String())
+                saleDates.length, (int i0) => saleDates[i0]?.toIso8601String()),
+        'rates': rates
       };
 }

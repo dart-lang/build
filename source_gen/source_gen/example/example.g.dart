@@ -7,15 +7,15 @@ part of source_gen.example.example;
 // Target: class Person
 // **************************************************************************
 
-Person _$PersonFromJson(Map json) => new Person(
-    json['firstName'], json['lastName'],
-    middleName: json['middleName'],
-    dateOfBirth: json['date-of-birth'] == null
-        ? null
-        : DateTime.parse(json['date-of-birth']))
-  ..orders = (json['orders'] as List)
-      ?.map((v0) => v0 == null ? null : new Order.fromJson(v0))
-      ?.toList();
+Person _$PersonFromJson(Map json) =>
+    new Person(json['firstName'] as String, json['lastName'] as String,
+        middleName: json['middleName'] as String,
+        dateOfBirth: json['date-of-birth'] == null
+            ? null
+            : DateTime.parse(json['date-of-birth']))
+      ..orders = (json['orders'] as List)
+          ?.map((v0) => v0 == null ? null : new Order.fromJson(v0))
+          ?.toList();
 
 abstract class _$PersonSerializerMixin {
   String get firstName;
@@ -38,9 +38,9 @@ abstract class _$PersonSerializerMixin {
 // **************************************************************************
 
 Order _$OrderFromJson(Map json) => new Order()
-  ..count = json['count']
-  ..itemNumber = json['itemNumber']
-  ..isRushed = json['isRushed']
+  ..count = json['count'] as int
+  ..itemNumber = json['itemNumber'] as int
+  ..isRushed = json['isRushed'] as bool
   ..item = json['item'] == null ? null : new Item.fromJson(json['item']);
 
 abstract class _$OrderSerializerMixin {
@@ -62,9 +62,9 @@ abstract class _$OrderSerializerMixin {
 // **************************************************************************
 
 Item _$ItemFromJson(Map json) => new Item()
-  ..count = json['count']
-  ..itemNumber = json['itemNumber']
-  ..isRushed = json['isRushed'];
+  ..count = json['count'] as int
+  ..itemNumber = json['itemNumber'] as int
+  ..isRushed = json['isRushed'] as bool;
 
 // **************************************************************************
 // Generator: JsonLiteralGenerator

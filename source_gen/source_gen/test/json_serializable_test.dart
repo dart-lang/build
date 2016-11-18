@@ -101,6 +101,16 @@ void main() {
 
       expect(output, contains('(json[\'children\'] as List)?.map('));
     });
+
+    test('class with list of int is cast for strong mode', () async {
+      var element = await _getClassForCodeString('Person');
+      var output = await _generator.generate(element, null);
+
+      expect(output, isNotNull);
+
+      expect(output,
+          contains("json['listOfInts'] as List)?.map((v0) => v0 as int)"));
+    });
   });
 
   test('reads JsonKey annotations', () async {
@@ -154,6 +164,7 @@ class Person {
   DateTime dateOfBirth;
   dynamic dynamicType;
   var varType;
+  List<int> listOfInts;
 }
 
 @JsonSerializable()

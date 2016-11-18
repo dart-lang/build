@@ -54,6 +54,7 @@ class Item extends Object with _$ItemSerializerMixin {
   final int price;
   int itemNumber;
   List<DateTime> saleDates;
+  List<int> rates;
 
   Item([this.price]);
 

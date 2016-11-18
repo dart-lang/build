@@ -232,7 +232,7 @@ String _writeAccessToVar(String varExpression, DartType searchType,
 
     var itemVal = "v$depth";
 
-    var output = "($varExpression as List)?.map(($itemVal) =>"
+    var output = "($varExpression as List)?.map(($itemVal) => "
         "${_writeAccessToVar(itemVal, iterableGenericType, depth: depth+1)}"
         ")";
 
@@ -241,6 +241,10 @@ String _writeAccessToVar(String varExpression, DartType searchType,
     }
 
     return output;
+  }
+
+  if (!searchType.isDynamic) {
+    return "$varExpression as $searchType";
   }
 
   return varExpression;
