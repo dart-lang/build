@@ -1,3 +1,7 @@
+## 0.5.1+7
+
+* Generate valid strong-mode code for typed lists.
+
 ## 0.5.1+6
 
 * Support the latest version of `pkg/build`.
