@@ -293,20 +293,17 @@ ParameterizedType _typeTest(
 /*=T*/ _firstNonNull/*<T>*/(Iterable/*<T>*/ values) =>
     values.firstWhere((value) => value != null, orElse: () => null);
 
-bool _isDartIterable(DartType type) {
-  return type.element.library != null &&
-      type.element.library.isDartCore &&
-      type.name == 'Iterable';
-}
+bool _isDartIterable(DartType type) =>
+    type.element.library != null &&
+    type.element.library.isDartCore &&
+    type.name == 'Iterable';
 
-bool _isDartList(DartType type) {
-  return type.element.library != null &&
-      type.element.library.isDartCore &&
-      type.name == 'List';
-}
+bool _isDartList(DartType type) =>
+    type.element.library != null &&
+    type.element.library.isDartCore &&
+    type.name == 'List';
 
-bool _isDartDateTime(DartType type) {
-  return type.element.library != null &&
-      type.element.library.isDartCore &&
-      type.name == 'DateTime';
-}
+bool _isDartDateTime(DartType type) =>
+    type.element.library != null &&
+    type.element.library.isDartCore &&
+    type.name == 'DateTime';
