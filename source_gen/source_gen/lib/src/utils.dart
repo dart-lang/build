@@ -110,27 +110,24 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
 }
 
 UriResolver _getPackageResolver(String projectPath, DartSdk sdk) {
-  // is there a .packages file? If yes, use that!
-
   var dotPackagesPath = p.join(projectPath, '.packages');
 
-  if (FileSystemEntity.isFileSync(dotPackagesPath)) {
-    PubPackageMapProvider pubPackageMapProvider =
-        new PubPackageMapProvider(PhysicalResourceProvider.INSTANCE, sdk);
-    PackageMapInfo packageMapInfo = pubPackageMapProvider
-        .computePackageMap(PhysicalResourceProvider.INSTANCE.getResource('.'));
-    Map<String, List<Folder>> packageMap = packageMapInfo.packageMap;
-    if (packageMap != null) {
-      return new PackageMapUriResolver(
-          PhysicalResourceProvider.INSTANCE, packageMap);
-    }
+  if (!FileSystemEntity.isFileSync(dotPackagesPath)) {
+    throw new StateError('A package configuration file was not found at the '
+        'expectetd location. $dotPackagesPath');
   }
 
-  var packagesPath = p.join(projectPath, 'packages');
+  var pubPackageMapProvider =
+      new PubPackageMapProvider(PhysicalResourceProvider.INSTANCE, sdk);
+  var packageMapInfo = pubPackageMapProvider
+      .computePackageMap(PhysicalResourceProvider.INSTANCE.getResource('.'));
+  var packageMap = packageMapInfo.packageMap;
+  if (packageMap == null) {
+    throw new StateError('An error occurred getting the package map.');
+  }
 
-  var packageDirectory = new JavaFile(packagesPath);
-
-  return new PackageUriResolver([packageDirectory]);
+  return new PackageMapUriResolver(
+      PhysicalResourceProvider.INSTANCE, packageMap);
 }
 
 /// Returns all of the declarations in [unit], including [unit] as the first
@@ -164,7 +161,7 @@ LibraryElement getLibraryElementForSourceFile(
   var libs = context.getLibrariesContaining(source);
 
   if (libs.length > 1) {
-    throw "We don't support multiple libraries for a source.";
+    throw new Exception("We don't support multiple libraries for a source.");
   }
 
   if (libs.isEmpty) {
