@@ -7,12 +7,13 @@
 # Fast fail the script on failures.
 set -e
 
-cd build_test
+pushd build_test
 pub get
 dartanalyzer --fatal-warnings lib/build_test.dart
 pub run test
+popd
 
-cd ../build
+pushd build
 pub get
 dartanalyzer --fatal-warnings lib/build.dart
 pub run test
