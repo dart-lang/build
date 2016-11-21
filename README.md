@@ -1,6 +1,6 @@
 # [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build) [![Coverage Status](https://coveralls.io/repos/dart-lang/build/badge.svg?branch=master)](https://coveralls.io/r/dart-lang/build)
 
-These packages provide utilities for generating Dart code outside of `pub`.
+These packages provide utilities for generating Dart code.
 
 ## Build
 
