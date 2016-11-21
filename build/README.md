@@ -1,20 +1,20 @@
 # [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build) [![Coverage Status](https://coveralls.io/repos/dart-lang/build/badge.svg?branch=master)](https://coveralls.io/r/dart-lang/build)
 
-# Build
+# `build`
 
 Defines the basic pieces of how a build happens and how they interact.
 
-## Builder
+## `Builder` class
 
 The business logic for code generation. Most consumers of the `build` package
 will create custom implementations of Builder.
 
-## BuildStep
+## `BuildStep` class
 
 The way a `Builder` interacts with the outside world. Defines the unit of work
 and allows reading/writing files and resolving code.
 
-## Resolver
+## `Resolver` class
 
 An interface into the dart analyzer to allow resolution of code that needs
 generation.
