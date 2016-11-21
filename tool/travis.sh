@@ -7,13 +7,15 @@
 # Fast fail the script on failures.
 set -e
 
-# Verify that the libraries are error free, requires some strong mode changes
-# that are only in the dev channel right now though.
-if [ "$TRAVIS_DART_VERSION" != "stable" ]; then
-  dartanalyzer --fatal-warnings lib/build.dart build_test/lib/build_test.dart
-fi
+pushd build_test
+pub get
+dartanalyzer --fatal-warnings lib/build_test.dart
+pub run test
+popd
 
-# Run the tests.
+pushd build
+pub get
+dartanalyzer --fatal-warnings lib/build.dart
 pub run test
 
 # Install dart_coveralls; gather and send coverage data.
@@ -26,6 +28,4 @@ if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
     tool/test_all.dart
   rm tool/test_all.dart
 fi
-
-# Run package:build_test tests
-(cd build_test; pub get && pub run test)
+popd
