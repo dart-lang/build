@@ -28,3 +28,4 @@ if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
     tool/test_all.dart
   rm tool/test_all.dart
 fi
+popd
