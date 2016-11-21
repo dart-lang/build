@@ -11,4 +11,4 @@ pubspec.lock
 tool/test_all.dart
 
 # Include .packages files from tests which are hand coded
-!test/fixtures/**/.packages
+!build/test/fixtures/**/.packages
