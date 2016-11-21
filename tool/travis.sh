@@ -7,6 +7,18 @@
 # Fast fail the script on failures.
 set -e
 
+function run_coveralls {
+  if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
+    dart tool/create_test_all.dart
+    pub global activate dart_coveralls
+    pub global run dart_coveralls report \
+      --retry 2 \
+      --exclude-test-files \
+      tool/test_all.dart
+    rm tool/test_all.dart
+  fi
+}
+
 pushd build_test
 pub get
 dartanalyzer --fatal-warnings lib/build_test.dart
@@ -17,15 +29,19 @@ pushd build
 pub get
 dartanalyzer --fatal-warnings lib/build.dart
 pub run test
+run_coveralls
+popd
 
-# Install dart_coveralls; gather and send coverage data.
-if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
-  dart tool/create_test_all.dart
-  pub global activate dart_coveralls
-  pub global run dart_coveralls report \
-    --retry 2 \
-    --exclude-test-files \
-    tool/test_all.dart
-  rm tool/test_all.dart
-fi
+pushd build_runner
+pub get
+dartanalyzer --fatal-warnings lib/build_runner.dart
+pub run test
+run_coveralls
+popd
+
+pushd build_barback
+pub get
+dartanalyzer --fatal-warnings lib/build_barback.dart
+pub run test
+run_coveralls
 popd

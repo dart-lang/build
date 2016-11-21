@@ -4,11 +4,12 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:logging/logging.dart';
 
 void main() {
   group('build_test', () {

@@ -9,6 +9,9 @@ import 'package:logging/logging.dart';
 import '../analyzer/resolver.dart';
 import '../asset/asset.dart';
 import '../asset/id.dart';
+import '../asset/reader.dart';
+import '../asset/writer.dart';
+import 'build_step_impl.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// it also handles tracking of dependencies.
@@ -38,4 +41,17 @@ abstract class BuildStep {
   /// constants are already resolved.
   Future<Resolver> resolve(AssetId id,
       {bool resolveAllConstants, List<AssetId> entryPoints});
+}
+
+abstract class ManagedBuildStep extends BuildStep {
+  /// Mark the build step as finished and wait for any side effects to settle.
+  Future complete();
+
+  factory ManagedBuildStep(
+      Asset input,
+      Iterable<AssetId> expectedOutputs,
+      AssetReader reader,
+      AssetWriter writer,
+      String packageName,
+      Resolvers resolvers, {Logger logger}) = BuildStepImpl;
 }

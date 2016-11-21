@@ -1,6 +1,7 @@
-## 0.2.0+1
+## 0.3.0
 
-- Forwards compatible version bump in package:build
+- Support the package split into build/build_runner/build_barback
+- Expose additional test utilities that used to be internal to build
 
 ## 0.2.0
 

@@ -5,8 +5,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
 
-class StubAssetReader implements AssetReader {
+class StubAssetReader implements RunnerAssetReader {
   @override
   Future<bool> hasInput(AssetId id) => new Future.value(null);
 

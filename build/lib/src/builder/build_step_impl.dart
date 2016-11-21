@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
@@ -18,37 +17,22 @@ import 'exceptions.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// its expected and real outputs. It also handles tracking of dependencies.
-class BuildStepImpl implements BuildStep {
+class BuildStepImpl implements ManagedBuildStep {
   final Resolvers _resolvers;
 
   /// The primary input for this build step.
   @override
   final Asset input;
 
+  @override
+  final Logger logger;
+
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
-  final List<AssetId> expectedOutputs;
-
-  /// The [Logger] for this [BuildStep].
-  @override
-  Logger get logger {
-    _logger ??= new Logger(input.id.toString());
-    return _logger;
-  }
-
-  Logger _logger;
-
-  /// The actual outputs of this build step.
-  UnmodifiableListView<Asset> get outputs => new UnmodifiableListView(_outputs);
-  final List<Asset> _outputs = [];
+  final List<AssetId> _expectedOutputs = [];
 
   /// A future that completes once all outputs current are done writing.
   Future _outputsCompleted = new Future(() {});
-
-  /// The dependencies read in during this build step.
-  UnmodifiableListView<AssetId> get dependencies =>
-      new UnmodifiableListView(_dependencies);
-  final Set<AssetId> _dependencies = new Set<AssetId>();
 
   /// Used internally for reading files.
   final AssetReader _reader;
@@ -59,18 +43,18 @@ class BuildStepImpl implements BuildStep {
   /// The current root package, used for input/output validation.
   final String _rootPackage;
 
-  BuildStepImpl(this.input, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage, this._resolvers)
-      : expectedOutputs = new List.unmodifiable(expectedOutputs) {
-    /// The [input] is always a dependency.
-    _dependencies.add(input.id);
+  BuildStepImpl(Asset input, Iterable<AssetId> expectedOutputs, this._reader,
+      this._writer, this._rootPackage, this._resolvers,
+      {Logger logger})
+      : this.input = input,
+        this.logger = logger ?? new Logger('${input.id}') {
+    _expectedOutputs.addAll(expectedOutputs);
   }
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
   @override
   Future<bool> hasInput(AssetId id) {
     _checkInput(id);
-    _dependencies.add(id);
     return _reader.hasInput(id);
   }
 
@@ -78,7 +62,6 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
     _checkInput(id);
-    _dependencies.add(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
@@ -90,7 +73,6 @@ class BuildStepImpl implements BuildStep {
   @override
   void writeAsString(Asset asset, {Encoding encoding: UTF8}) {
     _checkOutput(asset);
-    _outputs.add(asset);
     var done = _writer.writeAsString(asset, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);
   }
@@ -106,9 +88,8 @@ class BuildStepImpl implements BuildStep {
 
   /// Should be called after `build` has completed. This will wait until for
   /// [_outputsCompleted].
-  Future complete() async {
-    await _outputsCompleted;
-  }
+  @override
+  Future complete() => _outputsCompleted;
 
   /// Checks that [id] is a valid input, and throws an [InvalidInputException]
   /// if its not.
@@ -123,9 +104,9 @@ class BuildStepImpl implements BuildStep {
   void _checkOutput(Asset asset) {
     if (asset.id.package != _rootPackage) {
       throw new InvalidOutputException(
-          asset, 'Files may only be output in the root (application) package.');
+          asset, 'Files may only be output in the root (application) package. Not allowint ${asset.id.package} from ${_rootPackage}');
     }
-    if (!expectedOutputs.any((id) => id == asset.id)) {
+    if (!_expectedOutputs.any((id) => id == asset.id)) {
       throw new UnexpectedOutputException(asset);
     }
   }
