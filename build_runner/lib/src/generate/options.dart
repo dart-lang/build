@@ -13,6 +13,7 @@ import 'package:stack_trace/stack_trace.dart';
 import '../asset/cache.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
+import '../asset/writer.dart';
 import '../package_graph/package_graph.dart';
 import 'directory_watcher_factory.dart';
 
@@ -22,7 +23,7 @@ class BuildOptions {
   StreamSubscription logListener;
   PackageGraph packageGraph;
   RunnerAssetReader reader;
-  AssetWriter writer;
+  RunnerAssetWriter writer;
   bool deleteFilesByDefault;
   Resolvers resolvers;
 

@@ -15,6 +15,7 @@ import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
 import '../asset/reader.dart';
+import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
@@ -36,7 +37,7 @@ class BuildImpl {
   final _logger = new Logger('Build');
   final PackageGraph _packageGraph;
   final RunnerAssetReader _reader;
-  final AssetWriter _writer;
+  final RunnerAssetWriter _writer;
   final Resolvers _resolvers;
 
   AssetGraph _assetGraph;

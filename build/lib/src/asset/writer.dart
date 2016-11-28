@@ -5,12 +5,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'asset.dart';
-import 'id.dart';
 
 abstract class AssetWriter {
   Future writeAsString(Asset asset, {Encoding encoding: UTF8});
-
-  Future delete(AssetId id);
 }
 
 /// An [AssetWriter] which tracks all assets written during it's lifetime.
@@ -27,7 +24,4 @@ class AssetWriterSpy implements AssetWriter {
     _assetsWritten.add(asset);
     return _delegate.writeAsString(asset, encoding: encoding);
   }
-
-  @override
-  Future delete(AssetId id) => _delegate.delete(id);
 }
