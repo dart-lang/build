@@ -1,4 +1,4 @@
-## 0.3.0
+## 0.2.1
 
 - Support the package split into build/build_runner/build_barback
 - Expose additional test utilities that used to be internal to build
