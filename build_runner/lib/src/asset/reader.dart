@@ -22,10 +22,13 @@ class AssetReaderSpy implements AssetReader {
   Iterable<AssetId> get assetsRead => _assetsRead;
 
   @override
-  Future<bool> hasInput(AssetId input) => _delegate.hasInput(input);
+  Future<bool> hasInput(AssetId input) {
+    _assetsRead.add(input);
+    return _delegate.hasInput(input);
+  }
 
   @override
-  Future<String> readAsString(AssetId input, {Encoding encoding : UTF8}) {
+  Future<String> readAsString(AssetId input, {Encoding encoding: UTF8}) {
     _assetsRead.add(input);
     return _delegate.readAsString(input, encoding: encoding);
   }
