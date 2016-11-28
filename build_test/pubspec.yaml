@@ -11,5 +11,13 @@ dependencies:
   test: ^0.12.0
   watcher: ^0.9.7
 
+dependency_overrides:
+  build:
+    path: ../build
+  build_runner:
+    path: ../build_runner
+  build_barback:
+    path: ../build_barback
+
 environment:
   sdk: ">=1.8.0 <2.0.0"
