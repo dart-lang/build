@@ -43,7 +43,7 @@ abstract class BuildStep {
       {bool resolveAllConstants, List<AssetId> entryPoints});
 }
 
-abstract class ManagedBuildStep extends BuildStep {
+abstract class ManagedBuildStep implements BuildStep {
   /// Mark the build step as finished and wait for any side effects to settle.
   Future complete();
 
