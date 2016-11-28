@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
-import 'package:build/build.dart' show Resolver, Resolvers, AssetId, BuildStep;
+import 'package:build/build.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_transformers/resolver.dart' as code_transformers
     show Resolver, Resolvers, dartSdkDirectory;

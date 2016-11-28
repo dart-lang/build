@@ -5,13 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build/build.dart'
-    show
-        Asset,
-        AssetId,
-        AssetWriter,
-        AssetNotFoundException,
-        PackageNotFoundException;
+import 'package:build/build.dart';
 import 'package:path/path.dart' as path;
 
 import 'reader.dart';

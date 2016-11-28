@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart' show AssetReader, AssetId;
+import 'package:build/build.dart';
 
 import '../generate/input_set.dart';
 

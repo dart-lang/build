@@ -4,7 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build/build.dart' show Resolvers, AssetWriter;
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_static/shelf_static.dart';

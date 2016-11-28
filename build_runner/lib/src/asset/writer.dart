@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart' show AssetWriter, Asset, AssetId;
+import 'package:build/build.dart';
 
 /// An [AssetWriter] which tracks all assets written during it's lifetime.
 class AssetWriterSpy implements AssetWriter {

@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
-import 'package:build/build.dart' show AssetId;
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';

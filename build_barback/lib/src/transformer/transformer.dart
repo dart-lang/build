@@ -4,9 +4,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart' as build show Asset, AssetId;
-import 'package:build/build.dart'
-    show Resolvers, AssetReader, AssetWriter, ManagedBuildStep, Builder;
+import 'package:build/build.dart' as build;
+import 'package:build/build.dart' hide Asset, AssetId;
 import 'package:barback/barback.dart' as barback show AssetId;
 import 'package:barback/barback.dart' hide Asset, AssetId;
 import 'package:logging/logging.dart';

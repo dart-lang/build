@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
-import 'package:build/build.dart' show AssetId, Builder, BuildStep;
+import 'package:build/build.dart';
 import 'package:barback/barback.dart' as barback;
 
 import '../util/barback.dart';

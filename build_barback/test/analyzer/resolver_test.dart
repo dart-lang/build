@@ -4,17 +4,15 @@
 @TestOn('vm')
 import 'dart:async';
 
+import 'package:build/build.dart';
+import 'package:build_test/build_test.dart';
 import 'package:code_transformers/resolver.dart' as code_transformers
     show Resolver, Resolvers, dartSdkDirectory;
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart'
-    show ManagedBuildStep, Resolver, BuildStep, AssetId, Builder;
 import 'package:build_barback/build_barback.dart';
 import 'package:build_barback/src/util/barback.dart';
-
-import 'package:build_test/build_test.dart';
 
 class ResolversSpy implements BarbackResolvers {
   code_transformers.Resolver lastResolved;
