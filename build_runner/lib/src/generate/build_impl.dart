@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:mirrors';
 
-import 'package:build/build.dart' hide AssetReader;
+import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -15,7 +15,6 @@ import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
 import '../asset/reader.dart';
-import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
