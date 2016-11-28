@@ -20,27 +20,27 @@ function run_coveralls {
 }
 
 pushd build_test
-pub get
+pub upgrade
 dartanalyzer --fatal-warnings lib/build_test.dart
 pub run test
 popd
 
 pushd build
-pub get
+pub upgrade
 dartanalyzer --fatal-warnings lib/build.dart
 pub run test
 run_coveralls
 popd
 
 pushd build_runner
-pub get
+pub upgrade
 dartanalyzer --fatal-warnings lib/build_runner.dart
 pub run test
 run_coveralls
 popd
 
 pushd build_barback
-pub get
+pub upgrade
 dartanalyzer --fatal-warnings lib/build_barback.dart
 pub run test
 run_coveralls
