@@ -5,8 +5,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
 
-class InMemoryAssetWriter implements AssetWriter {
+class InMemoryAssetWriter implements RunnerAssetWriter {
   final Map<AssetId, DatedString> assets = {};
 
   InMemoryAssetWriter();

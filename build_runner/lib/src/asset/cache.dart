@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 
 import '../generate/input_set.dart';
 import 'reader.dart';
+import 'writer.dart';
 
 /// A basic [Asset] cache by [AssetId].
 class AssetCache {
@@ -108,13 +109,14 @@ class CachedAssetReader implements RunnerAssetReader {
   Future<DateTime> lastModified(AssetId id) => _reader.lastModified(id);
 }
 
-/// An [AssetWriter] which takes both an [AssetCache] and an [AssetWriter].
+/// A [RunnerAssetWriter] which takes both an [AssetCache] and a
+/// [RunnerAssetWriter].
 ///
 /// It writes [Asset]s to both always. Writes are done synchronously to the
-/// cache, and then asynchronously to the [AssetWriter].
-class CachedAssetWriter implements AssetWriter {
+/// cache, and then asynchronously to the [RunnerAssetWriter].
+class CachedAssetWriter implements RunnerAssetWriter {
   final AssetCache _cache;
-  final AssetWriter _writer;
+  final RunnerAssetWriter _writer;
 
   CachedAssetWriter(this._cache, this._writer);
 

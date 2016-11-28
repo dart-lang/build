@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
 import '../asset/reader.dart';
+import '../asset/writer.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import 'build_impl.dart';
@@ -45,7 +46,7 @@ Future<BuildResult> build(PhaseGroup phaseGroup,
     {bool deleteFilesByDefault,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
-    AssetWriter writer,
+    RunnerAssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
     Resolvers resolvers,
@@ -93,7 +94,7 @@ Stream<BuildResult> watch(PhaseGroup phaseGroup,
     {bool deleteFilesByDefault,
     PackageGraph packageGraph,
     AssetReader reader,
-    AssetWriter writer,
+    RunnerAssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
     Resolvers resolvers,
@@ -137,7 +138,7 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
     {bool deleteFilesByDefault,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
-    AssetWriter writer,
+    RunnerAssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
     Resolvers resolvers,

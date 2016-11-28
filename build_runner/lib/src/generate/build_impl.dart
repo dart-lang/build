@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:mirrors';
 
-import 'package:build/build.dart' hide AssetReader;
+import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -37,7 +37,7 @@ class BuildImpl {
   final _logger = new Logger('Build');
   final PackageGraph _packageGraph;
   final RunnerAssetReader _reader;
-  final AssetWriter _writer;
+  final RunnerAssetWriter _writer;
   final Resolvers _resolvers;
 
   AssetGraph _assetGraph;

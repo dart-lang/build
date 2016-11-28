@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as path;
 
 import 'reader.dart';
+import 'writer.dart';
 import '../generate/input_set.dart';
 import '../package_graph/package_graph.dart';
 
@@ -85,7 +86,7 @@ AssetId _fileToAssetId(File file, PackageNode packageNode) {
 
 /// Basic [AssetWriter] which uses a [PackageGraph] to look up where to write
 /// files to disk.
-class FileBasedAssetWriter implements AssetWriter {
+class FileBasedAssetWriter implements RunnerAssetWriter {
   final PackageGraph packageGraph;
 
   FileBasedAssetWriter(this.packageGraph);
