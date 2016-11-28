@@ -1,7 +1,7 @@
 ## 0.6.0
 
 - **BREAKING** Move some classes and methods out of this package. If you are
-  using `build`, `watch`, or `server`, along with `PhaseGroup` and related
+  using `build`, `watch`, or `serve`, along with `PhaseGroup` and related
   classes add a dependency on `build_runner`. If you are using
   `BuilderTransformer` or `TansformerBuilder` add a dependency on
   `build_barback`.
