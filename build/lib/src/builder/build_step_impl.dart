@@ -104,7 +104,10 @@ class BuildStepImpl implements ManagedBuildStep {
   void _checkOutput(Asset asset) {
     if (asset.id.package != _rootPackage) {
       throw new InvalidOutputException(
-          asset, 'Files may only be output in the root (application) package. Not allowint ${asset.id.package} from ${_rootPackage}');
+          asset,
+          'Files may only be output in the root (application) package. '
+          'Attempted to output "${asset.id}" but the root package is '
+          '"$_rootPackage".');
     }
     if (!_expectedOutputs.any((id) => id == asset.id)) {
       throw new UnexpectedOutputException(asset);
