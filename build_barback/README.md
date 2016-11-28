@@ -12,7 +12,7 @@ like any other Transformer. The Builder used this way must follow the rules of
 other Transformers, it cannot use inputs from outside the package where the
 Transformer is specified in pubspec.yaml
 
-## Using a `Transformer` with ahead of time codegen
+## Using an exisiting `Transformer` with `package:build`
 
 Wrap the `Transformer` instance with `new TransformerBuilder(transformer)` and
 run as any other `Builder`. The Transformer instance used this way must follow
