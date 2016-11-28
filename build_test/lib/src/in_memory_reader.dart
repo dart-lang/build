@@ -6,10 +6,11 @@ import 'dart:convert';
 import 'dart:mirrors';
 
 import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
 
 import 'in_memory_writer.dart';
 
-class InMemoryAssetReader implements AssetReader {
+class InMemoryAssetReader implements RunnerAssetReader {
   final Map<AssetId, DatedString> assets;
 
   InMemoryAssetReader(this.assets);

@@ -1,3 +1,14 @@
+## 0.6.0
+
+- **BREAKING** Move some classes and methods out of this package. If you are
+  using `build`, `watch`, or `serve`, along with `PhaseGroup` and related
+  classes add a dependency on `build_runner`. If you are using
+  `BuilderTransformer` or `TansformerBuilder` add a dependency on
+  `build_barback`.
+- **BREAKING** Resolvers is now an abstract class. If you were using the
+  constructor `const Resolvers()` as a default instance import `build_barback`
+  and used `const BarbackResolvers()` instead.
+
 ## 0.5.0
 
 - **BREAKING** BuilderTransformer must be constructed with a single Builder. Use

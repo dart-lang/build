@@ -7,8 +7,10 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
+import 'package:build_barback/build_barback.dart';
+import 'package:build_test/build_test.dart';
 
-import '../common/common.dart';
+import '../common/file_combiner_builder.dart';
 
 void main() {
   group('BuildStepImpl ', () {
@@ -23,47 +25,9 @@ void main() {
         reader = new StubAssetReader();
         writer = new StubAssetWriter();
         primary = makeAsset();
-        buildStep = new BuildStepImpl(
-            primary, [], reader, writer, primary.id.package, const Resolvers());
-      });
-
-      test('tracks dependencies on read', () async {
-        expect(buildStep.dependencies, [primary.id]);
-
-        var a1 = makeAssetId();
-        await buildStep.readAsString(a1);
-        expect(buildStep.dependencies, [primary.id, a1]);
-
-        var a2 = makeAssetId();
-        await buildStep.readAsString(a2);
-        expect(buildStep.dependencies, [primary.id, a1, a2]);
-      });
-
-      test('tracks dependencies on hasInput', () async {
-        expect(buildStep.dependencies, [primary.id]);
-
-        var a1 = makeAssetId();
-        await buildStep.hasInput(a1);
-        expect(buildStep.dependencies, [primary.id, a1]);
-
-        var a2 = makeAssetId();
-        await buildStep.hasInput(a2);
-        expect(buildStep.dependencies, [primary.id, a1, a2]);
-      });
-
-      test('tracks outputs', () async {
-        var a1 = makeAsset();
-        var a2 = makeAsset();
-        buildStep = new BuildStepImpl(primary, [a1.id, a2.id], reader, writer,
-            primary.id.package, const Resolvers());
-
-        buildStep.writeAsString(a1);
-        expect(buildStep.outputs, [a1]);
-
-        buildStep.writeAsString(a2);
-        expect(buildStep.outputs, [a1, a2]);
-
-        expect(buildStep.complete(), completes);
+        buildStep = new BuildStepImpl(primary, [], reader, writer,
+            primary.id.package, const BarbackResolvers(),
+            logger: new Logger('${primary.id}'));
       });
 
       test('doesnt allow non-expected outputs', () {
@@ -139,18 +103,12 @@ void main() {
         addAssets(inputs.values, writer);
         var outputId = new AssetId.parse('$primary.combined');
         var buildStep = new BuildStepImpl(inputs[new AssetId.parse(primary)],
-            [outputId], reader, writer, 'a', const Resolvers());
+            [outputId], reader, writer, 'a', const BarbackResolvers());
 
         await fileCombiner.build(buildStep);
         await buildStep.complete();
 
-        // All the assets should be read and marked as deps, except [unUsed].
-        expect(buildStep.dependencies,
-            inputs.keys.where((k) => k != new AssetId.parse(unUsed)));
-
         // One output.
-        expect(buildStep.outputs[0].id, outputId);
-        expect(buildStep.outputs[0].stringContents, 'AB');
         expect(writer.assets[outputId].value, 'AB');
       });
 
@@ -170,7 +128,7 @@ void main() {
 
           var primary = makeAssetId('a|web/a.dart');
           var buildStep = new BuildStepImpl(inputs[primary], [], reader, writer,
-              primary.package, const Resolvers());
+              primary.package, const BarbackResolvers());
           var resolver = await buildStep.resolve(primary);
 
           var aLib = resolver.getLibrary(primary);
