@@ -33,7 +33,8 @@ void _checkOutputs(Map<String, /*String|Matcher*/ dynamic> outputs,
     });
   }
   expect(actualAssets, isEmpty,
-      reason: 'Unexpected outputs found `$actualAssets`. Only expected $outputs');
+      reason:
+          'Unexpected outputs found `$actualAssets`. Only expected $outputs');
 }
 
 /// Runs [builder] in a test environment.
@@ -77,8 +78,8 @@ Future testBuilder(Builder builder, Map<String, String> inputs,
   });
   // TODO(nbosch) resolvers?
   await runBuilder(builder, inputIds, reader, writer, null);
-  var actualOutputs = <AssetId,DatedString>{}..addAll(writer.assets);
-  for(var assetId in inputIds) {
+  var actualOutputs = <AssetId, DatedString>{}..addAll(writer.assets);
+  for (var assetId in inputIds) {
     actualOutputs.remove(assetId);
   }
   _checkOutputs(outputs, actualOutputs);

@@ -10,7 +10,7 @@ import 'package:code_transformers/resolver.dart' as code_transformers
 
 import '../util/barback.dart';
 
-class BarbackResolver implements Resolver{
+class BarbackResolver implements Resolver {
   final code_transformers.Resolver _resolver;
 
   BarbackResolver(this._resolver);

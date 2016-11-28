@@ -53,5 +53,6 @@ abstract class ManagedBuildStep implements BuildStep {
       AssetReader reader,
       AssetWriter writer,
       String packageName,
-      Resolvers resolvers, {Logger logger}) = BuildStepImpl;
+      Resolvers resolvers,
+      {Logger logger}) = BuildStepImpl;
 }

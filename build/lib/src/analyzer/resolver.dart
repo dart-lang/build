@@ -30,6 +30,6 @@ abstract class Resolver {
 }
 
 abstract class Resolvers {
-  Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
-          bool resolveAllConstants);
+  Future<Resolver> get(
+      BuildStep buildStep, List<AssetId> entryPoints, bool resolveAllConstants);
 }
