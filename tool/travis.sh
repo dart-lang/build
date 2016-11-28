@@ -9,7 +9,7 @@ set -e
 
 function run_coveralls {
   if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
-    dart ../tool/create_test_all.dart
+    dart tool/create_test_all.dart
     pub global activate dart_coveralls
     pub global run dart_coveralls report \
       --retry 2 \
