@@ -5,19 +5,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart';
 
-class StubAssetReader implements RunnerAssetReader {
+class StubAssetReader implements AssetReader {
   @override
   Future<bool> hasInput(AssetId id) => new Future.value(null);
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
       new Future.value(null);
-
-  @override
-  Stream<AssetId> listAssetIds(_) async* {}
-
-  @override
-  Future<DateTime> lastModified(AssetId id) => new Future.value(null);
 }

@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart';
-import 'package:build_test/build_test.dart' hide testPhases;
+import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 import 'package:transformer_test/utils.dart';
 

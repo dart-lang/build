@@ -5,8 +5,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
 
-class InMemoryAssetWriter implements AssetWriter {
+class InMemoryAssetWriter implements RunnerAssetWriter {
   final Map<AssetId, DatedString> assets = {};
 
   InMemoryAssetWriter();
@@ -15,6 +16,11 @@ class InMemoryAssetWriter implements AssetWriter {
   Future writeAsString(Asset asset,
       {Encoding encoding: UTF8, DateTime lastModified}) async {
     assets[asset.id] = new DatedString(asset.stringContents, lastModified);
+  }
+
+  @override
+  Future delete(AssetId id) async {
+    assets.remove(id);
   }
 }
 

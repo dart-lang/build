@@ -133,8 +133,4 @@ class _TransformAssetWriter implements AssetWriter {
     transform.addOutput(toBarbackAsset(asset));
     return new Future.value(null);
   }
-
-  @override
-  Future delete(build.AssetId id) =>
-      throw new UnsupportedError('_TransformAssetWriter can\'t delete files.');
 }
