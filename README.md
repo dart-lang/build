@@ -36,3 +36,10 @@ instances of builds and checking their outputs.
 This package generally only be a dev_dependency as it introduces a dependency on
 package:test. The exception to that would be if you were creating another
 testing-only package that wraps this one.
+
+## Examples
+
+The `e2e_example` directory has demonstrations of running a `Builder` both
+through pub (see the transformers section of `pubspec.yaml`) and in place (see
+the files `build.dart` and `watch.dart`). In real situations a project would
+choose one or the other approach rather than mix both.
