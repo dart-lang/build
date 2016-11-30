@@ -7,9 +7,10 @@ import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
+import 'package:build_test/build_test.dart'
+    hide InMemoryAssetWriter, DatedString, InMemoryAssetReader;
 import 'package:build_runner/build_runner.dart';
 
-import 'assets.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 
