@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
-import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
 
 import 'package:e2e_example/copy_builder.dart';
 import 'package:e2e_example/packages_dir_builder.dart';
@@ -11,15 +11,15 @@ import 'package:e2e_example/packages_dir_builder.dart';
 Future main() async {
   // Builds a full package dependency graph for the current package.
   var graph = new PackageGraph.forThisPackage();
-  var phases = new PhaseGroup();
+  var phases = new PhaseGroup()
+    ..newPhase().addAction(
+        new CopyBuilder(), new InputSet(graph.root.name, ['**/*.txt']));
 
-  // Give [Builder]s access to a [PackageGraph] so they can choose which
-  // packages to run on. This simplifies user code a lot, and helps to mitigate
-  // the transitive deps issue.
-  CopyBuilder.addPhases(phases, graph);
-
-  // Adds all the phases necessary to copy all files into a fake packages dir!
-  PackagesDirBuilder.addPhases(phases, graph);
+  var packagesDirBuilder = new PackagesDirBuilder(graph.root.name, 'web');
+  var phase = phases.newPhase();
+  for (var package in graph.allPackages.values) {
+    phase.addAction(packagesDirBuilder, new InputSet(package.name, ['lib/**']));
+  }
 
   watch(phases);
 }
