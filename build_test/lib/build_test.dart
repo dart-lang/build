@@ -10,4 +10,3 @@ export 'src/matchers.dart';
 export 'src/stub_reader.dart';
 export 'src/stub_writer.dart';
 export 'src/test_builder.dart';
-export 'src/test_phases.dart';

@@ -22,7 +22,6 @@ function run_coveralls {
 pushd build_test
 pub upgrade
 dartanalyzer --fatal-warnings lib/build_test.dart
-pub run test
 popd
 
 pushd build

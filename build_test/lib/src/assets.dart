@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'package:build/build.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
 
 import 'in_memory_writer.dart';
 
@@ -33,10 +32,4 @@ void addAssets(Iterable<Asset> assets, InMemoryAssetWriter writer) {
   for (var asset in assets) {
     writer.assets[asset.id] = new DatedString(asset.stringContents);
   }
-}
-
-AssetNode makeAssetNode([String assetIdString, List<AssetId> outputs]) {
-  var node = new AssetNode(makeAssetId(assetIdString));
-  if (outputs != null) node.outputs.addAll(outputs);
-  return node;
 }

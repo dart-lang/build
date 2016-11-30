@@ -3,6 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'package:build_runner/src/util/constants.dart';
-export 'package:build_test/build_test.dart';
+export 'package:build_test/build_test.dart'
+    hide InMemoryAssetReader, InMemoryAssetWriter, DatedString;
 
 export 'file_combiner_builder.dart';
+export 'matchers.dart';
+export 'assets.dart';
+export 'test_phases.dart';
+export 'in_memory_reader.dart';
+export 'in_memory_writer.dart';

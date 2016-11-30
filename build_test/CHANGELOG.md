@@ -1,3 +1,8 @@
+## 0.3.0
+
+- **BREAKING** removed testPhases utility. Tests should be using testBuilder
+- Drop dependency on build_runner package
+
 ## 0.2.1
 
 - Support the package split into build/build_runner/build_barback
