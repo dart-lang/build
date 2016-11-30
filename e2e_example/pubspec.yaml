@@ -1,12 +1,23 @@
 name: e2e_example
-version: 0.1.0
+version: 0.2.0
 
 environment:
   sdk: '>=1.9.1 <2.0.0'
 
 dependencies:
+  build: any
+  build_barback: any
+
+dev_dependencies:
+  build_runner: any
+
+dependency_overrides:
   build:
-    path: ../
+    path: ../build
+  build_runner:
+    path: ../build_runner
+  build_barback:
+    path: ../build_barback
 
 transformers:
 - e2e_example:
