@@ -16,7 +16,10 @@ Transformer is specified in pubspec.yaml
 
 Wrap the `Transformer` instance with `new TransformerBuilder(transformer)` and
 run as any other `Builder`. The Transformer instance used this way must follow
-the rules of other Builders, it cannot overwrite files it uses as inputs.
+the rules of other Builders:
+- It cannot overwrite files it uses as inputs.
+- It must know before building what the outputs will be (it must be a
+  `DeclaringTransformer`).
 
 ## Features and bugs
 
