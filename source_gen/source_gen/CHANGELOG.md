@@ -1,6 +1,7 @@
-## 0.5.2-dev
+## 0.5.2
 
 * Use library URIs (not names) to look up annotations in the mirror system.
+* Loosen version constraint to allow package:build version 0.6
 
 ## 0.5.1+7
 

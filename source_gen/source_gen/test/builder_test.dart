@@ -5,46 +5,47 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
-import 'package:build/build.dart';
+import 'package:build_test/build_test.dart';
 import 'package:source_gen/builder.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
 import 'src/comment_generator.dart';
-import 'src/test_phases.dart';
 
 void main() {
   test('Simple Generator test', _simpleTest);
 
   test('Bad generated source', () async {
     var srcs = _createPackageStub(pkgName);
-    var phaseGroup = new PhaseGroup.singleAction(
-        new GeneratorBuilder([const _BadOutputGenerator()]),
-        new InputSet(pkgName, ['lib/test_lib.dart']));
+    var builder = new GeneratorBuilder([const _BadOutputGenerator()]);
 
-    await testPhases(phaseGroup, pkgName, srcs, {
-      '$pkgName|lib/test_lib.g.dart': contains('not valid code!'),
-    });
+    await testBuilder(builder, srcs,
+        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        outputs: {
+          '$pkgName|lib/test_lib.g.dart': contains('not valid code!'),
+        });
   });
 
   test('Generate standalone output file', () async {
     var srcs = _createPackageStub(pkgName);
-    var phaseGroup = new PhaseGroup.singleAction(
-        new GeneratorBuilder([const CommentGenerator()], isStandalone: true),
-        new InputSet(pkgName, ['lib/test_lib.dart']));
-    await testPhases(phaseGroup, pkgName, srcs, {
-      '$pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,
-    });
+    var builder =
+        new GeneratorBuilder([const CommentGenerator()], isStandalone: true);
+    await testBuilder(builder, srcs,
+        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        outputs: {
+          '$pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,
+        });
   });
 
   test('Generate explicitly non-standalone output file', () async {
     var srcs = _createPackageStub(pkgName);
-    var phaseGroup = new PhaseGroup.singleAction(
-        new GeneratorBuilder([const CommentGenerator()], isStandalone: false),
-        new InputSet(pkgName, ['lib/test_lib.dart']));
-    await testPhases(phaseGroup, pkgName, srcs, {
-      '$pkgName|lib/test_lib.g.dart': _testGenPartContent,
-    });
+    var builder =
+        new GeneratorBuilder([const CommentGenerator()], isStandalone: false);
+    await testBuilder(builder, srcs,
+        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        outputs: {
+          '$pkgName|lib/test_lib.g.dart': _testGenPartContent,
+        });
   });
 
   test('Expect error when multiple generators used on a standalone builder',
@@ -78,22 +79,19 @@ void main() {
 
   test('No-op generator produces no generated parts', () async {
     var srcs = _createPackageStub(pkgName);
-    var phaseGroup = new PhaseGroup.singleAction(
-        new GeneratorBuilder([const _NoOpGenerator()]),
-        new InputSet(pkgName, ['lib/test_lib.dart']));
-
-    await testPhases(phaseGroup, pkgName, srcs, {});
+    var builder = new GeneratorBuilder([const _NoOpGenerator()]);
+    await testBuilder(builder, srcs, outputs: {});
   });
 
   test('handle generator errors well', () async {
     var srcs =
         _createPackageStub(pkgName, testLibContent: _testLibContentWithError);
-    var phaseGroup = new PhaseGroup.singleAction(
-        new GeneratorBuilder([const CommentGenerator()]),
-        new InputSet(pkgName, ['lib/test_lib.dart']));
-    await testPhases(phaseGroup, pkgName, srcs, {
-      '$pkgName|lib/test_lib.g.dart': _testGenPartContentError,
-    });
+    var builder = new GeneratorBuilder([const CommentGenerator()]);
+    await testBuilder(builder, srcs,
+        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        outputs: {
+          '$pkgName|lib/test_lib.g.dart': _testGenPartContentError,
+        });
   });
 }
 
@@ -103,12 +101,13 @@ Future _simpleTest() => _generateTest(
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
   var srcs = _createPackageStub(pkgName);
-  var phaseGroup = new PhaseGroup.singleAction(new GeneratorBuilder([gen]),
-      new InputSet(pkgName, ['lib/test_lib.dart']));
+  var builder = new GeneratorBuilder([gen]);
 
-  await testPhases(phaseGroup, pkgName, srcs, {
-    '$pkgName|lib/test_lib.g.dart': expectedContent,
-  });
+  await testBuilder(builder, srcs,
+      generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+      outputs: {
+        '$pkgName|lib/test_lib.g.dart': expectedContent,
+      });
 }
 
 /// Creates a package using [pkgName].
