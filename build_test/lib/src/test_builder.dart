@@ -1,8 +1,6 @@
-// Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
@@ -60,10 +58,15 @@ void _checkOutputs(Map<String, /*String|Matcher*/ dynamic> outputs,
 ///
 /// [writer] can optionally be provided to capture assets written by the
 /// builders (e.g. when [outputs] is not sufficient).
+///
+/// [logLevel] sets the builder log level and [onLog] can optionally capture
+/// build log messages.
 Future testBuilder(Builder builder, Map<String, String> inputs,
     {bool deleteFilesByDefault,
     Map<String, String> outputs,
-    InMemoryAssetWriter writer}) async {
+    InMemoryAssetWriter writer,
+    Level logLevel: Level.OFF,
+    onLog(LogRecord record)}) async {
   writer ??= new InMemoryAssetWriter();
   final reader = new InMemoryAssetReader(writer.assets);
 
