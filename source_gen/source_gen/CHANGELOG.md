@@ -2,6 +2,7 @@
 
 * Use library URIs (not names) to look up annotations in the mirror system.
 * Loosen version constraint to allow package:build version 0.6
+* Fix a bug against the latest SDK checking whether List implements Iterable
 
 ## 0.5.1+7
 

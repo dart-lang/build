@@ -278,15 +278,10 @@ ParameterizedType _typeTest(
   if (tester(type)) return type;
 
   if (type is InterfaceType) {
-    var items = type.interfaces.where(tester).toList();
+    var tests = type.interfaces.map((type) => _typeTest(type, tester));
+    var match = _firstNonNull(tests);
 
-    if (items.length > 1) {
-      throw 'weird - more than 1 interface matches the type test - $items';
-    }
-
-    if (items.length == 1) {
-      return items.single;
-    }
+    if (match != null) return match;
 
     if (type.superclass != null) {
       return _typeTest(type.superclass, tester);
@@ -294,6 +289,9 @@ ParameterizedType _typeTest(
   }
   return null;
 }
+
+/*=T*/ _firstNonNull/*<T>*/(Iterable/*<T>*/ values) =>
+    values.firstWhere((value) => value != null, orElse: () => null);
 
 bool _isDartIterable(DartType type) {
   return type.element.library != null &&
