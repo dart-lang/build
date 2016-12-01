@@ -11,7 +11,8 @@ import 'in_memory_writer.dart';
 class InMemoryAssetReader implements AssetReader {
   final Map<AssetId, DatedString> assets;
 
-  InMemoryAssetReader(this.assets);
+  InMemoryAssetReader([Map<AssetId, DatedString> sourceAssets])
+      : assets = sourceAssets ?? <AssetId, DatedString>{};
 
   @override
   Future<bool> hasInput(AssetId id) {
@@ -22,5 +23,9 @@ class InMemoryAssetReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!await hasInput(id)) throw new AssetNotFoundException(id);
     return assets[id].value;
+  }
+
+  void cacheAsset(Asset asset) {
+    assets[asset.id] = new DatedString(asset.stringContents);
   }
 }

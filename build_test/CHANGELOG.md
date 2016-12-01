@@ -1,3 +1,11 @@
+## 0.3.1
+
+- Additional capabilities in testBuilder:
+  - Filter sourceAssets to inputs with `isInput`
+  - Get log records
+  - Ignore output expectations when `outputs` is null
+  - Use a custom `writer`
+
 ## 0.3.0
 
 - **BREAKING** removed testPhases utility. Tests should be using testBuilder
