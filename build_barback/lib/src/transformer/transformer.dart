@@ -60,12 +60,11 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
       return;
     }
 
-    // Run the build step.
-    var logger = new Logger('${input.id}');
-    Logger.root.level = Level.ALL;
-    var logSubscription = logger.onRecord.listen((LogRecord log) {
-      if (log.loggerName != logger.fullName) return;
+    hierarchicalLoggingEnabled = true;
 
+    var logger = new Logger.detached('BuilderTransformer-${input.id}');
+    logger.level = Level.ALL;
+    var logSubscription = logger.onRecord.listen((LogRecord log) {
       if (log.level <= Level.CONFIG) {
         transform.logger.fine(_logRecordToMessage(log));
       } else if (log.level <= Level.INFO) {
@@ -77,6 +76,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
       }
     });
 
+    // Run the build step.
     var buildStep = new ManagedBuildStep(
         input, expected, reader, writer, input.id.package, _resolvers,
         logger: logger);
