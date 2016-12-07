@@ -3,8 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:path/path.dart' as pathos;
 
-/// Forked from the `barback` package.
-///
 /// Identifies an asset within a package.
 class AssetId implements Comparable<AssetId> {
   /// The name of the package containing this asset.
