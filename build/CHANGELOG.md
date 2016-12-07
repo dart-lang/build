@@ -1,3 +1,8 @@
+## 0.6.1
+
+- `BuildStep` now implements `AssetReader` and `AssetWriter` so it's easier to
+  share with other code paths using a more limited interface.
+
 ## 0.6.0
 
 - **BREAKING** Move some classes and methods out of this package. If you are
