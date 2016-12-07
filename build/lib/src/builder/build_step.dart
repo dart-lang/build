@@ -15,7 +15,7 @@ import 'build_step_impl.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// it also handles tracking of dependencies.
-abstract class BuildStep {
+abstract class BuildStep implements AssetReader, AssetWriter {
   /// The primary input for this build step.
   Asset get input;
 
@@ -23,14 +23,22 @@ abstract class BuildStep {
   Logger get logger;
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
+  @override
   Future<bool> hasInput(AssetId id);
 
   /// Reads an [Asset] by [id] as a [String] using [encoding].
+  @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
   /// Outputs an [Asset] using the current [AssetWriter], and adds [asset] to
   /// [outputs].
-  void writeAsString(Asset asset, {Encoding encoding: UTF8});
+  ///
+  /// Throws an [UnexpectedOutputException] if [asset] is not in
+  /// [expectedOutputs]. Most `Builder` implementations should not need to
+  /// `await` this Future since the runner will be responsible for waiting until
+  /// all outputs are written.
+  @override
+  Future writeAsString(Asset asset, {Encoding encoding: UTF8});
 
   /// Gives a [Resolver] for [id]. This must be released when it is done being
   /// used.

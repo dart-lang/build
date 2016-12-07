@@ -51,33 +51,26 @@ class BuildStepImpl implements ManagedBuildStep {
     _expectedOutputs.addAll(expectedOutputs);
   }
 
-  /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
   @override
   Future<bool> hasInput(AssetId id) {
     _checkInput(id);
     return _reader.hasInput(id);
   }
 
-  /// Reads an [Asset] by [id] as a [String] using [encoding].
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
-  /// Outputs an [Asset] using the current [AssetWriter], and adds [asset] to
-  /// [outputs].
-  ///
-  /// Throws an [UnexpectedOutputException] if [asset] is not in
-  /// [expectedOutputs].
   @override
-  void writeAsString(Asset asset, {Encoding encoding: UTF8}) {
+  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
     _checkOutput(asset);
     var done = _writer.writeAsString(asset, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);
+    return done;
   }
 
-  /// Resolves [id] and returns a [Future<Resolver>] once that is done.
   @override
   Future<Resolver> resolve(AssetId id,
       {bool resolveAllConstants, List<AssetId> entryPoints}) async {
