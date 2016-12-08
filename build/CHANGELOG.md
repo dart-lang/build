@@ -1,3 +1,7 @@
+## 0.6.2
+
+- Remove unused dependencies
+
 ## 0.6.1
 
 - `BuildStep` now implements `AssetReader` and `AssetWriter` so it's easier to
