@@ -65,8 +65,20 @@ class BuildStepImpl implements ManagedBuildStep {
 
   @override
   Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
-    _checkOutput(asset);
+    _checkOutput(asset.id);
     var done = _writer.writeAsString(asset, encoding: encoding);
+    _outputsCompleted = _outputsCompleted.then((_) => done);
+    return done;
+  }
+
+  /// Synchronousl record [id] as an asset that needs to be written and
+  /// asynchronously write it.
+  ///
+  /// [id] needs to be passed separately from [asset] so that a check for
+  /// allowed outputs can be performed sychronously.
+  Future writeFromFuture(AssetId id, Future<Asset> asset) {
+    _checkOutput(id);
+    var done = asset.then((asset) => _writer.writeAsString(asset));
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
@@ -92,18 +104,18 @@ class BuildStepImpl implements ManagedBuildStep {
     }
   }
 
-  /// Checks that [asset] is a valid output, and throws an
+  /// Checks that [id] is a valid output, and throws an
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
-  void _checkOutput(Asset asset) {
-    if (asset.id.package != _rootPackage) {
+  void _checkOutput(AssetId id) {
+    if (id.package != _rootPackage) {
       throw new InvalidOutputException(
-          asset,
+          id,
           'Files may only be output in the root (application) package. '
-          'Attempted to output "${asset.id}" but the root package is '
+          'Attempted to output "$id" but the root package is '
           '"$_rootPackage".');
     }
-    if (!_expectedOutputs.any((id) => id == asset.id)) {
-      throw new UnexpectedOutputException(asset);
+    if (!_expectedOutputs.any((check) => check == id)) {
+      throw new UnexpectedOutputException(id);
     }
   }
 }

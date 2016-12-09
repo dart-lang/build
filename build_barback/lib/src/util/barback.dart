@@ -4,8 +4,9 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart' as build;
 import 'package:barback/barback.dart' as barback;
+import 'package:build/build.dart' as build;
+import 'package:build/src/builder/build_step_impl.dart';
 import 'package:logging/logging.dart';
 
 barback.AssetId toBarbackAssetId(build.AssetId id) =>
@@ -60,9 +61,8 @@ class BuildStepTransform implements barback.Transform {
 
   @override
   void addOutput(barback.Asset output) {
-    toBuildAsset(output).then((asset) {
-      buildStep.writeAsString(asset);
-    });
+    (buildStep as BuildStepImpl)
+        .writeFromFuture(toBuildAssetId(output.id), toBuildAsset(output));
   }
 
   @override

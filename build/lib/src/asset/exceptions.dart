@@ -1,7 +1,6 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'asset.dart';
 import 'id.dart';
 
 class AssetNotFoundException implements Exception {
@@ -23,13 +22,13 @@ class PackageNotFoundException implements Exception {
 }
 
 class InvalidOutputException implements Exception {
-  final Asset asset;
+  final AssetId assetId;
   final String message;
 
-  InvalidOutputException(this.asset, this.message);
+  InvalidOutputException(this.assetId, this.message);
 
   @override
-  String toString() => 'InvalidOutputException: $asset\n$message';
+  String toString() => 'InvalidOutputException: $assetId\n$message';
 }
 
 class InvalidInputException implements Exception {
