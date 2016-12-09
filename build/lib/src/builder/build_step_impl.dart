@@ -71,7 +71,7 @@ class BuildStepImpl implements ManagedBuildStep {
     return done;
   }
 
-  /// Synchronousl record [id] as an asset that needs to be written and
+  /// Synchronously record [id] as an asset that needs to be written and
   /// asynchronously write it.
   ///
   /// [id] needs to be passed separately from [asset] so that a check for
