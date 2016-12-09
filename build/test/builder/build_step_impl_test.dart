@@ -2,13 +2,16 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:build_barback/build_barback.dart';
+import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
-import 'package:build_barback/build_barback.dart';
-import 'package:build_test/build_test.dart';
 
 import '../common/file_combiner_builder.dart';
 
@@ -145,5 +148,69 @@ void main() {
         });
       });
     });
+
+    group('With slow writes', () {
+      BuildStepImpl buildStep;
+      SlowAssetWriter assetWriter;
+      Asset output;
+
+      setUp(() async {
+        var primary = makeAsset();
+        assetWriter = new SlowAssetWriter();
+        output = makeAsset('a|test.txt');
+        buildStep = new BuildStepImpl(
+            primary,
+            [output.id],
+            new StubAssetReader(),
+            assetWriter,
+            primary.id.package,
+            const BarbackResolvers());
+      });
+
+      test('Completes only after writes finish', () async {
+        buildStep.writeAsString(output);
+        var isComplete = false;
+        buildStep.complete().then((_) {
+          isComplete = true;
+        });
+        await new Future(() {});
+        expect(isComplete, false,
+            reason: 'File has not written, should not be complete');
+        assetWriter.finishWrite();
+        await new Future(() {});
+        expect(isComplete, true, reason: 'File is written, should be complete');
+      });
+
+      test('Completes only after async writes finish', () async {
+        var outputCompleter = new Completer<Asset>();
+        buildStep.writeFromFuture(output.id, outputCompleter.future);
+        var isComplete = false;
+        buildStep.complete().then((_) {
+          isComplete = true;
+        });
+        await new Future(() {});
+        expect(isComplete, false,
+            reason: 'File has not resolved, should not be complete');
+        outputCompleter.complete(output);
+        await new Future(() {});
+        expect(isComplete, false,
+            reason: 'File has not written, should not be complete');
+        assetWriter.finishWrite();
+        await new Future(() {});
+        expect(isComplete, true, reason: 'File is written, should be complete');
+      });
+    });
   });
+}
+
+class SlowAssetWriter implements AssetWriter {
+  final _writeCompleter = new Completer();
+  void finishWrite() {
+    _writeCompleter.complete(null);
+  }
+
+  @override
+  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
+    return _writeCompleter.future;
+  }
 }
