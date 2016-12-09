@@ -1,3 +1,7 @@
+## 0.6.3
+
+- Add hook for `build_barback` to write assets from a Future
+
 ## 0.6.2
 
 - Remove unused dependencies
