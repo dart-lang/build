@@ -1,3 +1,8 @@
+## 0.0.3
+
+- Prevent asset writing from escaping beyond the `complete()` call in
+  BuildStepImpl
+
 ## 0.0.2
 
 - Fix a bug forwarding logs from a `BuilderTransformer`
