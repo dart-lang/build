@@ -34,6 +34,9 @@ class TransformerBuilder implements Builder {
     (transformer as barback.DeclaringTransformer).declareOutputs(transform);
     return transform.outputs;
   }
+
+  @override
+  String toString() => 'TransformerBuilder[$transformer]';
 }
 
 /// A [barback.DeclaringTransform] which just collects outputs.
