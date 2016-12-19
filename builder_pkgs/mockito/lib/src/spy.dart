@@ -24,11 +24,11 @@ import 'mock.dart' show CannedResponse, Mock, setDefaultResponse;
 ///     var mockAnimal = new MockAnimal();
 ///     var realAnimal = new RealAnimal();
 ///     spy(mockAnimal, realAnimal);
-/*=E*/ spy/*<E>*/(Mock mock, Object/*=E*/ spyOn) {
+E spy<E>(Mock mock, E spyOn) {
   var mirror = reflect(spyOn);
   setDefaultResponse(
       mock,
       () => new CannedResponse(null,
           (Invocation realInvocation) => mirror.delegate(realInvocation)));
-  return mock;
+  return mock as E;
 }

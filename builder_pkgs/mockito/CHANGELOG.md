@@ -4,6 +4,7 @@
   `mockito.dart`. Users may import as `package:mockito/mirrors.dart`
   going forward.
 * Deprecated `mockito_no_mirrors.dart`; replace with `mockito.dart`.
+* Require Dart SDK `>=1.21.0 <2.0.0` to use generic methods.
 
 ## 1.0.1
 

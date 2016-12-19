@@ -4,6 +4,4 @@ dart:
   - stable
   - dev
   - 1.21.0
-  - 1.20.1
-  - 1.19.1
 script: ./tool/travis.sh

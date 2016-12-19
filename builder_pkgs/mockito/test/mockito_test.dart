@@ -35,7 +35,7 @@ class RealClass {
           {List<int> y, List<int> z}) =>
       "Real";
   String get getter => "Real";
-  void set setter(String arg) {
+  set setter(String arg) {
     throw new StateError("I must be mocked");
   }
 }
@@ -45,6 +45,7 @@ abstract class Foo {
 }
 
 abstract class AbstractFoo implements Foo {
+  @override
   String bar() => baz();
 
   String baz();
