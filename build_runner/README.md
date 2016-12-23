@@ -31,7 +31,7 @@ Lets look at a very simple example, with a single `BuildAction`. You can ignore
 the `CopyBuilder` for now, just know that its a `Builder` which copies files:
 
 ```dart
-import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
 
 main() async {
   /// The [PhaseGroup#singleAction] constructor is a shorthand for:
