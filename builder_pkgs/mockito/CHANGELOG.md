@@ -1,3 +1,7 @@
+## 2.0.0
+
+* Removed `mockito_no_mirrors.dart`
+
 ## 2.0.0-dev
 
 * Remove export of `spy` and any `dart:mirrors` based API from
