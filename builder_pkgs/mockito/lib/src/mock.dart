@@ -32,6 +32,10 @@ void setDefaultResponse(Mock mock, CannedResponse defaultResponse()) {
   mock._defaultResponse = defaultResponse;
 }
 
+throwOnMissingStub(Mock mock) {
+  mock._defaultResponse = Mock._throwResponse;
+}
+
 /// Extend or mixin this class to mark the implementation as a [Mock].
 ///
 /// A mocked class implements all fields and methods with a default
@@ -64,9 +68,16 @@ void setDefaultResponse(Mock mock, CannedResponse defaultResponse()) {
 /// used within the context of Dart for Web (dart2js/ddc) and Dart for Mobile
 /// (flutter).
 class Mock {
-  static CannedResponse _nullResponse() {
-    return new CannedResponse(null, (_) => null);
-  }
+  static CannedResponse _nullResponse() =>
+      new CannedResponse(null, (_) => null);
+
+  static CannedResponse _throwResponse() => new CannedResponse(
+      null,
+      (Invocation inv) =>
+          throw new UnimplementedError('''No stub for invocation:
+    member name: ${inv.memberName}
+    positional arguments (${inv.positionalArguments.length}): ${inv.positionalArguments}
+    named arguments (${inv.namedArguments.length}): ${inv.namedArguments}'''));
 
   final List<RealCall> _realCalls = <RealCall>[];
   final List<CannedResponse> _responses = <CannedResponse>[];

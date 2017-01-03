@@ -179,8 +179,10 @@ expect(cat.lives, 9);
 
 ## Debugging
 ```dart
-//printing all collected invocations of any mock methods of a list of mock objects
+//print all collected invocations of any mock methods of a list of mock objects
 logInvocations([catOne, catTwo]);
+//throw every time that a mock method is called without a stub being matched
+throwOnMissingStub(cat);
 ```
 
 ## Strong mode compliance

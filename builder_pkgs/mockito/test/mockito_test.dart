@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import 'package:mockito/mockito.dart';
-import 'package:mockito/src/mock.dart' show resetMockitoState;
+import 'package:mockito/src/mock.dart'
+    show resetMockitoState, throwOnMissingStub;
 import 'package:test/test.dart';
 
 class RealClass {
@@ -614,6 +615,21 @@ void main() {
       mock.methodWithNormalArgs(2);
       expect(verify(mock.methodWithNormalArgs(captureAny)).captured,
           equals([1, 2]));
+    });
+  });
+
+  group("throwOnMissingStub", () {
+    test("should throw when a mock was called without a matching stub", () {
+      throwOnMissingStub(mock as Mock);
+      when(mock.methodWithNormalArgs(42)).thenReturn("Ultimate Answer");
+      expect(() => (mock as MockedClass).methodWithoutArgs(),
+          throwsUnimplementedError);
+    });
+
+    test("should not throw when a mock was called with a matching stub", () {
+      throwOnMissingStub(mock as Mock);
+      when(mock.methodWithoutArgs()).thenReturn("A");
+      expect(() => mock.methodWithoutArgs(), returnsNormally);
     });
   });
 }

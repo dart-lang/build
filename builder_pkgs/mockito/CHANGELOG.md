@@ -1,3 +1,7 @@
+## 2.0.1
+
+* Add a new `throwOnMissingStub` method to the API.
+
 ## 2.0.0
 
 * Removed `mockito_no_mirrors.dart`
