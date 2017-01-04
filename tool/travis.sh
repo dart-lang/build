@@ -44,3 +44,9 @@ dartanalyzer --fatal-warnings lib/build_barback.dart
 pub run test
 run_coveralls
 popd
+
+pushd bazel_codegen
+pub upgrade
+dartanalyzer --fatal-warnings lib/bazel_codegen.dart
+pub run test
+popd
