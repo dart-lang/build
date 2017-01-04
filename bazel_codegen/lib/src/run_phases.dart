@@ -224,7 +224,7 @@ Options _parseOptions(List<String> args) {
   return options;
 }
 
-/// Writes a [WorkResponse] to stdout in the format that blaze expects.
+/// Writes a [WorkResponse] to stdout in the format that bazel expects.
 void writeResponse(WorkResponse response) {
   var responseBuffer = response.writeToBuffer();
 
