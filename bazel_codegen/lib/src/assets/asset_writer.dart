@@ -25,7 +25,7 @@ class BazelAssetWriter implements AssetWriter {
     var packageDir = _packageMap[asset.id.package];
     var bazelPath = path.join(packageDir, asset.id.path);
     if (_validInputs?.contains(bazelPath) == true) {
-      throw new SourceGenError(
+      throw new CodegenError(
           'Attempted to output ${asset.id} which was an input. Blaze does not '
           'allow overwriting of input files.');
     }

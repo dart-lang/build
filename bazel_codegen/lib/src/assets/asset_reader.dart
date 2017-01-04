@@ -68,7 +68,7 @@ class BazelAssetReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     final packagePath = _packageMap[id.package];
     if (!_assetFilter.isValid(id) || packagePath == null) {
-      throw new SourceGenError('Attempted to read invalid input $id.');
+      throw new CodegenError('Attempted to read invalid input $id.');
     }
     final filePath = path.join(packagePath, id.path);
 
@@ -79,7 +79,7 @@ class BazelAssetReader implements AssetReader {
     numAssetsReadFromDisk++;
     final contents = _fileSystem.readAsStringSync(filePath);
     if (contents == null) {
-      throw new SourceGenError('Could not find $id at $filePath');
+      throw new CodegenError('Could not find $id at $filePath');
     }
     _assetCache[id] = contents;
     return contents;
@@ -103,7 +103,7 @@ String _findPackageName(Map<String, String> packageMap, String packagePath) {
       return packageName;
     }
   }
-  throw new SourceGenError('Could not find package name for path $packagePath');
+  throw new CodegenError('Could not find package name for path $packagePath');
 }
 
 Map<String, AssetId> translateToAssetIds(Iterable<String> inputs,
@@ -112,7 +112,7 @@ Map<String, AssetId> translateToAssetIds(Iterable<String> inputs,
   final packageName = _findPackageName(packageMap, packagePath);
   for (var input in inputs) {
     if (!input.startsWith(packagePath)) {
-      throw new SourceGenError(
+      throw new CodegenError(
           'Cannot generate files for source "$input" because it is not '
           'in the current package ($packagePath). '
           'If this file is needed to generate other files, please add it to '

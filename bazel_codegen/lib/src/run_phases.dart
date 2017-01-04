@@ -22,13 +22,13 @@ typedef List<Phase> PhaseFactory(Options options);
 /// Runs builds as a worker.
 Future generateAsWorker(
     PhaseFactory phaseFactory, Map<String, String> defaultContent) {
-  return new _SourceGenWorker(phaseFactory, defaultContent).run();
+  return new _CodegenWorker(phaseFactory, defaultContent).run();
 }
 
 /// Runs in single build mode (not as a worker).
 Future generateSingleBuild(PhaseFactory phaseFactory, List<String> args,
     Map<String, String> defaultContent) async {
-  var timings = new SourceGenTiming()..start();
+  var timings = new CodegenTiming()..start();
   IOSinkLogHandle logger;
 
   var options = _parseOptions(args);
@@ -37,7 +37,7 @@ Future generateSingleBuild(PhaseFactory phaseFactory, List<String> args,
     logger = await _runPhases(
         phaseFactory(options), options, defaultContent, timings);
   } catch (e, s) {
-    stderr.writeln("Dart Source Gen failed with:\n$e\n$s");
+    stderr.writeln("Dart Codegen failed with:\n$e\n$s");
     exitCode = EXIT_CODE_ERROR;
   }
 
@@ -57,12 +57,12 @@ String _bazelRelativePath(String inputPath, Iterable<String> outputDirs) {
 }
 
 /// Persistent worker loop implementation.
-class _SourceGenWorker extends AsyncWorkerLoop {
+class _CodegenWorker extends AsyncWorkerLoop {
   final Map<String, String> defaultContent;
   final PhaseFactory phaseFactory;
   int numRuns = 0;
 
-  _SourceGenWorker(this.phaseFactory, this.defaultContent);
+  _CodegenWorker(this.phaseFactory, this.defaultContent);
 
   @override
   Future<WorkResponse> performRequest(WorkRequest request) async {
@@ -70,7 +70,7 @@ class _SourceGenWorker extends AsyncWorkerLoop {
     var options = _parseOptions(request.arguments);
     try {
       numRuns++;
-      var timings = new SourceGenTiming()..start();
+      var timings = new CodegenTiming()..start();
 
       var bazelRelativeInputs = request.inputs
           .map((input) => _bazelRelativePath(input.path, options.rootDirs));
@@ -93,7 +93,7 @@ class _SourceGenWorker extends AsyncWorkerLoop {
       await logHandle?.close();
       return new WorkResponse()
         ..exitCode = EXIT_CODE_ERROR
-        ..output = "Dart Source Gen worker failed with:\n$e\n$s";
+        ..output = "Dart Codegen worker failed with:\n$e\n$s";
     }
   }
 }
@@ -105,7 +105,7 @@ class _SourceGenWorker extends AsyncWorkerLoop {
 /// See one of the functions above for a description of
 /// [defaultContent].
 Future<IOSinkLogHandle> _runPhases(List<Phase> phases, Options options,
-    Map<String, String> defaultContent, SourceGenTiming timings,
+    Map<String, String> defaultContent, CodegenTiming timings,
     {bool isWorker: false, Set<String> validInputs}) async {
   assert(timings.isRunning);
 
@@ -113,7 +113,7 @@ Future<IOSinkLogHandle> _runPhases(List<Phase> phases, Options options,
     return new File(options.srcsPath).readAsLines();
   });
   if (srcPaths.isEmpty) {
-    throw new SourceGenError('No input files to process.');
+    throw new CodegenError('No input files to process.');
   }
 
   final packageMap =
@@ -190,7 +190,7 @@ Future<IOSinkLogHandle> _runPhases(List<Phase> phases, Options options,
         await Future.wait(futures);
       });
     } catch (e, stack) {
-      logger.severe('Caught error during source generation step '
+      logger.severe('Caught error during code generation step '
           '$builder on ${options.packagePath}:\n$e\n$stack');
     }
 

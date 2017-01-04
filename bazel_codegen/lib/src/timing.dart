@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 
-/// Tracks timing related to source gen actions.
-class SourceGenTiming {
+/// Tracks timing related to codegen actions.
+class CodegenTiming {
   static const _mainWatchDescription = 'All operations';
   final _watches = <String, Stopwatch>{};
 
-  SourceGenTiming() {
+  CodegenTiming() {
     _watches[_mainWatchDescription] = new Stopwatch();
   }
 

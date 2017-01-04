@@ -52,7 +52,7 @@ Map<String, Level> _optionToLogLevel = {
   'error': Level.SEVERE,
 };
 
-/// Parsed arguments for source generator binaries.
+/// Parsed arguments for code generator binaries.
 class Options {
   final List<String> rootDirs;
   final String packagePath;

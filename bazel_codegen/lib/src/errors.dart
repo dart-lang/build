@@ -1,10 +1,11 @@
-/// An error which occurred during source generation. These are typically errors
-/// that were internally detected.
-class SourceGenError extends Error {
+/// An error which occurred during code generation.
+///
+/// These are typically errors that were detected internally.
+class CodegenError extends Error {
   final String _message;
 
-  SourceGenError(this._message);
+  CodegenError(this._message);
 
   @override
-  String toString() => 'SourceGenError: $_message';
+  String toString() => 'CodegenError: $_message';
 }
