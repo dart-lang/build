@@ -5,6 +5,7 @@
   * Move cli_util to dev_dependencies
   * Avoid some deprecated analyzer apis
   * Syntax tweaks
+  * Drop results.dart which had no usages
 
 ## 0.5.2
 
