@@ -1,3 +1,11 @@
+## 0.5.3
+
+* Internal cleanup
+  * Drop some unused utility methods
+  * Move cli_util to dev_dependencies
+  * Avoid some deprecated analyzer apis
+  * Syntax tweaks
+
 ## 0.5.2
 
 * Use library URIs (not names) to look up annotations in the mirror system.

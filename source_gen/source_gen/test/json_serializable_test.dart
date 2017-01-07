@@ -17,6 +17,7 @@ import 'package:source_gen/generators/json_serializable_generator.dart';
 import 'package:source_gen/src/utils.dart';
 import 'package:test/test.dart';
 
+import 'analysis_utils.dart';
 import 'src/io.dart';
 import 'test_utils.dart';
 

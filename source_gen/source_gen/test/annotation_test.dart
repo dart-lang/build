@@ -17,9 +17,9 @@ import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/generators/json_serializable.dart';
 import 'package:source_gen/src/annotation.dart';
-import 'package:source_gen/src/utils.dart';
 import 'package:test/test.dart';
 
+import 'analysis_utils.dart';
 import 'src/io.dart';
 import 'test_files/annotations.dart' as defs;
 import 'test_utils.dart';
