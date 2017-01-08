@@ -8,7 +8,6 @@ import 'annotation_test.dart' as annotation;
 import 'builder_test.dart' as builder;
 import 'find_libraries_test.dart' as find_libraries;
 import 'json_serializable_test.dart' as json_generator;
-import 'utils_test.dart' as utils;
 
 import 'package:test/test.dart';
 
@@ -17,5 +16,4 @@ void main() {
   group('builder', builder.main);
   group('find_libraries', find_libraries.main);
   group('json_generator', json_generator.main);
-  group('utils', utils.main);
 }
