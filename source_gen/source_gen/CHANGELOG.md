@@ -1,5 +1,7 @@
 ## 0.5.3
 
+* Add matchTypes method. As with anything imported from /src/ this is
+  use-at-your-own-risk since it is not guaranteed to be stable
 * Internal cleanup
   * Drop some unused utility methods
   * Move cli_util to dev_dependencies
