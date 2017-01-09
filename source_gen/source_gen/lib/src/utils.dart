@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/standard_resolution_map.dart';
 import 'package:analyzer/dart/element/element.dart';
 
 String friendlyNameForElement(Element element) {
@@ -50,9 +51,10 @@ Iterable<Element> getElementsFromLibraryElement(LibraryElement unit) sync* {
 
 Iterable<Element> _getElements(CompilationUnitMember member) {
   if (member is TopLevelVariableDeclaration) {
-    return member.variables.variables.map((v) => v.element);
+    return member.variables.variables
+        .map(resolutionMap.elementDeclaredByVariableDeclaration);
   }
-  var element = member.element;
+  var element = resolutionMap.elementDeclaredByDeclaration(member);
 
   if (element == null) {
     print([member, member.runtimeType, member.element]);
