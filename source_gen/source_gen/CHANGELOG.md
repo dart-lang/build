@@ -1,3 +1,8 @@
+## 0.5.3+1
+
+* Don't throw when running against a non-library asset and getting no
+  LibraryElement
+
 ## 0.5.3
 
 * Add matchTypes method. As with anything imported from /src/ this is
