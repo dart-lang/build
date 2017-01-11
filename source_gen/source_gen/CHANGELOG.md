@@ -1,3 +1,8 @@
+## 0.5.3+2
+
+* BugFix: Always release the Resolver instance, even when generation does not
+  run
+
 ## 0.5.3+1
 
 * Don't throw when running against a non-library asset and getting no

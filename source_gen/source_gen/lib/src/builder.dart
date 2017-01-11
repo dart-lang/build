@@ -30,10 +30,13 @@ class GeneratorBuilder extends Builder {
   Future build(BuildStep buildStep) async {
     var id = buildStep.input.id;
     var resolver = await buildStep.resolve(id, resolveAllConstants: false);
-    var lib = resolver.getLibrary(id);
-    if (lib == null) return;
-    await _generateForLibrary(lib, buildStep);
-    resolver.release();
+    try {
+      var lib = resolver.getLibrary(id);
+      if (lib == null) return;
+      await _generateForLibrary(lib, buildStep);
+    } finally {
+      resolver.release();
+    }
   }
 
   @override
