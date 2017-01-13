@@ -21,8 +21,9 @@ void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetWriter writer) {
     } else if (value is List<int>) {
       writer.assets[id] = new DatedBytes(value);
     } else {
-      throw 'asset values must be of type `String` or `List<int>`, got '
-          '${value.runtimeType}.';
+      throw new ArgumentError(
+          '`assets` values must be of type `String` or `List<int>`, got '
+          '${value.runtimeType}.');
     }
   });
 }

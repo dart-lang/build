@@ -11,14 +11,6 @@ dependencies:
 dev_dependencies:
   build_runner: any
 
-dependency_overrides:
-  build:
-    path: ../build
-  build_runner:
-    path: ../build_runner
-  build_barback:
-    path: ../build_barback
-
 transformers:
 - e2e_example:
     $include: 'web/*.txt'
