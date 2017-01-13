@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
-import '../asset/asset.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';

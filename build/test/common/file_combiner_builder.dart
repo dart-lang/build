@@ -17,7 +17,7 @@ class FileCombinerBuilder implements Builder {
     }
 
     var outputId = _combinedAssetId(buildStep.inputId);
-    buildStep.writeAsString(new StringAsset(outputId, content.toString()));
+    buildStep.writeAsString(outputId, content.toString());
   }
 
   @override

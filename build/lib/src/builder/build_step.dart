@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
-import '../asset/asset.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -40,7 +39,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// since the runner will be responsible for waiting until all outputs are
   /// written.
   @override
-  Future writeAsBytes(BytesAsset asset);
+  Future writeAsBytes(AssetId id, List<int> bytes);
 
   /// Outputs an [Asset] using the current [AssetWriter].
   ///
@@ -48,7 +47,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// since the runner will be responsible for waiting until all outputs are
   /// written.
   @override
-  Future writeAsString(StringAsset asset, {Encoding encoding: UTF8});
+  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 
   /// Gives a [Resolver] for [id]. This must be released when it is done being
   /// used.

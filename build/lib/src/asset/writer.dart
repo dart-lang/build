@@ -4,14 +4,13 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'asset.dart';
 import 'id.dart';
 
 /// Abstract class that can write [Asset]s.
 abstract class AssetWriter {
-  Future writeAsBytes(BytesAsset asset);
+  Future writeAsBytes(AssetId id, List<int> bytes);
 
-  Future writeAsString(StringAsset asset, {Encoding encoding: UTF8});
+  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 }
 
 /// An [AssetWriter] which tracks all [AssetId]s written during it's lifetime.
@@ -24,14 +23,14 @@ class AssetWriterSpy implements AssetWriter {
   Iterable<AssetId> get assetsWritten => _assetsWritten;
 
   @override
-  Future writeAsBytes(BytesAsset asset) {
-    _assetsWritten.add(asset.id);
-    return _delegate.writeAsBytes(asset);
+  Future writeAsBytes(AssetId id, List<int> bytes) {
+    _assetsWritten.add(id);
+    return _delegate.writeAsBytes(id, bytes);
   }
 
   @override
-  Future writeAsString(StringAsset asset, {Encoding encoding: UTF8}) {
-    _assetsWritten.add(asset.id);
-    return _delegate.writeAsString(asset, encoding: encoding);
+  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8}) {
+    _assetsWritten.add(id);
+    return _delegate.writeAsString(id, contents, encoding: encoding);
   }
 }

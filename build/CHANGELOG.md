@@ -4,25 +4,25 @@ A number of changes to the apis, primarily to support reading/writing as bytes,
 as this is going to inevitably be a required feature. This will hopefully be the
 last breaking change before the `1.0` release, but it is a fairly large one.
 
-**New Features**
-- The `AssetWriter` class now has a `Future writeAsBytes(BytesAsset asset)`
-  method.
+### New Features
+- The `AssetWriter` class now has a
+  `Future writeAsBytes(AssetId id, List<int> bytes)` method.
 - The `AssetReader` class now has a `Future<List<int>> readAsBytes(AssetId id)`
   method.
 
-**Breaking Changes**
-- The `Asset` class is now an abstract class, which only defines the `id`
-  getter. There are two implementations, `StringAsset` and `BytesAsset`.
-- `AssetWriter#writeAsString` now takes a `StringAsset`.
+### Breaking Changes
+- The `Asset` class has been removed entirely.
+- The `AssetWriter#writeAsString` signature has changed to
+  `Future writeAsString(AssetId id, String contents, {Encoding encoding})`.
 - The type of the `AssetWriterSpy#assetsWritten` getter has changed from an
-  `Iterable<Asset>` to an `Iterable<AssetId>`. This is a memory optimization so
-  that all output asset contents are not kept in memory for the entire build.
+  `Iterable<Asset>` to an `Iterable<AssetId>`.
 - `BuildStep#input` has been changed to `BuildStep#inputId`, and its type has
   changed from `Asset` to `AssetId`. This means you must now use
   `BuildStep#readAsString` or `BuildStep#readAsBytes` to read the primary input,
   instead of it already being read in for you.
-  - *Note*: The changes to `AssetReader` and `AssetWriter` also affect
-    `BuildStep`, since it implements both of those interfaces.
+
+**Note**: The changes to `AssetReader` and `AssetWriter` also affect `BuildStep`
+and other classes that implement those interfaces.
 
 ## 0.6.3
 
