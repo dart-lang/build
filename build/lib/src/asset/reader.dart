@@ -8,6 +8,9 @@ import 'id.dart';
 
 /// Abstract interface for reading assets.
 abstract class AssetReader {
+  /// Asynchronously reads [id], and returns it as a [List<int>].
+  Future<List<int>> readAsBytes(AssetId id);
+
   /// Asynchronously reads [id], and returns it as a [String].
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 

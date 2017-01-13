@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
-import '../asset/asset.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -16,8 +15,8 @@ import 'build_step_impl.dart';
 /// A single step in the build processes. This represents a single input and
 /// it also handles tracking of dependencies.
 abstract class BuildStep implements AssetReader, AssetWriter {
-  /// The primary input for this build step.
-  Asset get input;
+  /// The primary input id for this build step.
+  AssetId get inputId;
 
   /// A [Logger] for this [BuildStep].
   Logger get logger;
@@ -26,19 +25,24 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @override
   Future<bool> hasInput(AssetId id);
 
-  /// Reads an [Asset] by [id] as a [String] using [encoding].
+  @override
+  Future<List<int>> readAsBytes(AssetId id);
+
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
-  /// Outputs an [Asset] using the current [AssetWriter], and adds [asset] to
-  /// [outputs].
-  ///
-  /// Throws an [UnexpectedOutputException] if [asset] is not in
-  /// [expectedOutputs]. Most `Builder` implementations should not need to
-  /// `await` this Future since the runner will be responsible for waiting until
-  /// all outputs are written.
+
+  /// **NOTE**: Most `Builder` implementations should not need to `await` this
+  /// Future since the runner will be responsible for waiting until all outputs
+  /// are written.
   @override
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8});
+  Future writeAsBytes(AssetId id, List<int> bytes);
+
+  /// **NOTE**: Most `Builder` implementations should not need to `await` this
+  /// Future since the runner will be responsible for waiting until all outputs
+  /// are written.
+  @override
+  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 
   /// Gives a [Resolver] for [id]. This must be released when it is done being
   /// used.
@@ -56,7 +60,7 @@ abstract class ManagedBuildStep implements BuildStep {
   Future complete();
 
   factory ManagedBuildStep(
-      Asset input,
+      AssetId inputId,
       Iterable<AssetId> expectedOutputs,
       AssetReader reader,
       AssetWriter writer,

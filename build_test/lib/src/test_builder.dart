@@ -12,19 +12,27 @@ import 'in_memory_writer.dart';
 import 'in_memory_reader.dart';
 import 'assets.dart';
 
-void _checkOutputs(Map<String, /*String|Matcher*/ dynamic> outputs,
-    [Map<AssetId, Asset> actualAssets]) {
+void _checkOutputs(Map<String, /*List<int>|String|Matcher*/ dynamic> outputs,
+    [List<AssetId> actualAssets, RecordingAssetWriter writer]) {
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
-      assert(contentsMatcher is String || contentsMatcher is Matcher);
+      assert(contentsMatcher is String ||
+          contentsMatcher is List<int> ||
+          contentsMatcher is Matcher);
 
       var assetId = makeAssetId(serializedId);
 
       // Check that the asset was produced.
-      var actual = actualAssets.remove(assetId);
-      expect(actual, isNotNull,
+      expect(actualAssets.remove(assetId), isNotNull,
           reason: 'Expected to find $assetId in ${actualAssets}.');
-      expect(actual.stringContents, contentsMatcher,
+      var actual = writer.assets[assetId];
+      var expected;
+      if (actual is DatedString) {
+        expected = actual.stringValue;
+      } else if (actual is DatedBytes) {
+        expected = actual.bytesValue;
+      }
+      expect(expected, contentsMatcher,
           reason: 'Unexpected content for $assetId in result.outputs.');
     });
     // Check that no extra assets were produced.
@@ -60,21 +68,26 @@ void _checkOutputs(Map<String, /*String|Matcher*/ dynamic> outputs,
 ///
 /// Callers may optionally provide an [onLog] callback to do validaiton on the
 /// logging output of the builder.
-Future testBuilder(Builder builder, Map<String, String> sourceAssets,
+Future testBuilder(
+    Builder builder, Map<String, /*String|List<int>*/ dynamic> sourceAssets,
     {Set<String> generateFor,
     bool isInput(String assetId),
     String rootPackage,
-    AssetWriter writer,
-    Map<String, /*String|Matcher*/ dynamic> outputs,
+    RecordingAssetWriter writer,
+    Map<String, /*String|List<int>|Matcher*/ dynamic> outputs,
     void onLog(LogRecord log)}) async {
   writer ??= new InMemoryAssetWriter();
   final reader = new InMemoryAssetReader();
 
   var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {
-    var asset = makeAsset(serializedId, contents);
-    reader.cacheAsset(asset);
-    inputIds.add(asset.id);
+    var id = makeAssetId(serializedId);
+    if (contents is String) {
+      reader.cacheStringAsset(id, contents);
+    } else if (contents is List<int>) {
+      reader.cacheBytesAsset(id, contents);
+    }
+    inputIds.add(id);
   });
 
   isInput ??= generateFor?.contains ?? (_) => true;
@@ -87,8 +100,6 @@ Future testBuilder(Builder builder, Map<String, String> sourceAssets,
       builder, inputIds, reader, writerSpy, const BarbackResolvers(),
       rootPackage: rootPackage, logger: logger);
   await logSubscription.cancel();
-  var actualOutputs = new Map<AssetId, Asset>.fromIterable(
-      writerSpy.assetsWritten,
-      key: (asset) => asset.id);
-  _checkOutputs(outputs, actualOutputs);
+  var actualOutputs = writerSpy.assetsWritten;
+  _checkOutputs(outputs, actualOutputs, writer);
 }

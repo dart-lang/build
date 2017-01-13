@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 export 'src/analyzer/resolver.dart';
-export 'src/asset/asset.dart';
 export 'src/asset/exceptions.dart';
 export 'src/asset/id.dart';
 export 'src/asset/reader.dart';

@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
-import '../asset/asset.dart';
 import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
@@ -20,9 +19,9 @@ import 'exceptions.dart';
 class BuildStepImpl implements ManagedBuildStep {
   final Resolvers _resolvers;
 
-  /// The primary input for this build step.
+  /// The primary input id for this build step.
   @override
-  final Asset input;
+  final AssetId inputId;
 
   @override
   final Logger logger;
@@ -43,11 +42,11 @@ class BuildStepImpl implements ManagedBuildStep {
   /// The current root package, used for input/output validation.
   final String _rootPackage;
 
-  BuildStepImpl(Asset input, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage, this._resolvers,
+  BuildStepImpl(AssetId inputId, Iterable<AssetId> expectedOutputs,
+      this._reader, this._writer, this._rootPackage, this._resolvers,
       {Logger logger})
-      : this.input = input,
-        this.logger = logger ?? new Logger('${input.id}') {
+      : this.inputId = inputId,
+        this.logger = logger ?? new Logger('$inputId') {
     _expectedOutputs.addAll(expectedOutputs);
   }
 
@@ -58,15 +57,29 @@ class BuildStepImpl implements ManagedBuildStep {
   }
 
   @override
+  Future<List<int>> readAsBytes(AssetId id) {
+    _checkInput(id);
+    return _reader.readAsBytes(id);
+  }
+
+  @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
   @override
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
-    _checkOutput(asset.id);
-    var done = _writer.writeAsString(asset, encoding: encoding);
+  Future writeAsBytes(AssetId id, List<int> bytes) {
+    _checkOutput(id);
+    var done = _writer.writeAsBytes(id, bytes);
+    _outputsCompleted = _outputsCompleted.then((_) => done);
+    return done;
+  }
+
+  @override
+  Future writeAsString(AssetId id, String content, {Encoding encoding: UTF8}) {
+    _checkOutput(id);
+    var done = _writer.writeAsString(id, content, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
@@ -76,9 +89,23 @@ class BuildStepImpl implements ManagedBuildStep {
   ///
   /// [id] needs to be passed separately from [asset] so that a check for
   /// allowed outputs can be performed sychronously.
-  Future writeFromFuture(AssetId id, Future<Asset> asset) {
+  Future writeFromFutureAsString(AssetId id, Future<String> contents,
+      {Encoding encoding: UTF8}) {
     _checkOutput(id);
-    var done = asset.then((asset) => _writer.writeAsString(asset));
+    var done =
+        contents.then((c) => _writer.writeAsString(id, c, encoding: encoding));
+    _outputsCompleted = _outputsCompleted.then((_) => done);
+    return done;
+  }
+
+  /// Synchronously record [id] as an asset that needs to be written and
+  /// asynchronously write it.
+  ///
+  /// [id] needs to be passed separately from [asset] so that a check for
+  /// allowed outputs can be performed sychronously.
+  Future writeFromFutureAsBytes(AssetId id, Future<List<int>> bytes) {
+    _checkOutput(id);
+    var done = bytes.then((b) => _writer.writeAsBytes(id, b));
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }

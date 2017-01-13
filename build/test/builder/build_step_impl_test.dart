@@ -21,28 +21,28 @@ void main() {
     AssetReader reader;
 
     group('with reader/writer stub', () {
-      Asset primary;
+      AssetId primary;
       BuildStepImpl buildStep;
 
       setUp(() {
         reader = new StubAssetReader();
         writer = new StubAssetWriter();
-        primary = makeAsset();
+        primary = makeAssetId();
         buildStep = new BuildStepImpl(primary, [], reader, writer,
-            primary.id.package, const BarbackResolvers(),
-            logger: new Logger('${primary.id}'));
+            primary.package, const BarbackResolvers(),
+            logger: new Logger('$primary'));
       });
 
       test('doesnt allow non-expected outputs', () {
-        var asset = makeAsset();
-        expect(() => buildStep.writeAsString(asset),
+        var id = makeAssetId();
+        expect(() => buildStep.writeAsString(id, '$id'),
             throwsA(new isInstanceOf<UnexpectedOutputException>()));
       });
 
       test('has a useable logger', () async {
         Logger.root.level = Level.ALL;
         var logger = buildStep.logger;
-        expect(logger.fullName, primary.id.toString());
+        expect(logger.fullName, '$primary');
         var logs = <LogRecord>[];
         var listener = logger.onRecord.listen(logs.add);
         logger.fine('hello');
@@ -50,9 +50,9 @@ void main() {
         logger.severe('goodbye');
         await listener.cancel();
         expect(logs.map((l) => l.toString()), [
-          '[FINE] ${primary.id}: hello',
-          '[WARNING] ${primary.id}: world',
-          '[SEVERE] ${primary.id}: goodbye',
+          '[FINE] $primary: hello',
+          '[WARNING] $primary: world',
+          '[SEVERE] $primary: goodbye',
         ]);
       });
 
@@ -65,22 +65,31 @@ void main() {
             throwsA(invalidInputException));
       });
 
-      test('readAsString throws InvalidInputExceptions', () async {
-        expect(() => buildStep.readAsString(makeAssetId('b|web/a.txt')),
-            throwsA(invalidInputException));
-        expect(() => buildStep.readAsString(makeAssetId('b|a.txt')),
-            throwsA(invalidInputException));
-        expect(() => buildStep.readAsString(makeAssetId('foo|bar.txt')),
-            throwsA(invalidInputException));
+      test('readAs* throws InvalidInputExceptions', () async {
+        var invalidInputs = [
+          makeAssetId('b|web/a.txt'),
+          makeAssetId('b|a.txt'),
+          makeAssetId('foo|bar.txt')
+        ];
+        for (var id in invalidInputs) {
+          expect(
+              () => buildStep.readAsString(id), throwsA(invalidInputException));
+          expect(
+              () => buildStep.readAsBytes(id), throwsA(invalidInputException));
+        }
       });
 
-      test('writeAsString throws InvalidOutputExceptions', () async {
-        var a1 = makeAsset('b|test.txt');
-        expect(
-            () => buildStep.writeAsString(a1), throwsA(invalidOutputException));
-        var a2 = makeAsset('foo|bar.txt');
-        expect(
-            () => buildStep.writeAsString(a2), throwsA(invalidOutputException));
+      test('writeAs* throws InvalidOutputExceptions', () async {
+        var invalidOutputIds = [
+          makeAssetId('b|test.txt'),
+          makeAssetId('foo|bar.txt'),
+        ];
+        for (var id in invalidOutputIds) {
+          expect(() => buildStep.writeAsString(id, 'foo'),
+              throwsA(invalidOutputException));
+          expect(() => buildStep.writeAsBytes(id, [0]),
+              throwsA(invalidOutputException));
+        }
       });
     });
 
@@ -95,42 +104,42 @@ void main() {
 
       test('tracks dependencies and outputs when used by a builder', () async {
         var fileCombiner = new FileCombinerBuilder();
-        var primary = 'a|web/primary.txt';
-        var unUsed = 'a|web/not_used.txt';
-        var inputs = makeAssets({
+        var primary = makeAssetId('a|web/primary.txt');
+        var unUsed = makeAssetId('a|web/not_used.txt');
+        var inputs = {
           primary: 'a|web/a.txt\na|web/b.txt',
-          'a|web/a.txt': 'A',
-          'a|web/b.txt': 'B',
+          makeAssetId('a|web/a.txt'): 'A',
+          makeAssetId('a|web/b.txt'): 'B',
           unUsed: 'C',
-        });
-        addAssets(inputs.values, writer);
+        };
+        addAssets(inputs, writer);
         var outputId = new AssetId.parse('$primary.combined');
-        var buildStep = new BuildStepImpl(inputs[new AssetId.parse(primary)],
-            [outputId], reader, writer, 'a', const BarbackResolvers());
+        var buildStep = new BuildStepImpl(
+            primary, [outputId], reader, writer, 'a', const BarbackResolvers());
 
         await fileCombiner.build(buildStep);
         await buildStep.complete();
 
         // One output.
-        expect(writer.assets[outputId].value, 'AB');
+        expect(writer.assets[outputId].stringValue, 'AB');
       });
 
       group('resolve', () {
         test('can resolve assets', () async {
-          var inputs = makeAssets({
-            'a|web/a.dart': '''
+          var inputs = {
+            makeAssetId('a|web/a.dart'): '''
               library a;
 
               import 'b.dart';
             ''',
-            'a|web/b.dart': '''
+            makeAssetId('a|web/b.dart'): '''
               library b;
             ''',
-          });
-          addAssets(inputs.values, writer);
+          };
+          addAssets(inputs, writer);
 
           var primary = makeAssetId('a|web/a.dart');
-          var buildStep = new BuildStepImpl(inputs[primary], [], reader, writer,
+          var buildStep = new BuildStepImpl(primary, [], reader, writer,
               primary.package, const BarbackResolvers());
           var resolver = await buildStep.resolve(primary);
 
@@ -152,23 +161,25 @@ void main() {
     group('With slow writes', () {
       BuildStepImpl buildStep;
       SlowAssetWriter assetWriter;
-      Asset output;
+      AssetId outputId;
+      String outputContent;
 
       setUp(() async {
-        var primary = makeAsset();
+        var primary = makeAssetId();
         assetWriter = new SlowAssetWriter();
-        output = makeAsset('a|test.txt');
+        outputId = makeAssetId('a|test.txt');
+        outputContent = '$outputId';
         buildStep = new BuildStepImpl(
             primary,
-            [output.id],
+            [outputId],
             new StubAssetReader(),
             assetWriter,
-            primary.id.package,
+            primary.package,
             const BarbackResolvers());
       });
 
       test('Completes only after writes finish', () async {
-        buildStep.writeAsString(output);
+        buildStep.writeAsString(outputId, outputContent);
         var isComplete = false;
         buildStep.complete().then((_) {
           isComplete = true;
@@ -182,8 +193,8 @@ void main() {
       });
 
       test('Completes only after async writes finish', () async {
-        var outputCompleter = new Completer<Asset>();
-        buildStep.writeFromFuture(output.id, outputCompleter.future);
+        var outputCompleter = new Completer<String>();
+        buildStep.writeFromFutureAsString(outputId, outputCompleter.future);
         var isComplete = false;
         buildStep.complete().then((_) {
           isComplete = true;
@@ -191,7 +202,7 @@ void main() {
         await new Future(() {});
         expect(isComplete, false,
             reason: 'File has not resolved, should not be complete');
-        outputCompleter.complete(output);
+        outputCompleter.complete(outputContent);
         await new Future(() {});
         expect(isComplete, false,
             reason: 'File has not written, should not be complete');
@@ -210,7 +221,10 @@ class SlowAssetWriter implements AssetWriter {
   }
 
   @override
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
-    return _writeCompleter.future;
-  }
+  Future writeAsBytes(AssetId id, List<int> bytes) => _writeCompleter.future;
+
+  @override
+  Future writeAsString(AssetId id, String contents,
+          {Encoding encoding: UTF8}) =>
+      _writeCompleter.future;
 }

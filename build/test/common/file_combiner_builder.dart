@@ -10,14 +10,14 @@ import 'package:build/build.dart';
 class FileCombinerBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
-    var lines = buildStep.input.stringContents.split('\n');
+    var lines = (await buildStep.readAsString(buildStep.inputId)).split('\n');
     var content = new StringBuffer();
     for (var line in lines) {
       content.write(await buildStep.readAsString(new AssetId.parse(line)));
     }
 
-    var outputId = _combinedAssetId(buildStep.input.id);
-    buildStep.writeAsString(new Asset(outputId, content.toString()));
+    var outputId = _combinedAssetId(buildStep.inputId);
+    buildStep.writeAsString(outputId, content.toString());
   }
 
   @override

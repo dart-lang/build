@@ -1,5 +1,7 @@
 analyzer:
   strong-mode: true
+  exclude:
+    - e2e_example/**
 
 linter:
   rules:

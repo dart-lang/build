@@ -1,3 +1,32 @@
+## 0.4.0-dev
+
+Updates to work with `build` version 0.7.0.
+
+### New Features
+- The `testBuilder` method now accepts `List<int>` values for both
+  `sourceAssets` and `outputs`.
+
+### Breaking Changes
+- The `testBuilder` method now requires a `RecordingAssetWriter` instead of
+  just an `AssetWriter` for the `writer` parameter.
+- Deleted the `makeAsset` and `makeAssets` methods. There is no more `Asset`
+  class so these don't really have any value any more.
+- The signature of `addAssets` has changed to
+  `void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetWriter writer)`.
+  Values of the map may be either `String` or `List<int>`.
+- `InMemoryAssetReader#assets` and `InMemoryAssetWriter#assets` have changed to
+  a type of `Map<AssetId, DatedValue>` from a type of
+  `Map<AssetId, DatedString>`. `DatedValue` has both a `stringValue` and
+  `bytesValue` getter.
+- `InMemoryAssetReader` and `InMemoryAssetWriter` have been updated to implement
+  the new `AssetReader` and `AssetWriter` interfaces (see the `build` package
+  CHANGELOG for more details).
+- `InMemoryAssetReader#cacheAsset` has been changed to two separate methods,
+  `void cacheStringAsset(AssetId id, String contents)` and
+  `void cacheBytesAsset(AssetId id, List<int> bytes)`.
+- The `equalsAsset` matcher has been removed, since there is no more `Asset`
+  class.
+
 ## 0.3.1
 
 - Additional capabilities in testBuilder:
