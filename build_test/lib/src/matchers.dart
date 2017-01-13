@@ -12,21 +12,3 @@ final Matcher invalidOutputException =
     new isInstanceOf<InvalidOutputException>();
 final Matcher packageNotFoundException =
     new isInstanceOf<PackageNotFoundException>();
-
-Matcher equalsAsset(Asset expected) => new _AssetMatcher(expected);
-
-class _AssetMatcher extends Matcher {
-  final Asset _expected;
-
-  const _AssetMatcher(this._expected);
-
-  @override
-  bool matches(Object item, _) =>
-      item is Asset &&
-      item.id == _expected.id &&
-      item.stringContents == _expected.stringContents;
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}

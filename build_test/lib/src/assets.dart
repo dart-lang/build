@@ -14,22 +14,15 @@ AssetId makeAssetId([String assetIdString]) {
   return new AssetId.parse(assetIdString);
 }
 
-Asset makeAsset([String assetIdString, String contents]) {
-  var id = makeAssetId(assetIdString);
-  return new Asset(id, contents ?? '$id');
-}
-
-Map<AssetId, Asset> makeAssets(Map<String, String> assetsMap) {
-  var assets = <AssetId, Asset>{};
-  assetsMap.forEach((idString, content) {
-    var asset = makeAsset(idString, content);
-    assets[asset.id] = asset;
+void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetWriter writer) {
+  assets.forEach((id, value) {
+    if (value is String) {
+      writer.assets[id] = new DatedString(value);
+    } else if (value is List<int>) {
+      writer.assets[id] = new DatedBytes(value);
+    } else {
+      throw 'asset values must be of type `String` or `List<int>`, got '
+          '${value.runtimeType}.';
+    }
   });
-  return assets;
-}
-
-void addAssets(Iterable<Asset> assets, InMemoryAssetWriter writer) {
-  for (var asset in assets) {
-    writer.assets[asset.id] = new DatedString(asset.stringContents);
-  }
 }

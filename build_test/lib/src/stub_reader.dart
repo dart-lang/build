@@ -8,9 +8,11 @@ import 'package:build/build.dart';
 
 class StubAssetReader implements AssetReader {
   @override
-  Future<bool> hasInput(AssetId id) => new Future.value(null);
+  Future<bool> hasInput(_) => new Future.value(null);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
-      new Future.value(null);
+  Future<List<int>> readAsBytes(_) => new Future.value(null);
+
+  @override
+  Future<String> readAsString(_, {Encoding encoding}) => new Future.value(null);
 }

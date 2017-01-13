@@ -39,12 +39,12 @@ class CopyBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (blockUntil != null) await blockUntil;
 
-    var ids = declareOutputs(buildStep.input.id);
+    var ids = declareOutputs(buildStep.inputId);
     for (var id in ids) {
       var content = copyFromAsset == null
-          ? buildStep.input.stringContents
+          ? await buildStep.readAsString(buildStep.inputId)
           : await buildStep.readAsString(copyFromAsset);
-      buildStep.writeAsString(new Asset(id, content));
+      buildStep.writeAsString(id, content);
     }
 
     if (touchAsset != null) await buildStep.hasInput(touchAsset);
