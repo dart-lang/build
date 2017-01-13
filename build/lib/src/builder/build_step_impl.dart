@@ -20,9 +20,9 @@ import 'exceptions.dart';
 class BuildStepImpl implements ManagedBuildStep {
   final Resolvers _resolvers;
 
-  /// The primary input for this build step.
+  /// The primary input id for this build step.
   @override
-  final Asset input;
+  final AssetId inputId;
 
   @override
   final Logger logger;
@@ -43,11 +43,11 @@ class BuildStepImpl implements ManagedBuildStep {
   /// The current root package, used for input/output validation.
   final String _rootPackage;
 
-  BuildStepImpl(Asset input, Iterable<AssetId> expectedOutputs, this._reader,
+  BuildStepImpl(AssetId inputId, Iterable<AssetId> expectedOutputs, this._reader,
       this._writer, this._rootPackage, this._resolvers,
       {Logger logger})
-      : this.input = input,
-        this.logger = logger ?? new Logger('${input.id}') {
+      : this.inputId = inputId,
+        this.logger = logger ?? new Logger('${inputId}') {
     _expectedOutputs.addAll(expectedOutputs);
   }
 
@@ -58,13 +58,27 @@ class BuildStepImpl implements ManagedBuildStep {
   }
 
   @override
+  Future<List<int>> readAsBytes(AssetId id) {
+    _checkInput(id);
+    return _reader.readAsBytes(id);
+  }
+
+  @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
   @override
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) {
+  Future writeAsBytes(BytesAsset asset) {
+    _checkOutput(asset.id);
+    var done = _writer.writeAsBytes(asset);
+    _outputsCompleted = _outputsCompleted.then((_) => done);
+    return done;
+  }
+
+  @override
+  Future writeAsString(StringAsset asset, {Encoding encoding: UTF8}) {
     _checkOutput(asset.id);
     var done = _writer.writeAsString(asset, encoding: encoding);
     _outputsCompleted = _outputsCompleted.then((_) => done);
@@ -76,9 +90,21 @@ class BuildStepImpl implements ManagedBuildStep {
   ///
   /// [id] needs to be passed separately from [asset] so that a check for
   /// allowed outputs can be performed sychronously.
-  Future writeFromFuture(AssetId id, Future<Asset> asset) {
+  Future writeFromFutureAsString(AssetId id, Future<StringAsset> asset) {
     _checkOutput(id);
-    var done = asset.then((asset) => _writer.writeAsString(asset));
+    var done = asset.then(_writer.writeAsString);
+    _outputsCompleted = _outputsCompleted.then((_) => done);
+    return done;
+  }
+
+  /// Synchronously record [id] as an asset that needs to be written and
+  /// asynchronously write it.
+  ///
+  /// [id] needs to be passed separately from [asset] so that a check for
+  /// allowed outputs can be performed sychronously.
+  Future writeFromFutureAsBytes(AssetId id, Future<BytesAsset> asset) {
+    _checkOutput(id);
+    var done = asset.then(_writer.writeAsBytes);
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }

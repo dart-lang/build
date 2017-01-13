@@ -16,8 +16,8 @@ import 'build_step_impl.dart';
 /// A single step in the build processes. This represents a single input and
 /// it also handles tracking of dependencies.
 abstract class BuildStep implements AssetReader, AssetWriter {
-  /// The primary input for this build step.
-  Asset get input;
+  /// The primary input id for this build step.
+  AssetId get inputId;
 
   /// A [Logger] for this [BuildStep].
   Logger get logger;
@@ -26,19 +26,29 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @override
   Future<bool> hasInput(AssetId id);
 
+  /// Reads an [Asset] by [id] as a [List<int>].
+  @override
+  Future<List<int>> readAsBytes(AssetId id);
+
   /// Reads an [Asset] by [id] as a [String] using [encoding].
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
-  /// Outputs an [Asset] using the current [AssetWriter], and adds [asset] to
-  /// [outputs].
+  /// Outputs an [BytesAsset] using the current [AssetWriter].
   ///
-  /// Throws an [UnexpectedOutputException] if [asset] is not in
-  /// [expectedOutputs]. Most `Builder` implementations should not need to
-  /// `await` this Future since the runner will be responsible for waiting until
-  /// all outputs are written.
+  /// Most `Builder` implementations should not need to `await` this Future
+  /// since the runner will be responsible for waiting until all outputs are
+  /// written.
   @override
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8});
+  Future writeAsBytes(BytesAsset asset);
+
+  /// Outputs an [Asset] using the current [AssetWriter].
+  ///
+  /// Most `Builder` implementations should not need to `await` this Future
+  /// since the runner will be responsible for waiting until all outputs are
+  /// written.
+  @override
+  Future writeAsString(StringAsset asset, {Encoding encoding: UTF8});
 
   /// Gives a [Resolver] for [id]. This must be released when it is done being
   /// used.
@@ -56,7 +66,7 @@ abstract class ManagedBuildStep implements BuildStep {
   Future complete();
 
   factory ManagedBuildStep(
-      Asset input,
+      AssetId inputId,
       Iterable<AssetId> expectedOutputs,
       AssetReader reader,
       AssetWriter writer,

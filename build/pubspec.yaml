@@ -1,5 +1,5 @@
 name: build
-version: 0.6.3
+version: 0.7.0-dev
 description: A build system for Dart.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
@@ -18,3 +18,9 @@ dev_dependencies:
   glob: ^1.1.0
   test: ^0.12.0
   transformer_test: ^0.2.0
+
+dependency_overrides:
+  build_test:
+    path: ../build_test
+  build_barback:
+    path: ../build_barback
