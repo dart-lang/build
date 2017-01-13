@@ -25,27 +25,22 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @override
   Future<bool> hasInput(AssetId id);
 
-  /// Reads an [Asset] by [id] as a [List<int>].
   @override
   Future<List<int>> readAsBytes(AssetId id);
 
-  /// Reads an [Asset] by [id] as a [String] using [encoding].
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
-  /// Outputs an [BytesAsset] using the current [AssetWriter].
-  ///
-  /// Most `Builder` implementations should not need to `await` this Future
-  /// since the runner will be responsible for waiting until all outputs are
-  /// written.
+
+  /// **NOTE**: Most `Builder` implementations should not need to `await` this
+  /// Future since the runner will be responsible for waiting until all outputs
+  /// are written.
   @override
   Future writeAsBytes(AssetId id, List<int> bytes);
 
-  /// Outputs an [Asset] using the current [AssetWriter].
-  ///
-  /// Most `Builder` implementations should not need to `await` this Future
-  /// since the runner will be responsible for waiting until all outputs are
-  /// written.
+  /// **NOTE**: Most `Builder` implementations should not need to `await` this
+  /// Future since the runner will be responsible for waiting until all outputs
+  /// are written.
   @override
   Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 

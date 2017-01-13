@@ -46,7 +46,7 @@ class BuildStepImpl implements ManagedBuildStep {
       this._reader, this._writer, this._rootPackage, this._resolvers,
       {Logger logger})
       : this.inputId = inputId,
-        this.logger = logger ?? new Logger('${inputId}') {
+        this.logger = logger ?? new Logger('$inputId') {
     _expectedOutputs.addAll(expectedOutputs);
   }
 

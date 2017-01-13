@@ -6,7 +6,6 @@ import 'dart:convert';
 
 import 'id.dart';
 
-/// Abstract class that can write [Asset]s.
 abstract class AssetWriter {
   Future writeAsBytes(AssetId id, List<int> bytes);
 
@@ -16,7 +15,7 @@ abstract class AssetWriter {
 /// An [AssetWriter] which tracks all [AssetId]s written during it's lifetime.
 class AssetWriterSpy implements AssetWriter {
   final AssetWriter _delegate;
-  final List<AssetId> _assetsWritten = [];
+  final _assetsWritten = new Set<AssetId>();
 
   AssetWriterSpy(this._delegate);
 
