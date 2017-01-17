@@ -100,15 +100,19 @@ barback.TransformLogger toTransformLogger(Logger logger) {
 }
 
 class _BuildStepAsset implements barback.Asset {
+  @override
   final barback.AssetId id;
+
   final build.BuildStep _buildStep;
 
   _BuildStepAsset(this.id, this._buildStep);
 
+  @override
   Stream<List<int>> read() async* {
     yield await _buildStep.readAsBytes(toBuildAssetId(id));
   }
 
+  @override
   Future<String> readAsString({Encoding encoding: UTF8}) =>
       _buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
 }
