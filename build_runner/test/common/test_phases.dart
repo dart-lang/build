@@ -6,9 +6,7 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
-import 'package:build_test/build_test.dart'
-    hide InMemoryAssetWriter, DatedString, InMemoryAssetReader;
+import 'package:build_test/build_test.dart';
 import 'package:build_runner/build_runner.dart';
 
 import 'in_memory_reader.dart';
@@ -16,40 +14,6 @@ import 'in_memory_writer.dart';
 
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
-
-void checkOutputs(
-    Map<String, /*String|Matcher*/ dynamic> outputs, BuildResult result,
-    [Map<AssetId, DatedString> actualAssets]) {
-  if (outputs != null) {
-    var remainingOutputIds =
-        new List.from(result.outputs.map((asset) => asset.id));
-    outputs.forEach((serializedId, contentsMatcher) {
-      assert(contentsMatcher is String || contentsMatcher is Matcher);
-
-      var assetId = makeAssetId(serializedId);
-      remainingOutputIds.remove(assetId);
-
-      /// Check that the writer wrote the assets
-      if (actualAssets != null) {
-        expect(actualAssets, contains(assetId));
-        expect(actualAssets[assetId].value, contentsMatcher,
-            reason: 'Unexpected content for $assetId.');
-      }
-
-      /// Check that the assets exist in [result.outputs].
-      var actual = result.outputs
-          .firstWhere((output) => output.id == assetId, orElse: () => null);
-      expect(actual, isNotNull,
-          reason: 'Expected to find $assetId in ${result.outputs}.');
-      expect(actual.id, assetId);
-      expect(actual.stringContents, contentsMatcher,
-          reason: 'Unexpected content for $assetId in result.outputs.');
-    });
-
-    expect(remainingOutputIds, isEmpty,
-        reason: 'Unexpected outputs found `$remainingOutputIds`.');
-  }
-}
 
 Future<BuildResult> nextResult(List results) {
   var done = new Completer<BuildResult>();
@@ -108,21 +72,27 @@ Future<BuildResult> nextResult(List results) {
 ///       });
 ///     }
 ///
-Future testPhases(PhaseGroup phases, Map<String, String> inputs,
+Future testPhases(
+    PhaseGroup phases, Map<String, /*String|List<int>*/ dynamic> inputs,
     {bool deleteFilesByDefault,
-    Map<String, String> outputs,
+    Map<String, /*String|List<int>*/ dynamic> outputs,
     PackageGraph packageGraph,
     BuildStatus status: BuildStatus.success,
     Matcher exceptionMatcher,
-    InMemoryAssetWriter writer,
+    InMemoryRunnerAssetWriter writer,
     Level logLevel: Level.OFF,
     onLog(LogRecord record)}) async {
-  writer ??= new InMemoryAssetWriter();
+  writer ??= new InMemoryRunnerAssetWriter();
   final actualAssets = writer.assets;
-  final reader = new InMemoryAssetReader(actualAssets);
+  final reader = new InMemoryRunnerAssetReader(actualAssets);
 
   inputs.forEach((serializedId, contents) {
-    writer.writeAsString(makeAsset(serializedId, contents));
+    var id = makeAssetId(serializedId);
+    if (contents is String) {
+      reader.cacheStringAsset(id, contents);
+    } else if (contents is List<int>) {
+      reader.cacheBytesAsset(id, contents);
+    }
   });
 
   if (packageGraph == null) {
@@ -144,5 +114,5 @@ Future testPhases(PhaseGroup phases, Map<String, String> inputs,
     expect(result.exception, exceptionMatcher);
   }
 
-  checkOutputs(outputs, result, actualAssets);
+  checkOutputs(outputs, result.outputs, writer);
 }

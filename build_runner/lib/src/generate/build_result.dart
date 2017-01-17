@@ -19,9 +19,9 @@ class BuildResult {
   final BuildType buildType;
 
   /// All outputs created/updated during this build.
-  final List<Asset> outputs;
+  final List<AssetId> outputs;
 
-  BuildResult(this.status, this.buildType, List<Asset> outputs,
+  BuildResult(this.status, this.buildType, List<AssetId> outputs,
       {this.exception, this.stackTrace})
       : outputs = new List.unmodifiable(outputs);
 

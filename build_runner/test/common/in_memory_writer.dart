@@ -2,31 +2,15 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
 
-class InMemoryAssetWriter implements RunnerAssetWriter {
-  final Map<AssetId, DatedString> assets = {};
-
-  InMemoryAssetWriter();
-
-  @override
-  Future writeAsString(Asset asset,
-      {Encoding encoding: UTF8, DateTime lastModified}) async {
-    assets[asset.id] = new DatedString(asset.stringContents, lastModified);
-  }
-
+class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
+    implements RunnerAssetWriter {
   @override
   Future delete(AssetId id) async {
     assets.remove(id);
   }
-}
-
-class DatedString {
-  final String value;
-  final DateTime date;
-
-  DatedString(this.value, [DateTime date]) : date = date ?? new DateTime.now();
 }
