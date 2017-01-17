@@ -9,17 +9,19 @@ import 'package:build/build.dart' as build;
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:logging/logging.dart';
 
+import 'stream.dart';
+
 barback.AssetId toBarbackAssetId(build.AssetId id) =>
     new barback.AssetId(id.package, id.path);
 
 build.AssetId toBuildAssetId(barback.AssetId id) =>
     new build.AssetId(id.package, id.path);
 
-barback.Asset toBarbackAsset(build.Asset asset) => new barback.Asset.fromString(
-    toBarbackAssetId(asset.id), asset.stringContents);
+barback.Asset barbackAssetFromBytes(build.AssetId id, List<int> bytes) =>
+    new barback.Asset.fromBytes(toBarbackAssetId(id), bytes);
 
-Future<build.Asset> toBuildAsset(barback.Asset asset) async =>
-    new build.Asset(toBuildAssetId(asset.id), await asset.readAsString());
+barback.Asset barbackAssetFromString(build.AssetId id, String contents) =>
+    new barback.Asset.fromString(toBarbackAssetId(id), contents);
 
 barback.Transform toBarbackTransform(build.BuildStep buildStep) =>
     new BuildStepTransform(buildStep);
@@ -30,7 +32,10 @@ class BuildStepTransform implements barback.Transform {
   BuildStepTransform(this.buildStep);
 
   @override
-  barback.Asset get primaryInput => toBarbackAsset(buildStep.input);
+  barback.Asset get primaryInput {
+    var id = toBarbackAssetId(buildStep.inputId);
+    return new _BuildStepAsset(id, buildStep);
+  }
 
   @override
   barback.TransformLogger get logger {
@@ -52,8 +57,9 @@ class BuildStepTransform implements barback.Transform {
       buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
 
   @override
-  Stream<List<int>> readInput(barback.AssetId id) =>
-      throw new UnimplementedError();
+  Stream<List<int>> readInput(barback.AssetId id) async* {
+    yield await buildStep.readAsBytes(toBuildAssetId(id));
+  }
 
   @override
   Future<bool> hasInput(barback.AssetId id) =>
@@ -61,8 +67,8 @@ class BuildStepTransform implements barback.Transform {
 
   @override
   void addOutput(barback.Asset output) {
-    (buildStep as BuildStepImpl)
-        .writeFromFuture(toBuildAssetId(output.id), toBuildAsset(output));
+    (buildStep as BuildStepImpl).writeFromFutureAsBytes(
+        toBuildAssetId(output.id), combineByteStream(output.read()));
   }
 
   @override
@@ -91,4 +97,18 @@ barback.TransformLogger toTransformLogger(Logger logger) {
     if (logLevel == null) throw 'Unrecognized LogLevel $level.';
     logger.log(logLevel, buffer);
   });
+}
+
+class _BuildStepAsset implements barback.Asset {
+  final barback.AssetId id;
+  final build.BuildStep _buildStep;
+
+  _BuildStepAsset(this.id, this._buildStep);
+
+  Stream<List<int>> read() async* {
+    yield await _buildStep.readAsBytes(toBuildAssetId(id));
+  }
+
+  Future<String> readAsString({Encoding encoding: UTF8}) =>
+      _buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
 }

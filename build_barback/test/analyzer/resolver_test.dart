@@ -45,12 +45,13 @@ void main() {
       List messages: const []}) async {
     var writer = new InMemoryAssetWriter();
     var reader = new InMemoryAssetReader(writer.assets);
-    var assets = makeAssets(inputs);
-    addAssets(assets.values, writer);
+    var actualInputs = <AssetId, String>{};
+    inputs.forEach((k, v) => actualInputs[makeAssetId(k)] = v);
+    addAssets(actualInputs, writer);
 
     var builder = new TestBuilder(validator);
-    var buildStep = new ManagedBuildStep(
-        assets[entryPoint], [], reader, writer, 'a', _resolvers);
+    var buildStep =
+        new ManagedBuildStep(entryPoint, [], reader, writer, 'a', _resolvers);
     var logs = <LogRecord>[];
     if (messages != null) {
       buildStep.logger.onRecord.listen(logs.add);
@@ -69,8 +70,8 @@ void main() {
             'a|web/main.dart': ' main() {}',
           },
           validator: (resolver) {
-            var source = (_resolvers.lastResolved as dynamic).sources[
-                toBarbackAssetId(entryPoint)];
+            var source = (_resolvers.lastResolved as dynamic)
+                .sources[toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 1);
 
             var lib = resolver.getLibrary(entryPoint);
@@ -85,8 +86,8 @@ void main() {
                 } ''',
           },
           validator: (resolver) {
-            var source = (_resolvers.lastResolved as dynamic).sources[
-                toBarbackAssetId(entryPoint)];
+            var source = (_resolvers.lastResolved as dynamic)
+                .sources[toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 2);
 
             var lib = resolver.getLibrary(entryPoint);
@@ -308,7 +309,7 @@ class TestBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var resolver = await buildStep.resolve(buildStep.input.id);
+    var resolver = await buildStep.resolve(buildStep.inputId);
     try {
       validator(resolver);
     } finally {

@@ -12,8 +12,11 @@ import 'in_memory_writer.dart';
 import 'in_memory_reader.dart';
 import 'assets.dart';
 
-void _checkOutputs(Map<String, /*List<int>|String|Matcher*/ dynamic> outputs,
-    [List<AssetId> actualAssets, RecordingAssetWriter writer]) {
+void _checkOutputs(
+    Map<String, /*List<int>|String|Matcher<DatedValue>*/ dynamic> outputs,
+    [Iterable<AssetId> actualAssets,
+    RecordingAssetWriter writer]) {
+  var modifiableActualAssets = new Set.from(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
       assert(contentsMatcher is String ||
@@ -23,20 +26,22 @@ void _checkOutputs(Map<String, /*List<int>|String|Matcher*/ dynamic> outputs,
       var assetId = makeAssetId(serializedId);
 
       // Check that the asset was produced.
-      expect(actualAssets.remove(assetId), isNotNull,
+      expect(modifiableActualAssets.remove(assetId), isNotNull,
           reason: 'Expected to find $assetId in ${actualAssets}.');
       var actual = writer.assets[assetId];
       var expected;
-      if (actual is DatedString) {
+      if (contentsMatcher is String) {
         expected = actual.stringValue;
-      } else if (actual is DatedBytes) {
+      } else if (contentsMatcher is List<int>) {
         expected = actual.bytesValue;
+      } else if (contentsMatcher is Matcher) {
+        expected = actual;
       }
       expect(expected, contentsMatcher,
           reason: 'Unexpected content for $assetId in result.outputs.');
     });
     // Check that no extra assets were produced.
-    expect(actualAssets, isEmpty,
+    expect(modifiableActualAssets, isEmpty,
         reason:
             'Unexpected outputs found `$actualAssets`. Only expected $outputs');
   }
@@ -74,7 +79,7 @@ Future testBuilder(
     bool isInput(String assetId),
     String rootPackage,
     RecordingAssetWriter writer,
-    Map<String, /*String|List<int>|Matcher*/ dynamic> outputs,
+    Map<String, /*String|List<int>|Matcher<DatedValue>*/ dynamic> outputs,
     void onLog(LogRecord log)}) async {
   writer ??= new InMemoryAssetWriter();
   final reader = new InMemoryAssetReader();
