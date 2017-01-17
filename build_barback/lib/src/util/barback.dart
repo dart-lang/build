@@ -34,7 +34,7 @@ class BuildStepTransform implements barback.Transform {
   @override
   barback.Asset get primaryInput {
     var id = toBarbackAssetId(buildStep.inputId);
-    return new _BuildStepAsset(id, buildStep);
+    return new _BuildAsset(id, buildStep);
   }
 
   @override
@@ -57,9 +57,8 @@ class BuildStepTransform implements barback.Transform {
       buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
 
   @override
-  Stream<List<int>> readInput(barback.AssetId id) async* {
-    yield await buildStep.readAsBytes(toBuildAssetId(id));
-  }
+  Stream<List<int>> readInput(barback.AssetId id) =>
+      buildStep.readAsBytes(toBuildAssetId(id)).asStream();
 
   @override
   Future<bool> hasInput(barback.AssetId id) =>
@@ -99,20 +98,19 @@ barback.TransformLogger toTransformLogger(Logger logger) {
   });
 }
 
-class _BuildStepAsset implements barback.Asset {
+class _BuildAsset implements barback.Asset {
   @override
   final barback.AssetId id;
 
-  final build.BuildStep _buildStep;
+  final build.AssetReader _assetReader;
 
-  _BuildStepAsset(this.id, this._buildStep);
+  _BuildAsset(this.id, this._assetReader);
 
   @override
-  Stream<List<int>> read() async* {
-    yield await _buildStep.readAsBytes(toBuildAssetId(id));
-  }
+  Stream<List<int>> read() =>
+      _assetReader.readAsBytes(toBuildAssetId(id)).asStream();
 
   @override
   Future<String> readAsString({Encoding encoding: UTF8}) =>
-      _buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
+      _assetReader.readAsString(toBuildAssetId(id), encoding: encoding);
 }

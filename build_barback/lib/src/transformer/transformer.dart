@@ -63,7 +63,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
     hierarchicalLoggingEnabled = true;
 
-    var logger = new Logger.detached('BuilderTransformer-${inputId}');
+    var logger = new Logger.detached('BuilderTransformer-$inputId');
     logger.level = Level.ALL;
     var logSubscription = logger.onRecord.listen((LogRecord log) {
       if (log.level <= Level.CONFIG) {
