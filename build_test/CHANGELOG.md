@@ -9,6 +9,8 @@ Updates to work with `build` version 0.7.0.
 ### Breaking Changes
 - The `testBuilder` method now requires a `RecordingAssetWriter` instead of
   just an `AssetWriter` for the `writer` parameter.
+- If a `Matcher` is supplied for the `outputs` parameter of `testBuilder`, it
+  will now need to match against a `DatedValue` instead of a `String`.
 - Deleted the `makeAsset` and `makeAssets` methods. There is no more `Asset`
   class so these don't really have any value any more.
 - The signature of `addAssets` has changed to

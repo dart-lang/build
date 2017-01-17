@@ -5,13 +5,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart' as build;
-import 'package:build/build.dart' hide Asset, AssetId;
+import 'package:build/build.dart' hide AssetId;
 import 'package:barback/barback.dart' as barback show AssetId;
 import 'package:barback/barback.dart' hide Asset, AssetId;
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
 import '../util/barback.dart';
+import '../util/stream.dart';
 
 /// A [Transformer] which runs a single [Builder] with a new [BuildStep].
 ///
@@ -35,7 +36,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   Future apply(Transform transform) async {
-    var input = await toBuildAsset(transform.primaryInput);
+    var inputId = await toBuildAssetId(transform.primaryInput.id);
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 
@@ -62,7 +63,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
     hierarchicalLoggingEnabled = true;
 
-    var logger = new Logger.detached('BuilderTransformer-${input.id}');
+    var logger = new Logger.detached('BuilderTransformer-$inputId');
     logger.level = Level.ALL;
     var logSubscription = logger.onRecord.listen((LogRecord log) {
       if (log.level <= Level.CONFIG) {
@@ -78,7 +79,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
     // Run the build step.
     var buildStep = new ManagedBuildStep(
-        input, expected, reader, writer, input.id.package, _resolvers,
+        inputId, expected, reader, writer, inputId.package, _resolvers,
         logger: logger);
     await _builder.build(buildStep);
     await buildStep.complete();
@@ -118,6 +119,10 @@ class _TransformAssetReader implements AssetReader {
       transform.hasInput(toBarbackAssetId(id));
 
   @override
+  Future<List<int>> readAsBytes(build.AssetId id) async =>
+      await combineByteStream(transform.readInput(toBarbackAssetId(id)));
+
+  @override
   Future<String> readAsString(build.AssetId id, {Encoding encoding: UTF8}) =>
       transform.readInputAsString(toBarbackAssetId(id), encoding: encoding);
 }
@@ -129,8 +134,15 @@ class _TransformAssetWriter implements AssetWriter {
   _TransformAssetWriter(this.transform);
 
   @override
-  Future writeAsString(build.Asset asset, {Encoding encoding: UTF8}) {
-    transform.addOutput(toBarbackAsset(asset));
+  Future writeAsBytes(build.AssetId id, List<int> bytes) {
+    transform.addOutput(barbackAssetFromBytes(id, bytes));
+    return new Future.value(null);
+  }
+
+  @override
+  Future writeAsString(build.AssetId id, String contents,
+      {Encoding encoding: UTF8}) {
+    transform.addOutput(barbackAssetFromString(id, contents));
     return new Future.value(null);
   }
 }
