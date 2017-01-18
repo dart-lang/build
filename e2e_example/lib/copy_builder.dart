@@ -9,9 +9,9 @@ import 'package:build/build.dart';
 class CopyBuilder extends Builder {
   @override
   Future build(BuildStep buildStep) async {
-    var input = buildStep.input;
-    var copy = new Asset(_copiedAssetId(input.id), input.stringContents);
-    buildStep.writeAsString(copy);
+    var id = buildStep.inputId;
+    buildStep.writeAsString(
+        _copiedAssetId(id), await buildStep.readAsString(id));
   }
 
   @override
