@@ -10,7 +10,6 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_static/shelf_static.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-import '../asset/cache.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -66,11 +65,8 @@ class BuildOptions {
         serveFilesOutsidePath: true);
     debounceDelay ??= const Duration(milliseconds: 250);
     packageGraph ??= new PackageGraph.forThisPackage();
-    var cache = new AssetCache();
-    reader ??=
-        new CachedAssetReader(cache, new FileBasedAssetReader(packageGraph));
-    writer ??=
-        new CachedAssetWriter(cache, new FileBasedAssetWriter(packageGraph));
+    reader ??= new FileBasedAssetReader(packageGraph);
+    writer ??= new FileBasedAssetWriter(packageGraph);
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
     deleteFilesByDefault ??= false;
   }

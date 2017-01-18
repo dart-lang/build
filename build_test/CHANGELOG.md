@@ -5,6 +5,7 @@ Updates to work with `build` version 0.7.0.
 ### New Features
 - The `testBuilder` method now accepts `List<int>` values for both
   `sourceAssets` and `outputs`.
+- The `checkOutputs` method is now public.
 
 ### Breaking Changes
 - The `testBuilder` method now requires a `RecordingAssetWriter` instead of

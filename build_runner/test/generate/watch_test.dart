@@ -11,6 +11,7 @@ import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
 
@@ -32,7 +33,7 @@ void main() {
 
     group('simple', () {
       test('rebuilds on file updates', () async {
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
             .listen(results.add);
@@ -40,20 +41,20 @@ void main() {
         var result = await nextResult(results);
         checkOutputs({
           'a|web/a.txt.copy': 'a',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
+        await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
         checkOutputs({
           'a|web/a.txt.copy': 'b',
-        }, result, writer.assets);
+        }, result.outputs, writer);
       });
 
       test('rebuilds on new files', () async {
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
             .listen(results.add);
@@ -61,22 +62,22 @@ void main() {
         var result = await nextResult(results);
         checkOutputs({
           'a|web/a.txt.copy': 'a',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/b.txt', 'b'));
+        await writer.writeAsString(makeAssetId('a|web/b.txt'), 'b');
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
         checkOutputs({
           'a|web/b.txt.copy': 'b',
-        }, result, writer.assets);
+        }, result.outputs, writer);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].value, 'a');
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].stringValue, 'a');
       });
 
       test('rebuilds on deleted files', () async {
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(
                 copyAPhaseGroup,
@@ -91,7 +92,7 @@ void main() {
         checkOutputs({
           'a|web/a.txt.copy': 'a',
           'a|web/b.txt.copy': 'b',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
         await writer.delete(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(new WatchEvent(
@@ -100,16 +101,16 @@ void main() {
         result = await nextResult(results);
 
         // Shouldn't rebuild anything, no outputs.
-        checkOutputs({}, result, writer.assets);
+        checkOutputs({}, result.outputs, writer);
 
         // The old output file should no longer exist either.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].value, 'b');
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].stringValue, 'b');
       });
 
       test('rebuilds properly update asset_graph.json', () async {
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'},
                 writer)
@@ -119,9 +120,9 @@ void main() {
         checkOutputs({
           'a|web/a.txt.copy': 'a',
           'a|web/b.txt.copy': 'b',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/c.txt', 'c'));
+        await writer.writeAsString(makeAssetId('a|web/c.txt'), 'c');
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'c.txt')));
         await writer.delete(makeAssetId('a|web/a.txt'));
@@ -129,10 +130,10 @@ void main() {
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
-        checkOutputs({'a|web/c.txt.copy': 'c'}, result, writer.assets);
+        checkOutputs({'a|web/c.txt.copy': 'c'}, result.outputs, writer);
 
-        var cachedGraph = new AssetGraph.deserialize(
-            JSON.decode(writer.assets[makeAssetId('a|$assetGraphPath')].value));
+        var cachedGraph = new AssetGraph.deserialize(JSON.decode(
+            writer.assets[makeAssetId('a|$assetGraphPath')].stringValue));
 
         var expectedGraph = new AssetGraph();
         var bCopyNode = makeAssetNode('a|web/b.txt.copy');
@@ -147,7 +148,7 @@ void main() {
 
       test('build fails if script is updated after the first build starts',
           () async {
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
             .listen(results.add);
@@ -155,12 +156,12 @@ void main() {
         var result = await nextResult(results);
         checkOutputs({
           'a|web/a.txt.copy': 'a',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
         /// Pretend like a part of the dart script got updated.
-        await writer.writeAsString(makeAsset('test|lib/test.dart', ''),
+        await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
             lastModified: new DateTime.now().add(new Duration(days: 1)));
-        await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
+        await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
@@ -169,7 +170,7 @@ void main() {
       });
 
       test('ignores events from nested packages', () async {
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         var packageA = new PackageNode(
             'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'));
@@ -188,10 +189,10 @@ void main() {
         // match the input set.
         checkOutputs({
           'a|web/a.txt.copy': 'a',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
-        await writer.writeAsString(makeAsset('b|web/b.txt', 'c'));
+        await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
+        await writer.writeAsString(makeAssetId('b|web/b.txt'), 'c');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'b', 'web', 'a.txt')));
         FakeWatcher.notifyWatchers(new WatchEvent(
@@ -202,11 +203,11 @@ void main() {
         // matches the input set.
         checkOutputs({
           'a|web/a.txt.copy': 'b',
-        }, result, writer.assets);
+        }, result.outputs, writer);
       });
 
       test('converts packages paths to absolute ones', () async {
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(copyAPhaseGroup, {'a|lib/a.txt': 'a'}, writer)
             .listen(results.add);
@@ -214,16 +215,16 @@ void main() {
         var result = await nextResult(results);
         checkOutputs({
           'a|lib/a.txt.copy': 'a',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|lib/a.txt', 'b'));
+        await writer.writeAsString(makeAssetId('a|lib/a.txt'), 'b');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'packages', 'a', 'a.txt')));
 
         result = await nextResult(results);
         checkOutputs({
           'a|lib/a.txt.copy': 'b',
-        }, result, writer.assets);
+        }, result.outputs, writer);
       });
     });
 
@@ -234,21 +235,21 @@ void main() {
         phases.newPhase()
           ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
 
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
         var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
-            result, writer.assets);
+            result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/a.txt', 'b'));
+        await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
-            result, writer.assets);
+            result.outputs, writer);
       });
 
       test('adds propagate through all phases', () async {
@@ -257,24 +258,25 @@ void main() {
         phases.newPhase()
           ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
 
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
         var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
-            result, writer.assets);
+            result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/b.txt', 'b'));
+        await writer.writeAsString(makeAssetId('a|web/b.txt'), 'b');
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
         checkOutputs({'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
-            result, writer.assets);
+            result.outputs, writer);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].value, 'a');
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')].value, 'a');
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].stringValue, 'a');
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')].stringValue,
+            'a');
       });
 
       test('deletes propagate through all phases', () async {
@@ -283,7 +285,7 @@ void main() {
         phases.newPhase()
           ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
 
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
             .listen(results.add);
@@ -294,7 +296,7 @@ void main() {
           'a|web/a.txt.copy.copy': 'a',
           'a|web/b.txt.copy': 'b',
           'a|web/b.txt.copy.copy': 'b'
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
         await writer.delete(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(new WatchEvent(
@@ -302,14 +304,15 @@ void main() {
 
         result = await nextResult(results);
         // Shouldn't rebuild anything, no outputs.
-        checkOutputs({}, result, writer.assets);
+        checkOutputs({}, result.outputs, writer);
 
         // Derived outputs should no longer exist.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')], isNull);
         // Other outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].value, 'b');
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')].value, 'b');
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].stringValue, 'b');
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')].stringValue,
+            'b');
       });
 
       test('deleted generated outputs are regenerated', () async {
@@ -318,7 +321,7 @@ void main() {
         phases.newPhase()
           ..addAction(new CopyBuilder(), new InputSet('a', ['**/*.copy']));
 
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a'}, writer).listen(results.add);
 
@@ -326,7 +329,7 @@ void main() {
         checkOutputs({
           'a|web/a.txt.copy': 'a',
           'a|web/a.txt.copy.copy': 'a',
-        }, result, writer.assets);
+        }, result.outputs, writer);
 
         await writer.delete(makeAssetId('a|web/a.txt.copy'));
         FakeWatcher.notifyWatchers(new WatchEvent(
@@ -337,7 +340,7 @@ void main() {
         checkOutputs({
           'a|web/a.txt.copy': 'a',
           'a|web/a.txt.copy.copy': 'a',
-        }, result, writer.assets);
+        }, result.outputs, writer);
       });
     });
 
@@ -348,20 +351,20 @@ void main() {
             new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
             new InputSet('a', ['web/a.txt']));
 
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
             .listen(results.add);
 
         var result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'b'}, result, writer.assets);
+        checkOutputs({'a|web/a.txt.copy': 'b'}, result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/b.txt', 'c'));
+        await writer.writeAsString(makeAssetId('a|web/b.txt'), 'c');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy': 'c'}, result, writer.assets);
+        checkOutputs({'a|web/a.txt.copy': 'c'}, result.outputs, writer);
       });
 
       test(
@@ -375,21 +378,21 @@ void main() {
             new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
             new InputSet('a', ['web/a.txt.copy']));
 
-        var writer = new InMemoryAssetWriter();
+        var writer = new InMemoryRunnerAssetWriter();
         var results = <BuildResult>[];
         startWatch(phases, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
             .listen(results.add);
 
         var result = await nextResult(results);
         checkOutputs({'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'b'},
-            result, writer.assets);
+            result.outputs, writer);
 
-        await writer.writeAsString(makeAsset('a|web/b.txt', 'c'));
+        await writer.writeAsString(makeAssetId('a|web/b.txt'), 'c');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
 
         result = await nextResult(results);
-        checkOutputs({'a|web/a.txt.copy.copy': 'c'}, result, writer.assets);
+        checkOutputs({'a|web/a.txt.copy.copy': 'c'}, result.outputs, writer);
       });
     });
   });
@@ -399,14 +402,14 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateWatchController;
 
 /// Start watching files and running builds.
-Stream<BuildResult> startWatch(
-    PhaseGroup phases, Map<String, String> inputs, InMemoryAssetWriter writer,
+Stream<BuildResult> startWatch(PhaseGroup phases, Map<String, String> inputs,
+    InMemoryRunnerAssetWriter writer,
     {PackageGraph packageGraph}) {
   inputs.forEach((serializedId, contents) {
-    writer.writeAsString(makeAsset(serializedId, contents));
+    writer.writeAsString(makeAssetId(serializedId), contents);
   });
   final actualAssets = writer.assets;
-  final reader = new InMemoryAssetReader(actualAssets);
+  final reader = new InMemoryRunnerAssetReader(actualAssets);
   if (packageGraph == null) {
     packageGraph ??= new PackageGraph.fromRoot(
         new PackageNode('a', null, null, new Uri.file('a/')));

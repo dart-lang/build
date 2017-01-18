@@ -12,10 +12,10 @@ import 'in_memory_writer.dart';
 import 'in_memory_reader.dart';
 import 'assets.dart';
 
-void _checkOutputs(
+void checkOutputs(
     Map<String, /*List<int>|String|Matcher<DatedValue>*/ dynamic> outputs,
-    [Iterable<AssetId> actualAssets,
-    RecordingAssetWriter writer]) {
+    Iterable<AssetId> actualAssets,
+    RecordingAssetWriter writer) {
   var modifiableActualAssets = new Set.from(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
@@ -106,5 +106,5 @@ Future testBuilder(
       rootPackage: rootPackage, logger: logger);
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
-  _checkOutputs(outputs, actualOutputs, writer);
+  checkOutputs(outputs, actualOutputs, writer);
 }

@@ -28,13 +28,13 @@ class FileBasedAssetReader implements RunnerAssetReader {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
-    var file = _fileFor(id, packageGraph);
-    if (!await file.exists()) {
-      throw new AssetNotFoundException(id);
-    }
-    return file.readAsString(encoding: encoding);
-  }
+  Future<List<int>> readAsBytes(AssetId id) async =>
+      (await _fileForOrThrow(id, packageGraph)).readAsBytes();
+
+  @override
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async =>
+      (await _fileForOrThrow(id, packageGraph))
+          .readAsString(encoding: encoding);
 
   /// Searches for all [AssetId]s matching [inputSet]s.
   @override
@@ -64,13 +64,8 @@ class FileBasedAssetReader implements RunnerAssetReader {
   }
 
   @override
-  Future<DateTime> lastModified(AssetId id) async {
-    var file = _fileFor(id, packageGraph);
-    if (!await file.exists()) {
-      throw new AssetNotFoundException(id);
-    }
-    return file.lastModified();
-  }
+  Future<DateTime> lastModified(AssetId id) async =>
+      (await _fileForOrThrow(id, packageGraph)).lastModified();
 }
 
 /// Creates an [AssetId] for [file], which is a part of [packageNode].
@@ -92,10 +87,18 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   FileBasedAssetWriter(this.packageGraph);
 
   @override
-  Future writeAsString(Asset asset, {Encoding encoding: UTF8}) async {
-    var file = _fileFor(asset.id, packageGraph);
+  Future writeAsBytes(AssetId id, List<int> bytes) async {
+    var file = _fileFor(id, packageGraph);
     await file.create(recursive: true);
-    await file.writeAsString(asset.stringContents, encoding: encoding);
+    await file.writeAsBytes(bytes);
+  }
+
+  @override
+  Future writeAsString(AssetId id, String contents,
+      {Encoding encoding: UTF8}) async {
+    var file = _fileFor(id, packageGraph);
+    await file.create(recursive: true);
+    await file.writeAsString(contents, encoding: encoding);
   }
 
   @override
@@ -116,4 +119,13 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
     throw new PackageNotFoundException(id.package);
   }
   return new File(path.join(package.location.toFilePath(), id.path));
+}
+
+/// Returns a [Future<File>] for [id] given [packageGraph].
+///
+/// Throws an `AssetNotFoundException` if it doesn't exist.
+Future<File> _fileForOrThrow(AssetId id, packageGraph) async {
+  var file = _fileFor(id, packageGraph);
+  if (!await file.exists()) throw new AssetNotFoundException(id);
+  return file;
 }

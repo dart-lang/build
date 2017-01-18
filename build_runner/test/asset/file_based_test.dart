@@ -102,14 +102,14 @@ void main() {
     final writer = new FileBasedAssetWriter(packageGraph);
 
     test('can output and delete files in the application package', () async {
-      var asset = makeAsset('basic_pkg|test_file.txt', 'test');
-      await writer.writeAsString(asset);
-      var id = asset.id;
+      var id = makeAssetId('basic_pkg|test_file.txt');
+      var content = 'test';
+      await writer.writeAsString(id, content);
       var file = new File(path.join('test', 'fixtures', id.package, id.path));
       expect(await file.exists(), isTrue);
-      expect(await file.readAsString(), 'test');
+      expect(await file.readAsString(), content);
 
-      await writer.delete(asset.id);
+      await writer.delete(id);
       expect(await file.exists(), isFalse);
     });
   });

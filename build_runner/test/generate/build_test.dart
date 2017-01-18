@@ -167,15 +167,15 @@ void main() {
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
-    final writer = new InMemoryAssetWriter();
+    final writer = new InMemoryRunnerAssetWriter();
     await testPhases(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
         outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         writer: writer);
 
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
-    var cachedGraph =
-        new AssetGraph.deserialize(JSON.decode(writer.assets[graphId].value));
+    var cachedGraph = new AssetGraph.deserialize(
+        JSON.decode(writer.assets[graphId].stringValue));
 
     var expectedGraph = new AssetGraph();
     var aCopyNode = makeAssetNode('a|web/a.txt.copy');
@@ -190,7 +190,7 @@ void main() {
 
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
       () async {
-    final writer = new InMemoryAssetWriter();
+    final writer = new InMemoryRunnerAssetWriter();
     var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
     var outputs = <String, String>{
       'a|web/a.txt.copy': 'a',
@@ -203,7 +203,7 @@ void main() {
   });
 
   test('can recover from a deleted asset_graph.json cache', () async {
-    final writer = new InMemoryAssetWriter();
+    final writer = new InMemoryRunnerAssetWriter();
     var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
     var outputs = <String, String>{
       'a|web/a.txt.copy': 'a',
@@ -235,8 +235,8 @@ void main() {
       var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id]);
       graph.add(bNode);
 
-      var writer = new InMemoryAssetWriter();
-      writer.writeAsString(makeAsset('a|lib/b.txt', 'b'),
+      var writer = new InMemoryRunnerAssetWriter();
+      writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
       await testPhases(copyAPhaseGroup, {
         'a|web/a.txt': 'a',
@@ -276,8 +276,8 @@ void main() {
       var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id]);
       graph.add(bNode);
 
-      var writer = new InMemoryAssetWriter();
-      writer.writeAsString(makeAsset('a|lib/b.txt', 'b'),
+      var writer = new InMemoryRunnerAssetWriter();
+      writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(days: 1)));
       await testPhases(
           phases,
@@ -313,7 +313,7 @@ void main() {
       var aNode = makeAssetNode('a|lib/a.txt', [aCopyNode.id]);
       graph.add(aNode);
 
-      var writer = new InMemoryAssetWriter();
+      var writer = new InMemoryRunnerAssetWriter();
       await testPhases(
           phases,
           {
@@ -325,8 +325,8 @@ void main() {
           writer: writer);
 
       /// Should be deleted using the writer, and removed from the new graph.
-      var newGraph = new AssetGraph.deserialize(
-          JSON.decode(writer.assets[makeAssetId('a|$assetGraphPath')].value));
+      var newGraph = new AssetGraph.deserialize(JSON
+          .decode(writer.assets[makeAssetId('a|$assetGraphPath')].stringValue));
       expect(newGraph.contains(aNode.id), isFalse);
       expect(newGraph.contains(aCopyNode.id), isFalse);
       expect(newGraph.contains(aCloneNode.id), isFalse);
@@ -344,11 +344,11 @@ void main() {
       var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
       graph.add(aNode);
 
-      var writer = new InMemoryAssetWriter();
+      var writer = new InMemoryRunnerAssetWriter();
 
       /// Spoof the `package:test/test.dart` import and pretend its newer than
       /// the current graph to cause a rebuild.
-      writer.writeAsString(makeAsset('test|lib/test.dart', ''),
+      writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
           lastModified: graph.validAsOf.add(new Duration(hours: 1)));
       await testPhases(copyAPhaseGroup, {
         'a|web/a.txt': 'a',

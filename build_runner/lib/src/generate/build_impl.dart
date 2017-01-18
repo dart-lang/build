@@ -13,7 +13,6 @@ import 'package:path/path.dart' as path;
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/cache.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
@@ -149,9 +148,8 @@ class BuildImpl {
       await logWithTime(_logger, 'Caching finalized dependency graph',
           () async {
         _assetGraph.validAsOf = validAsOf;
-        var assetGraphAsset =
-            new Asset(_assetGraphId, JSON.encode(_assetGraph.serialize()));
-        await _writer.writeAsString(assetGraphAsset);
+        await _writer.writeAsString(
+            _assetGraphId, JSON.encode(_assetGraph.serialize()));
       });
 
       done.complete(result);
@@ -287,10 +285,6 @@ class BuildImpl {
       seen.add(id);
       var node = _assetGraph.get(id);
       if (node == null) return;
-
-      if (_reader is CachedAssetReader) {
-        (_reader as CachedAssetReader).evictFromCache(id);
-      }
 
       // Update all outputs of this asset as well.
       await Future.wait(node.outputs.map((output) =>
@@ -428,7 +422,7 @@ class BuildImpl {
   /// Runs the [Phase]s in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
   Future<BuildResult> _runPhases() async {
-    final outputs = <Asset>[];
+    final outputs = <AssetId>[];
     for (var phase in _buildActions) {
       // Collects all the ids for files which are output by this stage. This
       // also includes files which didn't get regenerated because they weren't,
@@ -504,7 +498,7 @@ class BuildImpl {
   }
 
   /// Runs [builder] with [inputs] as inputs.
-  Stream<Asset> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
+  Stream<AssetId> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
       Set<AssetId> groupOutputs) async* {
     for (var input in primaryInputs) {
       var expectedOutputs = builder.declareOutputs(input);
@@ -574,8 +568,8 @@ class BuildImpl {
 
       /// Yield the outputs.
       for (var output in writer.assetsWritten) {
-        (_assetGraph.get(output.id) as GeneratedAssetNode).wasOutput = true;
-        groupOutputs.add(output.id);
+        (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
+        groupOutputs.add(output);
         yield output;
       }
     }
