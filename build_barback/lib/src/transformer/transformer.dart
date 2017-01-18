@@ -36,7 +36,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   Future apply(Transform transform) async {
-    var inputId = await toBuildAssetId(transform.primaryInput.id);
+    var inputId = toBuildAssetId(transform.primaryInput.id);
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 

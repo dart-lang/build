@@ -71,7 +71,7 @@ Future<BuildResult> build(PhaseGroup phaseGroup,
   }, cancelWhen: futureResult);
 
   var result = await futureResult;
-  options.logListener.cancel();
+  await options.logListener.cancel();
   return result;
 }
 
@@ -175,7 +175,7 @@ Stream<BuildResult> serve(PhaseGroup phaseGroup,
   watchImpl.onTerminated.then((_) async {
     await serverStarted;
     await stopServer();
-    options.logListener.cancel();
+    await options.logListener.cancel();
   });
 
   return resultStream;
