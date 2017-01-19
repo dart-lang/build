@@ -20,10 +20,9 @@ class ResolversSpy implements BarbackResolvers {
       new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
 
   @override
-  Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
-      bool resolveAllConstants) async {
+  Future<ReleasableResolver> get(BuildStep buildStep) async {
     lastResolved = await _resolvers.get(toBarbackTransform(buildStep),
-        entryPoints.map(toBarbackAssetId).toList(), resolveAllConstants);
+        [toBarbackAssetId(buildStep.inputId)], false);
     return new BarbackResolver(lastResolved);
   }
 }
@@ -309,11 +308,6 @@ class TestBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var resolver = await buildStep.resolve(buildStep.inputId);
-    try {
-      validator(resolver);
-    } finally {
-      resolver.release();
-    }
+    validator(await buildStep.resolver);
   }
 }

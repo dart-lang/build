@@ -74,6 +74,7 @@ class BuildImpl {
     /// Assume incremental, change if necessary.
     var buildType = BuildType.incremental;
     var done = new Completer<BuildResult>();
+    // ignore: unawaited_futures
     Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
@@ -195,6 +196,7 @@ class BuildImpl {
   /// has been updated since it started running.
   Future<bool> _buildScriptUpdated() async {
     var completer = new Completer<bool>();
+    // ignore: unawaited_futures
     Future
         .wait(currentMirrorSystem().libraries.keys.map((Uri uri) async {
       // Short-circuit

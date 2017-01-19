@@ -9,6 +9,11 @@ last breaking change before the `1.0` release, but it is a fairly large one.
   `Future writeAsBytes(AssetId id, List<int> bytes)` method.
 - The `AssetReader` class now has a `Future<List<int>> readAsBytes(AssetId id)`
   method.
+- You no longer need to call `Resolver#release` on any resolvers you get from
+  a `BuildStep` (in fact, the `Resolver` interface no longer has this method).
+- There is now a `BuildStep#resolver` getter, which resolves the primary input,
+  and returns a `Future<Resolver>`. This replaces the `BuildStep#resolve`
+  method.
 
 ### Breaking Changes
 - The `Asset` class has been removed entirely.
@@ -20,6 +25,9 @@ last breaking change before the `1.0` release, but it is a fairly large one.
   changed from `Asset` to `AssetId`. This means you must now use
   `BuildStep#readAsString` or `BuildStep#readAsBytes` to read the primary input,
   instead of it already being read in for you.
+- `Resolver` no longer has a `release` method (they are released for you).
+- `BuildStep#resolve` no longer exists, and has been replaced with the
+  `BuildStep#resolver` getter.
 
 **Note**: The changes to `AssetReader` and `AssetWriter` also affect `BuildStep`
 and other classes that implement those interfaces.

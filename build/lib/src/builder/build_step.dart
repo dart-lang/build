@@ -31,7 +31,6 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
-
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs
   /// are written.
@@ -44,15 +43,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @override
   Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 
-  /// Gives a [Resolver] for [id]. This must be released when it is done being
-  /// used.
-  ///
-  /// If you pass a value of [false] for [resolveAllConstants], then constants
-  /// will only be resolved in [id], and not any other libraries. This gives a
-  /// significant speed boost, at the cost of not being able to assume all
-  /// constants are already resolved.
-  Future<Resolver> resolve(AssetId id,
-      {bool resolveAllConstants, List<AssetId> entryPoints});
+  /// Gives a [Resolver] for [inputId].
+  Future<Resolver> get resolver;
 }
 
 abstract class ManagedBuildStep implements BuildStep {

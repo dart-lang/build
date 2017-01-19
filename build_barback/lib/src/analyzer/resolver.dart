@@ -10,7 +10,7 @@ import 'package:code_transformers/resolver.dart' as code_transformers
 
 import '../util/barback.dart';
 
-class BarbackResolver implements Resolver {
+class BarbackResolver implements ReleasableResolver {
   final code_transformers.Resolver _resolver;
 
   BarbackResolver(this._resolver);
@@ -43,8 +43,7 @@ class BarbackResolvers implements Resolvers {
 
   const BarbackResolvers();
 
-  Future<Resolver> get(BuildStep buildStep, List<AssetId> entryPoints,
-          bool resolveAllConstants) async =>
+  Future<ReleasableResolver> get(BuildStep buildStep) async =>
       new BarbackResolver(await _resolvers.get(toBarbackTransform(buildStep),
-          entryPoints.map(toBarbackAssetId).toList(), resolveAllConstants));
+          [toBarbackAssetId(buildStep.inputId)], false));
 }
