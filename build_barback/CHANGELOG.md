@@ -6,12 +6,18 @@ package, and the removal of the `Asset` class.
 ### New Features
 - `BuilderTransformer` now supports wrapping transformers that read or write
   their inputs as bytes.
-- Added `barbackAssetFromBytes` and `backbackAssetFromString` methods to replace
-  `toBarbackAsset`.
 
 ### Breaking Changes
-- `toBuildAsset` and `toBarbackAsset` no longer exists since there is no `Asset`
-  class any longer in the `build` package.
+- Stopped exporting `lib/src/util/barback.dart` which contains internal only
+  utilities. Specifically, the following items are no longer public (some are
+  deleted entirely or had breaking changes as well):
+  - `toBarbackAsset`
+  - `toBarbackAssetId`
+  - `toBarbackTransform`
+  - `toBuildAsset`
+  - `toBuildAssetId`
+  - `toTransformLogger`
+  - `BuildStepTransform`
 
 ## 0.0.3
 

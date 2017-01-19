@@ -4,4 +4,3 @@
 export 'src/analyzer/resolver.dart';
 export 'src/builder/transformer_builder.dart';
 export 'src/transformer/transformer.dart';
-export 'src/util/barback.dart';
