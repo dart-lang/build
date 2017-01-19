@@ -236,7 +236,7 @@ void main() {
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
-      writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
+      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
       await testPhases(copyAPhaseGroup, {
         'a|web/a.txt': 'a',
@@ -277,7 +277,7 @@ void main() {
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
-      writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
+      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(days: 1)));
       await testPhases(
           phases,
@@ -348,7 +348,7 @@ void main() {
 
       /// Spoof the `package:test/test.dart` import and pretend its newer than
       /// the current graph to cause a rebuild.
-      writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
+      await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
           lastModified: graph.validAsOf.add(new Duration(hours: 1)));
       await testPhases(copyAPhaseGroup, {
         'a|web/a.txt': 'a',
