@@ -95,6 +95,9 @@ if approppriate.""",
     var output = new Asset(outputId, '$_topHeader$genPartContent');
     buildStep.writeAsString(output);
   }
+
+  @override
+  String toString() => 'GeneratorBuilder:$generators';
 }
 
 Stream<GeneratedOutput> _generate(LibraryElement unit,
