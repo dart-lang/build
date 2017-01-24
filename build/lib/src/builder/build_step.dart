@@ -43,7 +43,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @override
   Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 
-  /// Gives a [Resolver] for [inputId].
+  /// A [Future<Resolver>] for [inputId].
   Future<Resolver> get resolver;
 }
 

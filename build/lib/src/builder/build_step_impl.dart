@@ -51,13 +51,7 @@ class BuildStepImpl implements ManagedBuildStep {
   }
 
   @override
-  Future<Resolver> get resolver {
-    if (_resolver == null) {
-      _resolver = _resolvers.get(this);
-    }
-
-    return _resolver;
-  }
+  Future<Resolver> get resolver => _resolver ??= _resolvers.get(this);
 
   Future<ReleasableResolver> _resolver;
 
@@ -121,14 +115,15 @@ class BuildStepImpl implements ManagedBuildStep {
     return done;
   }
 
-  /// Should be called after `build` has completed. This will wait until for
-  /// [_outputsCompleted] and release all [Resolver]s that were created.
+  /// Waits for work to finish and cleans up resources.
+  ///
+  /// This method should be called after a build has completed. After the
+  /// returned [Future] completes then all outputs have been written and the
+  /// [Resolver] for this build step - if any - has been released.
   @override
   Future complete() async {
     await _outputsCompleted;
-    if (_resolver != null) {
-      (await _resolver).release();
-    }
+    (await _resolver)?.release();
   }
 
   /// Checks that [id] is a valid input, and throws an [InvalidInputException]
