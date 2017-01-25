@@ -2,7 +2,7 @@
 
 These packages provide utilities for generating Dart code.
 
-## `build`
+## [build](https://github.com/dart-lang/build/blob/master/build/README.md)
 
 Defines the interfaces for creating a `Builder` which is a way of doing codegen
 that is compatible across build systems (pub, bazel, standalone runner).
@@ -15,12 +15,12 @@ In particular, transformers should only be exposed via a separate package, which
 has a dependency on `build_barback`. This allows core packages to not leak the
 dependency on barback and all of its transitive deps to all consumers.
 
-## `build_barback`
+## [build_barback](https://github.com/dart-lang/build/blob/master/build_barback/README.md)
 
 Allows wrapping up a `Builder` as a `Transformer` so that it can be run in `pub`
 or vice-versa.
 
-## `build_runner`
+## [build_runner](https://github.com/dart-lang/build/blob/master/build_runner/README.md)
 
 Provides `build` and `watch` utilities to enact builds.
 
@@ -28,7 +28,7 @@ This package should generally be a dev_dependency as it is used to run
 standalone builds. The only exception would be wrapping the `build` and `watch`
 methods with some other package.
 
-## `build_test`
+## [build_test](https://github.com/dart-lang/build/blob/master/build_test/README.md)
 
 Stub implementations for classes in `Build` and some utilities for running
 instances of builds and checking their outputs.
@@ -39,7 +39,7 @@ testing-only package that wraps this one.
 
 ## Examples
 
-The `e2e_example` directory has demonstrations of running a `Builder` both
+The [e2e_example](https://github.com/dart-lang/build/tree/master/e2e_example) directory has demonstrations of running a `Builder` both
 through pub (see the transformers section of `pubspec.yaml`) and in place (see
 the files `build.dart` and `watch.dart`). In real situations a project would
 choose one or the other approach rather than mix both.
