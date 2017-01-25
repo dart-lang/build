@@ -44,6 +44,7 @@ class CopyBuilder implements Builder {
       var content = copyFromAsset == null
           ? await buildStep.readAsString(buildStep.inputId)
           : await buildStep.readAsString(copyFromAsset);
+      // ignore: unawaited_futures
       buildStep.writeAsString(id, content);
     }
 

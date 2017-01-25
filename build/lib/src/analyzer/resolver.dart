@@ -9,9 +9,6 @@ import '../asset/id.dart';
 import '../builder/build_step.dart';
 
 abstract class Resolver {
-  /// Release this resolver so it can be updated by following build steps.
-  void release();
-
   /// Gets the resolved Dart library for an asset, or null if the AST has not
   /// been resolved.
   ///
@@ -29,7 +26,11 @@ abstract class Resolver {
   LibraryElement getLibraryByName(String libraryName);
 }
 
+abstract class ReleasableResolver implements Resolver {
+  /// Release this resolver so it can be updated by following build steps.
+  void release();
+}
+
 abstract class Resolvers {
-  Future<Resolver> get(
-      BuildStep buildStep, List<AssetId> entryPoints, bool resolveAllConstants);
+  Future<ReleasableResolver> get(BuildStep buildStep);
 }

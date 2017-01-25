@@ -141,7 +141,7 @@ void main() {
           var primary = makeAssetId('a|web/a.dart');
           var buildStep = new BuildStepImpl(primary, [], reader, writer,
               primary.package, const BarbackResolvers());
-          var resolver = await buildStep.resolve(primary);
+          var resolver = await buildStep.resolver;
 
           var aLib = resolver.getLibrary(primary);
           expect(aLib.name, 'a');
@@ -153,7 +153,7 @@ void main() {
           expect(bLib.name, 'b');
           expect(bLib.importedLibraries.length, 1);
 
-          resolver.release();
+          await buildStep.complete();
         });
       });
     });
@@ -179,8 +179,10 @@ void main() {
       });
 
       test('Completes only after writes finish', () async {
+        // ignore: unawaited_futures
         buildStep.writeAsString(outputId, outputContent);
         var isComplete = false;
+        // ignore: unawaited_futures
         buildStep.complete().then((_) {
           isComplete = true;
         });
@@ -194,8 +196,10 @@ void main() {
 
       test('Completes only after async writes finish', () async {
         var outputCompleter = new Completer<String>();
+        // ignore: unawaited_futures
         buildStep.writeFromFutureAsString(outputId, outputCompleter.future);
         var isComplete = false;
+        // ignore: unawaited_futures
         buildStep.complete().then((_) {
           isComplete = true;
         });

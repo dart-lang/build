@@ -17,6 +17,7 @@ class FileCombinerBuilder implements Builder {
     }
 
     var outputId = _combinedAssetId(buildStep.inputId);
+    // ignore: unawaited_futures
     buildStep.writeAsString(outputId, '$content');
   }
 
