@@ -6,6 +6,7 @@ package, and the removal of the `Asset` class.
 ### New Features
 - `BuilderTransformer` now supports wrapping transformers that read or write
   their inputs as bytes.
+- The Resolver implementation can check whether an Asset is a Library.
 
 ### Breaking Changes
 - Stopped exporting `lib/src/util/barback.dart` which contains internal only
