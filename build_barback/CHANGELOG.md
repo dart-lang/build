@@ -1,4 +1,4 @@
-## 0.1.0-dev
+## 0.1.0
 
 Updated to reflect the new support for reading/writing as bytes in the `build`
 package, and the removal of the `Asset` class.

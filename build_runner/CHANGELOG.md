@@ -1,4 +1,4 @@
-## 0.2.0-dev
+## 0.2.0
 
 Add support for the new bytes apis in `build`.
 
