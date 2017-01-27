@@ -19,6 +19,10 @@ class BarbackResolver implements ReleasableResolver {
   void release() => _resolver.release();
 
   @override
+  bool isLibrary(AssetId assetId) =>
+      _resolver.isLibrary(toBarbackAssetId(assetId));
+
+  @override
   LibraryElement getLibrary(AssetId assetId) {
     var library = _resolver.getLibrary(toBarbackAssetId(assetId));
     if (library == null) throw new NonLibraryAssetException(assetId);
