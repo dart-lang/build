@@ -1,3 +1,7 @@
+## 0.5.4
+
+* Update to latest `build`, `build_runner`, and `build_test` releases.
+
 ## 0.5.3+2
 
 * BugFix: Always release the Resolver instance, even when generation does not
@@ -55,7 +59,7 @@
 
 ## 0.5.1
 
-* Added GeneratorBuilder option isStandalone to generate files that aren't 
+* Added GeneratorBuilder option isStandalone to generate files that aren't
   part of source file.
 
 ## 0.5.0+3
@@ -86,7 +90,7 @@
   files via the `BuildStep` class, and that is now also provided to
   `Generator#generate` and `GeneratorForAnnotation#generateForAnnotatedElement`
   as a second argument.
-  
+
 * Timestamps are no longer included in generated code.
 
 * There is no longer a need to specify the files related to an individual
@@ -102,7 +106,7 @@
 
 ## 0.4.7+2
 
-* Upgrade to `analyzer '^0.27.1'` and removed a work-around for a fixed 
+* Upgrade to `analyzer '^0.27.1'` and removed a work-around for a fixed
   `analyzer` issue.
 
 ## 0.4.7+1

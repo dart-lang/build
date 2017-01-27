@@ -24,9 +24,9 @@ class JsonLiteralGenerator extends GeneratorForAnnotation<JsonLiteral> {
       throw 'must be relative path to the source file';
     }
 
-    var sourcePathDir = p.dirname(buildStep.input.id.path);
+    var sourcePathDir = p.dirname(buildStep.inputId.path);
     var fileId = new AssetId(
-        buildStep.input.id.package, p.join(sourcePathDir, annotation.path));
+        buildStep.inputId.package, p.join(sourcePathDir, annotation.path));
     var content = JSON.decode(await buildStep.readAsString(fileId));
 
     var thing = JSON.encode(content);

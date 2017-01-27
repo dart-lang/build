@@ -28,15 +28,10 @@ class GeneratorBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var id = buildStep.input.id;
-    var resolver = await buildStep.resolve(id, resolveAllConstants: false);
-    try {
-      var lib = resolver.getLibrary(id);
-      if (lib == null) return;
-      await _generateForLibrary(lib, buildStep);
-    } finally {
-      resolver.release();
-    }
+    var resolver = await buildStep.resolver;
+    if (!resolver.isLibrary(buildStep.inputId)) return;
+    var lib = resolver.getLibrary(buildStep.inputId);
+    await _generateForLibrary(lib, buildStep);
   }
 
   @override
@@ -50,7 +45,7 @@ class GeneratorBuilder extends Builder {
 
   Future _generateForLibrary(
       LibraryElement library, BuildStep buildStep) async {
-    buildStep.logger.fine('Running $generators for ${buildStep.input.id}');
+    buildStep.logger.fine('Running $generators for ${buildStep.inputId}');
     var generatedOutputs =
         await _generate(library, generators, buildStep).toList();
 
@@ -91,9 +86,8 @@ if approppriate.""",
           stack);
     }
 
-    var outputId = _generatedFile(buildStep.input.id);
-    var output = new Asset(outputId, '$_topHeader$genPartContent');
-    buildStep.writeAsString(output);
+    buildStep.writeAsString(
+        _generatedFile(buildStep.inputId), '$_topHeader$genPartContent');
   }
 
   @override
