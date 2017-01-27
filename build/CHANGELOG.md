@@ -14,6 +14,8 @@ last breaking change before the `1.0` release, but it is a fairly large one.
 - There is now a `BuildStep#resolver` getter, which resolves the primary input,
   and returns a `Future<Resolver>`. This replaces the `BuildStep#resolve`
   method.
+- `Resolver` has a new `isLibrary` method to check whether an asset is a Dart
+  library source file before trying to resolve it's LibraryElement
 
 ### Breaking Changes
 - The `Asset` class has been removed entirely.
@@ -28,6 +30,8 @@ last breaking change before the `1.0` release, but it is a fairly large one.
 - `Resolver` no longer has a `release` method (they are released for you).
 - `BuildStep#resolve` no longer exists, and has been replaced with the
   `BuildStep#resolver` getter.
+- `Resolver.getLibrary` will now throw a `NonLibraryAssetException` instead of
+  return null if it is asked to resolve an impossible library.
 
 **Note**: The changes to `AssetReader` and `AssetWriter` also affect `BuildStep`
 and other classes that implement those interfaces.

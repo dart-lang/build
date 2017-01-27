@@ -15,24 +15,24 @@ class BarbackResolver implements ReleasableResolver {
 
   BarbackResolver(this._resolver);
 
-  /// Release this resolver so it can be updated by following build steps.
+  @override
   void release() => _resolver.release();
 
-  /// Gets the resolved Dart library for an asset, or null if the AST has not
-  /// been resolved.
-  ///
-  /// If the AST has not been resolved then this normally means that the
-  /// transformer hosting this needs to be in an earlier phase.
-  LibraryElement getLibrary(AssetId assetId) =>
-      _resolver.getLibrary(toBarbackAssetId(assetId));
+  @override
+  bool isLibrary(AssetId assetId) =>
+      _resolver.isLibrary(toBarbackAssetId(assetId));
 
-  /// Gets all libraries accessible from the entry point, recursively.
-  ///
-  /// This includes all Dart SDK libraries as well.
+  @override
+  LibraryElement getLibrary(AssetId assetId) {
+    var library = _resolver.getLibrary(toBarbackAssetId(assetId));
+    if (library == null) throw new NonLibraryAssetException(assetId);
+    return library;
+  }
+
+  @override
   Iterable<LibraryElement> get libraries => _resolver.libraries;
 
-  /// Finds the first library identified by [libraryName], or null if no
-  /// library can be found.
+  @override
   LibraryElement getLibraryByName(String libraryName) =>
       _resolver.getLibraryByName(libraryName);
 }

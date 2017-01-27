@@ -9,11 +9,16 @@ import '../asset/id.dart';
 import '../builder/build_step.dart';
 
 abstract class Resolver {
-  /// Gets the resolved Dart library for an asset, or null if the AST has not
-  /// been resolved.
+  /// Whether [assetId] represents an Dart library file.
   ///
-  /// If the AST has not been resolved then this normally means that the
-  /// transformer hosting this needs to be in an earlier phase.
+  /// This will be false in the case where the file is not Dart source code, or
+  /// is a 'part of' file.
+  bool isLibrary(AssetId assetId);
+
+  /// Gets the resolved Dart library  defined in [assetId].
+  ///
+  /// If the asset is not a Dart library file throws a
+  /// [NonLibraryAssetException].
   LibraryElement getLibrary(AssetId assetId);
 
   /// Gets all libraries accessible from the entry point, recursively.
@@ -33,4 +38,13 @@ abstract class ReleasableResolver implements Resolver {
 
 abstract class Resolvers {
   Future<ReleasableResolver> get(BuildStep buildStep);
+}
+
+class NonLibraryAssetException implements Exception {
+  final AssetId assetId;
+
+  NonLibraryAssetException(this.assetId);
+
+  @override
+  String toString() => 'Asset [$assetId] is not a Dart library source file.';
 }
