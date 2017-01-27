@@ -1,4 +1,4 @@
-## 0.4.0-dev
+## 0.4.0
 
 Updates to work with `build` version 0.7.0.
 

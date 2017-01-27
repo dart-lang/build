@@ -1,4 +1,4 @@
-## 0.7.0-dev
+## 0.7.0
 
 A number of changes to the apis, primarily to support reading/writing as bytes,
 as this is going to inevitably be a required feature. This will hopefully be the
