@@ -29,8 +29,11 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     var buildStep = new ManagedBuildStep(
         input, expectedOutputs, reader, writer, rootPackage, resolvers,
         logger: logger);
-    await builder.build(buildStep);
-    await buildStep.complete();
+    try {
+      await builder.build(buildStep);
+    } finally {
+      await buildStep.complete();
+    }
   }
 
   await Future.wait(inputs.map(buildForInput));
