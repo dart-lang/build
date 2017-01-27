@@ -13,7 +13,7 @@ import 'in_memory_reader.dart';
 import 'assets.dart';
 
 void checkOutputs(
-    Map<String, /*List<int>|String|Matcher<DatedValue>*/ dynamic> outputs,
+    Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer) {
   var modifiableActualAssets = new Set.from(actualAssets);
@@ -35,7 +35,14 @@ void checkOutputs(
       } else if (contentsMatcher is List<int>) {
         expected = actual.bytesValue;
       } else if (contentsMatcher is Matcher) {
-        expected = actual;
+        if (actual is DatedBytes) {
+          expected = actual.bytesValue;
+        } else {
+          expected = actual.stringValue;
+        }
+      } else {
+        throw new ArgumentError('Expected values for `outputs` to be of type '
+            '`String`, `List<int>`, or `Matcher`, but got `$contentsMatcher`.');
       }
       expect(expected, contentsMatcher,
           reason: 'Unexpected content for $assetId in result.outputs.');
@@ -79,7 +86,7 @@ Future testBuilder(
     bool isInput(String assetId),
     String rootPackage,
     RecordingAssetWriter writer,
-    Map<String, /*String|List<int>|Matcher<DatedValue>*/ dynamic> outputs,
+    Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
     void onLog(LogRecord log)}) async {
   writer ??= new InMemoryAssetWriter();
   final reader = new InMemoryAssetReader();
