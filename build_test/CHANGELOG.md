@@ -1,3 +1,7 @@
+## 0.4.0+1
+
+- Bug Fix: Correctly identify missing outputs in testBuilder
+
 ## 0.4.0
 
 Updates to work with `build` version 0.7.0.

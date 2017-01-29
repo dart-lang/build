@@ -26,8 +26,9 @@ void checkOutputs(
       var assetId = makeAssetId(serializedId);
 
       // Check that the asset was produced.
-      expect(modifiableActualAssets.remove(assetId), isNotNull,
-          reason: 'Expected to find $assetId in ${actualAssets}.');
+      expect(modifiableActualAssets, contains(assetId),
+          reason: 'Builder failed to write asset $assetId');
+      modifiableActualAssets.remove(assetId);
       var actual = writer.assets[assetId];
       var expected;
       if (contentsMatcher is String) {
