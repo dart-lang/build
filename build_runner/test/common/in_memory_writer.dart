@@ -10,7 +10,11 @@ import 'package:build_test/build_test.dart';
 class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     implements RunnerAssetWriter {
   @override
+  OnDelete onDelete;
+
+  @override
   Future delete(AssetId id) async {
+    if (onDelete != null) onDelete(id); 
     assets.remove(id);
   }
 }

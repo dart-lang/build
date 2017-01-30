@@ -62,12 +62,21 @@ class WatchImpl {
 
   Completer _onTerminatedCompleter = new Completer();
   Future get onTerminated => _onTerminatedCompleter.future;
+  
+  /// Pending expected delete events from the writer.
+  final Set<AssetId> _expectedDeletes = new Set<AssetId>(); 
 
   WatchImpl(BuildOptions options, PhaseGroup phaseGroup)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         _packageGraph = options.packageGraph,
-        _buildImpl = new BuildImpl(options, phaseGroup);
+        _buildImpl = new BuildImpl(options, phaseGroup) {
+    var existingOnDelete = options.writer.onDelete;
+    options.writer.onDelete = (id) {
+      _expectedDeletes.add(id);
+      if (existingOnDelete != null) existingOnDelete(id);
+    };
+  }
 
   /// Completes after the current build is done, and stops further builds from
   /// happening.
@@ -140,6 +149,7 @@ class WatchImpl {
         if (_shouldSkipInput(input, changeType)) return;
         updatedInputsCopy[input] = changeType;
       });
+      _expectedDeletes.clear();
       updatedInputs.clear();
       if (updatedInputsCopy.isEmpty && !force) {
         return;
@@ -210,6 +220,14 @@ class WatchImpl {
           _logger.finest(
               'Got ${e.type} event for path $relativePath from ${watcher.path}');
           var id = new AssetId(package.name, relativePath);
+          
+          // Short circuit for expected deletes (these are a part of the build).
+          if (_expectedDeletes.contains(id)) {
+            // Remove the expected delete so real deletes later on work.
+            _expectedDeletes.remove(id);
+            return;
+          }
+
           var node = _assetGraph.get(id);
           // Short circuit for deletes of nodes that aren't in the graph.
           if (e.type == ChangeType.REMOVE && node == null) return;

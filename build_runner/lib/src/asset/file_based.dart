@@ -83,6 +83,8 @@ AssetId _fileToAssetId(File file, PackageNode packageNode) {
 /// files to disk.
 class FileBasedAssetWriter implements RunnerAssetWriter {
   final PackageGraph packageGraph;
+  @override
+  OnDelete onDelete;
 
   FileBasedAssetWriter(this.packageGraph);
 
@@ -102,13 +104,16 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   }
 
   @override
-  Future delete(AssetId id) async {
+  Future delete(AssetId id) {
     assert(id.package == packageGraph.root.name);
+    if (onDelete != null) onDelete(id);
 
     var file = _fileFor(id, packageGraph);
-    if (await file.exists()) {
-      await file.delete();
-    }
+    return () async {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }();
   }
 }
 
