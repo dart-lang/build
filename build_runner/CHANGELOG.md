@@ -1,3 +1,15 @@
+## 0.3.0
+
+### Bug Fixes
+
+- Fixed a race condition bug [175](https://github.com/dart-lang/build/issues/175)
+  that could cause invalid output errors.
+
+### Breaking Changes
+
+- `RunnerAssetWriter` now requires an additional field, `onDelete` which is a
+  callback that must be called synchronously within `delete`.
+
 ## 0.2.0
 
 Add support for the new bytes apis in `build`.

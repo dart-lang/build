@@ -94,7 +94,8 @@ void main() {
           'a|web/b.txt.copy': 'b',
         }, result.outputs, writer);
 
-        await writer.delete(makeAssetId('a|web/a.txt'));
+        // Don't call writer.delete, that has side effects.
+        writer.assets.remove(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
@@ -125,7 +126,8 @@ void main() {
         await writer.writeAsString(makeAssetId('a|web/c.txt'), 'c');
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'c.txt')));
-        await writer.delete(makeAssetId('a|web/a.txt'));
+        // Don't call writer.delete, that has side effects.
+        writer.assets.remove(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
@@ -298,7 +300,9 @@ void main() {
           'a|web/b.txt.copy.copy': 'b'
         }, result.outputs, writer);
 
-        await writer.delete(makeAssetId('a|web/a.txt'));
+        // Don't call writer.delete, that has side effects.
+        writer.assets.remove(makeAssetId('a|web/a.txt'));
+
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
@@ -331,7 +335,8 @@ void main() {
           'a|web/a.txt.copy.copy': 'a',
         }, result.outputs, writer);
 
-        await writer.delete(makeAssetId('a|web/a.txt.copy'));
+        // Don't call writer.delete, that has side effects.
+        writer.assets.remove(makeAssetId('a|web/a.txt.copy'));
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt.copy')));
 
