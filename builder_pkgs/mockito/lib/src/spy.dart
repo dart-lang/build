@@ -16,7 +16,9 @@
 // bringing in the mirrors dependency into mockito.dart.
 import 'dart:mirrors';
 
-import 'mock.dart' show CannedResponse, Mock, setDefaultResponse;
+import 'mock.dart' show Mock, setDefaultResponse;
+
+import 'package:mockito/src/call_pair.dart';
 
 /// Sets the default response of [mock] to be delegated to [spyOn].
 ///
@@ -27,8 +29,8 @@ import 'mock.dart' show CannedResponse, Mock, setDefaultResponse;
 E spy<E>(Mock mock, E spyOn) {
   var mirror = reflect(spyOn);
   setDefaultResponse(
-      mock,
-      () => new CannedResponse(null,
-          (Invocation realInvocation) => mirror.delegate(realInvocation)));
+    mock,
+    () => new CallPair.allInvocations(mirror.delegate),
+  );
   return mock as E;
 }

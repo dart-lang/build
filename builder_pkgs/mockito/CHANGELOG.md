@@ -1,3 +1,10 @@
+## 2.0.2
+
+* Start using the new `InvocationMatcher` instead of the old matcher.
+* Change `throwOnMissingStub` back to invoking `Object.noSuchMethod`:
+  * It was never documented what the thrown type should be expected as
+  * You can now just rely on `throwsNoSuchMethodError` if you want to catch it
+
 ## 2.0.1
 
 * Add a new `throwOnMissingStub` method to the API.

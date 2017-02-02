@@ -16,6 +16,8 @@
 // lib/mockito.dart, which is used for Dart AOT projects such as Flutter.
 
 import 'package:meta/meta.dart';
+import 'package:mockito/src/call_pair.dart';
+import 'package:mockito/src/invocation_matcher.dart';
 import 'package:test/test.dart';
 
 bool _whenInProgress = false;
@@ -24,16 +26,19 @@ _WhenCall _whenCall;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
 final _TimeStampProvider _timer = new _TimeStampProvider();
 final List _capturedArgs = [];
-final List<_ArgMatcher> _typedArgs = <_ArgMatcher>[];
-final Map<String, _ArgMatcher> _typedNamedArgs = <String, _ArgMatcher>{};
+final List<ArgMatcher> _typedArgs = <ArgMatcher>[];
+final Map<String, ArgMatcher> _typedNamedArgs = <String, ArgMatcher>{};
 
 // Hidden from the public API, used by spy.dart.
-void setDefaultResponse(Mock mock, CannedResponse defaultResponse()) {
+void setDefaultResponse(Mock mock, CallPair defaultResponse()) {
   mock._defaultResponse = defaultResponse;
 }
 
-throwOnMissingStub(Mock mock) {
-  mock._defaultResponse = Mock._throwResponse;
+/// Opt-into [Mock] throwing [NoSuchMethodError] for unimplemented methods.
+///
+/// The default behavior when not using this is to always return `null`.
+void throwOnMissingStub(Mock mock) {
+  mock._defaultResponse = () => new CallPair.allInvocations(mock._noSuchMethod);
 }
 
 /// Extend or mixin this class to mark the implementation as a [Mock].
@@ -68,25 +73,19 @@ throwOnMissingStub(Mock mock) {
 /// used within the context of Dart for Web (dart2js/ddc) and Dart for Mobile
 /// (flutter).
 class Mock {
-  static CannedResponse _nullResponse() =>
-      new CannedResponse(null, (_) => null);
+  static _answerNull(_) => null;
 
-  static CannedResponse _throwResponse() => new CannedResponse(
-      null,
-      (Invocation inv) =>
-          throw new UnimplementedError('''No stub for invocation:
-    member name: ${inv.memberName}
-    positional arguments (${inv.positionalArguments.length}): ${inv.positionalArguments}
-    named arguments (${inv.namedArguments.length}): ${inv.namedArguments}'''));
+  static const _nullResponse = const CallPair.allInvocations(_answerNull);
 
-  final List<RealCall> _realCalls = <RealCall>[];
-  final List<CannedResponse> _responses = <CannedResponse>[];
+  final _realCalls = <RealCall>[];
+  final _responses = <CallPair>[];
+
   String _givenName;
   int _givenHashCode;
 
-  _ReturnsCannedResponse _defaultResponse = _nullResponse;
+  _ReturnsCannedResponse _defaultResponse = () => _nullResponse;
 
-  void _setExpected(CannedResponse cannedResponse) {
+  void _setExpected(CallPair cannedResponse) {
     _responses.add(cannedResponse);
   }
 
@@ -106,12 +105,15 @@ class Mock {
     } else {
       _realCalls.add(new RealCall(this, invocation));
       var cannedResponse = _responses.lastWhere(
-          (cr) => cr.matcher.matches(invocation),
+          (cr) => cr.call.matches(invocation, {}),
           orElse: _defaultResponse);
       var response = cannedResponse.response(invocation);
       return response;
     }
   }
+
+  _noSuchMethod(Invocation invocation) =>
+      const Object().noSuchMethod(invocation);
 
   @override
   int get hashCode => _givenHashCode == null ? 0 : _givenHashCode;
@@ -125,7 +127,7 @@ class Mock {
   String toString() => _givenName != null ? _givenName : runtimeType.toString();
 }
 
-typedef CannedResponse _ReturnsCannedResponse();
+typedef CallPair _ReturnsCannedResponse();
 
 // When using the typed() matcher, we transform our invocation to have knowledge
 // of which arguments are wrapped with typed() and which ones are not. Otherwise
@@ -340,7 +342,7 @@ class InvocationMatcher {
     int index = 0;
     for (var roleArg in roleInvocation.positionalArguments) {
       var actArg = invocation.positionalArguments[index];
-      if (roleArg is _ArgMatcher && roleArg._capture) {
+      if (roleArg is ArgMatcher && roleArg._capture) {
         _capturedArgs.add(actArg);
       }
       index++;
@@ -348,8 +350,8 @@ class InvocationMatcher {
     for (var roleKey in roleInvocation.namedArguments.keys) {
       var roleArg = roleInvocation.namedArguments[roleKey];
       var actArg = invocation.namedArguments[roleKey];
-      if (roleArg is _ArgMatcher) {
-        if (roleArg is _ArgMatcher && roleArg._capture) {
+      if (roleArg is ArgMatcher) {
+        if (roleArg is ArgMatcher && roleArg._capture) {
           _capturedArgs.add(actArg);
         }
       }
@@ -390,19 +392,12 @@ class InvocationMatcher {
   }
 
   bool isMatchingArg(roleArg, actArg) {
-    if (roleArg is _ArgMatcher) {
-      return roleArg._matcher.matches(actArg, {});
+    if (roleArg is ArgMatcher) {
+      return roleArg.matcher.matches(actArg, {});
     } else {
       return equals(roleArg).matches(actArg, {});
     }
   }
-}
-
-class CannedResponse {
-  InvocationMatcher matcher;
-  Answering response;
-
-  CannedResponse(this.matcher, this.response);
 }
 
 class _TimeStampProvider {
@@ -470,8 +465,7 @@ class _WhenCall {
   _WhenCall(this.mock, this.whenInvocation);
 
   void _setExpected(Answering answer) {
-    mock._setExpected(
-        new CannedResponse(new InvocationMatcher(whenInvocation), answer));
+    mock._setExpected(new CallPair(isInvocation(whenInvocation), answer));
   }
 }
 
@@ -513,30 +507,33 @@ class _VerifyCall {
   }
 }
 
-class _ArgMatcher {
-  final Matcher _matcher;
+class ArgMatcher {
+  final Matcher matcher;
   final bool _capture;
 
-  _ArgMatcher(this._matcher, this._capture);
+  ArgMatcher(this.matcher, this._capture);
+
+  @override
+  String toString() => '$ArgMatcher {$matcher: $_capture}';
 }
 
 /// An argument matcher that matches any argument passed in "this" position.
-get any => new _ArgMatcher(anything, false);
+get any => new ArgMatcher(anything, false);
 
 /// An argument matcher that matches any argument passed in "this" position, and
 /// captures the argument for later access with `captured`.
-get captureAny => new _ArgMatcher(anything, true);
+get captureAny => new ArgMatcher(anything, true);
 
 /// An argument matcher that matches an argument that matches [matcher].
-argThat(Matcher matcher) => new _ArgMatcher(matcher, false);
+argThat(Matcher matcher) => new ArgMatcher(matcher, false);
 
 /// An argument matcher that matches an argument that matches [matcher], and
 /// captures the argument for later access with `captured`.
-captureThat(Matcher matcher) => new _ArgMatcher(matcher, true);
+captureThat(Matcher matcher) => new ArgMatcher(matcher, true);
 
 /// A Strong-mode safe argument matcher that wraps other argument matchers.
 /// See the README for a full explanation.
-/*=T*/ typed/*<T>*/(_ArgMatcher matcher, {String named}) {
+/*=T*/ typed/*<T>*/(ArgMatcher matcher, {String named}) {
   if (named == null) {
     _typedArgs.add(matcher);
   } else {

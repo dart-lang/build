@@ -622,8 +622,10 @@ void main() {
     test("should throw when a mock was called without a matching stub", () {
       throwOnMissingStub(mock as Mock);
       when(mock.methodWithNormalArgs(42)).thenReturn("Ultimate Answer");
-      expect(() => (mock as MockedClass).methodWithoutArgs(),
-          throwsUnimplementedError);
+      expect(
+        () => (mock as MockedClass).methodWithoutArgs(),
+        throwsNoSuchMethodError,
+      );
     });
 
     test("should not throw when a mock was called with a matching stub", () {

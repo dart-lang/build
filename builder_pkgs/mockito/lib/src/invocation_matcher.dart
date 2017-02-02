@@ -15,6 +15,7 @@
 import 'package:collection/collection.dart';
 import 'package:matcher/matcher.dart';
 import 'package:meta/meta.dart';
+import 'package:mockito/src/mock.dart';
 
 /// Returns a matcher that expects an invocation that matches arguments given.
 ///
@@ -161,16 +162,25 @@ class _InvocationMatcher implements Matcher {
           .equals(_invocation.namedArguments, item.namedArguments);
 }
 
-class _MatcherEquality extends DefaultEquality /* <Matcher | E> */ {
+// Uses both DeepCollectionEquality and custom matching for invocation matchers.
+class _MatcherEquality extends DeepCollectionEquality /* <Matcher | E> */ {
   const _MatcherEquality();
 
   @override
   bool equals(e1, e2) {
+    // All argument matches are wrapped in `ArgMatcher`, so we have to unwrap
+    // them into the raw `Matcher` type in order to finish our equality checks.
+    if (e1 is ArgMatcher) {
+      e1 = e1.matcher;
+    }
+    if (e2 is ArgMatcher) {
+      e2 = e2.matcher;
+    }
     if (e1 is Matcher && e2 is! Matcher) {
-      return e1.matches(e2, const {});
+      return e1.matches(e2, {});
     }
     if (e2 is Matcher && e1 is! Matcher) {
-      return e2.matches(e1, const {});
+      return e2.matches(e1, {});
     }
     return super.equals(e1, e2);
   }
