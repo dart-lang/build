@@ -227,8 +227,12 @@ class BuildImpl {
           continue unknownUri;
         unknownUri:
         default:
-          _logger.info('Unrecognized uri scheme `${uri.scheme}` found for '
-              'library in build script, falling back on full rebuild.');
+          _logger.info('Unsupported uri scheme `${uri.scheme}` found for '
+              'library in build script, falling back on full rebuild. '
+              '\nThis probably means you are running in an unsupported '
+              'context, such as in an isolate or via `pub run`. Instead you '
+              'should invoke this script directly like: '
+              '`dart path_to_script.dart`.');
           if (!completer.isCompleted) completer.complete(true);
           return;
       }
