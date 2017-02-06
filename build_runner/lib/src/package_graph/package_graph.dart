@@ -153,23 +153,24 @@ class PackageNode {
 
 /// The type of dependency being used. This dictates how the package should be
 /// watched for changes.
-enum PackageDependencyType { pub, github, path }
+enum PackageDependencyType { pub, github, path, hosted }
 
 PackageDependencyType _dependencyType(source) {
   if (source is String || source == null) return PackageDependencyType.pub;
 
   assert(source is YamlMap);
-  assert(source.keys.length == 1);
 
-  var typeString = source.keys.first;
-  switch (typeString) {
-    case 'git':
-      return PackageDependencyType.github;
-    case 'path':
-      return PackageDependencyType.path;
-    default:
-      throw 'Unrecognized package dependency type `$typeString`';
+  for (var key in source.keys) {
+    switch (key) {
+      case 'git':
+        return PackageDependencyType.github;
+      case 'hosted':
+        return PackageDependencyType.hosted;
+      case 'path':
+        return PackageDependencyType.path;
+    }
   }
+  throw 'Unable to determine dependency type:\n$source';
 }
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
