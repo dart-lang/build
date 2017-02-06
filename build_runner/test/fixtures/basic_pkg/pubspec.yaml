@@ -6,3 +6,8 @@ dependencies:
     git: git://github.com/b/b.git
   c:
     path: pkg/c
+  d:
+    version: ^5.0.0
+    hosted:
+      name: d
+      url: http://your-package-server.com

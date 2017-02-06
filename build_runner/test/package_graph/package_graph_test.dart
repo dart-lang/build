@@ -34,13 +34,14 @@ void main() {
           'a': graph['a'],
           'b': graph['b'],
           'c': graph['c'],
+          'd': graph['d'],
           'basic_pkg': graph['basic_pkg'],
         });
       });
 
       test('root', () {
         expectPkg(graph.root, 'basic_pkg', '1.0.0', PackageDependencyType.path,
-            basicPkgPath, [graph['a'], graph['b'], graph['c']]);
+            basicPkgPath, [graph['a'], graph['b'], graph['c'], graph['d']]);
       });
 
       test('pub dependency', () {
@@ -56,6 +57,11 @@ void main() {
       test('path dependency', () {
         expectPkg(graph['c'], 'c', '4.0.0', PackageDependencyType.path,
             '$basicPkgPath/pkg/c', [graph['basic_pkg']]);
+      });
+
+      test('hosted dependency', () {
+        expectPkg(graph['d'], 'd', '5.0.0', PackageDependencyType.hosted,
+            '$basicPkgPath/pkg/d', [graph['c']]);
       });
     });
 
