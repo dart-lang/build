@@ -3,5 +3,5 @@ sudo: false
 dart:
   - stable
   - dev
-  - 1.21.0
+  - 1.21.1
 script: ./tool/travis.sh
