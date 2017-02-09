@@ -1,7 +1,7 @@
 Mock library for Dart inspired by [Mockito](https://code.google.com/p/mockito/).
 
 [![Pub](https://img.shields.io/pub/v/mockito.svg)]()
-[![Build Status](https://travis-ci.org/dart-lang/dart-mockito.svg?branch=master)](https://travis-ci.org/dart-lang/dart-mockito)
+[![Build Status](https://travis-ci.org/dart-lang/mockito.svg?branch=master)](https://travis-ci.org/dart-lang/mockito)
 
 Current mock libraries suffer from specifying method names as strings, which cause a lot of problems:
   * Poor refactoring support: rename method and you need manually search/replace it's usage in when/verify clauses.
