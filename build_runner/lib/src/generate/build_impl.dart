@@ -499,7 +499,6 @@ class BuildImpl {
   /// Checks if an [input] is valid.
   bool _isValidInput(AssetId input) {
     var parts = path.split(input.path);
-    // Files must be in a top level directory.
     if (input.package != _packageGraph.root.name) return parts[0] == 'lib';
     return true;
   }
