@@ -1,7 +1,7 @@
 ## 0.7.1
 
 - Add a top-level `log` getter which is scoped to running builds and can be used
-  anywhere within a build rather than pass around a logger. This replaces the
+  anywhere within a build rather than passing around a logger. This replaces the
   `BuildStep.logger` field.
 - Deprecate `BuildStep.logger` - it is replaced by `log`
 - Deprecate `ManagedBuildStep`, all build runs should go through `runBuilders`.
