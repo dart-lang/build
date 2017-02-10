@@ -29,31 +29,13 @@ void main() {
         writer = new StubAssetWriter();
         primary = makeAssetId();
         buildStep = new BuildStepImpl(primary, [], reader, writer,
-            primary.package, const BarbackResolvers(),
-            logger: new Logger('$primary'));
+            primary.package, const BarbackResolvers());
       });
 
       test('doesnt allow non-expected outputs', () {
         var id = makeAssetId();
         expect(() => buildStep.writeAsString(id, '$id'),
             throwsA(new isInstanceOf<UnexpectedOutputException>()));
-      });
-
-      test('has a useable logger', () async {
-        Logger.root.level = Level.ALL;
-        var logger = buildStep.logger;
-        expect(logger.fullName, '$primary');
-        var logs = <LogRecord>[];
-        var listener = logger.onRecord.listen(logs.add);
-        logger.fine('hello');
-        logger.warning('world');
-        logger.severe('goodbye');
-        await listener.cancel();
-        expect(logs.map((l) => l.toString()), [
-          '[FINE] $primary: hello',
-          '[WARNING] $primary: world',
-          '[SEVERE] $primary: goodbye',
-        ]);
       });
 
       test('hasInput throws invalidInputExceptions', () async {

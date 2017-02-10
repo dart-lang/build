@@ -9,5 +9,6 @@ export 'src/asset/writer.dart';
 export 'src/builder/build_step.dart';
 export 'src/builder/builder.dart';
 export 'src/builder/exceptions.dart';
+export 'src/builder/logging.dart' show log;
 export 'src/builder/multiplexing_builder.dart';
 export 'src/generate/run_builder.dart';
