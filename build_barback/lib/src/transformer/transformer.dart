@@ -77,12 +77,8 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
       }
     });
 
-    // Run the build step.
-    var buildStep = new ManagedBuildStep(
-        inputId, expected, reader, writer, inputId.package, _resolvers,
+    await runBuilder(_builder, [inputId], reader, writer, _resolvers,
         logger: logger);
-    await _builder.build(buildStep);
-    await buildStep.complete();
     await logSubscription.cancel();
   }
 

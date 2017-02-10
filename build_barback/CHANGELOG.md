@@ -1,3 +1,7 @@
+## 0.1.1
+
+- Support the global log from `build`
+
 ## 0.1.0
 
 Updated to reflect the new support for reading/writing as bytes in the `build`
