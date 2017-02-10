@@ -13,6 +13,7 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import 'build_step.dart';
 import 'exceptions.dart';
+import 'logging.dart';
 
 /// A single step in the build processes. This represents a single input and
 /// its expected and real outputs. It also handles tracking of dependencies.
@@ -24,11 +25,11 @@ class BuildStepImpl implements ManagedBuildStep {
   final AssetId inputId;
 
   @override
-  final Logger logger;
+  Logger get logger => log;
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
-  final List<AssetId> _expectedOutputs = [];
+  final List<AssetId> _expectedOutputs;
 
   /// A future that completes once all outputs current are done writing.
   Future _outputsCompleted = new Future(() {});
@@ -42,13 +43,9 @@ class BuildStepImpl implements ManagedBuildStep {
   /// The current root package, used for input/output validation.
   final String _rootPackage;
 
-  BuildStepImpl(AssetId inputId, Iterable<AssetId> expectedOutputs,
-      this._reader, this._writer, this._rootPackage, this._resolvers,
-      {Logger logger})
-      : this.inputId = inputId,
-        this.logger = logger ?? new Logger('$inputId') {
-    _expectedOutputs.addAll(expectedOutputs);
-  }
+  BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
+      this._writer, this._rootPackage, this._resolvers)
+      : _expectedOutputs = expectedOutputs.toList();
 
   @override
   Future<Resolver> get resolver => _resolver ??= _resolvers.get(this);

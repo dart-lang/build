@@ -19,6 +19,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   AssetId get inputId;
 
   /// A [Logger] for this [BuildStep].
+  @Deprecated('Use the top-level `log` instead')
   Logger get logger;
 
   /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
@@ -47,6 +48,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   Future<Resolver> get resolver;
 }
 
+@Deprecated('Use `runBuilder` instead of creating a BuildStep manually')
 abstract class ManagedBuildStep implements BuildStep {
   /// Mark the build step as finished and wait for any side effects to settle.
   Future complete();
@@ -57,6 +59,5 @@ abstract class ManagedBuildStep implements BuildStep {
       AssetReader reader,
       AssetWriter writer,
       String packageName,
-      Resolvers resolvers,
-      {Logger logger}) = BuildStepImpl;
+      Resolvers resolvers) = BuildStepImpl;
 }
