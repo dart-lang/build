@@ -465,7 +465,7 @@ class BuildImpl {
     }
 
     var inputSets = packages.map((package) => new InputSet(
-        package, [package == _packageGraph.root.name ? '**/*' : 'lib/**']));
+        package, [package == _packageGraph.root.name ? '**' : 'lib/**']));
     var allInputs = await _reader.listAssetIds(inputSets).toList();
     _inputsByPackage.clear();
 
@@ -497,8 +497,6 @@ class BuildImpl {
   /// Checks if an [input] is valid.
   bool _isValidInput(AssetId input) {
     var parts = path.split(input.path);
-    // Files must be in a top level directory.
-    if (parts.length == 1) return false;
     if (input.package != _packageGraph.root.name) return parts[0] == 'lib';
     return true;
   }
