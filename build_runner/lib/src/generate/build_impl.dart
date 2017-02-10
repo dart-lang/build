@@ -478,6 +478,8 @@ class BuildImpl {
     for (var input in allInputs) {
       if (_isValidInput(input)) {
         _inputsByPackage[input.package].add(input);
+      } else {
+        _logger.warning('$input is not a valid input.');
       }
     }
   }
