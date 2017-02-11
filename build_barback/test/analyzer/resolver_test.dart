@@ -49,14 +49,12 @@ void main() {
     addAssets(actualInputs, writer);
 
     var builder = new TestBuilder(validator);
-    var buildStep =
-        new ManagedBuildStep(entryPoint, [], reader, writer, 'a', _resolvers);
+    var logger = new Logger('test');
     var logs = <LogRecord>[];
     if (messages != null) {
-      buildStep.logger.onRecord.listen(logs.add);
+      logger.onRecord.listen(logs.add);
     }
-    await builder.build(buildStep);
-    await buildStep.complete();
+    await runBuilder(builder, [entryPoint], reader, writer, _resolvers, logger: logger);
     if (messages != null) {
       expect(logs.map((l) => l.toString()), messages);
     }
@@ -219,7 +217,7 @@ void main() {
               } ''',
           },
           messages: [
-            '[WARNING] a|web/main.dart: $warningMessage "/b.dart"',
+            '[WARNING] test: $warningMessage "/b.dart"',
           ],
           validator: (resolver) {
             var lib = resolver.getLibrary(entryPoint);
