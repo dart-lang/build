@@ -1,3 +1,8 @@
+## 0.7.1+1
+
+- Use comment syntax for generic method - not everyone is on an SDK version that
+  supports the real syntax.
+
 ## 0.7.1
 
 - Add a top-level `log` getter which is scoped to running builds and can be used

@@ -9,4 +9,5 @@ const Symbol logKey = #buildLog;
 /// Will be `null` when not running within a build.
 Logger get log => Zone.current[logKey];
 
-T scopeLog<T>(T fn(), Logger log) => runZoned(fn, zoneValues: {logKey: log});
+dynamic/*=T*/ scopeLog/*<T>*/(dynamic/*=T*/ fn(), Logger log) =>
+    runZoned(fn, zoneValues: {logKey: log});
