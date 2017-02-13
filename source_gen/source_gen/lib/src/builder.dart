@@ -78,10 +78,12 @@ class GeneratorBuilder extends Builder {
       genPartContent = formatter.format(genPartContent);
     } catch (e, stack) {
       buildStep.logger.severe(
-          '''Error formatting generated source code for ${library.identifier}
-which was output to ${_generatedFile(buildStep.inputId).path}.\n
-This may indicate an issue in the generated code or in the formatter.\n
-Please check the generated code and file an issue on source_gen if appropriate.''',
+          'Error formatting generated source code for ${library.identifier}'
+          'which was output to ${_generatedFile(buildStep.inputId).path}.\n'
+          'This may indicate an issue in the generated code or in the '
+          'formatter.\n'
+          'Please check the generated code and file an issue on source_gen if '
+          'appropriate.',
           e,
           stack);
     }

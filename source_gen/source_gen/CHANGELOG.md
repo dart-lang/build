@@ -1,3 +1,7 @@
+## 0.5.4+1
+
+* Give more information when `dartfmt` fails.
+
 ## 0.5.4
 
 * Update to latest `build`, `build_runner`, and `build_test` releases.
