@@ -45,7 +45,7 @@ class GeneratorBuilder extends Builder {
 
   Future _generateForLibrary(
       LibraryElement library, BuildStep buildStep) async {
-    buildStep.logger.fine('Running $generators for ${buildStep.inputId}');
+    log.fine('Running $generators for ${buildStep.inputId}');
     var generatedOutputs =
         await _generate(library, generators, buildStep).toList();
 
@@ -77,7 +77,7 @@ class GeneratorBuilder extends Builder {
     try {
       genPartContent = formatter.format(genPartContent);
     } catch (e, stack) {
-      buildStep.logger.severe(
+      log.severe(
           'Error formatting generated source code for ${library.identifier}'
           'which was output to ${_generatedFile(buildStep.inputId).path}.\n'
           'This may indicate an issue in the generated code or in the '
@@ -107,15 +107,15 @@ Stream<GeneratedOutput> _processUnitMember(
     Element element, List<Generator> generators, BuildStep buildStep) async* {
   for (var gen in generators) {
     try {
-      buildStep.logger.finer('Running $gen for $element');
+      log.finer('Running $gen for $element');
       var createdUnit = await gen.generate(element, buildStep);
 
       if (createdUnit != null) {
-        buildStep.logger.finest(() => 'Generated $createdUnit for $element');
+        log.finest(() => 'Generated $createdUnit for $element');
         yield new GeneratedOutput(element, gen, createdUnit);
       }
     } catch (e, stack) {
-      buildStep.logger.severe('Error running $gen for $element.', e, stack);
+      log.severe('Error running $gen for $element.', e, stack);
       yield new GeneratedOutput.fromError(element, gen, e, stack);
     }
   }

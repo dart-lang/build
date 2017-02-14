@@ -1,3 +1,7 @@
+## 0.5.4+2
+
+* Use the new `log` field instead of the deprecated `buildStep.logger`
+
 ## 0.5.4+1
 
 * Give more information when `dartfmt` fails.
