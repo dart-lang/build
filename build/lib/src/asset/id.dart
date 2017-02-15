@@ -54,7 +54,7 @@ class AssetId implements Comparable<AssetId> {
             pathos.joinAll(parsedUri.pathSegments.skip(1)));
       }
       throw new UnsupportedError(
-        'Cannot resolve $uri; only "package" supported',
+        'Cannot resolve $uri; only "package" supported'
       );
     }
     if (from == null) {
