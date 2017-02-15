@@ -47,7 +47,6 @@ class AssetId implements Comparable<AssetId> {
   /// ```
   factory AssetId.resolve(String uri, {AssetId from}) {
     final parsedUri = Uri.parse(uri);
-    // If a dart:, package:, or file: URI was used, assume an absolute path.
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
         return new AssetId(parsedUri.pathSegments.first,
