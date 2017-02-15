@@ -62,39 +62,29 @@ void main() {
     });
 
     test("should throw for a file: URI", () {
-      expect(
-        () => new AssetId.resolve(r"file://localhost/etc/fstab1"),
-        throwsUnsupportedError,
-      );
+      expect(() => new AssetId.resolve(r"file://localhost/etc/fstab1"),
+          throwsUnsupportedError);
     });
 
     test("should throw for a dart: URI", () {
-      expect(
-        () => new AssetId.resolve(r"dart:collection"),
-        throwsUnsupportedError,
-      );
+      expect(() => new AssetId.resolve(r"dart:collection"),
+          throwsUnsupportedError);
     });
 
     test("should throw parsing a relative package URI without an origin", () {
-      expect(
-        () => new AssetId.resolve("some/relative/path.dart"),
-        throwsArgumentError,
-      );
+      expect(() => new AssetId.resolve("some/relative/path.dart"),
+          throwsArgumentError);
     });
 
     test("should parse a relative package URI", () {
-      var id = new AssetId.resolve(
-        "some/relative/path.dart",
-        from: new AssetId("app", "app.dart"),
-      );
+      var id = new AssetId.resolve("some/relative/path.dart",
+          from: new AssetId("app", "app.dart"));
       expect(id, new AssetId("app", "some/relative/path.dart"));
     });
 
     test("should parse a relative package URI pointing back", () {
-      var id = new AssetId.resolve(
-        "../src/some/path.dart",
-        from: new AssetId("app", "folder/folder.dart"),
-      );
+      var id = new AssetId.resolve("../src/some/path.dart",
+          from: new AssetId("app", "folder/folder.dart"));
       expect(id, new AssetId("app", "src/some/path.dart"));
     });
   });

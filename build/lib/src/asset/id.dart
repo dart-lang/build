@@ -38,7 +38,6 @@ class AssetId implements Comparable<AssetId> {
   ///   return new AssetId.resolve(element.uri);
   /// }
   /// ```
-  ///
   /// Optionally, specifying the origin asset ([from]) will also allow resolving
   /// relative to another asset - otherwise an [ArgumentError] will be thrown.
   /// ```dart
@@ -51,26 +50,19 @@ class AssetId implements Comparable<AssetId> {
     // If a dart:, package:, or file: URI was used, assume an absolute path.
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
-        return new AssetId(
-          parsedUri.pathSegments.first,
-          pathos.joinAll(parsedUri.pathSegments.skip(1)),
-        );
+        return new AssetId(parsedUri.pathSegments.first,
+            pathos.joinAll(parsedUri.pathSegments.skip(1)));
       }
       throw new UnsupportedError(
         'Cannot resolve $uri; only "package" supported',
       );
     }
     if (from == null) {
-      throw new ArgumentError.value(
-        uri,
-        'uri',
-        'An AssetId "from" must be specified to resolve a relative URI',
-      );
+      throw new ArgumentError.value(uri, 'uri',
+          'An AssetId "from" must be specified to resolve a relative URI');
     }
-    return new AssetId(
-      pathos.normalize(from.package),
-      pathos.join(pathos.dirname(from.path), uri),
-    );
+    return new AssetId(pathos.normalize(from.package),
+        pathos.join(pathos.dirname(from.path), uri));
   }
 
   /// Parses an [AssetId] string of the form "package|path/to/asset.txt".
