@@ -10,4 +10,7 @@ const Symbol logKey = #buildLog;
 Logger get log => Zone.current[logKey];
 
 dynamic/*=T*/ scopeLog/*<T>*/(dynamic/*=T*/ fn(), Logger log) =>
-    runZoned(fn, zoneValues: {logKey: log});
+    runZoned(fn, zoneSpecification:
+        new ZoneSpecification(print: (self, parent, zone, message) {
+      log.info(message);
+    }), zoneValues: {logKey: log});

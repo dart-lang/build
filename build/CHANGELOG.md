@@ -1,3 +1,11 @@
+## 0.7.2
+
+- Add an `AssetId.resolve` constructor to easily construct AssetIds from import
+  uris.
+- Capture 'print' calls inside running builds and automatically turn them in to
+  `log.info`. Depending on the environment a print can be hazardous so this
+  makes all builders safe and consistent by default.
+
 ## 0.7.1+1
 
 - Use comment syntax for generic method - not everyone is on an SDK version that
