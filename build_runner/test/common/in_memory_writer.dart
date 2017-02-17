@@ -14,7 +14,7 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
 
   @override
   Future delete(AssetId id) async {
-    if (onDelete != null) onDelete(id); 
+    if (onDelete != null) onDelete(id);
     assets.remove(id);
   }
 }

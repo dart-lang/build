@@ -103,6 +103,27 @@ void main() {
       });
     });
 
+    group('package with flutter dependencies', () {
+      var withFlutterDeps = 'test/fixtures/flutter_pkg';
+
+      setUp(() async {
+        graph = new PackageGraph.forPath(withFlutterDeps);
+      });
+
+      test('allPackages resolved correctly with all packages', () {
+        expect(graph.allPackages.keys, [
+          'flutter_gallery',
+          'intl',
+          'string_scanner',
+          'flutter',
+          'collection',
+          'flutter_gallery_assets',
+          'flutter_test',
+          'flutter_driver',
+        ]);
+      });
+    });
+
     test('custom creation via fromRoot', () {
       var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
       var b = new PackageNode('b', '1.0.0', PackageDependencyType.pub, null);
