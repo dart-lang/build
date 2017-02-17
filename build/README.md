@@ -24,6 +24,8 @@ that needs static analysis and/or code generation.
 You might be asking, why use this package instead of a pub `Transformer`? There
 are a few key differences that make this package better for most use cases.
 
+Also see https://github.com/dart-lang/build/wiki/Writing-a-Builder.
+
 ### Outputs
 
 Pub will only ever output files into your `build` directory, and pub serve only
