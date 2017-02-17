@@ -4,25 +4,27 @@
 
 Defines the basic pieces of how a build happens and how they interact.
 
-## `Builder` class
+## [`Builder`][dartdoc:Builder]
 
 The business logic for code generation. Most consumers of the `build` package
-will create custom implementations of Builder.
+will create custom implementations of `Builder`.
 
-## `BuildStep` class
+## [`BuildStep`][dartdoc:BuildStep]
 
 The way a `Builder` interacts with the outside world. Defines the unit of work
-and allows reading/writing files and resolving code.
+and allows reading/writing files and resolving Dart source code.
 
-## `Resolver` class
+## [`Resolver`][dartdoc:Resolver] class
 
-An interface into the dart analyzer to allow resolution of code that needs
-generation.
+An interface into the dart [analyzer][pub:analyzer] to allow resolution of code
+that needs static analysis and/or code generation.
 
 ## Differences between the `build` package and `pub`.
 
 You might be asking, why use this package instead of a pub `Transformer`? There
-are a few key differences that make this package better for some use cases.
+are a few key differences that make this package better for most use cases.
+
+Also see https://github.com/dart-lang/build/wiki/Writing-a-Builder.
 
 ### Outputs
 
@@ -76,11 +78,12 @@ and easier on users who have fewer modes to support.
 
 ## Implementing your own Builders
 
-If you have written a pub `Transformer` in the past, then the `Builder`api
-should be familiar to you. The main difference is that `Builders` must always
-declare their outputs, similar to a `DeclaringTransformer`.
+If you have written a pub `Transformer` in the past, then the
+[`Builder`][dartdoc:Builder] API should be familiar to you. The main difference is
+that `Builders` must always declare their outputs, similar to a
+`DeclaringTransformer`.
 
-The basic api looks like this:
+The basic API looks like this:
 
 ```dart
 abstract class Builder {
@@ -105,18 +108,18 @@ class CopyBuilder implements Builder {
   CopyBuilder(this.extension)
 
   Future build(BuildStep buildStep) async {
-    /// Each [buildStep] has just one input. This is a fully realized [Asset]
-    /// with its [stringContents] already available.
-    var input = buildStep.input;
+    /// Each [buildStep] has a single input.
+    var input = buildStep.inputId;
 
-    /// Create a new [Asset], with the new [AssetId].
-    var copy = new Asset(_copiedId(input.id), input.stringContents);
+    /// Create a new target [AssetId] based on the old one.
+    var copy = _copiedId(inputId);
+    var contents = await buildStep.readAsString(input);
 
-    /// Write out the [Asset].
+    /// Write out the new asset.
     ///
     /// There is no need to `await` here, the system handles waiting on these
     /// files as necessary before advancing to the next phase.
-    buildStep.writeAsString(copy);
+    buildStep.writeAsString(copy, contents);
   }
 
   /// Declare your outputs, just one file in this case.
@@ -130,12 +133,12 @@ It should be noted that you should _never_ touch the file system directly. Go
 through the `buildStep#readAsString` and `buildStep#writeAsString` methods in
 order to read and write assets. This is what enables the package to track all of
 your dependencies and do incremental rebuilds. It is also what enables your
-`Builder` to run on different environments.
+[`Builder`][dartdoc:Builder] to run on different environments.
 
 ### Using the analyzer
 
-If you need to do analyzer resolution, you can use the `BuildStep#resolve`
-method. This makes sure that all `Builder`s in the system share the same
+If you need to do analyzer resolution, you can use the `BuildStep#resolver`
+object. This makes sure that all `Builder`s in the system share the same
 analysis context, which greatly speeds up the overall system when multiple
 `Builder`s are doing resolution. Additionally, it handles for you making the
 analyzer work in an async environment.
@@ -149,14 +152,11 @@ Here is an example of a `Builder` which uses the `resolve` method:
 class ResolvingCopyBuilder {
   Future build(BuildStep buildStep) {
     /// Resolves all libraries reachable from the primary input.
-    var resolver = await buildStep.resolve(buildStep.input.id);
+    var resolver = await buildStep.resolver;
     /// Get a [LibraryElement] by asset id.
-    var entryLib = resolver.getLibrary(buildStep.input.id);
+    var entryLib = resolver.getLibrary(buildStep.inputId);
     /// Or get a [LibraryElement] by name.
     var otherLib = resolver.getLibraryByName('my.library');
-
-    /// **IMPORTANT**: If you don't release a resolver, your builds will hang.
-    resolver.release();
   }
 
   /// Declare outputs as well....
@@ -166,12 +166,13 @@ class ResolvingCopyBuilder {
 Once you have gotten a `LibraryElement` using one of the methods on `Resolver`,
 you are now just using the regular `analyzer` package to explore your app.
 
-**Important Note**: As shown in the code above, you _must_ call `release` on
-your resolver when you are done. If you don't then the next call to `resolve`
-will never complete.
-
 ## Features and bugs
 
 Please file feature requests and bugs at the [issue tracker][tracker].
 
 [tracker]: https://github.com/dart-lang/build/issues
+
+[dartdoc:Builder]: https://www.dartdocs.org/documentation/build/latest/build/Builder-class.html
+[dartdoc:BuildStep]: https://www.dartdocs.org/documentation/build/latest/build/BuildStep-class.html
+[dartdoc:Resolver]: https://www.dartdocs.org/documentation/build/latest/build/Resolver-class.html
+[pub:analyzer]: https://pub.dartlang.org/packages/analyzer
