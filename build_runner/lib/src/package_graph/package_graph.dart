@@ -92,7 +92,11 @@ class PackageGraph {
       deps.forEach((name, source) {
         var dep = nodes[name];
         if (dep == null) {
-          var pubspec = _pubspecForUri(packageLocations[name]);
+          var uri = packageLocations[name];
+          if (uri == null) {
+            throw 'No package found for $name.';
+          }
+          var pubspec = _pubspecForUri(uri);
           dep = addNodeAndDeps(pubspec, _dependencyType(rootDeps[name]));
         }
         node.dependencies.add(dep);
@@ -167,6 +171,7 @@ PackageDependencyType _dependencyType(source) {
       case 'hosted':
         return PackageDependencyType.hosted;
       case 'path':
+      case 'sdk': // Until Flutter supports another type, assume same as path.
         return PackageDependencyType.path;
     }
   }
