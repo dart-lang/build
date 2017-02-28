@@ -8,8 +8,14 @@ package folder, and rebuilds are _incremental_.
 
 ## Running Builds
 
-In order to run a build, you write a script which uses one of the three top
-level functions defined by this library:
+In order to run a build, you write a script to do the work. Every package which
+*uses* a builder must have it's own script, they cannot be reused from other
+packages. Often a package which defines a `Builder` will have an example you can
+reference, but a unique script must be written for the consuming packages as
+well.
+
+The script will use one of the three top level functions defined by this
+library:
 
 - **build**: Runs a single build and exits.
 - **watch**: Continuously runs builds as you edit files.
