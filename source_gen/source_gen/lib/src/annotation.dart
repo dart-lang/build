@@ -222,7 +222,7 @@ bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
     throw new ArgumentError.value(annotation, 'annotation',
         'Could not determine type of annotation. Are you missing a dependency?');
   }
-  
+
   return matchTypes(annotationType, annotationValueType);
 }
 

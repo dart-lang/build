@@ -1,5 +1,3 @@
-library source_gen.test.comment_generator;
-
 import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';

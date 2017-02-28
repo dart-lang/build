@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library source_gen.test.test_all;
-
 import 'annotation_test.dart' as annotation;
 import 'builder_test.dart' as builder;
 import 'find_libraries_test.dart' as find_libraries;
