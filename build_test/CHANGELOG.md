@@ -1,3 +1,8 @@
+## 0.4.1
+
+- Make `scopeLog` visible so tests can be run with an available `log` without
+  going through runBuilder.
+
 ## 0.4.0+1
 
 - Bug Fix: Correctly identify missing outputs in testBuilder
