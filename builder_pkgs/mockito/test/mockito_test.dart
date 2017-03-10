@@ -18,6 +18,7 @@ import 'package:mockito/src/mock.dart'
 import 'package:test/test.dart';
 
 class RealClass {
+  RealClass innerObj;
   String methodWithoutArgs() => "Real";
   String methodWithNormalArgs(int x) => "Real";
   String methodWithListArgs(List<int> x) => "Real";
@@ -218,6 +219,18 @@ void main() {
       when(mock.methodWithNormalArgs(argThat(equals(42)))).thenReturn("42");
       expect(mock.methodWithNormalArgs(43), equals("43"));
     });
+    test("should throw if `when` is called while stubbing", () {
+      expect(() {
+        var responseHelper = () {
+          var mock2 = new MockedClass();
+          when(mock2.getter).thenReturn("A");
+          return mock2;
+        };
+        when(mock.innerObj).thenReturn(responseHelper());
+      }, throwsStateError);
+    });
+
+    // [typed] API
     test("should mock method with typed arg matchers", () {
       when(mock.typeParameterizedFn(typed(any), typed(any)))
           .thenReturn("A lot!");

@@ -640,6 +640,9 @@ void verifyZeroInteractions(var mock) {
 typedef PostExpectation Expectation(x);
 
 Expectation get when {
+  if (_whenCall != null) {
+    throw new StateError('Cannot call `when` within a stub response');
+  }
   _whenInProgress = true;
   return (_) {
     _whenInProgress = false;
