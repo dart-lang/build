@@ -32,7 +32,8 @@ class AssetId implements Comparable<AssetId> {
   /// Creates a new [AssetId] from an [uri].
   ///
   /// This gracefully handles `package:` URIs, which is useful when creating an
-  /// [AssetId] from an `import` or `export` directive pointing to a package:
+  /// [AssetId] from an `import` or `export` directive pointing to a package's
+  /// _lib_ directory:
   /// ```dart
   /// AssetId assetOfDirective(UriReferencedElement element) {
   ///   return new AssetId.resolve(element.uri);
@@ -50,11 +51,10 @@ class AssetId implements Comparable<AssetId> {
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
         return new AssetId(parsedUri.pathSegments.first,
-            pathos.joinAll(parsedUri.pathSegments.skip(1)));
+            pathos.join('lib', pathos.joinAll(parsedUri.pathSegments.skip(1))));
       }
       throw new UnsupportedError(
-        'Cannot resolve $uri; only "package" supported'
-      );
+          'Cannot resolve $uri; only "package" supported');
     }
     if (from == null) {
       throw new ArgumentError.value(uri, 'uri',
