@@ -15,7 +15,7 @@ abstract class Resolver {
   /// is a 'part of' file.
   bool isLibrary(AssetId assetId);
 
-  /// Gets the resolved Dart library  defined in [assetId].
+  /// Gets the resolved Dart library defined in [assetId].
   ///
   /// If the asset is not a Dart library file throws a
   /// [NonLibraryAssetException].

@@ -1,3 +1,7 @@
+## Unreleased
+
+- Add `BuildStep.inputLibrary` as a convenience.
+
 ## 0.7.2
 
 - Add an `AssetId.resolve` constructor to easily construct AssetIds from import

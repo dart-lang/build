@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
@@ -17,6 +18,11 @@ import 'build_step_impl.dart';
 abstract class BuildStep implements AssetReader, AssetWriter {
   /// The primary input id for this build step.
   AssetId get inputId;
+
+  /// Resolved library defined by [inputId].
+  ///
+  /// Throws [NonLibraryAssetException] if [inputId] is not a Dart library file.
+  Future<LibraryElement> get inputLibrary;
 
   /// A [Logger] for this [BuildStep].
   @Deprecated('Use the top-level `log` instead')
