@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
@@ -23,6 +24,10 @@ class BuildStepImpl implements ManagedBuildStep {
   /// The primary input id for this build step.
   @override
   final AssetId inputId;
+
+  @override
+  Future<LibraryElement> get inputLibrary async =>
+      (await resolver).getLibrary(inputId);
 
   @override
   Logger get logger => log;
@@ -90,7 +95,7 @@ class BuildStepImpl implements ManagedBuildStep {
   /// asynchronously write it.
   ///
   /// [id] needs to be passed separately from [asset] so that a check for
-  /// allowed outputs can be performed sychronously.
+  /// allowed outputs can be performed synchronously.
   Future writeFromFutureAsString(AssetId id, Future<String> contents,
       {Encoding encoding: UTF8}) {
     _checkOutput(id);
@@ -104,7 +109,7 @@ class BuildStepImpl implements ManagedBuildStep {
   /// asynchronously write it.
   ///
   /// [id] needs to be passed separately from [asset] so that a check for
-  /// allowed outputs can be performed sychronously.
+  /// allowed outputs can be performed synchronously.
   Future writeFromFutureAsBytes(AssetId id, Future<List<int>> bytes) {
     _checkOutput(id);
     var done = bytes.then((b) => _writer.writeAsBytes(id, b));
