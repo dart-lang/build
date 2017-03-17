@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Add `BuildStep.inputLibrary` as a convenience.
+- Fix a bug in `AssetId.resolve` to prepend `lib/` when resolving packages.
 
 ## 0.7.2
 

@@ -53,12 +53,12 @@ void main() {
   group("resolve", () {
     test("should parse a package: URI", () {
       var id = new AssetId.resolve(r"package:app/app.dart");
-      expect(id, new AssetId("app", "app.dart"));
+      expect(id, new AssetId("app", "lib/app.dart"));
     });
 
     test("should parse a package: URI with a long path", () {
       var id = new AssetId.resolve(r"package:app/src/some/path.dart");
-      expect(id, new AssetId("app", "src/some/path.dart"));
+      expect(id, new AssetId("app", "lib/src/some/path.dart"));
     });
 
     test("should throw for a file: URI", () {
@@ -76,10 +76,16 @@ void main() {
           throwsArgumentError);
     });
 
+    test("should parse a relative URI within the test/ folder", () {
+      var id = new AssetId.resolve("common.dart",
+          from: new AssetId("app", "test/some_test.dart"));
+      expect(id, new AssetId("app", "test/common.dart"));
+    });
+
     test("should parse a relative package URI", () {
       var id = new AssetId.resolve("some/relative/path.dart",
-          from: new AssetId("app", "app.dart"));
-      expect(id, new AssetId("app", "some/relative/path.dart"));
+          from: new AssetId("app", "lib/app.dart"));
+      expect(id, new AssetId("app", "lib/some/relative/path.dart"));
     });
 
     test("should parse a relative package URI pointing back", () {
