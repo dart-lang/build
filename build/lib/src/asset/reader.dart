@@ -4,16 +4,20 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:glob/glob.dart';
+
 import 'id.dart';
 
 /// Abstract interface for reading assets.
 abstract class AssetReader {
-  /// Asynchronously reads [id], and returns it as a [List<int>].
   Future<List<int>> readAsBytes(AssetId id);
 
-  /// Asynchronously reads [id], and returns it as a [String].
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
-  /// Asynchronously checks if [id] exists.
+  /// Whether an asset at [id] is readable.
   Future<bool> hasInput(AssetId id);
+
+  /// Finds all of the assets which match [glob] and are readable under the root
+  /// package.
+  Iterable<AssetId> findAssets(Glob glob);
 }

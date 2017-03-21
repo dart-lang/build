@@ -1,7 +1,8 @@
-## Unreleased
+## 0.8.0-dev
 
 - Add `BuildStep.inputLibrary` as a convenience.
 - Fix a bug in `AssetId.resolve` to prepend `lib/` when resolving packages.
+- Add `AssetReader.findAssets` to allow listing assets by glob.
 
 ## 0.7.2
 
