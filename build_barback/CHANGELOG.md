@@ -1,3 +1,7 @@
+## 0.1.2-dev
+
+- Only use the global log from `build`
+
 ## 0.1.1
 
 - Support the global log from `build`

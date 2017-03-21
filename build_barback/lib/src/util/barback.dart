@@ -38,10 +38,8 @@ class BuildStepTransform implements barback.Transform {
   }
 
   @override
-  barback.TransformLogger get logger {
-    _logger ??= toTransformLogger(buildStep.logger);
-    return _logger;
-  }
+  barback.TransformLogger get logger =>
+      _logger ??= toTransformLogger(build.log);
 
   barback.TransformLogger _logger;
 
