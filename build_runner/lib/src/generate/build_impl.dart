@@ -466,7 +466,7 @@ class BuildImpl {
 
     var inputSets = packages.map((package) => new InputSet(
         package, [package == _packageGraph.root.name ? '**' : 'lib/**']));
-    var allInputs = await _reader.listAssetIds(inputSets).toList();
+    var allInputs = listAssetIds(_reader, inputSets);
     _inputsByPackage.clear();
 
     // Initialize the set of inputs for each package.
@@ -575,6 +575,20 @@ class BuildImpl {
         (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
         groupOutputs.add(output);
         yield output;
+      }
+    }
+  }
+}
+
+Iterable<AssetId> listAssetIds(
+    RunnerAssetReader assetReader, Iterable<InputSet> inputSets) sync* {
+  var seenAssets = new Set<AssetId>();
+  for (var inputSet in inputSets) {
+    for (var glob in inputSet.globs) {
+      for (var id
+          in assetReader.findAssets(glob, packageName: inputSet.package)) {
+        if (!seenAssets.add(id)) continue;
+        yield id;
       }
     }
   }

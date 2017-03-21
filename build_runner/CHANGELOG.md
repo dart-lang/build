@@ -1,3 +1,7 @@
+## 0.3.1-dev
+
+- Internal refactoring of RunnerAssetReader.
+
 ## 0.3.0
 
 ### Bug Fixes

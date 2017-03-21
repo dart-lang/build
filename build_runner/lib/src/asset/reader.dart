@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-
-import '../generate/input_set.dart';
+import 'package:glob/glob.dart';
 
 abstract class RunnerAssetReader extends AssetReader {
-  /// Gets a [Stream<AssetId>] of all assets available matching [inputSets].
-  Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets);
+  Iterable<AssetId> findAssets(Glob glob, {String packageName});
 
   /// Asynchronously gets the last modified [DateTime] of [id].
   Future<DateTime> lastModified(AssetId id);
