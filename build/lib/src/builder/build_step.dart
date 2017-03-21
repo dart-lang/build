@@ -28,16 +28,6 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @Deprecated('Use the top-level `log` instead')
   Logger get logger;
 
-  /// Checks if an [Asset] by [id] exists as an input for this [BuildStep].
-  @override
-  Future<bool> hasInput(AssetId id);
-
-  @override
-  Future<List<int>> readAsBytes(AssetId id);
-
-  @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
-
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs
   /// are written.
