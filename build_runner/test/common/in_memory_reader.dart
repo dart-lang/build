@@ -7,6 +7,7 @@ import 'dart:mirrors';
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
+import 'package:glob/glob.dart';
 
 class InMemoryRunnerAssetReader extends InMemoryAssetReader
     implements RunnerAssetReader {
@@ -14,15 +15,8 @@ class InMemoryRunnerAssetReader extends InMemoryAssetReader
       : super(sourceAssets);
 
   @override
-  Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets) async* {
-    for (var id in assets.keys) {
-      var matches = inputSets.any((inputSet) {
-        if (inputSet.package != id.package) return false;
-        return inputSet.globs.any((glob) => glob.matches(id.path));
-      });
-      if (matches) yield id;
-    }
-  }
+  Iterable<AssetId> findAssets(Glob glob, {String packageName}) => assets.keys
+      .where((id) => id.package == packageName && glob.matches(id.path));
 
   final Map<Uri, LibraryMirror> _allLibraries = currentMirrorSystem().libraries;
 

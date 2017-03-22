@@ -6,11 +6,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 
 import 'reader.dart';
 import 'writer.dart';
-import '../generate/input_set.dart';
 import '../package_graph/package_graph.dart';
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
@@ -36,30 +36,23 @@ class FileBasedAssetReader implements RunnerAssetReader {
       (await _fileForOrThrow(id, packageGraph))
           .readAsString(encoding: encoding);
 
-  /// Searches for all [AssetId]s matching [inputSet]s.
   @override
-  Stream<AssetId> listAssetIds(Iterable<InputSet> inputSets) async* {
-    var seenAssets = new Set<AssetId>();
-    for (var inputSet in inputSets) {
-      var packageNode = packageGraph[inputSet.package];
-      if (packageNode == null) {
-        throw new ArgumentError(
-            "Could not find package '${inputSet.package}' which was listed as "
-            "an input. Please ensure you have that package in your deps, or "
-            "remove it from your input sets.");
-      }
-      var packagePath = packageNode.location.toFilePath();
-      for (var glob in inputSet.globs) {
-        var fileStream = glob.list(followLinks: false, root: packagePath).where(
-            (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]));
-        await for (var entity in fileStream) {
-          // TODO(jakemac): Where do these files come from???
-          if (path.basename(entity.path).startsWith('._')) continue;
-          var id = _fileToAssetId(entity, packageNode);
-          if (!seenAssets.add(id)) continue;
-          yield id;
-        }
-      }
+  Iterable<AssetId> findAssets(Glob glob, {String packageName}) sync* {
+    var packageNode =
+        packageName == null ? packageGraph.root : packageGraph[packageName];
+    if (packageNode == null) {
+      throw new ArgumentError(
+          "Could not find package '$packageName' which was listed as "
+          "an input. Please ensure you have that package in your deps, or "
+          "remove it from your input sets.");
+    }
+    var packagePath = packageNode.location.toFilePath();
+    var files = glob.listSync(followLinks: false, root: packagePath).where(
+        (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]));
+    for (var file in files) {
+      // TODO(jakemac): Where do these files come from???
+      if (path.basename(file.path).startsWith('._')) continue;
+      yield _fileToAssetId(file, packageNode);
     }
   }
 

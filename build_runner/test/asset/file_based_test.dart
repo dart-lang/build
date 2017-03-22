@@ -4,6 +4,7 @@
 @TestOn('vm')
 import 'dart:io';
 
+import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
@@ -60,30 +61,14 @@ void main() {
           throwsA(packageNotFoundException));
     });
 
-    test('can list files based on simple InputSets', () async {
-      var inputSets = <InputSet>[
-        new InputSet('basic_pkg', ['{lib,web}/**']),
-        new InputSet('a', ['lib/**']),
-      ];
+    test('can list files based on glob', () async {
       expect(
-          await reader.listAssetIds(inputSets).toList(),
+          reader
+              .findAssets(new Glob('{lib,web}/**'), packageName: 'basic_pkg')
+              .toList(),
           unorderedEquals([
             makeAssetId('basic_pkg|lib/hello.txt'),
             makeAssetId('basic_pkg|web/hello.txt'),
-            makeAssetId('a|lib/a.txt'),
-          ]));
-    });
-
-    test('can list files based on InputSets with globs', () async {
-      var inputSets = <InputSet>[
-        new InputSet('basic_pkg', ['web/*.txt']),
-        new InputSet('a', ['lib/*']),
-      ];
-      expect(
-          await reader.listAssetIds(inputSets).toList(),
-          unorderedEquals([
-            makeAssetId('basic_pkg|web/hello.txt'),
-            makeAssetId('a|lib/a.txt'),
           ]));
     });
 
