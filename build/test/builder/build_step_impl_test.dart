@@ -80,7 +80,7 @@ void main() {
 
       setUp(() {
         writer = new InMemoryAssetWriter();
-        reader = new InMemoryAssetReader(writer.assets);
+        reader = new InMemoryAssetReader(sourceAssets: writer.assets);
       });
 
       test('tracks dependencies and outputs when used by a builder', () async {

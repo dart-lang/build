@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 
 class StubAssetReader implements AssetReader {
   @override
@@ -15,4 +16,7 @@ class StubAssetReader implements AssetReader {
 
   @override
   Future<String> readAsString(_, {Encoding encoding}) => new Future.value(null);
+
+  @override
+  Iterable<AssetId> findAssets(Glob glob) => null;
 }
