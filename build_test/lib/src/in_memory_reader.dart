@@ -5,13 +5,15 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 
 import 'in_memory_writer.dart';
 
 class InMemoryAssetReader implements AssetReader {
   final Map<AssetId, DatedValue> assets;
+  final String rootPackage;
 
-  InMemoryAssetReader([Map<AssetId, DatedValue> sourceAssets])
+  InMemoryAssetReader({Map<AssetId, DatedValue> sourceAssets, this.rootPackage})
       : assets = sourceAssets ?? <AssetId, DatedValue>{};
 
   @override
@@ -29,6 +31,15 @@ class InMemoryAssetReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!await hasInput(id)) throw new AssetNotFoundException(id);
     return assets[id].stringValue;
+  }
+
+  @override
+  Iterable<AssetId> findAssets(Glob glob) {
+    if (rootPackage == null) {
+      throw 'Cannot glob assets without a root package';
+    }
+    return assets.keys
+        .where((id) => id.package == rootPackage && glob.matches(id.path));
   }
 
   void cacheBytesAsset(AssetId id, List<int> bytes) {

@@ -1,3 +1,8 @@
+## 0.5.0
+
+- Add `findAssets` implementations to StubAssetReader an InMemoryAssetReader
+- **BREAKING**: InMemoryAssetReader constructor uses named optional parameters
+
 ## 0.4.1
 
 - Make `scopeLog` visible so tests can be run with an available `log` without
