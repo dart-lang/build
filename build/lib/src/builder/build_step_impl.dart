@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
@@ -74,6 +75,9 @@ class BuildStepImpl implements ManagedBuildStep {
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
+
+  @override
+  Iterable<AssetId> findAssets(Glob glob) => _reader.findAssets(glob);
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) {
