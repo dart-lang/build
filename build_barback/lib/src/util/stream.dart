@@ -5,7 +5,7 @@ import 'dart:async';
 
 Future<List<int>> combineByteStream(Stream<List<int>> stream) async {
   var chunks = await stream.toList();
-  return chunks.fold(<int>[], (List<int> p, e) {
+  return chunks.fold<List<int>>(<int>[], (p, e) {
     p.addAll(e);
     return p;
   });
