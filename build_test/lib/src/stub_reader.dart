@@ -18,5 +18,5 @@ class StubAssetReader implements AssetReader {
   Future<String> readAsString(_, {Encoding encoding}) => new Future.value(null);
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) => const [];
+  Iterable<AssetId> findAssets(Glob glob) => null;
 }
