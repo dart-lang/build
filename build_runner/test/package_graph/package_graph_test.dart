@@ -140,14 +140,14 @@ void main() {
       expect(
           () => new PackageGraph.forPath(
               path.join('test', 'fixtures', 'no_pubspec')),
-          throws);
+          throwsA(anything));
     });
 
     test('missing .packages file throws on create', () {
       expect(
           () => new PackageGraph.forPath(
               path.join('test', 'fixtures', 'no_packages_file')),
-          throws);
+          throwsA(anything));
     });
   });
 }
