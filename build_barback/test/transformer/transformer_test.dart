@@ -143,8 +143,8 @@ class LoggingCopyBuilder extends CopyBuilder {
     try {
       throw 'SomeError';
     } catch (e, s) {
-      buildStep.logger.warning('Warning!', e, s);
-      buildStep.logger.severe('Error!', e, s);
+      log.warning('Warning!', e, s);
+      log.severe('Error!', e, s);
     }
   }
 }
