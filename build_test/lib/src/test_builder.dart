@@ -90,7 +90,7 @@ Future testBuilder(
     Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
     void onLog(LogRecord log)}) async {
   writer ??= new InMemoryAssetWriter();
-  final reader = new InMemoryAssetReader(rootPackage:  rootPackage);
+  final reader = new InMemoryAssetReader(rootPackage: rootPackage);
 
   var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {

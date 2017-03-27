@@ -273,9 +273,8 @@ class WatchImpl {
       return null;
     }
     var packagePath = absolutePackagePaths[packageNode];
-    var libPath = path.joinAll(['lib']
-      ..addAll(
-          changePathParts.getRange(packagesIndex + 2, changePathParts.length)));
+    var libPath = path.joinAll(['lib']..addAll(
+        changePathParts.getRange(packagesIndex + 2, changePathParts.length)));
     return path.join(packagePath, libPath);
   }
 }
