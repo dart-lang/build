@@ -54,7 +54,8 @@ void main() {
     if (messages != null) {
       logger.onRecord.listen(logs.add);
     }
-    await runBuilder(builder, [entryPoint], reader, writer, _resolvers, logger: logger);
+    await runBuilder(builder, [entryPoint], reader, writer, _resolvers,
+        logger: logger);
     if (messages != null) {
       expect(logs.map((l) => l.toString()), messages);
     }
