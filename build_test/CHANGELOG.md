@@ -1,3 +1,8 @@
+## Unreleased
+
+- Add `PackageAssetReader`, a standalone asset reader that uses a
+  `PackageResolver` to map an `AssetId` to a location on disk.
+
 ## 0.5.0
 
 - Add `findAssets` implementations to StubAssetReader an InMemoryAssetReader
