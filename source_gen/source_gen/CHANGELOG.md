@@ -1,3 +1,7 @@
+## 0.5.4+3
+
+* Support the latest release of `pkg/dart_style`.
+
 ## 0.5.4+2
 
 * Use the new `log` field instead of the deprecated `buildStep.logger`
