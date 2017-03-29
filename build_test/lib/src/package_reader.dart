@@ -32,8 +32,8 @@ class PackageAssetReader implements AssetReader {
     return new PackageAssetReader(await resolver.asSync, rootPackage);
   }
 
-  File _resolve(AssetId id) =>
-      new File(p.join(_packageResolver.packagePath(id.package), id.path));
+  File _resolve(AssetId id) => new File(p
+      .canonicalize(p.join(_packageResolver.packagePath(id.package), id.path)));
 
   @override
   Iterable<AssetId> findAssets(Glob glob) {
