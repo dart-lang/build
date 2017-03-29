@@ -32,17 +32,14 @@ class PackageAssetReader implements AssetReader {
   }
 
   File _resolve(AssetId id) {
-    // Gets around inconsistencies with asset URIs.
-    //
-    // Sometimes build_test|build_test.dart = package:build_test/build_test.dart
-    // and sometimes you need |lib/build_test.dart. The package resolver is the
-    // former, so a prefix of 'lib/' results in 'lib/lib/'.
-    //
-    // TODO: https://github.com/dart-lang/build/issues/238.
-    if (id.path.startsWith('lib/')) {
-      id = new AssetId(id.package, id.path.substring('lib/'.length));
+    String path = id.path;
+    // The PackageResolver API can only resolve files in lib/.
+    if (path.startsWith('lib/')) {
+      path = path.substring('lib/'.length);
+      return new File.fromUri(_packageResolver.urlFor(id.package, path));
     }
-    return new File.fromUri(_packageResolver.urlFor(id.package, id.path));
+    var nonLibPath = '${_packageResolver.packagePath(id.package)}/$path';
+    return new File(nonLibPath);
   }
 
   @override
