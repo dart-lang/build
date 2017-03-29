@@ -6,11 +6,8 @@ set -e
 # Skipping this until at least we have a dev release that aligns with dart_style version
 # $(dirname -- "$0")/ensure_dartfmt.sh
 
-# Run the tests.
-pub run test
-
-# Run the build.dart file - just to make sure it works
-dart --checked tool/build.dart
+# Run the tests -- include the default-skipped presubmit tests
+pub run test --run-skipped
 
 # Install dart_coveralls; gather and send coverage data.
 if [ "$COVERALLS_TOKEN" ] && [ "$TRAVIS_DART_VERSION" = "stable" ]; then
