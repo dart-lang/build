@@ -32,13 +32,7 @@ class PackageAssetReader implements AssetReader {
   }
 
   File _resolve(AssetId id) {
-    String path = id.path;
-    // The PackageResolver API can only resolve files in lib/.
-    if (path.startsWith('lib/')) {
-      path = path.substring('lib/'.length);
-      return new File.fromUri(_packageResolver.urlFor(id.package, path));
-    }
-    var nonLibPath = '${_packageResolver.packagePath(id.package)}/$path';
+    var nonLibPath = '${_packageResolver.packagePath(id.package)}/${id.path}';
     return new File(nonLibPath);
   }
 
