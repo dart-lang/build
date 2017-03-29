@@ -32,7 +32,6 @@ class AssetWriterSpy implements AssetWriter {
 
   AssetWriterSpy(this._delegate);
 
-  /// All assets that were written.
   Iterable<AssetId> get assetsWritten => _assetsWritten;
 
   @override

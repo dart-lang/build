@@ -10,7 +10,7 @@ import 'id.dart';
 
 /// Standard interface for reading an asset within in a package.
 ///
-/// An [AssetReader] is required when implementing the `runBuilder` command.
+/// An [AssetReader] is required when implementing the `runBuilder` method.
 abstract class AssetReader {
   /// Returns a [Future] that completes with the bytes of a binary asset.
   ///
@@ -18,7 +18,7 @@ abstract class AssetReader {
   /// * Throws a [AssetNotFoundException] if [id.path] is not found.
   Future<List<int>> readAsBytes(AssetId id);
 
-  /// Returns a [Future] that completes the contents of a text asset.
+  /// Returns a [Future] that completes with the contents of a text asset.
   ///
   /// When decoding as text uses [encoding], or [UTF8] is not specified.
   ///
