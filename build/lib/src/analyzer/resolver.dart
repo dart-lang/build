@@ -8,42 +8,53 @@ import 'package:analyzer/dart/element/element.dart';
 import '../asset/id.dart';
 import '../builder/build_step.dart';
 
+/// Standard interface for resolving Dart source code as part of a build.
 abstract class Resolver {
-  /// Whether [assetId] represents an Dart library file.
+  /// Returns whether [assetId] represents an Dart library file.
   ///
-  /// This will be false in the case where the file is not Dart source code, or
-  /// is a 'part of' file.
+  /// This will be `false` in the case where the file is not Dart source code,
+  /// or is a `part of` file (not a standalone Dart library).
   bool isLibrary(AssetId assetId);
 
-  /// Gets the resolved Dart library defined in [assetId].
+  /// All libraries accessible from the entry point, recursively.
   ///
-  /// If the asset is not a Dart library file throws a
-  /// [NonLibraryAssetException].
-  LibraryElement getLibrary(AssetId assetId);
-
-  /// Gets all libraries accessible from the entry point, recursively.
-  ///
-  /// This includes all Dart SDK libraries as well.
+  /// **NOTE**: This includes all Dart SDK libraries as well.
   Iterable<LibraryElement> get libraries;
+
+  /// Returns a resolved library representing the file defined in [assetId].
+  ///
+  /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
+  LibraryElement getLibrary(AssetId assetId);
 
   /// Finds the first library identified by [libraryName], or null if no
   /// library can be found.
+
+  /// Returns the first library identified by [libraryName].
+  ///
+  /// If no library can be found, returns `null`.
+  ///
+  /// **NOTE**: In general, its recommended to use [getLibrary] with an absolute
+  /// asset id instead of a named identifier that has the possibility of not
+  /// being unique.
   LibraryElement getLibraryByName(String libraryName);
 }
 
+/// A resolver that should be manually released at the end of a build step.
 abstract class ReleasableResolver implements Resolver {
   /// Release this resolver so it can be updated by following build steps.
   void release();
 }
 
+/// A factory that returns a resolver for a given [BuildStep].
 abstract class Resolvers {
   Future<ReleasableResolver> get(BuildStep buildStep);
 }
 
+/// Thrown when attempting to read a non-Dart library in a [Resolver].
 class NonLibraryAssetException implements Exception {
   final AssetId assetId;
 
-  NonLibraryAssetException(this.assetId);
+  const NonLibraryAssetException(this.assetId);
 
   @override
   String toString() => 'Asset [$assetId] is not a Dart library source file.';

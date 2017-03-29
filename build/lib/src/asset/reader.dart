@@ -8,16 +8,27 @@ import 'package:glob/glob.dart';
 
 import 'id.dart';
 
-/// Abstract interface for reading assets.
+/// Standard interface for reading an asset within in a package.
+///
+/// An [AssetReader] is required when calling the `runBuilder` method.
 abstract class AssetReader {
+  /// Returns a [Future] that completes with the bytes of a binary asset.
+  ///
+  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
+  /// * Throws a [AssetNotFoundException] if [id.path] is not found.
   Future<List<int>> readAsBytes(AssetId id);
 
+  /// Returns a [Future] that completes with the contents of a text asset.
+  ///
+  /// When decoding as text uses [encoding], or [UTF8] is not specified.
+  ///
+  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
+  /// * Throws a [AssetNotFoundException] if [id.path] is not found.
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
-  /// Whether an asset at [id] is readable.
+  /// Returns a [Future] that completes with whether asset at [id] is readable.
   Future<bool> hasInput(AssetId id);
 
-  /// Finds all of the assets which match [glob] and are readable under the root
-  /// package.
+  /// Returns all readable assets matching [glob] under the root package.
   Iterable<AssetId> findAssets(Glob glob);
 }
