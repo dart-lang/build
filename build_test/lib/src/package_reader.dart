@@ -9,7 +9,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:package_resolver/package_resolver.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 
 /// Resolves using a [SyncPackageResolver] before reading from the file system.
 class PackageAssetReader implements AssetReader {
@@ -33,7 +33,7 @@ class PackageAssetReader implements AssetReader {
   }
 
   File _resolve(AssetId id) =>
-      new File(path.join(_packageResolver.packagePath(id.package), id.path));
+      new File(p.join(_packageResolver.packagePath(id.package), id.path));
 
   @override
   Iterable<AssetId> findAssets(Glob glob) {
@@ -48,7 +48,7 @@ class PackageAssetReader implements AssetReader {
   }
 
   AssetId _toAsset(String assetPath, String rootPackagePath) {
-    var relative = path.relative(assetPath, from: rootPackagePath);
+    var relative = p.relative(assetPath, from: rootPackagePath);
     return new AssetId(_rootPackage, relative);
   }
 
