@@ -13,10 +13,13 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import 'build_step_impl.dart';
 
-/// A single step in the build processes. This represents a single input and
-/// it also handles tracking of dependencies.
+/// A single step in a build process.
+///
+/// This represents a single [inputId], logic around resolving as a library,
+/// and the ability to read and write assets as allowed by the underlying build
+/// system.
 abstract class BuildStep implements AssetReader, AssetWriter {
-  /// The primary input id for this build step.
+  /// The primary for this build step.
   AssetId get inputId;
 
   /// Resolved library defined by [inputId].
@@ -28,19 +31,33 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   @Deprecated('Use the top-level `log` instead')
   Logger get logger;
 
+  /// Writes [bytes] to a binary file located at [id].
+  ///
+  /// Returns a [Future] that completes after writing the asset out.
+  ///
+  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
+  /// * Throws an [InvalidOutputException] if the output was not valid.
+  ///
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs
   /// are written.
   @override
   Future writeAsBytes(AssetId id, List<int> bytes);
 
+  /// Writes [contents] to a text file located at [id] with [encoding].
+  ///
+  /// Returns a [Future] that completes after writing the asset out.
+  ///
+  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
+  /// * Throws an [InvalidOutputException] if the output was not valid.
+  ///
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs
   /// are written.
   @override
   Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 
-  /// A [Future<Resolver>] for [inputId].
+  /// Completes with a [Resolver] for [inputId].
   Future<Resolver> get resolver;
 }
 

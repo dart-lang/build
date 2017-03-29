@@ -6,19 +6,33 @@ import 'dart:convert';
 
 import 'id.dart';
 
+/// Standard interface for writing an asset into a package's outputs.
 abstract class AssetWriter {
+  /// Writes [bytes] to a binary file located at [id].
+  ///
+  /// Returns a [Future] that completes after writing the asset out.
+  ///
+  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
+  /// * Throws an [InvalidOutputException] if the output was not valid.
   Future writeAsBytes(AssetId id, List<int> bytes);
 
+  /// Writes [contents] to a text file located at [id] with [encoding].
+  ///
+  /// Returns a [Future] that completes after writing the asset out.
+  ///
+  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
+  /// * Throws an [InvalidOutputException] if the output was not valid.
   Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
 }
 
-/// An [AssetWriter] which tracks all [AssetId]s written during it's lifetime.
+/// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
 class AssetWriterSpy implements AssetWriter {
   final AssetWriter _delegate;
   final _assetsWritten = new Set<AssetId>();
 
   AssetWriterSpy(this._delegate);
 
+  /// All assets that were written.
   Iterable<AssetId> get assetsWritten => _assetsWritten;
 
   @override
