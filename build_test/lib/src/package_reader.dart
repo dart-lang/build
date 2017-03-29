@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:package_resolver/package_resolver.dart';
+import 'package:path/path.dart' as path;
 
 /// Resolves using a [SyncPackageResolver] before reading from the file system.
 class PackageAssetReader implements AssetReader {
@@ -31,10 +32,8 @@ class PackageAssetReader implements AssetReader {
     return new PackageAssetReader(await resolver.asSync, rootPackage);
   }
 
-  File _resolve(AssetId id) {
-    var nonLibPath = '${_packageResolver.packagePath(id.package)}/${id.path}';
-    return new File(nonLibPath);
-  }
+  File _resolve(AssetId id) =>
+      new File(path.join(_packageResolver.packagePath(id.package), id.path));
 
   @override
   Iterable<AssetId> findAssets(Glob glob) {
@@ -45,11 +44,11 @@ class PackageAssetReader implements AssetReader {
     return glob
         .listSync(root: rootPackagePath)
         .where((entity) => entity is File)
-        .map((file) => _toAsset(file.path, rootPackagePath, glob));
+        .map((file) => _toAsset(file.path, rootPackagePath));
   }
 
-  AssetId _toAsset(String path, String rootPackagePath, Glob glob) {
-    var relative = glob.context.relative(path, from: rootPackagePath);
+  AssetId _toAsset(String assetPath, String rootPackagePath) {
+    var relative = path.relative(assetPath, from: rootPackagePath);
     return new AssetId(_rootPackage, relative);
   }
 
@@ -60,7 +59,6 @@ class PackageAssetReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) => _resolve(id).readAsBytes();
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
-    return _resolve(id).readAsString(encoding: encoding);
-  }
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
+      _resolve(id).readAsString(encoding: encoding);
 }
