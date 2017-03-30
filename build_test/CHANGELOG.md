@@ -2,6 +2,9 @@
 
 - Add `PackageAssetReader`, a standalone asset reader that uses a
   `PackageResolver` to map an `AssetId` to a location on disk.
+- Add `resolveSource`, a top-level function that can resolve arbitrary Dart
+  source code. This can be useful in testing your own code that uses a
+  `Resolver` to do type checks.
 
 ## 0.5.0
 
