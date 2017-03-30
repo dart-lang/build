@@ -42,8 +42,8 @@ void main() {
     });
 
     test('should combine files when using `findAssets`', () {
-      var idA = new AssetId('some_pkg', 'a.dart');
-      var idB = new AssetId('some_pkg', 'b.dart');
+      var idA = new AssetId('some_pkg', 'lib/a.dart');
+      var idB = new AssetId('some_pkg', 'lib/b.dart');
       assetReader = new MultiAssetReader([
         new InMemoryAssetReader(
           sourceAssets: {
@@ -58,8 +58,7 @@ void main() {
           rootPackage: 'some_pkg',
         ),
       ]);
-      // TODO: Follow-up on https://github.com/dart-lang/build/issues/241.
-      expect(assetReader.findAssets(new Glob('*.dart')), [idA, idB]);
+      expect(assetReader.findAssets(new Glob('lib/*.dart')), [idA, idB]);
     });
   });
 }
