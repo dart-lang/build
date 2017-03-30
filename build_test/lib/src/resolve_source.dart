@@ -6,7 +6,6 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart';
-import 'package:glob/glob.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';

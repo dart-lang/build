@@ -1,6 +1,7 @@
 analyzer:
   strong-mode: true
   exclude:
+    - bazel-*
     - e2e_example/**
 
 linter:
