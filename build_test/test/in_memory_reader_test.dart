@@ -33,11 +33,11 @@ void main() {
       );
     });
 
-    test('#findAssets should files in lib/', () {
+    test('#findAssets should list files in lib/', () {
       expect(assetReader.findAssets(new Glob('lib/*.dart')), [libAsset]);
     });
 
-    test('#findAssets should files in test/', () {
+    test('#findAssets should list files in test/', () {
       expect(assetReader.findAssets(new Glob('test/*.dart')), [testAsset]);
     });
   });
