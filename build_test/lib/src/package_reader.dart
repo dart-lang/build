@@ -44,7 +44,7 @@ class PackageAssetReader implements AssetReader {
     if (rootPackagePath == null) {
       throw new StateError('Could not resolve "$_rootPackage".');
     }
-    return globAssets(_rootPackage, rootPackagePath, glob);
+    return _globAssets(_rootPackage, rootPackagePath, glob);
   }
 
   @override
@@ -59,9 +59,7 @@ class PackageAssetReader implements AssetReader {
 }
 
 /// Returns all assets that match [glob] in [package] with a [path].
-///
-/// **INTERNAL ONLY**.
-Iterable<AssetId> globAssets(String package, String path, Glob glob) {
+Iterable<AssetId> _globAssets(String package, String path, Glob glob) {
   return glob
       .listSync(root: path)
       .where((entity) => entity is File)
