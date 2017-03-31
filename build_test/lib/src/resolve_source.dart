@@ -17,16 +17,20 @@ import 'package_reader.dart';
 ///
 /// Example use:
 /// ```dart
-/// await resolveSource(r'''
+/// var resolver = await resolveSource(r'''
+///   library example;
+///
 ///   import 'dart:collection';
 ///
-///   external Map createMap();
-/// ''', rootPackage: 'some_pkg')
+///   abstract class Foo implements Map {}
+/// ''');
+/// var element = resolver.getLibraryByName('example');
+/// expect(element.getType('Foo'), isNotNull);
 /// ```
 ///
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
-/// - by default, [PackageAssetReader.currentIsolate]. A custom [reader] may be
-/// provided to access files not visible to the current package's runtime.
+/// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
+/// be provided to map files not visible to the current package's runtime.
 Future<Resolver> resolveSource(
   String inputSource, {
   AssetId inputId,
@@ -51,10 +55,7 @@ Future<Resolver> resolveSource(
   runBuilder(
     builder,
     inputs,
-    new MultiAssetReader([
-      inMemory,
-      reader,
-    ]),
+    new MultiAssetReader([inMemory, reader]),
     new InMemoryAssetWriter(),
     const BarbackResolvers(),
     rootPackage: inputId.package,
