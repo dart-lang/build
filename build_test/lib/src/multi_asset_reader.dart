@@ -42,7 +42,9 @@ class MultiAssetReader implements AssetReader {
 
   /// Returns all readable assets matching [glob] under the root package.
   ///
-  /// **NOTE**: This is a combined view of all provided readers.
+  /// **NOTE**: This is a combined view of all provided readers. As such it is
+  /// possible that an [AssetId] will be iterated over more than once, unlike
+  /// other implementations of [AssetReader].
   @override
   Iterable<AssetId> findAssets(Glob glob) => new CombinedIterableView(
       _readers.map((reader) => reader.findAssets(glob)));
