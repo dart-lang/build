@@ -36,7 +36,7 @@ class InMemoryAssetReader implements AssetReader {
   @override
   Iterable<AssetId> findAssets(Glob glob) {
     if (rootPackage == null) {
-      throw 'Cannot glob assets without a root package';
+      throw new UnsupportedError('Root package is required to use findAssets');
     }
     return assets.keys
         .where((id) => id.package == rootPackage && glob.matches(id.path));
