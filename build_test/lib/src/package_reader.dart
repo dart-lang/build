@@ -41,6 +41,9 @@ class PackageAssetReader implements AssetReader {
       throw new UnsupportedError('Root package must be provided to use.');
     }
     var rootPackagePath = _packageResolver.packagePath(_rootPackage);
+    if (rootPackagePath == null) {
+      throw new StateError('Could not resolve "$_rootPackage".');
+    }
     return globAssets(_rootPackage, rootPackagePath, glob);
   }
 
@@ -59,15 +62,6 @@ class PackageAssetReader implements AssetReader {
 ///
 /// **INTERNAL ONLY**.
 Iterable<AssetId> globAssets(String package, String path, Glob glob) {
-  if (package == null) {
-    throw new ArgumentError.notNull('package');
-  }
-  if (path == null) {
-    throw new ArgumentError.notNull('path');
-  }
-  if (glob == null) {
-    throw new ArgumentError.notNull('glob');
-  }
   return glob
       .listSync(root: path)
       .where((entity) => entity is File)
