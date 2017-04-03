@@ -22,6 +22,9 @@ The ISS library, `iss.dart`, consists of two classes:
 The unit test, `iss_dart.test`, mocks the IssLocator class:
 
 ```
+// The Mock class uses noSuchMethod to catch all method invocations.
+// The @proxy annotation indicates that noSuchMethod calls should be
+// handled gracefully. For more info, see the readme for package:mockito.
 @proxy
 class MockIssLocator extends Mock implements IssLocator {}
 ```

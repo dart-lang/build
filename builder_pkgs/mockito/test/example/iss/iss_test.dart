@@ -54,6 +54,7 @@ void main() {
       Point<double> sf = new Point(37.783333, -122.416667);
       Point<double> mtv = new Point(37.389444, -122.081944);
       IssLocator locator = new MockIssLocator();
+      // Mountain View should be visible from San Francisco.
       when(locator.currentPosition).thenReturn(sf);
 
       var spotter = new IssSpotter(locator, mtv);
@@ -64,6 +65,7 @@ void main() {
       Point<double> london = new Point(51.5073, -0.1277);
       Point<double> mtv = new Point(37.389444, -122.081944);
       IssLocator locator = new MockIssLocator();
+      // London should not be visible from Mountain View.
       when(locator.currentPosition).thenReturn(london);
 
       var spotter = new IssSpotter(locator, mtv);
