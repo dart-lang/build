@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart';
 
@@ -28,21 +29,37 @@ import 'package_reader.dart';
 /// expect(element.getType('Foo'), isNotNull);
 /// ```
 ///
+/// By default, the returned [Resolver] is destroyed after the event loop is
+/// completed. In order to control the lifecycle, pass a [Completer] and
+/// complete it turning the `tearDown` phase of testing:
+/// ```dart
+/// Completer<Null> onTearDown;
+///
+/// setUp(() {
+///   onTearDown = new Completer<Null>();
+/// });
+///
+/// tearDown(() => onTearDown.complete());
+///
+/// test('...', () async {
+///   var resolver = await resolveSource('...', tearDown: onTearDown.future);
+///   // Use resolver.
+/// });
+/// ```
+///
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
 /// be provided to map files not visible to the current package's runtime.
-Future<Resolver> resolveSource(
-  String inputSource, {
-  AssetId inputId,
-  PackageResolver resolver,
-}) async {
+Future<Resolver> resolveSource(String inputSource,
+    {AssetId inputId, PackageResolver resolver, Future<Null> tearDown}) async {
   // If not provided use a fake asset and package.
   inputId ??= new AssetId('_resolve_source', '_resolve_source.dart');
   resolver ??= PackageResolver.current;
+  tearDown ??= new Future.delayed(Duration.ZERO);
   var syncResolver = await resolver.asSync;
   var reader = new PackageAssetReader(syncResolver, inputId.package);
   var completer = new Completer<Resolver>();
-  var builder = new _ResolveSourceBuilder(completer);
+  var builder = new _ResolveSourceBuilder(completer, tearDown);
   var inputs = [inputId];
   var inMemory = new InMemoryAssetReader(
     sourceAssets: {
@@ -69,16 +86,18 @@ Future<Resolver> resolveSource(
 /// input given a set of dependencies to also use. See `resolveSource`.
 class _ResolveSourceBuilder implements Builder {
   final Completer<Resolver> _resolver;
+  final Future<Null> _tearDown;
 
-  const _ResolveSourceBuilder(this._resolver);
+  const _ResolveSourceBuilder(this._resolver, this._tearDown);
 
   @override
-  Future<Null> build(BuildStep buildStep) {
-    return new Future.sync(() {
+  Future<Null> build(BuildStep buildStep) async {
+    await new Future.sync(() {
       if (!_resolver.isCompleted) {
         _resolver.complete(buildStep.resolver);
       }
     });
+    await _tearDown;
   }
 
   @override
