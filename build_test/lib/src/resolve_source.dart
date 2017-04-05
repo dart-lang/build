@@ -92,11 +92,9 @@ class _ResolveSourceBuilder implements Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    await new Future.sync(() {
-      if (!_resolver.isCompleted) {
-        _resolver.complete(buildStep.resolver);
-      }
-    });
+    if (!_resolver.isCompleted) {
+      _resolver.complete(buildStep.resolver);
+    }
     await _tearDown;
   }
 
