@@ -41,15 +41,10 @@ class PackageAssetReader implements AssetReader {
       throw new UnsupportedError('Root package must be provided to use.');
     }
     var rootPackagePath = _packageResolver.packagePath(_rootPackage);
-    return glob
-        .listSync(root: rootPackagePath)
-        .where((entity) => entity is File)
-        .map((file) => _toAsset(file.path, rootPackagePath));
-  }
-
-  AssetId _toAsset(String assetPath, String rootPackagePath) {
-    var relative = p.relative(assetPath, from: rootPackagePath);
-    return new AssetId(_rootPackage, relative);
+    if (rootPackagePath == null) {
+      throw new StateError('Could not resolve "$_rootPackage".');
+    }
+    return _globAssets(_rootPackage, rootPackagePath, glob);
   }
 
   @override
@@ -61,4 +56,15 @@ class PackageAssetReader implements AssetReader {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
       _resolve(id).readAsString(encoding: encoding);
+}
+
+/// Returns all assets that match [glob] in [package] with a [path].
+Iterable<AssetId> _globAssets(String package, String path, Glob glob) {
+  return glob
+      .listSync(root: path)
+      .where((entity) => entity is File)
+      .map((file) {
+    var relative = p.relative(file.path, from: path);
+    return new AssetId(package, relative);
+  });
 }
