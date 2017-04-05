@@ -13,10 +13,6 @@ import 'package:glob/glob.dart';
 ///
 /// [MultiAssetReader] attempts to check every provided [AssetReader] to see if
 /// they are capable of reading an [AssetId], otherwise checks the next reader.
-///
-/// **INTERNAL ONLY**: Only used as part of `build_test` for now for allowing a
-/// combination of "fake" assets (in-memory provided by a test) and "real"
-/// assets (i.e. dependencies we want resolved).
 class MultiAssetReader implements AssetReader {
   final List<AssetReader> _readers;
 
