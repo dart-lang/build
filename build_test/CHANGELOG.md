@@ -1,4 +1,4 @@
-## Unreleased
+## 0.5.1
 
 - Add `PackageAssetReader`, a standalone asset reader that uses a
   `PackageResolver` to map an `AssetId` to a location on disk.

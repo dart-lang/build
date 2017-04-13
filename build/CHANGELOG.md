@@ -1,4 +1,4 @@
-## 0.8.0-dev
+## 0.8.0
 
 - Add `AssetReader.findAssets` to allow listing assets by glob.
 
