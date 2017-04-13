@@ -12,6 +12,7 @@ dependencies:
   barback: ^0.15.0
   build: ^0.8.0
   code_transformers: ">=0.5.1 <0.6.0"
+  glob: ^1.1.0
   logging: ^0.11.2
 
 dev_dependencies:
