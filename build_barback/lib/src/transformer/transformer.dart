@@ -4,10 +4,11 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:build/build.dart' as build;
-import 'package:build/build.dart' hide AssetId;
 import 'package:barback/barback.dart' as barback show AssetId;
 import 'package:barback/barback.dart' hide Asset, AssetId;
+import 'package:build/build.dart' as build;
+import 'package:build/build.dart' hide AssetId;
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
@@ -121,6 +122,12 @@ class _TransformAssetReader implements AssetReader {
   @override
   Future<String> readAsString(build.AssetId id, {Encoding encoding: UTF8}) =>
       transform.readInputAsString(toBarbackAssetId(id), encoding: encoding);
+
+  @override
+  Iterable<build.AssetId> findAssets(Glob glob) => throw new UnsupportedError(
+      'findAssets cannot be used within a Transformer.\n'
+      'If you have a use case that requires support file an issue at '
+      'https://github.com/dart-lang/build/issues');
 }
 
 /// Very simple [AssetWriter] which uses a [Transform].

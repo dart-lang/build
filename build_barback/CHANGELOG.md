@@ -1,6 +1,7 @@
 ## 0.1.2-dev
 
 - Only use the global log from `build`
+- Upgrade to build 0.8.0
 
 ## 0.1.1
 
