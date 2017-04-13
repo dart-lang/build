@@ -1,7 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'package:path/path.dart' as pathos;
+import 'package:path/path.dart' as p;
 
 /// Identifies an asset within a package.
 class AssetId implements Comparable<AssetId> {
@@ -20,7 +20,7 @@ class AssetId implements Comparable<AssetId> {
   final String path;
 
   /// Gets the file extension of the asset, if it has one, including the ".".
-  String get extension => pathos.extension(path);
+  String get extension => p.extension(path);
 
   /// Creates a new [AssetId] at [path] within [package].
   ///
@@ -51,7 +51,7 @@ class AssetId implements Comparable<AssetId> {
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
         return new AssetId(parsedUri.pathSegments.first,
-            pathos.join('lib', pathos.joinAll(parsedUri.pathSegments.skip(1))));
+            p.join('lib', p.joinAll(parsedUri.pathSegments.skip(1))));
       }
       throw new UnsupportedError(
           'Cannot resolve $uri; only "package" supported');
@@ -60,8 +60,8 @@ class AssetId implements Comparable<AssetId> {
       throw new ArgumentError.value(uri, 'uri',
           'An AssetId "from" must be specified to resolve a relative URI');
     }
-    return new AssetId(pathos.normalize(from.package),
-        pathos.join(pathos.dirname(from.path), uri));
+    return new AssetId(
+        p.normalize(from.package), p.join(p.dirname(from.path), uri));
   }
 
   /// Parses an [AssetId] string of the form "package|path/to/asset.txt".
@@ -120,7 +120,7 @@ class AssetId implements Comparable<AssetId> {
   /// Returns a new [AssetId] with the same [package] and [path] as this one
   /// but with file extension [newExtension].
   AssetId changeExtension(String newExtension) =>
-      new AssetId(package, pathos.withoutExtension(path) + newExtension);
+      new AssetId(package, p.withoutExtension(path) + newExtension);
 
   @override
   String toString() => "$package|$path";
@@ -131,7 +131,7 @@ class AssetId implements Comparable<AssetId> {
 }
 
 String _normalizePath(String path) {
-  if (pathos.isAbsolute(path)) {
+  if (p.isAbsolute(path)) {
     throw new ArgumentError('Asset paths must be relative, but got "$path".');
   }
 
@@ -139,5 +139,5 @@ String _normalizePath(String path) {
   path = path.replaceAll(r"\", "/");
 
   // Collapse "." and "..".
-  return pathos.posix.normalize(path);
+  return p.posix.normalize(path);
 }
