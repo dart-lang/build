@@ -19,7 +19,7 @@ class AssetNode {
     var node;
     if (serializedNode.length == 2) {
       node = new AssetNode(new AssetId.deserialize(serializedNode[0]));
-    } else if (serializedNode.length == 4) {
+    } else if (serializedNode.length == 5) {
       node = new GeneratedAssetNode.deserialize(serializedNode);
     } else {
       throw new ArgumentError(
@@ -40,6 +40,9 @@ class AssetNode {
 
 /// A generated node in the asset graph.
 class GeneratedAssetNode extends AssetNode {
+  /// The phase which generated this asset.
+  final int phaseNumber;
+
   /// The primary input which generated this node.
   final AssetId primaryInput;
 
@@ -49,21 +52,25 @@ class GeneratedAssetNode extends AssetNode {
   /// Whether the asset was actually output.
   bool wasOutput;
 
-  GeneratedAssetNode(
-      this.primaryInput, this.needsUpdate, this.wasOutput, AssetId id)
+  GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
+      this.wasOutput, AssetId id)
       : super(id);
 
   factory GeneratedAssetNode.deserialize(List serialized) {
-    var node = new GeneratedAssetNode(new AssetId.deserialize(serialized[2]),
-        false, serialized[3], new AssetId.deserialize(serialized[0]));
+    var node = new GeneratedAssetNode(
+        serialized[4],
+        new AssetId.deserialize(serialized[2]),
+        false,
+        serialized[3],
+        new AssetId.deserialize(serialized[0]));
     node.outputs.addAll((serialized[1] as Iterable)
         .map((serializedOutput) => new AssetId.deserialize(serializedOutput)));
     return node;
   }
 
   @override
-  List serialize() =>
-      super.serialize()..addAll([primaryInput.serialize(), wasOutput]);
+  List serialize() => super.serialize()
+    ..addAll([primaryInput.serialize(), wasOutput, phaseNumber]);
 
   @override
   String toString() =>

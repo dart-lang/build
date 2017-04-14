@@ -429,7 +429,9 @@ class BuildImpl {
   /// which completes once all [BuildAction]s are done.
   Future<BuildResult> _runPhases() async {
     final outputs = <AssetId>[];
+    var phaseNumber = 0;
     for (var phase in _buildActions) {
+      phaseNumber++;
       // Collects all the ids for files which are output by this stage. This
       // also includes files which didn't get regenerated because they weren't,
       // dirty unlike [outputs] which only gets files which were explicitly
@@ -438,8 +440,8 @@ class BuildImpl {
 
       await Future.wait(phase.map((action) async {
         var inputs = _matchingInputs(action.inputSet);
-        await for (var output
-            in _runBuilder(action.builder, inputs, phaseOutputIds)) {
+        await for (var output in _runBuilder(
+            phaseNumber, action.builder, inputs, phaseOutputIds)) {
           outputs.add(output);
         }
       }));
@@ -502,8 +504,8 @@ class BuildImpl {
   }
 
   /// Runs [builder] with [inputs] as inputs.
-  Stream<AssetId> _runBuilder(Builder builder, Iterable<AssetId> primaryInputs,
-      Set<AssetId> groupOutputs) async* {
+  Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
+      Iterable<AssetId> primaryInputs, Set<AssetId> groupOutputs) async* {
     for (var input in primaryInputs) {
       var expectedOutputs = builder.declareOutputs(input);
 
@@ -529,7 +531,8 @@ class BuildImpl {
         /// [GeneratedAssetNode].
         if (existing is! GeneratedAssetNode) {
           _assetGraph.remove(output);
-          _assetGraph.add(new GeneratedAssetNode(input, true, false, output));
+          _assetGraph.add(
+              new GeneratedAssetNode(phaseNumber, input, true, false, output));
         }
       }
 
@@ -547,7 +550,7 @@ class BuildImpl {
         }
         continue;
       }
-      var reader = new AssetReaderSpy(_reader);
+      var reader = new SinglePhaseReader(_reader, _assetGraph, phaseNumber);
       var writer = new AssetWriterSpy(_writer);
       await runBuilder(builder, [input], reader, writer, _resolvers,
           rootPackage: _packageGraph.root.name);

@@ -3,37 +3,63 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
 
 abstract class RunnerAssetReader extends AssetReader {
+  @override
   Iterable<AssetId> findAssets(Glob glob, {String packageName});
 
   /// Asynchronously gets the last modified [DateTime] of [id].
   Future<DateTime> lastModified(AssetId id);
 }
 
-class AssetReaderSpy implements AssetReader {
+final _false = new Future.value(false);
+
+/// An [AssetReader] with a lifetime equivalent to that of a single Phase in a
+/// build.
+///
+/// Tracks the assets read during the build and prevents reading files output
+/// during the current or future phases.
+class SinglePhaseReader implements AssetReader {
   final AssetReader _delegate;
   final Set<AssetId> _assetsRead = new Set();
+  final AssetGraph _assetGraph;
+  final int _phaseNumber;
 
-  AssetReaderSpy(this._delegate);
+  SinglePhaseReader(this._delegate, this._assetGraph, this._phaseNumber);
 
   Iterable<AssetId> get assetsRead => _assetsRead;
 
+  bool _isReadable(AssetId id) {
+    var node = _assetGraph.get(id);
+    if (node == null) return true;
+    if (node is! GeneratedAssetNode) return true;
+    return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+  }
+
   @override
-  Future<bool> hasInput(AssetId input) {
-    _assetsRead.add(input);
-    return _delegate.hasInput(input);
+  Future<bool> hasInput(AssetId id) {
+    if (!_isReadable(id)) return _false;
+    _assetsRead.add(id);
+    return _delegate.hasInput(id);
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) {
+    if (!_isReadable(id)) throw new AssetNotFoundException(id);
     _assetsRead.add(id);
     return _delegate.readAsBytes(id);
   }
 
   @override
-  Future<String> readAsString(AssetId input, {Encoding encoding: UTF8}) {
-    _assetsRead.add(input);
-    return _delegate.readAsString(input, encoding: encoding);
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+    if (!_isReadable(id)) throw new AssetNotFoundException(id);
+    _assetsRead.add(id);
+    return _delegate.readAsString(id, encoding: encoding);
   }
+
+  @override
+  Iterable<AssetId> findAssets(Glob glob) =>
+      _delegate.findAssets(glob).where(_isReadable);
 }
