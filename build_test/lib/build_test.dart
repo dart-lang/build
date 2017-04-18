@@ -7,6 +7,7 @@ export 'src/fake_watcher.dart';
 export 'src/in_memory_reader.dart';
 export 'src/in_memory_writer.dart';
 export 'src/matchers.dart';
+export 'src/multi_asset_reader.dart' show MultiAssetReader;
 export 'src/package_reader.dart' show PackageAssetReader;
 export 'src/resolve_source.dart';
 export 'src/stub_reader.dart';

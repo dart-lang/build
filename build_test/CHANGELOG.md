@@ -1,3 +1,7 @@
+## 0.5.2
+
+- Add `MultiAssetReader` to the public API.
+
 ## 0.5.1
 
 - Add `PackageAssetReader`, a standalone asset reader that uses a
