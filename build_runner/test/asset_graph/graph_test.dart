@@ -87,8 +87,8 @@ void main() {
         var node = makeAssetNode();
         graph.add(node);
         for (int g = 0; g < 5 - n; g++) {
-          var generatedNode =
-              new GeneratedAssetNode(node.id, false, g % 2 == 0, makeAssetId());
+          var generatedNode = new GeneratedAssetNode(
+              1, node.id, false, g % 2 == 0, makeAssetId());
           node.outputs.add(generatedNode.id);
           graph.add(generatedNode);
         }

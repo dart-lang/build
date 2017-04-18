@@ -12,7 +12,7 @@ import 'package:glob/glob.dart';
 class InMemoryRunnerAssetReader extends InMemoryAssetReader
     implements RunnerAssetReader {
   InMemoryRunnerAssetReader([Map<AssetId, DatedValue> sourceAssets])
-      : super(sourceAssets);
+      : super(sourceAssets: sourceAssets);
 
   @override
   Iterable<AssetId> findAssets(Glob glob, {String packageName}) => assets.keys
