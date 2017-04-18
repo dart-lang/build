@@ -1,6 +1,10 @@
-## 0.3.1-dev
+## 0.3.1
 
 - Internal refactoring of RunnerAssetReader.
+- Support for build 0.8.0
+- Add findAssets on AssetReader implementations
+- Limit Asset reads to those which were available at the start of the phase.
+  This might cause some reads which uses to succeed to fail.
 
 ## 0.3.0
 
