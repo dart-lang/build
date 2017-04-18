@@ -1,3 +1,7 @@
+## 0.5.4+4
+
+* Support package:build 0.8.x
+
 ## 0.5.4+3
 
 * Support the latest release of `pkg/dart_style`.
