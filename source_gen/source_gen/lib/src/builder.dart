@@ -4,7 +4,6 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/exception/exception.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/src/dart_formatter.dart';
 
