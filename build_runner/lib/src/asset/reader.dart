@@ -46,14 +46,14 @@ class SinglePhaseReader implements AssetReader {
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
+  Future<List<int>> readAsBytes(AssetId id) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     _assetsRead.add(id);
     return _delegate.readAsBytes(id);
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     _assetsRead.add(id);
     return _delegate.readAsString(id, encoding: encoding);
