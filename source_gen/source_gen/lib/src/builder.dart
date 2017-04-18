@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/exception/exception.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/src/dart_formatter.dart';
 
@@ -98,7 +99,11 @@ class GeneratorBuilder extends Builder {
 
 Stream<GeneratedOutput> _generate(LibraryElement unit,
     List<Generator> generators, BuildStep buildStep) async* {
-  for (var element in getElementsFromLibraryElement(unit)) {
+  var elements = safeIterate(getElementsFromLibraryElement(unit), (e, [_]) {
+    log.fine('Resolve error details:\n$e');
+    log.severe('Failed to resolve ${buildStep.inputId}.');
+  });
+  for (var element in elements) {
     yield* _processUnitMember(element, generators, buildStep);
   }
 }

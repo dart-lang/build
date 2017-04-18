@@ -49,6 +49,20 @@ Iterable<Element> getElementsFromLibraryElement(LibraryElement unit) sync* {
   }
 }
 
+/// Returns an Iterable that will not throw any exceptions while iterating.
+///
+/// If an exception occurs while iterating [iterable] the return value will
+/// finish and [onError] will be called.
+Iterable<T> safeIterate<T>(Iterable<T> iterable, void onError(e, st)) sync* {
+  try {
+    for (var e in iterable) {
+      yield e;
+    }
+  } catch (e, st) {
+    onError(e, st);
+  }
+}
+
 Iterable<Element> _getElements(CompilationUnitMember member) {
   if (member is TopLevelVariableDeclaration) {
     return member.variables.variables

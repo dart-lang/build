@@ -1,6 +1,7 @@
-## 0.5.4+4
+## 0.5.5
 
 * Support package:build 0.8.x
+* Less verbose errors when analyzer fails to resolve the input.
 
 ## 0.5.4+3
 
