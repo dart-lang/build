@@ -25,7 +25,7 @@ class AssetGraph {
   ///
   /// This should be incremented any time the serialize/deserialize methods
   /// change on this class or [AssetNode].
-  static int get _version => 2;
+  static int get _version => 3;
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(Map serializedGraph) {

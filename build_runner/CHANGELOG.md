@@ -1,3 +1,10 @@
+## 0.3.1+1
+
+- Bug Fix: Update AssetGraph version so builds can be run without manually
+  deleting old build directory.
+- Bug Fix: Check for unreadable assets in an async method rather than throw
+  synchronously
+
 ## 0.3.1
 
 - Internal refactoring of RunnerAssetReader.
