@@ -46,6 +46,15 @@ void main() {
             throwsA(invalidInputException));
       });
 
+      test('hasInput behaves like canRead', () async {
+        expect(() => buildStep.hasInput(makeAssetId('b|web/a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.hasInput(makeAssetId('b|a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.hasInput(makeAssetId('foo|bar.txt')),
+            throwsA(invalidInputException));
+      });
+
       test('readAs* throws InvalidInputExceptions', () async {
         var invalidInputs = [
           makeAssetId('b|web/a.txt'),
