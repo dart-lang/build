@@ -23,9 +23,9 @@ class MultiAssetReader implements AssetReader {
   const MultiAssetReader(this._readers);
 
   @override
-  Future<bool> hasInput(AssetId id) async {
+  Future<bool> canRead(AssetId id) async {
     for (var reader in _readers) {
-      if (await reader.hasInput(id)) {
+      if (await reader.canRead(id)) {
         return true;
       }
     }
@@ -54,7 +54,7 @@ class MultiAssetReader implements AssetReader {
   /// Otherwise throws [AssetNotFoundException].
   Future<AssetReader> _readerWith(AssetId id) async {
     for (var reader in _readers) {
-      if (await reader.hasInput(id)) {
+      if (await reader.canRead(id)) {
         return reader;
       }
     }

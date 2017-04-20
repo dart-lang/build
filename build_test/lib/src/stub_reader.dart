@@ -9,7 +9,7 @@ import 'package:glob/glob.dart';
 
 class StubAssetReader implements AssetReader {
   @override
-  Future<bool> hasInput(_) => new Future.value(null);
+  FutureOr<bool> canRead(_) => null;
 
   @override
   Future<List<int>> readAsBytes(_) => new Future.value(null);
