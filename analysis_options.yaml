@@ -3,7 +3,6 @@ analyzer:
   errors:
     unused_import: error
     unused_local_variable: error
-    invalid_assignment: error
     dead_code: error
   exclude:
     - bazel-*
