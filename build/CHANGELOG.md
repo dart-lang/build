@@ -5,6 +5,7 @@
   of `AssetReader` and for any clients passing a `BuildStep` as an `AssetReader`
 - Make `canRead` return a `FutureOr` for more flexibility
 - Drop `ManagedBuildStep` class.
+- Drop `BuildStep.logger`. All logging should go through the top level `log`.
 
 ## 0.8.0
 
