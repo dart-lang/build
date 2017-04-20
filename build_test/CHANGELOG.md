@@ -1,7 +1,7 @@
 ## 0.5.3-dev
 
 - Support build 0.9.0
-  - Rename hasInput to canReade in AssetReader implementations
+  - Rename hasInput to canRead in AssetReader implementations
 
 ## 0.5.2
 
