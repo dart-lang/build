@@ -10,15 +10,16 @@ abstract class Builder {
   /// Generates the outputs for a given [BuildStep].
   Future build(BuildStep buildStep);
 
-  /// Configuration for which files will be created based on the file extension
-  /// of inputs.
+  /// Mapping from input file extension to output file extensions.
   ///
   /// All input sources matching any key in this map will be passed as build
   /// step to this builder. Only files with the same basename and an extension
-  /// from the values in this map are expected as outputs. If an empty key
-  /// exists, all inputs are considered matching. A builder must always return
-  /// the same configuration. Typically this will be `const` but may vary based
-  /// on build arguments. Most builders will use a single input extension and
-  /// one or more output extensions.
+  /// from the values in this map are expected as outputs.
+  ///
+  /// - If an empty key exists, all inputs are considered matching.
+  /// - A builder must always return the same configuration. Typically this will
+  /// be `const` but may vary based on build arguments.
+  /// - Most builders will use a single input extension and one or more output
+  /// extensions.
   Map<String, List<String>> get buildExtensions;
 }

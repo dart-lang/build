@@ -12,7 +12,7 @@ import '../asset/writer.dart';
 import '../builder/build_step_impl.dart';
 import '../builder/builder.dart';
 import '../builder/logging.dart';
-import 'find_outputs.dart';
+import 'expected_outputs.dart';
 
 /// Run [builder] on each asset in [inputs].
 ///
@@ -27,9 +27,8 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
   rootPackage ??= new Set.from(inputs.map((input) => input.package)).single;
   //TODO(nbosch) check overlapping outputs?
   Future<Null> buildForInput(AssetId input) async {
-    var expectedOutputs = findOutputs(builder, input);
-    var buildStep = new BuildStepImpl(
-        input, expectedOutputs, reader, writer, rootPackage, resolvers);
+    var buildStep = new BuildStepImpl(input, expectedOutputs(builder, input),
+        reader, writer, rootPackage, resolvers);
     try {
       await builder.build(buildStep);
     } finally {
