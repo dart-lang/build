@@ -1,3 +1,8 @@
+## 0.5.3-dev
+
+- Support build 0.9.0
+  - Rename hasInput to canRead in AssetReader implementations
+
 ## 0.5.2
 
 - Add `MultiAssetReader` to the public API.

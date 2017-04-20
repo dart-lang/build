@@ -22,16 +22,16 @@ void main() {
     });
 
     test('should be able to read `build_test.dart`', () async {
-      expect(await reader.hasInput(buildTest), isTrue);
+      expect(await reader.canRead(buildTest), isTrue);
       expect(await reader.readAsString(buildTest), isNotEmpty);
     });
 
     test('should be able to read this file (in test/)', () async {
-      expect(await reader.hasInput(thisFile), isTrue);
+      expect(await reader.canRead(thisFile), isTrue);
     });
 
     test('should not be able to read a missing file', () async {
-      expect(await reader.hasInput(buildMissing), isFalse);
+      expect(await reader.canRead(buildMissing), isFalse);
     });
 
     test('should be able to use `findAssets` for files in lib', () {

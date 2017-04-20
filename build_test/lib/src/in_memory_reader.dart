@@ -17,19 +17,17 @@ class InMemoryAssetReader implements AssetReader {
       : assets = sourceAssets ?? <AssetId, DatedValue>{};
 
   @override
-  Future<bool> hasInput(AssetId id) {
-    return new Future.value(assets.containsKey(id));
-  }
+  FutureOr<bool> canRead(AssetId id) => assets.containsKey(id);
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    if (!await hasInput(id)) throw new AssetNotFoundException(id);
+    if (!await canRead(id)) throw new AssetNotFoundException(id);
     return assets[id].bytesValue;
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
-    if (!await hasInput(id)) throw new AssetNotFoundException(id);
+    if (!await canRead(id)) throw new AssetNotFoundException(id);
     return assets[id].stringValue;
   }
 

@@ -1,3 +1,10 @@
+## 0.9.0-dev
+
+- Deprecate `BuildStep.hasInput` in favor of `BuildStep.canRead`.
+- Rename `AssetReader.hasInput` as `canRead`. This is breaking for implementers
+  of `AssetReader` and for any clients passing a `BuildStep` as an `AssetReader`
+- Make `canRead` return a `FutureOr` for more flexibility
+
 ## 0.8.0
 
 - Add `AssetReader.findAssets` to allow listing assets by glob.

@@ -48,7 +48,7 @@ class CopyBuilder implements Builder {
       buildStep.writeAsString(id, content);
     }
 
-    if (touchAsset != null) await buildStep.hasInput(touchAsset);
+    if (touchAsset != null) await buildStep.canRead(touchAsset);
   }
 
   @override

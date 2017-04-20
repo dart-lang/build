@@ -60,8 +60,14 @@ class BuildStepImpl implements ManagedBuildStep {
 
   @override
   Future<bool> hasInput(AssetId id) {
+    var result = canRead(id);
+    return new Future.value(result);
+  }
+
+  @override
+  FutureOr<bool> canRead(AssetId id) {
     _checkInput(id);
-    return _reader.hasInput(id);
+    return new Future.value(_reader.canRead(id));
   }
 
   @override

@@ -37,7 +37,16 @@ void main() {
             throwsA(new isInstanceOf<UnexpectedOutputException>()));
       });
 
-      test('hasInput throws invalidInputExceptions', () async {
+      test('canRead throws invalidInputExceptions', () async {
+        expect(() => buildStep.canRead(makeAssetId('b|web/a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.canRead(makeAssetId('b|a.txt')),
+            throwsA(invalidInputException));
+        expect(() => buildStep.canRead(makeAssetId('foo|bar.txt')),
+            throwsA(invalidInputException));
+      });
+
+      test('hasInput behaves like canRead', () async {
         expect(() => buildStep.hasInput(makeAssetId('b|web/a.txt')),
             throwsA(invalidInputException));
         expect(() => buildStep.hasInput(makeAssetId('b|a.txt')),
