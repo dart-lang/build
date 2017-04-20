@@ -26,8 +26,8 @@ abstract class AssetReader {
   /// * Throws a [AssetNotFoundException] if [id.path] is not found.
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
-  /// Returns a [Future] that completes with whether asset at [id] is readable.
-  Future<bool> hasInput(AssetId id);
+  /// Indicates whether asset at [id] is readable.
+  FutureOr<bool> canRead(AssetId id);
 
   /// Returns all readable assets matching [glob] under the root package.
   Iterable<AssetId> findAssets(Glob glob);
