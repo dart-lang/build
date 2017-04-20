@@ -1,4 +1,4 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
@@ -12,6 +12,7 @@ import '../asset/writer.dart';
 import '../builder/build_step_impl.dart';
 import '../builder/builder.dart';
 import '../builder/logging.dart';
+import 'expected_outputs.dart';
 
 /// Run [builder] on each asset in [inputs].
 ///
@@ -26,9 +27,8 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
   rootPackage ??= new Set.from(inputs.map((input) => input.package)).single;
   //TODO(nbosch) check overlapping outputs?
   Future<Null> buildForInput(AssetId input) async {
-    var expectedOutputs = builder.declareOutputs(input);
-    var buildStep = new BuildStepImpl(
-        input, expectedOutputs, reader, writer, rootPackage, resolvers);
+    var buildStep = new BuildStepImpl(input, expectedOutputs(builder, input),
+        reader, writer, rootPackage, resolvers);
     try {
       await builder.build(buildStep);
     } finally {

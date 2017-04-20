@@ -1,9 +1,8 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
-import '../asset/id.dart';
 import 'build_step.dart';
 import 'builder.dart';
 
@@ -21,20 +20,25 @@ class MultiplexingBuilder implements Builder {
   Future build(BuildStep buildStep) =>
       Future.wait(_builders.map((builder) => builder.build(buildStep)));
 
-  /// Collects declared outputs from all of the builders.
+  /// Merges output extensions from all builders.
   ///
   /// If multiple builders declare the same output it will appear in this List
   /// more than once. This should be considered an error.
   @override
-  List<AssetId> declareOutputs(AssetId inputId) =>
-      _collectOutputs(inputId).toList();
-
-  Iterable<AssetId> _collectOutputs(AssetId id) sync* {
-    for (var builder in _builders) {
-      yield* builder.declareOutputs(id);
-    }
-  }
+  Map<String, List<String>> get buildExtensions =>
+      _mergeMaps(_builders.map((b) => b.buildExtensions));
 
   @override
   String toString() => '$_builders';
+}
+
+Map<String, List<String>> _mergeMaps(Iterable<Map<String, List<String>>> maps) {
+  var result = <String, List<String>>{};
+  for (var map in maps) {
+    for (var key in map.keys) {
+      result.putIfAbsent(key, () => []);
+      result[key].addAll(map[key]);
+    }
+  }
+  return result;
 }

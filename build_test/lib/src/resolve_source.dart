@@ -98,5 +98,5 @@ class _ResolveSourceBuilder implements Builder {
   }
 
   @override
-  List<AssetId> declareOutputs(AssetId inputId) => const [];
+  Map<String, List<String>> get buildExtensions => const {'': const []};
 }
