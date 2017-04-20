@@ -11,15 +11,15 @@ class AssetId implements Comparable<AssetId> {
   /// The path to the asset relative to the root directory of [package].
   ///
   /// Source (i.e. read from disk) and generated (i.e. the output of a
-  /// [Transformer]) assets all have paths. Even intermediate assets that are
-  /// generated and then consumed by later transformations will still have
-  /// a path used to identify it.
+  /// `Builder`) assets all have paths. Even intermediate assets that are
+  /// generated and then consumed by later transformations will still have a
+  /// path used to identify it.
   ///
   /// Asset paths always use forward slashes as path separators, regardless of
   /// the host platform.
   final String path;
 
-  /// Gets the file extension of the asset, if it has one, including the ".".
+  /// The file extension of the asset, if it has one, including the ".".
   String get extension => p.extension(path);
 
   /// Creates a new [AssetId] at [path] within [package].
@@ -97,7 +97,7 @@ class AssetId implements Comparable<AssetId> {
       : package = data[0],
         path = data[1];
 
-  /// Returns `true` of [other] is an [AssetId] with the same package and path.
+  /// Returns `true` if [other] is an [AssetId] with the same package and path.
   @override
   bool operator ==(Object other) =>
       other is AssetId && package == other.package && path == other.path;
@@ -126,7 +126,7 @@ class AssetId implements Comparable<AssetId> {
   String toString() => "$package|$path";
 
   /// Serializes this [AssetId] to an object that can be sent across isolates
-  /// and passed to [deserialize].
+  /// and passed to [AssetId.deserialize].
   Object serialize() => [package, path];
 }
 

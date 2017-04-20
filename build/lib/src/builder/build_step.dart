@@ -34,8 +34,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///
   /// Returns a [Future] that completes after writing the asset out.
   ///
-  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
-  /// * Throws an [InvalidOutputException] if the output was not valid.
+  /// * Throws a `PackageNotFoundException` if `id.package` is not found.
+  /// * Throws an `InvalidOutputException` if the output was not valid.
   ///
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs
@@ -47,8 +47,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///
   /// Returns a [Future] that completes after writing the asset out.
   ///
-  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
-  /// * Throws an [InvalidOutputException] if the output was not valid.
+  /// * Throws a `PackageNotFoundException` if `id.package` is not found.
+  /// * Throws an `InvalidOutputException` if the output was not valid.
   ///
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs

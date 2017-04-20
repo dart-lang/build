@@ -281,8 +281,7 @@ class BuildImpl {
   }
 
   /// Applies all [updates] to the [_assetGraph] as well as doing other
-  /// necessary cleanup such as clearing caches for [CachedAssetReader]s and
-  /// deleting outputs as necessary.
+  /// necessary cleanup such as deleting outputs as necessary.
   Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
     var seen = new Set<AssetId>();
     Future clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
@@ -484,7 +483,7 @@ class BuildImpl {
     }
   }
 
-  /// Gets a list of all inputs matching [inputSets].
+  /// Gets a list of all inputs matching [inputSet].
   Set<AssetId> _matchingInputs(InputSet inputSet) {
     var inputs = new Set<AssetId>();
     assert(_inputsByPackage.containsKey(inputSet.package));
@@ -503,7 +502,7 @@ class BuildImpl {
     return true;
   }
 
-  /// Runs [builder] with [inputs] as inputs.
+  /// Runs [builder] with [primaryInputs] as inputs.
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
       Iterable<AssetId> primaryInputs, Set<AssetId> groupOutputs) async* {
     for (var input in primaryInputs) {
