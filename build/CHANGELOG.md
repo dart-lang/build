@@ -4,6 +4,7 @@
 - Rename `AssetReader.hasInput` as `canRead`. This is breaking for implementers
   of `AssetReader` and for any clients passing a `BuildStep` as an `AssetReader`
 - Make `canRead` return a `FutureOr` for more flexibility
+- Drop `ManagedBuildStep` class.
 
 ## 0.8.0
 
