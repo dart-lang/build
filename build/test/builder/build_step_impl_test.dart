@@ -187,7 +187,7 @@ void main() {
       test('Completes only after async writes finish', () async {
         var outputCompleter = new Completer<String>();
         // ignore: unawaited_futures
-        buildStep.writeFromFutureAsString(outputId, outputCompleter.future);
+        buildStep.writeAsString(outputId, outputCompleter.future);
         var isComplete = false;
         // ignore: unawaited_futures
         buildStep.complete().then((_) {
@@ -215,10 +215,11 @@ class SlowAssetWriter implements AssetWriter {
   }
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) => _writeCompleter.future;
+  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) =>
+      _writeCompleter.future;
 
   @override
-  Future writeAsString(AssetId id, String contents,
+  Future writeAsString(AssetId id, FutureOr<String> contents,
           {Encoding encoding: UTF8}) =>
       _writeCompleter.future;
 }

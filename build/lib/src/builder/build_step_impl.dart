@@ -88,7 +88,7 @@ class BuildStepImpl implements BuildStep {
   Iterable<AssetId> findAssets(Glob glob) => _reader.findAssets(glob);
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) {
+  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _checkOutput(id);
     var done = _writer.writeAsBytes(id, bytes);
     _outputsCompleted = _outputsCompleted.then((_) => done);
@@ -96,35 +96,9 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  Future writeAsString(AssetId id, String content, {Encoding encoding: UTF8}) {
+  Future writeAsString(AssetId id, FutureOr<String> content, {Encoding encoding: UTF8}) {
     _checkOutput(id);
     var done = _writer.writeAsString(id, content, encoding: encoding);
-    _outputsCompleted = _outputsCompleted.then((_) => done);
-    return done;
-  }
-
-  /// Synchronously record [id] as an asset that needs to be written and
-  /// asynchronously write it.
-  ///
-  /// [id] needs to be passed separately from [asset] so that a check for
-  /// allowed outputs can be performed synchronously.
-  Future writeFromFutureAsString(AssetId id, Future<String> contents,
-      {Encoding encoding: UTF8}) {
-    _checkOutput(id);
-    var done =
-        contents.then((c) => _writer.writeAsString(id, c, encoding: encoding));
-    _outputsCompleted = _outputsCompleted.then((_) => done);
-    return done;
-  }
-
-  /// Synchronously record [id] as an asset that needs to be written and
-  /// asynchronously write it.
-  ///
-  /// [id] needs to be passed separately from [asset] so that a check for
-  /// allowed outputs can be performed synchronously.
-  Future writeFromFutureAsBytes(AssetId id, Future<List<int>> bytes) {
-    _checkOutput(id);
-    var done = bytes.then((b) => _writer.writeAsBytes(id, b));
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }

@@ -14,7 +14,7 @@ abstract class AssetWriter {
   ///
   /// * Throws a [PackageNotFoundException] if [id.package] is not found.
   /// * Throws an [InvalidOutputException] if the output was not valid.
-  Future writeAsBytes(AssetId id, List<int> bytes);
+  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes);
 
   /// Writes [contents] to a text file located at [id] with [encoding].
   ///
@@ -22,7 +22,7 @@ abstract class AssetWriter {
   ///
   /// * Throws a [PackageNotFoundException] if [id.package] is not found.
   /// * Throws an [InvalidOutputException] if the output was not valid.
-  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
+  Future writeAsString(AssetId id, FutureOr<String> contents, {Encoding encoding: UTF8});
 }
 
 /// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
@@ -35,13 +35,13 @@ class AssetWriterSpy implements AssetWriter {
   Iterable<AssetId> get assetsWritten => _assetsWritten;
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) {
+  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _assetsWritten.add(id);
     return _delegate.writeAsBytes(id, bytes);
   }
 
   @override
-  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8}) {
+  Future writeAsString(AssetId id, FutureOr<String> contents, {Encoding encoding: UTF8}) {
     _assetsWritten.add(id);
     return _delegate.writeAsString(id, contents, encoding: encoding);
   }
