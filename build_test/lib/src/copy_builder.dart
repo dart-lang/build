@@ -41,11 +41,9 @@ class CopyBuilder implements Builder {
 
     var ids = declareOutputs(buildStep.inputId);
     for (var id in ids) {
-      var content = copyFromAsset == null
-          ? await buildStep.readAsString(buildStep.inputId)
-          : await buildStep.readAsString(copyFromAsset);
+      var toCopy = copyFromAsset ?? buildStep.inputId;
       // ignore: unawaited_futures
-      buildStep.writeAsString(id, content);
+      buildStep.writeAsString(id, buildStep.readAsString(toCopy));
     }
 
     if (touchAsset != null) await buildStep.canRead(touchAsset);

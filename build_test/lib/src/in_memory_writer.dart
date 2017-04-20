@@ -17,15 +17,15 @@ class InMemoryAssetWriter implements RecordingAssetWriter {
   InMemoryAssetWriter();
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes,
+  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes,
       {Encoding encoding: UTF8, DateTime lastModified}) async {
-    assets[id] = new DatedBytes(bytes, lastModified);
+    assets[id] = new DatedBytes(await bytes, lastModified);
   }
 
   @override
-  Future writeAsString(AssetId id, String contents,
+  Future writeAsString(AssetId id, FutureOr<String> contents,
       {Encoding encoding: UTF8, DateTime lastModified}) async {
-    assets[id] = new DatedString(contents, lastModified);
+    assets[id] = new DatedString(await contents, lastModified);
   }
 }
 
