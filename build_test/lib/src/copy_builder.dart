@@ -39,7 +39,8 @@ class CopyBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (blockUntil != null) await blockUntil;
 
-    var ids = declareOutputs(buildStep.inputId);
+    var ids = new Iterable.generate(numCopies)
+        .map((copy) => _copiedAssetId(buildStep.inputId, copy));
     for (var id in ids) {
       var toCopy = copyFromAsset ?? buildStep.inputId;
       // ignore: unawaited_futures
@@ -50,20 +51,22 @@ class CopyBuilder implements Builder {
   }
 
   @override
-  List<AssetId> declareOutputs(AssetId input) {
-    var outputs = <AssetId>[];
+  Map<String, List<String>> get buildExtensions {
+    var outputs = <String>[];
     for (int i = 0; i < numCopies; i++) {
-      outputs.add(_copiedAssetId(input, numCopies == 1 ? null : i));
+      outputs.add(_copiedAssetExtension(i));
     }
-    return outputs;
+    return {'': outputs};
   }
 
   AssetId _copiedAssetId(AssetId inputId, int copyNum) {
-    var withExtension = inputId
-        .addExtension('.$extension${copyNum == null ? '' : '.$copyNum'}');
+    var withExtension = inputId.addExtension(_copiedAssetExtension(copyNum));
     if (outputPackage == null) {
       return withExtension;
     }
     return new AssetId(outputPackage, withExtension.path);
   }
+
+  String _copiedAssetExtension(int copyNum) =>
+      '.$extension${copyNum == null ? '' : '.$copyNum'}';
 }

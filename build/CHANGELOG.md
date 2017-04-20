@@ -9,6 +9,9 @@
 - `AssetWriter.writeAs*` methods now take a `FutureOr` for content. Builders
   which produce content asynchronously can now set up the write without waiting
   for it to resolve.
+- *Breaking* `declareOutputs` is replaced with `buildExtensions`. All `Builder`
+  implementations must now have outputs that vary only based on the extensions
+  of inputs, rather than based on any part of the `AssetId`.
 
 ## 0.8.0
 
