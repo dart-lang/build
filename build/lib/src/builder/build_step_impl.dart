@@ -59,12 +59,15 @@ class BuildStepImpl implements ManagedBuildStep {
   Future<ReleasableResolver> _resolver;
 
   @override
-  Future<bool> hasInput(AssetId id) async => canRead(id);
+  Future<bool> hasInput(AssetId id) {
+    var result = canRead(id);
+    return new Future.value(result);
+  }
 
   @override
   FutureOr<bool> canRead(AssetId id) {
     _checkInput(id);
-    return _reader.canRead(id);
+    return new Future.value(_reader.canRead(id));
   }
 
   @override
