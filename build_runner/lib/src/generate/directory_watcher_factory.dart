@@ -3,8 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:watcher/watcher.dart';
 
-export 'package:watcher/watcher.dart' show DirectoryWatcher;
-
 typedef DirectoryWatcher DirectoryWatcherFactory(String path);
 
 DirectoryWatcher defaultDirectoryWatcherFactory(String path) =>

@@ -83,7 +83,7 @@ Future<BuildResult> build(PhaseGroup phaseGroup,
 /// off.
 ///
 /// The [directoryWatcherFactory] allows you to inject a way of creating custom
-/// [DirectoryWatcher]s. By default a normal [DirectoryWatcher] will be used.
+/// `DirectoryWatcher`s. By default a normal `DirectoryWatcher` will be used.
 ///
 /// The [terminateEventStream] is a stream which can send termination events.
 /// By default the [ProcessSignal.SIGINT] stream is used. In this mode, the
