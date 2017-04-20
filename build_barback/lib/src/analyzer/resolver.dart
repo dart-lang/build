@@ -43,6 +43,7 @@ class BarbackResolvers implements Resolvers {
 
   const BarbackResolvers();
 
+  @override
   Future<ReleasableResolver> get(BuildStep buildStep) async =>
       new BarbackResolver(await _resolvers.get(toBarbackTransform(buildStep),
           [toBarbackAssetId(buildStep.inputId)], false));

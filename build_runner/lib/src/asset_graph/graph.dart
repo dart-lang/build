@@ -6,7 +6,7 @@ import 'package:build/build.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
-/// Represents all the [Asset]s in the system, and all of their dependencies.
+/// Represents all the [AssetId]s in the system, and all of their dependencies.
 class AssetGraph {
   /// All the [AssetNode]s in the system, indexed by [AssetId].
   final _nodesById = <AssetId, AssetNode>{};
@@ -71,7 +71,7 @@ class AssetGraph {
   AssetNode addIfAbsent(AssetId id, AssetNode ifAbsent()) =>
       _nodesById.putIfAbsent(id, ifAbsent);
 
-  /// Removes [node] from the graph.
+  /// Removes the node representing [id] from the graph.
   AssetNode remove(AssetId id) => _nodesById.remove(id);
 
   /// Gets all nodes in the graph.
