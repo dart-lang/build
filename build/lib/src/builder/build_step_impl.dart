@@ -108,7 +108,6 @@ class BuildStepImpl implements BuildStep {
   /// This method should be called after a build has completed. After the
   /// returned [Future] completes then all outputs have been written and the
   /// [Resolver] for this build step - if any - has been released.
-  @override
   Future complete() async {
     await _outputsCompleted;
     (await _resolver)?.release();

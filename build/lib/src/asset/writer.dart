@@ -12,16 +12,16 @@ abstract class AssetWriter {
   ///
   /// Returns a [Future] that completes after writing the asset out.
   ///
-  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
-  /// * Throws an [InvalidOutputException] if the output was not valid.
+  /// * Throws a `PackageNotFoundException` if `id.package` is not found.
+  /// * Throws an `InvalidOutputException` if the output was not valid.
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes);
 
   /// Writes [contents] to a text file located at [id] with [encoding].
   ///
   /// Returns a [Future] that completes after writing the asset out.
   ///
-  /// * Throws a [PackageNotFoundException] if [id.package] is not found.
-  /// * Throws an [InvalidOutputException] if the output was not valid.
+  /// * Throws a `PackageNotFoundException` if `id.package` is not found.
+  /// * Throws an `InvalidOutputException` if the output was not valid.
   Future writeAsString(AssetId id, FutureOr<String> contents, {Encoding encoding: UTF8});
 }
 

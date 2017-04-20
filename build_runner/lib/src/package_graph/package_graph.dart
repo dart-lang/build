@@ -11,7 +11,7 @@ class PackageGraph {
   /// The root application package.
   final PackageNode root;
 
-  /// All [PackageNodes] indexed by package name.
+  /// All [PackageNode]s indexed by package name.
   final Map<String, PackageNode> allPackages;
 
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)

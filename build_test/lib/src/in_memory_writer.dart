@@ -11,6 +11,7 @@ abstract class RecordingAssetWriter implements AssetWriter {
 }
 
 class InMemoryAssetWriter implements RecordingAssetWriter {
+  @override
   final Map<AssetId, DatedValue> assets = {};
 
   InMemoryAssetWriter();
@@ -38,16 +39,20 @@ abstract class DatedValue {
 }
 
 class DatedString extends DatedValue {
+  @override
   final stringValue;
 
+  @override
   List<int> get bytesValue => UTF8.encode(stringValue);
 
   DatedString(this.stringValue, [DateTime date]) : super(date);
 }
 
 class DatedBytes extends DatedValue {
+  @override
   final bytesValue;
 
+  @override
   String get stringValue => UTF8.decode(bytesValue);
 
   DatedBytes(this.bytesValue, [DateTime date]) : super(date);
