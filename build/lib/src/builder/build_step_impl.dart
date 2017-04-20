@@ -1,4 +1,4 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
@@ -17,9 +17,11 @@ import 'build_step.dart';
 import 'exceptions.dart';
 import 'logging.dart';
 
-/// A single step in the build processes. This represents a single input and
-/// its expected and real outputs. It also handles tracking of dependencies.
-class BuildStepImpl implements ManagedBuildStep {
+/// A single step in the build processes.
+///
+/// This represents a single input and its expected and real outputs. It also
+/// handles tracking of dependencies.
+class BuildStepImpl implements BuildStep {
   final Resolvers _resolvers;
 
   /// The primary input id for this build step.
