@@ -12,8 +12,6 @@ import 'package:test/test.dart';
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 
-import '../common/file_combiner_builder.dart';
-
 void main() {
   group('BuildStepImpl ', () {
     AssetWriter writer;
@@ -92,26 +90,22 @@ void main() {
         reader = new InMemoryAssetReader(sourceAssets: writer.assets);
       });
 
-      test('tracks dependencies and outputs when used by a builder', () async {
-        var fileCombiner = new FileCombinerBuilder();
+      test('tracks outputs created by a builder', () async {
+        var builder = new CopyBuilder();
         var primary = makeAssetId('a|web/primary.txt');
-        var unUsed = makeAssetId('a|web/not_used.txt');
         var inputs = {
-          primary: 'a|web/a.txt\na|web/b.txt',
-          makeAssetId('a|web/a.txt'): 'A',
-          makeAssetId('a|web/b.txt'): 'B',
-          unUsed: 'C',
+          primary: 'foo',
         };
         addAssets(inputs, writer);
-        var outputId = new AssetId.parse('$primary.combined');
+        var outputId = new AssetId.parse('$primary.copy');
         var buildStep = new BuildStepImpl(
             primary, [outputId], reader, writer, 'a', const BarbackResolvers());
 
-        await fileCombiner.build(buildStep);
+        await builder.build(buildStep);
         await buildStep.complete();
 
         // One output.
-        expect(writer.assets[outputId].stringValue, 'AB');
+        expect(writer.assets[outputId].stringValue, 'foo');
       });
 
       group('resolve', () {

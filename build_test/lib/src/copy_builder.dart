@@ -68,5 +68,5 @@ class CopyBuilder implements Builder {
   }
 
   String _copiedAssetExtension(int copyNum) =>
-      '.$extension${copyNum == null ? '' : '.$copyNum'}';
+      '.$extension${numCopies == 1 ? '' : '.$copyNum'}';
 }
