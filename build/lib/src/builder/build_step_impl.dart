@@ -6,7 +6,6 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:glob/glob.dart';
-import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/exceptions.dart';
@@ -15,7 +14,6 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import 'build_step.dart';
 import 'exceptions.dart';
-import 'logging.dart';
 
 /// A single step in the build processes.
 ///
@@ -31,9 +29,6 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<LibraryElement> get inputLibrary async =>
       (await resolver).getLibrary(inputId);
-
-  @override
-  Logger get logger => log;
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
