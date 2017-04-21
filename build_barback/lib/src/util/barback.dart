@@ -59,12 +59,12 @@ class BuildStepTransform implements barback.Transform {
       buildStep.readAsBytes(toBuildAssetId(id)).asStream();
 
   @override
-  Future<bool> hasInput(barback.AssetId id) =>
-      buildStep.hasInput(toBuildAssetId(id));
+  Future<bool> hasInput(barback.AssetId id) async =>
+      buildStep.canRead(toBuildAssetId(id));
 
   @override
   void addOutput(barback.Asset output) {
-    (buildStep as BuildStepImpl).writeFromFutureAsBytes(
+    (buildStep as BuildStepImpl).writeAsBytes(
         toBuildAssetId(output.id), combineByteStream(output.read()));
   }
 

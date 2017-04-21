@@ -1,4 +1,4 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
@@ -33,7 +33,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   bool isPrimary(barback.AssetId id) =>
-      _builder.declareOutputs(toBuildAssetId(id)).isNotEmpty;
+      _builder.buildExtensions.keys.any((e) => id.path.endsWith(e));
 
   @override
   Future apply(Transform transform) async {
@@ -42,7 +42,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
     var writer = new _TransformAssetWriter(transform);
 
     var expected =
-        _builder.declareOutputs(toBuildAssetId(transform.primaryInput.id));
+        expectedOutputs(_builder, toBuildAssetId(transform.primaryInput.id));
     if (expected.isEmpty) return;
 
     // Check for overlapping outputs.
@@ -97,7 +97,8 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   void declareOutputs(DeclaringTransform transform) {
-    var outputs = _builder.declareOutputs(toBuildAssetId(transform.primaryId));
+    var outputs =
+        expectedOutputs(_builder, toBuildAssetId(transform.primaryId));
     outputs.map(toBarbackAssetId).forEach(transform.declareOutput);
   }
 
@@ -112,7 +113,7 @@ class _TransformAssetReader implements AssetReader {
   _TransformAssetReader(this.transform);
 
   @override
-  Future<bool> hasInput(build.AssetId id) =>
+  Future<bool> canRead(build.AssetId id) =>
       transform.hasInput(toBarbackAssetId(id));
 
   @override
@@ -137,15 +138,13 @@ class _TransformAssetWriter implements AssetWriter {
   _TransformAssetWriter(this.transform);
 
   @override
-  Future writeAsBytes(build.AssetId id, List<int> bytes) {
-    transform.addOutput(barbackAssetFromBytes(id, bytes));
-    return new Future.value(null);
+  Future writeAsBytes(build.AssetId id, FutureOr<List<int>> bytes) async {
+    transform.addOutput(barbackAssetFromBytes(id, await bytes));
   }
 
   @override
-  Future writeAsString(build.AssetId id, String contents,
-      {Encoding encoding: UTF8}) {
-    transform.addOutput(barbackAssetFromString(id, contents));
-    return new Future.value(null);
+  Future writeAsString(build.AssetId id, FutureOr<String> contents,
+      {Encoding encoding: UTF8}) async {
+    transform.addOutput(barbackAssetFromString(id, await contents));
   }
 }
