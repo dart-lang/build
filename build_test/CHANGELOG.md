@@ -3,7 +3,7 @@
 - Support build 0.9.0
   - Rename `hasInput` to `canRead` in `AssetReader` implementations
   - Replace `declareOutputs` with `buildExtensions` in `Builder` implementations
-- *Breaking* `CopyBuilder` no longer has an `outputPackage` field since outputs
+- **Breaking** `CopyBuilder` no longer has an `outputPackage` field since outputs
   can only ever be in the same package as inputs.
 
 ## 0.5.2
