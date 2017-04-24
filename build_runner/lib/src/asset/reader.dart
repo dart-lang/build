@@ -14,8 +14,6 @@ abstract class RunnerAssetReader extends AssetReader {
   Future<DateTime> lastModified(AssetId id);
 }
 
-final _asyncFalse = new Future.value(false);
-
 /// An [AssetReader] with a lifetime equivalent to that of a single Phase in a
 /// build.
 ///
@@ -39,10 +37,10 @@ class SinglePhaseReader implements AssetReader {
   }
 
   @override
-  Future<bool> hasInput(AssetId id) {
-    if (!_isReadable(id)) return _asyncFalse;
+  FutureOr<bool> canRead(AssetId id) {
+    if (!_isReadable(id)) return false;
     _assetsRead.add(id);
-    return _delegate.hasInput(id);
+    return _delegate.canRead(id);
   }
 
   @override

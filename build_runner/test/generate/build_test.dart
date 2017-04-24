@@ -103,51 +103,12 @@ void main() {
       });
     });
 
-    group('inputs from other packages', () {
-      test('only gets inputs from lib, can output to root package', () async {
-        var phases = new PhaseGroup.singleAction(
-            new CopyBuilder(outputPackage: 'a'), new InputSet('b', ['**/*']));
+    test('can\'t output files in non-root packages', () async {
+      var phases = new PhaseGroup.singleAction(
+          new CopyBuilder(), new InputSet('b', ['**/*']));
 
-        await testPhases(phases, {'b|web/b.txt': 'b', 'b|lib/b.txt': 'b'},
-            outputs: {'a|lib/b.txt.copy': 'b'});
-      });
-
-      test('can\'t output files in non-root packages', () async {
-        var phases = new PhaseGroup.singleAction(
-            new CopyBuilder(), new InputSet('b', ['**/*']));
-
-        await testPhases(phases, {'b|lib/b.txt': 'b'},
-            outputs: {}, status: BuildStatus.failure);
-      });
-    });
-
-    test('multiple phases, inputs from multiple packages', () async {
-      var phases = new PhaseGroup();
-      phases.newPhase()
-        ..addAction(new CopyBuilder(), aFiles)
-        ..addAction(new CopyBuilder(extension: 'clone', outputPackage: 'a'),
-            new InputSet('b', ['**/*.txt']));
-      var twoCopyBuilder = new CopyBuilder(numCopies: 2, outputPackage: 'a');
-      phases.newPhase()
-        ..addAction(twoCopyBuilder, new InputSet('a', ['lib/*.txt.*']))
-        ..addAction(twoCopyBuilder, new InputSet('b', ['**/*.dart']));
-
-      await testPhases(phases, {
-        'a|web/1.txt': '1',
-        'a|lib/2.txt': '2',
-        'b|lib/3.txt': '3',
-        'b|lib/b.dart': 'main() {}',
-      }, outputs: {
-        'a|web/1.txt.copy': '1',
-        'a|lib/2.txt.copy': '2',
-        'a|lib/3.txt.clone': '3',
-        'a|lib/2.txt.copy.copy.0': '2',
-        'a|lib/2.txt.copy.copy.1': '2',
-        'a|lib/3.txt.clone.copy.0': '3',
-        'a|lib/3.txt.clone.copy.1': '3',
-        'a|lib/b.dart.copy.0': 'main() {}',
-        'a|lib/b.dart.copy.1': 'main() {}',
-      });
+      await testPhases(phases, {'b|lib/b.txt': 'b'},
+          outputs: {}, status: BuildStatus.failure);
     });
   });
 
