@@ -85,12 +85,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _checkOutput(id);
-    Future done;
-    if (bytes is Future<List<int>>) {
-      done = bytes.then((b) => _writer.writeAsBytes(id, b));
-    } else {
-      done = _writer.writeAsBytes(id, bytes);
-    }
+    var done = _futureOrWrite(bytes, (b) => _writer.writeAsBytes(id, b));
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
@@ -99,16 +94,14 @@ class BuildStepImpl implements BuildStep {
   Future writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding: UTF8}) {
     _checkOutput(id);
-    Future done;
-    if (content is Future<String>) {
-      done =
-          content.then((c) => _writer.writeAsString(id, c, encoding: encoding));
-    } else {
-      done = _writer.writeAsString(id, content, encoding: encoding);
-    }
+    var done = _futureOrWrite(
+        content, (c) => _writer.writeAsString(id, c, encoding: encoding));
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
+
+  Future _futureOrWrite<T>(FutureOr<T> content, Future write(T content)) =>
+      (content is Future<T>) ? content.then(write) : write(content);
 
   /// Waits for work to finish and cleans up resources.
   ///
