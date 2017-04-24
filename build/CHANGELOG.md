@@ -6,9 +6,9 @@
 - Make `canRead` return a `FutureOr` for more flexibility
 - Drop `ManagedBuildStep` class.
 - Drop `BuildStep.logger`. All logging should go through the top level `log`.
-- `AssetWriter.writeAs*` methods now take a `FutureOr` for content. Builders
-  which produce content asynchronously can now set up the write without waiting
-  for it to resolve.
+- `BuildStep.writeAs*` methods now take a `FutureOr` for content. Builders which
+  produce content asynchronously can now set up the write without waiting for it
+  to resolve.
 - **Breaking** `declareOutputs` is replaced with `buildExtensions`. All `Builder`
   implementations must now have outputs that vary only based on the extensions
   of inputs, rather than based on any part of the `AssetId`.

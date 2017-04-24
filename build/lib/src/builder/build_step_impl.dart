@@ -85,15 +85,27 @@ class BuildStepImpl implements BuildStep {
   @override
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _checkOutput(id);
-    var done = _writer.writeAsBytes(id, bytes);
+    Future done;
+    if (bytes is Future<List<int>>) {
+      done = bytes.then((b) => _writer.writeAsBytes(id, b));
+    } else {
+      done = _writer.writeAsBytes(id, bytes);
+    }
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
 
   @override
-  Future writeAsString(AssetId id, FutureOr<String> content, {Encoding encoding: UTF8}) {
+  Future writeAsString(AssetId id, FutureOr<String> content,
+      {Encoding encoding: UTF8}) {
     _checkOutput(id);
-    var done = _writer.writeAsString(id, content, encoding: encoding);
+    Future done;
+    if (content is Future<String>) {
+      done =
+          content.then((c) => _writer.writeAsString(id, c, encoding: encoding));
+    } else {
+      done = _writer.writeAsString(id, content, encoding: encoding);
+    }
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
