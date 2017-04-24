@@ -33,7 +33,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   bool isPrimary(barback.AssetId id) =>
-      _builder.declareOutputs(toBuildAssetId(id)).isNotEmpty;
+      _builder.buildExtensions.keys.any((e) => id.path.endsWith(e));
 
   @override
   Future apply(Transform transform) async {
@@ -42,7 +42,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
     var writer = new _TransformAssetWriter(transform);
 
     var expected =
-        _builder.declareOutputs(toBuildAssetId(transform.primaryInput.id));
+        expectedOutputs(_builder, toBuildAssetId(transform.primaryInput.id));
     if (expected.isEmpty) return;
 
     // Check for overlapping outputs.
@@ -97,7 +97,8 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
   @override
   void declareOutputs(DeclaringTransform transform) {
-    var outputs = _builder.declareOutputs(toBuildAssetId(transform.primaryId));
+    var outputs =
+        expectedOutputs(_builder, toBuildAssetId(transform.primaryId));
     outputs.map(toBarbackAssetId).forEach(transform.declareOutput);
   }
 
@@ -112,7 +113,7 @@ class _TransformAssetReader implements AssetReader {
   _TransformAssetReader(this.transform);
 
   @override
-  Future<bool> hasInput(build.AssetId id) =>
+  Future<bool> canRead(build.AssetId id) =>
       transform.hasInput(toBarbackAssetId(id));
 
   @override

@@ -11,8 +11,12 @@ import 'package:build_test/build_test.dart';
 
 void main() {
   test('basic test', () async {
-    final copyTransformerBuilder =
-        new TransformerBuilder(new CopyTransformer());
+    final copyTransformerBuilder = new TransformerBuilder(
+      new CopyTransformer(),
+      const {
+        '': const ['.copy']
+      },
+    );
 
     await testBuilder(copyTransformerBuilder, {
       'a|web/a.txt': 'a',

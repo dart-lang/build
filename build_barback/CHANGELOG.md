@@ -1,3 +1,10 @@
+## 0.2.0-dev
+
+- Update to build 0.9.0
+- **Breaking** `TransformerBuilder` must be constructed with a `buildExtension`
+  configuration. Transformers wrapped as a builder must have outputs which vary
+  only by input extension.
+
 ## 0.1.2
 
 - Only use the global log from `build`

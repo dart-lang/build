@@ -6,12 +6,11 @@ import '../builder/builder.dart';
 
 /// Collects the expected AssetIds created by [builder] when given [input] based
 /// on the extension configuration.
-Set<AssetId> expectedOutputs(Builder builder, AssetId input) {
+Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) {
   var matchingExtensions =
       builder.buildExtensions.keys.where((e) => input.path.endsWith(e));
-  var outputs = matchingExtensions
+  return matchingExtensions
       .expand((e) => _replaceExtensions(input, e, builder.buildExtensions[e]));
-  return new Set<AssetId>.from(outputs);
 }
 
 Iterable<AssetId> _replaceExtensions(

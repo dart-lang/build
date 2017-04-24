@@ -303,7 +303,7 @@ class TestBuilder extends Builder {
   TestBuilder(this.validator);
 
   @override
-  List<AssetId> declareOutputs(AssetId idOrAsset) => [];
+  final buildExtensions = const {'': const []};
 
   @override
   Future build(BuildStep buildStep) async {
