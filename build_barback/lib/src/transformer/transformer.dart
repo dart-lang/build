@@ -1,4 +1,4 @@
-// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
@@ -138,13 +138,15 @@ class _TransformAssetWriter implements AssetWriter {
   _TransformAssetWriter(this.transform);
 
   @override
-  Future writeAsBytes(build.AssetId id, FutureOr<List<int>> bytes) async {
-    transform.addOutput(barbackAssetFromBytes(id, await bytes));
+  Future writeAsBytes(build.AssetId id, List<int> bytes) {
+    transform.addOutput(barbackAssetFromBytes(id, bytes));
+    return new Future.value(null);
   }
 
   @override
-  Future writeAsString(build.AssetId id, FutureOr<String> contents,
-      {Encoding encoding: UTF8}) async {
-    transform.addOutput(barbackAssetFromString(id, await contents));
+  Future writeAsString(build.AssetId id, String contents,
+      {Encoding encoding: UTF8}) {
+    transform.addOutput(barbackAssetFromString(id, contents));
+    return new Future.value(null);
   }
 }
