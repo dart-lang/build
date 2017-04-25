@@ -35,10 +35,9 @@ class GeneratorBuilder extends Builder {
   }
 
   @override
-  List<AssetId> declareOutputs(AssetId input) {
-    if (input.extension != '.dart') return const [];
-    return [_generatedFile(input)];
-  }
+  Map<String, List<String>> get buildExtensions => {
+        '.dart': [generatedExtension]
+      };
 
   AssetId _generatedFile(AssetId input) =>
       input.changeExtension(generatedExtension);

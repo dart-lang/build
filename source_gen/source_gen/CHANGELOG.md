@@ -1,3 +1,7 @@
+## 0.5.6
+
+* Support for package:build 0.9.0
+
 ## 0.5.5
 
 * Support package:build 0.8.x
