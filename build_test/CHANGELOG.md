@@ -1,4 +1,4 @@
-## 0.6.1-dev
+## 0.6.1
 
 - Declare an output extension in `_ResolveSourceBuilder` so it is not skipped
 
