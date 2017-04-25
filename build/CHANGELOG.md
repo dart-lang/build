@@ -1,4 +1,4 @@
-## 0.9.0-dev
+## 0.9.0
 
 - Deprecate `BuildStep.hasInput` in favor of `BuildStep.canRead`.
 - Rename `AssetReader.hasInput` as `canRead`. This is breaking for implementers

@@ -1,3 +1,7 @@
+## 0.3.2
+
+- Support for build 0.9.0
+
 ## 0.3.1+1
 
 - Bug Fix: Update AssetGraph version so builds can be run without manually
