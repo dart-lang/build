@@ -1,4 +1,4 @@
-## 0.6.0-dev
+## 0.6.0
 
 - Support build 0.9.0
   - Rename `hasInput` to `canRead` in `AssetReader` implementations

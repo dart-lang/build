@@ -1,4 +1,4 @@
-## 0.2.0-dev
+## 0.2.0
 
 - Update to build 0.9.0
 - **Breaking** `TransformerBuilder` must be constructed with a `buildExtension`
