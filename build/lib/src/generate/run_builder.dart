@@ -27,8 +27,10 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
   rootPackage ??= new Set.from(inputs.map((input) => input.package)).single;
   //TODO(nbosch) check overlapping outputs?
   Future<Null> buildForInput(AssetId input) async {
-    var buildStep = new BuildStepImpl(input, expectedOutputs(builder, input),
-        reader, writer, rootPackage, resolvers);
+    var outputs = expectedOutputs(builder, input);
+    if (outputs.isEmpty) return;
+    var buildStep = new BuildStepImpl(
+        input, outputs, reader, writer, rootPackage, resolvers);
     try {
       await builder.build(buildStep);
     } finally {
