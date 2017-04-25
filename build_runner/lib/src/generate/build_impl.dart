@@ -85,7 +85,7 @@ class BuildImpl {
         await logWithTime(_logger, 'Reading cached dependency graph', () async {
           _assetGraph = await _readAssetGraph();
           if (_assetGraph.allNodes.isEmpty &&
-              !(await _reader.hasInput(_assetGraphId))) {
+              !(await _reader.canRead(_assetGraphId))) {
             isNewAssetGraph = true;
             buildType = BuildType.full;
           } else {
@@ -177,7 +177,7 @@ class BuildImpl {
 
   /// Reads in the [assetGraph] from disk.
   Future<AssetGraph> _readAssetGraph() async {
-    if (!await _reader.hasInput(_assetGraphId)) return new AssetGraph();
+    if (!await _reader.canRead(_assetGraphId)) return new AssetGraph();
     try {
       return new AssetGraph.deserialize(
           JSON.decode(await _reader.readAsString(_assetGraphId)));
@@ -258,7 +258,7 @@ class BuildImpl {
         .map((node) async {
       bool exists;
       try {
-        exists = await _reader.hasInput(node.id);
+        exists = await _reader.canRead(node.id);
       } on PackageNotFoundException catch (_) {
         exists = false;
       }
@@ -339,15 +339,15 @@ class BuildImpl {
       tempInputsByPackage[package] = new Set<AssetId>.from(inputs);
     });
 
-    // No cache file exists, run `declareOutputs` on all phases and collect all
-    // outputs which conflict with existing assets.
+    // No cache file exists, find outputs for all phases and collect all outputs
+    // which conflict with existing assets.
     final conflictingOutputs = new Set<AssetId>();
     for (var phase in _buildActions) {
       final groupOutputIds = <AssetId>[];
       for (var action in phase) {
         var inputs = _matchingInputs(action.inputSet);
         for (var input in inputs) {
-          var outputs = action.builder.declareOutputs(input);
+          var outputs = expectedOutputs(action.builder, input);
 
           groupOutputIds.addAll(outputs);
           for (var output in outputs) {
@@ -506,10 +506,10 @@ class BuildImpl {
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
       Iterable<AssetId> primaryInputs, Set<AssetId> groupOutputs) async* {
     for (var input in primaryInputs) {
-      var expectedOutputs = builder.declareOutputs(input);
+      var builderOutputs = expectedOutputs(builder, input);
 
-      /// Validate [expectedOutputs].
-      for (var output in expectedOutputs) {
+      // Validate builderOutputs.
+      for (var output in builderOutputs) {
         if (output.package != _packageGraph.root.name) {
           throw new InvalidOutputException(output,
               'Files may only be output in the root (application) package.');
@@ -519,15 +519,15 @@ class BuildImpl {
         }
       }
 
-      /// Add nodes to the [AssetGraph] for [expectedOutputs] and [input].
+      // Add nodes to the AssetGraph for builderOutputs and input.
       var inputNode =
           _assetGraph.addIfAbsent(input, () => new AssetNode(input));
-      for (var output in expectedOutputs) {
+      for (var output in builderOutputs) {
         inputNode.outputs.add(output);
         var existing = _assetGraph.get(output);
 
-        /// If its null or of type [AssetNode], then insert a
-        /// [GeneratedAssetNode].
+        // If its null or of type AssetNode, then insert a
+        // [GeneratedAssetNode].
         if (existing is! GeneratedAssetNode) {
           _assetGraph.remove(output);
           _assetGraph.add(
@@ -535,14 +535,14 @@ class BuildImpl {
         }
       }
 
-      /// Skip the build step if none of the outputs need updating.
-      var skipBuild = !expectedOutputs.any((output) =>
+      // Skip the build step if none of the outputs need updating.
+      var skipBuild = !builderOutputs.any((output) =>
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
       if (skipBuild) {
-        /// If we skip the build, we still need to add the ids as outputs for
-        /// any files which were output last time, so they can be used by
-        /// subsequent phases.
-        for (var output in expectedOutputs) {
+        // If we skip the build, we still need to add the ids as outputs for
+        // any files which were output last time, so they can be used by
+        // subsequent phases.
+        for (var output in builderOutputs) {
           if ((_assetGraph.get(output) as GeneratedAssetNode).wasOutput) {
             groupOutputs.add(output);
           }
@@ -554,25 +554,25 @@ class BuildImpl {
       await runBuilder(builder, [input], reader, writer, _resolvers,
           rootPackage: _packageGraph.root.name);
 
-      /// Mark all outputs as no longer needing an update, and mark `wasOutput`
-      /// as `false` for now (this will get reset to true later one).
-      for (var output in expectedOutputs) {
+      // Mark all outputs as no longer needing an update, and mark `wasOutput`
+      // as `false` for now (this will get reset to true later one).
+      for (var output in builderOutputs) {
         (_assetGraph.get(output) as GeneratedAssetNode)
           ..needsUpdate = false
           ..wasOutput = false;
       }
 
-      /// Update the asset graph based on the dependencies discovered.
+      // Update the asset graph based on the dependencies discovered.
       for (var dependency in reader.assetsRead) {
         var dependencyNode = _assetGraph.addIfAbsent(
             dependency, () => new AssetNode(dependency));
 
-        /// We care about all [expectedOutputs], not just real outputs. Updates
-        /// to dependencies may cause a file to be output which wasn't before.
-        dependencyNode.outputs.addAll(expectedOutputs);
+        // We care about all builderOutputs, not just real outputs. Updates
+        // to dependencies may cause a file to be output which wasn't before.
+        dependencyNode.outputs.addAll(builderOutputs);
       }
 
-      /// Yield the outputs.
+      // Yield the outputs.
       for (var output in writer.assetsWritten) {
         (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
         groupOutputs.add(output);

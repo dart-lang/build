@@ -35,21 +35,21 @@ void main() {
     });
 
     test('can check for existence of any application package files', () async {
-      expect(await reader.hasInput(makeAssetId('basic_pkg|hello.txt')), isTrue);
-      expect(await reader.hasInput(makeAssetId('basic_pkg|lib/hello.txt')),
+      expect(await reader.canRead(makeAssetId('basic_pkg|hello.txt')), isTrue);
+      expect(await reader.canRead(makeAssetId('basic_pkg|lib/hello.txt')),
           isTrue);
-      expect(await reader.hasInput(makeAssetId('basic_pkg|web/hello.txt')),
+      expect(await reader.canRead(makeAssetId('basic_pkg|web/hello.txt')),
           isTrue);
 
-      expect(await reader.hasInput(makeAssetId('basic_pkg|a.txt')), isFalse);
+      expect(await reader.canRead(makeAssetId('basic_pkg|a.txt')), isFalse);
       expect(
-          await reader.hasInput(makeAssetId('basic_pkg|lib/a.txt')), isFalse);
+          await reader.canRead(makeAssetId('basic_pkg|lib/a.txt')), isFalse);
     });
 
     test('can check for existence of package dependency files in lib',
         () async {
-      expect(await reader.hasInput(makeAssetId('a|lib/a.txt')), isTrue);
-      expect(await reader.hasInput(makeAssetId('a|lib/b.txt')), isFalse);
+      expect(await reader.canRead(makeAssetId('a|lib/a.txt')), isTrue);
+      expect(await reader.canRead(makeAssetId('a|lib/b.txt')), isFalse);
     });
 
     test('throws when attempting to read a non-existent file', () async {

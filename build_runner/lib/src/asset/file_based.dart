@@ -23,9 +23,7 @@ class FileBasedAssetReader implements RunnerAssetReader {
       {this.ignoredDirs: const ['build', 'packages', '.pub']});
 
   @override
-  Future<bool> hasInput(AssetId id) async {
-    return _fileFor(id, packageGraph).exists();
-  }
+  FutureOr<bool> canRead(AssetId id) => _fileFor(id, packageGraph).exists();
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async =>
