@@ -1,6 +1,6 @@
 ## 0.6.1-dev
 
-- Declare an output extension in `_ResolveSurceBuilder` so it is not skipped
+- Declare an output extension in `_ResolveSourceBuilder` so it is not skipped
 
 ## 0.6.0
 
