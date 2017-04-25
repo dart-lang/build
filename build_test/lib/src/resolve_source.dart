@@ -98,5 +98,7 @@ class _ResolveSourceBuilder implements Builder {
   }
 
   @override
-  Map<String, List<String>> get buildExtensions => const {'': const []};
+  final buildExtensions = const {
+    '': const ['.unused']
+  };
 }

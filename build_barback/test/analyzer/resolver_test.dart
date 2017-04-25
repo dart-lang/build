@@ -303,7 +303,7 @@ class TestBuilder extends Builder {
   TestBuilder(this.validator);
 
   @override
-  final buildExtensions = const {'': const []};
+  final buildExtensions = const {'': const ['.unused']};
 
   @override
   Future build(BuildStep buildStep) async {

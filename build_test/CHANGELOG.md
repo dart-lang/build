@@ -1,3 +1,7 @@
+## 0.6.1-dev
+
+- Declare an output extension in `_ResolveSourceBuilder` so it is not skipped
+
 ## 0.6.0
 
 - Support build 0.9.0
