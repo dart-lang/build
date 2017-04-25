@@ -10,12 +10,14 @@ class CopyBuilder extends Builder {
   @override
   Future build(BuildStep buildStep) async {
     var id = buildStep.inputId;
-    buildStep.writeAsString(
-        _copiedAssetId(id), await buildStep.readAsString(id));
+    // ignore: unawaited_futures
+    buildStep.writeAsString(_copiedAssetId(id), buildStep.readAsString(id));
   }
 
   @override
-  List<AssetId> declareOutputs(AssetId inputId) => [_copiedAssetId(inputId)];
+  final buildExtensions = const {
+    '': const ['.copy']
+  };
 }
 
 AssetId _copiedAssetId(AssetId inputId) => inputId.addExtension('.copy');
