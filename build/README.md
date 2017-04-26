@@ -48,7 +48,7 @@ lead to confusion and difficulty when debugging, especially with source maps.
 ### Incremental builds
 
 The `build` package requires Builders to configure which output file extensions
-will be build for corresponding input file extensions. This allows fine grained
+will be built for corresponding input file extensions. This allows fine grained
 and incremental builds. See the `build_runner` package for an approach to
 incremental builds.
 
@@ -76,7 +76,7 @@ and easier on users who have fewer modes to support.
 
 If you have written a pub `Transformer` in the past, then the
 [`Builder`][dartdoc:Builder] API should be familiar to you. The main difference
-is that `Builders` must always configure outputs.
+is that `Builders` must always configure outputs based on input extensions.
 
 The basic API looks like this:
 
