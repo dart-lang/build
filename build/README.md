@@ -37,11 +37,6 @@ without getting any warnings about missing files from the analyzer. At the same
 time it enables you to easily go explore those files in your editor, and set
 breakpoints inside those files.
 
-### Inputs
-
-With `build`, you can use any file from any package you depend on as a primary
-input, where with `pub` you can only use files from your current package.
-
 ### Consistency
 
 You can't overwrite any pre-existing files using `build`, you can only generate
@@ -52,9 +47,10 @@ lead to confusion and difficulty when debugging, especially with source maps.
 
 ### Incremental builds
 
-The `build` package requires Builders to declare outptus which allows fine
-grained and incremental builds. See the `build_runner` package for an approach
-to incremental builds.
+The `build` package requires Builders to configure which output file extensions
+will be built for corresponding input file extensions. This allows fine grained
+and incremental builds. See the `build_runner` package for an approach to
+incremental builds.
 
 With `pub`, some transformations on your package dependencies may be cached, but
 any transformations on your current package are always redone each time you call
@@ -79,18 +75,17 @@ and easier on users who have fewer modes to support.
 ## Implementing your own Builders
 
 If you have written a pub `Transformer` in the past, then the
-[`Builder`][dartdoc:Builder] API should be familiar to you. The main difference is
-that `Builders` must always declare their outputs, similar to a
-`DeclaringTransformer`.
+[`Builder`][dartdoc:Builder] API should be familiar to you. The main difference
+is that `Builders` must always configure outputs based on input extensions.
 
 The basic API looks like this:
 
 ```dart
 abstract class Builder {
-  /// You can only output files in `build` that you declare here. You are not
+  /// You can only output files in `build` that are configured here. You are not
   /// required to output all of these files, but no other [Builder] is allowed
-  /// to declare the same outputs.
-  List<AssetId> declareOutputs(AssetId input);
+  /// to produce the same outputs.
+  Map<String, List<String>> get buildExtensions;
 
   /// Similar to `Transformer.apply`. This is where you build and output files.
   Future build(BuildStep buildStep);
@@ -112,7 +107,7 @@ class CopyBuilder implements Builder {
     var input = buildStep.inputId;
 
     /// Create a new target [AssetId] based on the old one.
-    var copy = _copiedId(inputId);
+    var copy = inputId.addExtension(extension);
     var contents = await buildStep.readAsString(input);
 
     /// Write out the new asset.
@@ -122,10 +117,10 @@ class CopyBuilder implements Builder {
     buildStep.writeAsString(copy, contents);
   }
 
-  /// Declare your outputs, just one file in this case.
-  List<AssetId> declareOutputs(AssetId inputId) => [_copiedId(inputId)];
-
-  AssetId _copiedId(AssetId inputId) => inputId.addExtension('$extension');
+  /// Configure output extensions. All possible inputs match the empty input
+  /// extension. For each input 1 output is created with `extension` appended to
+  /// the path.
+  Map<String, List<String>> get buildExtensions =>  {'': [extension]};
 }
 ```
 
@@ -140,26 +135,25 @@ your dependencies and do incremental rebuilds. It is also what enables your
 If you need to do analyzer resolution, you can use the `BuildStep#resolver`
 object. This makes sure that all `Builder`s in the system share the same
 analysis context, which greatly speeds up the overall system when multiple
-`Builder`s are doing resolution. Additionally, it handles for you making the
-analyzer work in an async environment.
-
-This `Resolver` has a subset of the apis of the one from `code_transformers`, so
-migrating to it should be easy if you have used `code_transformers` in the past.
+`Builder`s are doing resolution.
 
 Here is an example of a `Builder` which uses the `resolve` method:
 
 ```dart
 class ResolvingCopyBuilder {
-  Future build(BuildStep buildStep) {
-    /// Resolves all libraries reachable from the primary input.
+  Future build(BuildStep buildStep) async {
+    // Get the [LibraryElement] for the primary input.
+    var entryLib = buildStep.inputLibrary;
+    // Resolves all libraries reachable from the primary input.
     var resolver = await buildStep.resolver;
-    /// Get a [LibraryElement] by asset id.
-    var entryLib = resolver.getLibrary(buildStep.inputId);
-    /// Or get a [LibraryElement] by name.
+    // Get a [LibraryElement] for another asset.
+    var otherLib = resolver.getLibrary(new AssetId.resolve('some_import.dart'),
+        from: buildStep.inputId);
+    // Or get a [LibraryElement] by name.
     var otherLib = resolver.getLibraryByName('my.library');
   }
 
-  /// Declare outputs as well....
+  /// Configure outputs as well....
 }
 ```
 
