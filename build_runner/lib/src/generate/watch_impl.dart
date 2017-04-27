@@ -120,10 +120,6 @@ class WatchImpl {
       // Don't schedule more builds if we are turning down.
       if (_terminating) return;
 
-      // Any updates after this point should cause updates to the [AssetGraph]
-      // for later builds.
-      var validAsOf = new DateTime.now();
-
       _expectedDeletes.clear();
       if (updatedInputs.isEmpty && !force) {
         return;
@@ -131,7 +127,7 @@ class WatchImpl {
 
       _logger.info('Starting next build');
       _currentBuild =
-          _buildImpl.runBuild(validAsOf: validAsOf, updates: updatedInputs);
+          _buildImpl.runBuild(updates: updatedInputs);
       _currentBuild.then((result) {
         // Terminate the watcher if the build script is updated, there is no
         // need to continue listening.
