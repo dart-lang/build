@@ -5,7 +5,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 import 'directory_watcher_factory.dart';
 
@@ -19,7 +19,7 @@ class AssetChange {
 
 Future<Stream<AssetChange>> startFileWatchers(PackageGraph packageGraph,
     Logger logger, DirectoryWatcherFactory directoryWatcherFactory) async {
-  var ctl = new StreamController<AssetChange>();
+  var controller = new StreamController<AssetChange>();
   final watchers = <DirectoryWatcher>[];
 
   // Collect absolute file paths for all the packages. This needs to happen
@@ -27,7 +27,7 @@ Future<Stream<AssetChange>> startFileWatchers(PackageGraph packageGraph,
   final absolutePackagePaths = <PackageNode, String>{};
   for (var package in packageGraph.allPackages.values) {
     absolutePackagePaths[package] =
-        path.normalize(path.absolute(package.location.toFilePath()));
+        p.normalize(p.absolute(package.location.toFilePath()));
   }
 
   var listeners = <StreamSubscription>[];
@@ -51,20 +51,20 @@ Future<Stream<AssetChange>> startFileWatchers(PackageGraph packageGraph,
       if (changePath == null) return;
 
       // Check for ignored paths and immediately bail.
-      if (pathsToIgnore.any((path) => changePath.startsWith(path))) return;
+      if (pathsToIgnore.any((path) => p.isWithin(path, changePath))) return;
 
-      var relativePath = path.relative(changePath, from: absolutePackagePath);
+      var relativePath = p.relative(changePath, from: absolutePackagePath);
       logger.finest(
           'Got ${e.type} event for path $relativePath from ${watcher.path}');
       var id = new AssetId(package.name, relativePath);
 
-      ctl.add(new AssetChange(id, e.type));
+      controller.add(new AssetChange(id, e.type));
     }));
   }
 
   await Future.wait(watchers.map((w) => w.ready));
-  ctl.onCancel = () => Future.wait(listeners.map((l) => l.cancel()));
-  return ctl.stream;
+  controller.onCancel = () => Future.wait(listeners.map((l) => l.cancel()));
+  return controller.stream;
 }
 
 // Convert `packages` paths to absolute paths. Returns null if it finds an
@@ -74,7 +74,7 @@ String _normalizeChangePath(
     Map<PackageNode, String> absolutePackagePaths,
     Logger logger,
     PackageGraph packageGraph) {
-  var changePathParts = path.split(changePath);
+  var changePathParts = p.split(changePath);
   var packagesIndex = changePathParts.indexOf('packages');
   if (packagesIndex == -1) return changePath;
 
@@ -90,7 +90,7 @@ String _normalizeChangePath(
     return null;
   }
   var packagePath = absolutePackagePaths[packageNode];
-  var libPath = path.joinAll(['lib']..addAll(
-      changePathParts.getRange(packagesIndex + 2, changePathParts.length)));
-  return path.join(packagePath, libPath);
+  var libPath =
+      p.joinAll(['lib']..addAll(changePathParts.skip(packagesIndex + 2)));
+  return p.join(packagePath, libPath);
 }
