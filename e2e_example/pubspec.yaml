@@ -13,3 +13,11 @@ dev_dependencies:
 transformers:
 - e2e_example:
     $include: 'web/*.txt'
+
+dependency_overrides:
+  build:
+    path: ../build
+  build_barback:
+    path: ../build_barback
+  build_runner:
+    path: ../build_runner
