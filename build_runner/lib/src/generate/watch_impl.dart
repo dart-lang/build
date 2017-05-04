@@ -5,8 +5,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
@@ -15,6 +15,7 @@ import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
+import 'change_watcher.dart';
 import 'directory_watcher_factory.dart';
 import 'exceptions.dart';
 import 'options.dart';
@@ -23,8 +24,7 @@ import 'phase.dart';
 /// Watches all inputs for changes, and uses a [BuildImpl] to rerun builds as
 /// appropriate.
 class WatchImpl {
-  /// All file listeners currently set up.
-  final _allListeners = <StreamSubscription>[];
+  StreamSubscription _changeListener;
 
   /// The [AssetGraph] being shared with [_buildImpl]
   AssetGraph get _assetGraph => _buildImpl.assetGraph;
@@ -47,9 +47,6 @@ class WatchImpl {
   /// A future that completes when the current build is done.
   Future<BuildResult> _currentBuild;
   Future<BuildResult> get currentBuild => _currentBuild;
-
-  /// Whether or not another build is scheduled.
-  bool _nextBuildScheduled;
 
   /// Controller for the results stream.
   StreamController<BuildResult> _resultStreamController;
@@ -91,11 +88,7 @@ class WatchImpl {
 
     _terminating = true;
     _logger.info('Terminating watchers, no futher builds will be scheduled.');
-    _nextBuildScheduled = false;
-    for (var listener in _allListeners) {
-      await listener.cancel();
-    }
-    _allListeners.clear();
+    await _changeListener?.cancel();
     if (_currentBuild != null) {
       _logger.info('Waiting for ongoing build to finish.');
       await _currentBuild;
@@ -120,44 +113,25 @@ class WatchImpl {
 
     _runningWatch = true;
     _resultStreamController = new StreamController<BuildResult>();
-    _nextBuildScheduled = false;
-    var updatedInputs = new Map<AssetId, ChangeType>();
 
-    void doBuild([bool force = false]) {
+    var buildsFinished = new StreamController<Null>();
+
+    void doBuild(Map<AssetId, ChangeType> updatedInputs, [bool force = false]) {
       // Don't schedule more builds if we are turning down.
       if (_terminating) return;
 
-      if (_currentBuild != null) {
-        if (_nextBuildScheduled == false) {
-          _logger.info('Scheduling next build');
-          _nextBuildScheduled = true;
-        }
-        return;
-      }
-      assert(_nextBuildScheduled == false);
-
-      /// Any updates after this point should cause updates to the [AssetGraph]
-      /// for later builds.
+      // Any updates after this point should cause updates to the [AssetGraph]
+      // for later builds.
       var validAsOf = new DateTime.now();
 
-      /// Copy [updatedInputs] so that it doesn't get modified after this point.
-      /// Any further updates will be scheduled for the next build.
-      ///
-      /// Only copy the "interesting" outputs.
-      var updatedInputsCopy = <AssetId, ChangeType>{};
-      updatedInputs.forEach((input, changeType) {
-        if (_shouldSkipInput(input, changeType)) return;
-        updatedInputsCopy[input] = changeType;
-      });
       _expectedDeletes.clear();
-      updatedInputs.clear();
-      if (updatedInputsCopy.isEmpty && !force) {
+      if (updatedInputs.isEmpty && !force) {
         return;
       }
 
       _logger.info('Starting next build');
       _currentBuild =
-          _buildImpl.runBuild(validAsOf: validAsOf, updates: updatedInputsCopy);
+          _buildImpl.runBuild(validAsOf: validAsOf, updates: updatedInputs);
       _currentBuild.then((result) {
         // Terminate the watcher if the build script is updated, there is no
         // need to continue listening.
@@ -170,111 +144,57 @@ class WatchImpl {
           _resultStreamController.add(result);
         }
         _currentBuild = null;
-        if (_nextBuildScheduled) {
-          _nextBuildScheduled = false;
-          doBuild();
-        }
+        buildsFinished.add(null);
       });
     }
 
-    Timer buildTimer;
-    void scheduleBuild() {
-      if (buildTimer?.isActive == true) buildTimer.cancel();
-      buildTimer = new Timer(_debounceDelay, doBuild);
-    }
-
-    logWithTime(_logger, 'Setting up file watchers', () {
-      final watchers = <DirectoryWatcher>[];
-
-      // Collect absolute file paths for all the packages. This needs to happen
-      // before setting up the watchers.
-      final absolutePackagePaths = <PackageNode, String>{};
-      for (var package in _packageGraph.allPackages.values) {
-        absolutePackagePaths[package] =
-            path.normalize(path.absolute(package.location.toFilePath()));
-      }
-
-      // Set up watchers for all the packages
-      for (var package in _packageGraph.allPackages.values) {
-        var absolutePackagePath = absolutePackagePaths[package];
-        _logger.fine('Setting up watcher at $absolutePackagePath');
-
-        // Ignore all subfolders which are other packages.
-        var pathsToIgnore = absolutePackagePaths.values
-            .where((path) =>
-                path != absolutePackagePath &&
-                path.startsWith(absolutePackagePath))
-            .toList();
-
-        var watcher = _directoryWatcherFactory(absolutePackagePath);
-        watchers.add(watcher);
-        _allListeners.add(watcher.events.listen((WatchEvent e) {
-          var changePath = _normalizeChangePath(e.path, absolutePackagePaths);
-          if (changePath == null) return;
-
-          // Check for ignored paths and immediately bail.
-          if (pathsToIgnore.any((path) => changePath.startsWith(path))) return;
-
-          var relativePath =
-              path.relative(changePath, from: absolutePackagePath);
-          _logger.finest(
-              'Got ${e.type} event for path $relativePath from ${watcher.path}');
-          var id = new AssetId(package.name, relativePath);
-
-          // Short circuit for expected deletes (these are a part of the build).
-          if (_expectedDeletes.contains(id)) {
-            // Remove the expected delete so real deletes later on work.
-            _expectedDeletes.remove(id);
-            return;
-          }
-
-          var node = _assetGraph.get(id);
-          // Short circuit for deletes of nodes that aren't in the graph.
-          if (e.type == ChangeType.REMOVE && node == null) return;
-
-          updatedInputs[id] = e.type;
-          scheduleBuild();
-        }));
-      }
-
-      return Future.wait(watchers.map((w) => w.ready));
-    }).then((_) {
+    logWithTime(
+            _logger,
+            'Setting up file watchers',
+            () => startFileWatchers(
+                _packageGraph, _logger, _directoryWatcherFactory))
+        .then((Stream<AssetChange> changes) {
+      _changeListener = changes
+          .where(_shouldProcess)
+          .transform(debounceBuffer(_debounceDelay))
+          .transform(buffer(buildsFinished.stream))
+          .listen((changes) {
+        doBuild(_collectChanges(changes));
+      });
       // Schedule the first build!
-      doBuild(true);
+      doBuild({}, true);
     });
 
     return _resultStreamController.stream;
   }
 
-  /// Checks if we should skip a watch event for this [id].
-  bool _shouldSkipInput(AssetId id, ChangeType type) {
-    if (id.path.contains(cacheDir)) return true;
-    var node = _assetGraph.get(id);
-    return node is GeneratedAssetNode && type != ChangeType.REMOVE;
+  /// Checks if we should skip a watch event for this [change].
+  bool _shouldProcess(AssetChange change) {
+    if (_isCacheFile(change)) return false;
+    if (_isEditOnGeneratedFile(change)) return false;
+    if (_isExpectedDelete(change)) return false;
+    if (_isUnwatchedDelete(change)) return false;
+    return true;
   }
 
-  // Convert `packages` paths to absolute paths. Returns null if it finds an
-  // invalid package path.
-  String _normalizeChangePath(
-      String changePath, Map<PackageNode, String> absolutePackagePaths) {
-    var changePathParts = path.split(changePath);
-    var packagesIndex = changePathParts.indexOf('packages');
-    if (packagesIndex == -1) return changePath;
+  bool _isCacheFile(AssetChange change) => change.id.path.contains(cacheDir);
 
-    if (changePathParts.length < packagesIndex + 2) {
-      _logger.severe('Invalid change path: $changePath');
-      return null;
-    }
+  bool _isEditOnGeneratedFile(AssetChange change) =>
+      _assetGraph.get(change.id) is GeneratedAssetNode &&
+      change.type != ChangeType.REMOVE;
 
-    var packageName = changePathParts[packagesIndex + 1];
-    var packageNode = _packageGraph[packageName];
-    if (packageNode == null) {
-      _logger.severe('Got update for invalid package: $packageName');
-      return null;
+  bool _isExpectedDelete(AssetChange change) {
+    if (_expectedDeletes.contains(change.id)) {
+      _expectedDeletes.remove(change.id);
+      return true;
     }
-    var packagePath = absolutePackagePaths[packageNode];
-    var libPath = path.joinAll(['lib']..addAll(
-        changePathParts.getRange(packagesIndex + 2, changePathParts.length)));
-    return path.join(packagePath, libPath);
+    return false;
   }
+
+  bool _isUnwatchedDelete(AssetChange change) =>
+      change.type == ChangeType.REMOVE && !_assetGraph.contains(change.id);
 }
+
+Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) =>
+    new Map.fromIterable(changes.expand((c) => c),
+        key: (c) => c.id, value: (c) => c.type);
