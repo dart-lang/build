@@ -61,26 +61,39 @@ class BuildImpl {
   /// [BuildStatus.failure]. The exception and stack trace that caused the failure
   /// will be available as [BuildResult#exception] and [BuildResult#stackTrace]
   /// respectively.
-  ///
-  /// The [validAsOf] date is assigned to [AssetGraph#validAsOf] and marks
-  /// a point in time after which any updates to files should invalidate the
-  /// graph for future builds.
-  Future<BuildResult> runBuild(
-      {DateTime validAsOf, Map<AssetId, ChangeType> updates}) async {
-    validAsOf ??= new DateTime.now();
+  Future<BuildResult> runBuild({Map<AssetId, ChangeType> updates}) async {
     updates ??= <AssetId, ChangeType>{};
     var watch = new Stopwatch()..start();
+    var result = await _safeBuild(updates);
+    _buildRunning = false;
+    _isFirstBuild = false;
+    if (result.status == BuildStatus.success) {
+      _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
+          '${result.outputs.length} outputs\n\n');
+    } else {
+      if (result.exception is FatalBuildException) {
+        // TODO(???) Really bad idea. Should not set exit codes in libraries!
+        exitCode = 1;
+      }
+      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms',
+          result.exception, result.stackTrace);
+    }
+    return result;
+  }
 
-    /// Assume incremental, change if necessary.
-    var buildType = BuildType.incremental;
+  /// Runs a build inside a zone with an error handler and stack chain
+  /// capturing.
+  Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
     var done = new Completer<BuildResult>();
-    // ignore: unawaited_futures
+    // Assume incremental, change if necessary.
+    var buildType = BuildType.incremental;
+    var validAsOf = new DateTime.now();
     Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
       var isNewAssetGraph = false;
 
-      /// Initialize the [assetGraph] if its not yet set up.
+      // Initialize the [assetGraph] if its not yet set up.
       if (_assetGraph == null) {
         await logWithTime(_logger, 'Reading cached dependency graph', () async {
           _assetGraph = await _readAssetGraph();
@@ -97,13 +110,13 @@ class BuildImpl {
         });
       }
 
-      /// If the build script gets updated, we need to either fully invalidate
-      /// the graph (if the script current running is up to date), or we need to
-      /// terminate and ask the user to restart the script (if the currently
-      /// running script is out of date).
-      ///
-      /// The [_isFirstBuild] flag is used as a proxy for "has this script
-      /// been updated since it started running".
+      // If the build script gets updated, we need to either fully invalidate
+      // the graph (if the script current running is up to date), or we need to
+      // terminate and ask the user to restart the script (if the currently
+      // running script is out of date).
+      //
+      // The [_isFirstBuild] flag is used as a proxy for "has this script been
+      // updated since it started running".
       if (!isNewAssetGraph) {
         await logWithTime(_logger, 'Checking build script for updates',
             () async {
@@ -127,25 +140,25 @@ class BuildImpl {
       }
 
       await logWithTime(_logger, 'Finalizing build setup', () async {
-        /// Applies all [updates] to the [_assetGraph] as well as doing other
-        /// necessary cleanup.
+        // Applies all [updates] to the [_assetGraph] as well as doing other
+        // necessary cleanup.
         _logger
             .info('Updating dependency graph with changes since last build.');
         await _updateWithChanges(updates);
 
-        /// Wait while all inputs are collected.
+        // Wait while all inputs are collected.
         _logger.info('Initializing inputs');
         await _initializeInputsByPackage();
 
-        /// Delete all previous outputs!
+        // Delete all previous outputs!
         _logger.info('Deleting previous outputs');
         await _deletePreviousOutputs(isNewAssetGraph);
       });
 
-      /// Run a fresh build.
+      // Run a fresh build.
       var result = await logWithTime(_logger, 'Running build', _runPhases);
 
-      /// Write out the dependency graph file.
+      // Write out the dependency graph file.
       await logWithTime(_logger, 'Caching finalized dependency graph',
           () async {
         _assetGraph.validAsOf = validAsOf;
@@ -158,21 +171,7 @@ class BuildImpl {
       done.complete(new BuildResult(BuildStatus.failure, buildType, [],
           exception: e, stackTrace: chain.toTrace()));
     });
-    var result = await done.future;
-    _buildRunning = false;
-    _isFirstBuild = false;
-    if (result.status == BuildStatus.success) {
-      _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
-          '${result.outputs.length} outputs\n\n');
-    } else {
-      if (result.exception is FatalBuildException) {
-        // TODO(???) Really bad idea. Should not set exit codes in libraries!
-        exitCode = 1;
-      }
-      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms',
-          result.exception, result.stackTrace);
-    }
-    return result;
+    return done.future;
   }
 
   /// Reads in the [assetGraph] from disk.
