@@ -1,3 +1,7 @@
+## 0.5.7
+
+* Support for package:analyzer 0.30.0
+
 ## 0.5.6
 
 * Support for package:build 0.9.0
