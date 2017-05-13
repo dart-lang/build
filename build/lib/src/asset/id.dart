@@ -29,32 +29,40 @@ class AssetId implements Comparable<AssetId> {
   /// where possible.
   AssetId(this.package, String path) : path = _normalizePath(path);
 
-  /// Creates a new [AssetId] from an [uri].
+  /// Creates a new [AssetId] from an [uri] String.
   ///
-  /// This gracefully handles `package:` URIs, which is useful when creating an
-  /// [AssetId] from an `import` or `export` directive pointing to a package's
-  /// _lib_ directory:
+  /// This gracefully handles `package:` or `asset:` URIs.
+  ///
+  /// Resolve a `package:` URI when creating an [AssetId] from an `import` or
+  /// `export` directive pointing to a package's _lib_ directory:
   /// ```dart
   /// AssetId assetOfDirective(UriReferencedElement element) {
   ///   return new AssetId.resolve(element.uri);
   /// }
   /// ```
-  /// Optionally, specifying the origin asset ([from]) will also allow resolving
-  /// relative to another asset - otherwise an [ArgumentError] will be thrown.
+  ///
+  /// When resolving a relative URI with no scheme, specifyg the origin asset
+  /// ([from]) - otherwise an [ArgumentError] will be thrown.
   /// ```dart
   /// AssetId assetOfDirective(AssetId origin, UriReferencedElement element) {
   ///   return new AssetId.resolve(element.uri, from: origin);
   /// }
   /// ```
+  ///
+  /// `asset:` uris have the format '$package/$path', including the top level
+  /// directory.
   factory AssetId.resolve(String uri, {AssetId from}) {
     final parsedUri = Uri.parse(uri);
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
         return new AssetId(parsedUri.pathSegments.first,
             p.join('lib', p.joinAll(parsedUri.pathSegments.skip(1))));
+      } else if (parsedUri.scheme == 'asset') {
+        return new AssetId(parsedUri.pathSegments.first,
+            p.joinAll(parsedUri.pathSegments.skip(1)));
       }
       throw new UnsupportedError(
-          'Cannot resolve $uri; only "package" supported');
+          'Cannot resolve $uri; only "package" and "asset" schemes supported');
     }
     if (from == null) {
       throw new ArgumentError.value(uri, 'uri',
@@ -86,6 +94,15 @@ class AssetId implements Comparable<AssetId> {
 
     return new AssetId(parts[0], parts[1]);
   }
+
+  /// A `package:` URI suitable for use directly with other systems if this
+  /// asset is under it's package's `lib/` directory, else an `asset:` URI
+  /// suitable for use within build tools.
+  Uri get uri => _uri ?? path.startsWith('lib/')
+      ? new Uri(
+          scheme: 'package', path: '$package/${path.replaceFirst('lib/','')}')
+      : new Uri(scheme: 'asset', path: '$package/$path');
+  Uri _uri;
 
   /// Deserializes an [AssetId] from [data], which must be the result of
   /// calling [serialize] on an existing [AssetId].

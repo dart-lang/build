@@ -61,6 +61,11 @@ void main() {
       expect(id, new AssetId("app", "lib/src/some/path.dart"));
     });
 
+    test("should parse an asset: URI", () {
+      var id = new AssetId.resolve(r"asset:app/test/foo_test.dart");
+      expect(id, new AssetId("app", "test/foo_test.dart"));
+    });
+
     test("should throw for a file: URI", () {
       expect(() => new AssetId.resolve(r"file://localhost/etc/fstab1"),
           throwsUnsupportedError);
