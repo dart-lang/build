@@ -1,3 +1,8 @@
+## 0.9.3
+
+- Add support for resolving `asset:` URIs into AssetIds
+- Add `uri` property on AssetId
+
 ## 0.9.1
 
 - Skip Builders which would produce no outputs.
