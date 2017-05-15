@@ -3,6 +3,8 @@
 - **Breaking** `BuilderTransformer` is now an `AggregateTransformer`. This
   should be transparent for most use cases but could have errors if an instance
   was assigned to a variable of type `Transformer`.
+- **Breaking** `BuilderTransformer` no longer accepts a `Resolvers` instance,
+  instead it will create and manage Resolvers on its own.
 
 ## 0.2.0
 
