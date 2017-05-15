@@ -15,34 +15,39 @@ import '../analyzer/resolver.dart';
 import '../util/barback.dart';
 import '../util/stream.dart';
 
-/// A [Transformer] which runs a single [Builder] with a new [BuildStep].
+/// An [AggregateTransformer] which runs a single [Builder] with a new
+/// [BuildStep].
 ///
-/// By default all [BuilderTransformer]s are [DeclaringTransformer]s. If you
-/// wish to run as a [LazyTransformer], extend this class and mix in
-/// LazyTransformer.
-class BuilderTransformer implements Transformer, DeclaringTransformer {
+/// By default all [BuilderTransformer]s are [DeclaringAggregateTransformer]s.
+/// If you wish to run as a [LazyAggregateTransformer], extend this class and
+/// mix in LazyAggregateTransformer.
+class BuilderTransformer
+    implements AggregateTransformer, DeclaringAggregateTransformer {
   final Builder _builder;
-  final Resolvers _resolvers;
+  final _resolvers = const BarbackResolvers();
 
-  BuilderTransformer(this._builder,
-      {Resolvers resolvers: const BarbackResolvers()})
-      : this._resolvers = resolvers;
+  BuilderTransformer(this._builder);
 
   @override
-  String get allowedExtensions => null;
+  classifyPrimary(barback.AssetId id) =>
+      _builder.buildExtensions.keys.any((e) => id.path.endsWith(e))
+          ? 'primary'
+          : null;
 
   @override
-  bool isPrimary(barback.AssetId id) =>
-      _builder.buildExtensions.keys.any((e) => id.path.endsWith(e));
+  Future apply(AggregateTransform transform) async {
+    // Wait for all inputs to be ready so the Resolvers won't see any file
+    // changes before this transformer runs
+    var inputs = await transform.primaryInputs.toList();
+    return Future.wait(
+        inputs.map((input) => _apply(toBuildAssetId(input.id), transform)));
+  }
 
-  @override
-  Future apply(Transform transform) async {
-    var inputId = toBuildAssetId(transform.primaryInput.id);
+  Future _apply(build.AssetId inputId, AggregateTransform transform) async {
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 
-    var expected =
-        expectedOutputs(_builder, toBuildAssetId(transform.primaryInput.id));
+    var expected = expectedOutputs(_builder, inputId);
     if (expected.isEmpty) return;
 
     // Check for overlapping outputs.
@@ -58,7 +63,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
       transform.logger.error(
           'Builder `$_builder` declared outputs `$preExistingFiles` but those '
           'files already exist. This build step has been skipped.',
-          asset: transform.primaryInput.id);
+          asset: toBarbackAssetId(inputId));
       return;
     }
 
@@ -96,11 +101,13 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
   }
 
   @override
-  void declareOutputs(DeclaringTransform transform) {
-    var outputs =
-        expectedOutputs(_builder, toBuildAssetId(transform.primaryId));
-    outputs.map(toBarbackAssetId).forEach(transform.declareOutput);
-  }
+  Future declareOutputs(DeclaringAggregateTransform transform) =>
+      transform.primaryIds
+          .map(toBuildAssetId)
+          .expand((i) => expectedOutputs(_builder, i))
+          .map(toBarbackAssetId)
+          .asyncMap(transform.declareOutput)
+          .last;
 
   @override
   String toString() => 'BuilderTransformer: $_builder';
@@ -108,7 +115,7 @@ class BuilderTransformer implements Transformer, DeclaringTransformer {
 
 /// Very simple [AssetReader] which uses a [Transform].
 class _TransformAssetReader implements AssetReader {
-  final Transform transform;
+  final AggregateTransform transform;
 
   _TransformAssetReader(this.transform);
 
@@ -133,7 +140,7 @@ class _TransformAssetReader implements AssetReader {
 
 /// Very simple [AssetWriter] which uses a [Transform].
 class _TransformAssetWriter implements AssetWriter {
-  final Transform transform;
+  final AggregateTransform transform;
 
   _TransformAssetWriter(this.transform);
 

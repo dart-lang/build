@@ -111,7 +111,7 @@ void main() {
         [singleCopyTransformer],
       ],
       {'a|web/a.txt': 'hello'},
-      {'a|web/a.txt.copy': 'hello'},
+      {},
       messages: [
         _fileExistsError('${new CopyBuilder()}', ['a|web/a.txt.copy']),
       ],

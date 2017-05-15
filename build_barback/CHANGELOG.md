@@ -1,3 +1,9 @@
+## 0.3.0-dev
+
+- **Breaking** `BuilderTransformer` is now an `AggregateTransformer`. This
+  should be transparent for most use cases but could have errors if an instance
+  was assigned to a variable of type `Transformer`.
+
 ## 0.2.0
 
 - Update to build 0.9.0
