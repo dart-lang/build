@@ -38,6 +38,8 @@ export 'src/mock.dart'
         Verification,
 
         // -- misc
+        throwOnMissingStub,
         clearInteractions,
         reset,
+        resetMockitoState,
         logInvocations;
