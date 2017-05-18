@@ -11,9 +11,9 @@ import 'package:build/build.dart' hide AssetId;
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 
-import '../analyzer/resolver.dart';
 import '../util/barback.dart';
 import '../util/stream.dart';
+import 'resolvers.dart';
 
 /// An [AggregateTransformer] which runs a single [Builder] with a new
 /// [BuildStep].
@@ -24,7 +24,6 @@ import '../util/stream.dart';
 class BuilderTransformer
     implements AggregateTransformer, DeclaringAggregateTransformer {
   final Builder _builder;
-  final _resolvers = const BarbackResolvers();
 
   BuilderTransformer(this._builder);
 
@@ -38,12 +37,17 @@ class BuilderTransformer
   Future apply(AggregateTransform transform) async {
     // Wait for all inputs to be ready so the Resolvers won't see any file
     // changes before this transformer runs
-    var inputs = await transform.primaryInputs.toList();
-    return Future.wait(
-        inputs.map((input) => _apply(toBuildAssetId(input.id), transform)));
+    var entryPoints = (await transform.primaryInputs.toList())
+        .map((input) => toBuildAssetId(input.id));
+    var resolvers = new SinglePassResolvers(entryPoints,
+        (assetId) => transform.readInputAsString(toBarbackAssetId(assetId)));
+    await Future.wait(
+        entryPoints.map((assetId) => _apply(assetId, transform, resolvers)));
+    //TODO release analysis context?
   }
 
-  Future _apply(build.AssetId inputId, AggregateTransform transform) async {
+  Future _apply(build.AssetId inputId, AggregateTransform transform,
+      Resolvers resolvers) async {
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 
@@ -83,7 +87,7 @@ class BuilderTransformer
       }
     });
 
-    await runBuilder(_builder, [inputId], reader, writer, _resolvers,
+    await runBuilder(_builder, [inputId], reader, writer, resolvers,
         logger: logger);
     await logSubscription.cancel();
   }
