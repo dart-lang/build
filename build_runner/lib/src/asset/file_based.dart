@@ -30,9 +30,9 @@ class FileBasedAssetReader implements RunnerAssetReader {
       (await _fileForOrThrow(id, packageGraph)).readAsBytes();
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async =>
+  Future<String> readAsString(AssetId id, {Encoding encoding}) async =>
       (await _fileForOrThrow(id, packageGraph))
-          .readAsString(encoding: encoding);
+          .readAsString(encoding: encoding ?? UTF8);
 
   @override
   Iterable<AssetId> findAssets(Glob glob, {String packageName}) sync* {
