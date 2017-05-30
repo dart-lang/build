@@ -11,9 +11,10 @@ import 'package:build/build.dart' hide AssetId;
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 
+import '../analyzer/resolver.dart';
 import '../util/barback.dart';
 import '../util/stream.dart';
-import 'resolvers.dart';
+import 'crawl_imports.dart';
 
 /// An [AggregateTransformer] which runs a single [Builder] with a new
 /// [BuildStep].
@@ -24,6 +25,7 @@ import 'resolvers.dart';
 class BuilderTransformer
     implements AggregateTransformer, DeclaringAggregateTransformer {
   final Builder _builder;
+  final _resolvers = const BarbackResolvers();
 
   BuilderTransformer(this._builder);
 
@@ -37,17 +39,19 @@ class BuilderTransformer
   Future apply(AggregateTransform transform) async {
     // Wait for all inputs to be ready so the Resolvers won't see any file
     // changes before this transformer runs
-    var entryPoints = (await transform.primaryInputs.toList())
+    var inputs = (await transform.primaryInputs.toList())
         .map((input) => toBuildAssetId(input.id));
-    var resolvers = new SinglePassResolvers(entryPoints,
-        (assetId) => transform.readInputAsString(toBarbackAssetId(assetId)));
-    await Future.wait(
-        entryPoints.map((assetId) => _apply(assetId, transform, resolvers)));
-    //TODO release analysis context?
+    // Wait for all dependencies to be finished running transformers and let us
+    // read their assets.
+    await crawlImports(
+        inputs,
+        (id) => transform
+            .readInputAsString(toBarbackAssetId(id))
+            .catchError((_) => null));
+    return Future.wait(inputs.map((input) => _apply(input, transform)));
   }
 
-  Future _apply(build.AssetId inputId, AggregateTransform transform,
-      Resolvers resolvers) async {
+  Future _apply(build.AssetId inputId, AggregateTransform transform) async {
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 
@@ -87,7 +91,7 @@ class BuilderTransformer
       }
     });
 
-    await runBuilder(_builder, [inputId], reader, writer, resolvers,
+    await runBuilder(_builder, [inputId], reader, writer, _resolvers,
         logger: logger);
     await logSubscription.cancel();
   }

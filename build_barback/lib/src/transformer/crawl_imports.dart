@@ -4,128 +4,66 @@
 import 'dart:async';
 
 import 'package:analyzer/analyzer.dart' show parseDirectives;
-import 'package:analyzer/src/generated/engine.dart' show TimestampedData;
-import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
-import 'package:path/path.dart' as p;
 
 import 'package:analyzer/dart/ast/ast.dart';
 
-/// Crawl Dart files outside of the SDK transitively imported from any library
-/// in [entryPoints] and cache it as a [Source].
-Future<Map<Uri, Source>> crawlImports(
-    Iterable<AssetId> entryPoints, Future<String> read(AssetId id)) async {
+typedef FutureOr<V> ReadNode<K, V>(K key);
+typedef FutureOr<Iterable<K>> ReadEdges<K, V>(K key, V value);
+
+/// Crawls Dart files outside of the SDK transitively imported from any library
+/// in [entryPoints].
+Future crawlImports(
+    Iterable<AssetId> entryPoints, ReadNode<AssetId, String> readAsset) async {
   var roots = entryPoints.where((id) => id.path.endsWith('.dart'));
-  var assets = await _crawlAsync(roots, read, _assetImports);
-  var results = <Uri, Source>{};
-  for (var asset in assets.keys) {
-    results[asset.uri] = _toSource(asset, assets[asset]);
-  }
-  return results;
+  var crawler = new _AsyncCrawler(_assetReferences, readAsset, roots);
+  await crawler.crawlAsync();
 }
 
-Iterable<AssetId> _assetImports(AssetId id, String source) {
+/// All the assets referenced by a [UriBasedDirective] in [source] that aren't
+/// from the Dart SDK.
+///
+/// [id] represents the location of [source].
+Iterable<AssetId> _assetReferences(AssetId id, String source) {
   var unit = parseDirectives(source);
   return unit.directives
       .where((d) => d is UriBasedDirective)
-      .map((d) => d as UriBasedDirective)
-      .map((d) => d.uri.stringValue)
+      .map((d) => (d as UriBasedDirective).uri.stringValue)
       .where((uri) => !uri.startsWith('dart:'))
       .map((uri) => new AssetId.resolve(uri, from: id));
 }
 
-Source _toSource(AssetId id, String content) => new AssetSource(id, content);
-
-/// Crawl a graph where node values and edges are resolved asynchronously.
+/// Crawls a graph where node values and edges are resolved asynchronously.
 ///
-/// Nodes are keyed by type [K] and have values of type [V]. [resolve] finds the
-/// value for a node. [edges] finds the edges leaving a node.
-Future<Map<K, V>> _crawlAsync<K, V>(
-    Iterable<K> roots,
-    FutureOr<V> resolve(K key),
-    FutureOr<Iterable<K>> edges(K key, V value)) async {
-  var seen = <K, Future<V>>{};
-  await Future.wait(roots.map((k) => _visitNode(k, seen, resolve, edges)));
-  var results = <K, V>{};
-  for (var k in seen.keys) {
-    results[k] = await seen[k];
-  }
-  return results;
-}
+/// Nodes are keyed by type [K] and have values of type [V].
+class _AsyncCrawler<K, V> {
+  final _seen = <K, Future<V>>{};
 
-/// Synchronously record the the node a [key] has been seen, then start the
-/// work.
-///
-/// The returned Future will complete when the node at [key], and transitively
-/// reachable nodes, have either finished their crawl or are guaranteed to be
-/// completed within another future in [seen].
-Future _visitNode<K, V>(K key, Map<K, Future<V>> seen,
-    FutureOr<V> resolve(K key), FutureOr<Iterable<K>> edges(K key, V value)) {
-  if (seen.containsKey(key)) return new Future.value(null);
-  return seen[key] = _crawlFromNode(key, seen, resolve, edges);
-}
+  final ReadEdges<K, V> readEdges;
+  final ReadNode<K, V> readNode;
+  final Iterable<K> roots;
 
-/// Resolve the node at [key] and visit all transitively reachable nodes.
-Future<V> _crawlFromNode<K, V>(
-    K key,
-    Map<K, Future<V>> seen,
-    FutureOr<V> resolve(K key),
-    FutureOr<Iterable<K>> edges(K key, V value)) async {
-  var value = await resolve(key);
-  var next = await edges(key, value) ?? [];
-  await Future.wait(next.map((k) => _visitNode(k, seen, resolve, edges)));
-  return value;
-}
+  _AsyncCrawler(this.readEdges, this.readNode, this.roots);
 
-class AssetSource implements Source {
-  final AssetId _assetId;
-  final String _content;
+  /// Returns all nodes found by crawling from [roots].
+  Future crawlAsync() => Future.wait(roots.map((k) => _visitNode(k)));
 
-  AssetSource(this._assetId, this._content);
-
-  @override
-  TimestampedData<String> get contents => new TimestampedData(0, _content);
-
-  @override
-  String get encoding => '$_assetId';
-
-  @override
-  String get fullName => '$_assetId';
-
-  @override
-  int get hashCode => _assetId.hashCode;
-
-  @override
-  bool get isInSystemLibrary => false;
-
-  @override
-  Source get librarySource => null;
-
-  @override
-  int get modificationStamp => 0;
-
-  @override
-  String get shortName => p.basename(_assetId.path);
-
-  @override
-  Source get source => this;
-
-  @override
-  Uri get uri => _assetId.uri;
-
-  @override
-  UriKind get uriKind {
-    if (_assetId.path.startsWith('lib/')) return UriKind.PACKAGE_URI;
-    return UriKind.FILE_URI;
+  /// Synchronously record the the node a [key] has been seen, then start the
+  /// work.
+  ///
+  /// The returned Future will complete when the node at [key], and transitively
+  /// reachable nodes, have either finished their crawl or are guaranteed to be
+  /// completed within another future in [_seen].
+  Future _visitNode(K key) {
+    if (_seen.containsKey(key)) return new Future.value(null);
+    return _seen[key] = _crawlFromNode(key);
   }
 
-  @override
-  bool operator ==(Object object) =>
-      object is AssetSource && object._assetId == _assetId;
-
-  @override
-  bool exists() => true;
-
-  @override
-  String toString() => 'AssetSource[$_assetId]';
+  /// Resolve the node at [key] and visit all transitively reachable nodes.
+  Future<V> _crawlFromNode(K key) async {
+    var value = await readNode(key);
+    var next = await readEdges(key, value) ?? [];
+    await Future.wait(next.map((k) => _visitNode(k)));
+    return value;
+  }
 }
