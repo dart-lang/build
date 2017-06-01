@@ -1,3 +1,9 @@
+## 0.5.8
+
+* Add `formatOutput` optional parameter to the `GeneratorBuilder` constructor.
+  This is a lamda of the form `String formatOutput(String originalCode)` which
+  allows you do do custom formatting.
+
 ## 0.5.7
 
 * Support for package:analyzer 0.30.0

@@ -11,6 +11,7 @@ import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
 import 'src/comment_generator.dart';
+import 'src/unformatted_code_generator.dart';
 
 void main() {
   test('Simple Generator test', _simpleTest);
@@ -91,6 +92,41 @@ void main() {
         generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
         outputs: {
           '$pkgName|lib/test_lib.g.dart': _testGenPartContentError,
+        });
+  });
+
+  test('defaults to formatting generated code with the DartFormatter',
+      () async {
+    await testBuilder(new GeneratorBuilder([new UnformattedCodeGenerator()]),
+        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        outputs: {
+          '$pkgName|lib/a.g.dart':
+              contains(UnformattedCodeGenerator.formattedCode),
+        });
+  });
+
+  test('can skip formatting with a trivial lambda', () async {
+    await testBuilder(
+        new GeneratorBuilder([new UnformattedCodeGenerator()],
+            formatOutput: (s) => s),
+        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        outputs: {
+          '$pkgName|lib/a.g.dart':
+              contains(UnformattedCodeGenerator.unformattedCode),
+        });
+  });
+
+  test('can pass a custom formatter with formatOutput', () async {
+    var customOutput = 'final String hello = "hello";';
+    await testBuilder(
+        new GeneratorBuilder([new UnformattedCodeGenerator()],
+            formatOutput: (_) => customOutput),
+        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        outputs: {
+          '$pkgName|lib/a.g.dart': contains(customOutput),
         });
   });
 }
