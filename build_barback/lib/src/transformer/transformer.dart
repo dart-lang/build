@@ -14,6 +14,7 @@ import 'package:logging/logging.dart';
 import '../analyzer/resolver.dart';
 import '../util/barback.dart';
 import '../util/stream.dart';
+import 'crawl_imports.dart';
 
 /// An [AggregateTransformer] which runs a single [Builder] with a new
 /// [BuildStep].
@@ -38,9 +39,16 @@ class BuilderTransformer
   Future apply(AggregateTransform transform) async {
     // Wait for all inputs to be ready so the Resolvers won't see any file
     // changes before this transformer runs
-    var inputs = await transform.primaryInputs.toList();
-    return Future.wait(
-        inputs.map((input) => _apply(toBuildAssetId(input.id), transform)));
+    var inputs = (await transform.primaryInputs.toList())
+        .map((input) => toBuildAssetId(input.id));
+    // Wait for all dependencies to be finished running transformers and let us
+    // read their assets.
+    await crawlImports(
+        inputs,
+        (id) => transform
+            .readInputAsString(toBarbackAssetId(id))
+            .catchError((_) => null));
+    return Future.wait(inputs.map((input) => _apply(input, transform)));
   }
 
   Future _apply(build.AssetId inputId, AggregateTransform transform) async {

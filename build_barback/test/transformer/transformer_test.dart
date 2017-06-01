@@ -132,6 +132,48 @@ void main() {
     allOf(startsWith('error: Error!'), contains('SomeError'),
         contains('LoggingCopyBuilder.build')),
   ]);
+
+  testPhases('can resolve a library', [
+    [new BuilderTransformer(new ResolvingBuilder())]
+  ], {
+    'a|lib/a.dart': 'library a;'
+  }, {
+    'a|lib/a.libraryName': 'a'
+  });
+
+  testPhases('can resolve a library with package deps', [
+    [new BuilderTransformer(new ResolvingBuilder())]
+  ], {
+    'a|lib/a.dart': 'library a;',
+    'b|lib/b.dart': 'library b; import "package:a/a.dart";',
+  }, {
+    'a|lib/a.libraryName': 'a',
+    'b|lib/b.libraryName': 'b',
+  });
+
+  testPhases('can resolve a library with package deps when ran out of order', [
+    [new BuilderTransformer(new ResolvingBuilder())]
+  ], {
+    'b|lib/b.dart': 'library b; import "package:a/a.dart";',
+    'a|lib/a.dart': 'library a;',
+  }, {
+    'a|lib/a.libraryName': 'a',
+    'b|lib/b.libraryName': 'b',
+  });
+}
+
+class ResolvingBuilder extends Builder {
+  @override
+  Future build(BuildStep buildStep) async {
+    var library = await buildStep.inputLibrary;
+    await buildStep.writeAsString(
+        buildStep.inputId.changeExtension('.libraryName'), library.name);
+  }
+
+  @override
+  Map<String, List<String>> get buildExtensions => {
+        '.dart': ['.libraryName']
+      };
 }
 
 class LoggingCopyBuilder extends CopyBuilder {
