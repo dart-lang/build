@@ -25,6 +25,7 @@ Future crawlImports(
 ///
 /// [id] represents the location of [source].
 Iterable<AssetId> _assetReferences(AssetId id, String source) {
+  if (source == null) return [];
   var unit = parseDirectives(source);
   return unit.directives
       .where((d) => d is UriBasedDirective)
