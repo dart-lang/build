@@ -160,6 +160,14 @@ void main() {
     'a|lib/a.libraryName': 'a',
     'b|lib/b.libraryName': 'b',
   });
+
+  testPhases('can resolve a library with missing package deps', [
+    [new BuilderTransformer(new ResolvingBuilder())]
+  ], {
+    'a|lib/a.dart': 'library a; import "b.dart";',
+  }, {
+    'a|lib/a.libraryName': 'a',
+  });
 }
 
 class ResolvingBuilder extends Builder {
