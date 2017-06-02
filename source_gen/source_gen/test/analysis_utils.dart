@@ -21,7 +21,6 @@ Future<AnalysisContext> getAnalysisContextForProjectPath(
   // TODO: fail more clearly if this...fails
   var sdkPath = cli.getSdkDir().path;
 
-  JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
   var resourceProvider = PhysicalResourceProvider.INSTANCE;
   DartSdk sdk = new FolderBasedDartSdk(
       resourceProvider, resourceProvider.getFolder(sdkPath));
@@ -58,8 +57,8 @@ UriResolver _getPackageResolver(String projectPath, DartSdk sdk) {
 
   var pubPackageMapProvider =
       new PubPackageMapProvider(PhysicalResourceProvider.INSTANCE, sdk);
-  var packageMapInfo = pubPackageMapProvider
-      .computePackageMap(PhysicalResourceProvider.INSTANCE.getResource('.'));
+  var packageMapInfo = pubPackageMapProvider.computePackageMap(
+      PhysicalResourceProvider.INSTANCE.getResource(projectPath));
   var packageMap = packageMapInfo.packageMap;
   if (packageMap == null) {
     throw new StateError('An error occurred getting the package map.');
