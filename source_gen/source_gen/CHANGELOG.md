@@ -1,3 +1,7 @@
+## 0.5.9
+
+* Update the minimum Dart SDK to `1.22.1`.
+
 ## 0.5.8
 
 * Add `formatOutput` optional parameter to the `GeneratorBuilder` constructor.

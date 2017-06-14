@@ -21,7 +21,8 @@ class JsonLiteralGenerator extends GeneratorForAnnotation<JsonLiteral> {
   Future<String> generateForAnnotatedElement(
       Element element, JsonLiteral annotation, BuildStep buildStep) async {
     if (p.isAbsolute(annotation.path)) {
-      throw 'must be relative path to the source file';
+      throw new ArgumentError(
+          '`annotation.path` must be relative path to the source file.');
     }
 
     var sourcePathDir = p.dirname(buildStep.inputId.path);

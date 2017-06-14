@@ -107,8 +107,8 @@ Set<FieldElement> _writeFactory(StringBuffer buffer, ClassElement classElement,
 
     if (field == null) {
       if (arg.parameterKind == ParameterKind.REQUIRED) {
-        throw 'Cannot populate the required constructor argument: '
-            '${arg.displayName}.';
+        throw new UnsupportedError('Cannot populate the required constructor '
+            'argument: ${arg.displayName}.');
       }
       continue;
     }

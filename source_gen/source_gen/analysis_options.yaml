@@ -1,6 +1,7 @@
 analyzer:
  strong-mode: true
  errors:
+   unused_element: error
    unused_import: error
    unused_local_variable: error
    dead_code: error
@@ -23,11 +24,14 @@ linter:
      - avoid_return_types_on_setters
      - await_only_futures
      - camel_case_types
+     - directives_ordering
      - empty_catches
      - empty_constructor_bodies
      - library_names
      - library_prefixes
      - non_constant_identifier_names
+     - only_throw_errors
+     - prefer_final_fields
      - prefer_is_not_empty
      - slash_for_doc_comments
      - type_init_formals

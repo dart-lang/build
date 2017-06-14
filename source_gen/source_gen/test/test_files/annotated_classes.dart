@@ -1,7 +1,8 @@
 library source_gen.test.annotation_test.classes;
 
-import 'annotations.dart';
 import 'package:source_gen/generators/json_serializable.dart';
+
+import 'annotations.dart';
 
 part 'annotated_classes_part.dart';
 

@@ -11,8 +11,8 @@ void main() {
     pkgRoot = _runProc('git', ['rev-parse', '--show-toplevel']);
     var currentDir = Directory.current.resolveSymbolicLinksSync();
     if (pkgRoot != currentDir) {
-      throw "Expected the git root ($pkgRoot) "
-          "to match the current directory ($currentDir).";
+      throw new StateError("Expected the git root ($pkgRoot) "
+          "to match the current directory ($currentDir).");
     }
   } catch (e) {
     print("Skipping this test – git didn't run correctly");

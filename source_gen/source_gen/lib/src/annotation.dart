@@ -47,7 +47,8 @@ dynamic instantiateAnnotation(ElementAnnotation annotation) {
   var valueDeclaration =
       _getDeclarationMirrorFromType(annotation.constantValue.type);
 
-  throw "No clue how to create $valueDeclaration of type ${valueDeclaration.runtimeType}";
+  throw new UnsupportedError("Cannot create `$valueDeclaration` of type "
+      "${valueDeclaration.runtimeType}.");
 }
 
 dynamic _getValue(DartObject object, TypeProvider typeProvider) {
@@ -115,7 +116,7 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
   throw new CannotCreateFromAnnotationException._(object);
 }
 
-class CannotCreateFromAnnotationException {
+class CannotCreateFromAnnotationException implements Exception {
   final DartObject object;
   final CannotCreateFromAnnotationException innerException;
 
@@ -159,8 +160,9 @@ dynamic _createFromConstructor(
           return false;
         }
 
-        throw "${ctor.enclosingElement.type} is too complex. "
-            "We don't support initializers of type '${expression.runtimeType}'.";
+        throw new UnsupportedError(
+            "${ctor.enclosingElement.type} is too complex. Initializers of "
+            "type '${expression.runtimeType}' are not supported.");
       }) as ConstructorFieldInitializer;
 
       // get the field value now

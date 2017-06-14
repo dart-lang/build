@@ -23,7 +23,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     if (matchingAnnotations.isEmpty) {
       return null;
     } else if (matchingAnnotations.length > 1) {
-      throw 'cannot have more than one matching annotation';
+      throw new UnsupportedError(
+          'Cannot have more than one matching annotation');
     }
 
     var annotationInstance =

@@ -18,7 +18,7 @@ abstract class Generator {
   String toString() => this.runtimeType.toString();
 }
 
-class InvalidGenerationSourceError {
+class InvalidGenerationSourceError extends Error {
   final String message;
   final String todo;
 
