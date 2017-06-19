@@ -52,6 +52,10 @@ void main() {
       test('should be a super type of dart:collection#HashMap', () {
         expect(checkMap().isSuperTypeOf(staticHashMap), isTrue);
       });
+
+      test('should be assignable from dart:collection#HashMap', () {
+        expect(checkMap().isAssignableFromType(staticHashMap), isTrue);
+      });
     });
 
     group('(HashMap)', () {
@@ -62,6 +66,10 @@ void main() {
 
       test('should not be a super type of dart:core#Map', () {
         expect(checkHashMap().isSuperTypeOf(staticMap), isFalse);
+      });
+
+      test('should not assignable from type dart:core#Map', () {
+        expect(checkHashMap().isAssignableFromType(staticMap), isFalse);
       });
     });
   }

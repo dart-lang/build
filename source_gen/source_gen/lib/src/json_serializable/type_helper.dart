@@ -4,6 +4,7 @@
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:source_gen/src/type_checker.dart';
 
 abstract class TypeHelper {
   const TypeHelper();
@@ -104,7 +105,7 @@ class DateTimeHelper extends TypeHelper {
   bool canDeserialize(DartType type) => _matchesType(type);
 
   bool _matchesType(DartType type) =>
-      type.element.library?.isDartCore == true && type.name == 'DateTime';
+      const TypeChecker.fromUrl('dart:core#DateTime').isExactlyType(type);
 
   @override
   String serialize(DartType targetType, String name) =>

@@ -204,7 +204,7 @@ class JsonSerializableGenerator
       }
     }
 
-    if (_implementsDartList(fieldType)) {
+    if (_coreListChecker.isAssignableFromType(fieldType)) {
       var indexVal = "i${depth}";
 
       var substitute = '${expression}[$indexVal]';
@@ -247,7 +247,7 @@ class JsonSerializableGenerator
       }
     }
 
-    if (_isDartIterable(searchType) || _isDartList(searchType)) {
+    if (_coreIterableChecker.isAssignableFromType(searchType)) {
       var iterableGenericType =
           _getIterableGenericType(searchType as InterfaceType);
 
@@ -257,7 +257,7 @@ class JsonSerializableGenerator
           "${_writeAccessToVar(itemVal, iterableGenericType, depth: depth+1)}"
           ")";
 
-      if (_isDartList(searchType)) {
+      if (_coreListChecker.isAssignableFromType(searchType)) {
         output += "?.toList()";
       }
 
@@ -287,24 +287,24 @@ String _fieldToJsonMapKey(String fieldName, FieldElement field) {
 }
 
 DartType _getIterableGenericType(InterfaceType type) {
-  var iterableThing = _typeTest(type, _isDartIterable) as InterfaceType;
+  var iterableImplementation =
+      _getImplementationType(type, _coreIterableChecker) as InterfaceType;
 
-  return iterableThing.typeArguments.single;
+  return iterableImplementation.typeArguments.single;
 }
 
-bool _implementsDartList(DartType type) => _typeTest(type, _isDartList) != null;
-
-DartType _typeTest(DartType type, bool tester(DartType type)) {
-  if (tester(type)) return type;
+DartType _getImplementationType(DartType type, TypeChecker checker) {
+  if (checker.isExactlyType(type)) return type;
 
   if (type is InterfaceType) {
-    var tests = type.interfaces.map((type) => _typeTest(type, tester));
+    var tests =
+        type.interfaces.map((type) => _getImplementationType(type, checker));
     var match = _firstNotNull(tests);
 
     if (match != null) return match;
 
     if (type.superclass != null) {
-      return _typeTest(type.superclass, tester);
+      return _getImplementationType(type.superclass, checker);
     }
   }
   return null;
@@ -313,8 +313,6 @@ DartType _typeTest(DartType type, bool tester(DartType type)) {
 T _firstNotNull<T>(Iterable<T> values) =>
     values.firstWhere((value) => value != null, orElse: () => null);
 
-bool _isDartIterable(DartType type) =>
-    const TypeChecker.fromUrl('dart:core#Iterable').isExactlyType(type);
+final _coreIterableChecker = const TypeChecker.fromUrl('dart:core#Iterable');
 
-bool _isDartList(DartType type) =>
-    const TypeChecker.fromUrl('dart:core#List').isExactlyType(type);
+final _coreListChecker = const TypeChecker.fromUrl('dart:core#List');

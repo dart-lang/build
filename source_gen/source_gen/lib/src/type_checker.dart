@@ -46,6 +46,16 @@ abstract class TypeChecker {
       .map((a) => a.computeConstantValue())
       .where((a) => isExactlyType(a.type));
 
+  /// Returns `true` if representing the exact same class an or a superclass of
+  /// [element]
+  bool isAssignableFrom(Element element) =>
+      isExactly(element) || isSuperOf(element);
+
+  /// Returns `true` if representing the exact same type as or a supertype of
+  /// [staticType].
+  bool isAssignableFromType(DartType staticType) =>
+      isAssignableFrom(staticType.element);
+
   /// Returns `true` if representing the exact same class as [element].
   bool isExactly(Element element);
 
