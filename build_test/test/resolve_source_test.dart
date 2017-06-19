@@ -53,6 +53,17 @@ void main() {
       );
     });
   });
+
+  group('should resolveAsset', () {
+    Resolver resolver;
+
+    test('asset:build_test/test/_files/example_lib.dart', () async {
+      var asset = new AssetId('build_test', 'test/_files/example_lib.dart');
+      resolver = await resolveAsset(asset);
+      var libExample = resolver.getLibraryByName('example_lib');
+      expect(libExample.getType('Example'), isNotNull);
+    });
+  });
 }
 
 String _toStringId(InterfaceType t) =>

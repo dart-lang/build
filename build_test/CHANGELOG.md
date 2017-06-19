@@ -1,3 +1,19 @@
+## 0.6.3
+
+- Added `resolveAsset`, which is similar to `resolveSource` but specified a
+  real asset that lives on the file system. For example, to resolve the main
+  library of `package:collection`:
+
+```dart
+var pkgCollection = new AssetId('collection', 'lib/collection.dart');
+var resolver = await resolveAsset(pkgCollection);
+// ...
+```
+
+## 0.6.2
+
+- Internal version bump.
+
 ## 0.6.1
 
 - Declare an output extension in `_ResolveSourceBuilder` so it is not skipped
