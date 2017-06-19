@@ -82,15 +82,25 @@ class GeneratorBuilder extends Builder {
     var generatedOutputs =
         await _generate(library, generators, buildStep).toList();
 
-    // Don't outputs useless files.
-    if (generatedOutputs.isEmpty) return;
-
     var contentBuffer = new StringBuffer();
 
     if (!isStandalone) {
-      contentBuffer.writeln('part of ${library.name};');
+      var asset = buildStep.inputId;
+      var name = nameOfPartial(library, asset);
+      if (name == null) {
+        var suggest = suggestLibraryName(asset);
+        throw new InvalidGenerationSourceError(
+            'Could not find library identifier so a "part of" cannot be built.',
+            todo: ''
+                'Consider adding the following to your source file:\n\n'
+                'library $suggest;');
+      }
+      contentBuffer.writeln('part of $name;');
       contentBuffer.writeln();
     }
+
+    // Don't output useless files.
+    if (generatedOutputs.isEmpty) return;
 
     for (GeneratedOutput output in generatedOutputs) {
       contentBuffer.writeln('');

@@ -5,6 +5,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/standard_resolution_map.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:build/build.dart';
 
 String friendlyNameForElement(Element element) {
   var friendlyName = element.displayName;
@@ -37,6 +38,40 @@ String friendlyNameForElement(Element element) {
   }
 
   return names.join(' ');
+}
+
+/// Returns a name suitable for `part of "..."` when pointing to [element].
+///
+/// Returns `null` if [element] is missing identifier.
+///
+/// Starting in `1.25.0`, setting [allowUnnamedPartials] will fallback
+/// (actually, preferred) to `'part of "package:foo/path.dart'`, and null will
+/// never be returned.
+String nameOfPartial(
+  LibraryElement element,
+  AssetId source, {
+  bool allowUnnamedPartials: false,
+}) {
+  if (element.name != null && element.name.isNotEmpty) {
+    return element.name;
+  }
+  if (allowUnnamedPartials) {
+    return '\'package:${source.package}/${source.path}\'';
+  }
+  return null;
+}
+
+/// Returns a suggested library identifier based on [source] path and package.
+String suggestLibraryName(AssetId source) {
+  // lib/test.dart --> [lib/test.dart]
+  var parts = source.path.split('/');
+  // [lib/test.dart] --> [lib/test]
+  parts[parts.length - 1] = parts.last.split('.').first;
+  // [lib/test] --> [test]
+  if (parts.first == 'lib') {
+    parts = parts.skip(1);
+  }
+  return '${source.package}.${parts.join('.')}';
 }
 
 /// Returns all of the declarations in [unit], including [unit] as the first

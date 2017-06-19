@@ -67,6 +67,15 @@ void main() {
         returnsNormally);
   });
 
+  test('Throws an exception when no library identifier is found', () async {
+    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
+    var builder = new GeneratorBuilder([const CommentGenerator()]);
+    expect(
+        testBuilder(builder, sources,
+            outputs: {'$pkgName|lib/test_lib.g.dart': ''}),
+        throwsA(const isInstanceOf<InvalidGenerationSourceError>()));
+  });
+
   test(
       'Simple Generator test for library',
       () => _generateTest(

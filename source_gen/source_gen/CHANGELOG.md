@@ -4,21 +4,35 @@
 * Deprecated `builder.dart`: import `source_gen.dart` instead.
 * Added `TypeChecker`, a high-level API for performing static type checks:
 
-```dart
-import 'package:analyzer/dart/element/type.dart';
-import 'package:source_gen/source_gen.dart';
+  ```dart
+  import 'package:analyzer/dart/element/type.dart';
+  import 'package:source_gen/source_gen.dart';
+  
+  void checkType(DartType dartType) {
+    // Checks compared to runtime type `SomeClass`.
+    print(const TypeChecker.forRuntime(SomeClass).isExactlyType(dartType));
+    
+    // Checks compared to a known Url/Symbol:
+    const TypeChecker.forUrl('package:foo/foo.dart#SomeClass');
+    
+    // Checks compared to another resolved `DartType`:
+    const TypeChecker.forStatic(anotherDartType);
+  }
+  ```
 
-void checkType(DartType dartType) {
-  // Checks compared to runtime type `SomeClass`.
-  print(const TypeChecker.forRuntime(SomeClass).isExactlyType(dartType));
+* Failing to add a `library` directive to a library that is being used as a
+  generator target that generates partial files (`part of`) is now an explicit
+  error that gives a hint on how to name and fix your library:
   
-  // Checks compared to a known Url/Symbol:
-  const TypeChecker.forUrl('package:foo/foo.dart#SomeClass');
+  ```bash
+  > Could not find library identifier so a "part of" cannot be built.
+  >
+  > Consider adding the following to your source file:
+  >
+  > "library foo.bar;"
+  ```
   
-  // Checks compared to another resolved `DartType`:
-  const TypeChecker.forStatic(anotherDartType);
-}
-```
+  In Dart SDK `>=1.25.0` this can be relaxed as `part of` can refer to a path.
 
 ## 0.5.8
 
