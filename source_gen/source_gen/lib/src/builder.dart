@@ -12,24 +12,51 @@ import 'generated_output.dart';
 import 'generator.dart';
 import 'utils.dart';
 
+/// Returns [generatedCode] formatted, usually with something like `dartfmt`.
 typedef String OutputFormatter(String generatedCode);
 
+/// Wraps multiple [Generator]s and exposes them as a [Builder] for tooling.
+///
+/// ```dart
+/// // Creates a new builder that the following two generators.
+/// new GeneratorBuilder([
+///   new JsonSerializableGenerator(),
+///   new JsonLiteralGenerator(),
+/// ]);
+/// ```
 class GeneratorBuilder extends Builder {
+  /// Function that determines how the generated code is formatted.
   final OutputFormatter formatOutput;
+
+  /// What underlying generators are wrapped to form this [Builder].
   final List<Generator> generators;
+
+  /// For a given `.dart` file what extension is used to generate code.
+  ///
+  /// Defaults to `.g.dart`.
   final String generatedExtension;
+
+  /// Whether to emit a standalone (non-`part`) file in this builder.
   final bool isStandalone;
 
+  /// Wrap [generators] to form a [Builder]-compatible API.
   GeneratorBuilder(this.generators,
       {OutputFormatter formatOutput,
       this.generatedExtension: '.g.dart',
       this.isStandalone: false})
       : formatOutput = formatOutput ?? _formatter.format {
-    // TODO: validate that generatedExtension starts with a `.'
-    //       not null, empty, etc
+    if (generatedExtension == null) {
+      throw new ArgumentError.notNull('generatedExtension');
+    }
+    if (generatedExtension.isEmpty ||
+        !generatedExtension.startsWith('.') ||
+        !generatedExtension.endsWith('.dart')) {
+      throw new ArgumentError.value(generatedExtension, 'generatedExtension',
+          'Extension must be in the format of .dart or .*.dart');
+    }
     if (this.isStandalone && this.generators.length > 1) {
       throw new ArgumentError(
-          'Only one generator can be used to generate a standalone file.');
+          'A standalone file can only be generated from a single Generator.');
     }
   }
 
