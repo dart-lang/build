@@ -1,6 +1,7 @@
 ## 0.5.9
 
 * Update the minimum Dart SDK to `1.22.1`.
+* Deprecated `builder.dart`: import `source_gen.dart` instead.
 * Added `TypeChecker`, a high-level API for performing static type checks:
 
 ```dart
