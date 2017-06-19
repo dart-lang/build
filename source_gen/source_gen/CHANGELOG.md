@@ -1,11 +1,28 @@
 ## 0.5.9
 
 * Update the minimum Dart SDK to `1.22.1`.
+* Added `TypeChecker`, a high-level API for performing static type checks:
+
+```dart
+import 'package:analyzer/dart/element/type.dart';
+import 'package:source_gen/source_gen.dart';
+
+void checkType(DartType dartType) {
+  // Checks compared to runtime type `SomeClass`.
+  print(const TypeChecker.forRuntime(SomeClass).isExactlyType(dartType));
+  
+  // Checks compared to a known Url/Symbol:
+  const TypeChecker.forUrl('package:foo/foo.dart#SomeClass');
+  
+  // Checks compared to another resolved `DartType`:
+  const TypeChecker.forStatic(anotherDartType);
+}
+```
 
 ## 0.5.8
 
 * Add `formatOutput` optional parameter to the `GeneratorBuilder` constructor.
-  This is a lamda of the form `String formatOutput(String originalCode)` which
+  This is a lambda of the form `String formatOutput(String originalCode)` which
   allows you do do custom formatting.
 
 ## 0.5.7

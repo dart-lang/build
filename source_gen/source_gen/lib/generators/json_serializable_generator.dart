@@ -8,7 +8,6 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:source_gen/src/annotation.dart';
 import 'package:source_gen/src/json_serializable/type_helper.dart';
 import 'package:source_gen/src/utils.dart';
 
@@ -278,11 +277,10 @@ class JsonSerializableGenerator
 /// [fieldName] is used, unless [field] is annotated with [JsonKey], in which
 /// case [JsonKey.jsonName] is used.
 String _fieldToJsonMapKey(String fieldName, FieldElement field) {
-  var metadata = field.metadata;
-  var jsonKey = metadata.firstWhere((m) => matchAnnotation(JsonKey, m),
-      orElse: () => null);
+  const $JsonKey = const TypeChecker.fromRuntime(JsonKey);
+  var jsonKey = $JsonKey.firstAnnotationOf(field);
   if (jsonKey != null) {
-    var jsonName = jsonKey.constantValue.getField('jsonName').toStringValue();
+    var jsonName = jsonKey.getField('jsonName').toStringValue();
     return jsonName;
   }
   return fieldName;
@@ -316,11 +314,7 @@ T _firstNotNull<T>(Iterable<T> values) =>
     values.firstWhere((value) => value != null, orElse: () => null);
 
 bool _isDartIterable(DartType type) =>
-    type.element.library != null &&
-    type.element.library.isDartCore &&
-    type.name == 'Iterable';
+    const TypeChecker.fromUrl('dart:core#Iterable').isExactlyType(type);
 
 bool _isDartList(DartType type) =>
-    type.element.library != null &&
-    type.element.library.isDartCore &&
-    type.name == 'List';
+    const TypeChecker.fromUrl('dart:core#List').isExactlyType(type);
