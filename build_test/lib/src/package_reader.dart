@@ -12,6 +12,13 @@ import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
 
 /// Resolves using a [SyncPackageResolver] before reading from the file system.
+///
+/// For a simple implementation that uses the current isolate's package
+/// resolution logic (i.e. whatever you have generated in `.packages` in most
+/// cases), use [currentIsolate]:
+/// ```dart
+/// var assetReader = await PackageAssetReader.currentIsolate();
+/// ```
 class PackageAssetReader implements AssetReader {
   final SyncPackageResolver _packageResolver;
 
@@ -27,6 +34,8 @@ class PackageAssetReader implements AssetReader {
   const PackageAssetReader(this._packageResolver, [this._rootPackage]);
 
   /// A reader that can resolve files known to the current isolate.
+  ///
+  /// A [rootPackage] should be provided for full API compatibility.
   static Future<PackageAssetReader> currentIsolate({String rootPackage}) async {
     var resolver = PackageResolver.current;
     return new PackageAssetReader(await resolver.asSync, rootPackage);

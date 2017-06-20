@@ -203,7 +203,8 @@ void main() {
 }
 
 class SlowAssetWriter implements AssetWriter {
-  final _writeCompleter = new Completer();
+  final _writeCompleter = new Completer<Null>();
+  
   void finishWrite() {
     _writeCompleter.complete(null);
   }
