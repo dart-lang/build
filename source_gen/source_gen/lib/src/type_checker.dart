@@ -28,6 +28,12 @@ abstract class TypeChecker {
   ///   'dart:collection#LinkedHashMap',
   /// );
   /// ```
+  ///
+  /// **NOTE**: This is considered a more _brittle_ way of determining the type
+  /// because it relies on knowing the _absolute_ path (i.e. after resolved
+  /// `export` directives). You should ideally only use `fromUrl` when you know
+  /// the full path (likely you own/control the package) or it is in a stable
+  /// package like in the `dart:` SDK.
   const factory TypeChecker.fromUrl(dynamic url) = _UriTypeChecker;
 
   /// Returns the first constant annotating [element] that is this type.
@@ -170,7 +176,7 @@ class _UriTypeChecker extends TypeChecker {
   int get hashCode => _url.hashCode;
 
   /// Url as a [Uri] object, lazily constructed.
-  Uri get uri => _cache[this] ??= Uri.parse(_url);
+  Uri get uri => _cache[this] ??= _normalizeUrl(Uri.parse(_url));
 
   /// Returns whether this type represents the same as [url].
   bool hasSameUrl(dynamic url) =>

@@ -17,8 +17,16 @@ void main() {
   TypeChecker staticMapChecker;
   TypeChecker staticHashMapChecker;
 
+  // Resolved top-level types from package:source_gen.
+  DartType staticGenerator;
+  DartType staticGeneratorForAnnotation;
+  TypeChecker staticGeneratorChecker;
+  TypeChecker staticGeneratorForAnnotationChecker;
+
   setUpAll(() async {
-    final resolver = await resolveSource('');
+    final resolver = await resolveSource(r'''
+      export 'package:source_gen/source_gen.dart';
+    ''');
 
     final core = resolver.getLibraryByName('dart.core');
     staticMap = core.getType('Map').type;
@@ -27,12 +35,22 @@ void main() {
     final collection = resolver.getLibraryByName('dart.collection');
     staticHashMap = collection.getType('HashMap').type;
     staticHashMapChecker = new TypeChecker.fromStatic(staticHashMap);
+
+    final sourceGen = resolver.getLibraryByName('source_gen');
+    staticGenerator = findType(sourceGen, 'Generator').type;
+    staticGeneratorChecker = new TypeChecker.fromStatic(staticGenerator);
+    staticGeneratorForAnnotation =
+        findType(sourceGen, 'GeneratorForAnnotation').type;
+    staticGeneratorForAnnotationChecker =
+        new TypeChecker.fromStatic(staticGeneratorForAnnotation);
   });
 
   // Run a common set of type comparison checks with various implementations.
   void commonTests({
     @required TypeChecker checkMap(),
     @required TypeChecker checkHashMap(),
+    @required TypeChecker checkGenerator(),
+    @required TypeChecker checkGeneratorForAnnotation(),
   }) {
     group('(Map)', () {
       test('should equal dart:core#Map', () {
@@ -72,24 +90,60 @@ void main() {
         expect(checkHashMap().isAssignableFromType(staticMap), isFalse);
       });
     });
+
+    group('(Generator)', () {
+      test('should equal Generator', () {
+        expect(checkGenerator().isExactlyType(staticGenerator), isTrue,
+            reason: '${checkGenerator()} != $staticGenerator');
+      });
+
+      test('should not be a super type of Generator', () {
+        expect(checkGenerator().isSuperTypeOf(staticGenerator), isFalse,
+            reason: '${checkGenerator()} is super of $staticGenerator');
+      });
+
+      test('should be a super type of GeneratorForAnnotation', () {
+        expect(checkGenerator().isSuperTypeOf(staticGeneratorForAnnotation),
+            isTrue,
+            reason:
+                '${checkGenerator()} is not super of $staticGeneratorForAnnotation');
+      });
+
+      test('should be assignable from GeneratorForAnnotation', () {
+        expect(
+            checkGenerator().isAssignableFromType(staticGeneratorForAnnotation),
+            isTrue,
+            reason:
+                '${checkGenerator()} is not assignable from $staticGeneratorForAnnotation');
+      });
+    });
   }
 
   group('TypeChecker.forRuntime', () {
     commonTests(
         checkMap: () => const TypeChecker.fromRuntime(Map),
-        checkHashMap: () => const TypeChecker.fromRuntime(HashMap));
+        checkHashMap: () => const TypeChecker.fromRuntime(HashMap),
+        checkGenerator: () => const TypeChecker.fromRuntime(Generator),
+        checkGeneratorForAnnotation: () =>
+            const TypeChecker.fromRuntime(GeneratorForAnnotation));
   });
 
   group('TypeChecker.forStatic', () {
     commonTests(
         checkMap: () => staticMapChecker,
-        checkHashMap: () => staticHashMapChecker);
+        checkHashMap: () => staticHashMapChecker,
+        checkGenerator: () => staticGeneratorChecker,
+        checkGeneratorForAnnotation: () => staticGeneratorForAnnotationChecker);
   });
 
   group('TypeChecker.fromUrl', () {
     commonTests(
         checkMap: () => const TypeChecker.fromUrl('dart:core#Map'),
         checkHashMap: () =>
-            const TypeChecker.fromUrl('dart:collection#HashMap'));
+            const TypeChecker.fromUrl('dart:collection#HashMap'),
+        checkGenerator: () => const TypeChecker.fromUrl(
+            'package:source_gen/src/generator.dart#Generator'),
+        checkGeneratorForAnnotation: () => const TypeChecker.fromUrl(
+            'package:source_gen/src/generator_for_annotation.dart#GeneratorForAnnotation'));
   });
 }

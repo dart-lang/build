@@ -34,6 +34,16 @@
   
   In Dart SDK `>=1.25.0` this can be relaxed as `part of` can refer to a path.
 
+* Added `findType`, an utility method for `LibraryElement#getType` that also
+  traverses `export` directives for publicly exported types. For example, to
+  find `Generator` from `package:source_gen/source_gen.dart`:
+  
+  ```dart
+  void example(LibraryElement pkgSourceGen) {
+    findType(pkgSourceGen, 'Generator');
+  }
+  ```
+
 ## 0.5.8
 
 * Add `formatOutput` optional parameter to the `GeneratorBuilder` constructor.
