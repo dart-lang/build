@@ -1,6 +1,6 @@
 ## 0.6.3
 
-- Added `resolveAsset`, which is similar to `resolveSource` but specified a
+- Added `resolveAsset`, which is similar to `resolveSource` but specifies a
   real asset that lives on the file system. For example, to resolve the main
   library of `package:collection`:
 
