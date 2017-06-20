@@ -1,8 +1,8 @@
 # build_test
 
-Testing utilities for users of [`package:build`][].
-
 <p align="center">
+  Testing utilities for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
+  <br>
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
   </a>
