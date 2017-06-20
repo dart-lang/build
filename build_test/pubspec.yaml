@@ -1,6 +1,6 @@
 name: build_test
-description: Testing utilities for users of package:build.
-version: 0.6.2
+description: Utilities for writing unit tests of Builders.
+version: 0.6.3-dev
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
 
