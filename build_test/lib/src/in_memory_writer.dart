@@ -6,10 +6,12 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 
+/// An implementation of [AssetWriter] that records outputs to [assets].
 abstract class RecordingAssetWriter implements AssetWriter {
   Map<AssetId, DatedValue> get assets;
 }
 
+/// An implementation of [AssetWriter] that writes outputs to memory.
 class InMemoryAssetWriter implements RecordingAssetWriter {
   @override
   final Map<AssetId, DatedValue> assets = {};

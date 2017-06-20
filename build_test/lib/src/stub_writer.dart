@@ -6,7 +6,10 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 
+/// A no-op implementation of [AssetWriter].
 class StubAssetWriter implements AssetWriter {
+  const StubAssetWriter();
+
   @override
   Future writeAsBytes(_, __) => new Future.value(null);
 

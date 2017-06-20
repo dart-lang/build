@@ -7,7 +7,10 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
+/// A no-op implementation of [AssetReader].
 class StubAssetReader implements AssetReader {
+  const StubAssetReader();
+
   @override
   FutureOr<bool> canRead(_) => null;
 

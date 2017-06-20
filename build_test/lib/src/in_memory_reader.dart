@@ -9,10 +9,14 @@ import 'package:glob/glob.dart';
 
 import 'in_memory_writer.dart';
 
+/// An implementation of [AssetReader] with primed in-memory assets.
 class InMemoryAssetReader implements AssetReader {
   final Map<AssetId, DatedValue> assets;
   final String rootPackage;
 
+  /// Create a new asset reader that contains [sourceAssets].
+  ///
+  /// May optionally define a [rootPackage], which is required for some APIs.
   InMemoryAssetReader({Map<AssetId, DatedValue> sourceAssets, this.rootPackage})
       : assets = sourceAssets ?? <AssetId, DatedValue>{};
 
