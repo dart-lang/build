@@ -7,7 +7,7 @@ import 'package:watcher/watcher.dart';
 
 /// A fake [DirectoryWatcher].
 ///
-/// Use the static [FakeWatcher#notifyPath] method to add events.
+/// Use the static [notifyWatchers] method to add simulated events.
 class FakeWatcher implements DirectoryWatcher {
   @override
   String get directory => path;
