@@ -88,8 +88,7 @@ class JsonSerializableGenerator
       // write fields
       fields.forEach((name, field) {
         //TODO - handle aliased imports
-        //TODO - write generic types. Now `List<int>` turns into `List`
-        buffer.writeln('  ${field.type.name} get $name;');
+        buffer.writeln('  ${field.type} get $name;');
       });
 
       // write toJson method
@@ -204,24 +203,31 @@ class JsonSerializableGenerator
       }
     }
 
-    if (_coreListChecker.isAssignableFromType(fieldType)) {
-      var indexVal = "i${depth}";
-
-      var substitute = '${expression}[$indexVal]';
+    var isList = false;
+    if (_coreIterableChecker.isAssignableFromType(fieldType)) {
+      if (_coreListChecker.isAssignableFromType(fieldType)) {
+        isList = true;
+      }
+      var substitute = "v$depth";
       var subFieldValue = _fieldToJsonMapValue(substitute,
           _getIterableGenericType(fieldType as InterfaceType), depth + 1);
 
-      // If we're dealing with `List<T>` where `T` must be serialized, then
-      // generate a value that does the equivalent of .map(...).toList(), but
-      // Does so efficiently by creating a known-length List.
-      //TODO(kevmoo) this might be overkill. I think .map on iterable returns
-      //  an efficient-length iterable, so .map(...).toList() might be fine. :-/
+      // In the case of trivial JSON types (int, String, etc), `subFieldValue`
+      // will be identical to `substitute` – so no explicit mapping is needed.
+      // If they are not equal, then we to write out the substitution.
       if (subFieldValue != substitute) {
         // TODO: the type could be imported from a library with a prefix!
-        return "${expression} == null ? null : "
-            "new List.generate(${expression}.length, "
-            "(int $indexVal) => $subFieldValue)";
+        expression = "${expression}?.map(($substitute) => $subFieldValue)";
+
+        // expression now represents an Iterable (even if it started as a List
+        // ...resetting `isList` to `false`.
+        isList = false;
       }
+    }
+
+    if (!isList && _coreIterableChecker.isAssignableFromType(fieldType)) {
+      // Then we need to add `?.toList()
+      expression += "?.toList()";
     }
 
     return expression;
@@ -252,6 +258,13 @@ class JsonSerializableGenerator
           _getIterableGenericType(searchType as InterfaceType);
 
       var itemVal = "v$depth";
+      var itemSubVal =
+          _writeAccessToVar(itemVal, iterableGenericType, depth: depth + 1);
+
+      // If `itemSubVal` is the same, then we don't need to do anything fancy
+      if (itemVal == itemSubVal) {
+        return varExpression;
+      }
 
       var output = "($varExpression as List)?.map(($itemVal) => "
           "${_writeAccessToVar(itemVal, iterableGenericType, depth: depth+1)}"
@@ -264,7 +277,7 @@ class JsonSerializableGenerator
       return output;
     }
 
-    if (!searchType.isDynamic) {
+    if (!searchType.isDynamic && !searchType.isObject) {
       return "$varExpression as $searchType";
     }
 

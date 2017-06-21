@@ -94,7 +94,7 @@ void main() {
           await _getClassForCodeString('ParentObjectWithDynamicChildren');
       var output = await _generator.generate(element, null);
 
-      expect(output, contains('(json[\'children\'] as List)?.map('));
+      expect(output, contains('children = json[\'children\'];'));
     });
 
     test('class with list of int is cast for strong mode', () async {

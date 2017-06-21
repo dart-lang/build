@@ -22,7 +22,7 @@ abstract class _$PersonSerializerMixin {
   String get middleName;
   String get lastName;
   DateTime get dateOfBirth;
-  List get orders;
+  List<Order> get orders;
   Map<String, dynamic> toJson() => <String, dynamic>{
         'firstName': firstName,
         'middleName': middleName,

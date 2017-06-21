@@ -4,6 +4,53 @@ part of source_gen.test.example;
 
 // **************************************************************************
 // Generator: JsonSerializableGenerator
+// Target: class ListGenericTests
+// **************************************************************************
+
+ListGenericTests _$ListGenericTestsFromJson(Map json) => new ListGenericTests()
+  ..iterable = json['iterable']
+  ..dynamicIterable = json['dynamicIterable']
+  ..objectIterable = json['objectIterable']
+  ..intIterable = (json['intIterable'] as List)?.map((v0) => v0 as int)
+  ..dateTimeIterable = (json['dateTimeIterable'] as List)
+      ?.map((v0) => v0 == null ? null : DateTime.parse(v0))
+  ..list = json['list']
+  ..dynamicList = json['dynamicList']
+  ..objectList = json['objectList']
+  ..intList = (json['intList'] as List)?.map((v0) => v0 as int)?.toList()
+  ..dateTimeList = (json['dateTimeList'] as List)
+      ?.map((v0) => v0 == null ? null : DateTime.parse(v0))
+      ?.toList();
+
+abstract class _$ListGenericTestsSerializerMixin {
+  Iterable<dynamic> get iterable;
+  Iterable<dynamic> get dynamicIterable;
+  Iterable<Object> get objectIterable;
+  Iterable<int> get intIterable;
+  Iterable<DateTime> get dateTimeIterable;
+  List<dynamic> get list;
+  List<dynamic> get dynamicList;
+  List<Object> get objectList;
+  List<int> get intList;
+  List<DateTime> get dateTimeList;
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'iterable': iterable?.toList(),
+        'dynamicIterable': dynamicIterable?.toList(),
+        'objectIterable': objectIterable?.toList(),
+        'intIterable': intIterable?.toList(),
+        'dateTimeIterable':
+            dateTimeIterable?.map((v0) => v0?.toIso8601String())?.toList(),
+        'list': list,
+        'dynamicList': dynamicList,
+        'objectList': objectList,
+        'intList': intList,
+        'dateTimeList':
+            dateTimeList?.map((v0) => v0?.toIso8601String())?.toList()
+      };
+}
+
+// **************************************************************************
+// Generator: JsonSerializableGenerator
 // Target: class Person
 // **************************************************************************
 
@@ -40,7 +87,7 @@ Order _$OrderFromJson(Map json) => new Order((json['items'] as List)
 abstract class _$OrderSerializerMixin {
   int get count;
   bool get isRushed;
-  UnmodifiableListView get items;
+  UnmodifiableListView<Item> get items;
   Map<String, dynamic> toJson() =>
       <String, dynamic>{'count': count, 'isRushed': isRushed, 'items': items};
 }
@@ -60,15 +107,12 @@ Item _$ItemFromJson(Map json) => new Item(json['price'] as int)
 abstract class _$ItemSerializerMixin {
   int get price;
   int get itemNumber;
-  List get saleDates;
-  List get rates;
+  List<DateTime> get saleDates;
+  List<int> get rates;
   Map<String, dynamic> toJson() => <String, dynamic>{
         'price': price,
         'itemNumber': itemNumber,
-        'saleDates': saleDates == null
-            ? null
-            : new List.generate(
-                saleDates.length, (int i0) => saleDates[i0]?.toIso8601String()),
+        'saleDates': saleDates?.map((v0) => v0?.toIso8601String())?.toList(),
         'rates': rates
       };
 }
