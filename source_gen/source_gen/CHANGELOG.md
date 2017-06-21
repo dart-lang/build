@@ -44,6 +44,36 @@
   }
   ```
 
+* Added `ConstantReader`, a high-level API for reading from constant (static)
+  values from Dart source code (usually represented by `DartObject` from the
+  `analyzer` package):
+  
+  ```dart
+  abstract class ConstantReader {
+    factory ConstantReader(DartObject object) => ...
+  
+    // Other methods and properties also exist.
+  
+    /// Reads[ field] from the constant as another constant value.
+    ConstantReader read(String field);
+  
+    /// Reads [field] from the constant as a boolean.
+    ///
+    /// If the resulting value is `null`, uses [defaultTo] if defined.
+    bool readBool(String field, {bool defaultTo()});
+  
+    /// Reads [field] from the constant as an int.
+    ///
+    /// If the resulting value is `null`, uses [defaultTo] if defined.
+    int readInt(String field, {int defaultTo()});
+  
+    /// Reads [field] from the constant as a string.
+    ///
+    /// If the resulting value is `null`, uses [defaultTo] if defined.
+    String readString(String field, {String defaultTo()});
+  }
+  ```
+
 ## 0.5.8
 
 * Add `formatOutput` optional parameter to the `GeneratorBuilder` constructor.
