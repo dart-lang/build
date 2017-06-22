@@ -40,13 +40,17 @@
     sdk: '>=1.25.0 <2.0.0'
   ```
 
-* Added `findType`, an utility method for `LibraryElement#getType` that also
-  traverses `export` directives for publicly exported types. For example, to
-  find `Generator` from `package:source_gen/source_gen.dart`:
+* Added `LibraryReader`, a utility class for `LibraryElement` that exposes
+  high-level APIs, including `findType`, which traverses `export` directives
+  for publicly exported types. For example, to find `Generator` from
+  `package:source_gen/source_gen.dart`:
   
   ```dart
   void example(LibraryElement pkgSourceGen) {
-    findType(pkgSourceGen, 'Generator');
+    var library = new LibraryReader(pkgSourceGen);
+  
+    // Instead of pkgSourceGen.getType('Generator'), which is null.
+    library.findType('Generator');
   }
   ```
 

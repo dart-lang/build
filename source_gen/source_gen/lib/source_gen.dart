@@ -6,7 +6,7 @@ library source_gen;
 
 export 'src/builder.dart';
 export 'src/constants.dart' show ConstantReader;
-export 'src/find_type.dart' show findType;
 export 'src/generator.dart';
 export 'src/generator_for_annotation.dart';
+export 'src/library.dart' show LibraryReader;
 export 'src/type_checker.dart' show TypeChecker;

@@ -36,11 +36,12 @@ void main() {
     staticHashMap = collection.getType('HashMap').type;
     staticHashMapChecker = new TypeChecker.fromStatic(staticHashMap);
 
-    final sourceGen = resolver.getLibraryByName('source_gen');
-    staticGenerator = findType(sourceGen, 'Generator').type;
+    final sourceGen =
+        new LibraryReader(resolver.getLibraryByName('source_gen'));
+    staticGenerator = sourceGen.findType('Generator').type;
     staticGeneratorChecker = new TypeChecker.fromStatic(staticGenerator);
     staticGeneratorForAnnotation =
-        findType(sourceGen, 'GeneratorForAnnotation').type;
+        sourceGen.findType('GeneratorForAnnotation').type;
     staticGeneratorForAnnotationChecker =
         new TypeChecker.fromStatic(staticGeneratorForAnnotation);
   });
