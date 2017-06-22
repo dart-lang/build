@@ -76,6 +76,51 @@ String suggestLibraryName(AssetId source) {
   return '${source.package}.${parts.join('.')}';
 }
 
+/// Returns a URL representing [element].
+String urlOfElement(Element element) => element.kind == ElementKind.DYNAMIC
+    ? 'dart:core#dynmaic'
+    : normalizeUrl(element.source.uri)
+        .replace(fragment: element.name)
+        .toString();
+
+Uri normalizeUrl(Uri url) {
+  switch (url.scheme) {
+    case 'dart':
+      return normalizeDartUrl(url);
+    case 'package':
+      return packageToAssetUrl(url);
+    default:
+      return url;
+  }
+}
+
+/// Make `dart:`-type URLs look like a user-knowable path.
+///
+/// Some internal dart: URLs are something like `dart:core/map.dart`.
+///
+/// This isn't a user-knowable path, so we strip out extra path segments
+/// and only expose `dart:core`.
+Uri normalizeDartUrl(Uri url) => url.pathSegments.isNotEmpty
+    ? url.replace(pathSegments: url.pathSegments.take(1))
+    : url;
+
+/// Returns a `package:` URL into a `asset:` URL.
+///
+/// This makes internal comparison logic much easier, but still allows users
+/// to define assets in terms of `package:`, which is something that makes more
+/// sense to most.
+///
+/// For example this transforms `package:source_gen/source_gen.dart` into:
+/// `asset:source_gen/lib/source_gen.dart`.
+Uri packageToAssetUrl(Uri url) => url.scheme == 'package'
+    ? url.replace(
+        scheme: 'asset',
+        pathSegments: <String>[]
+          ..add(url.pathSegments.first)
+          ..add('lib')
+          ..addAll(url.pathSegments.skip(1)))
+    : url;
+
 /// Returns all of the declarations in [unit], including [unit] as the first
 /// item.
 Iterable<Element> getElementsFromLibraryElement(LibraryElement unit) sync* {

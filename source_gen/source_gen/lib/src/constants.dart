@@ -5,6 +5,7 @@
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 
+import 'revive.dart';
 import 'type_checker.dart';
 
 /// Throws an exception if [root] or its super(s) does not contain [name].
@@ -49,6 +50,9 @@ DartObject _getFieldRecursive(DartObject object, String field) {
 abstract class ConstantReader {
   factory ConstantReader(DartObject object) =>
       _isNull(object) ? const _NullConstant() : new _Constant(object);
+
+  /// Constant as any supported literal value.
+  dynamic get anyValue;
 
   /// Returns whether this constant represents a `bool` literal.
   bool get isBool;
@@ -102,6 +106,13 @@ abstract class ConstantReader {
 
   /// Reads[ field] from the constant as another constant value.
   ConstantReader read(String field);
+
+  /// Returns as a revived meta class.
+  ///
+  /// This is appropriate for cases where the underlying object is not a literal
+  /// and code generators will want to figure out how to "recreate" a constant
+  /// at runtime.
+  Revivable revive();
 }
 
 dynamic _throw(String expected, [dynamic object]) {
@@ -111,6 +122,9 @@ dynamic _throw(String expected, [dynamic object]) {
 /// Implements a [ConstantReader] representing a `null` value.
 class _NullConstant implements ConstantReader {
   const _NullConstant();
+
+  @override
+  dynamic get anyValue => _throw('dynamic');
 
   @override
   bool get boolValue => _throw('bool');
@@ -150,6 +164,9 @@ class _NullConstant implements ConstantReader {
 
   @override
   ConstantReader read(_) => throw new UnsupportedError('Null');
+
+  @override
+  Revivable revive() => throw new UnsupportedError('Null');
 }
 
 /// Default implementation of [ConstantReader].
@@ -157,6 +174,14 @@ class _Constant implements ConstantReader {
   final DartObject _object;
 
   const _Constant(this._object);
+
+  @override
+  dynamic get anyValue =>
+      _object.toBoolValue() ??
+      _object.toIntValue() ??
+      _object.toStringValue() ??
+      _object.toListValue() ??
+      _object.toMapValue();
 
   @override
   bool get boolValue =>
@@ -207,6 +232,9 @@ class _Constant implements ConstantReader {
     }
     return constant;
   }
+
+  @override
+  Revivable revive() => reviveInstance(_object);
 
   @override
   String toString() => 'ConstantReader ${_object}';
