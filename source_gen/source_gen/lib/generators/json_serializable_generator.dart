@@ -310,8 +310,9 @@ DartType _getImplementationType(DartType type, TypeChecker checker) {
   if (checker.isExactlyType(type)) return type;
 
   if (type is InterfaceType) {
-    var tests =
-        type.interfaces.map((type) => _getImplementationType(type, checker));
+    var tests = [type.interfaces, type.mixins]
+        .expand((e) => e)
+        .map((type) => _getImplementationType(type, checker));
     var match = _firstNotNull(tests);
 
     if (match != null) return match;
