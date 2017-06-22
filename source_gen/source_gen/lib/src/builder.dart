@@ -39,12 +39,24 @@ class GeneratorBuilder extends Builder {
   /// Whether to emit a standalone (non-`part`) file in this builder.
   final bool isStandalone;
 
+  final bool _requireLibraryDirective;
+
   /// Wrap [generators] to form a [Builder]-compatible API.
+  ///
+  /// May set [requireLibraryDirective] to `false` in order to opt-in to
+  /// supporting a `1.25.0` feature of `part of` being usable without an
+  /// explicit `library` directive. Developers should restrict their `pubspec`
+  /// accordingly:
+  /// ```yaml
+  /// sdk: '>=1.25.0 <2.0.0'
+  /// ```
   GeneratorBuilder(this.generators,
       {OutputFormatter formatOutput,
       this.generatedExtension: '.g.dart',
-      this.isStandalone: false})
-      : formatOutput = formatOutput ?? _formatter.format {
+      this.isStandalone: false,
+      bool requireLibraryDirective: true})
+      : formatOutput = formatOutput ?? _formatter.format,
+        _requireLibraryDirective = requireLibraryDirective {
     if (generatedExtension == null) {
       throw new ArgumentError.notNull('generatedExtension');
     }
@@ -86,7 +98,11 @@ class GeneratorBuilder extends Builder {
 
     if (!isStandalone) {
       var asset = buildStep.inputId;
-      var name = nameOfPartial(library, asset);
+      var name = nameOfPartial(
+        library,
+        asset,
+        allowUnnamedPartials: !_requireLibraryDirective,
+      );
       if (name == null) {
         var suggest = suggestLibraryName(asset);
         throw new InvalidGenerationSourceError(

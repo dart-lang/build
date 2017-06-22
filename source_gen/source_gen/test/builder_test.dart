@@ -75,6 +75,14 @@ void main() {
         throwsA(const isInstanceOf<InvalidGenerationSourceError>()));
   });
 
+  test('Allow no "library" when requireLibraryDirective=false', () async {
+    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
+    var builder = new GeneratorBuilder([const CommentGenerator()],
+        requireLibraryDirective: false);
+    await testBuilder(builder, sources,
+        outputs: {'$pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
+  });
+
   test(
       'Simple Generator test for library',
       () => _generateTest(
@@ -305,4 +313,16 @@ part of test_lib;
 // **************************************************************************
 
 // Code for "class Customer"
+''';
+
+const _testGenNoLibrary = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'test_lib.dart';
+
+// **************************************************************************
+// Generator: CommentGenerator
+// Target: class A
+// **************************************************************************
+
+// Code for "class A"
 ''';

@@ -33,6 +33,12 @@
   ```
   
   In Dart SDK `>=1.25.0` this can be relaxed as `part of` can refer to a path.
+  To opt-in, `GeneratorBuilder` now has a new flag, `requireLibraryDirective`.
+  Set it to `false`, and also set your `sdk` constraint appropriately:
+  
+  ```yaml
+    sdk: '>=1.25.0 <2.0.0'
+  ```
 
 * Added `findType`, an utility method for `LibraryElement#getType` that also
   traverses `export` directives for publicly exported types. For example, to

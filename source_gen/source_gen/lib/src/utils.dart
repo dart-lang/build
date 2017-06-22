@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/standard_resolution_map.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
 
 String friendlyNameForElement(Element element) {
   var friendlyName = element.displayName;
@@ -56,7 +57,8 @@ String nameOfPartial(
     return element.name;
   }
   if (allowUnnamedPartials) {
-    return '\'package:${source.package}/${source.path}\'';
+    var sourceUrl = p.basename(source.uri.toString());
+    return '\'$sourceUrl\'';
   }
   return null;
 }
