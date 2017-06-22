@@ -37,6 +37,7 @@ void main() {
         @Super()    // [5]
         @aList      // [6]
         @aMap       // [7]
+        @deprecated // [8]
         class Example {
           final String aString;
           final int aInt;
@@ -119,6 +120,12 @@ void main() {
     test('should fail reading a missing field', () {
       final $super = constants[5];
       expect(() => $super.read('foo'), throwsFormatException);
+    });
+
+    test('should compare using TypeChecker', () {
+      final $deprecated = constants[8];
+      final check = new TypeChecker.fromRuntime(Deprecated);
+      expect($deprecated.instanceOf(check), isTrue, reason: '$deprecated');
     });
   });
 }

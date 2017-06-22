@@ -5,6 +5,8 @@
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 
+import 'type_checker.dart';
+
 /// Throws an exception if [root] or its super(s) does not contain [name].
 void _assertHasField(ClassElement root, String name) {
   var element = root;
@@ -95,6 +97,9 @@ abstract class ConstantReader {
   /// Returns whether this constant represents `null`.
   bool get isNull;
 
+  /// Returns whether this constant matches [checker].
+  bool instanceOf(TypeChecker checker);
+
   /// Reads[ field] from the constant as another constant value.
   ConstantReader read(String field);
 }
@@ -141,6 +146,9 @@ class _NullConstant implements ConstantReader {
   bool get isString => false;
 
   @override
+  bool instanceOf(TypeChecker checker) => false;
+
+  @override
   ConstantReader read(_) => throw new UnsupportedError('Null');
 }
 
@@ -176,16 +184,20 @@ class _Constant implements ConstantReader {
   bool get isInt => _object.toIntValue() != null;
 
   @override
-  bool get isList => _object?.toListValue() != null;
+  bool get isList => _object.toListValue() != null;
 
   @override
   bool get isNull => _isNull(_object);
 
   @override
-  bool get isMap => _object?.toMapValue() != null;
+  bool get isMap => _object.toMapValue() != null;
 
   @override
   bool get isString => _object.toStringValue() != null;
+
+  @override
+  bool instanceOf(TypeChecker checker) =>
+      checker.isAssignableFromType(_object.type);
 
   @override
   ConstantReader read(String field) {
