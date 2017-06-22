@@ -3,6 +3,25 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/constant/value.dart';
+import 'package:analyzer/dart/element/element.dart';
+
+/// Throws an exception if [root] or its super(s) does not contain [name].
+void _assertHasField(ClassElement root, String name) {
+  var element = root;
+  while (element != null) {
+    final field = element.getField(name);
+    if (field != null) {
+      return;
+    }
+    element = element.supertype?.element;
+  }
+  final allFields = root.fields.toSet();
+  root.allSupertypes.forEach((t) => allFields.addAll(t.element.fields));
+  throw new FormatException(
+    'Class ${root.name} does not have field "$name".',
+    'Fields: $allFields',
+  );
+}
 
 /// Returns whether or not [object] is or represents a `null` value.
 bool _isNull(DartObject object) => object?.isNull != false;
@@ -43,6 +62,26 @@ abstract class ConstantReader {
   /// Throws [FormatException] if [isInt] is `false`.
   int get intValue;
 
+  /// Returns whether this constant represents a `List` literal.
+  ///
+  /// If `true`, [listValue] will return a `List` (not throw).
+  bool get isList;
+
+  /// Returns this constant as a `List` value.
+  ///
+  /// Throws [FormatException] if [isList] is `false`.
+  List<DartObject> get listValue;
+
+  /// Returns whether this constant represents a `Map` literal.
+  ///
+  /// If `true`, [listValue] will return a `Map` (not throw).
+  bool get isMap;
+
+  /// Returns this constant as a `Map` value.
+  ///
+  /// Throws [FormatException] if [isMap] is `false`.
+  Map<DartObject, DartObject> get mapValue;
+
   /// Returns whether this constant represents a `String` literal.
   ///
   /// If `true`, [stringValue] will return a `String` (not throw).
@@ -60,18 +99,28 @@ abstract class ConstantReader {
   ConstantReader read(String field);
 }
 
+dynamic _throw(String expected, [dynamic object]) {
+  throw new FormatException('Not a $expected', '$object');
+}
+
 /// Implements a [ConstantReader] representing a `null` value.
 class _NullConstant implements ConstantReader {
   const _NullConstant();
 
   @override
-  bool get boolValue => throw new FormatException('Not a bool', 'null');
+  bool get boolValue => _throw('bool');
 
   @override
-  int get intValue => throw new FormatException('Not an int', 'null');
+  int get intValue => _throw('int');
 
   @override
-  String get stringValue => throw new FormatException('Not a String', 'null');
+  String get stringValue => _throw('String');
+
+  @override
+  List<DartObject> get listValue => _throw('List');
+
+  @override
+  Map<DartObject, DartObject> get mapValue => _throw('Map');
 
   @override
   bool get isBool => false;
@@ -80,13 +129,19 @@ class _NullConstant implements ConstantReader {
   bool get isInt => false;
 
   @override
+  bool get isList => false;
+
+  @override
+  bool get isMap => false;
+
+  @override
   bool get isNull => true;
 
   @override
   bool get isString => false;
 
   @override
-  ConstantReader read(_) => this;
+  ConstantReader read(_) => throw new UnsupportedError('Null');
 }
 
 /// Default implementation of [ConstantReader].
@@ -96,19 +151,23 @@ class _Constant implements ConstantReader {
   const _Constant(this._object);
 
   @override
-  bool get boolValue => isBool
-      ? _object.toBoolValue()
-      : throw new FormatException('Not a bool', _object);
+  bool get boolValue =>
+      isBool ? _object.toBoolValue() : _throw('bool', _object);
 
   @override
-  int get intValue => isInt
-      ? _object.toIntValue()
-      : throw new FormatException('Not an int', _object);
+  int get intValue => isInt ? _object.toIntValue() : _throw('int', _object);
 
   @override
-  String get stringValue => isString
-      ? _object.toStringValue()
-      : throw new FormatException('Not a String', _object);
+  String get stringValue =>
+      isString ? _object.toStringValue() : _throw('String', _object);
+
+  @override
+  List<DartObject> get listValue =>
+      isList ? _object.toListValue() : _throw('List', _object);
+
+  @override
+  Map<DartObject, DartObject> get mapValue =>
+      isMap ? _object.toMapValue() : _throw('Map', _object);
 
   @override
   bool get isBool => _object.toBoolValue() != null;
@@ -117,12 +176,26 @@ class _Constant implements ConstantReader {
   bool get isInt => _object.toIntValue() != null;
 
   @override
+  bool get isList => _object?.toListValue() != null;
+
+  @override
   bool get isNull => _isNull(_object);
+
+  @override
+  bool get isMap => _object?.toMapValue() != null;
 
   @override
   bool get isString => _object.toStringValue() != null;
 
   @override
-  ConstantReader read(String field) =>
-      new ConstantReader(_getFieldRecursive(_object, field));
+  ConstantReader read(String field) {
+    final constant = new ConstantReader(_getFieldRecursive(_object, field));
+    if (constant.isNull) {
+      _assertHasField(_object?.type?.element, field);
+    }
+    return constant;
+  }
+
+  @override
+  String toString() => 'ConstantReader ${_object}';
 }

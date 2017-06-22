@@ -2,7 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:build_test/build_test.dart';
+import 'package:collection/collection.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
@@ -18,6 +20,8 @@ void main() {
         const aInt = 1234;
         const aBool = true;
         const aNull = null;
+        const aList = const [1, 2, 3];
+        const aMap = const {1: 'A', 2: 'B'};
         
         @aString    // [0]
         @aInt       // [1]
@@ -28,9 +32,11 @@ void main() {
           aInt: aInt,
           aBool: aBool,
           aNull: aNull,
-          nested: const Exampe(),
+          nested: const Example(),
         )
         @Super()    // [5]
+        @aList      // [6]
+        @aMap       // [7]
         class Example {
           final String aString;
           final int aInt;
@@ -76,9 +82,9 @@ void main() {
       expect(constant.read('aString').stringValue, 'Hello');
       expect(constant.read('aInt').intValue, 1234);
       expect(constant.read('aBool').boolValue, true);
-      expect(constant.read('aNull').isNull, isTrue);
 
       final nested = constant.read('nested');
+      expect(nested.isNull, isFalse, reason: '$nested');
       expect(nested.read('aString').isNull, isTrue);
       expect(nested.read('aInt').isNull, isTrue);
       expect(nested.read('aBool').isNull, isTrue);
@@ -87,6 +93,32 @@ void main() {
     test('should read from a super object', () {
       final constant = constants[5];
       expect(constant.read('aString').stringValue, 'Super Hello');
+    });
+
+    test('should read a list', () {
+      expect(constants[6].isList, isTrue, reason: '${constants[6]}');
+      expect(constants[6].listValue.map((c) => new ConstantReader(c).intValue),
+          [1, 2, 3]);
+    });
+
+    test('should read a map', () {
+      expect(constants[7].isMap, isTrue, reason: '${constants[7]}');
+      expect(
+          mapMap<DartObject, DartObject, int, String>(constants[7].mapValue,
+              key: (k, _) => new ConstantReader(k).intValue,
+              value: (_, v) => new ConstantReader(v).stringValue),
+          {1: 'A', 2: 'B'});
+    });
+
+    test('should fail reading from `null`', () {
+      final $null = constants[3];
+      expect($null.isNull, isTrue, reason: '${$null}');
+      expect(() => $null.read('foo'), throwsUnsupportedError);
+    });
+
+    test('should fail reading a missing field', () {
+      final $super = constants[5];
+      expect(() => $super.read('foo'), throwsFormatException);
     });
   });
 }
