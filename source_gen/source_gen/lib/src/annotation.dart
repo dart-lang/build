@@ -5,17 +5,16 @@
 import 'dart:mirrors';
 
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
-import 'package:analyzer/src/generated/constant.dart';
-import 'package:analyzer/src/generated/utilities_dart.dart';
 
 import 'constants.dart';
 import 'type_checker.dart';
 
 dynamic instantiateAnnotation(ElementAnnotation annotation) {
-  var annotationObject = annotation.constantValue;
+  var annotationObject = annotation.computeConstantValue();
   try {
     return _getValue(annotation.constantValue);
   } on CannotCreateFromAnnotationException catch (e) {
@@ -131,57 +130,23 @@ class CannotCreateFromAnnotationException implements Exception {
   }
 }
 
-final _cannotCreate = new Object();
+dynamic _createFromConstructor(ConstructorElement ctor, DartObject obj) {
+  var reader = new ConstantReader(obj);
+  var revivable = reader.revive();
 
-dynamic _createFromConstructor(
-    ConstructorElementImpl ctor, DartObjectImpl obj) {
-  var positionalArgs = [];
+  var positionalArgs =
+      revivable.positionalArguments.map((pa) => _getValue(pa)).toList();
+
   var namedArgs = <Symbol, dynamic>{};
-  for (var p in ctor.parameters) {
-    var paramName = p.name;
-    String fieldName;
-    if (p is FieldFormalParameterElement) {
-      fieldName = p.name;
-    } else {
-      // Trying to find the relationship between the ctor argument name and the
-      // field assigned in the object. Then we can take the field value and
-      // set it as the argument value
-
-      var initializer = ctor.constantInitializers.singleWhere((ci) {
-        var expression = (ci as ConstructorFieldInitializer).expression;
-        if (expression is SimpleIdentifier) {
-          return expression.name == paramName;
-        }
-
-        if (expression is NullLiteral) {
-          return false;
-        }
-
-        throw new UnsupportedError(
-            "${ctor.enclosingElement.type} is too complex. Initializers of "
-            "type '${expression.runtimeType}' are not supported.");
-      }) as ConstructorFieldInitializer;
-
-      // get the field value now
-      fieldName = initializer.fieldName.name;
-    }
-
-    var fieldObjectImpl = obj.fields[fieldName];
-    if (p.parameterKind == ParameterKind.NAMED) {
-      namedArgs[new Symbol(p.name)] = _getValue(fieldObjectImpl);
-    } else {
-      positionalArgs.add(_getValue(fieldObjectImpl));
-    }
-  }
-
-  var ctorName = new Symbol(ctor.name ?? '');
+  revivable.namedArguments.forEach((k, v) {
+    namedArgs[new Symbol(k)] = _getValue(v);
+  });
 
   var declarationMirror =
       _getDeclarationMirrorFromType(ctor.enclosingElement.type) as ClassMirror;
 
-  // figure out which ctor was used!
-  var instanceMirror =
-      declarationMirror.newInstance(ctorName, positionalArgs, namedArgs);
+  var instanceMirror = declarationMirror.newInstance(
+      new Symbol(revivable.accessor), positionalArgs, namedArgs);
   return instanceMirror.reflectee;
 }
 
