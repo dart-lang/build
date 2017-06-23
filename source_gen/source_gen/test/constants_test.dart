@@ -68,24 +68,31 @@ void main() {
     test('should read a String', () {
       expect(constants[0].isString, isTrue);
       expect(constants[0].stringValue, 'Hello');
+      expect(constants[0].anyValue, 'Hello');
     });
 
     test('should read an Int', () {
       expect(constants[1].isInt, isTrue);
       expect(constants[1].intValue, 1234);
+      expect(constants[1].anyValue, 1234);
     });
 
     test('should read a Bool', () {
       expect(constants[2].isBool, isTrue);
-      expect(constants[2].boolValue, true);
+      expect(constants[2].boolValue, isTrue);
+      expect(constants[2].anyValue, isTrue);
     });
 
     test('should read a Null', () {
       expect(constants[3].isNull, isTrue);
+      expect(constants[3].anyValue, isNull);
     });
 
     test('should read an arbitrary object', () {
       final constant = constants[4];
+
+      expect(() => constant.anyValue, throwsFormatException);
+
       expect(constant.read('aString').stringValue, 'Hello');
       expect(constant.read('aInt').intValue, 1234);
       expect(constant.read('aBool').boolValue, true);
@@ -106,6 +113,7 @@ void main() {
       expect(constants[6].isList, isTrue, reason: '${constants[6]}');
       expect(constants[6].listValue.map((c) => new ConstantReader(c).intValue),
           [1, 2, 3]);
+      expect(() => constants[6].anyValue, throwsFormatException);
     });
 
     test('should read a map', () {
@@ -115,6 +123,7 @@ void main() {
               key: (k, _) => new ConstantReader(k).intValue,
               value: (_, v) => new ConstantReader(v).stringValue),
           {1: 'A', 2: 'B'});
+      expect(() => constants[7].anyValue, throwsFormatException);
     });
 
     test('should read a double', () {
@@ -132,7 +141,7 @@ void main() {
     test('should read a Type', () {
       expect(constants[11].isType, isTrue);
       expect(constants[11].typeValue.name, 'DateTime');
-      expect(constants[11].anyValue.toString(), 'DateTime');
+      expect(() => constants[11].anyValue, throwsFormatException);
     });
 
     test('should fail reading from `null`', () {

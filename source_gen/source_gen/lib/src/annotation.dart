@@ -51,28 +51,13 @@ dynamic instantiateAnnotation(ElementAnnotation annotation) {
 dynamic _getValue(DartObject object) {
   var reader = new ConstantReader(object);
 
-  if (reader.isNull) {
-    return null;
-  }
-
-  if (reader.isBool) {
-    return reader.boolValue;
-  }
-
-  if (reader.isInt) {
-    return reader.intValue;
-  }
-
-  if (reader.isString) {
-    return reader.stringValue;
-  }
-
-  if (reader.isDouble) {
-    return reader.doubleValue;
-  }
-
-  if (reader.isSymbol) {
-    return reader.symbolValue;
+  if (reader.isNull ||
+      reader.isBool ||
+      reader.isInt ||
+      reader.isString ||
+      reader.isDouble ||
+      reader.isSymbol) {
+    return reader.anyValue;
   }
 
   if (reader.isType) {

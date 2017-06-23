@@ -53,6 +53,10 @@ abstract class ConstantReader {
       _isNull(object) ? const _NullConstant() : new _Constant(object);
 
   /// Constant as any supported literal value.
+  ///
+  /// Throws [FormatException] if a valid literal value cannot be returned. This
+  /// is the case if the constant is not a literal or if the literal value
+  /// is represented at least partially with [DartObject] instances.
   dynamic get anyValue;
 
   /// Returns whether this constant represents a `bool` literal.
@@ -76,6 +80,9 @@ abstract class ConstantReader {
 
   /// Returns this constant as a `List` value.
   ///
+  /// Note: the list values are instances of [DartObject] which represent the
+  /// original values.
+  ///
   /// Throws [FormatException] if [isList] is `false`.
   List<DartObject> get listValue;
 
@@ -85,6 +92,9 @@ abstract class ConstantReader {
   bool get isMap;
 
   /// Returns this constant as a `Map` value.
+  ///
+  /// Note: the map keys and values are instances of [DartObject] which
+  /// represent the original values.
   ///
   /// Throws [FormatException] if [isMap] is `false`.
   Map<DartObject, DartObject> get mapValue;
@@ -146,15 +156,12 @@ abstract class ConstantReader {
   Revivable revive();
 }
 
-dynamic _throw(String expected, [dynamic object]) => throw new FormatException(
-    'Not an instance of $expected.', object == null ? null : '$object');
-
 /// Implements a [ConstantReader] representing a `null` value.
 class _NullConstant implements ConstantReader {
   const _NullConstant();
 
   @override
-  dynamic get anyValue => _throw('dynamic');
+  dynamic get anyValue => null;
 
   @override
   bool get boolValue => _throw('bool');
@@ -215,6 +222,9 @@ class _NullConstant implements ConstantReader {
 
   @override
   Revivable revive() => throw new UnsupportedError('Null');
+
+  dynamic _throw(String expected) =>
+      throw new FormatException('Not an instance of $expected.');
 }
 
 /// Default implementation of [ConstantReader].
@@ -230,28 +240,25 @@ class _Constant implements ConstantReader {
       _object.toStringValue() ??
       _object.toDoubleValue() ??
       (isSymbol ? this.symbolValue : null) ??
-      _object.toTypeValue() ??
-      _object.toListValue() ??
-      _object.toMapValue();
+      _throw('bool, int, double, String or Symbol');
 
   @override
-  bool get boolValue =>
-      isBool ? _object.toBoolValue() : _throw('bool', _object);
+  bool get boolValue => isBool ? _object.toBoolValue() : _throw('bool');
 
   @override
-  int get intValue => isInt ? _object.toIntValue() : _throw('int', _object);
+  int get intValue => isInt ? _object.toIntValue() : _throw('int');
 
   @override
   String get stringValue =>
-      isString ? _object.toStringValue() : _throw('String', _object);
+      isString ? _object.toStringValue() : _throw('String');
 
   @override
   List<DartObject> get listValue =>
-      isList ? _object.toListValue() : _throw('List', _object);
+      isList ? _object.toListValue() : _throw('List');
 
   @override
   Map<DartObject, DartObject> get mapValue =>
-      isMap ? _object.toMapValue() : _throw('Map', _object);
+      isMap ? _object.toMapValue() : _throw('Map');
 
   @override
   bool get isBool => _object.toBoolValue() != null;
@@ -276,22 +283,20 @@ class _Constant implements ConstantReader {
 
   @override
   double get doubleValue =>
-      isDouble ? _object.toDoubleValue() : _throw('double', _object);
+      isDouble ? _object.toDoubleValue() : _throw('double');
 
   @override
   bool get isSymbol => _object.toSymbolValue() != null;
 
   @override
-  Symbol get symbolValue => isSymbol
-      ? new Symbol(_object.toSymbolValue())
-      : _throw('Symbol', _object);
+  Symbol get symbolValue =>
+      isSymbol ? new Symbol(_object.toSymbolValue()) : _throw('Symbol');
 
   @override
   bool get isType => _object.toTypeValue() != null;
 
   @override
-  DartType get typeValue =>
-      isType ? _object.toTypeValue() : _throw("Type", _object);
+  DartType get typeValue => isType ? _object.toTypeValue() : _throw("Type");
 
   @override
   bool instanceOf(TypeChecker checker) =>
@@ -311,4 +316,7 @@ class _Constant implements ConstantReader {
 
   @override
   String toString() => 'ConstantReader ${_object}';
+
+  dynamic _throw(String expected) =>
+      throw new FormatException('Not an instance of $expected.', _object);
 }
