@@ -22,6 +22,9 @@ void main() {
         const aNull = null;
         const aList = const [1, 2, 3];
         const aMap = const {1: 'A', 2: 'B'};
+        const aDouble = 1.23;
+        const aSymbol = #shanna;
+        const aType = DateTime;
         
         @aString    // [0]
         @aInt       // [1]
@@ -38,6 +41,9 @@ void main() {
         @aList      // [6]
         @aMap       // [7]
         @deprecated // [8]
+        @aDouble    // [9]
+        @aSymbol    // [10]
+        @aType      // [11]
         class Example {
           final String aString;
           final int aInt;
@@ -109,6 +115,24 @@ void main() {
               key: (k, _) => new ConstantReader(k).intValue,
               value: (_, v) => new ConstantReader(v).stringValue),
           {1: 'A', 2: 'B'});
+    });
+
+    test('should read a double', () {
+      expect(constants[9].isDouble, isTrue);
+      expect(constants[9].doubleValue, 1.23);
+      expect(constants[9].anyValue, 1.23);
+    });
+
+    test('should read a Symbol', () {
+      expect(constants[10].isSymbol, isTrue);
+      expect(constants[10].symbolValue, #shanna);
+      expect(constants[10].anyValue, #shanna);
+    });
+
+    test('should read a Type', () {
+      expect(constants[11].isType, isTrue);
+      expect(constants[11].typeValue.name, 'DateTime');
+      expect(constants[11].anyValue.toString(), 'DateTime');
     });
 
     test('should fail reading from `null`', () {

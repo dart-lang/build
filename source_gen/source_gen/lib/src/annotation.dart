@@ -2,9 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library source_gen.annotation;
-
-import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:analyzer/dart/ast/ast.dart';
@@ -12,14 +9,15 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/generated/constant.dart';
-import 'package:analyzer/src/generated/resolver.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
-import 'package:path/path.dart' as p;
+
+import 'constants.dart';
+import 'type_checker.dart';
 
 dynamic instantiateAnnotation(ElementAnnotation annotation) {
   var annotationObject = annotation.constantValue;
   try {
-    return _getValue(annotationObject, annotation.element.context.typeProvider);
+    return _getValue(annotation.constantValue);
   } on CannotCreateFromAnnotationException catch (e) {
     if (e.innerException != null) {
       // If there was a issue creating a nested object, there's not much we
@@ -51,33 +49,35 @@ dynamic instantiateAnnotation(ElementAnnotation annotation) {
       "${valueDeclaration.runtimeType}.");
 }
 
-dynamic _getValue(DartObject object, TypeProvider typeProvider) {
-  if (object.isNull) {
+dynamic _getValue(DartObject object) {
+  var reader = new ConstantReader(object);
+
+  if (reader.isNull) {
     return null;
   }
 
-  if (object.type == typeProvider.boolType) {
-    return object.toBoolValue();
+  if (reader.isBool) {
+    return reader.boolValue;
   }
 
-  if (object.type == typeProvider.intType) {
-    return object.toIntValue();
+  if (reader.isInt) {
+    return reader.intValue;
   }
 
-  if (object.type == typeProvider.stringType) {
-    return object.toStringValue();
+  if (reader.isString) {
+    return reader.stringValue;
   }
 
-  if (object.type == typeProvider.doubleType) {
-    return object.toDoubleValue();
+  if (reader.isDouble) {
+    return reader.doubleValue;
   }
 
-  if (object.type == typeProvider.symbolType) {
-    return new Symbol(object.toSymbolValue());
+  if (reader.isSymbol) {
+    return reader.symbolValue;
   }
 
-  if (object.type == typeProvider.typeType) {
-    var typeData = object.toTypeValue();
+  if (reader.isType) {
+    var typeData = reader.typeValue;
 
     if (typeData is InterfaceType) {
       var declarationMirror =
@@ -91,20 +91,17 @@ dynamic _getValue(DartObject object, TypeProvider typeProvider) {
   }
 
   try {
-    var listValue = object.toListValue();
-    if (listValue != null) {
-      return listValue
-          .map((DartObject element) => _getValue(element, typeProvider))
-          .toList();
-    }
+    if (reader.isList) {
+      var listValue = reader.listValue;
 
-    var mapValue = object.toMapValue();
-    if (mapValue != null) {
+      return listValue.map((DartObject element) => _getValue(element)).toList();
+    } else if (reader.isMap) {
+      var mapValue = reader.mapValue;
       var result = {};
       mapValue.forEach((DartObject key, DartObject value) {
-        dynamic mappedKey = _getValue(key, typeProvider);
+        dynamic mappedKey = _getValue(key);
         if (mappedKey != null) {
-          result[mappedKey] = _getValue(value, typeProvider);
+          result[mappedKey] = _getValue(value);
         }
       });
       return result;
@@ -169,13 +166,11 @@ dynamic _createFromConstructor(
       fieldName = initializer.fieldName.name;
     }
 
-    var typeProvider = ctor.context.typeProvider;
-
     var fieldObjectImpl = obj.fields[fieldName];
     if (p.parameterKind == ParameterKind.NAMED) {
-      namedArgs[new Symbol(p.name)] = _getValue(fieldObjectImpl, typeProvider);
+      namedArgs[new Symbol(p.name)] = _getValue(fieldObjectImpl);
     } else {
-      positionalArgs.add(_getValue(fieldObjectImpl, typeProvider));
+      positionalArgs.add(_getValue(fieldObjectImpl));
     }
   }
 
@@ -225,81 +220,7 @@ bool matchAnnotation(Type annotationType, ElementAnnotation annotation) {
         'Could not determine type of annotation. Are you missing a dependency?');
   }
 
-  return matchTypes(annotationType, annotationValueType);
+  var runtimeChecker = new TypeChecker.fromRuntime(annotationType);
+
+  return runtimeChecker.isExactlyType(annotationValueType);
 }
-
-/// Checks whether [annotationValueType] is equivalent to [annotationType].
-///
-/// Currently, this uses mirrors to compare the name and library uri of the two
-/// types.
-bool matchTypes(Type annotationType, ParameterizedType annotationValueType) {
-  var classMirror = reflectClass(annotationType);
-  var classMirrorSymbol = classMirror.simpleName;
-
-  var annTypeName = annotationValueType.name;
-  var annotationTypeSymbol = new Symbol(annTypeName);
-
-  if (classMirrorSymbol != annotationTypeSymbol) {
-    return false;
-  }
-
-  var annotationLibSource = annotationValueType.element.library.source;
-
-  var libOwnerUri = (classMirror.owner as LibraryMirror).uri;
-  var annotationLibSourceUri = annotationLibSource.uri;
-
-  if (annotationLibSourceUri.scheme == 'file' &&
-      libOwnerUri.scheme == 'package') {
-    // try to turn the libOwnerUri into a file uri
-    libOwnerUri = _fileUriFromPackageUri(libOwnerUri);
-  } else if (annotationLibSourceUri.scheme == 'asset' &&
-      libOwnerUri.scheme == 'package') {
-    // try to turn the libOwnerUri into a asset uri
-    libOwnerUri = _assetUriFromPackageUri(libOwnerUri);
-  }
-
-  return annotationLibSource.uri == libOwnerUri;
-}
-
-Uri _fileUriFromPackageUri(Uri libraryPackageUri) {
-  assert(libraryPackageUri.scheme == 'package');
-
-  var fullLibraryPath = p.join(_packageRoot, libraryPackageUri.path);
-
-  var file = new File(fullLibraryPath);
-
-  assert(file.existsSync());
-
-  var normalPath = file.resolveSymbolicLinksSync();
-
-  return new Uri.file(normalPath);
-}
-
-Uri _assetUriFromPackageUri(Uri libraryPackageUri) {
-  assert(libraryPackageUri.scheme == 'package');
-  var originalSegments = libraryPackageUri.pathSegments;
-  var newSegments = [originalSegments[0]]
-    ..add('lib')
-    ..addAll(originalSegments.getRange(1, originalSegments.length));
-
-  return new Uri(scheme: 'asset', pathSegments: newSegments);
-}
-
-String get _packageRoot {
-  if (_packageRootCache == null) {
-    var dir = Platform.packageRoot;
-
-    if (dir.isEmpty) {
-      dir = p.join(p.current, 'packages');
-    }
-
-    // Handle the case where we're running via pub and dir is a file: URI
-    dir = p.prettyUri(dir);
-
-    assert(FileSystemEntity.isDirectorySync(dir));
-    _packageRootCache = dir;
-  }
-  return _packageRootCache;
-}
-
-String _packageRootCache;

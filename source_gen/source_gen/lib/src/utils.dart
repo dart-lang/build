@@ -79,7 +79,8 @@ String suggestLibraryName(AssetId source) {
 /// Returns a URL representing [element].
 String urlOfElement(Element element) => element.kind == ElementKind.DYNAMIC
     ? 'dart:core#dynmaic'
-    : normalizeUrl(element.source.uri)
+    // using librarySource.uri – in case the element is in a part
+    : normalizeUrl(element.librarySource.uri)
         .replace(fragment: element.name)
         .toString();
 

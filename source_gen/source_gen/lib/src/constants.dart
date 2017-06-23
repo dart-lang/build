@@ -4,6 +4,7 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 
 import 'revive.dart';
 import 'type_checker.dart';
@@ -98,6 +99,36 @@ abstract class ConstantReader {
   /// Throws [FormatException] if [isString] is `false`.
   String get stringValue;
 
+  /// Returns whether this constant represents a `double` literal.
+  ///
+  /// If `true`, [doubleValue] will return a `double` (not throw).
+  bool get isDouble;
+
+  /// Returns this constant as an `double` value.
+  ///
+  /// Throws [FormatException] if [isDouble] is `false`.
+  double get doubleValue;
+
+  /// Returns whether this constant represents a `Symbol` literal.
+  ///
+  /// If `true`, [symbolValue] will return a `Symbol` (not throw).
+  bool get isSymbol;
+
+  /// Returns this constant as an `Symbol` value.
+  ///
+  /// Throws [FormatException] if [isSymbol] is `false`.
+  Symbol get symbolValue;
+
+  /// Returns whether this constant represents a `Type` literal.
+  ///
+  /// If `true`, [typeValue] will return a `DartType` (not throw).
+  bool get isType;
+
+  /// Returns a [DartType] representing this as a `Type` value.
+  ///
+  /// Throws [FormatException] if [isType] is `false`.
+  DartType get typeValue;
+
   /// Returns whether this constant represents `null`.
   bool get isNull;
 
@@ -115,9 +146,8 @@ abstract class ConstantReader {
   Revivable revive();
 }
 
-dynamic _throw(String expected, [dynamic object]) {
-  throw new FormatException('Not a $expected', '$object');
-}
+dynamic _throw(String expected, [dynamic object]) => throw new FormatException(
+    'Not an instance of $expected.', object == null ? null : '$object');
 
 /// Implements a [ConstantReader] representing a `null` value.
 class _NullConstant implements ConstantReader {
@@ -160,6 +190,24 @@ class _NullConstant implements ConstantReader {
   bool get isString => false;
 
   @override
+  bool get isDouble => false;
+
+  @override
+  double get doubleValue => _throw("double");
+
+  @override
+  bool get isSymbol => false;
+
+  @override
+  Symbol get symbolValue => _throw("Symbol");
+
+  @override
+  get isType => false;
+
+  @override
+  DartType get typeValue => _throw("Type");
+
+  @override
   bool instanceOf(TypeChecker checker) => false;
 
   @override
@@ -180,6 +228,9 @@ class _Constant implements ConstantReader {
       _object.toBoolValue() ??
       _object.toIntValue() ??
       _object.toStringValue() ??
+      _object.toDoubleValue() ??
+      (isSymbol ? this.symbolValue : null) ??
+      _object.toTypeValue() ??
       _object.toListValue() ??
       _object.toMapValue();
 
@@ -219,6 +270,28 @@ class _Constant implements ConstantReader {
 
   @override
   bool get isString => _object.toStringValue() != null;
+
+  @override
+  bool get isDouble => _object.toDoubleValue() != null;
+
+  @override
+  double get doubleValue =>
+      isDouble ? _object.toDoubleValue() : _throw('double', _object);
+
+  @override
+  bool get isSymbol => _object.toSymbolValue() != null;
+
+  @override
+  Symbol get symbolValue => isSymbol
+      ? new Symbol(_object.toSymbolValue())
+      : _throw('Symbol', _object);
+
+  @override
+  bool get isType => _object.toTypeValue() != null;
+
+  @override
+  DartType get typeValue =>
+      isType ? _object.toTypeValue() : _throw("Type", _object);
 
   @override
   bool instanceOf(TypeChecker checker) =>

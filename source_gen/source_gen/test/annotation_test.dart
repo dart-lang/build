@@ -250,7 +250,9 @@ ElementAnnotation _mockElementAnnotation(String typeName, Uri libraryUri) {
   when(value.type).thenReturn(type);
   when(type.name).thenReturn(typeName);
   when(type.element).thenReturn(element);
+  when(element.name).thenReturn(typeName);
   when(element.library).thenReturn(library);
+  when(element.librarySource).thenReturn(source);
   when(library.source).thenReturn(source);
   when(source.uri).thenReturn(libraryUri);
   return annotation;
