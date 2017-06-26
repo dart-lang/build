@@ -12,11 +12,11 @@ import 'package:source_gen/generators/json_serializable.dart';
 part 'json_test_example.g.dart';
 
 @JsonSerializable()
-class ListGenericTests extends Object with _$ListGenericTestsSerializerMixin {
-  ListGenericTests();
+class KitchenSink extends Object with _$KitchenSinkSerializerMixin {
+  KitchenSink();
 
-  factory ListGenericTests.fromJson(Map<String, Object> json) =>
-      _$ListGenericTestsFromJson(json);
+  factory KitchenSink.fromJson(Map<String, Object> json) =>
+      _$KitchenSinkFromJson(json);
 
   Iterable iterable;
   Iterable<dynamic> dynamicIterable;

@@ -4,10 +4,10 @@ part of source_gen.test.example;
 
 // **************************************************************************
 // Generator: JsonSerializableGenerator
-// Target: class ListGenericTests
+// Target: class KitchenSink
 // **************************************************************************
 
-ListGenericTests _$ListGenericTestsFromJson(Map json) => new ListGenericTests()
+KitchenSink _$KitchenSinkFromJson(Map json) => new KitchenSink()
   ..iterable = json['iterable']
   ..dynamicIterable = json['dynamicIterable']
   ..objectIterable = json['objectIterable']
@@ -22,7 +22,7 @@ ListGenericTests _$ListGenericTestsFromJson(Map json) => new ListGenericTests()
       ?.map((v0) => v0 == null ? null : DateTime.parse(v0))
       ?.toList();
 
-abstract class _$ListGenericTestsSerializerMixin {
+abstract class _$KitchenSinkSerializerMixin {
   Iterable<dynamic> get iterable;
   Iterable<dynamic> get dynamicIterable;
   Iterable<Object> get objectIterable;
