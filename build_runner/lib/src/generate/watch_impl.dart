@@ -126,8 +126,7 @@ class WatchImpl {
       }
 
       _logger.info('Starting next build');
-      _currentBuild =
-          _buildImpl.runBuild(updates: updatedInputs);
+      _currentBuild = _buildImpl.runBuild(updates: updatedInputs);
       _currentBuild.then((result) {
         // Terminate the watcher if the build script is updated, there is no
         // need to continue listening.

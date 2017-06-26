@@ -7,25 +7,8 @@
 # Fast fail the script on failures.
 set -e
 
-pushd build_test
+pushd $PKG
 pub upgrade
-dartanalyzer --fatal-warnings lib/build_test.dart
-popd
-
-pushd build
-pub upgrade
-dartanalyzer --fatal-warnings lib/build.dart
-pub run test
-popd
-
-pushd build_runner
-pub upgrade
-dartanalyzer --fatal-warnings lib/build_runner.dart
-pub run test
-popd
-
-pushd build_barback
-pub upgrade
-dartanalyzer --fatal-warnings lib/build_barback.dart
-pub run test
-popd
+dartanalyzer --fatal-warnings .
+echo Any unformatted files?
+dartfmt -n --set-exit-if-changed .

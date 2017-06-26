@@ -4,4 +4,18 @@ dart:
   - dev
   - stable
 
+env:
+  - PKG=build_test
+  - PKG=build
+  - PKG=build_runner
+  - PKG=build_barback
+
 script: ./tool/travis.sh
+
+# Only building master means that we don't run two builds for each pull request.
+branches:
+  only: [master]
+
+cache:
+ directories:
+   - $HOME/.pub-cache

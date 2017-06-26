@@ -49,7 +49,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Future since the runner will be responsible for waiting until all outputs
   /// are written.
   @override
-  Future writeAsString(AssetId id, FutureOr<String> contents, {Encoding encoding: UTF8});
+  Future writeAsString(AssetId id, FutureOr<String> contents,
+      {Encoding encoding: UTF8});
 
   @Deprecated('Use `canRead` instead')
   Future<bool> hasInput(AssetId id);
