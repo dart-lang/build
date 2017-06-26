@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -105,11 +106,15 @@ void _defaultLogListener(LogRecord record) {
     }
   }
 
-  if (record.level > Level.INFO || !_isPosixTerminal) {
-    lines.add('');
-  }
-
   var message = lines.join('\n');
+
+  var multiLine = LineSplitter.split(message).length > 1;
+
+  if (record.level > Level.INFO || !_isPosixTerminal || multiLine) {
+    // Add an extra line to the output so the last line is written over.
+    lines.add('');
+    message = lines.join('\n');
+  }
 
   if (record.level >= Level.SEVERE) {
     stderr.write(message);
