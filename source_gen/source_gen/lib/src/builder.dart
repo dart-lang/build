@@ -60,11 +60,9 @@ class GeneratorBuilder extends Builder {
     if (generatedExtension == null) {
       throw new ArgumentError.notNull('generatedExtension');
     }
-    if (generatedExtension.isEmpty ||
-        !generatedExtension.startsWith('.') ||
-        !generatedExtension.endsWith('.dart')) {
+    if (generatedExtension.isEmpty || !generatedExtension.startsWith('.')) {
       throw new ArgumentError.value(generatedExtension, 'generatedExtension',
-          'Extension must be in the format of .dart or .*.dart');
+          'Extension must be in the format of .*');
     }
     if (this.isStandalone && this.generators.length > 1) {
       throw new ArgumentError(
@@ -94,8 +92,14 @@ class GeneratorBuilder extends Builder {
     var generatedOutputs =
         await _generate(library, generators, buildStep).toList();
 
-    var contentBuffer = new StringBuffer();
+    // Don't output useless files.
+    //
+    // NOTE: It is important to do this check _before_ checking for valid
+    // library/part definitions because users expect some files to be skipped
+    // therefore they do not have "library".
+    if (generatedOutputs.isEmpty) return;
 
+    var contentBuffer = new StringBuffer();
     if (!isStandalone) {
       var asset = buildStep.inputId;
       var name = nameOfPartial(
@@ -114,9 +118,6 @@ class GeneratorBuilder extends Builder {
       contentBuffer.writeln('part of $name;');
       contentBuffer.writeln();
     }
-
-    // Don't output useless files.
-    if (generatedOutputs.isEmpty) return;
 
     for (GeneratedOutput output in generatedOutputs) {
       contentBuffer.writeln('');

@@ -1,3 +1,9 @@
+## 0.5.10
+
+* Bug fixes:
+  * Do not fail when "library" is omitted but nothing would be output.
+  * Do not fail on extensions that don't end in ".dart" (valid use case).
+
 ## 0.5.9
 
 * Update the minimum Dart SDK to `1.22.1`.
