@@ -13,6 +13,7 @@ linter:
      - control_flow_in_finally
      - empty_statements
      #- hash_and_equals
+     - implementation_imports
      - test_types_in_equals
      - throw_in_finally
      - unrelated_type_equality_checks

@@ -4,6 +4,7 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/constant/value.dart';
 
 import 'utils.dart';

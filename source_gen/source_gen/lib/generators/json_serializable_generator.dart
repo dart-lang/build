@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:analyzer/src/generated/utilities_dart.dart';
+import 'package:analyzer/analyzer.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_gen/src/json_serializable/type_helper.dart';
 import 'package:source_gen/src/utils.dart';
