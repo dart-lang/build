@@ -1,3 +1,7 @@
+## 0.5.10+1
+
+* Update minimum `analyzer` package to `0.29.10`.
+
 ## 0.5.10
 
 * Bug fixes:
