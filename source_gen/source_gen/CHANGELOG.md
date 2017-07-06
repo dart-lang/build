@@ -8,6 +8,9 @@
 * `TypeChecker#annotations...`-methods now throw a `StateError` if one or more
   annotations on an element are not resolvable. This is usually a sign of a
   mispelling, missing import, or missing dependency.
+  
+* Added `TypeChecker.any`, which delegates to multiple other `TypeChecker`
+  implementations when making a type check.
 
 ## 0.5.10+1
 

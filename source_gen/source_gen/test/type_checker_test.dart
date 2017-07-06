@@ -180,7 +180,7 @@ void main() {
             'package:source_gen/src/generator_for_annotation.dart#GeneratorForAnnotation'));
   });
 
-  test('should gracefully when something is not resolvable', () async {
+  test('should fail gracefully when something is not resolvable', () async {
     final resolver = await resolveSource(r'''
       library _test;
 
@@ -193,5 +193,13 @@ void main() {
 
     expect(() => $deprecated.annotationsOf(classX), throwsStateError,
         reason: 'deprecated was spelled wrong; no annotation can be resolved');
+  });
+
+  test('should check multiple checkers', () {
+    final listOrMap = const TypeChecker.any(const [
+      const TypeChecker.fromRuntime(List),
+      const TypeChecker.fromRuntime(Map),
+    ]);
+    expect(listOrMap.isExactlyType(staticMap), isTrue);
   });
 }

@@ -14,6 +14,20 @@ import 'utils.dart';
 abstract class TypeChecker {
   const TypeChecker._();
 
+  /// Creates a new [TypeChecker] that delegates to other [checkers].
+  ///
+  /// This implementation will return `true` for type checks if _any_ of the
+  /// provided type checkers return true, which is useful for deprecating an
+  /// API:
+  /// ```dart
+  /// const $Foo = const TypeChecker.fromRuntime(Foo);
+  /// const $Bar = const TypeChecker.fromRuntime(Bar);
+  ///
+  /// // Used until $Foo is deleted.
+  /// const $FooOrBar = const TypeChecker.forAny(const [$Foo, $Bar]);
+  /// ```
+  const factory TypeChecker.any(Iterable<TypeChecker> checkers) = _AnyChecker;
+
   /// Create a new [TypeChecker] backed by a runtime [type].
   ///
   /// This implementation uses `dart:mirrors` (runtime reflection).
@@ -71,14 +85,13 @@ abstract class TypeChecker {
   /// Returns annotating constants on [element] assignable to this type.
   Iterable<DartObject> annotationsOf(Element element) => element.metadata
       .map(_checkedConstantValue)
-      .where((a) => isAssignableFromType(a.type));
+      .where((a) => a?.type != null && isAssignableFromType(a.type));
 
   /// Returns annotating constants on [element] of exactly this type.
   Iterable<DartObject> annotationsOfExact(Element element) => element.metadata
       .map(_checkedConstantValue)
-      .where((a) => a?.type != null && isAssignableFromType(a.type));
+      .where((a) => a?.type != null && isExactlyType(a.type));
 
-  /// Returns `true` if the type of [element] can be assigned to this type.
   /// Returns `true` if the type of [element] can be assigned to this type.
   bool isAssignableFrom(Element element) =>
       isExactly(element) || _getAllSupertypes(element).any(isExactlyType);
@@ -209,4 +222,13 @@ class _UriTypeChecker extends TypeChecker {
 
   @override
   String toString() => '${uri}';
+}
+
+class _AnyChecker extends TypeChecker {
+  final Iterable<TypeChecker> _checkers;
+
+  const _AnyChecker(this._checkers) : super._();
+
+  @override
+  bool isExactly(Element element) => _checkers.any((c) => c.isExactly(element));
 }
