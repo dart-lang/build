@@ -1,3 +1,10 @@
+## 0.6.0
+
+* **Breaking change**: `TypeChecker#annotationsOf|firstAnnotationOf` now
+  returns annotations that are _assignable_ to the `TypeChecker`'s type. As a
+  result we've added `#annotationsOfExact|firstAnnotationOfExact` which has the
+  old behavior for precise checks.
+
 ## 0.5.10+1
 
 * Update minimum `analyzer` package to `0.29.10`.

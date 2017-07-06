@@ -38,7 +38,7 @@ abstract class TypeChecker {
   /// package like in the `dart:` SDK.
   const factory TypeChecker.fromUrl(dynamic url) = _UriTypeChecker;
 
-  /// Returns the first constant annotating [element] that is this type.
+  /// Returns the first constant annotating [element] assignable to this type.
   ///
   /// Otherwise returns `null`.
   DartObject firstAnnotationOf(Element element) {
@@ -49,18 +49,30 @@ abstract class TypeChecker {
     return results.isEmpty ? null : results.first;
   }
 
-  /// Returns every constant annotating [element] that is this type.
+  /// Returns the first constant annotating [element] that is exactly this type.
+  DartObject firstAnnotationOfExact(Element element) {
+    if (element.metadata.isEmpty) {
+      return null;
+    }
+    final results = annotationsOfExact(element);
+    return results.isEmpty ? null : results.first;
+  }
+
+  /// Returns annotating constants on [element] assignable to this type.
   Iterable<DartObject> annotationsOf(Element element) => element.metadata
+      .map((a) => a.computeConstantValue())
+      .where((a) => isAssignableFromType(a.type));
+
+  /// Returns annotating constants on [element] of exactly this type.
+  Iterable<DartObject> annotationsOfExact(Element element) => element.metadata
       .map((a) => a.computeConstantValue())
       .where((a) => isExactlyType(a.type));
 
-  /// Returns `true` if the type of [element] can be assigned to the type
-  /// represented by `this`.
+  /// Returns `true` if the type of [element] can be assigned to this type.
   bool isAssignableFrom(Element element) =>
       isExactly(element) || _getAllSupertypes(element).any(isExactlyType);
 
-  /// Returns `true` if [staticType] can be assigned to the type represented
-  /// by `this`.
+  /// Returns `true` if [staticType] can be assigned to this type.
   bool isAssignableFromType(DartType staticType) =>
       isAssignableFrom(staticType.element);
 
@@ -97,7 +109,7 @@ abstract class TypeChecker {
   bool isSuperTypeOf(DartType staticType) => isSuperOf(staticType.element);
 }
 
-//TODO(kevmoo) Remove when bug with `ClassElement.allSupertypes` is fixed
+// TODO(kevmoo) Remove when bug with `ClassElement.allSupertypes` is fixed
 // https://github.com/dart-lang/sdk/issues/29767
 Iterable<InterfaceType> _getAllSupertypes(Element element) sync* {
   if (element is ClassElement) {

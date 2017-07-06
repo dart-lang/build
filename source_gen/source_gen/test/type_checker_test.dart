@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// Increase timeouts on this test which resolves source code and can be slow.
+@Timeout.factor(2.0)
 import 'dart:collection';
 
 import 'package:analyzer/dart/element/type.dart';
