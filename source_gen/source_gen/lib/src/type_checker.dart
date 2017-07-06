@@ -58,16 +58,27 @@ abstract class TypeChecker {
     return results.isEmpty ? null : results.first;
   }
 
+  DartObject _checkedConstantValue(ElementAnnotation annotation) {
+    final result = annotation.computeConstantValue();
+    if (result == null) {
+      throw new StateError(
+          'Could not resolve $annotation. An import or dependency may be '
+          'missing or invalid.');
+    }
+    return result;
+  }
+
   /// Returns annotating constants on [element] assignable to this type.
   Iterable<DartObject> annotationsOf(Element element) => element.metadata
-      .map((a) => a.computeConstantValue())
+      .map(_checkedConstantValue)
       .where((a) => isAssignableFromType(a.type));
 
   /// Returns annotating constants on [element] of exactly this type.
   Iterable<DartObject> annotationsOfExact(Element element) => element.metadata
-      .map((a) => a.computeConstantValue())
-      .where((a) => isExactlyType(a.type));
+      .map(_checkedConstantValue)
+      .where((a) => a?.type != null && isAssignableFromType(a.type));
 
+  /// Returns `true` if the type of [element] can be assigned to this type.
   /// Returns `true` if the type of [element] can be assigned to this type.
   bool isAssignableFrom(Element element) =>
       isExactly(element) || _getAllSupertypes(element).any(isExactlyType);

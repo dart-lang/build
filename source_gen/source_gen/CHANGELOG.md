@@ -5,6 +5,10 @@
   result we've added `#annotationsOfExact|firstAnnotationOfExact` which has the
   old behavior for precise checks.
 
+* `TypeChecker#annotations...`-methods now throw a `StateError` if one or more
+  annotations on an element are not resolvable. This is usually a sign of a
+  mispelling, missing import, or missing dependency.
+
 ## 0.5.10+1
 
 * Update minimum `analyzer` package to `0.29.10`.

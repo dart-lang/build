@@ -179,4 +179,19 @@ void main() {
         checkGeneratorForAnnotation: () => const TypeChecker.fromUrl(
             'package:source_gen/src/generator_for_annotation.dart#GeneratorForAnnotation'));
   });
+
+  test('should gracefully when something is not resolvable', () async {
+    final resolver = await resolveSource(r'''
+      library _test;
+
+      @depracated // Intentionally mispelled.
+      class X {}
+    ''');
+    final lib = resolver.getLibraryByName('_test');
+    final classX = lib.getType('X');
+    final $deprecated = const TypeChecker.fromRuntime(Deprecated);
+
+    expect(() => $deprecated.annotationsOf(classX), throwsStateError,
+        reason: 'deprecated was spelled wrong; no annotation can be resolved');
+  });
 }
