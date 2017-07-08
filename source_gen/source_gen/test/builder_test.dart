@@ -75,6 +75,13 @@ void main() {
         throwsA(const isInstanceOf<InvalidGenerationSourceError>()));
   });
 
+  test('Does not fail when there is no output', () async {
+    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
+    var builder =
+        new GeneratorBuilder([new CommentGenerator(forClasses: false)]);
+    await testBuilder(builder, sources, outputs: {});
+  });
+
   test('Allow no "library" when requireLibraryDirective=false', () async {
     var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
     var builder = new GeneratorBuilder([const CommentGenerator()],
