@@ -6,6 +6,7 @@
 @Timeout.factor(2.0)
 import 'dart:collection';
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
@@ -201,5 +202,88 @@ void main() {
       const TypeChecker.fromRuntime(Map),
     ]);
     expect(listOrMap.isExactlyType(staticMap), isTrue);
+  });
+
+  group('should find annotations', () {
+    TypeChecker $A;
+    TypeChecker $B;
+    TypeChecker $C;
+
+    ClassElement $ExampleOfA;
+    ClassElement $ExampleOfMultiA;
+    ClassElement $ExampleOfAPlusB;
+    ClassElement $ExampleOfBPlusC;
+
+    setUpAll(() async {
+      final resolver = await resolveSource(r'''
+      library _test;
+
+      @A()
+      class ExampleOfA {}
+
+      @A()
+      @A()
+      class ExampleOfMultiA {}
+
+      @A()
+      @B()
+      class ExampleOfAPlusB {}
+
+      @B()
+      @C()
+      class ExampleOfBPlusC {}
+
+      class A {
+        const A();
+      }
+
+      class B {
+        const B();
+      }
+
+      class C extends B {
+        const C();
+      }
+    ''');
+      final library = resolver.getLibraryByName('_test');
+      $A = new TypeChecker.fromStatic(library.getType('A').type);
+      $B = new TypeChecker.fromStatic(library.getType('B').type);
+      $C = new TypeChecker.fromStatic(library.getType('C').type);
+      $ExampleOfA = library.getType('ExampleOfA');
+      $ExampleOfMultiA = library.getType('ExampleOfMultiA');
+      $ExampleOfAPlusB = library.getType('ExampleOfAPlusB');
+      $ExampleOfBPlusC = library.getType('ExampleOfBPlusC');
+    });
+
+    test('of a single @A', () {
+      final aAnnotation = $A.firstAnnotationOf($ExampleOfA);
+      expect(aAnnotation.type.name, 'A');
+      expect($B.annotationsOf($ExampleOfA), isEmpty);
+      expect($C.annotationsOf($ExampleOfA), isEmpty);
+    });
+
+    test('of a multiple @A', () {
+      final aAnnotations = $A.annotationsOf($ExampleOfMultiA);
+      expect(aAnnotations.map((a) => a.type.name), ['A', 'A']);
+      expect($B.annotationsOf($ExampleOfA), isEmpty);
+      expect($C.annotationsOf($ExampleOfA), isEmpty);
+    });
+
+    test('of a single @A + single @B', () {
+      final aAnnotations = $A.annotationsOf($ExampleOfAPlusB);
+      expect(aAnnotations.map((a) => a.type.name), ['A']);
+      final bAnnotations = $B.annotationsOf($ExampleOfAPlusB);
+      expect(bAnnotations.map((a) => a.type.name), ['B']);
+      expect($C.annotationsOf($ExampleOfAPlusB), isEmpty);
+    });
+
+    test('of a single @B + single @C', () {
+      final cAnnotations = $C.annotationsOf($ExampleOfBPlusC);
+      expect(cAnnotations.map((a) => a.type.name), ['C']);
+      final bAnnotations = $B.annotationsOf($ExampleOfBPlusC);
+      expect(bAnnotations.map((a) => a.type.name), ['B', 'C']);
+      final bExact = $B.annotationsOfExact($ExampleOfBPlusC);
+      expect(bExact.map((a) => a.type.name), ['B']);
+    });
   });
 }
