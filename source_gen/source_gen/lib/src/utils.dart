@@ -76,6 +76,12 @@ String suggestLibraryName(AssetId source) {
   return '${source.package}.${parts.join('.')}';
 }
 
+/// Returns what 'part "..."' URL is needed to import [output] from [input].
+///
+/// For example, will return `test_lib.g.dart` for `test_lib.dart`.
+String computePartUrl(AssetId input, AssetId output) =>
+    p.joinAll(p.split(p.relative(output.path, from: input.path)).skip(1));
+
 /// Returns a URL representing [element].
 String urlOfElement(Element element) => element.kind == ElementKind.DYNAMIC
     ? 'dart:core#dynmaic'

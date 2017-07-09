@@ -119,6 +119,21 @@ void main() {
         });
   });
 
+  test('warns when a non-standalone builder does not see "part"', () async {
+    var srcs =
+        _createPackageStub(pkgName, testLibContent: _testLibContentNoPart);
+    var builder = new GeneratorBuilder([const CommentGenerator()]);
+    var logs = <String>[];
+    await testBuilder(
+      builder,
+      srcs,
+      onLog: (log) {
+        logs.add(log.message);
+      },
+    );
+    expect(logs, ['Missing "part \'test_lib.g.dart\';".']);
+  });
+
   test('defaults to formatting generated code with the DartFormatter',
       () async {
     await testBuilder(new GeneratorBuilder([new UnformattedCodeGenerator()]),
@@ -167,7 +182,8 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
       generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
       outputs: {
         '$pkgName|lib/test_lib.g.dart': expectedContent,
-      });
+      },
+      onLog: (log) => fail('Unexpected log message: ${log.message}'));
 }
 
 /// Creates a package using [pkgName].
@@ -175,8 +191,7 @@ Map<String, String> _createPackageStub(String pkgName,
     {String testLibContent, String testLibPartContent}) {
   return {
     '$pkgName|lib/test_lib.dart': testLibContent ?? _testLibContent,
-    '$pkgName|lib/test_lib_part.dart':
-        testLibPartContent ?? _testLibPartContent,
+    '$pkgName|lib/test_lib.g.dart': testLibPartContent ?? _testLibPartContent,
   };
 }
 
@@ -200,14 +215,20 @@ const pkgName = 'pkg';
 
 const _testLibContent = r'''
 library test_lib;
-part 'test_lib_part.dart';
+part 'test_lib.g.dart';
+final int foo = 42;
+class Person { }
+''';
+
+const _testLibContentNoPart = r'''
+library test_lib;
 final int foo = 42;
 class Person { }
 ''';
 
 const _testLibContentWithError = r'''
 library test_lib;
-part 'test_lib_part.dart';
+part 'test_lib.g.dart';
 class MyError { }
 class MyGoodError { }
 ''';

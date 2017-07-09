@@ -2,6 +2,9 @@
 
 * Added `spanForElement`; returns a `SourceSpan` for an analyzer `Element`.
 
+* Logs a _warning_ to the console when a `GeneratorBuilder` outputs a part file
+  for a given input, but that input does not define `part 'name.g.dart';`.
+
 ## 0.6.0
 
 * **Breaking change**: `TypeChecker#annotationsOf|firstAnnotationOf` now

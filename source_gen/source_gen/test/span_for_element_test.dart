@@ -12,11 +12,14 @@ void main() {
   LibraryElement library;
 
   setUpAll(() async {
-    final resolver = await resolveSource(r'''
+    final resolver = await resolveSource(
+      r'''
       library test_lib;
-      
+
       abstract class Example implements List {}
-    ''', inputId: new AssetId('test_lib', 'lib/test_lib.dart'));
+    ''',
+      inputId: new AssetId('test_lib', 'lib/test_lib.dart'),
+    );
     library = resolver.getLibraryByName('test_lib');
   });
 

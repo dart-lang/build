@@ -98,6 +98,7 @@ class GeneratorBuilder extends Builder {
     // library/part definitions because users expect some files to be skipped
     // therefore they do not have "library".
     if (generatedOutputs.isEmpty) return;
+    final outputId = _generatedFile(buildStep.inputId);
 
     var contentBuffer = new StringBuffer();
     if (!isStandalone) {
@@ -114,6 +115,11 @@ class GeneratorBuilder extends Builder {
             todo: ''
                 'Consider adding the following to your source file:\n\n'
                 'library $suggest;');
+      }
+      final part = computePartUrl(buildStep.inputId, outputId);
+      if (!library.parts.map((c) => c.uri).contains(part)) {
+        // TODO: Upgrade to error in a future breaking change?
+        log.warning('Missing "part \'$part\';".');
       }
       contentBuffer.writeln('part of $name;');
       contentBuffer.writeln();
@@ -138,7 +144,7 @@ class GeneratorBuilder extends Builder {
     } catch (e, stack) {
       log.severe(
           'Error formatting generated source code for ${library.identifier}'
-          'which was output to ${_generatedFile(buildStep.inputId).path}.\n'
+          'which was output to ${outputId.path}.\n'
           'This may indicate an issue in the generated code or in the '
           'formatter.\n'
           'Please check the generated code and file an issue on source_gen if '
@@ -147,8 +153,7 @@ class GeneratorBuilder extends Builder {
           stack);
     }
 
-    buildStep.writeAsString(
-        _generatedFile(buildStep.inputId), '$_topHeader$genPartContent');
+    buildStep.writeAsString(outputId, '$_topHeader$genPartContent');
   }
 
   @override
