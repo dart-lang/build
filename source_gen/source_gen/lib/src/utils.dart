@@ -105,13 +105,13 @@ Uri normalizeDartUrl(Uri url) => url.pathSegments.isNotEmpty
     ? url.replace(pathSegments: url.pathSegments.take(1))
     : url;
 
-/// Returns a `package:` URL into a `asset:` URL.
+/// Returns a `package:` URL converted to a `asset:` URL.
 ///
 /// This makes internal comparison logic much easier, but still allows users
 /// to define assets in terms of `package:`, which is something that makes more
 /// sense to most.
 ///
-/// For example this transforms `package:source_gen/source_gen.dart` into:
+/// For example, this transforms `package:source_gen/source_gen.dart` into:
 /// `asset:source_gen/lib/source_gen.dart`.
 Uri packageToAssetUrl(Uri url) => url.scheme == 'package'
     ? url.replace(
@@ -120,6 +120,24 @@ Uri packageToAssetUrl(Uri url) => url.scheme == 'package'
           ..add(url.pathSegments.first)
           ..add('lib')
           ..addAll(url.pathSegments.skip(1)))
+    : url;
+
+/// Returns a `asset:` URL converted to a `package:` URL.
+///
+/// For example, this transformers `asset:source_gen/lib/source_gen.dart' into:
+/// `package:source_gen/source_gen.dart`. Asset URLs that aren't pointing to a
+/// file in the 'lib' folder are not modified.
+///
+/// Asset URLs come from `package:build`, as they are able to describe URLs that
+/// are not describable using `package:...`, such as files in the `bin`, `tool`,
+/// `web`, or even root directory of a package - `asset:some_lib/web/main.dart`.
+Uri assetToPackageUrl(Uri url) => url.scheme == 'asset' &&
+        url.pathSegments.length >= 1 &&
+        url.pathSegments[1] == 'lib'
+    ? url.replace(
+        scheme: 'package',
+        pathSegments: [url.pathSegments.first]
+          ..addAll(url.pathSegments.skip(2)))
     : url;
 
 /// Returns all of the declarations in [unit], including [unit] as the first

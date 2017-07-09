@@ -1,3 +1,7 @@
+## 0.6.1
+
+* Added `spanForElement`; returns a `SourceSpan` for an analyzer `Element`.
+
 ## 0.6.0
 
 * **Breaking change**: `TypeChecker#annotationsOf|firstAnnotationOf` now
