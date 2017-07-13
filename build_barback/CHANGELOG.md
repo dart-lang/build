@@ -1,4 +1,4 @@
-## 0.3.0-dev
+## 0.3.0
 
 - **Breaking** `BuilderTransformer` is now an `AggregateTransformer`. This
   should be transparent for most use cases but could have errors if an instance
