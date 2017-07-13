@@ -10,6 +10,8 @@ var resolver = await resolveAsset(pkgCollection);
 // ...
 ```
 
+- Supports `package:build_barback >=0.2.0 <0.4.0`.
+
 ## 0.6.2
 
 - Internal version bump.
