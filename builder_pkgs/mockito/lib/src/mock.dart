@@ -534,7 +534,7 @@ captureThat(Matcher matcher) => new ArgMatcher(matcher, true);
 
 /// A Strong-mode safe argument matcher that wraps other argument matchers.
 /// See the README for a full explanation.
-/*=T*/ typed/*<T>*/(ArgMatcher matcher, {String named}) {
+T typed<T>(ArgMatcher matcher, {String named}) {
   if (named == null) {
     _typedArgs.add(matcher);
   } else {
