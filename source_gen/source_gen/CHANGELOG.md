@@ -1,7 +1,10 @@
+## 0.6.1+1
+
+* Tighten constraint on `source_span`.
+
 ## 0.6.1
 
 * Added `spanForElement`; returns a `SourceSpan` for an analyzer `Element`.
-
 * Logs a _warning_ to the console when a `GeneratorBuilder` outputs a part file
   for a given input, but that input does not define `part 'name.g.dart';`.
 
@@ -11,11 +14,9 @@
   returns annotations that are _assignable_ to the `TypeChecker`'s type. As a
   result we've added `#annotationsOfExact|firstAnnotationOfExact` which has the
   old behavior for precise checks.
-
 * `TypeChecker#annotations...`-methods now throw a `StateError` if one or more
   annotations on an element are not resolvable. This is usually a sign of a
   mispelling, missing import, or missing dependency.
-  
 * Added `TypeChecker.any`, which delegates to multiple other `TypeChecker`
   implementations when making a type check.
 
