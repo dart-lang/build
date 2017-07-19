@@ -4,7 +4,7 @@
 
 library source_gen.test.annotation_test.classes;
 
-import 'package:source_gen/generators/json_serializable.dart';
+import 'package:_test_annotations/_test_annotations.dart';
 
 import 'annotations.dart';
 
@@ -40,8 +40,8 @@ class WithNestedObjects {}
 @objectAnnotation
 class WithConstMapLiteral {}
 
-@JsonSerializable()
-class AnnotatedWithJson {}
+@TestAnnotation()
+class AnnotatedThroughPackage {}
 
 @localTypedAnnotation
 class WithLocalTypedField {}

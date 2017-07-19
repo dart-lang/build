@@ -1,3 +1,9 @@
+## 0.7.0
+
+* **Breaking changes**
+  * Removed `JsonSerializable` and related classes. These are moved to
+    `package:json_serializable`.
+
 ## 0.6.1+1
 
 * Tighten constraint on `source_span`.

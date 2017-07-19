@@ -10,12 +10,11 @@ import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 
+import 'package:_test_annotations/_test_annotations.dart';
 import 'package:analyzer/src/generated/constant.dart';
-//import 'package:analyzer/src/generated/element.dart' show ElementAnnotationImpl;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as p;
-import 'package:source_gen/generators/json_serializable.dart';
 import 'package:source_gen/src/annotation.dart';
 import 'package:test/test.dart';
 
@@ -189,19 +188,20 @@ void main() {
 
       group('class annotated with type defined via package uri', () {
         test('When running on a normal file system', () {
-          var annotation = _getClassAnnotation(libElement, 'AnnotatedWithJson');
-          var matched = matchAnnotation(JsonSerializable, annotation);
+          var annotation =
+              _getClassAnnotation(libElement, 'AnnotatedThroughPackage');
+          var matched = matchAnnotation(TestAnnotation, annotation);
           expect(matched, isTrue);
         });
 
         test('When running in barback', () {
           var annotation = _mockElementAnnotation(
-              'JsonSerializable',
+              'TestAnnotation',
               new Uri(
                   scheme: 'asset',
-                  path: 'source_gen/lib/generators/json_serializable.dart'));
+                  path: '_test_annotations/lib/_test_annotations.dart'));
 
-          var matched = matchAnnotation(JsonSerializable, annotation);
+          var matched = matchAnnotation(TestAnnotation, annotation);
           expect(matched, isTrue);
         });
       });

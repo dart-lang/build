@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.6.1+1
+version: 0.7.0-dev
 author: Dart Team <misc@dartlang.org>
 description: Automated source code generation for Dart.
 homepage: https://github.com/dart-lang/source_gen
@@ -19,3 +19,5 @@ dev_dependencies:
   meta: ^1.0.5
   mockito: '>=0.11.0 <3.0.0'
   test: ^0.12.3
+  _test_annotations:
+    path: ./_test_annotations

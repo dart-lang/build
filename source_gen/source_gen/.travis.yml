@@ -5,8 +5,7 @@ dart:
   - stable
   - 1.22.1
 dart_task:
-  # Run the tests -- include the default-skipped presubmit tests
-  - test: --platform vm --run-skipped
+  - test
   - dartfmt
   - dartanalyzer
 matrix:
