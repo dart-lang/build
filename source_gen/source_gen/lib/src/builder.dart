@@ -162,10 +162,14 @@ class GeneratorBuilder extends Builder {
 
 Stream<GeneratedOutput> _generate(LibraryElement unit,
     List<Generator> generators, BuildStep buildStep) async* {
-  var elements = safeIterate(getElementsFromLibraryElement(unit), (e, [_]) {
+  List<Element> elements;
+  try {
+    elements = getElementsFromLibraryElement(unit).toList();
+  } catch (e) {
     log.fine('Resolve error details:\n$e');
     log.severe('Failed to resolve ${buildStep.inputId}.');
-  });
+    return;
+  }
   for (var element in elements) {
     yield* _processUnitMember(element, generators, buildStep);
   }
