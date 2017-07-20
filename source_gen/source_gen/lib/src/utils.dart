@@ -146,11 +146,11 @@ Uri assetToPackageUrl(Uri url) => url.scheme == 'asset' &&
           ..addAll(url.pathSegments.skip(2)))
     : url;
 
-/// Returns all of the declarations in [unit], including [unit] as the first
-/// item.
-Iterable<Element> getElementsFromLibraryElement(LibraryElement unit) sync* {
-  yield unit;
-  for (var cu in unit.units) {
+/// Returns all of the declarations in [library], including [library] as the
+/// first item.
+Iterable<Element> allElements(LibraryElement library) sync* {
+  yield library;
+  for (var cu in library.units) {
     for (var compUnitMember in cu.unit.declarations) {
       yield* _getElements(compUnitMember);
     }

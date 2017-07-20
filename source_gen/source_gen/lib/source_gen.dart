@@ -12,3 +12,4 @@ export 'src/library.dart' show LibraryReader;
 export 'src/revive.dart' show Revivable;
 export 'src/span_for_element.dart' show spanForElement;
 export 'src/type_checker.dart' show TypeChecker;
+export 'src/utils.dart' show allElements;

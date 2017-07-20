@@ -164,7 +164,7 @@ Stream<GeneratedOutput> _generate(LibraryElement unit,
     List<Generator> generators, BuildStep buildStep) async* {
   List<Element> elements;
   try {
-    elements = getElementsFromLibraryElement(unit).toList();
+    elements = allElements(unit).toList();
   } catch (e) {
     log.fine('Resolve error details:\n$e');
     log.severe('Failed to resolve ${buildStep.inputId}.');
