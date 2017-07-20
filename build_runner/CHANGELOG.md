@@ -1,3 +1,11 @@
+## 0.3.4+1
+
+- Support the latest release of `build_barback`.
+
+## 0.3.4
+
+- Support the latest release of `analyzer`.
+
 ## 0.3.2
 
 - Support for build 0.9.0
