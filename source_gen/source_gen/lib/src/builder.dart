@@ -13,13 +13,12 @@ import 'generated_output.dart';
 import 'generator.dart';
 import 'utils.dart';
 
-/// Returns [generatedCode] formatted, usually with something like `dartfmt`.
-typedef String OutputFormatter(String generatedCode);
+typedef String _OutputFormatter(String code);
 
 /// A [Builder] wrapping on one or more [Generator]s.
 class _Builder extends Builder {
   /// Function that determines how the generated code is formatted.
-  final OutputFormatter formatOutput;
+  final _OutputFormatter formatOutput;
 
   /// The generators run for each targeted library.
   final List<Generator> _generators;
@@ -32,7 +31,15 @@ class _Builder extends Builder {
 
   final bool _requireLibraryDirective;
 
-  /// Wrap [_generators] to form a [Builder]-compatible API.
+  /// Wrap [generators] to form a [Builder]-compatible API.
+  ///
+  /// May set [requireLibraryDirective] to `false` in order to opt-in to
+  /// supporting a `1.25.0` feature of `part of` being usable without an
+  /// explicit `library` directive. Developers should restrict their `pubspec`
+  /// accordingly:
+  /// ```yaml
+  /// sdk: '>=1.25.0 <2.0.0'
+  /// ```
   _Builder(this._generators,
       {OutputFormatter formatOutput,
       String generatedExtension: '.g.dart',
@@ -158,7 +165,7 @@ class PartBuilder extends _Builder {
   /// sdk: '>=1.25.0 <2.0.0'
   /// ```
   PartBuilder(List<Generator> generators,
-      {OutputFormatter formatOutput,
+      {String formatOutput(String code),
       String generatedExtension: '.g.dart',
       bool requireLibraryDirective: true})
       : super(generators,
@@ -177,7 +184,7 @@ class LibraryBuilder extends _Builder {
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
   LibraryBuilder(Generator generator,
-      {OutputFormatter formatOutput, String generatedExtension: '.g.dart'})
+      {String formatOutput(String code), String generatedExtension: '.g.dart'})
       : super([generator],
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,

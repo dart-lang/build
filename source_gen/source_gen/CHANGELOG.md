@@ -12,6 +12,7 @@
   * Removed `JsonSerializable` and related classes. These are moved to
     `package:json_serializable`.
   * Removed `lib/builder.dart`. Import through `source_gen.dart` instead.
+  * Removed `OutputFormatter` typedef.
 * Expose `allElements` - a utility to iterate across all `Element` instances
   contained in a `LibraryElement`.
 
