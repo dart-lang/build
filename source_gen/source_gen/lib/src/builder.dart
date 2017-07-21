@@ -1,4 +1,5 @@
 // Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
+
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -15,16 +16,8 @@ import 'utils.dart';
 /// Returns [generatedCode] formatted, usually with something like `dartfmt`.
 typedef String OutputFormatter(String generatedCode);
 
-/// Wraps multiple [Generator]s and exposes them as a [Builder] for tooling.
-///
-/// ```dart
-/// // Creates a new builder that the following two generators.
-/// new GeneratorBuilder([
-///   new JsonSerializableGenerator(),
-///   new JsonLiteralGenerator(),
-/// ]);
-/// ```
-class GeneratorBuilder extends Builder {
+/// A [Builder] wrapping on one or more [Generator]s.
+class _Builder extends Builder {
   /// Function that determines how the generated code is formatted.
   final OutputFormatter formatOutput;
 
@@ -50,7 +43,7 @@ class GeneratorBuilder extends Builder {
   /// ```yaml
   /// sdk: '>=1.25.0 <2.0.0'
   /// ```
-  GeneratorBuilder(this.generators,
+  _Builder(this.generators,
       {OutputFormatter formatOutput,
       this.generatedExtension: '.g.dart',
       this.isStandalone: false,
@@ -153,9 +146,26 @@ class GeneratorBuilder extends Builder {
 
     buildStep.writeAsString(outputId, '$_topHeader$genPartContent');
   }
+}
 
-  @override
-  String toString() => 'GeneratorBuilder:$generators';
+class PartBuilder extends _Builder {
+  PartBuilder(List<Generator> generators,
+      {OutputFormatter formatOutput,
+      String generatedExtension: '.g.dart',
+      bool requireLibraryDirective: true})
+      : super(generators,
+            formatOutput: formatOutput,
+            generatedExtension: generatedExtension,
+            requireLibraryDirective: requireLibraryDirective);
+}
+
+class LibraryBuilder extends _Builder {
+  LibraryBuilder(Generator generator,
+      {OutputFormatter formatOutput, String generatedExtension: '.g.dart'})
+      : super([generator],
+            formatOutput: formatOutput,
+            generatedExtension: generatedExtension,
+            isStandalone: true);
 }
 
 Stream<GeneratedOutput> _generate(LibraryElement library,

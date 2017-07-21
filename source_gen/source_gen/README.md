@@ -78,8 +78,10 @@ standalone tools like [build_runner][]. You could also build your own.
 
 Meanwhile, `source_gen` provides an API and tooling that is easily usable on
 top of `build` to make common tasks easier and more developer friendly. For
-example the [`GeneratorBuilder`][api:GeneratorBuilder] class wraps one or
-more [`Generator`][api:Generator] instances to make a [`Builder`][api:Builder].
+example the [`PartBuilder`][api:PartBuilder] class wraps one or more
+[`Generator`][api:Generator] instances to make a [`Builder`][api:Builder] which
+creates `part of` files, while the [`LibraryBuilder`][api:LibraryBuilder] class
+wraps a single Generator to make a `Builder` which creates Dart library files.
 
 ### What is the difference between `source_gen` and transformers?
 
@@ -115,7 +117,8 @@ detail*.
 <!-- Dartdoc -->
 [api:Builder]: https://www.dartdocs.org/documentation/build/latest/builder/Builder-class.html
 [api:Generator]: https://www.dartdocs.org/documentation/source_gen/latest/builder/Generator-class.html
-[api:GeneratorBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/GeneratorBuilder-class.html
+[api:PartBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/PartBuilder-class.html
+[api:LibraryBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/LibraryBuilder-class.html
 
 [Dart transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
 [Trivial example]: https://github.com/dart-lang/source_gen/blob/master/test/src/comment_generator.dart

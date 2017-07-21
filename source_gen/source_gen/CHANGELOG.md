@@ -7,6 +7,8 @@
     continue to call `generateForAnnotatedElement` repeatedly for each element.
   * `GeneratorForAnnotation` passes in a `ConstantReader` for the annotation
     instance rather than re-creating it using mirrors.
+  * `GeneratorBuilder` is replaced with `PartBuilder` and `LibraryBuilder`
+    depending on whether the output is meant to be included in a `part` file.
   * Removed `JsonSerializable` and related classes. These are moved to
     `package:json_serializable`.
   * Removed `lib/builder.dart`. Import through `source_gen.dart` instead.
