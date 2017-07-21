@@ -1,5 +1,4 @@
 // Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
-
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -31,17 +30,9 @@ class _Builder extends Builder {
 
   final bool _requireLibraryDirective;
 
-  /// Wrap [generators] to form a [Builder]-compatible API.
-  ///
-  /// May set [requireLibraryDirective] to `false` in order to opt-in to
-  /// supporting a `1.25.0` feature of `part of` being usable without an
-  /// explicit `library` directive. Developers should restrict their `pubspec`
-  /// accordingly:
-  /// ```yaml
-  /// sdk: '>=1.25.0 <2.0.0'
-  /// ```
+  /// Wrap [_generators] to form a [Builder]-compatible API.
   _Builder(this._generators,
-      {OutputFormatter formatOutput,
+      {String formatOutput(String code),
       String generatedExtension: '.g.dart',
       bool isStandalone: false,
       bool requireLibraryDirective: true})
