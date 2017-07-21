@@ -54,18 +54,18 @@ Once you have `source_gen` setup, you should reference the examples below.
 
 ## Creating a generator
 
-Extend the `Generator` class to plug into `source_gen`.
+Extend the `Generator` or `GeneratorForAnnotation` class and `source_gen` will
+call your generator for a Dart library or for each element within a library
+tagged with the annotation you are interested in.
 
 * [Trivial example][]
-* [Included generators][]
 
 ## Running generators
 
-`source_gen` is based on the [`build`][build] package.
-
-See `build.dart` and `watch.dart` in the `tool` directory. Both reference
-`tool/phases.dart`, which contains information mapping `source_gen` generators
-to target files.
+`source_gen` is based on the [`build`][build] package. Use a `PartBuilder` or
+`LibraryBuilder` to wrap your `Generator` as a `Builder` which can be run using
+a build system compatible with `package:build`. See the build package
+documentation for information on running Builders.
 
 ## FAQ
 
@@ -122,7 +122,6 @@ detail*.
 
 [Dart transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
 [Trivial example]: https://github.com/dart-lang/source_gen/blob/master/test/src/comment_generator.dart
-[Included generators]: https://github.com/dart-lang/source_gen/tree/master/lib/generators
 [build.dart]: https://github.com/dart-lang/source_gen/blob/master/build.dart
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
 [build]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_build
