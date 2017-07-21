@@ -21,43 +21,35 @@ class _Builder extends Builder {
   /// Function that determines how the generated code is formatted.
   final OutputFormatter formatOutput;
 
-  /// What underlying generators are wrapped to form this [Builder].
-  final List<Generator> generators;
+  /// The generators run for each targeted library.
+  final List<Generator> _generators;
 
-  /// For a given `.dart` file what extension is used to generate code.
-  ///
-  /// Defaults to `.g.dart`.
-  final String generatedExtension;
+  /// The [buildExtensions] configuration for `.dart`
+  final String _generatedExtension;
 
   /// Whether to emit a standalone (non-`part`) file in this builder.
-  final bool isStandalone;
+  final bool _isStandalone;
 
   final bool _requireLibraryDirective;
 
-  /// Wrap [generators] to form a [Builder]-compatible API.
-  ///
-  /// May set [requireLibraryDirective] to `false` in order to opt-in to
-  /// supporting a `1.25.0` feature of `part of` being usable without an
-  /// explicit `library` directive. Developers should restrict their `pubspec`
-  /// accordingly:
-  /// ```yaml
-  /// sdk: '>=1.25.0 <2.0.0'
-  /// ```
-  _Builder(this.generators,
+  /// Wrap [_generators] to form a [Builder]-compatible API.
+  _Builder(this._generators,
       {OutputFormatter formatOutput,
-      this.generatedExtension: '.g.dart',
-      this.isStandalone: false,
+      String generatedExtension: '.g.dart',
+      bool isStandalone: false,
       bool requireLibraryDirective: true})
-      : formatOutput = formatOutput ?? _formatter.format,
+      : _generatedExtension = generatedExtension,
+        _isStandalone = isStandalone,
+        formatOutput = formatOutput ?? _formatter.format,
         _requireLibraryDirective = requireLibraryDirective {
-    if (generatedExtension == null) {
+    if (_generatedExtension == null) {
       throw new ArgumentError.notNull('generatedExtension');
     }
-    if (generatedExtension.isEmpty || !generatedExtension.startsWith('.')) {
-      throw new ArgumentError.value(generatedExtension, 'generatedExtension',
+    if (_generatedExtension.isEmpty || !_generatedExtension.startsWith('.')) {
+      throw new ArgumentError.value(_generatedExtension, 'generatedExtension',
           'Extension must be in the format of .*');
     }
-    if (this.isStandalone && this.generators.length > 1) {
+    if (this._isStandalone && this._generators.length > 1) {
       throw new ArgumentError(
           'A standalone file can only be generated from a single Generator.');
     }
@@ -73,17 +65,17 @@ class _Builder extends Builder {
 
   @override
   Map<String, List<String>> get buildExtensions => {
-        '.dart': [generatedExtension]
+        '.dart': [_generatedExtension]
       };
 
   AssetId _generatedFile(AssetId input) =>
-      input.changeExtension(generatedExtension);
+      input.changeExtension(_generatedExtension);
 
   Future _generateForLibrary(
       LibraryElement library, BuildStep buildStep) async {
-    log.fine('Running $generators for ${buildStep.inputId}');
+    log.fine('Running $_generators for ${buildStep.inputId}');
     var generatedOutputs =
-        await _generate(library, generators, buildStep).toList();
+        await _generate(library, _generators, buildStep).toList();
 
     // Don't output useless files.
     //
@@ -94,7 +86,7 @@ class _Builder extends Builder {
     final outputId = _generatedFile(buildStep.inputId);
 
     var contentBuffer = new StringBuffer();
-    if (!isStandalone) {
+    if (!_isStandalone) {
       var asset = buildStep.inputId;
       var name = nameOfPartial(
         library,
@@ -148,7 +140,23 @@ class _Builder extends Builder {
   }
 }
 
+/// A [Builder] which generateds `part of` files.
 class PartBuilder extends _Builder {
+  /// Wrap [generators] as a [Builder] that generates `part of` files.
+  ///
+  /// [generatedExtension] indicates what files will be created for each `.dart`
+  /// input. Defaults to `.g.dart`.
+  ///
+  /// [formatOutput] is called to format the generated code. Defaults to
+  /// [DartFormatter.format].
+  ///
+  /// May set [requireLibraryDirective] to `false` in order to opt-in to
+  /// supporting a `1.25.0` feature of `part of` being usable without an
+  /// explicit `library` directive. Developers should restrict their `pubspec`
+  /// accordingly:
+  /// ```yaml
+  /// sdk: '>=1.25.0 <2.0.0'
+  /// ```
   PartBuilder(List<Generator> generators,
       {OutputFormatter formatOutput,
       String generatedExtension: '.g.dart',
@@ -159,7 +167,15 @@ class PartBuilder extends _Builder {
             requireLibraryDirective: requireLibraryDirective);
 }
 
+/// A [Builder] which generateds Dart library files.
 class LibraryBuilder extends _Builder {
+  /// Wrap [generator] as a [Builder] that generates Dart library files.
+  ///
+  /// [generatedExtension] indicates what files will be created for each `.dart`
+  /// input. Defaults to `.g.dart`.
+  ///
+  /// [formatOutput] is called to format the generated code. Defaults to
+  /// [DartFormatter.format].
   LibraryBuilder(Generator generator,
       {OutputFormatter formatOutput, String generatedExtension: '.g.dart'})
       : super([generator],
