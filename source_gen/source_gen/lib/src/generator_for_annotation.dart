@@ -10,8 +10,8 @@ import 'package:build/build.dart';
 
 import 'constants.dart';
 import 'generator.dart';
+import 'library.dart';
 import 'type_checker.dart';
-import 'utils.dart';
 
 /// A [Generator] that invokes [generateForAnnotatedElement] for every [T].
 ///
@@ -36,7 +36,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
   @override
   Future<String> generate(LibraryElement library, BuildStep buildStep) async {
-    var elements = allElements(library)
+    var elements = new LibraryReader(library)
+        .allElements
         .map((e) => new _AnnotatedElement(e, typeChecker.firstAnnotationOf(e)))
         .where((e) => e.annotation != null);
     var allOutput = await Future.wait(elements.map((e) =>
