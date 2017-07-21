@@ -30,13 +30,20 @@ class _Builder extends Builder {
 
   final bool _requireLibraryDirective;
 
+  @override
+  final Map<String, List<String>> buildExtensions;
+
   /// Wrap [_generators] to form a [Builder]-compatible API.
   _Builder(this._generators,
       {String formatOutput(String code),
       String generatedExtension: '.g.dart',
+      List<String> additionalOutputExtensions: const [],
       bool isStandalone: false,
       bool requireLibraryDirective: true})
       : _generatedExtension = generatedExtension,
+        buildExtensions = {
+          '.dart': [generatedExtension]..addAll(additionalOutputExtensions)
+        },
         _isStandalone = isStandalone,
         formatOutput = formatOutput ?? _formatter.format,
         _requireLibraryDirective = requireLibraryDirective {
@@ -60,11 +67,6 @@ class _Builder extends Builder {
     var lib = resolver.getLibrary(buildStep.inputId);
     await _generateForLibrary(lib, buildStep);
   }
-
-  @override
-  Map<String, List<String>> get buildExtensions => {
-        '.dart': [_generatedExtension]
-      };
 
   AssetId _generatedFile(AssetId input) =>
       input.changeExtension(_generatedExtension);
@@ -143,7 +145,9 @@ class PartBuilder extends _Builder {
   /// Wrap [generators] as a [Builder] that generates `part of` files.
   ///
   /// [generatedExtension] indicates what files will be created for each `.dart`
-  /// input. Defaults to `.g.dart`.
+  /// input. Defaults to `.g.dart`. If any generator in [generators] will create
+  /// additional outputs through the [BuildStep] they should be indicated in
+  /// [additionalOutputExtensions].
   ///
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
@@ -158,10 +162,12 @@ class PartBuilder extends _Builder {
   PartBuilder(List<Generator> generators,
       {String formatOutput(String code),
       String generatedExtension: '.g.dart',
+      List<String> additionalOutputExtensions: const [],
       bool requireLibraryDirective: true})
       : super(generators,
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
+            additionalOutputExtensions: additionalOutputExtensions,
             requireLibraryDirective: requireLibraryDirective);
 }
 
@@ -170,15 +176,20 @@ class LibraryBuilder extends _Builder {
   /// Wrap [generator] as a [Builder] that generates Dart library files.
   ///
   /// [generatedExtension] indicates what files will be created for each `.dart`
-  /// input. Defaults to `.g.dart`.
+  /// input. Defaults to `.g.dart`. If [generator] will create additional
+  /// outputs through the [BuildStep] they should be indicated in
+  /// [additionalOutputExtensions].
   ///
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
   LibraryBuilder(Generator generator,
-      {String formatOutput(String code), String generatedExtension: '.g.dart'})
+      {String formatOutput(String code),
+      String generatedExtension: '.g.dart',
+      List<String> additionalOutputExtensions: const []})
       : super([generator],
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
+            additionalOutputExtensions: additionalOutputExtensions,
             isStandalone: true);
 }
 
