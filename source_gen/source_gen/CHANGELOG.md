@@ -1,6 +1,12 @@
 ## 0.7.0
 
 * **Breaking changes**
+  * `Generator.generate` now operates on a `LibraryElement` rather than being
+    called for every `Element` within a library. Generators can iterate over
+    elements using the `allElements` utility. `GeneratorForAnnotation` will
+    continue to call `generateForAnnotatedElement` repeatedly for each element.
+  * `GeneratorForAnnotation` passes in a `ConstantReader` for the annotation
+    instance rather than re-creating it using mirrors.
   * Removed `JsonSerializable` and related classes. These are moved to
     `package:json_serializable`.
   * Removed `lib/builder.dart`. Import through `source_gen.dart` instead.

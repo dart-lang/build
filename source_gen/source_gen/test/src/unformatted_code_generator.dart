@@ -12,9 +12,7 @@ class UnformattedCodeGenerator extends Generator {
   const UnformattedCodeGenerator();
 
   @override
-  Future<String> generate(Element element, _) async {
-    return unformattedCode;
-  }
+  Future<String> generate(LibraryElement element, _) async => unformattedCode;
 
   static const formattedCode = '''
 void hello() => print('hello');

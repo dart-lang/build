@@ -2,16 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library source_gen.generated_output;
-
 import 'dart:convert';
-
-import 'package:analyzer/dart/element/element.dart';
 
 import 'generator.dart';
 
 class GeneratedOutput {
-  final Element sourceMember;
   final String output;
   final Generator generator;
   final error;
@@ -19,12 +14,11 @@ class GeneratedOutput {
 
   bool get isError => error != null;
 
-  GeneratedOutput(this.sourceMember, this.generator, this.output)
+  GeneratedOutput(this.generator, this.output)
       : error = null,
         stackTrace = null;
 
-  GeneratedOutput.fromError(this.sourceMember, this.generator, Object error,
-      [this.stackTrace])
+  GeneratedOutput.fromError(this.generator, Object error, [this.stackTrace])
       : this.output = _outputFromError(error),
         this.error = error;
 }

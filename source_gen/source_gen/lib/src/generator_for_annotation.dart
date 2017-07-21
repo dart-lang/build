@@ -2,63 +2,61 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library source_gen.generator_for_annotation;
-
 import 'dart:async';
 
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
-import 'annotation.dart';
+import 'constants.dart';
 import 'generator.dart';
+import 'type_checker.dart';
+import 'utils.dart';
 
-/// A generator that invokes [generateForAnnotatedElement] for every [T].
+/// A [Generator] that invokes [generateForAnnotatedElement] for every [T].
 ///
-/// For example, this will allow code generated based on `@Deprecated`:
+/// For example, this will allow code generated for all elements which are
+/// annotated with `@Deprecated`:
+///
 /// ```dart
 /// class DeprecatedGenerator extends GeneratorForAnnotation<Deprecated> {
 ///   @override
 ///   Future<String> generateForAnnotatedElement(
 ///       Element element,
-///       Deprecated annotation,
+///       ConstantReader annotation,
 ///       BuildStep buildStep) async {
 ///     // Return a string representing the code to emit.
 ///   }
 /// }
 /// ```
-///
-/// **NOTE**: This class operates under an assumption that annotation [T] can be
-/// created using `dart:mirrors` and based on the visible parameters to the
-/// annotation's class, and may not work for all cases.
 abstract class GeneratorForAnnotation<T> extends Generator {
   const GeneratorForAnnotation();
 
+  TypeChecker get typeChecker => new TypeChecker.fromRuntime(T);
+
   @override
-  Future<String> generate(Element element, BuildStep buildStep) {
-    var matchingAnnotations =
-        element.metadata.where((md) => matchAnnotation(T, md)).toList();
-
-    if (matchingAnnotations.isEmpty) {
-      return null;
-    }
-
-    if (matchingAnnotations.length > 1) {
-      throw new StateError('Cannot have more than one matching annotation');
-    }
-
-    var annotationInstance =
-        instantiateAnnotation(matchingAnnotations.single) as T;
-
-    assert(annotationInstance != null, 'Could not create an instance of $T');
-
-    return generateForAnnotatedElement(element, annotationInstance, buildStep);
+  Future<String> generate(LibraryElement library, BuildStep buildStep) async {
+    var elements = allElements(library)
+        .map((e) => new _AnnotatedElement(e, typeChecker.firstAnnotationOf(e)))
+        .where((e) => e.annotation != null);
+    var allOutput = await Future.wait(elements.map((e) =>
+        generateForAnnotatedElement(
+            e.element, new ConstantReader(e.annotation), buildStep)));
+    // TODO interleave comments indicating which element produced the output?
+    return allOutput.join('\n');
   }
 
   /// Override to return source code to generate for [element].
   ///
-  /// This method is invoked based on finding an instance of [annotation] in the
-  /// source code. An [annotation] instance is provided, if it can be determined
-  /// how to create the class, otherwise may be `null`.
+  /// This method is invoked based on finding elements annotated with an
+  /// instance of [T]. The [annotation] is provided as a [ConstantReader].
   Future<String> generateForAnnotatedElement(
-      Element element, T annotation, BuildStep buildStep);
+      Element element, ConstantReader annotation, BuildStep buildStep);
+}
+
+class _AnnotatedElement {
+  final Element element;
+  final DartObject annotation;
+
+  _AnnotatedElement(this.element, this.annotation);
 }

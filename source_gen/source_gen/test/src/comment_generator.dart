@@ -14,30 +14,25 @@ class CommentGenerator extends Generator {
   const CommentGenerator({this.forClasses: true, this.forLibrary: false});
 
   @override
-  Future<String> generate(Element element, _) async {
-    if (forClasses && element is ClassElement) {
-      if (element.displayName.contains('GoodError')) {
-        throw new InvalidGenerationSourceError(
-            "Don't use classes with the word 'Error' in the name",
-            todo: "Rename ${element.displayName} to something else.");
-      }
-
-      if (element.displayName.contains('Error')) {
-        throw new ArgumentError.value(
-            element,
-            'element',
-            "We don't support class names with the word 'Error'.\n"
-            "Try renaming the class.");
-      }
-
-      return '// Code for "$element"';
+  Future<String> generate(LibraryElement library, _) async {
+    var output = new StringBuffer();
+    if (forLibrary) {
+      output.writeln('// Code for "$library"');
     }
-
-    if (forLibrary && element is LibraryElement) {
-      return '// Code for "$element"';
+    if (forClasses) {
+      for (var classElement
+          in allElements(library).where((e) => e is ClassElement)) {
+        if (classElement.displayName.contains('GoodError')) {
+          throw new InvalidGenerationSourceError(
+              "Don't use classes with the word 'Error' in the name",
+              todo: 'Rename ${classElement.displayName} to something else.');
+        }
+        output.writeln('// Code for "$classElement"');
+      }
     }
-    return null;
+    return '$output';
   }
 
+  @override
   String toString() => 'CommentGenerator';
 }

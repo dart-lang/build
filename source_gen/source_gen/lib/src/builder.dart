@@ -129,8 +129,6 @@ class GeneratorBuilder extends Builder {
       contentBuffer.writeln('');
       contentBuffer.writeln(_headerLine);
       contentBuffer.writeln('// Generator: ${output.generator}');
-      contentBuffer
-          .writeln('// Target: ${friendlyNameForElement(output.sourceMember)}');
       contentBuffer.writeln(_headerLine);
       contentBuffer.writeln('');
 
@@ -160,35 +158,20 @@ class GeneratorBuilder extends Builder {
   String toString() => 'GeneratorBuilder:$generators';
 }
 
-Stream<GeneratedOutput> _generate(LibraryElement unit,
+Stream<GeneratedOutput> _generate(LibraryElement library,
     List<Generator> generators, BuildStep buildStep) async* {
-  List<Element> elements;
-  try {
-    elements = allElements(unit).toList();
-  } catch (e) {
-    log.fine('Resolve error details:\n$e');
-    log.severe('Failed to resolve ${buildStep.inputId}.');
-    return;
-  }
-  for (var element in elements) {
-    yield* _processUnitMember(element, generators, buildStep);
-  }
-}
-
-Stream<GeneratedOutput> _processUnitMember(
-    Element element, List<Generator> generators, BuildStep buildStep) async* {
   for (var gen in generators) {
     try {
-      log.finer('Running $gen for $element');
-      var createdUnit = await gen.generate(element, buildStep);
+      log.finer('Running $gen for $library');
+      var createdUnit = await gen.generate(library, buildStep);
 
-      if (createdUnit != null) {
-        log.finest(() => 'Generated $createdUnit for $element');
-        yield new GeneratedOutput(element, gen, createdUnit);
+      if (createdUnit != null && createdUnit.isNotEmpty) {
+        log.finest(() => 'Generated $createdUnit for $library');
+        yield new GeneratedOutput(gen, createdUnit);
       }
     } catch (e, stack) {
-      log.severe('Error running $gen for $element.', e, stack);
-      yield new GeneratedOutput.fromError(element, gen, e, stack);
+      log.severe('Error running $gen for $library.', e, stack);
+      yield new GeneratedOutput.fromError(gen, e, stack);
     }
   }
 }

@@ -14,7 +14,10 @@ import 'src/comment_generator.dart';
 import 'src/unformatted_code_generator.dart';
 
 void main() {
-  test('Simple Generator test', _simpleTest);
+  test('Simple Generator test', () {
+    _generateTest(const CommentGenerator(forClasses: true, forLibrary: false),
+        _testGenPartContent);
+  });
 
   test('Bad generated source', () async {
     var srcs = _createPackageStub(pkgName);
@@ -170,10 +173,6 @@ void main() {
   });
 }
 
-Future _simpleTest() => _generateTest(
-    const CommentGenerator(forClasses: true, forLibrary: false),
-    _testGenPartContent);
-
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
   var srcs = _createPackageStub(pkgName);
   var builder = new GeneratorBuilder([gen]);
@@ -198,17 +197,12 @@ Map<String, String> _createPackageStub(String pkgName,
 /// Doesn't generate output for any element
 class _NoOpGenerator extends Generator {
   const _NoOpGenerator();
-  Future<String> generate(Element element, _) => null;
+  Future<String> generate(LibraryElement element, _) => null;
 }
 
 class _BadOutputGenerator extends Generator {
   const _BadOutputGenerator();
-  Future<String> generate(Element element, _) async {
-    if (element is LibraryElement) {
-      return 'not valid code!';
-    }
-    return null;
-  }
+  Future<String> generate(LibraryElement element, _) async => 'not valid code!';
 }
 
 const pkgName = 'pkg';
@@ -245,16 +239,9 @@ part of test_lib;
 
 // **************************************************************************
 // Generator: CommentGenerator
-// Target: class Person
 // **************************************************************************
 
 // Code for "class Person"
-
-// **************************************************************************
-// Generator: CommentGenerator
-// Target: class Customer
-// **************************************************************************
-
 // Code for "class Customer"
 ''';
 
@@ -265,7 +252,6 @@ part of test_lib;
 
 // **************************************************************************
 // Generator: CommentGenerator
-// Target: library test_lib
 // **************************************************************************
 
 // Code for "test_lib"
@@ -275,16 +261,9 @@ const _testGenStandaloneContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
 // Generator: CommentGenerator
-// Target: class Person
 // **************************************************************************
 
 // Code for "class Person"
-
-// **************************************************************************
-// Generator: CommentGenerator
-// Target: class Customer
-// **************************************************************************
-
 // Code for "class Customer"
 ''';
 
@@ -295,23 +274,10 @@ part of test_lib;
 
 // **************************************************************************
 // Generator: CommentGenerator
-// Target: library test_lib
 // **************************************************************************
 
 // Code for "test_lib"
-
-// **************************************************************************
-// Generator: CommentGenerator
-// Target: class Person
-// **************************************************************************
-
 // Code for "class Person"
-
-// **************************************************************************
-// Generator: CommentGenerator
-// Target: class Customer
-// **************************************************************************
-
 // Code for "class Customer"
 ''';
 
@@ -321,26 +287,10 @@ part of test_lib;
 
 // **************************************************************************
 // Generator: CommentGenerator
-// Target: class MyError
-// **************************************************************************
-
-// Error: Invalid argument (element): We don't support class names with the word 'Error'.
-//        Try renaming the class.: Instance of 'ClassElementImpl'
-
-// **************************************************************************
-// Generator: CommentGenerator
-// Target: class MyGoodError
 // **************************************************************************
 
 // Error: Don't use classes with the word 'Error' in the name
 // TODO: Rename MyGoodError to something else.
-
-// **************************************************************************
-// Generator: CommentGenerator
-// Target: class Customer
-// **************************************************************************
-
-// Code for "class Customer"
 ''';
 
 const _testGenNoLibrary = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
@@ -349,7 +299,6 @@ part of 'test_lib.dart';
 
 // **************************************************************************
 // Generator: CommentGenerator
-// Target: class A
 // **************************************************************************
 
 // Code for "class A"
