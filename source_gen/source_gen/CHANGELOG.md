@@ -1,9 +1,9 @@
 ## 0.7.0
 
 * **Breaking changes**
-  * `Generator.generate` now operates on a `LibraryElement` rather than being
+  * `Generator.generate` now operates on a `LibraryReader` rather than being
     called for every `Element` within a library. Generators can iterate over
-    elements using the `allElements` utility. `GeneratorForAnnotation` will
+    elements using `LibraryReader.allElements`. `GeneratorForAnnotation` will
     continue to call `generateForAnnotatedElement` repeatedly for each element.
   * `GeneratorForAnnotation` passes in a `ConstantReader` for the annotation
     instance rather than re-creating it using mirrors.
@@ -15,6 +15,7 @@
   * Removed `OutputFormatter` typedef.
 * Add `LibraryReader.allElements` - a utility to iterate across all `Element`
   instances contained in Dart library.
+* Add `LibraryReader.element` to get back to the `LibraryElement` instance.
 
 ## 0.6.1+1
 

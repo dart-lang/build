@@ -5,7 +5,6 @@
 @TestOn('vm')
 import 'dart:async';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
@@ -175,12 +174,12 @@ Map<String, String> _createPackageStub(String pkgName,
 /// Doesn't generate output for any element
 class _NoOpGenerator extends Generator {
   const _NoOpGenerator();
-  Future<String> generate(LibraryElement element, _) => null;
+  Future<String> generate(LibraryReader library, _) => null;
 }
 
 class _BadOutputGenerator extends Generator {
   const _BadOutputGenerator();
-  Future<String> generate(LibraryElement element, _) async => 'not valid code!';
+  Future<String> generate(LibraryReader library, _) async => 'not valid code!';
 }
 
 const pkgName = 'pkg';

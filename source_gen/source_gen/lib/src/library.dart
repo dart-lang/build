@@ -10,27 +10,27 @@ import 'package:analyzer/src/dart/resolver/scope.dart';
 
 /// A high-level wrapper API with common functionality for [LibraryElement].
 class LibraryReader {
-  final LibraryElement _element;
+  final LibraryElement element;
 
   Namespace _namespaceCache;
 
-  LibraryReader(this._element);
+  LibraryReader(this.element);
 
   Namespace get _namespace => _namespaceCache ??=
-      new NamespaceBuilder().createExportNamespaceForLibrary(_element);
+      new NamespaceBuilder().createExportNamespaceForLibrary(element);
 
   /// Returns a top-level [ClassElement] publicly visible in by [name].
   ///
   /// Unlike [LibraryElement.getType], this also correctly traverses identifiers
   /// that are accessible via one or more `export` directives.
   ClassElement findType(String name) =>
-      _element.getType(name) ?? _namespace.get(name) as ClassElement;
+      element.getType(name) ?? _namespace.get(name) as ClassElement;
 
-  /// Returns all of the declarations in this library, including the
-  /// [LibraryElement] as the first item.
+  /// All of the declarations in this library, including the [LibraryElement] as
+  /// the first item.
   Iterable<Element> get allElements sync* {
-    yield _element;
-    for (var cu in _element.units) {
+    yield element;
+    for (var cu in element.units) {
       for (var compUnitMember in cu.unit.declarations) {
         yield* _getElements(compUnitMember);
       }

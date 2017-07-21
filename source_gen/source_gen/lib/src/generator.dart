@@ -4,8 +4,9 @@
 
 import 'dart:async';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+
+import 'library.dart';
 
 /// A tool to generate Dart code based on a Dart library source.
 ///
@@ -19,7 +20,7 @@ abstract class Generator {
   /// output is Dart code returned through the Future. If there is nothing to
   /// generate for this library may return null, or a Future that resolves to
   /// null or the empty string.
-  Future<String> generate(LibraryElement element, BuildStep buildStep) => null;
+  Future<String> generate(LibraryReader library, BuildStep buildStep) => null;
 
   @override
   String toString() => this.runtimeType.toString();

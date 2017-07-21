@@ -14,15 +14,14 @@ class CommentGenerator extends Generator {
   const CommentGenerator({this.forClasses: true, this.forLibrary: false});
 
   @override
-  Future<String> generate(LibraryElement library, _) async {
+  Future<String> generate(LibraryReader library, _) async {
     var output = new StringBuffer();
     if (forLibrary) {
-      output.writeln('// Code for "$library"');
+      output.writeln('// Code for "${library.element}"');
     }
     if (forClasses) {
-      for (var classElement in new LibraryReader(library)
-          .allElements
-          .where((e) => e is ClassElement)) {
+      for (var classElement
+          in library.allElements.where((e) => e is ClassElement)) {
         if (classElement.displayName.contains('GoodError')) {
           throw new InvalidGenerationSourceError(
               "Don't use classes with the word 'Error' in the name",

@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:source_gen/source_gen.dart';
 
 /// Generates a single-line of unformatted code.
@@ -12,7 +11,7 @@ class UnformattedCodeGenerator extends Generator {
   const UnformattedCodeGenerator();
 
   @override
-  Future<String> generate(LibraryElement element, _) async => unformattedCode;
+  Future<String> generate(LibraryReader library, _) async => unformattedCode;
 
   static const formattedCode = '''
 void hello() => print('hello');

@@ -10,6 +10,7 @@ import 'package:dart_style/dart_style.dart';
 
 import 'generated_output.dart';
 import 'generator.dart';
+import 'library.dart';
 import 'utils.dart';
 
 typedef String _OutputFormatter(String code);
@@ -195,10 +196,11 @@ class LibraryBuilder extends _Builder {
 
 Stream<GeneratedOutput> _generate(LibraryElement library,
     List<Generator> generators, BuildStep buildStep) async* {
+  var libraryReader = new LibraryReader(library);
   for (var gen in generators) {
     try {
       log.finer('Running $gen for $library');
-      var createdUnit = await gen.generate(library, buildStep);
+      var createdUnit = await gen.generate(libraryReader, buildStep);
 
       if (createdUnit != null && createdUnit.isNotEmpty) {
         log.finest(() => 'Generated $createdUnit for $library');

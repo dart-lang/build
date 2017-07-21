@@ -35,9 +35,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   TypeChecker get typeChecker => new TypeChecker.fromRuntime(T);
 
   @override
-  Future<String> generate(LibraryElement library, BuildStep buildStep) async {
-    var elements = new LibraryReader(library)
-        .allElements
+  Future<String> generate(LibraryReader library, BuildStep buildStep) async {
+    var elements = library.allElements
         .map((e) => new _AnnotatedElement(e, typeChecker.firstAnnotationOf(e)))
         .where((e) => e.annotation != null);
     var allOutput = await Future.wait(elements.map((e) =>
