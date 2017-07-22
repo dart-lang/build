@@ -46,7 +46,7 @@ DartObject _getFieldRecursive(DartObject object, String field) {
 
 /// A wrapper for analyzer's [DartObject] with a predictable high-level API.
 ///
-/// Unlike [DartObject.getField], all `readX` methods attempt to access super
+/// Unlike [DartObject.getField], the [read] method attempts to access super
 /// classes for the field value if not found.
 abstract class ConstantReader {
   factory ConstantReader(DartObject object) =>
@@ -145,7 +145,11 @@ abstract class ConstantReader {
   /// Returns whether this constant matches [checker].
   bool instanceOf(TypeChecker checker);
 
-  /// Reads[ field] from the constant as another constant value.
+  /// Reads [field] from the constant as another constant value.
+  ///
+  /// If the field is not present in the [DartObject] crawl up the chain of
+  /// super classes until it is found. If the field is not present throw a
+  /// [FormatException].
   ConstantReader read(String field);
 
   /// Returns as a revived meta class.
