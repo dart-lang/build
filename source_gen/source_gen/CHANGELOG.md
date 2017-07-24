@@ -17,6 +17,7 @@
 * Add `LibraryReader.allElements` - a utility to iterate across all `Element`
   instances contained in Dart library.
 * Add `LibraryReader.element` to get back to the `LibraryElement` instance.
+* Add `ConstantReader.objectValue` to get back to the `DartObject` instance.
 * Add `ConstantReader.peek` to read a value that returns `null` if not found:
 
 ```dart

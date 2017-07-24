@@ -144,6 +144,12 @@ void main() {
       expect(() => constants[11].anyValue, throwsFormatException);
     });
 
+    test('should give back the underlying value', () {
+      final object = constants[11].objectValue;
+      expect(object, isNotNull);
+      expect(object.toTypeValue(), isNotNull);
+    });
+
     test('should fail reading from `null`', () {
       final $null = constants[3];
       expect($null.isNull, isTrue, reason: '${$null}');

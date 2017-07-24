@@ -59,26 +59,29 @@ abstract class ConstantReader {
   /// is represented at least partially with [DartObject] instances.
   dynamic get anyValue;
 
-  /// Returns whether this constant represents a `bool` literal.
+  /// Underlying object used to create this instance.
+  DartObject get objectValue;
+
+  /// Whether this constant represents a `bool` literal.
   bool get isBool;
 
-  /// Returns this constant as a `bool` value.
+  /// This constant as a `bool` value.
   bool get boolValue;
 
-  /// Returns whether this constant represents an `int` literal.
+  /// This constant represents an `int` literal.
   bool get isInt;
 
-  /// Returns this constant as an `int` value.
+  /// This constant as an `int` value.
   ///
   /// Throws [FormatException] if [isInt] is `false`.
   int get intValue;
 
-  /// Returns whether this constant represents a `List` literal.
+  /// Whether this constant represents a `List` literal.
   ///
   /// If `true`, [listValue] will return a `List` (not throw).
   bool get isList;
 
-  /// Returns this constant as a `List` value.
+  /// This constant as a `List` value.
   ///
   /// Note: the list values are instances of [DartObject] which represent the
   /// original values.
@@ -86,12 +89,12 @@ abstract class ConstantReader {
   /// Throws [FormatException] if [isList] is `false`.
   List<DartObject> get listValue;
 
-  /// Returns whether this constant represents a `Map` literal.
+  /// Whether this constant represents a `Map` literal.
   ///
   /// If `true`, [listValue] will return a `Map` (not throw).
   bool get isMap;
 
-  /// Returns this constant as a `Map` value.
+  /// This constant as a `Map` value.
   ///
   /// Note: the map keys and values are instances of [DartObject] which
   /// represent the original values.
@@ -99,27 +102,27 @@ abstract class ConstantReader {
   /// Throws [FormatException] if [isMap] is `false`.
   Map<DartObject, DartObject> get mapValue;
 
-  /// Returns whether this constant represents a `String` literal.
+  /// Whether this constant represents a `String` literal.
   ///
   /// If `true`, [stringValue] will return a `String` (not throw).
   bool get isString;
 
-  /// Returns this constant as an `String` value.
+  /// This constant as an `String` value.
   ///
   /// Throws [FormatException] if [isString] is `false`.
   String get stringValue;
 
-  /// Returns whether this constant represents a `double` literal.
+  /// Whether this constant represents a `double` literal.
   ///
   /// If `true`, [doubleValue] will return a `double` (not throw).
   bool get isDouble;
 
-  /// Returns this constant as an `double` value.
+  /// This constant as an `double` value.
   ///
   /// Throws [FormatException] if [isDouble] is `false`.
   double get doubleValue;
 
-  /// Returns whether this constant represents a `Symbol` literal.
+  /// Whether this constant represents a `Symbol` literal.
   ///
   /// If `true`, [symbolValue] will return a `Symbol` (not throw).
   bool get isSymbol;
@@ -129,20 +132,20 @@ abstract class ConstantReader {
   /// Throws [FormatException] if [isSymbol] is `false`.
   Symbol get symbolValue;
 
-  /// Returns whether this constant represents a `Type` literal.
+  /// Whether this constant represents a `Type` literal.
   ///
   /// If `true`, [typeValue] will return a `DartType` (not throw).
   bool get isType;
 
-  /// Returns a [DartType] representing this as a `Type` value.
+  /// A [DartType] representing this as a `Type` value.
   ///
   /// Throws [FormatException] if [isType] is `false`.
   DartType get typeValue;
 
-  /// Returns whether this constant represents `null`.
+  /// Whether this constant represents `null`.
   bool get isNull;
 
-  /// Returns whether this constant matches [checker].
+  /// Whether this constant matches [checker].
   bool instanceOf(TypeChecker checker);
 
   /// Reads [field] from the constant as another constant value.
@@ -171,6 +174,9 @@ class _NullConstant implements ConstantReader {
 
   @override
   dynamic get anyValue => null;
+
+  @override
+  DartObject get objectValue => throw new UnsupportedError('Null');
 
   @override
   bool get boolValue => _throw('bool');
@@ -241,82 +247,83 @@ class _NullConstant implements ConstantReader {
 
 /// Default implementation of [ConstantReader].
 class _Constant implements ConstantReader {
-  final DartObject _object;
+  const _Constant(this.objectValue);
 
-  const _Constant(this._object);
+  @override
+  final DartObject objectValue;
 
   @override
   dynamic get anyValue =>
-      _object.toBoolValue() ??
-      _object.toIntValue() ??
-      _object.toStringValue() ??
-      _object.toDoubleValue() ??
+      objectValue.toBoolValue() ??
+      objectValue.toIntValue() ??
+      objectValue.toStringValue() ??
+      objectValue.toDoubleValue() ??
       (isSymbol ? this.symbolValue : null) ??
       _throw('bool, int, double, String or Symbol');
 
   @override
-  bool get boolValue => isBool ? _object.toBoolValue() : _throw('bool');
+  bool get boolValue => isBool ? objectValue.toBoolValue() : _throw('bool');
 
   @override
-  int get intValue => isInt ? _object.toIntValue() : _throw('int');
+  int get intValue => isInt ? objectValue.toIntValue() : _throw('int');
 
   @override
   String get stringValue =>
-      isString ? _object.toStringValue() : _throw('String');
+      isString ? objectValue.toStringValue() : _throw('String');
 
   @override
   List<DartObject> get listValue =>
-      isList ? _object.toListValue() : _throw('List');
+      isList ? objectValue.toListValue() : _throw('List');
 
   @override
   Map<DartObject, DartObject> get mapValue =>
-      isMap ? _object.toMapValue() : _throw('Map');
+      isMap ? objectValue.toMapValue() : _throw('Map');
 
   @override
-  bool get isBool => _object.toBoolValue() != null;
+  bool get isBool => objectValue.toBoolValue() != null;
 
   @override
-  bool get isInt => _object.toIntValue() != null;
+  bool get isInt => objectValue.toIntValue() != null;
 
   @override
-  bool get isList => _object.toListValue() != null;
+  bool get isList => objectValue.toListValue() != null;
 
   @override
-  bool get isNull => _isNull(_object);
+  bool get isNull => _isNull(objectValue);
 
   @override
-  bool get isMap => _object.toMapValue() != null;
+  bool get isMap => objectValue.toMapValue() != null;
 
   @override
-  bool get isString => _object.toStringValue() != null;
+  bool get isString => objectValue.toStringValue() != null;
 
   @override
-  bool get isDouble => _object.toDoubleValue() != null;
+  bool get isDouble => objectValue.toDoubleValue() != null;
 
   @override
   double get doubleValue =>
-      isDouble ? _object.toDoubleValue() : _throw('double');
+      isDouble ? objectValue.toDoubleValue() : _throw('double');
 
   @override
-  bool get isSymbol => _object.toSymbolValue() != null;
+  bool get isSymbol => objectValue.toSymbolValue() != null;
 
   @override
   Symbol get symbolValue =>
-      isSymbol ? new Symbol(_object.toSymbolValue()) : _throw('Symbol');
+      isSymbol ? new Symbol(objectValue.toSymbolValue()) : _throw('Symbol');
 
   @override
-  bool get isType => _object.toTypeValue() != null;
+  bool get isType => objectValue.toTypeValue() != null;
 
   @override
-  DartType get typeValue => isType ? _object.toTypeValue() : _throw("Type");
+  DartType get typeValue => isType ? objectValue.toTypeValue() : _throw("Type");
 
   @override
   bool instanceOf(TypeChecker checker) =>
-      checker.isAssignableFromType(_object.type);
+      checker.isAssignableFromType(objectValue.type);
 
   @override
   ConstantReader peek(String field) {
-    final constant = new ConstantReader(_getFieldRecursive(_object, field));
+    final constant = new ConstantReader(_getFieldRecursive(objectValue, field));
     if (constant.isNull) {
       return null;
     }
@@ -327,18 +334,18 @@ class _Constant implements ConstantReader {
   ConstantReader read(String field) {
     final reader = peek(field);
     if (reader == null) {
-      _assertHasField(_object?.type?.element, field);
+      _assertHasField(objectValue?.type?.element, field);
       return const _NullConstant();
     }
     return reader;
   }
 
   @override
-  Revivable revive() => reviveInstance(_object);
+  Revivable revive() => reviveInstance(objectValue);
 
   @override
-  String toString() => 'ConstantReader ${_object}';
+  String toString() => 'ConstantReader ${objectValue}';
 
   dynamic _throw(String expected) =>
-      throw new FormatException('Not an instance of $expected.', _object);
+      throw new FormatException('Not an instance of $expected.', objectValue);
 }
