@@ -1,6 +1,7 @@
 ## 0.7.0
 
-* **Breaking changes**
+* **Breaking changes**: See [the wiki](https://github.com/dart-lang/source_gen/wiki/Migrating-to-0.7.x)
+  for help upgrading.
   * `Generator.generate` now operates on a `LibraryReader` rather than being
     called for every `Element` within a library. Generators can iterate over
     elements using `LibraryReader.allElements`. `GeneratorForAnnotation` will
