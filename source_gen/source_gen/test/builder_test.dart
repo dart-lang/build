@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
@@ -148,6 +149,16 @@ void main() {
           '$pkgName|lib/a.g.dart': contains(customOutput),
         });
   });
+
+  test('Error logs contain original input ids', () async {
+    var logs = <LogRecord>[];
+    await testBuilder(new LibraryBuilder(new _ThrowingGenerator()),
+        {'$pkgName|lib/a.dart': 'void hello() {}'},
+        onLog: logs.add);
+    await new Future(() {});
+    expect(
+        logs.map((l) => l.message), contains(contains('$pkgName|lib/a.dart')));
+  });
 }
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
@@ -180,6 +191,10 @@ class _NoOpGenerator extends Generator {
 class _BadOutputGenerator extends Generator {
   const _BadOutputGenerator();
   Future<String> generate(LibraryReader library, _) async => 'not valid code!';
+}
+
+class _ThrowingGenerator extends Generator {
+  Future<String> generate(_, __) async => throw new UnimplementedError();
 }
 
 const pkgName = 'pkg';

@@ -199,15 +199,15 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
   var libraryReader = new LibraryReader(library);
   for (var gen in generators) {
     try {
-      log.finer('Running $gen for $library');
+      log.finer('Running $gen for ${buildStep.inputId}');
       var createdUnit = await gen.generate(libraryReader, buildStep);
 
       if (createdUnit != null && createdUnit.isNotEmpty) {
-        log.finest(() => 'Generated $createdUnit for $library');
+        log.finest(() => 'Generated $createdUnit for ${buildStep.inputId}');
         yield new GeneratedOutput(gen, createdUnit);
       }
     } catch (e, stack) {
-      log.severe('Error running $gen for $library.', e, stack);
+      log.severe('Error running $gen for ${buildStep.inputId}.', e, stack);
       yield new GeneratedOutput.fromError(gen, e, stack);
     }
   }

@@ -34,6 +34,8 @@ findTokenField(DartObject o) {
   `TypeChecker.firstAnnotationOfExact`. Setting this to `false` will enable you
   to check for matching annotations with incomplete type information (at your
   own risk).
+* Builder logs now log the primary inputs `AssetId` instead of the `library`,
+  which is more useful for tracking down the actual files.
 
 ## 0.6.1+1
 
