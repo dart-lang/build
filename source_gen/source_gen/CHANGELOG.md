@@ -14,7 +14,7 @@
     `package:json_serializable`.
   * Removed `lib/builder.dart`. Import through `source_gen.dart` instead.
   * Removed `OutputFormatter` typedef.
-  
+
 * Add `LibraryReader.allElements` - a utility to iterate across all `Element`
   instances contained in Dart library.
 * Add `LibraryReader.element` to get back to the `LibraryElement` instance.
@@ -28,6 +28,12 @@ findTokenField(DartObject o) {
   final token = o.peek('token') ?? o.read('_token');
 }
 ```
+
+* Add `throwOnUnresolved` optional parameter to `TypeChecker.annotationsOf`,
+  `TypeChecker.annotationsOfExact`, `TypeChecker.firstAnnotationOf`, and
+  `TypeChecker.firstAnnotationOfExact`. Setting this to `false` will enable you
+  to check for matching annotations with incomplete type information (at your
+  own risk).
 
 ## 0.6.1+1
 
@@ -70,14 +76,14 @@ findTokenField(DartObject o) {
   ```dart
   import 'package:analyzer/dart/element/type.dart';
   import 'package:source_gen/source_gen.dart';
-  
+
   void checkType(DartType dartType) {
     // Checks compared to runtime type `SomeClass`.
     print(const TypeChecker.forRuntime(SomeClass).isExactlyType(dartType));
-    
+
     // Checks compared to a known Url/Symbol:
     const TypeChecker.forUrl('package:foo/foo.dart#SomeClass');
-    
+
     // Checks compared to another resolved `DartType`:
     const TypeChecker.forStatic(anotherDartType);
   }
@@ -86,7 +92,7 @@ findTokenField(DartObject o) {
 * Failing to add a `library` directive to a library that is being used as a
   generator target that generates partial files (`part of`) is now an explicit
   error that gives a hint on how to name and fix your library:
-  
+
   ```bash
   > Could not find library identifier so a "part of" cannot be built.
   >
@@ -94,11 +100,11 @@ findTokenField(DartObject o) {
   >
   > "library foo.bar;"
   ```
-  
+
   In Dart SDK `>=1.25.0` this can be relaxed as `part of` can refer to a path.
   To opt-in, `GeneratorBuilder` now has a new flag, `requireLibraryDirective`.
   Set it to `false`, and also set your `sdk` constraint appropriately:
-  
+
   ```yaml
     sdk: '>=1.25.0 <2.0.0'
   ```
@@ -107,11 +113,11 @@ findTokenField(DartObject o) {
   high-level APIs, including `findType`, which traverses `export` directives
   for publicly exported types. For example, to find `Generator` from
   `package:source_gen/source_gen.dart`:
-  
+
   ```dart
   void example(LibraryElement pkgSourceGen) {
     var library = new LibraryReader(pkgSourceGen);
-  
+
     // Instead of pkgSourceGen.getType('Generator'), which is null.
     library.findType('Generator');
   }
@@ -120,26 +126,26 @@ findTokenField(DartObject o) {
 * Added `ConstantReader`, a high-level API for reading from constant (static)
   values from Dart source code (usually represented by `DartObject` from the
   `analyzer` package):
-  
+
   ```dart
   abstract class ConstantReader {
     factory ConstantReader(DartObject object) => ...
-  
+
     // Other methods and properties also exist.
-  
+
     /// Reads[ field] from the constant as another constant value.
     ConstantReader read(String field);
-  
+
     /// Reads [field] from the constant as a boolean.
     ///
     /// If the resulting value is `null`, uses [defaultTo] if defined.
     bool readBool(String field, {bool defaultTo()});
-  
+
     /// Reads [field] from the constant as an int.
     ///
     /// If the resulting value is `null`, uses [defaultTo] if defined.
     int readInt(String field, {int defaultTo()});
-  
+
     /// Reads [field] from the constant as a string.
     ///
     /// If the resulting value is `null`, uses [defaultTo] if defined.

@@ -286,4 +286,56 @@ void main() {
       expect(bExact.map((a) => a.type.name), ['B']);
     });
   });
+
+  group('unresolved annotations', () {
+    TypeChecker $A;
+    ClassElement $ExampleOfA;
+
+    setUpAll(() async {
+      final resolver = await resolveSource(r'''
+      library _test;
+
+      // Put the missing annotation first so it throws.
+      @B()
+      @A()
+      class ExampleOfA {}
+
+      class A {
+        const A();
+      }
+    ''');
+      final library = resolver.getLibraryByName('_test');
+      $A = new TypeChecker.fromStatic(library.getType('A').type);
+      $ExampleOfA = library.getType('ExampleOfA');
+    });
+
+    test('should throw by default', () {
+      expect(() => $A.firstAnnotationOf($ExampleOfA), throwsStateError);
+      expect(() => $A.annotationsOf($ExampleOfA), throwsStateError);
+      expect(() => $A.firstAnnotationOfExact($ExampleOfA), throwsStateError);
+      expect(() => $A.annotationsOfExact($ExampleOfA), throwsStateError);
+    });
+
+    test('should not throw if `throwOnUnresolved` == false', () {
+      expect(
+          $A.firstAnnotationOf($ExampleOfA, throwOnUnresolved: false).type.name,
+          'A');
+      expect(
+          $A
+              .annotationsOf($ExampleOfA, throwOnUnresolved: false)
+              .map((a) => a.type.name),
+          ['A']);
+      expect(
+          $A
+              .firstAnnotationOfExact($ExampleOfA, throwOnUnresolved: false)
+              .type
+              .name,
+          'A');
+      expect(
+          $A
+              .annotationsOfExact($ExampleOfA, throwOnUnresolved: false)
+              .map((a) => a.type.name),
+          ['A']);
+    });
+  });
 }
