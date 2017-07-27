@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
@@ -36,12 +35,9 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
   @override
   Future<String> generate(LibraryReader library, BuildStep buildStep) async {
-    var elements = library.allElements
-        .map((e) => new _AnnotatedElement(e, typeChecker.firstAnnotationOf(e)))
-        .where((e) => e.annotation != null);
+    var elements = library.annotatedWith(typeChecker);
     var allOutput = await Future.wait(elements.map((e) =>
-        generateForAnnotatedElement(
-            e.element, new ConstantReader(e.annotation), buildStep)));
+        generateForAnnotatedElement(e.element, e.annotation, buildStep)));
     // TODO interleave comments indicating which element produced the output?
     return allOutput.join('\n');
   }
@@ -52,11 +48,4 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   /// instance of [T]. The [annotation] is provided as a [ConstantReader].
   Future<String> generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep);
-}
-
-class _AnnotatedElement {
-  final Element element;
-  final DartObject annotation;
-
-  _AnnotatedElement(this.element, this.annotation);
 }

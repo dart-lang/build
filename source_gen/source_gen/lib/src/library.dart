@@ -8,6 +8,17 @@ import 'package:analyzer/dart/element/element.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/resolver/scope.dart';
 
+import 'constants.dart';
+import 'type_checker.dart';
+
+/// Result of finding an [annotation] on [element] through [LibraryReader].
+class AnnotatedElement {
+  final ConstantReader annotation;
+  final Element element;
+
+  const AnnotatedElement(this.annotation, this.element);
+}
+
 /// A high-level wrapper API with common functionality for [LibraryElement].
 class LibraryReader {
   final LibraryElement element;
@@ -34,6 +45,34 @@ class LibraryReader {
       }
     }
   }
+
+  /// All of the declarations in this library annotated with [checker].
+  Iterable<AnnotatedElement> annotatedWith(TypeChecker checker,
+      {bool throwOnUnresolved}) sync* {
+    for (final element in allElements) {
+      final annotation = checker.firstAnnotationOf(element,
+          throwOnUnresolved: throwOnUnresolved);
+      if (annotation != null) {
+        yield new AnnotatedElement(new ConstantReader(annotation), element);
+      }
+    }
+  }
+
+  /// All of the declarations in this library annotated with exactly [checker].
+  Iterable<AnnotatedElement> annotatedWithExact(TypeChecker checker,
+      {bool throwOnUnresolved}) sync* {
+    for (final element in allElements) {
+      final annotation = checker.firstAnnotationOfExact(element,
+          throwOnUnresolved: throwOnUnresolved);
+      if (annotation != null) {
+        yield new AnnotatedElement(new ConstantReader(annotation), element);
+      }
+    }
+  }
+
+  /// All of the `class` elements in this library.
+  Iterable<ClassElement> get classElements =>
+      element.definingCompilationUnit.types;
 
   Iterable<Element> _getElements(CompilationUnitMember member) {
     if (member is TopLevelVariableDeclaration) {

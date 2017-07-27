@@ -1,5 +1,10 @@
 ## 0.7.1
 
+### `LibraryReader`
+
+* Added `annotatedElements` to return all elements annotated with something.
+* Added `classElements` getter for returning all `class`-es in a library.
+
 ### `TypeChecker`
 
 * Added `hasAnnotationOf` and `hasAnnotationOfExact`.
