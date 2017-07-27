@@ -52,6 +52,9 @@ abstract class ConstantReader {
   factory ConstantReader(DartObject object) =>
       _isNull(object) ? const _NullConstant() : new _Constant(object);
 
+  /// Whether this constant is a supported literal value.
+  bool get isAny;
+
   /// Constant as any supported literal value.
   ///
   /// Throws [FormatException] if a valid literal value cannot be returned. This
@@ -173,6 +176,9 @@ class _NullConstant implements ConstantReader {
   const _NullConstant();
 
   @override
+  bool get isAny => true;
+
+  @override
   dynamic get anyValue => null;
 
   @override
@@ -252,14 +258,19 @@ class _Constant implements ConstantReader {
   @override
   final DartObject objectValue;
 
-  @override
-  dynamic get anyValue =>
+  dynamic get _anyValue =>
       objectValue.toBoolValue() ??
       objectValue.toIntValue() ??
       objectValue.toStringValue() ??
       objectValue.toDoubleValue() ??
-      (isSymbol ? this.symbolValue : null) ??
-      _throw('bool, int, double, String or Symbol');
+      (isSymbol ? symbolValue : null);
+
+  @override
+  dynamic get anyValue =>
+      _anyValue ??
+      (objectValue.isNull
+          ? null
+          : _throw('bool, int, double, String or Symbol'));
 
   @override
   bool get boolValue => isBool ? objectValue.toBoolValue() : _throw('bool');
@@ -278,6 +289,9 @@ class _Constant implements ConstantReader {
   @override
   Map<DartObject, DartObject> get mapValue =>
       isMap ? objectValue.toMapValue() : _throw('Map');
+
+  @override
+  bool get isAny => _anyValue != null;
 
   @override
   bool get isBool => objectValue.toBoolValue() != null;
