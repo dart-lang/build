@@ -370,7 +370,7 @@ class BuildImpl {
     if (conflictingOutputs.isEmpty) return;
 
     Future deleteConflictingOutputs() {
-      return Future.wait(conflictingOutputs.map/*<Future>*/((output) {
+      return Future.wait(conflictingOutputs.map((output) {
         _inputsByPackage[output.package]?.remove(output);
         return _writer.delete(output);
       }));

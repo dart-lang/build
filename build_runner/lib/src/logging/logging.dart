@@ -12,8 +12,8 @@ import 'package:logging/logging.dart';
 ///
 /// This function also appends a newline after the 2nd log (unless on windows)
 /// to ensure that it does not get overwritten by later log messages.
-Future/*<T>*/ logWithTime/*<T>*/(
-    Logger logger, String description, Future/*<T>*/ action()) async {
+Future<T> logWithTime<T>(
+    Logger logger, String description, Future<T> action()) async {
   var watch = new Stopwatch()..start();
   logger.info('$description...');
   var result = await action();
