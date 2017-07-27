@@ -9,7 +9,7 @@
 
 * Added `hasAnnotationOf` and `hasAnnotationOfExact`.
 
-### ConstantReader
+### `ConstantReader`
 
 * Added `isAny`.
 * Allow `anyValue` to return `null` if the value is actually `null`.
