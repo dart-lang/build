@@ -21,6 +21,7 @@ dev_dependencies:
   transformer_test: ^0.2.1
 
 dependency_overrides:
+  analyzer: 0.31.0-alpha.0
   build:
     path: ../build
   build_test:
