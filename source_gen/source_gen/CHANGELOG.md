@@ -1,5 +1,9 @@
 ## 0.7.1
 
+### `Generator{ForAnnotation}`
+
+* Return type of `generate{ForAnnotatedElement}` is now `FutureOr<String>`.
+
 ### `LibraryReader`
 
 * Added `annotatedElements` to return all elements annotated with something.

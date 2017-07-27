@@ -20,7 +20,7 @@ abstract class Generator {
   /// output is Dart code returned through the Future. If there is nothing to
   /// generate for this library may return null, or a Future that resolves to
   /// null or the empty string.
-  Future<String> generate(LibraryReader library, BuildStep buildStep) => null;
+  FutureOr<String> generate(LibraryReader library, BuildStep buildStep) => null;
 
   @override
   String toString() => this.runtimeType.toString();
