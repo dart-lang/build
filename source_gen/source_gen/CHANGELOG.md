@@ -1,5 +1,9 @@
 ## 0.7.1
 
+### `TypeChecker`
+
+* Added `hasAnnotationOf` and `hasAnnotationOfExact`.
+
 ### ConstantReader
 
 * Added `isAny`.

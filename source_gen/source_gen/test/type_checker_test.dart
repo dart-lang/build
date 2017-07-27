@@ -256,6 +256,7 @@ void main() {
     });
 
     test('of a single @A', () {
+      expect($A.hasAnnotationOf($ExampleOfA), isTrue);
       final aAnnotation = $A.firstAnnotationOf($ExampleOfA);
       expect(aAnnotation.type.name, 'A');
       expect($B.annotationsOf($ExampleOfA), isEmpty);
@@ -282,6 +283,7 @@ void main() {
       expect(cAnnotations.map((a) => a.type.name), ['C']);
       final bAnnotations = $B.annotationsOf($ExampleOfBPlusC);
       expect(bAnnotations.map((a) => a.type.name), ['B', 'C']);
+      expect($B.hasAnnotationOfExact($ExampleOfBPlusC), isTrue);
       final bExact = $B.annotationsOfExact($ExampleOfBPlusC);
       expect(bExact.map((a) => a.type.name), ['B']);
     });

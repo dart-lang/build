@@ -66,6 +66,12 @@ abstract class TypeChecker {
     return results.isEmpty ? null : results.first;
   }
 
+  /// Returns if a constant annotating [element] is assignable to this type.
+  ///
+  /// Throws on unresolved annotations unless [throwOnUnresolved] is `false`.
+  bool hasAnnotationOf(Element element, {bool throwOnUnresolved}) =>
+      firstAnnotationOf(element, throwOnUnresolved: throwOnUnresolved) != null;
+
   /// Returns the first constant annotating [element] that is exactly this type.
   ///
   /// Throws on unresolved annotations unless [throwOnUnresolved] is `false`.
@@ -77,6 +83,13 @@ abstract class TypeChecker {
         annotationsOfExact(element, throwOnUnresolved: throwOnUnresolved);
     return results.isEmpty ? null : results.first;
   }
+
+  /// Returns if a constant annotating [element] is exactly this type.
+  ///
+  /// Throws on unresolved annotations unless [throwOnUnresolved] is `false`.
+  bool hasAnnotationOfExact(Element element, {bool throwOnUnresolved}) =>
+      firstAnnotationOfExact(element, throwOnUnresolved: throwOnUnresolved) !=
+      null;
 
   DartObject _computeConstantValue(ElementAnnotation annotation,
       {bool throwOnUnresolved}) {
