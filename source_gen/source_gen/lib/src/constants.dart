@@ -3,46 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/constant/value.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 
+import 'constants/utils.dart';
 import 'revive.dart';
 import 'type_checker.dart';
-
-/// Throws an exception if [root] or its super(s) does not contain [name].
-void _assertHasField(ClassElement root, String name) {
-  var element = root;
-  while (element != null) {
-    final field = element.getField(name);
-    if (field != null) {
-      return;
-    }
-    element = element.supertype?.element;
-  }
-  final allFields = root.fields.toSet();
-  root.allSupertypes.forEach((t) => allFields.addAll(t.element.fields));
-  throw new FormatException(
-    'Class ${root.name} does not have field "$name".',
-    'Fields: $allFields',
-  );
-}
-
-/// Returns whether or not [object] is or represents a `null` value.
-bool _isNull(DartObject object) => object?.isNull != false;
-
-/// Similar to [DartObject.getField], but traverses super classes.
-///
-/// Returns `null` if ultimately [field] is never found.
-DartObject _getFieldRecursive(DartObject object, String field) {
-  if (_isNull(object)) {
-    return null;
-  }
-  final result = object.getField(field);
-  if (_isNull(result)) {
-    return _getFieldRecursive(object.getField('(super)'), field);
-  }
-  return result;
-}
 
 /// A wrapper for analyzer's [DartObject] with a predictable high-level API.
 ///
@@ -50,7 +15,7 @@ DartObject _getFieldRecursive(DartObject object, String field) {
 /// classes for the field value if not found.
 abstract class ConstantReader {
   factory ConstantReader(DartObject object) =>
-      _isNull(object) ? const _NullConstant() : new _Constant(object);
+      isNullLike(object) ? const _NullConstant() : new _Constant(object);
 
   /// Whether this constant is a supported literal value.
   bool get isAny;
@@ -303,7 +268,7 @@ class _Constant implements ConstantReader {
   bool get isList => objectValue.toListValue() != null;
 
   @override
-  bool get isNull => _isNull(objectValue);
+  bool get isNull => isNullLike(objectValue);
 
   @override
   bool get isMap => objectValue.toMapValue() != null;
@@ -337,7 +302,7 @@ class _Constant implements ConstantReader {
 
   @override
   ConstantReader peek(String field) {
-    final constant = new ConstantReader(_getFieldRecursive(objectValue, field));
+    final constant = new ConstantReader(getFieldRecursive(objectValue, field));
     if (constant.isNull) {
       return null;
     }
@@ -348,7 +313,7 @@ class _Constant implements ConstantReader {
   ConstantReader read(String field) {
     final reader = peek(field);
     if (reader == null) {
-      _assertHasField(objectValue?.type?.element, field);
+      assertHasField(objectValue?.type?.element, field);
       return const _NullConstant();
     }
     return reader;
