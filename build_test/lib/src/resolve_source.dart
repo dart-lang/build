@@ -6,11 +6,11 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart';
+import 'package:package_resolver/package_resolver.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
-import 'package:package_resolver/package_resolver.dart';
 import 'package_reader.dart';
 
 /// Returns a future that completes with a source [Resolver] for [inputSource].

@@ -8,9 +8,9 @@ import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart';
 import 'package:logging/logging.dart';
 
-import 'in_memory_writer.dart';
-import 'in_memory_reader.dart';
 import 'assets.dart';
+import 'in_memory_reader.dart';
+import 'in_memory_writer.dart';
 
 void checkOutputs(
     Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
