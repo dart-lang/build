@@ -68,35 +68,35 @@ void main() {
     test('should read a String', () {
       expect(constants[0].isString, isTrue);
       expect(constants[0].stringValue, 'Hello');
-      expect(constants[0].isAny, isTrue);
-      expect(constants[0].anyValue, 'Hello');
+      expect(constants[0].isLiteral, isTrue);
+      expect(constants[0].literalValue, 'Hello');
     });
 
     test('should read an Int', () {
       expect(constants[1].isInt, isTrue);
       expect(constants[1].intValue, 1234);
-      expect(constants[1].isAny, isTrue);
-      expect(constants[1].anyValue, 1234);
+      expect(constants[1].isLiteral, isTrue);
+      expect(constants[1].literalValue, 1234);
     });
 
     test('should read a Bool', () {
       expect(constants[2].isBool, isTrue);
       expect(constants[2].boolValue, isTrue);
-      expect(constants[2].isAny, isTrue);
-      expect(constants[2].anyValue, isTrue);
+      expect(constants[2].isLiteral, isTrue);
+      expect(constants[2].literalValue, isTrue);
     });
 
     test('should read a Null', () {
       expect(constants[3].isNull, isTrue);
-      expect(constants[3].isAny, isTrue);
-      expect(constants[3].anyValue, isNull);
+      expect(constants[3].isLiteral, isTrue);
+      expect(constants[3].literalValue, isNull);
     });
 
     test('should read an arbitrary object', () {
       final constant = constants[4];
 
-      expect(constant.isAny, isFalse);
-      expect(() => constant.anyValue, throwsFormatException);
+      expect(constant.isLiteral, isFalse);
+      expect(() => constant.literalValue, throwsFormatException);
 
       expect(constant.read('aString').stringValue, 'Hello');
       expect(constant.read('aInt').intValue, 1234);
@@ -116,42 +116,40 @@ void main() {
 
     test('should read a list', () {
       expect(constants[6].isList, isTrue, reason: '${constants[6]}');
+      expect(constants[6].isLiteral, isTrue);
       expect(constants[6].listValue.map((c) => new ConstantReader(c).intValue),
           [1, 2, 3]);
-      expect(constants[6].isAny, isFalse);
-      expect(() => constants[6].anyValue, throwsFormatException);
     });
 
     test('should read a map', () {
       expect(constants[7].isMap, isTrue, reason: '${constants[7]}');
+      expect(constants[7].isLiteral, isTrue);
       expect(
           mapMap<DartObject, DartObject, int, String>(constants[7].mapValue,
               key: (k, _) => new ConstantReader(k).intValue,
               value: (_, v) => new ConstantReader(v).stringValue),
           {1: 'A', 2: 'B'});
-      expect(constants[7].isAny, isFalse);
-      expect(() => constants[7].anyValue, throwsFormatException);
     });
 
     test('should read a double', () {
       expect(constants[9].isDouble, isTrue);
       expect(constants[9].doubleValue, 1.23);
-      expect(constants[9].isAny, isTrue);
-      expect(constants[9].anyValue, 1.23);
+      expect(constants[9].isLiteral, isTrue);
+      expect(constants[9].literalValue, 1.23);
     });
 
     test('should read a Symbol', () {
       expect(constants[10].isSymbol, isTrue);
-      expect(constants[10].isAny, isTrue);
+      expect(constants[10].isLiteral, isTrue);
       expect(constants[10].symbolValue, #shanna);
-      expect(constants[10].anyValue, #shanna);
+      expect(constants[10].literalValue, #shanna);
     });
 
     test('should read a Type', () {
       expect(constants[11].isType, isTrue);
       expect(constants[11].typeValue.name, 'DateTime');
-      expect(constants[11].isAny, isFalse);
-      expect(() => constants[11].anyValue, throwsFormatException);
+      expect(constants[11].isLiteral, isFalse);
+      expect(() => constants[11].literalValue, throwsFormatException);
     });
 
     test('should give back the underlying value', () {
@@ -256,7 +254,7 @@ void main() {
       expect(duration30s.accessor, isEmpty);
       expect(
           mapMap(duration30s.namedArguments,
-              value: (_, v) => new ConstantReader(v).anyValue),
+              value: (_, v) => new ConstantReader(v).literalValue),
           {
             'seconds': 30,
           });

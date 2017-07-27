@@ -8,7 +8,7 @@ import 'package:analyzer/dart/element/element.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/resolver/scope.dart';
 
-import 'constants.dart';
+import 'constants/reader.dart';
 import 'type_checker.dart';
 
 /// Result of finding an [annotation] on [element] through [LibraryReader].

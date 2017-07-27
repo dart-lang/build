@@ -7,7 +7,7 @@ import 'package:analyzer/dart/element/element.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/constant/value.dart';
 
-import 'utils.dart';
+import '../utils.dart';
 
 /// Returns a revivable instance of [object].
 ///

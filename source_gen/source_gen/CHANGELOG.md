@@ -15,9 +15,11 @@
 
 ### `ConstantReader`
 
-* Added `isAny`.
-* Allow `anyValue` to return `null` if the value is actually `null`.
+* Added `isAny` (for consistency, but _deprecated_) and `isLiteral`.
+* Added `literalValue` as an alias for the now deprecated `anyValue`.
+* Allow `literalValue` to return `null` if the value is actually `null`.
 * Fixed a bug where a `Symbol` would return as a `String` for `anyValue`.
+* Fixed a bug where a `List` and `Map` were not considered literals.
 
 ## 0.7.0
 

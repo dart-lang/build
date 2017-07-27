@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
-import 'constants.dart';
+import 'constants/reader.dart';
 import 'generator.dart';
 import 'library.dart';
 import 'type_checker.dart';
