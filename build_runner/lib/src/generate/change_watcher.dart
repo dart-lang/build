@@ -7,9 +7,9 @@ import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
-import 'directory_watcher_factory.dart';
 
 import '../package_graph/package_graph.dart';
+import 'directory_watcher_factory.dart';
 
 class AssetChange {
   final AssetId id;

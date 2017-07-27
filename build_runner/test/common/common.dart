@@ -6,8 +6,8 @@ export 'package:build_runner/src/util/constants.dart';
 export 'package:build_test/build_test.dart'
     hide InMemoryAssetReader, InMemoryAssetWriter, DatedString;
 
-export 'matchers.dart';
 export 'assets.dart';
-export 'test_phases.dart';
 export 'in_memory_reader.dart';
 export 'in_memory_writer.dart';
+export 'matchers.dart';
+export 'test_phases.dart';

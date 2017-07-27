@@ -57,7 +57,7 @@ class WatchImpl {
   /// Whether we are in the process of terminating.
   bool _terminating = false;
 
-  Completer _onTerminatedCompleter = new Completer();
+  final Completer _onTerminatedCompleter = new Completer();
   Future get onTerminated => _onTerminatedCompleter.future;
 
   /// Pending expected delete events from the writer.

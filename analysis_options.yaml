@@ -12,8 +12,7 @@ linter:
   rules:
     # Errors
     - avoid_empty_else
-    # Wait for FutureOr to work
-    #- await_only_futures
+    - await_only_futures
     - comment_references
     - control_flow_in_finally
     - empty_statements
@@ -29,11 +28,13 @@ linter:
     - avoid_init_to_null
     - avoid_return_types_on_setters
     - camel_case_types
+    - directives_ordering
     - empty_catches
     - empty_constructor_bodies
     - library_names
     - library_prefixes
     - non_constant_identifier_names
+    - prefer_final_fields
     - prefer_is_not_empty
     - slash_for_doc_comments
     - type_init_formals

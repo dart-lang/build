@@ -9,9 +9,9 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 
+import '../package_graph/package_graph.dart';
 import 'reader.dart';
 import 'writer.dart';
-import '../package_graph/package_graph.dart';
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
