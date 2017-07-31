@@ -491,12 +491,16 @@ class _VerifyCall {
 
   void _checkWith(bool never) {
     if (!never && matchingInvocations.isEmpty) {
-      var otherCallsText = "";
-      if (mock._realCalls.isNotEmpty) {
-        otherCallsText = " All calls: ";
+      var message;
+      if (mock._realCalls.isEmpty) {
+        message = "No matching calls (actually, no calls at all).";
+      } else {
+        var otherCalls = mock._realCalls.join(", ");
+        message = "No matching calls. All calls: $otherCalls";
       }
-      var calls = mock._realCalls.join(", ");
-      fail("No matching calls.$otherCallsText$calls");
+      fail("$message\n"
+          "(If you called `verify(...).called(0);`, please instead use "
+          "`verifyNever(...);`.)");
     }
     if (never && matchingInvocations.isNotEmpty) {
       var calls = mock._realCalls.join(", ");
@@ -564,13 +568,26 @@ typedef VerificationResult Verification(matchingInvocations);
 
 typedef void _InOrderVerification(List<dynamic> recordedInvocations);
 
+/// Verify that a method on a mock object was never called with the given
+/// arguments.
+///
+/// Call a method on a mock object within a `verifyNever` call. For example:
+///
+/// ```dart
+/// cat.eatFood("chicken");
+/// verifyNever(cat.eatFood("fish"));
+/// ```
+///
+/// Mockito will pass the current test case, as `cat.eatFood` has not been
+/// called with `"chicken"`.
 Verification get verifyNever => _makeVerify(true);
 
-/// Verify that a method on a mock object was called with given arguments.
+/// Verify that a method on a mock object was called with the given arguments.
 ///
 /// Call a method on a mock object within the call to `verify`. For example:
 ///
 /// ```dart
+/// cat.eatFood("chicken");
 /// verify(cat.eatFood("fish"));
 /// ```
 ///
@@ -582,6 +599,9 @@ Verification get verifyNever => _makeVerify(true);
 /// verify(cat.eatFood("fish")).called(2);
 /// verify(cat.eatFood("fish")).called(greaterThan(3));
 /// ```
+///
+/// Note: because of an unintended limitation, `verify(...).called(0);` will
+/// not work as expected. Please use `verifyNever(...);` instead.
 ///
 /// See also: [verifyNever], [verifyInOrder], [verifyZeroInteractions], and
 /// [verifyNoMoreInteractions].
@@ -601,7 +621,7 @@ Verification _makeVerify(bool never) {
       verifyCall._checkWith(never);
       return result;
     } else {
-      fail("Used on non-mockito");
+      fail("Used on a non-mockito object");
     }
   };
 }
