@@ -1,12 +1,12 @@
 name: mockito
-version: 2.0.2
+version: 2.1.0
 authors:
   - Dmitriy Fibulwinter <fibulwinter@gmail.com>
   - Dart Team <misc@dartlang.org>
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/dart-lang/mockito
 environment:
-  sdk: '>=1.21.0 <2.0.0'
+  sdk: '>=1.21.0 <2.0.0-dev.infinity'
 dependencies:
   matcher: '^0.12.0'
   meta: '^1.0.4'

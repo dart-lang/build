@@ -1,9 +1,18 @@
+## 2.1.0
+
+* Add documentation for `when`, `verify`, `verifyNever`, `resetMockitoState`.
+* Expose `throwOnMissingStub`, `resetMockitoState`.
+* Improve failure message for `verify`.
+* SDK version ceiling bumped to `<2.0.0-dev.infinity` to support Dart 2.0
+  development testing.
+* Add a Mockito + test package example at `test/example/iss`.
+
 ## 2.0.2
 
 * Start using the new `InvocationMatcher` instead of the old matcher.
 * Change `throwOnMissingStub` back to invoking `Object.noSuchMethod`:
-  * It was never documented what the thrown type should be expected as
-  * You can now just rely on `throwsNoSuchMethodError` if you want to catch it
+  * It was never documented what the thrown type should be expected as.
+  * You can now just rely on `throwsNoSuchMethodError` if you want to catch it.
 
 ## 2.0.1
 
