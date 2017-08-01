@@ -125,10 +125,7 @@ class BuildImpl {
             if (_isFirstBuild) {
               _logger.warning(
                   'Invalidating asset graph due to build script update');
-              _assetGraph.allNodes
-                  .where((node) => node is GeneratedAssetNode)
-                  .forEach((node) =>
-                      (node as GeneratedAssetNode).needsUpdate = true);
+              _assetGraph.invalidateBuildScript();
             } else {
               done.complete(new BuildResult(BuildStatus.failure, buildType, [],
                   exception: new BuildScriptUpdatedException()));
@@ -282,34 +279,8 @@ class BuildImpl {
   /// Applies all [updates] to the [_assetGraph] as well as doing other
   /// necessary cleanup such as deleting outputs as necessary.
   Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
-    var seen = new Set<AssetId>();
-    Future clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {AssetId parent}) async {
-      if (seen.contains(id)) return;
-      seen.add(id);
-      var node = _assetGraph.get(id);
-      if (node == null) return;
-
-      // Update all outputs of this asset as well.
-      await Future.wait(node.outputs.map((output) =>
-          clearNodeAndDeps(output, rootChangeType, parent: node.id)));
-
-      // For deletes, prune the graph.
-      if (parent == null && rootChangeType == ChangeType.REMOVE) {
-        _assetGraph.remove(id);
-      }
-      if (node is GeneratedAssetNode) {
-        node.needsUpdate = true;
-        if (rootChangeType == ChangeType.REMOVE &&
-            node.primaryInput == parent) {
-          _assetGraph.remove(id);
-          await _writer.delete(id);
-        }
-      }
-    }
-
-    await Future.wait(
-        updates.keys.map((input) => clearNodeAndDeps(input, updates[input])));
+    var deletes = _assetGraph.updateAndInvalidate(updates);
+    await Future.wait(deletes.map(_writer.delete));
   }
 
   /// Deletes all previous output files that are in need of an update.
@@ -320,14 +291,14 @@ class BuildImpl {
 
       // Remove all output nodes from [_inputsByPackage], and delete all assets
       // that need updates.
-      await Future.wait(_assetGraph.allNodes
-          .where((node) => node is GeneratedAssetNode)
-          .map((node) async {
-        _inputsByPackage[node.id.package]?.remove(node.id);
-        if ((node as GeneratedAssetNode).needsUpdate) {
-          await _writer.delete(node.id);
+      var deletes = <AssetId>[];
+      for (var node in _assetGraph.allNodes) {
+        if (node is GeneratedAssetNode) {
+          _inputsByPackage[node.id.package]?.remove(node.id);
+          if (node.needsUpdate) deletes.add(node.id);
         }
-      }));
+      }
+      await Future.wait(deletes.map(_writer.delete));
       return;
     }
 
