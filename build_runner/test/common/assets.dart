@@ -7,6 +7,9 @@ import 'package:build_test/build_test.dart';
 
 AssetNode makeAssetNode([String assetIdString, List<AssetId> outputs]) {
   var node = new AssetNode(makeAssetId(assetIdString));
-  if (outputs != null) node.outputs.addAll(outputs);
+  if (outputs != null) {
+    node.outputs.addAll(outputs);
+    node.primaryOutputs.addAll(outputs);
+  }
   return node;
 }

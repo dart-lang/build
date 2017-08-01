@@ -34,6 +34,10 @@ class _AssetGraphMatcher extends Matcher {
       if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, null)) {
         return false;
       }
+      if (!unorderedEquals(node.primaryOutputs)
+          .matches(expectedNode.primaryOutputs, null)) {
+        return false;
+      }
       if (item is GeneratedAssetNode) {
         if (expectedNode is GeneratedAssetNode) {
           if (item.primaryInput != expectedNode.primaryInput) return false;
