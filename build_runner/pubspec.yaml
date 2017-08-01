@@ -27,6 +27,7 @@ dev_dependencies:
   test: ^0.12.0
 
 dependency_overrides:
+  analyzer: 0.31.0-alpha.0
   build:
     path: ../build
   build_barback:
