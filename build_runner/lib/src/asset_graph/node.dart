@@ -7,29 +7,41 @@ import 'package:build/build.dart';
 class AssetNode {
   final AssetId id;
 
-  /// The [AssetId]s of all generated assets which depend on this node.
+  /// The assets that any [Builder] in the build graph declares it may output
+  /// when run on this asset.
+  final Set<AssetId> primaryOutputs = new Set<AssetId>();
+
+  /// The [AssetId]s of all generated assets which are output by a [Builder]
+  /// which reads this asset.
   final Set<AssetId> outputs = new Set<AssetId>();
 
   AssetNode(this.id);
 
   factory AssetNode.deserialize(List serializedNode) {
     AssetNode node;
-    if (serializedNode.length == 2) {
+    if (serializedNode.length == 3) {
       node = new AssetNode(new AssetId.deserialize(serializedNode[0]));
-    } else if (serializedNode.length == 5) {
+    } else if (serializedNode.length == 6) {
       node = new GeneratedAssetNode.deserialize(serializedNode);
     } else {
       throw new ArgumentError(
           'Unrecognized serialization format! $serializedNode');
     }
-
-    node.outputs.addAll(serializedNode[1]
-        .map((serializedOutput) => new AssetId.deserialize(serializedOutput)));
+    node._addSerializedOutputs(serializedNode);
     return node;
   }
 
-  List serialize() =>
-      [id.serialize(), outputs.map((id) => id.serialize()).toList()];
+  void _addSerializedOutputs(List serialized) {
+    outputs.addAll(serialized[1].map((id) => new AssetId.deserialize(id)));
+    primaryOutputs
+        .addAll(serialized[2].map((id) => new AssetId.deserialize(id)));
+  }
+
+  List serialize() => [
+        id.serialize(),
+        outputs.map((id) => id.serialize()).toList(),
+        primaryOutputs.map((id) => id.serialize()).toList(),
+      ];
 
   @override
   String toString() => 'AssetNode: $id';
@@ -55,13 +67,12 @@ class GeneratedAssetNode extends AssetNode {
 
   factory GeneratedAssetNode.deserialize(List serialized) {
     var node = new GeneratedAssetNode(
-        serialized[4],
-        new AssetId.deserialize(serialized[2]),
+        serialized[5],
+        new AssetId.deserialize(serialized[3]),
         false,
-        serialized[3],
+        serialized[4],
         new AssetId.deserialize(serialized[0]));
-    node.outputs.addAll((serialized[1] as Iterable)
-        .map((serializedOutput) => new AssetId.deserialize(serializedOutput)));
+    node._addSerializedOutputs(serialized);
     return node;
   }
 

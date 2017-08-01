@@ -494,6 +494,7 @@ class BuildImpl {
           _assetGraph.addIfAbsent(input, () => new AssetNode(input));
       for (var output in builderOutputs) {
         inputNode.outputs.add(output);
+        inputNode.primaryOutputs.add(output);
         var existing = _assetGraph.get(output);
 
         // If its null or of type AssetNode, then insert a

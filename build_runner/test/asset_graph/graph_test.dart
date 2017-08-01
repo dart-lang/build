@@ -90,6 +90,7 @@ void main() {
           var generatedNode = new GeneratedAssetNode(
               1, node.id, false, g % 2 == 0, makeAssetId());
           node.outputs.add(generatedNode.id);
+          node.primaryOutputs.add(generatedNode.id);
           graph.add(generatedNode);
         }
       }
