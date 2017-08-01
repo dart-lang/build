@@ -107,8 +107,9 @@ class AssetGraph {
         clearNodeAndDeps(output, rootChangeType, parent: node.id);
       }
 
-      // For deletes, prune the graph.
       if (parent == null && rootChangeType == ChangeType.REMOVE) {
+        // This is the root asset, it was removed on disk so it needs to be
+        // removed from the graph.
         remove(id);
       }
       if (node is GeneratedAssetNode) {
