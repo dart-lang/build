@@ -3,11 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:build/build.dart';
 
-/// A node in the asset graph.
-///
-/// This class specifically represents normal (ie: non-generated) assets.
+/// A node in the asset graph which may be an input to other assets.
 class AssetNode {
-  /// The asset this node represents.
   final AssetId id;
 
   /// The [AssetId]s of all generated assets which depend on this node.
@@ -16,7 +13,7 @@ class AssetNode {
   AssetNode(this.id);
 
   factory AssetNode.deserialize(List serializedNode) {
-    var node;
+    AssetNode node;
     if (serializedNode.length == 2) {
       node = new AssetNode(new AssetId.deserialize(serializedNode[0]));
     } else if (serializedNode.length == 5) {
