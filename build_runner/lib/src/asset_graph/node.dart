@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:build/build.dart';
 
-/// A node in the asset graph which may be inputs to other assets.
+/// A node in the asset graph which may be an input to other assets.
 class AssetNode {
   final AssetId id;
 
