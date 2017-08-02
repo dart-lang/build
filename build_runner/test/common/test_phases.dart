@@ -74,8 +74,7 @@ Future<BuildResult> nextResult(List results) {
 ///
 Future testPhases(
     PhaseGroup phases, Map<String, /*String|List<int>*/ dynamic> inputs,
-    {bool deleteFilesByDefault,
-    Map<String, /*String|List<int>*/ dynamic> outputs,
+    {Map<String, /*String|List<int>*/ dynamic> outputs,
     PackageGraph packageGraph,
     BuildStatus status: BuildStatus.success,
     Matcher exceptionMatcher,
@@ -101,7 +100,7 @@ Future testPhases(
   }
 
   var result = await build(phases,
-      deleteFilesByDefault: deleteFilesByDefault,
+      deleteFilesByDefault: true,
       reader: reader,
       writer: writer,
       packageGraph: packageGraph,
