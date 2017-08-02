@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
+import '../generate/phase.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
@@ -22,7 +23,7 @@ class AssetGraph {
   /// value if you want incremental rebuilds.
   DateTime validAsOf = new DateTime.fromMillisecondsSinceEpoch(0);
 
-  AssetGraph();
+  AssetGraph._();
 
   /// Part of the serialized graph, used to ensure versioning constraints.
   ///
@@ -37,14 +38,18 @@ class AssetGraph {
           serializedGraph['version'], _version);
     }
 
-    var graph = new AssetGraph();
+    var graph = new AssetGraph._();
     for (var serializedItem in serializedGraph['nodes']) {
-      graph.add(new AssetNode.deserialize(serializedItem));
+      graph._add(new AssetNode.deserialize(serializedItem));
     }
     graph.validAsOf =
         new DateTime.fromMillisecondsSinceEpoch(serializedGraph['validAsOf']);
     return graph;
   }
+
+  factory AssetGraph.build(
+          List<List<BuildAction>> phases, Set<AssetId> sources) =>
+      new AssetGraph._().._addOutputsForSources(phases, sources);
 
   /// Puts this graph into a serializable form.
   Map serialize() => {
@@ -60,25 +65,26 @@ class AssetGraph {
   AssetNode get(AssetId id) => _nodesById[id];
 
   /// Adds [node] to the graph.
-  void add(AssetNode node) {
+  void _add(AssetNode node) {
     if (_nodesById.containsKey(node.id)) {
       throw new DuplicateAssetNodeException(node);
     }
     _nodesById[node.id] = node;
   }
 
-  /// Adds the node returned by [ifAbsent] to the graph, if [id] doesn't
-  /// already exist.
-  ///
-  /// Returns either the existing value or the one just added.
-  AssetNode addIfAbsent(AssetId id, AssetNode ifAbsent()) =>
-      _nodesById.putIfAbsent(id, ifAbsent);
-
   /// Removes the node representing [id] from the graph.
-  AssetNode remove(AssetId id) => _nodesById.remove(id);
+  AssetNode _remove(AssetId id) => _nodesById.remove(id);
 
-  /// Gets all nodes in the graph.
+  /// All nodes in the graph, whether source files or generated outputs.
   Iterable<AssetNode> get allNodes => _nodesById.values;
+
+  /// All the generated outputs in the graph.
+  Iterable<AssetId> get outputs =>
+      allNodes.where((n) => n is GeneratedAssetNode).map((n) => n.id);
+
+  /// All the source files in the graph.
+  Iterable<AssetId> get sources =>
+      allNodes.where((n) => n is! GeneratedAssetNode).map((n) => n.id);
 
   /// Invalidates all generated assets.
   ///
@@ -94,31 +100,30 @@ class AssetGraph {
   /// set of assets that need to be deleted.
   Iterable<AssetId> updateAndInvalidate(Map<AssetId, ChangeType> updates) {
     var deletes = new Set<AssetId>();
-    var seen = new Set<AssetId>();
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {AssetId parent}) {
-      if (seen.contains(id)) return;
-      seen.add(id);
+        {AssetId parent, bool rootIsSource}) {
       var node = this.get(id);
       if (node == null) return;
+      if (parent == null) rootIsSource = node is! GeneratedAssetNode;
 
       // Update all outputs of this asset as well.
       for (var output in node.outputs) {
-        clearNodeAndDeps(output, rootChangeType, parent: node.id);
+        clearNodeAndDeps(output, rootChangeType,
+            parent: node.id, rootIsSource: rootIsSource);
       }
 
-      if (parent == null && rootChangeType == ChangeType.REMOVE) {
-        // This is the root asset, it was removed on disk so it needs to be
-        // removed from the graph.
-        remove(id);
-      }
       if (node is GeneratedAssetNode) {
-        node.needsUpdate = true;
-        if (rootChangeType == ChangeType.REMOVE &&
+        if (rootIsSource &&
+            rootChangeType == ChangeType.REMOVE &&
             node.primaryInput == parent) {
-          remove(id);
+          _remove(id);
           deletes.add(id);
+        } else {
+          node.needsUpdate = true;
         }
+      } else {
+        // This is a source
+        if (rootChangeType == ChangeType.REMOVE) _remove(id);
       }
     }
 
@@ -126,6 +131,48 @@ class AssetGraph {
     return deletes;
   }
 
+  /// Updates the structure of the graph to account for any new sources and
+  /// returns true if the graph has changed.
+  bool updateForSources(
+      List<List<BuildAction>> phases, Iterable<AssetId> newSources) {
+    var unseen = newSources.where((s) => !_nodesById.containsKey(s)).toList();
+    if (unseen.isEmpty) return false;
+    _addOutputsForSources(phases, unseen.toList());
+    return true;
+  }
+
+  void _addOutputsForSources(
+      List<List<BuildAction>> phases, Iterable<AssetId> newSources) {
+    newSources.map((s) => new AssetNode(s)).forEach(_add);
+    var allInputs = new Set<AssetId>()..addAll(newSources);
+    var phaseNumber = 0;
+    for (var phase in phases) {
+      phaseNumber++;
+      var phaseOutputs = <AssetId>[];
+      for (var action in phase) {
+        var inputs = allInputs.where(
+            (input) => action.inputSet.globs.any((g) => g.matches(input.path)));
+        for (var input in inputs) {
+          var outputs = expectedOutputs(action.builder, input);
+          phaseOutputs.addAll(outputs);
+          get(input).primaryOutputs.addAll(outputs);
+          for (var output in outputs) {
+            if (contains(output) && get(output) is AssetNode) {
+              _remove(output);
+            }
+            _add(new GeneratedAssetNode(
+                phaseNumber, input, true, false, output));
+          }
+        }
+      }
+      allInputs.addAll(phaseOutputs);
+    }
+  }
+
   @override
   String toString() => 'validAsOf: $validAsOf\n${_nodesById.values.toList()}';
+
+  // TODO remove once tests are updated
+  void add(AssetNode node) => _add(node);
+  AssetNode remove(AssetId id) => _remove(id);
 }

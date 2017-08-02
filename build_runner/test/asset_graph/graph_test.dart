@@ -7,16 +7,32 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/generate/input_set.dart';
+import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
 
 void main() {
   group('AssetGraph', () {
+    test('build', () {
+      var graph = new AssetGraph.build(
+          new PhaseGroup.singleAction(
+              new CopyBuilder(), new InputSet('foo', ['**'])).buildActions,
+          new Set.from([makeAssetId('foo|file')]));
+      expect(graph.outputs, unorderedEquals([makeAssetId('foo|file.copy')]));
+      expect(
+          graph.allNodes.map((n) => n.id),
+          unorderedEquals([
+            makeAssetId('foo|file'),
+            makeAssetId('foo|file.copy'),
+          ]));
+    });
     AssetGraph graph;
 
     setUp(() {
-      graph = new AssetGraph()..validAsOf = new DateTime.now();
+      graph = new AssetGraph.build([], new Set())
+        ..validAsOf = new DateTime.now();
     });
 
     void expectNodeDoesNotExist(AssetNode node) {
@@ -43,16 +59,6 @@ void main() {
         expectedNodes.add(testAddNode());
       }
       expect(graph.allNodes, unorderedEquals(expectedNodes));
-    });
-
-    test('addIfAbsent', () {
-      var node = makeAssetNode();
-      expect(graph.addIfAbsent(node.id, () => node), same(node));
-      expect(graph.contains(node.id), isTrue);
-
-      var otherNode = new AssetNode(node.id);
-      expect(graph.addIfAbsent(otherNode.id, () => otherNode), same(node));
-      expect(graph.contains(otherNode.id), isTrue);
     });
 
     test('duplicate adds throw DuplicateAssetNodeException', () {

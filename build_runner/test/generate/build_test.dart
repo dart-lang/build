@@ -123,7 +123,7 @@ void main() {
     var cachedGraph = new AssetGraph.deserialize(
         JSON.decode(writer.assets[graphId].stringValue));
 
-    var expectedGraph = new AssetGraph();
+    var expectedGraph = new AssetGraph.build([], new Set());
     var aCopyNode = makeAssetNode('a|web/a.txt.copy');
     expectedGraph.add(aCopyNode);
     expectedGraph.add(makeAssetNode('a|web/a.txt', [aCopyNode.id]));
@@ -173,7 +173,8 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var graph = new AssetGraph()..validAsOf = new DateTime.now();
+      var graph = new AssetGraph.build([], new Set())
+        ..validAsOf = new DateTime.now();
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
           1, bId, false, true, makeAssetId('a|lib/b.txt.copy'));
@@ -206,7 +207,8 @@ void main() {
         ..addAction(new CopyBuilder(extension: 'clone'),
             new InputSet('a', ['**/*.txt.copy']));
 
-      var graph = new AssetGraph()..validAsOf = new DateTime.now();
+      var graph = new AssetGraph.build([], new Set())
+        ..validAsOf = new DateTime.now();
 
       var aCloneNode = new GeneratedAssetNode(
           1,
@@ -217,9 +219,11 @@ void main() {
       graph.add(aCloneNode);
       var aCopyNode = new GeneratedAssetNode(1, makeAssetId('a|lib/a.txt'),
           false, true, makeAssetId('a|lib/a.txt.copy'))
+        ..primaryOutputs.add(aCloneNode.id)
         ..outputs.add(aCloneNode.id);
       graph.add(aCopyNode);
-      var aNode = makeAssetNode('a|lib/a.txt', [aCopyNode.id]);
+      var aNode = makeAssetNode('a|lib/a.txt', [aCopyNode.id])
+        ..primaryOutputs.add(aCopyNode.id);
       graph.add(aNode);
 
       var bCloneNode = new GeneratedAssetNode(
@@ -231,9 +235,11 @@ void main() {
       graph.add(bCloneNode);
       var bCopyNode = new GeneratedAssetNode(1, makeAssetId('a|lib/b.txt'),
           false, true, makeAssetId('a|lib/b.txt.copy'))
+        ..primaryOutputs.add(bCloneNode.id)
         ..outputs.add(bCloneNode.id);
       graph.add(bCopyNode);
-      var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id]);
+      var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id])
+        ..primaryOutputs.add(bCopyNode.id);
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
@@ -263,7 +269,7 @@ void main() {
         ..addAction(new CopyBuilder(extension: 'clone'),
             new InputSet('a', ['**/*.txt.copy']));
 
-      var graph = new AssetGraph();
+      var graph = new AssetGraph.build([], new Set());
       var aCloneNode = new GeneratedAssetNode(
           1,
           makeAssetId('a|lib/a.txt.copy'),
@@ -301,7 +307,7 @@ void main() {
     });
 
     test('invalidates graph if build script updates', () async {
-      var graph = new AssetGraph()
+      var graph = new AssetGraph.build([], new Set())
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(

@@ -127,7 +127,7 @@ void main() {
         var cachedGraph = new AssetGraph.deserialize(JSON.decode(
             writer.assets[makeAssetId('a|$assetGraphPath')].stringValue));
 
-        var expectedGraph = new AssetGraph();
+        var expectedGraph = new AssetGraph.build([], new Set());
         var bCopyNode = makeAssetNode('a|web/b.txt.copy');
         expectedGraph.add(bCopyNode);
         expectedGraph.add(makeAssetNode('a|web/b.txt', [bCopyNode.id]));
