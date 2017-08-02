@@ -188,7 +188,7 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var graph = new AssetGraph();
+      var graph = new AssetGraph()..validAsOf = new DateTime.now();
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
           1, bId, false, true, makeAssetId('a|lib/b.txt.copy'));
@@ -199,15 +199,19 @@ void main() {
       var writer = new InMemoryRunnerAssetWriter();
       await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
-      await testPhases(copyAPhaseGroup, {
-        'a|web/a.txt': 'a',
-        'a|lib/b.txt.copy': 'b',
-        'a|lib/c.txt': 'c',
-        'a|$assetGraphPath': JSON.encode(graph.serialize()),
-      }, outputs: {
-        'a|web/a.txt.copy': 'a',
-        'a|lib/c.txt.copy': 'c',
-      });
+      await testPhases(
+          copyAPhaseGroup,
+          {
+            'a|web/a.txt': 'a',
+            'a|lib/b.txt.copy': 'b',
+            'a|lib/c.txt': 'c',
+            'a|$assetGraphPath': JSON.encode(graph.serialize()),
+          },
+          outputs: {
+            'a|web/a.txt.copy': 'a',
+            'a|lib/c.txt.copy': 'c',
+          },
+          writer: writer);
     });
 
     test('invalidates generated assets based on graph age', () async {
