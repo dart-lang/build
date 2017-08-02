@@ -178,8 +178,8 @@ void main() {
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
-    var done = testPhases(copyAPhaseGroup, inputs,
-        outputs: outputs, writer: writer, deleteFilesByDefault: true);
+    var done =
+        testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
     // Should block on user input.
     await new Future.delayed(new Duration(seconds: 1));
     // Now it should complete!
