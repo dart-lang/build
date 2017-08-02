@@ -112,21 +112,6 @@ void main() {
     });
   });
 
-  group('errors', () {
-    test('when overwriting files', () async {
-      var emptyGraph = new AssetGraph();
-      await testPhases(
-          copyAPhaseGroup,
-          {
-            'a|lib/a.txt': 'a',
-            'a|lib/a.txt.copy': 'a',
-            'a|$assetGraphPath': JSON.encode(emptyGraph.serialize()),
-          },
-          status: BuildStatus.failure,
-          exceptionMatcher: invalidOutputException);
-    });
-  });
-
   test('tracks dependency graph in a asset_graph.json file', () async {
     final writer = new InMemoryRunnerAssetWriter();
     await testPhases(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
