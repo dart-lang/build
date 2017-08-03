@@ -66,9 +66,6 @@ class AssetGraph {
 
   /// Adds [node] to the graph.
   void _add(AssetNode node) {
-    if (_nodesById.containsKey(node.id)) {
-      throw new DuplicateAssetNodeException(node);
-    }
     _nodesById[node.id] = node;
   }
 
@@ -157,9 +154,6 @@ class AssetGraph {
           phaseOutputs.addAll(outputs);
           get(input).primaryOutputs.addAll(outputs);
           for (var output in outputs) {
-            if (contains(output) && get(output) is AssetNode) {
-              _remove(output);
-            }
             _add(new GeneratedAssetNode(
                 phaseNumber, input, true, false, output));
           }

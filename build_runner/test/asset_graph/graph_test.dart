@@ -61,11 +61,6 @@ void main() {
       expect(graph.allNodes, unorderedEquals(expectedNodes));
     });
 
-    test('duplicate adds throw DuplicateAssetNodeException', () {
-      var node = testAddNode();
-      expect(() => graph.add(node), throwsA(duplicateAssetNodeException));
-    });
-
     test('remove', () {
       var nodes = <AssetNode>[];
       for (int i = 0; i < 5; i++) {

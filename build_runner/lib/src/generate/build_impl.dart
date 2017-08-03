@@ -410,19 +410,14 @@ class BuildImpl {
   /// Runs [builder] with [primaryInputs] as inputs.
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
       Iterable<AssetId> primaryInputs, Set<AssetId> groupOutputs) async* {
-    var phaseSources = _inputsForPhase(phaseNumber);
     for (var input in primaryInputs) {
       var builderOutputs = expectedOutputs(builder, input);
 
       // Validate builderOutputs.
-      // TODO move this check to static graph generation?
       for (var output in builderOutputs) {
         if (output.package != _packageGraph.root.name) {
           throw new InvalidOutputException(output,
               'Files may only be output in the root (application) package.');
-        }
-        if (phaseSources.contains(output)) {
-          throw new InvalidOutputException(output, 'Cannot overwrite inputs.');
         }
       }
 
