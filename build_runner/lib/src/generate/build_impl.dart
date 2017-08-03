@@ -32,7 +32,6 @@ class BuildImpl {
   final AssetId _assetGraphId;
   final List<List<BuildAction>> _buildActions;
   final bool _deleteFilesByDefault;
-  final _inputsByPackage = <String, Set<AssetId>>{};
   final _logger = new Logger('Build');
   final PackageGraph _packageGraph;
   final RunnerAssetReader _reader;
@@ -136,23 +135,22 @@ class BuildImpl {
       await logWithTime(_logger, 'Finalizing build setup', () async {
         // Wait while all inputs are collected.
         _logger.info('Initializing inputs');
-        await _initializeInputsByPackage();
+        var currentSources = await _initializeInputsByPackage();
 
         if (_assetGraph != null) {
           await _writer.delete(_assetGraphId);
-          _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
+          currentSources.remove(_assetGraphId);
           // Applies all [updates] to the [_assetGraph] as well as doing other
           // necessary cleanup.
-          var sources = _inputsByPackage.values.expand((s) => s).toList();
           _logger
               .info('Updating dependency graph with changes since last build.');
-          _assetGraph.updateForSources(_buildActions, sources);
+          _assetGraph.updateForSources(_buildActions, currentSources);
           await _updateWithChanges(updates);
         }
 
         // Delete all previous outputs!
         _logger.info('Deleting previous outputs');
-        await _deletePreviousOutputs();
+        await _deletePreviousOutputs(currentSources);
       });
 
       // Run a fresh build.
@@ -283,38 +281,21 @@ class BuildImpl {
   /// necessary cleanup such as deleting outputs as necessary.
   Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
     var deletes = _assetGraph.updateAndInvalidate(updates);
-    await _deleteAssets(deletes);
+    await Future.wait(deletes.map(_writer.delete));
   }
 
-  /// Delete assets on disk and remove them from [_inputsByPackage]
-  Future _deleteAssets(Iterable<AssetId> assets) =>
-      Future.wait(assets.map((asset) {
-        _inputsByPackage[asset.package]?.remove(asset);
-        return _writer.delete(asset);
-      }));
-
   /// Deletes all previous output files that are in need of an update.
-  Future _deletePreviousOutputs() async {
+  Future _deletePreviousOutputs(Set<AssetId> currentSources) async {
     if (_assetGraph != null) {
-      // Remove all output nodes from [_inputsByPackage], and delete all assets
-      // that need updates.
-      var deletes = <AssetId>[];
-      for (var node in _assetGraph.allNodes) {
-        if (node is GeneratedAssetNode) {
-          _inputsByPackage[node.id.package]?.remove(node.id);
-          if (node.needsUpdate) deletes.add(node.id);
-        }
-      }
-      await Future.wait(deletes.map(_writer.delete));
+      await Future.wait(_assetGraph.allNodes
+          .where((n) => n is GeneratedAssetNode && n.needsUpdate)
+          .map((node) => _writer.delete(node.id)));
       return;
     }
-    _assetGraph = new AssetGraph.build(
-        _buildActions, new Set.from(_inputsByPackage.values.expand((v) => v)));
+    _assetGraph = new AssetGraph.build(_buildActions, currentSources);
 
-    bool existsOnDisk(AssetId asset) =>
-        _inputsByPackage[asset.package]?.contains(asset) ?? false;
-    final conflictingOutputs =
-        new Set<AssetId>.from(_assetGraph.outputs.where(existsOnDisk));
+    final conflictingOutputs = new Set<AssetId>.from(
+        _assetGraph.outputs.where(currentSources.contains));
 
     // Check conflictingOutputs, prompt user to delete files.
     if (conflictingOutputs.isEmpty) return;
@@ -323,7 +304,7 @@ class BuildImpl {
     if (_deleteFilesByDefault) {
       _logger.info('Deleting ${conflictingOutputs.length} declared outputs '
           'which already existed on disk.');
-      await _deleteAssets(conflictingOutputs);
+      await Future.wait(conflictingOutputs.map(_writer.delete));
       return;
     }
 
@@ -349,7 +330,7 @@ class BuildImpl {
       switch (input.toLowerCase()) {
         case 'y':
           stdout.writeln('Deleting files...');
-          await _deleteAssets(conflictingOutputs);
+          await Future.wait(conflictingOutputs.map(_writer.delete));
           done = true;
           break;
         case 'n':
@@ -380,26 +361,19 @@ class BuildImpl {
       final phaseOutputIds = new Set<AssetId>();
 
       await Future.wait(phase.map((action) async {
-        var inputs = _matchingInputs(action.inputSet);
+        var inputs = _matchingInputs(action.inputSet, phaseNumber);
         await for (var output in _runBuilder(
             phaseNumber, action.builder, inputs, phaseOutputIds)) {
           outputs.add(output);
         }
       }));
-
-      /// Once the group is done, add all outputs so they can be used in the next
-      /// phase.
-      for (var outputId in phaseOutputIds) {
-        _inputsByPackage.putIfAbsent(
-            outputId.package, () => new Set<AssetId>());
-        _inputsByPackage[outputId.package].add(outputId);
-      }
     }
     return new BuildResult(BuildStatus.success, BuildType.full, outputs);
   }
 
-  /// Initializes the map of all the available inputs by package.
-  Future _initializeInputsByPackage() async {
+  /// Initializes the map of all the available inputs by package and return
+  /// the inputs it found.
+  Future<Set<AssetId>> _initializeInputsByPackage() async {
     final packages = new Set<String>();
     for (var phase in _buildActions) {
       for (var action in phase) {
@@ -410,32 +384,21 @@ class BuildImpl {
     var inputSets = packages.map((package) => new InputSet(
         package, [package == _packageGraph.root.name ? '**' : 'lib/**']));
     var allInputs = listAssetIds(_reader, inputSets);
-    _inputsByPackage.clear();
-
-    // Initialize the set of inputs for each package.
-    for (var package in packages) {
-      _inputsByPackage[package] = new Set<AssetId>();
-    }
-
-    // Populate the inputs for each package.
-    for (var input in allInputs) {
-      if (_isValidInput(input)) {
-        _inputsByPackage[input.package].add(input);
-      }
-    }
+    return new Set<AssetId>.from(allInputs.where(_isValidInput));
   }
+
+  Set<AssetId> _inputsForPhase(int phaseNumber) =>
+      new Set<AssetId>.from(_assetGraph.allNodes
+          .where((n) =>
+              n is! GeneratedAssetNode ||
+              (n as GeneratedAssetNode).phaseNumber < phaseNumber)
+          .map((n) => n.id));
 
   /// Gets a list of all inputs matching [inputSet].
-  Set<AssetId> _matchingInputs(InputSet inputSet) {
-    var inputs = new Set<AssetId>();
-    assert(_inputsByPackage.containsKey(inputSet.package));
-    for (var input in _inputsByPackage[inputSet.package]) {
-      if (inputSet.globs.any((g) => g.matches(input.path))) {
-        inputs.add(input);
-      }
-    }
-    return inputs;
-  }
+  Set<AssetId> _matchingInputs(InputSet inputSet, int phaseNumber) =>
+      new Set<AssetId>.from(_inputsForPhase(phaseNumber).where((input) =>
+          input.package == inputSet.package &&
+          inputSet.globs.any((g) => g.matches(input.path))));
 
   /// Checks if an [input] is valid.
   bool _isValidInput(AssetId input) {
@@ -447,16 +410,18 @@ class BuildImpl {
   /// Runs [builder] with [primaryInputs] as inputs.
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
       Iterable<AssetId> primaryInputs, Set<AssetId> groupOutputs) async* {
+    var phaseSources = _inputsForPhase(phaseNumber);
     for (var input in primaryInputs) {
       var builderOutputs = expectedOutputs(builder, input);
 
       // Validate builderOutputs.
+      // TODO move this check to static graph generation?
       for (var output in builderOutputs) {
         if (output.package != _packageGraph.root.name) {
           throw new InvalidOutputException(output,
               'Files may only be output in the root (application) package.');
         }
-        if (_inputsByPackage[output.package]?.contains(output) == true) {
+        if (phaseSources.contains(output)) {
           throw new InvalidOutputException(output, 'Cannot overwrite inputs.');
         }
       }
