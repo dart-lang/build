@@ -301,7 +301,8 @@ void main() {
     });
 
     test('invalidates graph if build script updates', () async {
-      var graph = new AssetGraph();
+      var graph = new AssetGraph()
+        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           1, aId, false, true, makeAssetId('a|web/a.txt.copy'));
@@ -314,14 +315,18 @@ void main() {
       /// Spoof the `package:test/test.dart` import and pretend its newer than
       /// the current graph to cause a rebuild.
       await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
-          lastModified: graph.validAsOf.add(new Duration(hours: 1)));
-      await testPhases(copyAPhaseGroup, {
-        'a|web/a.txt': 'a',
-        'a|web/a.txt.copy': 'a',
-        'a|$assetGraphPath': JSON.encode(graph.serialize()),
-      }, outputs: {
-        'a|web/a.txt.copy': 'a',
-      });
+          lastModified: graph.validAsOf.add(new Duration(hours: 2)));
+      await testPhases(
+          copyAPhaseGroup,
+          {
+            'a|web/a.txt': 'a',
+            'a|web/a.txt.copy': 'a',
+            'a|$assetGraphPath': JSON.encode(graph.serialize()),
+          },
+          outputs: {
+            'a|web/a.txt.copy': 'a',
+          },
+          writer: writer);
     });
   });
 }
