@@ -106,12 +106,25 @@ Future testPhases(
       packageGraph: packageGraph,
       logLevel: logLevel,
       onLog: onLog);
-  expect(result.status, status,
-      reason: 'Exception:\n${result.exception}\n'
-          'Stack Trace:\n${result.stackTrace}');
+
+  checkBuild(result,
+      outputs: outputs,
+      writer: writer,
+      status: status,
+      exceptionMatcher: exceptionMatcher);
+}
+
+void checkBuild(BuildResult result,
+    {Map<String, dynamic> outputs,
+    InMemoryAssetWriter writer,
+    BuildStatus status = BuildStatus.success,
+    Matcher exceptionMatcher}) {
+  expect(result.status, status, reason: '$result');
   if (exceptionMatcher != null) {
     expect(result.exception, exceptionMatcher);
   }
 
-  checkOutputs(outputs, result.outputs, writer);
+  if (status == BuildStatus.success) {
+    checkOutputs(outputs, result.outputs, writer);
+  }
 }

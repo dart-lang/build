@@ -43,16 +43,14 @@ void main() {
       startServe(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
           .listen(results.add);
       var result = await nextResult(results);
-      checkOutputs({'a|web/a.txt.copy': 'a'}, result.outputs, writer);
+      checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       FakeWatcher.notifyWatchers(new WatchEvent(
           ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
       result = await nextResult(results);
-      checkOutputs({
-        'a|web/a.txt.copy': 'b',
-      }, result.outputs, writer);
+      checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
     });
 
     test('blocks serving files until the build is done', () async {
@@ -74,7 +72,7 @@ void main() {
       await wait(250);
       buildBlocker1.complete();
       var result = await nextResult(results);
-      checkOutputs({'a|web/a.txt.copy': 'a'}, result.outputs, writer);
+      checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       /// Next request completes right away.
       var buildBlocker2 = new Completer();
@@ -99,9 +97,7 @@ void main() {
       await wait(250);
       buildBlocker2.complete();
       result = await nextResult(results);
-      checkOutputs({
-        'a|web/a.txt.copy': 'b',
-      }, result.outputs, writer);
+      checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
       /// Make sure we actually see the final request finish.
       return done.future;
@@ -125,6 +121,7 @@ Stream<BuildResult> startServe(PhaseGroup phases, Map<String, String> inputs,
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   return serve(phases,
+      deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
       reader: reader,
