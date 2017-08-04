@@ -10,7 +10,6 @@ import 'package:stream_transform/stream_transform.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'build_impl.dart';
