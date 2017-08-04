@@ -19,7 +19,7 @@ dependencies:
   shelf: ^0.6.5
   shelf_static: ^0.2.3
   stack_trace: ^1.6.0
-  stream_transform: ^0.0.1
+  stream_transform: ^0.0.8
   watcher: ^0.9.7
   yaml: ^2.1.0
 
