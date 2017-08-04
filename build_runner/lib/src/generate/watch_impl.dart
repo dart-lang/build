@@ -116,15 +116,11 @@ class WatchImpl {
 
     var buildsFinished = new StreamController<Null>();
 
-    void doBuild(Map<AssetId, ChangeType> updatedInputs, [bool force = false]) {
+    void doBuild(Map<AssetId, ChangeType> updatedInputs) {
       // Don't schedule more builds if we are turning down.
       if (_terminating) return;
 
       _expectedDeletes.clear();
-      if (updatedInputs.isEmpty && !force) {
-        return;
-      }
-
       _logger.info('Starting next build');
       _currentBuild = _buildImpl.runBuild(updates: updatedInputs);
       _currentBuild.then((result) {
@@ -143,22 +139,15 @@ class WatchImpl {
       });
     }
 
-    logWithTime(
-            _logger,
-            'Setting up file watchers',
-            () => startFileWatchers(
-                _packageGraph, _logger, _directoryWatcherFactory))
-        .then((Stream<AssetChange> changes) {
-      _changeListener = changes
-          .where(_shouldProcess)
-          .transform(debounceBuffer(_debounceDelay))
-          .transform(buffer(buildsFinished.stream))
-          .listen((changes) {
-        doBuild(_collectChanges(changes));
-      });
-      // Schedule the first build!
-      doBuild({}, true);
-    });
+    var changes =
+        startFileWatchers(_packageGraph, _logger, _directoryWatcherFactory);
+    _changeListener = changes
+        .where(_shouldProcess)
+        .transform(debounceBuffer(_debounceDelay))
+        .transform(buffer(buildsFinished.stream))
+        .map(_collectChanges)
+        .transform(startWith({}))
+        .listen(doBuild);
 
     return _resultStreamController.stream;
   }
