@@ -23,8 +23,6 @@ import 'phase.dart';
 /// Watches all inputs for changes, and uses a [BuildImpl] to rerun builds as
 /// appropriate.
 class WatchImpl {
-  StreamSubscription _changeListener;
-
   /// The [AssetGraph] being shared with [_buildImpl]
   AssetGraph get _assetGraph => _buildImpl.assetGraph;
 
@@ -46,9 +44,6 @@ class WatchImpl {
   /// A future that completes when the current build is done.
   Future<BuildResult> _currentBuild;
   Future<BuildResult> get currentBuild => _currentBuild;
-
-  /// Controller for the results stream.
-  StreamController<BuildResult> _resultStreamController;
 
   /// Whether or not we are currently watching and running builds.
   bool _runningWatch = false;
@@ -74,6 +69,8 @@ class WatchImpl {
     };
   }
 
+  final _terminate = new Completer<Null>();
+
   /// Completes after the current build is done, and stops further builds from
   /// happening.
   Future terminate() async {
@@ -81,20 +78,12 @@ class WatchImpl {
       _logger.warning('Already terminating.');
       return;
     }
-    if (_resultStreamController == null) {
-      throw new StateError('`terminate` called before `runWatch`');
-    }
-
     _terminating = true;
     _logger.info('Terminating watchers, no futher builds will be scheduled.');
-    await _changeListener?.cancel();
+    _terminate.complete();
     if (_currentBuild != null) {
       _logger.info('Waiting for ongoing build to finish.');
       await _currentBuild;
-    }
-    if (_resultStreamController.hasListener) {
-      _logger.info('Closing build result stream.');
-      await _resultStreamController.close();
     }
     _terminating = false;
     _logger.info('Build watching terminated, safe to exit.\n');
@@ -111,44 +100,37 @@ class WatchImpl {
     }
 
     _runningWatch = true;
-    _resultStreamController = new StreamController<BuildResult>();
 
-    var buildsFinished = new StreamController<Null>();
-
-    void doBuild(Map<AssetId, ChangeType> updatedInputs) {
-      // Don't schedule more builds if we are turning down.
-      if (_terminating) return;
-
-      _expectedDeletes.clear();
+    Future<BuildResult> doBuild(List<List<AssetChange>> changes) {
       _logger.info('Starting next build');
-      _currentBuild = _buildImpl.runBuild(updates: updatedInputs);
-      _currentBuild.then((result) {
-        // Terminate the watcher if the build script is updated, there is no
-        // need to continue listening.
-        if (result.status == BuildStatus.failure &&
-            result.exception is FatalBuildException) {
-          terminate();
-        }
-
-        if (_resultStreamController.hasListener) {
-          _resultStreamController.add(result);
-        }
-        _currentBuild = null;
-        buildsFinished.add(null);
-      });
+      _expectedDeletes.clear();
+      var updates = _collectChanges(changes);
+      _currentBuild = _buildImpl.runBuild(updates: updates);
+      _currentBuild.then((_) => _currentBuild = null);
+      return _currentBuild;
     }
 
     var changes =
         startFileWatchers(_packageGraph, _logger, _directoryWatcherFactory);
-    _changeListener = changes
+    var buildResults = changes
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
-        .transform(buffer(buildsFinished.stream))
-        .map(_collectChanges)
-        .transform(startWith({}))
-        .listen(doBuild);
+        .transform(startWith([]))
+        .transform(takeUntil(_terminate.future))
+        .transform(asyncMapBuffer(doBuild))
+        .transform(tap(_terminateIfFatal))
+        .asBroadcastStream();
+    // Make sure there is at least 1 listener
+    buildResults.drain();
+    return buildResults;
+  }
 
-    return _resultStreamController.stream;
+  /// Terminate the watch if the build script updates.
+  void _terminateIfFatal(BuildResult result) {
+    if (result.status == BuildStatus.failure &&
+        result.exception is FatalBuildException) {
+      terminate();
+    }
   }
 
   /// Checks if we should skip a watch event for this [change].
