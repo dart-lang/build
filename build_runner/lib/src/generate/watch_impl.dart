@@ -178,13 +178,8 @@ class WatchImpl {
       _assetGraph.get(change.id) is GeneratedAssetNode &&
       change.type != ChangeType.REMOVE;
 
-  bool _isExpectedDelete(AssetChange change) {
-    if (_expectedDeletes.contains(change.id)) {
+  bool _isExpectedDelete(AssetChange change) =>
       _expectedDeletes.remove(change.id);
-      return true;
-    }
-    return false;
-  }
 
   bool _isUnwatchedDelete(AssetChange change) =>
       change.type == ChangeType.REMOVE && !_assetGraph.contains(change.id);
