@@ -15,8 +15,7 @@ import '../common/common.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuildAction =
-      new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*']);
+  final copyABuildAction = new BuildAction(new CopyBuilder(), 'a');
 
   group('build', () {
     group('with root package inputs', () {
@@ -28,7 +27,7 @@ void main() {
 
       test('one phase, one builder, one-to-many outputs', () async {
         await testActions([
-          new BuildAction(new CopyBuilder(numCopies: 2), 'a', inputs: ['**/*'])
+          new BuildAction(new CopyBuilder(numCopies: 2), 'a')
         ], {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
@@ -80,11 +79,9 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      await testActions([
-        new BuildAction(new CopyBuilder(), 'b', inputs: ['**/*'])
-      ], {
-        'b|lib/b.txt': 'b'
-      }, outputs: {}, status: BuildStatus.failure);
+      await testActions(
+          [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
+          outputs: {}, status: BuildStatus.failure);
     });
   });
 
