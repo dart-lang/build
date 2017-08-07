@@ -140,23 +140,9 @@ class BuildImpl {
         if (_assetGraph != null) {
           await _writer.delete(_assetGraphId);
           currentSources.remove(_assetGraphId);
-          // Applies all [updates] to the [_assetGraph] as well as doing other
-          // necessary cleanup.
           _logger
               .info('Updating dependency graph with changes since last build.');
           _assetGraph.updateForSources(_buildActions, currentSources);
-          await _updateWithChanges(updates);
-        }
-
-        if (_assetGraph != null) {
-          await _writer.delete(_assetGraphId);
-          _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
-          // Applies all [updates] to the [_assetGraph] as well as doing other
-          // necessary cleanup.
-          var sources = _inputsByPackage.values.expand((s) => s).toList();
-          _logger
-              .info('Updating dependency graph with changes since last build.');
-          _assetGraph.updateForSources(_buildActions, sources);
           await _updateWithChanges(updates);
         }
 
@@ -293,7 +279,7 @@ class BuildImpl {
   /// necessary cleanup such as deleting outputs as necessary.
   Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
     var deletes = _assetGraph.updateAndInvalidate(updates);
-    await _deleteAssets(deletes);
+    await Future.wait(deletes.map(_writer.delete));
   }
 
   /// Deletes all previous output files that are in need of an update.
@@ -383,8 +369,7 @@ class BuildImpl {
     return new BuildResult(BuildStatus.success, BuildType.full, outputs);
   }
 
-  /// Initializes the map of all the available inputs by package and return
-  /// the inputs it found.
+  /// Returns the set of available inputs on disk.
   Future<Set<AssetId>> _initializeInputsByPackage() async {
     final packages = new Set<String>();
     for (var phase in _buildActions) {
