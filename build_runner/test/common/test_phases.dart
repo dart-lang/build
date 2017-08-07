@@ -63,7 +63,7 @@ Future<BuildResult> nextResult(List results) {
 ///         var actions = [
 ///           new BuildAction(new LineCounterBuilder(), 'a', ['lib/utils.dart'])
 ///         ];
-///         await testPhases(actions, {
+///         await testActions(actions, {
 ///           'a|lib/utils.dart': '',
 ///         }, outputs: {
 ///           'a|lib/utils_linecount.txt': '50',
@@ -71,7 +71,7 @@ Future<BuildResult> nextResult(List results) {
 ///       });
 ///     }
 ///
-Future testPhases(List<BuildAction> buildActions,
+Future testActions(List<BuildAction> buildActions,
     Map<String, /*String|List<int>*/ dynamic> inputs,
     {Map<String, /*String|List<int>*/ dynamic> outputs,
     PackageGraph packageGraph,

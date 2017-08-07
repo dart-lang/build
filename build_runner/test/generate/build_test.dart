@@ -20,13 +20,13 @@ void main() {
   group('build', () {
     group('with root package inputs', () {
       test('one phase, one builder, one-to-one outputs', () async {
-        await testPhases(
+        await testActions(
             [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
       test('one phase, one builder, one-to-many outputs', () async {
-        await testPhases([
+        await testActions([
           new BuildAction(new CopyBuilder(numCopies: 2), 'a', ['**/*'])
         ], {
           'a|web/a.txt': 'a',
@@ -47,7 +47,7 @@ void main() {
           new BuildAction(
               new CopyBuilder(numCopies: 2), 'a', ['web/*.txt.clone'])
         ];
-        await testPhases(buildActions, {
+        await testActions(buildActions, {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
@@ -68,7 +68,7 @@ void main() {
               ['lib/b.txt']),
           new BuildAction(new CopyBuilder(), 'a', ['lib/a.txt'])
         ];
-        await testPhases(buildActions, {
+        await testActions(buildActions, {
           'a|lib/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
@@ -79,7 +79,7 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      await testPhases([
+      await testActions([
         new BuildAction(new CopyBuilder(), 'b', ['**/*'])
       ], {
         'b|lib/b.txt': 'b'
@@ -89,7 +89,7 @@ void main() {
 
   test('tracks dependency graph in a asset_graph.json file', () async {
     final writer = new InMemoryRunnerAssetWriter();
-    await testPhases(
+    await testActions(
         [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
         outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         writer: writer);
@@ -119,10 +119,10 @@ void main() {
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testPhases([copyABuildAction], inputs,
+    await testActions([copyABuildAction], inputs,
         outputs: outputs, writer: writer);
     // Second run, should have no extra outputs.
-    await testPhases([copyABuildAction], inputs,
+    await testActions([copyABuildAction], inputs,
         outputs: outputs, writer: writer);
   });
 
@@ -134,7 +134,7 @@ void main() {
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testPhases([copyABuildAction], inputs,
+    await testActions([copyABuildAction], inputs,
         outputs: outputs, writer: writer);
 
     // Delete the `asset_graph.json` file!
@@ -142,7 +142,7 @@ void main() {
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
-    var done = testPhases([copyABuildAction], inputs,
+    var done = testActions([copyABuildAction], inputs,
         outputs: outputs, writer: writer);
     // Should block on user input.
     await new Future.delayed(new Duration(seconds: 1));
@@ -164,7 +164,7 @@ void main() {
       var writer = new InMemoryRunnerAssetWriter();
       await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
-      await testPhases([
+      await testActions([
         copyABuildAction
       ], {
         'a|web/a.txt': 'a',
@@ -222,7 +222,7 @@ void main() {
       var writer = new InMemoryRunnerAssetWriter();
       await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(days: 1)));
-      await testPhases(
+      await testActions(
           buildActions,
           {
             'a|lib/a.txt': 'b',
@@ -262,7 +262,7 @@ void main() {
       graph.add(aNode);
 
       var writer = new InMemoryRunnerAssetWriter();
-      await testPhases(
+      await testActions(
           buildActions,
           {
             'a|lib/a.txt.copy': 'a',
@@ -299,7 +299,7 @@ void main() {
       /// the current graph to cause a rebuild.
       await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
           lastModified: graph.validAsOf.add(new Duration(hours: 2)));
-      await testPhases([
+      await testActions([
         copyABuildAction
       ], {
         'a|web/a.txt': 'a',
