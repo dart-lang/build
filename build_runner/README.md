@@ -51,8 +51,8 @@ A build with multiple steps may look like:
 ```dart
 main() async {
   await build([
-    new CopyBuilder('.copy1'), 'my_package', ['lib/*.dart']),
-    new CopyBuilder('.copy2'), 'my_package', ['lib/*.dart']),
+    new BuildACtion(new CopyBuilder('.copy1'), 'my_package', inputs: ['lib/*.dart']),
+    new BuildACtion(new CopyBuilder('.copy2'), 'my_package', inputs: ['lib/*.dart']),
   ]);}
 ```
 
@@ -63,8 +63,8 @@ globs need only to match the extension of the previous output.
 ```dart
 main() async {
   await build([
-    new CopyBuilder('.copy'), 'my_package', ['lib/*.dart']),
-    new CopyBuilder('.bak'), 'my_package', ['lib/*.dart.copy']),
+    new BuildAction(new CopyBuilder('.copy'), 'my_package', inputs: ['lib/*.dart']),
+    new BuildAction(new CopyBuilder('.bak'), 'my_package', inputs: ['lib/*.dart.copy']),
   ]);}
 ```
 
