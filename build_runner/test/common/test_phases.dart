@@ -29,7 +29,7 @@ Future<BuildResult> nextResult(List results) {
   return done.future;
 }
 
-/// Runs build [phases] in a test environment.
+/// Runs [buildActions] in a test environment.
 ///
 /// The test environment supplies in-memory build [inputs] to the builders under
 /// test. [outputs] may be optionally provided to verify that the builders
@@ -59,12 +59,11 @@ Future<BuildResult> nextResult(List results) {
 /// Example:
 ///
 ///     main() {
-///       test('LineCounterBuilder', () {
-///         var p = new Phase()
-///           ..addAction(new LineCounterBuilder(),
-///             new InputSet('a', ['lib/utils.dart']));
-///         var g = new PhaseGroup()..addPhase(p);
-///         await testPhases(g, {
+///       test('LineCounterBuilder', () async {
+///         var actions = [
+///           new BuildAction(new LineCounterBuilder(), 'a', ['lib/utils.dart'])
+///         ];
+///         await testActions(actions, {
 ///           'a|lib/utils.dart': '',
 ///         }, outputs: {
 ///           'a|lib/utils_linecount.txt': '50',
@@ -72,8 +71,8 @@ Future<BuildResult> nextResult(List results) {
 ///       });
 ///     }
 ///
-Future testPhases(
-    PhaseGroup phases, Map<String, /*String|List<int>*/ dynamic> inputs,
+Future testActions(List<BuildAction> buildActions,
+    Map<String, /*String|List<int>*/ dynamic> inputs,
     {Map<String, /*String|List<int>*/ dynamic> outputs,
     PackageGraph packageGraph,
     BuildStatus status: BuildStatus.success,
@@ -99,7 +98,7 @@ Future testPhases(
     packageGraph = new PackageGraph.fromRoot(rootPackage);
   }
 
-  var result = await build(phases,
+  var result = await build(buildActions,
       deleteFilesByDefault: true,
       reader: reader,
       writer: writer,

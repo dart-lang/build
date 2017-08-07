@@ -57,11 +57,11 @@ class WatchImpl {
   /// Pending expected delete events from the writer.
   final Set<AssetId> _expectedDeletes = new Set<AssetId>();
 
-  WatchImpl(BuildOptions options, PhaseGroup phaseGroup)
+  WatchImpl(BuildOptions options, List<BuildAction> buildActions)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         _packageGraph = options.packageGraph,
-        _buildImpl = new BuildImpl(options, phaseGroup) {
+        _buildImpl = new BuildImpl(options, buildActions) {
     var existingOnDelete = options.writer.onDelete;
     options.writer.onDelete = (id) {
       _expectedDeletes.add(id);

@@ -19,8 +19,7 @@ void main() {
   group('serve', () {
     InMemoryRunnerAssetWriter writer;
     CopyBuilder copyBuilder;
-    Phase copyAPhase;
-    PhaseGroup copyAPhaseGroup;
+    BuildAction copyABuildAction;
 
     setUp(() {
       _terminateServeController = new StreamController();
@@ -28,9 +27,7 @@ void main() {
 
       /// Basic phases/phase groups which get used in many tests
       copyBuilder = new CopyBuilder();
-      copyAPhase = new Phase()
-        ..addAction(copyBuilder, new InputSet('a', ['**/*']));
-      copyAPhaseGroup = new PhaseGroup()..addPhase(copyAPhase);
+      copyABuildAction = new BuildAction(copyBuilder, 'a', inputs: ['**/*']);
     });
 
     tearDown(() async {
@@ -40,7 +37,7 @@ void main() {
 
     test('does basic builds', () async {
       var results = <BuildResult>[];
-      startServe(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
+      startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer)
           .listen(results.add);
       var result = await nextResult(results);
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
@@ -58,7 +55,7 @@ void main() {
       copyBuilder.blockUntil = buildBlocker1.future;
 
       var results = <BuildResult>[];
-      startServe(copyAPhaseGroup, {'a|web/a.txt': 'a'}, writer)
+      startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer)
           .listen(results.add);
       // Give the build enough time to get started.
       await wait(100);
@@ -109,8 +106,8 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
-Stream<BuildResult> startServe(PhaseGroup phases, Map<String, String> inputs,
-    InMemoryRunnerAssetWriter writer) {
+Stream<BuildResult> startServe(List<BuildAction> buildActions,
+    Map<String, String> inputs, InMemoryRunnerAssetWriter writer) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });
@@ -120,7 +117,7 @@ Stream<BuildResult> startServe(PhaseGroup phases, Map<String, String> inputs,
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  return serve(phases,
+  return serve(buildActions,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
