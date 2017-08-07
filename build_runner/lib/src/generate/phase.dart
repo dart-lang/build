@@ -11,8 +11,9 @@ class BuildAction {
 
   BuildAction._(this.builder, this.inputSet);
 
-  BuildAction(this.builder, String package, [List<String> globs = const ['**']])
-      : inputSet = new InputSet(package, globs);
+  BuildAction(this.builder, String package,
+      {List<String> inputs = const ['**']})
+      : inputSet = new InputSet(package, inputs);
 
   @override
   String toString() => '$builder on $inputSet';

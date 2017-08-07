@@ -17,7 +17,8 @@ import '../common/common.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuildAction = new BuildAction(new CopyBuilder(), 'a', ['**/*']);
+  final copyABuildAction =
+      new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*']);
 
   group('watch', () {
     setUp(() {
@@ -214,7 +215,7 @@ void main() {
       test('edits propagate through all phases', () async {
         var buildActions = [
           copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', ['**/*.copy'])
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -240,7 +241,7 @@ void main() {
       test('adds propagate through all phases', () async {
         var buildActions = [
           copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', ['**/*.copy'])
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -270,7 +271,7 @@ void main() {
       test('deletes propagate through all phases', () async {
         var buildActions = [
           copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', ['**/*.copy'])
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -311,7 +312,7 @@ void main() {
       test('deleted generated outputs are regenerated', () async {
         var buildActions = [
           copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', ['**/*.copy']),
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy']),
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -348,9 +349,8 @@ void main() {
       test('of an output file is edited', () async {
         var buildActions = [
           new BuildAction(
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
-              'a',
-              ['web/a.txt'])
+              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')), 'a',
+              inputs: ['web/a.txt'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -374,11 +374,10 @@ void main() {
           'of an output which is derived from another generated file is edited',
           () async {
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', ['web/a.txt']),
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['web/a.txt']),
           new BuildAction(
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
-              'a',
-              ['web/a.txt.copy'])
+              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')), 'a',
+              inputs: ['web/a.txt.copy'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();

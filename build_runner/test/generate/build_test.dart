@@ -15,7 +15,8 @@ import '../common/common.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuildAction = new BuildAction(new CopyBuilder(), 'a', ['**/*']);
+  final copyABuildAction =
+      new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*']);
 
   group('build', () {
     group('with root package inputs', () {
@@ -27,7 +28,7 @@ void main() {
 
       test('one phase, one builder, one-to-many outputs', () async {
         await testActions([
-          new BuildAction(new CopyBuilder(numCopies: 2), 'a', ['**/*'])
+          new BuildAction(new CopyBuilder(numCopies: 2), 'a', inputs: ['**/*'])
         ], {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
@@ -42,10 +43,10 @@ void main() {
       test('multiple build actions', () async {
         var buildActions = [
           copyABuildAction,
-          new BuildAction(
-              new CopyBuilder(extension: 'clone'), 'a', ['**/*.txt']),
-          new BuildAction(
-              new CopyBuilder(numCopies: 2), 'a', ['web/*.txt.clone'])
+          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+              inputs: ['**/*.txt']),
+          new BuildAction(new CopyBuilder(numCopies: 2), 'a',
+              inputs: ['web/*.txt.clone'])
         ];
         await testActions(buildActions, {
           'a|web/a.txt': 'a',
@@ -65,8 +66,8 @@ void main() {
           new BuildAction(
               new CopyBuilder(touchAsset: new AssetId('a', 'lib/a.txt.copy')),
               'a',
-              ['lib/b.txt']),
-          new BuildAction(new CopyBuilder(), 'a', ['lib/a.txt'])
+              inputs: ['lib/b.txt']),
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['lib/a.txt'])
         ];
         await testActions(buildActions, {
           'a|lib/a.txt': 'a',
@@ -80,7 +81,7 @@ void main() {
 
     test('can\'t output files in non-root packages', () async {
       await testActions([
-        new BuildAction(new CopyBuilder(), 'b', ['**/*'])
+        new BuildAction(new CopyBuilder(), 'b', inputs: ['**/*'])
       ], {
         'b|lib/b.txt': 'b'
       }, outputs: {}, status: BuildStatus.failure);
@@ -180,8 +181,8 @@ void main() {
     test('invalidates generated assets based on graph age', () async {
       var buildActions = [
         copyABuildAction,
-        new BuildAction(
-            new CopyBuilder(extension: 'clone'), 'a', ['**/*.txt.copy'])
+        new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+            inputs: ['**/*.txt.copy'])
       ];
 
       var graph = new AssetGraph.build([], new Set())
@@ -242,8 +243,8 @@ void main() {
     test('graph/file system get cleaned up for deleted inputs', () async {
       var buildActions = [
         copyABuildAction,
-        new BuildAction(
-            new CopyBuilder(extension: 'clone'), 'a', ['**/*.txt.copy'])
+        new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+            inputs: ['**/*.txt.copy'])
       ];
 
       var graph = new AssetGraph.build([], new Set());
