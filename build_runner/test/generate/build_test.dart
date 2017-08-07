@@ -211,7 +211,7 @@ void main() {
         ..validAsOf = new DateTime.now();
 
       var aCloneNode = new GeneratedAssetNode(
-          1,
+          2,
           makeAssetId('a|lib/a.txt.copy'),
           false,
           true,
@@ -227,7 +227,7 @@ void main() {
       graph.add(aNode);
 
       var bCloneNode = new GeneratedAssetNode(
-          1,
+          2,
           makeAssetId('a|lib/b.txt.copy'),
           false,
           true,

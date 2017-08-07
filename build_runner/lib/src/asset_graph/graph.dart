@@ -66,9 +66,6 @@ class AssetGraph {
 
   /// Adds [node] to the graph.
   void _add(AssetNode node) {
-    if (_nodesById.containsKey(node.id)) {
-      throw new DuplicateAssetNodeException(node);
-    }
     _nodesById[node.id] = node;
   }
 
