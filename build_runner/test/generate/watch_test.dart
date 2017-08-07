@@ -17,8 +17,7 @@ import '../common/common.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuildAction =
-      new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*']);
+  final copyABuildAction = new BuildAction(new CopyBuilder(), 'a');
 
   group('watch', () {
     setUp(() {

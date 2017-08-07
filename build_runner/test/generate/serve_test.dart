@@ -27,7 +27,7 @@ void main() {
 
       /// Basic phases/phase groups which get used in many tests
       copyBuilder = new CopyBuilder();
-      copyABuildAction = new BuildAction(copyBuilder, 'a', inputs: ['**/*']);
+      copyABuildAction = new BuildAction(copyBuilder, 'a');
     });
 
     tearDown(() async {
