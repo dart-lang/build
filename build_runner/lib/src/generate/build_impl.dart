@@ -30,7 +30,7 @@ import 'phase.dart';
 /// Class which manages running builds.
 class BuildImpl {
   final AssetId _assetGraphId;
-  final List<List<BuildAction>> _buildActions;
+  final List<BuildAction> _buildActions;
   final bool _deleteFilesByDefault;
   final _logger = new Logger('Build');
   final PackageGraph _packageGraph;
@@ -43,10 +43,9 @@ class BuildImpl {
   bool _buildRunning = false;
   bool _isFirstBuild = true;
 
-  BuildImpl(BuildOptions options, PhaseGroup phaseGroup)
+  BuildImpl(BuildOptions options, this._buildActions)
       : _assetGraphId =
             new AssetId(options.packageGraph.root.name, assetGraphPath),
-        _buildActions = phaseGroup.buildActions,
         _deleteFilesByDefault = options.deleteFilesByDefault,
         _packageGraph = options.packageGraph,
         _reader = options.reader,
@@ -345,26 +344,23 @@ class BuildImpl {
     }
   }
 
-  /// Runs the [Phase]s in [_buildActions] and returns a [Future<BuildResult>]
+  /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
   Future<BuildResult> _runPhases() async {
     final outputs = <AssetId>[];
     var phaseNumber = 0;
-    for (var phase in _buildActions) {
+    for (var action in _buildActions) {
       phaseNumber++;
       // Collects all the ids for files which are output by this stage. This
       // also includes files which didn't get regenerated because they weren't,
       // dirty unlike [outputs] which only gets files which were explicitly
       // generated in this build.
       final phaseOutputIds = new Set<AssetId>();
-
-      await Future.wait(phase.map((action) async {
-        var inputs = _matchingInputs(action.inputSet, phaseNumber);
-        await for (var output in _runBuilder(
-            phaseNumber, action.builder, inputs, phaseOutputIds)) {
-          outputs.add(output);
-        }
-      }));
+      var inputs = _matchingInputs(action.inputSet, phaseNumber);
+      await for (var output
+          in _runBuilder(phaseNumber, action.builder, inputs, phaseOutputIds)) {
+        outputs.add(output);
+      }
     }
     return new BuildResult(BuildStatus.success, BuildType.full, outputs);
   }
@@ -372,10 +368,8 @@ class BuildImpl {
   /// Returns the set of available inputs on disk.
   Future<Set<AssetId>> _initializeInputsByPackage() async {
     final packages = new Set<String>();
-    for (var phase in _buildActions) {
-      for (var action in phase) {
-        packages.add(action.inputSet.package);
-      }
+    for (var action in _buildActions) {
+      packages.add(action.inputSet.package);
     }
 
     var inputSets = packages.map((package) => new InputSet(

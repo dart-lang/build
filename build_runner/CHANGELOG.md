@@ -1,3 +1,12 @@
+## 0.4.0-dev
+
+- **Breaking**: The `PhaseGroup` class has been replaced with a
+  `List<BuildAction>` in `build`, `watch`, and `serve`. The `PhaseGroup` and
+  `Phase` classes are removed.
+  If your current build has multiple actions in a single phase which are
+  depending on *not* seeing the outputs from other actions in the phase you will
+  need to instead set up the `InputSet`s so that the outputs are filtered out.
+
 ## 0.3.4+1
 
 - Support the latest release of `build_barback`.

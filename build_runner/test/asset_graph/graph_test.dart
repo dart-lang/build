@@ -7,7 +7,6 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/generate/input_set.dart';
 import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_test/build_test.dart';
 
@@ -17,8 +16,7 @@ void main() {
   group('AssetGraph', () {
     test('build', () {
       var graph = new AssetGraph.build(
-          new PhaseGroup.singleAction(
-              new CopyBuilder(), new InputSet('foo', ['**'])).buildActions,
+          [new BuildAction(new CopyBuilder(), 'foo')],
           new Set.from([makeAssetId('foo|file')]));
       expect(graph.outputs, unorderedEquals([makeAssetId('foo|file.copy')]));
       expect(

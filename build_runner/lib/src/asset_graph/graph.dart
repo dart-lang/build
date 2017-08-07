@@ -48,8 +48,8 @@ class AssetGraph {
   }
 
   factory AssetGraph.build(
-          List<List<BuildAction>> phases, Set<AssetId> sources) =>
-      new AssetGraph._().._addOutputsForSources(phases, sources);
+          List<BuildAction> buildActions, Set<AssetId> sources) =>
+      new AssetGraph._().._addOutputsForSources(buildActions, sources);
 
   /// Puts this graph into a serializable form.
   Map serialize() => {
@@ -131,35 +131,32 @@ class AssetGraph {
   /// Updates the structure of the graph to account for any new sources and
   /// returns true if the graph has changed.
   bool updateForSources(
-      List<List<BuildAction>> phases, Iterable<AssetId> sources) {
+      List<BuildAction> buildActions, Iterable<AssetId> sources) {
     var unseen = sources.where((s) => !_nodesById.containsKey(s)).toSet();
     if (unseen.isEmpty) return false;
-    _addOutputsForSources(phases, unseen);
+    _addOutputsForSources(buildActions, unseen);
     return true;
   }
 
   void _addOutputsForSources(
-      List<List<BuildAction>> phases, Set<AssetId> newSources) {
+      List<BuildAction> buildActions, Set<AssetId> newSources) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
     var allInputs = new Set<AssetId>.from(newSources);
     var phaseNumber = 0;
-    for (var phase in phases) {
+    for (var action in buildActions) {
       phaseNumber++;
       var phaseOutputs = <AssetId>[];
-      for (var action in phase) {
-        var inputs = allInputs.where(
-            (input) => action.inputSet.globs.any((g) => g.matches(input.path)));
-        for (var input in inputs) {
-          var outputs = expectedOutputs(action.builder, input);
-          phaseOutputs.addAll(outputs);
-          get(input).primaryOutputs.addAll(outputs);
-          for (var output in outputs) {
-            if (contains(output) && get(output) is AssetNode) {
-              _remove(output);
-            }
-            _add(new GeneratedAssetNode(
-                phaseNumber, input, true, false, output));
+      var inputs = allInputs.where(
+          (input) => action.inputSet.globs.any((g) => g.matches(input.path)));
+      for (var input in inputs) {
+        var outputs = expectedOutputs(action.builder, input);
+        phaseOutputs.addAll(outputs);
+        get(input).primaryOutputs.addAll(outputs);
+        for (var output in outputs) {
+          if (contains(output) && get(output) is AssetNode) {
+            _remove(output);
           }
+          _add(new GeneratedAssetNode(phaseNumber, input, true, false, output));
         }
       }
       allInputs.addAll(phaseOutputs);

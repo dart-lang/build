@@ -15,22 +15,20 @@ import '../common/common.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final aFiles = new InputSet('a', ['**/*']);
-  final copyAPhase = new Phase()..addAction(new CopyBuilder(), aFiles);
-  final copyAPhaseGroup = new PhaseGroup()..addPhase(copyAPhase);
+  final copyABuildAction = new BuildAction(new CopyBuilder(), 'a', ['**/*']);
 
   group('build', () {
     group('with root package inputs', () {
       test('one phase, one builder, one-to-one outputs', () async {
         await testPhases(
-            copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+            [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
       test('one phase, one builder, one-to-many outputs', () async {
-        var phases =
-            new PhaseGroup.singleAction(new CopyBuilder(numCopies: 2), aFiles);
-        await testPhases(phases, {
+        await testPhases([
+          new BuildAction(new CopyBuilder(numCopies: 2), 'a', ['**/*'])
+        ], {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
@@ -41,37 +39,15 @@ void main() {
         });
       });
 
-      test('one phase, multiple builders', () async {
-        var phases = new PhaseGroup();
-        phases.newPhase()
-          ..addAction(new CopyBuilder(), aFiles)
-          ..addAction(new CopyBuilder(extension: 'clone'), aFiles)
-          ..addAction(new CopyBuilder(numCopies: 2), aFiles);
-
-        await testPhases(phases, {
-          'a|web/a.txt': 'a',
-          'a|lib/b.txt': 'b',
-        }, outputs: {
-          'a|web/a.txt.copy': 'a',
-          'a|web/a.txt.clone': 'a',
-          'a|lib/b.txt.copy': 'b',
-          'a|lib/b.txt.clone': 'b',
-          'a|web/a.txt.copy.0': 'a',
-          'a|web/a.txt.copy.1': 'a',
-          'a|lib/b.txt.copy.0': 'b',
-          'a|lib/b.txt.copy.1': 'b',
-        });
-      });
-
-      test('multiple phases, multiple builders', () async {
-        var phases = new PhaseGroup();
-        phases.addPhase(copyAPhase);
-        phases.newPhase().addAction(new CopyBuilder(extension: 'clone'),
-            new InputSet('a', ['**/*.txt']));
-        phases.newPhase().addAction(new CopyBuilder(numCopies: 2),
-            new InputSet('a', ['web/*.txt.clone']));
-
-        await testPhases(phases, {
+      test('multiple build actions', () async {
+        var buildActions = [
+          copyABuildAction,
+          new BuildAction(
+              new CopyBuilder(extension: 'clone'), 'a', ['**/*.txt']),
+          new BuildAction(
+              new CopyBuilder(numCopies: 2), 'a', ['web/*.txt.clone'])
+        ];
+        await testPhases(buildActions, {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
@@ -85,15 +61,14 @@ void main() {
       });
 
       test('early step touches a not-yet-generated asset', () async {
-        var phases = new PhaseGroup();
-        phases.newPhase()
-          ..addAction(
+        var buildActions = [
+          new BuildAction(
               new CopyBuilder(touchAsset: new AssetId('a', 'lib/a.txt.copy')),
-              new InputSet('a', ['lib/b.txt']));
-        phases.newPhase()
-          ..addAction(new CopyBuilder(), new InputSet('a', ['lib/a.txt']));
-
-        await testPhases(phases, {
+              'a',
+              ['lib/b.txt']),
+          new BuildAction(new CopyBuilder(), 'a', ['lib/a.txt'])
+        ];
+        await testPhases(buildActions, {
           'a|lib/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
@@ -104,17 +79,18 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      var phases = new PhaseGroup.singleAction(
-          new CopyBuilder(), new InputSet('b', ['**/*']));
-
-      await testPhases(phases, {'b|lib/b.txt': 'b'},
-          outputs: {}, status: BuildStatus.failure);
+      await testPhases([
+        new BuildAction(new CopyBuilder(), 'b', ['**/*'])
+      ], {
+        'b|lib/b.txt': 'b'
+      }, outputs: {}, status: BuildStatus.failure);
     });
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
     final writer = new InMemoryRunnerAssetWriter();
-    await testPhases(copyAPhaseGroup, {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+    await testPhases(
+        [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
         outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         writer: writer);
 
@@ -143,9 +119,11 @@ void main() {
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
+    await testPhases([copyABuildAction], inputs,
+        outputs: outputs, writer: writer);
     // Second run, should have no extra outputs.
-    await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
+    await testPhases([copyABuildAction], inputs,
+        outputs: outputs, writer: writer);
   });
 
   test('can recover from a deleted asset_graph.json cache', () async {
@@ -156,15 +134,16 @@ void main() {
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
+    await testPhases([copyABuildAction], inputs,
+        outputs: outputs, writer: writer);
 
     // Delete the `asset_graph.json` file!
     var outputId = makeAssetId('a|$assetGraphPath');
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
-    var done =
-        testPhases(copyAPhaseGroup, inputs, outputs: outputs, writer: writer);
+    var done = testPhases([copyABuildAction], inputs,
+        outputs: outputs, writer: writer);
     // Should block on user input.
     await new Future.delayed(new Duration(seconds: 1));
     // Now it should complete!
@@ -185,27 +164,25 @@ void main() {
       var writer = new InMemoryRunnerAssetWriter();
       await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
-      await testPhases(
-          copyAPhaseGroup,
-          {
-            'a|web/a.txt': 'a',
-            'a|lib/b.txt.copy': 'b',
-            'a|lib/c.txt': 'c',
-            'a|$assetGraphPath': JSON.encode(graph.serialize()),
-          },
-          outputs: {
-            'a|web/a.txt.copy': 'a',
-            'a|lib/c.txt.copy': 'c',
-          },
-          writer: writer);
+      await testPhases([
+        copyABuildAction
+      ], {
+        'a|web/a.txt': 'a',
+        'a|lib/b.txt.copy': 'b',
+        'a|lib/c.txt': 'c',
+        'a|$assetGraphPath': JSON.encode(graph.serialize()),
+      }, outputs: {
+        'a|web/a.txt.copy': 'a',
+        'a|lib/c.txt.copy': 'c',
+      }, writer: writer);
     });
 
     test('invalidates generated assets based on graph age', () async {
-      var phases = new PhaseGroup();
-      phases.addPhase(copyAPhase);
-      phases.newPhase()
-        ..addAction(new CopyBuilder(extension: 'clone'),
-            new InputSet('a', ['**/*.txt.copy']));
+      var buildActions = [
+        copyABuildAction,
+        new BuildAction(
+            new CopyBuilder(extension: 'clone'), 'a', ['**/*.txt.copy'])
+      ];
 
       var graph = new AssetGraph.build([], new Set())
         ..validAsOf = new DateTime.now();
@@ -246,7 +223,7 @@ void main() {
       await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
           lastModified: graph.validAsOf.subtract(new Duration(days: 1)));
       await testPhases(
-          phases,
+          buildActions,
           {
             'a|lib/a.txt': 'b',
             'a|lib/a.txt.copy': 'a',
@@ -263,11 +240,11 @@ void main() {
     });
 
     test('graph/file system get cleaned up for deleted inputs', () async {
-      var phases = new PhaseGroup();
-      phases.addPhase(copyAPhase);
-      phases.newPhase()
-        ..addAction(new CopyBuilder(extension: 'clone'),
-            new InputSet('a', ['**/*.txt.copy']));
+      var buildActions = [
+        copyABuildAction,
+        new BuildAction(
+            new CopyBuilder(extension: 'clone'), 'a', ['**/*.txt.copy'])
+      ];
 
       var graph = new AssetGraph.build([], new Set());
       var aCloneNode = new GeneratedAssetNode(
@@ -286,7 +263,7 @@ void main() {
 
       var writer = new InMemoryRunnerAssetWriter();
       await testPhases(
-          phases,
+          buildActions,
           {
             'a|lib/a.txt.copy': 'a',
             'a|lib/a.txt.copy.clone': 'a',
@@ -322,17 +299,15 @@ void main() {
       /// the current graph to cause a rebuild.
       await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
           lastModified: graph.validAsOf.add(new Duration(hours: 2)));
-      await testPhases(
-          copyAPhaseGroup,
-          {
-            'a|web/a.txt': 'a',
-            'a|web/a.txt.copy': 'a',
-            'a|$assetGraphPath': JSON.encode(graph.serialize()),
-          },
-          outputs: {
-            'a|web/a.txt.copy': 'a',
-          },
-          writer: writer);
+      await testPhases([
+        copyABuildAction
+      ], {
+        'a|web/a.txt': 'a',
+        'a|web/a.txt.copy': 'a',
+        'a|$assetGraphPath': JSON.encode(graph.serialize()),
+      }, outputs: {
+        'a|web/a.txt.copy': 'a',
+      }, writer: writer);
     });
   });
 }

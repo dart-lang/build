@@ -22,16 +22,13 @@ library:
 - **serve**: Same as `watch`, but also provides a basic file server which blocks
     if there are ongoing builds.
 
-All three of these methods have a single required argument, a `PhaseGroup`. This
-is conceptually just a `List<Phase>` with some helper methods. Each of these
-`Phase`s runs sequentially, and blocks until the previous `Phase` is completed.
+All three of these methods have a single required argument, a
+`List<BuildAction>`. Each of these `BuildActions`s may run in parallel, but they
+may only read outputs from steps earlier in the list.
 
-A single `Phase` may be composed of one or more `BuildAction`s, which are just
-a combination of a single `Builder` and a single `InputSet`. The `Builder` is
-what will actually generate outputs, and the `InputSet` determines what the
-primary inputs to that `Builder` will be. All `BuildAction`s in a `Phase` can
-be ran at the same time, and cannot read in the outputs of any other
-`BuildAction` in the same `Phase`.
+A `BuildAction` is a combination of a single `Builder` and a single `InputSet`.
+The `Builder` is what will actually generate outputs, and the `InputSet`
+determines what the primary inputs to that `Builder` will be.
 
 Lets look at a very simple example, with a single `BuildAction`. You can ignore
 the `CopyBuilder` for now, just know that its a `Builder` which copies files:
@@ -40,11 +37,7 @@ the `CopyBuilder` for now, just know that its a `Builder` which copies files:
 import 'package:build_runner/build_runner.dart';
 
 main() async {
-  /// The [PhaseGroup#singleAction] constructor is a shorthand for:
-  ///
-  ///   new PhaseGroup().newPhase().addAction(builder, inputSet);
-  await build(new PhaseGroup.singleAction(
-      new CopyBuilder('.copy'), new InputSet('my_package', ['lib/*.dart'])));
+  await build([new CopyBuilder('.copy'), 'my_package', ['lib/*.dart']]);
 }
 ```
 
@@ -53,39 +46,30 @@ corresponding `*.dart.copy` files. Each time you run a build, it will check for
 any changes to the input files, and rerun the `CopyBuilder` only for the inputs
 that actually changed.
 
-You can add as many actions as you want to the first phase using the `addAction`
-method, and they will all run at the same time. For example, you could make
-multiple copies:
+A build with multiple steps may look like:
 
 ```dart
 main() async {
-  var inputs = new InputSet('my_package', ['lib/*.dart']);
-  await build(new PhaseGroup().newPhase()
-      ..addAction(new CopyBuilder('.copy1'), inputs)
-      ..addAction(new CopyBuilder('.copy2'), inputs));
-}
+  await build([
+    new CopyBuilder('.copy1'), 'my_package', ['lib/*.dart']),
+    new CopyBuilder('.copy2'), 'my_package', ['lib/*.dart']),
+  ]);}
 ```
 
 Lets say however, that you want to make a copy of one of your copies. Since
-no action can read outputs of another action in the same phase, you need to add
-an additional `Phase`:
+subsequent `BuildActions` can read the outputs of previous actions the input
+globs need only to match the extension of the previous output.
 
 ```dart
 main() async {
-  var phases = new PhaseGroup();
-  group.newPhase().addAction(
-      new CopyBuilder('.copy'), new InputSet('my_package', ['lib/*.dart']));
-  group.newPhase().addAction(
-      new CopyBuilder('.bak'), new InputSet('my_package', ['lib/*.dart.copy']));
-
-  await build(phases);
-}
+  await build([
+    new CopyBuilder('.copy'), 'my_package', ['lib/*.dart']),
+    new CopyBuilder('.bak'), 'my_package', ['lib/*.dart.copy']),
+  ]);}
 ```
 
 This time, all the `*.dart.copy` files will be created first, and then the next
-`Phase` will read those in and create additional `*.dart.copy.bak` files. You
-can add as many phases as you want, but in general it's better to add more
-actions to a single phase since they can run at the same time.
+`BuildAction` will read those in and create additional `*.dart.copy.bak` files.
 
 **Note**: Any time you change your build script (or any of its dependencies),
 the next build will be a full rebuild. This is because the system has no way
