@@ -91,15 +91,12 @@ class BuildImpl {
     Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
-      var isNewAssetGraph = false;
 
       // Initialize the [assetGraph] if its not yet set up.
       if (_assetGraph == null) {
         await logWithTime(_logger, 'Reading cached dependency graph', () async {
           _assetGraph = await _readAssetGraph();
-          if (_assetGraph.allNodes.isEmpty &&
-              !(await _reader.canRead(_assetGraphId))) {
-            isNewAssetGraph = true;
+          if (_assetGraph == null) {
             buildType = BuildType.full;
           } else {
             /// Collect updates since the asset graph was last created. This only
@@ -117,7 +114,7 @@ class BuildImpl {
       //
       // The [_isFirstBuild] flag is used as a proxy for "has this script been
       // updated since it started running".
-      if (!isNewAssetGraph) {
+      if (_assetGraph != null) {
         await logWithTime(_logger, 'Checking build script for updates',
             () async {
           if (await _buildScriptUpdated()) {
@@ -137,19 +134,25 @@ class BuildImpl {
       }
 
       await logWithTime(_logger, 'Finalizing build setup', () async {
-        // Applies all [updates] to the [_assetGraph] as well as doing other
-        // necessary cleanup.
-        _logger
-            .info('Updating dependency graph with changes since last build.');
-        await _updateWithChanges(updates);
-
         // Wait while all inputs are collected.
         _logger.info('Initializing inputs');
         await _initializeInputsByPackage();
 
+        if (_assetGraph != null) {
+          await _writer.delete(_assetGraphId);
+          _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
+          // Applies all [updates] to the [_assetGraph] as well as doing other
+          // necessary cleanup.
+          var sources = _inputsByPackage.values.expand((s) => s).toList();
+          _logger
+              .info('Updating dependency graph with changes since last build.');
+          _assetGraph.updateForSources(_buildActions, sources);
+          await _updateWithChanges(updates);
+        }
+
         // Delete all previous outputs!
         _logger.info('Deleting previous outputs');
-        await _deletePreviousOutputs(isNewAssetGraph);
+        await _deletePreviousOutputs();
       });
 
       // Run a fresh build.
@@ -173,7 +176,7 @@ class BuildImpl {
 
   /// Reads in the [assetGraph] from disk.
   Future<AssetGraph> _readAssetGraph() async {
-    if (!await _reader.canRead(_assetGraphId)) return new AssetGraph();
+    if (!await _reader.canRead(_assetGraphId)) return null;
     try {
       return new AssetGraph.deserialize(
           JSON.decode(await _reader.readAsString(_assetGraphId)));
@@ -181,7 +184,7 @@ class BuildImpl {
       // Start fresh if the cached asset_graph version doesn't match up with
       // the current version. We don't currently support old graph versions.
       _logger.info('Throwing away cached asset graph due to version mismatch.');
-      return new AssetGraph();
+      return null;
     }
   }
 
@@ -280,15 +283,19 @@ class BuildImpl {
   /// necessary cleanup such as deleting outputs as necessary.
   Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
     var deletes = _assetGraph.updateAndInvalidate(updates);
-    await Future.wait(deletes.map(_writer.delete));
+    await _deleteAssets(deletes);
   }
 
-  /// Deletes all previous output files that are in need of an update.
-  Future _deletePreviousOutputs(bool isNewAssetGraph) async {
-    if (!isNewAssetGraph) {
-      await _writer.delete(_assetGraphId);
-      _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
+  /// Delete assets on disk and remove them from [_inputsByPackage]
+  Future _deleteAssets(Iterable<AssetId> assets) =>
+      Future.wait(assets.map((asset) {
+        _inputsByPackage[asset.package]?.remove(asset);
+        return _writer.delete(asset);
+      }));
 
+  /// Deletes all previous output files that are in need of an update.
+  Future _deletePreviousOutputs() async {
+    if (_assetGraph != null) {
       // Remove all output nodes from [_inputsByPackage], and delete all assets
       // that need updates.
       var deletes = <AssetId>[];
@@ -301,57 +308,22 @@ class BuildImpl {
       await Future.wait(deletes.map(_writer.delete));
       return;
     }
+    _assetGraph = new AssetGraph.build(
+        _buildActions, new Set.from(_inputsByPackage.values.expand((v) => v)));
 
-    // Deep copy _inputsByPackage, we don't want to actually modify the real one
-    // as this is just a dry run to determine potential conflicts.
-    final tempInputsByPackage = {};
-    _inputsByPackage.forEach((package, inputs) {
-      tempInputsByPackage[package] = new Set<AssetId>.from(inputs);
-    });
-
-    // No cache file exists, find outputs for all phases and collect all outputs
-    // which conflict with existing assets.
-    final conflictingOutputs = new Set<AssetId>();
-    for (var phase in _buildActions) {
-      final groupOutputIds = <AssetId>[];
-      for (var action in phase) {
-        var inputs = _matchingInputs(action.inputSet);
-        for (var input in inputs) {
-          var outputs = expectedOutputs(action.builder, input);
-
-          groupOutputIds.addAll(outputs);
-          for (var output in outputs) {
-            if (tempInputsByPackage[output.package]?.contains(output) == true) {
-              conflictingOutputs.add(output);
-            }
-          }
-        }
-      }
-
-      // Once the group is done, add all outputs so they can be used in the next
-      // phase.
-      for (var outputId in groupOutputIds) {
-        tempInputsByPackage.putIfAbsent(
-            outputId.package, () => new Set<AssetId>());
-        tempInputsByPackage[outputId.package].add(outputId);
-      }
-    }
+    bool existsOnDisk(AssetId asset) =>
+        _inputsByPackage[asset.package]?.contains(asset) ?? false;
+    final conflictingOutputs =
+        new Set<AssetId>.from(_assetGraph.outputs.where(existsOnDisk));
 
     // Check conflictingOutputs, prompt user to delete files.
     if (conflictingOutputs.isEmpty) return;
-
-    Future deleteConflictingOutputs() {
-      return Future.wait(conflictingOutputs.map((output) {
-        _inputsByPackage[output.package]?.remove(output);
-        return _writer.delete(output);
-      }));
-    }
 
     // Skip the prompt if using this option.
     if (_deleteFilesByDefault) {
       _logger.info('Deleting ${conflictingOutputs.length} declared outputs '
           'which already existed on disk.');
-      await deleteConflictingOutputs();
+      await _deleteAssets(conflictingOutputs);
       return;
     }
 
@@ -377,7 +349,7 @@ class BuildImpl {
       switch (input.toLowerCase()) {
         case 'y':
           stdout.writeln('Deleting files...');
-          await deleteConflictingOutputs();
+          await _deleteAssets(conflictingOutputs);
           done = true;
           break;
         case 'n':
@@ -490,22 +462,18 @@ class BuildImpl {
       }
 
       // Add nodes to the AssetGraph for builderOutputs and input.
-      var inputNode =
-          _assetGraph.addIfAbsent(input, () => new AssetNode(input));
+      var inputNode = _assetGraph.get(input);
+      assert(inputNode != null,
+          'Inputs should be known in the static graph. Missing $input');
       for (var output in builderOutputs) {
         inputNode.outputs.add(output);
-        inputNode.primaryOutputs.add(output);
-        var existing = _assetGraph.get(output);
-
-        // If its null or of type AssetNode, then insert a
-        // [GeneratedAssetNode].
-        if (existing is! GeneratedAssetNode) {
-          _assetGraph.remove(output);
-          _assetGraph.add(
-              new GeneratedAssetNode(phaseNumber, input, true, false, output));
-        }
+        assert(inputNode.primaryOutputs.contains(output),
+            '$input missing primary output $output');
       }
-
+      assert(
+          builderOutputs.every((o) => _assetGraph.contains(o)),
+          'Outputs should be known statically. Missing '
+          '${builderOutputs.where((o) => !_assetGraph.contains(o)).toList()}');
       // Skip the build step if none of the outputs need updating.
       var skipBuild = !builderOutputs.any((output) =>
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
@@ -535,9 +503,7 @@ class BuildImpl {
 
       // Update the asset graph based on the dependencies discovered.
       for (var dependency in reader.assetsRead) {
-        var dependencyNode = _assetGraph.addIfAbsent(
-            dependency, () => new AssetNode(dependency));
-
+        var dependencyNode = _assetGraph.get(dependency);
         // We care about all builderOutputs, not just real outputs. Updates
         // to dependencies may cause a file to be output which wasn't before.
         dependencyNode.outputs.addAll(builderOutputs);
