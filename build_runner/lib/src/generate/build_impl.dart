@@ -148,6 +148,18 @@ class BuildImpl {
           await _updateWithChanges(updates);
         }
 
+        if (_assetGraph != null) {
+          await _writer.delete(_assetGraphId);
+          _inputsByPackage[_assetGraphId.package]?.remove(_assetGraphId);
+          // Applies all [updates] to the [_assetGraph] as well as doing other
+          // necessary cleanup.
+          var sources = _inputsByPackage.values.expand((s) => s).toList();
+          _logger
+              .info('Updating dependency graph with changes since last build.');
+          _assetGraph.updateForSources(_buildActions, sources);
+          await _updateWithChanges(updates);
+        }
+
         // Delete all previous outputs!
         _logger.info('Deleting previous outputs');
         await _deletePreviousOutputs(currentSources);
@@ -281,7 +293,7 @@ class BuildImpl {
   /// necessary cleanup such as deleting outputs as necessary.
   Future _updateWithChanges(Map<AssetId, ChangeType> updates) async {
     var deletes = _assetGraph.updateAndInvalidate(updates);
-    await Future.wait(deletes.map(_writer.delete));
+    await _deleteAssets(deletes);
   }
 
   /// Deletes all previous output files that are in need of an update.

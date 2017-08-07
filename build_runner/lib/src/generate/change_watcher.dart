@@ -3,11 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import 'directory_watcher_factory.dart';
 
@@ -17,7 +19,18 @@ class AssetChange {
   AssetChange(this.id, this.type);
 }
 
-Future<Stream<AssetChange>> startFileWatchers(PackageGraph packageGraph,
+Stream<AssetChange> startFileWatchers(PackageGraph packageGraph, Logger logger,
+    DirectoryWatcherFactory directoryWatcherFactory) {
+  var completer = new StreamCompleter<AssetChange>();
+  logWithTime(
+      logger,
+      'Setting up file watchers',
+      () => _startFileWatchers(packageGraph, logger, directoryWatcherFactory)
+          .then((stream) => completer.setSourceStream(stream)));
+  return completer.stream;
+}
+
+Future<Stream<AssetChange>> _startFileWatchers(PackageGraph packageGraph,
     Logger logger, DirectoryWatcherFactory directoryWatcherFactory) async {
   var controller = new StreamController<AssetChange>();
   final watchers = <DirectoryWatcher>[];

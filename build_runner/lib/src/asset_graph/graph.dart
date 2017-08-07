@@ -131,17 +131,17 @@ class AssetGraph {
   /// Updates the structure of the graph to account for any new sources and
   /// returns true if the graph has changed.
   bool updateForSources(
-      List<List<BuildAction>> phases, Iterable<AssetId> newSources) {
-    var unseen = newSources.where((s) => !_nodesById.containsKey(s)).toList();
+      List<List<BuildAction>> phases, Iterable<AssetId> sources) {
+    var unseen = sources.where((s) => !_nodesById.containsKey(s)).toSet();
     if (unseen.isEmpty) return false;
-    _addOutputsForSources(phases, unseen.toList());
+    _addOutputsForSources(phases, unseen);
     return true;
   }
 
   void _addOutputsForSources(
-      List<List<BuildAction>> phases, Iterable<AssetId> newSources) {
+      List<List<BuildAction>> phases, Set<AssetId> newSources) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
-    var allInputs = new Set<AssetId>()..addAll(newSources);
+    var allInputs = new Set<AssetId>.from(newSources);
     var phaseNumber = 0;
     for (var phase in phases) {
       phaseNumber++;
@@ -154,6 +154,9 @@ class AssetGraph {
           phaseOutputs.addAll(outputs);
           get(input).primaryOutputs.addAll(outputs);
           for (var output in outputs) {
+            if (contains(output) && get(output) is AssetNode) {
+              _remove(output);
+            }
             _add(new GeneratedAssetNode(
                 phaseNumber, input, true, false, output));
           }
