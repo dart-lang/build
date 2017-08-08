@@ -351,14 +351,9 @@ class BuildImpl {
     var phaseNumber = 0;
     for (var action in _buildActions) {
       phaseNumber++;
-      // Collects all the ids for files which are output by this stage. This
-      // also includes files which didn't get regenerated because they weren't,
-      // dirty unlike [outputs] which only gets files which were explicitly
-      // generated in this build.
-      final phaseOutputIds = new Set<AssetId>();
       var inputs = _matchingInputs(action.inputSet, phaseNumber);
       await for (var output
-          in _runBuilder(phaseNumber, action.builder, inputs, phaseOutputIds)) {
+          in _runBuilder(phaseNumber, action.builder, inputs)) {
         outputs.add(output);
       }
     }
@@ -400,7 +395,7 @@ class BuildImpl {
 
   /// Runs [builder] with [primaryInputs] as inputs.
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
-      Iterable<AssetId> primaryInputs, Set<AssetId> groupOutputs) async* {
+      Iterable<AssetId> primaryInputs) async* {
     for (var input in primaryInputs) {
       var builderOutputs = expectedOutputs(builder, input);
 
@@ -428,17 +423,8 @@ class BuildImpl {
       // Skip the build step if none of the outputs need updating.
       var skipBuild = !builderOutputs.any((output) =>
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
-      if (skipBuild) {
-        // If we skip the build, we still need to add the ids as outputs for
-        // any files which were output last time, so they can be used by
-        // subsequent phases.
-        for (var output in builderOutputs) {
-          if ((_assetGraph.get(output) as GeneratedAssetNode).wasOutput) {
-            groupOutputs.add(output);
-          }
-        }
-        continue;
-      }
+      if (skipBuild) continue;
+
       var reader = new SinglePhaseReader(_reader, _assetGraph, phaseNumber);
       var writer = new AssetWriterSpy(_writer);
       await runBuilder(builder, [input], reader, writer, _resolvers,
@@ -463,7 +449,6 @@ class BuildImpl {
       // Yield the outputs.
       for (var output in writer.assetsWritten) {
         (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
-        groupOutputs.add(output);
         yield output;
       }
     }
