@@ -1,3 +1,8 @@
+## 0.10.0-dev
+
+- **Breaking**: Removed deprecated method `BuildStep.hasInput` - all uses should
+  be going through `BuildStep.canRead`.
+
 ## 0.9.3
 
 - Add support for resolving `asset:` URIs into AssetIds
