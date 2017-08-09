@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_static/shelf_static.dart';
@@ -25,7 +24,6 @@ class BuildOptions {
   RunnerAssetReader reader;
   RunnerAssetWriter writer;
   bool deleteFilesByDefault;
-  Resolvers resolvers;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -49,7 +47,6 @@ class BuildOptions {
       this.port,
       this.reader,
       this.requestHandler,
-      this.resolvers,
       this.writer}) {
     /// Set up logging
     logLevel ??= Level.INFO;
