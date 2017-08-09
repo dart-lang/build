@@ -151,13 +151,8 @@ class _DelayedResolver implements Resolver {
   @override
   Future<LibraryElement> libraryFor(AssetId assetId) async =>
       (await _delegate).libraryFor(assetId);
-  @override
-  Future<LibraryElement> getLibrary(AssetId assetId) => libraryFor(assetId);
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
-  @override
-  Future<LibraryElement> getLibraryByName(String libraryName) =>
-      findLibraryByName(libraryName);
 }
