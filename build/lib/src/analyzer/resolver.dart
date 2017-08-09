@@ -25,8 +25,6 @@ abstract class Resolver {
   ///
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
   Future<LibraryElement> libraryFor(AssetId assetId);
-  @Deprecated('Use libraryFor')
-  Future<LibraryElement> getLibrary(AssetId assetId);
 
   /// Returns the first library identified by [libraryName].
   ///
@@ -36,8 +34,6 @@ abstract class Resolver {
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
   Future<LibraryElement> findLibraryByName(String libraryName);
-  @Deprecated('Use findLibraryByName')
-  Future<LibraryElement> getLibraryByName(String libraryName);
 }
 
 /// A resolver that should be manually released at the end of a build step.

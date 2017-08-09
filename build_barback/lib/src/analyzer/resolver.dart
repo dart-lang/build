@@ -30,18 +30,12 @@ class BarbackResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> getLibrary(AssetId assetId) => libraryFor(assetId);
-
-  @override
   Stream<LibraryElement> get libraries =>
       new Stream.fromIterable(_resolver.libraries);
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>
       _resolver.getLibraryByName(libraryName);
-  @override
-  Future<LibraryElement> getLibraryByName(String libraryName) =>
-      findLibraryByName(libraryName);
 }
 
 class BarbackResolvers implements Resolvers {
