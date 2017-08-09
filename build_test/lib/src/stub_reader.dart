@@ -12,7 +12,7 @@ class StubAssetReader implements AssetReader {
   const StubAssetReader();
 
   @override
-  FutureOr<bool> canRead(_) => null;
+  Future<bool> canRead(_) => new Future.value(null);
 
   @override
   Future<List<int>> readAsBytes(_) => new Future.value(null);

@@ -56,9 +56,9 @@ class BuildStepImpl implements BuildStep {
   Future<ReleasableResolver> _resolver;
 
   @override
-  FutureOr<bool> canRead(AssetId id) {
+  Future<bool> canRead(AssetId id) {
     _checkInput(id);
-    return new Future.value(_reader.canRead(id));
+    return _reader.canRead(id);
   }
 
   @override

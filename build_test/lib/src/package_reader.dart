@@ -57,7 +57,7 @@ class PackageAssetReader implements AssetReader {
   }
 
   @override
-  FutureOr<bool> canRead(AssetId id) => _resolve(id).exists();
+  Future<bool> canRead(AssetId id) => _resolve(id).exists();
 
   @override
   Future<List<int>> readAsBytes(AssetId id) => _resolve(id).readAsBytes();

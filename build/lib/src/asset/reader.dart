@@ -27,7 +27,7 @@ abstract class AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
 
   /// Indicates whether asset at [id] is readable.
-  FutureOr<bool> canRead(AssetId id);
+  Future<bool> canRead(AssetId id);
 
   /// Returns all readable assets matching [glob] under the root package.
   Iterable<AssetId> findAssets(Glob glob);

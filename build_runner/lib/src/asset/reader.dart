@@ -37,8 +37,8 @@ class SinglePhaseReader implements AssetReader {
   }
 
   @override
-  FutureOr<bool> canRead(AssetId id) {
-    if (!_isReadable(id)) return false;
+  Future<bool> canRead(AssetId id) {
+    if (!_isReadable(id)) return new Future.value(false);
     _assetsRead.add(id);
     return _delegate.canRead(id);
   }
