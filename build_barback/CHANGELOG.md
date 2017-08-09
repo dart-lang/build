@@ -1,3 +1,8 @@
+## 0.4.0-dev
+
+- **Breaking**: Resolver interface updated for breaking change in
+  `package:build` v0.10.0
+
 ## 0.3.0
 
 - **Breaking** `BuilderTransformer` is now an `AggregateTransformer`. This

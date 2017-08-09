@@ -19,22 +19,29 @@ class BarbackResolver implements ReleasableResolver {
   void release() => _resolver.release();
 
   @override
-  bool isLibrary(AssetId assetId) =>
+  Future<bool> isLibrary(AssetId assetId) async =>
       _resolver.isLibrary(toBarbackAssetId(assetId));
 
   @override
-  LibraryElement getLibrary(AssetId assetId) {
+  Future<LibraryElement> libraryFor(AssetId assetId) async {
     var library = _resolver.getLibrary(toBarbackAssetId(assetId));
     if (library == null) throw new NonLibraryAssetException(assetId);
     return library;
   }
 
   @override
-  Iterable<LibraryElement> get libraries => _resolver.libraries;
+  Future<LibraryElement> getLibrary(AssetId assetId) => libraryFor(assetId);
 
   @override
-  LibraryElement getLibraryByName(String libraryName) =>
+  Stream<LibraryElement> get libraries =>
+      new Stream.fromIterable(_resolver.libraries);
+
+  @override
+  Future<LibraryElement> findLibraryByName(String libraryName) async =>
       _resolver.getLibraryByName(libraryName);
+  @override
+  Future<LibraryElement> getLibraryByName(String libraryName) =>
+      findLibraryByName(libraryName);
 }
 
 class BarbackResolvers implements Resolvers {
