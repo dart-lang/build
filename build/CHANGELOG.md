@@ -2,6 +2,9 @@
 
 - **Breaking**: Removed deprecated method `BuildStep.hasInput` - all uses should
   be going through `BuildStep.canRead`.
+- **Breaking**: `Resolver` has asynchronous APIs for resolution and is retrieved
+  synchronously from the `BuildStep`. Added `libraryFor` to eventually replace
+  `getLibrary` and `findLibraryByName` to replace `getLibraryByName`.
 
 ## 0.9.3
 
