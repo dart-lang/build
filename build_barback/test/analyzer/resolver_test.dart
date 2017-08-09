@@ -243,7 +243,8 @@ void main() {
             'a|lib/d.dart': 'library a.d;'
           },
           validator: (resolver) async {
-            var libs = await resolver.libraries.where((l) => !l.isInSdk).toList();
+            var libs =
+                await resolver.libraries.where((l) => !l.isInSdk).toList();
             expect(
                 libs.map((l) => l.name),
                 unorderedEquals([
