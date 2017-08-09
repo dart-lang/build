@@ -1,3 +1,8 @@
+## 0.6.4-dev
+
+- Allow `package:build` v0.10.x
+- `AssetReader` implementations always return `Future` from `canRead`
+
 ## 0.6.3
 
 - Added `resolveAsset`, which is similar to `resolveSource` but specifies a

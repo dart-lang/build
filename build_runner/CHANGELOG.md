@@ -8,6 +8,7 @@
   need to instead set up the `InputSet`s so that the outputs are filtered out.
 - **Breaking**: The `resolvers` argument has been removed from `build`, `watch`,
   and `serve`.
+- Allow `package:build` v0.10.x
 
 ## 0.3.4+1
 

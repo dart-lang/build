@@ -21,7 +21,7 @@ class InMemoryAssetReader implements AssetReader {
       : assets = sourceAssets ?? <AssetId, DatedValue>{};
 
   @override
-  FutureOr<bool> canRead(AssetId id) => assets.containsKey(id);
+  Future<bool> canRead(AssetId id) async => assets.containsKey(id);
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
