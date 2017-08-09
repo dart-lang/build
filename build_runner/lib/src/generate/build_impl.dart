@@ -36,7 +36,7 @@ class BuildImpl {
   final PackageGraph _packageGraph;
   final RunnerAssetReader _reader;
   final RunnerAssetWriter _writer;
-  final Resolvers _resolvers;
+  final Resolvers _resolvers = const BarbackResolvers();
 
   AssetGraph _assetGraph;
   AssetGraph get assetGraph => _assetGraph;
@@ -49,8 +49,7 @@ class BuildImpl {
         _deleteFilesByDefault = options.deleteFilesByDefault,
         _packageGraph = options.packageGraph,
         _reader = options.reader,
-        _writer = options.writer,
-        _resolvers = options.resolvers ?? const BarbackResolvers();
+        _writer = options.writer;
 
   /// Runs a build
   ///

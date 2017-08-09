@@ -6,6 +6,8 @@
   If your current build has multiple actions in a single phase which are
   depending on *not* seeing the outputs from other actions in the phase you will
   need to instead set up the `InputSet`s so that the outputs are filtered out.
+- **Breaking**: The `resolvers` argument has been removed from `build`, `watch`,
+  and `serve`.
 
 ## 0.3.4+1
 

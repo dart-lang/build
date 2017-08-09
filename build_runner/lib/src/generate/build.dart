@@ -49,7 +49,6 @@ Future<BuildResult> build(List<BuildAction> buildActions,
     RunnerAssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
-    Resolvers resolvers,
     Stream terminateEventStream}) async {
   var options = new BuildOptions(
       deleteFilesByDefault: deleteFilesByDefault,
@@ -57,8 +56,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       reader: reader,
       writer: writer,
       logLevel: logLevel,
-      onLog: onLog,
-      resolvers: resolvers);
+      onLog: onLog);
   var buildImpl = new BuildImpl(options, buildActions);
 
   /// Run the build!
@@ -97,7 +95,6 @@ Stream<BuildResult> watch(List<BuildAction> buildActions,
     RunnerAssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
-    Resolvers resolvers,
     Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
     Stream terminateEventStream}) {
@@ -108,7 +105,6 @@ Stream<BuildResult> watch(List<BuildAction> buildActions,
       writer: writer,
       logLevel: logLevel,
       onLog: onLog,
-      resolvers: resolvers,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory);
   var watchImpl = new WatchImpl(options, buildActions);
@@ -141,7 +137,6 @@ Stream<BuildResult> serve(List<BuildAction> buildActions,
     RunnerAssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
-    Resolvers resolvers,
     Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
     Stream terminateEventStream,
@@ -156,7 +151,6 @@ Stream<BuildResult> serve(List<BuildAction> buildActions,
       writer: writer,
       logLevel: logLevel,
       onLog: onLog,
-      resolvers: resolvers,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory,
       directory: directory,
