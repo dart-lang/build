@@ -1,6 +1,9 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
+export 'package:build/src/builder/logging.dart' show scopeLog;
+
 export 'src/assets.dart';
 export 'src/copy_builder.dart';
 export 'src/fake_watcher.dart';
@@ -13,5 +16,3 @@ export 'src/resolve_source.dart';
 export 'src/stub_reader.dart';
 export 'src/stub_writer.dart';
 export 'src/test_builder.dart';
-
-export 'package:build/src/builder/logging.dart' show scopeLog;

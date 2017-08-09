@@ -24,7 +24,8 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger, String rootPackage}) async {
   logger ??= new Logger('runBuilder');
-  rootPackage ??= new Set.from(inputs.map((input) => input.package)).single;
+  rootPackage ??=
+      new Set<String>.from(inputs.map((input) => input.package)).single;
   //TODO(nbosch) check overlapping outputs?
   Future<Null> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);

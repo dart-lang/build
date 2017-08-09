@@ -24,11 +24,12 @@ class _AssetGraphMatcher extends Matcher {
   @override
   bool matches(dynamic item, _) {
     if (item is! AssetGraph) return false;
-    if (item.allNodes.length != _expected.allNodes.length) return false;
-    if (_checkValidAsOf && (item.validAsOf != _expected.validAsOf)) {
+    var graph = item as AssetGraph;
+    if (graph.allNodes.length != _expected.allNodes.length) return false;
+    if (_checkValidAsOf && (graph.validAsOf != _expected.validAsOf)) {
       return false;
     }
-    for (var node in item.allNodes) {
+    for (var node in graph.allNodes) {
       var expectedNode = _expected.get(node.id);
       if (expectedNode == null || expectedNode.id != node.id) return false;
       if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, null)) {
@@ -38,11 +39,11 @@ class _AssetGraphMatcher extends Matcher {
           .matches(expectedNode.primaryOutputs, null)) {
         return false;
       }
-      if (item is GeneratedAssetNode) {
+      if (node is GeneratedAssetNode) {
         if (expectedNode is GeneratedAssetNode) {
-          if (item.primaryInput != expectedNode.primaryInput) return false;
-          if (item.needsUpdate != expectedNode.needsUpdate) return false;
-          if (item.wasOutput != expectedNode.wasOutput) return false;
+          if (node.primaryInput != expectedNode.primaryInput) return false;
+          if (node.needsUpdate != expectedNode.needsUpdate) return false;
+          if (node.wasOutput != expectedNode.wasOutput) return false;
         } else {
           return false;
         }

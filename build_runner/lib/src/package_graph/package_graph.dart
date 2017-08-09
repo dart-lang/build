@@ -43,7 +43,7 @@ class PackageGraph {
       throw 'Unable to generate package graph, no `pubspec.yaml` found. '
           'This program must be ran from the root directory of your package.';
     }
-    var rootYaml = loadYaml(pubspec.readAsStringSync());
+    var rootYaml = loadYaml(pubspec.readAsStringSync()) as YamlMap;
 
     /// Read in the `.packages` file to get the locations of all packages.
     var packagesFile = new File(path.join(packagePath, '.packages'));
@@ -62,7 +62,7 @@ class PackageGraph {
       if (uriString.endsWith('/')) {
         uriString = uriString.substring(0, uriString.length - 1);
       }
-      var uri;
+      Uri uri;
       try {
         uri = Uri.parse(uriString);
       } on FormatException catch (_) {
@@ -81,10 +81,10 @@ class PackageGraph {
     Map<String, dynamic> rootDeps;
     PackageNode addNodeAndDeps(YamlMap yaml, PackageDependencyType type,
         {bool isRoot: false}) {
-      var name = yaml['name'];
+      var name = yaml['name'] as String;
       assert(!nodes.containsKey(name));
-      var node =
-          new PackageNode(name, yaml['version'], type, packageLocations[name]);
+      var node = new PackageNode(
+          name, yaml['version'] as String, type, packageLocations[name]);
       nodes[name] = node;
 
       var deps = _depsFromYaml(yaml, isRoot: isRoot);
@@ -163,9 +163,10 @@ PackageDependencyType _dependencyType(source) {
   if (source is String || source == null) return PackageDependencyType.pub;
 
   assert(source is YamlMap);
+  var map = source as YamlMap;
 
-  for (var key in source.keys) {
-    switch (key) {
+  for (var key in map.keys) {
+    switch (key as String) {
       case 'git':
         return PackageDependencyType.github;
       case 'hosted':
@@ -180,11 +181,11 @@ PackageDependencyType _dependencyType(source) {
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
 Map<String, dynamic> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
-  var deps = new Map<String, dynamic>.from(yaml['dependencies'] ?? {});
+  var deps = new Map<String, dynamic>.from(yaml['dependencies'] as Map ?? {});
   if (isRoot) {
-    deps.addAll(new Map.from(yaml['dev_dependencies'] ?? {}));
+    deps.addAll(new Map.from(yaml['dev_dependencies'] as Map ?? {}));
     yaml['dependency_overrides']?.forEach((dep, source) {
-      deps[dep] = source;
+      deps[dep as String] = source;
     });
   }
   return deps;
@@ -197,5 +198,5 @@ YamlMap _pubspecForUri(Uri uri) {
   if (!pubspec.existsSync()) {
     throw 'Unable to generate package graph, no `$pubspecPath` found.';
   }
-  return loadYaml(pubspec.readAsStringSync());
+  return loadYaml(pubspec.readAsStringSync()) as YamlMap;
 }

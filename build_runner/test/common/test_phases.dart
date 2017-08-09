@@ -15,7 +15,7 @@ import 'in_memory_writer.dart';
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 
-Future<BuildResult> nextResult(List results) {
+Future<BuildResult> nextResult(List<BuildResult> results) {
   var done = new Completer<BuildResult>();
   var startingLength = results.length;
   () async {

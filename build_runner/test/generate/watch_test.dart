@@ -11,6 +11,7 @@ import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
@@ -121,14 +122,17 @@ void main() {
         result = await nextResult(results);
         checkBuild(result, outputs: {'a|web/c.txt.copy': 'c'}, writer: writer);
 
-        var cachedGraph = new AssetGraph.deserialize(JSON.decode(
-            writer.assets[makeAssetId('a|$assetGraphPath')].stringValue));
+        var serialized = JSON.decode(
+            writer.assets[makeAssetId('a|$assetGraphPath')].stringValue) as Map;
+        var cachedGraph = new AssetGraph.deserialize(serialized);
 
         var expectedGraph = new AssetGraph.build([], new Set());
-        var bCopyNode = makeAssetNode('a|web/b.txt.copy');
+        var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/b.txt'),
+            false, true, makeAssetId('a|web/b.txt.copy'));
         expectedGraph.add(bCopyNode);
         expectedGraph.add(makeAssetNode('a|web/b.txt', [bCopyNode.id]));
-        var cCopyNode = makeAssetNode('a|web/c.txt.copy');
+        var cCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/c.txt'),
+            false, true, makeAssetId('a|web/c.txt.copy'));
         expectedGraph.add(cCopyNode);
         expectedGraph.add(makeAssetNode('a|web/c.txt', [cCopyNode.id]));
 

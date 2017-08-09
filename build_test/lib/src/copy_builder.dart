@@ -35,7 +35,7 @@ class CopyBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (blockUntil != null) await blockUntil;
 
-    var ids = new Iterable.generate(numCopies)
+    var ids = new Iterable<int>.generate(numCopies)
         .map((copy) => _copiedAssetId(buildStep.inputId, copy));
     for (var id in ids) {
       var toCopy = copyFromAsset ?? buildStep.inputId;

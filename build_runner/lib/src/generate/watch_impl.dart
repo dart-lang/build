@@ -157,4 +157,4 @@ class WatchImpl {
 
 Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) =>
     new Map.fromIterable(changes.expand((c) => c),
-        key: (c) => c.id, value: (c) => c.type);
+        key: (AssetChange c) => c.id, value: (AssetChange c) => c.type);

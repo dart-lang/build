@@ -173,7 +173,7 @@ class BuildImpl {
     if (!await _reader.canRead(_assetGraphId)) return null;
     try {
       return new AssetGraph.deserialize(
-          JSON.decode(await _reader.readAsString(_assetGraphId)));
+          JSON.decode(await _reader.readAsString(_assetGraphId)) as Map);
     } on AssetGraphVersionException catch (_) {
       // Start fresh if the cached asset_graph version doesn't match up with
       // the current version. We don't currently support old graph versions.
@@ -194,7 +194,7 @@ class BuildImpl {
         .wait(currentMirrorSystem().libraries.keys.map((Uri uri) async {
       // Short-circuit
       if (completer.isCompleted) return;
-      var lastModified;
+      DateTime lastModified;
       switch (uri.scheme) {
         case 'dart':
           return;

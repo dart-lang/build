@@ -19,7 +19,7 @@ class TransformerBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) {
     var transform = toBarbackTransform(buildStep);
-    return transformer.apply(transform);
+    return new Future.value(transformer.apply(transform));
   }
 
   @override
