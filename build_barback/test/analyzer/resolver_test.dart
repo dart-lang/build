@@ -40,7 +40,7 @@ void main() {
 
   Future validateResolver(
       {Map<String, String> inputs,
-      validator(Resolver resolver),
+      Future validator(Resolver resolver),
       List messages: const []}) async {
     var writer = new InMemoryAssetWriter();
     var reader = new InMemoryAssetReader(sourceAssets: writer.assets);
@@ -67,28 +67,30 @@ void main() {
           inputs: {
             'a|web/main.dart': ' main() {}',
           },
-          validator: (resolver) {
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
+
             var source = (_resolvers.lastResolved as dynamic)
                 .sources[toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 1);
 
-            var lib = resolver.getLibrary(entryPoint);
             expect(lib, isNotNull);
           });
     });
 
-    test('should update when sources change', () {
+    test('should update when sources change', () async {
       return validateResolver(
           inputs: {
             'a|web/main.dart': ''' main() {
                 } ''',
           },
-          validator: (resolver) {
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
+
             var source = (_resolvers.lastResolved as dynamic)
                 .sources[toBarbackAssetId(entryPoint)];
             expect(source.modificationStamp, 2);
 
-            var lib = resolver.getLibrary(entryPoint);
             expect(lib, isNotNull);
             expect(lib.entryPoint, isNotNull);
           });
@@ -106,8 +108,8 @@ void main() {
               library a;
               ''',
           },
-          validator: (resolver) {
-            var lib = resolver.getLibrary(entryPoint);
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
             var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
             expect(libA.getType('Foo'), isNull);
@@ -127,8 +129,8 @@ void main() {
               class Foo {}
               ''',
           },
-          validator: (resolver) {
-            var lib = resolver.getLibrary(entryPoint);
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
             var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
             expect(libA.getType('Foo'), isNotNull);
@@ -147,8 +149,8 @@ void main() {
               library b;
               ''',
           },
-          validator: (resolver) {
-            var lib = resolver.getLibrary(entryPoint);
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
             var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
             expect(libB.getType('Foo'), isNull);
@@ -164,8 +166,8 @@ void main() {
               main() {
               } ''',
           },
-          validator: (resolver) {
-            var lib = resolver.getLibrary(entryPoint);
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
           });
     });
@@ -184,8 +186,8 @@ void main() {
               class Bar {}
               ''',
           },
-          validator: (resolver) {
-            var lib = resolver.getLibrary(entryPoint);
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
             var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
             expect(libB.getType('Bar'), isNotNull);
@@ -201,8 +203,8 @@ void main() {
               main() {
               } ''',
           },
-          validator: (resolver) {
-            var lib = resolver.getLibrary(entryPoint);
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
           });
     });
@@ -220,8 +222,8 @@ void main() {
           messages: [
             '[WARNING] test: $warningMessage "/b.dart"',
           ],
-          validator: (resolver) {
-            var lib = resolver.getLibrary(entryPoint);
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
           });
     });
@@ -240,8 +242,9 @@ void main() {
             'a|lib/c.dart': 'library a.c;',
             'a|lib/d.dart': 'library a.d;'
           },
-          validator: (resolver) {
-            var libs = resolver.libraries.where((l) => !l.isInSdk);
+          validator: (resolver) async {
+            var libs =
+                await resolver.libraries.where((l) => !l.isInSdk).toList();
             expect(
                 libs.map((l) => l.name),
                 unorderedEquals([
@@ -267,30 +270,30 @@ void main() {
                 library b;
                 import 'package:a/a.dart'; ''',
           },
-          validator: (resolver) {
-            var libs = resolver.libraries.map((lib) => lib.name);
+          validator: (resolver) async {
+            var libs = await resolver.libraries.map((lib) => lib.name).toList();
             expect(libs.contains('a'), isTrue);
             expect(libs.contains('b'), isTrue);
           });
     });
 
-    test('handles parallel resolves', () {
+    test('handles parallel resolves', () async {
       return Future.wait([
         validateResolver(
             inputs: {
               'a|web/main.dart': '''
                 library foo;'''
             },
-            validator: (resolver) {
-              expect(resolver.getLibrary(entryPoint).name, 'foo');
+            validator: (resolver) async {
+              expect((await resolver.libraryFor(entryPoint)).name, 'foo');
             }),
         validateResolver(
             inputs: {
               'a|web/main.dart': '''
                 library bar;'''
             },
-            validator: (resolver) {
-              expect(resolver.getLibrary(entryPoint).name, 'bar');
+            validator: (resolver) async {
+              expect((await resolver.libraryFor(entryPoint)).name, 'bar');
             }),
       ]);
     });
@@ -298,7 +301,7 @@ void main() {
 }
 
 class TestBuilder extends Builder {
-  final Function validator;
+  final Future Function(Resolver) validator;
 
   TestBuilder(this.validator);
 
@@ -309,6 +312,6 @@ class TestBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    validator(await buildStep.resolver);
+    await validator(buildStep.resolver);
   }
 }

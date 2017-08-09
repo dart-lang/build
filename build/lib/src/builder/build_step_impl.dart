@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:async/async.dart';
 import 'package:glob/glob.dart';
 
 import '../analyzer/resolver.dart';
@@ -27,8 +28,7 @@ class BuildStepImpl implements BuildStep {
   final AssetId inputId;
 
   @override
-  Future<LibraryElement> get inputLibrary async =>
-      (await resolver).getLibrary(inputId);
+  Future<LibraryElement> get inputLibrary async => resolver.libraryFor(inputId);
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
@@ -51,7 +51,8 @@ class BuildStepImpl implements BuildStep {
       : _expectedOutputs = expectedOutputs.toList();
 
   @override
-  Future<Resolver> get resolver => _resolver ??= _resolvers.get(this);
+  Resolver get resolver =>
+      new _DelayedResolver(_resolver ??= _resolvers.get(this));
 
   Future<ReleasableResolver> _resolver;
 
@@ -129,4 +130,29 @@ class BuildStepImpl implements BuildStep {
       throw new UnexpectedOutputException(id);
     }
   }
+}
+
+class _DelayedResolver implements Resolver {
+  final Future<Resolver> _delegate;
+
+  _DelayedResolver(this._delegate);
+
+  @override
+  Future<bool> isLibrary(AssetId assetId) async =>
+      (await _delegate).isLibrary(assetId);
+
+  @override
+  Stream<LibraryElement> get libraries {
+    var completer = new StreamCompleter<LibraryElement>();
+    _delegate.then((r) => completer.setSourceStream(r.libraries));
+    return completer.stream;
+  }
+
+  @override
+  Future<LibraryElement> libraryFor(AssetId assetId) async =>
+      (await _delegate).libraryFor(assetId);
+
+  @override
+  Future<LibraryElement> findLibraryByName(String libraryName) async =>
+      (await _delegate).findLibraryByName(libraryName);
 }

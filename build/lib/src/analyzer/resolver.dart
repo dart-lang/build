@@ -14,29 +14,26 @@ abstract class Resolver {
   ///
   /// This will be `false` in the case where the file is not Dart source code,
   /// or is a `part of` file (not a standalone Dart library).
-  bool isLibrary(AssetId assetId);
+  Future<bool> isLibrary(AssetId assetId);
 
   /// All libraries accessible from the entry point, recursively.
   ///
   /// **NOTE**: This includes all Dart SDK libraries as well.
-  Iterable<LibraryElement> get libraries;
+  Stream<LibraryElement> get libraries;
 
   /// Returns a resolved library representing the file defined in [assetId].
   ///
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
-  LibraryElement getLibrary(AssetId assetId);
-
-  /// Finds the first library identified by [libraryName], or null if no
-  /// library can be found.
+  Future<LibraryElement> libraryFor(AssetId assetId);
 
   /// Returns the first library identified by [libraryName].
   ///
   /// If no library can be found, returns `null`.
   ///
-  /// **NOTE**: In general, its recommended to use [getLibrary] with an absolute
+  /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
-  LibraryElement getLibraryByName(String libraryName);
+  Future<LibraryElement> findLibraryByName(String libraryName);
 }
 
 /// A resolver that should be manually released at the end of a build step.

@@ -111,15 +111,15 @@ void main() {
         var primary = makeAssetId('a|web/a.dart');
         var buildStep = new BuildStepImpl(primary, [], reader, writer,
             primary.package, const BarbackResolvers());
-        var resolver = await buildStep.resolver;
+        var resolver = buildStep.resolver;
 
-        var aLib = resolver.getLibrary(primary);
+        var aLib = await resolver.libraryFor(primary);
         expect(aLib.name, 'a');
         expect(aLib.importedLibraries.length, 2);
         expect(aLib.importedLibraries.any((library) => library.name == 'b'),
             isTrue);
 
-        var bLib = resolver.getLibraryByName('b');
+        var bLib = await resolver.findLibraryByName('b');
         expect(bLib.name, 'b');
         expect(bLib.importedLibraries.length, 1);
 
