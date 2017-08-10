@@ -106,9 +106,9 @@ class AssetId implements Comparable<AssetId> {
 
   /// Deserializes an [AssetId] from [data], which must be the result of
   /// calling [serialize] on an existing [AssetId].
-  AssetId.deserialize(List<String> data)
-      : package = data[0],
-        path = data[1];
+  AssetId.deserialize(List data)
+      : package = data[0] as String,
+        path = data[1] as String;
 
   /// Returns `true` if [other] is an [AssetId] with the same package and path.
   @override
