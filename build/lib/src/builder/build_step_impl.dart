@@ -81,7 +81,7 @@ class BuildStepImpl implements BuildStep {
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _checkOutput(id);
     var done =
-        _futureOrWrite<List<int>>(bytes, (b) => _writer.writeAsBytes(id, b));
+        _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
@@ -90,8 +90,8 @@ class BuildStepImpl implements BuildStep {
   Future writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding: UTF8}) {
     _checkOutput(id);
-    var done = _futureOrWrite<String>(
-        content, (c) => _writer.writeAsString(id, c, encoding: encoding));
+    var done = _futureOrWrite(content,
+        (String c) => _writer.writeAsString(id, c, encoding: encoding));
     _outputsCompleted = _outputsCompleted.then((_) => done);
     return done;
   }
