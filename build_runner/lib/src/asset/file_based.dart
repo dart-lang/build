@@ -46,11 +46,12 @@ class FileBasedAssetReader implements RunnerAssetReader {
     }
     var packagePath = packageNode.location.toFilePath();
     var files = glob.listSync(followLinks: false, root: packagePath).where(
-        (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]));
+            (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]))
+        as Iterable<File>;
     for (var file in files) {
       // TODO(jakemac): Where do these files come from???
       if (path.basename(file.path).startsWith('._')) continue;
-      yield _fileToAssetId(file as File, packageNode);
+      yield _fileToAssetId(file, packageNode);
     }
   }
 
