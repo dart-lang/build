@@ -150,6 +150,16 @@ cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureThat(startsWith("F")).captured, ["Fish"]);
 ```
 
+## Waiting for an interaction
+```dart
+//waiting for a call
+cat.eatFood("Fish");
+await untilCalled(cat.chew()); //completes when cat.chew() is called
+//waiting for a call that has already happened
+cat.eatFood("Fish");
+await untilCalled(cat.eatFood(any)); //will complete immediately
+```
+
 ## Resetting mocks
 ```dart
 //clearing collected interactions

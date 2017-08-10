@@ -42,4 +42,5 @@ export 'src/mock.dart'
         clearInteractions,
         reset,
         resetMockitoState,
-        logInvocations;
+        logInvocations,
+        untilCalled;

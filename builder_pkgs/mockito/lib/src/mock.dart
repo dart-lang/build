@@ -15,14 +15,18 @@
 // Warning: Do not import dart:mirrors in this library, as it's exported via
 // lib/mockito.dart, which is used for Dart AOT projects such as Flutter.
 
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
 import 'package:mockito/src/invocation_matcher.dart';
 import 'package:test/test.dart';
 
 bool _whenInProgress = false;
+bool _untilCalledInProgress = false;
 bool _verificationInProgress = false;
 _WhenCall _whenCall;
+_UntilCall _untilCall;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
 final _TimeStampProvider _timer = new _TimeStampProvider();
 final List _capturedArgs = [];
@@ -78,6 +82,8 @@ class Mock {
 
   static const _nullResponse = const CallPair.allInvocations(_answerNull);
 
+  final StreamController<Invocation> _invocationStreamController =
+      new StreamController.broadcast();
   final _realCalls = <RealCall>[];
   final _responses = <CallPair>[];
 
@@ -103,8 +109,12 @@ class Mock {
     } else if (_verificationInProgress) {
       _verifyCalls.add(new _VerifyCall(this, invocation));
       return null;
+    } else if (_untilCalledInProgress) {
+      _untilCall = new _UntilCall(this, invocation);
+      return null;
     } else {
       _realCalls.add(new RealCall(this, invocation));
+      _invocationStreamController.add(invocation);
       var cannedResponse = _responses.lastWhere(
           (cr) => cr.call.matches(invocation, {}),
           orElse: _defaultResponse);
@@ -470,6 +480,29 @@ class _WhenCall {
   }
 }
 
+class _UntilCall {
+  final InvocationMatcher _invocationMatcher;
+  final Mock _mock;
+
+  _UntilCall(this._mock, Invocation invocation)
+      : _invocationMatcher = new InvocationMatcher(invocation);
+
+  bool _matchesInvocation(RealCall realCall) =>
+      _invocationMatcher.matches(realCall.invocation);
+
+  List<RealCall> get _realCalls => _mock._realCalls;
+
+  Future<Invocation> get invocationFuture {
+    if (_realCalls.any(_matchesInvocation)) {
+      return new Future.value(
+          _realCalls.firstWhere(_matchesInvocation).invocation);
+    }
+
+    return _mock._invocationStreamController.stream
+        .firstWhere(_invocationMatcher.matches);
+  }
+}
+
 class _VerifyCall {
   final Mock mock;
   final Invocation verifyInvocation;
@@ -707,6 +740,29 @@ Expectation get when {
   };
 }
 
+typedef Future<Invocation> InvocationLoader(_);
+
+/// Returns a future [Invocation] that will complete upon the first occurrence
+/// of the given invocation.
+///
+/// Usage of this is as follows:
+///
+/// ```dart
+/// cat.eatFood("fish");
+/// await untilCalled(cat.chew());
+/// ```
+///
+/// In the above example, the untilCalled(cat.chew()) will complete only when
+/// that method is called. If the given invocation has already been called, the
+/// future will return immediately.
+InvocationLoader get untilCalled {
+  _untilCalledInProgress = true;
+  return (_) {
+    _untilCalledInProgress = false;
+    return _untilCall.invocationFuture;
+  };
+}
+
 /// Print all collected invocations of any mock methods of [mocks].
 void logInvocations(List<Mock> mocks) {
   List<RealCall> allInvocations =
@@ -728,8 +784,10 @@ void logInvocations(List<Mock> mocks) {
 /// or in `tearDown`.
 void resetMockitoState() {
   _whenInProgress = false;
+  _untilCalledInProgress = false;
   _verificationInProgress = false;
   _whenCall = null;
+  _untilCall = null;
   _verifyCalls.clear();
   _capturedArgs.clear();
   _typedArgs.clear();
