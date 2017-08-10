@@ -66,6 +66,6 @@ void main() {
     var id2 = new AssetId('a', 'web/a.txt');
 
     expect({id1: true}.containsKey(id2), isTrue);
-    expect(new Set<AssetId>.from([id1]), contains(id2));
+    expect([id1].toSet(), contains(id2));
   });
 }

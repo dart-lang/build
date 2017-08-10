@@ -290,8 +290,8 @@ class BuildImpl {
     }
     _assetGraph = new AssetGraph.build(_buildActions, currentSources);
 
-    final conflictingOutputs = new Set<AssetId>.from(
-        _assetGraph.outputs.where(currentSources.contains));
+    final conflictingOutputs =
+        _assetGraph.outputs.where(currentSources.contains).toSet();
 
     // Check conflictingOutputs, prompt user to delete files.
     if (conflictingOutputs.isEmpty) return;
@@ -368,22 +368,23 @@ class BuildImpl {
 
     var inputSets = packages.map((package) => new InputSet(
         package, [package == _packageGraph.root.name ? '**' : 'lib/**']));
-    var allInputs = listAssetIds(_reader, inputSets);
-    return new Set<AssetId>.from(allInputs.where(_isValidInput));
+    return listAssetIds(_reader, inputSets).where(_isValidInput).toSet();
   }
 
-  Set<AssetId> _inputsForPhase(int phaseNumber) =>
-      new Set<AssetId>.from(_assetGraph.allNodes
-          .where((n) =>
-              n is! GeneratedAssetNode ||
-              (n as GeneratedAssetNode).phaseNumber < phaseNumber)
-          .map((n) => n.id));
+  Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes
+      .where((n) =>
+          n is! GeneratedAssetNode ||
+          (n as GeneratedAssetNode).phaseNumber < phaseNumber)
+      .map((n) => n.id)
+      .toSet();
 
   /// Gets a list of all inputs matching [inputSet].
   Set<AssetId> _matchingInputs(InputSet inputSet, int phaseNumber) =>
-      new Set<AssetId>.from(_inputsForPhase(phaseNumber).where((input) =>
-          input.package == inputSet.package &&
-          inputSet.globs.any((g) => g.matches(input.path))));
+      _inputsForPhase(phaseNumber)
+          .where((input) =>
+              input.package == inputSet.package &&
+              inputSet.globs.any((g) => g.matches(input.path)))
+          .toSet();
 
   /// Checks if an [input] is valid.
   bool _isValidInput(AssetId input) {
