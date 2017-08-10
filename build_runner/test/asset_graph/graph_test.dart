@@ -95,7 +95,7 @@ void main() {
       }
 
       var encoded = JSON.encode(graph.serialize());
-      var decoded = new AssetGraph.deserialize(JSON.decode(encoded));
+      var decoded = new AssetGraph.deserialize(JSON.decode(encoded) as Map);
       expect(graph, equalsAssetGraph(decoded));
     });
 
@@ -103,7 +103,7 @@ void main() {
       var serialized = graph.serialize();
       serialized['version'] = -1;
       var encoded = JSON.encode(serialized);
-      expect(() => new AssetGraph.deserialize(JSON.decode(encoded)),
+      expect(() => new AssetGraph.deserialize(JSON.decode(encoded) as Map),
           throwsA(assetGraphVersionException));
     });
   });

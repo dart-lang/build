@@ -35,15 +35,15 @@ class AssetGraph {
   factory AssetGraph.deserialize(Map serializedGraph) {
     if (serializedGraph['version'] != AssetGraph._version) {
       throw new AssetGraphVersionException(
-          serializedGraph['version'], _version);
+          serializedGraph['version'] as int, _version);
     }
 
     var graph = new AssetGraph._();
     for (var serializedItem in serializedGraph['nodes']) {
-      graph._add(new AssetNode.deserialize(serializedItem));
+      graph._add(new AssetNode.deserialize(serializedItem as List));
     }
-    graph.validAsOf =
-        new DateTime.fromMillisecondsSinceEpoch(serializedGraph['validAsOf']);
+    graph.validAsOf = new DateTime.fromMillisecondsSinceEpoch(
+        serializedGraph['validAsOf'] as int);
     return graph;
   }
 

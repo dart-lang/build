@@ -20,7 +20,7 @@ class AssetNode {
   factory AssetNode.deserialize(List serializedNode) {
     AssetNode node;
     if (serializedNode.length == 3) {
-      node = new AssetNode(new AssetId.deserialize(serializedNode[0]));
+      node = new AssetNode(new AssetId.deserialize(serializedNode[0] as List));
     } else if (serializedNode.length == 6) {
       node = new GeneratedAssetNode.deserialize(serializedNode);
     } else {
@@ -32,9 +32,10 @@ class AssetNode {
   }
 
   void _addSerializedOutputs(List serialized) {
-    outputs.addAll(serialized[1].map((id) => new AssetId.deserialize(id)));
-    primaryOutputs
-        .addAll(serialized[2].map((id) => new AssetId.deserialize(id)));
+    outputs.addAll(new List.from(serialized[1]
+        .map((id) => new AssetId.deserialize(id as List)) as Iterable));
+    primaryOutputs.addAll(new List.from(serialized[2]
+        .map((id) => new AssetId.deserialize(id as List)) as Iterable));
   }
 
   List serialize() => [
@@ -67,11 +68,11 @@ class GeneratedAssetNode extends AssetNode {
 
   factory GeneratedAssetNode.deserialize(List serialized) {
     var node = new GeneratedAssetNode(
-        serialized[5],
-        new AssetId.deserialize(serialized[3]),
+        serialized[5] as int,
+        new AssetId.deserialize(serialized[3] as List),
         false,
-        serialized[4],
-        new AssetId.deserialize(serialized[0]));
+        serialized[4] as bool,
+        new AssetId.deserialize(serialized[0] as List));
     node._addSerializedOutputs(serialized);
     return node;
   }

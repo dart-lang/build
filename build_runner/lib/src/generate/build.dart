@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
@@ -91,7 +90,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
 Stream<BuildResult> watch(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
     PackageGraph packageGraph,
-    AssetReader reader,
+    RunnerAssetReader reader,
     RunnerAssetWriter writer,
     Level logLevel,
     onLog(LogRecord record),
@@ -182,7 +181,7 @@ StreamSubscription _setupTerminateLogic(
     {Future cancelWhen}) {
   terminateEventStream ??= ProcessSignal.SIGINT.watch();
   int numEventsSeen = 0;
-  var terminateListener;
+  StreamSubscription terminateListener;
   terminateListener = terminateEventStream.listen((_) {
     numEventsSeen++;
     if (numEventsSeen == 1) {

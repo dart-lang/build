@@ -95,13 +95,15 @@ void main() {
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
     var cachedGraph = new AssetGraph.deserialize(
-        JSON.decode(writer.assets[graphId].stringValue));
+        JSON.decode(writer.assets[graphId].stringValue) as Map);
 
     var expectedGraph = new AssetGraph.build([], new Set());
-    var aCopyNode = makeAssetNode('a|web/a.txt.copy');
+    var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
+        false, true, makeAssetId('a|web/a.txt.copy'));
     expectedGraph.add(aCopyNode);
     expectedGraph.add(makeAssetNode('a|web/a.txt', [aCopyNode.id]));
-    var bCopyNode = makeAssetNode('a|lib/b.txt.copy');
+    var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
+        false, true, makeAssetId('a|lib/b.txt.copy'));
     expectedGraph.add(bCopyNode);
     expectedGraph.add(makeAssetNode('a|lib/b.txt', [bCopyNode.id]));
 
@@ -271,8 +273,9 @@ void main() {
           writer: writer);
 
       /// Should be deleted using the writer, and removed from the new graph.
-      var newGraph = new AssetGraph.deserialize(JSON
-          .decode(writer.assets[makeAssetId('a|$assetGraphPath')].stringValue));
+      var serialized = JSON.decode(
+          writer.assets[makeAssetId('a|$assetGraphPath')].stringValue) as Map;
+      var newGraph = new AssetGraph.deserialize(serialized);
       expect(newGraph.contains(aNode.id), isFalse);
       expect(newGraph.contains(aCopyNode.id), isFalse);
       expect(newGraph.contains(aCloneNode.id), isFalse);

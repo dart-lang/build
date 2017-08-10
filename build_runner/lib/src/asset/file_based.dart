@@ -50,7 +50,7 @@ class FileBasedAssetReader implements RunnerAssetReader {
     for (var file in files) {
       // TODO(jakemac): Where do these files come from???
       if (path.basename(file.path).startsWith('._')) continue;
-      yield _fileToAssetId(file, packageNode);
+      yield _fileToAssetId(file as File, packageNode);
     }
   }
 
@@ -120,7 +120,7 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
 /// Returns a [Future<File>] for [id] given [packageGraph].
 ///
 /// Throws an `AssetNotFoundException` if it doesn't exist.
-Future<File> _fileForOrThrow(AssetId id, packageGraph) async {
+Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) async {
   var file = _fileFor(id, packageGraph);
   if (!await file.exists()) throw new AssetNotFoundException(id);
   return file;
