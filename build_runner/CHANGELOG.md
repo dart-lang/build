@@ -1,3 +1,7 @@
+## 0.4.0+1
+
+- Depend on `build` 0.10.x and `build_barback` 0.4.x
+
 ## 0.4.0
 
 - **Breaking**: The `PhaseGroup` class has been replaced with a

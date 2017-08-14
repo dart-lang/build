@@ -1,5 +1,5 @@
 name: build_runner
-version: 0.4.1-dev
+version: 0.4.0+1
 description: Tools to write binaries that run builders.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
@@ -11,7 +11,7 @@ dependencies:
   analyzer: ">=0.27.1 <0.31.0"
   async: ^1.13.3
   build: ^0.10.0
-  build_barback: '>=0.2.0 <0.4.0'
+  build_barback: ^0.4.0
   crypto: ">=0.9.2 <3.0.0"
   glob: ^1.1.0
   logging: ^0.11.2
