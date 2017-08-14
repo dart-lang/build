@@ -1,3 +1,7 @@
+## 0.6.4+1
+
+- Allow `package:build_barback` v0.4.x
+
 ## 0.6.4
 
 - Allow `package:build` v0.10.x
