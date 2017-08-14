@@ -10,5 +10,7 @@ set -e
 pushd $PKG
 pub upgrade
 dartanalyzer --fatal-warnings .
-echo Any unformatted files?
-dartfmt -n --set-exit-if-changed .
+if [ "$TRAVIS_DART_VERSION" == "dev" ]; then
+  echo Any unformatted files?
+  dartfmt -n --set-exit-if-changed .
+fi
