@@ -1,4 +1,4 @@
-## 0.4.0-dev
+## 0.4.0
 
 - **Breaking**: Resolver interface updated for breaking change in
   `package:build` v0.10.0
