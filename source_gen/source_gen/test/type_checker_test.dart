@@ -4,6 +4,7 @@
 
 // Increase timeouts on this test which resolves source code and can be slow.
 @Timeout.factor(2.0)
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:analyzer/dart/element/element.dart';
@@ -30,31 +31,33 @@ void main() {
   TypeChecker staticGeneratorForAnnotationChecker;
 
   setUpAll(() async {
+    var resolverDone = new Completer();
     final resolver = await resolveSource(r'''
       export 'package:source_gen/source_gen.dart';
-    ''');
+    ''', tearDown: resolverDone.future);
 
-    final core = resolver.getLibraryByName('dart.core');
+    final core = await resolver.findLibraryByName('dart.core');
     var staticIterable = core.getType('Iterable').type;
     staticIterableChecker = new TypeChecker.fromStatic(staticIterable);
     staticUri = core.getType('Uri').type;
     staticMap = core.getType('Map').type;
     staticMapChecker = new TypeChecker.fromStatic(staticMap);
 
-    final collection = resolver.getLibraryByName('dart.collection');
+    final collection = await resolver.findLibraryByName('dart.collection');
     staticHashMap = collection.getType('HashMap').type;
     staticHashMapChecker = new TypeChecker.fromStatic(staticHashMap);
     staticUnmodifiableListView =
         collection.getType('UnmodifiableListView').type;
 
     final sourceGen =
-        new LibraryReader(resolver.getLibraryByName('source_gen'));
+        new LibraryReader(await resolver.findLibraryByName('source_gen'));
     staticGenerator = sourceGen.findType('Generator').type;
     staticGeneratorChecker = new TypeChecker.fromStatic(staticGenerator);
     staticGeneratorForAnnotation =
         sourceGen.findType('GeneratorForAnnotation').type;
     staticGeneratorForAnnotationChecker =
         new TypeChecker.fromStatic(staticGeneratorForAnnotation);
+    resolverDone.complete();
   });
 
   // Run a common set of type comparison checks with various implementations.
@@ -182,18 +185,20 @@ void main() {
   });
 
   test('should fail gracefully when something is not resolvable', () async {
+    var resolverDone = new Completer();
     final resolver = await resolveSource(r'''
       library _test;
 
       @depracated // Intentionally mispelled.
       class X {}
-    ''');
-    final lib = resolver.getLibraryByName('_test');
+    ''', tearDown: resolverDone.future);
+    final lib = await resolver.findLibraryByName('_test');
     final classX = lib.getType('X');
     final $deprecated = const TypeChecker.fromRuntime(Deprecated);
 
     expect(() => $deprecated.annotationsOf(classX), throwsStateError,
         reason: 'deprecated was spelled wrong; no annotation can be resolved');
+    resolverDone.complete();
   });
 
   test('should check multiple checkers', () {
@@ -215,6 +220,7 @@ void main() {
     ClassElement $ExampleOfBPlusC;
 
     setUpAll(() async {
+      var resolverDone = new Completer();
       final resolver = await resolveSource(r'''
       library _test;
 
@@ -244,8 +250,8 @@ void main() {
       class C extends B {
         const C();
       }
-    ''');
-      final library = resolver.getLibraryByName('_test');
+    ''', tearDown: resolverDone.future);
+      final library = await resolver.findLibraryByName('_test');
       $A = new TypeChecker.fromStatic(library.getType('A').type);
       $B = new TypeChecker.fromStatic(library.getType('B').type);
       $C = new TypeChecker.fromStatic(library.getType('C').type);
@@ -253,6 +259,8 @@ void main() {
       $ExampleOfMultiA = library.getType('ExampleOfMultiA');
       $ExampleOfAPlusB = library.getType('ExampleOfAPlusB');
       $ExampleOfBPlusC = library.getType('ExampleOfBPlusC');
+
+      resolverDone.complete();
     });
 
     test('of a single @A', () {
@@ -294,6 +302,7 @@ void main() {
     ClassElement $ExampleOfA;
 
     setUpAll(() async {
+      var resolverDone = new Completer();
       final resolver = await resolveSource(r'''
       library _test;
 
@@ -305,10 +314,12 @@ void main() {
       class A {
         const A();
       }
-    ''');
-      final library = resolver.getLibraryByName('_test');
+    ''', tearDown: resolverDone.future);
+      final library = await resolver.findLibraryByName('_test');
       $A = new TypeChecker.fromStatic(library.getType('A').type);
       $ExampleOfA = library.getType('ExampleOfA');
+
+      resolverDone.complete();
     });
 
     test('should throw by default', () {

@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build_test/build_test.dart';
@@ -13,7 +15,8 @@ void main() {
     LibraryElement testLib;
 
     setUpAll(() async {
-      testLib = (await resolveSource(r'''
+      var resolverDone = new Completer();
+      testLib = await (await resolveSource(r'''
         library test_lib;
 
         class A {
@@ -27,7 +30,8 @@ void main() {
         class C {
           String c;
         }
-      ''')).getLibraryByName('test_lib');
+      ''', tearDown: resolverDone.future)).findLibraryByName('test_lib');
+      resolverDone.complete();
     });
 
     test('should not throw when a class contains a field', () {
@@ -50,7 +54,8 @@ void main() {
     List<DartObject> objects;
 
     setUpAll(() async {
-      final testLib = (await resolveSource(r'''
+      var resolverDone = new Completer();
+      final testLib = await (await resolveSource(r'''
         library test_lib;
 
         @A('a-value')
@@ -75,7 +80,8 @@ void main() {
 
           const C(this.c);
         }
-      ''')).getLibraryByName('test_lib');
+      ''', tearDown: resolverDone.future)).findLibraryByName('test_lib');
+      resolverDone.complete();
       objects = testLib
           .getType('Example')
           .metadata

@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:build_test/build_test.dart';
 import 'package:collection/collection.dart';
@@ -13,6 +15,7 @@ void main() {
     List<ConstantReader> constants;
 
     setUpAll(() async {
+      var resolverDone = new Completer<Null>();
       final resolver = await resolveSource(r'''
         library test_lib;
         
@@ -56,13 +59,13 @@ void main() {
         class Super extends Example {
           const Super() : super(aString: 'Super Hello');
         }
-      ''');
-      constants = resolver
-          .getLibraryByName('test_lib')
+      ''', tearDown: resolverDone.future);
+      constants = (await resolver.findLibraryByName('test_lib'))
           .getType('Example')
           .metadata
           .map((e) => new ConstantReader(e.computeConstantValue()))
           .toList();
+      resolverDone.complete();
     });
 
     test('should read a String', () {
@@ -186,6 +189,7 @@ void main() {
     List<ConstantReader> constants;
 
     setUpAll(() async {
+      var resolverDone = new Completer<Null>();
       final resolver = await resolveSource(r'''
         library test_lib;
         
@@ -233,13 +237,13 @@ void main() {
         }
         
         const fieldOnly = const _FieldOnlyVisible();
-      ''');
-      constants = resolver
-          .getLibraryByName('test_lib')
+      ''', tearDown: resolverDone.future);
+      constants = (await resolver.findLibraryByName('test_lib'))
           .getType('Example')
           .metadata
           .map((e) => new ConstantReader(e.computeConstantValue()))
           .toList();
+      resolverDone.complete();
     });
 
     test('should decode Int64Like.ZERO', () {

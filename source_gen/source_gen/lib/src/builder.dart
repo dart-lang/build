@@ -63,9 +63,9 @@ class _Builder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var resolver = await buildStep.resolver;
-    if (!resolver.isLibrary(buildStep.inputId)) return;
-    var lib = resolver.getLibrary(buildStep.inputId);
+    var resolver = buildStep.resolver;
+    if (!await resolver.isLibrary(buildStep.inputId)) return;
+    var lib = await buildStep.inputLibrary;
     await _generateForLibrary(lib, buildStep);
   }
 

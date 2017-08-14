@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/source_gen.dart';
@@ -11,16 +13,18 @@ void main() {
   LibraryReader library;
 
   setUpAll(() async {
+    var resolverDone = new Completer();
     final resolver = await resolveSource(r'''
       library test_lib;
-      
+
       export 'dart:collection' show LinkedHashMap;
       export 'package:source_gen/source_gen.dart' show Generator;
       import 'dart:async' show Stream;
-      
+
       class Example {}
-    ''');
-    library = new LibraryReader(resolver.getLibraryByName('test_lib'));
+    ''', tearDown: resolverDone.future);
+    library = new LibraryReader(await resolver.findLibraryByName('test_lib'));
+    resolverDone.complete();
   });
 
   final isClassElement = const isInstanceOf<ClassElement>();
