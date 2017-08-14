@@ -1,4 +1,4 @@
-## 0.6.4-dev
+## 0.6.4
 
 - Allow `package:build` v0.10.x
 - `AssetReader` implementations always return `Future` from `canRead`

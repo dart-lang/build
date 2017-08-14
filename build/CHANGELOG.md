@@ -1,4 +1,4 @@
-## 0.10.0-dev
+## 0.10.0
 
 - **Breaking**: Removed deprecated method `BuildStep.hasInput` - all uses should
   be going through `BuildStep.canRead`.

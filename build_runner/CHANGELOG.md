@@ -1,4 +1,4 @@
-## 0.4.0-dev
+## 0.4.0
 
 - **Breaking**: The `PhaseGroup` class has been replaced with a
   `List<BuildAction>` in `build`, `watch`, and `serve`. The `PhaseGroup` and
