@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -9,27 +11,29 @@ import 'package:test/test.dart';
 
 void main() {
   group('should resolveSource of', () {
-    Resolver resolver;
-
     test('a simple dart file', () async {
-      resolver = await resolveSource(r'''
+      var resolverDone = new Completer<Null>();
+      var resolver = await resolveSource(r'''
         library example;
 
         class Foo {}
-      ''');
-      var libExample = resolver.getLibraryByName('example');
+      ''', tearDown: resolverDone.future);
+      var libExample = await resolver.findLibraryByName('example');
+      resolverDone.complete();
       expect(libExample.getType('Foo'), isNotNull);
     });
 
     test('a simple dart file with dart: dependencies', () async {
-      resolver = await resolveSource(r'''
+      var resolverDone = new Completer<Null>();
+      var resolver = await resolveSource(r'''
         library example;
 
         import 'dart:collection';
 
         abstract class Foo implements LinkedHashMap {}
-      ''');
-      var libExample = resolver.getLibraryByName('example');
+      ''', tearDown: resolverDone.future);
+      var libExample = await resolver.findLibraryByName('example');
+      resolverDone.complete();
       var classFoo = libExample.getType('Foo');
       expect(
         classFoo.allSupertypes.map(_toStringId),
@@ -38,14 +42,16 @@ void main() {
     });
 
     test('a simple dart file package: dependencies', () async {
-      resolver = await resolveSource(r'''
+      var resolverDone = new Completer<Null>();
+      var resolver = await resolveSource(r'''
         library example;
 
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''');
-      var libExample = resolver.getLibraryByName('example');
+      ''', tearDown: resolverDone.future);
+      var libExample = await resolver.findLibraryByName('example');
+      resolverDone.complete();
       var classFoo = libExample.getType('Foo');
       expect(
         classFoo.allSupertypes.map(_toStringId),
@@ -55,12 +61,12 @@ void main() {
   });
 
   group('should resolveAsset', () {
-    Resolver resolver;
-
     test('asset:build_test/test/_files/example_lib.dart', () async {
+      var resolverDone = new Completer<Null>();
       var asset = new AssetId('build_test', 'test/_files/example_lib.dart');
-      resolver = await resolveAsset(asset);
-      var libExample = resolver.getLibraryByName('example_lib');
+      var resolver = await resolveAsset(asset, tearDown: resolverDone.future);
+      var libExample = await resolver.findLibraryByName('example_lib');
+      resolverDone.complete();
       expect(libExample.getType('Example'), isNotNull);
     });
   });
