@@ -90,6 +90,19 @@ void main() {
           [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
           packageGraph: packageGraph, outputs: {}, status: BuildStatus.failure);
     });
+
+    test('can read files from external packages', () async {
+      var buildActions = [
+        new BuildAction(
+            new CopyBuilder(touchAsset: makeAssetId('b|lib/b.txt')), 'a')
+      ];
+      await testActions(buildActions, {
+        'a|lib/a.txt': 'a',
+        'b|lib/b.txt': 'b'
+      }, outputs: {
+        'a|lib/a.txt.copy': 'a',
+      });
+    });
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
