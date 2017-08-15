@@ -1,5 +1,5 @@
 name: mockito
-version: 2.1.0
+version: 2.2.0
 authors:
   - Dmitriy Fibulwinter <fibulwinter@gmail.com>
   - Dart Team <misc@dartlang.org>
@@ -8,6 +8,7 @@ homepage: https://github.com/dart-lang/mockito
 environment:
   sdk: '>=1.21.0 <2.0.0-dev.infinity'
 dependencies:
+  collection: '^1.1.0'
   matcher: '^0.12.0'
   meta: '^1.0.4'
   test: '>=0.12.0 <0.13.0'

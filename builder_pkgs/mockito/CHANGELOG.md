@@ -1,3 +1,8 @@
+## 2.2.0
+
+* Add new feature to wait for an interaction: `untilCalled`. See the README for
+  documentation.
+
 ## 2.1.0
 
 * Add documentation for `when`, `verify`, `verifyNever`, `resetMockitoState`.
