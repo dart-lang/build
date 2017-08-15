@@ -1,4 +1,4 @@
-## 0.4.1
+## 0.4.0+2
 
 - Bug fix: Don't crash after a Builder reads a file from another package.
 
