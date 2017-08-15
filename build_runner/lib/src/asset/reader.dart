@@ -31,7 +31,7 @@ class SinglePhaseReader implements AssetReader {
 
   bool _isReadable(AssetId id) {
     var node = _assetGraph.get(id);
-    if (node == null) return true;
+    if (node == null) return false;
     if (node is! GeneratedAssetNode) return true;
     return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
   }

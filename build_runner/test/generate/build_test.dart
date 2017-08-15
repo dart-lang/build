@@ -79,9 +79,29 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
+      var packageB = new PackageNode(
+          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
+        ..dependencies.add(packageB);
+      ;
+      var packageGraph = new PackageGraph.fromRoot(packageA);
       await testActions(
           [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
-          outputs: {}, status: BuildStatus.failure);
+          packageGraph: packageGraph, outputs: {}, status: BuildStatus.failure);
+    });
+
+    test('can read files from external packages', () async {
+      var buildActions = [
+        new BuildAction(
+            new CopyBuilder(touchAsset: makeAssetId('b|lib/b.txt')), 'a')
+      ];
+      await testActions(buildActions, {
+        'a|lib/a.txt': 'a',
+        'b|lib/b.txt': 'b'
+      }, outputs: {
+        'a|lib/a.txt.copy': 'a',
+      });
     });
   });
 
