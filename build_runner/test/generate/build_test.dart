@@ -84,7 +84,6 @@ void main() {
       var packageA = new PackageNode(
           'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
         ..dependencies.add(packageB);
-      ;
       var packageGraph = new PackageGraph.fromRoot(packageA);
       await testActions(
           [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
