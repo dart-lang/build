@@ -361,13 +361,9 @@ class BuildImpl {
 
   /// Returns the set of available inputs on disk.
   Future<Set<AssetId>> _initializeInputsByPackage() async {
-    final packages = new Set<String>();
-    for (var action in _buildActions) {
-      packages.add(action.inputSet.package);
-    }
-
-    var inputSets = packages.map((package) => new InputSet(
-        package, [package == _packageGraph.root.name ? '**' : 'lib/**']));
+    var inputSets = _packageGraph.allPackages.keys.map((package) =>
+        new InputSet(
+            package, [package == _packageGraph.root.name ? '**' : 'lib/**']));
     return listAssetIds(_reader, inputSets).where(_isValidInput).toSet();
   }
 
@@ -441,6 +437,7 @@ class BuildImpl {
       // Update the asset graph based on the dependencies discovered.
       for (var dependency in reader.assetsRead) {
         var dependencyNode = _assetGraph.get(dependency);
+        assert(dependencyNode != null, 'Asset Graph is missing $dependency');
         // We care about all builderOutputs, not just real outputs. Updates
         // to dependencies may cause a file to be output which wasn't before.
         dependencyNode.outputs.addAll(builderOutputs);

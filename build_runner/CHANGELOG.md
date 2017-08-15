@@ -1,3 +1,7 @@
+## 0.4.1
+
+- Bug fix: Don't crash after a Builder reads a file from another package.
+
 ## 0.4.0+1
 
 - Depend on `build` 0.10.x and `build_barback` 0.4.x
