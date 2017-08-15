@@ -14,3 +14,4 @@ if [ "$TRAVIS_DART_VERSION" == "dev" ]; then
   echo Any unformatted files?
   dartfmt -n --set-exit-if-changed .
 fi
+pub run test
