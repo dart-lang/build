@@ -12,28 +12,22 @@ import 'package:test/test.dart';
 void main() {
   group('should resolveSource of', () {
     test('a simple dart file', () async {
-      var resolverDone = new Completer<Null>();
-      var resolver = await resolveSource(r'''
+      var libExample = await resolveSource(r'''
         library example;
 
         class Foo {}
-      ''', tearDown: resolverDone.future);
-      var libExample = await resolver.findLibraryByName('example');
-      resolverDone.complete();
+      ''', (resolver) => resolver.findLibraryByName('example'));
       expect(libExample.getType('Foo'), isNotNull);
     });
 
     test('a simple dart file with dart: dependencies', () async {
-      var resolverDone = new Completer<Null>();
-      var resolver = await resolveSource(r'''
+      var libExample = await resolveSource(r'''
         library example;
 
         import 'dart:collection';
 
         abstract class Foo implements LinkedHashMap {}
-      ''', tearDown: resolverDone.future);
-      var libExample = await resolver.findLibraryByName('example');
-      resolverDone.complete();
+      ''', (resolver) => resolver.findLibraryByName('example'));
       var classFoo = libExample.getType('Foo');
       expect(
         classFoo.allSupertypes.map(_toStringId),
@@ -42,6 +36,21 @@ void main() {
     });
 
     test('a simple dart file package: dependencies', () async {
+      var libExample = await resolveSource(r'''
+        library example;
+
+        import 'package:collection/collection.dart';
+
+        abstract class Foo implements Equality {}
+      ''', (resolver) => resolver.findLibraryByName('example'));
+      var classFoo = libExample.getType('Foo');
+      expect(
+        classFoo.allSupertypes.map(_toStringId),
+        contains('asset:collection#Equality'),
+      );
+    });
+
+    test('waits for tearDown', () async {
       var resolverDone = new Completer<Null>();
       var resolver = await resolveSource(r'''
         library example;
@@ -49,7 +58,10 @@ void main() {
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''', tearDown: resolverDone.future);
+      ''', (resolver) => resolver, tearDown: resolverDone.future);
+      expect(
+          await resolver.libraries.any((library) => library.name == 'example'),
+          true);
       var libExample = await resolver.findLibraryByName('example');
       resolverDone.complete();
       var classFoo = libExample.getType('Foo');
@@ -62,11 +74,9 @@ void main() {
 
   group('should resolveAsset', () {
     test('asset:build_test/test/_files/example_lib.dart', () async {
-      var resolverDone = new Completer<Null>();
       var asset = new AssetId('build_test', 'test/_files/example_lib.dart');
-      var resolver = await resolveAsset(asset, tearDown: resolverDone.future);
-      var libExample = await resolver.findLibraryByName('example_lib');
-      resolverDone.complete();
+      var libExample = await resolveAsset(
+          asset, (resolver) => resolver.findLibraryByName('example_lib'));
       expect(libExample.getType('Example'), isNotNull);
     });
   });

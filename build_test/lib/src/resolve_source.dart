@@ -13,35 +13,39 @@ import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'package_reader.dart';
 
-/// Returns a future that completes with a source [Resolver] for [inputSource].
+/// Runs [action] using a created Resolver for [inputSource] and returns the
+/// result.
 ///
 /// Example use:
 /// ```dart
-/// var resolver = await resolveSource(r'''
+/// var library = await resolveSource(r'''
 ///   library example;
 ///
 ///   import 'dart:collection';
 ///
 ///   abstract class Foo implements Map {}
-/// ''');
-/// var element = resolver.getLibraryByName('example');
-/// expect(element.getType('Foo'), isNotNull);
+/// ''', (resolver) => resolver.findLibraryByName('example'));
+/// expect(library.getType('Foo'), isNotNull);
 /// ```
 ///
-/// By default, the returned [Resolver] is destroyed after the event loop is
-/// completed. In order to control the lifecycle, pass a [Completer] and
-/// complete it turning the `tearDown` phase of testing:
-/// ```dart
-/// Completer<Null> onTearDown;
+/// By default the [Resolver] is unusable after the [action] completes so
+/// references should not be kept after the future fires. To do more work in
+/// multiple tests with a Resolver from the same source use the [tearDown]
+/// argument:
 ///
-/// setUp(() {
+/// ```dart
+/// Completer<Null> resolverDone;
+/// Resolver resolver;
+///
+/// setUpAll(() async {
 ///   onTearDown = new Completer<Null>();
+///   resolver = await resolveSource('...', (resover) => resolver,
+///       tearDown: resolverDone.future);
 /// });
 ///
-/// tearDown(() => onTearDown.complete());
+/// tearDown(() => resolverDone.complete());
 ///
 /// test('...', () async {
-///   var resolver = await resolveSource('...', tearDown: onTearDown.future);
 ///   // Use resolver.
 /// });
 /// ```
@@ -49,36 +53,43 @@ import 'package_reader.dart';
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
 /// be provided to map files not visible to the current package's runtime.
-Future<Resolver> resolveSource(String inputSource,
-        {AssetId inputId, PackageResolver resolver, Future<Null> tearDown}) =>
+Future<T> resolveSource<T>(
+        String inputSource, FutureOr<T> Function(Resolver) action,
+        {AssetId inputId, PackageResolver resolver, Future tearDown}) =>
     _resolveAsset(
         inputId ?? new AssetId('_resolver_source', 'lib/_resolve_source.dart'),
+        action,
         inputContents: inputSource,
         resolver: resolver,
         tearDown: tearDown);
 
-/// Returns a future that completes with a source [Resolver] for [input].
+/// Runs [action] using a created Resolver for [input] and returns the result.
 ///
 /// Example use:
 /// ```dart
 /// var pkgBuildTest = new AssetId('build_test', 'lib/build_test.dart');
-/// var resolver = await resolveSource(pkgBuildTest);
+/// var library = await resolveSource(
+///     pkgBuildTest, (resolver) => resolver.libraryFor(pkgBuildTest));
 /// ```
 ///
-/// By default, the returned [Resolver] is destroyed after the event loop is
-/// completed. In order to control the lifecycle, pass a [Completer] and
-/// complete it turning the `tearDown` phase of testing:
-/// ```dart
-/// Completer<Null> onTearDown;
+/// By default the [Resolver] is unusable after the [action] completes so
+/// references should not be kept after the future fires. To do more work in
+/// multiple tests with a Resolver from the same source use the [tearDown]
+/// argument:
 ///
-/// setUp(() {
+/// ```dart
+/// Completer<Null> resolverDone;
+/// Resolver resolver;
+///
+/// setUpAll(() async {
 ///   onTearDown = new Completer<Null>();
+///   resolver = await resolveAsset('...', (resover) => resolver,
+///       tearDown: resolverDone.future);
 /// });
 ///
-/// tearDown(() => onTearDown.complete());
+/// tearDown(() => resolverDone.complete());
 ///
 /// test('...', () async {
-///   var resolver = await resolveAsset('...', tearDown: onTearDown.future);
 ///   // Use resolver.
 /// });
 /// ```
@@ -86,24 +97,20 @@ Future<Resolver> resolveSource(String inputSource,
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
 /// be provided to map files not visible to the current package's runtime.
-Future<Resolver> resolveAsset(AssetId input,
-        {PackageResolver resolver, Future<Null> tearDown}) =>
-    _resolveAsset(input, resolver: resolver, tearDown: tearDown);
+Future<T> resolveAsset<T>(AssetId input, FutureOr<T> Function(Resolver) action,
+        {PackageResolver resolver, Future tearDown}) =>
+    _resolveAsset(input, action, resolver: resolver, tearDown: tearDown);
 
 /// Internal only backing implementation of `resolveAsset` and `resolveSource`.
 ///
 /// If [inputContents] is non-null, it is used instead of reading [input] from
 /// the file system.
-Future<Resolver> _resolveAsset(AssetId input,
-    {String inputContents,
-    PackageResolver resolver,
-    Future<Null> tearDown}) async {
+Future<T> _resolveAsset<T>(AssetId input, FutureOr<T> Function(Resolver) action,
+    {String inputContents, PackageResolver resolver, Future tearDown}) async {
   resolver ??= PackageResolver.current;
-  tearDown ??= new Future.delayed(Duration.ZERO);
   var syncResolver = await resolver.asSync;
   var reader = new PackageAssetReader(syncResolver, input.package);
-  var completer = new Completer<Resolver>();
-  var builder = new _ResolveSourceBuilder(completer, tearDown);
+  var builder = new _ResolveSourceBuilder(action, tearDown);
   var inputs = [input];
   var inMemory = new InMemoryAssetReader(
     sourceAssets: {
@@ -121,24 +128,24 @@ Future<Resolver> _resolveAsset(AssetId input,
     const BarbackResolvers(),
     rootPackage: input.package,
   );
-  return completer.future;
+  return builder.onDone.future;
 }
 
 /// A [Builder] that is only used to retrieve a [Resolver] instance.
 ///
 /// It simulates what a user builder would do in order to resolve a primary
 /// input given a set of dependencies to also use. See `resolveSource`.
-class _ResolveSourceBuilder implements Builder {
-  final Completer<Resolver> _resolver;
-  final Future<Null> _tearDown;
+class _ResolveSourceBuilder<T> implements Builder {
+  final FutureOr<T> Function(Resolver) _action;
+  final Future _tearDown;
+  final onDone = new Completer<T>();
 
-  const _ResolveSourceBuilder(this._resolver, this._tearDown);
+  _ResolveSourceBuilder(this._action, this._tearDown);
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    if (!_resolver.isCompleted) {
-      _resolver.complete(buildStep.resolver);
-    }
+    var result = await _action(buildStep.resolver);
+    onDone.complete(result);
     await _tearDown;
   }
 
