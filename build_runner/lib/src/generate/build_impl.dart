@@ -137,7 +137,6 @@ class BuildImpl {
 
         if (_assetGraph != null) {
           await _writer.delete(_assetGraphId);
-          currentSources.remove(_assetGraphId);
           _logger
               .info('Updating dependency graph with changes since last build.');
           _assetGraph.updateForSources(_buildActions, currentSources);
@@ -383,11 +382,9 @@ class BuildImpl {
           .toSet();
 
   /// Checks if an [input] is valid.
-  bool _isValidInput(AssetId input) {
-    var parts = path.split(input.path);
-    if (input.package != _packageGraph.root.name) return parts[0] == 'lib';
-    return true;
-  }
+  bool _isValidInput(AssetId input) => input.package != _packageGraph.root.name
+      ? input.path.startsWith('lib/')
+      : !input.path.startsWith(toolDir);
 
   /// Runs [builder] with [primaryInputs] as inputs.
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
