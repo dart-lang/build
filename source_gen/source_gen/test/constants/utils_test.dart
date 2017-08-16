@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build_test/build_test.dart';
@@ -15,23 +13,21 @@ void main() {
     LibraryElement testLib;
 
     setUpAll(() async {
-      var resolverDone = new Completer();
-      testLib = await (await resolveSource(r'''
-        library test_lib;
+      testLib = await resolveSource(r'''
+          library test_lib;
 
-        class A {
-          String a;
-        }
+          class A {
+            String a;
+          }
 
-        class B extends A {
-          String b;
-        }
+          class B extends A {
+            String b;
+          }
 
-        class C {
-          String c;
-        }
-      ''', tearDown: resolverDone.future)).findLibraryByName('test_lib');
-      resolverDone.complete();
+          class C {
+            String c;
+          }
+          ''', (resolver) => resolver.findLibraryByName('test_lib'));
     });
 
     test('should not throw when a class contains a field', () {
@@ -54,34 +50,32 @@ void main() {
     List<DartObject> objects;
 
     setUpAll(() async {
-      var resolverDone = new Completer();
-      final testLib = await (await resolveSource(r'''
-        library test_lib;
+      final testLib = await resolveSource(r'''
+          library test_lib;
 
-        @A('a-value')
-        @B('a-value', 'b-value')
-        @C('c-value')
-        class Example {}
+          @A('a-value')
+          @B('a-value', 'b-value')
+          @C('c-value')
+          class Example {}
 
-        class A {
-          final String a;
+          class A {
+            final String a;
 
-          const A(this.a);
-        }
+            const A(this.a);
+          }
 
-        class B extends A {
-          final String b;
+          class B extends A {
+            final String b;
 
-          const B(String a, this.b) : super(a);
-        }
+            const B(String a, this.b) : super(a);
+          }
 
-        class C {
-          final String c;
+          class C {
+            final String c;
 
-          const C(this.c);
-        }
-      ''', tearDown: resolverDone.future)).findLibraryByName('test_lib');
-      resolverDone.complete();
+            const C(this.c);
+          }
+          ''', (resolver) => resolver.findLibraryByName('test_lib'));
       objects = testLib
           .getType('Example')
           .metadata

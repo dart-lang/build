@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -14,16 +12,12 @@ void main() {
   LibraryElement library;
 
   setUpAll(() async {
-    var resolverDone = new Completer<Null>();
-    final resolver = await resolveSource(r'''
+    library = await resolveSource(r'''
       library test_lib;
 
       abstract class Example implements List {}
-    ''',
-        inputId: new AssetId('test_lib', 'lib/test_lib.dart'),
-        tearDown: resolverDone.future);
-    library = await resolver.findLibraryByName('test_lib');
-    resolverDone.complete();
+    ''', (resolver) => resolver.findLibraryByName('test_lib'),
+        inputId: new AssetId('test_lib', 'lib/test_lib.dart'));
   });
 
   test('should highlight the use of "class Example"', () {
