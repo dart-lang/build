@@ -196,7 +196,6 @@ void main() {
     });
 
     test('Captures failed asynchronous writes', () {
-      // ignore: unawaited_futures
       buildStep.writeAsString(output, new Future.error('error'));
       expect(buildStep.complete(), throwsA('error'));
     });
