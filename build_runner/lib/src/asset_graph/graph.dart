@@ -146,8 +146,9 @@ class AssetGraph {
     for (var action in buildActions) {
       phaseNumber++;
       var phaseOutputs = <AssetId>[];
-      var inputs = allInputs.where(
-          (input) => action.inputSet.globs.any((g) => g.matches(input.path)));
+      var inputs = allInputs.where((input) =>
+          action.inputSet.package == input.package &&
+          action.inputSet.globs.any((g) => g.matches(input.path)));
       for (var input in inputs) {
         var outputs = expectedOutputs(action.builder, input);
         phaseOutputs.addAll(outputs);
