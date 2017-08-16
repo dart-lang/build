@@ -1,3 +1,7 @@
+## 0.4.1-dev
+
+- Prevent reads into `.dart_tool` for more hermetic builds.
+
 ## 0.4.0+3
 
 - Bug fix: Don't try to delete files generated for other packages.
