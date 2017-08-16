@@ -180,6 +180,27 @@ void main() {
       expect(isComplete, true, reason: 'File is written, should be complete');
     });
   });
+
+  group('With erroring writes', () {
+    AssetId primary;
+    BuildStepImpl buildStep;
+    AssetId output;
+
+    setUp(() {
+      var reader = new StubAssetReader();
+      var writer = new StubAssetWriter();
+      primary = makeAssetId();
+      output = makeAssetId();
+      buildStep = new BuildStepImpl(primary, [output], reader, writer,
+          primary.package, const BarbackResolvers());
+    });
+
+    test('Captures failed asynchronous writes', () {
+      // ignore: unawaited_futures
+      buildStep.writeAsString(output, new Future.error('error'));
+      expect(buildStep.complete(), throwsA('error'));
+    });
+  });
 }
 
 class SlowAssetWriter implements AssetWriter {

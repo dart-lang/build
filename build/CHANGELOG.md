@@ -1,3 +1,7 @@
+## 0.10.0+1
+
+- Bug Fix: Capture asynchronous errors during asset writing.
+
 ## 0.10.0
 
 - **Breaking**: Removed deprecated method `BuildStep.hasInput` - all uses should

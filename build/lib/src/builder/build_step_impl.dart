@@ -34,8 +34,8 @@ class BuildStepImpl implements BuildStep {
   /// step.
   final List<AssetId> _expectedOutputs;
 
-  /// A future that completes once all outputs current are done writing.
-  Future _outputsCompleted = new Future(() {});
+  /// The result of any writes which are starting during this step.
+  final _writeResults = <Future<Result>>[];
 
   /// Used internally for reading files.
   final AssetReader _reader;
@@ -82,7 +82,7 @@ class BuildStepImpl implements BuildStep {
     _checkOutput(id);
     var done =
         _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
-    _outputsCompleted = _outputsCompleted.then((_) => done);
+    _writeResults.add(Result.capture(done));
     return done;
   }
 
@@ -92,7 +92,7 @@ class BuildStepImpl implements BuildStep {
     _checkOutput(id);
     var done = _futureOrWrite(content,
         (String c) => _writer.writeAsString(id, c, encoding: encoding));
-    _outputsCompleted = _outputsCompleted.then((_) => done);
+    _writeResults.add(Result.capture(done));
     return done;
   }
 
@@ -105,7 +105,7 @@ class BuildStepImpl implements BuildStep {
   /// returned [Future] completes then all outputs have been written and the
   /// [Resolver] for this build step - if any - has been released.
   Future complete() async {
-    await _outputsCompleted;
+    await Future.wait(_writeResults.map(Result.release));
     (await _resolver)?.release();
   }
 
