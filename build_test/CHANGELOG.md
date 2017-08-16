@@ -1,3 +1,8 @@
+## 0.7.0
+
+- **Breaking**: `resolveSource` and `resolveAsset` now take an `action` to
+  perform with the Resolver instance.
+
 ## 0.6.4+1
 
 - Allow `package:build_barback` v0.4.x
