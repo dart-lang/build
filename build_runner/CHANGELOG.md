@@ -1,3 +1,7 @@
+## 0.4.0+3
+
+- Bug fix: Don't try to delete files generated for other packages.
+
 ## 0.4.0+2
 
 - Bug fix: Don't crash after a Builder reads a file from another package.

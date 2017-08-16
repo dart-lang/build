@@ -96,7 +96,10 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
 
   @override
   Future delete(AssetId id) {
-    assert(id.package == packageGraph.root.name);
+    if (id.package != packageGraph.root.name) {
+      throw new InvalidOutputException(
+          id, 'Should not delete assets outside of ${packageGraph.root.name}');
+    }
     if (onDelete != null) onDelete(id);
 
     var file = _fileFor(id, packageGraph);

@@ -102,6 +102,28 @@ void main() {
         'a|lib/a.txt.copy': 'a',
       });
     });
+
+    test('won\'t try to delete files from other packages', () async {
+      var packageB = new PackageNode(
+          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
+        ..dependencies.add(packageB);
+      var packageGraph = new PackageGraph.fromRoot(packageA);
+      var writer = new InMemoryRunnerAssetWriter()
+        ..onDelete = (AssetId assetId) {
+          if (assetId.package != 'a') {
+            throw 'Should not delete outside of package:a';
+          }
+        };
+      await testActions([new BuildAction(new CopyBuilder(), 'a')],
+          {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b', 'b|lib/b.txt.copy': 'b'},
+          packageGraph: packageGraph,
+          writer: writer,
+          outputs: {
+            'a|lib/a.txt.copy': 'a',
+          });
+    });
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
