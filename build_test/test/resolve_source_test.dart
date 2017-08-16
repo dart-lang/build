@@ -70,6 +70,21 @@ void main() {
         contains('asset:collection#Equality'),
       );
     });
+
+    test('can do expects inside the action', () async {
+      await resolveSource(r'''
+        library example;
+
+        import 'package:collection/collection.dart';
+
+        abstract class Foo implements Equality {}
+      ''', (resolver) async {
+        var libExample = await resolver.findLibraryByName('example');
+        var classFoo = libExample.getType('Foo');
+        expect(classFoo.allSupertypes.map(_toStringId),
+            contains('asset:collection#Equality'));
+      });
+    });
   });
 
   group('should resolveAsset', () {

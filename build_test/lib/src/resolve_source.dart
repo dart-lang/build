@@ -38,7 +38,7 @@ import 'package_reader.dart';
 /// Resolver resolver;
 ///
 /// setUpAll(() async {
-///   onTearDown = new Completer<Null>();
+///   resolverDone = new Completer<Null>();
 ///   resolver = await resolveSource('...', (resover) => resolver,
 ///       tearDown: resolverDone.future);
 /// });
@@ -82,7 +82,7 @@ Future<T> resolveSource<T>(
 /// Resolver resolver;
 ///
 /// setUpAll(() async {
-///   onTearDown = new Completer<Null>();
+///   resolverDone = new Completer<Null>();
 ///   resolver = await resolveAsset('...', (resover) => resolver,
 ///       tearDown: resolverDone.future);
 /// });
