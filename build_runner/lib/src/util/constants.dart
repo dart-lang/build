@@ -8,8 +8,13 @@ import 'package:crypto/crypto.dart';
 /// Relative path to the asset graph from the root package dir.
 final String assetGraphPath = '$cacheDir/$scriptHash/asset_graph.json';
 
+/// Directory used for build tooling.
+///
+/// Reading from this directory make cause non-hermetic builds.
+const String toolDir = '.dart_tool';
+
 /// Relative path to the cache directory from the root package dir.
-const String cacheDir = '.dart_tool/build';
+const String cacheDir = '$toolDir/build';
 
 final String scriptHash =
     md5.convert(Platform.script.path.codeUnits).toString();

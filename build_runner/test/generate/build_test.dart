@@ -103,6 +103,19 @@ void main() {
       });
     });
 
+    test('can\'t read files in .dart_tool', () async {
+      await testActions([
+        new BuildAction(
+            new CopyBuilder(
+                copyFromAsset: makeAssetId('a|.dart_tool/any_file')),
+            'a')
+      ], {
+        'a|lib/a.txt': 'a',
+        'a|.dart_tool/any_file': 'content'
+      }, status: BuildStatus.failure);
+      await new Future.delayed(const Duration(milliseconds: 500));
+    });
+
     test('won\'t try to delete files from other packages', () async {
       var packageB = new PackageNode(
           'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
