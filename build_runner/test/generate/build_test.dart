@@ -113,7 +113,6 @@ void main() {
         'a|lib/a.txt': 'a',
         'a|.dart_tool/any_file': 'content'
       }, status: BuildStatus.failure);
-      await new Future.delayed(const Duration(milliseconds: 500));
     });
 
     test('won\'t try to delete files from other packages', () async {
