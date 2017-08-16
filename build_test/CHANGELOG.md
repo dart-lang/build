@@ -1,3 +1,8 @@
+## 0.7.0+1
+
+- Switch to a typedef from function type syntax for compatibility with older
+  SDKs.
+
 ## 0.7.0
 
 - **Breaking**: `resolveSource` and `resolveAsset` now take an `action` to

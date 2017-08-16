@@ -54,7 +54,7 @@ import 'package_reader.dart';
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
 /// be provided to map files not visible to the current package's runtime.
 Future<T> resolveSource<T>(
-        String inputSource, FutureOr<T> Function(Resolver) action,
+        String inputSource, FutureOr<T> action(Resolver resolver),
         {AssetId inputId, PackageResolver resolver, Future tearDown}) =>
     _resolveAsset(
         inputId ?? new AssetId('_resolver_source', 'lib/_resolve_source.dart'),
@@ -97,7 +97,7 @@ Future<T> resolveSource<T>(
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
 /// be provided to map files not visible to the current package's runtime.
-Future<T> resolveAsset<T>(AssetId input, FutureOr<T> Function(Resolver) action,
+Future<T> resolveAsset<T>(AssetId input, FutureOr<T> action(Resolver resolver),
         {PackageResolver resolver, Future tearDown}) =>
     _resolveAsset(input, action, resolver: resolver, tearDown: tearDown);
 
@@ -105,7 +105,7 @@ Future<T> resolveAsset<T>(AssetId input, FutureOr<T> Function(Resolver) action,
 ///
 /// If [inputContents] is non-null, it is used instead of reading [input] from
 /// the file system.
-Future<T> _resolveAsset<T>(AssetId input, FutureOr<T> Function(Resolver) action,
+Future<T> _resolveAsset<T>(AssetId input, FutureOr<T> action(Resolver resolver),
     {String inputContents, PackageResolver resolver, Future tearDown}) async {
   resolver ??= PackageResolver.current;
   var syncResolver = await resolver.asSync;
@@ -131,12 +131,14 @@ Future<T> _resolveAsset<T>(AssetId input, FutureOr<T> Function(Resolver) action,
   return builder.onDone.future;
 }
 
+typedef FutureOr<T> _ResolverAction<T>(Resolver resolver);
+
 /// A [Builder] that is only used to retrieve a [Resolver] instance.
 ///
 /// It simulates what a user builder would do in order to resolve a primary
 /// input given a set of dependencies to also use. See `resolveSource`.
 class _ResolveSourceBuilder<T> implements Builder {
-  final FutureOr<T> Function(Resolver) _action;
+  final _ResolverAction<T> _action;
   final Future _tearDown;
   final onDone = new Completer<T>();
 
