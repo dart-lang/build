@@ -83,16 +83,6 @@ class AssetGraph {
   Iterable<AssetId> get sources =>
       allNodes.where((n) => n is! GeneratedAssetNode).map((n) => n.id);
 
-  /// Invalidates all generated assets.
-  ///
-  /// If the build script has changed any Builder could have new behavior which
-  /// would produce a different output.
-  void invalidateBuildScript() {
-    for (var node in allNodes) {
-      if (node is GeneratedAssetNode) node.needsUpdate = true;
-    }
-  }
-
   /// Update graph structure, invalidate outputs that may change, and return the
   /// set of assets that need to be deleted.
   Iterable<AssetId> updateAndInvalidate(Map<AssetId, ChangeType> updates) {

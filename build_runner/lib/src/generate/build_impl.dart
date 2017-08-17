@@ -119,7 +119,7 @@ class BuildImpl {
             if (_isFirstBuild) {
               _logger.warning(
                   'Invalidating asset graph due to build script update');
-              _assetGraph.invalidateBuildScript();
+              _assetGraph = null;
             } else {
               done.complete(new BuildResult(BuildStatus.failure, buildType, [],
                   exception: new BuildScriptUpdatedException()));

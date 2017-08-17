@@ -1,6 +1,7 @@
 ## 0.4.1-dev
 
 - Prevent reads into `.dart_tool` for more hermetic builds.
+- Bug Fix: Rebuild entire asset graph if the build script changes.
 
 ## 0.4.0+3
 
