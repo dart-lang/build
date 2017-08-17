@@ -299,7 +299,8 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = new AssetGraph.build([], new Set());
+      var graph = new AssetGraph.build([], new Set())
+        ..validAsOf = new DateTime.now();
       var aCloneNode = new GeneratedAssetNode(
           1,
           makeAssetId('a|lib/a.txt.copy'),
