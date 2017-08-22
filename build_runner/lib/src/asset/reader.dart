@@ -24,8 +24,10 @@ class SinglePhaseReader implements AssetReader {
   final Set<AssetId> _assetsRead = new Set();
   final AssetGraph _assetGraph;
   final int _phaseNumber;
+  final String _rootPackage;
 
-  SinglePhaseReader(this._delegate, this._assetGraph, this._phaseNumber);
+  SinglePhaseReader(
+      this._delegate, this._assetGraph, this._phaseNumber, this._rootPackage);
 
   Iterable<AssetId> get assetsRead => _assetsRead;
 
@@ -58,6 +60,11 @@ class SinglePhaseReader implements AssetReader {
   }
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) =>
-      _delegate.findAssets(glob).where(_isReadable);
+  Iterable<AssetId> findAssets(Glob glob) => _assetGraph.allNodes
+      .where((n) => n.id.package == _rootPackage)
+      .where((n) => glob.matches(n.id.path))
+      .where((n) =>
+          n is! GeneratedAssetNode ||
+          (n as GeneratedAssetNode).phaseNumber < _phaseNumber)
+      .map((n) => n.id);
 }
