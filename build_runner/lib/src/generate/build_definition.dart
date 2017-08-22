@@ -8,6 +8,7 @@ import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';
@@ -44,12 +45,10 @@ class BuildDefinitionLoader {
   final RunnerAssetReader _reader;
   final PackageGraph _packageGraph;
   final List<BuildAction> _buildActions;
+  final bool _writeToCache;
 
   BuildDefinitionLoader(
-    this._reader,
-    this._packageGraph,
-    this._buildActions,
-  );
+      this._reader, this._packageGraph, this._buildActions, this._writeToCache);
 
   Future<BuildDefinition> load() async {
     final assetGraphId = new AssetId(_packageGraph.root.name, assetGraphPath);
@@ -196,7 +195,11 @@ class BuildDefinitionLoader {
     var inputSets = _packageGraph.allPackages.keys.map((package) =>
         new InputSet(
             package, [package == _packageGraph.root.name ? '**' : 'lib/**']));
-    return _listAssetIds(inputSets).where(_isValidInput).toSet();
+    var sources = _listAssetIds(inputSets).where(_isValidInput).toSet();
+    if (_writeToCache) {
+      sources.addAll(_listGeneratedAssetIds());
+    }
+    return sources;
   }
 
   /// Checks if an [input] is valid.
@@ -214,6 +217,17 @@ class BuildDefinitionLoader {
           yield id;
         }
       }
+    }
+  }
+
+  Iterable<AssetId> _listGeneratedAssetIds() sync* {
+    var glob = new Glob('$generatedOutputDirectory/**');
+    for (var id in _reader.findAssets(glob)) {
+      var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
+      var firstSlash = packagePath.indexOf('/');
+      var package = packagePath.substring(0, firstSlash);
+      var path = packagePath.substring(firstSlash + 1);
+      yield new AssetId(package, path);
     }
   }
 }

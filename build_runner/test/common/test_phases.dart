@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -65,8 +66,10 @@ Future testActions(List<BuildAction> buildActions,
     Matcher exceptionMatcher,
     InMemoryRunnerAssetWriter writer,
     Level logLevel: Level.OFF,
-    onLog(LogRecord record)}) async {
+    onLog(LogRecord record),
+    bool writeToCache}) async {
   writer ??= new InMemoryRunnerAssetWriter();
+  writeToCache ??= false;
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
 
@@ -86,6 +89,7 @@ Future testActions(List<BuildAction> buildActions,
 
   var result = await build(buildActions,
       deleteFilesByDefault: true,
+      writeToCache: writeToCache,
       reader: reader,
       writer: writer,
       packageGraph: packageGraph,
@@ -96,20 +100,29 @@ Future testActions(List<BuildAction> buildActions,
       outputs: outputs,
       writer: writer,
       status: status,
-      exceptionMatcher: exceptionMatcher);
+      exceptionMatcher: exceptionMatcher,
+      writeToCache: writeToCache,
+      rootPackage: packageGraph.root.name);
 }
 
 void checkBuild(BuildResult result,
     {Map<String, dynamic> outputs,
     InMemoryAssetWriter writer,
     BuildStatus status = BuildStatus.success,
-    Matcher exceptionMatcher}) {
+    Matcher exceptionMatcher,
+    bool writeToCache: false,
+    String rootPackage}) {
   expect(result.status, status, reason: '$result');
   if (exceptionMatcher != null) {
     expect(result.exception, exceptionMatcher);
   }
 
+  var mapAssetIds = writeToCache
+      ? (AssetId id) => new AssetId(
+          rootPackage, '.dart_tool/build/generated/${id.package}/${id.path}')
+      : (AssetId id) => id;
+
   if (status == BuildStatus.success) {
-    checkOutputs(outputs, result.outputs, writer);
+    checkOutputs(outputs, result.outputs, writer, mapAssetIds: mapAssetIds);
   }
 }

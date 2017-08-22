@@ -43,13 +43,17 @@ class FileBasedAssetReader implements RunnerAssetReader {
           "remove it from your input sets.");
     }
     var packagePath = packageNode.location.toFilePath();
-    var files = glob
-        .listSync(followLinks: false, root: packagePath)
-        .where((e) => e is File);
-    for (var file in files) {
-      // TODO(jakemac): Where do these files come from???
-      if (path.basename(file.path).startsWith('._')) continue;
-      yield _fileToAssetId(file as File, packageNode);
+    try {
+      var files = glob
+          .listSync(followLinks: false, root: packagePath)
+          .where((e) => e is File);
+      for (var file in files) {
+        // TODO(jakemac): Where do these files come from???
+        if (path.basename(file.path).startsWith('._')) continue;
+        yield _fileToAssetId(file as File, packageNode);
+      }
+    } on FileSystemException catch (_) {
+      // Empty results
     }
   }
 
