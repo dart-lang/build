@@ -418,7 +418,8 @@ class BuildImpl {
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
       if (skipBuild) continue;
 
-      var reader = new SinglePhaseReader(_reader, _assetGraph, phaseNumber);
+      var reader = new SinglePhaseReader(
+          _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
       var writer = new AssetWriterSpy(_writer);
       await runBuilder(builder, [input], reader, writer, _resolvers,
           rootPackage: _packageGraph.root.name);
