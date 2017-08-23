@@ -1,3 +1,8 @@
+## 0.7.1-dev
+
+- Add `mapAssetIds` argument to `checkOutputs` for cases where the logical asset
+  location recorded by the builder does not match the written location.
+
 ## 0.7.0+1
 
 - Switch to a typedef from function type syntax for compatibility with older

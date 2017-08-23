@@ -12,10 +12,29 @@ import 'assets.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 
+AssetId _passThrough(AssetId id) => id;
+
+/// Validates that [actualAssets] matches the expected [outputs].
+///
+/// The keys in [outputs] should be serialized AssetIds in the form
+/// `'package|path'`. The values should match the expected content for the
+/// written asset and may be a String (for `writeAsString`), a `List<int>` (for
+/// `writeAsBytes`) or a [Matcher] for a String or bytes.
+///
+/// [actualAssets] are the IDs that were recorded as written during the build.
+///
+/// Assets are checked against those that were written to [writer]. If other
+/// assets were written through the writer, but not as part of the build
+/// process, they will be ignored. Only the IDs in [actualAssets] are checked.
+///
+/// If assets are written to a location that does not match their logical
+/// association to a package pass `[mapAssetIds]` to translate from the logical
+/// location to the actual written location.
 void checkOutputs(
     Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
     Iterable<AssetId> actualAssets,
-    RecordingAssetWriter writer) {
+    RecordingAssetWriter writer,
+    {AssetId mapAssetIds(AssetId id): _passThrough}) {
   var modifiableActualAssets = new Set.from(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
@@ -29,7 +48,7 @@ void checkOutputs(
       expect(modifiableActualAssets, contains(assetId),
           reason: 'Builder failed to write asset $assetId');
       modifiableActualAssets.remove(assetId);
-      var actual = writer.assets[assetId];
+      var actual = writer.assets[mapAssetIds(assetId)];
       var expected;
       if (contentsMatcher is String) {
         expected = actual.stringValue;
