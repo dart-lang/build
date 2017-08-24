@@ -32,7 +32,7 @@ class BuildStepImpl implements BuildStep {
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
-  final List<AssetId> _expectedOutputs;
+  final Set<AssetId> _expectedOutputs;
 
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result>>[];
@@ -47,8 +47,8 @@ class BuildStepImpl implements BuildStep {
   final String _rootPackage;
 
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage, this._resolvers)
-      : _expectedOutputs = expectedOutputs.toList();
+      this._writer, @deprecated this._rootPackage, this._resolvers)
+      : _expectedOutputs = expectedOutputs.toSet();
 
   @override
   Resolver get resolver =>
@@ -117,17 +117,10 @@ class BuildStepImpl implements BuildStep {
     }
   }
 
-  /// Checks that [id] is a valid output, and throws an
+  /// Checks that [id] is an expected output, and throws an
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(AssetId id) {
-    if (id.package != _rootPackage) {
-      throw new InvalidOutputException(
-          id,
-          'Files may only be output in the root (application) package. '
-          'Attempted to output "$id" but the root package is '
-          '"$_rootPackage".');
-    }
-    if (!_expectedOutputs.any((check) => check == id)) {
+    if (!_expectedOutputs.contains(id)) {
       throw new UnexpectedOutputException(id);
     }
   }

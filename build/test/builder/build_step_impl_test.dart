@@ -29,6 +29,8 @@ void main() {
       var id = makeAssetId();
       expect(() => buildStep.writeAsString(id, '$id'),
           throwsA(new isInstanceOf<UnexpectedOutputException>()));
+      expect(() => buildStep.writeAsBytes(id, [0]),
+          throwsA(new isInstanceOf<UnexpectedOutputException>()));
     });
 
     test('canRead throws invalidInputExceptions', () async {
@@ -50,19 +52,6 @@ void main() {
         expect(
             () => buildStep.readAsString(id), throwsA(invalidInputException));
         expect(() => buildStep.readAsBytes(id), throwsA(invalidInputException));
-      }
-    });
-
-    test('writeAs* throws InvalidOutputExceptions', () async {
-      var invalidOutputIds = [
-        makeAssetId('b|test.txt'),
-        makeAssetId('foo|bar.txt'),
-      ];
-      for (var id in invalidOutputIds) {
-        expect(() => buildStep.writeAsString(id, 'foo'),
-            throwsA(invalidOutputException));
-        expect(() => buildStep.writeAsBytes(id, [0]),
-            throwsA(invalidOutputException));
       }
     });
   });

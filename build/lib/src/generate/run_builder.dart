@@ -14,23 +14,21 @@ import '../builder/builder.dart';
 import '../builder/logging.dart';
 import 'expected_outputs.dart';
 
-/// Run [builder] on each asset in [inputs].
+/// Run [builder] with each asset in [inputs] as the primary input.
 ///
-///
-/// If [rootPackage] is not provided all [inputs] must be for the same
-/// package, and outputs are only allowed in this package. Builds for all
-/// inputs are run asynchronously and ordering is not guaranteed.
+/// Builds for all inputs are run asynchronously and ordering is not guaranteed.
+/// The [log] instance inside the builds will be scoped to [logger] which is
+/// defaulted to a [Logger] name 'runBuilder'.
 Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
-    {Logger logger, String rootPackage}) async {
+    {Logger logger, @deprecated String rootPackage}) async {
   logger ??= new Logger('runBuilder');
-  rootPackage ??= inputs.map((input) => input.package).toSet().single;
   //TODO(nbosch) check overlapping outputs?
   Future<Null> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
-    var buildStep = new BuildStepImpl(
-        input, outputs, reader, writer, rootPackage, resolvers);
+    var buildStep = new BuildStepImpl(input, outputs, reader, writer,
+        rootPackage ?? input.package, resolvers);
     try {
       await builder.build(buildStep);
     } finally {
