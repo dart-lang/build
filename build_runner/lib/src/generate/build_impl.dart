@@ -421,8 +421,7 @@ class BuildImpl {
       var reader = new SinglePhaseReader(
           _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
       var writer = new AssetWriterSpy(_writer);
-      await runBuilder(builder, [input], reader, writer, _resolvers,
-          rootPackage: _packageGraph.root.name);
+      await runBuilder(builder, [input], reader, writer, _resolvers);
 
       // Mark all outputs as no longer needing an update, and mark `wasOutput`
       // as `false` for now (this will get reset to true later one).

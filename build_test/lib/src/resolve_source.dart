@@ -120,14 +120,8 @@ Future<T> _resolveAsset<T>(AssetId input, FutureOr<T> action(Resolver resolver),
   );
   // We don't care about the results of this build.
   // ignore: unawaited_futures
-  runBuilder(
-    builder,
-    inputs,
-    new MultiAssetReader([inMemory, reader]),
-    new InMemoryAssetWriter(),
-    const BarbackResolvers(),
-    rootPackage: input.package,
-  );
+  runBuilder(builder, inputs, new MultiAssetReader([inMemory, reader]),
+      new InMemoryAssetWriter(), const BarbackResolvers());
   return builder.onDone.future;
 }
 
