@@ -10,11 +10,11 @@ final String assetGraphPath = '$cacheDir/$scriptHash/asset_graph.json';
 
 /// Directory used for build tooling.
 ///
-/// Reading from this directory may cause non-hermetic builds.
-const String toolDir = '.dart_tool';
+/// Reading from these directories may cause non-hermetic builds.
+const toolDirs = const ['.dart_tool', 'build', 'packages', '.pub'];
 
 /// Relative path to the cache directory from the root package dir.
-const String cacheDir = '$toolDir/build';
+const String cacheDir = '.dart_tool/build';
 
 final String scriptHash =
     md5.convert(Platform.script.path.codeUnits).toString();

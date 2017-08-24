@@ -17,10 +17,8 @@ import 'writer.dart';
 /// files from disk.
 class FileBasedAssetReader implements RunnerAssetReader {
   final PackageGraph packageGraph;
-  final List<String> ignoredDirs;
 
-  FileBasedAssetReader(this.packageGraph,
-      {this.ignoredDirs: const ['build', 'packages', '.pub']});
+  FileBasedAssetReader(this.packageGraph);
 
   @override
   Future<bool> canRead(AssetId id) => _fileFor(id, packageGraph).exists();
@@ -45,8 +43,9 @@ class FileBasedAssetReader implements RunnerAssetReader {
           "remove it from your input sets.");
     }
     var packagePath = packageNode.location.toFilePath();
-    var files = glob.listSync(followLinks: false, root: packagePath).where(
-        (e) => e is File && !ignoredDirs.contains(path.split(e.path)[1]));
+    var files = glob
+        .listSync(followLinks: false, root: packagePath)
+        .where((e) => e is File);
     for (var file in files) {
       // TODO(jakemac): Where do these files come from???
       if (path.basename(file.path).startsWith('._')) continue;

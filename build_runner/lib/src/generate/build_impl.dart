@@ -389,7 +389,7 @@ class BuildImpl {
   /// Checks if an [input] is valid.
   bool _isValidInput(AssetId input) => input.package != _packageGraph.root.name
       ? input.path.startsWith('lib/')
-      : !input.path.startsWith(toolDir);
+      : !toolDirs.any((d) => input.path.startsWith(d));
 
   /// Runs [builder] with [primaryInputs] as inputs.
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,

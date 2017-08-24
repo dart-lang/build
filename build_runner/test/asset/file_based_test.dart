@@ -18,7 +18,7 @@ final String newLine = Platform.isWindows ? '\r\n' : '\n';
 
 void main() {
   group('FileBasedAssetReader', () {
-    final reader = new FileBasedAssetReader(packageGraph, ignoredDirs: ['pkg']);
+    final reader = new FileBasedAssetReader(packageGraph);
 
     test('can read any application package files', () async {
       expect(await reader.readAsString(makeAssetId('basic_pkg|hello.txt')),
