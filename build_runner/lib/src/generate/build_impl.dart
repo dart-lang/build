@@ -89,6 +89,11 @@ class BuildImpl {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
 
+      if (_buildActions.any(
+          (action) => action.inputSet.package != _packageGraph.root.name)) {
+        throw const InvalidBuildActionException.nonRootPackage();
+      }
+
       // Initialize the [assetGraph] if its not yet set up.
       if (_assetGraph == null) {
         await logWithTime(_logger, 'Reading cached dependency graph', () async {
@@ -391,14 +396,6 @@ class BuildImpl {
       Iterable<AssetId> primaryInputs) async* {
     for (var input in primaryInputs) {
       var builderOutputs = expectedOutputs(builder, input);
-
-      // Validate builderOutputs.
-      for (var output in builderOutputs) {
-        if (output.package != _packageGraph.root.name) {
-          throw new InvalidOutputException(output,
-              'Files may only be output in the root (application) package.');
-        }
-      }
 
       // Add nodes to the AssetGraph for builderOutputs and input.
       var inputNode = _assetGraph.get(input);
