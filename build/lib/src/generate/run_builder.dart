@@ -14,7 +14,7 @@ import '../builder/builder.dart';
 import '../builder/logging.dart';
 import 'expected_outputs.dart';
 
-/// Run [builder] on with asset in [inputs] as the primary input.
+/// Run [builder] with each asset in [inputs] as the primary input.
 ///
 /// Builds for all inputs are run asynchronously and ordering is not guaranteed.
 /// The [log] instance inside the builds will be scoped to [logger] which is
