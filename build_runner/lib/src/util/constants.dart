@@ -8,7 +8,7 @@ import 'package:crypto/crypto.dart';
 /// Relative path to the asset graph from the root package dir.
 final String assetGraphPath = '$cacheDir/$scriptHash/asset_graph.json';
 
-/// Directory used for build tooling.
+/// Directories used for build tooling.
 ///
 /// Reading from these directories may cause non-hermetic builds.
 const toolDirs = const ['.dart_tool', 'build', 'packages', '.pub'];
