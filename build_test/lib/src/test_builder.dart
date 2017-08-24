@@ -111,7 +111,7 @@ Future testBuilder(
   var logSubscription = logger.onRecord.listen(onLog);
   await runBuilder(
       builder, inputIds, reader, writerSpy, const BarbackResolvers(),
-      rootPackage: rootPackage, logger: logger);
+      logger: logger);
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
   checkOutputs(outputs, actualOutputs, writer);
