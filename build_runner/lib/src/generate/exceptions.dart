@@ -9,6 +9,10 @@ class ConcurrentBuildException implements Exception {
       'ConcurrentBuildException: Only one build may be running at a time.';
 }
 
+abstract class FatalBuildException implements Exception {
+  const FatalBuildException();
+}
+
 class BuildScriptUpdatedException extends FatalBuildException {
   const BuildScriptUpdatedException();
 
@@ -28,6 +32,14 @@ class UnexpectedExistingOutputsException extends FatalBuildException {
       'mode and did not specify `deleteFilesByDefault` as `true`.';
 }
 
-abstract class FatalBuildException implements Exception {
-  const FatalBuildException();
+class InvalidBuildActionException extends FatalBuildException {
+  final String _reason;
+
+  const InvalidBuildActionException.nonRootPackage()
+      : _reason =
+            'A build action is attempting to operate on a package which is not '
+            'the root.';
+
+  @override
+  String toString() => 'InvalidBuildActionException: $_reason';
 }
