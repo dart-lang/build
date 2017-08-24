@@ -15,20 +15,6 @@ import 'in_memory_writer.dart';
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 
-Future<BuildResult> nextResult(List<BuildResult> results) {
-  var done = new Completer<BuildResult>();
-  var startingLength = results.length;
-  () async {
-    while (results.length == startingLength) {
-      await wait(10);
-    }
-    expect(results.length, startingLength + 1,
-        reason: 'Got two build results but only expected one');
-    done.complete(results.last);
-  }();
-  return done.future;
-}
-
 /// Runs [buildActions] in a test environment.
 ///
 /// The test environment supplies in-memory build [inputs] to the builders under
