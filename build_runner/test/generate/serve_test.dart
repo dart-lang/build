@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf.dart';
@@ -36,17 +37,16 @@ void main() {
     });
 
     test('does basic builds', () async {
-      var results = <BuildResult>[];
-      startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer)
-          .listen(results.add);
-      var result = await nextResult(results);
+      var results = new StreamQueue(
+          startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
+      var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       FakeWatcher.notifyWatchers(new WatchEvent(
           ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
-      result = await nextResult(results);
+      result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
     });
 
@@ -54,9 +54,8 @@ void main() {
       var buildBlocker1 = new Completer();
       copyBuilder.blockUntil = buildBlocker1.future;
 
-      var results = <BuildResult>[];
-      startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer)
-          .listen(results.add);
+      var results = new StreamQueue(
+          startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
       // Give the build enough time to get started.
       await wait(100);
 
@@ -68,7 +67,7 @@ void main() {
       });
       await wait(250);
       buildBlocker1.complete();
-      var result = await nextResult(results);
+      var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       /// Next request completes right away.
@@ -93,7 +92,7 @@ void main() {
       });
       await wait(250);
       buildBlocker2.complete();
-      result = await nextResult(results);
+      result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
       /// Make sure we actually see the final request finish.

@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:async/async.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -33,35 +34,33 @@ void main() {
     group('simple', () {
       test('rebuilds on file updates', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(
+            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
       });
 
       test('rebuilds on new files', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(
+            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/b.txt'), 'b');
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result, outputs: {'a|web/b.txt.copy': 'b'}, writer: writer);
         // Previous outputs should still exist.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')].stringValue, 'a');
@@ -69,16 +68,14 @@ void main() {
 
       test('rebuilds on deleted files', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch([
+        var results = new StreamQueue(startWatch([
           copyABuildAction
         ], {
           'a|web/a.txt': 'a',
           'a|web/b.txt': 'b',
-        }, writer)
-            .listen(results.add);
+        }, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
             writer: writer);
@@ -88,7 +85,7 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
 
         // Shouldn't rebuild anything, no outputs.
         checkBuild(result, outputs: {}, writer: writer);
@@ -101,12 +98,10 @@ void main() {
 
       test('rebuilds properly update asset_graph.json', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch([copyABuildAction], {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'},
-                writer)
-            .listen(results.add);
+        var results = new StreamQueue(startWatch([copyABuildAction],
+            {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
             writer: writer);
@@ -119,7 +114,7 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result, outputs: {'a|web/c.txt.copy': 'c'}, writer: writer);
 
         var serialized = JSON.decode(
@@ -142,11 +137,10 @@ void main() {
       test('build fails if script is updated after the first build starts',
           () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(
+            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         /// Pretend like a part of the dart script got updated.
@@ -156,13 +150,12 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result, status: BuildStatus.failure);
       });
 
       test('ignores events from nested packages', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
         var packageA = new PackageNode(
             'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'));
         var packageB = new PackageNode(
@@ -170,15 +163,14 @@ void main() {
         packageA.dependencies.add(packageB);
         var packageGraph = new PackageGraph.fromRoot(packageA);
 
-        startWatch([
+        var results = new StreamQueue(startWatch([
           copyABuildAction
         ], {
           'a|web/a.txt': 'a',
           'b|web/b.txt': 'b'
-        }, writer, packageGraph: packageGraph)
-            .listen(results.add);
+        }, writer, packageGraph: packageGraph));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         // Should ignore the files under the `b` package, even though they
         // match the input set.
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
@@ -190,7 +182,7 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         // Ignores the modification under the `b` package, even though it
         // matches the input set.
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
@@ -198,18 +190,17 @@ void main() {
 
       test('converts packages paths to absolute ones', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch([copyABuildAction], {'a|lib/a.txt': 'a'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(
+            startWatch([copyABuildAction], {'a|lib/a.txt': 'a'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result, outputs: {'a|lib/a.txt.copy': 'a'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|lib/a.txt'), 'b');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'packages', 'a', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result, outputs: {'a|lib/a.txt.copy': 'b'}, writer: writer);
       });
     });
@@ -222,11 +213,10 @@ void main() {
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch(buildActions, {'a|web/a.txt': 'a'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(
+            startWatch(buildActions, {'a|web/a.txt': 'a'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
             writer: writer);
@@ -235,7 +225,7 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
             writer: writer);
@@ -248,11 +238,10 @@ void main() {
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch(buildActions, {'a|web/a.txt': 'a'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(
+            startWatch(buildActions, {'a|web/a.txt': 'a'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
             writer: writer);
@@ -261,7 +250,7 @@ void main() {
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result,
             outputs: {'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
             writer: writer);
@@ -278,12 +267,10 @@ void main() {
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch(
-                buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(startWatch(
+            buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result,
             outputs: {
               'a|web/a.txt.copy': 'a',
@@ -299,7 +286,7 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         // Shouldn't rebuild anything, no outputs.
         checkBuild(result, outputs: {}, writer: writer);
 
@@ -319,11 +306,10 @@ void main() {
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch(buildActions, {'a|web/a.txt': 'a'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(
+            startWatch(buildActions, {'a|web/a.txt': 'a'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result,
             outputs: {
               'a|web/a.txt.copy': 'a',
@@ -336,7 +322,7 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt.copy')));
 
-        result = await nextResult(results);
+        result = await results.next;
         // Should rebuild the generated asset and its outputs.
         checkBuild(result,
             outputs: {
@@ -357,19 +343,17 @@ void main() {
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch(
-                buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(startWatch(
+            buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/b.txt'), 'c');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'c'}, writer: writer);
       });
 
@@ -384,12 +368,10 @@ void main() {
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
-        var results = <BuildResult>[];
-        startWatch(
-                buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer)
-            .listen(results.add);
+        var results = new StreamQueue(startWatch(
+            buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer));
 
-        var result = await nextResult(results);
+        var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'b'},
             writer: writer);
@@ -398,7 +380,7 @@ void main() {
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
 
-        result = await nextResult(results);
+        result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy.copy': 'c'}, writer: writer);
       });
