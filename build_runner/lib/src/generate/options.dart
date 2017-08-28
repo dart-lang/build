@@ -25,6 +25,13 @@ class BuildOptions {
   RunnerAssetWriter writer;
   bool deleteFilesByDefault;
 
+  /// Whether to write to a cache directory rather than the package's source
+  /// directory.
+  ///
+  /// Enabling this option is the only way to allow builders to run against
+  /// packages other than the root.
+  bool writeToCache;
+
   // Watch mode options.
   Duration debounceDelay;
   DirectoryWatcherFactory directoryWatcherFactory;
@@ -39,6 +46,7 @@ class BuildOptions {
       {this.address,
       this.debounceDelay,
       this.deleteFilesByDefault,
+      this.writeToCache,
       this.directory,
       this.directoryWatcherFactory,
       Level logLevel,
@@ -67,6 +75,7 @@ class BuildOptions {
     writer ??= new FileBasedAssetWriter(packageGraph);
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
     deleteFilesByDefault ??= false;
+    writeToCache ??= false;
   }
 }
 

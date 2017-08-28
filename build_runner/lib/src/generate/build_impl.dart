@@ -11,6 +11,7 @@ import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset/build_cache.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
@@ -30,6 +31,7 @@ class BuildImpl {
   final AssetId _assetGraphId;
   final List<BuildAction> _buildActions;
   final bool _deleteFilesByDefault;
+  final bool _writeToCache;
   final _logger = new Logger('Build');
   final PackageGraph _packageGraph;
   final RunnerAssetReader _reader;
@@ -45,12 +47,13 @@ class BuildImpl {
       : _assetGraphId =
             new AssetId(options.packageGraph.root.name, assetGraphPath),
         _deleteFilesByDefault = options.deleteFilesByDefault,
+        _writeToCache = options.writeToCache,
         _packageGraph = options.packageGraph,
         _reader = options.reader,
         _writer = options.writer,
         _buildActions = buildActions,
-        _buildDefinitionLoader = new BuildDefinitionLoader(
-            options.reader, options.packageGraph, buildActions);
+        _buildDefinitionLoader = new BuildDefinitionLoader(options.reader,
+            options.packageGraph, buildActions, options.writeToCache);
 
   /// Runs a build
   ///
@@ -89,8 +92,9 @@ class BuildImpl {
       if (_buildRunning) throw const ConcurrentBuildException();
       _buildRunning = true;
 
-      if (_buildActions.any(
-          (action) => action.inputSet.package != _packageGraph.root.name)) {
+      if (!_writeToCache &&
+          _buildActions.any(
+              (action) => action.inputSet.package != _packageGraph.root.name)) {
         throw const InvalidBuildActionException.nonRootPackage();
       }
 
@@ -132,7 +136,7 @@ class BuildImpl {
     if (_deleteFilesByDefault) {
       _logger.info('Deleting ${conflictingOutputs.length} declared outputs '
           'which already existed on disk.');
-      await Future.wait(conflictingOutputs.map(_writer.delete));
+      await Future.wait(conflictingOutputs.map(_delete));
       return;
     }
 
@@ -230,9 +234,17 @@ class BuildImpl {
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
       if (skipBuild) continue;
 
+      AssetReader wrappedReader = _reader;
+      AssetWriter wrappedWriter = _writer;
+      if (_writeToCache) {
+        wrappedReader = new BuildCacheReader(
+            wrappedReader, _assetGraph, _packageGraph.root.name);
+        wrappedWriter = new BuildCacheWriter(
+            wrappedWriter, _assetGraph, _packageGraph.root.name);
+      }
       var reader = new SinglePhaseReader(
-          _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
-      var writer = new AssetWriterSpy(_writer);
+          wrappedReader, _assetGraph, phaseNumber, _packageGraph.root.name);
+      var writer = new AssetWriterSpy(wrappedWriter);
       await runBuilder(builder, [input], reader, writer, _resolvers);
 
       // Mark all outputs as no longer needing an update, and mark `wasOutput`
@@ -258,5 +270,12 @@ class BuildImpl {
         yield output;
       }
     }
+  }
+
+  Future _delete(AssetId id) {
+    if (_writeToCache) {
+      id = cacheLocation(id, _assetGraph, _packageGraph.root.name);
+    }
+    return _writer.delete(id);
   }
 }

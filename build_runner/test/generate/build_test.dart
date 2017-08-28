@@ -90,6 +90,20 @@ void main() {
           packageGraph: packageGraph, outputs: {}, status: BuildStatus.failure);
     });
 
+    test('Can output files in non-root packages with `writeToCache`', () async {
+      var packageB = new PackageNode(
+          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
+        ..dependencies.add(packageB);
+      var packageGraph = new PackageGraph.fromRoot(packageA);
+      await testActions(
+          [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
+          packageGraph: packageGraph,
+          outputs: {'b|lib/b.txt.copy': 'b'},
+          writeToCache: true);
+    });
+
     test('can read files from external packages', () async {
       var buildActions = [
         new BuildAction(
