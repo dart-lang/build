@@ -95,13 +95,9 @@ class BuildImpl {
       }
 
       // Initialize the [assetGraph] if its not yet set up.
-      BuildDefinition buildDefinition;
-      if (_assetGraph == null) {
-        buildDefinition = await _buildDefinitionLoader.load();
-      } else {
-        buildDefinition =
-            await _buildDefinitionLoader.fromGraph(_assetGraph, updates);
-      }
+      var buildDefinition = (_assetGraph == null)
+          ? await _buildDefinitionLoader.load()
+          : await _buildDefinitionLoader.fromGraph(_assetGraph, updates);
       _assetGraph = buildDefinition.assetGraph;
       buildType = buildDefinition.buildType;
 
@@ -127,6 +123,56 @@ class BuildImpl {
           exception: e, stackTrace: chain.toTrace()));
     });
     return done.future;
+  }
+
+  Future<Null> _promptDelete(Set<AssetId> conflictingOutputs) async {
+    if (conflictingOutputs.isEmpty) return;
+
+    // Skip the prompt if using this option.
+    if (_deleteFilesByDefault) {
+      _logger.info('Deleting ${conflictingOutputs.length} declared outputs '
+          'which already existed on disk.');
+      await Future.wait(conflictingOutputs.map(_writer.delete));
+      return;
+    }
+
+    // Prompt the user to delete files that are declared as outputs.
+    _logger.warning('Found ${conflictingOutputs.length} declared outputs '
+        'which already exist on disk. This is likely because the'
+        '`$cacheDir` folder was deleted, or you are submitting generated '
+        'files to your source repository.');
+
+    // If not in a standard terminal then we just exit, since there is no way
+    // for the user to provide a yes/no answer.
+    if (stdioType(stdin) != StdioType.TERMINAL) {
+      throw new UnexpectedExistingOutputsException();
+    }
+
+    // Give a little extra space after the last message, need to make it clear
+    // this is a prompt.
+    stdout.writeln();
+    var done = false;
+    while (!done) {
+      stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
+      var input = stdin.readLineSync();
+      switch (input.toLowerCase()) {
+        case 'y':
+          stdout.writeln('Deleting files...');
+          done = true;
+          await Future.wait(conflictingOutputs.map(_writer.delete));
+          break;
+        case 'n':
+          throw new UnexpectedExistingOutputsException();
+          break;
+        case 'l':
+          for (var output in conflictingOutputs) {
+            stdout.writeln(output);
+          }
+          break;
+        default:
+          stdout.writeln('Unrecognized option $input, (y/n/l) expected.');
+      }
+    }
   }
 
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
@@ -210,56 +256,6 @@ class BuildImpl {
       for (var output in writer.assetsWritten) {
         (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
         yield output;
-      }
-    }
-  }
-
-  Future<Null> _promptDelete(Set<AssetId> conflictingOutputs) async {
-    if (conflictingOutputs.isEmpty) return;
-
-    // Skip the prompt if using this option.
-    if (_deleteFilesByDefault) {
-      _logger.info('Deleting ${conflictingOutputs.length} declared outputs '
-          'which already existed on disk.');
-      await Future.wait(conflictingOutputs.map(_writer.delete));
-      return;
-    }
-
-    // Prompt the user to delete files that are declared as outputs.
-    _logger.warning('Found ${conflictingOutputs.length} declared outputs '
-        'which already exist on disk. This is likely because the'
-        '`$cacheDir` folder was deleted, or you are submitting generated '
-        'files to your source repository.');
-
-    // If not in a standard terminal then we just exit, since there is no way
-    // for the user to provide a yes/no answer.
-    if (stdioType(stdin) != StdioType.TERMINAL) {
-      throw new UnexpectedExistingOutputsException();
-    }
-
-    // Give a little extra space after the last message, need to make it clear
-    // this is a prompt.
-    stdout.writeln();
-    var done = false;
-    while (!done) {
-      stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
-      var input = stdin.readLineSync();
-      switch (input.toLowerCase()) {
-        case 'y':
-          stdout.writeln('Deleting files...');
-          done = true;
-          await Future.wait(conflictingOutputs.map(_writer.delete));
-          break;
-        case 'n':
-          throw new UnexpectedExistingOutputsException();
-          break;
-        case 'l':
-          for (var output in conflictingOutputs) {
-            stdout.writeln(output);
-          }
-          break;
-        default:
-          stdout.writeln('Unrecognized option $input, (y/n/l) expected.');
       }
     }
   }
