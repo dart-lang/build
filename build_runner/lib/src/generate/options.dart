@@ -24,6 +24,7 @@ class BuildOptions {
   RunnerAssetReader reader;
   RunnerAssetWriter writer;
   bool deleteFilesByDefault;
+
   /// Whether to write to a cache directory rather than the package's source
   /// directory.
   ///
