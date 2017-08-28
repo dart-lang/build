@@ -84,8 +84,10 @@ class AssetGraph {
       allNodes.where((n) => n is! GeneratedAssetNode).map((n) => n.id);
 
   /// Update graph structure, invalidate outputs that may change, and return the
-  /// set of assets that need to be deleted.
-  Iterable<AssetId> updateAndInvalidate(Map<AssetId, ChangeType> updates) {
+  /// set of assets that need to be deleted because they would no longer be
+  /// generated, or because they are stale.
+  Iterable<AssetId> updateAndInvalidate(
+      List<BuildAction> buildActions, Map<AssetId, ChangeType> updates) {
     var deletes = new Set<AssetId>();
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
         {AssetId parent, bool rootIsSource}) {
@@ -115,17 +117,13 @@ class AssetGraph {
     }
 
     updates.forEach(clearNodeAndDeps);
-    return deletes;
-  }
+    _addOutputsForSources(buildActions,
+        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet());
 
-  /// Updates the structure of the graph to account for any new sources and
-  /// returns true if the graph has changed.
-  bool updateForSources(
-      List<BuildAction> buildActions, Iterable<AssetId> sources) {
-    var unseen = sources.where((s) => !_nodesById.containsKey(s)).toSet();
-    if (unseen.isEmpty) return false;
-    _addOutputsForSources(buildActions, unseen);
-    return true;
+    deletes.addAll(allNodes
+        .where((n) => n is GeneratedAssetNode && n.needsUpdate)
+        .map((n) => n.id));
+    return deletes;
   }
 
   void _addOutputsForSources(
