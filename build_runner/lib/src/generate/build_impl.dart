@@ -106,7 +106,7 @@ class BuildImpl {
       buildType = buildDefinition.buildType;
 
       await logWithTime(_logger, 'Deleting previous outputs', () async {
-        await Future.wait(buildDefinition.safeDeletes.map(_writer.delete));
+        await Future.wait(buildDefinition.safeDeletes.map(_delete));
         await _promptDelete(buildDefinition.conflictingAssets);
       });
 
@@ -163,7 +163,7 @@ class BuildImpl {
         case 'y':
           stdout.writeln('Deleting files...');
           done = true;
-          await Future.wait(conflictingOutputs.map(_writer.delete));
+          await Future.wait(conflictingOutputs.map(_delete));
           break;
         case 'n':
           throw new UnexpectedExistingOutputsException();

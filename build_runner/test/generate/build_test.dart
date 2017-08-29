@@ -104,6 +104,32 @@ void main() {
           writeToCache: true);
     });
 
+    test('Will not delete from non-root packages with `writeToCache`',
+        () async {
+      var packageB = new PackageNode(
+          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
+        ..dependencies.add(packageB);
+      var packageGraph = new PackageGraph.fromRoot(packageA);
+      var writer = new InMemoryRunnerAssetWriter()
+        ..onDelete = (AssetId assetId) {
+          if (assetId.package != 'a') {
+            throw 'Should not delete outside of package:a';
+          }
+        };
+      await testActions(
+          [new BuildAction(new CopyBuilder(), 'b')],
+          {
+            'b|lib/b.txt': 'b',
+            'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b'
+          },
+          packageGraph: packageGraph,
+          writer: writer,
+          outputs: {'b|lib/b.txt.copy': 'b'},
+          writeToCache: true);
+    });
+
     test('can read files from external packages', () async {
       var buildActions = [
         new BuildAction(

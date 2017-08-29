@@ -71,7 +71,7 @@ Future testActions(List<BuildAction> buildActions,
   writer ??= new InMemoryRunnerAssetWriter();
   writeToCache ??= false;
   final actualAssets = writer.assets;
-  final reader = new InMemoryRunnerAssetReader(actualAssets);
+  final reader = new InMemoryRunnerAssetReader(actualAssets, packageGraph?.root?.name);
 
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);

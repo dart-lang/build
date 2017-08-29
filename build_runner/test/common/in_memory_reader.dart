@@ -11,12 +11,16 @@ import 'package:glob/glob.dart';
 
 class InMemoryRunnerAssetReader extends InMemoryAssetReader
     implements RunnerAssetReader {
-  InMemoryRunnerAssetReader([Map<AssetId, DatedValue> sourceAssets])
-      : super(sourceAssets: sourceAssets);
+  InMemoryRunnerAssetReader(
+      [Map<AssetId, DatedValue> sourceAssets, String rootPackage])
+      : super(sourceAssets: sourceAssets, rootPackage: rootPackage);
 
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String packageName}) => assets.keys
-      .where((id) => id.package == packageName && glob.matches(id.path));
+  Iterable<AssetId> findAssets(Glob glob, {String packageName}) {
+    packageName ??= rootPackage;
+    return assets.keys
+        .where((id) => id.package == packageName && glob.matches(id.path));
+  }
 
   final Map<Uri, LibraryMirror> _allLibraries = currentMirrorSystem().libraries;
 
