@@ -9,6 +9,7 @@ env:
   - PKG=build
   - PKG=build_runner
   - PKG=build_barback
+  - PKG=build_compilers
 
 script: ./tool/travis.sh
 
