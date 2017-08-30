@@ -3,6 +3,20 @@
 - Add `mapAssetIds` argument to `checkOutputs` for cases where the logical asset
   location recorded by the builder does not match the written location.
 
+- Add `recordLogs`, a top-level function that invokes `scopeLog` and captures
+  the resulting `Stream<LogRecord>` for testing. Can be used with the provided
+  `anyLogOf`, `infoLogOf`, `warningLogOf`, `severeLogOf` matchers in order to
+  test a build process:
+
+```dart
+test('should log "uh oh!"', () async {
+  final logs = recordLogs(() => runBuilder());
+  expect(logs, emitsInOrder([
+    anyLogOf('uh oh!'),
+  ]);
+});
+```
+
 ## 0.7.0+1
 
 - Switch to a typedef from function type syntax for compatibility with older

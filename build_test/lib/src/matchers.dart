@@ -5,10 +5,18 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 
+/// Matches instance of [AssetNotFoundException].
 final Matcher assetNotFoundException =
-    new isInstanceOf<AssetNotFoundException>();
-final Matcher invalidInputException = new isInstanceOf<InvalidInputException>();
+    const isInstanceOf<AssetNotFoundException>();
+
+/// Matches instance of [InvalidInputException].
+final Matcher invalidInputException =
+    const isInstanceOf<InvalidInputException>();
+
+/// Matches instance of [InvalidOutputException].
 final Matcher invalidOutputException =
-    new isInstanceOf<InvalidOutputException>();
+    const isInstanceOf<InvalidOutputException>();
+
+/// Matches instance of [PackageNotFoundException].
 final Matcher packageNotFoundException =
-    new isInstanceOf<PackageNotFoundException>();
+    const isInstanceOf<PackageNotFoundException>();
