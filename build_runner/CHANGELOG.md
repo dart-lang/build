@@ -2,6 +2,9 @@
 
 - Prevent reads into `.dart_tool` for more hermetic builds.
 - Bug Fix: Rebuild entire asset graph if the build script changes.
+- Add `writeToCache` argument to `build` and `watch` which separates generated
+  files from the source directory and allows running builders against other
+  packages.
 
 ## 0.4.0+3
 
