@@ -10,6 +10,10 @@ import 'package:logging/logging.dart';
 
 /// Executes [run] with a new [Logger], returning the resulting log records.
 ///
+/// The returned [Stream] is _closed_ after the [run] function is executed. If
+/// [run] returns a [Future], that future is awaited _before_ the stream is
+/// closed.
+///
 /// ```dart
 /// test('should log "uh oh!"', () async {
 ///   final logs = recordLogs(() => runBuilder());
@@ -69,11 +73,7 @@ class _LogRecordMatcher extends Matcher {
 
   @override
   Description describeMismatch(
-    covariant LogRecord item,
-    Description description,
-    _,
-    __,
-  ) {
+      covariant LogRecord item, Description description, _, __) {
     if (!_level.matches(item.level, {})) {
       _level.describeMismatch(item.level, description, {}, false);
     }
