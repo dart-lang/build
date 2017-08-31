@@ -34,7 +34,7 @@ class PackageAssetReader implements AssetReader {
   /// ```
   const PackageAssetReader(this._packageResolver, [this._rootPackage]);
 
-  /// Returns a [PackageAssetReader] with a single [packageRoot] configured.
+  /// A [PackageAssetReader] with a single [packageRoot] configured.
   ///
   /// It is assumed that every _directory_ in [packageRoot] is a package where
   /// the name of the package is the name of the directory. This is similar to
@@ -93,10 +93,10 @@ class PackageAssetReader implements AssetReader {
   }
 
   @override
-  Future<bool> canRead(AssetId id) async {
+  Future<bool> canRead(AssetId id) {
     final file = _resolve(id);
     if (file == null) {
-      return false;
+      return new Future.value(false);
     }
     return file.exists();
   }

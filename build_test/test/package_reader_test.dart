@@ -43,7 +43,7 @@ void main() {
     });
   });
 
-  group('$PackageAssetReader.forPackage(s)', () {
+  group('$PackageAssetReader.forPackage', () {
     AssetReader reader;
 
     final exampleLibA = 'test/_libs/example_a/';
