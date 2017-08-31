@@ -65,7 +65,7 @@ class Module {
 
     return new Module._(
         toAssetId(_earliest(cycle)),
-        cycleUris.map(toAssetId).toSet(),
+        _cycleSources(cycle).map(toAssetId).toSet(),
         dependencyModules.map(toAssetId).toSet());
   }
 }
@@ -100,3 +100,11 @@ Iterable<LibraryElement> _libraryDependencies(LibraryElement library) => [
       library.importedLibraries,
       library.exportedLibraries
     ].expand((l) => l).where((l) => !l.isInSdk);
+
+/// All sources for a library cycle, including part files.
+Iterable<Uri> _cycleSources(Iterable<LibraryElement> libraries) =>
+    libraries.expand(_libraryUris);
+
+/// All sources for a library, including part files.
+Iterable<Uri> _libraryUris(LibraryElement library) =>
+    library.parts.map((u) => u.source.uri).toList()..add(library.source.uri);
