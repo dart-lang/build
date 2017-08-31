@@ -45,28 +45,29 @@ class Module {
   /// from any of the [sources] in this module.
   final Set<AssetId> directDependencies;
 
-  Module(this.primarySource, this.sources, this.directDependencies);
-}
+  Module._(this.primarySource, this.sources, this.directDependencies);
 
-Module defineModule(LibraryElement library) {
-  final cycle = library.libraryCycle;
-  final cycleUris = cycle.map((l) => l.source.uri).toSet();
-  final dependencyModules = new Set<Uri>();
-  final seenDependencies = new Set<Uri>();
-  for (var dependency in _cycleDependencies(cycle)) {
-    var uri = dependency.source.uri;
-    if (seenDependencies.contains(uri) || cycleUris.contains(uri)) continue;
-    var cycle = dependency.libraryCycle;
-    dependencyModules.add(_earliest(cycle));
-    seenDependencies.addAll(cycle.map((l) => l.source.uri));
+  /// Find the module definition which contains [library].
+  factory Module.forLibrary(LibraryElement library) {
+    final cycle = library.libraryCycle;
+    final cycleUris = cycle.map((l) => l.source.uri).toSet();
+    final dependencyModules = new Set<Uri>();
+    final seenDependencies = new Set<Uri>();
+    for (var dependency in _cycleDependencies(cycle)) {
+      var uri = dependency.source.uri;
+      if (seenDependencies.contains(uri) || cycleUris.contains(uri)) continue;
+      var cycle = dependency.libraryCycle;
+      dependencyModules.add(_earliest(cycle));
+      seenDependencies.addAll(cycle.map((l) => l.source.uri));
+    }
+
+    AssetId toAssetId(Uri uri) => new AssetId.resolve('${uri}');
+
+    return new Module._(
+        toAssetId(_earliest(cycle)),
+        cycleUris.map(toAssetId).toSet(),
+        dependencyModules.map(toAssetId).toSet());
   }
-
-  AssetId toAssetId(Uri uri) => new AssetId.resolve('${uri}');
-
-  return new Module(
-      toAssetId(_earliest(cycle)),
-      cycleUris.map(toAssetId).toSet(),
-      dependencyModules.map(toAssetId).toSet());
 }
 
 /// Returns whether [library] owns the module for it's strongly connected import
