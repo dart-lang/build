@@ -14,8 +14,8 @@ class Module {
   /// The library which will be used to reference any library in [sources].
   ///
   /// The assets which are built once per module, such as DDC compiled output or
-  /// Analyzer summaries, will be build for the primary source and not for any
-  /// other asset in [sources].
+  /// Analyzer summaries, will be named after the primary source and will
+  /// encompass everything in [sources].
   final AssetId primarySource;
 
   /// The libraries in the strongly connected import cycle with [primarySource].
