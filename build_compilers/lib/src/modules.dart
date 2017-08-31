@@ -50,18 +50,18 @@ class Module {
 
 Module defineModule(AssetId from, LibraryElement library) {
   final cycle = library.libraryCycle;
-  final cycleUris = cycle.map((l) => '${l.source.uri}').toSet();
-  final dependencyModules = new Set<String>();
-  final seenDependencies = new Set<String>();
+  final cycleUris = cycle.map((l) => l.source.uri).toSet();
+  final dependencyModules = new Set<Uri>();
+  final seenDependencies = new Set<Uri>();
   for (var dependency in _cycleDependencies(cycle)) {
-    var uri = '${dependency.source.uri}';
+    var uri = dependency.source.uri;
     if (seenDependencies.contains(uri) || cycleUris.contains(uri)) continue;
     var cycle = dependency.libraryCycle;
     dependencyModules.add(_earliest(cycle));
-    seenDependencies.addAll(cycle.map((l) => '${l.source.uri}'));
+    seenDependencies.addAll(cycle.map((l) => l.source.uri));
   }
 
-  AssetId toAssetId(String uri) => new AssetId.resolve(uri, from: from);
+  AssetId toAssetId(Uri uri) => new AssetId.resolve('${uri}', from: from);
 
   return new Module(
       toAssetId(_earliest(cycle)),
@@ -72,15 +72,15 @@ Module defineModule(AssetId from, LibraryElement library) {
 /// Returns whether [library] owns the module for it's strongly connected import
 /// cycle.
 bool isPrimary(LibraryElement library) =>
-    _earliest(library.libraryCycle) == '${library.source.uri}';
+    _earliest(library.libraryCycle) == library.source.uri;
 
-String _earliest(Iterable<LibraryElement> libraries) {
-  if (libraries.length < 2) return '${libraries.first.source.uri}';
-  return libraries.map((l) => '${l.source.uri}').reduce(_earlier);
+Uri _earliest(Iterable<LibraryElement> libraries) {
+  if (libraries.length < 2) return libraries.first.source.uri;
+  return libraries.map((l) => l.source.uri).reduce(_earlier);
 }
 
-T _earlier<T extends Comparable<T>>(T left, T right) =>
-    left.compareTo(right) < 0 ? left : right;
+Uri _earlier(Uri left, Uri right) =>
+    left.path.compareTo(right.path) < 0 ? left : right;
 
 /// All the non-SDK [LibraryElement]s which are imported or exported from
 /// any of [libraries].
