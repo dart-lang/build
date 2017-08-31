@@ -35,50 +35,50 @@ void main() {
   });
 
   group('defineModule.sources', () {
-    test('Finds the assets in a cycle', () async {
+    test('Finds the assets in a cycle', () {
       var sources = defineModule(assetCycle, libCycle).sources;
       expect(sources, unorderedEquals([assetCycle, assetSecondaryInCycle]));
     });
 
-    test('Finds a single asset with no cycle', () async {
+    test('Finds a single asset with no cycle', () {
       var sources = defineModule(assetNoCycle, libNoCycle).sources;
       expect(sources, unorderedEquals([assetNoCycle]));
     });
 
-    test('Finds the assets in a cycle across packages', () async {
+    test('Finds the assets in a cycle across packages', () {
       var sources = defineModule(assetCycleWithB, libCycleWithB).sources;
       expect(sources, unorderedEquals([assetCycleWithA, assetCycleWithB]));
     });
   });
 
   group('defineModule.directDependencies', () {
-    test('Chooses primary from cycle for dependency', () async {
+    test('Chooses primary from cycle for dependency', () {
       var dependencies = defineModule(assetCycle, libCycle).directDependencies;
       expect(dependencies, unorderedEquals([assetCycleWithB]));
     });
   });
 
   group('isPrimary', () {
-    test('Marks library with no cycle as primary', () async {
-      expect(isPrimary(libNoCycle), true);
-    });
+    group('within package', () {
+      test('Marks library with no cycle as primary', () {
+        expect(isPrimary(libNoCycle), true);
+      });
 
-    test('Marks library with lowest alpha sort as primary', () async {
-      expect(isPrimary(libCycle), true);
-    });
+      test('Marks library with lowest alpha sort as primary', () {
+        expect(isPrimary(libCycle), true);
+      });
 
-    test('Does not mark library with higher alpha sort as primary', () async {
-      expect(isPrimary(libSecondaryInCycle), false);
+      test('Does not mark library with higher alpha sort as primary', () {
+        expect(isPrimary(libSecondaryInCycle), false);
+      });
     });
-
-    test('Marks library with lowest alpha sort across packages as primary',
-        () async {
-      expect(isPrimary(libCycleWithB), true);
-    });
-    test(
-        'Does not mark library with higher alpha sort across packages as primary',
-        () async {
-      expect(isPrimary(libCycleWithA), false);
+    group('across packages', () {
+      test('Marks library with lowest alpha sort as primary', () {
+        expect(isPrimary(libCycleWithB), true);
+      });
+      test('Does not mark library with later alpha sort as primary', () {
+        expect(isPrimary(libCycleWithA), false);
+      });
     });
   });
 }
