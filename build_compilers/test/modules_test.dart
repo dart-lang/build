@@ -34,26 +34,26 @@ void main() {
     });
   });
 
-  group('defineModule.cycle', () {
+  group('defineModule.sources', () {
     test('Finds the assets in a cycle', () async {
-      var cycle = defineModule(assetCycle, libCycle).cycle;
-      expect(cycle, unorderedEquals([assetCycle, assetSecondaryInCycle]));
+      var sources = defineModule(assetCycle, libCycle).sources;
+      expect(sources, unorderedEquals([assetCycle, assetSecondaryInCycle]));
     });
 
     test('Finds a single asset with no cycle', () async {
-      var cycle = defineModule(assetNoCycle, libNoCycle).cycle;
-      expect(cycle, unorderedEquals([assetNoCycle]));
+      var sources = defineModule(assetNoCycle, libNoCycle).sources;
+      expect(sources, unorderedEquals([assetNoCycle]));
     });
 
     test('Finds the assets in a cycle across packages', () async {
-      var cycle = defineModule(assetCycleWithB, libCycleWithB).cycle;
-      expect(cycle, unorderedEquals([assetCycleWithA, assetCycleWithB]));
+      var sources = defineModule(assetCycleWithB, libCycleWithB).sources;
+      expect(sources, unorderedEquals([assetCycleWithA, assetCycleWithB]));
     });
   });
 
-  group('defineModule.dependencies', () {
+  group('defineModule.directDependencies', () {
     test('Chooses primary from cycle for dependency', () async {
-      var dependencies = defineModule(assetCycle, libCycle).dependencies;
+      var dependencies = defineModule(assetCycle, libCycle).directDependencies;
       expect(dependencies, unorderedEquals([assetCycleWithB]));
     });
   });

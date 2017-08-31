@@ -5,26 +5,55 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
+/// A collection of Dart libraries in a strongly connected component and the
+/// modules they depend on.
+///
+/// Modules can span pub package boundaries when there are import cycles across
+/// packages.
 class Module {
-  /// The libraries in the strongly connected cycle.
+  /// The library which will be used to reference any library in [sources].
   ///
-  /// In most cases without cyclic imports this will contain a single asset.
-  final Set<AssetId> cycle;
+  /// The assets which are built once per module, such as DDC compiled output or
+  /// Analyzer summaries, will be build for the primary source and not for any
+  /// other asset in [sources].
+  final AssetId primarySource;
 
-  /// The libraries which would have a `.sum` or `.js` output necessary to
-  /// compile this module.
+  /// The libraries in the strongly connected import cycle with [primarySource].
   ///
-  /// Every import from any of the assets in [cycle] will be covered by the
-  /// modules rooted within this set.
-  final Set<AssetId> dependencies;
-  Module(this.cycle, this.dependencies);
+  /// In most cases without cyclic imports this will contain only the primary
+  /// source. For libraries with an import cycle all of the libraries in the
+  /// cycle will be contained in `sources`. For example:
+  ///
+  /// ```dart
+  /// library foo;
+  ///
+  /// import 'bar.dart';
+  /// ```
+  ///
+  /// ```dart
+  /// library bar;
+  ///
+  /// import 'foo.dart';
+  /// ```
+  ///
+  /// Libraries `foo` and `bar` form an import cycle so they would be grouped in
+  /// the same module. Every Dart library will only be contained in a single
+  /// [Module].
+  final Set<AssetId> sources;
+
+  /// The [primarySource]s of the [Module]s which contain any library imported
+  /// from any of the [sources] in this module.
+  final Set<AssetId> directDependencies;
+
+  Module(this.primarySource, this.sources, this.directDependencies);
 }
 
 Module defineModule(AssetId from, LibraryElement library) {
-  final cycleUris = library.libraryCycle.map((l) => '${l.source.uri}').toSet();
+  final cycle = library.libraryCycle;
+  final cycleUris = cycle.map((l) => '${l.source.uri}').toSet();
   final dependencyModules = new Set<String>();
   final seenDependencies = new Set<String>();
-  for (var dependency in _cycleDependencies(library)) {
+  for (var dependency in _cycleDependencies(cycle)) {
     var uri = '${dependency.source.uri}';
     if (seenDependencies.contains(uri) || cycleUris.contains(uri)) continue;
     var cycle = dependency.libraryCycle;
@@ -34,7 +63,9 @@ Module defineModule(AssetId from, LibraryElement library) {
 
   AssetId toAssetId(String uri) => new AssetId.resolve(uri, from: from);
 
-  return new Module(cycleUris.map(toAssetId).toSet(),
+  return new Module(
+      toAssetId(_earliest(cycle)),
+      cycleUris.map(toAssetId).toSet(),
       dependencyModules.map(toAssetId).toSet());
 }
 
@@ -43,7 +74,7 @@ Module defineModule(AssetId from, LibraryElement library) {
 bool isPrimary(LibraryElement library) =>
     _earliest(library.libraryCycle) == '${library.source.uri}';
 
-String _earliest(List<LibraryElement> libraries) {
+String _earliest(Iterable<LibraryElement> libraries) {
   if (libraries.length < 2) return '${libraries.first.source.uri}';
   return libraries.map((l) => '${l.source.uri}').reduce(_earlier);
 }
@@ -52,11 +83,12 @@ T _earlier<T extends Comparable<T>>(T left, T right) =>
     left.compareTo(right) < 0 ? left : right;
 
 /// All the non-SDK [LibraryElement]s which are imported or exported from
-/// anywhere in the library cycle containing [library].
+/// any of [libraries].
 ///
 /// There may be duplicates
-Iterable<LibraryElement> _cycleDependencies(LibraryElement library) =>
-    library.libraryCycle.expand(_libraryDependencies);
+Iterable<LibraryElement> _cycleDependencies(
+        Iterable<LibraryElement> libraries) =>
+    libraries.expand(_libraryDependencies);
 
 /// All the non-SDK [LibraryElement]s which are imported or exported from
 /// [library].
