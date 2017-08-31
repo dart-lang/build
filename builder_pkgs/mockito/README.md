@@ -1,4 +1,4 @@
-Mock library for Dart inspired by [Mockito](https://code.google.com/p/mockito/).
+Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito).
 
 [![Pub](https://img.shields.io/pub/v/mockito.svg)]()
 [![Build Status](https://travis-ci.org/dart-lang/mockito.svg?branch=master)](https://travis-ci.org/dart-lang/mockito)
