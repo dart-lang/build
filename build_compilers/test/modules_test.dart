@@ -16,6 +16,7 @@ void main() {
   LibraryElement libCycleWithA;
   final assetCycle = makeAssetId('a|lib/a_cycle.dart');
   final assetSecondaryInCycle = makeAssetId('a|lib/a_secondary_in_cycle.dart');
+  final assetPartInCycle = makeAssetId('a|lib/a_part_in_cycle.dart');
   final assetNoCycle = makeAssetId('a|lib/a_no_cycle.dart');
   final assetCycleWithB = makeAssetId('a|lib/a_cycle_with_b.dart');
   final assetCycleWithA = makeAssetId('b|lib/b_cycle_with_a.dart');
@@ -37,7 +38,10 @@ void main() {
   group('defineModule.sources', () {
     test('Finds the assets in a cycle', () {
       var sources = new Module.forLibrary(libCycle).sources;
-      expect(sources, unorderedEquals([assetCycle, assetSecondaryInCycle]));
+      expect(
+          sources,
+          unorderedEquals(
+              [assetCycle, assetSecondaryInCycle, assetPartInCycle]));
     });
 
     test('Finds a single asset with no cycle', () {
