@@ -48,7 +48,7 @@ class Module {
   Module(this.primarySource, this.sources, this.directDependencies);
 }
 
-Module defineModule(AssetId from, LibraryElement library) {
+Module defineModule(LibraryElement library) {
   final cycle = library.libraryCycle;
   final cycleUris = cycle.map((l) => l.source.uri).toSet();
   final dependencyModules = new Set<Uri>();
@@ -61,7 +61,7 @@ Module defineModule(AssetId from, LibraryElement library) {
     seenDependencies.addAll(cycle.map((l) => l.source.uri));
   }
 
-  AssetId toAssetId(Uri uri) => new AssetId.resolve('${uri}', from: from);
+  AssetId toAssetId(Uri uri) => new AssetId.resolve('${uri}');
 
   return new Module(
       toAssetId(_earliest(cycle)),

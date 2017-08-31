@@ -36,24 +36,24 @@ void main() {
 
   group('defineModule.sources', () {
     test('Finds the assets in a cycle', () {
-      var sources = defineModule(assetCycle, libCycle).sources;
+      var sources = defineModule(libCycle).sources;
       expect(sources, unorderedEquals([assetCycle, assetSecondaryInCycle]));
     });
 
     test('Finds a single asset with no cycle', () {
-      var sources = defineModule(assetNoCycle, libNoCycle).sources;
+      var sources = defineModule(libNoCycle).sources;
       expect(sources, unorderedEquals([assetNoCycle]));
     });
 
     test('Finds the assets in a cycle across packages', () {
-      var sources = defineModule(assetCycleWithB, libCycleWithB).sources;
+      var sources = defineModule(libCycleWithB).sources;
       expect(sources, unorderedEquals([assetCycleWithA, assetCycleWithB]));
     });
   });
 
   group('defineModule.directDependencies', () {
     test('Chooses primary from cycle for dependency', () {
-      var dependencies = defineModule(assetCycle, libCycle).directDependencies;
+      var dependencies = defineModule(libCycle).directDependencies;
       expect(dependencies, unorderedEquals([assetCycleWithB]));
     });
   });
