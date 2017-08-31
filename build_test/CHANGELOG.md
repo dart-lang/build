@@ -17,6 +17,22 @@ test('should log "uh oh!"', () async {
 });
 ```
 
+- Add the constructors `forPackages` and `forPackageRoot` to
+  `PackageAssetReader` - these are convenience constructors for pointing to a
+  small set of packages (fake or real) for testing purposes. For example:
+
+```dart
+test('should resolve multiple libraries', () async {
+  reader = new PackageAssetReader.forPackages({
+    'example_a': '_libs/example_a',
+    'example_b': '_libs/example_b',
+  });
+  expect(await reader.canRead(fileFromExampleLibA), isTrue);
+  expect(await reader.canRead(fileFromExampleLibB), isTrue);
+  expect(await reader.canRead(fileFromExampleLibC), isFalse);
+});
+```
+
 ## 0.7.0+1
 
 - Switch to a typedef from function type syntax for compatibility with older

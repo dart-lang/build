@@ -42,4 +42,28 @@ void main() {
       expect(reader.findAssets(new Glob('test/*.dart')), contains(thisFile));
     });
   });
+
+  group('$PackageAssetReader.forPackage', () {
+    AssetReader reader;
+
+    final exampleLibA = 'test/_libs/example_a/';
+    final exampleLibB = 'test/_libs/example_b/';
+    final exampleLibAFile = new AssetId('example_a', 'lib/example_a.dart');
+    final exampleLibBFile = new AssetId('example_b', 'lib/example_b.dart');
+
+    test('should resolve one library', () async {
+      reader = new PackageAssetReader.forPackageRoot('test/_libs');
+      expect(await reader.canRead(exampleLibAFile), isTrue);
+      expect(await reader.canRead(exampleLibBFile), isTrue);
+    });
+
+    test('should resolve multiple libraries', () async {
+      reader = new PackageAssetReader.forPackages({
+        'example_a': exampleLibA,
+        'example_b': exampleLibB,
+      });
+      expect(await reader.canRead(exampleLibAFile), isTrue);
+      expect(await reader.canRead(exampleLibBFile), isTrue);
+    });
+  });
 }

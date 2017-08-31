@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
@@ -33,6 +34,36 @@ class PackageAssetReader implements AssetReader {
   /// ```
   const PackageAssetReader(this._packageResolver, [this._rootPackage]);
 
+  /// A [PackageAssetReader] with a single [packageRoot] configured.
+  ///
+  /// It is assumed that every _directory_ in [packageRoot] is a package where
+  /// the name of the package is the name of the directory. This is similar to
+  /// the older "packages" folder paradigm for resolution.
+  factory PackageAssetReader.forPackageRoot(String packageRoot,
+      [String rootPackage]) {
+    // This purposefully doesn't use SyncPackageResolver.root, because that is
+    // assuming a symlink collection and not directories, and this factory is
+    // more useful for a user-created collection of folders for testing.
+    final directory = new Directory(packageRoot);
+    final packages = <String, String>{};
+    for (final entity in directory.listSync()) {
+      if (entity is Directory) {
+        final name = p.basename(entity.path);
+        packages[name] = entity.uri.toString();
+      }
+    }
+    return new PackageAssetReader.forPackages(packages, rootPackage);
+  }
+
+  /// Returns a [PackageAssetReader] with a simple [packageToPath] mapping.
+  factory PackageAssetReader.forPackages(Map<String, String> packageToPath,
+          [String rootPackage]) =>
+      new PackageAssetReader(
+          new SyncPackageResolver.config(mapMap(packageToPath,
+              value: (_, String v) =>
+                  Uri.parse(p.absolute(v, 'lib')).replace(scheme: 'file'))),
+          rootPackage);
+
   /// A reader that can resolve files known to the current isolate.
   ///
   /// A [rootPackage] should be provided for full API compatibility.
@@ -41,8 +72,13 @@ class PackageAssetReader implements AssetReader {
     return new PackageAssetReader(await resolver.asSync, rootPackage);
   }
 
-  File _resolve(AssetId id) => new File(p
-      .canonicalize(p.join(_packageResolver.packagePath(id.package), id.path)));
+  File _resolve(AssetId id) {
+    final packagePath = _packageResolver.packagePath(id.package);
+    if (packagePath == null) {
+      return null;
+    }
+    return new File(p.canonicalize(p.join(packagePath, id.path)));
+  }
 
   @override
   Iterable<AssetId> findAssets(Glob glob) {
@@ -57,14 +93,31 @@ class PackageAssetReader implements AssetReader {
   }
 
   @override
-  Future<bool> canRead(AssetId id) => _resolve(id).exists();
+  Future<bool> canRead(AssetId id) {
+    final file = _resolve(id);
+    if (file == null) {
+      return new Future.value(false);
+    }
+    return file.exists();
+  }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) => _resolve(id).readAsBytes();
+  Future<List<int>> readAsBytes(AssetId id) {
+    final file = _resolve(id);
+    if (file == null) {
+      throw new ArgumentError('Could not read $id.');
+    }
+    return file.readAsBytes();
+  }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
-      _resolve(id).readAsString(encoding: encoding);
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+    final file = _resolve(id);
+    if (file == null) {
+      throw new ArgumentError('Could not read $id.');
+    }
+    return file.readAsString(encoding: encoding);
+  }
 }
 
 /// Returns all assets that match [glob] in [package] with a [path].
