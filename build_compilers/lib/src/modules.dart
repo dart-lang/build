@@ -75,7 +75,8 @@ bool isPrimary(LibraryElement library) =>
     _earliest(library.libraryCycle) == library.source.uri;
 
 Uri _earliest(Iterable<LibraryElement> libraries) {
-  if (libraries.length < 2) return libraries.first.source.uri;
+  assert(libraries.isNotEmpty, 'Library cycle should not be empty');
+  if (libraries.length == 1) return libraries.single.source.uri;
   return libraries.map((l) => l.source.uri).reduce(_earlier);
 }
 
