@@ -16,7 +16,7 @@ dependencies:
   glob: ^1.1.0
   logging: ^0.11.2
   path: ^1.1.0
-  shelf: ^0.6.5
+  shelf: ">=0.6.5 <0.8.0"
   shelf_static: ^0.2.3
   stack_trace: ^1.6.0
   stream_transform: ^0.0.9
