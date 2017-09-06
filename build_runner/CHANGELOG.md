@@ -5,6 +5,7 @@
 - Add `writeToCache` argument to `build` and `watch` which separates generated
   files from the source directory and allows running builders against other
   packages.
+- Allow the latest version of `package:shelf`.
 
 ## 0.4.0+3
 
