@@ -20,9 +20,13 @@ import 'exceptions.dart';
 import 'options.dart';
 import 'phase.dart';
 
+BuildResults runWatch(
+        BuildOptions options, List<BuildAction> buildActions, Future until) =>
+    new _Watch(options, buildActions, until);
+
 /// Watches all inputs for changes, and uses a [BuildImpl] to rerun builds as
 /// appropriate.
-class WatchImpl {
+class _Watch implements BuildResults {
   /// The [AssetGraph] being shared with [_buildImpl]
   AssetGraph get _assetGraph => _buildImpl.assetGraph;
 
@@ -41,23 +45,13 @@ class WatchImpl {
   /// The [PackageGraph] for the current program.
   final PackageGraph _packageGraph;
 
-  /// A future that completes when the current build is done.
-  Future<BuildResult> _currentBuild;
-  Future<BuildResult> get currentBuild => _currentBuild;
-
-  /// Whether or not we are currently watching and running builds.
-  bool _runningWatch = false;
-
-  /// Whether we are in the process of terminating.
-  bool _terminating = false;
-
-  final Completer _onTerminatedCompleter = new Completer();
-  Future get onTerminated => _onTerminatedCompleter.future;
+  @override
+  Future<BuildResult> currentBuild;
 
   /// Pending expected delete events from the writer.
   final Set<AssetId> _expectedDeletes = new Set<AssetId>();
 
-  WatchImpl(BuildOptions options, List<BuildAction> buildActions)
+  _Watch(BuildOptions options, List<BuildAction> buildActions, Future until)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         _packageGraph = options.packageGraph,
@@ -67,48 +61,34 @@ class WatchImpl {
       _expectedDeletes.add(id);
       if (existingOnDelete != null) existingOnDelete(id);
     };
+    builds = this.runWatch(until);
   }
 
-  final _terminate = new Completer<Null>();
-
-  /// Completes after the current build is done, and stops further builds from
-  /// happening.
-  Future terminate() async {
-    if (_terminating) {
-      _logger.warning('Already terminating.');
-      return;
-    }
-    _terminating = true;
-    _logger.info('Terminating watchers, no futher builds will be scheduled.');
-    _terminate.complete();
-    if (_currentBuild != null) {
-      _logger.info('Waiting for ongoing build to finish.');
-      await _currentBuild;
-    }
-    _terminating = false;
-    _logger.info('Build watching terminated, safe to exit.\n');
-    _onTerminatedCompleter.complete();
-  }
+  @override
+  Stream<BuildResult> builds;
 
   /// Runs a build any time relevant files change.
   ///
   /// Only one build will run at a time, and changes are batched.
-  Stream<BuildResult> runWatch() {
-    if (_runningWatch) {
-      throw new StateError(
-          '`runWatch` called twice, `terminate` must be called in between.');
+  Stream<BuildResult> runWatch(Future until) {
+    var fatalBuild = new Completer();
+    checkResult(BuildResult result) {
+      if (result.status == BuildStatus.failure &&
+          result.exception is FatalBuildException) {
+        fatalBuild.complete();
+      }
     }
-
-    _runningWatch = true;
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) {
       _logger.info('Starting next build');
       _expectedDeletes.clear();
       var updates = _collectChanges(changes);
-      _currentBuild = _buildImpl.runBuild(updates: updates);
-      _currentBuild.then((_) => _currentBuild = null);
-      return _currentBuild;
+      currentBuild = _buildImpl.runBuild(updates: updates);
+      currentBuild.then((_) => currentBuild = null);
+      return currentBuild;
     }
+
+    var terminate = Future.any([until, fatalBuild.future]);
 
     var changes =
         startFileWatchers(_packageGraph, _logger, _directoryWatcherFactory);
@@ -116,21 +96,13 @@ class WatchImpl {
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
         .transform(startWith([]))
-        .transform(takeUntil(_terminate.future))
+        .transform(takeUntil(terminate))
         .transform(asyncMapBuffer(doBuild))
-        .transform(tap(_terminateIfFatal))
+        .transform(tap(checkResult))
         .asBroadcastStream();
     // Make sure there is at least 1 listener
     buildResults.drain();
     return buildResults;
-  }
-
-  /// Terminate the watch if the build script updates.
-  void _terminateIfFatal(BuildResult result) {
-    if (result.status == BuildStatus.failure &&
-        result.exception is FatalBuildException) {
-      terminate();
-    }
   }
 
   /// Checks if we should skip a watch event for this [change].
