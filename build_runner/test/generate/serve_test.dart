@@ -61,7 +61,8 @@ void main() {
 
       var request =
           new Request('GET', Uri.parse('http://localhost:8000/CHANGELOG.md'));
-      server.blockingHandler(request).then((Response response) {
+      // ignore: unawaited_futures
+      (server.blockingHandler(request) as Future).then((Response response) {
         expect(buildBlocker1.isCompleted, isTrue,
             reason: 'Server shouldn\'t respond until builds are done.');
       });
@@ -72,7 +73,8 @@ void main() {
 
       /// Next request completes right away.
       var buildBlocker2 = new Completer();
-      server.blockingHandler(request).then((response) {
+      // ignore: unawaited_futures
+      (server.blockingHandler(request) as Future).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isFalse);
       });
@@ -85,7 +87,8 @@ void main() {
       // Give the build enough time to get started.
       await wait(500);
       var done = new Completer();
-      server.blockingHandler(request).then((response) {
+      // ignore: unawaited_futures
+      (server.blockingHandler(request) as Future).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isTrue);
         done.complete();

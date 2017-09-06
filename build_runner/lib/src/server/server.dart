@@ -26,7 +26,7 @@ Future<HttpServer> startServer(WatchImpl watchImpl, BuildOptions options) {
   try {
     blockingHandler = (Request request) async {
       if (watchImpl.currentBuild != null) await watchImpl.currentBuild;
-      return options.requestHandler(request);
+      return await options.requestHandler(request);
     };
     _futureServer = serve(blockingHandler, options.address, options.port);
     return _futureServer;
