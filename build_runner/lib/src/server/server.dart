@@ -25,7 +25,7 @@ Future<HttpServer> startServer(BuildState buildState, BuildOptions options) {
 
   try {
     blockingHandler = (Request request) async {
-      if (buildState.currentBuild != null) await buildState.currentBuild;
+      await buildState.currentBuild;
       return await options.requestHandler(request);
     };
     _futureServer = serve(blockingHandler, options.address, options.port);

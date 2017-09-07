@@ -165,12 +165,12 @@ Stream<BuildResult> serve(List<BuildAction> buildActions,
 
 /// Fires [shouldTerminate] once a `SIGINT` is intercepted.
 ///
-/// The `SIGINT` stream can optionally be replaces with another Stream in the
+/// The `SIGINT` stream can optionally be replaced with another Stream in the
 /// constructor. [cancel] should be called after work is finished. If multiple
 /// events are receieved on the terminate event stream before work is finished
 /// the process will be terminated with [exit].
 class _Terminator {
-  /// A Future that fires when a signal has been received indicated that builds
+  /// A Future that fires when a signal has been received indicating that builds
   /// should stop.
   final Future shouldTerminate;
   final StreamSubscription _subscription;
