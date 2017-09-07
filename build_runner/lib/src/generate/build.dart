@@ -58,18 +58,12 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       writer: writer,
       logLevel: logLevel,
       onLog: onLog);
+  var terminator = new _Terminator(terminateEventStream);
   var buildImpl = new BuildImpl(options, buildActions);
 
-  /// Run the build!
-  var futureResult = buildImpl.runBuild();
+  var result = await buildImpl.runBuild();
 
-  // Stop doing new builds when told to terminate.
-  _setupTerminateLogic(terminateEventStream, () {
-    new Logger('Build').info('Waiting for build to finish...');
-    return futureResult;
-  }, cancelWhen: futureResult);
-
-  var result = await futureResult;
+  await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
@@ -110,20 +104,15 @@ Stream<BuildResult> watch(List<BuildAction> buildActions,
       onLog: onLog,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory);
-  var watchImpl = new WatchImpl(options, buildActions);
+  var terminator = new _Terminator(terminateEventStream);
+  var buildState = runWatch(options, buildActions, terminator.shouldTerminate);
 
-  var resultStream = watchImpl.runWatch();
-
-  // Stop doing new builds when told to terminate.
-  _setupTerminateLogic(terminateEventStream, () async {
-    await watchImpl.terminate();
-  }, cancelWhen: watchImpl.onTerminated);
-
-  watchImpl.onTerminated.then((_) {
-    options.logListener.cancel();
+  buildState.buildResults.drain().then((_) async {
+    await terminator.cancel();
+    await options.logListener.cancel();
   });
 
-  return resultStream;
+  return buildState.buildResults;
 }
 
 /// Same as [watch], except it also provides a server.
@@ -159,46 +148,49 @@ Stream<BuildResult> serve(List<BuildAction> buildActions,
       directory: directory,
       address: address,
       port: port);
-  var watchImpl = new WatchImpl(options, buildActions);
+  var terminator = new _Terminator(terminateEventStream);
+  var buildState = runWatch(options, buildActions, terminator.shouldTerminate);
 
-  var resultStream = watchImpl.runWatch();
-  var serverStarted = startServer(watchImpl, options);
+  var serverStarted = startServer(buildState, options);
 
-  // Stop doing new builds when told to terminate.
-  _setupTerminateLogic(terminateEventStream, () async {
-    await watchImpl.terminate();
-  }, cancelWhen: watchImpl.onTerminated);
-
-  watchImpl.onTerminated.then((_) async {
+  buildState.buildResults.drain().then((_) async {
+    await terminator.cancel();
     await serverStarted;
     await stopServer();
     await options.logListener.cancel();
   });
 
-  return resultStream;
+  return buildState.buildResults;
 }
 
-/// Given [terminateEventStream], call [onTerminate] the first time an event is
-/// seen. If a second event is received, simply exit.
-StreamSubscription _setupTerminateLogic(
-    Stream terminateEventStream, Future onTerminate(),
-    {Future cancelWhen}) {
-  terminateEventStream ??= ProcessSignal.SIGINT.watch();
-  int numEventsSeen = 0;
-  StreamSubscription terminateListener;
-  terminateListener = terminateEventStream.listen((_) {
-    numEventsSeen++;
-    if (numEventsSeen == 1) {
-      onTerminate().then((_) {
-        terminateListener.cancel();
-      });
-    } else {
-      exit(2);
-    }
-  });
+/// Fires [shouldTerminate] once a `SIGINT` is intercepted.
+///
+/// The `SIGINT` stream can optionally be replaced with another Stream in the
+/// constructor. [cancel] should be called after work is finished. If multiple
+/// events are receieved on the terminate event stream before work is finished
+/// the process will be terminated with [exit].
+class _Terminator {
+  /// A Future that fires when a signal has been received indicating that builds
+  /// should stop.
+  final Future shouldTerminate;
+  final StreamSubscription _subscription;
 
-  cancelWhen?.then((_) {
-    terminateListener.cancel();
-  });
-  return terminateListener;
+  factory _Terminator([Stream terminateEventStream]) {
+    var shouldTerminate = new Completer();
+    terminateEventStream ??= ProcessSignal.SIGINT.watch();
+    int numEventsSeen = 0;
+    StreamSubscription terminateListener = terminateEventStream.listen((_) {
+      numEventsSeen++;
+      if (numEventsSeen == 1) {
+        shouldTerminate.complete();
+      } else {
+        exit(2);
+      }
+    });
+    return new _Terminator._(shouldTerminate.future, terminateListener);
+  }
+
+  _Terminator._(this.shouldTerminate, this._subscription);
+
+  Future cancel() => _subscription.cancel();
 }

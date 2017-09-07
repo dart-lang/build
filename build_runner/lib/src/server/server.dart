@@ -7,8 +7,8 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 
+import '../generate/build_result.dart';
 import '../generate/options.dart';
-import '../generate/watch_impl.dart';
 
 /// The actual [HttpServer] in use.
 Future<HttpServer> _futureServer;
@@ -18,14 +18,14 @@ Future<HttpServer> _futureServer;
 Handler blockingHandler;
 
 /// Starts a server which blocks on any ongoing builds.
-Future<HttpServer> startServer(WatchImpl watchImpl, BuildOptions options) {
+Future<HttpServer> startServer(BuildState buildState, BuildOptions options) {
   if (_futureServer != null) {
     throw new StateError('Server already running.');
   }
 
   try {
     blockingHandler = (Request request) async {
-      if (watchImpl.currentBuild != null) await watchImpl.currentBuild;
+      await buildState.currentBuild;
       return await options.requestHandler(request);
     };
     _futureServer = serve(blockingHandler, options.address, options.port);
