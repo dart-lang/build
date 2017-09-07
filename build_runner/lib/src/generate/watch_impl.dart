@@ -96,7 +96,9 @@ class _Watch implements BuildState {
       return currentBuild;
     }
 
-    var terminate = Future.any([until, fatalBuild.future]);
+    var terminate = Future.any([until, fatalBuild.future]).then((_) {
+      _logger.info('Terminating. No further builds will be scheduled');
+    });
 
     var changes =
         startFileWatchers(_packageGraph, _logger, _directoryWatcherFactory);
@@ -109,7 +111,9 @@ class _Watch implements BuildState {
         .transform(tap(checkResult))
         .asBroadcastStream();
     // Make sure there is at least 1 listener
-    buildResults.drain();
+    buildResults.drain().then((_) {
+      _logger.info('Builds finished. Safe to exit');
+    });
     return buildResults;
   }
 
