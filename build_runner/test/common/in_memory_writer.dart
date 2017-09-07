@@ -7,9 +7,10 @@ import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
+typedef void OnDelete(AssetId id);
+
 class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     implements RunnerAssetWriter {
-  @override
   OnDelete onDelete;
 
   @override

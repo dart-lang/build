@@ -7,6 +7,7 @@ import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/constants.dart';
+import 'writer.dart';
 
 /// Wraps an [AssetReader] and translates reads for generated files into reads
 /// from the build cache directory
@@ -35,8 +36,8 @@ class BuildCacheReader implements AssetReader {
       'Asset globbing should be done per phase with the AssetGraph');
 }
 
-class BuildCacheWriter implements AssetWriter {
-  final AssetWriter _delegate;
+class BuildCacheWriter implements RunnerAssetWriter {
+  final RunnerAssetWriter _delegate;
   final AssetGraph _assetGraph;
   final String _rootPackage;
 
@@ -50,6 +51,9 @@ class BuildCacheWriter implements AssetWriter {
       _delegate.writeAsString(
           cacheLocation(id, _assetGraph, _rootPackage), content,
           encoding: encoding);
+  @override
+  Future delete(AssetId id) =>
+      _delegate.delete(cacheLocation(id, _assetGraph, _rootPackage));
 }
 
 AssetId cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {

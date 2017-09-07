@@ -59,9 +59,8 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       logLevel: logLevel,
       onLog: onLog);
   var terminator = new _Terminator(terminateEventStream);
-  var buildImpl = new BuildImpl(options, buildActions);
 
-  var result = await buildImpl.runBuild();
+  var result = await singleBuild(options, buildActions);
 
   await terminator.cancel();
   await options.logListener.cancel();

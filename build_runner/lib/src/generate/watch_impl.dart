@@ -10,15 +10,18 @@ import 'package:stream_transform/stream_transform.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../changes/build_script_updates.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
+import 'build_definition.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'change_watcher.dart';
 import 'directory_watcher_factory.dart';
-import 'exceptions.dart';
 import 'options.dart';
 import 'phase.dart';
+
+final _logger = new Logger('Watch');
 
 /// Repeatedly run builds as files change on disk until [until] fires.
 ///
@@ -32,14 +35,10 @@ BuildState runWatch(
         BuildOptions options, List<BuildAction> buildActions, Future until) =>
     new _Watch(options, buildActions, until);
 
-/// Watches all inputs for changes, and uses a [BuildImpl] to rerun builds as
-/// appropriate.
-class _Watch implements BuildState {
-  /// The [AssetGraph] being shared with [_buildImpl]
-  AssetGraph get _assetGraph => _buildImpl.assetGraph;
+typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
-  /// The [BuildImpl] being used to run builds.
-  final BuildImpl _buildImpl;
+class _Watch implements BuildState {
+  AssetGraph _assetGraph;
 
   /// Delay to wait for more file watcher events.
   final Duration _debounceDelay;
@@ -47,29 +46,20 @@ class _Watch implements BuildState {
   /// Injectable factory for creating directory watchers.
   final DirectoryWatcherFactory _directoryWatcherFactory;
 
-  /// A logger to use!
-  final _logger = new Logger('Watch');
-
   /// The [PackageGraph] for the current program.
   final PackageGraph _packageGraph;
 
   @override
   Future<BuildResult> currentBuild;
 
-  /// Pending expected delete events from the writer.
+  /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = new Set<AssetId>();
 
   _Watch(BuildOptions options, List<BuildAction> buildActions, Future until)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
-        _packageGraph = options.packageGraph,
-        _buildImpl = new BuildImpl(options, buildActions) {
-    var existingOnDelete = options.writer.onDelete;
-    options.writer.onDelete = (id) {
-      _expectedDeletes.add(id);
-      if (existingOnDelete != null) existingOnDelete(id);
-    };
-    buildResults = _run(until);
+        _packageGraph = options.packageGraph {
+    buildResults = _run(options, buildActions, until).asBroadcastStream();
   }
 
   @override
@@ -78,44 +68,47 @@ class _Watch implements BuildState {
   /// Runs a build any time relevant files change.
   ///
   /// Only one build will run at a time, and changes are batched.
-  Stream<BuildResult> _run(Future until) {
+  Stream<BuildResult> _run(BuildOptions options, List<BuildAction> buildActions,
+      Future until) async* {
     var fatalBuild = new Completer();
-    checkResult(BuildResult result) {
-      if (result.status == BuildStatus.failure &&
-          result.exception is FatalBuildException) {
-        fatalBuild.complete();
-      }
-    }
+    var firstBuild = new Completer<BuildResult>();
+    currentBuild = firstBuild.future;
+    var changes =
+        startFileWatchers(_packageGraph, _logger, _directoryWatcherFactory);
 
-    Future<BuildResult> doBuild(List<List<AssetChange>> changes) {
-      _logger.info('Starting next build');
+    var buildDefinition = await BuildDefinition.load(options, buildActions);
+    _assetGraph = buildDefinition.assetGraph;
+
+    var build = await BuildImpl.create(buildDefinition, buildActions,
+        onDelete: _expectedDeletes.add);
+    yield build.firstBuild;
+    firstBuild.complete(build.firstBuild);
+
+    Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       _expectedDeletes.clear();
-      var updates = _collectChanges(changes);
-      currentBuild = _buildImpl.runBuild(updates: updates);
-      currentBuild.then((_) => currentBuild = null);
-      return currentBuild;
+      if (await new BuildScriptUpdates(options)
+          .isNewerThan(_assetGraph.validAsOf)) {
+        fatalBuild.complete();
+        _logger.severe('Terminating builds due to build script update');
+        return new BuildResult(BuildStatus.failure, []);
+      }
+      return build.run(_collectChanges(changes));
     }
 
     var terminate = Future.any([until, fatalBuild.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled');
     });
 
-    var changes =
-        startFileWatchers(_packageGraph, _logger, _directoryWatcherFactory);
-    var buildResults = changes
+    yield* changes
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
-        .transform(startWith([]))
         .transform(takeUntil(terminate))
-        .transform(asyncMapBuffer(doBuild))
-        .transform(tap(checkResult))
-        .asBroadcastStream();
-    // Make sure there is at least 1 listener
-    buildResults.drain().then((_) {
-      _logger.info('Builds finished. Safe to exit');
-    });
-    return buildResults;
+        .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)));
+    _logger.info('Builds finished. Safe to exit');
   }
+
+  _BuildAction _recordCurrentBuild(_BuildAction build) => (changes) =>
+      currentBuild = build(changes)..then((_) => currentBuild = null);
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {

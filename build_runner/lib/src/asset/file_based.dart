@@ -77,8 +77,6 @@ AssetId _fileToAssetId(File file, PackageNode packageNode) {
 /// files to disk.
 class FileBasedAssetWriter implements RunnerAssetWriter {
   final PackageGraph packageGraph;
-  @override
-  OnDelete onDelete;
 
   FileBasedAssetWriter(this.packageGraph);
 
@@ -103,7 +101,6 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
       throw new InvalidOutputException(
           id, 'Should not delete assets outside of ${packageGraph.root.name}');
     }
-    if (onDelete != null) onDelete(id);
 
     var file = _fileFor(id, packageGraph);
     return () async {

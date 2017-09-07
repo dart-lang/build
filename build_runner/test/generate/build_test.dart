@@ -85,9 +85,11 @@ void main() {
           'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
         ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
-      await testActions(
-          [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
-          packageGraph: packageGraph, outputs: {}, status: BuildStatus.failure);
+      expect(
+          testActions(
+              [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
+              packageGraph: packageGraph),
+          throwsA(anything));
     });
 
     test('Can output files in non-root packages with `writeToCache`', () async {
