@@ -20,14 +20,12 @@ import '../asset_graph/node.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
-import 'build_result.dart';
 import 'exceptions.dart';
 import 'input_set.dart';
 import 'phase.dart';
 
 class BuildDefinition {
   final AssetGraph assetGraph;
-  final BuildType buildType;
 
   /// The serialized asset graph and generated files which need updates.
   final Set<AssetId> safeDeletes;
@@ -36,8 +34,7 @@ class BuildDefinition {
   /// proven to be from the last build.
   final Set<AssetId> conflictingAssets;
 
-  BuildDefinition(this.assetGraph, this.buildType, this.safeDeletes,
-      this.conflictingAssets);
+  BuildDefinition(this.assetGraph, this.safeDeletes, this.conflictingAssets);
 }
 
 class BuildDefinitionLoader {
@@ -55,7 +52,6 @@ class BuildDefinitionLoader {
     AssetGraph assetGraph;
     final safeDeletes = new Set<AssetId>();
     final conflictingOutputs = new Set<AssetId>();
-    BuildType buildType = BuildType.incremental;
     _logger.info('Initializing inputs');
     var currentSources = await _findCurrentSources();
     await logWithTime(_logger, 'Reading cached dependency graph', () async {
@@ -72,7 +68,6 @@ class BuildDefinitionLoader {
         assetGraph = new AssetGraph.build(_buildActions, currentSources);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(currentSources.contains).toSet());
-        buildType = BuildType.full;
       } else {
         _logger
             .info('Updating dependency graph with changes since last build.');
@@ -86,8 +81,7 @@ class BuildDefinitionLoader {
             .addAll(assetGraph.updateAndInvalidate(_buildActions, updates));
       }
     });
-    return new BuildDefinition(
-        assetGraph, buildType, safeDeletes, conflictingOutputs);
+    return new BuildDefinition(assetGraph, safeDeletes, conflictingOutputs);
   }
 
   Future<BuildDefinition> fromGraph(
@@ -98,8 +92,7 @@ class BuildDefinitionLoader {
     var safeDeletes = new Set<AssetId>();
     _logger.info('Updating dependency graph with changes since last build.');
     safeDeletes.addAll(assetGraph.updateAndInvalidate(_buildActions, updates));
-    return new BuildDefinition(
-        assetGraph, BuildType.incremental, safeDeletes, new Set<AssetId>());
+    return new BuildDefinition(assetGraph, safeDeletes, new Set<AssetId>());
   }
 
   /// Reads in an [AssetGraph] from disk.

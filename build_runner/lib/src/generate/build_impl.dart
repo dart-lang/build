@@ -85,8 +85,6 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
     var done = new Completer<BuildResult>();
-    // Assume incremental, change if necessary.
-    var buildType = BuildType.incremental;
     var buildStartTime = new DateTime.now();
     Chain.capture(() async {
       if (_buildRunning) throw const ConcurrentBuildException();
@@ -103,7 +101,6 @@ class BuildImpl {
           ? await _buildDefinitionLoader.load()
           : await _buildDefinitionLoader.fromGraph(_assetGraph, updates);
       _assetGraph = buildDefinition.assetGraph;
-      buildType = buildDefinition.buildType;
 
       await logWithTime(_logger, 'Deleting previous outputs', () async {
         await Future.wait(buildDefinition.safeDeletes.map(_delete));
@@ -123,7 +120,7 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
-      done.complete(new BuildResult(BuildStatus.failure, buildType, [],
+      done.complete(new BuildResult(BuildStatus.failure, [],
           exception: e, stackTrace: chain.toTrace()));
     });
     return done.future;
@@ -192,7 +189,7 @@ class BuildImpl {
         outputs.add(output);
       }
     }
-    return new BuildResult(BuildStatus.success, BuildType.full, outputs);
+    return new BuildResult(BuildStatus.success, outputs);
   }
 
   Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes
