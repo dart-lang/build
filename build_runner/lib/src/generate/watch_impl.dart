@@ -20,13 +20,21 @@ import 'exceptions.dart';
 import 'options.dart';
 import 'phase.dart';
 
-BuildResults runWatch(
+/// Repeatedly run builds as files change on disk until [until] fires.
+///
+/// Sets up file watchers and collects changes then triggers new builds. When
+/// [until] fires the file watchers will be stopped and up to one additional
+/// build may run if there were pending changes.
+///
+/// The [BuildState.buildResults] stream will end after the final build has been
+/// run.
+BuildState runWatch(
         BuildOptions options, List<BuildAction> buildActions, Future until) =>
     new _Watch(options, buildActions, until);
 
 /// Watches all inputs for changes, and uses a [BuildImpl] to rerun builds as
 /// appropriate.
-class _Watch implements BuildResults {
+class _Watch implements BuildState {
   /// The [AssetGraph] being shared with [_buildImpl]
   AssetGraph get _assetGraph => _buildImpl.assetGraph;
 
@@ -61,16 +69,16 @@ class _Watch implements BuildResults {
       _expectedDeletes.add(id);
       if (existingOnDelete != null) existingOnDelete(id);
     };
-    builds = this.runWatch(until);
+    buildResults = _run(until);
   }
 
   @override
-  Stream<BuildResult> builds;
+  Stream<BuildResult> buildResults;
 
   /// Runs a build any time relevant files change.
   ///
   /// Only one build will run at a time, and changes are batched.
-  Stream<BuildResult> runWatch(Future until) {
+  Stream<BuildResult> _run(Future until) {
     var fatalBuild = new Completer();
     checkResult(BuildResult result) {
       if (result.status == BuildStatus.failure &&

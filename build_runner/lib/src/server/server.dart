@@ -18,14 +18,14 @@ Future<HttpServer> _futureServer;
 Handler blockingHandler;
 
 /// Starts a server which blocks on any ongoing builds.
-Future<HttpServer> startServer(BuildResults results, BuildOptions options) {
+Future<HttpServer> startServer(BuildState buildState, BuildOptions options) {
   if (_futureServer != null) {
     throw new StateError('Server already running.');
   }
 
   try {
     blockingHandler = (Request request) async {
-      if (results.currentBuild != null) await results.currentBuild;
+      if (buildState.currentBuild != null) await buildState.currentBuild;
       return await options.requestHandler(request);
     };
     _futureServer = serve(blockingHandler, options.address, options.port);

@@ -105,15 +105,14 @@ Stream<BuildResult> watch(List<BuildAction> buildActions,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory);
   var terminator = new _Terminator(terminateEventStream);
-  var buildResults =
-      runWatch(options, buildActions, terminator.shouldTerminate);
+  var buildState = runWatch(options, buildActions, terminator.shouldTerminate);
 
-  buildResults.builds.drain().then((_) async {
+  buildState.buildResults.drain().then((_) async {
     await terminator.cancel();
     await options.logListener.cancel();
   });
 
-  return buildResults.builds;
+  return buildState.buildResults;
 }
 
 /// Same as [watch], except it also provides a server.
@@ -150,26 +149,33 @@ Stream<BuildResult> serve(List<BuildAction> buildActions,
       address: address,
       port: port);
   var terminator = new _Terminator(terminateEventStream);
-  var buildResults =
-      runWatch(options, buildActions, terminator.shouldTerminate);
+  var buildState = runWatch(options, buildActions, terminator.shouldTerminate);
 
-  var serverStarted = startServer(buildResults, options);
+  var serverStarted = startServer(buildState, options);
 
-  buildResults.builds.drain().then((_) async {
+  buildState.buildResults.drain().then((_) async {
     await terminator.cancel();
     await serverStarted;
     await stopServer();
     await options.logListener.cancel();
   });
 
-  return buildResults.builds;
+  return buildState.buildResults;
 }
 
+/// Fires [shouldTerminate] once a `SIGINT` is intercepted.
+///
+/// The `SIGINT` stream can optionally be replaces with another Stream in the
+/// constructor. [cancel] should be called after work is finished. If multiple
+/// events are receieved on the terminate event stream before work is finished
+/// the process will be terminated with [exit].
 class _Terminator {
+  /// A Future that fires when a signal has been received indicated that builds
+  /// should stop.
   final Future shouldTerminate;
   final StreamSubscription _subscription;
 
-  factory _Terminator(Stream terminateEventStream) {
+  factory _Terminator([Stream terminateEventStream]) {
     var shouldTerminate = new Completer();
     terminateEventStream ??= ProcessSignal.SIGINT.watch();
     int numEventsSeen = 0;

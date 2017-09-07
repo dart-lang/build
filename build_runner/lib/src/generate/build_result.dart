@@ -57,7 +57,7 @@ enum BuildStatus {
 /// The type of a build.
 enum BuildType { incremental, full }
 
-abstract class BuildResults {
+abstract class BuildState {
   Future<BuildResult> get currentBuild;
-  Stream<BuildResult> get builds;
+  Stream<BuildResult> get buildResults;
 }
