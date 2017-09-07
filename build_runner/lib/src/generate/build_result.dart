@@ -17,13 +17,10 @@ class BuildResult {
   /// The [StackTrace] for [exception] if non-null.
   final StackTrace stackTrace;
 
-  /// The type of this build.
-  final BuildType buildType;
-
   /// All outputs created/updated during this build.
   final List<AssetId> outputs;
 
-  BuildResult(this.status, this.buildType, List<AssetId> outputs,
+  BuildResult(this.status, List<AssetId> outputs,
       {this.exception, this.stackTrace})
       : outputs = new List.unmodifiable(outputs);
 
@@ -33,13 +30,11 @@ class BuildResult {
       return '''
 
 Build Succeeded!
-Type: $buildType
 ''';
     } else {
       return '''
 
 Build Failed :(
-Type: $buildType
 Exception: $exception
 Stack Trace:
 $stackTrace
@@ -53,9 +48,6 @@ enum BuildStatus {
   success,
   failure,
 }
-
-/// The type of a build.
-enum BuildType { incremental, full }
 
 abstract class BuildState {
   Future<BuildResult> get currentBuild;

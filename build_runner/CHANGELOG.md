@@ -1,5 +1,6 @@
-## 0.4.1-dev
+## 0.5.0-dev
 
+- **Breaking**: Removed `buildType` field from `BuildResult`.
 - Prevent reads into `.dart_tool` for more hermetic builds.
 - Bug Fix: Rebuild entire asset graph if the build script changes.
 - Add `writeToCache` argument to `build` and `watch` which separates generated
