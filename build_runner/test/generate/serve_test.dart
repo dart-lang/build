@@ -11,7 +11,6 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/server/server.dart' as server;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
