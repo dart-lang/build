@@ -134,4 +134,5 @@ class _Watch implements BuildState {
 
 Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) =>
     new Map.fromIterable(changes.expand((c) => c),
-        key: (AssetChange c) => c.id, value: (AssetChange c) => c.type);
+        key: (c) => (c as AssetChange).id,
+        value: (c) => (c as AssetChange).type);
