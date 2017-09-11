@@ -35,8 +35,7 @@ class BuildOptions {
   DirectoryWatcherFactory directoryWatcherFactory;
 
   BuildOptions(
-      {
-      this.debounceDelay,
+      {this.debounceDelay,
       this.deleteFilesByDefault,
       this.writeToCache,
       this.directoryWatcherFactory,
