@@ -11,7 +11,6 @@ import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/build_cache.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
@@ -26,47 +25,54 @@ import 'input_set.dart';
 import 'options.dart';
 import 'phase.dart';
 
-/// Class which manages running builds.
+final _logger = new Logger('Build');
+
+Future<BuildResult> singleBuild(
+    BuildOptions options, List<BuildAction> buildActions) async {
+  var buildDefinition = await BuildDefinition.load(options, buildActions);
+  return (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
+}
+
+typedef void _OnDelete(AssetId id);
+
 class BuildImpl {
-  final AssetId _assetGraphId;
+  BuildResult _firstBuild;
+  BuildResult get firstBuild => _firstBuild;
+
   final List<BuildAction> _buildActions;
-  final bool _deleteFilesByDefault;
-  final bool _writeToCache;
-  final _logger = new Logger('Build');
   final PackageGraph _packageGraph;
-  final RunnerAssetReader _reader;
+  final AssetReader _reader;
   final RunnerAssetWriter _writer;
-  final Resolvers _resolvers = const BarbackResolvers();
-  final BuildDefinitionLoader _buildDefinitionLoader;
+  final _resolvers = const BarbackResolvers();
+  final AssetGraph _assetGraph;
 
-  AssetGraph _assetGraph;
-  AssetGraph get assetGraph => _assetGraph;
-  bool _buildRunning = false;
+  final _OnDelete _onDelete;
 
-  BuildImpl(BuildOptions options, List<BuildAction> buildActions)
-      : _assetGraphId =
-            new AssetId(options.packageGraph.root.name, assetGraphPath),
-        _deleteFilesByDefault = options.deleteFilesByDefault,
-        _writeToCache = options.writeToCache,
-        _packageGraph = options.packageGraph,
-        _reader = options.reader,
-        _writer = options.writer,
-        _buildActions = buildActions,
-        _buildDefinitionLoader = new BuildDefinitionLoader(options.reader,
-            options.packageGraph, buildActions, options.writeToCache);
+  BuildImpl._(BuildDefinition buildDefinition, List<BuildAction> buildActions,
+      this._onDelete)
+      : _packageGraph = buildDefinition.packageGraph,
+        _reader = buildDefinition.reader,
+        _writer = buildDefinition.writer,
+        _assetGraph = buildDefinition.assetGraph,
+        _buildActions = buildActions;
 
-  /// Runs a build
-  ///
-  /// The returned [Future] is guaranteed to complete with a [BuildResult]. If
-  /// an exception is thrown by any phase, [BuildResult#status] will be set to
-  /// [BuildStatus.failure]. The exception and stack trace that caused the failure
-  /// will be available as [BuildResult#exception] and [BuildResult#stackTrace]
-  /// respectively.
-  Future<BuildResult> runBuild({Map<AssetId, ChangeType> updates}) async {
-    updates ??= <AssetId, ChangeType>{};
+  static Future<BuildImpl> create(
+      BuildDefinition buildDefinition, List<BuildAction> buildActions,
+      {void onDelete(AssetId id)}) async {
+    var build = new BuildImpl._(buildDefinition, buildActions, onDelete);
+
+    _logger.info('Checking for stale files');
+    await build._firstBuildCleanup(buildDefinition.conflictingAssets,
+        buildDefinition.deleteFilesByDefault);
+
+    build._firstBuild = await build.run(buildDefinition.updates);
+    return build;
+  }
+
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
-    var result = await _safeBuild(updates);
-    _buildRunning = false;
+    if (updates.isNotEmpty) await _updateAssetGraph(updates);
+    var result = await _safeBuild();
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
           '${result.outputs.length} outputs\n\n');
@@ -81,32 +87,17 @@ class BuildImpl {
     return result;
   }
 
+  Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
+    var deletes = _assetGraph.updateAndInvalidate(_buildActions, updates);
+    await Future.wait(deletes.map(_delete));
+  }
+
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
-  Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
+  Future<BuildResult> _safeBuild() {
     var done = new Completer<BuildResult>();
     var buildStartTime = new DateTime.now();
     Chain.capture(() async {
-      if (_buildRunning) throw const ConcurrentBuildException();
-      _buildRunning = true;
-
-      if (!_writeToCache &&
-          _buildActions.any(
-              (action) => action.inputSet.package != _packageGraph.root.name)) {
-        throw const InvalidBuildActionException.nonRootPackage();
-      }
-
-      // Initialize the [assetGraph] if its not yet set up.
-      var buildDefinition = (_assetGraph == null)
-          ? await _buildDefinitionLoader.load()
-          : await _buildDefinitionLoader.fromGraph(_assetGraph, updates);
-      _assetGraph = buildDefinition.assetGraph;
-
-      await logWithTime(_logger, 'Deleting previous outputs', () async {
-        await Future.wait(buildDefinition.safeDeletes.map(_delete));
-        await _promptDelete(buildDefinition.conflictingAssets);
-      });
-
       // Run a fresh build.
       var result = await logWithTime(_logger, 'Running build', _runPhases);
 
@@ -115,7 +106,8 @@ class BuildImpl {
           () async {
         _assetGraph.validAsOf = buildStartTime;
         await _writer.writeAsString(
-            _assetGraphId, JSON.encode(_assetGraph.serialize()));
+            new AssetId(_packageGraph.root.name, assetGraphPath),
+            JSON.encode(_assetGraph.serialize()));
       });
 
       done.complete(result);
@@ -126,19 +118,20 @@ class BuildImpl {
     return done.future;
   }
 
-  Future<Null> _promptDelete(Set<AssetId> conflictingOutputs) async {
-    if (conflictingOutputs.isEmpty) return;
+  Future<Null> _firstBuildCleanup(
+      Set<AssetId> conflictingAssets, bool deleteFilesByDefault) async {
+    if (conflictingAssets.isEmpty) return;
 
     // Skip the prompt if using this option.
-    if (_deleteFilesByDefault) {
-      _logger.info('Deleting ${conflictingOutputs.length} declared outputs '
+    if (deleteFilesByDefault) {
+      _logger.info('Deleting ${conflictingAssets.length} declared outputs '
           'which already existed on disk.');
-      await Future.wait(conflictingOutputs.map(_delete));
+      await Future.wait(conflictingAssets.map(_delete));
       return;
     }
 
     // Prompt the user to delete files that are declared as outputs.
-    _logger.warning('Found ${conflictingOutputs.length} declared outputs '
+    _logger.warning('Found ${conflictingAssets.length} declared outputs '
         'which already exist on disk. This is likely because the'
         '`$cacheDir` folder was deleted, or you are submitting generated '
         'files to your source repository.');
@@ -160,13 +153,13 @@ class BuildImpl {
         case 'y':
           stdout.writeln('Deleting files...');
           done = true;
-          await Future.wait(conflictingOutputs.map(_delete));
+          await Future.wait(conflictingAssets.map(_delete));
           break;
         case 'n':
           throw new UnexpectedExistingOutputsException();
           break;
         case 'l':
-          for (var output in conflictingOutputs) {
+          for (var output in conflictingAssets) {
             stdout.writeln(output);
           }
           break;
@@ -230,19 +223,11 @@ class BuildImpl {
       var skipBuild = !builderOutputs.any((output) =>
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
       if (skipBuild) continue;
-
-      AssetReader wrappedReader = _reader;
-      AssetWriter wrappedWriter = _writer;
-      if (_writeToCache) {
-        wrappedReader = new BuildCacheReader(
-            wrappedReader, _assetGraph, _packageGraph.root.name);
-        wrappedWriter = new BuildCacheWriter(
-            wrappedWriter, _assetGraph, _packageGraph.root.name);
-      }
-      var reader = new SinglePhaseReader(
-          wrappedReader, _assetGraph, phaseNumber, _packageGraph.root.name);
-      var writer = new AssetWriterSpy(wrappedWriter);
-      await runBuilder(builder, [input], reader, writer, _resolvers);
+      var wrappedReader = new SinglePhaseReader(
+          _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
+      var wrappedWriter = new AssetWriterSpy(_writer);
+      await runBuilder(
+          builder, [input], wrappedReader, wrappedWriter, _resolvers);
 
       // Mark all outputs as no longer needing an update, and mark `wasOutput`
       // as `false` for now (this will get reset to true later one).
@@ -253,7 +238,7 @@ class BuildImpl {
       }
 
       // Update the asset graph based on the dependencies discovered.
-      for (var dependency in reader.assetsRead) {
+      for (var dependency in wrappedReader.assetsRead) {
         var dependencyNode = _assetGraph.get(dependency);
         assert(dependencyNode != null, 'Asset Graph is missing $dependency');
         // We care about all builderOutputs, not just real outputs. Updates
@@ -262,7 +247,7 @@ class BuildImpl {
       }
 
       // Yield the outputs.
-      for (var output in writer.assetsWritten) {
+      for (var output in wrappedWriter.assetsWritten) {
         (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
         yield output;
       }
@@ -270,9 +255,7 @@ class BuildImpl {
   }
 
   Future _delete(AssetId id) {
-    if (_writeToCache) {
-      id = cacheLocation(id, _assetGraph, _packageGraph.root.name);
-    }
+    _onDelete?.call(id);
     return _writer.delete(id);
   }
 }

@@ -13,16 +13,6 @@ abstract class FatalBuildException implements Exception {
   const FatalBuildException();
 }
 
-class BuildScriptUpdatedException extends FatalBuildException {
-  const BuildScriptUpdatedException();
-
-  @override
-  String toString() => 'BuildScriptUpdatedException: Build abandoned due to '
-      'change to the build script or one of its dependencies. This could be '
-      'caused by a pub get or any other change. Please restart the build '
-      'script.';
-}
-
 class UnexpectedExistingOutputsException extends FatalBuildException {
   const UnexpectedExistingOutputsException();
 
