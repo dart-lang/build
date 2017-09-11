@@ -4,45 +4,56 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
-import 'package:shelf/shelf_io.dart';
 
 import '../generate/build_result.dart';
-import '../generate/options.dart';
+import '../generate/watch_impl.dart';
 
-/// The actual [HttpServer] in use.
-Future<HttpServer> _futureServer;
+class BuildHandler implements BuildState {
+  final BuildState _state;
+  final AssetHandler _assetHandler;
 
-/// Public for testing purposes only :(. This file is not directly exported
-/// though so it is effectively package private.
-Handler blockingHandler;
-
-/// Starts a server which blocks on any ongoing builds.
-Future<HttpServer> startServer(BuildState buildState, BuildOptions options) {
-  if (_futureServer != null) {
-    throw new StateError('Server already running.');
+  static Future<BuildHandler> create(WatchImpl watch) async {
+    var rootPackage = watch.packageGraph.root.name;
+    var assetHandler = new AssetHandler(await watch.reader, rootPackage);
+    return new BuildHandler(watch, assetHandler);
   }
 
-  try {
-    blockingHandler = (Request request) async {
-      await buildState.currentBuild;
-      return await options.requestHandler(request);
-    };
-    _futureServer = serve(blockingHandler, options.address, options.port);
-    return _futureServer;
-  } catch (e, s) {
-    stderr.writeln('Error setting up server: $e\n\n$s');
-    return new Future.value(null);
+  BuildHandler(this._state, this._assetHandler);
+
+  @override
+  Future<BuildResult> get currentBuild => _state.currentBuild;
+  @override
+  Stream<BuildResult> get buildResults => _state.buildResults;
+
+  Future<Response> handle(Request request) async {
+    await currentBuild;
+    return _assetHandler.handle(request);
   }
 }
 
-Future stopServer() {
-  if (_futureServer == null) {
-    throw new StateError('Server not running.');
+class AssetHandler {
+  final AssetReader _reader;
+  final String _rootPackage;
+
+  AssetHandler(this._reader, this._rootPackage);
+
+  Future<Response> handle(Request request) async {
+    var pathSegments = request.url.pathSegments;
+    var assetId = (pathSegments.first == 'packages')
+        ? new AssetId(pathSegments[1], p.joinAll(pathSegments.sublist(2)))
+        : new AssetId(_rootPackage, p.joinAll(pathSegments));
+    try {
+      if (!await _reader.canRead(assetId)) {
+        return new Response.notFound('Not Found');
+      }
+    } on ArgumentError catch (_) {
+      return new Response.notFound('Not Found');
+    }
+    var bytes = await _reader.readAsBytes(assetId);
+    var headers = {HttpHeaders.CONTENT_LENGTH: '${bytes.length}'};
+    return new Response.ok(bytes, headers: headers);
   }
-  return _futureServer.then((server) {
-    server.close();
-    _futureServer = null;
-    blockingHandler = null;
-  });
 }

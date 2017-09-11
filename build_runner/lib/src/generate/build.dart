@@ -121,8 +121,9 @@ Stream<BuildResult> watch(List<BuildAction> buildActions,
 /// By default a static server will be set up to serve [directory] at
 /// [address]:[port], but instead a [requestHandler] may be provided for custom
 /// behavior.
-Stream<BuildResult> serve(List<BuildAction> buildActions,
+Future<BuildHandler> buildHandler(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
+    bool writeToCache,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
     RunnerAssetWriter writer,
@@ -137,6 +138,7 @@ Stream<BuildResult> serve(List<BuildAction> buildActions,
     Handler requestHandler}) {
   var options = new BuildOptions(
       deleteFilesByDefault: deleteFilesByDefault,
+      writeToCache: writeToCache,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
@@ -148,18 +150,14 @@ Stream<BuildResult> serve(List<BuildAction> buildActions,
       address: address,
       port: port);
   var terminator = new _Terminator(terminateEventStream);
-  var buildState = runWatch(options, buildActions, terminator.shouldTerminate);
+  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 
-  var serverStarted = startServer(buildState, options);
-
-  buildState.buildResults.drain().then((_) async {
+  watch.buildResults.drain().then((_) async {
     await terminator.cancel();
-    await serverStarted;
-    await stopServer();
     await options.logListener.cancel();
   });
 
-  return buildState.buildResults;
+  return BuildHandler.create(watch);
 }
 
 /// Fires [shouldTerminate] once a `SIGINT` is intercepted.
