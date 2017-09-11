@@ -119,7 +119,7 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  return buildHandler(buildActions,
+  return watch(buildActions,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,

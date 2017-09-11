@@ -395,6 +395,7 @@ StreamController _terminateWatchController;
 Stream<BuildResult> startWatch(List<BuildAction> buildActions,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
     {PackageGraph packageGraph}) {
+  var buildResults = new StreamController<BuildResult>.broadcast();
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });
@@ -406,7 +407,7 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
   }
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  return watch(buildActions,
+  var buildState = watch(buildActions,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
@@ -415,6 +416,10 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
       packageGraph: packageGraph,
       terminateEventStream: _terminateWatchController.stream,
       logLevel: Level.OFF);
+  buildState
+      .then((s) => buildResults.addStream(s.buildResults))
+      .then((_) => buildResults.close());
+  return buildResults.stream;
 }
 
 /// Tells the program to stop watching files and terminate.
