@@ -45,8 +45,10 @@ class AssetHandler {
 
   Future<Response> handle(Request request) async {
     var pathSegments = request.url.pathSegments;
-    var assetId = (pathSegments.first == 'packages')
-        ? new AssetId(pathSegments[1], p.joinAll(pathSegments.sublist(2)))
+    var packagesIndex = pathSegments.indexOf('packages');
+    var assetId = packagesIndex > 0
+        ? new AssetId(pathSegments[packagesIndex + 1],
+            p.join('lib', p.joinAll(pathSegments.sublist(packagesIndex + 2))))
         : new AssetId(_rootPackage, p.joinAll(pathSegments));
     try {
       if (!await _reader.canRead(assetId)) {
