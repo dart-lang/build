@@ -15,6 +15,8 @@ main() {
     });
 
     test('throws for invalid paths', () {
+      expect(() => topLevelDir('../bar.dart'), throwsArgumentError,
+          reason: 'Paths reaching outside the root dir should throw.');
       expect(() => topLevelDir('foo/../../bar.dart'), throwsArgumentError,
           reason: 'Paths reaching outside the root dir should throw.');
       expect(() => topLevelDir('foo.dart'), throwsArgumentError,
