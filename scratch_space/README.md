@@ -1,0 +1,55 @@
+# [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
+
+## [`ScratchSpace`][dartdoc:ScratchSpace]
+
+A `ScratchSpace` is a thin wrapper around a temporary directory. The
+constructor takes zero arguments, so making one is as simple as doing
+`new ScratchSpace()`.
+
+### Adding assets to a `ScratchSpace`
+
+To add assets to the `ScratchSpace`, you use the `ensureAssets` method, which
+takes an `Iterable<AssetId>` and an `AssetReader` (for which you should
+generally pass your `BuildStep` which implements that interface).
+
+**Note:** It is important to note that the `ScratchSpace` does not guarantee
+that the version of a file within it is the most updated version, only that
+some version of it exists. For this reason you should create a new
+`ScratchSpace` for each build (within a single build files cannot change, but
+between builds they might).
+
+### Deleting a `ScratchSpace`
+
+When you are done with a `ScratchSpace` you should call `delete` on it to make
+sure it gets cleaned up, otherwise you can end up filling up the users tmp
+directory.
+
+**Note:** You cannot delete individual assets from a `ScratchSpace` today, you
+can only delete the entire thing. If you have a use case for deleting
+individual files you can [file an issue][tracker]. 
+
+### Getting the actual File objects for a `ScratchSpace`
+
+When invoking an external binary, you probably need to tell it where to look
+for files. There are a few fields/methods to help you do this:
+
+  * `String get packagesDir`: The `packages` directory in the `ScratchSpace`.
+  * `String get tmpDir`: The root temp directory for the `ScratchSpace`.
+  * `File fileFor(AssetId id)`: The File object for `id`.
+
+### Copying back outputs from the temp directory
+
+After running your executable, you most likely have some outputs that you
+need to notify the build system about. To do this you can use the `copyOutput`
+method, which takes an `AssetId` and `AssetWriter` (for which you should
+generally pass your `BuildStep` which implements that interface).
+
+This will copy the asset referenced by the `AssetId` from the temp directory
+back to your actual output directory.
+
+## Feature requests and bugs
+
+Please file feature requests and bugs at the [issue tracker][tracker].
+
+[tracker]: https://github.com/dart-lang/build/issues
+[dartdoc:ScratchSpace]: https://www.dartdocs.org/documentation/scratch_space/latest/scratch_space/ScratchSpace-class.html
