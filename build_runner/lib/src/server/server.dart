@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 
@@ -38,6 +39,8 @@ class AssetHandler {
   final AssetReader _reader;
   final String _rootPackage;
 
+  final _typeResolver = new MimeTypeResolver();
+
   AssetHandler(this._reader, this._rootPackage);
 
   Future<Response> handle(Request request) async {
@@ -53,7 +56,10 @@ class AssetHandler {
       return new Response.notFound('Not Found');
     }
     var bytes = await _reader.readAsBytes(assetId);
-    var headers = {HttpHeaders.CONTENT_LENGTH: '${bytes.length}'};
+    var headers = {
+      HttpHeaders.CONTENT_LENGTH: '${bytes.length}',
+      HttpHeaders.CONTENT_TYPE: _typeResolver.lookup(assetId.path)
+    };
     return new Response.ok(bytes, headers: headers);
   }
 }
