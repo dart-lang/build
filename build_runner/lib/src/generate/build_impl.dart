@@ -33,6 +33,8 @@ Future<BuildResult> singleBuild(
   return (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
 }
 
+typedef void _OnDelete(AssetId id);
+
 class BuildImpl {
   BuildResult _firstBuild;
   BuildResult get firstBuild => _firstBuild;
@@ -44,7 +46,7 @@ class BuildImpl {
   final _resolvers = const BarbackResolvers();
   final AssetGraph _assetGraph;
 
-  final void Function(AssetId) _onDelete;
+  final _OnDelete _onDelete;
 
   BuildImpl._(BuildDefinition buildDefinition, List<BuildAction> buildActions,
       this._onDelete)
@@ -56,7 +58,7 @@ class BuildImpl {
 
   static Future<BuildImpl> create(
       BuildDefinition buildDefinition, List<BuildAction> buildActions,
-      {void Function(AssetId) onDelete}) async {
+      {void onDelete(AssetId id)}) async {
     var build = new BuildImpl._(buildDefinition, buildActions, onDelete);
 
     _logger.info('Checking for stale files');
