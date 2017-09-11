@@ -70,6 +70,11 @@ Future<BuildResult> build(List<BuildAction> buildActions,
 /// Same as [build], except it watches the file system and re-runs builds
 /// automatically.
 ///
+/// The [ServeHandler.handle] method can be used as a [Handler] from
+/// `package:shelf`. Requests for assets will be blocked while builds are
+/// running then served with the latest version of the asset. Only source and
+/// generated assets can be served through this handler.
+///
 /// The [debounceDelay] controls how often builds will run. As long as files
 /// keep changing with less than that amount of time apart, builds will be put
 /// off.
@@ -82,46 +87,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
 /// first event will allow any ongoing builds to finish, and then the program
 ///  will complete normally. Subsequent events are not handled (and will
 ///  typically cause a shutdown).
-Stream<BuildResult> watch(List<BuildAction> buildActions,
-    {bool deleteFilesByDefault,
-    bool writeToCache,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Duration debounceDelay,
-    DirectoryWatcherFactory directoryWatcherFactory,
-    Stream terminateEventStream}) {
-  var options = new BuildOptions(
-      deleteFilesByDefault: deleteFilesByDefault,
-      writeToCache: writeToCache,
-      packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
-      logLevel: logLevel,
-      onLog: onLog,
-      debounceDelay: debounceDelay,
-      directoryWatcherFactory: directoryWatcherFactory);
-  var terminator = new _Terminator(terminateEventStream);
-  var buildState = runWatch(options, buildActions, terminator.shouldTerminate);
-
-  buildState.buildResults.drain().then((_) async {
-    await terminator.cancel();
-    await options.logListener.cancel();
-  });
-
-  return buildState.buildResults;
-}
-
-/// Same as [watch], except it also provides a server.
-///
-/// This server will block all requests if a build is current in process.
-///
-/// By default a static server will be set up to serve [directory] at
-/// [address]:[port], but instead a [requestHandler] may be provided for custom
-/// behavior.
-Future<BuildHandler> buildHandler(List<BuildAction> buildActions,
+Future<ServeHandler> watch(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
     bool writeToCache,
     PackageGraph packageGraph,
@@ -157,7 +123,7 @@ Future<BuildHandler> buildHandler(List<BuildAction> buildActions,
     await options.logListener.cancel();
   });
 
-  return BuildHandler.create(watch);
+  return createServeHandler(watch);
 }
 
 /// Fires [shouldTerminate] once a `SIGINT` is intercepted.

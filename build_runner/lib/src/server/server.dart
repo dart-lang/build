@@ -11,17 +11,17 @@ import 'package:shelf/shelf.dart';
 import '../generate/build_result.dart';
 import '../generate/watch_impl.dart';
 
-class BuildHandler implements BuildState {
+Future<ServeHandler> createServeHandler(WatchImpl watch) async {
+  var rootPackage = watch.packageGraph.root.name;
+  var assetHandler = new AssetHandler(await watch.reader, rootPackage);
+  return new ServeHandler._(watch, assetHandler);
+}
+
+class ServeHandler implements BuildState {
   final BuildState _state;
   final AssetHandler _assetHandler;
 
-  static Future<BuildHandler> create(WatchImpl watch) async {
-    var rootPackage = watch.packageGraph.root.name;
-    var assetHandler = new AssetHandler(await watch.reader, rootPackage);
-    return new BuildHandler(watch, assetHandler);
-  }
-
-  BuildHandler(this._state, this._assetHandler);
+  ServeHandler._(this._state, this._assetHandler);
 
   @override
   Future<BuildResult> get currentBuild => _state.currentBuild;

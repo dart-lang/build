@@ -16,7 +16,7 @@ import 'package:build_test/build_test.dart';
 import '../common/common.dart';
 
 void main() {
-  group('BuildHandler', () {
+  group('ServeHandler', () {
     InMemoryRunnerAssetWriter writer;
     CopyBuilder copyBuilder;
     BuildAction copyABuildAction;
@@ -108,7 +108,7 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
-Future<BuildHandler> createHandler(List<BuildAction> buildActions,
+Future<ServeHandler> createHandler(List<BuildAction> buildActions,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
