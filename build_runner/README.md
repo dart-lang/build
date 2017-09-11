@@ -18,9 +18,8 @@ The script will use one of the three top level functions defined by this
 library:
 
 - **build**: Runs a single build and exits.
-- **watch**: Continuously runs builds as you edit files.
-- **serve**: Same as `watch`, but also provides a basic file server which blocks
-    if there are ongoing builds.
+- **watch**: Continuously runs builds as you edit files and allow serving assets
+  as a `shelf` handler.
 
 All three of these methods have a single required argument, a
 `List<BuildAction>`. Each of these `BuildActions`s may run in parallel, but they
