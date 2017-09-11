@@ -97,11 +97,7 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
     onLog(LogRecord record),
     Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
-    Stream terminateEventStream,
-    String directory,
-    String address,
-    int port,
-    Handler requestHandler}) {
+    Stream terminateEventStream}) {
   var options = new BuildOptions(
       deleteFilesByDefault: deleteFilesByDefault,
       writeToCache: writeToCache,
@@ -111,10 +107,7 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
       logLevel: logLevel,
       onLog: onLog,
       debounceDelay: debounceDelay,
-      directoryWatcherFactory: directoryWatcherFactory,
-      directory: directory,
-      address: address,
-      port: port);
+      directoryWatcherFactory: directoryWatcherFactory);
   var terminator = new _Terminator(terminateEventStream);
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 

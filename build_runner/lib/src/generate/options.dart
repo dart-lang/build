@@ -6,8 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
-import 'package:shelf/shelf.dart';
-import 'package:shelf_static/shelf_static.dart';
 import 'package:stack_trace/stack_trace.dart';
 
 import '../asset/file_based.dart';
@@ -36,25 +34,16 @@ class BuildOptions {
   Duration debounceDelay;
   DirectoryWatcherFactory directoryWatcherFactory;
 
-  // Server options.
-  int port;
-  String address;
-  String directory;
-  Handler requestHandler;
-
   BuildOptions(
-      {this.address,
+      {
       this.debounceDelay,
       this.deleteFilesByDefault,
       this.writeToCache,
-      this.directory,
       this.directoryWatcherFactory,
       Level logLevel,
       onLog(LogRecord record),
       this.packageGraph,
-      this.port,
       this.reader,
-      this.requestHandler,
       this.writer}) {
     /// Set up logging
     logLevel ??= Level.INFO;
@@ -62,13 +51,6 @@ class BuildOptions {
     logListener = Logger.root.onRecord.listen(onLog ?? _defaultLogListener);
 
     /// Set up other defaults.
-    address ??= 'localhost';
-    directory ??= '.';
-    port ??= 8000;
-    requestHandler ??= createStaticHandler(directory,
-        defaultDocument: 'index.html',
-        listDirectories: true,
-        serveFilesOutsidePath: true);
     debounceDelay ??= const Duration(milliseconds: 250);
     packageGraph ??= new PackageGraph.forThisPackage();
     reader ??= new FileBasedAssetReader(packageGraph);
