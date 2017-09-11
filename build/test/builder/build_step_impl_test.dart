@@ -13,6 +13,16 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 
 void main() {
+  ResourceManager resourceManager;
+
+  setUp(() {
+    resourceManager = new ResourceManager();
+  });
+
+  tearDown(() async {
+    await resourceManager.disposeAll();
+  });
+
   group('with reader/writer stub', () {
     AssetId primary;
     BuildStepImpl buildStep;
@@ -22,7 +32,7 @@ void main() {
       var writer = new StubAssetWriter();
       primary = makeAssetId();
       buildStep = new BuildStepImpl(primary, [], reader, writer,
-          primary.package, const BarbackResolvers());
+          primary.package, const BarbackResolvers(), resourceManager);
     });
 
     test('doesnt allow non-expected outputs', () {
@@ -54,6 +64,13 @@ void main() {
         expect(() => buildStep.readAsBytes(id), throwsA(invalidInputException));
       }
     });
+
+    test('fetchResource can fetch resources', () async {
+      int expected = 1;
+      var intResource = new Resource(() => expected);
+      var actual = await buildStep.fetchResource(intResource);
+      expect(actual, expected);
+    });
   });
 
   group('with in memory file system', () {
@@ -73,8 +90,8 @@ void main() {
       };
       addAssets(inputs, writer);
       var outputId = new AssetId.parse('$primary.copy');
-      var buildStep = new BuildStepImpl(
-          primary, [outputId], reader, writer, 'a', const BarbackResolvers());
+      var buildStep = new BuildStepImpl(primary, [outputId], reader, writer,
+          'a', const BarbackResolvers(), resourceManager);
 
       await builder.build(buildStep);
       await buildStep.complete();
@@ -99,7 +116,7 @@ void main() {
 
         var primary = makeAssetId('a|web/a.dart');
         var buildStep = new BuildStepImpl(primary, [], reader, writer,
-            primary.package, const BarbackResolvers());
+            primary.package, const BarbackResolvers(), resourceManager);
         var resolver = buildStep.resolver;
 
         var aLib = await resolver.libraryFor(primary);
@@ -128,8 +145,14 @@ void main() {
       assetWriter = new SlowAssetWriter();
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
-      buildStep = new BuildStepImpl(primary, [outputId], new StubAssetReader(),
-          assetWriter, primary.package, const BarbackResolvers());
+      buildStep = new BuildStepImpl(
+          primary,
+          [outputId],
+          new StubAssetReader(),
+          assetWriter,
+          primary.package,
+          const BarbackResolvers(),
+          resourceManager);
     });
 
     test('Completes only after writes finish', () async {
@@ -181,7 +204,7 @@ void main() {
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = new BuildStepImpl(primary, [output], reader, writer,
-          primary.package, const BarbackResolvers());
+          primary.package, const BarbackResolvers(), resourceManager);
     });
 
     test('Captures failed asynchronous writes', () {
