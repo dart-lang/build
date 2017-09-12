@@ -14,7 +14,6 @@ import '../asset/build_cache.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
