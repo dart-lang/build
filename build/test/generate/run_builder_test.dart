@@ -64,7 +64,7 @@ main() {
       await runBuilder(builder, inputs.keys, reader, writer, null);
     });
 
-    test('disposes the provided resource manager', () async {
+    test('disposes the default resource manager', () async {
       expect(resourceDisposed, true);
     });
   });

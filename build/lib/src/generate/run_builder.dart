@@ -21,7 +21,10 @@ import 'expected_outputs.dart';
 /// The [log] instance inside the builds will be scoped to [logger] which is
 /// defaulted to a [Logger] name 'runBuilder'.
 ///
-/// If
+/// If a [resourceManager] is provided it will be used and it will not be
+/// automatically disposed of (its up to the caller to dispose of it later). If
+/// one is not provided then one will be created and disposed at the end of
+/// this function call.
 Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
