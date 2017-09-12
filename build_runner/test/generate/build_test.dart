@@ -406,5 +406,62 @@ void main() {
         'a|web/a.txt.copy': 'a',
       }, writer: writer);
     });
+
+    test('no outputs if no changed sources', () async {
+      var graph = new AssetGraph.build([], new Set())
+        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
+      var aId = makeAssetId('a|web/a.txt');
+      var aCopyNode = new GeneratedAssetNode(
+          1, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+      graph.add(aCopyNode);
+      var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
+      graph.add(aNode);
+
+      var writer = new InMemoryRunnerAssetWriter();
+
+      await writer.writeAsString(makeAssetId('a|web/a.txt'), '',
+          lastModified: graph.validAsOf.subtract(new Duration(hours: 2)));
+      await testActions([
+        copyABuildAction
+      ], {
+        'a|web/a.txt': 'a',
+        'a|web/a.txt.copy': 'a',
+        'a|$assetGraphPath': JSON.encode(graph.serialize()),
+      }, outputs: {}, writer: writer);
+    });
+
+    test('no outputs if no changed sources using `writeToCache`', () async {
+      var graph = new AssetGraph.build([], new Set())
+        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
+      var aId = makeAssetId('a|web/a.txt');
+      var aCopyNode = new GeneratedAssetNode(
+          1, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+      graph.add(aCopyNode);
+      var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
+      graph.add(aNode);
+
+      var writer = new InMemoryRunnerAssetWriter();
+
+      await writer.writeAsString(makeAssetId('a|web/a.txt'), '',
+          lastModified: graph.validAsOf.subtract(new Duration(hours: 2)));
+      await writer.writeAsString(
+          makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '',
+          lastModified: graph.validAsOf.add(new Duration(hours: 2)));
+
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'));
+      var packageGraph = new PackageGraph.fromRoot(packageA);
+      await testActions([
+        copyABuildAction
+      ], {
+        'a|web/a.txt': 'a',
+        'a|.dart_tool/build/generated/a/web/a.txt.copy': 'a',
+        'a|$assetGraphPath': JSON.encode(graph.serialize()),
+      },
+          outputs: {},
+          writer: writer,
+          writeToCache: true,
+          packageGraph: packageGraph);
+    });
   });
 }
