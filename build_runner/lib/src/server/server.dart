@@ -44,9 +44,17 @@ class AssetHandler {
   AssetHandler(this._reader, this._rootPackage);
 
   Future<Response> handle(Request request) async {
-    var pathSegments = request.url.pathSegments;
+    var response = await _handle(request.url.pathSegments);
+    if (response.statusCode == 404) {
+      response = await _handle(
+          new List.from(request.url.pathSegments)..add('index.html'));
+    }
+    return response;
+  }
+
+  Future<Response> _handle(List<String> pathSegments) async {
     var packagesIndex = pathSegments.indexOf('packages');
-    var assetId = packagesIndex > 0
+    var assetId = packagesIndex >= 0
         ? new AssetId(pathSegments[packagesIndex + 1],
             p.join('lib', p.joinAll(pathSegments.sublist(packagesIndex + 2))))
         : new AssetId(_rootPackage, p.joinAll(pathSegments));
