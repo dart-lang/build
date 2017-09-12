@@ -4,6 +4,9 @@
 
 import 'dart:async';
 
+typedef FutureOr<T> CreateInstance<T>();
+typedef FutureOr DisposeInstance<T>(T instance);
+
 /// A [Resource] encapsulates the logic for creating and disposing of some
 /// expensive object which has a lifecycle.
 ///
@@ -14,17 +17,16 @@ import 'dart:async';
 /// guarantees in a sane way.
 class Resource<T> {
   /// Factory method which creates an instance of this resource.
-  final FutureOr<T> Function() _create;
+  final CreateInstance<T> _create;
 
   /// Optional method which is given an existing instance that is ready to be
   /// disposed.
-  final FutureOr Function(T instance) _userDispose;
+  final DisposeInstance<T> _userDispose;
 
   /// A Future instance of this resource if one has ever been requested.
   Future<T> _instance;
 
-  Resource(this._create, {FutureOr Function(T instance) dispose})
-      : _userDispose = dispose;
+  Resource(this._create, {DisposeInstance<T> dispose}) : _userDispose = dispose;
 
   /// Fetches an actual instance of this resource.
   Future<T> _fetch() {
@@ -38,7 +40,7 @@ class Resource<T> {
     var oldInstance = _instance;
     _instance = null;
     if (_userDispose != null) {
-      return oldInstance.then((old) => _userDispose(old));
+      return oldInstance.then(_userDispose);
     } else {
       return new Future.value(null);
     }
