@@ -55,7 +55,7 @@ class BuildOptions {
     reader ??= new FileBasedAssetReader(packageGraph);
     writer ??= new FileBasedAssetWriter(packageGraph);
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
-    deleteFilesByDefault ??= false;
+    deleteFilesByDefault ??= writeToCache ?? false;
     writeToCache ??= false;
   }
 }
