@@ -31,13 +31,13 @@ final _logger = new Logger('Watch');
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-BuildState runWatch(
+WatchImpl runWatch(
         BuildOptions options, List<BuildAction> buildActions, Future until) =>
-    new _Watch(options, buildActions, until);
+    new WatchImpl(options, buildActions, until);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
-class _Watch implements BuildState {
+class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
 
   /// Delay to wait for more file watcher events.
@@ -47,7 +47,7 @@ class _Watch implements BuildState {
   final DirectoryWatcherFactory _directoryWatcherFactory;
 
   /// The [PackageGraph] for the current program.
-  final PackageGraph _packageGraph;
+  final PackageGraph packageGraph;
 
   @override
   Future<BuildResult> currentBuild;
@@ -55,10 +55,13 @@ class _Watch implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = new Set<AssetId>();
 
-  _Watch(BuildOptions options, List<BuildAction> buildActions, Future until)
+  final _readerCompleter = new Completer<AssetReader>();
+  Future<AssetReader> get reader => _readerCompleter.future;
+
+  WatchImpl(BuildOptions options, List<BuildAction> buildActions, Future until)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
-        _packageGraph = options.packageGraph {
+        packageGraph = options.packageGraph {
     buildResults = _run(options, buildActions, until).asBroadcastStream();
   }
 
@@ -74,9 +77,10 @@ class _Watch implements BuildState {
     var firstBuild = new Completer<BuildResult>();
     currentBuild = firstBuild.future;
     var changes =
-        startFileWatchers(_packageGraph, _logger, _directoryWatcherFactory);
+        startFileWatchers(packageGraph, _logger, _directoryWatcherFactory);
 
     var buildDefinition = await BuildDefinition.load(options, buildActions);
+    _readerCompleter.complete(buildDefinition.reader);
     _assetGraph = buildDefinition.assetGraph;
 
     var build = await BuildImpl.create(buildDefinition, buildActions,

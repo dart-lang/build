@@ -11,13 +11,12 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/server/server.dart' as server;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
 
 void main() {
-  group('serve', () {
+  group('ServeHandler', () {
     InMemoryRunnerAssetWriter writer;
     CopyBuilder copyBuilder;
     BuildAction copyABuildAction;
@@ -26,7 +25,6 @@ void main() {
       _terminateServeController = new StreamController();
       writer = new InMemoryRunnerAssetWriter();
 
-      /// Basic phases/phase groups which get used in many tests
       copyBuilder = new CopyBuilder();
       copyABuildAction = new BuildAction(copyBuilder, 'a');
     });
@@ -37,8 +35,9 @@ void main() {
     });
 
     test('does basic builds', () async {
-      var results = new StreamQueue(
-          startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
+      var handler =
+          await createHandler([copyABuildAction], {'a|web/a.txt': 'a'}, writer);
+      var results = new StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
@@ -54,15 +53,16 @@ void main() {
       var buildBlocker1 = new Completer();
       copyBuilder.blockUntil = buildBlocker1.future;
 
-      var results = new StreamQueue(
-          startServe([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
+      var handler =
+          await createHandler([copyABuildAction], {'a|web/a.txt': 'a'}, writer);
+      var results = new StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
       await wait(100);
 
       var request =
           new Request('GET', Uri.parse('http://localhost:8000/CHANGELOG.md'));
       // ignore: unawaited_futures
-      (server.blockingHandler(request) as Future).then((Response response) {
+      handler.handle(request).then((Response response) {
         expect(buildBlocker1.isCompleted, isTrue,
             reason: 'Server shouldn\'t respond until builds are done.');
       });
@@ -74,7 +74,7 @@ void main() {
       /// Next request completes right away.
       var buildBlocker2 = new Completer();
       // ignore: unawaited_futures
-      (server.blockingHandler(request) as Future).then((response) {
+      handler.handle(request).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isFalse);
       });
@@ -88,7 +88,7 @@ void main() {
       await wait(500);
       var done = new Completer();
       // ignore: unawaited_futures
-      (server.blockingHandler(request) as Future).then((response) {
+      handler.handle(request).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isTrue);
         done.complete();
@@ -108,7 +108,7 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
-Stream<BuildResult> startServe(List<BuildAction> buildActions,
+Future<ServeHandler> createHandler(List<BuildAction> buildActions,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
@@ -119,7 +119,7 @@ Stream<BuildResult> startServe(List<BuildAction> buildActions,
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  return serve(buildActions,
+  return watch(buildActions,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,

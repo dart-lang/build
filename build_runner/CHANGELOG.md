@@ -1,6 +1,12 @@
 ## 0.5.0-dev
 
 - **Breaking**: Removed `buildType` field from `BuildResult`.
+- **Breaking**: `watch` now returns a `ServeHandler` instead of a
+  `Stream<BuildResult>`. Use `ServeHandler.buildResults` to get back to the
+  original stream.
+- **Breaking**: `serve` has been removed. Instead use `watch` and use the
+  resulting `ServeHandler.handle` method along with a server created in the
+  client script to start a server.
 - Prevent reads into `.dart_tool` for more hermetic builds.
 - Bug Fix: Rebuild entire asset graph if the build script changes.
 - Add `writeToCache` argument to `build` and `watch` which separates generated
