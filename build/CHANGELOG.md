@@ -3,6 +3,7 @@
 - Remove restrictions around the root package when Builders are running. It is
   the responsibility of the build system to ensure that builders are only run on
   inputs that will produce outputs that can be written.
+- Added the `Resource` class, and `BuildStep#fetchResource` method.
 
 ## 0.10.0+1
 
