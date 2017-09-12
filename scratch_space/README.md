@@ -6,17 +6,41 @@ A `ScratchSpace` is a thin wrapper around a temporary directory. The
 constructor takes zero arguments, so making one is as simple as doing
 `new ScratchSpace()`.
 
+In general you actually want to wrap a `ScratchSpace` in a `Resource`, so that
+you can re-use the scratch space across build steps in an individual build.
+This is safe to do since you are not allowed to overwrite files within a build.
+
+This should look something like the following:
+
+```
+final myScratchSpaceResource =
+    new Resource(() => new ScratchSpace(), dispose: (old) => old.delete());
+```
+
+And then you can get access to it through the `BuildStep#fetchResource` api:
+
+```
+class MyBuilder extends Builder {
+  Future build(BuildStep buildStep) async {
+    var scratchSpace = await buildStep.fetchResource(myScratchSpaceResource);
+  }
+}
+```
+
 ### Adding assets to a `ScratchSpace`
 
 To add assets to the `ScratchSpace`, you use the `ensureAssets` method, which
 takes an `Iterable<AssetId>` and an `AssetReader` (for which you should
 generally pass your `BuildStep` which implements that interface).
 
+You must always call this method with all assets that your external executable
+might need in order to set up the proper dependencies and ensure hermetic
+builds.
+
 **Note:** It is important to note that the `ScratchSpace` does not guarantee
 that the version of a file within it is the most updated version, only that
 some version of it exists. For this reason you should create a new
-`ScratchSpace` for each build (within a single build files cannot change, but
-between builds they might).
+`ScratchSpace` for each build using the `Resource` class as recommended above.
 
 ### Deleting a `ScratchSpace`
 
@@ -26,7 +50,7 @@ directory.
 
 **Note:** You cannot delete individual assets from a `ScratchSpace` today, you
 can only delete the entire thing. If you have a use case for deleting
-individual files you can [file an issue][tracker]. 
+individual files you can [file an issue][tracker].
 
 ### Getting the actual File objects for a `ScratchSpace`
 
