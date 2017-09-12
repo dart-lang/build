@@ -43,13 +43,12 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<Response> handle(Request request) async {
-    var response = await _handle(request.url.pathSegments);
-    if (response.statusCode == 404) {
-      response = await _handle(
-          new List.from(request.url.pathSegments)..add('index.html'));
+  Future<Response> handle(Request request) {
+    var pathSegments = request.url.pathSegments;
+    if (request.url.path.endsWith('/')) {
+      pathSegments = new List.from(pathSegments)..add('index.html');
     }
-    return response;
+    return _handle(pathSegments);
   }
 
   Future<Response> _handle(List<String> pathSegments) async {

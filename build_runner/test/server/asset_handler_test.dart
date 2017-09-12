@@ -39,10 +39,17 @@ void main() {
     expect(await response.readAsString(), 'content');
   });
 
-  test('defaults to index.html', () async {
+  test('defaults to index.html if URI ends with slash', () async {
     reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
     var response = await handler
         .handle(new Request('GET', Uri.parse('http://server.com/web/')));
     expect(await response.readAsString(), 'content');
+  });
+
+  test('does not default to index.html if URI does not end in slash', () async {
+    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    var response = await handler
+        .handle(new Request('GET', Uri.parse('http://server.com/web')));
+    expect(response.statusCode, 404);
   });
 }
