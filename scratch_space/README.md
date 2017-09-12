@@ -6,9 +6,9 @@ A `ScratchSpace` is a thin wrapper around a temporary directory. The
 constructor takes zero arguments, so making one is as simple as doing
 `new ScratchSpace()`.
 
-In general you actually want to wrap a `ScratchSpace` in a `Resource`, so that
-you can re-use the scratch space across build steps in an individual build.
-This is safe to do since you are not allowed to overwrite files within a build.
+In general, you should wrap a `ScratchSpace` in a `Resource`, so that you can
+re-use the scratch space across build steps in an individual build. This is
+safe to do since you are not allowed to overwrite files within a build.
 
 This should look something like the following:
 
