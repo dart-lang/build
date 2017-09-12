@@ -2,8 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+
+import 'summary_builder.dart';
 
 /// A collection of Dart libraries in a strongly connected component and the
 /// modules they depend on.
@@ -11,6 +15,12 @@ import 'package:build/build.dart';
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
 class Module {
+  AssetId get jsId => primarySource.changeExtension('.js');
+
+  /// The linked summary for this module.
+  AssetId get linkedSummaryId =>
+      primarySource.changeExtension(linkedSummaryExtension);
+
   /// The library which will be used to reference any library in [sources].
   ///
   /// The assets which are built once per module, such as DDC compiled output or
@@ -67,6 +77,23 @@ class Module {
         toAssetId(_earliest(cycle)),
         _cycleSources(cycle).map(toAssetId).toSet(),
         dependencyModules.map(toAssetId).toSet());
+  }
+
+  /// Computes the [primarySource]s of all [Module]s that are transitively
+  /// depended on by this module.
+  Future<Set<AssetId>> computeTransitiveDependencies(Resolver resolver) async {
+    var transitiveDeps = new Set<AssetId>();
+    var modulesToCrawl = directDependencies.toSet();
+    while (modulesToCrawl.isNotEmpty) {
+      var next = modulesToCrawl.last;
+      modulesToCrawl.remove(next);
+      if (transitiveDeps.contains(next)) continue;
+      transitiveDeps.add(next);
+      var module = new Module.forLibrary(await resolver.libraryFor(next));
+      modulesToCrawl.addAll(module.directDependencies
+          .where((id) => !transitiveDeps.contains(id)));
+    }
+    return transitiveDeps;
   }
 }
 
