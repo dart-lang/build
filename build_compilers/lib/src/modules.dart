@@ -21,6 +21,10 @@ class Module {
   AssetId get linkedSummaryId =>
       primarySource.changeExtension(linkedSummaryExtension);
 
+  /// The unlinked summary for this module.
+  AssetId get unlinkedSummaryId =>
+      primarySource.changeExtension(unlinkedSummaryExtension);
+
   /// The library which will be used to reference any library in [sources].
   ///
   /// The assets which are built once per module, such as DDC compiled output or
