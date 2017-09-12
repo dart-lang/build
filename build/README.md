@@ -188,8 +188,8 @@ You can get an instance of the underlying resource by using the
 `Future<T> fetchResource<T>(Resource<T>)`.
 
 **Important Note**: It may be tempting to try and use a `Resource` instance to
-cache information from previous build steps (or even assets), but this shoul
-be avoided because it can break the soundness of the build, and may induce
+cache information from previous build steps (or even assets), but this should
+be avoided because it can break the soundness of the build, and may introduce
 subtle bugs for incremental builds (remember the whole build doesn't run every
 time!). The `build` package relies on the `BuildStep#canRead` and
 `BuildStep#readAs*` methods to track build step dependencies, so sidestepping
