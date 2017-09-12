@@ -13,6 +13,7 @@ import '../asset/exceptions.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../resource/resource.dart';
 import 'build_step.dart';
 import 'exceptions.dart';
 
@@ -46,8 +47,16 @@ class BuildStepImpl implements BuildStep {
   /// The current root package, used for input/output validation.
   final String _rootPackage;
 
-  BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, @deprecated this._rootPackage, this._resolvers)
+  final ResourceManager _resourceManager;
+
+  BuildStepImpl(
+      this.inputId,
+      Iterable<AssetId> expectedOutputs,
+      this._reader,
+      this._writer,
+      @deprecated this._rootPackage,
+      this._resolvers,
+      this._resourceManager)
       : _expectedOutputs = expectedOutputs.toSet();
 
   @override
@@ -61,6 +70,10 @@ class BuildStepImpl implements BuildStep {
     _checkInput(id);
     return _reader.canRead(id);
   }
+
+  @override
+  Future<T> fetchResource<T>(Resource<T> resource) =>
+      _resourceManager.fetch(resource);
 
   @override
   Future<List<int>> readAsBytes(AssetId id) {

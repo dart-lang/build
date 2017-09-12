@@ -13,3 +13,4 @@ export 'src/builder/logging.dart' show log;
 export 'src/builder/multiplexing_builder.dart';
 export 'src/generate/expected_outputs.dart';
 export 'src/generate/run_builder.dart';
+export 'src/resource/resource.dart';

@@ -10,6 +10,7 @@ import '../analyzer/resolver.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../resource/resource.dart';
 
 /// A single step in a build process.
 ///
@@ -24,6 +25,14 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///
   /// Throws [NonLibraryAssetException] if [inputId] is not a Dart library file.
   Future<LibraryElement> get inputLibrary;
+
+  /// Gets an instance provided by [resource] which is guaranteed to be unique
+  /// within a single build, and may be reused across build steps within a
+  /// build if the implementation allows.
+  ///
+  /// It is also guaranteed that [resource] will be disposed before the next
+  /// build starts (and the dispose callback will be invoked if provided).
+  Future<T> fetchResource<T>(Resource<T> resource);
 
   /// Writes [bytes] to a binary file located at [id].
   ///

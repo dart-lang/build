@@ -160,6 +160,42 @@ class ResolvingCopyBuilder {
 Once you have gotten a `LibraryElement` using one of the methods on `Resolver`,
 you are now just using the regular `analyzer` package to explore your app.
 
+### Sharing expensive objects across build steps
+
+The build package includes a `Resource` class, which can give you an instance
+of an expensive object that is guaranteed to be unique across builds, but may
+be re-used by multiple build steps within a single build (to the extent that
+the implementation allows). It also gives you a way of disposing of your
+resource at the end of its lifecycle.
+
+The `Resource<T>` constructor takes a single required argument which is a
+factory function that returns a `FutureOr<T>`. There is also a named argument
+`dispose` which is called at the end of life for the resource, with the
+instance that should be disposed. This returns a `FutureOr<dynamic>`.
+
+So a simple example `Resource` would look like this:
+
+```dart
+final resource = new Resource(
+  () => createMyExpensiveResource(),
+  dispose: (instance) async {
+    await instance.doSomeCleanup();
+  });
+```
+
+You can get an instance of the underlying resource by using the
+`BuildStep#fetchResource` method, whose type signature looks like
+`Future<T> fetchResource<T>(Resource<T>)`.
+
+**Important Note**: It may be tempting to try and use a `Resource` instance to
+cache information from previous build steps (or even assets), but this should
+be avoided because it can break the soundness of the build, and may introduce
+subtle bugs for incremental builds (remember the whole build doesn't run every
+time!). The `build` package relies on the `BuildStep#canRead` and
+`BuildStep#readAs*` methods to track build step dependencies, so sidestepping
+those can and will break the dependency tracking, resulting in inconsistent and
+stale assets.
+
 ## Features and bugs
 
 Please file feature requests and bugs at the [issue tracker][tracker].
