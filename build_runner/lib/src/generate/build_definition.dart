@@ -84,13 +84,8 @@ class _Loader {
         conflictingOutputs
             .addAll(assetGraph.outputs.where(currentSources.contains).toSet());
       } else {
-        _logger
-            .info('Updating dependency graph with changes since last build.');
-        var newSources = new Set<AssetId>.from(currentSources)
-          ..removeAll(assetGraph.allNodes.map((n) => n.id));
-        updates.addAll(
-            new Map.fromIterable(newSources, value: (_) => ChangeType.ADD));
-        updates.addAll(await _getUpdates(assetGraph));
+        _logger.info('Updating asset graph with changes since last build.');
+        updates.addAll(await _findUpdates(assetGraph, currentSources));
       }
     });
     AssetReader reader = _options.reader;
@@ -118,36 +113,34 @@ class _Loader {
     }
   }
 
-  /// Creates and returns a map of updates to assets based on [assetGraph].
-  Future<Map<AssetId, ChangeType>> _getUpdates(AssetGraph assetGraph) async {
-    // Collect updates to the graph based on any changed assets.
+  /// Finds the asset changes which have happened while unwatched between builds
+  /// by taking a difference between the assets in the graph and the assets on
+  /// disk.
+  Future<Map<AssetId, ChangeType>> _findUpdates(
+      AssetGraph assetGraph, Set<AssetId> currentSources) async {
     var updates = <AssetId, ChangeType>{};
-    await Future.wait(assetGraph.allNodes
-        .where((node) =>
-            node is! GeneratedAssetNode ||
-            (node as GeneratedAssetNode).wasOutput)
-        .map((node) async {
-      bool exists;
-      try {
-        exists = await _options.reader.canRead(node.id);
-      } on PackageNotFoundException catch (_) {
-        exists = false;
+    addUpdates(Iterable<AssetId> assets, ChangeType type) {
+      for (var asset in assets) {
+        updates[asset] = type;
       }
-      if (!exists) {
-        updates[node.id] = ChangeType.REMOVE;
-        return;
-      }
-      // Only handle deletes for generated assets, their modified timestamp
-      // is always newer than the asset graph.
-      //
-      // TODO(jakemac): https://github.com/dart-lang/build/issues/61
-      if (node is GeneratedAssetNode) return;
+    }
 
-      var lastModified = await _options.reader.lastModified(node.id);
-      if (lastModified.compareTo(assetGraph.validAsOf) > 0) {
-        updates[node.id] = ChangeType.MODIFY;
+    var newSources = new Set<AssetId>.from(currentSources)
+      ..removeAll(assetGraph.allNodes.map((n) => n.id));
+    addUpdates(newSources, ChangeType.ADD);
+    var removedAssets = assetGraph.allNodes
+        .map((n) => n.id)
+        .where((id) => !currentSources.contains((id)));
+    addUpdates(removedAssets, ChangeType.REMOVE);
+
+    var remainingSources = assetGraph.sources.where(currentSources.contains);
+    var modifyChecks = remainingSources.map((id) async {
+      var modified = await _options.reader.lastModified(id);
+      if (modified.isAfter(assetGraph.validAsOf)) {
+        updates[id] = ChangeType.MODIFY;
       }
-    }));
+    });
+    await Future.wait(modifyChecks);
     return updates;
   }
 
