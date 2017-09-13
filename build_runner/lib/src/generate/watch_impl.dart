@@ -118,6 +118,7 @@ class WatchImpl implements BuildState {
   bool _shouldProcess(AssetChange change) {
     if (_isCacheFile(change)) return false;
     if (_isGitFile(change)) return false;
+    if (_hasNoOutputs(change)) return false;
     if (_isEditOnGeneratedFile(change)) return false;
     if (_isExpectedDelete(change)) return false;
     if (_isUnwatchedDelete(change)) return false;
@@ -127,6 +128,10 @@ class WatchImpl implements BuildState {
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
   bool _isGitFile(AssetChange change) => change.id.path.startsWith('.git/');
+
+  bool _hasNoOutputs(AssetChange change) =>
+      _assetGraph.contains(change.id) &&
+      _assetGraph.get(change.id).outputs.isEmpty;
 
   bool _isEditOnGeneratedFile(AssetChange change) =>
       _assetGraph.get(change.id) is GeneratedAssetNode &&
