@@ -117,13 +117,16 @@ class WatchImpl implements BuildState {
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
     if (_isCacheFile(change)) return false;
+    if (_isGitFile(change)) return false;
     if (_isEditOnGeneratedFile(change)) return false;
     if (_isExpectedDelete(change)) return false;
     if (_isUnwatchedDelete(change)) return false;
     return true;
   }
 
-  bool _isCacheFile(AssetChange change) => change.id.path.contains(cacheDir);
+  bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
+
+  bool _isGitFile(AssetChange change) => change.id.path.startsWith('.git/');
 
   bool _isEditOnGeneratedFile(AssetChange change) =>
       _assetGraph.get(change.id) is GeneratedAssetNode &&
