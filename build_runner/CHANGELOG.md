@@ -1,4 +1,4 @@
-## 0.5.0-dev
+## 0.5.0
 
 - **Breaking**: Removed `buildType` field from `BuildResult`.
 - **Breaking**: `watch` now returns a `ServeHandler` instead of a

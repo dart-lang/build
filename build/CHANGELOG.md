@@ -1,4 +1,4 @@
-## 0.10.1-dev
+## 0.10.1
 
 - Remove restrictions around the root package when Builders are running. It is
   the responsibility of the build system to ensure that builders are only run on
