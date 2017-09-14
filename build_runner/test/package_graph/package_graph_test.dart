@@ -150,6 +150,63 @@ void main() {
           throwsA(anything));
     });
   });
+
+  group('orderedPackages', () {
+    test('with two sub trees', () {
+      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
+      var left1 =
+          new PackageNode('left1', '1.0.0', PackageDependencyType.pub, null);
+      var left2 =
+          new PackageNode('left2', '1.0.0', PackageDependencyType.pub, null);
+      var right1 =
+          new PackageNode('right1', '1.0.0', PackageDependencyType.pub, null);
+      var right2 =
+          new PackageNode('right2', '1.0.0', PackageDependencyType.pub, null);
+      a.dependencies.addAll([left1, right1]);
+      left1.dependencies.add(left2);
+      right1.dependencies.add(right2);
+      var graph = new PackageGraph.fromRoot(a);
+      var inOrder = graph.orderedPackages.map((n) => n.name).toList();
+      expect(inOrder, containsAllInOrder(['left2', 'left1', 'a']));
+      expect(inOrder, containsAllInOrder(['right2', 'right1', 'a']));
+    });
+
+    test('handles cycles', () {
+      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
+      var b = new PackageNode('b', '1.0.0', PackageDependencyType.path, null);
+      a.dependencies.add(b);
+      b.dependencies.add(a);
+      var graph = new PackageGraph.fromRoot(a);
+      var inOrder = graph.orderedPackages.map((n) => n.name).toList();
+      expect(inOrder, containsAllInOrder(['a', 'b']));
+    });
+  });
+
+  group('dependentsOf', () {
+    test('with two sub trees', () {
+      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
+      var left1 =
+          new PackageNode('left1', '1.0.0', PackageDependencyType.pub, null);
+      var left2 =
+          new PackageNode('left2', '1.0.0', PackageDependencyType.pub, null);
+      var right1 =
+          new PackageNode('right1', '1.0.0', PackageDependencyType.pub, null);
+      var right2 =
+          new PackageNode('right2', '1.0.0', PackageDependencyType.pub, null);
+      var needle =
+          new PackageNode('needle', '1.0.0', PackageDependencyType.pub, null);
+      a.dependencies.addAll([left1, right1, needle]);
+      left1.dependencies.addAll([left2, needle]);
+      right1.dependencies.add(right2);
+      right2.dependencies.add(needle);
+      var graph = new PackageGraph.fromRoot(a);
+      var dependents = graph.dependentsOf('needle').map((n) => n.name).toList();
+      expect(dependents, containsAllInOrder(['left1', 'a']));
+      expect(dependents, containsAllInOrder(['right2', 'a']));
+      expect(dependents, isNot(contains('left2')));
+      expect(dependents, isNot(contains('right1')));
+    });
+  });
 }
 
 void expectPkg(PackageNode node, String name, dynamic version,
