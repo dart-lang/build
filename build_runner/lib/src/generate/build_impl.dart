@@ -72,7 +72,9 @@ class BuildImpl {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
     if (updates.isNotEmpty) await _updateAssetGraph(updates);
-    var result = await _safeBuild();
+    var resourceManager = new ResourceManager();
+    var result = await _safeBuild(resourceManager);
+    await resourceManager.disposeAll();
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
           '${result.outputs.length} outputs\n\n');
@@ -94,12 +96,13 @@ class BuildImpl {
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
-  Future<BuildResult> _safeBuild() {
+  Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
     var buildStartTime = new DateTime.now();
     Chain.capture(() async {
       // Run a fresh build.
-      var result = await logWithTime(_logger, 'Running build', _runPhases);
+      var result = await logWithTime(
+          _logger, 'Running build', () => _runPhases(resourceManager));
 
       // Write out the dependency graph file.
       await logWithTime(_logger, 'Caching finalized dependency graph',
@@ -171,14 +174,14 @@ class BuildImpl {
 
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
-  Future<BuildResult> _runPhases() async {
+  Future<BuildResult> _runPhases(ResourceManager resourceManager) async {
     final outputs = <AssetId>[];
     var phaseNumber = 0;
     for (var action in _buildActions) {
       phaseNumber++;
       var inputs = _matchingInputs(action.inputSet, phaseNumber);
-      await for (var output
-          in _runBuilder(phaseNumber, action.builder, inputs)) {
+      await for (var output in _runBuilder(
+          phaseNumber, action.builder, inputs, resourceManager)) {
         outputs.add(output);
       }
     }
@@ -202,8 +205,9 @@ class BuildImpl {
 
   /// Runs [builder] with [primaryInputs] as inputs.
   Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
-      Iterable<AssetId> primaryInputs) async* {
-    for (var input in primaryInputs) {
+      Iterable<AssetId> primaryInputs, ResourceManager resourceManager) {
+    var streamController = new StreamController<AssetId>();
+    Future runForInput(AssetId input) async {
       var builderOutputs = expectedOutputs(builder, input);
 
       // Add nodes to the AssetGraph for builderOutputs and input.
@@ -222,12 +226,13 @@ class BuildImpl {
       // Skip the build step if none of the outputs need updating.
       var skipBuild = !builderOutputs.any((output) =>
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
-      if (skipBuild) continue;
+      if (skipBuild) return;
       var wrappedReader = new SinglePhaseReader(
           _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
       var wrappedWriter = new AssetWriterSpy(_writer);
       await runBuilder(
-          builder, [input], wrappedReader, wrappedWriter, _resolvers);
+          builder, [input], wrappedReader, wrappedWriter, _resolvers,
+          resourceManager: resourceManager);
 
       // Mark all outputs as no longer needing an update, and mark `wasOutput`
       // as `false` for now (this will get reset to true later one).
@@ -249,9 +254,15 @@ class BuildImpl {
       // Yield the outputs.
       for (var output in wrappedWriter.assetsWritten) {
         (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
-        yield output;
+        streamController.add(output);
       }
     }
+
+    Future.wait(primaryInputs.map(runForInput)).then((_) {
+      streamController.close();
+    });
+
+    return streamController.stream;
   }
 
   Future _delete(AssetId id) {
