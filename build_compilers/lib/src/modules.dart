@@ -15,6 +15,7 @@ import 'summary_builder.dart';
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
 class Module {
+  /// The JS file for this module.
   AssetId get jsId => primarySource.changeExtension('.js');
 
   /// The linked summary for this module.

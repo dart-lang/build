@@ -13,7 +13,7 @@ String get _scriptExtension => Platform.isWindows ? '.bat' : '';
 
 const _defaultMaxWorkers = 4;
 
-const _maxWorkersEnvVar = 'PUB_MAX_WORKERS_PER_TASK';
+const _maxWorkersEnvVar = 'BUILD_MAX_WORKERS_PER_TASK';
 
 final int _maxWorkersPerTask = int
     .parse(Platform.environment[_maxWorkersEnvVar] ?? '$_defaultMaxWorkers',
@@ -28,12 +28,6 @@ final int _maxWorkersPerTask = int
 final analyzerDriver = new BazelWorkerDriver(
     () => Process.start(p.join(sdkDir, 'bin', 'dartanalyzer$_scriptExtension'),
         ['--build-mode', '--persistent_worker']),
-    maxWorkers: _maxWorkersPerTask);
-
-/// Manages a shared set of persistent dartdevc workers.
-final dartdevcDriver = new BazelWorkerDriver(
-    () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
-        ['--persistent_worker']),
     maxWorkers: _maxWorkersPerTask);
 
 final sdkDir = cli_util.getSdkPath();

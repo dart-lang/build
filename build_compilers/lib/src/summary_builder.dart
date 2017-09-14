@@ -29,9 +29,12 @@ class UnlinkedSummaryBuilder implements Builder {
     var library = await buildStep.inputLibrary;
     if (!isPrimary(library)) return;
 
-    // Collect all transitive summary deps.
     var module = new Module.forLibrary(library);
-    await createUnlinkedSummary(module, buildStep);
+    try {
+      await createUnlinkedSummary(module, buildStep);
+    } catch (e, s) {
+      log.warning('Error creating ${module.unlinkedSummaryId}:\n$e\n$s');
+    }
   }
 }
 
@@ -49,9 +52,12 @@ class LinkedSummaryBuilder implements Builder {
     var library = await buildStep.inputLibrary;
     if (!isPrimary(library)) return;
 
-    // Collect all transitive summary deps.
     var module = new Module.forLibrary(library);
-    await createLinkedSummary(module, buildStep);
+    try {
+      await createLinkedSummary(module, buildStep);
+    } catch (e, s) {
+      log.warning('Error creating ${module.linkedSummaryId}:\n$e\n$s');
+    }
   }
 }
 
