@@ -27,3 +27,11 @@ class AnalyzerSummaryException extends _WorkerException {
   AnalyzerSummaryException(AssetId summaryId, String error)
       : super(summaryId, error);
 }
+
+/// An [Exception] that is thrown when dartdevc compilation fails.
+class DartDevcCompilationException extends _WorkerException {
+  @override
+  final String message = 'Error compiling dartdevc module';
+
+  DartDevcCompilationException(AssetId jsId, String error) : super(jsId, error);
+}
