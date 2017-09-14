@@ -132,12 +132,12 @@ class PackageGraph {
 
   /// All of the packages in postorder by dependencies.
   ///
-  /// Depedenencies of a package will come after the package in the result. If
+  /// Depedenencies of a package will come before the package in the result. If
   /// there is a package cycle the relative position of packages within the
-  /// cycle is non-deterministic. For any two packages for which neither is a
-  /// transitive dependency of the other the relative position of the packages
-  /// within the cycle is non-deterministic. The root package will always be
-  /// last in this list regardless of it's position in a cycle.
+  /// cycle is non-deterministic, ecept that the root package will always come
+  /// last. For any two packages for which neither is a transitive dependency of
+  /// the other the relative position of the packages within the cycle is
+  /// non-deterministic.
   Iterable<PackageNode> get orderedPackages sync* {
     var seen = new Set<PackageNode>();
     var queue = new Queue<PackageNode>();
