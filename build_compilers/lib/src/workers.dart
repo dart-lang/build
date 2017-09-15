@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io';
+import 'dart:math' show min;
 
 import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
@@ -11,7 +12,7 @@ import 'package:path/path.dart' as p;
 
 String get _scriptExtension => Platform.isWindows ? '.bat' : '';
 
-const _defaultMaxWorkers = 4;
+final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
 
 const _maxWorkersEnvVar = 'BUILD_MAX_WORKERS_PER_TASK';
 
