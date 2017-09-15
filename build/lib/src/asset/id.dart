@@ -65,7 +65,7 @@ class AssetId implements Comparable<AssetId> {
           'Cannot resolve $uri; only "package" and "asset" schemes supported');
     }
     if (from == null) {
-      throw new ArgumentError.value(uri, 'uri',
+      throw new ArgumentError.value(from, 'from',
           'An AssetId "from" must be specified to resolve a relative URI');
     }
     return new AssetId(
