@@ -1,4 +1,4 @@
-## 0.7.1-dev
+## 0.7.1
 
 - Add `mapAssetIds` argument to `checkOutputs` for cases where the logical asset
   location recorded by the builder does not match the written location.

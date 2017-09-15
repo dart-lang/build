@@ -100,8 +100,7 @@ class Module {
       if (transitiveDeps.contains(next)) continue;
       transitiveDeps.add(next);
       var module = new Module.forLibrary(await resolver.libraryFor(next));
-      modulesToCrawl.addAll(module.directDependencies
-          .where((id) => !transitiveDeps.contains(id)));
+      modulesToCrawl.addAll(module.directDependencies);
     }
     return transitiveDeps;
   }
