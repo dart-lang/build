@@ -132,9 +132,9 @@ class PackageGraph {
 
   /// All of the packages in postorder by dependencies.
   ///
-  /// Depedenencies of a package will come before the package in the result. If
+  /// Depedencies of a package will come before the package in the result. If
   /// there is a package cycle the relative position of packages within the
-  /// cycle is non-deterministic, ecept that the root package will always come
+  /// cycle is non-deterministic, except that the root package will always come
   /// last. For any two packages for which neither is a transitive dependency of
   /// the other the relative position of the packages within the cycle is
   /// non-deterministic.
