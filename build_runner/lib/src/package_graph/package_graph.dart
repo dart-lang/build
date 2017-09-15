@@ -138,25 +138,8 @@ class PackageGraph {
   /// last. For any two packages for which neither is a transitive dependency of
   /// the other the relative position of the packages within the cycle is
   /// non-deterministic.
-  Iterable<PackageNode> get orderedPackages sync* {
-    var seen = new Set<PackageNode>();
-    var emitted = new Set<PackageNode>();
-    var queue = new Queue<PackageNode>();
-    queue.addLast(root);
-    while (queue.isNotEmpty) {
-      var next = queue.last;
-      if (next.dependencies.isEmpty || seen.contains(next)) {
-        var toEmit = queue.removeLast();
-        if (!emitted.contains(toEmit)) {
-          emitted.add(toEmit);
-          yield toEmit;
-        }
-      } else {
-        queue.addAll(next.dependencies);
-        seen.add(next);
-      }
-    }
-  }
+  Iterable<PackageNode> get orderedPackages =>
+      _orderedPackages(root, new Set<PackageNode>());
 
   @override
   String toString() {
@@ -166,6 +149,16 @@ class PackageGraph {
     }
     return buffer.toString();
   }
+}
+
+Iterable<PackageNode> _orderedPackages(
+    PackageNode current, Set<PackageNode> seen) sync* {
+  seen.add(current);
+  for (var dep in current.dependencies) {
+    if (seen.contains(dep)) continue;
+    yield* _orderedPackages(dep, seen);
+  }
+  yield current;
 }
 
 /// A node in a [PackageGraph].

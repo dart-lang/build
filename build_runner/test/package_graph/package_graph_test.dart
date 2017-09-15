@@ -171,14 +171,27 @@ void main() {
       expect(inOrder, containsAllInOrder(['right2', 'right1', 'a']));
     });
 
-    test('handles cycles', () {
+    test('includes root last in cycle', () {
       var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
       var b = new PackageNode('b', '1.0.0', PackageDependencyType.path, null);
       a.dependencies.add(b);
       b.dependencies.add(a);
       var graph = new PackageGraph.fromRoot(a);
       var inOrder = graph.orderedPackages.map((n) => n.name).toList();
-      expect(inOrder, containsAllInOrder(['a', 'b']));
+      expect(inOrder, ['b', 'a']);
+    });
+
+    test('handles cycles from beneath the root', () {
+      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
+      var b = new PackageNode('b', '1.0.0', PackageDependencyType.path, null);
+      var c = new PackageNode('c', '1.0.0', PackageDependencyType.path, null);
+      a.dependencies.add(b);
+      b.dependencies.add(c);
+      c.dependencies.add(b);
+      var graph = new PackageGraph.fromRoot(a);
+      var inOrder = graph.orderedPackages.map((n) => n.name).toList();
+      expect(inOrder, containsAllInOrder(['b', 'a']));
+      expect(inOrder, containsAllInOrder(['c', 'a']));
     });
 
     test('handles diamonds', () {
