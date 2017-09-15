@@ -180,7 +180,7 @@ class BuildImpl {
     for (var action in _buildActions) {
       phaseNumber++;
       var inputs = _matchingInputs(action.inputSet, phaseNumber);
-      await for (var output in _runBuilder(
+      for (var output in await _runBuilder(
           phaseNumber, action.builder, inputs, resourceManager)) {
         outputs.add(output);
       }
@@ -204,9 +204,10 @@ class BuildImpl {
           .toSet();
 
   /// Runs [builder] with [primaryInputs] as inputs.
-  Stream<AssetId> _runBuilder(int phaseNumber, Builder builder,
-      Iterable<AssetId> primaryInputs, ResourceManager resourceManager) {
-    var streamController = new StreamController<AssetId>();
+  Future<Iterable<AssetId>> _runBuilder(int phaseNumber, Builder builder,
+      Iterable<AssetId> primaryInputs, ResourceManager resourceManager) async {
+    var outputs = <AssetId>[];
+
     Future runForInput(AssetId input) async {
       var builderOutputs = expectedOutputs(builder, input);
 
@@ -254,15 +255,13 @@ class BuildImpl {
       // Yield the outputs.
       for (var output in wrappedWriter.assetsWritten) {
         (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
-        streamController.add(output);
+        outputs.add(output);
       }
     }
 
-    Future.wait(primaryInputs.map(runForInput)).then((_) {
-      streamController.close();
-    });
+    await Future.wait(primaryInputs.map(runForInput));
 
-    return streamController.stream;
+    return outputs;
   }
 
   Future _delete(AssetId id) {
