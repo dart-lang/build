@@ -16,11 +16,15 @@ main() {
     assets = {
       'b|lib/b.dart': '''final world = 'world';''',
       'a|lib/a.dart': '''
-import 'package:b/b.dart';
-final hello = world;''',
+        import 'package:b/b.dart';
+        final hello = world;
+      ''',
       'a|web/index.dart': '''
-import "package:a/a.dart";
-main() {print(hello);}''',
+        import "package:a/a.dart";
+        main() {
+          print(hello);
+        }
+      ''',
     };
   });
 
