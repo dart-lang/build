@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
@@ -117,6 +118,28 @@ class PackageGraph {
   /// Shorthand to get a package by name.
   PackageNode operator [](String packageName) => allPackages[packageName];
 
+  /// Finds all packages which depend on [packageName] in postorder by
+  /// dependencies.
+  ///
+  /// See [orderedPackages] for ordering guarantees. The node for [packageName]
+  /// will not be included in the result.
+  Iterable<PackageNode> dependentsOf(String packageName) {
+    if (!allPackages.containsKey(packageName)) return const [];
+    var node = allPackages[packageName];
+    return orderedPackages.where((n) => n.dependencies.contains(node));
+  }
+
+  /// All of the packages in postorder by dependencies.
+  ///
+  /// Depedencies of a package will come before the package in the result. If
+  /// there is a package cycle the relative position of packages within the
+  /// cycle is non-deterministic, except that the root package will always come
+  /// last. For any two packages for which neither is a transitive dependency of
+  /// the other the relative position of the packages within the cycle is
+  /// non-deterministic.
+  Iterable<PackageNode> get orderedPackages =>
+      _orderedPackages(root, new Set<PackageNode>());
+
   @override
   String toString() {
     var buffer = new StringBuffer();
@@ -125,6 +148,16 @@ class PackageGraph {
     }
     return buffer.toString();
   }
+}
+
+Iterable<PackageNode> _orderedPackages(
+    PackageNode current, Set<PackageNode> seen) sync* {
+  seen.add(current);
+  for (var dep in current.dependencies) {
+    if (seen.contains(dep)) continue;
+    yield* _orderedPackages(dep, seen);
+  }
+  yield current;
 }
 
 /// A node in a [PackageGraph].

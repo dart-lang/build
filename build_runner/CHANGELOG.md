@@ -1,3 +1,7 @@
+## 0.5.1-dev
+
+- Add `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
+
 ## 0.5.0
 
 - **Breaking**: Removed `buildType` field from `BuildResult`.
