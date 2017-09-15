@@ -180,6 +180,22 @@ void main() {
       var inOrder = graph.orderedPackages.map((n) => n.name).toList();
       expect(inOrder, containsAllInOrder(['a', 'b']));
     });
+
+    test('handles diamonds', () {
+      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
+      var left =
+          new PackageNode('left', '1.0.0', PackageDependencyType.path, null);
+      var right =
+          new PackageNode('right', '1.0.0', PackageDependencyType.path, null);
+      var sharedDep = new PackageNode(
+          'sharedDep', '1.0.0', PackageDependencyType.path, null);
+      a.dependencies.addAll([left, right]);
+      left.dependencies.add(sharedDep);
+      right.dependencies.add(sharedDep);
+      var graph = new PackageGraph.fromRoot(a);
+      var inOrder = graph.orderedPackages.map((n) => n.name).toList();
+      expect(inOrder, hasLength(4));
+    });
   });
 
   group('dependentsOf', () {

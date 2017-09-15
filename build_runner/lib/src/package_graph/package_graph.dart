@@ -140,12 +140,17 @@ class PackageGraph {
   /// non-deterministic.
   Iterable<PackageNode> get orderedPackages sync* {
     var seen = new Set<PackageNode>();
+    var emitted = new Set<PackageNode>();
     var queue = new Queue<PackageNode>();
     queue.addLast(root);
     while (queue.isNotEmpty) {
       var next = queue.last;
       if (next.dependencies.isEmpty || seen.contains(next)) {
-        yield queue.removeLast();
+        var toEmit = queue.removeLast();
+        if (!emitted.contains(toEmit)) {
+          emitted.add(toEmit);
+          yield toEmit;
+        }
       } else {
         queue.addAll(next.dependencies);
         seen.add(next);
