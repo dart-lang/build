@@ -31,4 +31,10 @@ final analyzerDriver = new BazelWorkerDriver(
         ['--build-mode', '--persistent_worker']),
     maxWorkers: _maxWorkersPerTask);
 
+/// Manages a shared set of persistent dartdevc workers.
+final dartdevcDriver = new BazelWorkerDriver(
+    () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
+        ['--persistent_worker']),
+    maxWorkers: _maxWorkersPerTask);
+
 final sdkDir = cli_util.getSdkPath();

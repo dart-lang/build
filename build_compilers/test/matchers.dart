@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:analyzer/src/summary/idl.dart';
 import 'package:test/test.dart';
 
@@ -27,4 +29,12 @@ class HasUnlinkedUris extends CustomMatcher {
     var bundle = new PackageBundle.fromBuffer(summaryBytes as List<int>);
     return bundle.unlinkedUnitUris;
   }
+}
+
+/// A matcher that decodes bytes and matches against the resulting string.
+class Utf8Decoded extends CustomMatcher {
+  Utf8Decoded(matcher) : super('Utf8 decoded bytes', 'UTF8.decode', matcher);
+
+  @override
+  featureValueOf(bytes) => UTF8.decode(bytes as List<int>);
 }

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
+import 'dev_compiler_builder.dart';
 import 'summary_builder.dart';
 
 /// A collection of Dart libraries in a strongly connected component and the
@@ -16,7 +17,11 @@ import 'summary_builder.dart';
 /// packages.
 class Module {
   /// The JS file for this module.
-  AssetId get jsId => primarySource.changeExtension('.js');
+  AssetId get jsId => primarySource.changeExtension(jsModuleExtension);
+
+  // The sourcemap for the JS file for this module.
+  AssetId get jsSourceMapId =>
+      primarySource.changeExtension(jsSourceMapExtension);
 
   /// The linked summary for this module.
   AssetId get linkedSummaryId =>
