@@ -79,11 +79,6 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     request.arguments.add('--no-source-map');
   }
 
-  // Add environment constants.
-  // environmentConstants.forEach((key, value) {
-  //   request.arguments.add('-D$key=$value');
-  // });
-
   // Add all the linked summaries as summary inputs.
   for (var id in transitiveSummaryDeps) {
     request.arguments.addAll(['-s', scratchSpace.fileFor(id).path]);
@@ -98,10 +93,6 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
           .add('--url-mapping=$uri,${scratchSpace.fileFor(id).path}');
     }
   }
-  // // Add the default analysis_options if not the root package.
-  // if (!isRoot) {
-  //   request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
-  // }
 
   // And finally add all the urls to compile, using the package: path for
   // files under lib and the full absolute path for other files.
