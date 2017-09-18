@@ -55,7 +55,7 @@ void throwOnMissingStub(Mock mock) {
 ///
 ///     // Real class.
 ///     class Cat {
-///       String getSound() => 'Meow';
+///       String getSound(String suffix) => 'Meow$suffix';
 ///     }
 ///
 ///     // Mock class.
@@ -66,10 +66,10 @@ void throwOnMissingStub(Mock mock) {
 ///       var cat = new MockCat();
 ///
 ///       // When 'getSound' is called, return 'Woof'
-///       when(cat.getSound()).thenReturn('Woof');
+///       when(cat.getSound(typed(any))).thenReturn('Woof');
 ///
 ///       // Try making a Cat sound...
-///       print(cat.getSound()); // Prints 'Woof'
+///       print(cat.getSound('foo')); // Prints 'Woof'
 ///     }
 ///
 /// **WARNING**: [Mock] uses [noSuchMethod](goo.gl/r3IQUH), which is a _form_ of
