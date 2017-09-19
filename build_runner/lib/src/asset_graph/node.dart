@@ -54,6 +54,8 @@ class GeneratedAssetNode extends AssetNode {
   final int phaseNumber;
 
   /// The primary input which generated this node.
+  ///
+  /// May be `null` in the case of a `PackageBuilder`.
   final AssetId primaryInput;
 
   /// Whether or not this asset needs to be updated.
@@ -69,7 +71,9 @@ class GeneratedAssetNode extends AssetNode {
   factory GeneratedAssetNode.deserialize(List serialized) {
     var node = new GeneratedAssetNode(
         serialized[5] as int,
-        new AssetId.deserialize(serialized[3] as List),
+        serialized[3] == null
+            ? null
+            : new AssetId.deserialize(serialized[3] as List),
         false,
         serialized[4] as bool,
         new AssetId.deserialize(serialized[0] as List));
@@ -79,7 +83,7 @@ class GeneratedAssetNode extends AssetNode {
 
   @override
   List serialize() => super.serialize()
-    ..addAll([primaryInput.serialize(), wasOutput, phaseNumber]);
+    ..addAll([primaryInput?.serialize(), wasOutput, phaseNumber]);
 
   @override
   String toString() =>

@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
 import '../generate/phase.dart';
+import '../package_builder/package_builder.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
@@ -126,6 +127,8 @@ class AssetGraph {
     return deletes;
   }
 
+  /// Adds all [GeneratedAssetNode]s for [buildActions] with [newSources] as
+  /// inputs to this asset graph.
   void _addOutputsForSources(
       List<BuildAction> buildActions, Set<AssetId> newSources) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
@@ -134,19 +137,33 @@ class AssetGraph {
     for (var action in buildActions) {
       phaseNumber++;
       var phaseOutputs = <AssetId>[];
-      var inputs = allInputs.where(action.inputSet.matches);
-      for (var input in inputs) {
-        var outputs = expectedOutputs(action.builder, input);
+      if (action.builder is PackageBuilder) {
+        var builder = action.builder as PackageBuilder;
+        var outputs = builder.declareOutputs();
         phaseOutputs.addAll(outputs);
-        get(input).primaryOutputs.addAll(outputs);
-        for (var output in outputs) {
-          if (contains(output) && get(output) is AssetNode) {
-            _remove(output);
-          }
-          _add(new GeneratedAssetNode(phaseNumber, input, true, false, output));
+        _addGeneratedOutputs(outputs, phaseNumber);
+      } else {
+        var inputs = allInputs.where(action.inputSet.matches);
+        for (var input in inputs) {
+          var outputs = expectedOutputs(action.builder, input);
+          phaseOutputs.addAll(outputs);
+          get(input).primaryOutputs.addAll(outputs);
+          _addGeneratedOutputs(outputs, phaseNumber, primaryInput: input);
         }
       }
       allInputs.addAll(phaseOutputs);
+    }
+  }
+
+  /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
+  void _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+      {AssetId primaryInput}) {
+    for (var output in outputs) {
+      if (contains(output) && get(output) is AssetNode) {
+        _remove(output);
+      }
+      _add(new GeneratedAssetNode(
+          phaseNumber, primaryInput, true, false, output));
     }
   }
 

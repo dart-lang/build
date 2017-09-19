@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build/src/builder/build_step_impl.dart';
+import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
@@ -16,6 +18,7 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/logging.dart';
+import '../package_builder/package_builder.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -182,9 +185,12 @@ class BuildImpl {
     for (var action in _buildActions) {
       phaseNumber++;
       var inputs = _matchingInputs(action.inputSet, phaseNumber);
-      for (var output in await _runBuilder(
-          phaseNumber, action.builder, inputs, resourceManager)) {
-        outputs.add(output);
+      if (action.builder is PackageBuilder) {
+        outputs.addAll(await _runPackageBuilder(
+            phaseNumber, action.builder as PackageBuilder, resourceManager));
+      } else {
+        outputs.addAll(await _runBuilder(
+            phaseNumber, action.builder, inputs, resourceManager));
       }
     }
     return new BuildResult(BuildStatus.success, outputs);
@@ -264,6 +270,58 @@ class BuildImpl {
     await Future.wait(primaryInputs.map(runForInput));
 
     return outputs;
+  }
+
+  Future<Iterable<AssetId>> _runPackageBuilder(int phaseNumber,
+      PackageBuilder builder, ResourceManager resourceManager) async {
+    var builderOutputs = builder.declareOutputs();
+
+    assert(
+        builderOutputs.every((o) => _assetGraph.contains(o)),
+        'Outputs should be known statically. Missing '
+        '${builderOutputs.where((o) => !_assetGraph.contains(o)).toList()}');
+
+    // Skip the build step if none of the outputs need updating.
+    var skipBuild = !builderOutputs.any((output) =>
+        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
+    if (skipBuild) return <AssetId>[];
+
+    var wrappedReader = new SinglePhaseReader(
+        _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
+    var wrappedWriter = new AssetWriterSpy(_writer);
+
+    var logger = new Logger('runBuilder');
+    var buildStep = new BuildStepImpl(null, builderOutputs, wrappedReader,
+        wrappedWriter, _packageGraph.root.name, _resolvers, resourceManager);
+    try {
+      await scopeLog(() => builder.build(buildStep), logger);
+    } finally {
+      await buildStep.complete();
+    }
+
+    // Mark all outputs as no longer needing an update, and mark `wasOutput`
+    // as `false` for now (this will get reset to true later one).
+    for (var output in builderOutputs) {
+      (_assetGraph.get(output) as GeneratedAssetNode)
+        ..needsUpdate = false
+        ..wasOutput = false;
+    }
+
+    // Update the asset graph based on the dependencies discovered.
+    for (var dependency in wrappedReader.assetsRead) {
+      var dependencyNode = _assetGraph.get(dependency);
+      assert(dependencyNode != null, 'Asset Graph is missing $dependency');
+      // We care about all builderOutputs, not just real outputs. Updates
+      // to dependencies may cause a file to be output which wasn't before.
+      dependencyNode.outputs.addAll(builderOutputs);
+    }
+
+    // Mark the actual outputs as output
+    for (var output in wrappedWriter.assetsWritten) {
+      (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
+    }
+
+    return wrappedWriter.assetsWritten;
   }
 
   Future _delete(AssetId id) {
