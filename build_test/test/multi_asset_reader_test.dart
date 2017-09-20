@@ -81,5 +81,18 @@ void main() {
       expect(
           assetReader.findAssets(new Glob('lib/*.dart'), package: 'b'), [idB]);
     });
+
+    test('propagates errors from wrapped readers', () {
+      var idA = new AssetId('a', 'lib/a.dart');
+      assetReader = new MultiAssetReader([
+        new InMemoryAssetReader(
+          sourceAssets: {
+            idA: new DatedString('A'),
+          },
+        ),
+      ]);
+      expect(() => assetReader.findAssets(new Glob('lib/*.dart')),
+          throwsUnsupportedError);
+    });
   });
 }
