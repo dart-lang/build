@@ -211,6 +211,25 @@ void main() {
             'a|lib/a.txt.copy': 'a',
           });
     });
+
+    test('Overdeclared outputs are not treated as inputs to later steps',
+        () async {
+      var buildActions = [
+        new BuildAction(
+            new OverDeclaringCopyBuilder(numCopies: 1, extension: 'unexpected'),
+            'a'),
+        new BuildAction(
+            new CopyBuilder(numCopies: 1, extension: 'expected'), 'a'),
+        new BuildAction(new CopyBuilder(numCopies: 1), 'a',
+            inputs: ['**.expected', '**.unexpected']),
+      ];
+      await testActions(buildActions, {
+        'a|lib/a.txt': 'a',
+      }, outputs: {
+        'a|lib/a.txt.expected': 'a',
+        'a|lib/a.txt.expected.copy': 'a',
+      });
+    });
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
@@ -497,4 +516,13 @@ void main() {
           packageGraph: packageGraph);
     });
   });
+}
+
+class OverDeclaringCopyBuilder extends CopyBuilder {
+  OverDeclaringCopyBuilder({int numCopies: 1, String extension})
+      : super(numCopies: numCopies, extension: extension);
+
+  // Override to not actually output anything.
+  @override
+  Future build(BuildStep buildStep) async {}
 }
