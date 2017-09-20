@@ -1,3 +1,15 @@
+## 0.8.0-dev
+
+- `InMemoryAssetReader`, `MultiAssetReader`, `StubAssetReader` and
+  `PackageAssetReader` now implement the `MultiPackageAssetReader` interface.
+- `testBuilder` now supports `Builder`s that call `findAssets` in non-root
+  packages. 
+- Added a `GlobbingBuilder` which globs files in a package.
+- **Breaking**: The `MultiAssetReader` now requires all its wrapped readers to
+  implement the `MultiPackageAssetReader` interface.
+  - This should not affect most users, since all readers provided by this
+    package now implement that interface.
+
 ## 0.7.1
 
 - Add `mapAssetIds` argument to `checkOutputs` for cases where the logical asset

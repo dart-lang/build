@@ -165,8 +165,9 @@ class _Loader {
     var seenAssets = new Set<AssetId>();
     for (var inputSet in inputSets) {
       for (var glob in inputSet.globs) {
-        for (var id in _options.reader
-            .findAssets(glob, packageName: inputSet.package)) {
+        var assetIds =
+            _options.reader.findAssets(glob, package: inputSet.package);
+        for (var id in assetIds) {
           if (!seenAssets.add(id)) continue;
           yield id;
         }

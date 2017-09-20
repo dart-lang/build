@@ -1,6 +1,13 @@
-## 0.5.1-dev
+## 0.6.0-dev
 
 - Add `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
+- **Breaking**: The `RunnerAssetReader` interface now extends
+  `MultiPackageAssetReader` which means the `packageName` named arg has changed
+  to `package`.
+  - While technically breaking this is primarily an internal only change. This
+    interface isn't used directly my most users.
+- Fixed an issue where `findAssets` could return declared outputs from previous
+  phases that weren't actually output.
 
 ## 0.5.0
 

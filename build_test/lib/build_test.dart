@@ -7,6 +7,7 @@ export 'package:build/src/builder/logging.dart' show scopeLog;
 export 'src/assets.dart';
 export 'src/copy_builder.dart';
 export 'src/fake_watcher.dart';
+export 'src/globbing_builder.dart';
 export 'src/in_memory_reader.dart';
 export 'src/in_memory_writer.dart';
 export 'src/matchers.dart';

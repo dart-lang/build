@@ -189,9 +189,13 @@ class BuildImpl {
   }
 
   Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes
-      .where((n) =>
-          n is! GeneratedAssetNode ||
-          (n as GeneratedAssetNode).phaseNumber < phaseNumber)
+      .where((n) {
+        if (n is GeneratedAssetNode) {
+          return n.wasOutput && n.phaseNumber < phaseNumber;
+        } else {
+          return true;
+        }
+      })
       .map((n) => n.id)
       .toSet();
 
@@ -229,7 +233,7 @@ class BuildImpl {
           (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
       if (skipBuild) return;
       var wrappedReader = new SinglePhaseReader(
-          _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
+          _reader, _assetGraph, phaseNumber, input.package);
       var wrappedWriter = new AssetWriterSpy(_writer);
       await runBuilder(
           builder, [input], wrappedReader, wrappedWriter, _resolvers,

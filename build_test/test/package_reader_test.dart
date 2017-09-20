@@ -9,8 +9,9 @@ import 'package:test/test.dart';
 
 void main() {
   group('$PackageAssetReader', () {
-    AssetReader reader;
+    PackageAssetReader reader;
 
+    final buildAsset = new AssetId('build', 'lib/build.dart');
     final buildTest = new AssetId('build_test', 'lib/build_test.dart');
     final buildMissing = new AssetId('build_test', 'lib/build_missing.dart');
     final thisFile = new AssetId('build_test', 'test/package_reader_test.dart');
@@ -40,6 +41,12 @@ void main() {
 
     test('should be able to use `findAssets` for files in test', () {
       expect(reader.findAssets(new Glob('test/*.dart')), contains(thisFile));
+    });
+
+    test('should be able to use `findAssets` for files in non-root packages',
+        () {
+      expect(reader.findAssets(new Glob('lib/*.dart'), package: 'build'),
+          contains(buildAsset));
     });
   });
 

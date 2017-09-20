@@ -29,6 +29,20 @@ abstract class AssetReader {
   /// Indicates whether asset at [id] is readable.
   Future<bool> canRead(AssetId id);
 
-  /// Returns all readable assets matching [glob] under the root package.
+  /// Returns all readable assets matching [glob] under the current package.
   Iterable<AssetId> findAssets(Glob glob);
+}
+
+/// The same as an `AssetReader`, except that `findAssets` takes an optional
+/// argument `package` which allows you to glob any package.
+///
+/// This should not be exposed to end users generally, but can be used by
+/// different build system implementations.
+abstract class MultiPackageAssetReader extends AssetReader {
+  /// Returns all readable assets matching [glob] under [package].
+  ///
+  /// Some implementations may require the [package] argument, while others
+  /// may have a sane default.
+  @override
+  Iterable<AssetId> findAssets(Glob glob, {String package});
 }

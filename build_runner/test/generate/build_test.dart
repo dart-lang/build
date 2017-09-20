@@ -4,9 +4,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
@@ -16,6 +17,7 @@ import '../common/common.dart';
 void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyABuildAction = new BuildAction(new CopyBuilder(), 'a');
+  final globBuilder = new GlobbingBuilder(new Glob('**.txt'));
 
   group('build', () {
     group('with root package inputs', () {
@@ -145,6 +147,39 @@ void main() {
       });
     });
 
+    test('can glob files from packages', () async {
+      var packageB = new PackageNode(
+          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
+        ..dependencies.add(packageB);
+      var packageGraph = new PackageGraph.fromRoot(packageA);
+
+      var buildActions = [
+        new BuildAction(globBuilder, 'a'),
+        new BuildAction(globBuilder, 'b'),
+      ];
+
+      await testActions(
+          buildActions,
+          {
+            'a|lib/a.globPlaceholder': '',
+            'a|lib/a.txt': '',
+            'a|lib/b.txt': '',
+            'a|web/a.txt': '',
+            'b|lib/b.globPlaceholder': '',
+            'b|lib/c.txt': '',
+            'b|lib/d.txt': '',
+            'b|web/b.txt': '',
+          },
+          outputs: {
+            'a|lib/a.matchingFiles': 'a|lib/a.txt\na|lib/b.txt\na|web/a.txt',
+            'b|lib/b.matchingFiles': 'b|lib/c.txt\nb|lib/d.txt',
+          },
+          packageGraph: packageGraph,
+          writeToCache: true);
+    });
+
     test('can\'t read files in .dart_tool', () async {
       await testActions([
         new BuildAction(
@@ -177,6 +212,25 @@ void main() {
           outputs: {
             'a|lib/a.txt.copy': 'a',
           });
+    });
+
+    test('Overdeclared outputs are not treated as inputs to later steps',
+        () async {
+      var buildActions = [
+        new BuildAction(
+            new OverDeclaringCopyBuilder(numCopies: 1, extension: 'unexpected'),
+            'a'),
+        new BuildAction(
+            new CopyBuilder(numCopies: 1, extension: 'expected'), 'a'),
+        new BuildAction(new CopyBuilder(numCopies: 1), 'a',
+            inputs: ['**.expected', '**.unexpected']),
+      ];
+      await testActions(buildActions, {
+        'a|lib/a.txt': 'a',
+      }, outputs: {
+        'a|lib/a.txt.expected': 'a',
+        'a|lib/a.txt.expected.copy': 'a',
+      });
     });
   });
 
@@ -464,4 +518,13 @@ void main() {
           packageGraph: packageGraph);
     });
   });
+}
+
+class OverDeclaringCopyBuilder extends CopyBuilder {
+  OverDeclaringCopyBuilder({int numCopies: 1, String extension})
+      : super(numCopies: numCopies, extension: extension);
+
+  // Override to not actually output anything.
+  @override
+  Future build(BuildStep buildStep) async {}
 }

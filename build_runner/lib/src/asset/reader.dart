@@ -6,10 +6,8 @@ import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 
-abstract class RunnerAssetReader extends AssetReader {
-  @override
-  Iterable<AssetId> findAssets(Glob glob, {String packageName});
-
+/// A [MultiPackageAssetReader] with the additional `lastModified` method.
+abstract class RunnerAssetReader extends MultiPackageAssetReader {
   /// Asynchronously gets the last modified [DateTime] of [id].
   Future<DateTime> lastModified(AssetId id);
 }
@@ -24,10 +22,10 @@ class SinglePhaseReader implements AssetReader {
   final Set<AssetId> _assetsRead = new Set();
   final AssetGraph _assetGraph;
   final int _phaseNumber;
-  final String _rootPackage;
+  final String _primaryPackage;
 
-  SinglePhaseReader(
-      this._delegate, this._assetGraph, this._phaseNumber, this._rootPackage);
+  SinglePhaseReader(this._delegate, this._assetGraph, this._phaseNumber,
+      this._primaryPackage);
 
   Iterable<AssetId> get assetsRead => _assetsRead;
 
@@ -61,10 +59,13 @@ class SinglePhaseReader implements AssetReader {
 
   @override
   Iterable<AssetId> findAssets(Glob glob) => _assetGraph.allNodes
-      .where((n) => n.id.package == _rootPackage)
-      .where((n) => glob.matches(n.id.path))
-      .where((n) =>
-          n is! GeneratedAssetNode ||
-          (n as GeneratedAssetNode).phaseNumber < _phaseNumber)
-      .map((n) => n.id);
+          .where((n) => n.id.package == _primaryPackage)
+          .where((n) => glob.matches(n.id.path))
+          .where((n) {
+        if (n is GeneratedAssetNode) {
+          return n.wasOutput && n.phaseNumber < _phaseNumber;
+        } else {
+          return true;
+        }
+      }).map((n) => n.id);
 }
