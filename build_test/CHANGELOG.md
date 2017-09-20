@@ -4,6 +4,7 @@
   `PackageAssetReader` now implement the `MultiPackageAssetReader` interface.
 - `testBuilder` now supports `Builder`s that call `findAssets` in non-root
   packages. 
+- Added a `GlobbingBuilder` which globs files in a package.
 - **Breaking**: The `MultiAssetReader` now requires all its wrapped readers to
   implement the `MultiPackageAssetReader` interface.
   - This should not affect most users, since all readers provided by this
