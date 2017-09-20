@@ -189,9 +189,13 @@ class BuildImpl {
   }
 
   Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes
-      .where((n) =>
-          n is! GeneratedAssetNode ||
-          (n as GeneratedAssetNode).phaseNumber < phaseNumber)
+      .where((n) {
+        if (n is GeneratedAssetNode) {
+          return n.wasOutput == true && n.phaseNumber < phaseNumber;
+        } else {
+          return true;
+        }
+      })
       .map((n) => n.id)
       .toSet();
 

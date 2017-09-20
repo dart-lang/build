@@ -9,12 +9,14 @@ import 'package:collection/collection.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
-/// An [AssetReader] that delegates to multiple other asset readers.
+/// An [MultiPackageAssetReader] that delegates to multiple other asset
+/// readers.
 ///
-/// [MultiAssetReader] attempts to check every provided [AssetReader] to see if
-/// they are capable of reading an [AssetId], otherwise checks the next reader.
-class MultiAssetReader implements AssetReader {
-  final List<AssetReader> _readers;
+/// [MultiAssetReader] attempts to check every provided
+/// [MultiPackageAssetReader] to see if they are capable of reading an
+/// [AssetId], otherwise checks the next reader.
+class MultiAssetReader implements MultiPackageAssetReader {
+  final List<MultiPackageAssetReader> _readers;
 
   const MultiAssetReader(this._readers);
 
@@ -36,14 +38,15 @@ class MultiAssetReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async =>
       (await _readerWith(id)).readAsString(id, encoding: encoding);
 
-  /// Returns all readable assets matching [glob] under the root package.
+  /// Returns all readable assets matching [glob] under [package].
   ///
   /// **NOTE**: This is a combined view of all provided readers. As such it is
   /// possible that an [AssetId] will be iterated over more than once, unlike
   /// other implementations of [AssetReader].
   @override
-  Iterable<AssetId> findAssets(Glob glob) => new CombinedIterableView(
-      _readers.map((reader) => reader.findAssets(glob)));
+  Iterable<AssetId> findAssets(Glob glob, {String package}) =>
+      new CombinedIterableView(
+          _readers.map((reader) => reader.findAssets(glob, package: package)));
 
   /// Returns the first [AssetReader] that contains [id].
   ///

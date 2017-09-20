@@ -63,7 +63,7 @@ void main() {
     test('can list files based on glob', () async {
       expect(
           reader
-              .findAssets(new Glob('{lib,web}/**'), packageName: 'basic_pkg')
+              .findAssets(new Glob('{lib,web}/**'), package: 'basic_pkg')
               .toList(),
           unorderedEquals([
             makeAssetId('basic_pkg|lib/hello.txt'),

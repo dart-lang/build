@@ -13,19 +13,22 @@ void main() {
     final libAsset = new AssetId(packageName, 'lib/some_pkg.dart');
     final testAsset = new AssetId(packageName, 'test/some_test.dart');
 
-    AssetReader assetReader;
+    InMemoryAssetReader assetReader;
+    Map<AssetId, DatedValue> allAssets;
 
     setUp(() {
+      allAssets = {
+        libAsset: new DatedString('libAsset'),
+        testAsset: new DatedString('testAsset'),
+      };
       assetReader = new InMemoryAssetReader(
-        sourceAssets: {
-          libAsset: new DatedString('libAsset'),
-          testAsset: new DatedString('testAsset'),
-        },
+        sourceAssets: allAssets,
         rootPackage: packageName,
       );
     });
 
-    test('#findAssets should throw if rootPackage not supplied', () {
+    test('#findAssets should throw if rootPackage and package are not supplied',
+        () {
       assetReader = new InMemoryAssetReader();
       expect(
         () => assetReader.findAssets(new Glob('lib/*.dart')),
@@ -39,6 +42,16 @@ void main() {
 
     test('#findAssets should list files in test/', () {
       expect(assetReader.findAssets(new Glob('test/*.dart')), [testAsset]);
+    });
+
+    test('#findAssets should be able to list files in non-root packages', () {
+      var otherLibAsset = new AssetId('other', 'lib/other.dart');
+      var otherAssets = {
+        otherLibAsset: new DatedString('otherLibAsset'),
+      };
+      allAssets.addAll(otherAssets);
+      expect(assetReader.findAssets(new Glob('lib/*.dart'), package: 'other'),
+          [otherLibAsset]);
     });
   });
 }

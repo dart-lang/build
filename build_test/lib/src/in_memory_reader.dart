@@ -10,7 +10,7 @@ import 'package:glob/glob.dart';
 import 'in_memory_writer.dart';
 
 /// An implementation of [AssetReader] with primed in-memory assets.
-class InMemoryAssetReader implements AssetReader {
+class InMemoryAssetReader implements MultiPackageAssetReader {
   final Map<AssetId, DatedValue> assets;
   final String rootPackage;
 
@@ -36,12 +36,15 @@ class InMemoryAssetReader implements AssetReader {
   }
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) {
-    if (rootPackage == null) {
-      throw new UnsupportedError('Root package is required to use findAssets');
+  Iterable<AssetId> findAssets(Glob glob, {String package}) {
+    package ??= rootPackage;
+    if (package == null) {
+      throw new UnsupportedError(
+          'Root package is required to use findAssets without providing an '
+          'explicit package.');
     }
     return assets.keys
-        .where((id) => id.package == rootPackage && glob.matches(id.path));
+        .where((id) => id.package == package && glob.matches(id.path));
   }
 
   void cacheBytesAsset(AssetId id, List<int> bytes) {

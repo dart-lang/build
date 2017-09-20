@@ -8,7 +8,7 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
 /// A no-op implementation of [AssetReader].
-class StubAssetReader implements AssetReader {
+class StubAssetReader implements MultiPackageAssetReader {
   const StubAssetReader();
 
   @override
@@ -21,5 +21,5 @@ class StubAssetReader implements AssetReader {
   Future<String> readAsString(_, {Encoding encoding}) => new Future.value(null);
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) => null;
+  Iterable<AssetId> findAssets(Glob glob, {String package}) => null;
 }

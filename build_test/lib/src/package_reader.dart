@@ -20,7 +20,7 @@ import 'package:path/path.dart' as p;
 /// ```dart
 /// var assetReader = await PackageAssetReader.currentIsolate();
 /// ```
-class PackageAssetReader implements AssetReader {
+class PackageAssetReader implements MultiPackageAssetReader {
   final SyncPackageResolver _packageResolver;
 
   /// What package is the originating build occurring in.
@@ -81,15 +81,18 @@ class PackageAssetReader implements AssetReader {
   }
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) {
-    if (_rootPackage == null) {
-      throw new UnsupportedError('Root package must be provided to use.');
+  Iterable<AssetId> findAssets(Glob glob, {String package}) {
+    package ??= _rootPackage;
+    if (package == null) {
+      throw new UnsupportedError(
+          'Root package must be provided to use `findAssets` without an '
+          'explicit `package`.');
     }
-    var rootPackagePath = _packageResolver.packagePath(_rootPackage);
-    if (rootPackagePath == null) {
-      throw new StateError('Could not resolve "$_rootPackage".');
+    var packagePath = _packageResolver.packagePath(package);
+    if (packagePath == null) {
+      throw new StateError('Could not resolve "$package".');
     }
-    return _globAssets(_rootPackage, rootPackagePath, glob);
+    return _globAssets(package, packagePath, glob);
   }
 
   @override

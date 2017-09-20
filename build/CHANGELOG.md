@@ -1,3 +1,15 @@
+## 0.10.2-dev
+
+- Added the `MultiPackageAssetReader` interface which allows globbing within
+  any package.
+  - This is not exposed to typical users, only build system implementations
+    need it. The `BuildStep` class does not implement this interface.
+- The docs for `AssetReader#findAssets` have changed such that it globs within
+  the current package instead of the root package (typically defined as
+  `buildStep.inputId.package`).
+  - Before you could run builders only on the root package, but now that you
+    can run them on any package the old functionality no longer makes sense.
+
 ## 0.10.1
 
 - Remove restrictions around the root package when Builders are running. It is

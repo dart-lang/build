@@ -13,7 +13,7 @@ final throwsAssetNotFound = throwsA(isAssetNotFound);
 
 void main() {
   group('$MultiAssetReader', () {
-    AssetReader assetReader;
+    MultiAssetReader assetReader;
 
     test('should throw an $AssetNotFoundException with no readers', () {
       var missingId = new AssetId('some_pkg', 'some_pkg.dart');
@@ -59,6 +59,27 @@ void main() {
         ),
       ]);
       expect(assetReader.findAssets(new Glob('lib/*.dart')), [idA, idB]);
+    });
+
+    test('should support the `package` arg in `findAssets`', () {
+      var idA = new AssetId('a', 'lib/a.dart');
+      var idB = new AssetId('b', 'lib/b.dart');
+      assetReader = new MultiAssetReader([
+        new InMemoryAssetReader(
+          sourceAssets: {
+            idA: new DatedString('A'),
+          },
+        ),
+        new InMemoryAssetReader(
+          sourceAssets: {
+            idB: new DatedString('B'),
+          },
+        ),
+      ]);
+      expect(
+          assetReader.findAssets(new Glob('lib/*.dart'), package: 'a'), [idA]);
+      expect(
+          assetReader.findAssets(new Glob('lib/*.dart'), package: 'b'), [idB]);
     });
   });
 }

@@ -88,7 +88,14 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) => _reader.findAssets(glob);
+  Iterable<AssetId> findAssets(Glob glob) {
+    if (_reader is MultiPackageAssetReader) {
+      return (_reader as MultiPackageAssetReader)
+          .findAssets(glob, package: inputId?.package ?? _rootPackage);
+    } else {
+      return _reader.findAssets(glob);
+    }
+  }
 
   @override
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
