@@ -9,7 +9,7 @@ import 'package:collection/collection.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
-/// An [MultiPackageAssetReader] that delegates to multiple other asset
+/// A [MultiPackageAssetReader] that delegates to multiple other asset
 /// readers.
 ///
 /// [MultiAssetReader] attempts to check every provided
