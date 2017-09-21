@@ -519,12 +519,3 @@ void main() {
     });
   });
 }
-
-class OverDeclaringCopyBuilder extends CopyBuilder {
-  OverDeclaringCopyBuilder({int numCopies: 1, String extension})
-      : super(numCopies: numCopies, extension: extension);
-
-  // Override to not actually output anything.
-  @override
-  Future build(BuildStep buildStep) async {}
-}

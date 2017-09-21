@@ -8,6 +8,10 @@
     interface isn't used directly my most users.
 - Fixed an issue where `findAssets` could return declared outputs from previous
   phases that weren't actually output.
+- Fixed two issues with `writeToCache`:
+  - Over-declared outputs will no longer attempt to build on each startup.
+  - Unrecognized files in the cache dir will no longer be treated as inputs,
+    they will be ignored.
 
 ## 0.5.0
 

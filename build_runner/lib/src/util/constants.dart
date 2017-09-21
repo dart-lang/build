@@ -11,11 +11,18 @@ final String assetGraphPath = '$cacheDir/$scriptHash/asset_graph.json';
 /// Directories used for build tooling.
 ///
 /// Reading from these directories may cause non-hermetic builds.
-const toolDirs = const ['.dart_tool', 'build', 'packages', '.pub'];
+const toolDirs = const [
+  '.dart_tool',
+  'build',
+  'packages',
+  '.pub',
+  '.git',
+  '.idea'
+];
 
 /// The directory to which assets will be written when `writeToCache` is
 /// enabled.
-const generatedOutputDirectory = '.dart_tool/build/generated';
+const generatedOutputDirectory = '$cacheDir/generated';
 
 /// Relative path to the cache directory from the root package dir.
 const String cacheDir = '.dart_tool/build';
