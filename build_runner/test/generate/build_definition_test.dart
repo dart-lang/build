@@ -19,7 +19,7 @@ import 'package:build_runner/src/util/constants.dart';
 import '../common/common.dart';
 
 main() {
-  group('load', () {
+  group('BuildDefinition.load', () {
     Map<AssetId, DatedValue> assets;
     BuildOptions options;
 
@@ -38,7 +38,7 @@ main() {
     });
 
     group('updates', () {
-      test('deleted outputs are captured as remove events', () async {
+      test('contains deleted outputs as remove events', () async {
         var lastBuild = new DateTime.now();
         assets[makeAssetId('a|lib/test.txt')] =
             new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
@@ -59,8 +59,7 @@ main() {
         expect(buildDefinition.updates[generatedSrcId], ChangeType.REMOVE);
       });
 
-      test('non-output generated nodes are not captured as remove events',
-          () async {
+      test('ignores non-output generated nodes', () async {
         var lastBuild = new DateTime.now();
         assets[makeAssetId('a|lib/test.txt')] =
             new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
