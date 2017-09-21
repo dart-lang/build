@@ -6,7 +6,11 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 
 /// Relative path to the asset graph from the root package dir.
-final String assetGraphPath = '$cacheDir/$scriptHash/asset_graph.json';
+final String assetGraphPath = assetGraphPathFor(Platform.script.path);
+
+/// Relative path to the asset graph for a build script at [path]
+String assetGraphPathFor(String path) =>
+    '$cacheDir/${scriptHashFor(path)}/asset_graph.json';
 
 /// Directories used for build tooling.
 ///
@@ -27,5 +31,5 @@ const generatedOutputDirectory = '$cacheDir/generated';
 /// Relative path to the cache directory from the root package dir.
 const String cacheDir = '.dart_tool/build';
 
-final String scriptHash =
-    md5.convert(Platform.script.path.codeUnits).toString();
+/// Returns a hash for a given path.
+String scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
