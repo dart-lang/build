@@ -48,10 +48,14 @@ class BuilderTransformer
         (id) => transform
             .readInputAsString(toBarbackAssetId(id))
             .catchError((_) => null));
-    return Future.wait(inputs.map((input) => _apply(input, transform)));
+    var resourceManager = new ResourceManager();
+    return Future
+        .wait(inputs.map((input) => _apply(input, transform, resourceManager)))
+        .then((_) => resourceManager.disposeAll());
   }
 
-  Future _apply(build.AssetId inputId, AggregateTransform transform) async {
+  Future _apply(build.AssetId inputId, AggregateTransform transform,
+      ResourceManager resourceManager) async {
     var reader = new _TransformAssetReader(transform);
     var writer = new _TransformAssetWriter(transform);
 
@@ -92,7 +96,7 @@ class BuilderTransformer
     });
 
     await runBuilder(_builder, [inputId], reader, writer, _resolvers,
-        logger: logger);
+        logger: logger, resourceManager: resourceManager);
     await logSubscription.cancel();
   }
 
