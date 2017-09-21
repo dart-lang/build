@@ -14,6 +14,7 @@ import '../asset/build_cache.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
@@ -66,7 +67,12 @@ class _Loader {
     AssetGraph assetGraph;
     final conflictingOutputs = new Set<AssetId>();
     _logger.info('Initializing inputs');
-    var currentSources = await _findCurrentSources();
+    var inputSources = await _findInputSources();
+    var cacheDirSources = new Set<AssetId>();
+    if (_options.writeToCache) {
+      cacheDirSources.addAll(_listGeneratedAssetIds());
+    }
+    var allSources = inputSources.union(cacheDirSources);
     var updates = <AssetId, ChangeType>{};
     await logWithTime(_logger, 'Reading cached dependency graph', () async {
       if (await _options.reader.canRead(assetGraphId)) {
@@ -79,12 +85,13 @@ class _Loader {
         assetGraph = null;
       }
       if (assetGraph == null) {
-        assetGraph = new AssetGraph.build(_buildActions, currentSources);
+        assetGraph = new AssetGraph.build(_buildActions, inputSources);
         conflictingOutputs
-            .addAll(assetGraph.outputs.where(currentSources.contains).toSet());
+            .addAll(assetGraph.outputs.where(allSources.contains).toSet());
       } else {
         _logger.info('Updating asset graph with changes since last build.');
-        updates.addAll(await _findUpdates(assetGraph, currentSources));
+        updates.addAll(await _findUpdates(
+            assetGraph, inputSources, cacheDirSources, allSources));
       }
     });
     AssetReader reader = _options.reader;
@@ -116,7 +123,10 @@ class _Loader {
   /// by taking a difference between the assets in the graph and the assets on
   /// disk.
   Future<Map<AssetId, ChangeType>> _findUpdates(
-      AssetGraph assetGraph, Set<AssetId> currentSources) async {
+      AssetGraph assetGraph,
+      Set<AssetId> inputSources,
+      Set<AssetId> generatedSources,
+      Set<AssetId> allSources) async {
     var updates = <AssetId, ChangeType>{};
     addUpdates(Iterable<AssetId> assets, ChangeType type) {
       for (var asset in assets) {
@@ -124,15 +134,19 @@ class _Loader {
       }
     }
 
-    var newSources = new Set<AssetId>.from(currentSources)
-      ..removeAll(assetGraph.allNodes.map((n) => n.id));
+    var newSources = inputSources
+        .difference(assetGraph.allNodes.map((node) => node.id).toSet());
     addUpdates(newSources, ChangeType.ADD);
     var removedAssets = assetGraph.allNodes
+        .where((n) =>
+            n is! GeneratedAssetNode || (n as GeneratedAssetNode).wasOutput)
         .map((n) => n.id)
-        .where((id) => !currentSources.contains((id)));
+        .where((id) => !allSources.contains((id)));
+
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    var remainingSources = assetGraph.sources.where(currentSources.contains);
+    var remainingSources =
+        assetGraph.sources.toSet().intersection(inputSources);
     var modifyChecks = remainingSources.map((id) async {
       var modified = await _options.reader.lastModified(id);
       if (modified.isAfter(assetGraph.validAsOf)) {
@@ -143,15 +157,12 @@ class _Loader {
     return updates;
   }
 
-  /// Returns the set of available inputs on disk.
-  Future<Set<AssetId>> _findCurrentSources() async {
+  /// Returns the set of original package inputs on disk.
+  Future<Set<AssetId>> _findInputSources() async {
     var inputSets = _options.packageGraph.allPackages.keys.map((package) =>
         new InputSet(package,
             [package == _options.packageGraph.root.name ? '**' : 'lib/**']));
     var sources = _listAssetIds(inputSets).where(_isValidInput).toSet();
-    if (_options.writeToCache) {
-      sources.addAll(_listGeneratedAssetIds());
-    }
     return sources;
   }
 
