@@ -1,4 +1,5 @@
 name: scratch_space
+version: 0.0.1
 dependencies:
   build: ^0.10.0
   path: ^1.1.0
