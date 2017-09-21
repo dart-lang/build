@@ -1,7 +1,7 @@
 ## 0.4.0+1
 
 - Use a single `ResourceManager` for all calls to `runBuilder` in
-  `TransformerBuilder`. This makes `Resource`s be shared across all build
+  `BuilderTransformer`. This makes `Resource`s be shared across all build
   steps for a given package and Builder.
 
 ## 0.4.0
