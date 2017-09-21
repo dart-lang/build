@@ -10,6 +10,7 @@ env:
   - PKG=build_runner
   - PKG=build_barback
   - PKG=build_compilers
+  - PKG=scratch_space
 
 script: ./tool/travis.sh
 
