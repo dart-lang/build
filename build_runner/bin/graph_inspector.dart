@@ -151,8 +151,8 @@ class GraphCommand extends Command {
 
   @override
   run() {
-    bool showGenerated = argResults['generated'];
-    bool showSources = argResults['original'];
+    var showGenerated = argResults['generated'] as bool;
+    var showSources = argResults['original'] as bool;
     Iterable<AssetNode> nodes;
     if (showGenerated) {
       nodes = assetGraph.allNodes.where((n) => n is GeneratedAssetNode);
@@ -162,12 +162,12 @@ class GraphCommand extends Command {
       nodes = assetGraph.allNodes;
     }
 
-    String package = argResults['package'];
+    var package = argResults['package'] as String;
     if (package != null) {
       nodes = nodes.where((node) => node.id.package == package);
     }
 
-    String pattern = argResults['pattern'];
+    var pattern = argResults['pattern'] as String;
     if (pattern != null) {
       var glob = new Glob(pattern);
       nodes = nodes.where((node) => glob.matches(node.id.path));
