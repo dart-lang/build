@@ -136,7 +136,7 @@ class BuildImpl {
     }
 
     // Prompt the user to delete files that are declared as outputs.
-    _logger.warning('Found ${conflictingAssets.length} declared outputs '
+    _logger.info('Found ${conflictingAssets.length} declared outputs '
         'which already exist on disk. This is likely because the'
         '`$cacheDir` folder was deleted, or you are submitting generated '
         'files to your source repository.');
