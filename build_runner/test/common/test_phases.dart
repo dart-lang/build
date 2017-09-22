@@ -58,7 +58,7 @@ Future wait(int milliseconds) =>
 ///       });
 ///     }
 ///
-Future testActions(List<BuildAction> buildActions,
+Future<BuildResult> testActions(List<BuildAction> buildActions,
     Map<String, /*String|List<int>*/ dynamic> inputs,
     {Map<String, /*String|List<int>*/ dynamic> outputs,
     PackageGraph packageGraph,
@@ -67,7 +67,8 @@ Future testActions(List<BuildAction> buildActions,
     InMemoryRunnerAssetWriter writer,
     Level logLevel: Level.OFF,
     onLog(LogRecord record),
-    bool writeToCache}) async {
+    bool writeToCache,
+    bool checkBuildStatus: true}) async {
   writer ??= new InMemoryRunnerAssetWriter();
   writeToCache ??= false;
   final actualAssets = writer.assets;
@@ -97,13 +98,17 @@ Future testActions(List<BuildAction> buildActions,
       logLevel: logLevel,
       onLog: onLog);
 
-  checkBuild(result,
-      outputs: outputs,
-      writer: writer,
-      status: status,
-      exceptionMatcher: exceptionMatcher,
-      writeToCache: writeToCache,
-      rootPackage: packageGraph.root.name);
+  if (checkBuildStatus) {
+    checkBuild(result,
+        outputs: outputs,
+        writer: writer,
+        status: status,
+        exceptionMatcher: exceptionMatcher,
+        writeToCache: writeToCache,
+        rootPackage: packageGraph.root.name);
+  }
+
+  return result;
 }
 
 void checkBuild(BuildResult result,
