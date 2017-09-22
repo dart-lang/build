@@ -35,6 +35,8 @@ void main() {
     expect(result.status, BuildStatus.failure,
         reason: 'Dartfmt should fail due to invalid code emitted');
     final trace = new Trace.from(result.stackTrace);
+    expect(trace.frames.map((f) => f.package), contains('dart_style'),
+        reason: 'Should have failed due to a dartfmt error');
     expect(trace.toString(), trace.terse.toString(), reason: 'Should be terse');
     expect(trace.foldFrames((f) => f.package == 'build_runner').toString(),
         trace.toString(),
@@ -47,7 +49,6 @@ class BadCodeBuilder implements Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    // ignore: unawaited_futures
     final output = buildStep.inputId.changeExtension('.g.dart');
     await buildStep.writeAsString(output, _dartfmt.format(_badOutput));
   }
