@@ -1,4 +1,4 @@
-## 0.10.2-dev
+## 0.10.2
 
 - Added the `MultiPackageAssetReader` interface which allows globbing within
   any package.

@@ -1,10 +1,13 @@
-## 0.8.0-dev
+## 0.8.0
 
 - `InMemoryAssetReader`, `MultiAssetReader`, `StubAssetReader` and
   `PackageAssetReader` now implement the `MultiPackageAssetReader` interface.
 - `testBuilder` now supports `Builder`s that call `findAssets` in non-root
   packages. 
 - Added a `GlobbingBuilder` which globs files in a package.
+- Added the `RecordingAssetReader` interface, which adds the
+  `Iterable<AssetId> get assetsRead` getter.
+- `InMemoryAssetReader` now implements `RecordingAssetReader`.
 - **Breaking**: The `MultiAssetReader` now requires all its wrapped readers to
   implement the `MultiPackageAssetReader` interface.
   - This should not affect most users, since all readers provided by this
