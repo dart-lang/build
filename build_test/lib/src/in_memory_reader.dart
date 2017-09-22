@@ -9,16 +9,23 @@ import 'package:glob/glob.dart';
 
 import 'in_memory_writer.dart';
 
+/// An [AssetReader] that records which assets have been read to [readAssets].
+abstract class RecordingAssetReader implements AssetReader {
+  Iterable<AssetId> get readAssets;
+}
+
 /// An implementation of [AssetReader] with primed in-memory assets.
-class InMemoryAssetReader implements MultiPackageAssetReader {
+class InMemoryAssetReader implements MultiPackageAssetReader, RecordingAssetReader {
   final Map<AssetId, DatedValue> assets;
   final String rootPackage;
+  final Set<AssetId> readAssets;
 
   /// Create a new asset reader that contains [sourceAssets].
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
   InMemoryAssetReader({Map<AssetId, DatedValue> sourceAssets, this.rootPackage})
-      : assets = sourceAssets ?? <AssetId, DatedValue>{};
+      : assets = sourceAssets ?? <AssetId, DatedValue>{},
+        readAssets = new Set<AssetId>();
 
   @override
   Future<bool> canRead(AssetId id) async => assets.containsKey(id);
@@ -26,12 +33,14 @@ class InMemoryAssetReader implements MultiPackageAssetReader {
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!await canRead(id)) throw new AssetNotFoundException(id);
+    readAssets.add(id);
     return assets[id].bytesValue;
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!await canRead(id)) throw new AssetNotFoundException(id);
+    readAssets.add(id);
     return assets[id].stringValue;
   }
 
