@@ -21,6 +21,7 @@ import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
+import 'fold_frames.dart';
 import 'input_set.dart';
 import 'options.dart';
 import 'phase.dart';
@@ -115,8 +116,9 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
+      final trace = foldInternalFrames(chain.toTrace()).terse;
       done.complete(new BuildResult(BuildStatus.failure, [],
-          exception: e, stackTrace: chain.toTrace()));
+          exception: e, stackTrace: trace));
     });
     return done.future;
   }
