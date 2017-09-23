@@ -205,8 +205,7 @@ class BuildImpl {
   Set<AssetId> _matchingInputs(InputSet inputSet, int phaseNumber) =>
       _inputsForPhase(phaseNumber)
           .where((input) =>
-              input.package == inputSet.package &&
-              inputSet.matches(input.path))
+              input.package == inputSet.package && inputSet.matches(input.path))
           .toSet();
 
   /// Runs [builder] with [primaryInputs] as inputs.
