@@ -3,28 +3,44 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:glob/glob.dart';
 
-/// Represents a set of files in a package which should be used as primary
-/// inputs to a `Builder`.
+/// A set of files in a package to use as primary inputs to a `Builder`.
 class InputSet {
-  /// The package that the [globs] should be ran on.
+  /// The package name that the [globs] should be ran on.
   final String package;
 
-  /// The [Glob]s for files from [package] to use as inputs.
+  /// Files in [package] that are used as inputs to a builder.
   ///
-  /// Note: If the [package] is a package dependency, then only files under
-  /// `lib` will be available, but for the application package any files can be
-  /// listed.
+  /// **NOTE**: If [package] is a package _dependency_, then only files under
+  /// `lib` will be available. For the current application package any files can
+  /// be listed (such as `bin`, `web`, `tool`, etc).
   final List<Glob> globs;
 
-  InputSet(this.package, Iterable<String> globs)
+  /// Files that are excluded when processing [globs].
+  final List<Glob> excludes;
+
+  InputSet(this.package, Iterable<String> globs,
+      {Iterable<String> excludes: const []})
       : this.globs =
-            new List.unmodifiable(globs.map((pattern) => new Glob(pattern)));
+            new List.unmodifiable(globs.map((pattern) => new Glob(pattern))),
+        this.excludes =
+            new List.unmodifiable(excludes.map((pattern) => new Glob(pattern)));
+
+  /// Returns whether [path] is included in [globs] and not in [excludes].
+  bool matches(String path) =>
+      globs.any((g) => g.matches(path)) &&
+      !excludes.any((g) => g.matches(path));
 
   @override
   String toString() {
     var buffer = new StringBuffer()
       ..write('InputSet: package `$package` with globs');
     for (var glob in globs) {
+      buffer.write(' `${glob.pattern}`');
+    }
+    if (excludes.isNotEmpty) {
+      buffer.write(' excluding ');
+    }
+    for (var glob in excludes) {
       buffer.write(' `${glob.pattern}`');
     }
     buffer.writeln('');

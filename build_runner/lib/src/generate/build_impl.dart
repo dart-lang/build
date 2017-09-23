@@ -206,7 +206,7 @@ class BuildImpl {
       _inputsForPhase(phaseNumber)
           .where((input) =>
               input.package == inputSet.package &&
-              inputSet.globs.any((g) => g.matches(input.path)))
+              inputSet.matches(input.path))
           .toSet();
 
   /// Runs [builder] with [primaryInputs] as inputs.

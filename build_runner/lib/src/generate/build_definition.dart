@@ -179,7 +179,7 @@ class _Loader {
         var assetIds =
             _options.reader.findAssets(glob, package: inputSet.package);
         for (var id in assetIds) {
-          if (!seenAssets.add(id)) continue;
+          if (!seenAssets.add(id) || !inputSet.matches(id.path)) continue;
           yield id;
         }
       }

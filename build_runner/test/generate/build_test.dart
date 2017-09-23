@@ -180,6 +180,20 @@ void main() {
           writeToCache: true);
     });
 
+    test('can glob files from packages with excludes applied', () async {
+      await testActions([
+        new BuildAction(new CopyBuilder(), 'a', excludes: ['lib/a/*.txt'])
+      ], {
+        'a|lib/a/1.txt': '',
+        'a|lib/a/2.txt': '',
+        'a|lib/b/1.txt': '',
+        'a|lib/b/2.txt': '',
+      }, outputs: {
+        'a|lib/b/1.txt.copy': '',
+        'a|lib/b/2.txt.copy': '',
+      }, writeToCache: true);
+    });
+
     test('can\'t read files in .dart_tool', () async {
       await testActions([
         new BuildAction(
