@@ -1,6 +1,8 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
+import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
 /// A set of files in a package to use as primary inputs to a `Builder`.
@@ -25,10 +27,11 @@ class InputSet {
         this.excludes =
             new List.unmodifiable(excludes.map((pattern) => new Glob(pattern)));
 
-  /// Returns whether [path] is included in [globs] and not in [excludes].
-  bool matches(String path) =>
-      globs.any((g) => g.matches(path)) &&
-      !excludes.any((g) => g.matches(path));
+  /// Returns whether [input] is included in [globs] and not in [excludes].
+  bool matches(AssetId input) =>
+      package == input.package &&
+      globs.any((g) => g.matches(input.path)) &&
+      !excludes.any((g) => g.matches(input.path));
 
   @override
   String toString() {
