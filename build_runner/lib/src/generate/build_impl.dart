@@ -203,11 +203,7 @@ class BuildImpl {
 
   /// Gets a list of all inputs matching [inputSet].
   Set<AssetId> _matchingInputs(InputSet inputSet, int phaseNumber) =>
-      _inputsForPhase(phaseNumber)
-          .where((input) =>
-              input.package == inputSet.package &&
-              inputSet.globs.any((g) => g.matches(input.path)))
-          .toSet();
+      _inputsForPhase(phaseNumber).where(inputSet.matches).toSet();
 
   /// Runs [builder] with [primaryInputs] as inputs.
   Future<Iterable<AssetId>> _runBuilder(int phaseNumber, Builder builder,
