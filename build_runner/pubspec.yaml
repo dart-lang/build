@@ -10,7 +10,7 @@ environment:
 dependencies:
   analyzer: ">=0.27.1 <0.31.0"
   args: ">=0.13.7 <2.0.0"
-  async: ^1.13.3
+  async: ">=1.13.3 <3.0.0"
   build: ^0.10.1
   build_barback: ^0.4.0
   crypto: ">=0.9.2 <3.0.0"
