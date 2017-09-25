@@ -65,8 +65,15 @@ class AssetGraph {
   /// Gets the [AssetNode] for [id], if one exists.
   AssetNode get(AssetId id) => _nodesById[id];
 
-  /// Adds [node] to the graph.
+  /// Adds [node] to the graph if it doesn't exist.
+  ///
+  /// Throws a [StateError] if it already exists in the graph.
   void _add(AssetNode node) {
+    if (contains(node.id)) {
+      throw new StateError(
+          'Tried to add node ${node.id} to the asset graph but it already '
+          'exists.');
+    }
     _nodesById[node.id] = node;
   }
 
@@ -156,6 +163,8 @@ class AssetGraph {
   }
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
+  ///
+  /// Replaces any existing [AssetNode]s with [GeneratedAssetNode]s.
   void _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       {AssetId primaryInput}) {
     for (var output in outputs) {
