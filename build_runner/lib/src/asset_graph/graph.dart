@@ -147,8 +147,12 @@ class AssetGraph {
       if (action.builder is PackageBuilder) {
         var builder = action.builder as PackageBuilder;
         var outputs = builder.declareOutputs();
-        phaseOutputs.addAll(outputs);
-        _addGeneratedOutputs(outputs, phaseNumber);
+        // Only rebuild if some outputs are missing (in reality, these should
+        // either all be missing or none of them).
+        if (outputs.any((output) => !contains(output))) {
+          phaseOutputs.addAll(outputs);
+          _addGeneratedOutputs(outputs, phaseNumber);
+        }
       } else {
         var inputs = allInputs.where(action.inputSet.matches);
         for (var input in inputs) {

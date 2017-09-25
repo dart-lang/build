@@ -184,11 +184,11 @@ class BuildImpl {
     var phaseNumber = 0;
     for (var action in _buildActions) {
       phaseNumber++;
-      var inputs = _matchingInputs(action.inputSet, phaseNumber);
       if (action.builder is PackageBuilder) {
         outputs.addAll(await _runPackageBuilder(
             phaseNumber, action.builder as PackageBuilder, resourceManager));
       } else {
+        var inputs = _matchingInputs(action.inputSet, phaseNumber);
         outputs.addAll(await _runBuilder(
             phaseNumber, action.builder, inputs, resourceManager));
       }
