@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   analyzer: ">=0.27.1 <0.31.0"
-  async: ^1.13.3
+  async: ">=1.13.3 <3.0.0"
   logging: ^0.11.2
   path: ^1.1.0
   glob: ^1.1.0
