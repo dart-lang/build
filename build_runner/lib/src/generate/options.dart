@@ -93,14 +93,15 @@ void _defaultLogListener(LogRecord record) {
     }
   }
 
-  var message = lines.join('\n');
+  var message = new StringBuffer(lines.join('\n'));
 
-  var multiLine = LineSplitter.split(message).length > 1;
+  // We always add an extra newline at the end of each message, so it
+  // isn't multiline unless we see > 2 lines.
+  var multiLine = LineSplitter.split(message.toString()).length > 2;
 
   if (record.level > Level.INFO || !_isPosixTerminal || multiLine) {
-    // Add an extra line to the output so the last line is written over.
-    lines.add('');
-    message = lines.join('\n');
+    // Add an extra line to the output so the last line isn't written over.
+    message.writeln('');
   }
 
   if (record.level >= Level.SEVERE) {
