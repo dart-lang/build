@@ -1,6 +1,7 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -84,7 +85,7 @@ class InspectNodeCommand extends Command {
       stderr.writeln('Expected at least one uri for a node to inspect.');
     }
     for (var stringUri in stringUris) {
-      var id = _getIdFromStringUri(stringUri);
+      var id = _idFromString(stringUri);
       if (id == null) {
         continue;
       }
@@ -153,33 +154,33 @@ class GraphCommand extends Command {
   run() {
     var showGenerated = argResults['generated'] as bool;
     var showSources = argResults['original'] as bool;
-    Iterable<AssetNode> nodes;
+    Iterable<AssetId> assets;
     if (showGenerated) {
-      nodes = assetGraph.allNodes.where((n) => n is GeneratedAssetNode);
+      assets = assetGraph.outputs;
     } else if (showSources) {
-      nodes = assetGraph.allNodes.where((n) => n is! GeneratedAssetNode);
+      assets = assetGraph.sources;
     } else {
-      nodes = assetGraph.allNodes;
+      assets = assetGraph.allNodes.map((n) => n.id);
     }
 
     var package = argResults['package'] as String;
     if (package != null) {
-      nodes = nodes.where((node) => node.id.package == package);
+      assets = assets.where((id) => id.package == package);
     }
 
     var pattern = argResults['pattern'] as String;
     if (pattern != null) {
       var glob = new Glob(pattern);
-      nodes = nodes.where((node) => glob.matches(node.id.path));
+      assets = assets.where((id) => glob.matches(id.path));
     }
 
-    for (var node in nodes) {
-      _listAsset(node.id, stdout, indentation: '  ');
+    for (var id in assets) {
+      _listAsset(id, stdout, indentation: '  ');
     }
   }
 }
 
-AssetId _getIdFromStringUri(String stringUri) {
+AssetId _idFromString(String stringUri) {
   var uri = Uri.parse(stringUri);
   if (uri.scheme == 'package') {
     return new AssetId(uri.pathSegments.first,
