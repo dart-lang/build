@@ -3,11 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 

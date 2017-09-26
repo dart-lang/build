@@ -16,7 +16,7 @@ String _pubBinary = p.join(getSdkPath(), 'bin', 'pub');
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
 Future<ProcessResult> pubGet(String package) async {
-  var pubGetresult = await Process.run(_pubBinary, ['get'],
+  var pubGetresult = await Process.run(_pubBinary, ['get', '--offline'],
       workingDirectory: p.join(d.sandbox, package));
   expect(pubGetresult.exitCode, 0, reason: pubGetresult.stderr as String);
   return pubGetresult;
