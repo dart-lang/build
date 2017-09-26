@@ -256,7 +256,9 @@ class BuildImpl {
 
       // Yield the outputs.
       for (var output in wrappedWriter.assetsWritten) {
-        (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
+        var node = _assetGraph.get(output) as GeneratedAssetNode;
+        node.wasOutput = true;
+        node.globs = wrappedReader.globsRan.toSet();
         outputs.add(output);
       }
     }
