@@ -537,16 +537,17 @@ void main() {
   });
 
   group('build integration tests', () {
-    setUp(() async {
-      await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_runner',
-          'build_test',
-          'glob'
-        ]),
-        d.dir('tool', [
-          d.file('build.dart', '''
+    group('findAssets', () {
+      setUp(() async {
+        await d.dir('a', [
+          await pubspec('a', currentIsolateDependencies: [
+            'build',
+            'build_runner',
+            'build_test',
+            'glob'
+          ]),
+          d.dir('tool', [
+            d.file('build.dart', '''
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -556,85 +557,154 @@ main() async {
     [new BuildAction(new GlobbingBuilder(new Glob('**.txt')), 'a')]);
 }
 ''')
-        ]),
-        d.dir('web', [
-          d.file('a.globPlaceholder'),
-          d.file('a.txt', ''),
-          d.file('b.txt', ''),
-        ]),
-      ]).create();
+          ]),
+          d.dir('web', [
+            d.file('a.globPlaceholder'),
+            d.file('a.txt', ''),
+            d.file('b.txt', ''),
+          ]),
+        ]).create();
 
-      await pubGet('a');
+        await pubGet('a');
 
-      // Run a build and validate the output.
-      var result = await runDart('a', 'tool/build.dart');
-      expect(result.exitCode, 0, reason: result.stderr as String);
-      await d.dir('a', [
-        d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
-      ]).validate();
+        // Run a build and validate the output.
+        var result = await runDart('a', 'tool/build.dart');
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        await d.dir('a', [
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+        ]).validate();
+      });
+
+      test('picks up new files that match the glob', () async {
+        // Add a new file matching the glob.
+        await d.dir('a', [
+          d.dir('web', [d.file('c.txt', '')])
+        ]).create();
+
+        // Run a new build and validate.
+        var result = await runDart('a', 'tool/build.dart');
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        expect(result.stdout, contains('with 1 outputs'));
+        await d.dir('a', [
+          d.dir('web', [
+            d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt\na|web/c.txt')
+          ])
+        ]).validate();
+      });
+
+      test('picks up deleted files that match the glob', () async {
+        // Delete a file matching the glob.
+        var aTxtFile = new File(p.join(d.sandbox, 'a', 'web', 'a.txt'));
+        aTxtFile.deleteSync();
+
+        // Run a new build and validate.
+        var result = await runDart('a', 'tool/build.dart');
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        expect(result.stdout, contains('with 1 outputs'));
+        await d.dir('a', [
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/b.txt')])
+        ]).validate();
+      });
+
+      test(
+          'doesn\'t cause new builds for files that don\'t match '
+          'any globs', () async {
+        // Add a new file not matching the glob.
+        await d.dir('a', [
+          d.dir('web', [d.file('c.other', '')])
+        ]).create();
+
+        // Run a new build and validate.
+        var result = await runDart('a', 'tool/build.dart');
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        expect(result.stdout, contains('with 0 outputs'));
+        await d.dir('a', [
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+        ]).validate();
+      });
+
+      test('doesn\'t cause new builds for file changes', () async {
+        // Change a file matching the glob.
+        await d.dir('a', [
+          d.dir('web', [d.file('a.txt', 'changed!')])
+        ]).create();
+
+        // Run a new build and validate.
+        var result = await runDart('a', 'tool/build.dart');
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        expect(result.stdout, contains('with 0 outputs'));
+        await d.dir('a', [
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+        ]).validate();
+      });
     });
 
-    test('glob apis pick up new files that match the glob', () async {
-      // Add a new file matching the glob.
-      await d.dir('a', [
-        d.dir('web', [d.file('c.txt', '')])
-      ]).create();
+    group('findAssets with no initial output', () {
+      setUp(() async {
+        await d.dir('a', [
+          await pubspec('a', currentIsolateDependencies: [
+            'build',
+            'build_runner',
+            'build_test',
+            'glob'
+          ]),
+          d.dir('tool', [
+            d.file('build.dart', '''
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+import 'package:glob/glob.dart';
 
-      // Run a new build and validate.
-      var result = await runDart('a', 'tool/build.dart');
-      expect(result.exitCode, 0, reason: result.stderr as String);
-      expect(result.stdout, contains('with 1 outputs'));
-      await d.dir('a', [
-        d.dir('web', [
-          d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt\na|web/c.txt')
-        ])
-      ]).validate();
-    });
+main() async {
+  await build(
+    [new BuildAction(new OverDeclaringGlobbingBuilder(
+        new Glob('**.txt')), 'a')]);
+}
 
-    test('glob apis pick up deleted files that match the glob', () async {
-      // Delete a file matching the glob.
-      var aTxtFile = new File(p.join(d.sandbox, 'a', 'web', 'a.txt'));
-      aTxtFile.deleteSync();
+class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
+  OverDeclaringGlobbingBuilder(Glob glob) : super(glob);
 
-      // Run a new build and validate.
-      var result = await runDart('a', 'tool/build.dart');
-      expect(result.exitCode, 0, reason: result.stderr as String);
-      expect(result.stdout, contains('with 1 outputs'));
-      await d.dir('a', [
-        d.dir('web', [d.file('a.matchingFiles', 'a|web/b.txt')])
-      ]).validate();
-    });
+  @override
+  Future build(BuildStep buildStep) async {
+    var assets = buildStep.findAssets(glob).toList();
+    // Only output if we have a 'web/b.txt' file.
+    if (assets.any((id) => id.path == 'web/b.txt')) {
+      await super.build(buildStep);
+    }
+  }
+}
+''')
+          ]),
+          d.dir('web', [
+            d.file('a.globPlaceholder'),
+            d.file('a.txt', ''),
+          ]),
+        ]).create();
 
-    test(
-        'glob apis don\'t cause new builds for files that don\'t match '
-        'any globs', () async {
-      // Add a new file not matching the glob.
-      await d.dir('a', [
-        d.dir('web', [d.file('c.other', '')])
-      ]).create();
+        await pubGet('a');
 
-      // Run a new build and validate.
-      var result = await runDart('a', 'tool/build.dart');
-      expect(result.exitCode, 0, reason: result.stderr as String);
-      expect(result.stdout, contains('with 0 outputs'));
-      await d.dir('a', [
-        d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
-      ]).validate();
-    });
+        // Run a build and validate the output.
+        var result = await runDart('a', 'tool/build.dart');
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        expect(result.stdout, contains('with 0 outputs'));
+        await d.dir('a', [
+          d.dir('web', [d.nothing('a.matchingFiles')])
+        ]).validate();
+      });
 
-    test('glob apis don\'t cause new builds for file changes', () async {
-      // Change a file matching the glob.
-      await d.dir('a', [
-        d.dir('web', [d.file('a.txt', 'changed!')])
-      ]).create();
+      test('picks up new files that match the glob', () async {
+        // Add a new file matching the glob which causes a real output.
+        await d.dir('a', [
+          d.dir('web', [d.file('b.txt', '')])
+        ]).create();
 
-      // Run a new build and validate.
-      var result = await runDart('a', 'tool/build.dart');
-      expect(result.exitCode, 0, reason: result.stderr as String);
-      expect(result.stdout, contains('with 0 outputs'));
-      await d.dir('a', [
-        d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
-      ]).validate();
+        // Run a new build and validate.
+        var result = await runDart('a', 'tool/build.dart');
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        expect(result.stdout, contains('with 1 outputs'));
+        await d.dir('a', [
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+        ]).validate();
+      });
     });
   });
 }
