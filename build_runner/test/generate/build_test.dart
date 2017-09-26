@@ -3,10 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
@@ -531,5 +534,53 @@ void main() {
           writeToCache: true,
           packageGraph: packageGraph);
     });
+  });
+
+  group('build integration tests', () {
+    test('glob apis pick up new files that match the glob', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_runner',
+          'build_test',
+          'glob'
+        ]),
+        d.dir('tool', [
+          d.file('build.dart', '''
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+import 'package:glob/glob.dart';
+
+main() async {
+  await build(
+    [new BuildAction(new GlobbingBuilder(new Glob('**.txt')), 'a')]);
+}
+''')
+        ]),
+        d.dir('web', [
+          d.file('a.globPlaceholder'),
+          d.file('a.txt', ''),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+
+      var result = await runDart('a', 'tool/build.dart');
+
+      expect(result.exitCode, 0, reason: result.stderr as String);
+
+      var sandboxDir = p.join(d.sandbox, 'a');
+      var outputFile = new File(p.join(sandboxDir, 'web', 'a.matchingFiles'));
+      expect(outputFile.existsSync(), isTrue);
+      expect(outputFile.readAsStringSync(), 'a|web/a.txt');
+
+      new File(p.join(sandboxDir, 'web', 'b.txt.copy')).createSync();
+
+      result = await runDart('a', 'tool/build.dart');
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('with 1 outputs'));
+      expect(outputFile.existsSync(), isTrue);
+      expect(outputFile.readAsStringSync(), 'a|web/a.txt\na|web/b.txt');
+    }, skip: 'https://github.com/dart-lang/build/issues/455');
   });
 }
