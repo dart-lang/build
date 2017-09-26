@@ -568,19 +568,22 @@ main() async {
       var result = await runDart('a', 'tool/build.dart');
 
       expect(result.exitCode, 0, reason: result.stderr as String);
+      await d.dir('a', [
+        d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt')])
+      ]).validate();
 
-      var sandboxDir = p.join(d.sandbox, 'a');
-      var outputFile = new File(p.join(sandboxDir, 'web', 'a.matchingFiles'));
-      expect(outputFile.existsSync(), isTrue);
-      expect(outputFile.readAsStringSync(), 'a|web/a.txt');
-
-      new File(p.join(sandboxDir, 'web', 'b.txt.copy')).createSync();
+      // Add a new file matching the glob.
+      await d.dir('a', [
+        d.dir('web', [d.file('b.txt', '')])
+      ]).create();
 
       result = await runDart('a', 'tool/build.dart');
-      expect(result.exitCode, 0);
+      expect(result.exitCode, 0, reason: result.stderr as String);
       expect(result.stdout, contains('with 1 outputs'));
-      expect(outputFile.existsSync(), isTrue);
-      expect(outputFile.readAsStringSync(), 'a|web/a.txt\na|web/b.txt');
+
+      await d.dir('a', [
+        d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+      ]).validate();
     }, skip: 'https://github.com/dart-lang/build/issues/455');
   });
 }
