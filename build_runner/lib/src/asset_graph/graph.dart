@@ -121,16 +121,16 @@ class AssetGraph {
 
     var allNewAndDeletedIds = _addOutputsForSources(buildActions,
         updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet())
+      ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
       ..addAll(deletes);
 
     // For all new or deleted assets, check if they match any globs.
-    for (var newid in allNewAndDeletedIds) {
+    for (var id in allNewAndDeletedIds) {
       var samePackageOutputNodes = allNodes
-          .where(
-              (n) => n is GeneratedAssetNode && n.id.package == newid.package)
+          .where((n) => n is GeneratedAssetNode && n.id.package == id.package)
           .toList();
       for (GeneratedAssetNode node in samePackageOutputNodes) {
-        if (node.globs.any((glob) => glob.matches(newid.path))) {
+        if (node.globs.any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
           clearNodeAndDeps(node.id, null);
         }
