@@ -582,6 +582,6 @@ main() async {
       await d.dir('a', [
         d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
       ]).validate();
-    }, skip: 'https://github.com/dart-lang/build/issues/455');
+    });
   });
 }
