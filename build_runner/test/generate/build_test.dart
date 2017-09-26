@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
@@ -531,5 +532,56 @@ void main() {
           writeToCache: true,
           packageGraph: packageGraph);
     });
+  });
+
+  group('build integration tests', () {
+    test('glob apis pick up new files that match the glob', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_runner',
+          'build_test',
+          'glob'
+        ]),
+        d.dir('tool', [
+          d.file('build.dart', '''
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+import 'package:glob/glob.dart';
+
+main() async {
+  await build(
+    [new BuildAction(new GlobbingBuilder(new Glob('**.txt')), 'a')]);
+}
+''')
+        ]),
+        d.dir('web', [
+          d.file('a.globPlaceholder'),
+          d.file('a.txt', ''),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+
+      var result = await runDart('a', 'tool/build.dart');
+
+      expect(result.exitCode, 0, reason: result.stderr as String);
+      await d.dir('a', [
+        d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt')])
+      ]).validate();
+
+      // Add a new file matching the glob.
+      await d.dir('a', [
+        d.dir('web', [d.file('b.txt', '')])
+      ]).create();
+
+      result = await runDart('a', 'tool/build.dart');
+      expect(result.exitCode, 0, reason: result.stderr as String);
+      expect(result.stdout, contains('with 1 outputs'));
+
+      await d.dir('a', [
+        d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+      ]).validate();
+    }, skip: 'https://github.com/dart-lang/build/issues/455');
   });
 }
