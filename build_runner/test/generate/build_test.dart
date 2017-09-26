@@ -623,7 +623,7 @@ main() async {
     });
 
     test('glob apis don\'t cause new builds for file changes', () async {
-      // Add a new file not matching the glob.
+      // Change a file matching the glob.
       await d.dir('a', [
         d.dir('web', [d.file('a.txt', 'changed!')])
       ]).create();

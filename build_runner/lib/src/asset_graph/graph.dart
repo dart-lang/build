@@ -129,8 +129,10 @@ class AssetGraph {
       var samePackageOutputNodes = allNodes
           .where((n) => n is GeneratedAssetNode && n.id.package == id.package)
           .toList();
-      for (GeneratedAssetNode node in samePackageOutputNodes) {
-        if (node.globs.any((glob) => glob.matches(id.path))) {
+      for (var node in samePackageOutputNodes) {
+        if ((node as GeneratedAssetNode)
+            .globs
+            .any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
           clearNodeAndDeps(node.id, null);
         }
