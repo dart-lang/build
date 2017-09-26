@@ -11,9 +11,11 @@ export 'package:build_test/build_test.dart'
     hide InMemoryAssetReader, InMemoryAssetWriter;
 
 export 'assets.dart';
+export 'descriptors.dart';
 export 'in_memory_reader.dart';
 export 'in_memory_writer.dart';
 export 'matchers.dart';
+export 'sdk.dart';
 export 'test_phases.dart';
 
 class OverDeclaringCopyBuilder extends CopyBuilder {
