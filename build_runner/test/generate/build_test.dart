@@ -3,9 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -535,7 +537,8 @@ void main() {
   });
 
   group('build integration tests', () {
-    test('glob apis pick up new files that match the glob', () async {
+    test('glob apis pick up new and deleted files that match the glob',
+        () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
@@ -563,8 +566,8 @@ main() async {
 
       await pubGet('a');
 
+      // Run a build and validate the output.
       var result = await runDart('a', 'tool/build.dart');
-
       expect(result.exitCode, 0, reason: result.stderr as String);
       await d.dir('a', [
         d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt')])
@@ -575,12 +578,24 @@ main() async {
         d.dir('web', [d.file('b.txt', '')])
       ]).create();
 
+      // Run a new build and validate.
       result = await runDart('a', 'tool/build.dart');
       expect(result.exitCode, 0, reason: result.stderr as String);
       expect(result.stdout, contains('with 1 outputs'));
-
       await d.dir('a', [
         d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+      ]).validate();
+
+      // Delete a file matching the glob.
+      var aTxtFile = new File(p.join(d.sandbox, 'a', 'web', 'a.txt'));
+      aTxtFile.deleteSync();
+
+      // Run a new build and validate.
+      result = await runDart('a', 'tool/build.dart');
+      expect(result.exitCode, 0, reason: result.stderr as String);
+      expect(result.stdout, contains('with 1 outputs'));
+      await d.dir('a', [
+        d.dir('web', [d.file('a.matchingFiles', 'a|web/b.txt')])
       ]).validate();
     });
   });
