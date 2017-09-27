@@ -167,8 +167,8 @@ class AssetGraph {
       if (action.builder is PackageBuilder) {
         var builder = action.builder as PackageBuilder;
         var outputs = builder.declareOutputs();
-        // Only rebuild if some outputs are missing (in reality, these should
-        // either all be missing or none of them).
+        // `PackageBuilder`s don't generally care about new files, so we only
+        // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
           _addGeneratedOutputs(outputs, phaseNumber);
@@ -193,6 +193,8 @@ class AssetGraph {
   void _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       {AssetId primaryInput}) {
     for (var output in outputs) {
+      // When `writeToCache` is false we can pick up old generated outputs as
+      // regular `AssetNode`s, this deletes them.
       if (contains(output)) _remove(output);
 
       _add(new GeneratedAssetNode(

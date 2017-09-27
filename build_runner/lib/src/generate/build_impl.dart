@@ -211,7 +211,11 @@ class BuildImpl {
   Set<AssetId> _matchingInputs(InputSet inputSet, int phaseNumber) =>
       _inputsForPhase(phaseNumber).where(inputSet.matches).toSet();
 
-  /// Runs [builder] with [primaryInputs] as inputs.
+  /// Runs a normal [builder] with [primaryInputs] as inputs and returns only
+  /// the outputs that were newly created.
+  ///
+  /// Does not return outputs that didn't need to be re-ran or were declared
+  /// but not output.
   Future<Iterable<AssetId>> _runBuilder(int phaseNumber, Builder builder,
       Iterable<AssetId> primaryInputs, ResourceManager resourceManager) async {
     var outputs = <AssetId>[];
@@ -219,7 +223,7 @@ class BuildImpl {
     Future runForInput(AssetId input) async {
       var builderOutputs = expectedOutputs(builder, input);
 
-      // Add nodes to the AssetGraph for builderOutputs and input.
+      // Add `builderOutputs` to the primary outputs of the input.
       var inputNode = _assetGraph.get(input);
       assert(inputNode != null,
           'Inputs should be known in the static graph. Missing $input');
@@ -228,14 +232,9 @@ class BuildImpl {
         assert(inputNode.primaryOutputs.contains(output),
             '$input missing primary output $output');
       }
-      assert(
-          builderOutputs.every((o) => _assetGraph.contains(o)),
-          'Outputs should be known statically. Missing '
-          '${builderOutputs.where((o) => !_assetGraph.contains(o)).toList()}');
-      // Skip the build step if none of the outputs need updating.
-      var skipBuild = !builderOutputs.any((output) =>
-          (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
-      if (skipBuild) return;
+
+      if (!_buildShouldRun(builderOutputs)) return;
+
       var wrappedReader = new SinglePhaseReader(
           _reader, _assetGraph, phaseNumber, input.package);
       var wrappedWriter = new AssetWriterSpy(_writer);
@@ -243,31 +242,11 @@ class BuildImpl {
           builder, [input], wrappedReader, wrappedWriter, _resolvers,
           resourceManager: resourceManager);
 
-      // Mark all outputs as no longer needing an update, and mark `wasOutput`
-      // as `false` for now (this will get reset to true later one).
-      //
-      // Also tracks all the globs that were used during this build.
-      for (var output in builderOutputs) {
-        (_assetGraph.get(output) as GeneratedAssetNode)
-          ..needsUpdate = false
-          ..wasOutput = false
-          ..globs = wrappedReader.globsRan.toSet();
-      }
+      // Reset the state for all the `builderOutputs` nodes based on what was
+      // read and written.
+      _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
 
-      // Update the asset graph based on the dependencies discovered.
-      for (var dependency in wrappedReader.assetsRead) {
-        var dependencyNode = _assetGraph.get(dependency);
-        assert(dependencyNode != null, 'Asset Graph is missing $dependency');
-        // We care about all builderOutputs, not just real outputs. Updates
-        // to dependencies may cause a file to be output which wasn't before.
-        dependencyNode.outputs.addAll(builderOutputs);
-      }
-
-      // Yield the outputs.
-      for (var output in wrappedWriter.assetsWritten) {
-        (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
-        outputs.add(output);
-      }
+      outputs.addAll(wrappedWriter.assetsWritten);
     }
 
     await Future.wait(primaryInputs.map(runForInput));
@@ -275,22 +254,18 @@ class BuildImpl {
     return outputs;
   }
 
+  /// Runs [builder] and returns only the outputs that were newly created.
+  ///
+  /// Does not return outputs that didn't need to be re-ran or were declared
+  /// but not output.
   Future<Iterable<AssetId>> _runPackageBuilder(int phaseNumber,
       PackageBuilder builder, ResourceManager resourceManager) async {
     var builderOutputs = builder.declareOutputs();
 
-    assert(
-        builderOutputs.every((o) => _assetGraph.contains(o)),
-        'Outputs should be known statically. Missing '
-        '${builderOutputs.where((o) => !_assetGraph.contains(o)).toList()}');
-
-    // Skip the build step if none of the outputs need updating.
-    var skipBuild = !builderOutputs.any((output) =>
-        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
-    if (skipBuild) return <AssetId>[];
+    if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
     var wrappedReader = new SinglePhaseReader(
-        _reader, _assetGraph, phaseNumber, _packageGraph.root.name);
+        _reader, _assetGraph, phaseNumber, builder.package);
     var wrappedWriter = new AssetWriterSpy(_writer);
 
     var logger = new Logger('runBuilder');
@@ -302,30 +277,53 @@ class BuildImpl {
       await buildStep.complete();
     }
 
-    // Mark all outputs as no longer needing an update, and mark `wasOutput`
-    // as `false` for now (this will get reset to true later one).
-    for (var output in builderOutputs) {
+    // Reset the state for all the `builderOutputs` nodes based on what was
+    // read and written.
+    _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
+
+    return wrappedWriter.assetsWritten;
+  }
+
+  bool _buildShouldRun(Iterable<AssetId> outputs) {
+    assert(
+        outputs.every((o) => _assetGraph.contains(o)),
+        'Outputs should be known statically. Missing '
+        '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
+
+    // A build should be ran if any output needs updating
+    return outputs.any((output) =>
+        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
+  }
+
+  /// Sets the state for all [declaredOutputs] of a build step, by:
+  ///
+  /// - Setting `needsUpdate` to `false` for each output
+  /// - Setting `wasOutput` based on [writer#assetsWritten].
+  /// - Setting `globs` on each output based on [reader#globsRan].
+  void _setOutputsState(Iterable<AssetId> declaredOutputs,
+      SinglePhaseReader reader, AssetWriterSpy writer) {
+    // Reset the state for each output, setting `wasOutput` to false for now
+    // (will set to true in the next loop for written assets).
+    for (var output in declaredOutputs) {
       (_assetGraph.get(output) as GeneratedAssetNode)
         ..needsUpdate = false
         ..wasOutput = false
-        ..globs = wrappedReader.globsRan.toSet();
+        ..globs = reader.globsRan.toSet();
+    }
+
+    // Mark the actual outputs as output.
+    for (var output in writer.assetsWritten) {
+      (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
     }
 
     // Update the asset graph based on the dependencies discovered.
-    for (var dependency in wrappedReader.assetsRead) {
+    for (var dependency in reader.assetsRead) {
       var dependencyNode = _assetGraph.get(dependency);
       assert(dependencyNode != null, 'Asset Graph is missing $dependency');
       // We care about all builderOutputs, not just real outputs. Updates
       // to dependencies may cause a file to be output which wasn't before.
-      dependencyNode.outputs.addAll(builderOutputs);
+      dependencyNode.outputs.addAll(declaredOutputs);
     }
-
-    // Mark the actual outputs as output
-    for (var output in wrappedWriter.assetsWritten) {
-      (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
-    }
-
-    return wrappedWriter.assetsWritten;
   }
 
   Future _delete(AssetId id) {
