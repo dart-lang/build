@@ -584,4 +584,47 @@ main() async {
       ]).validate();
     }, skip: 'https://github.com/dart-lang/build/issues/455');
   });
+
+  group('regression tests', () {
+    test(
+        'checking for existing outputs works with deleted '
+        'intermediate outputs', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_runner',
+          'build_test',
+          'glob'
+        ]),
+        d.dir('tool', [
+          d.file('build.dart', '''
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+
+main() async {
+  await build([
+    new BuildAction(new CopyBuilder(), 'a'),
+    new BuildAction(new CopyBuilder(), 'a', inputs: ['**.txt.copy']),
+  ]);
+}
+''')
+        ]),
+        d.dir('web', [
+          d.file('a.txt', 'a'),
+          d.file('a.txt.copy.copy', 'a'),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+
+      var result = await runDart('a', 'tool/build.dart');
+
+      expect(result.exitCode, isNot(0),
+          reason: 'build should fail due to conflicting outputs');
+      expect(
+          result.stderr,
+          allOf(contains('Found 1 outputs already on disk'),
+              contains('a|web/a.txt.copy.copy')));
+    });
+  });
 }
