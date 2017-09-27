@@ -32,7 +32,7 @@ class BuildCacheReader implements AssetReader {
           encoding: encoding);
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) => throw new UnimplementedError(
+  Stream<AssetId> findAssets(Glob glob) => throw new UnimplementedError(
       'Asset globbing should be done per phase with the AssetGraph');
 }
 

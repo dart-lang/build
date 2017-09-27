@@ -33,7 +33,7 @@ class FileBasedAssetReader implements RunnerAssetReader {
           .readAsString(encoding: encoding ?? UTF8);
 
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String package}) sync* {
+  Stream<AssetId> findAssets(Glob glob, {String package}) async* {
     var packageNode =
         package == null ? packageGraph.root : packageGraph[package];
     if (packageNode == null) {
@@ -44,10 +44,10 @@ class FileBasedAssetReader implements RunnerAssetReader {
     }
     var packagePath = packageNode.location.toFilePath();
     try {
-      var files = glob
-          .listSync(followLinks: false, root: packagePath)
+      var fileStream = glob
+          .list(followLinks: false, root: packagePath)
           .where((e) => e is File);
-      for (var file in files) {
+      await for (var file in fileStream) {
         // TODO(jakemac): Where do these files come from???
         if (path.basename(file.path).startsWith('._')) continue;
         yield _fileToAssetId(file as File, packageNode);

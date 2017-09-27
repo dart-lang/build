@@ -58,7 +58,8 @@ class SinglePhaseReader implements AssetReader {
   }
 
   @override
-  Iterable<AssetId> findAssets(Glob glob) => _assetGraph.allNodes
+  Stream<AssetId> findAssets(Glob glob) =>
+      new Stream.fromIterable(_assetGraph.allNodes
           .where((n) => n.id.package == _primaryPackage)
           .where((n) => glob.matches(n.id.path))
           .where((n) {
@@ -67,5 +68,5 @@ class SinglePhaseReader implements AssetReader {
         } else {
           return true;
         }
-      }).map((n) => n.id);
+      }).map((n) => n.id));
 }

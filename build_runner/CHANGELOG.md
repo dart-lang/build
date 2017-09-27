@@ -1,5 +1,9 @@
 ## 0.6.0-dev
 
+- **Breaking**: All `AssetReader#findAssets` implementations now return a
+  `Stream<AssetId>` to match the latest `build` package. This should not affect
+  most users unless you are extending the built in `AssetReader`s or using them
+  in a custom way.
 - Add `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
 - **Breaking**: The `RunnerAssetReader` interface now extends
   `MultiPackageAssetReader` which means the `packageName` named arg has changed

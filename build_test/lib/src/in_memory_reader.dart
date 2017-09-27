@@ -19,6 +19,8 @@ class InMemoryAssetReader
     implements MultiPackageAssetReader, RecordingAssetReader {
   final Map<AssetId, DatedValue> assets;
   final String rootPackage;
+
+  @override
   final Set<AssetId> assetsRead;
 
   /// Create a new asset reader that contains [sourceAssets].
@@ -49,15 +51,15 @@ class InMemoryAssetReader
   }
 
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String package}) {
+  Stream<AssetId> findAssets(Glob glob, {String package}) {
     package ??= rootPackage;
     if (package == null) {
       throw new UnsupportedError(
           'Root package is required to use findAssets without providing an '
           'explicit package.');
     }
-    return assets.keys
-        .where((id) => id.package == package && glob.matches(id.path));
+    return new Stream.fromIterable(assets.keys
+        .where((id) => id.package == package && glob.matches(id.path)));
   }
 
   void cacheBytesAsset(AssetId id, List<int> bytes) {
