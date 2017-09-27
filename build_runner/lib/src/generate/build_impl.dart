@@ -307,7 +307,8 @@ class BuildImpl {
     for (var output in builderOutputs) {
       (_assetGraph.get(output) as GeneratedAssetNode)
         ..needsUpdate = false
-        ..wasOutput = false;
+        ..wasOutput = false
+        ..globs = wrappedReader.globsRan.toSet();
     }
 
     // Update the asset graph based on the dependencies discovered.
