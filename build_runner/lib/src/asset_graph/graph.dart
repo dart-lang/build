@@ -30,7 +30,7 @@ class AssetGraph {
   ///
   /// This should be incremented any time the serialize/deserialize methods
   /// change on this class or [AssetNode].
-  static int get _version => 4;
+  static int get _version => 5;
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(Map serializedGraph) {
@@ -97,6 +97,7 @@ class AssetGraph {
   Iterable<AssetId> updateAndInvalidate(
       List<BuildAction> buildActions, Map<AssetId, ChangeType> updates) {
     var deletes = new Set<AssetId>();
+
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
         {AssetId parent, bool rootIsSource}) {
       var node = this.get(id);
@@ -125,8 +126,26 @@ class AssetGraph {
     }
 
     updates.forEach(clearNodeAndDeps);
-    _addOutputsForSources(buildActions,
-        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet());
+
+    var allNewAndDeletedIds = _addOutputsForSources(buildActions,
+        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet())
+      ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
+      ..addAll(deletes);
+
+    // For all new or deleted assets, check if they match any globs.
+    for (var id in allNewAndDeletedIds) {
+      var samePackageOutputNodes = allNodes
+          .where((n) => n is GeneratedAssetNode && n.id.package == id.package)
+          .toList();
+      for (var node in samePackageOutputNodes) {
+        if ((node as GeneratedAssetNode)
+            .globs
+            .any((glob) => glob.matches(id.path))) {
+          // The change type is irrelevant here.
+          clearNodeAndDeps(node.id, null);
+        }
+      }
+    }
 
     deletes.addAll(allNodes
         .where((n) => n is GeneratedAssetNode && n.needsUpdate)
@@ -134,9 +153,10 @@ class AssetGraph {
     return deletes;
   }
 
-  /// Adds all [GeneratedAssetNode]s for [buildActions] with [newSources] as
-  /// inputs to this asset graph.
-  void _addOutputsForSources(
+  /// Returns a set containing [newSources] plus any new generated sources
+  /// based on [buildActions], and updates this graph to contain all the
+  /// new outputs.
+  Set<AssetId> _addOutputsForSources(
       List<BuildAction> buildActions, Set<AssetId> newSources) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
     var allInputs = new Set<AssetId>.from(newSources);
@@ -164,6 +184,7 @@ class AssetGraph {
       }
       allInputs.addAll(phaseOutputs);
     }
+    return allInputs;
   }
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
@@ -172,9 +193,8 @@ class AssetGraph {
   void _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       {AssetId primaryInput}) {
     for (var output in outputs) {
-      if (contains(output) && get(output) is AssetNode) {
-        _remove(output);
-      }
+      if (contains(output)) _remove(output);
+
       _add(new GeneratedAssetNode(
           phaseNumber, primaryInput, true, false, output));
     }

@@ -245,10 +245,13 @@ class BuildImpl {
 
       // Mark all outputs as no longer needing an update, and mark `wasOutput`
       // as `false` for now (this will get reset to true later one).
+      //
+      // Also tracks all the globs that were used during this build.
       for (var output in builderOutputs) {
         (_assetGraph.get(output) as GeneratedAssetNode)
           ..needsUpdate = false
-          ..wasOutput = false;
+          ..wasOutput = false
+          ..globs = wrappedReader.globsRan.toSet();
       }
 
       // Update the asset graph based on the dependencies discovered.

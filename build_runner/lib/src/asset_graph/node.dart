@@ -1,7 +1,9 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 
 /// A node in the asset graph which may be an input to other assets.
 class AssetNode {
@@ -21,7 +23,7 @@ class AssetNode {
     AssetNode node;
     if (serializedNode.length == 3) {
       node = new AssetNode(new AssetId.deserialize(serializedNode[0] as List));
-    } else if (serializedNode.length == 6) {
+    } else if (serializedNode.length == 7) {
       node = new GeneratedAssetNode.deserialize(serializedNode);
     } else {
       throw new ArgumentError(
@@ -64,26 +66,42 @@ class GeneratedAssetNode extends AssetNode {
   /// Whether the asset was actually output.
   bool wasOutput;
 
+  /// All the [Glob]s that were ran to create this asset.
+  ///
+  /// Any new or deleted files matching this glob should invalidate this node.
+  Set<Glob> globs;
+
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
-      this.wasOutput, AssetId id)
-      : super(id);
+      this.wasOutput, AssetId id,
+      {Set<Glob> globs})
+      : this.globs = globs ?? new Set<Glob>(),
+        super(id);
 
   factory GeneratedAssetNode.deserialize(List serialized) {
     var node = new GeneratedAssetNode(
-        serialized[5] as int,
-        serialized[3] == null
-            ? null
-            : new AssetId.deserialize(serialized[3] as List),
-        false,
-        serialized[4] as bool,
-        new AssetId.deserialize(serialized[0] as List));
+      serialized[5] as int,
+      serialized[3] == null
+          ? null
+          : new AssetId.deserialize(serialized[3] as List),
+      false,
+      serialized[4] as bool,
+      new AssetId.deserialize(serialized[0] as List),
+      globs: (serialized[6] as Iterable<String>)
+          .map((pattern) => new Glob(pattern))
+          .toSet(),
+    );
     node._addSerializedOutputs(serialized);
     return node;
   }
 
   @override
   List serialize() => super.serialize()
-    ..addAll([primaryInput?.serialize(), wasOutput, phaseNumber]);
+    ..addAll([
+      primaryInput?.serialize(),
+      wasOutput,
+      phaseNumber,
+      globs.map((glob) => glob.pattern).toList()
+    ]);
 
   @override
   String toString() =>
