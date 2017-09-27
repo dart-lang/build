@@ -41,7 +41,7 @@ void main() {
       expect(assetReader.readAsString(idC), throwsAssetNotFound);
     });
 
-    test('should combine files when using `findAssets`', () {
+    test('should combine files when using `findAssets`', () async {
       var idA = new AssetId('some_pkg', 'lib/a.dart');
       var idB = new AssetId('some_pkg', 'lib/b.dart');
       assetReader = new MultiAssetReader([
@@ -58,10 +58,11 @@ void main() {
           rootPackage: 'some_pkg',
         ),
       ]);
-      expect(assetReader.findAssets(new Glob('lib/*.dart')), [idA, idB]);
+      expect(await assetReader.findAssets(new Glob('lib/*.dart')).toList(),
+          [idA, idB]);
     });
 
-    test('should support the `package` arg in `findAssets`', () {
+    test('should support the `package` arg in `findAssets`', () async {
       var idA = new AssetId('a', 'lib/a.dart');
       var idB = new AssetId('b', 'lib/b.dart');
       assetReader = new MultiAssetReader([
@@ -77,9 +78,15 @@ void main() {
         ),
       ]);
       expect(
-          assetReader.findAssets(new Glob('lib/*.dart'), package: 'a'), [idA]);
+          await assetReader
+              .findAssets(new Glob('lib/*.dart'), package: 'a')
+              .toList(),
+          [idA]);
       expect(
-          assetReader.findAssets(new Glob('lib/*.dart'), package: 'b'), [idB]);
+          await assetReader
+              .findAssets(new Glob('lib/*.dart'), package: 'b')
+              .toList(),
+          [idB]);
     });
 
     test('propagates errors from wrapped readers', () {

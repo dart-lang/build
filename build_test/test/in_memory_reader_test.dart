@@ -36,21 +36,27 @@ void main() {
       );
     });
 
-    test('#findAssets should list files in lib/', () {
-      expect(assetReader.findAssets(new Glob('lib/*.dart')), [libAsset]);
+    test('#findAssets should list files in lib/', () async {
+      expect(await assetReader.findAssets(new Glob('lib/*.dart')).toList(),
+          [libAsset]);
     });
 
-    test('#findAssets should list files in test/', () {
-      expect(assetReader.findAssets(new Glob('test/*.dart')), [testAsset]);
+    test('#findAssets should list files in test/', () async {
+      expect(await assetReader.findAssets(new Glob('test/*.dart')).toList(),
+          [testAsset]);
     });
 
-    test('#findAssets should be able to list files in non-root packages', () {
+    test('#findAssets should be able to list files in non-root packages',
+        () async {
       var otherLibAsset = new AssetId('other', 'lib/other.dart');
       var otherAssets = {
         otherLibAsset: new DatedString('otherLibAsset'),
       };
       allAssets.addAll(otherAssets);
-      expect(assetReader.findAssets(new Glob('lib/*.dart'), package: 'other'),
+      expect(
+          await assetReader
+              .findAssets(new Glob('lib/*.dart'), package: 'other')
+              .toList(),
           [otherLibAsset]);
     });
   });
