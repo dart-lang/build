@@ -184,13 +184,14 @@ class BuildImpl {
     var phaseNumber = 0;
     for (var action in _buildActions) {
       phaseNumber++;
-      if (action.builder is PackageBuilder) {
-        outputs.addAll(await _runPackageBuilder(
-            phaseNumber, action.builder as PackageBuilder, resourceManager));
+      var builder = action.builder;
+      if (builder is PackageBuilder) {
+        outputs.addAll(
+            await _runPackageBuilder(phaseNumber, builder, resourceManager));
       } else {
         var inputs = _matchingInputs(action.inputSet, phaseNumber);
-        outputs.addAll(await _runBuilder(
-            phaseNumber, action.builder, inputs, resourceManager));
+        outputs.addAll(
+            await _runBuilder(phaseNumber, builder, inputs, resourceManager));
       }
     }
     return new BuildResult(BuildStatus.success, outputs);
@@ -254,7 +255,8 @@ class BuildImpl {
     return outputs;
   }
 
-  /// Runs [builder] and returns only the outputs that were newly created.
+  /// Runs the [PackageBuilder] [builder] and returns only the outputs
+  /// that were newly created.
   ///
   /// Does not return outputs that didn't need to be re-ran or were declared
   /// but not output.
@@ -284,6 +286,7 @@ class BuildImpl {
     return wrappedWriter.assetsWritten;
   }
 
+  /// Checks and returns whether any [outputs] need to be updated.
   bool _buildShouldRun(Iterable<AssetId> outputs) {
     assert(
         outputs.every((o) => _assetGraph.contains(o)),
@@ -298,8 +301,9 @@ class BuildImpl {
   /// Sets the state for all [declaredOutputs] of a build step, by:
   ///
   /// - Setting `needsUpdate` to `false` for each output
-  /// - Setting `wasOutput` based on [writer#assetsWritten].
-  /// - Setting `globs` on each output based on [reader#globsRan].
+  /// - Setting `wasOutput` based on `writer.assetsWritten`.
+  /// - Setting `globs` on each output based on `reader.globsRan`
+  /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
   void _setOutputsState(Iterable<AssetId> declaredOutputs,
       SinglePhaseReader reader, AssetWriterSpy writer) {
     // Reset the state for each output, setting `wasOutput` to false for now

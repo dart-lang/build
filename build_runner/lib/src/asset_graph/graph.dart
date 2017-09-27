@@ -164,8 +164,8 @@ class AssetGraph {
     for (var action in buildActions) {
       phaseNumber++;
       var phaseOutputs = <AssetId>[];
-      if (action.builder is PackageBuilder) {
-        var builder = action.builder as PackageBuilder;
+      var builder = action.builder;
+      if (builder is PackageBuilder) {
         var outputs = builder.declareOutputs();
         // `PackageBuilder`s don't generally care about new files, so we only
         // add the outputs if they don't already exist.
@@ -176,7 +176,7 @@ class AssetGraph {
       } else {
         var inputs = allInputs.where(action.inputSet.matches);
         for (var input in inputs) {
-          var outputs = expectedOutputs(action.builder, input);
+          var outputs = expectedOutputs(builder, input);
           phaseOutputs.addAll(outputs);
           get(input).primaryOutputs.addAll(outputs);
           _addGeneratedOutputs(outputs, phaseNumber, primaryInput: input);
