@@ -102,11 +102,11 @@ class BuildImpl {
     var buildStartTime = new DateTime.now();
     Chain.capture(() async {
       // Run a fresh build.
-      var result = await logWithTime(
+      var result = await logTimedAsync(
           _logger, 'Running build', () => _runPhases(resourceManager));
 
       // Write out the dependency graph file.
-      await logWithTime(_logger, 'Caching finalized dependency graph',
+      await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
         _assetGraph.validAsOf = buildStartTime;
         await _writer.writeAsString(

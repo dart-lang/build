@@ -244,7 +244,7 @@ void expectPkg(PackageNode node, String name, dynamic version,
   expect(node.name, name);
   expect(node.version, version);
   expect(node.dependencyType, type);
-  expect(node.location.path, location);
+  expect(node.path, location);
   if (dependencies != null) {
     expect(node.dependencies, unorderedEquals(dependencies));
   }

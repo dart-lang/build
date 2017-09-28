@@ -4,6 +4,9 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/watcher/asset_change.dart';
+import 'package:build_runner/src/watcher/graph_watcher.dart';
+import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -16,7 +19,6 @@ import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
-import 'change_watcher.dart';
 import 'directory_watcher_factory.dart';
 import 'options.dart';
 import 'phase.dart';
@@ -76,8 +78,11 @@ class WatchImpl implements BuildState {
     var fatalBuild = new Completer();
     var firstBuild = new Completer<BuildResult>();
     currentBuild = firstBuild.future;
-    var changes =
-        startFileWatchers(packageGraph, _logger, _directoryWatcherFactory);
+    var changes = new PackageGraphWatcher(packageGraph,
+        logger: _logger,
+        watch: (node) => new PackageNodeWatcher(node, watch: (path) {
+              return _directoryWatcherFactory(path);
+            })).watch();
 
     var buildDefinition = await BuildDefinition.load(options, buildActions);
     _readerCompleter.complete(buildDefinition.reader);
