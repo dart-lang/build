@@ -186,8 +186,8 @@ class BuildImpl {
       phaseNumber++;
       var builder = action.builder;
       if (builder is PackageBuilder) {
-        outputs.addAll(
-            await _runPackageBuilder(phaseNumber, builder, resourceManager));
+        outputs.addAll(await _runPackageBuilder(
+            phaseNumber, action.inputSet.package, builder, resourceManager));
       } else {
         var inputs = _matchingInputs(action.inputSet, phaseNumber);
         outputs.addAll(
@@ -260,14 +260,14 @@ class BuildImpl {
   ///
   /// Does not return outputs that didn't need to be re-ran or were declared
   /// but not output.
-  Future<Iterable<AssetId>> _runPackageBuilder(int phaseNumber,
+  Future<Iterable<AssetId>> _runPackageBuilder(int phaseNumber, String package,
       PackageBuilder builder, ResourceManager resourceManager) async {
-    var builderOutputs = builder.declareOutputs();
+    var builderOutputs = outputIdsForBuilder(builder, package);
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(
-        _reader, _assetGraph, phaseNumber, builder.package);
+    var wrappedReader =
+        new SinglePhaseReader(_reader, _assetGraph, phaseNumber, package);
     var wrappedWriter = new AssetWriterSpy(_writer);
 
     var logger = new Logger('runBuilder');

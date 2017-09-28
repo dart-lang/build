@@ -166,7 +166,7 @@ class AssetGraph {
       var phaseOutputs = <AssetId>[];
       var builder = action.builder;
       if (builder is PackageBuilder) {
-        var outputs = builder.declareOutputs();
+        var outputs = outputIdsForBuilder(builder, action.inputSet.package);
         // `PackageBuilder`s don't generally care about new files, so we only
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {

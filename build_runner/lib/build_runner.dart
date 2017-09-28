@@ -8,5 +8,6 @@ export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/input_set.dart';
 export 'src/generate/phase.dart';
+export 'src/package_builder/package_builder.dart' show PackageBuilder;
 export 'src/package_graph/package_graph.dart';
 export 'src/server/server.dart' show ServeHandler;
