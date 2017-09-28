@@ -1,13 +1,20 @@
 ## 0.6.0-dev
 
-- Add `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
-- **Breaking**: The `RunnerAssetReader` interface now extends
-  `MultiPackageAssetReader` which means the `packageName` named arg has changed
-  to `package`.
-  - While technically breaking this is primarily an internal only change. This
-    interface isn't used directly my most users.
+### New features
+
+- Added `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
+- Added `PackageWatcher`, a wrapper API that emits changed `AssetId`s.
+
+### Breaking changes
+
+- `RunnerAssetReader` interface now extends `MultiPackageAssetReader` which
+   means the `packageName` named arg has changed to `package`; while
+   technically breaking most users don't rely on this interface.
+   
+### Bug fixes
+
 - Fixed an issue where `findAssets` could return declared outputs from previous
-  phases that weren't actually output.
+  phases that weren't actually output.  
 - Fixed two issues with `writeToCache`:
   - Over-declared outputs will no longer attempt to build on each startup.
   - Unrecognized files in the cache dir will no longer be treated as inputs,
