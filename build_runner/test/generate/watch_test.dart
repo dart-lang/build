@@ -187,22 +187,6 @@ void main() {
         // matches the input set.
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
       });
-
-      test('converts packages paths to absolute ones', () async {
-        var writer = new InMemoryRunnerAssetWriter();
-        var results = new StreamQueue(
-            startWatch([copyABuildAction], {'a|lib/a.txt': 'a'}, writer));
-
-        var result = await results.next;
-        checkBuild(result, outputs: {'a|lib/a.txt.copy': 'a'}, writer: writer);
-
-        await writer.writeAsString(makeAssetId('a|lib/a.txt'), 'b');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'packages', 'a', 'a.txt')));
-
-        result = await results.next;
-        checkBuild(result, outputs: {'a|lib/a.txt.copy': 'b'}, writer: writer);
-      }, skip: 'Not sure if support still needed');
     });
 
     group('multiple phases', () {
