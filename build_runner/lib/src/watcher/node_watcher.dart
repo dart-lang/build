@@ -43,9 +43,6 @@ class PackageNodeWatcher {
     final path = _node.path;
     final absolute = relative != null ? p.join(path, relative) : path;
     final events = _strategy(absolute).events;
-    return events.map((e) {
-      print(e);
-      return new AssetChange.fromEvent(_node, e);
-    });
+    return events.map((e) => new AssetChange.fromEvent(_node, e));
   }
 }
