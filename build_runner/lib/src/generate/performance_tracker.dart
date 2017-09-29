@@ -20,6 +20,7 @@ class BuildPerformanceTracker extends TimeTracker {
   /// Tracks [action] which is ran with [runAction].
   Future<Iterable<AssetId>> trackAction(
       BuildAction action, Future<Iterable<AssetId>> runAction()) {
+    assert(startTime != null && stopTime == null);
     var tracker = new BuildActionTracker(action);
     _actions.add(tracker);
     return tracker.track(runAction);
