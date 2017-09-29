@@ -74,7 +74,7 @@ class _Loader {
     }
     var allSources = inputSources.union(cacheDirSources);
     var updates = <AssetId, ChangeType>{};
-    await logWithTime(_logger, 'Reading cached dependency graph', () async {
+    await logTimedAsync(_logger, 'Reading cached dependency graph', () async {
       if (await _options.reader.canRead(assetGraphId)) {
         assetGraph = await _readAssetGraph(assetGraphId);
       }

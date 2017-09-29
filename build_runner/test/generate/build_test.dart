@@ -84,11 +84,11 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
-        ..dependencies.add(packageB);
+      var packageB =
+          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+      var packageA =
+          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
+            ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
       expect(
           testActions(
@@ -98,11 +98,11 @@ void main() {
     });
 
     test('Can output files in non-root packages with `writeToCache`', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
-        ..dependencies.add(packageB);
+      var packageB =
+          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+      var packageA =
+          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
+            ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
       await testActions(
           [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
@@ -113,11 +113,11 @@ void main() {
 
     test('Will not delete from non-root packages with `writeToCache`',
         () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
-        ..dependencies.add(packageB);
+      var packageB =
+          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+      var packageA =
+          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
+            ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
       var writer = new InMemoryRunnerAssetWriter()
         ..onDelete = (AssetId assetId) {
@@ -151,11 +151,11 @@ void main() {
     });
 
     test('can glob files from packages', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
-        ..dependencies.add(packageB);
+      var packageB =
+          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+      var packageA =
+          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
+            ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
 
       var buildActions = [
@@ -210,11 +210,11 @@ void main() {
     });
 
     test('won\'t try to delete files from other packages', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, new Uri.file('a/b/'));
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'))
-        ..dependencies.add(packageB);
+      var packageB =
+          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+      var packageA =
+          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
+            ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
       var writer = new InMemoryRunnerAssetWriter()
         ..onDelete = (AssetId assetId) {
@@ -519,8 +519,8 @@ void main() {
           makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '',
           lastModified: graph.validAsOf.add(new Duration(hours: 2)));
 
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, new Uri.file('a/'));
+      var packageA =
+          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/');
       var packageGraph = new PackageGraph.fromRoot(packageA);
       await testActions([
         copyABuildAction

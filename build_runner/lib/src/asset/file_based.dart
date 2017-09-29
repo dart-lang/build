@@ -42,7 +42,7 @@ class FileBasedAssetReader implements RunnerAssetReader {
           "an input. Please ensure you have that package in your deps, or "
           "remove it from your input sets.");
     }
-    var packagePath = packageNode.location.toFilePath();
+    var packagePath = packageNode.path;
     try {
       var fileStream = glob
           .list(followLinks: false, root: packagePath)
@@ -65,11 +65,7 @@ class FileBasedAssetReader implements RunnerAssetReader {
 /// Creates an [AssetId] for [file], which is a part of [packageNode].
 AssetId _fileToAssetId(File file, PackageNode packageNode) {
   var filePath = path.normalize(file.absolute.path);
-  var packageUri = packageNode.location;
-  var packagePath = path.normalize(packageUri.isAbsolute
-      ? packageUri.toFilePath()
-      : path.absolute(packageUri.toFilePath()));
-  var relativePath = path.relative(filePath, from: packagePath);
+  var relativePath = path.relative(filePath, from: packageNode.path);
   return new AssetId(packageNode.name, relativePath);
 }
 
@@ -117,7 +113,7 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
   if (package == null) {
     throw new PackageNotFoundException(id.package);
   }
-  return new File(path.join(package.location.toFilePath(), id.path));
+  return new File(path.join(package.path, id.path));
 }
 
 /// Returns a [Future<File>] for [id] given [packageGraph].
