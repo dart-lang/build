@@ -1,7 +1,7 @@
 ## 0.6.0-dev
 
 - Add `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
-- Added `performanceTracker` field to `BuildResult` which gives you performance
+- Added `performance` field to `BuildResult` which gives you performance
   information about the overall build as well as the individual actions.
 - **Breaking**: The `RunnerAssetReader` interface now extends
   `MultiPackageAssetReader` which means the `packageName` named arg has changed
