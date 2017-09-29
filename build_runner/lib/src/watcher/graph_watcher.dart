@@ -12,14 +12,14 @@ import 'package:path/path.dart' as p;
 import 'asset_change.dart';
 import 'node_watcher.dart';
 
-typedef PackageNodeWatcher _Strategy(PackageNode node);
+typedef PackageNodeWatcher _NodeWatcherStrategy(PackageNode node);
 PackageNodeWatcher _default(PackageNode node) => new PackageNodeWatcher(node);
 
 /// Allows watching an entire graph of packages to schedule rebuilds.
 class PackageGraphWatcher {
   // TODO: Consider pulling logging out and providing hooks instead.
   final Logger _logger;
-  final _Strategy _strategy;
+  final _NodeWatcherStrategy _strategy;
   final PackageGraph _graph;
 
   /// Creates a new watcher for a [PackageGraph].
@@ -61,11 +61,10 @@ class PackageGraphWatcher {
     final absolutePaths = _absolutePaths();
     _graph.allPackages.forEach((name, node) {
       final nestedPackages = _nestedPaths(absolutePaths, node);
+      _logger.fine('Setting up watcher at ${node.path}');
       subscriptions.add(_strategy(node).watch().listen((event) {
         // TODO: Consider a faster filtering strategy.
-        final absolutePath = p.join(absolutePaths[node], event.id.path);
-        _logger.fine('Setting up watcher at $absolutePaths');
-        if (nestedPackages.any((path) => p.isWithin(path, absolutePath))) {
+        if (nestedPackages.any((path) => p.isWithin(path, node.path))) {
           return;
         }
         _logger.finest(
@@ -86,7 +85,7 @@ class PackageGraphWatcher {
 
   // Returns a set of all packages that are "nested" within a node.
   //
-  // This allows the watcher to optimize and avoid
+  // This allows the watcher to optimize and avoid duplicate events.
   List<String> _nestedPaths(Map<PackageNode, String> paths, PackageNode node) {
     final absolutePath = paths[node];
     return paths.values.where((path) {

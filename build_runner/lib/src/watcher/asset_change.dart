@@ -16,7 +16,6 @@ class AssetChange {
   /// What caused the asset to be detected as changed.
   final ChangeType type;
 
-  /// Create a new change record.
   const AssetChange(this.id, this.type);
 
   /// Creates a new change record in [package] from an existing watcher [event].

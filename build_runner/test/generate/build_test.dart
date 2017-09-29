@@ -114,9 +114,9 @@ void main() {
     test('Will not delete from non-root packages with `writeToCache`',
         () async {
       var packageB =
-          new PackageNode('b', '0.1.0', PackageDependencyType.path, '/a/b/');
+          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
       var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, '/a/')
+          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
             ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
       var writer = new InMemoryRunnerAssetWriter()
