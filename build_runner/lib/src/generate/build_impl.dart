@@ -24,6 +24,7 @@ import 'exceptions.dart';
 import 'fold_frames.dart';
 import 'input_set.dart';
 import 'options.dart';
+import 'performance_tracker.dart';
 import 'phase.dart';
 
 final _logger = new Logger('Build');
@@ -177,17 +178,21 @@ class BuildImpl {
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
   Future<BuildResult> _runPhases(ResourceManager resourceManager) async {
+    var performanceTracker = new BuildPerformanceTracker()..start();
     final outputs = <AssetId>[];
     var phaseNumber = 0;
     for (var action in _buildActions) {
-      phaseNumber++;
-      var inputs = _matchingInputs(action.inputSet, phaseNumber);
-      for (var output in await _runBuilder(
-          phaseNumber, action.builder, inputs, resourceManager)) {
-        outputs.add(output);
-      }
+      outputs.addAll(await performanceTracker.trackAction(action, () async {
+        phaseNumber++;
+        var inputs = _matchingInputs(action.inputSet, phaseNumber);
+        for (var output in await _runBuilder(
+            phaseNumber, action.builder, inputs, resourceManager)) {
+          outputs.add(output);
+        }
+      }));
     }
-    return new BuildResult(BuildStatus.success, outputs);
+    return new BuildResult(BuildStatus.success, outputs,
+        performanceTracker: performanceTracker..stop());
   }
 
   Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes
