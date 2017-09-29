@@ -1,3 +1,9 @@
+## 0.11.0-dev
+
+- **Breaking**: `AssetReader.findAssets` now returns a `Stream<AssetId>`
+  instead of an `Iterable<AssetId>`. This also impacts `BuildStep` since that
+  implements `AssetReader`.
+
 ## 0.10.2+1
 
 - Fix an issue where multiple `ResourceManager`s would share `Resource`

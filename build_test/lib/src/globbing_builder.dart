@@ -21,7 +21,7 @@ class GlobbingBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var allAssets = buildStep.findAssets(glob).toList();
+    var allAssets = await buildStep.findAssets(glob).toList();
     allAssets.sort((a, b) => a.path.compareTo(b.path));
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension('.matchingFiles'),

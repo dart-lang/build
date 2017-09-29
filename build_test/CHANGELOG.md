@@ -1,3 +1,8 @@
+## 0.9.0-dev
+
+- **Breaking**: All `AssetReader#findAssets` implementations now return a
+  `Stream<AssetId>` to match the latest `build` package.
+
 ## 0.8.0
 
 - `InMemoryAssetReader`, `MultiAssetReader`, `StubAssetReader` and
