@@ -192,7 +192,7 @@ class BuildImpl {
       });
     }
     return new BuildResult(BuildStatus.success, outputs,
-        performanceTracker: performanceTracker..stop());
+        performance: performanceTracker..stop());
   }
 
   Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes

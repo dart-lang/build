@@ -10,6 +10,8 @@ import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
+import 'package:build_runner/src/generate/performance_tracker.dart';
+
 main() {
   group('PerformanceTracker', () {
     BuildPerformanceTracker tracker;

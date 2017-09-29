@@ -22,13 +22,11 @@ class BuildResult {
   /// All outputs created/updated during this build.
   final List<AssetId> outputs;
 
-  /// Build performance broken out by build action.
-  ///
-  /// May be `null` depending on the build implementation.
-  final BuildPerformanceTracker performanceTracker;
+  /// The [BuildPerformance] broken out by build action, may be `null`.
+  final BuildPerformance performance;
 
   BuildResult(this.status, List<AssetId> outputs,
-      {this.exception, this.stackTrace, this.performanceTracker})
+      {this.exception, this.stackTrace, this.performance})
       : outputs = new List.unmodifiable(outputs);
 
   @override

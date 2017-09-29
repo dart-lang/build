@@ -8,12 +8,31 @@ import 'package:build/build.dart';
 
 import 'phase.dart';
 
-/// Tracks the performance of an entire build, as well as all of the
-/// individual [actions] that were ran in that build.
-class BuildPerformanceTracker extends TimeTracker {
+/// The timings of an operation, including its [startTime], [stopTime], and
+/// [duration].
+abstract class Timings {
+  Duration get duration;
+  DateTime get startTime;
+  DateTime get stopTime;
+}
+
+/// The [Timings] of an entire build, including all its [actions].
+abstract class BuildPerformance implements Timings {
+  /// The [Timings] of each [BuildAction] ran in this build.
+  Iterable<BuildActionPerformance> get actions;
+}
+
+/// The [Timings] of an [action] within a larger build.
+abstract class BuildActionPerformance implements Timings {
+  BuildAction get action;
+}
+
+/// Internal class that tracks the [Timings] of an entire build.
+class BuildPerformanceTracker extends TimeTracker implements BuildPerformance {
   /// All the actions ran in this build.
   ///
   /// Use [trackAction] to track individual actions.
+  @override
   Iterable<BuildActionTracker> get actions => _actions;
   final _actions = <BuildActionTracker>[];
 
@@ -27,17 +46,21 @@ class BuildPerformanceTracker extends TimeTracker {
   }
 }
 
-/// Tracks how long it took to run an individual [BuildAction].
+/// Internal class that tracks the [Timings] of an individual [BuildAction].
 ///
 /// Tracks total time it took to run on all inputs available to that action.
 ///
 /// It isn't feasible to accurately track how long it took to run on each
 /// individual input because they are all ran at the same time.
-class BuildActionTracker extends TimeTracker {
+class BuildActionTracker extends TimeTracker implements BuildActionPerformance {
+  @override
   final BuildAction action;
 
   BuildActionTracker(this.action);
 
+  /// Runs [runAction], setting [startTime] and [stopTime] accordingly.
+  ///
+  /// Should never be called more than once.
   Future<Iterable<AssetId>> track(Future<Iterable<AssetId>> runAction()) {
     assert(startTime == null && stopTime == null);
     start();
@@ -48,20 +71,21 @@ class BuildActionTracker extends TimeTracker {
   }
 }
 
-/// Base class for time tracking of an individual operation.
-///
-/// Tracks a [startTime], [stopTime], and [duration].
-class TimeTracker {
+/// Internal base class for tracking the [Timings] of an arbitrary operation.
+class TimeTracker implements Timings {
   /// When this operation started, call [start] to set this.
+  @override
   DateTime get startTime => _startTime;
   DateTime _startTime;
 
   /// When this operation stopped, call [stop] to set this.
+  @override
   DateTime get stopTime => _stopTime;
   DateTime _stopTime;
 
   /// The total duration of this operation, equivalent to taking the difference
   /// between [stopTime] and [startTime].
+  @override
   Duration get duration {
     assert(_startTime != null && _stopTime != null);
     return new Duration(
