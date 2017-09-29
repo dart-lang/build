@@ -1,3 +1,8 @@
+## 0.10.2+1
+
+- Fix an issue where multiple `ResourceManager`s would share `Resource`
+  instances if running at the same time. 
+
 ## 0.10.2
 
 - Added the `MultiPackageAssetReader` interface which allows globbing within
