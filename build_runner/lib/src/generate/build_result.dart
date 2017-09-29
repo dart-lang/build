@@ -5,6 +5,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
+import 'performance_tracker.dart';
+
 /// The result of an individual build, this may be an incremental build or
 /// a full build.
 class BuildResult {
@@ -20,8 +22,11 @@ class BuildResult {
   /// All outputs created/updated during this build.
   final List<AssetId> outputs;
 
+  /// The [BuildPerformance] broken out by build action, may be `null`.
+  final BuildPerformance performance;
+
   BuildResult(this.status, List<AssetId> outputs,
-      {this.exception, this.stackTrace})
+      {this.exception, this.stackTrace, this.performance})
       : outputs = new List.unmodifiable(outputs);
 
   @override

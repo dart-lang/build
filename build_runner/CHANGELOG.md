@@ -5,6 +5,8 @@
   most users unless you are extending the built in `AssetReader`s or using them
   in a custom way.
 - Add `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
+- Added `performance` field to `BuildResult` which gives you performance
+  information about the overall build as well as the individual actions.
 - **Breaking**: The `RunnerAssetReader` interface now extends
   `MultiPackageAssetReader` which means the `packageName` named arg has changed
   to `package`.
