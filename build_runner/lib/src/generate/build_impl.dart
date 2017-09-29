@@ -182,14 +182,14 @@ class BuildImpl {
     final outputs = <AssetId>[];
     var phaseNumber = 0;
     for (var action in _buildActions) {
-      outputs.addAll(await performanceTracker.trackAction(action, () async {
+      await performanceTracker.trackAction(action, () async {
         phaseNumber++;
         var inputs = _matchingInputs(action.inputSet, phaseNumber);
         for (var output in await _runBuilder(
             phaseNumber, action.builder, inputs, resourceManager)) {
           outputs.add(output);
         }
-      }));
+      });
     }
     return new BuildResult(BuildStatus.success, outputs,
         performanceTracker: performanceTracker..stop());
