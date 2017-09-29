@@ -23,6 +23,8 @@ class BuildResult {
   final List<AssetId> outputs;
 
   /// Build performance broken out by build action.
+  ///
+  /// May be `null` depending on the build implementation.
   final BuildPerformanceTracker performanceTracker;
 
   BuildResult(this.status, List<AssetId> outputs,
