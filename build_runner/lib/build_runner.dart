@@ -7,6 +7,8 @@ export 'src/asset/writer.dart';
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/input_set.dart';
+export 'src/generate/performance_tracker.dart'
+    show BuildPerformance, BuildActionPerformance;
 export 'src/generate/phase.dart';
 export 'src/package_graph/package_graph.dart';
 export 'src/server/server.dart' show ServeHandler;

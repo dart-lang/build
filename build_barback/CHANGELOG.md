@@ -1,3 +1,9 @@
+## 0.4.0+2
+
+- `TransformerAssetReader#findAssets` now returns a `Stream<AssetId>` to match
+  the latest `build` package, but this isn't considered a breaking change since
+  the api is unsupported and throws in this implementation.
+
 ## 0.4.0+1
 
 - Use a single `ResourceManager` for all calls to `runBuilder` in

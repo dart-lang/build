@@ -13,6 +13,10 @@
 
 ### Bug fixes
 
+- **Breaking**: All `AssetReader#findAssets` implementations now return a
+  `Stream<AssetId>` to match the latest `build` package. This should not affect
+  most users unless you are extending the built in `AssetReader`s or using them
+  in a custom way.
 - Fixed an issue where `findAssets` could return declared outputs from previous
   phases that did not actually output the asset.
 - Fixed two issues with `writeToCache`:

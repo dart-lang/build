@@ -21,5 +21,5 @@ class StubAssetReader implements MultiPackageAssetReader {
   Future<String> readAsString(_, {Encoding encoding}) => new Future.value(null);
 
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String package}) => null;
+  Stream<AssetId> findAssets(Glob glob, {String package}) => null;
 }

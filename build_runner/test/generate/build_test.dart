@@ -665,7 +665,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var assets = buildStep.findAssets(glob).toList();
+    var assets = await buildStep.findAssets(glob).toList();
     // Only output if we have a 'web/b.txt' file.
     if (assets.any((id) => id.path == 'web/b.txt')) {
       await super.build(buildStep);

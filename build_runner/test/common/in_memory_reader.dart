@@ -16,10 +16,10 @@ class InMemoryRunnerAssetReader extends InMemoryAssetReader
       : super(sourceAssets: sourceAssets, rootPackage: rootPackage);
 
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String package}) {
+  Stream<AssetId> findAssets(Glob glob, {String package}) {
     package ??= rootPackage;
-    return assets.keys
-        .where((id) => id.package == package && glob.matches(id.path));
+    return new Stream.fromIterable(assets.keys
+        .where((id) => id.package == package && glob.matches(id.path)));
   }
 
   final Map<Uri, LibraryMirror> _allLibraries = currentMirrorSystem().libraries;

@@ -80,5 +80,15 @@ main() {
       await resourceManager.disposeAll();
       expect(numDisposed, length);
     });
+
+    test('doesn\'t share resources with other ResourceManagers', () async {
+      var otherManager = new ResourceManager();
+      var last = 0;
+      var intResource = new Resource(() => last++);
+
+      var original = await resourceManager.fetch(intResource);
+      var other = await otherManager.fetch(intResource);
+      expect(original, isNot(other));
+    });
   });
 }

@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:collection/collection.dart';
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
@@ -44,9 +44,8 @@ class MultiAssetReader implements MultiPackageAssetReader {
   /// possible that an [AssetId] will be iterated over more than once, unlike
   /// other implementations of [AssetReader].
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String package}) =>
-      new CombinedIterableView(
-          _readers.map((reader) => reader.findAssets(glob, package: package)));
+  Stream<AssetId> findAssets(Glob glob, {String package}) => StreamGroup.merge(
+      _readers.map((reader) => reader.findAssets(glob, package: package)));
 
   /// Returns the first [AssetReader] that contains [id].
   ///
