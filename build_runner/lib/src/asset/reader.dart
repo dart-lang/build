@@ -18,9 +18,10 @@ abstract class RunnerAssetReader extends MultiPackageAssetReader {
 /// Tracks the assets read during the build and prevents reading files output
 /// during the current or future phases.
 class SinglePhaseReader implements AssetReader {
-  final AssetReader _delegate;
-  final Set<AssetId> _assetsRead = new Set();
   final AssetGraph _assetGraph;
+  final _assetsRead = new Set<AssetId>();
+  final AssetReader _delegate;
+  final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
 
@@ -28,6 +29,7 @@ class SinglePhaseReader implements AssetReader {
       this._primaryPackage);
 
   Iterable<AssetId> get assetsRead => _assetsRead;
+  Iterable<Glob> get globsRan => _globsRan;
 
   bool _isReadable(AssetId id) {
     var node = _assetGraph.get(id);
@@ -58,15 +60,17 @@ class SinglePhaseReader implements AssetReader {
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob) =>
-      new Stream.fromIterable(_assetGraph.allNodes
-          .where((n) => n.id.package == _primaryPackage)
-          .where((n) => glob.matches(n.id.path))
-          .where((n) {
-        if (n is GeneratedAssetNode) {
-          return n.wasOutput && n.phaseNumber < _phaseNumber;
-        } else {
-          return true;
-        }
-      }).map((n) => n.id));
+  Stream<AssetId> findAssets(Glob glob) {
+    _globsRan.add(glob);
+    return new Stream.fromIterable(_assetGraph.allNodes
+        .where((n) => n.id.package == _primaryPackage)
+        .where((n) => glob.matches(n.id.path))
+        .where((n) {
+      if (n is GeneratedAssetNode) {
+        return n.wasOutput && n.phaseNumber < _phaseNumber;
+      } else {
+        return true;
+      }
+    }).map((n) => n.id));
+  }
 }

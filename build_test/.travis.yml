@@ -1,0 +1,15 @@
+language: dart
+dart:
+  - dev
+  - stable
+
+dart_task:
+  - test
+  - dartfmt: sdk
+  - dartanalyzer
+
+matrix:
+  exclude:
+    - dart: stable
+      dart_task:
+        dartfmt: sdk

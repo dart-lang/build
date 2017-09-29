@@ -1,3 +1,4 @@
+# Created with https://github.com/dart-lang/mono_repo
 language: dart
 
 dart:
@@ -5,12 +6,39 @@ dart:
   - stable
 
 env:
-  - PKG=build_test
-  - PKG=build
-  - PKG=build_runner
-  - PKG=build_barback
-  - PKG=build_compilers
-  - PKG=scratch_space
+  - PKG=build TASK=dartanalyzer
+  - PKG=build TASK=dartfmt
+  - PKG=build TASK=test
+  - PKG=build_barback TASK=dartanalyzer
+  - PKG=build_barback TASK=dartfmt
+  - PKG=build_barback TASK=test
+  - PKG=build_compilers TASK=dartanalyzer
+  - PKG=build_compilers TASK=dartfmt
+  - PKG=build_compilers TASK=test
+  - PKG=build_runner TASK=dartanalyzer
+  - PKG=build_runner TASK=dartfmt
+  - PKG=build_runner TASK=test
+  - PKG=build_test TASK=dartanalyzer
+  - PKG=build_test TASK=dartfmt
+  - PKG=build_test TASK=test
+  - PKG=scratch_space TASK=dartanalyzer
+  - PKG=scratch_space TASK=dartfmt
+  - PKG=scratch_space TASK=test
+
+matrix:
+  exclude:
+    - dart: stable
+      env: PKG=build TASK=dartfmt
+    - dart: stable
+      env: PKG=build_barback TASK=dartfmt
+    - dart: stable
+      env: PKG=build_compilers TASK=dartfmt
+    - dart: stable
+      env: PKG=build_runner TASK=dartfmt
+    - dart: stable
+      env: PKG=build_test TASK=dartfmt
+    - dart: stable
+      env: PKG=scratch_space TASK=dartfmt
 
 script: ./tool/travis.sh
 
