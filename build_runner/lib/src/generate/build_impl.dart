@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
+import 'package:build_runner/src/util/clock.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -100,7 +101,7 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
-    var buildStartTime = new DateTime.now();
+    var buildStartTime = now();
     Chain.capture(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
