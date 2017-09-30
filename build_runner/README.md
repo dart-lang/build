@@ -1,76 +1,144 @@
-# [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
+# build_runner
 
-# `build_runner`
+<p align="center">
+  Standalone generator and watcher for Dart using <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
+  <br>
+  <a href="https://travis-ci.org/dart-lang/build">
+    <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
+  </a>
+  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_runner">
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_test.svg" alt="Issues related to build_test" />
+  </a>
+  <a href="https://pub.dartlang.org/packages/build_runner">
+    <img src="https://img.shields.io/pub/v/build_runner.svg" alt="Pub Package Version" />
+  </a>
+  <a href="https://www.dartdocs.org/documentation/build_runner/latest">
+    <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
+  </a>
+  <a href="https://gitter.im/dart-lang/source_gen">
+    <img src="https://badges.gitter.im/dart-lang/source_gen.svg" alt="Join the chat on Gitter" />
+  </a>
+</p>
 
-This package provides a concrete way of generating files using Dart code,
-outside of `pub`. These files are generated directly on disk in the current
-package folder, and rebuilds are _incremental_.
+The `build_runner` package provides a concrete way of generating files using
+Dart code, outside of tools like `pub`. Unlike `pub serve/build`, files are
+always generated directly on disk, and rebuilds are _incremental_ - inspired by
+tools such as [Bazel][].
 
-## Running Builds
+* [Installation](#installation)
+* [Usage](#usage)
+  * [Configuring](#configuring)
+  * [Inputs](#inputs)
+  * [Outputs](#outputs)
+  * [Source control](#source-control)
+  * [Publishing packages](#publishing-packages)
+* [Contributing](#contributing)
+  * [Testing](#testing)
+
+## Installation
+
+This package is intended to only be as a [development dependency][] for users
+of [`package:build`][], and should not be used in any production code. Simply
+add to your `pubspec.yaml`:
+
+```yaml
+dev_dependencies:
+  build_runner:
+```
+
+## Usage
 
 In order to run a build, you write a script to do the work. Every package which
-*uses* a builder must have it's own script, they cannot be reused from other
-packages. Often a package which defines a `Builder` will have an example you can
-reference, but a unique script must be written for the consuming packages as
-well.
+*uses* a [`Builder`][builder] must have it's own script, they cannot be reused
+from other packages. Often a package which defines a [`Builder`][builder] will
+have an example you can reference, but a unique script must be written for the
+consuming packages as well.
 
-The script will use one of the three top level functions defined by this
-library:
+Your script should use one of the two functions defined by this library:
 
-- **build**: Runs a single build and exits.
-- **watch**: Continuously runs builds as you edit files and allow serving assets
-  as a `shelf` handler.
+- [**`build`**][build_fn]: Run a single build and exit.
+- [**`watch`**][watch_fn]: Continuously run builds as you edit files.
 
-All three of these methods have a single required argument, a
-`List<BuildAction>`. Each of these `BuildActions`s may run in parallel, but they
-may only read outputs from steps earlier in the list.
+### Configuring
 
-A `BuildAction` is a combination of a single `Builder` and a single `InputSet`.
-The `Builder` is what will actually generate outputs, and the `InputSet`
-determines what the primary inputs to that `Builder` will be.
+Both [`build`][build_fn] and [`watch`][watch_fn] have a single required
+argument, a `List<BuildAction>` - each of these [`BuildAction`][build_action]s
+may run in parallel, but they may only read outputs from steps _earlier_ in the
+list.
+
+A [`BuildAction`][build_action] is a combination of a single
+[`Builder`][builder], which actually generates outputs, and a single
+[`InputSet`][input_set] , which determines what the primary inputs to that
+builder will be.
 
 Lets look at a very simple example, with a single `BuildAction`. You can ignore
 the `CopyBuilder` for now, just know that its a `Builder` which copies files:
 
 ```dart
-import 'package:build_runner/build_runner.dart';
-
 main() async {
-  await build([new CopyBuilder('.copy'), 'my_package', ['lib/*.dart']]);
+  await build([
+    new BuildAction(
+      new CopyBuilder('.copy'), 
+      'my_package', 
+      inputs: ['lib/*.dart'],
+    ),
+  ]);
 }
 ```
 
-The above example would copy all `*.dart` files directly under `lib` to
-corresponding `*.dart.copy` files. Each time you run a build, it will check for
-any changes to the input files, and rerun the `CopyBuilder` only for the inputs
-that actually changed.
+> Copies all `*.dart` files under `lib` to a corresponding `*.dart.copy`.
+
+Every time you run a `build`, `build_runner` checks for any changes to the
+inputs specified, and reruns the `CopyBuilder` for the inputs that actually
+changed.
 
 A build with multiple steps may look like:
 
 ```dart
 main() async {
   await build([
-    new BuildACtion(new CopyBuilder('.copy1'), 'my_package', inputs: ['lib/*.dart']),
-    new BuildACtion(new CopyBuilder('.copy2'), 'my_package', inputs: ['lib/*.dart']),
-  ]);}
+    new BuildAction(
+      new CopyBuilder('.copy1'), 
+      'my_package', 
+      inputs: ['lib/*.dart'],
+    ),
+    new BuildAction(
+      new CopyBuilder('.copy2'), 
+      'my_package', 
+      inputs: ['lib/*.dart'],
+    ),
+  ]);
+}
 ```
 
-Lets say however, that you want to make a copy of one of your copies. Since
-subsequent `BuildActions` can read the outputs of previous actions the input
-globs need only to match the extension of the previous output.
+> Makes _two_ copies of every `*.dart` file, a `.copy1` and `.copy2`.
+
+Let's say, however, you want to use the _previous_ output as an input to the
+next build action - for example, you want to convert `.md` (Markdown) to
+`.html`, and then convert `.html` into a `.png` (screenshot of the page):
 
 ```dart
 main() async {
   await build([
-    new BuildAction(new CopyBuilder('.copy'), 'my_package', inputs: ['lib/*.dart']),
-    new BuildAction(new CopyBuilder('.bak'), 'my_package', inputs: ['lib/*.dart.copy']),
-  ]);}
+    new BuildAction(
+      new MarkdownToHtmlBuilder(), 
+      'my_package', 
+      inputs: ['web/**.md'],
+    ),
+    new BuildAction(
+      new ChromeScreenshotBuilder(), 
+      'my_package', 
+      inputs: ['web/**.html'],
+    ),
+  ]);
+}
 ```
 
-This time, all the `*.dart.copy` files will be created first, and then the next
-`BuildAction` will read those in and create additional `*.dart.copy.bak` files.
+> This time, all the `*.html` files will be created first, and since the next
+> `BuildAction` is waiting for `*.html` inputs, it will _wait_ for them to be
+> created, and then create the `*.png` (screenshot) files.
 
-**Note**: Any time you change your build script (or any of its dependencies),
+**NOTE**: Any time you change your build script (or any of its dependencies),
 the next build will be a full rebuild. This is because the system has no way
 of knowing how that change may have affected the outputs.
 
@@ -83,22 +151,29 @@ from the current package.
 In general it is best to be as specific as possible with your `InputSet`s,
 because all matching files will be provided to `declareOutputs`.
 
+> Future versions of `build_runner` may aid in automatically generating
+> `InputSet`s based on the builders being used! See [issue #353][issue_353].
+
 ### Outputs
 
-You may only output files in the current package, but anywhere in the current
-package is allowed.
-
-You are not allowed to overwrite existing files, only create new ones.
-
-Outputs from previous builds will not be treated as inputs to later ones.
+* You may output files anywhere in the current package.
+* You are not allowed to overwrite existing files, only create new ones.
+* Outputs from previous builds will not be treated as inputs to later ones.
+* You may use a previous `BuildAction`'s outputs as an input to a later action.
 
 ### Source control
 
 This package creates a top level `.dart_tool` folder in your package, which
-should not be submitted to your source control repo (likely this just means
-adding '.dart_tool' to your '.gitignore' file).
+should not be submitted to your source control repository. You can see [our own
+`.gitignore`](https://github.com/dart-lang/build/blob/master/.gitignore) as an
+example.
 
-When it comes to generated files it is generally best to not submit them to
+```git
+# Files generated by dart tools
+.dart_tool
+```
+
+When it comes to _generated_ files it is generally best to not submit them to
 source control, but a specific `Builder` may provide a recommendation otherwise.
 
 It should be noted that if you do submit generated files to your repo then when
@@ -110,12 +185,55 @@ you can type `n` to abandon the build without taking any action.
 
 ### Publishing packages
 
-In general generated files should be published with your package, but this may
-not always be the case. Some `Builder`s may provide a recommendation for this as
-well.
+In general generated files **should** be published with your package, but this
+may not always be the case. Some `Builder`s may provide a recommendation for
+this as well.
 
-## Features and bugs
+## Contributing
 
-Please file feature requests and bugs at the [issue tracker][tracker].
+We welcome a diverse set of contributions, including, but not limited to:
 
-[tracker]: https://github.com/dart-lang/build/issues
+* [Filing bugs and feature requests][file_an_issue]
+* [Send a pull request][pull_request]
+* Or, create something awesome using this API and share with us and others!
+
+For the stability of the API and existing users, consider opening an issue
+first before implementing a large new feature or breaking an API. For smaller
+changes (like documentation, minor bug fixes), just send a pull request.
+
+### Testing
+
+Ensure code passes all our [analyzer checks][analysis_options]:
+
+```sh
+$ dartanalyzer .
+```
+
+Ensure all code is formatted. You must use the local version:
+
+```sh
+$ pub run dart_style:format -w .
+```
+
+Run all of our unit tests:
+
+```sh
+$ pub run test
+```
+
+[Bazel]: https://bazel.build/
+[`package:build`]: https://pub.dartlang.org/packages/build
+[`shelf`]: https://pub.dartlang.org/packages/shelf
+[analysis_options]: https://github.com/dart-lang/build/blob/master/analysis_options.yaml
+
+[builder]: https://www.dartdocs.org/documentation/build/latest/build/Builder-class.html
+[build_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/build.html
+[watch_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/watch.html
+[build_action]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/BuildAction-class.html
+[input_set]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/InputSet-class.html
+
+[issue_353]: https://github.com/dart-lang/build/issues/353
+
+[development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
+[file_an_issue]: https://github.com/dart-lang/build/issues/new
+[pull_request]: https://github.com/dart-lang/build/pulls
