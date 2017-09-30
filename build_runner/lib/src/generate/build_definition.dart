@@ -60,7 +60,12 @@ class _Loader {
     if (!_options.writeToCache &&
         _buildActions.any((action) =>
             action.inputSet.package != _options.packageGraph.root.name)) {
-      throw const InvalidBuildActionException.nonRootPackage();
+      final root = _options.packageGraph.root.name;
+      for (final action in _buildActions) {
+        if (action.inputSet.package != _options.packageGraph.root.name) {
+          throw new InvalidBuildActionException.nonRootPackage(action, root);
+        }
+      }
     }
     final assetGraphId =
         new AssetId(_options.packageGraph.root.name, assetGraphPath);

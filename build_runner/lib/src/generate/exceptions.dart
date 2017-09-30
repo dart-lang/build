@@ -1,6 +1,9 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
+import 'package:build_runner/src/generate/phase.dart';
+
 class ConcurrentBuildException implements Exception {
   const ConcurrentBuildException();
 
@@ -25,10 +28,16 @@ class UnexpectedExistingOutputsException extends FatalBuildException {
 class InvalidBuildActionException extends FatalBuildException {
   final String _reason;
 
-  const InvalidBuildActionException.nonRootPackage()
+  InvalidBuildActionException.nonRootPackage(BuildAction action, String root)
       : _reason =
-            'A build action is attempting to operate on a package which is not '
-            'the root.';
+            'A build action (${action.builder}) is attempting to operate on '
+            'package "${action.inputSet.package}", but the build script is '
+            'located in package "$root". It\'s not valid to attempt to '
+            'generate files for another package.'
+            '\n\n'
+            'Did you mean to write:\n'
+            '  new BuildAction(..., \'$root\')\n'
+            '... instead?';
 
   @override
   String toString() => 'InvalidBuildActionException: $_reason';
