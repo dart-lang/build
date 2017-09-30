@@ -37,9 +37,9 @@ tools such as [Bazel][].
 
 ## Installation
 
-This package is intended to only be as a [development dependency][] for users
-of [`package:build`][], and should not be used in any production code. Simply
-add to your `pubspec.yaml`:
+This package is intended to support development of Dart projects with
+[`package:build`][]. In general, put it under [dev_dependencies][], in your
+[`pubspec.yaml`][pubspec].
 
 ```yaml
 dev_dependencies:
@@ -203,16 +203,18 @@ changes (like documentation, minor bug fixes), just send a pull request.
 
 ### Testing
 
+All pull requests are validated against [travis][travis], and must pass.
+
 Ensure code passes all our [analyzer checks][analysis_options]:
 
 ```sh
 $ dartanalyzer .
 ```
 
-Ensure all code is formatted. You must use the local version:
+Ensure all code is formatted with the latest [dev-channel SDK][dev_sdk].
 
 ```sh
-$ pub run dart_style:format -w .
+$ dartfmt -w .
 ```
 
 Run all of our unit tests:
@@ -234,6 +236,9 @@ $ pub run test
 
 [issue_353]: https://github.com/dart-lang/build/issues/353
 
-[development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
+[travis]: https://travis-ci.org/
+[dev_sdk]: https://www.dartlang.org/install
+[dev_dependencies]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
+[pubspec]: https://www.dartlang.org/tools/pub/pubspec
 [file_an_issue]: https://github.com/dart-lang/build/issues/new
 [pull_request]: https://github.com/dart-lang/build/pulls
