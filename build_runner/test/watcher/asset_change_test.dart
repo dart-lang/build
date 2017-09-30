@@ -32,7 +32,7 @@ void main() {
     test('should support relative paths', () {
       final pkgBar = path.join('/', 'foo', 'bar');
       final barFile = path.join('lib', 'bar.dart');
-      final nodeBar = new PackageNode('bar', null, null, pkgBar);
+      final nodeBar = new PackageNode.noPubspec('bar', pkgBar);
 
       final event = new WatchEvent(ChangeType.ADD, barFile);
       final change = new AssetChange.fromEvent(nodeBar, event);
@@ -45,7 +45,7 @@ void main() {
       final pkgBar = path.join('/', 'foo', 'bar');
       final barFile = path.join('/', 'foo', 'bar', 'lib', 'bar.dart');
 
-      final nodeBar = new PackageNode('bar', null, null, pkgBar);
+      final nodeBar = new PackageNode.noPubspec('bar', pkgBar);
       final event = new WatchEvent(ChangeType.ADD, barFile);
       final change = new AssetChange.fromEvent(nodeBar, event);
 

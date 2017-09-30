@@ -387,7 +387,7 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
   final reader = new InMemoryRunnerAssetReader(actualAssets);
   if (packageGraph == null) {
     packageGraph ??= new PackageGraph.fromRoot(
-        new PackageNode('a', null, null, path.absolute('a')));
+        new PackageNode.noPubspec('a', path.absolute('a')));
   }
   final watcherFactory = (String path) => new FakeWatcher(path);
 

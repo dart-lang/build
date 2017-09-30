@@ -162,13 +162,17 @@ Iterable<PackageNode> _orderedPackages(
 
 /// A node in a [PackageGraph].
 class PackageNode {
-  /// The name of the package as listed in the pubspec.yaml
+  /// The name of the package as listed in `pubspec.yaml`.
   final String name;
 
-  /// The version of the package as listed in the pubspec.yaml
+  /// The version of the package as listed in `pubspec.yaml`.
+  ///
+  /// May be `null` if [PackageNode.noPubspec] was used.
   final String version;
 
   /// The type of dependency being used to pull in this package.
+  ///
+  /// May be `null` if [PackageNode.noPubspec] was used.
   final PackageDependencyType dependencyType;
 
   /// All the packages that this package directly depends on.
@@ -178,6 +182,13 @@ class PackageNode {
   final String path;
 
   PackageNode(this.name, this.version, this.dependencyType, this.path);
+
+  /// Create a [PackageNode] without any details from a `pubspec.yaml` file.
+  ///
+  /// This is useful for testing, or in cases where a package may be synthetic.
+  PackageNode.noPubspec(this.name, this.path)
+      : dependencyType = null,
+        version = null;
 
   @override
   String toString() => '''
