@@ -145,7 +145,7 @@ class BuildImpl {
     // If not in a standard terminal then we just exit, since there is no way
     // for the user to provide a yes/no answer.
     if (stdioType(stdin) != StdioType.TERMINAL) {
-      throw new UnexpectedExistingOutputsException();
+      throw new UnexpectedExistingOutputsException(conflictingAssets);
     }
 
     // Give a little extra space after the last message, need to make it clear
@@ -162,7 +162,7 @@ class BuildImpl {
           await Future.wait(conflictingAssets.map(_delete));
           break;
         case 'n':
-          throw new UnexpectedExistingOutputsException();
+          throw new UnexpectedExistingOutputsException(conflictingAssets);
           break;
         case 'l':
           for (var output in conflictingAssets) {
