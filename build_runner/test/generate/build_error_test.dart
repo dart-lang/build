@@ -21,7 +21,7 @@ void main() {
         ],
         {},
         packageGraph: new PackageGraph.fromRoot(
-          new PackageNode.noPubspec('root_package', ''),
+          new PackageNode.noPubspec('root_package', path: ''),
         ),
       );
     } catch (e) {
