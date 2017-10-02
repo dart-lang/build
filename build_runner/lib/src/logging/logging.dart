@@ -1,24 +1,47 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
 
-/// Calls [logger#info] with [description] before and after calling [action]
-/// and waiting for the returned future to complete. The 2nd log message will
-/// have the elapsed time appended.
+// Ensures on windows this message does not get overwritten by later logs.
+final _logSuffix = '${Platform.isWindows ? '' : '\n'}';
+
+/// Logs an asynchronous [action] with [description] before and after.
 ///
-/// This function also appends a newline after the 2nd log (unless on windows)
-/// to ensure that it does not get overwritten by later log messages.
-Future<T> logWithTime<T>(
-    Logger logger, String description, Future<T> action()) async {
-  var watch = new Stopwatch()..start();
-  logger.info('$description...');
-  var result = await action();
+/// Returns a future that completes after the action and logging finishes.
+Future<T> logTimedAsync<T>(
+  Logger logger,
+  String description,
+  Future<T> action(), {
+  Level level: Level.INFO,
+}) async {
+  final watch = new Stopwatch()..start();
+  logger.log(level, '$description...');
+  final result = await action();
   watch.stop();
-  logger.info('$description completed, took ${watch.elapsedMilliseconds}ms'
-      '${Platform.isWindows ? '' : '\n'}');
+  final time = '${watch.elapsedMicroseconds}ms$_logSuffix';
+  logger.log(level, '$description completed, took $time');
+  return result;
+}
+
+/// Logs a synchronous [action] with [description] before and after.
+///
+/// Returns a future that completes after the action and logging finishes.
+T logTimedSync<T>(
+  Logger logger,
+  String description,
+  T action(), {
+  Level level: Level.INFO,
+}) {
+  final watch = new Stopwatch()..start();
+  logger.log(level, '$description...');
+  final result = action();
+  watch.stop();
+  final time = '${watch.elapsedMicroseconds}ms$_logSuffix';
+  logger.log(level, '$description completed, took $time');
   return result;
 }

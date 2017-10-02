@@ -1,17 +1,33 @@
 ## 0.6.0-dev
 
-- Add `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
-- **Breaking**: The `RunnerAssetReader` interface now extends
-  `MultiPackageAssetReader` which means the `packageName` named arg has changed
-  to `package`.
-  - While technically breaking this is primarily an internal only change. This
-    interface isn't used directly my most users.
+### New features
+
+- Added `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
+- **Breaking**: `PackageNode.location` has become `PackageNode.path`, and is
+  now a `String` (absolute path) instead of a `Uri`; this prevents needing
+  conversions to/from `Uri` across the package.
+- **Breaking**: `RunnerAssetReader` interface now extends
+  `MultiPackageAssetReader`, which means the `packageName` named argument has
+  changed to `package`; while technically breaking most users do not rely on
+  this interface explicitly.
+
+### Bug fixes
+
+- **Breaking**: All `AssetReader#findAssets` implementations now return a
+  `Stream<AssetId>` to match the latest `build` package. This should not affect
+  most users unless you are extending the built in `AssetReader`s or using them
+  in a custom way.
 - Fixed an issue where `findAssets` could return declared outputs from previous
-  phases that weren't actually output.
+  phases that did not actually output the asset.
 - Fixed two issues with `writeToCache`:
   - Over-declared outputs will no longer attempt to build on each startup.
-  - Unrecognized files in the cache dir will no longer be treated as inputs,
-    they will be ignored.
+  - Unrecognized files in the cache dir will no longer be treated as inputs.
+
+### Internal changes
+
+- Added `PackageGraphWatcher` and `PackageNodeWatcher` as a wrapper API,
+  including an `AssetChange` class that is now consistently used across the
+  package.
 
 ## 0.5.0
 

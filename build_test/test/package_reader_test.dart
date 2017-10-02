@@ -36,17 +36,19 @@ void main() {
     });
 
     test('should be able to use `findAssets` for files in lib', () {
-      expect(reader.findAssets(new Glob('lib/*.dart')), contains(buildTest));
+      expect(
+          reader.findAssets(new Glob('lib/*.dart')), emitsThrough(buildTest));
     });
 
     test('should be able to use `findAssets` for files in test', () {
-      expect(reader.findAssets(new Glob('test/*.dart')), contains(thisFile));
+      expect(
+          reader.findAssets(new Glob('test/*.dart')), emitsThrough(thisFile));
     });
 
     test('should be able to use `findAssets` for files in non-root packages',
         () {
       expect(reader.findAssets(new Glob('lib/*.dart'), package: 'build'),
-          contains(buildAsset));
+          emitsThrough(buildAsset));
     });
   });
 

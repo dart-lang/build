@@ -24,21 +24,19 @@ class Resource<T> {
   final DisposeInstance<T> _userDispose;
 
   /// A Future instance of this resource if one has ever been requested.
-  Future<T> _instance;
+  final _instanceByManager = <ResourceManager, Future<T>>{};
 
   Resource(this._create, {DisposeInstance<T> dispose}) : _userDispose = dispose;
 
-  /// Fetches an actual instance of this resource.
-  Future<T> _fetch() {
-    _instance ??= new Future.value(_create());
-    return _instance;
-  }
+  /// Fetches an actual instance of this resource for [manager].
+  Future<T> _fetch(ResourceManager manager) =>
+      _instanceByManager.putIfAbsent(manager, () async => await _create());
 
-  /// Disposes the actual instance of this resource if present.
-  Future _dispose() {
-    if (_instance == null) return new Future.value(null);
-    var oldInstance = _instance;
-    _instance = null;
+  /// Disposes the actual instance of this resource for [manager] if present.
+  Future _dispose(ResourceManager manager) {
+    if (!_instanceByManager.containsKey(manager)) return new Future.value(null);
+    var oldInstance = _fetch(manager);
+    _instanceByManager.remove(manager);
     if (_userDispose != null) {
       return oldInstance.then(_userDispose);
     } else {
@@ -58,12 +56,12 @@ class ResourceManager {
   /// Fetches an instance of [resource].
   Future<T> fetch<T>(Resource<T> resource) async {
     _resources.add(resource);
-    return resource._fetch();
+    return resource._fetch(this);
   }
 
   /// Disposes of all [Resource]s fetched since the last call to [disposeAll].
   Future<Null> disposeAll() {
-    var done = Future.wait(_resources.map((r) => r._dispose()));
+    var done = Future.wait(_resources.map((r) => r._dispose(this)));
     _resources.clear();
     return done.then((_) => null);
   }

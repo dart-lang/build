@@ -70,11 +70,11 @@ class _Loader {
     var inputSources = await _findInputSources();
     var cacheDirSources = new Set<AssetId>();
     if (_options.writeToCache) {
-      cacheDirSources.addAll(_listGeneratedAssetIds());
+      cacheDirSources.addAll(await _listGeneratedAssetIds().toList());
     }
     var allSources = inputSources.union(cacheDirSources);
     var updates = <AssetId, ChangeType>{};
-    await logWithTime(_logger, 'Reading cached dependency graph', () async {
+    await logTimedAsync(_logger, 'Reading cached dependency graph', () async {
       if (await _options.reader.canRead(assetGraphId)) {
         assetGraph = await _readAssetGraph(assetGraphId);
       }
@@ -172,13 +172,13 @@ class _Loader {
           ? input.path.startsWith('lib/')
           : !toolDirs.any((d) => input.path.startsWith(d));
 
-  Iterable<AssetId> _listAssetIds(Iterable<InputSet> inputSets) sync* {
+  Stream<AssetId> _listAssetIds(Iterable<InputSet> inputSets) async* {
     var seenAssets = new Set<AssetId>();
     for (var inputSet in inputSets) {
       for (var glob in inputSet.globs) {
         var assetIds =
             _options.reader.findAssets(glob, package: inputSet.package);
-        for (var id in assetIds) {
+        await for (var id in assetIds) {
           if (!seenAssets.add(id) || !inputSet.matches(id)) continue;
           yield id;
         }
@@ -186,9 +186,9 @@ class _Loader {
     }
   }
 
-  Iterable<AssetId> _listGeneratedAssetIds() sync* {
+  Stream<AssetId> _listGeneratedAssetIds() async* {
     var glob = new Glob('$generatedOutputDirectory/**');
-    for (var id in _options.reader.findAssets(glob)) {
+    await for (var id in _options.reader.findAssets(glob)) {
       var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
       var firstSlash = packagePath.indexOf('/');
       var package = packagePath.substring(0, firstSlash);

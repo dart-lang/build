@@ -115,7 +115,7 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
   });
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
-  final rootPackage = new PackageNode('a', null, null, new Uri.file('a/'));
+  final rootPackage = new PackageNode('a', null, null, path.absolute('a'));
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
   final watcherFactory = (String path) => new FakeWatcher(path);
 

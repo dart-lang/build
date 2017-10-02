@@ -52,7 +52,7 @@ class PackageGraph {
       throw 'Unable to generate package graph, no `.packages` found. '
           'This program must be ran from the root directory of your package.';
     }
-    var packageLocations = <String, Uri>{};
+    var packageLocations = <String, String>{};
     packagesFile.readAsLinesSync().skip(1).forEach((line) {
       var firstColon = line.indexOf(':');
       var name = line.substring(0, firstColon);
@@ -74,7 +74,7 @@ class PackageGraph {
       if (!uri.isAbsolute) {
         uri = new Uri.file(path.join(packagePath, uri.path));
       }
-      packageLocations[name] = uri;
+      packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
     });
 
     /// Create all [PackageNode]s for all deps.
@@ -97,7 +97,7 @@ class PackageGraph {
           if (uri == null) {
             throw 'No package found for $name.';
           }
-          var pubspec = _pubspecForUri(uri);
+          var pubspec = _pubspecForPath(uri);
           dep = addNodeAndDeps(pubspec, _dependencyType(rootDeps[name]));
         }
         node.dependencies.add(dep);
@@ -174,17 +174,17 @@ class PackageNode {
   /// All the packages that this package directly depends on.
   final List<PackageNode> dependencies = [];
 
-  /// The location of the current version of this package.
-  final Uri location;
+  /// The absolute path of the current version of this package.
+  final String path;
 
-  PackageNode(this.name, this.version, this.dependencyType, this.location);
+  PackageNode(this.name, this.version, this.dependencyType, this.path);
 
   @override
   String toString() => '''
   $name:
     version: $version
     type: $dependencyType
-    location: $location
+    path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
 }
 
@@ -224,9 +224,9 @@ Map<String, dynamic> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
   return deps;
 }
 
-/// [uri] should point to the top level directory for the package.
-YamlMap _pubspecForUri(Uri uri) {
-  var pubspecPath = path.join(uri.toFilePath(), 'pubspec.yaml');
+/// Should point to the top level directory for the package.
+YamlMap _pubspecForPath(String absolutePath) {
+  var pubspecPath = path.join(absolutePath, 'pubspec.yaml');
   var pubspec = new File(pubspecPath);
   if (!pubspec.existsSync()) {
     throw 'Unable to generate package graph, no `$pubspecPath` found.';

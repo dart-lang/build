@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -30,7 +31,7 @@ abstract class AssetReader {
   Future<bool> canRead(AssetId id);
 
   /// Returns all readable assets matching [glob] under the current package.
-  Iterable<AssetId> findAssets(Glob glob);
+  Stream<AssetId> findAssets(Glob glob);
 }
 
 /// The same as an `AssetReader`, except that `findAssets` takes an optional
@@ -44,5 +45,5 @@ abstract class MultiPackageAssetReader extends AssetReader {
   /// Some implementations may require the [package] argument, while others
   /// may have a sane default.
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String package});
+  Stream<AssetId> findAssets(Glob glob, {String package});
 }

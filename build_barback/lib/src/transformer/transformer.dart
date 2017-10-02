@@ -144,7 +144,7 @@ class _TransformAssetReader implements AssetReader {
       transform.readInputAsString(toBarbackAssetId(id), encoding: encoding);
 
   @override
-  Iterable<build.AssetId> findAssets(Glob glob) => throw new UnsupportedError(
+  Stream<build.AssetId> findAssets(Glob glob) => throw new UnsupportedError(
       'findAssets cannot be used within a Transformer.\n'
       'If you have a use case that requires support file an issue at '
       'https://github.com/dart-lang/build/issues');

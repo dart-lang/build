@@ -81,7 +81,7 @@ class PackageAssetReader implements MultiPackageAssetReader {
   }
 
   @override
-  Iterable<AssetId> findAssets(Glob glob, {String package}) {
+  Stream<AssetId> findAssets(Glob glob, {String package}) {
     package ??= _rootPackage;
     if (package == null) {
       throw new UnsupportedError(
@@ -124,11 +124,8 @@ class PackageAssetReader implements MultiPackageAssetReader {
 }
 
 /// Returns all assets that match [glob] in [package] with a [path].
-Iterable<AssetId> _globAssets(String package, String path, Glob glob) {
-  return glob
-      .listSync(root: path)
-      .where((entity) => entity is File)
-      .map((file) {
+Stream<AssetId> _globAssets(String package, String path, Glob glob) {
+  return glob.list(root: path).where((entity) => entity is File).map((file) {
     var relative = p.relative(file.path, from: path);
     return new AssetId(package, relative);
   });

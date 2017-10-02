@@ -27,6 +27,7 @@ import 'exceptions.dart';
 import 'fold_frames.dart';
 import 'input_set.dart';
 import 'options.dart';
+import 'performance_tracker.dart';
 import 'phase.dart';
 
 final _logger = new Logger('Build');
@@ -105,11 +106,11 @@ class BuildImpl {
     var buildStartTime = new DateTime.now();
     Chain.capture(() async {
       // Run a fresh build.
-      var result = await logWithTime(
+      var result = await logTimedAsync(
           _logger, 'Running build', () => _runPhases(resourceManager));
 
       // Write out the dependency graph file.
-      await logWithTime(_logger, 'Caching finalized dependency graph',
+      await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
         _assetGraph.validAsOf = buildStartTime;
         await _writer.writeAsString(
@@ -180,21 +181,25 @@ class BuildImpl {
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
   Future<BuildResult> _runPhases(ResourceManager resourceManager) async {
+    var performanceTracker = new BuildPerformanceTracker()..start();
     final outputs = <AssetId>[];
     var phaseNumber = 0;
     for (var action in _buildActions) {
-      phaseNumber++;
-      var builder = action.builder;
-      if (builder is PackageBuilder) {
-        outputs.addAll(await _runPackageBuilder(
-            phaseNumber, action.inputSet.package, builder, resourceManager));
-      } else {
-        var inputs = _matchingInputs(action.inputSet, phaseNumber);
-        outputs.addAll(
-            await _runBuilder(phaseNumber, builder, inputs, resourceManager));
-      }
+      await performanceTracker.trackAction(action, () async {
+        phaseNumber++;
+        var builder = action.builder;
+        if (builder is PackageBuilder) {
+          outputs.addAll(await _runPackageBuilder(
+              phaseNumber, action.inputSet.package, builder, resourceManager));
+        } else {
+          var inputs = _matchingInputs(action.inputSet, phaseNumber);
+          outputs.addAll(
+              await _runBuilder(phaseNumber, builder, inputs, resourceManager));
+        }
+      });
     }
-    return new BuildResult(BuildStatus.success, outputs);
+    return new BuildResult(BuildStatus.success, outputs,
+        performance: performanceTracker..stop());
   }
 
   Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes
