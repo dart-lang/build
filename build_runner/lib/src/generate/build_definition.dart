@@ -57,9 +57,7 @@ class _Loader {
   _Loader(this._options, this._buildActions);
 
   Future<BuildDefinition> load() async {
-    if (!_options.writeToCache &&
-        _buildActions.any((action) =>
-            action.inputSet.package != _options.packageGraph.root.name)) {
+    if (!_options.writeToCache) {
       final root = _options.packageGraph.root.name;
       for (final action in _buildActions) {
         if (action.inputSet.package != _options.packageGraph.root.name) {
