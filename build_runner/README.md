@@ -7,7 +7,7 @@
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
   </a>
   <a href="https://github.com/dart-lang/build/labels/package%3Abuild_runner">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_test.svg" alt="Issues related to build_test" />
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_runner.svg" alt="Issues related to build_runner" />
   </a>
   <a href="https://pub.dartlang.org/packages/build_runner">
     <img src="https://img.shields.io/pub/v/build_runner.svg" alt="Pub Package Version" />
