@@ -2,67 +2,61 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/util/clock.dart';
 import 'package:build_test/build_test.dart';
 
 import 'package:build_runner/src/generate/performance_tracker.dart';
 
 main() {
   group('PerformanceTracker', () {
+    DateTime time;
+    final startTime = new DateTime(2017);
+    final Clock fakeClock = () => time;
+
     BuildPerformanceTracker tracker;
 
     setUp(() {
-      tracker = new BuildPerformanceTracker()..start();
+      time = startTime;
+      tracker = scopeClock(
+        fakeClock,
+        () => new BuildPerformanceTracker()..start(),
+      );
     });
 
     test('can track start/stop times and total duration', () {
-      tracker.stop();
-      expect(tracker.startTime.microsecondsSinceEpoch,
-          lessThan(new DateTime.now().microsecondsSinceEpoch));
-      expect(
-          tracker.stopTime.microsecondsSinceEpoch,
-          allOf(lessThan(new DateTime.now().microsecondsSinceEpoch),
-              greaterThan(tracker.startTime.microsecondsSinceEpoch)));
-      expect(
-          tracker.duration,
-          new Duration(
-              microseconds: tracker.stopTime.microsecondsSinceEpoch -
-                  tracker.startTime.microsecondsSinceEpoch));
+      time = startTime.add(const Duration(seconds: 5));
+      scopeClock(fakeClock, tracker.stop);
+      expect(tracker.startTime, startTime);
+      expect(tracker.stopTime, time);
+      expect(tracker.duration, const Duration(seconds: 5));
     });
 
     test('can track multiple actions', () async {
-      var packages = ['a', 'b', 'c'];
-      var buildActions =
-          packages.map((p) => new BuildAction(new CopyBuilder(), p)).toList();
-      for (var action in buildActions) {
-        await tracker.trackAction(action, () async {
-          await new Future.delayed(new Duration(milliseconds: 5));
+      await scopeClock(fakeClock, () async {
+        var packages = ['a', 'b', 'c'];
+        var builder = new CopyBuilder();
+        var actions = packages.map((p) => new BuildAction(builder, p)).toList();
+
+        for (var action in actions) {
+          time = time.add(const Duration(seconds: 5));
           var package = action.inputSet.package;
           return [new AssetId(package, 'lib/$package.txt')];
-        });
-      }
-      tracker.stop();
+        }
 
-      expect(tracker.actions.map((trackedAction) => trackedAction.action),
-          orderedEquals(buildActions));
-      var last = tracker.startTime;
-      var actionsTotal = new Duration(microseconds: 0);
-      for (var trackedAction in tracker.actions) {
-        actionsTotal += trackedAction.duration;
-        expect(trackedAction.startTime.microsecondsSinceEpoch,
-            greaterThan(last.microsecondsSinceEpoch));
-        expect(trackedAction.stopTime.microsecondsSinceEpoch,
-            greaterThan(trackedAction.startTime.microsecondsSinceEpoch));
-        last = trackedAction.stopTime;
-      }
-      expect(tracker.stopTime.microsecondsSinceEpoch,
-          greaterThan(last.microsecondsSinceEpoch));
-      expect(actionsTotal, lessThanOrEqualTo(tracker.duration));
+        tracker.stop();
+        expect(tracker.actions.map((a) => a.action), orderedEquals(actions));
+
+        var times = tracker.actions.map((t) => t.stopTime).toList();
+        expect(times.toSet(), hasLength(times), reason: 'Expected unique time');
+        expect(times, orderedEquals(times.toList()..sort()));
+
+        var total = tracker.actions.fold(0, (a, b) => a.duration + b.duration);
+        expect(total, const Duration(seconds: 15));
+      });
     });
   });
 }

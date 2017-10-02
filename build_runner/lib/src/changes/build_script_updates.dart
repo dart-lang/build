@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/util/clock.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
@@ -54,6 +55,6 @@ class BuildScriptUpdates {
         'context, such as in an isolate or via `pub run`. Instead you '
         'should invoke this script directly like: '
         '`dart path_to_script.dart`.');
-    return new DateTime.now();
+    return now();
   }
 }
