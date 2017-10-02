@@ -48,7 +48,7 @@ dev_dependencies:
 
 ## Usage
 
-In order to run a build, you write a script to do the work. Every package which
+To run a build, write a simple script to do the work. Every package which
 *uses* a [`Builder`][builder] must have it's own script, they cannot be reused
 from other packages. Often a package which defines a [`Builder`][builder] will
 have an example you can reference, but a unique script must be written for the
