@@ -58,8 +58,8 @@ class _Loader {
 
   Future<BuildDefinition> load() async {
     if (!_options.writeToCache &&
-        _buildActions.any((action) =>
-            action.inputSet.package != _options.packageGraph.root.name)) {
+        _buildActions.any(
+            (action) => action.package != _options.packageGraph.root.name)) {
       throw const InvalidBuildActionException.nonRootPackage();
     }
     final assetGraphId =

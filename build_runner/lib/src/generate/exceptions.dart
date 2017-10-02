@@ -1,6 +1,9 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
+import 'phase.dart';
+
 class ConcurrentBuildException implements Exception {
   const ConcurrentBuildException();
 
@@ -29,6 +32,11 @@ class InvalidBuildActionException extends FatalBuildException {
       : _reason =
             'A build action is attempting to operate on a package which is not '
             'the root.';
+
+  InvalidBuildActionException.unrecognizedType(BuildAction action)
+      : _reason = 'Unrecognized BuildAction type ${action.runtimeType}, only'
+            '`AssetBuildAction` (the default) and `PackageBuildAction` are '
+            'supported.';
 
   @override
   String toString() => 'InvalidBuildActionException: $_reason';

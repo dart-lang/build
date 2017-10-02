@@ -187,14 +187,15 @@ class BuildImpl {
     for (var action in _buildActions) {
       await performanceTracker.trackAction(action, () async {
         phaseNumber++;
-        var builder = action.builder;
-        if (builder is PackageBuilder) {
+        if (action is PackageBuildAction) {
           outputs.addAll(await _runPackageBuilder(
-              phaseNumber, action.inputSet.package, builder, resourceManager));
-        } else {
+              phaseNumber, action.package, action.builder, resourceManager));
+        } else if (action is AssetBuildAction) {
           var inputs = _matchingInputs(action.inputSet, phaseNumber);
-          outputs.addAll(
-              await _runBuilder(phaseNumber, builder, inputs, resourceManager));
+          outputs.addAll(await _runBuilder(
+              phaseNumber, action.builder, inputs, resourceManager));
+        } else {
+          throw new InvalidBuildActionException.unrecognizedType(action);
         }
       });
     }

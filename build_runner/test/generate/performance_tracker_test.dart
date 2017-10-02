@@ -42,7 +42,7 @@ main() {
       for (var action in buildActions) {
         await tracker.trackAction(action, () async {
           await new Future.delayed(new Duration(milliseconds: 5));
-          var package = action.inputSet.package;
+          var package = action.package;
           return [new AssetId(package, 'lib/$package.txt')];
         });
       }

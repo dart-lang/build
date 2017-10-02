@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
+import '../generate/exceptions.dart';
 import '../generate/phase.dart';
 import '../package_builder/package_builder.dart';
 import 'exceptions.dart';
@@ -164,23 +165,24 @@ class AssetGraph {
     for (var action in buildActions) {
       phaseNumber++;
       var phaseOutputs = <AssetId>[];
-      var builder = action.builder;
-      if (builder is PackageBuilder) {
-        var outputs = outputIdsForBuilder(builder, action.inputSet.package);
+      if (action is PackageBuildAction) {
+        var outputs = outputIdsForBuilder(action.builder, action.package);
         // `PackageBuilder`s don't generally care about new files, so we only
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
           _addGeneratedOutputs(outputs, phaseNumber);
         }
-      } else {
+      } else if (action is AssetBuildAction) {
         var inputs = allInputs.where(action.inputSet.matches);
         for (var input in inputs) {
-          var outputs = expectedOutputs(builder, input);
+          var outputs = expectedOutputs(action.builder, input);
           phaseOutputs.addAll(outputs);
           get(input).primaryOutputs.addAll(outputs);
           _addGeneratedOutputs(outputs, phaseNumber, primaryInput: input);
         }
+      } else {
+        throw new InvalidBuildActionException.unrecognizedType(action);
       }
       allInputs.addAll(phaseOutputs);
     }
