@@ -5,6 +5,7 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../generate/build_impl.dart';
 
 /// A [MultiPackageAssetReader] with the additional `lastModified` method.
 abstract class RunnerAssetReader extends MultiPackageAssetReader {
@@ -24,9 +25,11 @@ class SinglePhaseReader implements AssetReader {
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
+  final BuildImpl _buildImpl;
+  final ResourceManager _resourceManager;
 
   SinglePhaseReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage);
+      this._primaryPackage, this._buildImpl, this._resourceManager);
 
   Iterable<AssetId> get assetsRead => _assetsRead;
   Iterable<Glob> get globsRan => _globsRan;
@@ -49,6 +52,7 @@ class SinglePhaseReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     _assetsRead.add(id);
+    await _ensureAssetIsBuilt(id);
     return _delegate.readAsBytes(id);
   }
 
@@ -56,21 +60,34 @@ class SinglePhaseReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     _assetsRead.add(id);
+    await _ensureAssetIsBuilt(id);
     return _delegate.readAsString(id, encoding: encoding);
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob) {
+  Stream<AssetId> findAssets(Glob glob) async* {
     _globsRan.add(glob);
-    return new Stream.fromIterable(_assetGraph.allNodes
+    var potentialMatches = _assetGraph.allNodes
         .where((n) => n.id.package == _primaryPackage)
-        .where((n) => glob.matches(n.id.path))
-        .where((n) {
-      if (n is GeneratedAssetNode) {
-        return n.wasOutput && n.phaseNumber < _phaseNumber;
+        .where((n) => glob.matches(n.id.path));
+    for (var node in potentialMatches) {
+      if (node is GeneratedAssetNode) {
+        if (node.phaseNumber >= _phaseNumber) continue;
+        if (node.needsUpdate) {
+          await _ensureAssetIsBuilt(node.id);
+          if (node.wasOutput) yield node.id;
+        }
       } else {
-        return true;
+        yield node.id;
       }
-    }).map((n) => n.id));
+    }
+  }
+
+  Future<Null> _ensureAssetIsBuilt(AssetId id) async {
+    var node = _assetGraph.get(id);
+    if (node is GeneratedAssetNode && node.needsUpdate) {
+      await _buildImpl.runPhaseForInput(
+          _phaseNumber, node.primaryInput, _resourceManager);
+    }
   }
 }
