@@ -149,7 +149,9 @@ the top level `lib` folder any package dependency, and you can read all files
 from the current package.
 
 In general it is best to be as specific as possible with your `InputSet`s,
-because all matching files will be provided to `declareOutputs`.
+because all matching files will be checked against a `Builder`'s
+[`buildExtensions`][build_extensions] - see [outputs](#outputs) for more
+information.
 
 > Future versions of `build_runner` may aid in automatically generating
 > `InputSet`s based on the builders being used! See [issue #353][issue_353].
@@ -157,6 +159,11 @@ because all matching files will be provided to `declareOutputs`.
 ### Outputs
 
 * You may output files anywhere in the current package.
+
+> **NOTE**: When using the `writeToCache: true` option with either `build` or
+> `watch`, builders _are_ allowed to output under the `lib` folder of _any_
+> package you depend on.
+
 * You are not allowed to overwrite existing files, only create new ones.
 * Outputs from previous builds will not be treated as inputs to later ones.
 * You may use a previous `BuildAction`'s outputs as an input to a later action.
@@ -203,7 +210,9 @@ changes (like documentation, minor bug fixes), just send a pull request.
 
 ### Testing
 
-All pull requests are validated against [travis][travis], and must pass.
+All pull requests are validated against [travis][travis], and must pass. The
+`build_runner` package lives in a mono repository with other `build` packages,
+and _all_ of the following checks must pass for _each_ package.
 
 Ensure code passes all our [analyzer checks][analysis_options]:
 
@@ -233,6 +242,7 @@ $ pub run test
 [watch_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/watch.html
 [build_action]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/BuildAction-class.html
 [input_set]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/InputSet-class.html
+[build_extensions]: https://www.dartdocs.org/documentation/build/latest/build/Builder/buildExtensions.html
 
 [issue_353]: https://github.com/dart-lang/build/issues/353
 
