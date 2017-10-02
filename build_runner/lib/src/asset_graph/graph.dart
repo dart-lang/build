@@ -49,9 +49,10 @@ class AssetGraph {
     return graph;
   }
 
-  factory AssetGraph.build(
-          List<BuildAction> buildActions, Set<AssetId> sources) =>
-      new AssetGraph._().._addOutputsForSources(buildActions, sources);
+  factory AssetGraph.build(List<BuildAction> buildActions, Set<AssetId> sources,
+          String rootPackage) =>
+      new AssetGraph._()
+        .._addOutputsForSources(buildActions, sources, rootPackage);
 
   /// Puts this graph into a serializable form.
   Map serialize() => {
@@ -95,8 +96,8 @@ class AssetGraph {
   /// Update graph structure, invalidate outputs that may change, and return the
   /// set of assets that need to be deleted because they would no longer be
   /// generated, or because they are stale.
-  Iterable<AssetId> updateAndInvalidate(
-      List<BuildAction> buildActions, Map<AssetId, ChangeType> updates) {
+  Iterable<AssetId> updateAndInvalidate(List<BuildAction> buildActions,
+      Map<AssetId, ChangeType> updates, String rootPackage) {
     var deletes = new Set<AssetId>();
 
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
@@ -128,8 +129,10 @@ class AssetGraph {
 
     updates.forEach(clearNodeAndDeps);
 
-    var allNewAndDeletedIds = _addOutputsForSources(buildActions,
-        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet())
+    var allNewAndDeletedIds = _addOutputsForSources(
+        buildActions,
+        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet(),
+        rootPackage)
       ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
       ..addAll(deletes);
 
@@ -157,8 +160,8 @@ class AssetGraph {
   /// Returns a set containing [newSources] plus any new generated sources
   /// based on [buildActions], and updates this graph to contain all the
   /// new outputs.
-  Set<AssetId> _addOutputsForSources(
-      List<BuildAction> buildActions, Set<AssetId> newSources) {
+  Set<AssetId> _addOutputsForSources(List<BuildAction> buildActions,
+      Set<AssetId> newSources, String rootPackage) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
     var allInputs = new Set<AssetId>.from(newSources);
     var phaseNumber = 0;
@@ -167,6 +170,12 @@ class AssetGraph {
       var phaseOutputs = <AssetId>[];
       if (action is PackageBuildAction) {
         var outputs = outputIdsForBuilder(action.builder, action.package);
+        var invalidOutputs = outputs.where(
+            (o) => o.package != rootPackage && !o.path.startsWith('lib/'));
+        if (invalidOutputs.isNotEmpty) {
+          throw new InvalidPackageBuilderOutputsException(
+              action, invalidOutputs, rootPackage);
+        }
         // `PackageBuilder`s don't generally care about new files, so we only
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {

@@ -44,8 +44,9 @@ main() {
             new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
-        var assetGraph = new AssetGraph.build(buildActions, assets.keys.toSet())
-          ..validAsOf = new DateTime.now();
+        var assetGraph =
+            new AssetGraph.build(buildActions, assets.keys.toSet(), 'a')
+              ..validAsOf = new DateTime.now();
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -67,8 +68,9 @@ main() {
           new BuildAction(new OverDeclaringCopyBuilder(), 'a')
         ];
 
-        var assetGraph = new AssetGraph.build(buildActions, assets.keys.toSet())
-          ..validAsOf = lastBuild;
+        var assetGraph =
+            new AssetGraph.build(buildActions, assets.keys.toSet(), 'a')
+              ..validAsOf = lastBuild;
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -88,8 +90,9 @@ main() {
             new DatedString('a');
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
-        var assetGraph = new AssetGraph.build(buildActions, new Set<AssetId>())
-          ..validAsOf = new DateTime.now();
+        var assetGraph =
+            new AssetGraph.build(buildActions, new Set<AssetId>(), 'a')
+              ..validAsOf = new DateTime.now();
         expect(assetGraph.allNodes, isEmpty);
 
         assets[makeAssetId('a|$assetGraphPath')] =

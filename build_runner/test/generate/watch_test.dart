@@ -121,7 +121,7 @@ void main() {
             writer.assets[makeAssetId('a|$assetGraphPath')].stringValue) as Map;
         var cachedGraph = new AssetGraph.deserialize(serialized);
 
-        var expectedGraph = new AssetGraph.build([], new Set());
+        var expectedGraph = new AssetGraph.build([], new Set(), 'a');
         var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/b.txt'),
             false, true, makeAssetId('a|web/b.txt.copy'));
         expectedGraph.add(bCopyNode);

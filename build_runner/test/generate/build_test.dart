@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/asset_graph/exceptions.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 
@@ -21,6 +22,10 @@ void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyABuildAction = new BuildAction(new CopyBuilder(), 'a');
   final globBuilder = new GlobbingBuilder(new Glob('**.txt'));
+  final txtFilePackageBuilderAction = new PackageBuildAction(
+      new TxtFilePackageBuilder(
+          'a', {'web/hello.txt': 'hello', 'web/world.txt': 'world'}),
+      'a');
 
   group('build', () {
     group('with root package inputs', () {
@@ -44,13 +49,20 @@ void main() {
         });
       });
 
+      test('one package builder', () async {
+        await testActions([txtFilePackageBuilderAction], {},
+            outputs: {'a|web/hello.txt': 'hello', 'a|web/world.txt': 'world'});
+      });
+
       test('multiple build actions', () async {
         var buildActions = [
           copyABuildAction,
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
               inputs: ['**/*.txt']),
+          txtFilePackageBuilderAction,
           new BuildAction(new CopyBuilder(numCopies: 2), 'a',
-              inputs: ['web/*.txt.clone'])
+              inputs: ['web/*.txt.clone']),
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['web/hello.txt']),
         ];
         await testActions(buildActions, {
           'a|web/a.txt': 'a',
@@ -62,6 +74,9 @@ void main() {
           'a|lib/b.txt.clone': 'b',
           'a|web/a.txt.clone.copy.0': 'a',
           'a|web/a.txt.clone.copy.1': 'a',
+          'a|web/hello.txt': 'hello',
+          'a|web/world.txt': 'world',
+          'a|web/hello.txt.copy': 'hello',
         });
       });
 
@@ -97,44 +112,72 @@ void main() {
           throwsA(anything));
     });
 
-    test('Can output files in non-root packages with `writeToCache`', () async {
-      var packageB =
-          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-            ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
-      await testActions(
-          [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
-          packageGraph: packageGraph,
-          outputs: {'b|lib/b.txt.copy': 'b'},
-          writeToCache: true);
-    });
+    group('with `writeToCache: true`', () {
+      PackageGraph packageGraph;
 
-    test('Will not delete from non-root packages with `writeToCache`',
-        () async {
-      var packageB =
-          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-            ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
-      var writer = new InMemoryRunnerAssetWriter()
-        ..onDelete = (AssetId assetId) {
-          if (assetId.package != 'a') {
-            throw 'Should not delete outside of package:a';
-          }
-        };
-      await testActions(
-          [new BuildAction(new CopyBuilder(), 'b')],
-          {
-            'b|lib/b.txt': 'b',
-            'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b'
-          },
-          packageGraph: packageGraph,
-          writer: writer,
-          outputs: {'b|lib/b.txt.copy': 'b'},
-          writeToCache: true);
+      setUp(() {
+        var packageB =
+            new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+        var packageA =
+            new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
+              ..dependencies.add(packageB);
+        packageGraph = new PackageGraph.fromRoot(packageA);
+      });
+      test('can output files in non-root packages', () async {
+        await testActions(
+            [
+              new BuildAction(new CopyBuilder(), 'b'),
+              new PackageBuildAction(
+                  new TxtFilePackageBuilder('b', {'lib/hello.txt': 'hello'}),
+                  'b')
+            ],
+            {'b|lib/b.txt': 'b'},
+            packageGraph: packageGraph,
+            outputs: {
+              'b|lib/b.txt.copy': 'b',
+              'b|lib/hello.txt': 'hello',
+            },
+            writeToCache: true);
+      });
+
+      test(
+          'PackageBuilder can\'t output files outside of `lib` in non-root '
+          'packages.', () async {
+        expect(
+            testActions(
+                [
+                  new PackageBuildAction(
+                      new TxtFilePackageBuilder(
+                          'b', {'web/hello.txt': 'hello'}),
+                      'b')
+                ],
+                {},
+                packageGraph: packageGraph,
+                outputs: {
+                  'b|web/hello.txt': 'hello',
+                },
+                writeToCache: true),
+            throwsA(new isInstanceOf<InvalidPackageBuilderOutputsException>()));
+      });
+
+      test('Will not delete from non-root packages', () async {
+        var writer = new InMemoryRunnerAssetWriter()
+          ..onDelete = (AssetId assetId) {
+            if (assetId.package != 'a') {
+              throw 'Should not delete outside of package:a';
+            }
+          };
+        await testActions(
+            [new BuildAction(new CopyBuilder(), 'b')],
+            {
+              'b|lib/b.txt': 'b',
+              'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b'
+            },
+            packageGraph: packageGraph,
+            writer: writer,
+            outputs: {'b|lib/b.txt.copy': 'b'},
+            writeToCache: true);
+      });
     });
 
     test('can read files from external packages', () async {
@@ -263,7 +306,7 @@ void main() {
     var cachedGraph = new AssetGraph.deserialize(
         JSON.decode(writer.assets[graphId].stringValue) as Map);
 
-    var expectedGraph = new AssetGraph.build([], new Set());
+    var expectedGraph = new AssetGraph.build([], new Set(), 'a');
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
         false, true, makeAssetId('a|web/a.txt.copy'));
     expectedGraph.add(aCopyNode);
@@ -318,7 +361,7 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var graph = new AssetGraph.build([], new Set())
+      var graph = new AssetGraph.build([], new Set(), 'a')
         ..validAsOf = new DateTime.now();
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
@@ -350,7 +393,7 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = new AssetGraph.build([], new Set())
+      var graph = new AssetGraph.build([], new Set(), 'a')
         ..validAsOf = new DateTime.now();
 
       var aCloneNode = new GeneratedAssetNode(
@@ -412,7 +455,7 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = new AssetGraph.build([], new Set())
+      var graph = new AssetGraph.build([], new Set(), 'a')
         ..validAsOf = new DateTime.now();
       var aCloneNode = new GeneratedAssetNode(
           1,
@@ -452,7 +495,7 @@ void main() {
     });
 
     test('invalidates graph if build script updates', () async {
-      var graph = new AssetGraph.build([], new Set())
+      var graph = new AssetGraph.build([], new Set(), 'a')
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
@@ -479,7 +522,7 @@ void main() {
     });
 
     test('no outputs if no changed sources', () async {
-      var graph = new AssetGraph.build([], new Set())
+      var graph = new AssetGraph.build([], new Set(), 'a')
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
@@ -502,7 +545,7 @@ void main() {
     });
 
     test('no outputs if no changed sources using `writeToCache`', () async {
-      var graph = new AssetGraph.build([], new Set())
+      var graph = new AssetGraph.build([], new Set(), 'a')
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(

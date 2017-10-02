@@ -95,7 +95,8 @@ class BuildImpl {
   }
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    var deletes = _assetGraph.updateAndInvalidate(_buildActions, updates);
+    var deletes = _assetGraph.updateAndInvalidate(
+        _buildActions, updates, _packageGraph.root.name);
     await Future.wait(deletes.map(_delete));
   }
 

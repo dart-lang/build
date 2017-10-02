@@ -85,7 +85,8 @@ class _Loader {
         assetGraph = null;
       }
       if (assetGraph == null) {
-        assetGraph = new AssetGraph.build(_buildActions, inputSources);
+        assetGraph = new AssetGraph.build(
+            _buildActions, inputSources, _options.packageGraph.root.name);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
       } else {
