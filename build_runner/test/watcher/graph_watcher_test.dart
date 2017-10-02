@@ -14,8 +14,8 @@ import 'package:watcher/watcher.dart';
 void main() {
   group('PackageGraphWatcher', () {
     test('should aggregate changes from all nodes', () {
-      final pkgA = new PackageNode.noPubspec('a', '/g/a');
-      final pkgB = new PackageNode.noPubspec('b', '/g/b');
+      final pkgA = new PackageNode.noPubspec('a', path: '/g/a');
+      final pkgB = new PackageNode.noPubspec('b', path: '/g/b');
       pkgA.dependencies.add(pkgB);
 
       final graph = new PackageGraph.fromRoot(pkgA);
@@ -39,8 +39,8 @@ void main() {
     });
 
     test('should avoid duplicate changes with nested packages', () {
-      final pkgA = new PackageNode.noPubspec('a', '/g/a');
-      final pkgB = new PackageNode.noPubspec('b', '/g/a/b');
+      final pkgA = new PackageNode.noPubspec('a', path: '/g/a');
+      final pkgB = new PackageNode.noPubspec('b', path: '/g/a/b');
       pkgA.dependencies.add(pkgB);
 
       final graph = new PackageGraph.fromRoot(pkgA);

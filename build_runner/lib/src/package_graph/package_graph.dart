@@ -186,7 +186,7 @@ class PackageNode {
   /// Create a [PackageNode] without any details from a `pubspec.yaml` file.
   ///
   /// This is useful for testing, or in cases where a package may be synthetic.
-  PackageNode.noPubspec(this.name, this.path)
+  PackageNode.noPubspec(this.name, {this.path})
       : dependencyType = null,
         version = null;
 

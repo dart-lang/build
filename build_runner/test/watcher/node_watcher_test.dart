@@ -18,7 +18,7 @@ void main() {
 
     test('should emit a changed asset', () {
       nodeWatcher = new PackageNodeWatcher(
-        new PackageNode.noPubspec('a', '/b/a'),
+        new PackageNode.noPubspec('a', path: '/b/a'),
         watch: (path) => watcher = new FakeWatcher(path),
       );
 
@@ -50,7 +50,7 @@ void main() {
       nodeWatcher = new PackageNodeWatcher(
         new PackageNode.noPubspec(
           'a',
-          '/b/a',
+          path: '/b/a',
         ),
         watch: (path) => watcher = new FakeWatcher(path),
       );
