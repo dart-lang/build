@@ -18,12 +18,7 @@ void main() {
 
     test('should emit a changed asset', () {
       nodeWatcher = new PackageNodeWatcher(
-        new PackageNode(
-          'a',
-          null,
-          null,
-          '/b/a',
-        ),
+        new PackageNode.noPubspec('a', path: '/b/a'),
         watch: (path) => watcher = new FakeWatcher(path),
       );
 
@@ -53,11 +48,9 @@ void main() {
 
     test('should also respect relative watch URLs', () {
       nodeWatcher = new PackageNodeWatcher(
-        new PackageNode(
+        new PackageNode.noPubspec(
           'a',
-          null,
-          null,
-          '/b/a',
+          path: '/b/a',
         ),
         watch: (path) => watcher = new FakeWatcher(path),
       );

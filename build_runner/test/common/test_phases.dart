@@ -85,7 +85,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
   });
 
   if (packageGraph == null) {
-    var rootPackage = new PackageNode('a', null, null, null);
+    var rootPackage = new PackageNode.noPubspec('a');
     packageGraph = new PackageGraph.fromRoot(rootPackage);
   }
 

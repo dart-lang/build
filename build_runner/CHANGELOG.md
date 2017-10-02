@@ -3,6 +3,7 @@
 ### New features
 
 - Added `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
+- Added the `noPubspec` constructor to `PackageNode`.
 - **Breaking**: `PackageNode.location` has become `PackageNode.path`, and is
   now a `String` (absolute path) instead of a `Uri`; this prevents needing
   conversions to/from `Uri` across the package.
