@@ -92,11 +92,14 @@ class ScratchSpace {
         if (pending != null) futures.add(pending);
       } else {
         file.createSync(recursive: true);
-        var done = _descriptorPool.withResource(() async {
-          await file.writeAsBytes(await reader.readAsBytes(id));
-          // ignore: unawaited_futures
-          _pendingWrites.remove(id);
-        });
+        var done = () async {
+          var bytes = await reader.readAsBytes(id);
+          await _descriptorPool.withResource(() async {
+            await file.writeAsBytes(bytes);
+            // ignore: unawaited_futures
+            _pendingWrites.remove(id);
+          });
+        }();
         _pendingWrites[id] = done;
         futures.add(done);
       }
