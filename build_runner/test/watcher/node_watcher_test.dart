@@ -3,61 +3,53 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
+
 import 'package:build/build.dart';
-import 'package:build_runner/src/package_graph/package_graph.dart';
-import 'package:build_runner/src/watcher/asset_change.dart';
-import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
+import 'package:build_runner/src/package_graph/package_graph.dart';
+import 'package:build_runner/src/watcher/asset_change.dart';
+import 'package:build_runner/src/watcher/node_watcher.dart';
+
 void main() {
   group('PackageNodeWatcher', () {
-    PackageNodeWatcher nodeWatcher;
-    FakeWatcher watcher;
+    Directory tmpDir;
 
-    test('should emit a changed asset', () {
-      nodeWatcher = new PackageNodeWatcher(
-        new PackageNode.noPubspec('a', path: '/b/a'),
-        watch: (path) => watcher = new FakeWatcher(path),
-      );
-
-      expect(
-        nodeWatcher.watch('lib'),
-        emitsInOrder([
-          new AssetChange(
-            new AssetId('a', 'lib/1.dart'),
-            ChangeType.ADD,
-          ),
-          new AssetChange(
-            new AssetId('a', 'lib/2.dart'),
-            ChangeType.MODIFY,
-          ),
-          new AssetChange(
-            new AssetId('a', 'lib/3.dart'),
-            ChangeType.REMOVE,
-          ),
-        ]),
-      );
-
-      watcher
-        ..emitAdd(p.join('/b', 'a', 'lib', '1.dart'))
-        ..emitModify(p.join('/b', 'a', 'lib', '2.dart'))
-        ..emitRemove(p.join('/b', 'a', 'lib', '3.dart'));
+    setUp(() {
+      tmpDir = Directory.systemTemp.createTempSync();
     });
 
-    test('should also respect relative watch URLs', () {
-      nodeWatcher = new PackageNodeWatcher(
-        new PackageNode.noPubspec(
-          'a',
-          path: '/b/a',
-        ),
-        watch: (path) => watcher = new FakeWatcher(path),
-      );
+    tearDown(() {
+      tmpDir.deleteSync(recursive: true);
+    });
+
+    void initFiles(PackageNode node) {
+      new File(p.join(node.path, 'lib', '2.dart'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('2');
+      new File(p.join(node.path, 'lib', '3.dart'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('3');
+    }
+
+    void modifyFiles(PackageNode node) {
+      new File(p.join(node.path, 'lib', '1.dart')).createSync(recursive: true);
+      new File(p.join(node.path, 'lib', '2.dart')).writeAsStringSync('2+');
+      new File(p.join(node.path, 'lib', '3.dart')).deleteSync();
+    }
+
+    test('should emit a changed asset', () async {
+      var node = new PackageNode.noPubspec('a', path: p.join(tmpDir.path, 'a'));
+      var nodeWatcher = new PackageNodeWatcher(node);
+
+      initFiles(node);
 
       expect(
         nodeWatcher.watch('lib'),
-        emitsInOrder([
+        emitsInAnyOrder([
           new AssetChange(
             new AssetId('a', 'lib/1.dart'),
             ChangeType.ADD,
@@ -73,45 +65,37 @@ void main() {
         ]),
       );
 
-      var relative = p.relative('/b/a', from: p.current);
+      await nodeWatcher.watcher.ready;
+      modifyFiles(node);
+    });
 
-      watcher
-        ..emitAdd(p.join(relative, 'lib', '1.dart'))
-        ..emitModify(p.join(relative, 'lib', '2.dart'))
-        ..emitRemove(p.join(relative, 'lib', '3.dart'));
+    test('should also respect relative watch URLs', () async {
+      var node = new PackageNode.noPubspec('a',
+          path: p.relative(p.join(tmpDir.path, 'a'), from: p.current));
+      var nodeWatcher = new PackageNodeWatcher(node);
+
+      initFiles(node);
+
+      expect(
+        nodeWatcher.watch('lib'),
+        emitsInAnyOrder([
+          new AssetChange(
+            new AssetId('a', 'lib/1.dart'),
+            ChangeType.ADD,
+          ),
+          new AssetChange(
+            new AssetId('a', 'lib/2.dart'),
+            ChangeType.MODIFY,
+          ),
+          new AssetChange(
+            new AssetId('a', 'lib/3.dart'),
+            ChangeType.REMOVE,
+          ),
+        ]),
+      );
+
+      await nodeWatcher.watcher.ready;
+      modifyFiles(node);
     });
   });
-}
-
-class FakeWatcher implements Watcher {
-  final _events = new StreamController<WatchEvent>();
-
-  @override
-  final String path;
-
-  FakeWatcher(this.path);
-
-  /// Emits a [ChangeType.ADD] event for [path].
-  void emitAdd(String path) {
-    _events.add(new WatchEvent(ChangeType.ADD, path));
-  }
-
-  /// Emits a [ChangeType.MODIFY] event for [path].
-  void emitModify(String path) {
-    _events.add(new WatchEvent(ChangeType.MODIFY, path));
-  }
-
-  /// Emits a [ChangeType.REMOVE] event for [path].
-  void emitRemove(String path) {
-    _events.add(new WatchEvent(ChangeType.REMOVE, path));
-  }
-
-  @override
-  Stream<WatchEvent> get events => _events.stream;
-
-  @override
-  final isReady = true;
-
-  @override
-  Future<Null> get ready => new Future.value();
 }

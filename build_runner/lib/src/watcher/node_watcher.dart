@@ -18,6 +18,10 @@ class PackageNodeWatcher {
   final _WatcherStrategy _strategy;
   final PackageNode _node;
 
+  /// The actual watcher instance.
+  Watcher _watcher;
+  Watcher get watcher => _watcher;
+
   /// Creates a new watcher for a [PackageNode].
   ///
   /// May optionally specify a [watch] strategy, otherwise will attempt a
@@ -40,9 +44,12 @@ class PackageNodeWatcher {
   /// packageA.watch()
   /// ```
   Stream<AssetChange> watch([String relative]) {
+    assert(_watcher == null);
+
     final path = _node.path;
     final absolute = relative != null ? p.join(path, relative) : path;
-    final events = _strategy(absolute).events;
+    _watcher = _strategy(absolute);
+    final events = _watcher.events;
     return events.map((e) => new AssetChange.fromEvent(_node, e));
   }
 }
