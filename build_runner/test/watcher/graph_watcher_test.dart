@@ -71,6 +71,9 @@ class FakeNodeWatcher implements PackageNodeWatcher {
 
   FakeNodeWatcher(this._package);
 
+  @override
+  Watcher get watcher => throw new UnimplementedError();
+
   void emitAdd(String path) {
     _events.add(
       new AssetChange(
