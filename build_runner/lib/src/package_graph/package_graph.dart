@@ -199,12 +199,12 @@ class PackageNode {
     type: $dependencyType
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
-}
 
-/// Converts [path] to an absolute path, returns `null` if given `null`.
-String _toAbsolute(String path) {
-  if (path == null) return null;
-  return p.isAbsolute(path) ? path : p.absolute(path);
+  /// Converts [path] to an absolute path, returns `null` if given `null`.
+  static String _toAbsolute(String path) {
+    if (path == null) return null;
+    return p.isAbsolute(path) ? path : p.absolute(path);
+  }
 }
 
 /// The type of dependency being used. This dictates how the package should be
