@@ -7,7 +7,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -41,9 +41,9 @@ void main() {
       );
 
       watcher
-        ..emitAdd(path.join('/b', 'a', 'lib', '1.dart'))
-        ..emitModify(path.join('/b', 'a', 'lib', '2.dart'))
-        ..emitRemove(path.join('/b', 'a', 'lib', '3.dart'));
+        ..emitAdd(p.join('/b', 'a', 'lib', '1.dart'))
+        ..emitModify(p.join('/b', 'a', 'lib', '2.dart'))
+        ..emitRemove(p.join('/b', 'a', 'lib', '3.dart'));
     });
 
     test('should also respect relative watch URLs', () {
@@ -73,10 +73,12 @@ void main() {
         ]),
       );
 
+      var relative = p.relative('/b/a', from: p.current);
+
       watcher
-        ..emitAdd(path.join('lib', '1.dart'))
-        ..emitModify(path.join('lib', '2.dart'))
-        ..emitRemove(path.join('lib', '3.dart'));
+        ..emitAdd(p.join(relative, 'lib', '1.dart'))
+        ..emitModify(p.join(relative, 'lib', '2.dart'))
+        ..emitRemove(p.join(relative, 'lib', '3.dart'));
     });
   });
 }
