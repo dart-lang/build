@@ -23,7 +23,7 @@ class AssetNode {
     AssetNode node;
     if (serializedNode.length == 3) {
       node = new AssetNode(new AssetId.deserialize(serializedNode[0] as List));
-    } else if (serializedNode.length == 7) {
+    } else if (serializedNode.length == 8) {
       node = new GeneratedAssetNode.deserialize(serializedNode);
     } else {
       throw new ArgumentError(
@@ -78,8 +78,10 @@ class GeneratedAssetNode extends AssetNode {
   factory GeneratedAssetNode.deserialize(List serialized) {
     var node = new GeneratedAssetNode(
       serialized[5] as int,
-      new AssetId.deserialize(serialized[3] as List),
-      false,
+      serialized[3] == null
+          ? null
+          : new AssetId.deserialize(serialized[3] as List),
+      serialized[7] as bool,
       serialized[4] as bool,
       new AssetId.deserialize(serialized[0] as List),
       globs: (serialized[6] as Iterable<String>)
@@ -96,7 +98,8 @@ class GeneratedAssetNode extends AssetNode {
       primaryInput.serialize(),
       wasOutput,
       phaseNumber,
-      globs.map((glob) => glob.pattern).toList()
+      globs.map((glob) => glob.pattern).toList(),
+      needsUpdate,
     ]);
 
   @override

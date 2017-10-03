@@ -64,9 +64,11 @@ class BuildImpl {
       {void onDelete(AssetId id)}) async {
     var build = new BuildImpl._(buildDefinition, buildActions, onDelete);
 
-    _logger.info('Checking for stale files');
-    await build._firstBuildCleanup(buildDefinition.conflictingAssets,
-        buildDefinition.deleteFilesByDefault);
+    await logTimedAsync(
+        _logger,
+        'Checking for stale files',
+        () => build._firstBuildCleanup(buildDefinition.conflictingAssets,
+            buildDefinition.deleteFilesByDefault));
 
     build._firstBuild = await build.run(buildDefinition.updates);
     return build;
@@ -74,7 +76,11 @@ class BuildImpl {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
-    if (updates.isNotEmpty) await _updateAssetGraph(updates);
+    _lazyPhases.clear();
+    if (updates.isNotEmpty) {
+      await logTimedAsync(
+          _logger, 'Updating asset graph', () => _updateAssetGraph(updates));
+    }
     var resourceManager = new ResourceManager();
     var result = await _safeBuild(resourceManager);
     await resourceManager.disposeAll();
@@ -183,34 +189,45 @@ class BuildImpl {
     final outputs = <AssetId>[];
     var phaseNumber = 0;
     for (var action in _buildActions) {
+      phaseNumber++;
       if (action.builder is OptionalBuilder) continue;
       await performanceTracker.trackAction(action, () async {
-        phaseNumber++;
-        var inputs = _matchingInputs(action.inputSet, phaseNumber);
+        var inputs = await _matchingInputs(
+            action.inputSet, phaseNumber, resourceManager);
         for (var output in await _runBuilder(
             phaseNumber, action.builder, inputs, resourceManager)) {
           outputs.add(output);
         }
       });
     }
+    await Future.forEach(
+        _lazyPhases.values,
+        (Future<Iterable<AssetId>> lazyOuts) async =>
+            outputs.addAll(await lazyOuts));
     return new BuildResult(BuildStatus.success, outputs,
         performance: performanceTracker..stop());
   }
 
-  Set<AssetId> _inputsForPhase(int phaseNumber) => _assetGraph.allNodes
-      .where((n) {
-        if (n is GeneratedAssetNode) {
-          return n.wasOutput && n.phaseNumber < phaseNumber;
-        } else {
-          return true;
-        }
-      })
-      .map((n) => n.id)
-      .toSet();
-
   /// Gets a list of all inputs matching [inputSet].
-  Set<AssetId> _matchingInputs(InputSet inputSet, int phaseNumber) =>
-      _inputsForPhase(phaseNumber).where(inputSet.matches).toSet();
+  ///
+  /// Lazily builds any [OptionalBuilder]s matching [inputSet].
+  Future<Set<AssetId>> _matchingInputs(InputSet inputSet, int phaseNumber,
+      ResourceManager resourceManager) async {
+    var ids = new Set<AssetId>();
+    for (var node in _assetGraph.allNodes) {
+      if (!inputSet.matches(node.id)) continue;
+      if (node is GeneratedAssetNode) {
+        if (node.phaseNumber >= phaseNumber) continue;
+        if (node.needsUpdate) {
+          await runPhaseForInput(
+              node.phaseNumber, node.primaryInput, resourceManager);
+        }
+        if (!node.wasOutput) continue;
+      }
+      ids.add(node.id);
+    }
+    return ids;
+  }
 
   /// Runs [builder] with [primaryInputs] as inputs.
   Future<Iterable<AssetId>> _runBuilder(int phaseNumber, Builder builder,
@@ -221,14 +238,15 @@ class BuildImpl {
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
 
-  Future<Null> runPhaseForInput(
+  final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
+
+  Future<Iterable<AssetId>> runPhaseForInput(
       int phaseNumber, AssetId input, ResourceManager resourceManager) async {
-    await _runForInput(
-        phaseNumber,
-        // phase numbers start at 1 because..... they do
-        _buildActions[phaseNumber - 1].builder,
-        input,
-        resourceManager);
+    return _lazyPhases.putIfAbsent('$phaseNumber|$input', () {
+      // phase numbers start at 1 because..... they do
+      var action = _buildActions[phaseNumber - 1];
+      return _runForInput(phaseNumber, action.builder, input, resourceManager);
+    });
   }
 
   Future<Iterable<AssetId>> _runForInput(int phaseNumber, Builder builder,

@@ -42,9 +42,10 @@ class SinglePhaseReader implements AssetReader {
   }
 
   @override
-  Future<bool> canRead(AssetId id) {
+  Future<bool> canRead(AssetId id) async {
     if (!_isReadable(id)) return new Future.value(false);
     _assetsRead.add(id);
+    await _ensureAssetIsBuilt(id);
     return _delegate.canRead(id);
   }
 
@@ -73,10 +74,8 @@ class SinglePhaseReader implements AssetReader {
     for (var node in potentialMatches) {
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= _phaseNumber) continue;
-        if (node.needsUpdate) {
-          await _ensureAssetIsBuilt(node.id);
-          if (node.wasOutput) yield node.id;
-        }
+        await _ensureAssetIsBuilt(node.id);
+        if (node.wasOutput) yield node.id;
       } else {
         yield node.id;
       }
@@ -87,7 +86,7 @@ class SinglePhaseReader implements AssetReader {
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
       await _buildImpl.runPhaseForInput(
-          _phaseNumber, node.primaryInput, _resourceManager);
+          node.phaseNumber, node.primaryInput, _resourceManager);
     }
   }
 }
