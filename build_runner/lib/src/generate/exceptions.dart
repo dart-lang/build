@@ -36,8 +36,7 @@ class InvalidBuildActionException extends FatalBuildException {
   final String _reason;
 
   InvalidBuildActionException.nonRootPackage(BuildAction action, String root)
-      : _reason =
-            'A build action (${action.builder}) is attempting to operate on '
+      : _reason = 'A build action (${action}) is attempting to operate on '
             'package "${action.package}", but the build script is '
             'located in package "$root". It\'s not valid to attempt to '
             'generate files for another package unless "writeToCache: true" '

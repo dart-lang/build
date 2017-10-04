@@ -10,7 +10,6 @@ import 'input_set.dart';
 /// A "phase" in the build graph, which represents running a [builder] on a
 /// specific [package].
 abstract class BuildAction {
-  Builder get builder;
   String get package;
 
   /// Creates an [AssetBuildAction] for a normal [Builder].
@@ -27,7 +26,6 @@ abstract class BuildAction {
 /// The default type of [BuildAction], create one using the normal
 /// [BuildAction] constructor.
 class AssetBuildAction implements BuildAction {
-  @override
   final Builder builder;
 
   @override
@@ -45,7 +43,6 @@ class AssetBuildAction implements BuildAction {
 /// a normal [Builder], and runs a single time on [package] instead of once per
 /// input file.
 class PackageBuildAction implements BuildAction {
-  @override
   final PackageBuilder builder;
 
   @override
