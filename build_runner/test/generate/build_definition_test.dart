@@ -27,7 +27,7 @@ main() {
       assets = <AssetId, DatedValue>{};
       var assetReader = new InMemoryRunnerAssetReader(assets, 'a');
       var assetWriter = new InMemoryRunnerAssetWriter();
-      var packageA = new PackageNode('a', null, null, null);
+      var packageA = new PackageNode.noPubspec('a');
       var packageGraph = new PackageGraph.fromRoot(packageA);
       options = new BuildOptions(
           reader: assetReader,

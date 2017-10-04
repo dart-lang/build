@@ -4,7 +4,7 @@
 
 import 'dart:io';
 
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 /// A graph of the package dependencies for an application.
@@ -39,7 +39,7 @@ class PackageGraph {
   /// at [packagePath] (no trailing slash).
   factory PackageGraph.forPath(String packagePath) {
     /// Read in the pubspec file and parse it as yaml.
-    var pubspec = new File(path.join(packagePath, 'pubspec.yaml'));
+    var pubspec = new File(p.join(packagePath, 'pubspec.yaml'));
     if (!pubspec.existsSync()) {
       throw 'Unable to generate package graph, no `pubspec.yaml` found. '
           'This program must be ran from the root directory of your package.';
@@ -47,7 +47,7 @@ class PackageGraph {
     var rootYaml = loadYaml(pubspec.readAsStringSync()) as YamlMap;
 
     /// Read in the `.packages` file to get the locations of all packages.
-    var packagesFile = new File(path.join(packagePath, '.packages'));
+    var packagesFile = new File(p.join(packagePath, '.packages'));
     if (!packagesFile.existsSync()) {
       throw 'Unable to generate package graph, no `.packages` found. '
           'This program must be ran from the root directory of your package.';
@@ -72,7 +72,7 @@ class PackageGraph {
         uri = new Uri.file(uriString);
       }
       if (!uri.isAbsolute) {
-        uri = new Uri.file(path.join(packagePath, uri.path));
+        uri = new Uri.file(p.join(packagePath, uri.path));
       }
       packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
     });
@@ -162,13 +162,17 @@ Iterable<PackageNode> _orderedPackages(
 
 /// A node in a [PackageGraph].
 class PackageNode {
-  /// The name of the package as listed in the pubspec.yaml
+  /// The name of the package as listed in `pubspec.yaml`.
   final String name;
 
-  /// The version of the package as listed in the pubspec.yaml
+  /// The version of the package as listed in `pubspec.yaml`.
+  ///
+  /// May be `null` if [PackageNode.noPubspec] was used.
   final String version;
 
   /// The type of dependency being used to pull in this package.
+  ///
+  /// May be `null` if [PackageNode.noPubspec] was used.
   final PackageDependencyType dependencyType;
 
   /// All the packages that this package directly depends on.
@@ -177,7 +181,16 @@ class PackageNode {
   /// The absolute path of the current version of this package.
   final String path;
 
-  PackageNode(this.name, this.version, this.dependencyType, this.path);
+  PackageNode(this.name, this.version, this.dependencyType, String path)
+      : path = _toAbsolute(path);
+
+  /// Create a [PackageNode] without any details from a `pubspec.yaml` file.
+  ///
+  /// This is useful for testing, or in cases where a package may be synthetic.
+  PackageNode.noPubspec(this.name, {String path})
+      : dependencyType = null,
+        path = _toAbsolute(path),
+        version = null;
 
   @override
   String toString() => '''
@@ -186,6 +199,12 @@ class PackageNode {
     type: $dependencyType
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
+
+  /// Converts [path] to an absolute path, returns `null` if given `null`.
+  static String _toAbsolute(String path) {
+    if (path == null) return null;
+    return p.isAbsolute(path) ? path : p.absolute(path);
+  }
 }
 
 /// The type of dependency being used. This dictates how the package should be
@@ -226,7 +245,7 @@ Map<String, dynamic> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
 
 /// Should point to the top level directory for the package.
 YamlMap _pubspecForPath(String absolutePath) {
-  var pubspecPath = path.join(absolutePath, 'pubspec.yaml');
+  var pubspecPath = p.join(absolutePath, 'pubspec.yaml');
   var pubspec = new File(pubspecPath);
   if (!pubspec.existsSync()) {
     throw 'Unable to generate package graph, no `$pubspecPath` found.';

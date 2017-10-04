@@ -5,7 +5,7 @@
 import 'package:build/build.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -30,27 +30,28 @@ void main() {
     });
 
     test('should support relative paths', () {
-      final pkgBar = path.join('/', 'foo', 'bar');
-      final barFile = path.join('lib', 'bar.dart');
-      final nodeBar = new PackageNode('bar', null, null, pkgBar);
+      final pkgBar = p.join('/', 'foo', 'bar');
+      final barFile =
+          p.join(p.relative(pkgBar, from: p.current), 'lib', 'bar.dart');
+      final nodeBar = new PackageNode.noPubspec('bar', path: pkgBar);
 
       final event = new WatchEvent(ChangeType.ADD, barFile);
       final change = new AssetChange.fromEvent(nodeBar, event);
 
       expect(change.id.package, 'bar');
-      expect(change.id.path, path.join('lib', 'bar.dart'));
+      expect(change.id.path, p.join('lib', 'bar.dart'));
     });
 
     test('should normalize absolute paths to relative', () {
-      final pkgBar = path.join('/', 'foo', 'bar');
-      final barFile = path.join('/', 'foo', 'bar', 'lib', 'bar.dart');
+      final pkgBar = p.join('/', 'foo', 'bar');
+      final barFile = p.join('/', 'foo', 'bar', 'lib', 'bar.dart');
 
-      final nodeBar = new PackageNode('bar', null, null, pkgBar);
+      final nodeBar = new PackageNode.noPubspec('bar', path: pkgBar);
       final event = new WatchEvent(ChangeType.ADD, barFile);
       final change = new AssetChange.fromEvent(nodeBar, event);
 
       expect(change.id.package, 'bar');
-      expect(change.id.path, path.join('lib', 'bar.dart'));
+      expect(change.id.path, p.join('lib', 'bar.dart'));
     });
   });
 }

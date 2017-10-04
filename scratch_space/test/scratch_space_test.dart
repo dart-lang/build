@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -102,6 +104,17 @@ void main() {
       scratchSpace.delete();
       expect(scratchSpace.delete, throwsStateError);
     });
+
+    group('regression tests', () {
+      test('doesn\'t deadlock when the reader also uses a scratchspace',
+          () async {
+        // Recursively "reads" from the previous numeric file until it gets
+        // to 0, using the scratchSpace.
+        var reader = new RecursiveScratchSpaceAssetReader(scratchSpace);
+        var first = new AssetId('a', 'lib/100');
+        expect(await reader.readAsBytes(first), UTF8.encode('0'));
+      });
+    });
   });
 
   test('canonicalUriFor', () {
@@ -119,4 +132,33 @@ void main() {
     expect(() => canonicalUriFor(new AssetId('a', 'web/../a.dart')),
         throwsArgumentError);
   });
+}
+
+/// An asset reader that uses a scratch space to implement `readAsBytes`, used
+/// for the deadlock regression test.
+class RecursiveScratchSpaceAssetReader implements AssetReader {
+  final ScratchSpace scratchSpace;
+
+  RecursiveScratchSpaceAssetReader(this.scratchSpace);
+
+  @override
+  canRead(_) async => true;
+
+  @override
+  Future<List<int>> readAsBytes(AssetId id) async {
+    var idNum = int.parse(p.split(id.path).last);
+    if (idNum > 0) {
+      var readFrom = new AssetId(id.package, 'lib/${idNum - 1}');
+      await scratchSpace.ensureAssets([readFrom], this);
+      return scratchSpace.fileFor(readFrom).readAsBytes();
+    } else {
+      return UTF8.encode('0');
+    }
+  }
+
+  @override
+  findAssets(_) => throw new UnimplementedError();
+
+  @override
+  readAsString(_, {encoding}) => throw new UnimplementedError();
 }

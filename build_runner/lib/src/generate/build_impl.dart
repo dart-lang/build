@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
+import 'package:build_runner/src/util/clock.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -104,7 +105,7 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
-    var buildStartTime = new DateTime.now();
+    var buildStartTime = now();
     Chain.capture(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
@@ -149,7 +150,7 @@ class BuildImpl {
     // If not in a standard terminal then we just exit, since there is no way
     // for the user to provide a yes/no answer.
     if (stdioType(stdin) != StdioType.TERMINAL) {
-      throw new UnexpectedExistingOutputsException();
+      throw new UnexpectedExistingOutputsException(conflictingAssets);
     }
 
     // Give a little extra space after the last message, need to make it clear
@@ -166,7 +167,7 @@ class BuildImpl {
           await Future.wait(conflictingAssets.map(_delete));
           break;
         case 'n':
-          throw new UnexpectedExistingOutputsException();
+          throw new UnexpectedExistingOutputsException(conflictingAssets);
           break;
         case 'l':
           for (var output in conflictingAssets) {

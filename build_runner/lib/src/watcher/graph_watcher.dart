@@ -79,7 +79,7 @@ class PackageGraphWatcher {
   Map<PackageNode, String> _absolutePaths() {
     return new Map<PackageNode, String>.fromIterable(
       _graph.allPackages.values,
-      value: (PackageNode node) => node.path,
+      value: (/* Dynamic as bottom */ node) => (node as PackageNode).path,
     );
   }
 

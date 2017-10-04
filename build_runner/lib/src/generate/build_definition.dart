@@ -57,10 +57,13 @@ class _Loader {
   _Loader(this._options, this._buildActions);
 
   Future<BuildDefinition> load() async {
-    if (!_options.writeToCache &&
-        _buildActions.any(
-            (action) => action.package != _options.packageGraph.root.name)) {
-      throw const InvalidBuildActionException.nonRootPackage();
+    if (!_options.writeToCache) {
+      final root = _options.packageGraph.root.name;
+      for (final action in _buildActions) {
+        if (action.package != _options.packageGraph.root.name) {
+          throw new InvalidBuildActionException.nonRootPackage(action, root);
+        }
+      }
     }
     final assetGraphId =
         new AssetId(_options.packageGraph.root.name, assetGraphPath);
