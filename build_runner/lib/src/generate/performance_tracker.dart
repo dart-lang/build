@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
+import 'package:build_runner/src/util/clock.dart';
 import 'phase.dart';
 
 /// The timings of an operation, including its [startTime], [stopTime], and
@@ -96,12 +97,12 @@ class TimeTracker implements Timings {
   /// Start tracking this operation, must only be called once, before [stop].
   void start() {
     assert(_startTime == null && _stopTime == null);
-    _startTime = new DateTime.now();
+    _startTime = now();
   }
 
   /// Stop tracking this operation, must only be called once, after [start].
   void stop() {
     assert(_startTime != null && _stopTime == null);
-    _stopTime = new DateTime.now();
+    _stopTime = now();
   }
 }

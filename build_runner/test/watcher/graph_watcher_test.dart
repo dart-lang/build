@@ -14,8 +14,8 @@ import 'package:watcher/watcher.dart';
 void main() {
   group('PackageGraphWatcher', () {
     test('should aggregate changes from all nodes', () {
-      final pkgA = new PackageNode('a', null, null, '/g/a');
-      final pkgB = new PackageNode('b', null, null, '/g/b');
+      final pkgA = new PackageNode.noPubspec('a', path: '/g/a');
+      final pkgB = new PackageNode.noPubspec('b', path: '/g/b');
       pkgA.dependencies.add(pkgB);
 
       final graph = new PackageGraph.fromRoot(pkgA);
@@ -39,8 +39,8 @@ void main() {
     });
 
     test('should avoid duplicate changes with nested packages', () {
-      final pkgA = new PackageNode('a', null, null, '/g/a');
-      final pkgB = new PackageNode('b', null, null, '/g/a/b');
+      final pkgA = new PackageNode.noPubspec('a', path: '/g/a');
+      final pkgB = new PackageNode.noPubspec('b', path: '/g/a/b');
       pkgA.dependencies.add(pkgB);
 
       final graph = new PackageGraph.fromRoot(pkgA);
@@ -70,6 +70,9 @@ class FakeNodeWatcher implements PackageNodeWatcher {
   final _events = new StreamController<AssetChange>();
 
   FakeNodeWatcher(this._package);
+
+  @override
+  Watcher get watcher => throw new UnimplementedError();
 
   void emitAdd(String path) {
     _events.add(

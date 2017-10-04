@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
@@ -139,14 +139,14 @@ void main() {
     test('missing pubspec throws on create', () {
       expect(
           () => new PackageGraph.forPath(
-              path.join('test', 'fixtures', 'no_pubspec')),
+              p.join('test', 'fixtures', 'no_pubspec')),
           throwsA(anything));
     });
 
     test('missing .packages file throws on create', () {
       expect(
           () => new PackageGraph.forPath(
-              path.join('test', 'fixtures', 'no_packages_file')),
+              p.join('test', 'fixtures', 'no_packages_file')),
           throwsA(anything));
     });
   });
@@ -241,6 +241,7 @@ void main() {
 void expectPkg(PackageNode node, String name, dynamic version,
     PackageDependencyType type, String location,
     [Iterable<PackageNode> dependencies]) {
+  location = p.absolute(location);
   expect(node.name, name);
   expect(node.version, version);
   expect(node.dependencyType, type);

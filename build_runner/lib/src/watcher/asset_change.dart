@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../package_graph/package_graph.dart';
@@ -31,13 +31,12 @@ class AssetChange {
 
   static String _normalizeRelativePath(PackageNode package, WatchEvent event) {
     final pkgPath = package.path;
-    if (path.isAbsolute(event.path)) {
-      if (!path.isWithin(pkgPath, event.path)) {
-        throw new ArgumentError('"${event.path}" is not in "$pkgPath".');
-      }
-      return event.path.substring(pkgPath.length + 1);
+    var absoluteEventPath =
+        p.isAbsolute(event.path) ? event.path : p.absolute(event.path);
+    if (!p.isWithin(pkgPath, absoluteEventPath)) {
+      throw new ArgumentError('"${absoluteEventPath}" is not in "$pkgPath".');
     }
-    return event.path;
+    return p.relative(absoluteEventPath, from: pkgPath);
   }
 
   @override

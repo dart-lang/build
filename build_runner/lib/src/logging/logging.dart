@@ -23,7 +23,7 @@ Future<T> logTimedAsync<T>(
   logger.log(level, '$description...');
   final result = await action();
   watch.stop();
-  final time = '${watch.elapsedMicroseconds}ms$_logSuffix';
+  final time = '${watch.elapsedMilliseconds}ms$_logSuffix';
   logger.log(level, '$description completed, took $time');
   return result;
 }
