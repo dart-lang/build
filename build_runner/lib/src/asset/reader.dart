@@ -85,7 +85,7 @@ class SinglePhaseReader implements AssetReader {
   Future<Null> _ensureAssetIsBuilt(AssetId id) async {
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
-      await _buildImpl.runPhaseForInput(
+      await _buildImpl.runLazyPhaseForInput(
           node.phaseNumber, node.primaryInput, _resourceManager);
     }
   }

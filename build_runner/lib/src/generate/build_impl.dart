@@ -218,7 +218,7 @@ class BuildImpl {
 
   /// Gets a list of all inputs matching [inputSet].
   ///
-  /// Lazily builds any [OptionalBuilder]s matching [inputSet].
+  /// Lazily builds any optional build actions matching [inputSet].
   Future<Set<AssetId>> _matchingInputs(InputSet inputSet, int phaseNumber,
       ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
@@ -227,7 +227,7 @@ class BuildImpl {
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) continue;
         if (node.needsUpdate) {
-          await runPhaseForInput(
+          await runLazyPhaseForInput(
               node.phaseNumber, node.primaryInput, resourceManager);
         }
         if (!node.wasOutput) continue;
@@ -252,10 +252,23 @@ class BuildImpl {
 
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
 
-  Future<Iterable<AssetId>> runPhaseForInput(
-      int phaseNumber, AssetId input, ResourceManager resourceManager) async {
+  /// Lazily runs [phaseNumber] with [input] and [resourceManager].
+  Future<Iterable<AssetId>> runLazyPhaseForInput(
+      int phaseNumber, AssetId input, ResourceManager resourceManager) {
     return _lazyPhases.putIfAbsent('$phaseNumber|$input', () async {
-      // phase numbers start at 1 because..... they do
+      // First check if `input` is generated, and whether or not it was
+      // actually output. If it wasn't then we just return an empty list here.
+      var inputNode = _assetGraph.get(input);
+      if (inputNode is GeneratedAssetNode) {
+        // Make sure the `inputNode` is up to date, generate run it.
+        if (inputNode.needsUpdate) {
+          await runLazyPhaseForInput(
+              inputNode.phaseNumber, inputNode.primaryInput, resourceManager);
+        }
+        if (!inputNode.wasOutput) return <AssetId>[];
+      }
+
+      // Phase numbers start at 1 because..... they do
       var action = _buildActions[phaseNumber - 1];
 
       if (action is PackageBuildAction) {
