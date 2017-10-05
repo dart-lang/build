@@ -10,18 +10,21 @@ import 'input_set.dart';
 /// A "phase" in the build graph, which represents running a builder on a
 /// specific [package].
 ///
-/// If [isOptional] is `true` then this action runs lazily when another action
-/// tries to read one of its outputs. If no other action attempts to read the
-/// outputs of an optional action, then its outputs will never be created.
-///
 /// See the [BuildAction] and [PackageBuildAction] implementations.
 abstract class BuildAction {
   String get package;
 
+  /// If `true` then this action runs lazily when another action tries to read
+  /// one of its outputs, or use one of its outputs as a primary input. If no
+  /// other action attempts to do this, then its outputs will never be created.
   final bool isOptional;
 
   BuildAction._(bool isOptional) : this.isOptional = isOptional ?? false;
 
+  /// Creates an [AssetBuildAction] for a normal [Builder].
+  ///
+  /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
+  /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
   factory BuildAction(Builder builder, String package,
       {List<String> inputs = const ['**'],
       List<String> excludes = const [],
