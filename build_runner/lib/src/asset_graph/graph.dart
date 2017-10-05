@@ -5,7 +5,9 @@
 import 'package:build/build.dart';
 import 'package:watcher/watcher.dart';
 
+import '../generate/exceptions.dart';
 import '../generate/phase.dart';
+import '../package_builder/package_builder.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
@@ -47,9 +49,10 @@ class AssetGraph {
     return graph;
   }
 
-  factory AssetGraph.build(
-          List<BuildAction> buildActions, Set<AssetId> sources) =>
-      new AssetGraph._().._addOutputsForSources(buildActions, sources);
+  factory AssetGraph.build(List<BuildAction> buildActions, Set<AssetId> sources,
+          String rootPackage) =>
+      new AssetGraph._()
+        .._addOutputsForSources(buildActions, sources, rootPackage);
 
   /// Puts this graph into a serializable form.
   Map serialize() => {
@@ -64,8 +67,15 @@ class AssetGraph {
   /// Gets the [AssetNode] for [id], if one exists.
   AssetNode get(AssetId id) => _nodesById[id];
 
-  /// Adds [node] to the graph.
+  /// Adds [node] to the graph if it doesn't exist.
+  ///
+  /// Throws a [StateError] if it already exists in the graph.
   void _add(AssetNode node) {
+    if (contains(node.id)) {
+      throw new StateError(
+          'Tried to add node ${node.id} to the asset graph but it already '
+          'exists.');
+    }
     _nodesById[node.id] = node;
   }
 
@@ -86,8 +96,8 @@ class AssetGraph {
   /// Update graph structure, invalidate outputs that may change, and return the
   /// set of assets that need to be deleted because they would no longer be
   /// generated, or because they are stale.
-  Iterable<AssetId> updateAndInvalidate(
-      List<BuildAction> buildActions, Map<AssetId, ChangeType> updates) {
+  Iterable<AssetId> updateAndInvalidate(List<BuildAction> buildActions,
+      Map<AssetId, ChangeType> updates, String rootPackage) {
     var deletes = new Set<AssetId>();
 
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
@@ -119,8 +129,10 @@ class AssetGraph {
 
     updates.forEach(clearNodeAndDeps);
 
-    var allNewAndDeletedIds = _addOutputsForSources(buildActions,
-        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet())
+    var allNewAndDeletedIds = _addOutputsForSources(
+        buildActions,
+        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet(),
+        rootPackage)
       ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
       ..addAll(deletes);
 
@@ -148,27 +160,57 @@ class AssetGraph {
   /// Returns a set containing [newSources] plus any new generated sources
   /// based on [buildActions], and updates this graph to contain all the
   /// new outputs.
-  Set<AssetId> _addOutputsForSources(
-      List<BuildAction> buildActions, Set<AssetId> newSources) {
+  Set<AssetId> _addOutputsForSources(List<BuildAction> buildActions,
+      Set<AssetId> newSources, String rootPackage) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
     var allInputs = new Set<AssetId>.from(newSources);
     var phaseNumber = 0;
     for (var action in buildActions) {
       phaseNumber++;
       var phaseOutputs = <AssetId>[];
-      var inputs = allInputs.where(action.inputSet.matches);
-      for (var input in inputs) {
-        var outputs = expectedOutputs(action.builder, input);
-        phaseOutputs.addAll(outputs);
-        get(input).primaryOutputs.addAll(outputs);
-        for (var output in outputs) {
-          if (contains(output)) _remove(output);
-          _add(new GeneratedAssetNode(phaseNumber, input, true, false, output));
+      if (action is PackageBuildAction) {
+        var outputs = outputIdsForBuilder(action.builder, action.package);
+        var invalidOutputs = outputs.where(
+            (o) => o.package != rootPackage && !o.path.startsWith('lib/'));
+        if (invalidOutputs.isNotEmpty) {
+          throw new InvalidPackageBuilderOutputsException(
+              action, invalidOutputs, rootPackage);
         }
+        // `PackageBuilder`s don't generally care about new files, so we only
+        // add the outputs if they don't already exist.
+        if (outputs.any((output) => !contains(output))) {
+          phaseOutputs.addAll(outputs);
+          _addGeneratedOutputs(outputs, phaseNumber);
+        }
+      } else if (action is AssetBuildAction) {
+        var inputs = allInputs.where(action.inputSet.matches);
+        for (var input in inputs) {
+          var outputs = expectedOutputs(action.builder, input);
+          phaseOutputs.addAll(outputs);
+          get(input).primaryOutputs.addAll(outputs);
+          _addGeneratedOutputs(outputs, phaseNumber, primaryInput: input);
+        }
+      } else {
+        throw new InvalidBuildActionException.unrecognizedType(action);
       }
       allInputs.addAll(phaseOutputs);
     }
     return allInputs;
+  }
+
+  /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
+  ///
+  /// Replaces any existing [AssetNode]s with [GeneratedAssetNode]s.
+  void _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+      {AssetId primaryInput}) {
+    for (var output in outputs) {
+      // When `writeToCache` is false we can pick up old generated outputs as
+      // regular `AssetNode`s, this deletes them.
+      if (contains(output)) _remove(output);
+
+      _add(new GeneratedAssetNode(
+          phaseNumber, primaryInput, true, false, output));
+    }
   }
 
   @override

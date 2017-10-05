@@ -5,6 +5,8 @@
 import 'package:build/build.dart';
 import 'package:build_runner/src/generate/phase.dart';
 
+import 'phase.dart';
+
 class ConcurrentBuildException implements Exception {
   const ConcurrentBuildException();
 
@@ -34,9 +36,8 @@ class InvalidBuildActionException extends FatalBuildException {
   final String _reason;
 
   InvalidBuildActionException.nonRootPackage(BuildAction action, String root)
-      : _reason =
-            'A build action (${action.builder}) is attempting to operate on '
-            'package "${action.inputSet.package}", but the build script is '
+      : _reason = 'A build action (${action}) is attempting to operate on '
+            'package "${action.package}", but the build script is '
             'located in package "$root". It\'s not valid to attempt to '
             'generate files for another package unless "writeToCache: true" '
             'is used.'
@@ -44,6 +45,11 @@ class InvalidBuildActionException extends FatalBuildException {
             'Did you mean to write:\n'
             '  new BuildAction(..., \'$root\')\n'
             '... instead?';
+
+  InvalidBuildActionException.unrecognizedType(BuildAction action)
+      : _reason = 'Unrecognized BuildAction type ${action.runtimeType}, only'
+            '`AssetBuildAction` (the default) and `PackageBuildAction` are '
+            'supported.';
 
   @override
   String toString() => 'InvalidBuildActionException: $_reason';
