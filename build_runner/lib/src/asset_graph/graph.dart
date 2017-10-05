@@ -164,10 +164,9 @@ class AssetGraph {
       Set<AssetId> newSources, String rootPackage) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
     var allInputs = new Set<AssetId>.from(newSources);
-    var phaseNumber = 0;
-    for (var action in buildActions) {
-      phaseNumber++;
+    for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = <AssetId>[];
+      var action = buildActions[phase];
       if (action is PackageBuildAction) {
         var outputs = outputIdsForBuilder(action.builder, action.package);
         var invalidOutputs = outputs.where(
@@ -180,7 +179,7 @@ class AssetGraph {
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
-          _addGeneratedOutputs(outputs, phaseNumber);
+          _addGeneratedOutputs(outputs, phase);
         }
       } else if (action is AssetBuildAction) {
         var inputs = allInputs.where(action.inputSet.matches);
@@ -188,7 +187,7 @@ class AssetGraph {
           var outputs = expectedOutputs(action.builder, input);
           phaseOutputs.addAll(outputs);
           get(input).primaryOutputs.addAll(outputs);
-          _addGeneratedOutputs(outputs, phaseNumber, primaryInput: input);
+          _addGeneratedOutputs(outputs, phase, primaryInput: input);
         }
       } else {
         throw new InvalidBuildActionException.unrecognizedType(action);

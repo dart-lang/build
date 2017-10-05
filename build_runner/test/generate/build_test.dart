@@ -365,7 +365,7 @@ void main() {
         ..validAsOf = new DateTime.now();
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
-          1, bId, false, true, makeAssetId('a|lib/b.txt.copy'));
+          0, bId, false, true, makeAssetId('a|lib/b.txt.copy'));
       graph.add(bCopyNode);
       var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id]);
       graph.add(bNode);
@@ -397,13 +397,13 @@ void main() {
         ..validAsOf = new DateTime.now();
 
       var aCloneNode = new GeneratedAssetNode(
-          2,
+          1,
           makeAssetId('a|lib/a.txt.copy'),
           false,
           true,
           makeAssetId('a|lib/a.txt.copy.clone'));
       graph.add(aCloneNode);
-      var aCopyNode = new GeneratedAssetNode(1, makeAssetId('a|lib/a.txt'),
+      var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
           false, true, makeAssetId('a|lib/a.txt.copy'))
         ..primaryOutputs.add(aCloneNode.id)
         ..outputs.add(aCloneNode.id);
@@ -413,13 +413,13 @@ void main() {
       graph.add(aNode);
 
       var bCloneNode = new GeneratedAssetNode(
-          2,
+          1,
           makeAssetId('a|lib/b.txt.copy'),
           false,
           true,
           makeAssetId('a|lib/b.txt.copy.clone'));
       graph.add(bCloneNode);
-      var bCopyNode = new GeneratedAssetNode(1, makeAssetId('a|lib/b.txt'),
+      var bCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/b.txt'),
           false, true, makeAssetId('a|lib/b.txt.copy'))
         ..primaryOutputs.add(bCloneNode.id)
         ..outputs.add(bCloneNode.id);
@@ -458,13 +458,13 @@ void main() {
       var graph = new AssetGraph.build([], new Set(), 'a')
         ..validAsOf = new DateTime.now();
       var aCloneNode = new GeneratedAssetNode(
-          1,
+          0,
           makeAssetId('a|lib/a.txt.copy'),
           false,
           true,
           makeAssetId('a|lib/a.txt.copy.clone'));
       graph.add(aCloneNode);
-      var aCopyNode = new GeneratedAssetNode(1, makeAssetId('a|lib/a.txt'),
+      var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
           false, true, makeAssetId('a|lib/a.txt.copy'))
         ..outputs.add(aCloneNode.id);
       graph.add(aCopyNode);
@@ -499,7 +499,7 @@ void main() {
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
-          1, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+          0, aId, false, true, makeAssetId('a|web/a.txt.copy'));
       graph.add(aCopyNode);
       var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
       graph.add(aNode);
@@ -526,7 +526,7 @@ void main() {
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
-          1, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+          0, aId, false, true, makeAssetId('a|web/a.txt.copy'));
       graph.add(aCopyNode);
       var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
       graph.add(aNode);
@@ -549,7 +549,7 @@ void main() {
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
-          1, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+          0, aId, false, true, makeAssetId('a|web/a.txt.copy'));
       graph.add(aCopyNode);
       var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
       graph.add(aNode);

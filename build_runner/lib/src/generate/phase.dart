@@ -23,7 +23,7 @@ abstract class BuildAction {
       List<String> excludes = const [],
       bool isOptional}) {
     var inputSet = new InputSet(package, inputs, excludes: excludes);
-    return new AssetBuildAction(builder, inputSet, isOptional: isOptional);
+    return new AssetBuildAction._(builder, inputSet, isOptional: isOptional);
   }
 }
 
@@ -37,7 +37,7 @@ class AssetBuildAction extends BuildAction {
   @override
   String get package => inputSet.package;
 
-  AssetBuildAction(this.builder, this.inputSet, {bool isOptional})
+  AssetBuildAction._(this.builder, this.inputSet, {bool isOptional})
       : super._(isOptional);
 
   @override
