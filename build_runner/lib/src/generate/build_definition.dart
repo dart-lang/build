@@ -60,7 +60,7 @@ class _Loader {
     if (!_options.writeToCache) {
       final root = _options.packageGraph.root.name;
       for (final action in _buildActions) {
-        if (action.inputSet.package != _options.packageGraph.root.name) {
+        if (action.package != _options.packageGraph.root.name) {
           throw new InvalidBuildActionException.nonRootPackage(action, root);
         }
       }
@@ -88,7 +88,8 @@ class _Loader {
         assetGraph = null;
       }
       if (assetGraph == null) {
-        assetGraph = new AssetGraph.build(_buildActions, inputSources);
+        assetGraph = new AssetGraph.build(
+            _buildActions, inputSources, _options.packageGraph.root.name);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
       } else {

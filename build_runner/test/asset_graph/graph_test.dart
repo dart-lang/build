@@ -17,7 +17,8 @@ void main() {
     test('build', () {
       var graph = new AssetGraph.build(
           [new BuildAction(new CopyBuilder(), 'foo')],
-          new Set.from([makeAssetId('foo|file')]));
+          new Set.from([makeAssetId('foo|file')]),
+          'foo');
       expect(graph.outputs, unorderedEquals([makeAssetId('foo|file.copy')]));
       expect(
           graph.allNodes.map((n) => n.id),
@@ -29,7 +30,7 @@ void main() {
     AssetGraph graph;
 
     setUp(() {
-      graph = new AssetGraph.build([], new Set())
+      graph = new AssetGraph.build([], new Set(), 'foo')
         ..validAsOf = new DateTime.now();
     });
 

@@ -56,6 +56,8 @@ class GeneratedAssetNode extends AssetNode {
   final int phaseNumber;
 
   /// The primary input which generated this node.
+  ///
+  /// May be `null` in the case of a `PackageBuilder`.
   final AssetId primaryInput;
 
   /// Whether or not this asset needs to be updated.
@@ -95,7 +97,7 @@ class GeneratedAssetNode extends AssetNode {
   @override
   List serialize() => super.serialize()
     ..addAll([
-      primaryInput.serialize(),
+      primaryInput?.serialize(),
       wasOutput,
       phaseNumber,
       globs.map((glob) => glob.pattern).toList(),

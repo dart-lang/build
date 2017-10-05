@@ -43,7 +43,7 @@ main() {
 
         for (var action in actions) {
           time = time.add(const Duration(seconds: 5));
-          var package = action.inputSet.package;
+          var package = action.package;
           return [new AssetId(package, 'lib/$package.txt')];
         }
 
