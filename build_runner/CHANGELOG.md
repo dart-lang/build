@@ -4,6 +4,10 @@
 
 - Added `orderedPackages` and `dependentsOf` utilities to `PackageGraph`.
 - Added the `noPubspec` constructor to `PackageNode`.
+- Added the `PackageBuilder` and `PackageBuildAction` classes. These builders
+  only run once per package, and have no primary input. Outputs must be well
+  known ahead of time and are declared with the `Iterable<String> get outputs`
+  field, which returns relative paths under the current package.
 - **Breaking**: `PackageNode.location` has become `PackageNode.path`, and is
   now a `String` (absolute path) instead of a `Uri`; this prevents needing
   conversions to/from `Uri` across the package.
