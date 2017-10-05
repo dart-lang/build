@@ -35,7 +35,8 @@ class UnexpectedExistingOutputsException extends FatalBuildException {
 class InvalidBuildActionException extends FatalBuildException {
   final String _reason;
 
-  InvalidBuildActionException.nonRootPackage(BuildAction action, String root)
+  InvalidBuildActionException.nonRootPackage(
+      BuildActionBase action, String root)
       : _reason = 'A build action (${action}) is attempting to operate on '
             'package "${action.package}", but the build script is '
             'located in package "$root". It\'s not valid to attempt to '
@@ -46,7 +47,7 @@ class InvalidBuildActionException extends FatalBuildException {
             '  new BuildAction(..., \'$root\')\n'
             '... instead?';
 
-  InvalidBuildActionException.unrecognizedType(BuildAction action)
+  InvalidBuildActionException.unrecognizedType(BuildActionBase action)
       : _reason = 'Unrecognized BuildAction type ${action.runtimeType}, only'
             '`AssetBuildAction` (the default) and `PackageBuildAction` are '
             'supported.';

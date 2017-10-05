@@ -9,23 +9,18 @@ import 'input_set.dart';
 
 /// A "phase" in the build graph, which represents running a [builder] on a
 /// specific [package].
-abstract class BuildAction {
+///
+/// See the [BuildAction] and [PackageBuildAction] implementations.
+abstract class BuildActionBase<T> {
   String get package;
 
-  /// Creates an [AssetBuildAction] for a normal [Builder].
-  ///
-  /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
-  /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
-  factory BuildAction(Builder builder, String package,
-      {List<String> inputs = const ['**'], List<String> excludes = const []}) {
-    var inputSet = new InputSet(package, inputs, excludes: excludes);
-    return new AssetBuildAction._(builder, inputSet);
-  }
+  T get builder;
 }
 
-/// The default type of [BuildAction], create one using the normal
-/// [BuildAction] constructor.
-class AssetBuildAction implements BuildAction {
+/// The default type of [BuildActionBase], takes a normal [Builder] and an
+/// [InputSet] of primary inputs to run on.
+class BuildAction implements BuildActionBase<Builder> {
+  @override
   final Builder builder;
 
   @override
@@ -33,16 +28,19 @@ class AssetBuildAction implements BuildAction {
 
   final InputSet inputSet;
 
-  AssetBuildAction._(this.builder, this.inputSet);
+  BuildAction(this.builder, String package,
+      {List<String> inputs = const ['**'], List<String> excludes = const []})
+      : inputSet = new InputSet(package, inputs, excludes: excludes);
 
   @override
   String toString() => '$builder on $inputSet';
 }
 
-/// A special type of [BuildAction] which takes a [PackageBuilder] instead of
-/// a normal [Builder], and runs a single time on [package] instead of once per
-/// input file.
-class PackageBuildAction implements BuildAction {
+/// A special type of [BuildActionBase] which takes a [PackageBuilder] instead
+/// of a normal [Builder], and runs a single time on [package] instead of once
+/// per input file.
+class PackageBuildAction implements BuildActionBase<PackageBuilder> {
+  @override
   final PackageBuilder builder;
 
   @override

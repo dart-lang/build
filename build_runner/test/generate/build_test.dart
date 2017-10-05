@@ -55,7 +55,7 @@ void main() {
       });
 
       test('multiple build actions', () async {
-        var buildActions = [
+        var buildActions = <BuildActionBase>[
           copyABuildAction,
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
               inputs: ['**/*.txt']),

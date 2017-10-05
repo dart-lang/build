@@ -41,7 +41,7 @@ import 'watch_impl.dart';
 /// By default the [ProcessSignal.SIGINT] stream is used. In this mode, it
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
-Future<BuildResult> build(List<BuildAction> buildActions,
+Future<BuildResult> build(List<BuildActionBase> buildActions,
     {bool deleteFilesByDefault,
     bool writeToCache,
     PackageGraph packageGraph,
