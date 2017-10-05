@@ -7,8 +7,12 @@ import 'package:build/build.dart';
 import '../package_builder/package_builder.dart';
 import 'input_set.dart';
 
-/// A "phase" in the build graph, which represents running a [builder] on a
+/// A "phase" in the build graph, which represents running a builder on a
 /// specific [package].
+///
+/// If [isOptional] is `true` then this action runs lazily when another action
+/// tries to read one of its outputs. If no other action attempts to read the
+/// outputs of an optional action, then its outputs will never be created.
 ///
 /// See the [BuildAction] and [PackageBuildAction] implementations.
 abstract class BuildAction {
