@@ -49,8 +49,8 @@ class AssetGraph {
     return graph;
   }
 
-  factory AssetGraph.build(List<BuildActionBase> buildActions,
-          Set<AssetId> sources, String rootPackage) =>
+  factory AssetGraph.build(List<BuildAction> buildActions, Set<AssetId> sources,
+          String rootPackage) =>
       new AssetGraph._()
         .._addOutputsForSources(buildActions, sources, rootPackage);
 
@@ -96,7 +96,7 @@ class AssetGraph {
   /// Update graph structure, invalidate outputs that may change, and return the
   /// set of assets that need to be deleted because they would no longer be
   /// generated, or because they are stale.
-  Iterable<AssetId> updateAndInvalidate(List<BuildActionBase> buildActions,
+  Iterable<AssetId> updateAndInvalidate(List<BuildAction> buildActions,
       Map<AssetId, ChangeType> updates, String rootPackage) {
     var deletes = new Set<AssetId>();
 
@@ -160,7 +160,7 @@ class AssetGraph {
   /// Returns a set containing [newSources] plus any new generated sources
   /// based on [buildActions], and updates this graph to contain all the
   /// new outputs.
-  Set<AssetId> _addOutputsForSources(List<BuildActionBase> buildActions,
+  Set<AssetId> _addOutputsForSources(List<BuildAction> buildActions,
       Set<AssetId> newSources, String rootPackage) {
     newSources.map((s) => new AssetNode(s)).forEach(_add);
     var allInputs = new Set<AssetId>.from(newSources);
@@ -182,7 +182,7 @@ class AssetGraph {
           phaseOutputs.addAll(outputs);
           _addGeneratedOutputs(outputs, phaseNumber);
         }
-      } else if (action is BuildAction) {
+      } else if (action is AssetBuildAction) {
         var inputs = allInputs.where(action.inputSet.matches);
         for (var input in inputs) {
           var outputs = expectedOutputs(action.builder, input);

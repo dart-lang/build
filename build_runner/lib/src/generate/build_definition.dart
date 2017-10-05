@@ -46,12 +46,12 @@ class BuildDefinition {
       this.reader, this.writer, this.packageGraph, this.deleteFilesByDefault);
 
   static Future<BuildDefinition> load(
-          BuildOptions options, List<BuildActionBase> buildActions) =>
+          BuildOptions options, List<BuildAction> buildActions) =>
       new _Loader(options, buildActions).load();
 }
 
 class _Loader {
-  final List<BuildActionBase> _buildActions;
+  final List<BuildAction> _buildActions;
   final BuildOptions _options;
 
   _Loader(this._options, this._buildActions);

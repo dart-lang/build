@@ -18,7 +18,6 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../builder/optional_builder.dart';
 import '../logging/logging.dart';
 import '../package_builder/package_builder.dart';
 import '../package_graph/package_graph.dart';
@@ -35,7 +34,7 @@ import 'phase.dart';
 final _logger = new Logger('Build');
 
 Future<BuildResult> singleBuild(
-    BuildOptions options, List<BuildActionBase> buildActions) async {
+    BuildOptions options, List<BuildAction> buildActions) async {
   var buildDefinition = await BuildDefinition.load(options, buildActions);
   return (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
 }
@@ -46,7 +45,7 @@ class BuildImpl {
   BuildResult _firstBuild;
   BuildResult get firstBuild => _firstBuild;
 
-  final List<BuildActionBase> _buildActions;
+  final List<BuildAction> _buildActions;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
   final RunnerAssetWriter _writer;
@@ -63,7 +62,7 @@ class BuildImpl {
         _assetGraph = buildDefinition.assetGraph;
 
   static Future<BuildImpl> create(
-      BuildDefinition buildDefinition, List<BuildActionBase> buildActions,
+      BuildDefinition buildDefinition, List<BuildAction> buildActions,
       {void onDelete(AssetId id)}) async {
     var build = new BuildImpl._(buildDefinition, buildActions, onDelete);
 
@@ -194,12 +193,12 @@ class BuildImpl {
     var phaseNumber = 0;
     for (var action in _buildActions) {
       phaseNumber++;
-      if (action.builder is OptionalBuilder) continue;
+      if (action.isOptional) continue;
       await performanceTracker.trackAction(action, () async {
         if (action is PackageBuildAction) {
           outputs.addAll(await _runPackageBuilder(
               phaseNumber, action.package, action.builder, resourceManager));
-        } else if (action is BuildAction) {
+        } else if (action is AssetBuildAction) {
           var inputs = await _matchingInputs(
               action.inputSet, phaseNumber, resourceManager);
           outputs.addAll(await _runBuilder(
@@ -262,7 +261,7 @@ class BuildImpl {
       if (action is PackageBuildAction) {
         return _runPackageBuilder(
             phaseNumber, action.package, action.builder, resourceManager);
-      } else if (action is BuildAction) {
+      } else if (action is AssetBuildAction) {
         return _runForInput(
             phaseNumber, action.builder, input, resourceManager);
       } else {

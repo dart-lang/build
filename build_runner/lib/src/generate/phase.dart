@@ -11,40 +11,48 @@ import 'input_set.dart';
 /// specific [package].
 ///
 /// See the [BuildAction] and [PackageBuildAction] implementations.
-abstract class BuildActionBase<T> {
+abstract class BuildAction {
   String get package;
 
-  T get builder;
+  final bool isOptional;
+
+  BuildAction._(bool isOptional) : this.isOptional = isOptional ?? false;
+
+  factory BuildAction(Builder builder, String package,
+      {List<String> inputs = const ['**'],
+      List<String> excludes = const [],
+      bool isOptional}) {
+    var inputSet = new InputSet(package, inputs, excludes: excludes);
+    return new AssetBuildAction(builder, inputSet, isOptional: isOptional);
+  }
 }
 
-/// The default type of [BuildActionBase], takes a normal [Builder] and an
+/// The default type of [BuildAction], takes a normal [Builder] and an
 /// [InputSet] of primary inputs to run on.
-class BuildAction implements BuildActionBase<Builder> {
-  @override
+class AssetBuildAction extends BuildAction {
   final Builder builder;
+
+  final InputSet inputSet;
 
   @override
   String get package => inputSet.package;
 
-  final InputSet inputSet;
-
-  BuildAction(this.builder, String package,
-      {List<String> inputs = const ['**'], List<String> excludes = const []})
-      : inputSet = new InputSet(package, inputs, excludes: excludes);
+  AssetBuildAction(this.builder, this.inputSet, {bool isOptional})
+      : super._(isOptional);
 
   @override
   String toString() => '$builder on $inputSet';
 }
 
-/// A special type of [BuildActionBase] which takes a [PackageBuilder] instead
+/// A special type of [BuildAction] which takes a [PackageBuilder] instead
 /// of a normal [Builder], and runs a single time on [package] instead of once
 /// per input file.
-class PackageBuildAction implements BuildActionBase<PackageBuilder> {
-  @override
+class PackageBuildAction extends BuildAction {
   final PackageBuilder builder;
 
   @override
   final String package;
 
-  PackageBuildAction(this.builder, this.package);
+  PackageBuildAction(this.builder, this.package, {bool isOptional})
+      : super._(isOptional);
 }

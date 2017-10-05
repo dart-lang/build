@@ -58,7 +58,7 @@ Future wait(int milliseconds) =>
 ///       });
 ///     }
 ///
-Future<BuildResult> testActions(List<BuildActionBase> buildActions,
+Future<BuildResult> testActions(List<BuildAction> buildActions,
     Map<String, /*String|List<int>*/ dynamic> inputs,
     {Map<String, /*String|List<int>*/ dynamic> outputs,
     PackageGraph packageGraph,

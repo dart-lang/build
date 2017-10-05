@@ -25,7 +25,7 @@ abstract class BuildPerformance implements Timings {
 
 /// The [Timings] of an [action] within a larger build.
 abstract class BuildActionPerformance implements Timings {
-  BuildActionBase get action;
+  BuildAction get action;
 }
 
 /// Internal class that tracks the [Timings] of an entire build.
@@ -39,7 +39,7 @@ class BuildPerformanceTracker extends TimeTracker implements BuildPerformance {
 
   /// Tracks [action] which is ran with [runAction].
   Future<Iterable<AssetId>> trackAction(
-      BuildActionBase action, Future<Iterable<AssetId>> runAction()) {
+      BuildAction action, Future<Iterable<AssetId>> runAction()) {
     assert(startTime != null && stopTime == null);
     var tracker = new BuildActionTracker(action);
     _actions.add(tracker);
@@ -55,7 +55,7 @@ class BuildPerformanceTracker extends TimeTracker implements BuildPerformance {
 /// individual input because they are all ran at the same time.
 class BuildActionTracker extends TimeTracker implements BuildActionPerformance {
   @override
-  final BuildActionBase action;
+  final BuildAction action;
 
   BuildActionTracker(this.action);
 
