@@ -185,17 +185,16 @@ class BuildImpl {
   Future<BuildResult> _runPhases(ResourceManager resourceManager) async {
     var performanceTracker = new BuildPerformanceTracker()..start();
     final outputs = <AssetId>[];
-    var phaseNumber = 0;
-    for (var action in _buildActions) {
+    for (var phase = 0; phase < _buildActions.length; phase++) {
+      var action = _buildActions[phase];
       await performanceTracker.trackAction(action, () async {
-        phaseNumber++;
         if (action is PackageBuildAction) {
           outputs.addAll(await _runPackageBuilder(
-              phaseNumber, action.package, action.builder, resourceManager));
+              phase, action.package, action.builder, resourceManager));
         } else if (action is AssetBuildAction) {
-          var inputs = _matchingInputs(action.inputSet, phaseNumber);
+          var inputs = _matchingInputs(action.inputSet, phase);
           outputs.addAll(await _runBuilder(
-              phaseNumber, action.builder, inputs, resourceManager));
+              phase, action.builder, inputs, resourceManager));
         } else {
           throw new InvalidBuildActionException.unrecognizedType(action);
         }
