@@ -29,9 +29,9 @@ main() {
     };
 
     // Set up all the other required inputs for this test.
-    await testBuilderAndAddAssets(new ModuleBuilder(), assets);
-    await testBuilderAndAddAssets(new UnlinkedSummaryBuilder(), assets);
-    await testBuilderAndAddAssets(new LinkedSummaryBuilder(), assets);
+    await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
+    await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
   });
 
   test("can compile ddc modules under lib and web", () async {

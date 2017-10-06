@@ -8,7 +8,7 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 
 /// Forwards to [testBuilder], and adds all output assets to [assets].
-Future<Null> testBuilderAndAddAssets(
+Future<Null> testBuilderAndCollectAssets(
     Builder builder, Map<String, dynamic> assets) async {
   var writer = new InMemoryAssetWriter();
   await testBuilder(builder, assets, writer: writer);

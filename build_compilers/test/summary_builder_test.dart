@@ -29,7 +29,7 @@ main() {
     };
 
     // Set up all the other required inputs for this test.
-    await testBuilderAndAddAssets(new ModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
   });
 
   test("can output unlinked analyzer summaries for modules under lib and web",
@@ -47,7 +47,7 @@ main() {
   test("can output linked analyzer summaries for modules under lib and web",
       () async {
     // Build the unlinked summaries first.
-    await testBuilderAndAddAssets(new UnlinkedSummaryBuilder(), assets);
+    await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
 
     // Actual test for LinkedSummaryBuilder;
     var expectedOutputs = <String, Matcher>{
