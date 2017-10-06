@@ -8,11 +8,12 @@ import 'package:test/test.dart';
 import 'package:build_compilers/build_compilers.dart';
 
 import 'matchers.dart';
+import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
 
-  setUp(() {
+  setUp(() async {
     assets = {
       'b|lib/b.dart': '''final world = 'world';''',
       'a|lib/a.dart': '''
@@ -26,6 +27,9 @@ main() {
         }
       ''',
     };
+
+    // Set up all the other required inputs for this test.
+    await testBuilderAndAddAssets(new ModuleBuilder(), assets);
   });
 
   test("can output unlinked analyzer summaries for modules under lib and web",
@@ -42,13 +46,8 @@ main() {
 
   test("can output linked analyzer summaries for modules under lib and web",
       () async {
-    // Use `testBuilder` to create unlinked summaries for the actual test.
-    var writer = new InMemoryAssetWriter();
-    await testBuilder(new UnlinkedSummaryBuilder(), assets, writer: writer);
-    // Add the unlinked summaries to `assets`.
-    writer.assets.forEach((id, datedValue) {
-      assets['${id.package}|${id.path}'] = datedValue.bytesValue;
-    });
+    // Build the unlinked summaries first.
+    await testBuilderAndAddAssets(new UnlinkedSummaryBuilder(), assets);
 
     // Actual test for LinkedSummaryBuilder;
     var expectedOutputs = <String, Matcher>{

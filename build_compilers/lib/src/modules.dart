@@ -3,12 +3,14 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'dev_compiler_builder.dart';
+import 'module_builder.dart';
 import 'summary_builder.dart';
 
 part 'modules.g.dart';
@@ -107,7 +109,7 @@ class Module extends Object with _$ModuleSerializerMixin {
 
   /// Computes the [primarySource]s of all [Module]s that are transitively
   /// depended on by this module.
-  Future<Set<AssetId>> computeTransitiveDependencies(Resolver resolver) async {
+  Future<Set<AssetId>> computeTransitiveDependencies(AssetReader reader) async {
     var transitiveDeps = new Set<AssetId>();
     var modulesToCrawl = directDependencies.toSet();
     while (modulesToCrawl.isNotEmpty) {
@@ -115,7 +117,9 @@ class Module extends Object with _$ModuleSerializerMixin {
       modulesToCrawl.remove(next);
       if (transitiveDeps.contains(next)) continue;
       transitiveDeps.add(next);
-      var module = new Module.forLibrary(await resolver.libraryFor(next));
+      var module = new Module.fromJson(JSON.decode(
+              await reader.readAsString(next.changeExtension(moduleExtension)))
+          as Map<String, dynamic>);
       modulesToCrawl.addAll(module.directDependencies);
     }
     return transitiveDeps;

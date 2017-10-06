@@ -3,5 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/dev_compiler_builder.dart' show DevCompilerBuilder;
+export 'src/module_builder.dart' show ModuleBuilder, moduleExtension;
 export 'src/summary_builder.dart'
     show LinkedSummaryBuilder, UnlinkedSummaryBuilder;
