@@ -6,16 +6,20 @@ import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 import 'dev_compiler_builder.dart';
 import 'summary_builder.dart';
+
+part 'modules.g.dart';
 
 /// A collection of Dart libraries in a strongly connected component and the
 /// modules they depend on.
 ///
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
-class Module {
+@JsonSerializable()
+class Module extends Object with _$ModuleSerializerMixin {
   /// The JS file for this module.
   AssetId get jsId => primarySource.changeExtension(jsModuleExtension);
 
@@ -36,6 +40,8 @@ class Module {
   /// The assets which are built once per module, such as DDC compiled output or
   /// Analyzer summaries, will be named after the primary source and will
   /// encompass everything in [sources].
+  @override
+  @JsonKey(name: 'p', nullable: false)
   final AssetId primarySource;
 
   /// The libraries in the strongly connected import cycle with [primarySource].
@@ -59,13 +65,20 @@ class Module {
   /// Libraries `foo` and `bar` form an import cycle so they would be grouped in
   /// the same module. Every Dart library will only be contained in a single
   /// [Module].
+  @override
+  @JsonKey(name: 's', nullable: false)
   final Set<AssetId> sources;
 
   /// The [primarySource]s of the [Module]s which contain any library imported
   /// from any of the [sources] in this module.
+  @override
+  @JsonKey(name: 'd', nullable: false)
   final Set<AssetId> directDependencies;
 
-  Module._(this.primarySource, this.sources, this.directDependencies);
+  Module(this.primarySource, Iterable<AssetId> sources,
+      Iterable<AssetId> directDependencies)
+      : this.sources = sources.toSet(),
+        this.directDependencies = directDependencies.toSet();
 
   /// Find the module definition which contains [library].
   factory Module.forLibrary(LibraryElement library) {
@@ -83,11 +96,14 @@ class Module {
 
     AssetId toAssetId(Uri uri) => new AssetId.resolve('${uri}');
 
-    return new Module._(
+    return new Module(
         toAssetId(_earliest(cycle)),
         _cycleSources(cycle).map(toAssetId).toSet(),
         dependencyModules.map(toAssetId).toSet());
   }
+
+  /// Generated factory constructor.
+  factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
 
   /// Computes the [primarySource]s of all [Module]s that are transitively
   /// depended on by this module.

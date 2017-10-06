@@ -14,7 +14,7 @@ env:
   - PKG=build_barback TASK=test
   - PKG=build_compilers TASK=dartanalyzer
   - PKG=build_compilers TASK=dartfmt
-  - PKG=build_compilers TASK=test
+  - PKG=build_compilers TASK=test_1
   - PKG=build_runner TASK=dartanalyzer
   - PKG=build_runner TASK=dartfmt
   - PKG=build_runner TASK=test
