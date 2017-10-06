@@ -28,17 +28,17 @@ env:
 matrix:
   exclude:
     - dart: stable
-      env: PKG=build TASK=dartfmt
-    - dart: stable
-      env: PKG=build_barback TASK=dartfmt
+      env: PKG=build_test TASK=dartfmt
     - dart: stable
       env: PKG=build_compilers TASK=dartfmt
     - dart: stable
-      env: PKG=build_runner TASK=dartfmt
-    - dart: stable
-      env: PKG=build_test TASK=dartfmt
+      env: PKG=build_barback TASK=dartfmt
     - dart: stable
       env: PKG=scratch_space TASK=dartfmt
+    - dart: stable
+      env: PKG=build_runner TASK=dartfmt
+    - dart: stable
+      env: PKG=build TASK=dartfmt
 
 script: ./tool/travis.sh
 

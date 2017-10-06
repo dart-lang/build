@@ -28,6 +28,10 @@ test) echo
   echo -e "[1mTASK: test[22m"
   pub run test
   ;;
+test) echo
+  echo -e "[1mTASK: test[22m"
+  pub run test --run-skipped
+  ;;
 *) echo -e "[31mNot expecting TASK '${TASK}'. Error![0m"
   exit 1
   ;;
