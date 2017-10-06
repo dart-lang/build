@@ -3,11 +3,14 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:scratch_space/scratch_space.dart';
 
 import 'errors.dart';
+import 'module_builder.dart';
 import 'modules.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
@@ -19,17 +22,14 @@ final String unlinkedSummaryExtension = '.unlinked.sum';
 class UnlinkedSummaryBuilder implements Builder {
   @override
   final buildExtensions = {
-    '.dart': [unlinkedSummaryExtension]
+    moduleExtension: [unlinkedSummaryExtension]
   };
 
   @override
   Future build(BuildStep buildStep) async {
-    if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
-
-    var library = await buildStep.inputLibrary;
-    if (!isPrimary(library)) return;
-
-    var module = new Module.forLibrary(library);
+    var module = new Module.fromJson(
+        JSON.decode(await buildStep.readAsString(buildStep.inputId))
+            as Map<String, dynamic>);
     try {
       await createUnlinkedSummary(module, buildStep);
     } catch (e, s) {
@@ -42,17 +42,14 @@ class UnlinkedSummaryBuilder implements Builder {
 class LinkedSummaryBuilder implements Builder {
   @override
   final buildExtensions = {
-    '.dart': [linkedSummaryExtension]
+    moduleExtension: [linkedSummaryExtension]
   };
 
   @override
   Future build(BuildStep buildStep) async {
-    if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
-
-    var library = await buildStep.inputLibrary;
-    if (!isPrimary(library)) return;
-
-    var module = new Module.forLibrary(library);
+    var module = new Module.fromJson(
+        JSON.decode(await buildStep.readAsString(buildStep.inputId))
+            as Map<String, dynamic>);
     try {
       await createLinkedSummary(module, buildStep);
     } catch (e, s) {
@@ -92,8 +89,7 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
 /// Creates a linked summary for [module].
 Future createLinkedSummary(Module module, BuildStep buildStep,
     {bool isRoot = false}) async {
-  var transitiveDeps =
-      await module.computeTransitiveDependencies(buildStep.resolver);
+  var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveSummaryDeps =
       transitiveDeps.map((id) => id.changeExtension(unlinkedSummaryExtension));
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);

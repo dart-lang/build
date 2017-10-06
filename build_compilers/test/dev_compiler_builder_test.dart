@@ -8,11 +8,12 @@ import 'package:test/test.dart';
 import 'package:build_compilers/build_compilers.dart';
 
 import 'matchers.dart';
+import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
 
-  setUp(() {
+  setUp(() async {
     assets = {
       'b|lib/b.dart': '''final world = 'world';''',
       'a|lib/a.dart': '''
@@ -26,25 +27,14 @@ main() {
         }
       ''',
     };
+
+    // Set up all the other required inputs for this test.
+    await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
+    await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
   });
 
   test("can compile ddc modules under lib and web", () async {
-    // Use `testBuilder` to create unlinked summaries for the actual test.
-    var writer = new InMemoryAssetWriter();
-    await testBuilder(new UnlinkedSummaryBuilder(), assets, writer: writer);
-    // Add the unlinked summaries to `assets`.
-    writer.assets.forEach((id, datedValue) {
-      assets['${id.package}|${id.path}'] = datedValue.bytesValue;
-    });
-
-    // Use `testBuilder` to create linked summaries for the actual test.
-    writer = new InMemoryAssetWriter();
-    await testBuilder(new LinkedSummaryBuilder(), assets, writer: writer);
-    // Add the linked summaries to `assets`.
-    writer.assets.forEach((id, datedValue) {
-      assets['${id.package}|${id.path}'] = datedValue.bytesValue;
-    });
-
     var expectedOutputs = {
       'b|lib/b.js': new Utf8Decoded(contains('world')),
       'a|lib/a.js': new Utf8Decoded(contains('hello')),

@@ -3,12 +3,14 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
 import 'errors.dart';
+import 'module_builder.dart';
 import 'modules.dart';
 import 'scratch_space.dart';
 import 'summary_builder.dart';
@@ -21,17 +23,14 @@ final String jsSourceMapExtension = '.js.map';
 class DevCompilerBuilder implements Builder {
   @override
   final buildExtensions = {
-    '.dart': [jsModuleExtension, jsSourceMapExtension]
+    moduleExtension: [jsModuleExtension, jsSourceMapExtension]
   };
 
   @override
   Future build(BuildStep buildStep) async {
-    if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
-
-    var library = await buildStep.inputLibrary;
-    if (!isPrimary(library)) return;
-
-    var module = new Module.forLibrary(library);
+    var module = new Module.fromJson(
+        JSON.decode(await buildStep.readAsString(buildStep.inputId))
+            as Map<String, dynamic>);
     try {
       await createDevCompilerModule(module, buildStep);
     } catch (e, s) {
@@ -43,8 +42,7 @@ class DevCompilerBuilder implements Builder {
 /// Compile [module] with the dev compiler.
 Future createDevCompilerModule(Module module, BuildStep buildStep,
     {bool isRoot = false, bool debugMode = false}) async {
-  var transitiveDeps =
-      await module.computeTransitiveDependencies(buildStep.resolver);
+  var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveSummaryDeps =
       transitiveDeps.map((id) => id.changeExtension(linkedSummaryExtension));
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
