@@ -7,6 +7,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 // TODO: Generalize this test and move it to package:build_test. This is copied
@@ -16,9 +17,9 @@ void main() {
   try {
     pkgRoot = _runProc('git', ['rev-parse', '--show-toplevel']);
     var currentDir = Directory.current.resolveSymbolicLinksSync();
-    if (pkgRoot != currentDir) {
+    if (!p.isWithin(pkgRoot, currentDir)) {
       throw new StateError('Expected the git root ($pkgRoot) '
-          'to match the current directory ($currentDir).');
+          'to be a parent of the current directory ($currentDir).');
     }
   } catch (e) {
     print("Skipping this test – git didn't run correctly");
@@ -32,7 +33,7 @@ void main() {
 
     // 2 - run build - should be no output, since nothing should change
     var result =
-        _runProc('dart', ['--checked', 'tool/serve.dart', '--single-build']);
+        _runProc('dart', ['--checked', 'tool/watch.dart', '--single-build']);
     expect(result,
         contains(new RegExp(r'Build: Succeeded after \S+ with \d+ outputs')));
 
