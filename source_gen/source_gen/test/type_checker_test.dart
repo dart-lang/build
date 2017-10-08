@@ -102,7 +102,7 @@ void main() {
 
       // Ensure we're consistent WRT generic types
       test('should be assignable from Map<String, String>', () {
-        // Using Uri.queryParamaters to get a Map<String, String>
+        // Using Uri.queryParameters to get a Map<String, String>
         var stringStringMapType =
             staticUri.getGetter('queryParameters').returnType;
 

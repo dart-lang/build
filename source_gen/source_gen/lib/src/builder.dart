@@ -141,7 +141,7 @@ class _Builder extends Builder {
   }
 }
 
-/// A [Builder] which generateds `part of` files.
+/// A [Builder] which generates `part of` files.
 class PartBuilder extends _Builder {
   /// Wrap [generators] as a [Builder] that generates `part of` files.
   ///
@@ -172,7 +172,7 @@ class PartBuilder extends _Builder {
             requireLibraryDirective: requireLibraryDirective);
 }
 
-/// A [Builder] which generateds Dart library files.
+/// A [Builder] which generates Dart library files.
 class LibraryBuilder extends _Builder {
   /// Wrap [generator] as a [Builder] that generates Dart library files.
   ///
