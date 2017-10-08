@@ -40,6 +40,26 @@ void main() {
         });
   });
 
+  test('Generate standalone output file with custom header', () async {
+    var srcs = _createPackageStub(pkgName);
+    var builder =
+        new LibraryBuilder(const CommentGenerator(), header: _customHeader);
+    await testBuilder(builder, srcs,
+        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        outputs: {
+          '$pkgName|lib/test_lib.g.dart':
+              startsWith(_customHeader + '\n\n// ***')
+        });
+  });
+
+  test('LibraryBuilder omits header if provided an empty String', () async {
+    var srcs = _createPackageStub(pkgName);
+    var builder = new LibraryBuilder(const CommentGenerator(), header: '');
+    await testBuilder(builder, srcs,
+        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        outputs: {'$pkgName|lib/test_lib.g.dart': startsWith('// ***')});
+  });
+
   test('Expect no error when multiple generators used on nonstandalone builder',
       () async {
     expect(
@@ -126,6 +146,27 @@ void main() {
         });
   });
 
+  test('PartBuilder uses a custom header when provided', () async {
+    await testBuilder(
+        new PartBuilder([new UnformattedCodeGenerator()],
+            header: _customHeader),
+        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        outputs: {
+          '$pkgName|lib/a.g.dart': startsWith(_customHeader + '\npart of'),
+        });
+  });
+
+  test('PartBuilder includes no header when `header` is empty', () async {
+    await testBuilder(
+        new PartBuilder([new UnformattedCodeGenerator()], header: ''),
+        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        outputs: {
+          '$pkgName|lib/a.g.dart': startsWith('part of'),
+        });
+  });
+
   test('can skip formatting with a trivial lambda', () async {
     await testBuilder(
         new PartBuilder([new UnformattedCodeGenerator()],
@@ -199,6 +240,8 @@ class _ThrowingGenerator extends Generator {
   @override
   Future<String> generate(_, __) async => throw new UnimplementedError();
 }
+
+final _customHeader = '// Copyright 1979';
 
 const pkgName = 'pkg';
 

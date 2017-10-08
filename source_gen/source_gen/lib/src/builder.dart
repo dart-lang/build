@@ -31,6 +31,8 @@ class _Builder extends Builder {
 
   final bool _requireLibraryDirective;
 
+  final String _header;
+
   @override
   final Map<String, List<String>> buildExtensions;
 
@@ -40,14 +42,16 @@ class _Builder extends Builder {
       String generatedExtension: '.g.dart',
       List<String> additionalOutputExtensions: const [],
       bool isStandalone: false,
-      bool requireLibraryDirective: true})
+      bool requireLibraryDirective: true,
+      String header})
       : _generatedExtension = generatedExtension,
         buildExtensions = {
           '.dart': [generatedExtension]..addAll(additionalOutputExtensions)
         },
         _isStandalone = isStandalone,
         formatOutput = formatOutput ?? _formatter.format,
-        _requireLibraryDirective = requireLibraryDirective {
+        _requireLibraryDirective = requireLibraryDirective,
+        _header = header ?? defaultFileHeader {
     if (_generatedExtension == null) {
       throw new ArgumentError.notNull('generatedExtension');
     }
@@ -87,6 +91,11 @@ class _Builder extends Builder {
     final outputId = _generatedFile(buildStep.inputId);
 
     var contentBuffer = new StringBuffer();
+
+    if (_header.isNotEmpty) {
+      contentBuffer.writeln(_header);
+    }
+
     if (!_isStandalone) {
       var asset = buildStep.inputId;
       var name = nameOfPartial(
@@ -137,7 +146,7 @@ class _Builder extends Builder {
           stack);
     }
 
-    buildStep.writeAsString(outputId, '$_topHeader$genPartContent');
+    buildStep.writeAsString(outputId, genPartContent);
   }
 }
 
@@ -153,6 +162,10 @@ class PartBuilder extends _Builder {
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
   ///
+  /// [header] is used to specify the content at the top of each generated file.
+  /// If `null`, the content of [defaultFileHeader] is used.
+  /// If [header] is an empty `String` no header is added.
+  ///
   /// May set [requireLibraryDirective] to `false` in order to opt-in to
   /// supporting a `1.25.0` feature of `part of` being usable without an
   /// explicit `library` directive. Developers should restrict their `pubspec`
@@ -164,12 +177,14 @@ class PartBuilder extends _Builder {
       {String formatOutput(String code),
       String generatedExtension: '.g.dart',
       List<String> additionalOutputExtensions: const [],
-      bool requireLibraryDirective: true})
+      bool requireLibraryDirective: true,
+      String header})
       : super(generators,
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
             additionalOutputExtensions: additionalOutputExtensions,
-            requireLibraryDirective: requireLibraryDirective);
+            requireLibraryDirective: requireLibraryDirective,
+            header: header);
 }
 
 /// A [Builder] which generates Dart library files.
@@ -181,17 +196,22 @@ class LibraryBuilder extends _Builder {
   /// outputs through the [BuildStep] they should be indicated in
   /// [additionalOutputExtensions].
   ///
+  /// If `null`, the content of [defaultFileHeader] is used.
+  /// If [header] is an empty `String` no header is added.
+  ///
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
   LibraryBuilder(Generator generator,
       {String formatOutput(String code),
       String generatedExtension: '.g.dart',
-      List<String> additionalOutputExtensions: const []})
+      List<String> additionalOutputExtensions: const [],
+      String header})
       : super([generator],
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
             additionalOutputExtensions: additionalOutputExtensions,
-            isStandalone: true);
+            isStandalone: true,
+            header: header);
 }
 
 Stream<GeneratedOutput> _generate(LibraryElement library,
@@ -215,7 +235,7 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
 
 final _formatter = new DartFormatter();
 
-const _topHeader = '''// GENERATED CODE - DO NOT MODIFY BY HAND
+const defaultFileHeader = '''// GENERATED CODE - DO NOT MODIFY BY HAND
 
 ''';
 

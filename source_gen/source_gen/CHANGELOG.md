@@ -1,3 +1,7 @@
+## 0.7.2
+
+* Support an optional `header` argument to `PartBuilder` and `LibraryBuilder`.
+
 ## 0.7.1
 
 ### `Generator{ForAnnotation}`
