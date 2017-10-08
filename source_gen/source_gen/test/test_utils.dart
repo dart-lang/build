@@ -31,7 +31,7 @@ const Matcher isInvalidGenerationSourceError =
     const _InvalidGenerationSourceError();
 
 class _InvalidGenerationSourceError extends TypeMatcher {
-  const _InvalidGenerationSourceError() : super("InvalidGenerationSourceError");
+  const _InvalidGenerationSourceError() : super('InvalidGenerationSourceError');
 
   @override
   bool matches(item, Map matchState) => item is InvalidGenerationSourceError;

@@ -246,7 +246,8 @@ class _UriTypeChecker extends TypeChecker {
 
   /// Returns whether this type represents the same as [url].
   bool hasSameUrl(dynamic url) =>
-      uri.toString() == (url is String ? url : normalizeUrl(url).toString());
+      uri.toString() ==
+      (url is String ? url : normalizeUrl(url as Uri).toString());
 
   @override
   bool isExactly(Element element) => hasSameUrl(urlOfElement(element));

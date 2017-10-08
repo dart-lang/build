@@ -252,7 +252,7 @@ void main() {
       expect(duration30s.accessor, isEmpty);
       expect(
           mapMap(duration30s.namedArguments,
-              value: (_, v) => new ConstantReader(v).literalValue),
+              value: (_, DartObject v) => new ConstantReader(v).literalValue),
           {
             'seconds': 30,
           });

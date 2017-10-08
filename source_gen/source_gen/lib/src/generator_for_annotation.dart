@@ -37,7 +37,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   Future<String> generate(LibraryReader library, BuildStep buildStep) async {
     var elements = library.annotatedWith(typeChecker);
     var allOutput = await Future.wait(elements.map((e) async =>
-        generateForAnnotatedElement(e.element, e.annotation, buildStep)));
+        await generateForAnnotatedElement(e.element, e.annotation, buildStep)));
     // TODO interleave comments indicating which element produced the output?
     return allOutput.join('\n');
   }

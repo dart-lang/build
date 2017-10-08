@@ -185,15 +185,18 @@ Map<String, String> _createPackageStub(String pkgName,
 /// Doesn't generate output for any element
 class _NoOpGenerator extends Generator {
   const _NoOpGenerator();
+  @override
   Future<String> generate(LibraryReader library, _) => null;
 }
 
 class _BadOutputGenerator extends Generator {
   const _BadOutputGenerator();
+  @override
   Future<String> generate(LibraryReader library, _) async => 'not valid code!';
 }
 
 class _ThrowingGenerator extends Generator {
+  @override
   Future<String> generate(_, __) async => throw new UnimplementedError();
 }
 

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/constant/value.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:meta/meta.dart';
 
@@ -122,7 +123,7 @@ abstract class ConstantReader {
 
 class _NullConstant extends ConstantReader {
   @alwaysThrows
-  static dynamic _throw(String expected) {
+  static T _throw<T>(String expected) {
     throw new FormatException('Not an instance of $expected.');
   }
 
@@ -266,7 +267,7 @@ class _DartObjectConstant extends ConstantReader {
   ConstantReader read(String field) {
     final reader = peek(field);
     if (reader == null) {
-      assertHasField(objectValue?.type?.element, field);
+      assertHasField(objectValue?.type?.element as ClassElement, field);
       return const _NullConstant();
     }
     return reader;

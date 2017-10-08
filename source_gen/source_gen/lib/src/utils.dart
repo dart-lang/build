@@ -69,7 +69,7 @@ String suggestLibraryName(AssetId source) {
   parts[parts.length - 1] = parts.last.split('.').first;
   // [lib/test] --> [test]
   if (parts.first == 'lib') {
-    parts = parts.skip(1);
+    parts.removeAt(0);
   }
   return '${source.package}.${parts.join('.')}';
 }
