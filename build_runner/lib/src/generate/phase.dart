@@ -14,9 +14,13 @@ import 'input_set.dart';
 abstract class BuildAction {
   String get package;
 
-  /// If `true` then this action runs lazily when another action tries to read
-  /// one of its outputs, or use one of its outputs as a primary input. If no
-  /// other action attempts to do this, then its outputs will never be created.
+  /// Whether to run lazily when an output is read.
+  ///
+  /// An optional build action will only run if one of its outputs is read by
+  /// a later [Builder], or is used as a primary input to a later [Builder].
+  ///
+  /// If no build actions read the output of an optional action, then it will
+  /// never run.
   final bool isOptional;
 
   BuildAction._(bool isOptional) : this.isOptional = isOptional ?? false;
