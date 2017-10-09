@@ -297,8 +297,12 @@ class BuildImpl {
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(_reader, _assetGraph, phaseNumber,
-        input.package, _runLazyPhaseForInput, resourceManager);
+    var wrappedReader = new SinglePhaseReader(
+        _reader,
+        _assetGraph,
+        phaseNumber,
+        input.package,
+        (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
     var wrappedWriter = new AssetWriterSpy(_writer);
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
         resourceManager: resourceManager);
@@ -321,8 +325,12 @@ class BuildImpl {
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(_reader, _assetGraph, phaseNumber,
-        package, _runLazyPhaseForInput, resourceManager);
+    var wrappedReader = new SinglePhaseReader(
+        _reader,
+        _assetGraph,
+        phaseNumber,
+        package,
+        (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
     var wrappedWriter = new AssetWriterSpy(_writer);
 
     var logger = new Logger('runBuilder');
