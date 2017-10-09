@@ -5,7 +5,9 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../generate/build_impl.dart';
+
+typedef Future RunPhaseForInput(
+    int phaseNumber, AssetId primaryInput, ResourceManager resourceManager);
 
 /// A [MultiPackageAssetReader] with the additional `lastModified` method.
 abstract class RunnerAssetReader extends MultiPackageAssetReader {
@@ -25,11 +27,11 @@ class SinglePhaseReader implements AssetReader {
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
-  final BuildImpl _buildImpl;
+  final RunPhaseForInput _runPhaseForInput;
   final ResourceManager _resourceManager;
 
   SinglePhaseReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage, this._buildImpl, this._resourceManager);
+      this._primaryPackage, this._runPhaseForInput, this._resourceManager);
 
   Iterable<AssetId> get assetsRead => _assetsRead;
   Iterable<Glob> get globsRan => _globsRan;
@@ -85,7 +87,7 @@ class SinglePhaseReader implements AssetReader {
   Future<Null> _ensureAssetIsBuilt(AssetId id) async {
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
-      await _buildImpl.runLazyPhaseForInput(
+      await _runPhaseForInput(
           node.phaseNumber, node.primaryInput, _resourceManager);
     }
   }

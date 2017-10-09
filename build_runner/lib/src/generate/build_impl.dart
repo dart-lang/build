@@ -226,7 +226,7 @@ class BuildImpl {
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) continue;
         if (node.needsUpdate) {
-          await runLazyPhaseForInput(
+          await _runLazyPhaseForInput(
               node.phaseNumber, node.primaryInput, resourceManager);
         }
         if (!node.wasOutput) continue;
@@ -252,7 +252,7 @@ class BuildImpl {
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
 
   /// Lazily runs [phaseNumber] with [input] and [resourceManager].
-  Future<Iterable<AssetId>> runLazyPhaseForInput(
+  Future<Iterable<AssetId>> _runLazyPhaseForInput(
       int phaseNumber, AssetId input, ResourceManager resourceManager) {
     return _lazyPhases.putIfAbsent('$phaseNumber|$input', () async {
       // First check if `input` is generated, and whether or not it was
@@ -261,7 +261,7 @@ class BuildImpl {
       if (inputNode is GeneratedAssetNode) {
         // Make sure the `inputNode` is up to date, generate run it.
         if (inputNode.needsUpdate) {
-          await runLazyPhaseForInput(
+          await _runLazyPhaseForInput(
               inputNode.phaseNumber, inputNode.primaryInput, resourceManager);
         }
         if (!inputNode.wasOutput) return <AssetId>[];
@@ -298,7 +298,7 @@ class BuildImpl {
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
     var wrappedReader = new SinglePhaseReader(_reader, _assetGraph, phaseNumber,
-        input.package, this, resourceManager);
+        input.package, _runLazyPhaseForInput, resourceManager);
     var wrappedWriter = new AssetWriterSpy(_writer);
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
         resourceManager: resourceManager);
@@ -321,8 +321,8 @@ class BuildImpl {
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(
-        _reader, _assetGraph, phaseNumber, package, this, resourceManager);
+    var wrappedReader = new SinglePhaseReader(_reader, _assetGraph, phaseNumber,
+        package, _runLazyPhaseForInput, resourceManager);
     var wrappedWriter = new AssetWriterSpy(_writer);
 
     var logger = new Logger('runBuilder');
