@@ -54,11 +54,43 @@ void main() {
             outputs: {'a|web/hello.txt': 'hello', 'a|web/world.txt': 'world'});
       });
 
-      test('multiple build actions', () async {
+      test('optional build actions don\'t run if their outputs aren\'t read',
+          () async {
+        await testActions([
+          new PackageBuildAction(
+              new TxtFilePackageBuilder('a', {'web/a.txt': 'a'}), 'a',
+              isOptional: true),
+          new BuildAction(new CopyBuilder(extension: '1'), 'a',
+              isOptional: true),
+          new BuildAction(new CopyBuilder(extension: '2'), 'a',
+              isOptional: true, inputs: ['**.1']),
+        ], {}, outputs: {});
+      });
+
+      test('optional build actions do run if their outputs are read', () async {
+        await testActions([
+          new PackageBuildAction(
+              new TxtFilePackageBuilder('a', {'web/a.txt': 'a'}), 'a',
+              isOptional: true),
+          new BuildAction(new CopyBuilder(extension: '1'), 'a',
+              isOptional: true),
+          new BuildAction(new CopyBuilder(extension: '2'), 'a',
+              isOptional: true, inputs: ['**.1']),
+          new BuildAction(new CopyBuilder(extension: '3'), 'a',
+              inputs: ['**.2']),
+        ], {}, outputs: {
+          'a|web/a.txt': 'a',
+          'a|web/a.txt.1': 'a',
+          'a|web/a.txt.1.2': 'a',
+          'a|web/a.txt.1.2.3': 'a',
+        });
+      });
+
+      test('multiple mixed build actions', () async {
         var buildActions = [
           copyABuildAction,
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-              inputs: ['**/*.txt']),
+              inputs: ['**/*.txt'], isOptional: true),
           txtFilePackageBuilderAction,
           new BuildAction(new CopyBuilder(numCopies: 2), 'a',
               inputs: ['web/*.txt.clone']),
@@ -71,7 +103,7 @@ void main() {
           'a|web/a.txt.copy': 'a',
           'a|web/a.txt.clone': 'a',
           'a|lib/b.txt.copy': 'b',
-          'a|lib/b.txt.clone': 'b',
+          // No b.txt.clone since nothing else read it and its optional.
           'a|web/a.txt.clone.copy.0': 'a',
           'a|web/a.txt.clone.copy.1': 'a',
           'a|web/hello.txt': 'hello',
