@@ -8,6 +8,9 @@
   only run once per package, and have no primary input. Outputs must be well
   known ahead of time and are declared with the `Iterable<String> get outputs`
   field, which returns relative paths under the current package.
+- Added the `isOptional` field to `BuildAction`. Setting this to `true` means
+  that the action will not run unless some other non-optional action tries to
+  read one of the outputs of the action.
 - **Breaking**: `PackageNode.location` has become `PackageNode.path`, and is
   now a `String` (absolute path) instead of a `Uri`; this prevents needing
   conversions to/from `Uri` across the package.
