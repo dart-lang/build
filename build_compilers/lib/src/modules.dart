@@ -152,10 +152,13 @@ Iterable<LibraryElement> _cycleDependencies(
 /// [library].
 ///
 /// There may be duplicates.
-Iterable<LibraryElement> _libraryDependencies(LibraryElement library) => [
-      library.importedLibraries,
-      library.exportedLibraries
-    ].expand((l) => l).where((l) => !l.isInSdk);
+Iterable<LibraryElement> _libraryDependencies(LibraryElement library) =>
+    [library.importedLibraries, library.exportedLibraries]
+        .expand((l) => l)
+        // TODO: `isInSdk` returns false for some dart: libraries, can remove
+        // the `dart` scheme check once
+        // https://github.com/dart-lang/sdk/issues/31045 is fixed.
+        .where((l) => !l.isInSdk && l.source.uri.scheme != 'dart');
 
 /// All sources for a library cycle, including part files.
 Iterable<Uri> _cycleSources(Iterable<LibraryElement> libraries) =>
