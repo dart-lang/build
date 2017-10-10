@@ -19,33 +19,6 @@ class AssetNode {
 
   AssetNode(this.id);
 
-  factory AssetNode.deserialize(List serializedNode) {
-    AssetNode node;
-    if (serializedNode.length == 3) {
-      node = new AssetNode(new AssetId.deserialize(serializedNode[0] as List));
-    } else if (serializedNode.length == 8) {
-      node = new GeneratedAssetNode.deserialize(serializedNode);
-    } else {
-      throw new ArgumentError(
-          'Unrecognized serialization format! $serializedNode');
-    }
-    node._addSerializedOutputs(serializedNode);
-    return node;
-  }
-
-  void _addSerializedOutputs(List serialized) {
-    outputs.addAll(new List.from(serialized[1]
-        .map((id) => new AssetId.deserialize(id as List)) as Iterable));
-    primaryOutputs.addAll(new List.from(serialized[2]
-        .map((id) => new AssetId.deserialize(id as List)) as Iterable));
-  }
-
-  List serialize() => [
-        id.serialize(),
-        outputs.map((id) => id.serialize()).toList(),
-        primaryOutputs.map((id) => id.serialize()).toList(),
-      ];
-
   @override
   String toString() => 'AssetNode: $id';
 }
@@ -76,33 +49,6 @@ class GeneratedAssetNode extends AssetNode {
       {Set<Glob> globs})
       : this.globs = globs ?? new Set<Glob>(),
         super(id);
-
-  factory GeneratedAssetNode.deserialize(List serialized) {
-    var node = new GeneratedAssetNode(
-      serialized[5] as int,
-      serialized[3] == null
-          ? null
-          : new AssetId.deserialize(serialized[3] as List),
-      serialized[7] as bool,
-      serialized[4] as bool,
-      new AssetId.deserialize(serialized[0] as List),
-      globs: (serialized[6] as Iterable<String>)
-          .map((pattern) => new Glob(pattern))
-          .toSet(),
-    );
-    node._addSerializedOutputs(serialized);
-    return node;
-  }
-
-  @override
-  List serialize() => super.serialize()
-    ..addAll([
-      primaryInput?.serialize(),
-      wasOutput,
-      phaseNumber,
-      globs.map((glob) => glob.pattern).toList(),
-      needsUpdate,
-    ]);
 
   @override
   String toString() =>

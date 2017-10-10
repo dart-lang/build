@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
 import '../generate/exceptions.dart';
@@ -10,6 +11,8 @@ import '../generate/phase.dart';
 import '../package_builder/package_builder.dart';
 import 'exceptions.dart';
 import 'node.dart';
+
+part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph {
@@ -31,35 +34,19 @@ class AssetGraph {
   ///
   /// This should be incremented any time the serialize/deserialize methods
   /// change on this class or [AssetNode].
-  static int get _version => 6;
+  static int get _version => 7;
 
   /// Deserializes this graph.
-  factory AssetGraph.deserialize(Map serializedGraph) {
-    if (serializedGraph['version'] != AssetGraph._version) {
-      throw new AssetGraphVersionException(
-          serializedGraph['version'] as int, _version);
-    }
-
-    var graph = new AssetGraph._();
-    for (var serializedItem in serializedGraph['nodes']) {
-      graph._add(new AssetNode.deserialize(serializedItem as List));
-    }
-    graph.validAsOf = new DateTime.fromMillisecondsSinceEpoch(
-        serializedGraph['validAsOf'] as int);
-    return graph;
-  }
+  factory AssetGraph.deserialize(Map serializedGraph) =>
+      new _AssetGraphDeserializer(serializedGraph).deserialize();
 
   factory AssetGraph.build(List<BuildAction> buildActions, Set<AssetId> sources,
           String rootPackage) =>
       new AssetGraph._()
         .._addOutputsForSources(buildActions, sources, rootPackage);
 
-  /// Puts this graph into a serializable form.
-  Map serialize() => {
-        'version': _version,
-        'nodes': allNodes.map((node) => node.serialize()).toList(),
-        'validAsOf': validAsOf.millisecondsSinceEpoch,
-      };
+  Map<String, dynamic> serialize() =>
+      new _AssetGraphSerializer(this).serialize();
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) => _nodesById.containsKey(id);
