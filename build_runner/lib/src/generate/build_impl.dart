@@ -221,18 +221,18 @@ class BuildImpl {
   Future<Set<AssetId>> _matchingInputs(InputSet inputSet, int phaseNumber,
       ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
-    for (var node in _assetGraph.allNodes) {
-      if (!inputSet.matches(node.id)) continue;
+    await Future.wait(_assetGraph.allNodes.map((node) async {
+      if (!inputSet.matches(node.id)) return;
       if (node is GeneratedAssetNode) {
-        if (node.phaseNumber >= phaseNumber) continue;
+        if (node.phaseNumber >= phaseNumber) return;
         if (node.needsUpdate) {
           await _runLazyPhaseForInput(
               node.phaseNumber, node.primaryInput, resourceManager);
         }
-        if (!node.wasOutput) continue;
+        if (!node.wasOutput) return;
       }
       ids.add(node.id);
-    }
+    }));
     return ids;
   }
 
