@@ -4,6 +4,12 @@
 
 part of 'graph.dart';
 
+/// Part of the serialized graph, used to ensure versioning constraints.
+///
+/// This should be incremented any time the serialize/deserialize formats
+/// change.
+const _version = 7;
+
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
   final _idToAssetId = <int, AssetId>{};
@@ -13,9 +19,9 @@ class _AssetGraphDeserializer {
 
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
-    if (_serializedGraph['version'] != AssetGraph._version) {
+    if (_serializedGraph['version'] != _version) {
       throw new AssetGraphVersionException(
-          _serializedGraph['version'] as int, AssetGraph._version);
+          _serializedGraph['version'] as int, _version);
     }
 
     var graph = new AssetGraph._();
@@ -84,7 +90,7 @@ class _AssetGraphSerializer {
     }
 
     var result = <String, dynamic>{
-      'version': AssetGraph._version,
+      'version': _version,
       'nodes': _graph.allNodes.map(_serializeNode).toList(),
       'validAsOf': _graph.validAsOf.millisecondsSinceEpoch,
     };
