@@ -4,12 +4,14 @@
 
 part of 'graph.dart';
 
+/// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
   final _idToAssetId = <int, AssetId>{};
   final Map _serializedGraph;
 
   _AssetGraphDeserializer(this._serializedGraph);
 
+  /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
     if (_serializedGraph['version'] != AssetGraph._version) {
       throw new AssetGraphVersionException(
@@ -18,6 +20,7 @@ class _AssetGraphDeserializer {
 
     var graph = new AssetGraph._();
 
+    // Read in the id => AssetId map from the graph first.
     for (var descriptor in _serializedGraph['serializedAssetIds']) {
       _idToAssetId[descriptor[0] as int] =
           new AssetId(descriptor[1] as String, descriptor[2] as String);
@@ -26,6 +29,7 @@ class _AssetGraphDeserializer {
     for (var serializedItem in _serializedGraph['nodes']) {
       graph._add(_deserializeAssetNode(serializedItem as List));
     }
+
     graph.validAsOf = new DateTime.fromMillisecondsSinceEpoch(
         _serializedGraph['validAsOf'] as int);
     return graph;
@@ -62,6 +66,7 @@ class _AssetGraphDeserializer {
   bool _deserializeBool(int value) => value == 0 ? false : true;
 }
 
+/// Serializes an [AssetGraph] into a [Map].
 class _AssetGraphSerializer {
   final _assetIdToId = <AssetId, int>{};
 
@@ -69,8 +74,9 @@ class _AssetGraphSerializer {
 
   _AssetGraphSerializer(this._graph);
 
+  /// Perform the serialization, should only be called once.
   Map<String, dynamic> serialize() {
-    /// Compute numeric ids for all nodes.
+    /// Compute numeric identifiers for all asset ids.
     var next = 0;
     for (var node in _graph.allNodes) {
       _assetIdToId[node.id] = next;
@@ -83,33 +89,94 @@ class _AssetGraphSerializer {
       'validAsOf': _graph.validAsOf.millisecondsSinceEpoch,
     };
 
+    // Store the id => AssetId mapping as a nested list so we don't have to
+    // stringify the integers and parse them back (ints aren't valid JSON
+    // keys).
     var serializedAssetIds = <List>[];
     _assetIdToId.forEach((k, v) {
       serializedAssetIds.add([v, k.package, k.path]);
     });
     result['serializedAssetIds'] = serializedAssetIds;
+
     return result;
   }
 
-  List<Object> _serializeNode(AssetNode node) {
-    var serializedNode = <Object>[
-      _assetIdToId[node.id],
-      node.outputs.map((id) => _assetIdToId[id]).toList(),
-      node.primaryOutputs.map((id) => _assetIdToId[id]).toList(),
-    ];
-
+  List _serializeNode(AssetNode node) {
     if (node is GeneratedAssetNode) {
-      serializedNode.addAll([
-        _assetIdToId[node.primaryInput],
-        _serializeBool(node.wasOutput),
-        node.phaseNumber,
-        node.globs.map((glob) => glob.pattern).toList(),
-        _serializeBool(node.needsUpdate),
-      ]);
+      return new _WrappedGeneratedAssetNode(node, this);
+    } else {
+      return new _WrappedAssetNode(node, this);
     }
+  }
+}
 
-    return serializedNode;
+/// Wraps an [AssetNode] in a class that implements [List] instead of
+/// creating a new list for each one.
+class _WrappedAssetNode extends Object with ListMixin implements List {
+  final AssetNode node;
+  final _AssetGraphSerializer serializer;
+
+  _WrappedAssetNode(this.node, this.serializer);
+
+  @override
+  int get length => 3;
+  @override
+  set length(_) => throw new UnsupportedError(
+      'length setter not unsupported for WrappedAssetNode');
+
+  @override
+  Object operator [](int index) {
+    switch (index) {
+      case 0:
+        return serializer._assetIdToId[node.id];
+      case 1:
+        return node.outputs.map((id) => serializer._assetIdToId[id]).toList();
+      case 2:
+        return node.primaryOutputs
+            .map((id) => serializer._assetIdToId[id])
+            .toList();
+      default:
+        throw new RangeError.index(index, this);
+    }
   }
 
-  int _serializeBool(bool value) => value ? 1 : 0;
+  @override
+  operator []=(_, __) =>
+      throw new UnsupportedError('[]= not supported for WrappedAssetNode');
+}
+
+/// Wraps a [GeneratedAssetNode] in a class that implements [List] instead of
+/// creating a new list for each one.
+class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
+  final GeneratedAssetNode generatedNode;
+
+  @override
+  int get length => super.length + 5;
+
+  _WrappedGeneratedAssetNode(
+      this.generatedNode, _AssetGraphSerializer serializer)
+      : super(generatedNode, serializer);
+
+  @override
+  Object operator [](int index) {
+    if (index < super.length) return super[index];
+    switch (index) {
+      case 3:
+        return generatedNode.primaryInput != null
+            ? serializer._assetIdToId[generatedNode.primaryInput]
+            : null;
+      case 4:
+        return _serializeBool(generatedNode.wasOutput);
+      case 5:
+        return generatedNode.phaseNumber;
+      case 6:
+        return generatedNode.globs.map((glob) => glob.pattern).toList();
+      case 7:
+        return _serializeBool(generatedNode.needsUpdate);
+      default:
+        throw new RangeError.index(index, this);
+    }
+  }
+
+  static int _serializeBool(bool value) => value ? 1 : 0;
 }
