@@ -1,0 +1,288 @@
+// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:analyzer/analyzer.dart';
+import 'package:build/build.dart';
+import 'package:path/path.dart' as _p;
+
+import 'dev_compiler_builder.dart';
+import 'module_builder.dart';
+import 'modules.dart';
+
+/// Alias `_p.url` to `p`.
+_p.Context get p => _p.url;
+
+final String bootstrapJsExtension = '.dart.bootstrap.js';
+final String jsEntrypointExtension = '.dart.js';
+final String jsEntrypointSourceMapExtension = '.dart.js.map';
+
+class DevCompilerBootstrapBuilder extends Builder {
+  @override
+  final buildExtensions = {
+    '.dart': [
+      bootstrapJsExtension,
+      jsEntrypointExtension,
+      jsEntrypointSourceMapExtension
+    ],
+  };
+
+  @override
+  Future build(BuildStep buildStep) async {
+    var dartEntrypointId = buildStep.inputId;
+    var isAppEntrypoint = await isAppEntryPoint(dartEntrypointId, buildStep);
+    if (!isAppEntrypoint) return;
+
+    var moduleId = buildStep.inputId.changeExtension(moduleExtension);
+    var module = new Module.fromJson(
+        JSON.decode(await buildStep.readAsString(moduleId))
+            as Map<String, dynamic>);
+
+    // First, ensure all transitive modules are built.
+    await _ensureTransitiveModules(module, buildStep);
+
+    var appModuleName = p.withoutExtension(module.jsId.path);
+
+    // The name of the entrypoint dart library within the entrypoint JS module.
+    //
+    // This is used to invoke `main()` from within the bootstrap script.
+    //
+    // TODO(jakemac53): Sane module name creation, this only works in the most
+    // basic of cases.
+    //
+    // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
+    // which will allow us to not rely on the naming schemes that dartdevc uses
+    // internally, but instead specify our own.
+    var appModuleScope = p
+        .withoutExtension(p.basename(module.jsId.path))
+        .replaceAll('.', '\$46');
+
+    // Map from module name to module path.
+    // var moduleDir = topLevelDir(dartEntrypointId.path);
+    var modulePaths = {
+      appModuleName: appModuleName,
+      'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'
+    };
+    var transitiveDeps = (await module.computeTransitiveDependencies(buildStep))
+        .map((id) => id.changeExtension(jsModuleExtension));
+    for (var jsDep in transitiveDeps) {
+      var dir = topLevelDir(jsDep.path);
+      if (dir != 'lib') {
+        var jsModuleName = p.withoutExtension(jsDep.path);
+
+        modulePaths[jsModuleName] = jsModuleName;
+      } else {
+        var jsModuleName = 'packages/${jsDep.package}/${jsDep.path}';
+        modulePaths[jsModuleName] = jsModuleName;
+      }
+    }
+
+    var bootstrapContent = new StringBuffer('(function() {\n');
+    bootstrapContent.write(_dartLoaderSetup(modulePaths));
+    bootstrapContent.write(_requireJsConfig);
+
+    bootstrapContent.write(_appBootstrap(appModuleName, appModuleScope));
+
+    var bootstrapId = dartEntrypointId.changeExtension(bootstrapJsExtension);
+    await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
+
+    var bootstrapModuleName = p.withoutExtension(
+        p.relative(bootstrapId.path, from: p.dirname(dartEntrypointId.path)));
+
+    var entrypointJsContent = _entryPointJs(bootstrapModuleName);
+    await buildStep.writeAsString(
+        dartEntrypointId.changeExtension(jsEntrypointExtension),
+        entrypointJsContent);
+    await buildStep.writeAsString(
+        dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension),
+        '{"version":3,"sourceRoot":"","sources":[],"names":[],"mappings":"",'
+        '"file":""}');
+  }
+
+  /// Ensures that all transitive js modules are available and built.
+  Future<Null> _ensureTransitiveModules(
+      Module module, AssetReader reader) async {
+    // First check the main module is readable.
+    await reader.canRead(module.jsId);
+
+    // Then check all transitive js deps are readable.
+    var transitiveDeps = await module.computeTransitiveDependencies(reader);
+    var jsModules =
+        transitiveDeps.map((id) => id.changeExtension(jsModuleExtension));
+    await Future.wait(jsModules.map((jsId) async {
+      if (await reader.canRead(jsId)) return;
+      throw 'Unable to read js module $jsId.';
+    }));
+  }
+
+  /// Returns whether or not [dartId] is an app entrypoint (basically, whether or
+  /// not it has a `main` function).
+  Future<bool> isAppEntryPoint(AssetId dartId, AssetReader reader) async {
+    assert(dartId.extension == '.dart');
+    // Skip reporting errors here, dartdevc will report them later with nicer
+    // formatting.
+    var parsed = parseCompilationUnit(await reader.readAsString(dartId),
+        suppressErrors: true);
+    // Allow two or fewer arguments so that entrypoints intended for use with
+    // [spawnUri] get counted.
+    //
+    // TODO: This misses the case where a Dart file doesn't contain main(),
+    // but has a part that does, or it exports a `main` from another library.
+    return parsed.declarations.any((node) {
+      return node is FunctionDeclaration &&
+          node.name.name == "main" &&
+          node.functionExpression.parameters.parameters.length <= 2;
+    });
+  }
+}
+
+/// Returns the top level directory in [uri].
+///
+/// Throws an [ArgumentError] if [uri] is just a filename with no directory.
+String topLevelDir(String uri) {
+  var parts = p.split(p.normalize(uri));
+  String error;
+  if (parts.length == 1) {
+    error = 'The uri `$uri` does not contain a directory.';
+  } else if (parts.first == '..') {
+    error = 'The uri `$uri` reaches outside the root directory.';
+  }
+  if (error != null) {
+    throw new ArgumentError(
+        'Cannot compute top level dir for path `$uri`. $error');
+  }
+  return parts.first;
+}
+
+String _appBootstrap(String modulePath, String moduleScope) => '''
+require(["$modulePath", "dart_sdk"], function(app, dart_sdk) {
+  dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
+$_registerDevToolsFormatter
+  app.$moduleScope.main();
+});
+})();
+''';
+
+String _entryPointJs(String bootstrapModuleName) => '''
+(function() {
+  $_currentDirectoryScript
+  var el;
+  el = document.createElement("script");
+  el.defer = true;
+  el.async = false;
+  el.src = "/packages/\$sdk/dev_compiler/web/dart_stack_trace_mapper.js";
+  document.head.appendChild(el);
+  el = document.createElement("script");
+  el.defer = true;
+  el.async = false;
+  el.src = "/packages/\$sdk/dev_compiler/amd/require.js";
+  el.setAttribute("data-main", _currentDirectory + "$bootstrapModuleName");
+  document.head.appendChild(el);
+})();
+''';
+
+/// JavaScript snippet to determine the directory a script was run from.
+final _currentDirectoryScript = r'''
+var _currentDirectory = (function () {
+  var _url;
+  var lines = new Error().stack.split('\n');
+  function lookupUrl() {
+    if (lines.length > 2) {
+      var match = lines[1].match(/^\s+at (.+):\d+:\d+$/);
+      // Chrome.
+      if (match) return match[1];
+      // Chrome nested eval case.
+      match = lines[1].match(/^\s+at eval [(](.+):\d+:\d+[)]$/);
+      if (match) return match[1];
+      // Edge.
+      match = lines[1].match(/^\s+at.+\((.+):\d+:\d+\)$/);
+      if (match) return match[1];
+      // Firefox.
+      match = lines[0].match(/[<][@](.+):\d+:\d+$/)
+      if (match) return match[1];
+    }
+    // Safari.
+    return lines[0].match(/(.+):\d+:\d+$/)[1];
+  }
+  _url = lookupUrl();
+  var lastSlash = _url.lastIndexOf('/');
+  if (lastSlash == -1) return _url;
+  var currentDirectory = _url.substring(0, lastSlash + 1);
+  return currentDirectory;
+})();
+''';
+
+/// Sets up `window.$dartLoader` based on [modulePaths].
+String _dartLoaderSetup(Map<String, String> modulePaths) => '''
+$_currentDirectoryScript
+let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
+if(!window.\$dartLoader) {
+   window.\$dartLoader = {
+     moduleIdToUrl: new Map(),
+     urlToModuleId: new Map(),
+     rootDirectories: new Array(),
+   };
+}
+let customModulePaths = {};
+window.\$dartLoader.rootDirectories.push(_currentDirectory);
+for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
+  let modulePath = modulePaths[moduleName];
+  if (modulePath != moduleName) {
+    customModulePaths[moduleName] = modulePath;
+  }
+  var src = _currentDirectory + modulePath + '.js';
+  if (window.\$dartLoader.moduleIdToUrl.has(moduleName)) {
+    continue;
+  }
+  \$dartLoader.moduleIdToUrl.set(moduleName, src);
+  \$dartLoader.urlToModuleId.set(src, moduleName);
+}
+console.log(customModulePaths);
+''';
+
+final _registerDevToolsFormatter = '''
+  dart_sdk._debugger.registerDevtoolsFormatter();
+  if (window.\$dartStackTraceUtility && !window.\$dartStackTraceUtility.ready) {
+    window.\$dartStackTraceUtility.ready = true;
+    let dart = dart_sdk.dart;
+    window.\$dartStackTraceUtility.setSourceMapProvider(
+      function(url) {
+        var module = window.\$dartLoader.urlToModuleId.get(url);
+        if (!module) return null;
+        return dart.getSourceMap(module);
+      });
+  }
+  window.postMessage({ type: "DDC_STATE_CHANGE", state: "start" }, "*");
+''';
+
+/// Error handler code for require.js which requests a `.errors` file for any
+/// failed module, and logs it to the console.
+final _requireJsConfig = '''
+// Whenever we fail to load a JS module, try to request the corresponding
+// `.errors` file, and log it to the console.
+(function() {
+  var oldOnError = requirejs.onError;
+  requirejs.onError = function(e) {
+    if (e.originalError && e.originalError.srcElement) {
+      var xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          console.error(this.responseText);
+        }
+      };
+      xhr.open("GET", e.originalError.srcElement.src + ".errors", true);
+      xhr.send();
+    }
+    // Also handle errors the normal way.
+    if (oldOnError) oldOnError(e);
+  };
+}());
+require.config({
+    baseUrl: "/",
+    waitSeconds: 0,
+    paths: customModulePaths
+});
+''';

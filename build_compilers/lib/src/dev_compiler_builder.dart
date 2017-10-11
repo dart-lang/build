@@ -16,6 +16,7 @@ import 'scratch_space.dart';
 import 'summary_builder.dart';
 import 'workers.dart';
 
+final String jsModuleErrorsExtension = '.errors';
 final String jsModuleExtension = '.js';
 final String jsSourceMapExtension = '.js.map';
 
@@ -23,7 +24,11 @@ final String jsSourceMapExtension = '.js.map';
 class DevCompilerBuilder implements Builder {
   @override
   final buildExtensions = {
-    moduleExtension: [jsModuleExtension, jsSourceMapExtension]
+    moduleExtension: [
+      jsModuleExtension,
+      jsModuleErrorsExtension,
+      jsSourceMapExtension
+    ]
   };
 
   @override
@@ -33,8 +38,11 @@ class DevCompilerBuilder implements Builder {
             as Map<String, dynamic>);
     try {
       await createDevCompilerModule(module, buildStep);
-    } catch (e, s) {
+    } on DartDevcCompilationException catch (e, s) {
       log.warning('Error compiling ${module.jsId}:\n$e\n$s');
+      await buildStep.writeAsString(
+          buildStep.inputId.changeExtension(jsModuleErrorsExtension),
+          e.message);
     }
   }
 }
