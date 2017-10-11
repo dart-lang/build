@@ -80,6 +80,13 @@ void main() {
       expect(reader.lastModified(makeAssetId('basic_pkg|foo.txt')),
           throwsA(assetNotFoundException));
     });
+
+    test('can read from the SDK', () async {
+      expect(
+          await reader
+              .canRead(makeAssetId(r'$sdk|lib/dev_compiler/amd/dart_sdk.js')),
+          true);
+    });
   });
 
   group('FileBasedAssetWriter', () {
