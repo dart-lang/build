@@ -163,9 +163,9 @@ class _Loader {
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> _findInputSources() async {
-    var inputSets = _options.packageGraph.allPackages.keys.map((package) =>
-        new InputSet(package,
-            [package == _options.packageGraph.root.name ? '**' : 'lib/**']));
+    var inputSets = _options.packageGraph.allPackages.values.map((package) =>
+        new InputSet(package.name, package.includes,
+            excludes: package.excludes));
     var sources = _listAssetIds(inputSets).where(_isValidInput).toSet();
     return sources;
   }
