@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(const ['presubmit-only'])
+@Timeout(const Duration(seconds: 120))
 
 import 'dart:convert';
 import 'dart:io';
