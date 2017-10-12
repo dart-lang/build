@@ -30,13 +30,16 @@ void main() {
       });
 
       test('allPackages', () {
-        expect(graph.allPackages, {
-          'a': graph['a'],
-          'b': graph['b'],
-          'c': graph['c'],
-          'd': graph['d'],
-          'basic_pkg': graph['basic_pkg'],
-        });
+        expect(
+            graph.allPackages,
+            equals({
+              'a': graph['a'],
+              'b': graph['b'],
+              'c': graph['c'],
+              'd': graph['d'],
+              'basic_pkg': graph['basic_pkg'],
+              r'$sdk': anything,
+            }));
       });
 
       test('root', () {
@@ -79,6 +82,7 @@ void main() {
           'a': graph['a'],
           'b': graph['b'],
           'with_dev_deps': graph['with_dev_deps'],
+          r'$sdk': graph[r'$sdk'],
         });
       });
 
@@ -120,6 +124,7 @@ void main() {
           'flutter_gallery_assets',
           'flutter_test',
           'flutter_driver',
+          r'$sdk',
         ]);
       });
     });
@@ -133,7 +138,8 @@ void main() {
       b.dependencies.add(c);
       var graph = new PackageGraph.fromRoot(a);
       expect(graph.root, a);
-      expect(graph.allPackages, {'a': a, 'b': b, 'c': c, 'd': d});
+      expect(graph.allPackages,
+          equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}));
     });
 
     test('missing pubspec throws on create', () {

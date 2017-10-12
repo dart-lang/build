@@ -22,6 +22,7 @@ void main() {
       final nodes = {
         'a': new FakeNodeWatcher(pkgA),
         'b': new FakeNodeWatcher(pkgB),
+        r'$sdk': new FakeNodeWatcher(null),
       };
       final watcher = new PackageGraphWatcher(graph, watch: (node) {
         return nodes[node.name];
@@ -47,6 +48,7 @@ void main() {
       final nodes = {
         'a': new FakeNodeWatcher(pkgA),
         'b': new FakeNodeWatcher(pkgB),
+        r'$sdk': new FakeNodeWatcher(null),
       };
       final watcher = new PackageGraphWatcher(graph, watch: (node) {
         return nodes[node.name];

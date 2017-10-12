@@ -131,8 +131,9 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      var packageB =
-          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+      var packageB = new PackageNode(
+          'b', '0.1.0', PackageDependencyType.path, 'a/b/',
+          includes: ['**']);
       var packageA =
           new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
             ..dependencies.add(packageB);
@@ -148,8 +149,9 @@ void main() {
       PackageGraph packageGraph;
 
       setUp(() {
-        var packageB =
-            new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+        var packageB = new PackageNode(
+            'b', '0.1.0', PackageDependencyType.path, 'a/b/',
+            includes: ['**']);
         var packageA =
             new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
               ..dependencies.add(packageB);
@@ -228,9 +230,10 @@ void main() {
     test('can glob files from packages', () async {
       var packageB =
           new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-            ..dependencies.add(packageB);
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, 'a/',
+          includes: ['**'])
+        ..dependencies.add(packageB);
       var packageGraph = new PackageGraph.fromRoot(packageA);
 
       var buildActions = [
@@ -285,8 +288,9 @@ void main() {
     });
 
     test('won\'t try to delete files from other packages', () async {
-      var packageB =
-          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
+      var packageB = new PackageNode(
+          'b', '0.1.0', PackageDependencyType.path, 'a/b/',
+          includes: ['**']);
       var packageA =
           new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
             ..dependencies.add(packageB);
@@ -594,8 +598,9 @@ void main() {
           makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '',
           lastModified: graph.validAsOf.add(new Duration(hours: 2)));
 
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/');
+      var packageA = new PackageNode(
+          'a', '0.1.0', PackageDependencyType.path, 'a/',
+          includes: ['**']);
       var packageGraph = new PackageGraph.fromRoot(packageA);
       await testActions([
         copyABuildAction

@@ -4,8 +4,15 @@
 
 import 'dart:io';
 
+import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
+
+/// The SDK package, we filter this to the core libs and dev compiler
+/// resources.
+final PackageNode _sdkPackageNode = new PackageNode(
+    r'$sdk', null, null, getSdkPath(),
+    includes: ['lib/dev_compiler/**', 'lib/core/**', 'lib/internal/**']);
 
 /// A graph of the package dependencies for an application.
 class PackageGraph {
@@ -16,7 +23,9 @@ class PackageGraph {
   final Map<String, PackageNode> allPackages;
 
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
-      : allPackages = new Map.unmodifiable(allPackages);
+      : allPackages = new Map.unmodifiable(
+            new Map<String, PackageNode>.from(allPackages)
+              ..putIfAbsent(r'$sdk', () => _sdkPackageNode));
 
   /// Creates a [PackageGraph] given the [root] [PackageNode].
   factory PackageGraph.fromRoot(PackageNode root) {
@@ -85,7 +94,8 @@ class PackageGraph {
       var name = yaml['name'] as String;
       assert(!nodes.containsKey(name));
       var node = new PackageNode(
-          name, yaml['version'] as String, type, packageLocations[name]);
+          name, yaml['version'] as String, type, packageLocations[name],
+          includes: isRoot ? ['**'] : ['lib/**']);
       nodes[name] = node;
 
       var deps = _depsFromYaml(yaml, isRoot: isRoot);
@@ -181,16 +191,34 @@ class PackageNode {
   /// The absolute path of the current version of this package.
   final String path;
 
-  PackageNode(this.name, this.version, this.dependencyType, String path)
-      : path = _toAbsolute(path);
+  /// The glob patterns to include from this package.
+  ///
+  /// Only the files matching these patterns will end up in the asset graph,
+  /// unless they also match a pattern in [excludes].
+  final List<String> _includes;
+  Iterable<String> get includes => _includes;
+
+  /// The glob patterns to exclude from this package.
+  ///
+  /// Any files matching these pattern will be excluded from the asset graph.
+  final List<String> _excludes;
+  Iterable<String> get excludes => _excludes;
+
+  PackageNode(this.name, this.version, this.dependencyType, String path,
+      {Iterable<String> includes, Iterable<String> excludes})
+      : path = _toAbsolute(path),
+        this._includes = includes?.toList() ?? ['lib/**'],
+        this._excludes = excludes?.toList() ?? <String>[];
 
   /// Create a [PackageNode] without any details from a `pubspec.yaml` file.
   ///
   /// This is useful for testing, or in cases where a package may be synthetic.
-  PackageNode.noPubspec(this.name, {String path})
-      : dependencyType = null,
-        path = _toAbsolute(path),
-        version = null;
+  factory PackageNode.noPubspec(String name,
+          {String path,
+          Iterable<String> includes,
+          Iterable<String> excludes}) =>
+      new PackageNode(name, null, null, _toAbsolute(path),
+          includes: includes, excludes: excludes);
 
   @override
   String toString() => '''
