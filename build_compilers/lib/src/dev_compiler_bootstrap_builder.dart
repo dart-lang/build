@@ -123,24 +123,6 @@ class DevCompilerBootstrapBuilder extends Builder {
   }
 }
 
-/// Returns the top level directory in [uri].
-///
-/// Throws an [ArgumentError] if [uri] is just a filename with no directory.
-String topLevelDir(String uri) {
-  var parts = p.split(p.normalize(uri));
-  String error;
-  if (parts.length == 1) {
-    error = 'The uri `$uri` does not contain a directory.';
-  } else if (parts.first == '..') {
-    error = 'The uri `$uri` reaches outside the root directory.';
-  }
-  if (error != null) {
-    throw new ArgumentError(
-        'Cannot compute top level dir for path `$uri`. $error');
-  }
-  return parts.first;
-}
-
 /// Code that actually imports the [moduleName] module, and calls the
 /// `[moduleScope].main()` function on it.
 ///
