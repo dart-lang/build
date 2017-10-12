@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
-import 'package:path/path.dart' as _p;
+import 'package:path/path.dart' as _p; // ignore: library_prefixes
 
 import 'dev_compiler_builder.dart';
 import 'module_builder.dart';
