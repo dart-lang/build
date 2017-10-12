@@ -31,7 +31,7 @@ class DevCompilerBootstrapBuilder extends Builder {
   };
 
   @override
-  Future build(BuildStep buildStep) async {
+  Future<Null> build(BuildStep buildStep) async {
     var dartEntrypointId = buildStep.inputId;
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
@@ -102,8 +102,8 @@ class DevCompilerBootstrapBuilder extends Builder {
     }));
   }
 
-  /// Returns whether or not [dartId] is an app entrypoint (basically, whether or
-  /// not it has a `main` function).
+  /// Returns whether or not [dartId] is an app entrypoint (basically, whether
+  /// or not it has a `main` function).
   Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
     assert(dartId.extension == '.dart');
     // Skip reporting errors here, dartdevc will report them later with nicer
