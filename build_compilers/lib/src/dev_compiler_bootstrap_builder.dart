@@ -33,7 +33,7 @@ class DevCompilerBootstrapBuilder extends Builder {
   @override
   Future build(BuildStep buildStep) async {
     var dartEntrypointId = buildStep.inputId;
-    var isAppEntrypoint = await isAppEntryPoint(dartEntrypointId, buildStep);
+    var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
 
     var moduleId = buildStep.inputId.changeExtension(moduleExtension);
@@ -61,7 +61,6 @@ class DevCompilerBootstrapBuilder extends Builder {
         .replaceAll('.', '\$46');
 
     // Map from module name to module path.
-    // var moduleDir = topLevelDir(dartEntrypointId.path);
     var modulePaths = {
       appModuleName: appModuleName,
       'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'
@@ -121,7 +120,7 @@ class DevCompilerBootstrapBuilder extends Builder {
 
   /// Returns whether or not [dartId] is an app entrypoint (basically, whether or
   /// not it has a `main` function).
-  Future<bool> isAppEntryPoint(AssetId dartId, AssetReader reader) async {
+  Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
     assert(dartId.extension == '.dart');
     // Skip reporting errors here, dartdevc will report them later with nicer
     // formatting.
@@ -158,15 +157,21 @@ String topLevelDir(String uri) {
   return parts.first;
 }
 
-String _appBootstrap(String modulePath, String moduleScope) => '''
-require(["$modulePath", "dart_sdk"], function(app, dart_sdk) {
+/// Code that actually imports the [moduleName] module, and calls the
+/// `[moduleScope].main()` function on it.
+///
+/// Also performs other necessary initialization.
+String _appBootstrap(String moduleName, String moduleScope) => '''
+require(["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
-$_registerDevToolsFormatter
+$_initializeTools
   app.$moduleScope.main();
 });
 })();
 ''';
 
+/// The actual entrypoint JS file which injects all the necessary scripts to
+/// run the app.
 String _entryPointJs(String bootstrapModuleName) => '''
 (function() {
   $_currentDirectoryScript
@@ -243,7 +248,11 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
 }
 ''';
 
-final _registerDevToolsFormatter = '''
+/// Code to initialize the dev tools formatter, stack trace mapper, and any
+/// other tools.
+///
+/// Posts a message to the window when done.
+final _initializeTools = '''
   dart_sdk._debugger.registerDevtoolsFormatter();
   if (window.\$dartStackTraceUtility && !window.\$dartStackTraceUtility.ready) {
     window.\$dartStackTraceUtility.ready = true;
@@ -258,8 +267,17 @@ final _registerDevToolsFormatter = '''
   window.postMessage({ type: "DDC_STATE_CHANGE", state: "start" }, "*");
 ''';
 
-/// Error handler code for require.js which requests a `.errors` file for any
-/// failed module, and logs it to the console.
+/// Require JS config for ddc.
+///
+/// Sets the base url to `/` so that all modules can be loaded using absolute
+/// paths which simplifies a lot of scenarios.
+///
+/// Sets the timeout for loading modules to infinity (0).
+///
+/// Sets up the custom module paths.
+///
+/// Adds error handler code for require.js which requests a `.errors` file for
+/// any failed module, and logs it to the console.
 final _requireJsConfig = '''
 // Whenever we fail to load a JS module, try to request the corresponding
 // `.errors` file, and log it to the console.
