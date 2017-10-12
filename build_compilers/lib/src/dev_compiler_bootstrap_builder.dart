@@ -60,24 +60,8 @@ class DevCompilerBootstrapBuilder extends Builder {
         .withoutExtension(p.basename(module.jsId.path))
         .replaceAll('.', '\$46');
 
-    // Map from module name to module path.
-    var modulePaths = {
-      appModuleName: appModuleName,
-      'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'
-    };
-    var transitiveDeps = (await module.computeTransitiveDependencies(buildStep))
-        .map((id) => id.changeExtension(jsModuleExtension));
-    for (var jsDep in transitiveDeps) {
-      var dir = topLevelDir(jsDep.path);
-      if (dir != 'lib') {
-        var jsModuleName = p.withoutExtension(jsDep.path);
-
-        modulePaths[jsModuleName] = jsModuleName;
-      } else {
-        var jsModuleName = 'packages/${jsDep.package}/${jsDep.path}';
-        modulePaths[jsModuleName] = jsModuleName;
-      }
-    }
+    // Map from module name to module path for custom modules.
+    var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
 
     var bootstrapContent = new StringBuffer('(function() {\n');
     bootstrapContent.write(_dartLoaderSetup(modulePaths));
