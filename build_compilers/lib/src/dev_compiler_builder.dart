@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
+import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
@@ -83,6 +84,10 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   } else {
     request.arguments.add('--no-source-map');
   }
+
+  // Add the default analysis_options.
+  await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
+  request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the linked summaries as summary inputs.
   for (var id in transitiveSummaryDeps) {
