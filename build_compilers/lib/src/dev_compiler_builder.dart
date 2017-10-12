@@ -16,6 +16,7 @@ import 'scratch_space.dart';
 import 'summary_builder.dart';
 import 'workers.dart';
 
+final String jsModuleErrorsExtension = '.js.errors';
 final String jsModuleExtension = '.js';
 final String jsSourceMapExtension = '.js.map';
 
@@ -23,7 +24,11 @@ final String jsSourceMapExtension = '.js.map';
 class DevCompilerBuilder implements Builder {
   @override
   final buildExtensions = {
-    moduleExtension: [jsModuleExtension, jsSourceMapExtension]
+    moduleExtension: [
+      jsModuleExtension,
+      jsModuleErrorsExtension,
+      jsSourceMapExtension
+    ]
   };
 
   @override
@@ -33,15 +38,17 @@ class DevCompilerBuilder implements Builder {
             as Map<String, dynamic>);
     try {
       await createDevCompilerModule(module, buildStep);
-    } catch (e, s) {
-      log.warning('Error compiling ${module.jsId}:\n$e\n$s');
+    } on DartDevcCompilationException catch (e) {
+      log.warning('Error compiling ${module.jsId}:\n$e');
+      await buildStep.writeAsString(
+          buildStep.inputId.changeExtension(jsModuleErrorsExtension), '$e');
     }
   }
 }
 
 /// Compile [module] with the dev compiler.
 Future createDevCompilerModule(Module module, BuildStep buildStep,
-    {bool isRoot = false, bool debugMode = false}) async {
+    {bool debugMode = true}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveSummaryDeps =
       transitiveDeps.map((id) => id.changeExtension(linkedSummaryExtension));
@@ -107,7 +114,9 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   // status code if something failed. Today we just make sure there is an output
   // JS file to verify it was successful.
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
-    throw new DartDevcCompilationException(module.jsId, response.output);
+    var message =
+        response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
+    throw new DartDevcCompilationException(module.jsId, message);
   } else {
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(module.jsId, buildStep);

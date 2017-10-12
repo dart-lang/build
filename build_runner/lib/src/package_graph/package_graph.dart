@@ -12,7 +12,7 @@ import 'package:yaml/yaml.dart';
 /// resources.
 final PackageNode _sdkPackageNode = new PackageNode(
     r'$sdk', null, null, getSdkPath(),
-    includes: ['lib/dev_compiler/**', 'lib/core/**', 'lib/internal/**']);
+    includes: ['lib/dev_compiler/**.js']);
 
 /// A graph of the package dependencies for an application.
 class PackageGraph {
