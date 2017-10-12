@@ -15,6 +15,7 @@ main() {
 
   setUp(() async {
     assets = {
+      'build_compilers|lib/src/analysis_options.default.yaml': '',
       'b|lib/b.dart': '''final world = 'world';''',
       'a|lib/a.dart': '''
         import 'package:b/b.dart';
