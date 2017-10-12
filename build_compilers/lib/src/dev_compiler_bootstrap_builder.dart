@@ -105,16 +105,17 @@ class DevCompilerBootstrapBuilder extends Builder {
   /// Ensures that all transitive js modules are available and built.
   Future<Null> _ensureTransitiveModules(
       Module module, AssetReader reader) async {
-    // First check the main module is readable.
-    await reader.canRead(module.jsId);
-
-    // Then check all transitive js deps are readable.
+    // Collect all the modules this module depends on, plus this module.
     var transitiveDeps = await module.computeTransitiveDependencies(reader);
-    var jsModules =
-        transitiveDeps.map((id) => id.changeExtension(jsModuleExtension));
+    var jsModules = transitiveDeps
+        .map((id) => id.changeExtension(jsModuleExtension))
+        .toList()
+          ..add(module.jsId);
+    // Check that each module is readable, and warn otherwise.
     await Future.wait(jsModules.map((jsId) async {
       if (await reader.canRead(jsId)) return;
-      throw 'Unable to read js module $jsId.';
+      log.warning(
+          'Unable to read $jsId, check your console for compilation errors.');
     }));
   }
 
@@ -240,7 +241,6 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   \$dartLoader.moduleIdToUrl.set(moduleName, src);
   \$dartLoader.urlToModuleId.set(src, moduleName);
 }
-console.log(customModulePaths);
 ''';
 
 final _registerDevToolsFormatter = '''
