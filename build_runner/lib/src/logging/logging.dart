@@ -41,7 +41,7 @@ T logTimedSync<T>(
   logger.log(level, '$description...');
   final result = action();
   watch.stop();
-  final time = '${watch.elapsedMicroseconds}ms$_logSuffix';
+  final time = '${watch.elapsedMilliseconds}ms$_logSuffix';
   logger.log(level, '$description completed, took $time');
   return result;
 }
