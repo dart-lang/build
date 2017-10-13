@@ -96,13 +96,27 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
 Future createLinkedSummary(Module module, BuildStep buildStep,
     {bool isRoot = false}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
-  var transitiveSummaryDeps =
-      transitiveDeps.map((id) => id.changeExtension(unlinkedSummaryExtension));
+  var transitiveUnlinkedSummaryDeps = <AssetId>[];
+  var transitiveLinkedSummaryDeps = <AssetId>[];
+
+  // Provide linked summaries where possible (if created in a previous phase),
+  // otherwise provide unlinked summaries.
+  await Future.wait(transitiveDeps.map((dartId) async {
+    var linkedSummary = dartId.changeExtension(linkedSummaryExtension);
+    if (await buildStep.canRead(linkedSummary)) {
+      transitiveLinkedSummaryDeps.add(linkedSummary);
+    } else {
+      transitiveUnlinkedSummaryDeps
+          .add(dartId.changeExtension(unlinkedSummaryExtension));
+    }
+  }));
+
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = new Set<AssetId>()
     ..addAll(module.sources)
-    ..addAll(transitiveSummaryDeps);
+    ..addAll(transitiveLinkedSummaryDeps)
+    ..addAll(transitiveUnlinkedSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var summaryOutputFile = scratchSpace.fileFor(module.linkedSummaryId);
   var request = new WorkRequest();
@@ -118,9 +132,12 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
   await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
   request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
 
-  // Add all the unlinked summaries as build summary inputs.
-  request.arguments.addAll(transitiveSummaryDeps.map((id) =>
+  // Add all the unlinked and linked summaries as build summary inputs.
+  request.arguments.addAll(transitiveUnlinkedSummaryDeps.map((id) =>
       '--build-summary-unlinked-input=${scratchSpace.fileFor(id).path}'));
+  request.arguments.addAll(transitiveLinkedSummaryDeps
+      .map((id) => '--build-summary-input=${scratchSpace.fileFor(id).path}'));
+
   // Add all the files to include in the linked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
   var response = await analyzerDriver.doWork(request);
