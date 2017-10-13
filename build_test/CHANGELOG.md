@@ -1,5 +1,8 @@
 ## 0.9.0-dev
 
+- Added the `TestBootstrapBuilder` under the `builder.dart` library. This can
+  be used to bootstrap tests similar to the `test/pub_serve` Transformer.
+  - **Known Issue**: Custom html files are not supported.  
 - **Breaking**: All `AssetReader#findAssets` implementations now return a
   `Stream<AssetId>` to match the latest `build` package.
 
