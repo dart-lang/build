@@ -18,6 +18,10 @@
   `MultiPackageAssetReader`, which means the `packageName` named argument has
   changed to `package`; while technically breaking most users do not rely on
   this interface explicitly.
+- **Breaking**: `ServeHandler.handle` has been replaced with
+  `Handler ServeHandler.handleFor(String rootDir)`. This allows you to create
+  separate handlers per directory you want to serve, which maintains pub serve
+  conventions and allows interoperation with `pub run test --pub-serve=$PORT`.
 
 ### Bug fixes
 
