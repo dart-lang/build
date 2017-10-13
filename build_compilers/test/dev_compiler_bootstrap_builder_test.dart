@@ -42,7 +42,11 @@ main() {
       'a|web/index.dart.js': contains('index.dart.bootstrap'),
       'a|web/index.dart.js.map': anything,
       'a|web/index.dart.bootstrap.js': allOf([
+        // Maps non-lib modules to remove the top level dir.
+        contains('"web/index": "index"'),
+        // Requires the top level module and dart sdk.
         contains('require(["web/index", "dart_sdk"]'),
+        // Calls main on the top level module.
         contains('index.main()'),
       ]),
     };

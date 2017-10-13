@@ -62,6 +62,17 @@ class DevCompilerBootstrapBuilder extends Builder {
 
     // Map from module name to module path for custom modules.
     var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
+    var transitiveNoneLibJsModules = [module.jsId]
+      ..addAll((await module.computeTransitiveDependencies(buildStep)))
+      ..where((dartId) => !dartId.path.startsWith('lib/'))
+          .map((dartId) => dartId.changeExtension(jsModuleExtension));
+    for (var module in transitiveNoneLibJsModules) {
+      // Strip out the top level dir from the path for any non-lib module. We
+      // set baseUrl to `/` to simplify things, and we only allow you to serve
+      // top level directories.
+      var moduleName = p.withoutExtension(module.path);
+      modulePaths[moduleName] = p.joinAll(p.split(moduleName).skip(1));
+    }
 
     var bootstrapContent = new StringBuffer('(function() {\n');
     bootstrapContent.write(_dartLoaderSetup(modulePaths));
