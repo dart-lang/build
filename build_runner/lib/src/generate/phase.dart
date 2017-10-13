@@ -7,7 +7,7 @@ import 'package:build/build.dart';
 import '../package_builder/package_builder.dart';
 import 'input_set.dart';
 
-/// A "phase" in the build graph, which represents running a builder on a
+/// A "phase" in the build graph, which represents running a [Builder] on a
 /// specific [package].
 ///
 /// See the [BuildAction] and [PackageBuildAction] implementations.
