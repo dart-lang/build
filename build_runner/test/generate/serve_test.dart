@@ -55,14 +55,15 @@ void main() {
 
       var handler =
           await createHandler([copyABuildAction], {'a|web/a.txt': 'a'}, writer);
+      var webHandler = handler.handlerFor('web');
       var results = new StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
       await wait(100);
 
       var request =
-          new Request('GET', Uri.parse('http://localhost:8000/CHANGELOG.md'));
+          new Request('GET', Uri.parse('http://localhost:8000/a.txt'));
       // ignore: unawaited_futures
-      handler.handle(request).then((Response response) {
+      (webHandler(request) as Future<Response>).then((Response response) {
         expect(buildBlocker1.isCompleted, isTrue,
             reason: 'Server shouldn\'t respond until builds are done.');
       });
@@ -74,7 +75,7 @@ void main() {
       /// Next request completes right away.
       var buildBlocker2 = new Completer();
       // ignore: unawaited_futures
-      handler.handle(request).then((response) {
+      (webHandler(request) as Future<Response>).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isFalse);
       });
@@ -88,7 +89,7 @@ void main() {
       await wait(500);
       var done = new Completer();
       // ignore: unawaited_futures
-      handler.handle(request).then((response) {
+      (webHandler(request) as Future<Response>).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isTrue);
         done.complete();
