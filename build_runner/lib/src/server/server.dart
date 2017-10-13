@@ -29,9 +29,17 @@ class ServeHandler implements BuildState {
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
-  Future<Response> handle(Request request) async {
+  Handler handlerFor(String rootDir) {
+    if (p.url.split(rootDir).length != 1) {
+      throw new ArgumentError.value(
+          rootDir, 'rootDir', 'Only top level directories are supported');
+    }
+    return (Request request) => _handle(request, rootDir);
+  }
+
+  FutureOr<Response> _handle(Request request, String rootDir) async {
     await currentBuild;
-    return _assetHandler.handle(request);
+    return _assetHandler.handle(request, rootDir);
   }
 }
 
@@ -43,9 +51,14 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<Response> handle(Request request) {
-    var pathSegments = request.url.pathSegments;
-    if (request.url.path.endsWith('/')) {
+  Future<Response> handle(Request request, String rootDir) {
+    var pathSegments = <String>[];
+    if (rootDir != null) {
+      pathSegments.addAll(p.url.split(rootDir));
+    }
+    pathSegments.addAll(request.url.pathSegments);
+
+    if (request.url.path.endsWith('/') || request.url.path.isEmpty) {
       pathSegments = new List.from(pathSegments)..add('index.html');
     }
     return _handle(pathSegments);

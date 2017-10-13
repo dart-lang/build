@@ -21,35 +21,44 @@ void main() {
   test('can read from the root package', () async {
     reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/web/index.html')));
+        new Request('GET', Uri.parse('http://server.com/index.html')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('can read from dependencies', () async {
     reader.cacheStringAsset(makeAssetId('b|lib/b.dart'), 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/packages/b/b.dart')));
+        new Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
+        'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('can read from dependencies nested under top-level dir', () async {
     reader.cacheStringAsset(makeAssetId('b|lib/b.dart'), 'content');
-    var response = await handler.handle(new Request(
-        'GET', Uri.parse('http://server.com/web/packages/b/b.dart')));
+    var response = await handler.handle(
+        new Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
+        'web');
+    expect(await response.readAsString(), 'content');
+  });
+
+  test('defaults to index.html if path is empty', () async {
+    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    var response = await handler.handle(
+        new Request('GET', Uri.parse('http://server.com/')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('defaults to index.html if URI ends with slash', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
-    var response = await handler
-        .handle(new Request('GET', Uri.parse('http://server.com/web/')));
+    reader.cacheStringAsset(makeAssetId('a|web/sub/index.html'), 'content');
+    var response = await handler.handle(
+        new Request('GET', Uri.parse('http://server.com/sub/')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('does not default to index.html if URI does not end in slash', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
-    var response = await handler
-        .handle(new Request('GET', Uri.parse('http://server.com/web')));
+    reader.cacheStringAsset(makeAssetId('a|web/sub/index.html'), 'content');
+    var response = await handler.handle(
+        new Request('GET', Uri.parse('http://server.com/sub')), 'web');
     expect(response.statusCode, 404);
   });
 }
