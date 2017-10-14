@@ -52,10 +52,7 @@ class AssetHandler {
   AssetHandler(this._reader, this._rootPackage);
 
   Future<Response> handle(Request request, String rootDir) {
-    var pathSegments = <String>[];
-    if (rootDir != null) {
-      pathSegments.addAll(p.url.split(rootDir));
-    }
+    var pathSegments = <String>[rootDir];
     pathSegments.addAll(request.url.pathSegments);
 
     if (request.url.path.endsWith('/') || request.url.path.isEmpty) {
