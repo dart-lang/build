@@ -70,7 +70,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
 /// Same as [build], except it watches the file system and re-runs builds
 /// automatically.
 ///
-/// Call [ServeHandler.handlerFor] to create a [Handler] for use with
+/// The [ServeHandler.handle] method can be used as a [Handler] from
 /// `package:shelf`. Requests for assets will be blocked while builds are
 /// running then served with the latest version of the asset. Only source and
 /// generated assets can be served through this handler.
