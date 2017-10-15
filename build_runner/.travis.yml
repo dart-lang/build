@@ -6,7 +6,7 @@ dart:
 dart_task:
   - test
   - dartfmt: sdk
-  - dartanalyzer
+  - dartanalyzer: --fatal-warnings --fatal-lints
 
 matrix:
   exclude:
