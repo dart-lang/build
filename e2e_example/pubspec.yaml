@@ -1,8 +1,6 @@
 name: e2e_example
-description: A web app that uses AngularDart Components
+description: A basic web app
 version: 0.0.1
-#homepage: https://www.example.com
-#author: Jacob MacDonald <email@example.com>
 
 environment:
   sdk: '>=1.24.0 <2.0.0'

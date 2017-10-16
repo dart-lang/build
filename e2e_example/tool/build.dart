@@ -18,28 +18,17 @@ Future main() async {
         inputs: ['test/**_test.dart']),
   ];
 
-  void crawlPackageAndAddBuilder(
-      PackageNode packageNode, Builder builder, String inputExtension,
-      {PackageNode root, Set<PackageNode> seen}) {
-    seen ??= new Set<PackageNode>();
-    root ??= packageNode;
-    for (var dep in packageNode.dependencies) {
-      if (seen.contains(dep)) continue;
-      seen.add(dep);
-      crawlPackageAndAddBuilder(dep, builder, inputExtension,
-          root: root, seen: seen);
+  void addBuilderForAll(Builder builder, String inputExtension) {
+    for (var packageNode in graph.orderedPackages) {
+      buildActions
+          .add(new BuildAction(builder, packageNode.name, isOptional: true));
     }
-    buildActions
-        .add(new BuildAction(builder, packageNode.name, isOptional: true));
   }
 
-  crawlPackageAndAddBuilder(graph.root, new ModuleBuilder(), '.dart');
-  crawlPackageAndAddBuilder(
-      graph.root, new UnlinkedSummaryBuilder(), moduleExtension);
-  crawlPackageAndAddBuilder(
-      graph.root, new LinkedSummaryBuilder(), moduleExtension);
-  crawlPackageAndAddBuilder(
-      graph.root, new DevCompilerBuilder(), moduleExtension);
+  addBuilderForAll(new ModuleBuilder(), '.dart');
+  addBuilderForAll(new UnlinkedSummaryBuilder(), moduleExtension);
+  addBuilderForAll(new LinkedSummaryBuilder(), moduleExtension);
+  addBuilderForAll(new DevCompilerBuilder(), moduleExtension);
 
   buildActions.add(new BuildAction(
       new DevCompilerBootstrapBuilder(), graph.root.name,
