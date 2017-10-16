@@ -4,10 +4,6 @@
 # Fast fail the script on failures.
 set -e
 
-# Handcoded, need to update mono_repo to be able to include this. Based on
-# https://github.com/travis-ci/travis-ci/issues/6683#issuecomment-251938932.
-t=0; until (xdpyinfo -display :99 &> /dev/null || test $t -gt 10); do sleep 1; let t=$t+1; done
-
 if [ -z "$PKG" ]; then
   echo -e "[31mPKG environment variable must be set![0m"
   exit 1
