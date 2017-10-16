@@ -48,7 +48,8 @@ void main() {
       var gitStatus = Process.runSync('git', ['status']).stdout as String;
       gitWasClean = gitStatus.contains('nothing to commit, working tree clean');
       expect(gitWasClean, isTrue,
-          reason: 'Not running on a clean git client, aborting test.');
+          reason: 'Not running on a clean git client, aborting test.\n'
+              '`git status` gave:\n$gitStatus');
     }
 
     setUp(() async {
