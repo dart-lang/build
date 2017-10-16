@@ -68,7 +68,8 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     Level logLevel: Level.OFF,
     onLog(LogRecord record),
     bool writeToCache,
-    bool checkBuildStatus: true}) async {
+    bool checkBuildStatus: true,
+    bool deleteFilesByDefault: true}) async {
   writer ??= new InMemoryRunnerAssetWriter();
   writeToCache ??= false;
   final actualAssets = writer.assets;
@@ -90,7 +91,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
   }
 
   var result = await build(buildActions,
-      deleteFilesByDefault: true,
+      deleteFilesByDefault: deleteFilesByDefault,
       writeToCache: writeToCache,
       reader: reader,
       writer: writer,
