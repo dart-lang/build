@@ -45,11 +45,11 @@ void main() {
     bool gitWasClean = false;
 
     void ensureCleanGitClient() {
-      var gitStatus = Process.runSync('git', ['status']).stdout as String;
+      var gitStatus = Process.runSync('git', ['status', '.']).stdout as String;
       gitWasClean = gitStatus.contains('nothing to commit, working tree clean');
       expect(gitWasClean, isTrue,
           reason: 'Not running on a clean git client, aborting test.\n'
-              '`git status` gave:\n$gitStatus');
+              '`git status .` gave:\n$gitStatus');
     }
 
     setUp(() async {
@@ -60,7 +60,7 @@ void main() {
       if (gitWasClean) {
         // Reset our state after each test, assuming we didn't abandon tests due
         // to a non-pristine git environment.
-        Process.runSync('git', ['reset', '--hard']);
+        Process.runSync('git', ['checkout', 'HEAD', '--', '.']);
         await nextSuccessfulBuild;
       }
     });
