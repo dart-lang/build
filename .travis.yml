@@ -1,6 +1,11 @@
 # Created with https://github.com/dart-lang/mono_repo
 language: dart
 
+# Handcoded, need to update mono_repo to be able to include this. Based on
+# https://github.com/travis-ci/travis-ci/issues/6683#issuecomment-251938932.
+sudo: required
+dist: trusty
+
 dart:
   - dev
   - stable
