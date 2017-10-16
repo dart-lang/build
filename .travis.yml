@@ -1,6 +1,11 @@
 # Created with https://github.com/dart-lang/mono_repo
 language: dart
 
+# Handcoded, need to update mono_repo to be able to include this. Based on
+# https://github.com/travis-ci/travis-ci/issues/6683#issuecomment-251938932.
+sudo: required
+dist: trusty
+
 dart:
   - dev
   - stable
@@ -21,6 +26,8 @@ env:
   - PKG=build_test TASK=dartanalyzer
   - PKG=build_test TASK=dartfmt
   - PKG=build_test TASK=test
+  - PKG=e2e_example TASK=dartanalyzer
+  - PKG=e2e_example TASK=test
   - PKG=scratch_space TASK=dartanalyzer
   - PKG=scratch_space TASK=dartfmt
   - PKG=scratch_space TASK=test
@@ -49,3 +56,15 @@ branches:
 cache:
  directories:
    - $HOME/.pub-cache
+
+# Handcoded, need to update mono_repo to be able to include this. Based on
+# https://github.com/travis-ci/travis-ci/issues/6683#issuecomment-251938932.
+before_install:
+ - export CHROME_BIN=/usr/bin/google-chrome
+ - export DISPLAY=:99.0
+ - sh -e /etc/init.d/xvfb start
+ - sudo apt-get update
+ - sudo apt-get install -y libappindicator1 fonts-liberation
+ - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+ - sudo dpkg -i google-chrome*.deb
+ - "t=0; until (xdpyinfo -display :99 &> /dev/null || test $t -gt 10); do sleep 1; let t=$t+1; done"
