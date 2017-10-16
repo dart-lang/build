@@ -41,7 +41,7 @@ void main() {
     await expectTestsPass();
   });
 
-  group('File edits', () {
+  group('File changes', () {
     bool gitWasClean = false;
 
     void ensureCleanGitClient() {
@@ -53,7 +53,6 @@ void main() {
 
     setUp(() async {
       ensureCleanGitClient();
-      await expectTestsPass();
     });
 
     tearDown(() async {
@@ -65,18 +64,24 @@ void main() {
       }
     });
 
-    test('change test to fail and rerun', () async {
+    test('edit test to fail and rerun', () async {
       await replaceAllInFile(
           'test/hello_world_test.dart', 'Hello World!', 'Goodbye World!');
       await nextSuccessfulBuild;
       await expectTestsFail();
     });
 
-    test('change dependency lib causing test to fail and rerun', () async {
+    test('edit dependency lib causing test to fail and rerun', () async {
       await replaceAllInFile('lib/app.dart', 'Hello World!', 'Goodbye World!');
       await nextSuccessfulBuild;
       await expectTestsFail();
     });
+
+    test('create new test', () async {
+      await createFile(p.join('test', 'other_test.dart'), basicTestContents);
+      await nextSuccessfulBuild;
+      await expectTestsPass();
+    }, skip: 'https://github.com/dart-lang/build/issues/500');
   });
 }
 
@@ -96,9 +101,25 @@ Future<Null> expectTestsPass() async {
   expect(result.stdout, contains('All tests passed!'));
 }
 
+Future<Null> createFile(String path, String contents) async {
+  var file = new File(path);
+  expect(await file.exists(), isFalse);
+  await file.create(recursive: true);
+  await file.writeAsString(contents);
+}
+
 Future<Null> replaceAllInFile(String path, String from, String replace) async {
   var file = new File(path);
   expect(await file.exists(), isTrue);
   var content = await file.readAsString();
   await file.writeAsString(content.replaceAll(from, replace));
 }
+
+final basicTestContents = '''
+import 'package:test/test.dart';
+
+main() {
+  test('1 == 1', () {
+    expect(1, equals(1));
+  });
+}''';
