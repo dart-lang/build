@@ -21,6 +21,8 @@ env:
   - PKG=build_test TASK=dartanalyzer
   - PKG=build_test TASK=dartfmt
   - PKG=build_test TASK=test
+  - PKG=e2e_example TASK=dartanalyzer
+  - PKG=e2e_example TASK=test
   - PKG=scratch_space TASK=dartanalyzer
   - PKG=scratch_space TASK=dartfmt
   - PKG=scratch_space TASK=test
