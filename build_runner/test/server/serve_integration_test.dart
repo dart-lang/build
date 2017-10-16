@@ -45,6 +45,7 @@ void main() {
     subscription = server.buildResults.listen((_) {
       if (!nextBuild.isCompleted) {
         nextBuild.complete();
+        nextBuild = new Completer<Null>();
       }
     });
     await nextBuild.future;
@@ -86,7 +87,7 @@ void main() {
     FakeWatcher.notifyWatchers(
       new WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
-    await (nextBuild = new Completer<Null>()).future;
+    await nextBuild.future;
     final response = await handler(new Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
   }, skip: 'Enable on fix of https://github.com/dart-lang/build/issues/500');
