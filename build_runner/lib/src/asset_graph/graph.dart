@@ -177,7 +177,9 @@ class AssetGraph {
         for (var input in inputs) {
           var outputs = expectedOutputs(action.builder, input);
           phaseOutputs.addAll(outputs);
-          get(input).primaryOutputs.addAll(outputs);
+          var node = get(input);
+          node.primaryOutputs.addAll(outputs);
+          node.outputs.addAll(outputs);
           _addGeneratedOutputs(outputs, phase, primaryInput: input);
         }
       } else {

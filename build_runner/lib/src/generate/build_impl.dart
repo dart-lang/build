@@ -288,11 +288,12 @@ class BuildImpl {
     var inputNode = _assetGraph.get(input);
     assert(inputNode != null,
         'Inputs should be known in the static graph. Missing $input');
-    for (var output in builderOutputs) {
-      inputNode.outputs.add(output);
-      assert(inputNode.primaryOutputs.contains(output),
-          '$input missing primary output $output');
-    }
+    assert(
+        inputNode.primaryOutputs.containsAll(builderOutputs),
+        '$input missing primary outputs ' +
+            builderOutputs
+                .where((id) => !inputNode.primaryOutputs.contains(id))
+                .join(', '));
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
