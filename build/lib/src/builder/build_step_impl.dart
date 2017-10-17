@@ -54,7 +54,7 @@ class BuildStepImpl implements BuildStep {
       Iterable<AssetId> expectedOutputs,
       this._reader,
       this._writer,
-      @deprecated this._rootPackage,
+      @deprecated this._rootPackage, // ignore: deprecated_member_use
       this._resolvers,
       this._resourceManager)
       : _expectedOutputs = expectedOutputs.toSet();
