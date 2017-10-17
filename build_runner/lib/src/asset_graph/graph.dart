@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:build/build.dart';
@@ -76,13 +77,20 @@ class AssetGraph {
   Iterable<AssetId> get sources =>
       allNodes.where((n) => n is! GeneratedAssetNode).map((n) => n.id);
 
-  /// Update graph structure, invalidate outputs that may change, and return the
-  /// set of assets that need to be deleted because they would no longer be
-  /// generated, or because they are stale.
-  Iterable<AssetNode> updateAndInvalidate(List<BuildAction> buildActions,
-      Map<AssetId, ChangeType> updates, String rootPackage) {
-    var deletes = new Set<AssetNode>();
+  /// Updates graph structure, invalidating and deleting any outputs that were
+  /// affected.
+  Future<Null> updateAndInvalidate(
+      List<BuildAction> buildActions,
+      Map<AssetId, ChangeType> updates,
+      String rootPackage,
+      Future delete(AssetId id)) async {
+    // All the assets that should be deleted.
+    var idsToDelete = new Set<AssetId>();
+    // All the assets that should be removed from the graph entirely.
+    var idsToRemove = new Set<AssetId>();
 
+    // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
+    // the outputs of `id`.
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
         {AssetId parent, bool rootIsSource}) {
       var node = this.get(id);
@@ -96,17 +104,17 @@ class AssetGraph {
       }
 
       if (node is GeneratedAssetNode) {
+        idsToDelete.add(id);
         if (rootIsSource &&
             rootChangeType == ChangeType.REMOVE &&
             node.primaryInput == parent) {
-          _remove(id);
-          deletes.add(node);
+          idsToRemove.add(id);
         } else {
           node.needsUpdate = true;
         }
       } else {
         // This is a source
-        if (rootChangeType == ChangeType.REMOVE) _remove(id);
+        if (rootChangeType == ChangeType.REMOVE) idsToRemove.add(id);
       }
     }
 
@@ -117,13 +125,12 @@ class AssetGraph {
         updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet(),
         rootPackage)
       ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
-      ..addAll(deletes.map((node) => node.id));
+      ..addAll(idsToDelete);
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
       var samePackageOutputNodes = allNodes
-          .where((n) => n is GeneratedAssetNode && n.id.package == id.package)
-          .toList();
+          .where((n) => n is GeneratedAssetNode && n.id.package == id.package);
       for (var node in samePackageOutputNodes) {
         if ((node as GeneratedAssetNode)
             .globs
@@ -134,9 +141,11 @@ class AssetGraph {
       }
     }
 
-    deletes.addAll(
-        allNodes.where((n) => n is GeneratedAssetNode && n.needsUpdate));
-    return deletes;
+    // Delete all the invalidated assets, then remove them from the graph. This
+    // order is important because some `AssetReader`s throw if the id is not in
+    // the graph.
+    await Future.wait(idsToDelete.map(delete));
+    idsToRemove.forEach(_remove);
   }
 
   /// Returns a set containing [newSources] plus any new generated sources
