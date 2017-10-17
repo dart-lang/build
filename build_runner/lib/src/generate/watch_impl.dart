@@ -149,7 +149,44 @@ class WatchImpl implements BuildState {
       change.type == ChangeType.REMOVE && !_assetGraph.contains(change.id);
 }
 
-Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) =>
-    new Map.fromIterable(changes.expand((c) => c),
-        key: (c) => (c as AssetChange).id,
-        value: (c) => (c as AssetChange).type);
+Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
+  var changeMap = <AssetId, ChangeType>{};
+  for (var change in changes.expand((l) => l)) {
+    var originalChangeType = changeMap[change.id];
+    if (originalChangeType != null) {
+      switch (originalChangeType) {
+        case ChangeType.ADD:
+          if (change.type == ChangeType.REMOVE) {
+            // ADD followed by REMOVE, just remove the change.
+            changeMap.remove(change.id);
+          }
+          break;
+        case ChangeType.REMOVE:
+          if (change.type == ChangeType.ADD) {
+            // REMOVE followed by ADD, convert to a MODIFY
+            changeMap[change.id] = ChangeType.MODIFY;
+          } else if (change.type == ChangeType.MODIFY) {
+            // REMOVE followed by MODIFY isn't sensible, just throw.
+            throw new StateError(
+                'Internal error, got REMOVE event followed by MODIFY event for '
+                '${change.id}.');
+          }
+          break;
+        case ChangeType.MODIFY:
+          if (change.type == ChangeType.REMOVE) {
+            // MODIFY followed by REMOVE, convert to REMOVE
+            changeMap[change.id] = change.type;
+          } else if (change.type == ChangeType.ADD) {
+            // MODIFY followed by ADD isn't sensible, just throw.
+            throw new StateError(
+                'Internal error, got MODIFY event followed by ADD event for '
+                '${change.id}.');
+          }
+          break;
+      }
+    } else {
+      changeMap[change.id] = change.type;
+    }
+  }
+  return changeMap;
+}

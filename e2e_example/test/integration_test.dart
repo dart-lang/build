@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 Directory toolDir = new Directory(p.join('.dart_tool', 'build'));
 Process process;
+Stream<String> stdErrLines;
 Stream<String> stdOutLines;
 
 void main() {
@@ -27,6 +28,13 @@ void main() {
         .transform(const LineSplitter())
         .asBroadcastStream();
     stdOutLines.listen(print);
+
+    stdErrLines = process.stderr
+        .transform(UTF8.decoder)
+        .transform(const LineSplitter())
+        .asBroadcastStream();
+    stdErrLines.listen(print);
+
     await nextSuccessfulBuild;
   });
 
@@ -61,6 +69,22 @@ void main() {
         // Reset our state after each test, assuming we didn't abandon tests due
         // to a non-pristine git environment.
         Process.runSync('git', ['checkout', 'HEAD', '--', '.']);
+        // Delete the untracked files.
+        var gitStatus = Process
+            .runSync('git', ['status', '--porcelain', '.']).stdout as String;
+
+        var untracked = gitStatus
+            .split('\n')
+            .where((line) => line.startsWith('??'))
+            .map((line) => line.split(' ')[1])
+            .map((path) {
+          var parts = p.split(path);
+          assert(parts[0] == 'e2e_example');
+          return p.joinAll(parts.skip(1));
+        });
+        for (var path in untracked) {
+          Process.runSync('rm', [path]);
+        }
         await nextSuccessfulBuild;
       }
     });
@@ -82,12 +106,12 @@ void main() {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
       await nextSuccessfulBuild;
       await expectTestsPass();
-    }, skip: 'https://github.com/dart-lang/build/issues/500');
+    });
   });
 }
 
 Future get nextSuccessfulBuild =>
-    stdOutLines.firstWhere((line) => line.contains('build completed'));
+    stdOutLines.firstWhere((line) => line.contains('Build: Succeeded after'));
 
 Future<ProcessResult> runTests() =>
     Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);

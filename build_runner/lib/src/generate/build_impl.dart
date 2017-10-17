@@ -100,11 +100,9 @@ class BuildImpl {
     return result;
   }
 
-  Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    var deletes = _assetGraph.updateAndInvalidate(
-        _buildActions, updates, _packageGraph.root.name);
-    await Future.wait(deletes.map(_delete));
-  }
+  Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) =>
+      _assetGraph.updateAndInvalidate(
+          _buildActions, updates, _packageGraph.root.name, _delete);
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
@@ -290,11 +288,12 @@ class BuildImpl {
     var inputNode = _assetGraph.get(input);
     assert(inputNode != null,
         'Inputs should be known in the static graph. Missing $input');
-    for (var output in builderOutputs) {
-      inputNode.outputs.add(output);
-      assert(inputNode.primaryOutputs.contains(output),
-          '$input missing primary output $output');
-    }
+    assert(
+        inputNode.primaryOutputs.containsAll(builderOutputs),
+        '$input missing primary outputs ' +
+            builderOutputs
+                .where((id) => !inputNode.primaryOutputs.contains(id))
+                .join(', '));
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
