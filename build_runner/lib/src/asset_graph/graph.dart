@@ -142,7 +142,7 @@ class AssetGraph {
     }
 
     // Delete all the invalidated assets, then remove them from the graph. This
-    // order is important because some `AssetReader`s throw if the id is not in
+    // order is important because some `AssetWriter`s throw if the id is not in
     // the graph.
     await Future.wait(idsToDelete.map(delete));
     idsToRemove.forEach(_remove);
