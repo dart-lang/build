@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build_runner/src/generate/exceptions.dart';
 import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:test/test.dart';
@@ -32,5 +33,24 @@ void main() {
       expect(error, contains('operate on package "not_root_package"'));
       expect(error, contains('new BuildAction(..., \'root_package\')'));
     }
+  });
+
+  test('fail if an output is on disk and !deleteFilesByDefault', () async {
+    expect(
+      testActions(
+        [
+          new BuildAction(new CopyBuilder(), 'a'),
+        ],
+        {
+          'a|lib/a.dart': '',
+          'a|lib/a.dart.copy': '',
+        },
+        packageGraph: new PackageGraph.fromRoot(
+          new PackageNode.noPubspec('a', path: ''),
+        ),
+        deleteFilesByDefault: false,
+      ),
+      throwsA(const isInstanceOf<UnexpectedExistingOutputsException>()),
+    );
   });
 }

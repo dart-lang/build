@@ -154,7 +154,8 @@ class BuildImpl {
 
     // If not in a standard terminal then we just exit, since there is no way
     // for the user to provide a yes/no answer.
-    if (stdioType(stdin) != StdioType.TERMINAL) {
+    bool runningInPubRunTest() => Platform.script.scheme == 'data';
+    if (stdioType(stdin) != StdioType.TERMINAL || runningInPubRunTest()) {
       throw new UnexpectedExistingOutputsException(conflictingAssets);
     }
 
