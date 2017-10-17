@@ -79,9 +79,9 @@ class AssetGraph {
   /// Update graph structure, invalidate outputs that may change, and return the
   /// set of assets that need to be deleted because they would no longer be
   /// generated, or because they are stale.
-  Iterable<AssetId> updateAndInvalidate(List<BuildAction> buildActions,
+  Iterable<AssetNode> updateAndInvalidate(List<BuildAction> buildActions,
       Map<AssetId, ChangeType> updates, String rootPackage) {
-    var deletes = new Set<AssetId>();
+    var deletes = new Set<AssetNode>();
 
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
         {AssetId parent, bool rootIsSource}) {
@@ -100,7 +100,7 @@ class AssetGraph {
             rootChangeType == ChangeType.REMOVE &&
             node.primaryInput == parent) {
           _remove(id);
-          deletes.add(id);
+          deletes.add(node);
         } else {
           node.needsUpdate = true;
         }
@@ -117,7 +117,7 @@ class AssetGraph {
         updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet(),
         rootPackage)
       ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
-      ..addAll(deletes);
+      ..addAll(deletes.map((node) => node.id));
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
@@ -134,9 +134,8 @@ class AssetGraph {
       }
     }
 
-    deletes.addAll(allNodes
-        .where((n) => n is GeneratedAssetNode && n.needsUpdate)
-        .map((n) => n.id));
+    deletes.addAll(
+        allNodes.where((n) => n is GeneratedAssetNode && n.needsUpdate));
     return deletes;
   }
 

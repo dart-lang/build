@@ -14,6 +14,7 @@ import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset/build_cache.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
@@ -103,7 +104,17 @@ class BuildImpl {
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     var deletes = _assetGraph.updateAndInvalidate(
         _buildActions, updates, _packageGraph.root.name);
-    await Future.wait(deletes.map(_delete));
+    await Future.wait(deletes.map((node) {
+      if (_reader is BuildCacheReader && node is GeneratedAssetNode) {
+        // These nodes have been deleted from the graph, so we have to edit the
+        // id ahead of time to point at the generated otuput dir.
+        var id = node.id;
+        return _delete(new AssetId(_packageGraph.root.name,
+            '$generatedOutputDirectory/${id.package}/${id.path}'));
+      } else {
+        return _delete(node.id);
+      }
+    }));
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
