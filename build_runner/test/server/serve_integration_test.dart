@@ -19,7 +19,7 @@ void main() {
   InMemoryRunnerAssetReader reader;
   InMemoryRunnerAssetWriter writer;
   StreamSubscription subscription;
-  Completer<Null> nextBuild;
+  Completer<BuildResult> nextBuild;
 
   final path = p.absolute('example');
 
@@ -41,12 +41,10 @@ void main() {
     ));
     handler = server.handlerFor('web');
 
-    nextBuild = new Completer<Null>();
-    subscription = server.buildResults.listen((_) {
-      if (!nextBuild.isCompleted) {
-        nextBuild.complete();
-        nextBuild = new Completer<Null>();
-      }
+    nextBuild = new Completer<BuildResult>();
+    subscription = server.buildResults.listen((result) {
+      nextBuild.complete(result);
+      nextBuild = new Completer<BuildResult>();
     });
     await nextBuild.future;
   });
@@ -87,10 +85,13 @@ void main() {
     FakeWatcher.notifyWatchers(
       new WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
-    await nextBuild.future;
+    var result = await nextBuild.future;
+    for (var output in result.outputs) {
+      reader.cacheStringAsset(output, writer.assets[output].stringValue);
+    }
     final response = await handler(new Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
-  }, skip: 'Enable on fix of https://github.com/dart-lang/build/issues/500');
+  });
 }
 
 class UppercaseBuilder implements Builder {
