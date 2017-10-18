@@ -19,8 +19,8 @@ part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph {
-  /// All the [AssetNode]s in the graph, indexed by [AssetId].
-  final _nodesById = <AssetId, AssetNode>{};
+  /// All the [AssetNode]s in the graph, indexed by package and then path.
+  final _nodesByPackage = <String, Map<String, AssetNode>>{};
 
   /// The start time of the most recent build which created this graph.
   ///
@@ -46,10 +46,15 @@ class AssetGraph {
       new _AssetGraphSerializer(this).serialize();
 
   /// Checks if [id] exists in the graph.
-  bool contains(AssetId id) => _nodesById.containsKey(id);
+  bool contains(AssetId id) =>
+      _nodesByPackage[id.package]?.containsKey(id.path) ?? false;
 
   /// Gets the [AssetNode] for [id], if one exists.
-  AssetNode get(AssetId id) => _nodesById[id];
+  AssetNode get(AssetId id) {
+    var pkg = _nodesByPackage[id?.package];
+    if (pkg == null) return null;
+    return pkg[id.path];
+  }
 
   /// Adds [node] to the graph if it doesn't exist.
   ///
@@ -60,14 +65,19 @@ class AssetGraph {
           'Tried to add node ${node.id} to the asset graph but it already '
           'exists.');
     }
-    _nodesById[node.id] = node;
+    _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
   }
 
   /// Removes the node representing [id] from the graph.
-  AssetNode _remove(AssetId id) => _nodesById.remove(id);
+  AssetNode _remove(AssetId id) => _nodesByPackage[id.package].remove(id.path);
 
   /// All nodes in the graph, whether source files or generated outputs.
-  Iterable<AssetNode> get allNodes => _nodesById.values;
+  Iterable<AssetNode> get allNodes =>
+      _nodesByPackage.values.expand((pkdIds) => pkdIds.values);
+
+  /// All nodes in the graph for `package`.
+  Iterable<AssetNode> packageNodes(String package) =>
+      _nodesByPackage[package]?.values ?? [];
 
   /// All the generated outputs in the graph.
   Iterable<AssetId> get outputs =>
@@ -129,8 +139,8 @@ class AssetGraph {
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
-      var samePackageOutputNodes = allNodes
-          .where((n) => n is GeneratedAssetNode && n.id.package == id.package);
+      var samePackageOutputNodes =
+          packageNodes(id.package).where((n) => n is GeneratedAssetNode);
       for (var node in samePackageOutputNodes) {
         if ((node as GeneratedAssetNode)
             .globs
@@ -206,7 +216,7 @@ class AssetGraph {
   }
 
   @override
-  String toString() => 'validAsOf: $validAsOf\n${_nodesById.values.toList()}';
+  String toString() => 'validAsOf: $validAsOf\n${allNodes.toList()}';
 
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
