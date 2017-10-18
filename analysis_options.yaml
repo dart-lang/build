@@ -8,7 +8,6 @@ analyzer:
     override_on_non_overriding_method: error
   exclude:
     - bazel-*
-    - e2e_example/**
 linter:
   rules:
     # Errors

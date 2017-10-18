@@ -49,14 +49,8 @@ class BuildStepImpl implements BuildStep {
 
   final ResourceManager _resourceManager;
 
-  BuildStepImpl(
-      this.inputId,
-      Iterable<AssetId> expectedOutputs,
-      this._reader,
-      this._writer,
-      @deprecated this._rootPackage,
-      this._resolvers,
-      this._resourceManager)
+  BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
+      this._writer, this._rootPackage, this._resolvers, this._resourceManager)
       : _expectedOutputs = expectedOutputs.toSet();
 
   @override
