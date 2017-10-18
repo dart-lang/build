@@ -29,7 +29,7 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
-    @deprecated String rootPackage}) async {
+    String rootPackage}) async {
   var shouldDisposeResourceManager = resourceManager == null;
   resourceManager ??= new ResourceManager();
   logger ??= new Logger('runBuilder');
