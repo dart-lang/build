@@ -68,8 +68,8 @@ class SinglePhaseReader implements AssetReader {
   @override
   Stream<AssetId> findAssets(Glob glob) async* {
     _globsRan.add(glob);
-    var potentialMatches = _assetGraph.allNodes
-        .where((n) => n.id.package == _primaryPackage)
+    var potentialMatches = _assetGraph
+        .packageNodes(_primaryPackage)
         .where((n) => glob.matches(n.id.path));
     for (var node in potentialMatches) {
       if (node is GeneratedAssetNode) {
