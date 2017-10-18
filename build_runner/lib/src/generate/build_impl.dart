@@ -220,7 +220,8 @@ class BuildImpl {
   Future<Set<AssetId>> _matchingInputs(InputSet inputSet, int phaseNumber,
       ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
-    await Future.wait(_assetGraph.allNodes.map((node) async {
+    await Future
+        .wait(_assetGraph.packageNodes(inputSet.package).map((node) async {
       if (!inputSet.matches(node.id)) return;
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
