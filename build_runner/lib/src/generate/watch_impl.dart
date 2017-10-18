@@ -73,47 +73,73 @@ class WatchImpl implements BuildState {
   /// Runs a build any time relevant files change.
   ///
   /// Only one build will run at a time, and changes are batched.
-  Stream<BuildResult> _run(BuildOptions options, List<BuildAction> buildActions,
-      Future until) async* {
-    var fatalBuild = new Completer();
-    var firstBuild = new Completer<BuildResult>();
-    currentBuild = firstBuild.future;
-    var changes = new PackageGraphWatcher(packageGraph,
-        logger: _logger,
-        watch: (node) => new PackageNodeWatcher(node, watch: (path) {
-              return _directoryWatcherFactory(path);
-            })).watch();
+  ///
+  /// File watchers are scheduled synchronously.
+  Stream<BuildResult> _run(
+      BuildOptions options, List<BuildAction> buildActions, Future until) {
+    var fatalBuildCompleter = new Completer();
+    var firstBuildCompleter = new Completer<BuildResult>();
+    currentBuild = firstBuildCompleter.future;
+    var controller = new StreamController<BuildResult>();
 
-    var buildDefinition = await BuildDefinition.load(options, buildActions);
-    _readerCompleter.complete(buildDefinition.reader);
-    _assetGraph = buildDefinition.assetGraph;
-
-    var build = await BuildImpl.create(buildDefinition, buildActions,
-        onDelete: _expectedDeletes.add);
-    yield build.firstBuild;
-    firstBuild.complete(build.firstBuild);
+    // We need this inside `doBuild`, but we won't actually create it until
+    // the end of this function. It must be non-null before `doBuild` is
+    // invoked.
+    BuildImpl build;
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
+      assert(build != null);
+
       _expectedDeletes.clear();
       if (await new BuildScriptUpdates(options)
           .isNewerThan(_assetGraph.validAsOf)) {
-        fatalBuild.complete();
+        fatalBuildCompleter.complete();
         _logger.severe('Terminating builds due to build script update');
         return new BuildResult(BuildStatus.failure, []);
       }
       return build.run(_collectChanges(changes));
     }
 
-    var terminate = Future.any([until, fatalBuild.future]).then((_) {
+    var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled');
     });
 
-    yield* changes
+    // Start watching files immediately, before the first build is even started.
+    new PackageGraphWatcher(packageGraph,
+            logger: _logger,
+            watch: (node) => new PackageNodeWatcher(node, watch: (path) {
+                  return _directoryWatcherFactory(path);
+                }))
+        .watch()
+        .asyncMap<AssetChange>((change) {
+          // Delay any events until the first build is completed.
+          if (firstBuildCompleter.isCompleted) return change;
+          return firstBuildCompleter.future.then((_) => change);
+        })
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
         .transform(takeUntil(terminate))
-        .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)));
-    _logger.info('Builds finished. Safe to exit');
+        .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
+        .listen(controller.add)
+        .onDone(() {
+          _logger.info('Builds finished. Safe to exit');
+          controller.close();
+        });
+
+    // Schedule the actual first build for the future so we can return the
+    // stream synchronously.
+    () async {
+      var buildDefinition = await BuildDefinition.load(options, buildActions);
+      _readerCompleter.complete(buildDefinition.reader);
+      _assetGraph = buildDefinition.assetGraph;
+      build = await BuildImpl.create(buildDefinition, buildActions,
+          onDelete: _expectedDeletes.add);
+
+      controller.add(build.firstBuild);
+      firstBuildCompleter.complete(build.firstBuild);
+    }();
+
+    return controller.stream;
   }
 
   _BuildAction _recordCurrentBuild(_BuildAction build) => (changes) =>
@@ -121,6 +147,7 @@ class WatchImpl implements BuildState {
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
+    assert(_assetGraph != null);
     if (_isCacheFile(change)) return false;
     if (_isGitFile(change)) return false;
     if (_hasNoOutputs(change)) return false;

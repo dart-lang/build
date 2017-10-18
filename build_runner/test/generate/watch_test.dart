@@ -188,6 +188,25 @@ void main() {
         // matches the input set.
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
       });
+
+      test('rebuilds on file updates during first build', () async {
+        var writer = new InMemoryRunnerAssetWriter();
+        var results = new StreamQueue(
+            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
+
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
+
+        var result = await results.next;
+        // TODO: Move this up above the call to notifyWatchers once
+        // https://github.com/dart-lang/build/issues/526 is fixed.
+        await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
+
+        checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+
+        result = await results.next;
+        checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
+      });
     });
 
     group('multiple phases', () {
