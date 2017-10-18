@@ -37,14 +37,8 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
   Future<Null> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
-    var buildStep = new BuildStepImpl(
-        input,
-        outputs,
-        reader,
-        writer,
-        rootPackage ?? input.package, // ignore: deprecated_member_use
-        resolvers,
-        resourceManager);
+    var buildStep = new BuildStepImpl(input, outputs, reader, writer,
+        rootPackage ?? input.package, resolvers, resourceManager);
     try {
       await builder.build(buildStep);
     } finally {
