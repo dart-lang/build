@@ -139,8 +139,8 @@ class AssetGraph {
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
-      var samePackageOutputNodes = allNodes
-          .where((n) => n is GeneratedAssetNode && n.id.package == id.package);
+      var samePackageOutputNodes =
+          packageNodes(id.package).where((n) => n is GeneratedAssetNode);
       for (var node in samePackageOutputNodes) {
         if ((node as GeneratedAssetNode)
             .globs
