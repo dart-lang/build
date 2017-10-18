@@ -46,7 +46,14 @@ class SinglePhaseReader implements AssetReader {
     if (!_isReadable(id)) return new Future.value(false);
     _assetsRead.add(id);
     await _ensureAssetIsBuilt(id);
-    return _delegate.canRead(id);
+    var node = _assetGraph.get(id);
+    if (node is GeneratedAssetNode) {
+      // Short circut, we know this file exists because its readable and it was
+      // output.
+      return node.wasOutput;
+    } else {
+      return _delegate.canRead(id);
+    }
   }
 
   @override
