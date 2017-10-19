@@ -49,3 +49,27 @@ class TxtFilePackageBuilder extends PackageBuilder {
         buildStep.writeAsString(new AssetId(package, path), content));
   }
 }
+
+class ExistsBuilder extends Builder {
+  final AssetId idToCheck;
+  final Future waitFor;
+
+  final _hasRanCompleter = new Completer<Null>();
+  Future get hasRan => _hasRanCompleter.future;
+
+  ExistsBuilder(this.idToCheck, {this.waitFor});
+
+  @override
+  final buildExtensions = {
+    '': ['.exists']
+  };
+
+  @override
+  Future<Null> build(BuildStep buildStep) async {
+    await waitFor; // await works on null too!
+    var exists = await buildStep.canRead(idToCheck);
+    await buildStep.writeAsString(
+        buildStep.inputId.addExtension('.exists'), '$exists');
+    _hasRanCompleter.complete(null);
+  }
+}
