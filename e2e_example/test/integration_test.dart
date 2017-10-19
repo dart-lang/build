@@ -91,7 +91,7 @@ void main() {
 
     test('edit test to fail and rerun', () async {
       await replaceAllInFile(
-          'test/hello_world_test.dart', 'Hello World!', 'Goodbye World!');
+          'test/common/message.dart', 'Hello World!', 'Goodbye World!');
       await nextSuccessfulBuild;
       await expectTestsFail();
     });
