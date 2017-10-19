@@ -94,13 +94,13 @@ void main() {
           'test/common/message.dart', 'Hello World!', 'Goodbye World!');
       await nextSuccessfulBuild;
       await expectTestsFail();
-    });
+    }, skip: 'https://github.com/dart-lang/build/issues/533');
 
     test('edit dependency lib causing test to fail and rerun', () async {
       await replaceAllInFile('lib/app.dart', 'Hello World!', 'Goodbye World!');
       await nextSuccessfulBuild;
       await expectTestsFail();
-    });
+    }, skip: 'https://github.com/dart-lang/build/issues/533');
 
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
