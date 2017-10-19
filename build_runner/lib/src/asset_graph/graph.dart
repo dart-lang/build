@@ -108,7 +108,7 @@ class AssetGraph {
         {AssetId parent, bool rootIsSource}) {
       var node = this.get(id);
       if (node == null) return;
-      invalidatedIds.add(id);
+      if (!invalidatedIds.add(id)) return;
       if (parent == null) rootIsSource = node is! GeneratedAssetNode;
 
       // Update all outputs of this asset as well.
