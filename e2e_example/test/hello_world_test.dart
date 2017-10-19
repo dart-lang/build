@@ -9,6 +9,8 @@ import 'package:test/test.dart';
 
 import 'package:e2e_example/app.dart';
 
+import 'common/message.dart';
+
 void main() {
   setUp(() {
     startApp();
@@ -19,6 +21,6 @@ void main() {
   });
 
   test('hello world', () {
-    expect(document.body.text, contains('Hello World!'));
+    expect(document.body.text, contains(message));
   });
 }
