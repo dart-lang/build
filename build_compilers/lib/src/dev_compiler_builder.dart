@@ -60,6 +60,8 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     ..addAll(transitiveSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var jsOutputFile = scratchSpace.fileFor(module.jsId);
+  var libraryRoot = p.join(
+      scratchSpace.tempDir.path, p.split(p.dirname(module.jsId.path)).first);
   var sdkSummary = p.url.join(sdkDir, 'lib/_internal/ddc_sdk.sum');
   var request = new WorkRequest();
 
@@ -68,7 +70,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     '--modules=amd',
     '--dart-sdk=${sdkDir}',
     '--module-root=${scratchSpace.tempDir.path}',
-    '--library-root=${p.dirname(jsOutputFile.path)}',
+    '--library-root=$libraryRoot',
     '--summary-extension=${linkedSummaryExtension.substring(1)}',
     '--no-summarize',
     '-o',

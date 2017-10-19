@@ -57,7 +57,9 @@ class DevCompilerBootstrapBuilder extends Builder {
     // which will allow us to not rely on the naming schemes that dartdevc uses
     // internally, but instead specify our own.
     var appModuleScope = p
-        .withoutExtension(p.basename(module.jsId.path))
+        .split(p.withoutExtension(module.jsId.path))
+        .skip(1)
+        .join('__')
         .replaceAll('.', '\$46');
 
     // Map from module name to module path for custom modules.
