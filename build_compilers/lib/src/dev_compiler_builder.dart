@@ -52,7 +52,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     {bool debugMode = true}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveSummaryDeps =
-      transitiveDeps.map((id) => id.changeExtension(linkedSummaryExtension));
+      transitiveDeps.values.map((module) => module.linkedSummaryId);
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = new Set<AssetId>()
@@ -106,6 +106,17 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     }
   }
 
+  for (var dep in transitiveDeps.values) {
+    if (dep.primarySource.path.startsWith('lib/')) continue;
+    for (var source in dep.sources) {
+      var relativePath =
+          p.relative(source.path, from: p.dirname(module.jsId.path));
+      var absoluteUri = scratchSpace.fileFor(source).uri;
+      request.arguments.add('--url-mapping=$absoluteUri,${source.path}');
+      request.arguments.add('--bazel-mapping=${source.path},$relativePath');
+    }
+  }
+
   // And finally add all the urls to compile, using the package: path for
   // files under lib and the full absolute path for other files.
   request.arguments.addAll(module.sources.map((id) {
@@ -122,8 +133,8 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   // JS file to verify it was successful.
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
     var message =
-        response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-    throw new DartDevcCompilationException(module.jsId, message);
+        response.output; //.replaceAll('${scratchSpace.tempDir.path}/', '');
+    throw new DartDevcCompilationException(module.jsId, '$message\n$request');
   } else {
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(module.jsId, buildStep);
