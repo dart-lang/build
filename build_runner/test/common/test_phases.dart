@@ -64,6 +64,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     PackageGraph packageGraph,
     BuildStatus status: BuildStatus.success,
     Matcher exceptionMatcher,
+    InMemoryRunnerAssetReader reader,
     InMemoryRunnerAssetWriter writer,
     Level logLevel: Level.OFF,
     onLog(LogRecord record),
@@ -73,7 +74,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
   writer ??= new InMemoryRunnerAssetWriter();
   writeToCache ??= false;
   final actualAssets = writer.assets;
-  final reader =
+  reader ??=
       new InMemoryRunnerAssetReader(actualAssets, packageGraph?.root?.name);
 
   inputs.forEach((serializedId, contents) {

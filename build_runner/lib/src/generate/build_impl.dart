@@ -14,6 +14,7 @@ import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset/cache.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
@@ -47,7 +48,7 @@ class BuildImpl {
 
   final List<BuildAction> _buildActions;
   final PackageGraph _packageGraph;
-  final AssetReader _reader;
+  final CachingAssetReader _reader;
   final RunnerAssetWriter _writer;
   final _resolvers = const BarbackResolvers();
   final AssetGraph _assetGraph;
@@ -57,7 +58,7 @@ class BuildImpl {
   BuildImpl._(
       BuildDefinition buildDefinition, this._buildActions, this._onDelete)
       : _packageGraph = buildDefinition.packageGraph,
-        _reader = buildDefinition.reader,
+        _reader = new CachingAssetReader(buildDefinition.reader),
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph;
 
@@ -100,9 +101,10 @@ class BuildImpl {
     return result;
   }
 
-  Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) =>
-      _assetGraph.updateAndInvalidate(
-          _buildActions, updates, _packageGraph.root.name, _delete);
+  Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
+    _reader.invalidate(await _assetGraph.updateAndInvalidate(
+        _buildActions, updates, _packageGraph.root.name, _delete));
+  }
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.

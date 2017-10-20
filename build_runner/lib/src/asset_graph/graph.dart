@@ -89,11 +89,14 @@ class AssetGraph {
 
   /// Updates graph structure, invalidating and deleting any outputs that were
   /// affected.
-  Future<Null> updateAndInvalidate(
+  ///
+  /// Returns the list of [AssetId]s that were invalidated.
+  Future<Set<AssetId>> updateAndInvalidate(
       List<BuildAction> buildActions,
       Map<AssetId, ChangeType> updates,
       String rootPackage,
       Future delete(AssetId id)) async {
+    var invalidatedIds = new Set<AssetId>();
     // All the assets that should be deleted.
     var idsToDelete = new Set<AssetId>();
     // All the assets that should be removed from the graph entirely.
@@ -105,6 +108,7 @@ class AssetGraph {
         {AssetId parent, bool rootIsSource}) {
       var node = this.get(id);
       if (node == null) return;
+      if (!invalidatedIds.add(id)) return;
       if (parent == null) rootIsSource = node is! GeneratedAssetNode;
 
       // Update all outputs of this asset as well.
@@ -156,6 +160,8 @@ class AssetGraph {
     // the graph.
     await Future.wait(idsToDelete.map(delete));
     idsToRemove.forEach(_remove);
+
+    return invalidatedIds;
   }
 
   /// Returns a set containing [newSources] plus any new generated sources

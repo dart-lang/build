@@ -113,20 +113,62 @@ void main() {
       });
 
       test('early step touches a not-yet-generated asset', () async {
+        var copyId = new AssetId('a', 'lib/a.txt.copy');
         var buildActions = [
-          new BuildAction(
-              new CopyBuilder(touchAsset: new AssetId('a', 'lib/a.txt.copy')),
-              'a',
+          new BuildAction(new CopyBuilder(touchAsset: copyId), 'a',
               inputs: ['lib/b.txt']),
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['lib/a.txt'])
+          new BuildAction(new CopyBuilder(), 'a', inputs: ['lib/a.txt']),
+          new BuildAction(new ExistsBuilder(copyId), 'a', inputs: ['lib/a.txt'])
         ];
         await testActions(buildActions, {
           'a|lib/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
+          'a|lib/a.txt.exists': 'true',
           'a|lib/a.txt.copy': 'a',
           'a|lib/b.txt.copy': 'b',
         });
+      });
+
+      test('asset is deleted mid-build, use cached canRead result', () async {
+        var aTxtId = new AssetId('a', 'lib/a.txt');
+        var ready = new Completer();
+        var firstBuilder = new ExistsBuilder(aTxtId);
+        var writer = new InMemoryRunnerAssetWriter();
+        var reader = new InMemoryRunnerAssetReader(writer.assets, 'a');
+        var buildActions = [
+          new BuildAction(firstBuilder, 'a', inputs: ['lib/a.txt']),
+          new BuildAction(new ExistsBuilder(aTxtId, waitFor: ready.future), 'a',
+              inputs: ['lib/b.txt']),
+        ];
+
+        // After the first builder runs, delete the asset from the reader and
+        // allow the 2nd builder to run.
+        //
+        // ignore: unawaited_futures
+        firstBuilder.hasRan.then((_) {
+          reader.assets.remove(aTxtId);
+          ready.complete();
+        });
+
+        await testActions(
+            buildActions,
+            {
+              'a|lib/a.txt': '',
+              'a|lib/b.txt': '',
+            },
+            outputs: {
+              'a|lib/a.txt.exists': 'true',
+              'a|lib/b.txt.exists': 'true',
+            },
+            reader: reader,
+            writer: writer);
+      });
+
+      test('one phase, one builder, one-to-one outputs', () async {
+        await testActions(
+            [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+            outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
     });
 
