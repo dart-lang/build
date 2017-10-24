@@ -45,6 +45,12 @@ void main() {
     await toolDir.delete(recursive: true);
   });
 
+  test('Doesn\'t compile submodules into the root module', () {
+    var testJsFile = new File(p.join('.dart_tool', 'build', 'generated',
+        'e2e_example', 'test', 'hello_world_test.js'));
+    expect(testJsFile.readAsStringSync(), isNot(contains('Hello World!')));
+  });
+
   test('Can run passing tests', () async {
     await expectTestsPass();
   });
@@ -94,13 +100,13 @@ void main() {
           'test/common/message.dart', 'Hello World!', 'Goodbye World!');
       await nextSuccessfulBuild;
       await expectTestsFail();
-    }, skip: 'https://github.com/dart-lang/build/issues/533');
+    });
 
     test('edit dependency lib causing test to fail and rerun', () async {
       await replaceAllInFile('lib/app.dart', 'Hello World!', 'Goodbye World!');
       await nextSuccessfulBuild;
       await expectTestsFail();
-    }, skip: 'https://github.com/dart-lang/build/issues/533');
+    });
 
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);

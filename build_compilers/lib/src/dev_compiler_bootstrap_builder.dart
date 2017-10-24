@@ -9,7 +9,6 @@ import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 
-import 'dev_compiler_builder.dart';
 import 'module_builder.dart';
 import 'modules.dart';
 
@@ -65,9 +64,9 @@ class DevCompilerBootstrapBuilder extends Builder {
     // Map from module name to module path for custom modules.
     var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
     var transitiveNoneLibJsModules = [module.jsId]
-      ..addAll((await module.computeTransitiveDependencies(buildStep)))
-      ..where((dartId) => !dartId.path.startsWith('lib/'))
-          .map((dartId) => dartId.changeExtension(jsModuleExtension));
+      ..addAll((await module.computeTransitiveDependencies(buildStep))
+          .map((module) => module.jsId))
+      ..where((id) => !id.path.startsWith('lib/'));
     for (var module in transitiveNoneLibJsModules) {
       // Strip out the top level dir from the path for any non-lib module. We
       // set baseUrl to `/` to simplify things, and we only allow you to serve
@@ -103,10 +102,8 @@ class DevCompilerBootstrapBuilder extends Builder {
       Module module, AssetReader reader) async {
     // Collect all the modules this module depends on, plus this module.
     var transitiveDeps = await module.computeTransitiveDependencies(reader);
-    var jsModules = transitiveDeps
-        .map((id) => id.changeExtension(jsModuleExtension))
-        .toList()
-          ..add(module.jsId);
+    var jsModules = transitiveDeps.map((module) => module.jsId).toList()
+      ..add(module.jsId);
     // Check that each module is readable, and warn otherwise.
     await Future.wait(jsModules.map((jsId) async {
       if (await reader.canRead(jsId)) return;

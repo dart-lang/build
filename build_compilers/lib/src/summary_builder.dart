@@ -101,13 +101,11 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
 
   // Provide linked summaries where possible (if created in a previous phase),
   // otherwise provide unlinked summaries.
-  await Future.wait(transitiveDeps.map((dartId) async {
-    var linkedSummary = dartId.changeExtension(linkedSummaryExtension);
-    if (await buildStep.canRead(linkedSummary)) {
-      transitiveLinkedSummaryDeps.add(linkedSummary);
+  await Future.wait(transitiveDeps.map((module) async {
+    if (await buildStep.canRead(module.linkedSummaryId)) {
+      transitiveLinkedSummaryDeps.add(module.linkedSummaryId);
     } else {
-      transitiveUnlinkedSummaryDeps
-          .add(dartId.changeExtension(unlinkedSummaryExtension));
+      transitiveUnlinkedSummaryDeps.add(module.unlinkedSummaryId);
     }
   }));
 
@@ -155,7 +153,7 @@ Iterable<String> _analyzerSourceArgsForModule(
     var uri = canonicalUriFor(id);
     var file = scratchSpace.fileFor(id);
     if (!uri.startsWith('package:')) {
-      uri = file.uri.toString();
+      uri = new Uri.file('/${id.path}').toString();
     }
     return '$uri|${file.path}';
   });

@@ -52,7 +52,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     {bool debugMode = true}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveSummaryDeps =
-      transitiveDeps.map((id) => id.changeExtension(linkedSummaryExtension));
+      transitiveDeps.map((module) => module.linkedSummaryId);
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = new Set<AssetId>()
@@ -60,8 +60,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     ..addAll(transitiveSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var jsOutputFile = scratchSpace.fileFor(module.jsId);
-  var libraryRoot = p.join(
-      scratchSpace.tempDir.path, p.split(p.dirname(module.jsId.path)).first);
+  var libraryRoot = '/${p.split(p.dirname(module.jsId.path)).first}';
   var sdkSummary = p.url.join(sdkDir, 'lib/_internal/ddc_sdk.sum');
   var request = new WorkRequest();
 
@@ -69,7 +68,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     '--dart-sdk-summary=$sdkSummary',
     '--modules=amd',
     '--dart-sdk=${sdkDir}',
-    '--module-root=${scratchSpace.tempDir.path}',
+    '--module-root=.',
     '--library-root=$libraryRoot',
     '--summary-extension=${linkedSummaryExtension.substring(1)}',
     '--no-summarize',
@@ -98,11 +97,16 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
 
   // Add URL mappings for all the package: files to tell DartDevc where to
   // find them.
+  //
+  // For non-lib files we use "fake" absolute file uris, using `id.path`.
   for (var id in module.sources) {
     var uri = canonicalUriFor(id);
     if (uri.startsWith('package:')) {
       request.arguments
           .add('--url-mapping=$uri,${scratchSpace.fileFor(id).path}');
+    } else {
+      var absoluteFileUri = new Uri.file('/${id.path}');
+      request.arguments.add('--url-mapping=$absoluteFileUri,${id.path}');
     }
   }
 
@@ -113,7 +117,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     if (uri.startsWith('package:')) {
       return uri;
     }
-    return scratchSpace.fileFor(id).path;
+    return new Uri.file('/${id.path}').toString();
   }));
 
   var response = await dartdevcDriver.doWork(request);
@@ -123,7 +127,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
     var message =
         response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-    throw new DartDevcCompilationException(module.jsId, message);
+    throw new DartDevcCompilationException(module.jsId, '$message\n$request}');
   } else {
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(module.jsId, buildStep);
