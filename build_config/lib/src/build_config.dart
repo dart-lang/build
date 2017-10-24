@@ -98,7 +98,8 @@ class BuildConfig {
       : packageName = pubspec.pubPackageName {
     final config = loadYaml(configYaml);
 
-    final Map<String, Map> targetConfigs = config['targets'] ?? {};
+    final Map<String, Map> targetConfigs =
+        config['targets'] as Map<String, Map> ?? {};
     for (var targetName in targetConfigs.keys) {
       var targetConfig = _readMapOrThrow(
           targetConfigs, targetName, _targetOptions, 'target `$targetName`');
@@ -154,7 +155,8 @@ class BuildConfig {
           'Expected exactly one.');
     }
 
-    final Map<String, Map> builderConfigs = config['builders'] ?? {};
+    final Map<String, Map> builderConfigs =
+        config['builders'] as Map<String, Map> ?? {};
     for (var builderName in builderConfigs.keys) {
       final builderConfig = _readMapOrThrow(builderConfigs, builderName,
           _builderOptions, 'builder `$builderName`',
