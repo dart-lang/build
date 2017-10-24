@@ -13,9 +13,14 @@ import 'pubspec.dart';
 /// The parsed values from a `build.yaml` file.
 class BuildConfig {
   /// Supported values for the `platforms` attribute.
-  static const _allPlatforms = const [_vmPlatform, _webPlatform];
+  static const _allPlatforms = const [
+    _vmPlatform,
+    _webPlatform,
+    _flutterPlatform,
+  ];
   static const _vmPlatform = 'vm';
   static const _webPlatform = 'web';
+  static const _flutterPlatform = 'flutter';
 
   static const _targetOptions = const [
     _builders,
@@ -74,14 +79,14 @@ class BuildConfig {
   /// The default config if you have no `build.yaml` file.
   BuildConfig.useDefault(Pubspec pubspec,
       {bool includeWebSources: false,
-      bool enableDdc: true,
+      List<String> platforms: const [],
       Iterable<String> excludeSources: const []})
       : packageName = pubspec.pubPackageName {
     var sources = ["lib/**"];
     if (includeWebSources) sources.add("web/**");
     dartLibraries[packageName] = new BuildTarget(
         dependencies: pubspec.dependencies,
-        enableDdc: enableDdc,
+        platforms: platforms,
         isDefault: true,
         name: packageName,
         package: pubspec.pubPackageName,
@@ -114,7 +119,7 @@ class BuildConfig {
           _readBoolOrThrow(targetConfig, _default, defaultValue: false);
 
       final platforms = _readListOfStringsOrThrow(targetConfig, _platforms,
-          defaultValue: _allPlatforms, validValues: _allPlatforms);
+          defaultValue: [], validValues: _allPlatforms);
 
       final sources = _readListOfStringsOrThrow(targetConfig, _sources);
 
@@ -124,7 +129,7 @@ class BuildConfig {
       dartLibraries[targetName] = new BuildTarget(
         builders: builders,
         dependencies: dependencies,
-        enableDdc: platforms.contains(_webPlatform),
+        platforms: platforms,
         excludeSources: excludeSources,
         generateFor: generateFor,
         isDefault: isDefault,
@@ -319,10 +324,11 @@ class BuildTarget {
   /// A map from builder name to the configuration used for this target.
   final Map<String, Map<String, dynamic>> builders;
 
-  /// Whether or not  to enable the dart development compiler.
+  /// The platforms supported by this target.
   ///
-  /// This is configured using the "platforms" option in a build.yaml file.
-  final bool enableDdc;
+  /// May be limited by, for isntance, importing core libraries that are not
+  /// cross platform. An empty list indicates all platforms are supported.
+  final List<String> platforms;
 
   /// Whether or not this is the default dart library for the package.
   final bool isDefault;
@@ -334,7 +340,7 @@ class BuildTarget {
   BuildTarget(
       {this.builders: const {},
       this.dependencies,
-      this.enableDdc: true,
+      this.platforms: const [],
       this.excludeSources: const [],
       this.generateFor,
       this.isDefault: false,

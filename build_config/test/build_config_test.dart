@@ -26,7 +26,7 @@ void main() {
       ),
       'e': new BuildTarget(
         dependencies: ['f', ':a'],
-        enableDdc: false,
+        platforms: ['vm'],
         excludeSources: ['lib/src/e/g.dart'],
         isDefault: true,
         name: 'e',
@@ -168,7 +168,8 @@ void expectDartLibraries(
     Map<String, BuildTarget> actual, Map<String, BuildTarget> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], new _BuildTargetMatcher(expected[p]));
+    expect(actual[p], new _BuildTargetMatcher(expected[p]),
+        reason: '${actual[p].platforms} vs ${expected[p].platforms}');
   }
 }
 
@@ -182,7 +183,7 @@ class _BuildTargetMatcher extends Matcher {
       item.name == _expected.name &&
       item.package == _expected.package &&
       item.isDefault == _expected.isDefault &&
-      item.enableDdc == _expected.enableDdc &&
+      equals(_expected.platforms).matches(item.platforms, _) &&
       equals(_expected.builders).matches(item.builders, _) &&
       equals(_expected.dependencies).matches(item.dependencies, _) &&
       equals(_expected.generateFor).matches(item.generateFor, _) &&
