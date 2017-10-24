@@ -5,10 +5,10 @@
 set -e
 
 if [ -z "$PKG" ]; then
-  echo -e "[31mPKG environment variable must be set![0m"
+  echo -e "PKG environment variable must be set!"
   exit 1
 elif [ -z "$TASK" ]; then
-  echo -e "[31mTASK environment variable must be set![0m"
+  echo -e "TASK environment variable must be set!"
   exit 1
 fi
 
@@ -17,22 +17,22 @@ pub upgrade
 
 case $TASK in
 dartanalyzer) echo
-  echo -e "[1mTASK: dartanalyzer[22m"
+  echo -e "TASK: dartanalyzer"
   dartanalyzer .
   ;;
 dartfmt) echo
-  echo -e "[1mTASK: dartfmt[22m"
+  echo -e "TASK: dartfmt"
   dartfmt -n --set-exit-if-changed .
   ;;
 test) echo
-  echo -e "[1mTASK: test[22m"
+  echo -e "TASK: test"
   pub run test
   ;;
 test_1) echo
-  echo -e "[1mTASK: test_1[22m"
+  echo -e "TASK: test_1"
   pub run test --run-skipped
   ;;
-*) echo -e "[31mNot expecting TASK '${TASK}'. Error![0m"
+*) echo -e "Not expecting TASK '${TASK}'. Error!"
   exit 1
   ;;
 esac

@@ -20,6 +20,9 @@ env:
   - PKG=build_compilers TASK=dartanalyzer
   - PKG=build_compilers TASK=dartfmt
   - PKG=build_compilers TASK=test_1
+  - PKG=build_config TASK=dartanalyzer
+  - PKG=build_config TASK=dartfmt
+  - PKG=build_config TASK=test
   - PKG=build_runner TASK=dartanalyzer
   - PKG=build_runner TASK=dartfmt
   - PKG=build_runner TASK=test
@@ -40,6 +43,8 @@ matrix:
       env: PKG=build_barback TASK=dartfmt
     - dart: stable
       env: PKG=build_compilers TASK=dartfmt
+    - dart: stable
+      env: PKG=build_config TASK=dartfmt
     - dart: stable
       env: PKG=build_runner TASK=dartfmt
     - dart: stable
