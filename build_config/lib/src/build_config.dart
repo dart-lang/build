@@ -42,14 +42,12 @@ class BuildConfig {
   static const _builderOptions = const [
     _builderFactories,
     _import,
-    _inputExtension,
-    _outputExtensions,
+    _buildExtensions,
     _target,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
-  static const _inputExtension = 'input_extension';
-  static const _outputExtensions = 'output_extensions';
+  static const _buildExtensions = 'build_extensions';
   static const _target = 'target';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
@@ -165,17 +163,14 @@ class BuildConfig {
       final builderFactories =
           _readListOfStringsOrThrow(builderConfig, _builderFactories);
       final import = _readStringOrThrow(builderConfig, _import);
-      final inputExtension = _readStringOrThrow(builderConfig, _inputExtension);
-      final outputExtensions =
-          _readListOfStringsOrThrow(builderConfig, _outputExtensions);
+      final buildExtensions = _readBuildExtensions(builderConfig);
       final target = _readStringOrThrow(builderConfig, _target);
 
       builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
         import: import,
-        inputExtension: inputExtension,
+        buildExtensions: buildExtensions,
         name: builderName,
-        outputExtensions: outputExtensions,
         package: pubspec.pubPackageName,
         target: target,
       );
@@ -237,6 +232,19 @@ class BuildConfig {
     return new List<String>.from(value as List);
   }
 
+  static Map<String, List<String>> _readBuildExtensions(
+      Map<String, dynamic> options) {
+    dynamic value = options[_buildExtensions];
+    if (value == null) {
+      throw new ArgumentError('Missing configuratino for build_extensions');
+    }
+    if (value is! Map<String, List<String>>) {
+      throw new ArgumentError('Invalid value for build_extensions, '
+          'got `$value` but expected a Map');
+    }
+    return value as Map<String, List<String>>;
+  }
+
   static Map<String, dynamic> _readMapOrThrow(Map<String, dynamic> options,
       String option, Iterable<String> validKeys, String description,
       {Map<String, dynamic> defaultValue}) {
@@ -288,24 +296,18 @@ class BuilderDefinition {
   /// The import to be used to load `clazz`.
   final String import;
 
-  /// The input extension to treat as primary inputs to the builder.
-  final String inputExtension;
-
-  /// The expected output extensions.
-  ///
-  /// For each file matching `inputExtension` a matching file with each of
-  /// these extensions must be output.
-  final Iterable<String> outputExtensions;
+  /// A map from input extension to the output extensions created for matching
+  /// inputs.
+  final Map<String, List<String>> buildExtensions;
 
   /// The name of the dart_library target that contains `import`.
   final String target;
 
   BuilderDefinition(
       {this.builderFactories,
-      this.inputExtension,
+      this.buildExtensions,
       this.import,
       this.name,
-      this.outputExtensions,
       this.package,
       this.target});
 }

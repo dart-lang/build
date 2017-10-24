@@ -38,12 +38,13 @@ void main() {
       'h': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         import: 'package:example/e.dart',
-        inputExtension: '.dart',
+        buildExtensions: {
+          '.dart': [
+            '.g.dart',
+            '.json',
+          ]
+        },
         name: 'h',
-        outputExtensions: [
-          '.g.dart',
-          '.json',
-        ],
         package: 'example',
         target: 'e',
       ),
@@ -66,12 +67,13 @@ void main() {
       'a': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         import: 'package:example/builder.dart',
-        inputExtension: '.dart',
         name: 'a',
-        outputExtensions: [
-          '.g.dart',
-          '.json',
-        ],
+        buildExtensions: {
+          '.dart': [
+            '.g.dart',
+            '.json',
+          ]
+        },
         package: 'example',
         target: 'example',
       ),
@@ -110,10 +112,7 @@ builders:
   h:
     builder_factories: ["createBuilder"]
     import: package:example/e.dart
-    input_extension: .dart
-    output_extensions:
-      - .g.dart
-      - .json
+    build_extensions: {".dart": [".g.dart", ".json"]}
     target: e
 ''';
 
@@ -122,10 +121,7 @@ builders:
   a:
     builder_factories: ["createBuilder"]
     import: package:example/builder.dart
-    input_extension: .dart
-    output_extensions:
-      - .g.dart
-      - .json
+    build_extensions: {".dart": [".g.dart", ".json"]}
     target: example
 ''';
 
@@ -152,10 +148,9 @@ class _BuilderDefinitionMatcher extends Matcher {
   bool matches(item, _) =>
       item is BuilderDefinition &&
       equals(_expected.builderFactories).matches(item.builderFactories, _) &&
-      item.inputExtension == _expected.inputExtension &&
+      equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
       item.import == _expected.import &&
       item.name == _expected.name &&
-      equals(item.outputExtensions).matches(_expected.outputExtensions, _) &&
       item.package == _expected.package &&
       item.target == _expected.target;
 
