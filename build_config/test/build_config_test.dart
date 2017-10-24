@@ -10,7 +10,7 @@ void main() {
   test('build.yaml can be parsed', () {
     var pubspec = new Pubspec.parse(pubspecYaml);
     var buildConfig = new BuildConfig.parse(pubspec, buildYaml);
-    expectDartLibraries(buildConfig.dartLibraries, {
+    expectBuildTargets(buildConfig.buildTargets, {
       'a': new BuildTarget(
         builders: {
           'b:b': {},
@@ -34,7 +34,7 @@ void main() {
         sources: ['lib/e.dart', 'lib/src/e/**'],
       )
     });
-    expectDartBuilderBinaries(buildConfig.dartBuilderBinaries, {
+    expectBuilderDefinitions(buildConfig.builderDefinitions, {
       'h': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         import: 'package:example/e.dart',
@@ -53,7 +53,7 @@ void main() {
   test('build.yaml can omit a targets section', () {
     var pubspec = new Pubspec.parse(pubspecYaml);
     var buildConfig = new BuildConfig.parse(pubspec, buildYamlNoTargets);
-    expectDartLibraries(buildConfig.dartLibraries, {
+    expectBuildTargets(buildConfig.buildTargets, {
       'example': new BuildTarget(
         dependencies: ['a', 'b'],
         isDefault: true,
@@ -62,7 +62,7 @@ void main() {
         sources: ['lib/**'],
       ),
     });
-    expectDartBuilderBinaries(buildConfig.dartBuilderBinaries, {
+    expectBuilderDefinitions(buildConfig.builderDefinitions, {
       'a': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         import: 'package:example/builder.dart',
@@ -136,7 +136,7 @@ dependencies:
   b: 2.0.0
 ''';
 
-void expectDartBuilderBinaries(Map<String, BuilderDefinition> actual,
+void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
     Map<String, BuilderDefinition> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
@@ -164,7 +164,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       description.addDescriptionOf(_expected);
 }
 
-void expectDartLibraries(
+void expectBuildTargets(
     Map<String, BuildTarget> actual, Map<String, BuildTarget> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {

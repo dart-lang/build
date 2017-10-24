@@ -71,10 +71,10 @@ class BuildConfig {
   final String packageName;
 
   /// All the `builders` defined in a `build.yaml` file.
-  final dartBuilderBinaries = <String, BuilderDefinition>{};
+  final builderDefinitions = <String, BuilderDefinition>{};
 
   /// All the `targets` defined in a `build.yaml` file.
-  final dartLibraries = <String, BuildTarget>{};
+  final buildTargets = <String, BuildTarget>{};
 
   /// The default config if you have no `build.yaml` file.
   BuildConfig.useDefault(Pubspec pubspec,
@@ -84,7 +84,7 @@ class BuildConfig {
       : packageName = pubspec.pubPackageName {
     var sources = ["lib/**"];
     if (includeWebSources) sources.add("web/**");
-    dartLibraries[packageName] = new BuildTarget(
+    buildTargets[packageName] = new BuildTarget(
         dependencies: pubspec.dependencies,
         platforms: platforms,
         isDefault: true,
@@ -126,7 +126,7 @@ class BuildConfig {
       final generateFor = _readListOfStringsOrThrow(targetConfig, _generateFor,
           allowNull: true);
 
-      dartLibraries[targetName] = new BuildTarget(
+      buildTargets[targetName] = new BuildTarget(
         builders: builders,
         dependencies: dependencies,
         platforms: platforms,
@@ -140,10 +140,10 @@ class BuildConfig {
     }
 
     // Add the default dart library if there are no targets discovered.
-    if (dartLibraries.isEmpty) {
+    if (buildTargets.isEmpty) {
       var sources = ["lib/**"];
       if (includeWebSources) sources.add("web/**");
-      dartLibraries[pubspec.pubPackageName] = new BuildTarget(
+      buildTargets[pubspec.pubPackageName] = new BuildTarget(
           dependencies: pubspec.dependencies,
           isDefault: true,
           name: pubspec.pubPackageName,
@@ -151,7 +151,7 @@ class BuildConfig {
           sources: sources);
     }
 
-    if (dartLibraries.values.where((l) => l.isDefault).length != 1) {
+    if (buildTargets.values.where((l) => l.isDefault).length != 1) {
       throw new ArgumentError('Found no targets with `$_default: true`. '
           'Expected exactly one.');
     }
@@ -170,7 +170,7 @@ class BuildConfig {
           _readListOfStringsOrThrow(builderConfig, _outputExtensions);
       final target = _readStringOrThrow(builderConfig, _target);
 
-      dartBuilderBinaries[builderName] = new BuilderDefinition(
+      builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
         import: import,
         inputExtension: inputExtension,
@@ -183,7 +183,7 @@ class BuildConfig {
   }
 
   BuildTarget get defaultBuildTarget =>
-      dartLibraries.values.singleWhere((l) => l.isDefault);
+      buildTargets.values.singleWhere((l) => l.isDefault);
 
   static Map<String, Map<String, dynamic>> _readBuildersOrThrow(
       Map<String, dynamic> options, String option) {
