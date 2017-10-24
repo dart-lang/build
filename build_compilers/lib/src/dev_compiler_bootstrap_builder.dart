@@ -65,7 +65,6 @@ class DevCompilerBootstrapBuilder extends Builder {
     var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
     var transitiveNoneLibJsModules = [module.jsId]
       ..addAll((await module.computeTransitiveDependencies(buildStep))
-          .values
           .map((module) => module.jsId))
       ..where((id) => !id.path.startsWith('lib/'));
     for (var module in transitiveNoneLibJsModules) {
@@ -103,7 +102,7 @@ class DevCompilerBootstrapBuilder extends Builder {
       Module module, AssetReader reader) async {
     // Collect all the modules this module depends on, plus this module.
     var transitiveDeps = await module.computeTransitiveDependencies(reader);
-    var jsModules = transitiveDeps.values.map((module) => module.jsId).toList()
+    var jsModules = transitiveDeps.map((module) => module.jsId).toList()
       ..add(module.jsId);
     // Check that each module is readable, and warn otherwise.
     await Future.wait(jsModules.map((jsId) async {

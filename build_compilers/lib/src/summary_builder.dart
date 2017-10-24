@@ -101,7 +101,7 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
 
   // Provide linked summaries where possible (if created in a previous phase),
   // otherwise provide unlinked summaries.
-  await Future.wait(transitiveDeps.values.map((module) async {
+  await Future.wait(transitiveDeps.map((module) async {
     if (await buildStep.canRead(module.linkedSummaryId)) {
       transitiveLinkedSummaryDeps.add(module.linkedSummaryId);
     } else {

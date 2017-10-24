@@ -109,8 +109,7 @@ class Module extends Object with _$ModuleSerializerMixin {
 
   /// Computes the [primarySource]s of all [Module]s that are transitively
   /// depended on by this module.
-  Future<Map<AssetId, Module>> computeTransitiveDependencies(
-      AssetReader reader) async {
+  Future<List<Module>> computeTransitiveDependencies(AssetReader reader) async {
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = directDependencies.toSet();
     while (modulesToCrawl.isNotEmpty) {
@@ -123,7 +122,7 @@ class Module extends Object with _$ModuleSerializerMixin {
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }
-    return transitiveDeps;
+    return transitiveDeps.values.toList();
   }
 }
 

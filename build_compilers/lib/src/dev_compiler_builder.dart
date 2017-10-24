@@ -52,7 +52,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     {bool debugMode = true}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveSummaryDeps =
-      transitiveDeps.values.map((module) => module.linkedSummaryId);
+      transitiveDeps.map((module) => module.linkedSummaryId);
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = new Set<AssetId>()
