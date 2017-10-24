@@ -10,6 +10,8 @@ import 'package:build/build.dart';
 import 'package:cli_util/cli_util.dart' as cli_util;
 import 'package:path/path.dart' as p;
 
+import 'scratch_space.dart';
+
 String get _scriptExtension => Platform.isWindows ? '.bat' : '';
 
 final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
@@ -28,13 +30,15 @@ final int _maxWorkersPerTask = int
 /// Manages a shared set of persistent analyzer workers.
 final analyzerDriver = new BazelWorkerDriver(
     () => Process.start(p.join(sdkDir, 'bin', 'dartanalyzer$_scriptExtension'),
-        ['--build-mode', '--persistent_worker']),
+        ['--build-mode', '--persistent_worker'],
+        workingDirectory: scratchSpace.tempDir.path),
     maxWorkers: _maxWorkersPerTask);
 
 /// Manages a shared set of persistent dartdevc workers.
 final dartdevcDriver = new BazelWorkerDriver(
     () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
-        ['--persistent_worker']),
+        ['--persistent_worker'],
+        workingDirectory: scratchSpace.tempDir.path),
     maxWorkers: _maxWorkersPerTask);
 
 final sdkDir = cli_util.getSdkPath();

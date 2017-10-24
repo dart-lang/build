@@ -5,8 +5,15 @@
 import 'package:build/build.dart';
 import 'package:scratch_space/scratch_space.dart';
 
-/// A shared [ScratchSpace] for ddc and analyzer workers that persists during
-/// individual builds.
-final scratchSpaceResource = new Resource<ScratchSpace>(
-    () => new ScratchSpace(),
-    dispose: (old) => old.delete());
+/// A shared [ScratchSpace] for ddc and analyzer workers that persists
+/// throughout builds.
+final scratchSpace = new ScratchSpace();
+
+/// A shared [Resource] for a [ScratchSpace], which cleans up the contents of
+/// the [ScratchSpace] in dispose, but doesn't delete it entirely.
+final scratchSpaceResource =
+    new Resource<ScratchSpace>(() => scratchSpace, dispose: (_) async {
+  await for (var entity in scratchSpace.tempDir.list()) {
+    await entity.delete(recursive: true);
+  }
+});
