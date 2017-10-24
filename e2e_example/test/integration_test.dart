@@ -45,6 +45,12 @@ void main() {
     await toolDir.delete(recursive: true);
   });
 
+  test('Doesn\'t compile submodules into the root module', () {
+    var testJsFile = new File(p.join('.dart_tool', 'build', 'generated',
+        'e2e_example', 'test', 'hello_world_test.js'));
+    expect(testJsFile.readAsStringSync(), isNot(contains('Hello World!')));
+  });
+
   test('Can run passing tests', () async {
     await expectTestsPass();
   });

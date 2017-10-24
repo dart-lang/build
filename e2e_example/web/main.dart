@@ -4,6 +4,8 @@
 
 import 'package:e2e_example/app.dart';
 
+import 'sub/message.dart';
+
 void main() {
-  startApp();
+  startApp(text: message);
 }
