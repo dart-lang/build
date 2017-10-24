@@ -24,8 +24,10 @@ class Resource<T> {
   /// disposed.
   final DisposeInstance<T> _userDispose;
 
-  /// Optional method which is called before the process is going to exit. This
-  /// allows resources to do any final cleanup, and is not given an instance.
+  /// Optional method which is called before the process is going to exit.
+  ///
+  /// This allows resources to do any final cleanup, and is not given an
+  /// instance.
   final BeforeExit _userBeforeExit;
 
   /// A Future instance of this resource if one has ever been requested.
@@ -60,9 +62,11 @@ class Resource<T> {
 class ResourceManager {
   final _resources = new Set<Resource>();
 
-  /// The [Resource]s that we need to call `beforeExit` on. We have to hang on
-  /// to these forever, but they should be small in number, and we don't hold
-  /// on to the instances.
+  /// The [Resource]s that we need to call `beforeExit` on.
+  ///
+  /// We have to hang on to these forever, but they should be small in number,
+  /// and we don't hold on to the actual created instances, just the [Resource]
+  /// instances.
   final _resourcesWithBeforeExit = new Set<Resource>();
 
   /// Fetches an instance of [resource].
