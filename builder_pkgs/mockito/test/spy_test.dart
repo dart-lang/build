@@ -33,7 +33,7 @@ void main() {
 
   group("spy", () {
     setUp(() {
-      mock = spy/*<RealClass>*/(new MockedClass(), new RealClass());
+      mock = spy(new MockedClass(), new RealClass());
     });
 
     test("should delegate to real object by default", () {

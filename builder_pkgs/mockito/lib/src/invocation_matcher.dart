@@ -117,7 +117,7 @@ class _InvocationMatcher implements Matcher {
 
   // Returns named arguments as an iterable of '<name>: <value>'.
   static Iterable<String> _namedArgsAndValues(Invocation invocation) =>
-      invocation.namedArguments.keys.map/*<String>*/((name) =>
+      invocation.namedArguments.keys.map((name) =>
           '${_symbolToString(name)}: ${invocation.namedArguments[name]}');
 
   // This will give is a mangled symbol in dart2js/aot with minification

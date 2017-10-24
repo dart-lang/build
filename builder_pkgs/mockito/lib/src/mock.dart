@@ -726,7 +726,7 @@ typedef PostExpectation Expectation(x);
 /// `when` or `verify` context (a call "for real"), Mockito will respond with
 /// the stored canned response, if it can match the mock method parameters.
 ///
-/// The response generators include [thenReturn], [thenAnswer], and [thenThrow].
+/// The response generators include `thenReturn`, `thenAnswer`, and `thenThrow`.
 ///
 /// See the README for more information.
 Expectation get when {
