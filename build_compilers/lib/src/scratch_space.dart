@@ -11,9 +11,10 @@ final scratchSpace = new ScratchSpace();
 
 /// A shared [Resource] for a [ScratchSpace], which cleans up the contents of
 /// the [ScratchSpace] in dispose, but doesn't delete it entirely.
-final scratchSpaceResource =
-    new Resource<ScratchSpace>(() => scratchSpace, dispose: (_) async {
-  await for (var entity in scratchSpace.tempDir.list()) {
-    await entity.delete(recursive: true);
-  }
-});
+final scratchSpaceResource = new Resource<ScratchSpace>(() => scratchSpace,
+    dispose: (_) async {
+      await for (var entity in scratchSpace.tempDir.list()) {
+        await entity.delete(recursive: true);
+      }
+    },
+    beforeExit: () => scratchSpace.delete());

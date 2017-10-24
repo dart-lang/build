@@ -51,7 +51,10 @@ class BuilderTransformer
     var resourceManager = new ResourceManager();
     return Future
         .wait(inputs.map((input) => _apply(input, transform, resourceManager)))
-        .then((_) => resourceManager.disposeAll());
+        .then((_) async {
+      await resourceManager.disposeAll();
+      await resourceManager.beforeExit();
+    });
   }
 
   Future _apply(build.AssetId inputId, AggregateTransform transform,
