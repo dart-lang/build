@@ -28,17 +28,36 @@ final int _maxWorkersPerTask = int
 });
 
 /// Manages a shared set of persistent analyzer workers.
-final analyzerDriver = new BazelWorkerDriver(
-    () => Process.start(p.join(sdkDir, 'bin', 'dartanalyzer$_scriptExtension'),
-        ['--build-mode', '--persistent_worker'],
-        workingDirectory: scratchSpace.tempDir.path),
-    maxWorkers: _maxWorkersPerTask);
+BazelWorkerDriver get _analyzerDriver => __analyzerDriver ??=
+    new BazelWorkerDriver(
+        () => Process.start(
+            p.join(sdkDir, 'bin', 'dartanalyzer$_scriptExtension'),
+            ['--build-mode', '--persistent_worker'],
+            workingDirectory: scratchSpace.tempDir.path),
+        maxWorkers: _maxWorkersPerTask);
+BazelWorkerDriver __analyzerDriver;
+
+/// Resource for fetching the current [BazelWorkerDriver] for dartanalyzer.
+final analyzerDriverResource = new Resource<BazelWorkerDriver>(
+    () => _analyzerDriver, beforeExit: () async {
+  await _analyzerDriver?.terminateWorkers();
+  __analyzerDriver = null;
+});
 
 /// Manages a shared set of persistent dartdevc workers.
-final dartdevcDriver = new BazelWorkerDriver(
-    () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
-        ['--persistent_worker'],
-        workingDirectory: scratchSpace.tempDir.path),
-    maxWorkers: _maxWorkersPerTask);
+BazelWorkerDriver get _dartdevcDriver => __dartdevcDriver ??=
+    new BazelWorkerDriver(
+        () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
+            ['--persistent_worker'],
+            workingDirectory: scratchSpace.tempDir.path),
+        maxWorkers: _maxWorkersPerTask);
+BazelWorkerDriver __dartdevcDriver;
+
+/// Resource for fetching the current [BazelWorkerDriver] for dartdevc.
+final dartdevcDriverResource = new Resource<BazelWorkerDriver>(
+    () => _dartdevcDriver, beforeExit: () async {
+  await _dartdevcDriver?.terminateWorkers();
+  __dartdevcDriver = null;
+});
 
 final sdkDir = cli_util.getSdkPath();
