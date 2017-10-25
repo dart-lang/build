@@ -120,7 +120,8 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     return new Uri.file('/${id.path}').toString();
   }));
 
-  var response = await dartdevcDriver.doWork(request);
+  var dartdevc = await buildStep.fetchResource(dartdevcDriverResource);
+  var response = await dartdevc.doWork(request);
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
   // status code if something failed. Today we just make sure there is an output
   // JS file to verify it was successful.

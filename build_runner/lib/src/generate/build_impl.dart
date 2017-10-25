@@ -37,7 +37,10 @@ final _logger = new Logger('Build');
 Future<BuildResult> singleBuild(
     BuildOptions options, List<BuildAction> buildActions) async {
   var buildDefinition = await BuildDefinition.load(options, buildActions);
-  return (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
+  var result =
+      (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
+  await buildDefinition.resourceManager.beforeExit();
+  return result;
 }
 
 typedef void _OnDelete(AssetId id);
@@ -46,21 +49,22 @@ class BuildImpl {
   BuildResult _firstBuild;
   BuildResult get firstBuild => _firstBuild;
 
+  final AssetGraph _assetGraph;
   final List<BuildAction> _buildActions;
+  final _OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final CachingAssetReader _reader;
-  final RunnerAssetWriter _writer;
   final _resolvers = const BarbackResolvers();
-  final AssetGraph _assetGraph;
-
-  final _OnDelete _onDelete;
+  final ResourceManager _resourceManager;
+  final RunnerAssetWriter _writer;
 
   BuildImpl._(
       BuildDefinition buildDefinition, this._buildActions, this._onDelete)
       : _packageGraph = buildDefinition.packageGraph,
         _reader = new CachingAssetReader(buildDefinition.reader),
         _writer = buildDefinition.writer,
-        _assetGraph = buildDefinition.assetGraph;
+        _assetGraph = buildDefinition.assetGraph,
+        _resourceManager = buildDefinition.resourceManager;
 
   static Future<BuildImpl> create(
       BuildDefinition buildDefinition, List<BuildAction> buildActions,
@@ -84,9 +88,8 @@ class BuildImpl {
       await logTimedAsync(
           _logger, 'Updating asset graph', () => _updateAssetGraph(updates));
     }
-    var resourceManager = new ResourceManager();
-    var result = await _safeBuild(resourceManager);
-    await resourceManager.disposeAll();
+    var result = await _safeBuild(_resourceManager);
+    await _resourceManager.disposeAll();
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
           '${result.outputs.length} outputs\n\n');

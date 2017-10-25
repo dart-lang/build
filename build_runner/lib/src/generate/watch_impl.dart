@@ -41,6 +41,7 @@ typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
 class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
+  BuildDefinition _buildDefinition;
 
   /// Delay to wait for more file watcher events.
   final Duration _debounceDelay;
@@ -121,18 +122,19 @@ class WatchImpl implements BuildState {
         .transform(takeUntil(terminate))
         .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
         .listen(controller.add)
-        .onDone(() {
+        .onDone(() async {
+          await _buildDefinition.resourceManager.beforeExit();
+          await controller.close();
           _logger.info('Builds finished. Safe to exit');
-          controller.close();
         });
 
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
-      var buildDefinition = await BuildDefinition.load(options, buildActions);
-      _readerCompleter.complete(buildDefinition.reader);
-      _assetGraph = buildDefinition.assetGraph;
-      build = await BuildImpl.create(buildDefinition, buildActions,
+      _buildDefinition = await BuildDefinition.load(options, buildActions);
+      _readerCompleter.complete(_buildDefinition.reader);
+      _assetGraph = _buildDefinition.assetGraph;
+      build = await BuildImpl.create(_buildDefinition, buildActions,
           onDelete: _expectedDeletes.add);
 
       controller.add(build.firstBuild);

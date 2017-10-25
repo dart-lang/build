@@ -6,6 +6,7 @@ import 'dart:async';
 
 typedef FutureOr<T> CreateInstance<T>();
 typedef FutureOr DisposeInstance<T>(T instance);
+typedef FutureOr BeforeExit();
 
 /// A [Resource] encapsulates the logic for creating and disposing of some
 /// expensive object which has a lifecycle.
@@ -23,10 +24,18 @@ class Resource<T> {
   /// disposed.
   final DisposeInstance<T> _userDispose;
 
+  /// Optional method which is called before the process is going to exit.
+  ///
+  /// This allows resources to do any final cleanup, and is not given an
+  /// instance.
+  final BeforeExit _userBeforeExit;
+
   /// A Future instance of this resource if one has ever been requested.
   final _instanceByManager = <ResourceManager, Future<T>>{};
 
-  Resource(this._create, {DisposeInstance<T> dispose}) : _userDispose = dispose;
+  Resource(this._create, {DisposeInstance<T> dispose, BeforeExit beforeExit})
+      : _userDispose = dispose,
+        _userBeforeExit = beforeExit;
 
   /// Fetches an actual instance of this resource for [manager].
   Future<T> _fetch(ResourceManager manager) =>
@@ -53,8 +62,18 @@ class Resource<T> {
 class ResourceManager {
   final _resources = new Set<Resource>();
 
+  /// The [Resource]s that we need to call `beforeExit` on.
+  ///
+  /// We have to hang on to these forever, but they should be small in number,
+  /// and we don't hold on to the actual created instances, just the [Resource]
+  /// instances.
+  final _resourcesWithBeforeExit = new Set<Resource>();
+
   /// Fetches an instance of [resource].
   Future<T> fetch<T>(Resource<T> resource) async {
+    if (resource._userBeforeExit != null) {
+      _resourcesWithBeforeExit.add(resource);
+    }
     _resources.add(resource);
     return resource._fetch(this);
   }
@@ -64,5 +83,13 @@ class ResourceManager {
     var done = Future.wait(_resources.map((r) => r._dispose(this)));
     _resources.clear();
     return done.then((_) => null);
+  }
+
+  /// Invokes the `beforeExit` callbacks of all [Resource]s that had one.
+  Future<Null> beforeExit() async {
+    await Future.wait(_resourcesWithBeforeExit.map((r) async {
+      if (r._userBeforeExit != null) return r._userBeforeExit();
+    }));
+    _resourcesWithBeforeExit.clear();
   }
 }

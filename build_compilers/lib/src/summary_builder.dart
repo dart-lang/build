@@ -82,7 +82,8 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
 
   // Add all the files to include in the unlinked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
-  var response = await analyzerDriver.doWork(request);
+  var analyzer = await buildStep.fetchResource(analyzerDriverResource);
+  var response = await analyzer.doWork(request);
   if (response.exitCode == EXIT_CODE_ERROR) {
     throw new AnalyzerSummaryException(
         module.unlinkedSummaryId, response.output);
@@ -138,7 +139,8 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
 
   // Add all the files to include in the linked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
-  var response = await analyzerDriver.doWork(request);
+  var analyzer = await buildStep.fetchResource(analyzerDriverResource);
+  var response = await analyzer.doWork(request);
   if (response.exitCode == EXIT_CODE_ERROR) {
     throw new AnalyzerSummaryException(module.linkedSummaryId, response.output);
   }
