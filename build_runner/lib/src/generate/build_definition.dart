@@ -177,8 +177,10 @@ class _Loader {
     var remainingSources =
         assetGraph.sources.toSet().intersection(inputSources);
     var modifyChecks = remainingSources.map((id) async {
-      var modified = await _options.reader.lastModified(id);
-      if (modified.isAfter(assetGraph.validAsOf)) {
+      var node = assetGraph.get(id);
+      var originalDigest = node.digest;
+      node.digest = await _options.reader.digest(id);
+      if (node.digest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
     });
