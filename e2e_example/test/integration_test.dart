@@ -119,11 +119,23 @@ void main() {
       await nextSuccessfulBuild;
       await expectTestsPass(1);
     });
+
+    test('build failures can be fixed', () async {
+      var path = p.join('test', 'common', 'message.dart');
+      await deleteFile(path);
+      await nextFailedBuild;
+      await createFile(path, "String get message => 'Hello World!';");
+      await nextSuccessfulBuild;
+      await expectTestsPass();
+    });
   });
 }
 
 Future get nextSuccessfulBuild =>
     stdOutLines.firstWhere((line) => line.contains('Build: Succeeded after'));
+
+Future get nextFailedBuild =>
+    stdErrLines.firstWhere((line) => line.contains('Build: Failed after'));
 
 Future<ProcessResult> runTests() =>
     Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
