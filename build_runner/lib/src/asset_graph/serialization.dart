@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 7;
+const _version = 8;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -43,18 +43,23 @@ class _AssetGraphDeserializer {
 
   AssetNode _deserializeAssetNode(List serializedNode) {
     AssetNode node;
-    if (serializedNode.length == 3) {
-      node = new AssetNode(_idToAssetId[serializedNode[0]]);
-    } else if (serializedNode.length == 8) {
+    var serializedDigest = serializedNode[3] as String;
+    var digest = serializedDigest == null
+        ? null
+        : new Digest(hex.decode(serializedDigest));
+    if (serializedNode.length == 4) {
+      node = new AssetNode(_idToAssetId[serializedNode[0]], digest: digest);
+    } else if (serializedNode.length == 9) {
       node = new GeneratedAssetNode(
-        serializedNode[5] as int,
-        _idToAssetId[serializedNode[3]],
-        _deserializeBool(serializedNode[7] as int),
-        _deserializeBool(serializedNode[4] as int),
+        serializedNode[6] as int,
+        _idToAssetId[serializedNode[4]],
+        _deserializeBool(serializedNode[8] as int),
+        _deserializeBool(serializedNode[5] as int),
         _idToAssetId[serializedNode[0]],
-        globs: (serializedNode[6] as Iterable<String>)
+        globs: (serializedNode[7] as Iterable<String>)
             .map((pattern) => new Glob(pattern))
             .toSet(),
+        digest: digest,
       );
     } else {
       throw new ArgumentError(
@@ -125,7 +130,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
   _WrappedAssetNode(this.node, this.serializer);
 
   @override
-  int get length => 3;
+  int get length => 4;
   @override
   set length(_) => throw new UnsupportedError(
       'length setter not unsupported for WrappedAssetNode');
@@ -141,6 +146,8 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
         return node.primaryOutputs
             .map((id) => serializer._assetIdToId[id])
             .toList();
+      case 3:
+        return node.digest?.toString();
       default:
         throw new RangeError.index(index, this);
     }
@@ -167,17 +174,17 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   Object operator [](int index) {
     if (index < super.length) return super[index];
     switch (index) {
-      case 3:
+      case 4:
         return generatedNode.primaryInput != null
             ? serializer._assetIdToId[generatedNode.primaryInput]
             : null;
-      case 4:
-        return _serializeBool(generatedNode.wasOutput);
       case 5:
-        return generatedNode.phaseNumber;
+        return _serializeBool(generatedNode.wasOutput);
       case 6:
-        return generatedNode.globs.map((glob) => glob.pattern).toList();
+        return generatedNode.phaseNumber;
       case 7:
+        return generatedNode.globs.map((glob) => glob.pattern).toList();
+      case 8:
         return _serializeBool(generatedNode.needsUpdate);
       default:
         throw new RangeError.index(index, this);

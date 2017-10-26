@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 /// A node in the asset graph which may be an input to other assets.
@@ -17,7 +18,13 @@ class AssetNode {
   /// which reads this asset.
   final Set<AssetId> outputs = new Set<AssetId>();
 
-  AssetNode(this.id);
+  /// The [Digest] for this node in its last known state.
+  ///
+  /// May be `null` if this is a [GeneratedAssetNode] and it doesn't currently
+  /// exist.
+  Digest digest;
+
+  AssetNode(this.id, {this.digest});
 
   @override
   String toString() => 'AssetNode: $id';
@@ -46,9 +53,9 @@ class GeneratedAssetNode extends AssetNode {
 
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
       this.wasOutput, AssetId id,
-      {Set<Glob> globs})
+      {Digest digest, Set<Glob> globs})
       : this.globs = globs ?? new Set<Glob>(),
-        super(id);
+        super(id, digest: digest);
 
   @override
   String toString() =>

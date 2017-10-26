@@ -11,6 +11,7 @@ import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
+import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -36,7 +37,7 @@ class BuildDefinition {
   /// proven to be from the last build.
   final Set<AssetId> conflictingAssets;
 
-  final AssetReader reader;
+  final DigestAssetReader reader;
   final RunnerAssetWriter writer;
 
   final PackageGraph packageGraph;
@@ -85,6 +86,7 @@ class _Loader {
     }
     var allSources = inputSources.union(cacheDirSources);
     var updates = <AssetId, ChangeType>{};
+    DigestAssetReader reader = _options.reader;
     await logTimedAsync(_logger, 'Reading cached dependency graph', () async {
       if (await _options.reader.canRead(assetGraphId)) {
         assetGraph = await _readAssetGraph(assetGraphId);
@@ -96,8 +98,8 @@ class _Loader {
         assetGraph = null;
       }
       if (assetGraph == null) {
-        assetGraph = new AssetGraph.build(
-            _buildActions, inputSources, _options.packageGraph.root.name);
+        assetGraph = await AssetGraph.build(_buildActions, inputSources,
+            _options.packageGraph.root.name, reader);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
       } else {
@@ -106,7 +108,6 @@ class _Loader {
             assetGraph, inputSources, cacheDirSources, allSources));
       }
     });
-    AssetReader reader = _options.reader;
     var writer = _options.writer;
     if (_options.writeToCache) {
       reader = new BuildCacheReader(

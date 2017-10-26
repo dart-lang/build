@@ -6,34 +6,43 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
-/// An [AssetReader] that wraps another [AssetReader] and caches all results
-/// from it.
+/// A [DigestAssetReader] that wraps another [DigestAssetReader] and caches all
+/// results from it.
 ///
 /// Assets are cached until [invalidate] is invoked.
 ///
 /// Does not implement [findAssets].
-class CachingAssetReader implements AssetReader {
+class CachingAssetReader implements DigestAssetReader {
+  /// Cached results of [readAsBytes].
+  final _bytesContentCache = <AssetId, Future<List<int>>>{};
+
   /// Cached results of [canRead].
   final _canReadCache = <AssetId, Future<bool>>{};
 
-  /// Cached results of [readAsBytes].
-  final _bytesContentCache = <AssetId, Future<List<int>>>{};
+  /// Cached results of [digest].
+  final _digestCache = <AssetId, Future<Digest>>{};
 
   /// Cached results of [readAsString], per [Encoding] type used.
   ///
   /// These are computed and stored lazily using [readAsBytes].
   final _stringContentCache = <AssetId, Map<Encoding, Future<String>>>{};
 
-  /// The [AssetReader] to delegate all reads to.
-  final AssetReader _delegate;
+  /// The [DigestAssetReader] to delegate all reads to.
+  final DigestAssetReader _delegate;
 
   CachingAssetReader(this._delegate);
 
   @override
   Future<bool> canRead(AssetId id) =>
       _canReadCache.putIfAbsent(id, () => _delegate.canRead(id));
+
+  @override
+  Future<Digest> digest(id) =>
+      _digestCache.putIfAbsent(id, () => _delegate.digest(id));
 
   @override
   Stream<AssetId> findAssets(Glob glob) =>
@@ -54,8 +63,9 @@ class CachingAssetReader implements AssetReader {
   /// Clears all [ids] from all caches.
   void invalidate(Iterable<AssetId> ids) {
     for (var id in ids) {
-      _canReadCache.remove(id);
       _bytesContentCache.remove(id);
+      _canReadCache.remove(id);
+      _digestCache.remove(id);
       _stringContentCache.remove(id);
     }
   }

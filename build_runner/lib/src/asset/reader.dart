@@ -2,16 +2,33 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 
 typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
+abstract class DigestAssetReader implements AssetReader {
+  /// Asynchronously compute the digest for [id].
+  Future<Digest> digest(AssetId id);
+}
+
 /// A [MultiPackageAssetReader] with the additional `lastModified` method.
-abstract class RunnerAssetReader extends MultiPackageAssetReader {
+abstract class RunnerAssetReader extends MultiPackageAssetReader
+    implements DigestAssetReader {
   /// Asynchronously gets the last modified [DateTime] of [id].
   Future<DateTime> lastModified(AssetId id);
+}
+
+/// A [DigestAssetReader] that uses [sha1] to compute [Digest]s.
+abstract class Sha1DigestReader
+    implements DigestAssetReader, RunnerAssetReader {
+  @override
+  Future<Digest> digest(AssetId id) async {
+    var bytes = await readAsBytes(id);
+    return sha1.convert(bytes);
+  }
 }
 
 /// An [AssetReader] with a lifetime equivalent to that of a single Phase in a

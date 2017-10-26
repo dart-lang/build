@@ -6,9 +6,12 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:build/build.dart';
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
+import '../asset/reader.dart';
 import '../generate/exceptions.dart';
 import '../generate/phase.dart';
 import '../package_builder/package_builder.dart';
@@ -37,10 +40,16 @@ class AssetGraph {
   factory AssetGraph.deserialize(Map serializedGraph) =>
       new _AssetGraphDeserializer(serializedGraph).deserialize();
 
-  factory AssetGraph.build(List<BuildAction> buildActions, Set<AssetId> sources,
-          String rootPackage) =>
-      new AssetGraph._()
-        .._addOutputsForSources(buildActions, sources, rootPackage);
+  static Future<AssetGraph> build(
+      List<BuildAction> buildActions,
+      Set<AssetId> sources,
+      String rootPackage,
+      DigestAssetReader digestReader) async {
+    var graph = new AssetGraph._();
+    await graph._addNodesWithDigest(sources, digestReader);
+    graph._addOutputsForSources(buildActions, sources, rootPackage);
+    return graph;
+  }
 
   Map<String, dynamic> serialize() =>
       new _AssetGraphSerializer(this).serialize();
@@ -66,6 +75,19 @@ class AssetGraph {
           'exists.');
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
+  }
+
+  /// Adds [assetIds] as [AssetNode]s to this graph, and uses [digestReader] to
+  /// compute the [Digest] for each.
+  Future<Null> _addNodesWithDigest(
+      Set<AssetId> assetIds, DigestAssetReader digestReader) async {
+    var nodes = await Future.wait(assetIds.map((id) async {
+      var digest = await digestReader.digest(id);
+      return new AssetNode(id, digest: digest);
+    }));
+    for (var node in nodes) {
+      _add(node);
+    }
   }
 
   /// Removes the node representing [id] from the graph.
@@ -95,7 +117,8 @@ class AssetGraph {
       List<BuildAction> buildActions,
       Map<AssetId, ChangeType> updates,
       String rootPackage,
-      Future delete(AssetId id)) async {
+      Future delete(AssetId id),
+      DigestAssetReader digestReader) async {
     var invalidatedIds = new Set<AssetId>();
     // All the assets that should be deleted.
     var idsToDelete = new Set<AssetId>();
@@ -134,12 +157,14 @@ class AssetGraph {
 
     updates.forEach(clearNodeAndDeps);
 
-    var allNewAndDeletedIds = _addOutputsForSources(
-        buildActions,
-        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet(),
-        rootPackage)
-      ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
-      ..addAll(idsToDelete);
+    var newIds =
+        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet();
+
+    await _addNodesWithDigest(newIds, digestReader);
+    var allNewAndDeletedIds =
+        _addOutputsForSources(buildActions, newIds, rootPackage)
+          ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
+          ..addAll(idsToDelete);
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
@@ -169,7 +194,6 @@ class AssetGraph {
   /// new outputs.
   Set<AssetId> _addOutputsForSources(List<BuildAction> buildActions,
       Set<AssetId> newSources, String rootPackage) {
-    newSources.map((s) => new AssetNode(s)).forEach(_add);
     var allInputs = new Set<AssetId>.from(newSources);
     for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = <AssetId>[];
