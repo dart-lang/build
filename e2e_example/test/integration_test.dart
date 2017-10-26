@@ -111,7 +111,13 @@ void main() {
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
       await nextSuccessfulBuild;
-      await expectTestsPass();
+      await expectTestsPass(3);
+    });
+
+    test('delete test', () async {
+      await deleteFile(p.join('test', 'subdir', 'subdir_test.dart'));
+      await nextSuccessfulBuild;
+      await expectTestsPass(1);
     });
   });
 }
@@ -127,9 +133,13 @@ Future<Null> expectTestsFail() async {
   expect(result.stdout, contains('Some tests failed'));
 }
 
-Future<Null> expectTestsPass() async {
+Future<Null> expectTestsPass([int numRan]) async {
   var result = await runTests();
   expect(result.stdout, contains('All tests passed!'));
+  if (numRan != null) {
+    expect(result.stdout, contains('+$numRan'));
+    expect(result.stdout, isNot(contains('+${numRan + 1}')));
+  }
 }
 
 Future<Null> createFile(String path, String contents) async {
@@ -137,6 +147,12 @@ Future<Null> createFile(String path, String contents) async {
   expect(await file.exists(), isFalse);
   await file.create(recursive: true);
   await file.writeAsString(contents);
+}
+
+Future<Null> deleteFile(String path) async {
+  var file = new File(path);
+  expect(await file.exists(), isTrue);
+  await file.delete();
 }
 
 Future<Null> replaceAllInFile(String path, String from, String replace) async {
