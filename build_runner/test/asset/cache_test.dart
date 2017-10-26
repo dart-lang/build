@@ -20,11 +20,11 @@ void main() {
   var assets = <AssetId, DatedValue>{
     fooTxt: new DatedString('bar'),
   };
-  InMemoryAssetReader delegate;
+  InMemoryRunnerAssetReader delegate;
   CachingAssetReader reader;
 
   setUp(() {
-    delegate = new InMemoryAssetReader(sourceAssets: assets);
+    delegate = new InMemoryRunnerAssetReader(assets);
     reader = new CachingAssetReader(delegate);
   });
 

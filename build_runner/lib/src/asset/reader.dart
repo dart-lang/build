@@ -21,13 +21,12 @@ abstract class RunnerAssetReader extends MultiPackageAssetReader
   Future<DateTime> lastModified(AssetId id);
 }
 
-/// A [DigestAssetReader] that uses [sha1] to compute [Digest]s.
-abstract class Sha1DigestReader
-    implements DigestAssetReader, RunnerAssetReader {
+/// A [DigestAssetReader] that uses [md5] to compute [Digest]s.
+abstract class Md5DigestReader implements DigestAssetReader, RunnerAssetReader {
   @override
   Future<Digest> digest(AssetId id) async {
     var bytes = await readAsBytes(id);
-    return sha1.convert(bytes);
+    return md5.convert(bytes);
   }
 }
 

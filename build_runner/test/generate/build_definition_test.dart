@@ -22,10 +22,11 @@ main() {
   group('BuildDefinition.load', () {
     Map<AssetId, DatedValue> assets;
     BuildOptions options;
+    InMemoryRunnerAssetReader assetReader;
 
     setUp(() {
       assets = <AssetId, DatedValue>{};
-      var assetReader = new InMemoryRunnerAssetReader(assets, 'a');
+      assetReader = new InMemoryRunnerAssetReader(assets, 'a');
       var assetWriter = new InMemoryRunnerAssetWriter();
       var packageA = new PackageNode.noPubspec('a');
       var packageGraph = new PackageGraph.fromRoot(packageA);
@@ -44,9 +45,9 @@ main() {
             new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
-        var assetGraph =
-            new AssetGraph.build(buildActions, assets.keys.toSet(), 'a')
-              ..validAsOf = new DateTime.now();
+        var assetGraph = await AssetGraph.build(
+            buildActions, assets.keys.toSet(), 'a', assetReader)
+          ..validAsOf = new DateTime.now();
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -68,9 +69,9 @@ main() {
           new BuildAction(new OverDeclaringCopyBuilder(), 'a')
         ];
 
-        var assetGraph =
-            new AssetGraph.build(buildActions, assets.keys.toSet(), 'a')
-              ..validAsOf = lastBuild;
+        var assetGraph = await AssetGraph.build(
+            buildActions, assets.keys.toSet(), 'a', assetReader)
+          ..validAsOf = lastBuild;
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -90,9 +91,9 @@ main() {
             new DatedString('a');
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
-        var assetGraph =
-            new AssetGraph.build(buildActions, new Set<AssetId>(), 'a')
-              ..validAsOf = new DateTime.now();
+        var assetGraph = await AssetGraph.build(
+            buildActions, new Set<AssetId>(), 'a', assetReader)
+          ..validAsOf = new DateTime.now();
         expect(assetGraph.allNodes, isEmpty);
 
         assets[makeAssetId('a|$assetGraphPath')] =

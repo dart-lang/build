@@ -81,13 +81,19 @@ class AssetGraph {
   /// compute the [Digest] for each.
   Future<Null> _addNodesWithDigest(
       Set<AssetId> assetIds, DigestAssetReader digestReader) async {
-    var nodes = await Future.wait(assetIds.map((id) async {
-      var digest = await digestReader.digest(id);
-      return new AssetNode(id, digest: digest);
-    }));
-    for (var node in nodes) {
+    await Future.wait(assetIds.map((id) async {
+      var node = new AssetNode(id);
       _add(node);
-    }
+      node.digest = await digestReader.digest(id);
+    }));
+  }
+
+  /// Updates the [Digest] for all nodes corresponding to [assetIds].
+  Future<Null> _updateDigests(
+      Set<AssetId> assetIds, DigestAssetReader digestReader) async {
+    await Future.wait(assetIds.map((id) async {
+      get(id).digest = await digestReader.digest(id);
+    }));
   }
 
   /// Removes the node representing [id] from the graph.
@@ -157,13 +163,30 @@ class AssetGraph {
 
     updates.forEach(clearNodeAndDeps);
 
-    var newIds =
-        updates.keys.where((id) => updates[id] == ChangeType.ADD).toSet();
+    var newIds = new Set<AssetId>();
+    var modifyIds = new Set<AssetId>();
+    var removeIds = new Set<AssetId>();
+    updates.forEach((id, changeType) {
+      if (changeType != ChangeType.ADD && get(id) == null) return;
+      switch (changeType) {
+        case ChangeType.ADD:
+          newIds.add(id);
+          break;
+        case ChangeType.MODIFY:
+          modifyIds.add(id);
+          break;
+        case ChangeType.REMOVE:
+          removeIds.add(id);
+          break;
+      }
+    });
 
     await _addNodesWithDigest(newIds, digestReader);
+    await _updateDigests(modifyIds, digestReader);
+
     var allNewAndDeletedIds =
         _addOutputsForSources(buildActions, newIds, rootPackage)
-          ..addAll(updates.keys.where((id) => updates[id] == ChangeType.REMOVE))
+          ..addAll(removeIds)
           ..addAll(idsToDelete);
 
     // For all new or deleted assets, check if they match any globs.

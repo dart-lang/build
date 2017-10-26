@@ -6,13 +6,13 @@ import 'dart:mirrors';
 
 import 'package:build/build.dart';
 import 'package:build_runner/src/asset/reader.dart'
-    show Sha1DigestReader, RunnerAssetReader;
+    show Md5DigestReader, RunnerAssetReader;
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 
 /// Workaround class for mixin application limitations, if
 /// [InMemoryRunnerAssetReader] extends [InMemoryAssetReader] directly then it
-/// can't use mixins ([Sha1DigestReader] in this case).
+/// can't use mixins ([Md5DigestReader] in this case).
 class _InMemoryAssetReader extends InMemoryAssetReader {
   _InMemoryAssetReader(
       Map<AssetId, DatedValue> sourceAssets, String rootPackage)
@@ -20,7 +20,7 @@ class _InMemoryAssetReader extends InMemoryAssetReader {
 }
 
 class InMemoryRunnerAssetReader extends _InMemoryAssetReader
-    with Sha1DigestReader
+    with Md5DigestReader
     implements RunnerAssetReader {
   InMemoryRunnerAssetReader(
       [Map<AssetId, DatedValue> sourceAssets, String rootPackage])

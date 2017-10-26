@@ -20,6 +20,7 @@ void main() {
   InMemoryRunnerAssetWriter writer;
   StreamSubscription subscription;
   Completer<BuildResult> nextBuild;
+  StreamController terminateController;
 
   final path = p.absolute('example');
 
@@ -27,8 +28,11 @@ void main() {
     final graph = new PackageGraph.fromRoot(
       new PackageNode.noPubspec('example', path: path),
     );
-    reader = new InMemoryRunnerAssetReader({}, 'example');
     writer = new InMemoryRunnerAssetWriter();
+    reader = new InMemoryRunnerAssetReader(writer.assets, 'example');
+    reader.cacheStringAsset(
+        new AssetId('example', 'web/initial.txt'), 'initial');
+    terminateController = new StreamController();
     final server = (await watch(
       [
         new BuildAction(const UppercaseBuilder(), 'example'),
@@ -38,6 +42,7 @@ void main() {
       writer: writer,
       logLevel: Level.ALL,
       directoryWatcherFactory: (path) => new FakeWatcher(path),
+      terminateEventStream: terminateController.stream,
     ));
     handler = server.handlerFor('web');
 
@@ -49,20 +54,24 @@ void main() {
     await nextBuild.future;
   });
 
-  tearDown(() => subscription.cancel());
+  tearDown(() async {
+    await subscription.cancel();
+    terminateController.add(null);
+    await terminateController.close();
+  });
 
   test('should serve original files', () async {
-    final getHello = Uri.parse('http://localhost/hello.txt');
-    reader.cacheStringAsset(new AssetId('example', 'web/hello.txt'), 'Hello');
+    final getHello = Uri.parse('http://localhost/initial.txt');
     final response = await handler(new Request('GET', getHello));
-    expect(await response.readAsString(), 'Hello');
+    expect(await response.readAsString(), 'initial');
   });
 
   test('should serve built files', () async {
-    final getHello = Uri.parse('http://localhost/hello.g.txt');
-    reader.cacheStringAsset(new AssetId('example', 'web/hello.g.txt'), 'HELLO');
+    final getHello = Uri.parse('http://localhost/initial.g.txt');
+    reader.cacheStringAsset(
+        new AssetId('example', 'web/initial.g.txt'), 'INITIAL');
     final response = await handler(new Request('GET', getHello));
-    expect(await response.readAsString(), 'HELLO');
+    expect(await response.readAsString(), 'INITIAL');
   });
 
   test('should 404 on missing files', () async {
@@ -74,6 +83,11 @@ void main() {
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
     reader.cacheStringAsset(new AssetId('example', 'web/new.txt'), 'New');
+    await new Future.value();
+    FakeWatcher.notifyWatchers(
+      new WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
+    );
+    await nextBuild.future;
     final response = await handler(new Request('GET', getNew));
     expect(await response.readAsString(), 'New');
   });
@@ -85,10 +99,7 @@ void main() {
     FakeWatcher.notifyWatchers(
       new WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
-    var result = await nextBuild.future;
-    for (var output in result.outputs) {
-      reader.cacheStringAsset(output, writer.assets[output].stringValue);
-    }
+    await nextBuild.future;
     final response = await handler(new Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
   });

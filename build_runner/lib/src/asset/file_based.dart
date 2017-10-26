@@ -15,7 +15,7 @@ import 'writer.dart';
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
-class FileBasedAssetReader extends Sha1DigestReader
+class FileBasedAssetReader extends Md5DigestReader
     implements RunnerAssetReader {
   final PackageGraph packageGraph;
 

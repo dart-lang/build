@@ -3,10 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
+import 'package:crypto/crypto.dart';
 
 export 'package:build_runner/src/util/constants.dart';
 export 'package:build_test/build_test.dart'
@@ -19,6 +21,8 @@ export 'in_memory_writer.dart';
 export 'matchers.dart';
 export 'sdk.dart';
 export 'test_phases.dart';
+
+Digest computeDigest(String contents) => md5.convert(UTF8.encode(contents));
 
 class OverDeclaringCopyBuilder extends CopyBuilder {
   OverDeclaringCopyBuilder({int numCopies: 1, String extension: 'copy'})

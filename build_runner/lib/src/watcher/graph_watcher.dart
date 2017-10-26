@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:build_runner/src/logging/logging.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 
 import 'asset_change.dart';
 import 'node_watcher.dart';
@@ -58,13 +57,12 @@ class PackageGraphWatcher {
 
   List<StreamSubscription> _watch(StreamSink<AssetChange> sink) {
     final subscriptions = <StreamSubscription>[];
-    final absolutePaths = _absolutePaths();
     _graph.allPackages.forEach((name, node) {
-      final nestedPackages = _nestedPaths(absolutePaths, node);
+      final nestedPackages = _nestedPaths(node);
       _logger.fine('Setting up watcher at ${node.path}');
       subscriptions.add(_strategy(node).watch().listen((event) {
         // TODO: Consider a faster filtering strategy.
-        if (nestedPackages.any((path) => p.isWithin(path, node.path))) {
+        if (nestedPackages.any((path) => event.id.path.startsWith(path))) {
           return;
         }
         _logger.finest(
@@ -75,21 +73,15 @@ class PackageGraphWatcher {
     return subscriptions;
   }
 
-  // Returns a mapping of node -> absolute path on disk.
-  Map<PackageNode, String> _absolutePaths() {
-    return new Map<PackageNode, String>.fromIterable(
-      _graph.allPackages.values,
-      value: (/* Dynamic as bottom */ node) => (node as PackageNode).path,
-    );
-  }
-
   // Returns a set of all packages that are "nested" within a node.
   //
   // This allows the watcher to optimize and avoid duplicate events.
-  List<String> _nestedPaths(Map<PackageNode, String> paths, PackageNode node) {
-    final absolutePath = paths[node];
-    return paths.values.where((path) {
-      return path != absolutePath && path.startsWith(absolutePath);
-    }).toList();
+  List<String> _nestedPaths(PackageNode rootNode) {
+    return _graph.allPackages.values
+        .where((node) {
+          return rootNode != node && node.path.startsWith(rootNode.path);
+        })
+        .map((node) => node.path.substring(rootNode.path.length + 1) + '/')
+        .toList();
   }
 }

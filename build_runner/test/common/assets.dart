@@ -4,9 +4,12 @@
 import 'package:build/build.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_test/build_test.dart';
+import 'package:crypto/crypto.dart';
 
-AssetNode makeAssetNode([String assetIdString, List<AssetId> outputs]) {
-  var node = new AssetNode(makeAssetId(assetIdString));
+AssetNode makeAssetNode(
+    [String assetIdString, List<AssetId> outputs, Digest digest]) {
+  var id = makeAssetId(assetIdString);
+  var node = new AssetNode(id, digest: digest);
   if (outputs != null) {
     node.outputs.addAll(outputs);
     node.primaryOutputs.addAll(outputs);
