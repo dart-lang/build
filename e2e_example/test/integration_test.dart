@@ -127,7 +127,7 @@ void main() {
       await createFile(path, "String get message => 'Hello World!';");
       await nextSuccessfulBuild;
       await expectTestsPass();
-    });
+    }, skip: 'https://github.com/dart-lang/build/issues/548');
   });
 }
 
