@@ -46,7 +46,7 @@ class _AssetGraphDeserializer {
     var serializedDigest = serializedNode[3] as String;
     var digest = serializedDigest == null
         ? null
-        : new Digest(hex.decode(serializedDigest));
+        : new Digest(BASE64.decode(serializedDigest));
     if (serializedNode.length == 4) {
       node = new AssetNode(_idToAssetId[serializedNode[0]], digest: digest);
     } else if (serializedNode.length == 9) {
@@ -147,7 +147,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .map((id) => serializer._assetIdToId[id])
             .toList();
       case 3:
-        return node.digest?.toString();
+        return node.digest == null ? null : BASE64.encode(node.digest.bytes);
       default:
         throw new RangeError.index(index, this);
     }

@@ -87,27 +87,36 @@ class _Loader {
     var allSources = inputSources.union(cacheDirSources);
     var updates = <AssetId, ChangeType>{};
     DigestAssetReader reader = _options.reader;
-    await logTimedAsync(_logger, 'Reading cached dependency graph', () async {
-      if (await _options.reader.canRead(assetGraphId)) {
-        assetGraph = await _readAssetGraph(assetGraphId);
-      }
-      if (assetGraph != null &&
-          await new BuildScriptUpdates(_options)
-              .isNewerThan(assetGraph.validAsOf)) {
-        _logger.warning('Invalidating asset graph due to build script update');
-        assetGraph = null;
-      }
-      if (assetGraph == null) {
+    if (await _options.reader.canRead(assetGraphId)) {
+      assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
+          () => _readAssetGraph(assetGraphId));
+    }
+    if (assetGraph != null) {
+      await logTimedAsync(_logger, 'Checking build script for updates',
+          () async {
+        if (await new BuildScriptUpdates(_options)
+            .isNewerThan(assetGraph.validAsOf)) {
+          _logger
+              .warning('Invalidating asset graph due to build script update');
+          assetGraph = null;
+        }
+      });
+    }
+    if (assetGraph == null) {
+      await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
             _options.packageGraph.root.name, reader);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
-      } else {
-        _logger.info('Updating asset graph with changes since last build.');
+      });
+    } else {
+      await logTimedAsync(
+          _logger, 'Updating asset graph with changes since last build',
+          () async {
         updates.addAll(await _findUpdates(
             assetGraph, inputSources, cacheDirSources, allSources));
-      }
-    });
+      });
+    }
     var writer = _options.writer;
     if (_options.writeToCache) {
       reader = new BuildCacheReader(
