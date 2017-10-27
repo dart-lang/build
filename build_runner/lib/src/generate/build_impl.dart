@@ -345,7 +345,11 @@ class BuildImpl {
     var buildStep = new BuildStepImpl(null, builderOutputs, wrappedReader,
         wrappedWriter, _packageGraph.root.name, _resolvers, resourceManager);
     try {
-      await scopeLogAsync(() => builder.build(buildStep), logger);
+      // Wrapping in `new Future.value` to work around
+      // https://github.com/dart-lang/sdk/issues/31237, users might return
+      // synchronously and not have any analysis errors today.
+      await scopeLogAsync(
+          () => new Future.value(builder.build(buildStep)), logger);
     } finally {
       await buildStep.complete();
     }

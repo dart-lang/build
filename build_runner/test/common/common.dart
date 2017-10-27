@@ -44,7 +44,7 @@ class TxtFilePackageBuilder extends PackageBuilder {
   TxtFilePackageBuilder(this.package, this.outputContents);
 
   @override
-  build(BuildStep buildStep) {
+  Future<Null> build(BuildStep buildStep) async {
     outputContents.forEach((path, content) =>
         buildStep.writeAsString(new AssetId(package, path), content));
   }
