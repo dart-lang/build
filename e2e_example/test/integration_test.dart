@@ -111,13 +111,31 @@ void main() {
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
       await nextSuccessfulBuild;
-      await expectTestsPass();
+      await expectTestsPass(3);
     });
+
+    test('delete test', () async {
+      await deleteFile(p.join('test', 'subdir', 'subdir_test.dart'));
+      await nextSuccessfulBuild;
+      await expectTestsPass(1);
+    });
+
+    test('build failures can be fixed', () async {
+      var path = p.join('test', 'common', 'message.dart');
+      await deleteFile(path);
+      await nextFailedBuild;
+      await createFile(path, "String get message => 'Hello World!';");
+      await nextSuccessfulBuild;
+      await expectTestsPass();
+    }, skip: 'https://github.com/dart-lang/build/issues/548');
   });
 }
 
 Future get nextSuccessfulBuild =>
     stdOutLines.firstWhere((line) => line.contains('Build: Succeeded after'));
+
+Future get nextFailedBuild =>
+    stdErrLines.firstWhere((line) => line.contains('Build: Failed after'));
 
 Future<ProcessResult> runTests() =>
     Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
@@ -127,9 +145,13 @@ Future<Null> expectTestsFail() async {
   expect(result.stdout, contains('Some tests failed'));
 }
 
-Future<Null> expectTestsPass() async {
+Future<Null> expectTestsPass([int numRan]) async {
   var result = await runTests();
   expect(result.stdout, contains('All tests passed!'));
+  if (numRan != null) {
+    expect(result.stdout, contains('+$numRan'));
+    expect(result.stdout, isNot(contains('+${numRan + 1}')));
+  }
 }
 
 Future<Null> createFile(String path, String contents) async {
@@ -137,6 +159,12 @@ Future<Null> createFile(String path, String contents) async {
   expect(await file.exists(), isFalse);
   await file.create(recursive: true);
   await file.writeAsString(contents);
+}
+
+Future<Null> deleteFile(String path) async {
+  var file = new File(path);
+  expect(await file.exists(), isTrue);
+  await file.delete();
 }
 
 Future<Null> replaceAllInFile(String path, String from, String replace) async {
