@@ -116,9 +116,14 @@ class Module extends Object with _$ModuleSerializerMixin {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
       if (transitiveDeps.containsKey(next)) continue;
-      var module = new Module.fromJson(JSON.decode(
-              await reader.readAsString(next.changeExtension(moduleExtension)))
-          as Map<String, dynamic>);
+      var nextModuleId = next.changeExtension(moduleExtension);
+      if (!await reader.canRead(nextModuleId)) {
+        log.warning('Missing module $nextModuleId');
+        continue;
+      }
+      var module = new Module.fromJson(
+          JSON.decode(await reader.readAsString(nextModuleId))
+              as Map<String, dynamic>);
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }

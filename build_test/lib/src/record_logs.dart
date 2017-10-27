@@ -25,7 +25,7 @@ import 'package:logging/logging.dart';
 Stream<LogRecord> recordLogs(dynamic run(), {String name: ''}) {
   final logger = new Logger(name);
   Timer.run(() async {
-    await scopeLog(run, logger);
+    await scopeLogAsync(() => new Future.value(run()), logger);
     logger.clearListeners();
   });
   return logger.onRecord;

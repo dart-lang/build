@@ -46,7 +46,7 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     }
   }
 
-  await scopeLog(() => Future.wait(inputs.map(buildForInput)), logger);
+  await scopeLogAsync(() => Future.wait(inputs.map(buildForInput)), logger);
 
   if (shouldDisposeResourceManager) {
     await resourceManager.disposeAll();

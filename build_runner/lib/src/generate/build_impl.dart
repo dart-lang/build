@@ -227,6 +227,7 @@ class BuildImpl {
     var ids = new Set<AssetId>();
     await Future
         .wait(_assetGraph.packageNodes(inputSet.package).map((node) async {
+      if (node is SyntheticAssetNode) return;
       if (!inputSet.matches(node.id)) return;
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
@@ -310,8 +311,9 @@ class BuildImpl {
         input.package,
         (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
     var wrappedWriter = new AssetWriterSpy(_writer);
+    var logger = new Logger('$builder on $input');
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
-        resourceManager: resourceManager);
+        logger: logger, resourceManager: resourceManager);
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
@@ -339,11 +341,11 @@ class BuildImpl {
         (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
     var wrappedWriter = new AssetWriterSpy(_writer);
 
-    var logger = new Logger('runBuilder');
+    var logger = new Logger('$builder on $package');
     var buildStep = new BuildStepImpl(null, builderOutputs, wrappedReader,
         wrappedWriter, _packageGraph.root.name, _resolvers, resourceManager);
     try {
-      await scopeLog(() => builder.build(buildStep), logger);
+      await scopeLogAsync(() => builder.build(buildStep), logger);
     } finally {
       await buildStep.complete();
     }
