@@ -27,13 +27,13 @@ void main() {
         .transform(UTF8.decoder)
         .transform(const LineSplitter())
         .asBroadcastStream();
-    stdOutLines.listen(print);
+    stdOutLines.listen((l) => print('stdout: $l'));
 
     stdErrLines = process.stderr
         .transform(UTF8.decoder)
         .transform(const LineSplitter())
         .asBroadcastStream();
-    stdErrLines.listen(print);
+    stdErrLines.listen((l) => print('stderr: $l'));
 
     await nextSuccessfulBuild;
   });
@@ -58,12 +58,15 @@ void main() {
   group('File changes', () {
     bool gitWasClean = false;
 
-    void ensureCleanGitClient() {
+    bool gitIsClean() {
       var gitStatus = Process.runSync('git', ['status', '.']).stdout as String;
-      gitWasClean = gitStatus.contains('nothing to commit, working tree clean');
+      return gitStatus.contains('nothing to commit, working tree clean');
+    }
+
+    void ensureCleanGitClient() {
+      gitWasClean = gitIsClean();
       expect(gitWasClean, isTrue,
-          reason: 'Not running on a clean git client, aborting test.\n'
-              '`git status .` gave:\n$gitStatus');
+          reason: 'Not running on a clean git client, aborting test.\n');
     }
 
     setUp(() async {
@@ -72,6 +75,8 @@ void main() {
 
     tearDown(() async {
       if (gitWasClean) {
+        if (gitIsClean()) return;
+
         // Reset our state after each test, assuming we didn't abandon tests due
         // to a non-pristine git environment.
         Process.runSync('git', ['checkout', 'HEAD', '--', '.']);
@@ -79,6 +84,7 @@ void main() {
         var gitStatus = Process
             .runSync('git', ['status', '--porcelain', '.']).stdout as String;
 
+        var nextBuild = nextSuccessfulBuild;
         var untracked = gitStatus
             .split('\n')
             .where((line) => line.startsWith('??'))
@@ -91,42 +97,64 @@ void main() {
         for (var path in untracked) {
           Process.runSync('rm', [path]);
         }
-        await nextSuccessfulBuild;
+        await nextBuild;
       }
     });
 
     test('edit test to fail and rerun', () async {
+      var nextBuild = nextSuccessfulBuild;
       await replaceAllInFile(
           'test/common/message.dart', 'Hello World!', 'Goodbye World!');
-      await nextSuccessfulBuild;
+      await nextBuild;
       await expectTestsFail();
     });
 
     test('edit dependency lib causing test to fail and rerun', () async {
+      var nextBuild = nextSuccessfulBuild;
       await replaceAllInFile('lib/app.dart', 'Hello World!', 'Goodbye World!');
-      await nextSuccessfulBuild;
+      await nextBuild;
       await expectTestsFail();
     });
 
     test('create new test', () async {
+      var nextBuild = nextSuccessfulBuild;
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
-      await nextSuccessfulBuild;
+      await nextBuild;
       await expectTestsPass(3);
     });
 
     test('delete test', () async {
+      var nextBuild = nextSuccessfulBuild;
       await deleteFile(p.join('test', 'subdir', 'subdir_test.dart'));
-      await nextSuccessfulBuild;
+      await nextBuild;
       await expectTestsPass(1);
     });
 
-    test('build failures can be fixed', () async {
+    test('ddc errors can be fixed', () async {
       var path = p.join('test', 'common', 'message.dart');
+      var error = nextStdErrLine('Error compiling dartdevc module:'
+          'e2e_example|test/hello_world_test.js');
+      var nextBuild = nextSuccessfulBuild;
       await deleteFile(path);
-      await nextFailedBuild;
+      await error;
+      await nextBuild;
+
+      nextBuild = nextSuccessfulBuild;
       await createFile(path, "String get message => 'Hello World!';");
-      await nextSuccessfulBuild;
+      await nextBuild;
       await expectTestsPass();
+    });
+
+    test('build errors can be fixed', () async {
+      var path = p.join('lib', 'expected.fail');
+
+      var nextBuild = nextFailedBuild;
+      await createFile(path, 'some error');
+      await nextBuild;
+
+      nextBuild = nextSuccessfulBuild;
+      await deleteFile(path);
+      await nextBuild;
     });
   });
 }
@@ -136,6 +164,9 @@ Future get nextSuccessfulBuild =>
 
 Future get nextFailedBuild =>
     stdErrLines.firstWhere((line) => line.contains('Build: Failed after'));
+
+Future nextStdErrLine(String message) =>
+    stdErrLines.firstWhere((line) => line.contains(message));
 
 Future<ProcessResult> runTests() =>
     Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);

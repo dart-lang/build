@@ -16,6 +16,7 @@ Future main() async {
   var buildActions = <BuildAction>[
     new BuildAction(new TestBootstrapBuilder(), graph.root.name,
         inputs: ['test/**_test.dart']),
+    new BuildAction(new ThrowingBuilder(), graph.root.name),
   ];
 
   void addBuilderForAll(Builder builder, String inputExtension) {
@@ -52,4 +53,16 @@ Future main() async {
   await serveHandler.buildResults.drain();
   await server.close();
   await testServer.close();
+}
+
+class ThrowingBuilder extends Builder {
+  @override
+  final buildExtensions = {
+    '.fail': ['.fail.message']
+  };
+
+  @override
+  Future<Null> build(BuildStep buildStep) async {
+    throw await buildStep.readAsString(buildStep.inputId);
+  }
 }
