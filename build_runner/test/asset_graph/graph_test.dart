@@ -81,6 +81,11 @@ void main() {
                 0, node.id, g % 2 == 1, g % 2 == 0, makeAssetId());
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
+
+            var syntheticNode = new SyntheticAssetNode(makeAssetId());
+            syntheticNode.outputs.add(generatedNode.id);
+
+            graph.add(syntheticNode);
             graph.add(generatedNode);
           }
         }

@@ -30,6 +30,9 @@ class AssetNode {
 /// that if that asset gets added later the outputs are properly invalidated.
 class SyntheticAssetNode extends AssetNode {
   SyntheticAssetNode(AssetId id) : super(id);
+
+  @override
+  String toString() => 'SyntheticAssetNode: $id';
 }
 
 /// A generated node in the asset graph.
