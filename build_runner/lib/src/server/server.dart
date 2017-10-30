@@ -47,9 +47,7 @@ class ServeHandler implements BuildState {
     if (_lastBuildResult.status == BuildStatus.failure) {
       return new Response(HttpStatus.INTERNAL_SERVER_ERROR,
           body: _htmlErrorPage(_lastBuildResult),
-          headers: {
-            HttpHeaders.CONTENT_TYPE: 'text/html',
-          });
+          headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
     }
     return _assetHandler.handle(request, rootDir);
   }
