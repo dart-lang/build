@@ -40,9 +40,9 @@ class DevCompilerBuilder implements Builder {
     try {
       await createDevCompilerModule(module, buildStep);
     } on DartDevcCompilationException catch (e) {
-      log.warning('Error compiling ${module.jsId}:\n$e');
       await buildStep.writeAsString(
           buildStep.inputId.changeExtension(jsModuleErrorsExtension), '$e');
+      log.severe('', e);
     }
   }
 }

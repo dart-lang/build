@@ -31,6 +31,7 @@ class _AssetGraphMatcher extends Matcher {
     }
     for (var node in graph.allNodes) {
       var expectedNode = _expected.get(node.id);
+      if (node.runtimeType != expectedNode.runtimeType) return false;
       if (expectedNode == null || expectedNode.id != node.id) return false;
       if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, null)) {
         return false;

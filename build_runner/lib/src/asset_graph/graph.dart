@@ -60,10 +60,17 @@ class AssetGraph {
   ///
   /// Throws a [StateError] if it already exists in the graph.
   void _add(AssetNode node) {
-    if (contains(node.id)) {
-      throw new StateError(
-          'Tried to add node ${node.id} to the asset graph but it already '
-          'exists.');
+    var existing = get(node.id);
+    if (existing != null) {
+      if (existing is SyntheticAssetNode) {
+        _remove(existing.id);
+        node.outputs.addAll(existing.outputs);
+        node.primaryOutputs.addAll(existing.primaryOutputs);
+      } else {
+        throw new StateError(
+            'Tried to add node ${node.id} to the asset graph but it already '
+            'exists.');
+      }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
   }
@@ -84,8 +91,9 @@ class AssetGraph {
       allNodes.where((n) => n is GeneratedAssetNode).map((n) => n.id);
 
   /// All the source files in the graph.
-  Iterable<AssetId> get sources =>
-      allNodes.where((n) => n is! GeneratedAssetNode).map((n) => n.id);
+  Iterable<AssetId> get sources => allNodes
+      .where((n) => n is! GeneratedAssetNode && n is! SyntheticAssetNode)
+      .map((n) => n.id);
 
   /// Updates graph structure, invalidating and deleting any outputs that were
   /// affected.
@@ -105,30 +113,31 @@ class AssetGraph {
     // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
     // the outputs of `id`.
     void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {AssetId parent, bool rootIsSource}) {
+        {bool rootIsSource}) {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
-      if (parent == null) rootIsSource = node is! GeneratedAssetNode;
-
-      // Update all outputs of this asset as well.
-      for (var output in node.outputs) {
-        clearNodeAndDeps(output, rootChangeType,
-            parent: node.id, rootIsSource: rootIsSource);
-      }
+      rootIsSource ??= node is! GeneratedAssetNode;
 
       if (node is GeneratedAssetNode) {
         idsToDelete.add(id);
         if (rootIsSource &&
             rootChangeType == ChangeType.REMOVE &&
-            node.primaryInput == parent) {
+            idsToRemove.contains(node.primaryInput)) {
           idsToRemove.add(id);
         } else {
           node.needsUpdate = true;
+          node.wasOutput = false;
+          node.globs = new Set();
         }
       } else {
         // This is a source
         if (rootChangeType == ChangeType.REMOVE) idsToRemove.add(id);
+      }
+
+      // Update all outputs of this asset as well.
+      for (var output in node.outputs) {
+        clearNodeAndDeps(output, rootChangeType, rootIsSource: rootIsSource);
       }
     }
 

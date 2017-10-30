@@ -23,6 +23,18 @@ class AssetNode {
   String toString() => 'AssetNode: $id';
 }
 
+/// A node which is not a generated or source asset.
+///
+/// Typically these are created as a result of `canRead` calls for assets that
+/// don't exist in the graph. We still need to set up proper dependencies so
+/// that if that asset gets added later the outputs are properly invalidated.
+class SyntheticAssetNode extends AssetNode {
+  SyntheticAssetNode(AssetId id) : super(id);
+
+  @override
+  String toString() => 'SyntheticAssetNode: $id';
+}
+
 /// A generated node in the asset graph.
 class GeneratedAssetNode extends AssetNode {
   /// The phase which generated this asset.
