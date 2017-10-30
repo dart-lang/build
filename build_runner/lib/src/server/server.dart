@@ -45,14 +45,8 @@ class ServeHandler implements BuildState {
   FutureOr<Response> _handle(Request request, String rootDir) async {
     await currentBuild;
     if (_lastBuildResult.status == BuildStatus.failure) {
-      return new Response(200,
-          body: '<h1>Build failed!</h1>'
-              '<p><strong>Error:</strong></p>'
-              '<p><strong style="color: red">'
-              '${_htmlify(_lastBuildResult.exception)}'
-              '</strong></p>'
-              '<p><strong>Stack Trace:</strong></p>'
-              '<p>${_htmlify(_lastBuildResult.stackTrace)}</p>',
+      return new Response(HttpStatus.INTERNAL_SERVER_ERROR,
+          body: _htmlErrorPage(_lastBuildResult),
           headers: {
             HttpHeaders.CONTENT_TYPE: 'text/html',
           });
@@ -60,7 +54,15 @@ class ServeHandler implements BuildState {
     return _assetHandler.handle(request, rootDir);
   }
 
-  String _htmlify(content) =>
+  static String _htmlErrorPage(BuildResult result) => '<h1>Build failed!</h1>'
+      '<p><strong>Error:</strong></p>'
+      '<p><strong style="color: red">'
+      '${_htmlify(result.exception)}'
+      '</strong></p>'
+      '<p><strong>Stack Trace:</strong></p>'
+      '<p>${_htmlify(result.stackTrace)}</p>';
+
+  static String _htmlify(content) =>
       content.toString().replaceAll('\n', '<br/>').replaceAll(' ', '&nbsp;');
 }
 

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -52,7 +53,7 @@ void main() {
     var response = await serveHandler.handlerFor('web')(
         new Request('GET', Uri.parse('http://server.com/index.html')));
 
-    expect(response.statusCode, 200);
+    expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
     expect(
         await response.readAsString(),
         allOf(contains('Really&nbsp;bad&nbsp;error&nbsp;omg!'),
