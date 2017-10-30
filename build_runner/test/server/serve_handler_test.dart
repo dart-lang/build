@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -18,13 +19,16 @@ import '../common/common.dart';
 void main() {
   ServeHandler serveHandler;
   InMemoryRunnerAssetReader reader;
+  MockWatchImpl watchImpl;
 
   setUp(() async {
     reader = new InMemoryRunnerAssetReader();
     var packageGraph =
         new PackageGraph.fromRoot(new PackageNode.noPubspec('a'));
-    serveHandler =
-        await createServeHandler(new MockWatchImpl(reader, packageGraph));
+    watchImpl = new MockWatchImpl(reader, packageGraph);
+    serveHandler = await createServeHandler(watchImpl);
+    watchImpl.addFutureResult(
+        new Future.value(new BuildResult(BuildStatus.success, [])));
   });
 
   test('can get handlers for a subdirectory', () async {
@@ -37,16 +41,39 @@ void main() {
   test('throws if you pass a non-root directory', () {
     expect(() => serveHandler.handlerFor('web/sub'), throwsArgumentError);
   });
+
+  test('serves an error page if there were build errors', () async {
+    var fakeException = 'Really bad error omg!';
+    var fakeStackTrace = 'My cool stack trace!';
+    watchImpl.addFutureResult(new Future.value(new BuildResult(
+        BuildStatus.failure, [],
+        exception: fakeException,
+        stackTrace: new StackTrace.fromString(fakeStackTrace))));
+    await new Future.value();
+    var response = await serveHandler.handlerFor('web')(
+        new Request('GET', Uri.parse('http://server.com/index.html')));
+
+    expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(
+        await response.readAsString(),
+        allOf(contains('Really&nbsp;bad&nbsp;error&nbsp;omg!'),
+            contains('My&nbsp;cool&nbsp;stack&nbsp;trace!')));
+  });
 }
 
 class MockWatchImpl implements WatchImpl {
+  Future<BuildResult> _currentBuild;
   @override
-  Future<BuildResult> get currentBuild => new Future.value(null);
+  Future<BuildResult> get currentBuild => _currentBuild;
   @override
-  set currentBuild(_) => throw new UnsupportedError('unsupported!');
+  set currentBuild(newValue) => throw new UnsupportedError('unsupported!');
+
+  final _futureBuildResultsController =
+      new StreamController<Future<BuildResult>>();
+  final _buildResultsController = new StreamController<BuildResult>();
 
   @override
-  get buildResults => throw new UnsupportedError('unsupported!');
+  get buildResults => _buildResultsController.stream;
   @override
   set buildResults(_) => throw new UnsupportedError('unsupported!');
 
@@ -56,6 +83,23 @@ class MockWatchImpl implements WatchImpl {
   @override
   final Future<AssetReader> reader;
 
+  void addFutureResult(Future<BuildResult> result) {
+    _futureBuildResultsController.add(result);
+  }
+
   MockWatchImpl(AssetReader reader, this.packageGraph)
-      : this.reader = new Future.value(reader);
+      : this.reader = new Future.value(reader) {
+    _futureBuildResultsController.stream.listen((futureBuildResult) {
+      if (_currentBuild != null) {
+        _currentBuild = _currentBuild.then((_) => futureBuildResult);
+      } else {
+        _currentBuild = futureBuildResult;
+      }
+
+      _currentBuild.then((result) {
+        _buildResultsController.add(result);
+        _currentBuild = null;
+      });
+    });
+  }
 }

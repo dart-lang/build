@@ -21,8 +21,13 @@ Future<ServeHandler> createServeHandler(WatchImpl watch) async {
 class ServeHandler implements BuildState {
   final BuildState _state;
   final AssetHandler _assetHandler;
+  BuildResult _lastBuildResult;
 
-  ServeHandler._(this._state, this._assetHandler);
+  ServeHandler._(this._state, this._assetHandler) {
+    _state.buildResults.listen((result) {
+      _lastBuildResult = result;
+    });
+  }
 
   @override
   Future<BuildResult> get currentBuild => _state.currentBuild;
@@ -39,8 +44,24 @@ class ServeHandler implements BuildState {
 
   FutureOr<Response> _handle(Request request, String rootDir) async {
     await currentBuild;
+    if (_lastBuildResult.status == BuildStatus.failure) {
+      return new Response(HttpStatus.INTERNAL_SERVER_ERROR,
+          body: _htmlErrorPage(_lastBuildResult),
+          headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+    }
     return _assetHandler.handle(request, rootDir);
   }
+
+  static String _htmlErrorPage(BuildResult result) => '<h1>Build failed!</h1>'
+      '<p><strong>Error:</strong></p>'
+      '<p><strong style="color: red">'
+      '${_htmlify(result.exception)}'
+      '</strong></p>'
+      '<p><strong>Stack Trace:</strong></p>'
+      '<p>${_htmlify(result.stackTrace)}</p>';
+
+  static String _htmlify(content) =>
+      content.toString().replaceAll('\n', '<br/>').replaceAll(' ', '&nbsp;');
 }
 
 class AssetHandler {
