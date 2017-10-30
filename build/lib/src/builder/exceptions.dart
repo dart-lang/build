@@ -5,9 +5,11 @@ import '../asset/id.dart';
 
 class UnexpectedOutputException implements Exception {
   final AssetId assetId;
+  final Iterable<AssetId> expectedOutputs;
 
-  UnexpectedOutputException(this.assetId);
+  UnexpectedOutputException(this.assetId, {this.expectedOutputs});
 
   @override
-  String toString() => 'UnexpectedOutputException: $assetId';
+  String toString() => 'UnexpectedOutputException: $assetId'
+      '${expectedOutputs == null ? '' : '\nExpected one of: $expectedOutputs'}';
 }
