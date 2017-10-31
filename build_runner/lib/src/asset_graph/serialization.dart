@@ -161,7 +161,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
 
   _WrappedAssetNode(this.node, this.serializer);
 
-  static final _length = _FieldId.Digest.index + 1;
+  static final int _length = _FieldId.Digest.index + 1;
 
   @override
   int get length => _length;
@@ -216,9 +216,9 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   /// not in [_WrappedAssetNode].
   ///
   /// Indexes below this number are forwarded to `super[index]`.
-  static final _serializedOffset = _WrappedAssetNode._length;
+  static final int _serializedOffset = _WrappedAssetNode._length;
 
-  static final _length = _FieldId.values.length;
+  static final int _length = _FieldId.values.length;
 
   @override
   int get length => _length;
