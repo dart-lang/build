@@ -33,7 +33,7 @@ class UnlinkedSummaryBuilder implements Builder {
             as Map<String, dynamic>);
     try {
       await createUnlinkedSummary(module, buildStep);
-    } catch (e, s) {
+    } on AnalyzerSummaryException catch (e, s) {
       log.warning('Error creating ${module.unlinkedSummaryId}:\n$e\n$s');
     }
   }
@@ -53,7 +53,7 @@ class LinkedSummaryBuilder implements Builder {
             as Map<String, dynamic>);
     try {
       await createLinkedSummary(module, buildStep);
-    } catch (e, s) {
+    } on AnalyzerSummaryException catch (e, s) {
       log.warning('Error creating ${module.linkedSummaryId}:\n$e\n$s');
     }
   }

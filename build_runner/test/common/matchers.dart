@@ -33,7 +33,17 @@ class _AssetGraphMatcher extends Matcher {
     }
     for (var node in graph.allNodes) {
       var expectedNode = _expected.get(node.id);
-      if (expectedNode == null || expectedNode.id != node.id) matches = false;
+      if (node.runtimeType != expectedNode.runtimeType) {
+        matchState['RuntimeType'] = [
+          node.runtimeType,
+          expectedNode.runtimeType
+        ];
+        matches = false;
+      }
+      if (expectedNode == null || expectedNode.id != node.id) {
+        matchState['AssetId'] = [node.id, expectedNode.id];
+        matches = false;
+      }
       if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, null)) {
         matchState['Outputs of ${node.id}'] = [
           node.outputs,

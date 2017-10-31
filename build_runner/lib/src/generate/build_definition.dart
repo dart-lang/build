@@ -163,12 +163,17 @@ class _Loader {
       }
     }
 
-    var newSources = inputSources
-        .difference(assetGraph.allNodes.map((node) => node.id).toSet());
+    var newSources = inputSources.difference(assetGraph.allNodes
+        .where((node) => node is! SyntheticAssetNode)
+        .map((node) => node.id)
+        .toSet());
     addUpdates(newSources, ChangeType.ADD);
     var removedAssets = assetGraph.allNodes
-        .where((n) =>
-            n is! GeneratedAssetNode || (n as GeneratedAssetNode).wasOutput)
+        .where((n) {
+          if (n is SyntheticAssetNode) return false;
+          if (n is GeneratedAssetNode) return n.wasOutput;
+          return true;
+        })
         .map((n) => n.id)
         .where((id) => !allSources.contains((id)));
 

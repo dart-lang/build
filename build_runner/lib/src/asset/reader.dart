@@ -51,8 +51,13 @@ class SinglePhaseReader implements AssetReader {
   Iterable<Glob> get globsRan => _globsRan;
 
   bool _isReadable(AssetId id) {
+    _assetsRead.add(id);
     var node = _assetGraph.get(id);
-    if (node == null) return false;
+    if (node == null) {
+      _assetGraph.add(new SyntheticAssetNode(id));
+      return false;
+    }
+    if (node is SyntheticAssetNode) return false;
     if (node is! GeneratedAssetNode) return true;
     return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
   }
@@ -60,7 +65,6 @@ class SinglePhaseReader implements AssetReader {
   @override
   Future<bool> canRead(AssetId id) async {
     if (!_isReadable(id)) return new Future.value(false);
-    _assetsRead.add(id);
     await _ensureAssetIsBuilt(id);
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode) {
@@ -75,7 +79,6 @@ class SinglePhaseReader implements AssetReader {
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    _assetsRead.add(id);
     await _ensureAssetIsBuilt(id);
     return _delegate.readAsBytes(id);
   }
@@ -83,7 +86,6 @@ class SinglePhaseReader implements AssetReader {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    _assetsRead.add(id);
     await _ensureAssetIsBuilt(id);
     return _delegate.readAsString(id, encoding: encoding);
   }

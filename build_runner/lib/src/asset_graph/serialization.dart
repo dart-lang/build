@@ -47,16 +47,21 @@ class _AssetGraphDeserializer {
     var digest = serializedDigest == null
         ? null
         : new Digest(BASE64.decode(serializedDigest));
-    if (serializedNode.length == 4) {
-      node = new AssetNode(_idToAssetId[serializedNode[0]], digest: digest);
-    } else if (serializedNode.length == 9) {
+    var id = _idToAssetId[serializedNode[0]];
+    if (serializedNode.length == 5) {
+      if (_deserializeBool(serializedNode[4] as int)) {
+        node = new SyntheticAssetNode(id);
+      } else {
+        node = new AssetNode(id, digest: digest);
+      }
+    } else if (serializedNode.length == 10) {
       node = new GeneratedAssetNode(
-        serializedNode[6] as int,
-        _idToAssetId[serializedNode[4]],
-        _deserializeBool(serializedNode[8] as int),
-        _deserializeBool(serializedNode[5] as int),
-        _idToAssetId[serializedNode[0]],
-        globs: (serializedNode[7] as Iterable<String>)
+        serializedNode[7] as int,
+        _idToAssetId[serializedNode[5]],
+        _deserializeBool(serializedNode[9] as int),
+        _deserializeBool(serializedNode[6] as int),
+        id,
+        globs: (serializedNode[8] as Iterable<String>)
             .map((pattern) => new Glob(pattern))
             .toSet(),
         digest: digest,
@@ -130,7 +135,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
   _WrappedAssetNode(this.node, this.serializer);
 
   @override
-  int get length => 4;
+  int get length => 5;
   @override
   set length(_) => throw new UnsupportedError(
       'length setter not unsupported for WrappedAssetNode');
@@ -148,6 +153,8 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .toList();
       case 3:
         return node.digest == null ? null : BASE64.encode(node.digest.bytes);
+      case 4:
+        return _serializeBool(node is SyntheticAssetNode);
       default:
         throw new RangeError.index(index, this);
     }
@@ -174,22 +181,22 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   Object operator [](int index) {
     if (index < super.length) return super[index];
     switch (index) {
-      case 4:
+      case 5:
         return generatedNode.primaryInput != null
             ? serializer._assetIdToId[generatedNode.primaryInput]
             : null;
-      case 5:
-        return _serializeBool(generatedNode.wasOutput);
       case 6:
-        return generatedNode.phaseNumber;
+        return _serializeBool(generatedNode.wasOutput);
       case 7:
-        return generatedNode.globs.map((glob) => glob.pattern).toList();
+        return generatedNode.phaseNumber;
       case 8:
+        return generatedNode.globs.map((glob) => glob.pattern).toList();
+      case 9:
         return _serializeBool(generatedNode.needsUpdate);
       default:
         throw new RangeError.index(index, this);
     }
   }
-
-  static int _serializeBool(bool value) => value ? 1 : 0;
 }
+
+int _serializeBool(bool value) => value ? 1 : 0;

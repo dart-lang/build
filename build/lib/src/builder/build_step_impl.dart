@@ -135,7 +135,7 @@ class BuildStepImpl implements BuildStep {
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(AssetId id) {
     if (!_expectedOutputs.contains(id)) {
-      throw new UnexpectedOutputException(id);
+      throw new UnexpectedOutputException(id, expected: _expectedOutputs);
     }
   }
 }

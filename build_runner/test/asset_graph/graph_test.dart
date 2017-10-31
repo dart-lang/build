@@ -85,6 +85,11 @@ void main() {
                 0, node.id, g % 2 == 1, g % 2 == 0, makeAssetId());
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
+
+            var syntheticNode = new SyntheticAssetNode(makeAssetId());
+            syntheticNode.outputs.add(generatedNode.id);
+
+            graph.add(syntheticNode);
             graph.add(generatedNode);
           }
         }
@@ -107,6 +112,8 @@ void main() {
       final buildActions = [new BuildAction(new CopyBuilder(), 'foo')];
       final primaryInputId = makeAssetId('foo|file');
       final primaryOutputId = makeAssetId('foo|file.copy');
+      final syntheticId = makeAssetId('foo|synthetic');
+      final syntheticOutputId = makeAssetId('foo|synthetic.copy');
 
       setUp(() async {
         graph = await AssetGraph.build(
@@ -154,6 +161,37 @@ void main() {
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
           expect(deletes, equals([primaryOutputId]));
+        });
+
+        test('add new primary input which replaces a synthetic node', () async {
+          var syntheticNode = new SyntheticAssetNode(syntheticId);
+          graph.add(syntheticNode);
+          expect(graph.get(syntheticId), syntheticNode);
+
+          var changes = {syntheticId: ChangeType.ADD};
+          await graph.updateAndInvalidate(
+              buildActions, changes, 'foo', null, digestReader);
+
+          expect(graph.contains(syntheticId), isTrue);
+          expect(graph.get(syntheticId),
+              isNot(new isInstanceOf<SyntheticAssetNode>()));
+          expect(graph.contains(syntheticOutputId), isTrue);
+        });
+
+        test('add new generated asset which replaces a synthetic node',
+            () async {
+          var syntheticNode = new SyntheticAssetNode(syntheticOutputId);
+          graph.add(syntheticNode);
+          expect(graph.get(syntheticOutputId), syntheticNode);
+
+          var changes = {syntheticId: ChangeType.ADD};
+          await graph.updateAndInvalidate(
+              buildActions, changes, 'foo', null, digestReader);
+
+          expect(graph.contains(syntheticOutputId), isTrue);
+          expect(graph.get(syntheticOutputId),
+              new isInstanceOf<GeneratedAssetNode>());
+          expect(graph.contains(syntheticOutputId), isTrue);
         });
       });
     });
