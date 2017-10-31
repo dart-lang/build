@@ -109,15 +109,21 @@ void main() {
     });
 
     group('with buildActions', () {
-      final buildActions = [new BuildAction(new CopyBuilder(), 'foo')];
+      final buildActions = [
+        new BuildAction(new CopyBuilder(), 'foo', excludes: ['excluded'])
+      ];
       final primaryInputId = makeAssetId('foo|file');
+      final excludedInputId = makeAssetId('foo|excluded');
       final primaryOutputId = makeAssetId('foo|file.copy');
       final syntheticId = makeAssetId('foo|synthetic');
       final syntheticOutputId = makeAssetId('foo|synthetic.copy');
 
       setUp(() async {
         graph = await AssetGraph.build(
-            buildActions, new Set.from([primaryInputId]), 'foo', digestReader);
+            buildActions,
+            new Set.from([primaryInputId, excludedInputId]),
+            'foo',
+            digestReader);
       });
 
       test('build', () {
@@ -126,11 +132,19 @@ void main() {
             graph.allNodes.map((n) => n.id),
             unorderedEquals([
               primaryInputId,
+              excludedInputId,
               primaryOutputId,
             ]));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, [primaryOutputId]);
+        expect(node.lastKnownDigest, isNotNull,
+            reason: 'Nodes with outputs should get an eager digest.');
+
+        var excludedNode = graph.get(excludedInputId);
+        expect(excludedNode, isNotNull);
+        expect(excludedNode.lastKnownDigest, isNull,
+            reason: 'Nodes with no output shouldn\'t get an eager digest.');
       });
 
       group('updateAndInvalidate', () {
