@@ -76,6 +76,25 @@ void main() {
           new isInstanceOf<DateTime>());
     });
 
+    test('can compute digests', () async {
+      expect(
+          await reader.digest(makeAssetId('basic_pkg|hello.txt')), isNotNull);
+    });
+
+    test('digests are different for different file contents', () async {
+      var helloDigest =
+          await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
+      var aDigest = await reader.digest(makeAssetId('a|lib/a.txt'));
+      expect(helloDigest, isNot(equals(aDigest)));
+    });
+
+    test('digests are identical for identical file contents', () async {
+      var helloDigest =
+          await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
+      var aDigest = await reader.digest(makeAssetId('basic_pkg|web/hello.txt'));
+      expect(helloDigest, equals(aDigest));
+    });
+
     test('lastModified throws AssetNotFoundException appropriately', () async {
       expect(reader.lastModified(makeAssetId('basic_pkg|foo.txt')),
           throwsA(assetNotFoundException));

@@ -118,4 +118,18 @@ void main() {
       expect(delegate.assetsRead, []);
     });
   });
+
+  group('digest', () {
+    test('should read from the delegate', () async {
+      expect(await reader.digest(fooTxt), isNotNull);
+      expect(delegate.assetsRead, [fooTxt]);
+    });
+
+    test('should re-read from the delegate (no cache)', () async {
+      expect(await reader.digest(fooTxt), isNotNull);
+      delegate.assetsRead.clear();
+      expect(await reader.digest(fooTxt), isNotNull);
+      expect(delegate.assetsRead, [fooTxt]);
+    });
+  });
 }
