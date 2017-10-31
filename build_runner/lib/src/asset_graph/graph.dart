@@ -89,7 +89,7 @@ class AssetGraph {
   Future<Null> _addNodesWithDigest(
       Set<AssetId> assetIds, DigestAssetReader digestReader) async {
     await Future.wait(assetIds.map((id) async {
-      var node = new AssetNode(id);
+      var node = new SourceAssetNode(id);
       _add(node);
       node.digest = await digestReader.digest(id);
     }));
@@ -119,9 +119,8 @@ class AssetGraph {
       allNodes.where((n) => n is GeneratedAssetNode).map((n) => n.id);
 
   /// All the source files in the graph.
-  Iterable<AssetId> get sources => allNodes
-      .where((n) => n is! GeneratedAssetNode && n is! SyntheticAssetNode)
-      .map((n) => n.id);
+  Iterable<AssetId> get sources =>
+      allNodes.where((n) => n is SourceAssetNode).map((n) => n.id);
 
   /// Updates graph structure, invalidating and deleting any outputs that were
   /// affected.
@@ -146,7 +145,7 @@ class AssetGraph {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
-      rootIsSource ??= node is! GeneratedAssetNode;
+      rootIsSource ??= node is SourceAssetNode;
 
       if (node is GeneratedAssetNode) {
         idsToDelete.add(id);

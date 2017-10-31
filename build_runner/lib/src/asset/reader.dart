@@ -58,7 +58,8 @@ class SinglePhaseReader implements AssetReader {
       return false;
     }
     if (node is SyntheticAssetNode) return false;
-    if (node is! GeneratedAssetNode) return true;
+    if (node is SourceAssetNode) return true;
+    assert(node is GeneratedAssetNode);
     return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
   }
 

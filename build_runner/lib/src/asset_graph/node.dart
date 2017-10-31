@@ -7,7 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 /// A node in the asset graph which may be an input to other assets.
-class AssetNode {
+abstract class AssetNode {
   final AssetId id;
 
   /// The assets that any [Builder] in the build graph declares it may output
@@ -28,6 +28,14 @@ class AssetNode {
 
   @override
   String toString() => 'AssetNode: $id';
+}
+
+/// A node which is an original source asset (not generated).
+class SourceAssetNode extends AssetNode {
+  SourceAssetNode(AssetId id, {Digest digest}) : super(id, digest: digest);
+
+  @override
+  String toString() => 'SourceAssetNode: $id';
 }
 
 /// A node which is not a generated or source asset.
