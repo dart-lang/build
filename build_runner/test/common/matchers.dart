@@ -59,8 +59,11 @@ class _AssetGraphMatcher extends Matcher {
         ];
         matches = false;
       }
-      if (node.digest != expectedNode.digest) {
-        matchState['Digest of ${node.id}'] = [node.digest, expectedNode.digest];
+      if (node.lastKnownDigest != expectedNode.lastKnownDigest) {
+        matchState['Digest of ${node.id}'] = [
+          node.lastKnownDigest,
+          expectedNode.lastKnownDigest
+        ];
         matches = false;
       }
       if (node is GeneratedAssetNode) {

@@ -387,7 +387,7 @@ class BuildImpl {
       (_assetGraph.get(output) as GeneratedAssetNode)
         ..needsUpdate = false
         ..wasOutput = false
-        ..digest = null
+        ..lastKnownDigest = null
         ..globs = reader.globsRan.toSet();
     }
 
@@ -395,7 +395,7 @@ class BuildImpl {
     await Future.wait(writer.assetsWritten.map((output) async {
       (_assetGraph.get(output) as GeneratedAssetNode)
         ..wasOutput = true
-        ..digest = await _reader.digest(output);
+        ..lastKnownDigest = await _reader.digest(output);
     }));
 
     // Update the asset graph based on the dependencies discovered.

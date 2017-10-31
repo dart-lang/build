@@ -38,7 +38,7 @@ abstract class Md5DigestReader implements DigestAssetReader, RunnerAssetReader {
 class SinglePhaseReader implements AssetReader {
   final AssetGraph _assetGraph;
   final _assetsRead = new Set<AssetId>();
-  final AssetReader _delegate;
+  final DigestAssetReader _delegate;
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
@@ -67,6 +67,7 @@ class SinglePhaseReader implements AssetReader {
   Future<bool> canRead(AssetId id) async {
     if (!_isReadable(id)) return new Future.value(false);
     await _ensureAssetIsBuilt(id);
+    await _ensureDigest(id);
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode) {
       // Short circut, we know this file exists because its readable and it was
@@ -81,6 +82,7 @@ class SinglePhaseReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     await _ensureAssetIsBuilt(id);
+    await _ensureDigest(id);
     return _delegate.readAsBytes(id);
   }
 
@@ -88,6 +90,7 @@ class SinglePhaseReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     await _ensureAssetIsBuilt(id);
+    await _ensureDigest(id);
     return _delegate.readAsString(id, encoding: encoding);
   }
 
@@ -113,5 +116,10 @@ class SinglePhaseReader implements AssetReader {
     if (node is GeneratedAssetNode && node.needsUpdate) {
       await _runPhaseForInput(node.phaseNumber, node.primaryInput);
     }
+  }
+
+  Future<Null> _ensureDigest(AssetId id) async {
+    var node = _assetGraph.get(id);
+    node.lastKnownDigest ??= await _delegate.digest(id);
   }
 }

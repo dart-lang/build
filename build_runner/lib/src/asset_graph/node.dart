@@ -20,11 +20,11 @@ abstract class AssetNode {
 
   /// The [Digest] for this node in its last known state.
   ///
-  /// May be `null` if this is a [GeneratedAssetNode] and it doesn't currently
+  /// May be `null` if this asset has no outputs, or if it doesn't actually
   /// exist.
-  Digest digest;
+  Digest lastKnownDigest;
 
-  AssetNode(this.id, {this.digest});
+  AssetNode(this.id, {this.lastKnownDigest});
 
   @override
   String toString() => 'AssetNode: $id';
@@ -32,7 +32,8 @@ abstract class AssetNode {
 
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
-  SourceAssetNode(AssetId id, {Digest digest}) : super(id, digest: digest);
+  SourceAssetNode(AssetId id, {Digest lastKnownDigest})
+      : super(id, lastKnownDigest: lastKnownDigest);
 
   @override
   String toString() => 'SourceAssetNode: $id';
@@ -73,9 +74,9 @@ class GeneratedAssetNode extends AssetNode {
 
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
       this.wasOutput, AssetId id,
-      {Digest digest, Set<Glob> globs})
+      {Digest lastKnownDigest, Set<Glob> globs})
       : this.globs = globs ?? new Set<Glob>(),
-        super(id, digest: digest);
+        super(id, lastKnownDigest: lastKnownDigest);
 
   @override
   String toString() =>

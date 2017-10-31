@@ -53,14 +53,14 @@ class _AssetGraphDeserializer {
     switch (typeId) {
       case _NodeTypeId.Source:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new SourceAssetNode(id, digest: digest);
+        node = new SourceAssetNode(id, lastKnownDigest: digest);
         break;
       case _NodeTypeId.Synthetic:
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new SyntheticAssetNode(id);
         break;
       case _NodeTypeId.Generated:
-        assert(serializedNode.length != _WrappedGeneratedAssetNode._length);
+        assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
         node = new GeneratedAssetNode(
           serializedNode[_FieldId.PhaseNumber.index] as int,
           _idToAssetId[serializedNode[_FieldId.PrimaryInput.index] as int],
@@ -70,7 +70,7 @@ class _AssetGraphDeserializer {
           globs: (serializedNode[_FieldId.Globs.index] as Iterable<String>)
               .map((pattern) => new Glob(pattern))
               .toSet(),
-          digest: digest,
+          lastKnownDigest: digest,
         );
         break;
     }
@@ -194,7 +194,9 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .map((id) => serializer._assetIdToId[id])
             .toList();
       case _FieldId.Digest:
-        return node.digest == null ? null : BASE64.encode(node.digest.bytes);
+        return node.lastKnownDigest == null
+            ? null
+            : BASE64.encode(node.lastKnownDigest.bytes);
       default:
         throw new RangeError.index(index, this);
     }

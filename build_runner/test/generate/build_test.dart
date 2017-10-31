@@ -387,13 +387,13 @@ void main() {
     var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
         false, true, makeAssetId('a|web/a.txt.copy'),
-        digest: computeDigest('a'));
+        lastKnownDigest: computeDigest('a'));
     expectedGraph.add(aCopyNode);
     expectedGraph
         .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
     var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
         false, true, makeAssetId('a|lib/b.txt.copy'),
-        digest: computeDigest('b'));
+        lastKnownDigest: computeDigest('b'));
     expectedGraph.add(bCopyNode);
     expectedGraph
         .add(makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b')));
@@ -447,7 +447,7 @@ void main() {
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
           0, bId, false, true, makeAssetId('a|lib/b.txt.copy'),
-          digest: computeDigest('b'));
+          lastKnownDigest: computeDigest('b'));
       graph.add(bCopyNode);
       var bNode =
           makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b'));
@@ -485,11 +485,11 @@ void main() {
           false,
           true,
           makeAssetId('a|lib/a.txt.copy.clone'),
-          digest: computeDigest('a'));
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCloneNode);
       var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
           false, true, makeAssetId('a|lib/a.txt.copy'),
-          digest: computeDigest('a'))
+          lastKnownDigest: computeDigest('a'))
         ..primaryOutputs.add(aCloneNode.id)
         ..outputs.add(aCloneNode.id);
       graph.add(aCopyNode);
@@ -504,11 +504,11 @@ void main() {
           false,
           true,
           makeAssetId('a|lib/b.txt.copy.clone'),
-          digest: computeDigest('b'));
+          lastKnownDigest: computeDigest('b'));
       graph.add(bCloneNode);
       var bCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/b.txt'),
           false, true, makeAssetId('a|lib/b.txt.copy'),
-          digest: computeDigest('b'))
+          lastKnownDigest: computeDigest('b'))
         ..primaryOutputs.add(bCloneNode.id)
         ..outputs.add(bCloneNode.id);
       graph.add(bCopyNode);
@@ -552,11 +552,11 @@ void main() {
           false,
           true,
           makeAssetId('a|lib/a.txt.copy.clone'),
-          digest: computeDigest('a'));
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCloneNode);
       var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
           false, true, makeAssetId('a|lib/a.txt.copy'),
-          digest: computeDigest('a'))
+          lastKnownDigest: computeDigest('a'))
         ..outputs.add(aCloneNode.id);
       graph.add(aCopyNode);
       var aNode =
@@ -592,7 +592,7 @@ void main() {
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
-          digest: computeDigest('a'));
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCopyNode);
       var aNode =
           makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
@@ -621,7 +621,7 @@ void main() {
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
-          digest: computeDigest('a'));
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCopyNode);
       var aNode =
           makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
@@ -646,7 +646,7 @@ void main() {
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
-          digest: computeDigest('a'));
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCopyNode);
       var aNode =
           makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));

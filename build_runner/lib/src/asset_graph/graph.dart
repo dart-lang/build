@@ -46,8 +46,11 @@ class AssetGraph {
       String rootPackage,
       DigestAssetReader digestReader) async {
     var graph = new AssetGraph._();
-    await graph._addNodesWithDigest(sources, digestReader);
+    var newNodes = graph._addSources(sources);
     graph._addOutputsForSources(buildActions, sources, rootPackage);
+    // Pre-emptively compute digests for the nodes we know have outputs.
+    await graph._setLastKnownDigests(
+        newNodes.where((node) => node.outputs.isNotEmpty), digestReader);
     return graph;
   }
 
@@ -84,22 +87,22 @@ class AssetGraph {
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
   }
 
-  /// Adds [assetIds] as [AssetNode]s to this graph, and uses [digestReader] to
-  /// compute the [Digest] for each.
-  Future<Null> _addNodesWithDigest(
-      Set<AssetId> assetIds, DigestAssetReader digestReader) async {
-    await Future.wait(assetIds.map((id) async {
+  /// Adds [assetIds] as [AssetNode]s to this graph, and returns the newly
+  /// created nodes.
+  List<AssetNode> _addSources(Set<AssetId> assetIds) {
+    return assetIds.map((id) {
       var node = new SourceAssetNode(id);
       _add(node);
-      node.digest = await digestReader.digest(id);
-    }));
+      return node;
+    }).toList();
   }
 
-  /// Updates the [Digest] for all nodes corresponding to [assetIds].
-  Future<Null> _updateDigests(
-      Set<AssetId> assetIds, DigestAssetReader digestReader) async {
-    await Future.wait(assetIds.map((id) async {
-      get(id).digest = await digestReader.digest(id);
+  /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
+  /// `lastKnownDigest` field.
+  Future<Null> _setLastKnownDigests(
+      Iterable<AssetNode> nodes, DigestAssetReader digestReader) async {
+    await Future.wait(nodes.map((node) async {
+      node.lastKnownDigest = await digestReader.digest(node.id);
     }));
   }
 
@@ -140,8 +143,8 @@ class AssetGraph {
 
     // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
     // the outputs of `id`.
-    void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {bool rootIsSource}) {
+    Future<Null> clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
+        {bool rootIsSource}) async {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
@@ -164,12 +167,13 @@ class AssetGraph {
       }
 
       // Update all outputs of this asset as well.
-      for (var output in node.outputs) {
-        clearNodeAndDeps(output, rootChangeType, rootIsSource: rootIsSource);
-      }
+      await Future.wait(node.outputs.map((output) => clearNodeAndDeps(
+          output, rootChangeType,
+          rootIsSource: rootIsSource)));
     }
 
-    updates.forEach(clearNodeAndDeps);
+    await Future
+        .wait(updates.keys.map((id) => clearNodeAndDeps(id, updates[id])));
 
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
@@ -189,8 +193,13 @@ class AssetGraph {
       }
     });
 
-    await _addNodesWithDigest(newIds, digestReader);
-    await _updateDigests(modifyIds, digestReader);
+    var newAndModifiedNodes = modifyIds.map(this.get).toList()
+      ..addAll(_addSources(newIds));
+    // Pre-emptively compute digests for the new and modified nodes we know have
+    // outputs.
+    await _setLastKnownDigests(
+        newAndModifiedNodes.where((node) => node.outputs.isNotEmpty),
+        digestReader);
 
     var allNewAndDeletedIds =
         _addOutputsForSources(buildActions, newIds, rootPackage)
@@ -206,7 +215,7 @@ class AssetGraph {
             .globs
             .any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
-          clearNodeAndDeps(node.id, null);
+          await clearNodeAndDeps(node.id, null);
         }
       }
     }
