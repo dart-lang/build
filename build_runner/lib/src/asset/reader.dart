@@ -11,6 +11,8 @@ typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
 abstract class DigestAssetReader implements AssetReader {
   /// Asynchronously compute the digest for [id].
+  ///
+  /// Throws a [AssetNotFoundException] if [id] is not found.
   Future<Digest> digest(AssetId id);
 }
 
