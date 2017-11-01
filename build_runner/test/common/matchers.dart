@@ -22,38 +22,94 @@ class _AssetGraphMatcher extends Matcher {
   const _AssetGraphMatcher(this._expected, this._checkValidAsOf);
 
   @override
-  bool matches(dynamic item, _) {
+  bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
     if (item is! AssetGraph) return false;
+    var matches = true;
     var graph = item as AssetGraph;
-    if (graph.allNodes.length != _expected.allNodes.length) return false;
+    if (graph.allNodes.length != _expected.allNodes.length) matches = false;
     if (_checkValidAsOf && (graph.validAsOf != _expected.validAsOf)) {
-      return false;
+      matchState['ValidAsOf'] = [graph.validAsOf, _expected.validAsOf];
+      matches = false;
     }
     for (var node in graph.allNodes) {
       var expectedNode = _expected.get(node.id);
-      if (node.runtimeType != expectedNode.runtimeType) return false;
-      if (expectedNode == null || expectedNode.id != node.id) return false;
+      if (node.runtimeType != expectedNode.runtimeType) {
+        matchState['RuntimeType'] = [
+          node.runtimeType,
+          expectedNode.runtimeType
+        ];
+        matches = false;
+      }
+      if (expectedNode == null || expectedNode.id != node.id) {
+        matchState['AssetId'] = [node.id, expectedNode.id];
+        matches = false;
+      }
       if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, null)) {
-        return false;
+        matchState['Outputs of ${node.id}'] = [
+          node.outputs,
+          expectedNode.outputs
+        ];
+        matches = false;
       }
       if (!unorderedEquals(node.primaryOutputs)
           .matches(expectedNode.primaryOutputs, null)) {
-        return false;
+        matchState['Primary outputs of ${node.id}'] = [
+          node.primaryOutputs,
+          expectedNode.primaryOutputs
+        ];
+        matches = false;
+      }
+      if (node.lastKnownDigest != expectedNode.lastKnownDigest) {
+        matchState['Digest of ${node.id}'] = [
+          node.lastKnownDigest,
+          expectedNode.lastKnownDigest
+        ];
+        matches = false;
       }
       if (node is GeneratedAssetNode) {
         if (expectedNode is GeneratedAssetNode) {
-          if (node.primaryInput != expectedNode.primaryInput) return false;
-          if (node.needsUpdate != expectedNode.needsUpdate) return false;
-          if (node.wasOutput != expectedNode.wasOutput) return false;
+          if (node.primaryInput != expectedNode.primaryInput) {
+            matchState['primaryInput of ${node.id}'] = [
+              node.primaryInput,
+              expectedNode.primaryInput
+            ];
+            matches = false;
+          }
+          if (node.needsUpdate != expectedNode.needsUpdate) {
+            matchState['needsUpdate of ${node.id}'] = [
+              node.needsUpdate,
+              expectedNode.needsUpdate
+            ];
+            matches = false;
+          }
+          if (node.wasOutput != expectedNode.wasOutput) {
+            matchState['wasOutput of ${node.id}'] = [
+              node.wasOutput,
+              expectedNode.wasOutput
+            ];
+            matches = false;
+          }
         } else {
-          return false;
+          matchState['Type of ${node.id}'] = [
+            node.runtimeType,
+            expectedNode.runtimeType
+          ];
+          matches = false;
         }
       }
     }
-    return true;
+    return matches;
   }
 
   @override
   Description describe(Description description) =>
       description.addDescriptionOf(_expected);
+
+  @override
+  Description describeMismatch(
+      item, Description mismatchDescription, Map matchState, bool verbose) {
+    matchState.forEach((k, v) =>
+        mismatchDescription.add('$k: got ${v[0]} but expected ${v[1]}'));
+    return mismatchDescription;
+  }
 }

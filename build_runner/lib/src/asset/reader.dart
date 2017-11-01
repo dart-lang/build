@@ -6,16 +6,34 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 
 typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
+abstract class DigestAssetReader implements AssetReader {
+  /// Asynchronously compute the digest for [id].
+  ///
+  /// Throws a [AssetNotFoundException] if [id] is not found.
+  Future<Digest> digest(AssetId id);
+}
+
 /// A [MultiPackageAssetReader] with the additional `lastModified` method.
-abstract class RunnerAssetReader extends MultiPackageAssetReader {
+abstract class RunnerAssetReader extends MultiPackageAssetReader
+    implements DigestAssetReader {
   /// Asynchronously gets the last modified [DateTime] of [id].
   Future<DateTime> lastModified(AssetId id);
+}
+
+/// A [DigestAssetReader] that uses [md5] to compute [Digest]s.
+abstract class Md5DigestReader implements DigestAssetReader, RunnerAssetReader {
+  @override
+  Future<Digest> digest(AssetId id) async {
+    var bytes = await readAsBytes(id);
+    return md5.convert(bytes);
+  }
 }
 
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
@@ -32,7 +50,7 @@ abstract class RunnerAssetReader extends MultiPackageAssetReader {
 class SingleStepReader implements AssetReader {
   final AssetGraph _assetGraph;
   final _assetsRead = new Set<AssetId>();
-  final AssetReader _delegate;
+  final DigestAssetReader _delegate;
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
@@ -57,7 +75,8 @@ class SingleStepReader implements AssetReader {
       return false;
     }
     if (node is SyntheticAssetNode) return false;
-    if (node is! GeneratedAssetNode) return true;
+    if (node is SourceAssetNode) return true;
+    assert(node is GeneratedAssetNode);
     return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
   }
 
@@ -66,19 +85,23 @@ class SingleStepReader implements AssetReader {
     if (!_isReadable(id)) return new Future.value(false);
     await _ensureAssetIsBuilt(id);
     var node = _assetGraph.get(id);
+    bool result;
     if (node is GeneratedAssetNode) {
       // Short circut, we know this file exists because its readable and it was
       // output.
-      return node.wasOutput;
+      result = node.wasOutput;
     } else {
-      return _delegate.canRead(id);
+      result = await _delegate.canRead(id);
     }
+    if (result) await _ensureDigest(id);
+    return result;
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     await _ensureAssetIsBuilt(id);
+    await _ensureDigest(id);
     return _delegate.readAsBytes(id);
   }
 
@@ -86,6 +109,7 @@ class SingleStepReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     await _ensureAssetIsBuilt(id);
+    await _ensureDigest(id);
     return _delegate.readAsString(id, encoding: encoding);
   }
 
@@ -111,5 +135,10 @@ class SingleStepReader implements AssetReader {
     if (node is GeneratedAssetNode && node.needsUpdate) {
       await _runPhaseForInput(node.phaseNumber, node.primaryInput);
     }
+  }
+
+  Future<Null> _ensureDigest(AssetId id) async {
+    var node = _assetGraph.get(id);
+    node.lastKnownDigest ??= await _delegate.digest(id);
   }
 }

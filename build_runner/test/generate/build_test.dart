@@ -384,15 +384,19 @@ void main() {
     var cachedGraph = new AssetGraph.deserialize(
         JSON.decode(writer.assets[graphId].stringValue) as Map);
 
-    var expectedGraph = new AssetGraph.build([], new Set(), 'a');
+    var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
-        false, true, makeAssetId('a|web/a.txt.copy'));
+        false, true, makeAssetId('a|web/a.txt.copy'),
+        lastKnownDigest: computeDigest('a'));
     expectedGraph.add(aCopyNode);
-    expectedGraph.add(makeAssetNode('a|web/a.txt', [aCopyNode.id]));
+    expectedGraph
+        .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
     var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
-        false, true, makeAssetId('a|lib/b.txt.copy'));
+        false, true, makeAssetId('a|lib/b.txt.copy'),
+        lastKnownDigest: computeDigest('b'));
     expectedGraph.add(bCopyNode);
-    expectedGraph.add(makeAssetNode('a|lib/b.txt', [bCopyNode.id]));
+    expectedGraph
+        .add(makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b')));
 
     expect(cachedGraph, equalsAssetGraph(expectedGraph));
   });
@@ -408,9 +412,8 @@ void main() {
     // First run, nothing special.
     await testActions([copyABuildAction], inputs,
         outputs: outputs, writer: writer);
-    // Second run, should have no extra outputs.
-    await testActions([copyABuildAction], inputs,
-        outputs: outputs, writer: writer);
+    // Second run, should have no outputs.
+    await testActions([copyABuildAction], inputs, outputs: {}, writer: writer);
   });
 
   test('can recover from a deleted asset_graph.json cache', () async {
@@ -439,13 +442,15 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var graph = new AssetGraph.build([], new Set(), 'a')
+      var graph = await AssetGraph.build([], new Set(), 'a', null)
         ..validAsOf = new DateTime.now();
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
-          0, bId, false, true, makeAssetId('a|lib/b.txt.copy'));
+          0, bId, false, true, makeAssetId('a|lib/b.txt.copy'),
+          lastKnownDigest: computeDigest('b'));
       graph.add(bCopyNode);
-      var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id]);
+      var bNode =
+          makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b'));
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
@@ -471,7 +476,7 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = new AssetGraph.build([], new Set(), 'a')
+      var graph = await AssetGraph.build([], new Set(), 'a', null)
         ..validAsOf = new DateTime.now();
 
       var aCloneNode = new GeneratedAssetNode(
@@ -479,15 +484,18 @@ void main() {
           makeAssetId('a|lib/a.txt.copy'),
           false,
           true,
-          makeAssetId('a|lib/a.txt.copy.clone'));
+          makeAssetId('a|lib/a.txt.copy.clone'),
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCloneNode);
       var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
-          false, true, makeAssetId('a|lib/a.txt.copy'))
+          false, true, makeAssetId('a|lib/a.txt.copy'),
+          lastKnownDigest: computeDigest('a'))
         ..primaryOutputs.add(aCloneNode.id)
         ..outputs.add(aCloneNode.id);
       graph.add(aCopyNode);
-      var aNode = makeAssetNode('a|lib/a.txt', [aCopyNode.id])
-        ..primaryOutputs.add(aCopyNode.id);
+      var aNode =
+          makeAssetNode('a|lib/a.txt', [aCopyNode.id], computeDigest('a'))
+            ..primaryOutputs.add(aCopyNode.id);
       graph.add(aNode);
 
       var bCloneNode = new GeneratedAssetNode(
@@ -495,15 +503,18 @@ void main() {
           makeAssetId('a|lib/b.txt.copy'),
           false,
           true,
-          makeAssetId('a|lib/b.txt.copy.clone'));
+          makeAssetId('a|lib/b.txt.copy.clone'),
+          lastKnownDigest: computeDigest('b'));
       graph.add(bCloneNode);
       var bCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/b.txt'),
-          false, true, makeAssetId('a|lib/b.txt.copy'))
+          false, true, makeAssetId('a|lib/b.txt.copy'),
+          lastKnownDigest: computeDigest('b'))
         ..primaryOutputs.add(bCloneNode.id)
         ..outputs.add(bCloneNode.id);
       graph.add(bCopyNode);
-      var bNode = makeAssetNode('a|lib/b.txt', [bCopyNode.id])
-        ..primaryOutputs.add(bCopyNode.id);
+      var bNode =
+          makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b'))
+            ..primaryOutputs.add(bCopyNode.id);
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
@@ -533,20 +544,23 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = new AssetGraph.build([], new Set(), 'a')
+      var graph = await AssetGraph.build([], new Set(), 'a', null)
         ..validAsOf = new DateTime.now();
       var aCloneNode = new GeneratedAssetNode(
           0,
           makeAssetId('a|lib/a.txt.copy'),
           false,
           true,
-          makeAssetId('a|lib/a.txt.copy.clone'));
+          makeAssetId('a|lib/a.txt.copy.clone'),
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCloneNode);
       var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
-          false, true, makeAssetId('a|lib/a.txt.copy'))
+          false, true, makeAssetId('a|lib/a.txt.copy'),
+          lastKnownDigest: computeDigest('a'))
         ..outputs.add(aCloneNode.id);
       graph.add(aCopyNode);
-      var aNode = makeAssetNode('a|lib/a.txt', [aCopyNode.id]);
+      var aNode =
+          makeAssetNode('a|lib/a.txt', [aCopyNode.id], computeDigest('a'));
       graph.add(aNode);
 
       var writer = new InMemoryRunnerAssetWriter();
@@ -573,13 +587,15 @@ void main() {
     });
 
     test('invalidates graph if build script updates', () async {
-      var graph = new AssetGraph.build([], new Set(), 'a')
+      var graph = await AssetGraph.build([], new Set(), 'a', null)
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
-          0, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+          0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCopyNode);
-      var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
+      var aNode =
+          makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
       graph.add(aNode);
 
       var writer = new InMemoryRunnerAssetWriter();
@@ -600,13 +616,15 @@ void main() {
     });
 
     test('no outputs if no changed sources', () async {
-      var graph = new AssetGraph.build([], new Set(), 'a')
+      var graph = await AssetGraph.build([], new Set(), 'a', null)
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
-          0, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+          0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCopyNode);
-      var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
+      var aNode =
+          makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
       graph.add(aNode);
 
       var writer = new InMemoryRunnerAssetWriter();
@@ -623,13 +641,15 @@ void main() {
     });
 
     test('no outputs if no changed sources using `writeToCache`', () async {
-      var graph = new AssetGraph.build([], new Set(), 'a')
+      var graph = await AssetGraph.build([], new Set(), 'a', null)
         ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
-          0, aId, false, true, makeAssetId('a|web/a.txt.copy'));
+          0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
+          lastKnownDigest: computeDigest('a'));
       graph.add(aCopyNode);
-      var aNode = makeAssetNode('a|web/a.txt', [aCopyNode.id]);
+      var aNode =
+          makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
       graph.add(aNode);
 
       var writer = new InMemoryRunnerAssetWriter();

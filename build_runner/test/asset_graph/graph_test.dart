@@ -1,12 +1,14 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
+import 'package:build_runner/src/asset/reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/phase.dart';
@@ -15,6 +17,8 @@ import 'package:build_test/build_test.dart';
 import '../common/common.dart';
 
 void main() {
+  final digestReader = new MockDigestReader();
+
   group('AssetGraph', () {
     AssetGraph graph;
 
@@ -37,8 +41,8 @@ void main() {
     }
 
     group('simple graph', () {
-      setUp(() {
-        graph = new AssetGraph.build([], new Set(), 'foo')
+      setUp(() async {
+        graph = await AssetGraph.build([], new Set(), 'foo', digestReader)
           ..validAsOf = new DateTime.now();
       });
 
@@ -105,15 +109,21 @@ void main() {
     });
 
     group('with buildActions', () {
-      final buildActions = [new BuildAction(new CopyBuilder(), 'foo')];
+      final buildActions = [
+        new BuildAction(new CopyBuilder(), 'foo', excludes: ['excluded'])
+      ];
       final primaryInputId = makeAssetId('foo|file');
+      final excludedInputId = makeAssetId('foo|excluded');
       final primaryOutputId = makeAssetId('foo|file.copy');
       final syntheticId = makeAssetId('foo|synthetic');
       final syntheticOutputId = makeAssetId('foo|synthetic.copy');
 
-      setUp(() {
-        graph = new AssetGraph.build(
-            buildActions, new Set.from([primaryInputId]), 'foo');
+      setUp(() async {
+        graph = await AssetGraph.build(
+            buildActions,
+            new Set.from([primaryInputId, excludedInputId]),
+            'foo',
+            digestReader);
       });
 
       test('build', () {
@@ -122,17 +132,26 @@ void main() {
             graph.allNodes.map((n) => n.id),
             unorderedEquals([
               primaryInputId,
+              excludedInputId,
               primaryOutputId,
             ]));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, [primaryOutputId]);
+        expect(node.lastKnownDigest, isNotNull,
+            reason: 'Nodes with outputs should get an eager digest.');
+
+        var excludedNode = graph.get(excludedInputId);
+        expect(excludedNode, isNotNull);
+        expect(excludedNode.lastKnownDigest, isNull,
+            reason: 'Nodes with no output shouldn\'t get an eager digest.');
       });
 
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
           var changes = {new AssetId('foo', 'new'): ChangeType.ADD};
-          await graph.updateAndInvalidate(buildActions, changes, 'foo', null);
+          await graph.updateAndInvalidate(
+              buildActions, changes, 'foo', null, digestReader);
           expect(graph.contains(new AssetId('foo', 'new.copy')), isTrue);
         });
 
@@ -140,8 +159,8 @@ void main() {
           var changes = {primaryInputId: ChangeType.REMOVE};
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
-          await graph.updateAndInvalidate(
-              buildActions, changes, 'foo', (id) async => deletes.add(id));
+          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+              (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isFalse);
           expect(graph.contains(primaryOutputId), isFalse);
           expect(deletes, equals([primaryOutputId]));
@@ -151,8 +170,8 @@ void main() {
           var changes = {primaryInputId: ChangeType.MODIFY};
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
-          await graph.updateAndInvalidate(
-              buildActions, changes, 'foo', (id) async => deletes.add(id));
+          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+              (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
           expect(deletes, equals([primaryOutputId]));
@@ -164,7 +183,8 @@ void main() {
           expect(graph.get(syntheticId), syntheticNode);
 
           var changes = {syntheticId: ChangeType.ADD};
-          await graph.updateAndInvalidate(buildActions, changes, 'foo', null);
+          await graph.updateAndInvalidate(
+              buildActions, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId),
@@ -179,7 +199,8 @@ void main() {
           expect(graph.get(syntheticOutputId), syntheticNode);
 
           var changes = {syntheticId: ChangeType.ADD};
-          await graph.updateAndInvalidate(buildActions, changes, 'foo', null);
+          await graph.updateAndInvalidate(
+              buildActions, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(graph.get(syntheticOutputId),
@@ -189,4 +210,13 @@ void main() {
       });
     });
   });
+}
+
+class MockDigestReader extends StubAssetReader with Md5DigestReader {
+  @override
+  Future<List<int>> readAsBytes(AssetId id) async => UTF8.encode('$id');
+
+  @override
+  Future<DateTime> lastModified(AssetId id) => throw new UnimplementedError(
+      'lastModified not implemented for MockDigestReader');
 }

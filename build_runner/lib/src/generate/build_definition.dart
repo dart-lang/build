@@ -11,6 +11,7 @@ import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
+import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -36,7 +37,7 @@ class BuildDefinition {
   /// proven to be from the last build.
   final Set<AssetId> conflictingAssets;
 
-  final AssetReader reader;
+  final DigestAssetReader reader;
   final RunnerAssetWriter writer;
 
   final PackageGraph packageGraph;
@@ -85,28 +86,37 @@ class _Loader {
     }
     var allSources = inputSources.union(cacheDirSources);
     var updates = <AssetId, ChangeType>{};
-    await logTimedAsync(_logger, 'Reading cached dependency graph', () async {
-      if (await _options.reader.canRead(assetGraphId)) {
-        assetGraph = await _readAssetGraph(assetGraphId);
-      }
-      if (assetGraph != null &&
-          await new BuildScriptUpdates(_options)
-              .isNewerThan(assetGraph.validAsOf)) {
-        _logger.warning('Invalidating asset graph due to build script update');
-        assetGraph = null;
-      }
-      if (assetGraph == null) {
-        assetGraph = new AssetGraph.build(
-            _buildActions, inputSources, _options.packageGraph.root.name);
+    DigestAssetReader reader = _options.reader;
+    if (await _options.reader.canRead(assetGraphId)) {
+      assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
+          () => _readAssetGraph(assetGraphId));
+    }
+    if (assetGraph != null) {
+      await logTimedAsync(_logger, 'Checking build script for updates',
+          () async {
+        if (await new BuildScriptUpdates(_options)
+            .isNewerThan(assetGraph.validAsOf)) {
+          _logger
+              .warning('Invalidating asset graph due to build script update');
+          assetGraph = null;
+        }
+      });
+    }
+    if (assetGraph == null) {
+      await logTimedAsync(_logger, 'Building new asset graph', () async {
+        assetGraph = await AssetGraph.build(_buildActions, inputSources,
+            _options.packageGraph.root.name, reader);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
-      } else {
-        _logger.info('Updating asset graph with changes since last build.');
+      });
+    } else {
+      await logTimedAsync(
+          _logger, 'Updating asset graph with changes since last build',
+          () async {
         updates.addAll(await _findUpdates(
             assetGraph, inputSources, cacheDirSources, allSources));
-      }
-    });
-    AssetReader reader = _options.reader;
+      });
+    }
     var writer = _options.writer;
     if (_options.writeToCache) {
       reader = new BuildCacheReader(
@@ -172,8 +182,10 @@ class _Loader {
     var remainingSources =
         assetGraph.sources.toSet().intersection(inputSources);
     var modifyChecks = remainingSources.map((id) async {
-      var modified = await _options.reader.lastModified(id);
-      if (modified.isAfter(assetGraph.validAsOf)) {
+      var node = assetGraph.get(id);
+      var originalDigest = node.lastKnownDigest;
+      var currentDigest = await _options.reader.digest(id);
+      if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
     });

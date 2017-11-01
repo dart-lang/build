@@ -3,10 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 /// A node in the asset graph which may be an input to other assets.
-class AssetNode {
+abstract class AssetNode {
   final AssetId id;
 
   /// The assets that any [Builder] in the build graph declares it may output
@@ -17,10 +18,25 @@ class AssetNode {
   /// which reads this asset.
   final Set<AssetId> outputs = new Set<AssetId>();
 
-  AssetNode(this.id);
+  /// The [Digest] for this node in its last known state.
+  ///
+  /// May be `null` if this asset has no outputs, or if it doesn't actually
+  /// exist.
+  Digest lastKnownDigest;
+
+  AssetNode(this.id, {this.lastKnownDigest});
 
   @override
   String toString() => 'AssetNode: $id';
+}
+
+/// A node which is an original source asset (not generated).
+class SourceAssetNode extends AssetNode {
+  SourceAssetNode(AssetId id, {Digest lastKnownDigest})
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  @override
+  String toString() => 'SourceAssetNode: $id';
 }
 
 /// A node which is not a generated or source asset.
@@ -58,9 +74,9 @@ class GeneratedAssetNode extends AssetNode {
 
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
       this.wasOutput, AssetId id,
-      {Set<Glob> globs})
+      {Digest lastKnownDigest, Set<Glob> globs})
       : this.globs = globs ?? new Set<Glob>(),
-        super(id);
+        super(id, lastKnownDigest: lastKnownDigest);
 
   @override
   String toString() =>

@@ -106,7 +106,7 @@ class BuildImpl {
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     _reader.invalidate(await _assetGraph.updateAndInvalidate(
-        _buildActions, updates, _packageGraph.root.name, _delete));
+        _buildActions, updates, _packageGraph.root.name, _delete, _reader));
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
@@ -317,7 +317,7 @@ class BuildImpl {
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
-    _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
+    await _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
 
     return wrappedWriter.assetsWritten;
   }
@@ -356,7 +356,7 @@ class BuildImpl {
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
-    _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
+    await _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
 
     return wrappedWriter.assetsWritten;
   }
@@ -379,21 +379,25 @@ class BuildImpl {
   /// - Setting `wasOutput` based on `writer.assetsWritten`.
   /// - Setting `globs` on each output based on `reader.globsRan`
   /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
-  void _setOutputsState(Iterable<AssetId> declaredOutputs,
-      SingleStepReader reader, AssetWriterSpy writer) {
+  /// - Setting the `lastKnownDigest` on each output based on the new contents.
+  Future<Null> _setOutputsState(Iterable<AssetId> declaredOutputs,
+      SingleStepReader reader, AssetWriterSpy writer) async {
     // Reset the state for each output, setting `wasOutput` to false for now
     // (will set to true in the next loop for written assets).
     for (var output in declaredOutputs) {
       (_assetGraph.get(output) as GeneratedAssetNode)
         ..needsUpdate = false
         ..wasOutput = false
+        ..lastKnownDigest = null
         ..globs = reader.globsRan.toSet();
     }
 
     // Mark the actual outputs as output.
-    for (var output in writer.assetsWritten) {
-      (_assetGraph.get(output) as GeneratedAssetNode).wasOutput = true;
-    }
+    await Future.wait(writer.assetsWritten.map((output) async {
+      (_assetGraph.get(output) as GeneratedAssetNode)
+        ..wasOutput = true
+        ..lastKnownDigest = await _reader.digest(output);
+    }));
 
     // Update the asset graph based on the dependencies discovered.
     for (var dependency in reader.assetsRead) {

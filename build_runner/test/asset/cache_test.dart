@@ -20,11 +20,11 @@ void main() {
   var assets = <AssetId, DatedValue>{
     fooTxt: new DatedString('bar'),
   };
-  InMemoryAssetReader delegate;
+  InMemoryRunnerAssetReader delegate;
   CachingAssetReader reader;
 
   setUp(() {
-    delegate = new InMemoryAssetReader(sourceAssets: assets);
+    delegate = new InMemoryRunnerAssetReader(assets);
     reader = new CachingAssetReader(delegate);
   });
 
@@ -116,6 +116,20 @@ void main() {
 
       expect(await reader.readAsString(fooTxt), fooContent);
       expect(delegate.assetsRead, []);
+    });
+  });
+
+  group('digest', () {
+    test('should read from the delegate', () async {
+      expect(await reader.digest(fooTxt), isNotNull);
+      expect(delegate.assetsRead, [fooTxt]);
+    });
+
+    test('should re-read from the delegate (no cache)', () async {
+      expect(await reader.digest(fooTxt), isNotNull);
+      delegate.assetsRead.clear();
+      expect(await reader.digest(fooTxt), isNotNull);
+      expect(delegate.assetsRead, [fooTxt]);
     });
   });
 }

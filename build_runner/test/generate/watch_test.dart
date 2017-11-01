@@ -109,27 +109,38 @@ void main() {
         await writer.writeAsString(makeAssetId('a|web/c.txt'), 'c');
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'c.txt')));
+
+        await writer.writeAsString(makeAssetId('a|web/b.txt'), 'b2');
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
+
         // Don't call writer.delete, that has side effects.
         writer.assets.remove(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
 
         result = await results.next;
-        checkBuild(result, outputs: {'a|web/c.txt.copy': 'c'}, writer: writer);
+        checkBuild(result,
+            outputs: {'a|web/b.txt.copy': 'b2', 'a|web/c.txt.copy': 'c'},
+            writer: writer);
 
         var serialized = JSON.decode(
             writer.assets[makeAssetId('a|$assetGraphPath')].stringValue) as Map;
         var cachedGraph = new AssetGraph.deserialize(serialized);
 
-        var expectedGraph = new AssetGraph.build([], new Set(), 'a');
+        var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
         var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/b.txt'),
-            false, true, makeAssetId('a|web/b.txt.copy'));
+            false, true, makeAssetId('a|web/b.txt.copy'),
+            lastKnownDigest: computeDigest('b2'));
         expectedGraph.add(bCopyNode);
-        expectedGraph.add(makeAssetNode('a|web/b.txt', [bCopyNode.id]));
+        expectedGraph.add(
+            makeAssetNode('a|web/b.txt', [bCopyNode.id], computeDigest('b2')));
         var cCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/c.txt'),
-            false, true, makeAssetId('a|web/c.txt.copy'));
+            false, true, makeAssetId('a|web/c.txt.copy'),
+            lastKnownDigest: computeDigest('c'));
         expectedGraph.add(cCopyNode);
-        expectedGraph.add(makeAssetNode('a|web/c.txt', [cCopyNode.id]));
+        expectedGraph.add(
+            makeAssetNode('a|web/c.txt', [cCopyNode.id], computeDigest('c')));
 
         expect(cachedGraph, equalsAssetGraph(expectedGraph));
       });
@@ -165,7 +176,7 @@ void main() {
         var packageGraph = new PackageGraph.fromRoot(packageA);
 
         var results = new StreamQueue(startWatch([
-          copyABuildAction
+          copyABuildAction,
         ], {
           'a|web/a.txt': 'a',
           'b|web/b.txt': 'b'
