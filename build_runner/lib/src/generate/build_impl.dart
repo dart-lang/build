@@ -304,7 +304,7 @@ class BuildImpl {
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(
+    var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
@@ -333,7 +333,7 @@ class BuildImpl {
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(
+    var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
@@ -380,7 +380,7 @@ class BuildImpl {
   /// - Setting `globs` on each output based on `reader.globsRan`
   /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
   void _setOutputsState(Iterable<AssetId> declaredOutputs,
-      SinglePhaseReader reader, AssetWriterSpy writer) {
+      SingleStepReader reader, AssetWriterSpy writer) {
     // Reset the state for each output, setting `wasOutput` to false for now
     // (will set to true in the next loop for written assets).
     for (var output in declaredOutputs) {
