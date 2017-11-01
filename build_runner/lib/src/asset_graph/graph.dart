@@ -143,8 +143,8 @@ class AssetGraph {
 
     // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
     // the outputs of `id`.
-    Future<Null> clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {bool rootIsSource}) async {
+    void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
+        {bool rootIsSource}) {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
@@ -167,13 +167,12 @@ class AssetGraph {
       }
 
       // Update all outputs of this asset as well.
-      await Future.wait(node.outputs.map((output) => clearNodeAndDeps(
-          output, rootChangeType,
-          rootIsSource: rootIsSource)));
+      for (var output in node.outputs) {
+        clearNodeAndDeps(output, rootChangeType, rootIsSource: rootIsSource);
+      }
     }
 
-    await Future
-        .wait(updates.keys.map((id) => clearNodeAndDeps(id, updates[id])));
+    updates.forEach(clearNodeAndDeps);
 
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
@@ -215,7 +214,7 @@ class AssetGraph {
             .globs
             .any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
-          await clearNodeAndDeps(node.id, null);
+          clearNodeAndDeps(node.id, null);
         }
       }
     }
