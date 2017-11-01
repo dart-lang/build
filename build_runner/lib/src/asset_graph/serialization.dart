@@ -43,31 +43,30 @@ class _AssetGraphDeserializer {
 
   AssetNode _deserializeAssetNode(List serializedNode) {
     AssetNode node;
-    var typeId =
-        _NodeTypeId.values[serializedNode[_FieldId.NodeType.index] as int];
-    var id = _idToAssetId[serializedNode[_FieldId.Id.index] as int];
-    var serializedDigest = serializedNode[_FieldId.Digest.index] as String;
+    var typeId = _NodeType.values[serializedNode[_Field.NodeType.index] as int];
+    var id = _idToAssetId[serializedNode[_Field.Id.index] as int];
+    var serializedDigest = serializedNode[_Field.Digest.index] as String;
     var digest = serializedDigest == null
         ? null
         : new Digest(BASE64.decode(serializedDigest));
     switch (typeId) {
-      case _NodeTypeId.Source:
+      case _NodeType.Source:
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new SourceAssetNode(id, lastKnownDigest: digest);
         break;
-      case _NodeTypeId.Synthetic:
+      case _NodeType.Synthetic:
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new SyntheticAssetNode(id);
         break;
-      case _NodeTypeId.Generated:
+      case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
         node = new GeneratedAssetNode(
-          serializedNode[_FieldId.PhaseNumber.index] as int,
-          _idToAssetId[serializedNode[_FieldId.PrimaryInput.index] as int],
-          _deserializeBool(serializedNode[_FieldId.NeedsUpdate.index] as int),
-          _deserializeBool(serializedNode[_FieldId.WasOutput.index] as int),
+          serializedNode[_Field.PhaseNumber.index] as int,
+          _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
+          _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
+          _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
           id,
-          globs: (serializedNode[_FieldId.Globs.index] as Iterable<String>)
+          globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
               .map((pattern) => new Glob(pattern))
               .toSet(),
           lastKnownDigest: digest,
@@ -75,9 +74,9 @@ class _AssetGraphDeserializer {
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(
-        serializedNode[_FieldId.Outputs.index] as List<int>));
+        serializedNode[_Field.Outputs.index] as List<int>));
     node.primaryOutputs.addAll(_deserializeAssetIds(
-        serializedNode[_FieldId.PrimaryOutputs.index] as List<int>));
+        serializedNode[_Field.PrimaryOutputs.index] as List<int>));
     return node;
   }
 
@@ -132,10 +131,10 @@ class _AssetGraphSerializer {
 }
 
 /// Used to serialize the type of a node using an int.
-enum _NodeTypeId { Source, Synthetic, Generated }
+enum _NodeType { Source, Synthetic, Generated }
 
 /// Field indexes for serialized nodes.
-enum _FieldId {
+enum _Field {
   // First, the generic fields for all asset nodes.
   NodeType,
   Id,
@@ -161,7 +160,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
 
   _WrappedAssetNode(this.node, this.serializer);
 
-  static final int _length = _FieldId.Digest.index + 1;
+  static final int _length = _Field.Digest.index + 1;
 
   @override
   int get length => _length;
@@ -172,28 +171,28 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
 
   @override
   Object operator [](int index) {
-    var fieldId = _FieldId.values[index];
+    var fieldId = _Field.values[index];
     switch (fieldId) {
-      case _FieldId.NodeType:
+      case _Field.NodeType:
         if (node is SourceAssetNode) {
-          return _NodeTypeId.Source.index;
+          return _NodeType.Source.index;
         } else if (node is GeneratedAssetNode) {
-          return _NodeTypeId.Generated.index;
+          return _NodeType.Generated.index;
         } else if (node is SyntheticAssetNode) {
-          return _NodeTypeId.Synthetic.index;
+          return _NodeType.Synthetic.index;
         } else {
           throw new StateError('Unrecognized node type');
         }
         break;
-      case _FieldId.Id:
+      case _Field.Id:
         return serializer._assetIdToId[node.id];
-      case _FieldId.Outputs:
+      case _Field.Outputs:
         return node.outputs.map((id) => serializer._assetIdToId[id]).toList();
-      case _FieldId.PrimaryOutputs:
+      case _Field.PrimaryOutputs:
         return node.primaryOutputs
             .map((id) => serializer._assetIdToId[id])
             .toList();
-      case _FieldId.Digest:
+      case _Field.Digest:
         return node.lastKnownDigest == null
             ? null
             : BASE64.encode(node.lastKnownDigest.bytes);
@@ -218,7 +217,7 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   /// Indexes below this number are forwarded to `super[index]`.
   static final int _serializedOffset = _WrappedAssetNode._length;
 
-  static final int _length = _FieldId.values.length;
+  static final int _length = _Field.values.length;
 
   @override
   int get length => _length;
@@ -230,19 +229,19 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   @override
   Object operator [](int index) {
     if (index < _serializedOffset) return super[index];
-    var fieldId = _FieldId.values[index];
+    var fieldId = _Field.values[index];
     switch (fieldId) {
-      case _FieldId.PrimaryInput:
+      case _Field.PrimaryInput:
         return generatedNode.primaryInput != null
             ? serializer._assetIdToId[generatedNode.primaryInput]
             : null;
-      case _FieldId.WasOutput:
+      case _Field.WasOutput:
         return _serializeBool(generatedNode.wasOutput);
-      case _FieldId.PhaseNumber:
+      case _Field.PhaseNumber:
         return generatedNode.phaseNumber;
-      case _FieldId.Globs:
+      case _Field.Globs:
         return generatedNode.globs.map((glob) => glob.pattern).toList();
-      case _FieldId.NeedsUpdate:
+      case _Field.NeedsUpdate:
         return _serializeBool(generatedNode.needsUpdate);
       default:
         throw new RangeError.index(index, this);
