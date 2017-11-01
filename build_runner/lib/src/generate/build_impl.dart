@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
-import 'package:build_runner/src/util/clock.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -113,7 +112,6 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
-    var buildStartTime = now();
     Chain.capture(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
@@ -122,7 +120,6 @@ class BuildImpl {
       // Write out the dependency graph file.
       await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
-        _assetGraph.validAsOf = buildStartTime;
         await _writer.writeAsString(
             new AssetId(_packageGraph.root.name, assetGraphPath),
             JSON.encode(_assetGraph.serialize()));

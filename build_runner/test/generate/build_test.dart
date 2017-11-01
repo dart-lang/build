@@ -442,8 +442,7 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now();
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
           0, bId, false, true, makeAssetId('a|lib/b.txt.copy'),
@@ -475,8 +474,7 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now();
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
 
       var aCloneNode = new GeneratedAssetNode(
           1,
@@ -542,8 +540,7 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now();
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var aCloneNode = new GeneratedAssetNode(
           0,
           makeAssetId('a|lib/a.txt.copy'),
@@ -585,8 +582,7 @@ void main() {
     });
 
     test('invalidates graph if build script updates', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
@@ -613,8 +609,7 @@ void main() {
     });
 
     test('no outputs if no changed sources', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
@@ -637,8 +632,7 @@ void main() {
     });
 
     test('no outputs if no changed sources using `writeToCache`', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),

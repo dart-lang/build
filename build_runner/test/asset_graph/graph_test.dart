@@ -42,8 +42,7 @@ void main() {
 
     group('simple graph', () {
       setUp(() async {
-        graph = await AssetGraph.build([], new Set(), 'foo', digestReader)
-          ..validAsOf = new DateTime.now();
+        graph = await AssetGraph.build([], new Set(), 'foo', digestReader);
       });
 
       test('add, contains, get, allNodes', () {

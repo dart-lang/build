@@ -25,15 +25,6 @@ class AssetGraph {
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final _nodesByPackage = <String, Map<String, AssetNode>>{};
 
-  /// The start time of the most recent build which created this graph.
-  ///
-  /// Any assets which have been updated after this time should be invalidated
-  /// on subsequent builds.
-  ///
-  /// This is initialized to a very old value, and should be set to a real
-  /// value if you want incremental rebuilds.
-  DateTime validAsOf = new DateTime.fromMillisecondsSinceEpoch(0);
-
   AssetGraph._();
 
   /// Deserializes this graph.
@@ -285,7 +276,7 @@ class AssetGraph {
   }
 
   @override
-  String toString() => 'validAsOf: $validAsOf\n${allNodes.toList()}';
+  String toString() => allNodes.toList().toString();
 
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);

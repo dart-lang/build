@@ -42,8 +42,7 @@ main() {
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
         var assetGraph = await AssetGraph.build(buildActions,
-            [makeAssetId('a|lib/test.txt')].toSet(), 'a', assetReader)
-          ..validAsOf = new DateTime.now();
+            [makeAssetId('a|lib/test.txt')].toSet(), 'a', assetReader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -58,15 +57,13 @@ main() {
       });
 
       test('ignores non-output generated nodes', () async {
-        var lastBuild = new DateTime.now();
         assetReader.cacheStringAsset(makeAssetId('a|lib/test.txt'), 'a');
         var buildActions = [
           new BuildAction(new OverDeclaringCopyBuilder(), 'a')
         ];
 
         var assetGraph = await AssetGraph.build(buildActions,
-            [makeAssetId('a|lib/test.txt')].toSet(), 'a', assetReader)
-          ..validAsOf = lastBuild;
+            [makeAssetId('a|lib/test.txt')].toSet(), 'a', assetReader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -87,8 +84,7 @@ main() {
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
         var assetGraph = await AssetGraph.build(
-            buildActions, new Set<AssetId>(), 'a', assetReader)
-          ..validAsOf = new DateTime.now();
+            buildActions, new Set<AssetId>(), 'a', assetReader);
         expect(assetGraph.allNodes, isEmpty);
 
         assetReader.cacheStringAsset(makeAssetId('a|$assetGraphPath'),
