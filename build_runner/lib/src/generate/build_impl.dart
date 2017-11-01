@@ -304,7 +304,7 @@ class BuildImpl {
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(
+    var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
@@ -333,7 +333,7 @@ class BuildImpl {
 
     if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
 
-    var wrappedReader = new SinglePhaseReader(
+    var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
@@ -381,7 +381,7 @@ class BuildImpl {
   /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
   Future<Null> _setOutputsState(Iterable<AssetId> declaredOutputs,
-      SinglePhaseReader reader, AssetWriterSpy writer) async {
+      SingleStepReader reader, AssetWriterSpy writer) async {
     // Reset the state for each output, setting `wasOutput` to false for now
     // (will set to true in the next loop for written assets).
     for (var output in declaredOutputs) {
