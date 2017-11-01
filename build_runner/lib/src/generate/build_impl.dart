@@ -379,6 +379,7 @@ class BuildImpl {
   /// - Setting `wasOutput` based on `writer.assetsWritten`.
   /// - Setting `globs` on each output based on `reader.globsRan`
   /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
+  /// - Setting the `lastKnownDigest` on each output based on the new contents.
   Future<Null> _setOutputsState(Iterable<AssetId> declaredOutputs,
       SinglePhaseReader reader, AssetWriterSpy writer) async {
     // Reset the state for each output, setting `wasOutput` to false for now
