@@ -63,7 +63,8 @@ void main() {
         result = await results.next;
         checkBuild(result, outputs: {'a|web/b.txt.copy': 'b'}, writer: writer);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].stringValue, 'a');
+        expect(
+            writer.assets[makeAssetId('a|web/a.txt.copy')], UTF8.encode('a'));
       });
 
       test('rebuilds on deleted files', () async {
@@ -93,7 +94,8 @@ void main() {
         // The old output file should no longer exist either.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].stringValue, 'b');
+        expect(
+            writer.assets[makeAssetId('a|web/b.txt.copy')], UTF8.encode('b'));
       });
 
       test('rebuilds properly update asset_graph.json', () async {
@@ -125,7 +127,8 @@ void main() {
             writer: writer);
 
         var serialized = JSON.decode(
-            writer.assets[makeAssetId('a|$assetGraphPath')].stringValue) as Map;
+                UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')]))
+            as Map;
         var cachedGraph = new AssetGraph.deserialize(serialized);
 
         var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
@@ -155,8 +158,7 @@ void main() {
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         /// Pretend like a part of the dart script got updated.
-        await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
-            lastModified: new DateTime.now().add(new Duration(days: 1)));
+        await writer.writeAsString(makeAssetId('test|lib/test.dart'), '');
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
@@ -270,9 +272,10 @@ void main() {
             outputs: {'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
             writer: writer);
         // Previous outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy')].stringValue, 'a');
-        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')].stringValue,
-            'a');
+        expect(
+            writer.assets[makeAssetId('a|web/a.txt.copy')], UTF8.encode('a'));
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')],
+            UTF8.encode('a'));
       });
 
       test('deletes propagate through all phases', () async {
@@ -309,9 +312,10 @@ void main() {
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')], isNull);
         // Other outputs should still exist.
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy')].stringValue, 'b');
-        expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')].stringValue,
-            'b');
+        expect(
+            writer.assets[makeAssetId('a|web/b.txt.copy')], UTF8.encode('b'));
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')],
+            UTF8.encode('b'));
       });
 
       test('deleted generated outputs are regenerated', () async {

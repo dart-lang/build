@@ -12,7 +12,7 @@ Future<Null> testBuilderAndCollectAssets(
     Builder builder, Map<String, dynamic> assets) async {
   var writer = new InMemoryAssetWriter();
   await testBuilder(builder, assets, writer: writer);
-  writer.assets.forEach((id, datedValue) {
-    assets['${id.package}|${id.path}'] = datedValue.bytesValue;
+  writer.assets.forEach((id, value) {
+    assets['${id.package}|${id.path}'] = value;
   });
 }

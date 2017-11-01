@@ -92,8 +92,7 @@ class WatchImpl implements BuildState {
       assert(build != null);
 
       _expectedDeletes.clear();
-      if (await new BuildScriptUpdates(options)
-          .isNewerThan(_assetGraph.validAsOf)) {
+      if (await new BuildScriptUpdates(options, _assetGraph).hasBeenUpdated()) {
         fatalBuildCompleter.complete();
         _logger.severe('Terminating builds due to build script update');
         return new BuildResult(BuildStatus.failure, []);

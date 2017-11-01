@@ -20,15 +20,13 @@ abstract class DigestAssetReader implements AssetReader {
   Future<Digest> digest(AssetId id);
 }
 
-/// A [MultiPackageAssetReader] with the additional `lastModified` method.
-abstract class RunnerAssetReader extends MultiPackageAssetReader
-    implements DigestAssetReader {
-  /// Asynchronously gets the last modified [DateTime] of [id].
-  Future<DateTime> lastModified(AssetId id);
-}
+/// A [RunnerAssetReader] must implement both [MultiPackageAssetReader] and
+/// [DigestAssetReader].
+abstract class RunnerAssetReader
+    implements MultiPackageAssetReader, DigestAssetReader {}
 
 /// A [DigestAssetReader] that uses [md5] to compute [Digest]s.
-abstract class Md5DigestReader implements DigestAssetReader, RunnerAssetReader {
+abstract class Md5DigestReader implements DigestAssetReader {
   @override
   Future<Digest> digest(AssetId id) async {
     var bytes = await readAsBytes(id);

@@ -20,13 +20,11 @@ import '../common/common.dart';
 
 main() {
   group('BuildDefinition.load', () {
-    Map<AssetId, DatedValue> assets;
     BuildOptions options;
     InMemoryRunnerAssetReader assetReader;
 
     setUp(() {
-      assets = <AssetId, DatedValue>{};
-      assetReader = new InMemoryRunnerAssetReader(assets, 'a');
+      assetReader = new InMemoryRunnerAssetReader({}, 'a');
       var assetWriter = new InMemoryRunnerAssetWriter();
       var packageA = new PackageNode.noPubspec('a');
       var packageGraph = new PackageGraph.fromRoot(packageA);
@@ -40,21 +38,19 @@ main() {
 
     group('updates', () {
       test('contains deleted outputs as remove events', () async {
-        var lastBuild = new DateTime.now();
-        assets[makeAssetId('a|lib/test.txt')] =
-            new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
+        assetReader.cacheStringAsset(makeAssetId('a|lib/test.txt'), 'a');
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
-        var assetGraph = await AssetGraph.build(
-            buildActions, assets.keys.toSet(), 'a', assetReader)
+        var assetGraph = await AssetGraph.build(buildActions,
+            [makeAssetId('a|lib/test.txt')].toSet(), 'a', assetReader)
           ..validAsOf = new DateTime.now();
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
         generatedNode.wasOutput = true;
 
-        assets[makeAssetId('a|$assetGraphPath')] =
-            new DatedString(JSON.encode(assetGraph.serialize()));
+        assetReader.cacheStringAsset(makeAssetId('a|$assetGraphPath'),
+            JSON.encode(assetGraph.serialize()));
 
         var buildDefinition = await BuildDefinition.load(options, buildActions);
         expect(buildDefinition.updates.keys, [generatedSrcId]);
@@ -63,22 +59,21 @@ main() {
 
       test('ignores non-output generated nodes', () async {
         var lastBuild = new DateTime.now();
-        assets[makeAssetId('a|lib/test.txt')] =
-            new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
+        assetReader.cacheStringAsset(makeAssetId('a|lib/test.txt'), 'a');
         var buildActions = [
           new BuildAction(new OverDeclaringCopyBuilder(), 'a')
         ];
 
-        var assetGraph = await AssetGraph.build(
-            buildActions, assets.keys.toSet(), 'a', assetReader)
+        var assetGraph = await AssetGraph.build(buildActions,
+            [makeAssetId('a|lib/test.txt')].toSet(), 'a', assetReader)
           ..validAsOf = lastBuild;
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
         generatedNode.wasOutput = false;
 
-        assets[makeAssetId('a|$assetGraphPath')] =
-            new DatedString(JSON.encode(assetGraph.serialize()));
+        assetReader.cacheStringAsset(makeAssetId('a|$assetGraphPath'),
+            JSON.encode(assetGraph.serialize()));
 
         var buildDefinition = await BuildDefinition.load(options, buildActions);
         expect(buildDefinition.updates, isEmpty);
@@ -87,8 +82,8 @@ main() {
 
     group('assetGraph', () {
       test('doesn\'t capture unrecognized cacheDir files as inputs', () async {
-        assets[makeAssetId('a|$generatedOutputDirectory/a/lib/test.txt')] =
-            new DatedString('a');
+        assetReader.cacheStringAsset(
+            makeAssetId('a|$generatedOutputDirectory/a/lib/test.txt'), 'a');
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
         var assetGraph = await AssetGraph.build(
@@ -96,8 +91,8 @@ main() {
           ..validAsOf = new DateTime.now();
         expect(assetGraph.allNodes, isEmpty);
 
-        assets[makeAssetId('a|$assetGraphPath')] =
-            new DatedString(JSON.encode(assetGraph.serialize()));
+        assetReader.cacheStringAsset(makeAssetId('a|$assetGraphPath'),
+            JSON.encode(assetGraph.serialize()));
 
         var buildDefinition = await BuildDefinition.load(options, buildActions);
         expect(buildDefinition.updates, isEmpty);

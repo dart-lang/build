@@ -71,11 +71,6 @@ void main() {
           ]));
     });
 
-    test('can get lastModified time for files', () async {
-      expect(await reader.lastModified(makeAssetId('basic_pkg|hello.txt')),
-          new isInstanceOf<DateTime>());
-    });
-
     test('can compute digests', () async {
       expect(
           await reader.digest(makeAssetId('basic_pkg|hello.txt')), isNotNull);
@@ -93,11 +88,6 @@ void main() {
           await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
       var aDigest = await reader.digest(makeAssetId('basic_pkg|web/hello.txt'));
       expect(helloDigest, equals(aDigest));
-    });
-
-    test('lastModified throws AssetNotFoundException appropriately', () async {
-      expect(reader.lastModified(makeAssetId('basic_pkg|foo.txt')),
-          throwsA(assetNotFoundException));
     });
 
     test('can read from the SDK', () async {

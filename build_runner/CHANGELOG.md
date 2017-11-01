@@ -14,10 +14,14 @@
 - **Breaking**: `PackageNode.location` has become `PackageNode.path`, and is
   now a `String` (absolute path) instead of a `Uri`; this prevents needing
   conversions to/from `Uri` across the package.
-- **Breaking**: `RunnerAssetReader` interface now extends
-  `MultiPackageAssetReader`, which means the `packageName` named argument has
-  changed to `package`; while technically breaking most users do not rely on
-  this interface explicitly.
+- **Breaking**: `RunnerAssetReader` interface requires you to implement
+  `MultiPackageAssetReader` and `DigestAssetReader`. This means the
+  `packageName` named argument has changed to `package`, and you have to add the
+  `Future<Digest> digest(AssetId id)` method. While technically breaking most
+  users do not rely on this interface explicitly.
+  - You also no longer have to implement the
+    `Future<DateTime> lastModified(AssetId id)` method, as it has been replaced
+    with the `DigestAssetReader` interface.
 - **Breaking**: `ServeHandler.handle` has been replaced with
   `Handler ServeHandler.handleFor(String rootDir)`. This allows you to create
   separate handlers per directory you want to serve, which maintains pub serve
@@ -34,6 +38,11 @@
 - Fixed two issues with `writeToCache`:
   - Over-declared outputs will no longer attempt to build on each startup.
   - Unrecognized files in the cache dir will no longer be treated as inputs.
+- Running build scripts via `pub run` will no longer cause full rebuilds every
+  time.
+- Asset invalidation has changed from using last modified timestamps to content
+  hashes. This is generally much more reliable, and unblocks other desired
+  features.
 
 ### Internal changes
 

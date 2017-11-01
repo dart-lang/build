@@ -94,8 +94,8 @@ class _Loader {
     if (assetGraph != null) {
       await logTimedAsync(_logger, 'Checking build script for updates',
           () async {
-        if (await new BuildScriptUpdates(_options)
-            .isNewerThan(assetGraph.validAsOf)) {
+        if (await new BuildScriptUpdates(_options, assetGraph)
+            .hasBeenUpdated()) {
           _logger
               .warning('Invalidating asset graph due to build script update');
           assetGraph = null;

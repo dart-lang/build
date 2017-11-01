@@ -382,7 +382,7 @@ void main() {
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
     var cachedGraph = new AssetGraph.deserialize(
-        JSON.decode(writer.assets[graphId].stringValue) as Map);
+        JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
 
     var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
@@ -454,8 +454,7 @@ void main() {
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
-      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
-          lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
+      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b');
       await testActions([
         copyABuildAction
       ], {
@@ -518,8 +517,7 @@ void main() {
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
-      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
-          lastModified: graph.validAsOf.subtract(new Duration(days: 1)));
+      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b');
       await testActions(
           buildActions,
           {
@@ -576,7 +574,7 @@ void main() {
 
       /// Should be deleted using the writer, and removed from the new graph.
       var serialized = JSON.decode(
-          writer.assets[makeAssetId('a|$assetGraphPath')].stringValue) as Map;
+          UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
       var newGraph = new AssetGraph.deserialize(serialized);
       expect(newGraph.contains(aNode.id), isFalse);
       expect(newGraph.contains(aCopyNode.id), isFalse);
@@ -602,8 +600,7 @@ void main() {
 
       /// Spoof the `package:test/test.dart` import and pretend its newer than
       /// the current graph to cause a rebuild.
-      await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
-          lastModified: graph.validAsOf.add(new Duration(hours: 2)));
+      await writer.writeAsString(makeAssetId('test|lib/test.dart'), '');
       await testActions([
         copyABuildAction
       ], {
@@ -629,8 +626,7 @@ void main() {
 
       var writer = new InMemoryRunnerAssetWriter();
 
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), '',
-          lastModified: graph.validAsOf.subtract(new Duration(hours: 2)));
+      await writer.writeAsString(makeAssetId('a|web/a.txt'), '');
       await testActions([
         copyABuildAction
       ], {
@@ -654,11 +650,9 @@ void main() {
 
       var writer = new InMemoryRunnerAssetWriter();
 
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), '',
-          lastModified: graph.validAsOf.subtract(new Duration(hours: 2)));
+      await writer.writeAsString(makeAssetId('a|web/a.txt'), '');
       await writer.writeAsString(
-          makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '',
-          lastModified: graph.validAsOf.add(new Duration(hours: 2)));
+          makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '');
 
       var packageA = new PackageNode(
           'a', '0.1.0', PackageDependencyType.path, 'a/',

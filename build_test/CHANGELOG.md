@@ -5,6 +5,14 @@
   - **Known Issue**: Custom html files are not supported.  
 - **Breaking**: All `AssetReader#findAssets` implementations now return a
   `Stream<AssetId>` to match the latest `build` package.
+- **Breaking**: The `DatedValue`, `DatedString`, and `DatedBytes` apis are now
+  gone, since timestamps are no longer used by package:build. Instead the
+  `InMemoryAssetReader` and other apis take a `Map<AssetId, dynamic>`, and will
+  convert that into a `Map<AssetId, List<int>>` under the covers.
+  - **Note**: One side-effect of this change is that modifying the assets map
+    after passing it to the `InMemoryAssetReader` no longer has any effect. You
+    must call instead `cacheStringAsset` or `cacheBytesAsset` instead to add
+    or update assets.
 
 ## 0.8.0
 

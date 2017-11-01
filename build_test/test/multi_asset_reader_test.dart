@@ -30,10 +30,10 @@ void main() {
       var idC = new AssetId('some_pkg', 'missing.dart');
       assetReader = new MultiAssetReader([
         new InMemoryAssetReader(sourceAssets: {
-          idA: new DatedString('A'),
+          idA: 'A',
         }),
         new InMemoryAssetReader(sourceAssets: {
-          idB: new DatedString('B'),
+          idB: 'B',
         }),
       ]);
       expect(await assetReader.readAsString(idA), 'A');
@@ -47,13 +47,13 @@ void main() {
       assetReader = new MultiAssetReader([
         new InMemoryAssetReader(
           sourceAssets: {
-            idA: new DatedString('A'),
+            idA: 'A',
           },
           rootPackage: 'some_pkg',
         ),
         new InMemoryAssetReader(
           sourceAssets: {
-            idB: new DatedString('B'),
+            idB: 'B',
           },
           rootPackage: 'some_pkg',
         ),
@@ -68,12 +68,12 @@ void main() {
       assetReader = new MultiAssetReader([
         new InMemoryAssetReader(
           sourceAssets: {
-            idA: new DatedString('A'),
+            idA: 'A',
           },
         ),
         new InMemoryAssetReader(
           sourceAssets: {
-            idB: new DatedString('B'),
+            idB: 'B',
           },
         ),
       ]);
@@ -94,7 +94,7 @@ void main() {
       assetReader = new MultiAssetReader([
         new InMemoryAssetReader(
           sourceAssets: {
-            idA: new DatedString('A'),
+            idA: 'A',
           },
         ),
       ]);
