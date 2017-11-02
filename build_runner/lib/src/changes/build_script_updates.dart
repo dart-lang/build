@@ -93,10 +93,8 @@ class BuildScriptUpdates {
             'Unsupported uri scheme `${uri.scheme}` found for '
             'library in build script.\n'
             'This probably means you are running in an unsupported '
-            'context, such as in an isolate or via `pub run`. Instead you '
-            'should invoke this script directly like: '
-            '`dart path_to_script.dart`.\n'
-            'Full uri was:  $uri.');
+            'context, such as in an isolate.\n'
+            'Full uri was: $uri.');
     }
     return null;
   }
