@@ -5,12 +5,14 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
+
+import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 
 import '../common/common.dart';
 
@@ -33,16 +35,17 @@ void main() {
     reader.cacheStringAsset(
         new AssetId('example', 'web/initial.txt'), 'initial');
     terminateController = new StreamController();
-    final server = (await watch(
+    final server = (await watch_impl.watch(
       [
         new BuildAction(const UppercaseBuilder(), 'example'),
       ],
       packageGraph: graph,
       reader: reader,
       writer: writer,
-      logLevel: Level.ALL,
+      logLevel: Level.OFF,
       directoryWatcherFactory: (path) => new FakeWatcher(path),
       terminateEventStream: terminateController.stream,
+      skipBuildScriptCheck: true,
     ));
     handler = server.handlerFor('web');
 

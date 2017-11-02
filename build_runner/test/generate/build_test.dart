@@ -3,13 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
-import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/exceptions.dart';
@@ -382,7 +379,7 @@ void main() {
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
     var cachedGraph = new AssetGraph.deserialize(
-        JSON.decode(writer.assets[graphId].stringValue) as Map);
+        JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
 
     var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
@@ -442,8 +439,7 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now();
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var bId = makeAssetId('a|lib/b.txt');
       var bCopyNode = new GeneratedAssetNode(
           0, bId, false, true, makeAssetId('a|lib/b.txt.copy'),
@@ -454,8 +450,7 @@ void main() {
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
-      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
-          lastModified: graph.validAsOf.subtract(new Duration(hours: 1)));
+      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b');
       await testActions([
         copyABuildAction
       ], {
@@ -476,8 +471,7 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now();
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
 
       var aCloneNode = new GeneratedAssetNode(
           1,
@@ -518,8 +512,7 @@ void main() {
       graph.add(bNode);
 
       var writer = new InMemoryRunnerAssetWriter();
-      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b',
-          lastModified: graph.validAsOf.subtract(new Duration(days: 1)));
+      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b');
       await testActions(
           buildActions,
           {
@@ -544,8 +537,7 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now();
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var aCloneNode = new GeneratedAssetNode(
           0,
           makeAssetId('a|lib/a.txt.copy'),
@@ -576,7 +568,7 @@ void main() {
 
       /// Should be deleted using the writer, and removed from the new graph.
       var serialized = JSON.decode(
-          writer.assets[makeAssetId('a|$assetGraphPath')].stringValue) as Map;
+          UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
       var newGraph = new AssetGraph.deserialize(serialized);
       expect(newGraph.contains(aNode.id), isFalse);
       expect(newGraph.contains(aCopyNode.id), isFalse);
@@ -586,38 +578,8 @@ void main() {
       expect(writer.assets.containsKey(aCloneNode.id), isFalse);
     });
 
-    test('invalidates graph if build script updates', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
-      var aId = makeAssetId('a|web/a.txt');
-      var aCopyNode = new GeneratedAssetNode(
-          0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
-          lastKnownDigest: computeDigest('a'));
-      graph.add(aCopyNode);
-      var aNode =
-          makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
-      graph.add(aNode);
-
-      var writer = new InMemoryRunnerAssetWriter();
-
-      /// Spoof the `package:test/test.dart` import and pretend its newer than
-      /// the current graph to cause a rebuild.
-      await writer.writeAsString(makeAssetId('test|lib/test.dart'), '',
-          lastModified: graph.validAsOf.add(new Duration(hours: 2)));
-      await testActions([
-        copyABuildAction
-      ], {
-        'a|web/a.txt': 'a',
-        'a|web/a.txt.copy': 'a',
-        'a|$assetGraphPath': JSON.encode(graph.serialize()),
-      }, outputs: {
-        'a|web/a.txt.copy': 'a',
-      }, writer: writer);
-    });
-
     test('no outputs if no changed sources', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
@@ -629,8 +591,7 @@ void main() {
 
       var writer = new InMemoryRunnerAssetWriter();
 
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), '',
-          lastModified: graph.validAsOf.subtract(new Duration(hours: 2)));
+      await writer.writeAsString(makeAssetId('a|web/a.txt'), '');
       await testActions([
         copyABuildAction
       ], {
@@ -641,8 +602,7 @@ void main() {
     });
 
     test('no outputs if no changed sources using `writeToCache`', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null)
-        ..validAsOf = new DateTime.now().add(const Duration(hours: 1));
+      var graph = await AssetGraph.build([], new Set(), 'a', null);
       var aId = makeAssetId('a|web/a.txt');
       var aCopyNode = new GeneratedAssetNode(
           0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
@@ -654,11 +614,9 @@ void main() {
 
       var writer = new InMemoryRunnerAssetWriter();
 
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), '',
-          lastModified: graph.validAsOf.subtract(new Duration(hours: 2)));
+      await writer.writeAsString(makeAssetId('a|web/a.txt'), '');
       await writer.writeAsString(
-          makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '',
-          lastModified: graph.validAsOf.add(new Duration(hours: 2)));
+          makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '');
 
       var packageA = new PackageNode(
           'a', '0.1.0', PackageDependencyType.path, 'a/',
@@ -675,221 +633,6 @@ void main() {
           writer: writer,
           writeToCache: true,
           packageGraph: packageGraph);
-    });
-  });
-
-  group('build integration tests', () {
-    group('findAssets', () {
-      setUp(() async {
-        await d.dir('a', [
-          await pubspec('a', currentIsolateDependencies: [
-            'build',
-            'build_runner',
-            'build_test',
-            'glob'
-          ]),
-          d.dir('tool', [
-            d.file('build.dart', '''
-import 'package:build_runner/build_runner.dart';
-import 'package:build_test/build_test.dart';
-import 'package:glob/glob.dart';
-
-main() async {
-  await build(
-    [new BuildAction(new GlobbingBuilder(new Glob('**.txt')), 'a')]);
-}
-''')
-          ]),
-          d.dir('web', [
-            d.file('a.globPlaceholder'),
-            d.file('a.txt', ''),
-            d.file('b.txt', ''),
-          ]),
-        ]).create();
-
-        await pubGet('a');
-
-        // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart');
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
-        ]).validate();
-      });
-
-      test('picks up new files that match the glob', () async {
-        // Add a new file matching the glob.
-        await d.dir('a', [
-          d.dir('web', [d.file('c.txt', '')])
-        ]).create();
-
-        // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 1 outputs'));
-        await d.dir('a', [
-          d.dir('web', [
-            d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt\na|web/c.txt')
-          ])
-        ]).validate();
-      });
-
-      test('picks up deleted files that match the glob', () async {
-        // Delete a file matching the glob.
-        var aTxtFile = new File(p.join(d.sandbox, 'a', 'web', 'a.txt'));
-        aTxtFile.deleteSync();
-
-        // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 1 outputs'));
-        await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/b.txt')])
-        ]).validate();
-      });
-
-      test(
-          'doesn\'t cause new builds for files that don\'t match '
-          'any globs', () async {
-        // Add a new file not matching the glob.
-        await d.dir('a', [
-          d.dir('web', [d.file('c.other', '')])
-        ]).create();
-
-        // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 0 outputs'));
-        await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
-        ]).validate();
-      });
-
-      test('doesn\'t cause new builds for file changes', () async {
-        // Change a file matching the glob.
-        await d.dir('a', [
-          d.dir('web', [d.file('a.txt', 'changed!')])
-        ]).create();
-
-        // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 0 outputs'));
-        await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
-        ]).validate();
-      });
-    });
-
-    group('findAssets with no initial output', () {
-      setUp(() async {
-        await d.dir('a', [
-          await pubspec('a', currentIsolateDependencies: [
-            'build',
-            'build_runner',
-            'build_test',
-            'glob'
-          ]),
-          d.dir('tool', [
-            d.file('build.dart', '''
-import 'package:build_runner/build_runner.dart';
-import 'package:build_test/build_test.dart';
-import 'package:glob/glob.dart';
-
-main() async {
-  await build(
-    [new BuildAction(new OverDeclaringGlobbingBuilder(
-        new Glob('**.txt')), 'a')]);
-}
-
-class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
-  OverDeclaringGlobbingBuilder(Glob glob) : super(glob);
-
-  @override
-  Future build(BuildStep buildStep) async {
-    var assets = await buildStep.findAssets(glob).toList();
-    // Only output if we have a 'web/b.txt' file.
-    if (assets.any((id) => id.path == 'web/b.txt')) {
-      await super.build(buildStep);
-    }
-  }
-}
-''')
-          ]),
-          d.dir('web', [
-            d.file('a.globPlaceholder'),
-            d.file('a.txt', ''),
-          ]),
-        ]).create();
-
-        await pubGet('a');
-
-        // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart');
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 0 outputs'));
-        await d.dir('a', [
-          d.dir('web', [d.nothing('a.matchingFiles')])
-        ]).validate();
-      });
-
-      test('picks up new files that match the glob', () async {
-        // Add a new file matching the glob which causes a real output.
-        await d.dir('a', [
-          d.dir('web', [d.file('b.txt', '')])
-        ]).create();
-
-        // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout, contains('with 1 outputs'));
-        await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
-        ]).validate();
-      });
-    });
-  });
-
-  group('regression tests', () {
-    test(
-        'checking for existing outputs works with deleted '
-        'intermediate outputs', () async {
-      await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_runner',
-          'build_test',
-          'glob'
-        ]),
-        d.dir('tool', [
-          d.file('build.dart', '''
-import 'package:build_runner/build_runner.dart';
-import 'package:build_test/build_test.dart';
-
-main() async {
-  await build([
-    new BuildAction(new CopyBuilder(), 'a'),
-    new BuildAction(new CopyBuilder(), 'a', inputs: ['**.txt.copy']),
-  ]);
-}
-''')
-        ]),
-        d.dir('web', [
-          d.file('a.txt', 'a'),
-          d.file('a.txt.copy.copy', 'a'),
-        ]),
-      ]).create();
-
-      await pubGet('a');
-
-      var result = await runDart('a', 'tool/build.dart');
-
-      expect(result.exitCode, isNot(0),
-          reason: 'build should fail due to conflicting outputs');
-      expect(
-          result.stderr,
-          allOf(contains('Found 1 outputs already on disk'),
-              contains('a|web/a.txt.copy.copy')));
     });
   });
 }

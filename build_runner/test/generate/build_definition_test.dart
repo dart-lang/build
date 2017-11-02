@@ -1,11 +1,15 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
@@ -20,88 +24,90 @@ import '../common/common.dart';
 
 main() {
   group('BuildDefinition.load', () {
-    Map<AssetId, DatedValue> assets;
     BuildOptions options;
-    InMemoryRunnerAssetReader assetReader;
+    String pkgARoot;
 
-    setUp(() {
-      assets = <AssetId, DatedValue>{};
-      assetReader = new InMemoryRunnerAssetReader(assets, 'a');
-      var assetWriter = new InMemoryRunnerAssetWriter();
-      var packageA = new PackageNode.noPubspec('a');
-      var packageGraph = new PackageGraph.fromRoot(packageA);
+    Future<Null> createFile(String path, String contents) async {
+      var file = new File(p.join(pkgARoot, path));
+      expect(await file.exists(), isFalse);
+      await file.create(recursive: true);
+      await file.writeAsString(contents);
+      addTearDown(() => file.delete());
+    }
+
+    setUp(() async {
+      await d.dir(
+        'pkg_a',
+        [
+          await pubspec('a'),
+          d.file('.packages', '\na:./lib/'),
+          d.dir('lib'),
+        ],
+      ).create();
+      pkgARoot = p.join(d.sandbox, 'pkg_a');
+      var packageGraph = new PackageGraph.forPath(pkgARoot);
       options = new BuildOptions(
-          reader: assetReader,
-          writer: assetWriter,
           packageGraph: packageGraph,
           logLevel: Level.OFF,
-          writeToCache: true);
+          writeToCache: true,
+          skipBuildScriptCheck: true);
     });
 
     group('updates', () {
       test('contains deleted outputs as remove events', () async {
-        var lastBuild = new DateTime.now();
-        assets[makeAssetId('a|lib/test.txt')] =
-            new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
+        await createFile(p.join('lib', 'test.txt'), 'a');
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
-        var assetGraph = await AssetGraph.build(
-            buildActions, assets.keys.toSet(), 'a', assetReader)
-          ..validAsOf = new DateTime.now();
+        var assetGraph = await AssetGraph.build(buildActions,
+            [makeAssetId('a|lib/test.txt')].toSet(), 'a', options.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
         generatedNode.wasOutput = true;
 
-        assets[makeAssetId('a|$assetGraphPath')] =
-            new DatedString(JSON.encode(assetGraph.serialize()));
+        await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
         var buildDefinition = await BuildDefinition.load(options, buildActions);
-        expect(buildDefinition.updates.keys, [generatedSrcId]);
+        expect(buildDefinition.updates, contains(generatedSrcId));
         expect(buildDefinition.updates[generatedSrcId], ChangeType.REMOVE);
       });
 
       test('ignores non-output generated nodes', () async {
-        var lastBuild = new DateTime.now();
-        assets[makeAssetId('a|lib/test.txt')] =
-            new DatedString('a', lastBuild.subtract(new Duration(seconds: 1)));
+        await createFile(p.join('lib', 'test.txt'), 'a');
         var buildActions = [
           new BuildAction(new OverDeclaringCopyBuilder(), 'a')
         ];
 
-        var assetGraph = await AssetGraph.build(
-            buildActions, assets.keys.toSet(), 'a', assetReader)
-          ..validAsOf = lastBuild;
+        var assetGraph = await AssetGraph.build(buildActions,
+            [makeAssetId('a|lib/test.txt')].toSet(), 'a', options.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             assetGraph.get(generatedSrcId) as GeneratedAssetNode;
         generatedNode.wasOutput = false;
 
-        assets[makeAssetId('a|$assetGraphPath')] =
-            new DatedString(JSON.encode(assetGraph.serialize()));
+        await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
         var buildDefinition = await BuildDefinition.load(options, buildActions);
-        expect(buildDefinition.updates, isEmpty);
+        expect(buildDefinition.updates, isNot(contains(generatedSrcId)));
       });
     });
 
     group('assetGraph', () {
       test('doesn\'t capture unrecognized cacheDir files as inputs', () async {
-        assets[makeAssetId('a|$generatedOutputDirectory/a/lib/test.txt')] =
-            new DatedString('a');
+        var generatedId = new AssetId(
+            'a', p.url.join(generatedOutputDirectory, 'a', 'lib', 'test.txt'));
+        await createFile(generatedId.path, 'a');
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
         var assetGraph = await AssetGraph.build(
-            buildActions, new Set<AssetId>(), 'a', assetReader)
-          ..validAsOf = new DateTime.now();
+            buildActions, new Set<AssetId>(), 'a', options.reader);
         expect(assetGraph.allNodes, isEmpty);
 
-        assets[makeAssetId('a|$assetGraphPath')] =
-            new DatedString(JSON.encode(assetGraph.serialize()));
+        await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
         var buildDefinition = await BuildDefinition.load(options, buildActions);
-        expect(buildDefinition.updates, isEmpty);
-        expect(buildDefinition.assetGraph.allNodes, isEmpty);
+        expect(buildDefinition.updates, isNot(contains(generatedId)));
+        expect(buildDefinition.assetGraph.contains(generatedId), isFalse);
       });
     });
   });

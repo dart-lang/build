@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
@@ -110,10 +111,10 @@ StreamController _terminateServeController;
 
 /// Start serving files and running builds.
 Future<ServeHandler> createHandler(List<BuildAction> buildActions,
-    Map<String, String> inputs, InMemoryRunnerAssetWriter writer) {
-  inputs.forEach((serializedId, contents) {
-    writer.writeAsString(makeAssetId(serializedId), contents);
-  });
+    Map<String, String> inputs, InMemoryRunnerAssetWriter writer) async {
+  await Future.wait(inputs.keys.map((serializedId) async {
+    await writer.writeAsString(makeAssetId(serializedId), inputs[serializedId]);
+  }));
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
   final rootPackage = new PackageNode.noPubspec('a',
@@ -121,7 +122,7 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  return watch(buildActions,
+  return watch_impl.watch(buildActions,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
@@ -129,7 +130,8 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
       writer: writer,
       packageGraph: packageGraph,
       terminateEventStream: _terminateServeController.stream,
-      logLevel: Level.OFF);
+      logLevel: Level.OFF,
+      skipBuildScriptCheck: true);
 }
 
 /// Tells the program to terminate.

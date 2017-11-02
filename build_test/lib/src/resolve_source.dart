@@ -114,7 +114,7 @@ Future<T> _resolveAsset<T>(AssetId input, FutureOr<T> action(Resolver resolver),
   var inputs = [input];
   var inMemory = new InMemoryAssetReader(
     sourceAssets: {
-      input: new DatedString(inputContents ?? await reader.readAsString(input)),
+      input: inputContents ?? await reader.readAsString(input),
     },
     rootPackage: input.package,
   );

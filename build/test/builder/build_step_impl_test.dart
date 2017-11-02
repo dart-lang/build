@@ -97,7 +97,7 @@ void main() {
       await buildStep.complete();
 
       // One output.
-      expect(writer.assets[outputId].stringValue, 'foo');
+      expect(writer.assets[outputId], decodedMatches('foo'));
     });
 
     group('resolve', () {

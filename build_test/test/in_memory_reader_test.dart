@@ -14,12 +14,11 @@ void main() {
     final testAsset = new AssetId(packageName, 'test/some_test.dart');
 
     InMemoryAssetReader assetReader;
-    Map<AssetId, DatedValue> allAssets;
 
     setUp(() {
-      allAssets = {
-        libAsset: new DatedString('libAsset'),
-        testAsset: new DatedString('testAsset'),
+      var allAssets = {
+        libAsset: 'libAsset',
+        testAsset: 'testAsset',
       };
       assetReader = new InMemoryAssetReader(
         sourceAssets: allAssets,
@@ -49,10 +48,7 @@ void main() {
     test('#findAssets should be able to list files in non-root packages',
         () async {
       var otherLibAsset = new AssetId('other', 'lib/other.dart');
-      var otherAssets = {
-        otherLibAsset: new DatedString('otherLibAsset'),
-      };
-      allAssets.addAll(otherAssets);
+      assetReader.cacheStringAsset(otherLibAsset, 'otherLibAsset');
       expect(
           await assetReader
               .findAssets(new Glob('lib/*.dart'), package: 'other')

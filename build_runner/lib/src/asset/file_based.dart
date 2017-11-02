@@ -57,10 +57,6 @@ class FileBasedAssetReader extends Md5DigestReader
       // Empty results
     }
   }
-
-  @override
-  Future<DateTime> lastModified(AssetId id) async =>
-      (await _fileForOrThrow(id, packageGraph)).lastModified();
 }
 
 /// Creates an [AssetId] for [file], which is a part of [packageNode].

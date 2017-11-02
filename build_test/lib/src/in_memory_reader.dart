@@ -7,8 +7,6 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
-import 'in_memory_writer.dart';
-
 /// An [AssetReader] that records which assets have been read to [assetsRead].
 abstract class RecordingAssetReader implements AssetReader {
   Iterable<AssetId> get assetsRead;
@@ -17,7 +15,7 @@ abstract class RecordingAssetReader implements AssetReader {
 /// An implementation of [AssetReader] with primed in-memory assets.
 class InMemoryAssetReader
     implements MultiPackageAssetReader, RecordingAssetReader {
-  final Map<AssetId, DatedValue> assets;
+  final Map<AssetId, List<int>> assets;
   final String rootPackage;
 
   @override
@@ -25,10 +23,27 @@ class InMemoryAssetReader
 
   /// Create a new asset reader that contains [sourceAssets].
   ///
+  /// Any items in [sourceAssets] which are [String]s will be converted into
+  /// a [List<int>] of bytes.
+  ///
   /// May optionally define a [rootPackage], which is required for some APIs.
-  InMemoryAssetReader({Map<AssetId, DatedValue> sourceAssets, this.rootPackage})
-      : assets = sourceAssets ?? <AssetId, DatedValue>{},
+  InMemoryAssetReader({Map<AssetId, dynamic> sourceAssets, this.rootPackage})
+      : assets = _convertAssetsToBytes(sourceAssets) ?? <AssetId, List<int>>{},
         assetsRead = new Set<AssetId>();
+
+  static Map<AssetId, List<int>> _convertAssetsToBytes(
+      Map<AssetId, dynamic> original) {
+    if (original == null) return null;
+
+    var updates = <AssetId, List<int>>{};
+    original.forEach((id, content) {
+      if (content is String) updates[id] = UTF8.encode(content);
+    });
+    updates.forEach((id, bytes) {
+      original[id] = bytes;
+    });
+    return original as Map<AssetId, List<int>>;
+  }
 
   @override
   Future<bool> canRead(AssetId id) async {
@@ -40,14 +55,14 @@ class InMemoryAssetReader
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!await canRead(id)) throw new AssetNotFoundException(id);
     assetsRead.add(id);
-    return assets[id].bytesValue;
+    return assets[id];
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
     if (!await canRead(id)) throw new AssetNotFoundException(id);
     assetsRead.add(id);
-    return assets[id].stringValue;
+    return UTF8.decode(assets[id]);
   }
 
   @override
@@ -63,10 +78,11 @@ class InMemoryAssetReader
   }
 
   void cacheBytesAsset(AssetId id, List<int> bytes) {
-    assets[id] = new DatedBytes(bytes);
+    assets[id] = bytes;
   }
 
-  void cacheStringAsset(AssetId id, String contents) {
-    assets[id] = new DatedString(contents);
+  void cacheStringAsset(AssetId id, String contents, {Encoding encoding}) {
+    encoding ??= UTF8;
+    assets[id] = encoding.encode(contents);
   }
 }

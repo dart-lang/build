@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
-import 'package:build_runner/src/util/clock.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -31,8 +30,37 @@ import 'input_set.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
+import 'terminator.dart';
 
 final _logger = new Logger('Build');
+
+Future<BuildResult> build(List<BuildAction> buildActions,
+    {bool deleteFilesByDefault,
+    bool writeToCache,
+    PackageGraph packageGraph,
+    RunnerAssetReader reader,
+    RunnerAssetWriter writer,
+    Level logLevel,
+    onLog(LogRecord record),
+    Stream terminateEventStream,
+    bool skipBuildScriptCheck}) async {
+  var options = new BuildOptions(
+      deleteFilesByDefault: deleteFilesByDefault,
+      writeToCache: writeToCache,
+      packageGraph: packageGraph,
+      reader: reader,
+      writer: writer,
+      logLevel: logLevel,
+      onLog: onLog,
+      skipBuildScriptCheck: skipBuildScriptCheck);
+  var terminator = new Terminator(terminateEventStream);
+
+  var result = await singleBuild(options, buildActions);
+
+  await terminator.cancel();
+  await options.logListener.cancel();
+  return result;
+}
 
 Future<BuildResult> singleBuild(
     BuildOptions options, List<BuildAction> buildActions) async {
@@ -113,7 +141,6 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
-    var buildStartTime = now();
     Chain.capture(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
@@ -122,7 +149,6 @@ class BuildImpl {
       // Write out the dependency graph file.
       await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
-        _assetGraph.validAsOf = buildStartTime;
         await _writer.writeAsString(
             new AssetId(_packageGraph.root.name, assetGraphPath),
             JSON.encode(_assetGraph.serialize()));

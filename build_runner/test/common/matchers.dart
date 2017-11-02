@@ -12,14 +12,13 @@ final Matcher assetGraphVersionException =
 final Matcher duplicateAssetNodeException =
     new isInstanceOf<DuplicateAssetNodeException>();
 
-Matcher equalsAssetGraph(AssetGraph expected, {bool checkValidAsOf}) =>
-    new _AssetGraphMatcher(expected, checkValidAsOf ?? false);
+Matcher equalsAssetGraph(AssetGraph expected) =>
+    new _AssetGraphMatcher(expected);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
-  final bool _checkValidAsOf;
 
-  const _AssetGraphMatcher(this._expected, this._checkValidAsOf);
+  const _AssetGraphMatcher(this._expected);
 
   @override
   bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
@@ -27,10 +26,6 @@ class _AssetGraphMatcher extends Matcher {
     var matches = true;
     var graph = item as AssetGraph;
     if (graph.allNodes.length != _expected.allNodes.length) matches = false;
-    if (_checkValidAsOf && (graph.validAsOf != _expected.validAsOf)) {
-      matchState['ValidAsOf'] = [graph.validAsOf, _expected.validAsOf];
-      matches = false;
-    }
     for (var node in graph.allNodes) {
       var expectedNode = _expected.get(node.id);
       if (node.runtimeType != expectedNode.runtimeType) {

@@ -5,6 +5,20 @@
   - **Known Issue**: Custom html files are not supported.  
 - **Breaking**: All `AssetReader#findAssets` implementations now return a
   `Stream<AssetId>` to match the latest `build` package.
+- **Breaking**: The `DatedValue`, `DatedString`, and `DatedBytes` apis are now
+  gone, since timestamps are no longer used by package:build. Instead the
+  `InMemoryAssetReader` and other apis take a `Map<AssetId, dynamic>`, and will
+  automatically convert any `String` values into  `List<int>` values.
+- **Breaking**: The `outputs` map of `testBuilder` works a little bit
+  differently due to the removal of `DatedValue` and `DatedString`.
+  * If a value provided is a `String`, then the asset is by default decoded
+    using UTF8, and matched against the string.
+  * If the value is a `matcher`, it will match againt the actual bytes of the
+    asset (in `List<int>` form).
+  * A new matcher was added, `decodedMatches`, which can be combined with other
+    matchers to match against the string contents. For example, to match a
+    string containing a substring, you would do
+    `decodedMatches(contains('some substring'))`.
 
 ## 0.8.0
 

@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:test/test.dart';
 import 'package:build/build.dart';
@@ -51,15 +52,11 @@ void checkOutputs(
       var actual = writer.assets[mapAssetIds(assetId)];
       var expected;
       if (contentsMatcher is String) {
-        expected = actual.stringValue;
+        expected = UTF8.decode(actual);
       } else if (contentsMatcher is List<int>) {
-        expected = actual.bytesValue;
+        expected = actual;
       } else if (contentsMatcher is Matcher) {
-        if (actual is DatedBytes) {
-          expected = actual.bytesValue;
-        } else {
-          expected = actual.stringValue;
-        }
+        expected = actual;
       } else {
         throw new ArgumentError('Expected values for `outputs` to be of type '
             '`String`, `List<int>`, or `Matcher`, but got `$contentsMatcher`.');

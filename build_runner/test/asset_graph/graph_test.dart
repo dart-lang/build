@@ -42,8 +42,7 @@ void main() {
 
     group('simple graph', () {
       setUp(() async {
-        graph = await AssetGraph.build([], new Set(), 'foo', digestReader)
-          ..validAsOf = new DateTime.now();
+        graph = await AssetGraph.build([], new Set(), 'foo', digestReader);
       });
 
       test('add, contains, get, allNodes', () {
@@ -215,8 +214,4 @@ void main() {
 class MockDigestReader extends StubAssetReader with Md5DigestReader {
   @override
   Future<List<int>> readAsBytes(AssetId id) async => UTF8.encode('$id');
-
-  @override
-  Future<DateTime> lastModified(AssetId id) => throw new UnimplementedError(
-      'lastModified not implemented for MockDigestReader');
 }

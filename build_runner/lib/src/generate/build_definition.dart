@@ -91,11 +91,11 @@ class _Loader {
       assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
           () => _readAssetGraph(assetGraphId));
     }
-    if (assetGraph != null) {
+    if (assetGraph != null && !_options.skipBuildScriptCheck) {
       await logTimedAsync(_logger, 'Checking build script for updates',
           () async {
-        if (await new BuildScriptUpdates(_options)
-            .isNewerThan(assetGraph.validAsOf)) {
+        if (await new BuildScriptUpdates(_options, assetGraph)
+            .hasBeenUpdated()) {
           _logger
               .warning('Invalidating asset graph due to build script update');
           assetGraph = null;
@@ -108,6 +108,11 @@ class _Loader {
             _options.packageGraph.root.name, reader);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
+      });
+      await logTimedAsync(_logger, 'Recording initial build script state',
+          () async {
+        await new BuildScriptUpdates(_options, assetGraph)
+            .recordInitialDigests();
       });
     } else {
       await logTimedAsync(

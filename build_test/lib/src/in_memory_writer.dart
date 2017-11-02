@@ -8,54 +8,24 @@ import 'package:build/build.dart';
 
 /// An implementation of [AssetWriter] that records outputs to [assets].
 abstract class RecordingAssetWriter implements AssetWriter {
-  Map<AssetId, DatedValue> get assets;
+  Map<AssetId, List<int>> get assets;
 }
 
 /// An implementation of [AssetWriter] that writes outputs to memory.
 class InMemoryAssetWriter implements RecordingAssetWriter {
   @override
-  final Map<AssetId, DatedValue> assets = {};
+  final Map<AssetId, List<int>> assets = {};
 
   InMemoryAssetWriter();
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes,
-      {Encoding encoding: UTF8, DateTime lastModified}) async {
-    assets[id] = new DatedBytes(bytes, lastModified);
+  Future writeAsBytes(AssetId id, List<int> bytes) async {
+    assets[id] = bytes;
   }
 
   @override
   Future writeAsString(AssetId id, String contents,
-      {Encoding encoding: UTF8, DateTime lastModified}) async {
-    assets[id] = new DatedString(contents, lastModified);
+      {Encoding encoding: UTF8}) async {
+    assets[id] = encoding.encode(contents);
   }
-}
-
-abstract class DatedValue {
-  final DateTime date;
-
-  String get stringValue;
-  List<int> get bytesValue;
-
-  DatedValue([DateTime date]) : date = date ?? new DateTime.now();
-}
-
-class DatedString extends DatedValue {
-  @override
-  final stringValue;
-
-  @override
-  List<int> get bytesValue => UTF8.encode(stringValue);
-
-  DatedString(this.stringValue, [DateTime date]) : super(date);
-}
-
-class DatedBytes extends DatedValue {
-  @override
-  final bytesValue;
-
-  @override
-  String get stringValue => UTF8.decode(bytesValue);
-
-  DatedBytes(this.bytesValue, [DateTime date]) : super(date);
 }

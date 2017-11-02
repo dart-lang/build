@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 9;
+const _version = 10;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -36,8 +36,6 @@ class _AssetGraphDeserializer {
       graph._add(_deserializeAssetNode(serializedItem as List));
     }
 
-    graph.validAsOf = new DateTime.fromMillisecondsSinceEpoch(
-        _serializedGraph['validAsOf'] as int);
     return graph;
   }
 
@@ -106,7 +104,6 @@ class _AssetGraphSerializer {
     var result = <String, dynamic>{
       'version': _version,
       'nodes': _graph.allNodes.map(_serializeNode).toList(),
-      'validAsOf': _graph.validAsOf.millisecondsSinceEpoch,
     };
 
     // Store the id => AssetId mapping as a nested list so we don't have to

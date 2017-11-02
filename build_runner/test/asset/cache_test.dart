@@ -2,10 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
-
 import 'package:build/build.dart';
-import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner/src/asset/cache.dart';
@@ -16,9 +13,9 @@ void main() {
   var fooTxt = new AssetId('a', 'foo.txt');
   var missingTxt = new AssetId('a', 'missing.txt');
   var fooContent = 'bar';
-  var fooUTF8Bytes = UTF8.encode('bar');
-  var assets = <AssetId, DatedValue>{
-    fooTxt: new DatedString('bar'),
+  var fooUTF8Bytes = decodedMatches('bar');
+  var assets = <AssetId, dynamic>{
+    fooTxt: 'bar',
   };
   InMemoryRunnerAssetReader delegate;
   CachingAssetReader reader;

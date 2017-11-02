@@ -7,7 +7,6 @@ import 'package:test/test.dart';
 
 import 'package:build_compilers/build_compilers.dart';
 
-import 'matchers.dart';
 import 'util.dart';
 
 main() {
@@ -37,12 +36,12 @@ main() {
 
   test("can compile ddc modules under lib and web", () async {
     var expectedOutputs = {
-      'b|lib/b.js': new Utf8Decoded(contains('world')),
-      'b|lib/b.js.map': new Utf8Decoded(contains('b.dart')),
-      'a|lib/a.js': new Utf8Decoded(contains('hello')),
-      'a|lib/a.js.map': new Utf8Decoded(contains('a.dart')),
-      'a|web/index.js': new Utf8Decoded(contains('main')),
-      'a|web/index.js.map': new Utf8Decoded(contains('index.dart')),
+      'b|lib/b.js': decodedMatches(contains('world')),
+      'b|lib/b.js.map': decodedMatches(contains('b.dart')),
+      'a|lib/a.js': decodedMatches(contains('hello')),
+      'a|lib/a.js.map': decodedMatches(contains('a.dart')),
+      'a|web/index.js': decodedMatches(contains('main')),
+      'a|web/index.js.map': decodedMatches(contains('index.dart')),
     };
     await testBuilder(new DevCompilerBuilder(), assets,
         outputs: expectedOutputs);
