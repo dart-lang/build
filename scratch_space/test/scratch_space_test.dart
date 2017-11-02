@@ -19,13 +19,12 @@ void main() {
     ScratchSpace scratchSpace;
     InMemoryAssetReader assetReader;
 
-    Map<AssetId, DatedValue> allAssets = [
+    Map<AssetId, List<int>> allAssets = [
       'dep|lib/dep.dart',
       'myapp|lib/myapp.dart',
       'myapp|web/main.dart',
     ].fold({}, (assets, serializedId) {
-      assets[new AssetId.parse(serializedId)] =
-          new DatedBytes(serializedId.codeUnits);
+      assets[new AssetId.parse(serializedId)] = serializedId.codeUnits;
       return assets;
     });
 
@@ -80,7 +79,7 @@ void main() {
       var writer = new InMemoryAssetWriter();
       await scratchSpace.copyOutput(outputId, writer);
 
-      expect(writer.assets[outputId].stringValue, outputContent);
+      expect(writer.assets[outputId], decodedMatches(outputContent));
     });
 
     test('Can delete a ScratchSpace', () async {
