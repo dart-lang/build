@@ -55,15 +55,22 @@ class BuildDefinition {
       this.resourceManager);
 
   static Future<BuildDefinition> load(
-          BuildOptions options, List<BuildAction> buildActions) =>
-      new _Loader(options, buildActions).load();
+          BuildOptions options, List<BuildAction> buildActions,
+          {bool skipBuildScriptCheck}) =>
+      new _Loader(options, buildActions,
+              skipBuildScriptCheck: skipBuildScriptCheck)
+          .load();
 }
 
 class _Loader {
   final List<BuildAction> _buildActions;
   final BuildOptions _options;
 
-  _Loader(this._options, this._buildActions);
+  /// For testing purposes only.
+  final bool _skipBuildScriptCheck;
+
+  _Loader(this._options, this._buildActions, {bool skipBuildScriptCheck})
+      : _skipBuildScriptCheck = skipBuildScriptCheck ?? false;
 
   Future<BuildDefinition> load() async {
     if (!_options.writeToCache) {
@@ -91,7 +98,7 @@ class _Loader {
       assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
           () => _readAssetGraph(assetGraphId));
     }
-    if (assetGraph != null) {
+    if (assetGraph != null && !_skipBuildScriptCheck) {
       await logTimedAsync(_logger, 'Checking build script for updates',
           () async {
         if (await new BuildScriptUpdates(_options, assetGraph)

@@ -79,6 +79,12 @@ class BuildScriptUpdates {
     }
 
     var node = _graph.get(id);
+    if (node == null) {
+      _logger.warning('$id was not found in the asset graph, falling back on '
+          'full rebuild.\n This probably means you don\'t have your '
+          'dependencies specified fully in your pubspec.yaml.');
+      return true;
+    }
     if (node.lastKnownDigest == null) {
       node.lastKnownDigest = await _reader.digest(id);
       return true;
@@ -90,5 +96,3 @@ class BuildScriptUpdates {
     }
   }
 }
-
-void hello() {}
