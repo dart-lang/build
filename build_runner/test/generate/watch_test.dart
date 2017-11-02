@@ -13,6 +13,7 @@ import 'package:watcher/watcher.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
@@ -165,7 +166,7 @@ void main() {
 
         result = await results.next;
         checkBuild(result, status: BuildStatus.failure);
-      });
+      }, skip: 'Need to move to an integration test');
 
       test('ignores events from nested packages', () async {
         var writer = new InMemoryRunnerAssetWriter();
@@ -203,12 +204,17 @@ void main() {
       });
 
       test('rebuilds on file updates during first build', () async {
+        var blocker = new Completer<Null>();
+        var buildAction =
+            new BuildAction(new CopyBuilder(blockUntil: blocker.future), 'a');
         var writer = new InMemoryRunnerAssetWriter();
         var results = new StreamQueue(
-            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
+            startWatch([buildAction], {'a|web/a.txt': 'a'}, writer));
 
+        await new Future(() {});
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
+        blocker.complete();
 
         var result = await results.next;
         // TODO: Move this up above the call to notifyWatchers once
@@ -426,7 +432,7 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
   }
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  var buildState = watch(buildActions,
+  var buildState = watch_impl.watch(buildActions,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
@@ -434,7 +440,8 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
       writer: writer,
       packageGraph: packageGraph,
       terminateEventStream: _terminateWatchController.stream,
-      logLevel: Level.OFF);
+      logLevel: Level.OFF,
+      skipBuildScriptCheck: true);
   buildState
       .then((s) => buildResults.addStream(s.buildResults))
       .then((_) => buildResults.close());

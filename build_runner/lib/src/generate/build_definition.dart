@@ -55,22 +55,15 @@ class BuildDefinition {
       this.resourceManager);
 
   static Future<BuildDefinition> load(
-          BuildOptions options, List<BuildAction> buildActions,
-          {bool skipBuildScriptCheck}) =>
-      new _Loader(options, buildActions,
-              skipBuildScriptCheck: skipBuildScriptCheck)
-          .load();
+          BuildOptions options, List<BuildAction> buildActions) =>
+      new _Loader(options, buildActions).load();
 }
 
 class _Loader {
   final List<BuildAction> _buildActions;
   final BuildOptions _options;
 
-  /// For testing purposes only.
-  final bool _skipBuildScriptCheck;
-
-  _Loader(this._options, this._buildActions, {bool skipBuildScriptCheck})
-      : _skipBuildScriptCheck = skipBuildScriptCheck ?? false;
+  _Loader(this._options, this._buildActions);
 
   Future<BuildDefinition> load() async {
     if (!_options.writeToCache) {
@@ -98,7 +91,7 @@ class _Loader {
       assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
           () => _readAssetGraph(assetGraphId));
     }
-    if (assetGraph != null && !_skipBuildScriptCheck) {
+    if (assetGraph != null && !_options.skipBuildScriptCheck) {
       await logTimedAsync(_logger, 'Checking build script for updates',
           () async {
         if (await new BuildScriptUpdates(_options, assetGraph)
@@ -115,6 +108,11 @@ class _Loader {
             _options.packageGraph.root.name, reader);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
+      });
+      await logTimedAsync(_logger, 'Recording initial build script state',
+          () async {
+        await new BuildScriptUpdates(_options, assetGraph)
+            .recordInitialDigests();
       });
     } else {
       await logTimedAsync(

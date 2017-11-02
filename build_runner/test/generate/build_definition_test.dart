@@ -47,7 +47,10 @@ main() {
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       var packageGraph = new PackageGraph.forPath(pkgARoot);
       options = new BuildOptions(
-          packageGraph: packageGraph, logLevel: Level.OFF, writeToCache: true);
+          packageGraph: packageGraph,
+          logLevel: Level.OFF,
+          writeToCache: true,
+          skipBuildScriptCheck: true);
     });
 
     group('updates', () {
@@ -64,8 +67,7 @@ main() {
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
-        var buildDefinition = await BuildDefinition.load(options, buildActions,
-            skipBuildScriptCheck: true);
+        var buildDefinition = await BuildDefinition.load(options, buildActions);
         expect(buildDefinition.updates, contains(generatedSrcId));
         expect(buildDefinition.updates[generatedSrcId], ChangeType.REMOVE);
       });
@@ -85,8 +87,7 @@ main() {
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
-        var buildDefinition = await BuildDefinition.load(options, buildActions,
-            skipBuildScriptCheck: true);
+        var buildDefinition = await BuildDefinition.load(options, buildActions);
         expect(buildDefinition.updates, isNot(contains(generatedSrcId)));
       });
     });
@@ -104,8 +105,7 @@ main() {
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
-        var buildDefinition = await BuildDefinition.load(options, buildActions,
-            skipBuildScriptCheck: true);
+        var buildDefinition = await BuildDefinition.load(options, buildActions);
         expect(buildDefinition.updates, isNot(contains(generatedId)));
         expect(buildDefinition.assetGraph.contains(generatedId), isFalse);
       });

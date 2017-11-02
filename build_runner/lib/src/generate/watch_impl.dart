@@ -11,10 +11,13 @@ import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../asset/reader.dart';
+import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
 import '../package_graph/package_graph.dart';
+import '../server/server.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_impl.dart';
@@ -22,8 +25,44 @@ import 'build_result.dart';
 import 'directory_watcher_factory.dart';
 import 'options.dart';
 import 'phase.dart';
+import 'terminator.dart';
 
 final _logger = new Logger('Watch');
+
+Future<ServeHandler> watch(List<BuildAction> buildActions,
+    {bool deleteFilesByDefault,
+    bool writeToCache,
+    PackageGraph packageGraph,
+    RunnerAssetReader reader,
+    RunnerAssetWriter writer,
+    Level logLevel,
+    onLog(LogRecord record),
+    Duration debounceDelay,
+    DirectoryWatcherFactory directoryWatcherFactory,
+    Stream terminateEventStream,
+    bool skipBuildScriptCheck}) async {
+  var options = new BuildOptions(
+      deleteFilesByDefault: deleteFilesByDefault,
+      writeToCache: writeToCache,
+      packageGraph: packageGraph,
+      reader: reader,
+      writer: writer,
+      logLevel: logLevel,
+      onLog: onLog,
+      debounceDelay: debounceDelay,
+      directoryWatcherFactory: directoryWatcherFactory,
+      skipBuildScriptCheck: skipBuildScriptCheck);
+  var terminator = new Terminator(terminateEventStream);
+  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
+
+  // ignore: unawaited_futures
+  watch.buildResults.drain().then((_) async {
+    await terminator.cancel();
+    await options.logListener.cancel();
+  });
+
+  return createServeHandler(watch);
+}
 
 /// Repeatedly run builds as files change on disk until [until] fires.
 ///
@@ -92,10 +131,13 @@ class WatchImpl implements BuildState {
       assert(build != null);
 
       _expectedDeletes.clear();
-      if (await new BuildScriptUpdates(options, _assetGraph).hasBeenUpdated()) {
-        fatalBuildCompleter.complete();
-        _logger.severe('Terminating builds due to build script update');
-        return new BuildResult(BuildStatus.failure, []);
+      if (!options.skipBuildScriptCheck) {
+        if (await new BuildScriptUpdates(options, _assetGraph)
+            .hasBeenUpdated()) {
+          fatalBuildCompleter.complete();
+          _logger.severe('Terminating builds due to build script update');
+          return new BuildResult(BuildStatus.failure, []);
+        }
       }
       return build.run(_collectChanges(changes));
     }

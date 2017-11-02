@@ -11,12 +11,11 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
-import 'build_impl.dart';
+import 'build_impl.dart' as build_impl;
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
-import 'options.dart';
 import 'phase.dart';
-import 'watch_impl.dart';
+import 'watch_impl.dart' as watch_impl;
 
 /// Runs all of the actions in [buildActions] once.
 ///
@@ -42,30 +41,23 @@ import 'watch_impl.dart';
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
 Future<BuildResult> build(List<BuildAction> buildActions,
-    {bool deleteFilesByDefault,
-    bool writeToCache,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Stream terminateEventStream}) async {
-  var options = new BuildOptions(
-      deleteFilesByDefault: deleteFilesByDefault,
-      writeToCache: writeToCache,
-      packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
-      logLevel: logLevel,
-      onLog: onLog);
-  var terminator = new _Terminator(terminateEventStream);
-
-  var result = await singleBuild(options, buildActions);
-
-  await terminator.cancel();
-  await options.logListener.cancel();
-  return result;
-}
+        {bool deleteFilesByDefault,
+        bool writeToCache,
+        PackageGraph packageGraph,
+        RunnerAssetReader reader,
+        RunnerAssetWriter writer,
+        Level logLevel,
+        onLog(LogRecord record),
+        Stream terminateEventStream}) =>
+    build_impl.build(buildActions,
+        deleteFilesByDefault: deleteFilesByDefault,
+        writeToCache: writeToCache,
+        packageGraph: packageGraph,
+        reader: reader,
+        writer: writer,
+        logLevel: logLevel,
+        onLog: onLog,
+        terminateEventStream: terminateEventStream);
 
 /// Same as [build], except it watches the file system and re-runs builds
 /// automatically.
@@ -88,65 +80,24 @@ Future<BuildResult> build(List<BuildAction> buildActions,
 ///  will complete normally. Subsequent events are not handled (and will
 ///  typically cause a shutdown).
 Future<ServeHandler> watch(List<BuildAction> buildActions,
-    {bool deleteFilesByDefault,
-    bool writeToCache,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Duration debounceDelay,
-    DirectoryWatcherFactory directoryWatcherFactory,
-    Stream terminateEventStream}) {
-  var options = new BuildOptions(
-      deleteFilesByDefault: deleteFilesByDefault,
-      writeToCache: writeToCache,
-      packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
-      logLevel: logLevel,
-      onLog: onLog,
-      debounceDelay: debounceDelay,
-      directoryWatcherFactory: directoryWatcherFactory);
-  var terminator = new _Terminator(terminateEventStream);
-  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
-
-  watch.buildResults.drain().then((_) async {
-    await terminator.cancel();
-    await options.logListener.cancel();
-  });
-
-  return createServeHandler(watch);
-}
-
-/// Fires [shouldTerminate] once a `SIGINT` is intercepted.
-///
-/// The `SIGINT` stream can optionally be replaced with another Stream in the
-/// constructor. [cancel] should be called after work is finished. If multiple
-/// events are receieved on the terminate event stream before work is finished
-/// the process will be terminated with [exit].
-class _Terminator {
-  /// A Future that fires when a signal has been received indicating that builds
-  /// should stop.
-  final Future shouldTerminate;
-  final StreamSubscription _subscription;
-
-  factory _Terminator([Stream terminateEventStream]) {
-    var shouldTerminate = new Completer();
-    terminateEventStream ??= ProcessSignal.SIGINT.watch();
-    int numEventsSeen = 0;
-    StreamSubscription terminateListener = terminateEventStream.listen((_) {
-      numEventsSeen++;
-      if (numEventsSeen == 1) {
-        shouldTerminate.complete();
-      } else {
-        exit(2);
-      }
-    });
-    return new _Terminator._(shouldTerminate.future, terminateListener);
-  }
-
-  _Terminator._(this.shouldTerminate, this._subscription);
-
-  Future cancel() => _subscription.cancel();
-}
+        {bool deleteFilesByDefault,
+        bool writeToCache,
+        PackageGraph packageGraph,
+        RunnerAssetReader reader,
+        RunnerAssetWriter writer,
+        Level logLevel,
+        onLog(LogRecord record),
+        Duration debounceDelay,
+        DirectoryWatcherFactory directoryWatcherFactory,
+        Stream terminateEventStream}) =>
+    watch_impl.watch(buildActions,
+        deleteFilesByDefault: deleteFilesByDefault,
+        writeToCache: writeToCache,
+        packageGraph: packageGraph,
+        reader: reader,
+        writer: writer,
+        logLevel: logLevel,
+        onLog: onLog,
+        debounceDelay: debounceDelay,
+        directoryWatcherFactory: directoryWatcherFactory,
+        terminateEventStream: terminateEventStream);

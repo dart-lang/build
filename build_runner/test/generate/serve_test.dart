@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
@@ -121,7 +122,7 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
   final packageGraph = new PackageGraph.fromRoot(rootPackage);
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  return watch(buildActions,
+  return watch_impl.watch(buildActions,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
@@ -129,7 +130,8 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
       writer: writer,
       packageGraph: packageGraph,
       terminateEventStream: _terminateServeController.stream,
-      logLevel: Level.OFF);
+      logLevel: Level.OFF,
+      skipBuildScriptCheck: true);
 }
 
 /// Tells the program to terminate.

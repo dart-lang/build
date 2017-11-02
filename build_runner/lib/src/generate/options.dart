@@ -34,6 +34,9 @@ class BuildOptions {
   Duration debounceDelay;
   DirectoryWatcherFactory directoryWatcherFactory;
 
+  // For testing only, skips the build script updates check.
+  bool skipBuildScriptCheck;
+
   BuildOptions(
       {this.debounceDelay,
       this.deleteFilesByDefault,
@@ -43,7 +46,8 @@ class BuildOptions {
       onLog(LogRecord record),
       this.packageGraph,
       this.reader,
-      this.writer}) {
+      this.writer,
+      this.skipBuildScriptCheck}) {
     /// Set up logging
     logLevel ??= Level.INFO;
     Logger.root.level = logLevel;
@@ -57,6 +61,7 @@ class BuildOptions {
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
     deleteFilesByDefault ??= writeToCache ?? false;
     writeToCache ??= false;
+    skipBuildScriptCheck ??= false;
   }
 }
 

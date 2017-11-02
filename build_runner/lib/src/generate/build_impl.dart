@@ -30,8 +30,37 @@ import 'input_set.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
+import 'terminator.dart';
 
 final _logger = new Logger('Build');
+
+Future<BuildResult> build(List<BuildAction> buildActions,
+    {bool deleteFilesByDefault,
+    bool writeToCache,
+    PackageGraph packageGraph,
+    RunnerAssetReader reader,
+    RunnerAssetWriter writer,
+    Level logLevel,
+    onLog(LogRecord record),
+    Stream terminateEventStream,
+    bool skipBuildScriptCheck}) async {
+  var options = new BuildOptions(
+      deleteFilesByDefault: deleteFilesByDefault,
+      writeToCache: writeToCache,
+      packageGraph: packageGraph,
+      reader: reader,
+      writer: writer,
+      logLevel: logLevel,
+      onLog: onLog,
+      skipBuildScriptCheck: skipBuildScriptCheck);
+  var terminator = new Terminator(terminateEventStream);
+
+  var result = await singleBuild(options, buildActions);
+
+  await terminator.cancel();
+  await options.logListener.cancel();
+  return result;
+}
 
 Future<BuildResult> singleBuild(
     BuildOptions options, List<BuildAction> buildActions) async {

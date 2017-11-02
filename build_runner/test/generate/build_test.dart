@@ -606,7 +606,7 @@ void main() {
       }, outputs: {
         'a|web/a.txt.copy': 'a',
       }, writer: writer);
-    });
+    }, skip: 'Need to move this to an integration test');
 
     test('no outputs if no changed sources', () async {
       var graph = await AssetGraph.build([], new Set(), 'a', null);
