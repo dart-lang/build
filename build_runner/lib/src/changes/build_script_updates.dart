@@ -29,7 +29,7 @@ class BuildScriptUpdates {
   /// known digests in [_graph].
   Future<bool> hasBeenUpdated() async {
     return (await Future.wait(_urisForThisScript.map(_wasUpdated)))
-        .any((wasUpdated) => wasUpdated);
+        .contains(true);
   }
 
   /// Records initial digests for all imports in the current program.
@@ -97,6 +97,9 @@ class BuildScriptUpdates {
   ///
   /// If it can't tell due to an unsupported uri, then this always returns
   /// `true`.
+  ///
+  /// Some uris will always return false, such as `dart:` uris, and certain
+  /// `data:` uris that are recognized as test bootstrapping entrypoints.
   Future<bool> _wasUpdated(Uri uri) async {
     AssetId id;
     try {
@@ -128,9 +131,7 @@ class BuildScriptUpdates {
       // initially compute the last known digest.
       return true;
     } else {
-      var currentDigest = await _reader.digest(id);
-      if (node.lastKnownDigest == currentDigest) return false;
-      return true;
+      return node.lastKnownDigest != await _reader.digest(id);
     }
   }
 }
