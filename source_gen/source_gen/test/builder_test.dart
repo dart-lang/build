@@ -26,7 +26,8 @@ void main() {
     await testBuilder(builder, srcs,
         generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
         outputs: {
-          '$pkgName|lib/test_lib.g.dart': contains('not valid code!'),
+          '$pkgName|lib/test_lib.g.dart':
+              decodedMatches(contains('not valid code!')),
         });
   });
 
@@ -48,7 +49,7 @@ void main() {
         generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
         outputs: {
           '$pkgName|lib/test_lib.g.dart':
-              startsWith(_customHeader + '\n\n// ***')
+              decodedMatches(startsWith(_customHeader + '\n\n// ***'))
         });
   });
 
@@ -57,7 +58,9 @@ void main() {
     var builder = new LibraryBuilder(const CommentGenerator(), header: '');
     await testBuilder(builder, srcs,
         generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
-        outputs: {'$pkgName|lib/test_lib.g.dart': startsWith('// ***')});
+        outputs: {
+          '$pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***'))
+        });
   });
 
   test('Expect no error when multiple generators used on nonstandalone builder',
@@ -142,7 +145,7 @@ void main() {
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
           '$pkgName|lib/a.g.dart':
-              contains(UnformattedCodeGenerator.formattedCode),
+              decodedMatches(contains(UnformattedCodeGenerator.formattedCode)),
         });
   });
 
@@ -153,7 +156,8 @@ void main() {
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart': startsWith(_customHeader + '\npart of'),
+          '$pkgName|lib/a.g.dart':
+              decodedMatches(startsWith(_customHeader + '\npart of')),
         });
   });
 
@@ -163,7 +167,7 @@ void main() {
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart': startsWith('part of'),
+          '$pkgName|lib/a.g.dart': decodedMatches(startsWith('part of')),
         });
   });
 
@@ -174,8 +178,8 @@ void main() {
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart':
-              contains(UnformattedCodeGenerator.unformattedCode),
+          '$pkgName|lib/a.g.dart': decodedMatches(
+              contains(UnformattedCodeGenerator.unformattedCode)),
         });
   });
 
@@ -187,7 +191,7 @@ void main() {
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart': contains(customOutput),
+          '$pkgName|lib/a.g.dart': decodedMatches(contains(customOutput)),
         });
   });
 
@@ -209,7 +213,7 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
   await testBuilder(builder, srcs,
       generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
       outputs: {
-        '$pkgName|lib/test_lib.g.dart': expectedContent,
+        '$pkgName|lib/test_lib.g.dart': decodedMatches(expectedContent),
       },
       onLog: (log) => fail('Unexpected log message: ${log.message}'));
 }

@@ -1,3 +1,7 @@
+## 0.7.2+1
+
+* Allow `package:build` version 0.11.0
+
 ## 0.7.2
 
 * Support an optional `header` argument to `PartBuilder` and `LibraryBuilder`.
