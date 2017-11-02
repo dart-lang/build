@@ -97,8 +97,8 @@ class WatchImpl implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = new Set<AssetId>();
 
-  final _readerCompleter = new Completer<AssetReader>();
-  Future<AssetReader> get reader => _readerCompleter.future;
+  final _readerCompleter = new Completer<DigestAssetReader>();
+  Future<DigestAssetReader> get reader => _readerCompleter.future;
 
   WatchImpl(BuildOptions options, List<BuildAction> buildActions, Future until)
       : _directoryWatcherFactory = options.directoryWatcherFactory,

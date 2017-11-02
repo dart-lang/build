@@ -8,7 +8,6 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
@@ -36,6 +35,22 @@ void main() {
     var response = await serveHandler.handlerFor('web')(
         new Request('GET', Uri.parse('http://server.com/index.html')));
     expect(await response.readAsString(), 'content');
+  });
+
+  test('caching with etags works', () async {
+    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    var handler = serveHandler.handlerFor('web');
+    var requestUri = Uri.parse('http://server.com/index.html');
+    var firstResponse = await handler(new Request('GET', requestUri));
+    var etag = firstResponse.headers[HttpHeaders.ETAG];
+    expect(etag, isNotNull);
+    expect(firstResponse.statusCode, HttpStatus.OK);
+    expect(await firstResponse.readAsString(), 'content');
+
+    var cachedResponse = await handler(new Request('GET', requestUri,
+        headers: {HttpHeaders.IF_NONE_MATCH: etag}));
+    expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+    expect(await cachedResponse.readAsString(), isEmpty);
   });
 
   test('throws if you pass a non-root directory', () {
@@ -81,13 +96,13 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final Future<AssetReader> reader;
+  final Future<DigestAssetReader> reader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(AssetReader reader, this.packageGraph)
+  MockWatchImpl(DigestAssetReader reader, this.packageGraph)
       : this.reader = new Future.value(reader) {
     _futureBuildResultsController.stream.listen((futureBuildResult) {
       if (_currentBuild != null) {
