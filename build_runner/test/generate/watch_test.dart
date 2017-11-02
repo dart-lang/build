@@ -149,25 +149,6 @@ void main() {
         expect(cachedGraph, equalsAssetGraph(expectedGraph));
       });
 
-      test('build fails if script is updated after the first build starts',
-          () async {
-        var writer = new InMemoryRunnerAssetWriter();
-        var results = new StreamQueue(
-            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
-
-        var result = await results.next;
-        checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
-
-        /// Pretend like a part of the dart script got updated.
-        await writer.writeAsString(makeAssetId('test|lib/test.dart'), '');
-        await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
-
-        result = await results.next;
-        checkBuild(result, status: BuildStatus.failure);
-      }, skip: 'Need to move to an integration test');
-
       test('ignores events from nested packages', () async {
         var writer = new InMemoryRunnerAssetWriter();
         var packageA = new PackageNode(
