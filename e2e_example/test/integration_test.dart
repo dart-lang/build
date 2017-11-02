@@ -156,6 +156,22 @@ void main() {
       await deleteFile(path);
       await nextBuild;
     });
+
+    test('can hit the server and get cached results', () async {
+      var httpClient = new HttpClient();
+      var firstRequest =
+          await httpClient.get('localhost', 8080, 'main.dart.js');
+      var firstResponse = await firstRequest.close();
+      expect(firstResponse.statusCode, HttpStatus.OK);
+      var etag = firstResponse.headers[HttpHeaders.ETAG];
+      expect(etag, isNotNull);
+
+      var cachedRequest =
+          await httpClient.get('localhost', 8080, 'main.dart.js');
+      cachedRequest.headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+      var cachedResponse = await cachedRequest.close();
+      expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+    });
   });
 }
 
