@@ -1,6 +1,6 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
-version: 0.9.0-dev
+version: 0.9.0
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
 
@@ -22,7 +22,3 @@ dependencies:
 
 dev_dependencies:
   analyzer: ">=0.27.1 <0.31.0"
-
-dependency_overrides:
-  build:
-    path: ../build

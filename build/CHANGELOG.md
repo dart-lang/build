@@ -1,4 +1,4 @@
-## 0.11.0-dev
+## 0.11.0
 
 - **Breaking**: `AssetReader.findAssets` now returns a `Stream<AssetId>`
   instead of an `Iterable<AssetId>`. This also impacts `BuildStep` since that

@@ -24,10 +24,3 @@ dev_dependencies:
   test: ^0.12.24
   a:
     path: test/fixtures/a
-
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_test:
-    path: ../build_test
