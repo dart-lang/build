@@ -1,3 +1,7 @@
+## 0.0.1+2
+
+- Allow package:build 0.11.0
+
 ## 0.0.1+1
 
 - Fix a deadlock issue around the file descriptor pool, only take control of a
