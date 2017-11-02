@@ -1,4 +1,4 @@
-## 0.9.0-dev
+## 0.9.0
 
 - Added the `TestBootstrapBuilder` under the `builder.dart` library. This can
   be used to bootstrap tests similar to the `test/pub_serve` Transformer.
