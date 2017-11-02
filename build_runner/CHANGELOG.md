@@ -38,8 +38,6 @@
 - Fixed two issues with `writeToCache`:
   - Over-declared outputs will no longer attempt to build on each startup.
   - Unrecognized files in the cache dir will no longer be treated as inputs.
-- Running build scripts via `pub run` will no longer cause full rebuilds every
-  time.
 - Asset invalidation has changed from using last modified timestamps to content
   hashes. This is generally much more reliable, and unblocks other desired
   features.

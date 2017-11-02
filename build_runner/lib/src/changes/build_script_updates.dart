@@ -80,20 +80,14 @@ class BuildScriptUpdates {
         if (uri.path.contains('package:test')) break;
         continue unsupported;
       case 'http':
-        // Running via `pub run`, the bin script (and relative imports of it)
-        // will be loaded by uri from a server serving the bin dir.
-        //
-        // We turn these into asset ids pointing at the bin dir of the root
-        // package.
-        return new AssetId(
-            _rootPackage, p.url.join('bin', uri.path.substring(1)));
+        continue unsupported;
       unsupported:
       default:
         throw new ArgumentError(
             'Unsupported uri scheme `${uri.scheme}` found for '
             'library in build script.\n'
             'This probably means you are running in an unsupported '
-            'context, such as in an isolate.\n'
+            'context, such as in an isolate or via `pub run`.\n'
             'Full uri was: $uri.');
     }
     return null;
