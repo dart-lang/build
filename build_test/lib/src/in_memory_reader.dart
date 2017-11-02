@@ -23,6 +23,9 @@ class InMemoryAssetReader
 
   /// Create a new asset reader that contains [sourceAssets].
   ///
+  /// Any items in [sourceAssets] which are [String]s will be converted into
+  /// a [List<int>] of bytes.
+  ///
   /// May optionally define a [rootPackage], which is required for some APIs.
   InMemoryAssetReader({Map<AssetId, dynamic> sourceAssets, this.rootPackage})
       : assets = _convertAssetsToBytes(sourceAssets) ?? <AssetId, List<int>>{},
@@ -30,12 +33,16 @@ class InMemoryAssetReader
 
   static Map<AssetId, List<int>> _convertAssetsToBytes(
       Map<AssetId, dynamic> original) {
-    var newMap = <AssetId, List<int>>{};
+    if (original == null) return null;
+
+    var updates = <AssetId, List<int>>{};
     original.forEach((id, content) {
-      if (content is String) content = UTF8.encode(content as String);
-      newMap[id] = content as List<int>;
+      if (content is String) updates[id] = UTF8.encode(content);
     });
-    return newMap;
+    updates.forEach((id, bytes) {
+      original[id] = bytes;
+    });
+    return original as Map<AssetId, List<int>>;
   }
 
   @override

@@ -110,10 +110,10 @@ StreamController _terminateServeController;
 
 /// Start serving files and running builds.
 Future<ServeHandler> createHandler(List<BuildAction> buildActions,
-    Map<String, String> inputs, InMemoryRunnerAssetWriter writer) {
-  inputs.forEach((serializedId, contents) {
-    writer.writeAsString(makeAssetId(serializedId), contents);
-  });
+    Map<String, String> inputs, InMemoryRunnerAssetWriter writer) async {
+  await Future.wait(inputs.keys.map((serializedId) async {
+    await writer.writeAsString(makeAssetId(serializedId), inputs[serializedId]);
+  }));
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
   final rootPackage = new PackageNode.noPubspec('a',

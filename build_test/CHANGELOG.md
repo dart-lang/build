@@ -8,11 +8,7 @@
 - **Breaking**: The `DatedValue`, `DatedString`, and `DatedBytes` apis are now
   gone, since timestamps are no longer used by package:build. Instead the
   `InMemoryAssetReader` and other apis take a `Map<AssetId, dynamic>`, and will
-  convert that into a `Map<AssetId, List<int>>` under the covers.
-  - **Note**: One side-effect of this change is that modifying the assets map
-    after passing it to the `InMemoryAssetReader` no longer has any effect. You
-    must call instead `cacheStringAsset` or `cacheBytesAsset` instead to add
-    or update assets.
+  automatically convert any `String` values into  `List<int>` values.
 
 ## 0.8.0
 
