@@ -62,11 +62,3 @@ class EncodedModuleMatcher extends Matcher {
   Description describe(Description description) =>
       description.add(JSON.encode(expected.toJson()).toString());
 }
-
-/// A matcher that decodes bytes and matches against the resulting string.
-class Utf8Decoded extends CustomMatcher {
-  Utf8Decoded(matcher) : super('Utf8 decoded bytes', 'UTF8.decode', matcher);
-
-  @override
-  featureValueOf(bytes) => UTF8.decode(bytes as List<int>);
-}

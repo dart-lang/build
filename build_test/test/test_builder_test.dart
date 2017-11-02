@@ -35,12 +35,12 @@ void main() {
       'b|lib/d.txt': '',
     };
     var expectedOutputs = {
-      'a|lib/a.matchingFiles':
-          allOf(contains('a|lib/a.txt'), contains('a|lib/b.txt')),
-      'b|lib/b.matchingFiles': 'b|lib/a.txt\n'
+      'a|lib/a.matchingFiles': decodedMatches(
+          allOf(contains('a|lib/a.txt'), contains('a|lib/b.txt'))),
+      'b|lib/b.matchingFiles': decodedMatches('b|lib/a.txt\n'
           'b|lib/b.txt\n'
           'b|lib/c.txt\n'
-          'b|lib/d.txt'
+          'b|lib/d.txt'),
     };
     await testBuilder(new GlobbingBuilder(new Glob('**.txt')), assets,
         rootPackage: 'a', outputs: expectedOutputs);

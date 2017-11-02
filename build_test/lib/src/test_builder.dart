@@ -56,11 +56,7 @@ void checkOutputs(
       } else if (contentsMatcher is List<int>) {
         expected = actual;
       } else if (contentsMatcher is Matcher) {
-        if (actual is List<int>) {
-          expected = actual;
-        } else {
-          expected = UTF8.decode(actual);
-        }
+        expected = actual;
       } else {
         throw new ArgumentError('Expected values for `outputs` to be of type '
             '`String`, `List<int>`, or `Matcher`, but got `$contentsMatcher`.');
