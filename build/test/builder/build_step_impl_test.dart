@@ -97,7 +97,7 @@ void main() {
       await buildStep.complete();
 
       // One output.
-      expect(writer.assets[outputId], UTF8.encode('foo'));
+      expect(writer.assets[outputId], decodedMatches('foo'));
     });
 
     group('resolve', () {

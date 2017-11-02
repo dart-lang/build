@@ -50,13 +50,11 @@ main() {
           .transform(UTF8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
-      stdOutLines.listen((l) => print('stdout: $l'));
 
       stdErrLines = process.stderr
           .transform(UTF8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
-      stdErrLines.listen((l) => print('stderr: $l'));
 
       await nextSuccessfulBuild;
       await d.dir('a', [

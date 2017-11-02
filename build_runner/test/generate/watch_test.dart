@@ -64,8 +64,8 @@ void main() {
         result = await results.next;
         checkBuild(result, outputs: {'a|web/b.txt.copy': 'b'}, writer: writer);
         // Previous outputs should still exist.
-        expect(
-            writer.assets[makeAssetId('a|web/a.txt.copy')], UTF8.encode('a'));
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')],
+            decodedMatches('a'));
       });
 
       test('rebuilds on deleted files', () async {
@@ -95,8 +95,8 @@ void main() {
         // The old output file should no longer exist either.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         // Previous outputs should still exist.
-        expect(
-            writer.assets[makeAssetId('a|web/b.txt.copy')], UTF8.encode('b'));
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')],
+            decodedMatches('b'));
       });
 
       test('rebuilds properly update asset_graph.json', () async {
@@ -259,10 +259,10 @@ void main() {
             outputs: {'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
             writer: writer);
         // Previous outputs should still exist.
-        expect(
-            writer.assets[makeAssetId('a|web/a.txt.copy')], UTF8.encode('a'));
+        expect(writer.assets[makeAssetId('a|web/a.txt.copy')],
+            decodedMatches('a'));
         expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')],
-            UTF8.encode('a'));
+            decodedMatches('a'));
       });
 
       test('deletes propagate through all phases', () async {
@@ -299,10 +299,10 @@ void main() {
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         expect(writer.assets[makeAssetId('a|web/a.txt.copy.copy')], isNull);
         // Other outputs should still exist.
-        expect(
-            writer.assets[makeAssetId('a|web/b.txt.copy')], UTF8.encode('b'));
+        expect(writer.assets[makeAssetId('a|web/b.txt.copy')],
+            decodedMatches('b'));
         expect(writer.assets[makeAssetId('a|web/b.txt.copy.copy')],
-            UTF8.encode('b'));
+            decodedMatches('b'));
       });
 
       test('deleted generated outputs are regenerated', () async {

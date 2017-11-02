@@ -15,7 +15,7 @@ void main() {
   var fooTxt = new AssetId('a', 'foo.txt');
   var missingTxt = new AssetId('a', 'missing.txt');
   var fooContent = 'bar';
-  var fooUTF8Bytes = UTF8.encode('bar');
+  var fooUTF8Bytes = decodedMatches('bar');
   var assets = <AssetId, dynamic>{
     fooTxt: 'bar',
   };
