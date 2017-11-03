@@ -8,15 +8,13 @@ import 'dart:io';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_config/build_config.dart';
 
-const _scriptDir = '.dart_tool/build';
-const scriptLocation = '$_scriptDir/build.dart';
+const scriptLocation = '.dart_tool/build/build.dart';
 
 Future<Null> ensureBuildScript() async {
   var scriptFile = new File(scriptLocation);
   // TODO - how can we invalidate this?
   if (scriptFile.existsSync()) return;
-  var scriptDir = new Directory(_scriptDir);
-  if (!scriptDir.existsSync()) scriptDir.createSync(recursive: true);
+  scriptFile.createSync(recursive: true);
   await scriptFile.writeAsString(await _generateBuildScript());
 }
 
