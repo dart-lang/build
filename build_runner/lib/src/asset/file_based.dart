@@ -8,10 +8,14 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
+import 'package:pool/pool.dart';
 
 import '../package_graph/package_graph.dart';
 import 'reader.dart';
 import 'writer.dart';
+
+/// Pool for async file writes, we don't want to use too many file handles.
+final _descriptorPool = new Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
@@ -22,16 +26,21 @@ class FileBasedAssetReader extends Md5DigestReader
   FileBasedAssetReader(this.packageGraph);
 
   @override
-  Future<bool> canRead(AssetId id) => _fileFor(id, packageGraph).exists();
+  Future<bool> canRead(AssetId id) =>
+      _descriptorPool.withResource(() => _fileFor(id, packageGraph).exists());
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) async =>
-      (await _fileForOrThrow(id, packageGraph)).readAsBytes();
+  Future<List<int>> readAsBytes(AssetId id) async {
+    var file = await _fileForOrThrow(id, packageGraph);
+    return _descriptorPool.withResource(file.readAsBytes);
+  }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) async =>
-      (await _fileForOrThrow(id, packageGraph))
-          .readAsString(encoding: encoding ?? UTF8);
+  Future<String> readAsString(AssetId id, {Encoding encoding}) async {
+    var file = await _fileForOrThrow(id, packageGraph);
+    return _descriptorPool
+        .withResource(() => file.readAsString(encoding: encoding ?? UTF8));
+  }
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) async* {
@@ -76,16 +85,20 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
     var file = _fileFor(id, packageGraph);
-    await file.create(recursive: true);
-    await file.writeAsBytes(bytes);
+    await _descriptorPool.withResource(() async {
+      await file.create(recursive: true);
+      await file.writeAsBytes(bytes);
+    });
   }
 
   @override
   Future writeAsString(AssetId id, String contents,
       {Encoding encoding: UTF8}) async {
     var file = _fileFor(id, packageGraph);
-    await file.create(recursive: true);
-    await file.writeAsString(contents, encoding: encoding);
+    await _descriptorPool.withResource(() async {
+      await file.create(recursive: true);
+      await file.writeAsString(contents, encoding: encoding);
+    });
   }
 
   @override
@@ -96,11 +109,11 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
     }
 
     var file = _fileFor(id, packageGraph);
-    return () async {
+    return _descriptorPool.withResource(() async {
       if (await file.exists()) {
         await file.delete();
       }
-    }();
+    });
   }
 }
 
@@ -118,6 +131,8 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
 /// Throws an `AssetNotFoundException` if it doesn't exist.
 Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) async {
   var file = _fileFor(id, packageGraph);
-  if (!await file.exists()) throw new AssetNotFoundException(id);
+  if (!await _descriptorPool.withResource(file.exists)) {
+    throw new AssetNotFoundException(id);
+  }
   return file;
 }
