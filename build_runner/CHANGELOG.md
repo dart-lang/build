@@ -1,3 +1,14 @@
+## 0.6.1
+
+### Internal Improvements
+
+- Now using `package:pool` to limit the number of open file handles.
+
+### Bug fixes
+
+- Fixed an issue where the asset graph could get in an invalid state if you
+  aren't setting `writeToCache: true`.
+
 ## 0.6.0
 
 ### New features
