@@ -97,8 +97,21 @@ class AssetGraph {
     }));
   }
 
-  /// Removes the node representing [id] from the graph.
-  AssetNode _remove(AssetId id) => _nodesByPackage[id.package].remove(id.path);
+  /// Removes the node representing [id] from the graph, and all of its
+  /// `primaryOutput`s.
+  ///
+  /// Returns a [Set<AssetId>] of all removed nodes.
+  Set<AssetId> _remove(AssetId id, {Set<AssetId> removedIds}) {
+    removedIds ??= new Set<AssetId>();
+    var node = get(id);
+    if (node == null) return removedIds;
+    removedIds.add(id);
+    for (var output in node.primaryOutputs) {
+      _remove(output, removedIds: removedIds);
+    }
+    _nodesByPackage[id.package].remove(id.path);
+    return removedIds;
+  }
 
   /// All nodes in the graph, whether source files or generated outputs.
   Iterable<AssetNode> get allNodes =>
@@ -129,8 +142,6 @@ class AssetGraph {
     var invalidatedIds = new Set<AssetId>();
     // All the assets that should be deleted.
     var idsToDelete = new Set<AssetId>();
-    // All the assets that should be removed from the graph entirely.
-    var idsToRemove = new Set<AssetId>();
 
     // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
     // the outputs of `id`.
@@ -143,18 +154,9 @@ class AssetGraph {
 
       if (node is GeneratedAssetNode) {
         idsToDelete.add(id);
-        if (rootIsSource &&
-            rootChangeType == ChangeType.REMOVE &&
-            idsToRemove.contains(node.primaryInput)) {
-          idsToRemove.add(id);
-        } else {
-          node.needsUpdate = true;
-          node.wasOutput = false;
-          node.globs = new Set();
-        }
-      } else {
-        // This is a source
-        if (rootChangeType == ChangeType.REMOVE) idsToRemove.add(id);
+        node.needsUpdate = true;
+        node.wasOutput = false;
+        node.globs = new Set();
       }
 
       // Update all outputs of this asset as well.
@@ -214,7 +216,10 @@ class AssetGraph {
     // order is important because some `AssetWriter`s throw if the id is not in
     // the graph.
     await Future.wait(idsToDelete.map(delete));
-    idsToRemove.forEach(_remove);
+
+    // Remove all deleted source assets from the graph, which also recursively
+    // removes all their primary outputs.
+    removeIds.where((id) => get(id) is SourceAssetNode).forEach(_remove);
 
     return invalidatedIds;
   }
@@ -240,17 +245,22 @@ class AssetGraph {
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
-          _addGeneratedOutputs(outputs, phase);
+          allInputs.removeAll(_addGeneratedOutputs(outputs, phase));
         }
       } else if (action is AssetBuildAction) {
-        var inputs = allInputs.where(action.inputSet.matches);
+        var inputs = allInputs.where(action.inputSet.matches).toList();
         for (var input in inputs) {
+          // We might have deleted some inputs during this loop, if they turned
+          // out to be generated assets.
+          if (!allInputs.contains(input)) continue;
+
           var outputs = expectedOutputs(action.builder, input);
           phaseOutputs.addAll(outputs);
           var node = get(input);
           node.primaryOutputs.addAll(outputs);
           node.outputs.addAll(outputs);
-          _addGeneratedOutputs(outputs, phase, primaryInput: input);
+          allInputs.removeAll(
+              _addGeneratedOutputs(outputs, phase, primaryInput: input));
         }
       } else {
         throw new InvalidBuildActionException.unrecognizedType(action);
@@ -262,17 +272,27 @@ class AssetGraph {
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
   ///
-  /// Replaces any existing [AssetNode]s with [GeneratedAssetNode]s.
-  void _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+  /// If there are existing [SourceAssetNode]s or [SyntheticAssetNode]s  that
+  /// overlap the [GeneratedAssetNode]s, then they will be replaced with
+  /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
+  /// from the graph as well. The return value is the set of assets that were
+  /// removed from the graph.
+  Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       {AssetId primaryInput}) {
+    var removed = new Set<AssetId>();
     for (var output in outputs) {
       // When `writeToCache` is false we can pick up old generated outputs as
-      // regular `AssetNode`s, this deletes them.
-      if (contains(output)) _remove(output);
+      // regular `AssetNode`s, we need to delete them and all their primary
+      // outputs, and replace them with a `GeneratedAssetNode`.
+      if (contains(output)) {
+        assert(get(output) is! GeneratedAssetNode);
+        _remove(output, removedIds: removed);
+      }
 
       _add(new GeneratedAssetNode(
           phaseNumber, primaryInput, true, false, output));
     }
+    return removed;
   }
 
   @override
@@ -280,5 +300,5 @@ class AssetGraph {
 
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
-  AssetNode remove(AssetId id) => _remove(id);
+  Set<AssetId> remove(AssetId id) => _remove(id);
 }
