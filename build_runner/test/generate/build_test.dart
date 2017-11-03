@@ -549,10 +549,13 @@ void main() {
       var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
           false, true, makeAssetId('a|lib/a.txt.copy'),
           lastKnownDigest: computeDigest('a'))
+        ..primaryOutputs.add(aCloneNode.id)
         ..outputs.add(aCloneNode.id);
       graph.add(aCopyNode);
       var aNode =
-          makeAssetNode('a|lib/a.txt', [aCopyNode.id], computeDigest('a'));
+          makeAssetNode('a|lib/a.txt', [aCopyNode.id], computeDigest('a'))
+            ..primaryOutputs.add(aCopyNode.id)
+            ..outputs.add(aCopyNode.id);
       graph.add(aNode);
 
       var writer = new InMemoryRunnerAssetWriter();

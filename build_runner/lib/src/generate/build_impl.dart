@@ -323,7 +323,8 @@ class BuildImpl {
         'Inputs should be known in the static graph. Missing $input');
     assert(
         inputNode.primaryOutputs.containsAll(builderOutputs),
-        '$input missing primary outputs ' +
+        'input $input with builder $builder missing primary outputs: \n' +
+            'Got ${inputNode.primaryOutputs.join(', ')} which was missing:\n' +
             builderOutputs
                 .where((id) => !inputNode.primaryOutputs.contains(id))
                 .join(', '));
