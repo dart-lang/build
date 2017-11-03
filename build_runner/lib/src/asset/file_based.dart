@@ -14,7 +14,7 @@ import '../package_graph/package_graph.dart';
 import 'reader.dart';
 import 'writer.dart';
 
-/// Pool for async file writes, we don't want to use too many file handles.
+/// Pool for async file operations, we don't want to use too many file handles.
 final _descriptorPool = new Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
