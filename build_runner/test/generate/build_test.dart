@@ -167,6 +167,40 @@ void main() {
             [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
+
+      test('pre-existing outputs', () async {
+        var writer = new InMemoryRunnerAssetWriter();
+        await testActions([
+          copyABuildAction,
+          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+              inputs: ['**.txt.copy'])
+        ], {
+          'a|web/a.txt': 'a',
+          'a|web/a.txt.copy': 'a',
+        }, outputs: {
+          'a|web/a.txt.copy': 'a',
+          'a|web/a.txt.copy.clone': 'a'
+        }, writer: writer, deleteFilesByDefault: true);
+
+        var graphId = makeAssetId('a|$assetGraphPath');
+        expect(writer.assets, contains(graphId));
+        var cachedGraph = new AssetGraph.deserialize(
+            JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
+        expect(
+            cachedGraph.allNodes.map((node) => node.id),
+            unorderedEquals([
+              makeAssetId('a|web/a.txt'),
+              makeAssetId('a|web/a.txt.copy'),
+              makeAssetId('a|web/a.txt.copy.clone'),
+            ]));
+        expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
+        expect(
+            cachedGraph.outputs,
+            unorderedEquals([
+              makeAssetId('a|web/a.txt.copy'),
+              makeAssetId('a|web/a.txt.copy.clone'),
+            ]));
+      });
     });
 
     test('can\'t output files in non-root packages', () async {
@@ -489,7 +523,8 @@ void main() {
       graph.add(aCopyNode);
       var aNode =
           makeAssetNode('a|lib/a.txt', [aCopyNode.id], computeDigest('a'))
-            ..primaryOutputs.add(aCopyNode.id);
+            ..primaryOutputs.add(aCopyNode.id)
+            ..outputs.add(aCopyNode.id);
       graph.add(aNode);
 
       var bCloneNode = new GeneratedAssetNode(
