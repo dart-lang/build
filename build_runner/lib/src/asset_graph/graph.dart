@@ -101,16 +101,16 @@ class AssetGraph {
   /// `primaryOutput`s.
   ///
   /// Returns a [Set<AssetId>] of all removed nodes.
-  Set<AssetId> _remove(AssetId id, {Set<AssetId> removedSet}) {
-    removedSet ??= new Set<AssetId>();
+  Set<AssetId> _remove(AssetId id, {Set<AssetId> removedIds}) {
+    removedIds ??= new Set<AssetId>();
     var node = get(id);
-    if (node == null) return removedSet;
-    removedSet.add(id);
+    if (node == null) return removedIds;
+    removedIds.add(id);
     for (var output in node.primaryOutputs) {
-      _remove(output, removedSet: removedSet);
+      _remove(output, removedIds: removedIds);
     }
     _nodesByPackage[id.package].remove(id.path);
-    return removedSet;
+    return removedIds;
   }
 
   /// All nodes in the graph, whether source files or generated outputs.
@@ -286,7 +286,7 @@ class AssetGraph {
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
         assert(get(output) is! GeneratedAssetNode);
-        _remove(output, removedSet: removed);
+        _remove(output, removedIds: removed);
       }
 
       _add(new GeneratedAssetNode(
