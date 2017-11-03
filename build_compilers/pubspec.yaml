@@ -17,8 +17,8 @@ dependencies:
   scratch_space: ^0.0.1
 
 dev_dependencies:
-  build_runner: ^0.5.0
-  build_test: ">=0.7.1 <0.9.0"
+  build_runner: ^0.6.0
+  build_test: ^0.9.0
   json_serializable: ^0.2.4
   source_gen: ^0.7.0
   test: ^0.12.24
