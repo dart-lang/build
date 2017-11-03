@@ -16,6 +16,7 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
+import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
@@ -132,12 +133,15 @@ class WatchImpl implements BuildState {
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        if (await new BuildScriptUpdates(options, _assetGraph)
-            .hasBeenUpdated()) {
-          fatalBuildCompleter.complete();
-          _logger.severe('Terminating builds due to build script update');
-          return new BuildResult(BuildStatus.failure, []);
-        }
+        await logTimedAsync(_logger, 'Checking build script for updates',
+            () async {
+          if (await new BuildScriptUpdates(options, _assetGraph)
+              .hasBeenUpdated()) {
+            fatalBuildCompleter.complete();
+            _logger.severe('Terminating builds due to build script update');
+            return new BuildResult(BuildStatus.failure, []);
+          }
+        });
       }
       return build.run(_collectChanges(changes));
     }
