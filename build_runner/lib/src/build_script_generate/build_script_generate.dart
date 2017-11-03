@@ -26,8 +26,8 @@ Future<String> _generateBuildScript() async {
       await Future.wait(packageGraph.orderedPackages.map(_packageBuildConfig));
   var printStatements = buildConfigs
       .where((config) => config.builderDefinitions.isNotEmpty)
-      .map((config) => new Reference('print').call([
-            literalString('I would run: ${config.packageName} - '
+      .map((config) => refer('print').call([
+            literalString('I would run: \'${config.packageName} - '
                 '${config.builderDefinitions.keys.toList()}')
           ]).statement);
   final library = new File((b) => b.body.addAll([
