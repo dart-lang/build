@@ -3,15 +3,17 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' as io;
 
-import 'package:build_runner/build_runner.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/build_runner.dart';
+import 'package:code_builder/code_builder.dart';
+import 'package:dart_style/dart_style.dart';
 
 const scriptLocation = '.dart_tool/build/build.dart';
 
 Future<Null> ensureBuildScript() async {
-  var scriptFile = new File(scriptLocation);
+  var scriptFile = new io.File(scriptLocation);
   // TODO - how can we invalidate this?
   if (scriptFile.existsSync()) return;
   scriptFile.createSync(recursive: true);
@@ -19,19 +21,22 @@ Future<Null> ensureBuildScript() async {
 }
 
 Future<String> _generateBuildScript() async {
-  var result = new StringBuffer();
   var packageGraph = new PackageGraph.forThisPackage();
   var buildConfigs =
       await Future.wait(packageGraph.orderedPackages.map(_packageBuildConfig));
-  result.writeln('void main() {');
-  for (var config in buildConfigs) {
-    if (config.builderDefinitions.isNotEmpty) {
-      result.writeln('print("I would run: ${config.packageName} - '
-          '${config.builderDefinitions.keys.toList()}");');
-    }
-  }
-  result.writeln('}');
-  return '$result';
+  var printStatements = buildConfigs
+      .where((config) => config.builderDefinitions.isNotEmpty)
+      .map((config) => refer('print').call([
+            literalString('I would run: \'${config.packageName} - '
+                '${config.builderDefinitions.keys.toList()}')
+          ]).statement);
+  final library = new File((b) => b.body.addAll([
+        new Method.returnsVoid((b) => b
+          ..name = 'main'
+          ..body = new Block((b) => b..statements.addAll(printStatements)))
+      ]));
+  final emitter = new DartEmitter();
+  return new DartFormatter().format('${library.accept(emitter)}');
 }
 
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
