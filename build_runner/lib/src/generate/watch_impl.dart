@@ -198,7 +198,9 @@ class WatchImpl implements BuildState {
     assert(_assetGraph != null);
     if (_isCacheFile(change)) return false;
     if (_isGitFile(change)) return false;
-    if (_hasNoOutputs(change)) return false;
+    // If we haven't computed a digest for this asset then we don't care about
+    // changes to it.
+    if (_hasNoDigest(change)) return false;
     if (_isEditOnGeneratedFile(change)) return false;
     if (_isExpectedDelete(change)) return false;
     if (_isUnwatchedDelete(change)) return false;
@@ -209,9 +211,9 @@ class WatchImpl implements BuildState {
 
   bool _isGitFile(AssetChange change) => change.id.path.startsWith('.git/');
 
-  bool _hasNoOutputs(AssetChange change) =>
+  bool _hasNoDigest(AssetChange change) =>
       _assetGraph.contains(change.id) &&
-      _assetGraph.get(change.id).outputs.isEmpty;
+      _assetGraph.get(change.id).lastKnownDigest == null;
 
   bool _isEditOnGeneratedFile(AssetChange change) =>
       _assetGraph.get(change.id) is GeneratedAssetNode &&
