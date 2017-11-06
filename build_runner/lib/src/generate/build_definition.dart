@@ -44,6 +44,8 @@ class BuildDefinition {
   final bool deleteFilesByDefault;
   final ResourceManager resourceManager;
 
+  final BuildScriptUpdates buildScriptUpdates;
+
   BuildDefinition._(
       this.assetGraph,
       this.updates,
@@ -52,7 +54,8 @@ class BuildDefinition {
       this.writer,
       this.packageGraph,
       this.deleteFilesByDefault,
-      this.resourceManager);
+      this.resourceManager,
+      this.buildScriptUpdates);
 
   static Future<BuildDefinition> load(
           BuildOptions options, List<BuildAction> buildActions) =>
@@ -87,39 +90,34 @@ class _Loader {
     var allSources = inputSources.union(cacheDirSources);
     var updates = <AssetId, ChangeType>{};
     DigestAssetReader reader = _options.reader;
+    BuildScriptUpdates buildScriptUpdates;
     if (await _options.reader.canRead(assetGraphId)) {
       assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
           () => _readAssetGraph(assetGraphId));
+      buildScriptUpdates =
+          await BuildScriptUpdates.create(_options, assetGraph);
     }
-    if (assetGraph != null && !_options.skipBuildScriptCheck) {
-      await logTimedAsync(_logger, 'Checking build script for updates',
-          () async {
-        if (await new BuildScriptUpdates(_options, assetGraph)
-            .hasBeenUpdated()) {
-          _logger
-              .warning('Invalidating asset graph due to build script update');
-          assetGraph = null;
-        }
-      });
+
+    if (assetGraph != null) {
+      updates.addAll(await _findUpdates(
+          assetGraph, inputSources, cacheDirSources, allSources));
+      if (!_options.skipBuildScriptCheck &&
+          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
+        _logger.warning('Invalidating asset graph due to build script update');
+        assetGraph = null;
+        buildScriptUpdates = null;
+        updates.clear();
+      }
     }
+
     if (assetGraph == null) {
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
             _options.packageGraph.root.name, reader);
+        buildScriptUpdates =
+            await BuildScriptUpdates.create(_options, assetGraph);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
-      });
-      await logTimedAsync(_logger, 'Recording initial build script state',
-          () async {
-        await new BuildScriptUpdates(_options, assetGraph)
-            .recordInitialDigests();
-      });
-    } else {
-      await logTimedAsync(
-          _logger, 'Updating asset graph with changes since last build',
-          () async {
-        updates.addAll(await _findUpdates(
-            assetGraph, inputSources, cacheDirSources, allSources));
       });
     }
     var writer = _options.writer;
@@ -137,7 +135,8 @@ class _Loader {
         writer,
         _options.packageGraph,
         _options.deleteFilesByDefault,
-        new ResourceManager());
+        new ResourceManager(),
+        buildScriptUpdates);
   }
 
   /// Reads in an [AssetGraph] from disk.

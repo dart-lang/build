@@ -15,7 +15,6 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../changes/build_script_updates.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
@@ -130,20 +129,22 @@ class WatchImpl implements BuildState {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(build != null);
+      var mergedChanges = _collectChanges(changes);
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        await logTimedAsync(_logger, 'Checking build script for updates',
-            () async {
-          if (await new BuildScriptUpdates(options, _assetGraph)
-              .hasBeenUpdated()) {
+        var result = await logTimedAsync(
+            _logger, 'Checking build script for updates', () async {
+          if (_buildDefinition.buildScriptUpdates
+              .hasBeenUpdated(mergedChanges.keys.toSet())) {
             fatalBuildCompleter.complete();
             _logger.severe('Terminating builds due to build script update');
             return new BuildResult(BuildStatus.failure, []);
           }
         });
+        if (result != null) return result;
       }
-      return build.run(_collectChanges(changes));
+      return build.run(mergedChanges);
     }
 
     var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
