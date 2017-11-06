@@ -19,12 +19,24 @@ Stream<String> _stdOutLines;
 /// Runs the build script in this package, and waits for the first build to
 /// complete.
 ///
-/// This expects the first build to complete successfully.
+/// By default, this ensures a brand new build by deleting the `.dart_tool`
+/// directory, but you can disable this by setting [ensureCleanBuild] to
+/// `false`.
 ///
-/// This should typically be invoked in `setUpAll`.
-Future<Null> startServer() async {
+/// This expects the first build to complete successfully, but you can add extra
+/// expects that happen before that using [extraExpects]. All of these will be
+/// invoked and awaited before awaiting the next successful build.
+///
+/// For debugging purposes you can enable printing of the build script output by
+/// setting [verbose] to `true`.
+Future<Null> startServer(
+    {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) async {
+  ensureCleanBuild ??= true;
+  verbose ??= false;
+  extraExpects ??= [];
+
   // Make sure this is a clean build
-  if (await _toolDir.exists()) {
+  if (ensureCleanBuild && await _toolDir.exists()) {
     await _toolDir.delete(recursive: true);
   }
 
@@ -39,17 +51,26 @@ Future<Null> startServer() async {
       .transform(const LineSplitter())
       .asBroadcastStream();
 
+  if (verbose) {
+    _stdOutLines.listen((line) => print('StdOut: $line'));
+    _stdErrLines.listen((line) => print('StdErr: $line'));
+  }
+
+  await Future.wait(extraExpects.map((cb) async => await cb()));
   await nextSuccessfulBuild;
 }
 
-/// Stops the current build script.
+/// Kills the current build script.
 ///
-/// This should typically be invoked in `tearDownAll`.
-Future<Null> stopServer() async {
+/// By default this will clean up the `.dart_tool` directory, but you can
+/// disable this by setting [cleanUp] to `false`.
+Future<Null> stopServer({bool cleanUp}) async {
+  cleanUp ??= true;
   expect(_process.kill(), true);
   await _process.exitCode;
+  _process = null;
 
-  await _toolDir.delete(recursive: true);
+  if (cleanUp) await _toolDir.delete(recursive: true);
 }
 
 /// Checks whether the current git client is "clean" (no pending changes) for
@@ -82,7 +103,8 @@ Future<Null> _resetGitClient() async {
   var gitStatus =
       Process.runSync('git', ['status', '--porcelain', '.']).stdout as String;
 
-  var nextBuild = nextSuccessfulBuild;
+  Future<Null> nextBuild;
+  if (_process != null) nextBuild = nextSuccessfulBuild;
   var untracked = gitStatus
       .split('\n')
       .where((line) => line.startsWith('??'))
@@ -95,17 +117,23 @@ Future<Null> _resetGitClient() async {
   for (var path in untracked) {
     Process.runSync('rm', [path]);
   }
-  await nextBuild;
+  if (nextBuild != null) await nextBuild;
 }
 
-Future get nextSuccessfulBuild =>
-    _stdOutLines.firstWhere((line) => line.contains('Build: Succeeded after'));
+Future<Null> get nextSuccessfulBuild async {
+  await _stdOutLines
+      .firstWhere((line) => line.contains('Build: Succeeded after'));
+}
 
-Future get nextFailedBuild =>
-    _stdErrLines.firstWhere((line) => line.contains('Build: Failed after'));
+Future<Null> get nextFailedBuild async {
+  await _stdErrLines.firstWhere((line) => line.contains('Build: Failed after'));
+}
 
-Future nextStdErrLine(String message) =>
-    _stdErrLines.firstWhere((line) => line.contains(message));
+Future<String> nextStdErrLine(String message) =>
+    _stdErrLines.firstWhere((line) => line.contains(message)) as Future<String>;
+
+Future<String> nextStdOutLine(String message) =>
+    _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
 Future<ProcessResult> runTests() =>
     Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);

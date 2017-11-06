@@ -133,8 +133,8 @@ class WatchImpl implements BuildState {
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        await logTimedAsync(_logger, 'Checking build script for updates',
-            () async {
+        var result = await logTimedAsync(
+            _logger, 'Checking build script for updates', () async {
           if (await new BuildScriptUpdates(options, _assetGraph)
               .hasBeenUpdated()) {
             fatalBuildCompleter.complete();
@@ -142,6 +142,7 @@ class WatchImpl implements BuildState {
             return new BuildResult(BuildStatus.failure, []);
           }
         });
+        if (result != null) return result;
       }
       return build.run(_collectChanges(changes));
     }
