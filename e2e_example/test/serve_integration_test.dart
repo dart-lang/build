@@ -12,11 +12,11 @@ import 'common/utils.dart';
 
 void main() {
   setUpAll(() async {
-    await startServer();
+    await startServer(ensureCleanBuild: true);
   });
 
   tearDownAll(() async {
-    await stopServer();
+    await stopServer(cleanUp: true);
   });
 
   test('Doesn\'t compile submodules into the root module', () {

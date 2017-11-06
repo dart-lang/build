@@ -20,8 +20,8 @@ void main() {
       await replaceAllInFile(
           'tool/build.dart', 'ThrowingBuilder', 'FailingBuilder');
       await terminateLine;
-      await stopServer(cleanUp: false);
-      await startServer(ensureCleanBuild: false, extraExpects: [
+      await stopServer();
+      await startServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),
@@ -31,10 +31,10 @@ void main() {
 
     test('while not serving invalidate the next build', () async {
       await startServer();
-      await stopServer(cleanUp: false);
+      await stopServer();
       await replaceAllInFile(
           'tool/build.dart', 'ThrowingBuilder', 'FailingBuilder');
-      await startServer(ensureCleanBuild: false, extraExpects: [
+      await startServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),

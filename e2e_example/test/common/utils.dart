@@ -19,9 +19,7 @@ Stream<String> _stdOutLines;
 /// Runs the build script in this package, and waits for the first build to
 /// complete.
 ///
-/// By default, this ensures a brand new build by deleting the `.dart_tool`
-/// directory, but you can disable this by setting [ensureCleanBuild] to
-/// `false`.
+/// To ensure a clean build, set [ensureCleanBuild] to `true`.
 ///
 /// This expects the first build to complete successfully, but you can add extra
 /// expects that happen before that using [extraExpects]. All of these will be
@@ -31,7 +29,7 @@ Stream<String> _stdOutLines;
 /// setting [verbose] to `true`.
 Future<Null> startServer(
     {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) async {
-  ensureCleanBuild ??= true;
+  ensureCleanBuild ??= false;
   verbose ??= false;
   extraExpects ??= [];
 
@@ -62,10 +60,9 @@ Future<Null> startServer(
 
 /// Kills the current build script.
 ///
-/// By default this will clean up the `.dart_tool` directory, but you can
-/// disable this by setting [cleanUp] to `false`.
+/// To clean up the `.dart_tool` directory as well, set [cleanUp] to `true`.
 Future<Null> stopServer({bool cleanUp}) async {
-  cleanUp ??= true;
+  cleanUp ??= false;
   expect(_process.kill(), true);
   await _process.exitCode;
   _process = null;
@@ -99,24 +96,11 @@ Future<Null> _resetGitClient() async {
   // Reset our state after each test, assuming we didn't abandon tests due
   // to a non-pristine git environment.
   Process.runSync('git', ['checkout', 'HEAD', '--', '.']);
-  // Delete the untracked files.
-  var gitStatus =
-      Process.runSync('git', ['status', '--porcelain', '.']).stdout as String;
 
   Future<Null> nextBuild;
   if (_process != null) nextBuild = nextSuccessfulBuild;
-  var untracked = gitStatus
-      .split('\n')
-      .where((line) => line.startsWith('??'))
-      .map((line) => line.split(' ')[1])
-      .map((path) {
-    var parts = p.split(path);
-    assert(parts[0] == 'e2e_example');
-    return p.joinAll(parts.skip(1));
-  });
-  for (var path in untracked) {
-    Process.runSync('rm', [path]);
-  }
+  // Delete the untracked files.
+  await Process.run('git', ['clean', '-df', '.']);
   if (nextBuild != null) await nextBuild;
 }
 
