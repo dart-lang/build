@@ -411,12 +411,38 @@ class BuildImpl {
       SingleStepReader reader, AssetWriterSpy writer) async {
     // Reset the state for each output, setting `wasOutput` to false for now
     // (will set to true in the next loop for written assets).
+    //
+    // Also updates the `inputs` set for each output, and the `outputs` sets for
+    // all inputs.
     for (var output in declaredOutputs) {
-      (_assetGraph.get(output) as GeneratedAssetNode)
+      var node = _assetGraph.get(output) as GeneratedAssetNode;
+      node
         ..needsUpdate = false
         ..wasOutput = false
         ..lastKnownDigest = null
         ..globs = reader.globsRan.toSet();
+
+      // Update dependencies that don't exist any more.
+      var removedInputs = node.inputs.difference(reader.assetsRead);
+      node.inputs.removeAll(removedInputs);
+      for (var input in removedInputs) {
+        // TODO: special type of dependency here? This means the primary input
+        // was never actually read.
+        if (input == node.primaryInput) continue;
+
+        var inputNode = _assetGraph.get(input);
+        assert(inputNode != null, 'Asset Graph is missing $input');
+        inputNode.outputs.remove(output);
+      }
+
+      // Add the new dependencies.
+      var newInputs = reader.assetsRead.difference(node.inputs);
+      node.inputs.addAll(newInputs);
+      for (var input in newInputs) {
+        var inputNode = _assetGraph.get(input);
+        assert(inputNode != null, 'Asset Graph is missing $input');
+        inputNode.outputs.add(output);
+      }
     }
 
     // Mark the actual outputs as output.
@@ -425,15 +451,6 @@ class BuildImpl {
         ..wasOutput = true
         ..lastKnownDigest = await _reader.digest(output);
     }));
-
-    // Update the asset graph based on the dependencies discovered.
-    for (var dependency in reader.assetsRead) {
-      var dependencyNode = _assetGraph.get(dependency);
-      assert(dependencyNode != null, 'Asset Graph is missing $dependency');
-      // We care about all builderOutputs, not just real outputs. Updates
-      // to dependencies may cause a file to be output which wasn't before.
-      dependencyNode.outputs.addAll(declaredOutputs);
-    }
   }
 
   Future _delete(AssetId id) {

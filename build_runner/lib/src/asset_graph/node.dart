@@ -72,10 +72,15 @@ class GeneratedAssetNode extends AssetNode {
   /// Any new or deleted files matching this glob should invalidate this node.
   Set<Glob> globs;
 
+  /// All the inputs that were read when generating this asset, or deciding not
+  /// to generate it.
+  final Set<AssetId> inputs;
+
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
       this.wasOutput, AssetId id,
-      {Digest lastKnownDigest, Set<Glob> globs})
+      {Digest lastKnownDigest, Set<Glob> globs, Iterable<AssetId> inputs})
       : this.globs = globs ?? new Set<Glob>(),
+        this.inputs = inputs?.toSet() ?? new Set<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override
