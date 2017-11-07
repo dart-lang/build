@@ -10,6 +10,8 @@ import 'package:build_runner/build_runner.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 
+import 'types.dart' as types;
+
 const scriptLocation = '.dart_tool/build/build.dart';
 
 Future<Null> ensureBuildScript() async {
@@ -19,18 +21,6 @@ Future<Null> ensureBuildScript() async {
   scriptFile.createSync(recursive: true);
   await scriptFile.writeAsString(await _generateBuildScript());
 }
-
-final _packageGraph = new TypeReference((b) => b
-  ..symbol = 'PackageGraph'
-  ..url = 'package:build_runner/build_runner.dart');
-
-final _buildAction = new TypeReference((b) => b
-  ..symbol = 'BuildAction'
-  ..url = 'package:build_runner/build_runner.dart');
-
-final _buildActions = new TypeReference((b) => b
-  ..symbol = 'List'
-  ..types.add(_buildAction));
 
 Future<String> _generateBuildScript() async {
   var packageGraph = new PackageGraph.forThisPackage();
@@ -48,11 +38,11 @@ Method _findBuildActions(Iterable<BuildConfig> buildConfigs) =>
       ..name = '_buildActions'
       ..requiredParameters.add(new Parameter((b) => b
         ..name = 'graph'
-        ..type = _packageGraph))
-      ..returns = _buildActions
+        ..type = types.packageGraph))
+      ..returns = types.buildActions
       ..body = new Block((b) => b
         ..statements.addAll([
-          _buildActions.newInstance([]).assignVar('actions').statement,
+          types.buildActions.newInstance([]).assignVar('actions').statement,
           // TODO - Pass actual arguments
           literalList([], new TypeReference((b) => b..symbol = 'String'))
               .assignVar('args')
@@ -67,7 +57,7 @@ Method _main() => new Method((b) => b
   ..body = new Block((b) => b
     ..statements.addAll([
       refer('_buildActions')
-          .call([_packageGraph.newInstanceNamed('forThisPackage', [])])
+          .call([types.packageGraph.newInstanceNamed('forThisPackage', [])])
           .assignVar('actions')
           .statement,
       refer('watch', 'package:build_runner/build_runner.dart')
@@ -122,7 +112,7 @@ Iterable<Code> _addBuildActions(Iterable<BuildConfig> configs) {
                     ..requiredParameters
                         .add(new Parameter((b) => b..name = 'b'))
                     ..lambda = true
-                    ..body = _buildAction
+                    ..body = types.buildAction
                         .newInstance([refer('b'), refer('p')]).code).closure
                 ])
               ]).code).closure
