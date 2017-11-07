@@ -13,23 +13,23 @@ import '../asset_graph/graph.dart';
 import '../generate/options.dart';
 
 class BuildScriptUpdates {
-  final Set<AssetId> _allAssetIds;
+  final Set<AssetId> _allSources;
   final bool _supportsIncrementalRebuilds;
 
-  BuildScriptUpdates._(this._supportsIncrementalRebuilds, this._allAssetIds);
+  BuildScriptUpdates._(this._supportsIncrementalRebuilds, this._allSources);
 
   static Future<BuildScriptUpdates> create(
       BuildOptions options, AssetGraph graph) async {
     bool supportsIncrementalRebuilds = true;
     var rootPackage = options.packageGraph.root.name;
-    Set<AssetId> allAssetIds;
+    Set<AssetId> allSources;
     var logger = new Logger('BuildScriptUpdates');
     try {
-      allAssetIds = _urisForThisScript
+      allSources = _urisForThisScript
           .map((id) => _idForUri(id, rootPackage))
           .where((id) => id != null)
           .toSet();
-      var missing = allAssetIds.firstWhere((id) => !graph.contains(id),
+      var missing = allSources.firstWhere((id) => !graph.contains(id),
           orElse: () => null);
       if (missing != null) {
         supportsIncrementalRebuilds = false;
@@ -38,8 +38,8 @@ class BuildScriptUpdates {
             'don\'t have your dependencies specified fully in your '
             'pubspec.yaml.');
       } else {
-        // Make sure we are tracking changes for all ids in [allAssetIds].
-        for (var id in allAssetIds) {
+        // Make sure we are tracking changes for all ids in [allSources].
+        for (var id in allSources) {
           var node = graph.get(id);
           if (node.lastKnownDigest == null) {
             node.lastKnownDigest = await options.reader.digest(id);
@@ -48,9 +48,9 @@ class BuildScriptUpdates {
       }
     } on ArgumentError catch (_) {
       supportsIncrementalRebuilds = false;
-      allAssetIds = new Set<AssetId>();
+      allSources = new Set<AssetId>();
     }
-    return new BuildScriptUpdates._(supportsIncrementalRebuilds, allAssetIds);
+    return new BuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
   }
 
   static Iterable<Uri> get _urisForThisScript =>
@@ -60,7 +60,7 @@ class BuildScriptUpdates {
   /// [updatedIds].
   bool hasBeenUpdated(Set<AssetId> updatedIds) {
     if (!_supportsIncrementalRebuilds) return true;
-    return updatedIds.intersection(_allAssetIds).isNotEmpty;
+    return updatedIds.intersection(_allSources).isNotEmpty;
   }
 
   /// Attempts to return an [AssetId] for [uri].
