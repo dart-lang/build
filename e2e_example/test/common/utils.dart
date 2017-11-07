@@ -63,9 +63,11 @@ Future<Null> startServer(
 /// To clean up the `.dart_tool` directory as well, set [cleanUp] to `true`.
 Future<Null> stopServer({bool cleanUp}) async {
   cleanUp ??= false;
-  expect(_process.kill(), true);
-  await _process.exitCode;
-  _process = null;
+  if (_process != null) {
+    expect(_process.kill(), true);
+    await _process.exitCode;
+    _process = null;
+  }
 
   if (cleanUp) await _toolDir.delete(recursive: true);
 }

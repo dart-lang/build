@@ -11,10 +11,14 @@ void main() {
   group('Build script changes', () {
     setUp(() async {
       ensureCleanGitClient();
+      await startServer(verbose: true);
+    });
+
+    tearDown(() async {
+      await stopServer();
     });
 
     test('while serving prompt the user to restart', () async {
-      await startServer();
       var terminateLine =
           nextStdOutLine('Terminating. No further builds will be scheduled');
       await replaceAllInFile(
@@ -25,12 +29,10 @@ void main() {
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),
-      ]);
-      await stopServer();
+      ], verbose: true);
     });
 
     test('while not serving invalidate the next build', () async {
-      await startServer();
       await stopServer();
       await replaceAllInFile(
           'tool/build.dart', 'ThrowingBuilder', 'FailingBuilder');
@@ -38,8 +40,7 @@ void main() {
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),
-      ]);
-      await stopServer();
+      ], verbose: true);
     });
   });
 }
