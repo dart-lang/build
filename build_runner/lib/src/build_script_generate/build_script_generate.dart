@@ -98,8 +98,8 @@ Iterable<Code> _addBuildActions(Iterable<BuildConfig> configs) {
           .property('map')
           .call([
             new Method((b) => b
-              ..requiredParameters.add(new Parameter((b) => b..name = 'n'))
-              ..body = refer('n').property('name').code
+              ..requiredParameters.add(new Parameter((b) => b..name = 'p'))
+              ..body = refer('p').property('name').code
               ..lambda = true).closure
           ])
           .property('forEach')
