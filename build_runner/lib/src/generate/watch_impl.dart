@@ -15,8 +15,6 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../changes/build_script_updates.dart';
-import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
@@ -130,21 +128,18 @@ class WatchImpl implements BuildState {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(build != null);
+      var mergedChanges = _collectChanges(changes);
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        var result = await logTimedAsync(
-            _logger, 'Checking build script for updates', () async {
-          if (await new BuildScriptUpdates(options, _assetGraph)
-              .hasBeenUpdated()) {
-            fatalBuildCompleter.complete();
-            _logger.severe('Terminating builds due to build script update');
-            return new BuildResult(BuildStatus.failure, []);
-          }
-        });
-        if (result != null) return result;
+        if (_buildDefinition.buildScriptUpdates
+            .hasBeenUpdated(mergedChanges.keys.toSet())) {
+          fatalBuildCompleter.complete();
+          _logger.severe('Terminating builds due to build script update');
+          return new BuildResult(BuildStatus.failure, []);
+        }
       }
-      return build.run(_collectChanges(changes));
+      return build.run(mergedChanges);
     }
 
     var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
@@ -198,7 +193,12 @@ class WatchImpl implements BuildState {
     assert(_assetGraph != null);
     if (_isCacheFile(change)) return false;
     if (_isGitFile(change)) return false;
-    if (_hasNoOutputs(change)) return false;
+    // If we haven't computed a digest for this asset and it has not outputs,
+    // then we don't care about changes to it.
+    //
+    // Checking for a digest alone isn't enough because a file may be deleted
+    // and re-added, in which case it won't have a digest.
+    if (_hasNoOutputs(change) && _hasNoDigest(change)) return false;
     if (_isEditOnGeneratedFile(change)) return false;
     if (_isExpectedDelete(change)) return false;
     if (_isUnwatchedDelete(change)) return false;
@@ -208,6 +208,10 @@ class WatchImpl implements BuildState {
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
   bool _isGitFile(AssetChange change) => change.id.path.startsWith('.git/');
+
+  bool _hasNoDigest(AssetChange change) =>
+      _assetGraph.contains(change.id) &&
+      _assetGraph.get(change.id).lastKnownDigest == null;
 
   bool _hasNoOutputs(AssetChange change) =>
       _assetGraph.contains(change.id) &&

@@ -9,61 +9,65 @@ import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import '../asset/reader.dart';
 import '../asset_graph/graph.dart';
 import '../generate/options.dart';
 
 class BuildScriptUpdates {
-  final AssetGraph _graph;
-  final String _rootPackage;
-  final DigestAssetReader _reader;
-  final _logger = new Logger('BuildScriptUpdates');
+  final Set<AssetId> _allSources;
+  final bool _supportsIncrementalRebuilds;
 
-  BuildScriptUpdates(BuildOptions options, this._graph)
-      : _reader = options.reader,
-        _rootPackage = options.packageGraph.root.name;
+  BuildScriptUpdates._(this._supportsIncrementalRebuilds, this._allSources);
 
-  Iterable<Uri> get _urisForThisScript => currentMirrorSystem().libraries.keys;
-
-  /// Checks if the current running program has been updated, based on previous
-  /// known digests in [_graph].
-  Future<bool> hasBeenUpdated() async {
-    return (await Future.wait(_urisForThisScript.map(_wasUpdated)))
-        .contains(true);
+  static Future<BuildScriptUpdates> create(
+      BuildOptions options, AssetGraph graph) async {
+    bool supportsIncrementalRebuilds = true;
+    var rootPackage = options.packageGraph.root.name;
+    Set<AssetId> allSources;
+    var logger = new Logger('BuildScriptUpdates');
+    try {
+      allSources = _urisForThisScript
+          .map((id) => _idForUri(id, rootPackage))
+          .where((id) => id != null)
+          .toSet();
+      var missing = allSources.firstWhere((id) => !graph.contains(id),
+          orElse: () => null);
+      if (missing != null) {
+        supportsIncrementalRebuilds = false;
+        logger.warning('$missing was not found in the asset graph, '
+            'incremental builds will not work.\n This probably means you '
+            'don\'t have your dependencies specified fully in your '
+            'pubspec.yaml.');
+      } else {
+        // Make sure we are tracking changes for all ids in [allSources].
+        for (var id in allSources) {
+          var node = graph.get(id);
+          if (node.lastKnownDigest == null) {
+            node.lastKnownDigest = await options.reader.digest(id);
+          }
+        }
+      }
+    } on ArgumentError catch (_) {
+      supportsIncrementalRebuilds = false;
+      allSources = new Set<AssetId>();
+    }
+    return new BuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
   }
 
-  /// Records initial digests for all imports in the current program.
-  Future<Null> recordInitialDigests() async {
-    await Future.wait(_urisForThisScript.map((uri) async {
-      try {
-        var id = _idForUri(uri);
-        // Returns null for uris we don't care about, such as dart: uris and
-        // certain data: uris.
-        if (id == null) return;
-        var node = _graph.get(id);
-        if (node == null) {
-          _logger.warning('$id was not found in the asset graph, incremental '
-              'builds will not work.\n This probably means you don\'t have '
-              'your dependencies specified fully in your pubspec.yaml.');
-          return;
-        }
-        if (node.lastKnownDigest == null) {
-          node.lastKnownDigest = await _reader.digest(id);
-        }
-      } on ArgumentError catch (e) {
-        _logger.warning(
-            'Unable to record digests for build script sources, '
-            'incremental builds will not work.',
-            e);
-      }
-    }));
+  static Iterable<Uri> get _urisForThisScript =>
+      currentMirrorSystem().libraries.keys;
+
+  /// Checks if the current running program has been updated, based on
+  /// [updatedIds].
+  bool hasBeenUpdated(Set<AssetId> updatedIds) {
+    if (!_supportsIncrementalRebuilds) return true;
+    return updatedIds.intersection(_allSources).isNotEmpty;
   }
 
   /// Attempts to return an [AssetId] for [uri].
   ///
   /// Returns `null` if the uri should be ignored, or throws an [ArgumentError]
   /// if the [uri] is not recognized.
-  AssetId _idForUri(Uri uri) {
+  static AssetId _idForUri(Uri uri, String _rootPackage) {
     switch (uri.scheme) {
       case 'dart':
         // TODO: check for sdk updates!
@@ -91,47 +95,5 @@ class BuildScriptUpdates {
             'Full uri was: $uri.');
     }
     return null;
-  }
-
-  /// Checks whether [uri] has been updated.
-  ///
-  /// If it can't tell due to an unsupported uri, then this always returns
-  /// `true`.
-  ///
-  /// Some uris will always return false, such as `dart:` uris, and certain
-  /// `data:` uris that are recognized as test bootstrapping entrypoints.
-  Future<bool> _wasUpdated(Uri uri) async {
-    AssetId id;
-    try {
-      id = _idForUri(uri);
-      // `null` but no error is a signal to skip this uri.
-      if (id == null) return false;
-    } on ArgumentError catch (e, _) {
-      _logger.warning(
-          'Unable to check build script for updates, falling back on full '
-          'rebuild.',
-          e);
-      return true;
-    }
-
-    if (!await _reader.canRead(id)) {
-      _logger.info('Unable to read asset $id, falling back on full rebuild.');
-      return true;
-    }
-
-    var node = _graph.get(id);
-    if (node == null) {
-      _logger.warning('$id was not found in the asset graph, falling back on '
-          'full rebuild.\n This probably means you don\'t have your '
-          'dependencies specified fully in your pubspec.yaml.');
-      return true;
-    }
-    if (node.lastKnownDigest == null) {
-      // This could happen if a new import was added, or we weren't able to
-      // initially compute the last known digest.
-      return true;
-    } else {
-      return node.lastKnownDigest != await _reader.digest(id);
-    }
   }
 }
