@@ -54,8 +54,8 @@ Future<Null> startServer(
     _stdErrLines.listen((line) => print('StdErr: $line'));
   }
 
+  extraExpects.add(() => nextSuccessfulBuild);
   await Future.wait(extraExpects.map((cb) async => await cb()));
-  await nextSuccessfulBuild;
 }
 
 /// Kills the current build script.
