@@ -418,13 +418,15 @@ void main() {
     var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
         false, true, makeAssetId('a|web/a.txt.copy'),
-        lastKnownDigest: computeDigest('a'));
+        lastKnownDigest: computeDigest('a'),
+        inputs: [makeAssetId('a|web/a.txt')]);
     expectedGraph.add(aCopyNode);
     expectedGraph
         .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
     var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
         false, true, makeAssetId('a|lib/b.txt.copy'),
-        lastKnownDigest: computeDigest('b'));
+        lastKnownDigest: computeDigest('b'),
+        inputs: [makeAssetId('a|lib/b.txt')]);
     expectedGraph.add(bCopyNode);
     expectedGraph
         .add(makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b')));
@@ -473,94 +475,38 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null);
-      var bId = makeAssetId('a|lib/b.txt');
-      var bCopyNode = new GeneratedAssetNode(
-          0, bId, false, true, makeAssetId('a|lib/b.txt.copy'),
-          lastKnownDigest: computeDigest('b'));
-      graph.add(bCopyNode);
-      var bNode =
-          makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b'));
-      graph.add(bNode);
+      var buildActions = [copyABuildAction];
 
+      // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b');
-      await testActions([
-        copyABuildAction
-      ], {
-        'a|web/a.txt': 'a',
-        'a|lib/b.txt.copy': 'b',
-        'a|lib/c.txt': 'c',
-        'a|$assetGraphPath': JSON.encode(graph.serialize()),
-      }, outputs: {
-        'a|web/a.txt.copy': 'a',
-        'a|lib/c.txt.copy': 'c',
-      }, writer: writer);
-    });
-
-    test('invalidates generated assets based on graph age', () async {
-      var buildActions = [
-        copyABuildAction,
-        new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-            inputs: ['**/*.txt.copy'])
-      ];
-
-      var graph = await AssetGraph.build([], new Set(), 'a', null);
-
-      var aCloneNode = new GeneratedAssetNode(
-          1,
-          makeAssetId('a|lib/a.txt.copy'),
-          false,
-          true,
-          makeAssetId('a|lib/a.txt.copy.clone'),
-          lastKnownDigest: computeDigest('a'));
-      graph.add(aCloneNode);
-      var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
-          false, true, makeAssetId('a|lib/a.txt.copy'),
-          lastKnownDigest: computeDigest('a'))
-        ..primaryOutputs.add(aCloneNode.id)
-        ..outputs.add(aCloneNode.id);
-      graph.add(aCopyNode);
-      var aNode =
-          makeAssetNode('a|lib/a.txt', [aCopyNode.id], computeDigest('a'))
-            ..primaryOutputs.add(aCopyNode.id)
-            ..outputs.add(aCopyNode.id);
-      graph.add(aNode);
-
-      var bCloneNode = new GeneratedAssetNode(
-          1,
-          makeAssetId('a|lib/b.txt.copy'),
-          false,
-          true,
-          makeAssetId('a|lib/b.txt.copy.clone'),
-          lastKnownDigest: computeDigest('b'));
-      graph.add(bCloneNode);
-      var bCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/b.txt'),
-          false, true, makeAssetId('a|lib/b.txt.copy'),
-          lastKnownDigest: computeDigest('b'))
-        ..primaryOutputs.add(bCloneNode.id)
-        ..outputs.add(bCloneNode.id);
-      graph.add(bCopyNode);
-      var bNode =
-          makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b'))
-            ..primaryOutputs.add(bCopyNode.id);
-      graph.add(bNode);
-
-      var writer = new InMemoryRunnerAssetWriter();
-      await writer.writeAsString(makeAssetId('a|lib/b.txt'), 'b');
       await testActions(
           buildActions,
           {
-            'a|lib/a.txt': 'b',
-            'a|lib/a.txt.copy': 'a',
-            'a|lib/a.txt.copy.clone': 'a',
-            'a|lib/b.txt.copy': 'b',
-            'a|lib/b.txt.copy.clone': 'b',
-            'a|$assetGraphPath': JSON.encode(graph.serialize()),
+            'a|web/a.txt': 'a',
+            'a|lib/b.txt': 'b',
           },
           outputs: {
-            'a|lib/a.txt.copy': 'b',
-            'a|lib/a.txt.copy.clone': 'b',
+            'a|web/a.txt.copy': 'a',
+            'a|lib/b.txt.copy': 'b',
+          },
+          writer: writer);
+
+      // Followup build with modified inputs.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+      await testActions(
+          buildActions,
+          {
+            'a|web/a.txt': 'a2',
+            'a|web/a.txt.copy': 'a',
+            'a|lib/b.txt': 'b',
+            'a|lib/b.txt.copy': 'b',
+            'a|lib/c.txt': 'c',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {
+            'a|web/a.txt.copy': 'a2',
+            'a|lib/c.txt.copy': 'c',
           },
           writer: writer);
     });
@@ -572,34 +518,28 @@ void main() {
             inputs: ['**/*.txt.copy'])
       ];
 
-      var graph = await AssetGraph.build([], new Set(), 'a', null);
-      var aCloneNode = new GeneratedAssetNode(
-          0,
-          makeAssetId('a|lib/a.txt.copy'),
-          false,
-          true,
-          makeAssetId('a|lib/a.txt.copy.clone'),
-          lastKnownDigest: computeDigest('a'));
-      graph.add(aCloneNode);
-      var aCopyNode = new GeneratedAssetNode(0, makeAssetId('a|lib/a.txt'),
-          false, true, makeAssetId('a|lib/a.txt.copy'),
-          lastKnownDigest: computeDigest('a'))
-        ..primaryOutputs.add(aCloneNode.id)
-        ..outputs.add(aCloneNode.id);
-      graph.add(aCopyNode);
-      var aNode =
-          makeAssetNode('a|lib/a.txt', [aCopyNode.id], computeDigest('a'))
-            ..primaryOutputs.add(aCopyNode.id)
-            ..outputs.add(aCopyNode.id);
-      graph.add(aNode);
-
+      // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
+      await testActions(
+          buildActions,
+          {
+            'a|lib/a.txt': 'a',
+          },
+          outputs: {
+            'a|lib/a.txt.copy': 'a',
+            'a|lib/a.txt.copy.clone': 'a',
+          },
+          writer: writer);
+
+      // Followup build with deleted input + cached graph.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
       await testActions(
           buildActions,
           {
             'a|lib/a.txt.copy': 'a',
             'a|lib/a.txt.copy.clone': 'a',
-            'a|$assetGraphPath': JSON.encode(graph.serialize()),
+            'a|$assetGraphPath': serializedGraph,
           },
           outputs: {},
           writer: writer);
@@ -608,69 +548,107 @@ void main() {
       var serialized = JSON.decode(
           UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
       var newGraph = new AssetGraph.deserialize(serialized);
-      expect(newGraph.contains(aNode.id), isFalse);
-      expect(newGraph.contains(aCopyNode.id), isFalse);
-      expect(newGraph.contains(aCloneNode.id), isFalse);
-      expect(writer.assets.containsKey(aNode.id), isFalse);
-      expect(writer.assets.containsKey(aCopyNode.id), isFalse);
-      expect(writer.assets.containsKey(aCloneNode.id), isFalse);
+      var aNodeId = makeAssetId('a|lib/a.txt');
+      var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
+      var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
+      expect(newGraph.contains(aNodeId), isFalse);
+      expect(newGraph.contains(aCopyNodeId), isFalse);
+      expect(newGraph.contains(aCloneNodeId), isFalse);
+      expect(writer.assets.containsKey(aNodeId), isFalse);
+      expect(writer.assets.containsKey(aCopyNodeId), isFalse);
+      expect(writer.assets.containsKey(aCloneNodeId), isFalse);
     });
 
     test('no outputs if no changed sources', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null);
-      var aId = makeAssetId('a|web/a.txt');
-      var aCopyNode = new GeneratedAssetNode(
-          0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
-          lastKnownDigest: computeDigest('a'));
-      graph.add(aCopyNode);
-      var aNode =
-          makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
-      graph.add(aNode);
+      var buildActions = [copyABuildAction];
 
+      // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
+      await testActions(buildActions, {'a|web/a.txt': 'a'},
+          outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), '');
-      await testActions([
-        copyABuildAction
-      ], {
+      // Followup build with same sources + cached graph.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      await testActions(buildActions, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
-        'a|$assetGraphPath': JSON.encode(graph.serialize()),
-      }, outputs: {}, writer: writer);
+        'a|$assetGraphPath': serializedGraph,
+      }, outputs: {});
     });
 
     test('no outputs if no changed sources using `writeToCache`', () async {
-      var graph = await AssetGraph.build([], new Set(), 'a', null);
-      var aId = makeAssetId('a|web/a.txt');
-      var aCopyNode = new GeneratedAssetNode(
-          0, aId, false, true, makeAssetId('a|web/a.txt.copy'),
-          lastKnownDigest: computeDigest('a'));
-      graph.add(aCopyNode);
-      var aNode =
-          makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a'));
-      graph.add(aNode);
+      var buildActions = [copyABuildAction];
 
+      // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), '');
-      await writer.writeAsString(
-          makeAssetId('a|.dart_tool/build/generated/a/web/a.txt'), '');
-
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, 'a/',
-          includes: ['**']);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
-      await testActions([
-        copyABuildAction
-      ], {
-        'a|web/a.txt': 'a',
-        'a|.dart_tool/build/generated/a/web/a.txt.copy': 'a',
-        'a|$assetGraphPath': JSON.encode(graph.serialize()),
-      },
-          outputs: {},
+      await testActions(buildActions, {'a|web/a.txt': 'a'},
+          // Note that `testActions` converts generated cache dir paths to the
+          // original ones for matching.
+          outputs: {'a|web/a.txt.copy': 'a'},
           writer: writer,
-          writeToCache: true,
-          packageGraph: packageGraph);
+          writeToCache: true);
+
+      // Followup build with same sources + cached graph.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      await testActions(
+          buildActions,
+          {
+            'a|web/a.txt': 'a',
+            'a|web/a.txt.copy': 'a',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {},
+          writeToCache: true);
+    });
+
+    test('inputs/outputs are updated if they change', () async {
+      // Initial build.
+      var writer = new InMemoryRunnerAssetWriter();
+      await testActions([
+        new BuildAction(
+            new CopyBuilder(copyFromAsset: makeAssetId('a|lib/b.txt')), 'a',
+            inputs: ['lib/a.txt'])
+      ], {
+        'a|lib/a.txt': 'a',
+        'a|lib/b.txt': 'b',
+        'a|lib/c.txt': 'c',
+      }, outputs: {
+        'a|lib/a.txt.copy': 'b',
+      }, writer: writer);
+
+      // Followup build with same sources + cached graph, but configure the
+      // builder to read a different file.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+
+      await testActions([
+        new BuildAction(
+            new CopyBuilder(copyFromAsset: makeAssetId('a|lib/c.txt')), 'a',
+            inputs: ['lib/a.txt'])
+      ], {
+        'a|lib/a.txt': 'a',
+        'a|lib/a.txt.copy': 'b',
+        // Hack to get the file to rebuild, we are being bad by changing the
+        // builder but pretending its the same.
+        'a|lib/b.txt': 'b2',
+        'a|lib/c.txt': 'c',
+        'a|$assetGraphPath': serializedGraph,
+      }, outputs: {
+        'a|lib/a.txt.copy': 'c',
+      }, writer: writer);
+
+      // Read cached graph and validate.
+      var graph = new AssetGraph.deserialize(JSON.decode(
+          UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')])) as Map);
+      var outputNode =
+          graph.get(makeAssetId('a|lib/a.txt.copy')) as GeneratedAssetNode;
+      var aTxtNode = graph.get(makeAssetId('a|lib/a.txt'));
+      var bTxtNode = graph.get(makeAssetId('a|lib/b.txt'));
+      var cTxtNode = graph.get(makeAssetId('a|lib/c.txt'));
+      expect(outputNode.inputs, unorderedEquals([aTxtNode.id, cTxtNode.id]));
+      expect(aTxtNode.outputs, contains(outputNode.id));
+      expect(bTxtNode.outputs, isEmpty);
+      expect(cTxtNode.outputs, unorderedEquals([outputNode.id]));
     });
   });
 }

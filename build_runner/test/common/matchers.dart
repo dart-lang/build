@@ -84,6 +84,14 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
+          if (!unorderedEquals(node.inputs)
+              .matches(expectedNode.inputs, null)) {
+            matchState['Inputs of ${node.id}'] = [
+              node.inputs,
+              expectedNode.inputs
+            ];
+            matches = false;
+          }
         } else {
           matchState['Type of ${node.id}'] = [
             node.runtimeType,
