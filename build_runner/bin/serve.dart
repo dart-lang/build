@@ -6,13 +6,17 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:io/io.dart';
+import 'package:logging/logging.dart';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
+import 'package:build_runner/src/logging/std_io_logging.dart';
 
 Future<Null> main() async {
+  var logListener = Logger.root.onRecord.listen(stdIOLogListener);
   await ensureBuildScript();
   var dart = Platform.resolvedExecutable;
   var buildRun = await new ProcessManager().spawn(dart, [scriptLocation]);
   await buildRun.exitCode;
   await ProcessManager.terminateStdIn();
+  await logListener.cancel();
 }
