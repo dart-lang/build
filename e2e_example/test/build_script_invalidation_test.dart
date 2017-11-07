@@ -11,11 +11,8 @@ void main() {
   group('Build script changes', () {
     setUp(() async {
       ensureCleanGitClient();
-      await startServer(verbose: true);
-    });
-
-    tearDown(() async {
-      await stopServer();
+      await startServer(ensureCleanBuild: true, verbose: true);
+      addTearDown(() => stopServer(cleanUp: true));
     });
 
     test('while serving prompt the user to restart', () async {

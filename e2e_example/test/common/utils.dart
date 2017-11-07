@@ -68,6 +68,14 @@ Future<Null> stopServer({bool cleanUp}) async {
     await _process.exitCode;
     _process = null;
   }
+  if (_stdOutLines != null) {
+    await _stdOutLines.drain();
+    _stdOutLines = null;
+  }
+  if (_stdErrLines != null) {
+    await _stdErrLines.drain();
+    _stdErrLines = null;
+  }
 
   if (cleanUp) await _toolDir.delete(recursive: true);
 }
