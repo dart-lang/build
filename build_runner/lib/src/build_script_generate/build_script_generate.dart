@@ -33,23 +33,24 @@ Future<String> _generateBuildScript() async {
   return new DartFormatter().format('${library.accept(emitter)}');
 }
 
-Method _findBuildActions(Iterable<BuildConfig> buildConfigs) =>
-    new Method((b) => b
-      ..name = '_buildActions'
-      ..requiredParameters.add(new Parameter((b) => b
-        ..name = 'graph'
-        ..type = types.packageGraph))
-      ..returns = types.buildActions
-      ..body = new Block((b) => b
-        ..statements.addAll([
-          types.buildActions.newInstance([]).assignVar('actions').statement,
-          // TODO - Pass actual arguments
-          literalList([], new TypeReference((b) => b..symbol = 'String'))
-              .assignVar('args')
-              .statement,
-        ]
-          ..addAll(_addBuildActions(buildConfigs))
-          ..add(refer('actions').returned.statement))));
+Method _findBuildActions(Iterable<BuildConfig> buildConfigs) {
+  var statements = <Code>[
+    types.buildActions.newInstance([]).assignVar('actions').statement,
+    // TODO - Pass actual arguments
+    literalList([], new TypeReference((b) => b..symbol = 'String'))
+        .assignVar('args')
+        .statement,
+  ];
+  statements.addAll(_addBuildActions(buildConfigs));
+  statements.add(refer('actions').returned.statement);
+  return new Method((b) => b
+    ..name = '_buildActions'
+    ..requiredParameters.add(new Parameter((b) => b
+      ..name = 'graph'
+      ..type = types.packageGraph))
+    ..returns = types.buildActions
+    ..body = new Block((b) => b..statements.addAll(statements)));
+}
 
 Method _main() => new Method((b) => b
   ..name = 'main'
