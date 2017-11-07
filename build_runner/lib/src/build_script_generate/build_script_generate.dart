@@ -46,7 +46,7 @@ Method _findBuildActions(Iterable<BuildConfig> buildConfigs) {
   return new Method((b) => b
     ..name = '_buildActions'
     ..requiredParameters.add(new Parameter((b) => b
-      ..name = 'graph'
+      ..name = 'packageGraph'
       ..type = types.packageGraph))
     ..returns = types.buildActions
     ..body = new Block((b) => b..statements.addAll(statements)));
@@ -92,7 +92,7 @@ Iterable<Code> _addBuildActions(Iterable<BuildConfig> configs) {
     var varName = 'buildersFor${config.packageName}';
     statements.addAll([
       _packageBuilders(config, varName),
-      refer('graph')
+      refer('packageGraph')
           .property('dependentsOf')
           .call([literalString(config.packageName)])
           .property('map')
