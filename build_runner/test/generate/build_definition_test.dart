@@ -41,6 +41,11 @@ main() {
         [
           await pubspec('a'),
           d.file('.packages', '\na:./lib/'),
+          d.dir('.dart_tool', [
+            d.dir('build', [
+              d.dir('entrypoint', [d.file('build.dart', '// builds!')])
+            ])
+          ]),
           d.dir('lib'),
         ],
       ).create();
@@ -108,6 +113,13 @@ main() {
         var buildDefinition = await BuildDefinition.load(options, buildActions);
         expect(buildDefinition.updates, isNot(contains(generatedId)));
         expect(buildDefinition.assetGraph.contains(generatedId), isFalse);
+      });
+
+      test('includes generated entrypoint', () async {
+        var entryPoint =
+            new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
+        var buildDefinition = await BuildDefinition.load(options, []);
+        expect(buildDefinition.assetGraph.contains(entryPoint), isTrue);
       });
     });
   });
