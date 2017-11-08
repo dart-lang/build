@@ -206,11 +206,12 @@ class _Loader {
     return sources;
   }
 
-  /// Checks if an [input] is valid.
+  /// Checks whether [input] is allowed to be read over the course of a build.
   bool _isValidInput(AssetId input) =>
       input.package != _options.packageGraph.root.name
           ? input.path.startsWith('lib/')
-          : !toolDirs.any((d) => input.path.startsWith(d));
+          : !toolDirs.any((d) => input.path.startsWith(d)) ||
+              input.path.startsWith(entryPointDir);
 
   Stream<AssetId> _listAssetIds(Iterable<InputSet> inputSets) async* {
     var seenAssets = new Set<AssetId>();
