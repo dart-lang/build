@@ -57,7 +57,7 @@ class SingleStepReader implements AssetReader {
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._runPhaseForInput);
 
-  Iterable<AssetId> get assetsRead => _assetsRead;
+  Set<AssetId> get assetsRead => _assetsRead;
 
   /// The [Glob]s which have been searched with [findAssets].
   ///

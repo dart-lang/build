@@ -88,6 +88,8 @@ void main() {
             var syntheticNode = new SyntheticAssetNode(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);
 
+            generatedNode.inputs.addAll([node.id, syntheticNode.id]);
+
             graph.add(syntheticNode);
             graph.add(generatedNode);
           }

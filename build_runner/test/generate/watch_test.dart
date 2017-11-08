@@ -135,13 +135,15 @@ void main() {
         var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
         var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/b.txt'),
             false, true, makeAssetId('a|web/b.txt.copy'),
-            lastKnownDigest: computeDigest('b2'));
+            lastKnownDigest: computeDigest('b2'),
+            inputs: [makeAssetId('a|web/b.txt')]);
         expectedGraph.add(bCopyNode);
         expectedGraph.add(
             makeAssetNode('a|web/b.txt', [bCopyNode.id], computeDigest('b2')));
         var cCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/c.txt'),
             false, true, makeAssetId('a|web/c.txt.copy'),
-            lastKnownDigest: computeDigest('c'));
+            lastKnownDigest: computeDigest('c'),
+            inputs: [makeAssetId('a|web/c.txt')]);
         expectedGraph.add(cCopyNode);
         expectedGraph.add(
             makeAssetNode('a|web/c.txt', [cCopyNode.id], computeDigest('c')));

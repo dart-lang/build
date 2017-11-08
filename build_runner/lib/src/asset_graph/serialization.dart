@@ -32,8 +32,21 @@ class _AssetGraphDeserializer {
           new AssetId(descriptor[1] as String, descriptor[2] as String);
     }
 
+    // Read in all the nodes and their outputs.
+    //
+    // Note that this does not read in the inputs of generated nodes.
     for (var serializedItem in _serializedGraph['nodes']) {
       graph._add(_deserializeAssetNode(serializedItem as List));
+    }
+
+    // Update the inputs of all generated nodes based on the outputs of the
+    // current nodes.
+    for (var node in graph.allNodes) {
+      for (var output in node.outputs) {
+        var generatedNode = graph.get(output) as GeneratedAssetNode;
+        assert(generatedNode != null, 'Asset Graph is missing $output');
+        generatedNode.inputs.add(node.id);
+      }
     }
 
     return graph;

@@ -109,6 +109,12 @@ class AssetGraph {
     for (var output in node.primaryOutputs) {
       _remove(output, removedIds: removedIds);
     }
+    for (var output in node.outputs) {
+      var generatedNode = get(output) as GeneratedAssetNode;
+      if (generatedNode != null) {
+        generatedNode.inputs.remove(id);
+      }
+    }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;
   }
@@ -145,12 +151,10 @@ class AssetGraph {
 
     // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
     // the outputs of `id`.
-    void clearNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {bool rootIsSource}) {
+    void clearNodeAndDeps(AssetId id, ChangeType rootChangeType) {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
-      rootIsSource ??= node is SourceAssetNode;
 
       if (node is GeneratedAssetNode) {
         idsToDelete.add(id);
@@ -161,7 +165,7 @@ class AssetGraph {
 
       // Update all outputs of this asset as well.
       for (var output in node.outputs) {
-        clearNodeAndDeps(output, rootChangeType, rootIsSource: rootIsSource);
+        clearNodeAndDeps(output, rootChangeType);
       }
     }
 
