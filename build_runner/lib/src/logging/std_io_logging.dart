@@ -15,7 +15,6 @@ final _endColor = _isPosixTerminal ? '\u001b[0m' : '';
 final _isPosixTerminal =
     !Platform.isWindows && stdioType(stdout) == StdioType.TERMINAL;
 
-
 void stdIOLogListener(LogRecord record) {
   var color;
   if (record.level < Level.WARNING) {
