@@ -15,14 +15,16 @@ import 'modules.dart';
 /// Alias `_p.url` to `p`.
 _p.Context get p => _p.url;
 
-final String bootstrapJsExtension = '.dart.bootstrap.js';
-final String jsEntrypointExtension = '.dart.js';
-final String jsEntrypointSourceMapExtension = '.dart.js.map';
+const bootstrapJsExtension = '.dart.bootstrap.js';
+const jsEntrypointExtension = '.dart.js';
+const jsEntrypointSourceMapExtension = '.dart.js.map';
 
-class DevCompilerBootstrapBuilder extends Builder {
+class DevCompilerBootstrapBuilder implements Builder {
+  const DevCompilerBootstrapBuilder();
+
   @override
-  final buildExtensions = {
-    '.dart': [
+  final buildExtensions = const {
+    '.dart': const [
       bootstrapJsExtension,
       jsEntrypointExtension,
       jsEntrypointSourceMapExtension

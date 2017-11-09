@@ -16,14 +16,16 @@ import 'modules.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
 
-final String linkedSummaryExtension = '.linked.sum';
-final String unlinkedSummaryExtension = '.unlinked.sum';
+const linkedSummaryExtension = '.linked.sum';
+const unlinkedSummaryExtension = '.unlinked.sum';
 
 /// A builder which can output unlinked summaries!
 class UnlinkedSummaryBuilder implements Builder {
+  const UnlinkedSummaryBuilder();
+
   @override
-  final buildExtensions = {
-    moduleExtension: [unlinkedSummaryExtension]
+  final buildExtensions = const {
+    moduleExtension: const [unlinkedSummaryExtension]
   };
 
   @override
@@ -41,9 +43,11 @@ class UnlinkedSummaryBuilder implements Builder {
 
 /// A builder which can output linked summaries!
 class LinkedSummaryBuilder implements Builder {
+  const LinkedSummaryBuilder();
+
   @override
-  final buildExtensions = {
-    moduleExtension: [linkedSummaryExtension]
+  final buildExtensions = const {
+    moduleExtension: const [linkedSummaryExtension]
   };
 
   @override
