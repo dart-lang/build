@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 10;
+const _version = 11;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -159,7 +159,8 @@ enum _Field {
   WasOutput,
   PhaseNumber,
   Globs,
-  NeedsUpdate
+  NeedsUpdate,
+  PreviousInputsDigest
 }
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
@@ -253,6 +254,10 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
         return generatedNode.globs.map((glob) => glob.pattern).toList();
       case _Field.NeedsUpdate:
         return _serializeBool(generatedNode.needsUpdate);
+      case _Field.PreviousInputsDigest:
+        return generatedNode.previousInputsDigest == null
+            ? null
+            : BASE64.encode(generatedNode.previousInputsDigest.bytes);
       default:
         throw new RangeError.index(index, this);
     }

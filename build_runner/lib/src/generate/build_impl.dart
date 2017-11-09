@@ -9,6 +9,8 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
+import 'package:crypto/crypto.dart';
+import 'package:crypto/src/digest_sink.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -156,7 +158,8 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
-      final trace = foldInternalFrames(chain.toTrace()).terse;
+      // final trace = foldInternalFrames(chain.toTrace()).terse;
+      final trace = chain.toTrace();
       done.complete(new BuildResult(BuildStatus.failure, [],
           exception: e, stackTrace: trace));
     });
@@ -329,7 +332,7 @@ class BuildImpl {
                 .where((id) => !inputNode.primaryOutputs.contains(id))
                 .join(', '));
 
-    if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
+    if (!await _buildShouldRun(builderOutputs)) return <AssetId>[];
 
     var wrappedReader = new SingleStepReader(
         _reader,
@@ -358,7 +361,7 @@ class BuildImpl {
       PackageBuilder builder, ResourceManager resourceManager) async {
     var builderOutputs = outputIdsForBuilder(builder, package);
 
-    if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
+    if (!await _buildShouldRun(builderOutputs)) return <AssetId>[];
 
     var wrappedReader = new SingleStepReader(
         _reader,
@@ -389,15 +392,42 @@ class BuildImpl {
   }
 
   /// Checks and returns whether any [outputs] need to be updated.
-  bool _buildShouldRun(Iterable<AssetId> outputs) {
+  Future<bool> _buildShouldRun(Iterable<AssetId> outputs) {
     assert(
         outputs.every((o) => _assetGraph.contains(o)),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
 
     // A build should be ran if any output needs updating
-    return outputs.any((output) =>
-        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
+    return Future.any(outputs.map((output) async {
+      var node = _assetGraph.get(output) as GeneratedAssetNode;
+      if (!node.needsUpdate) {
+        return false;
+      }
+      if (node.previousInputsDigest == null) return true;
+      // if (await _computeCombinedDigest(node.inputs) ==
+      //     node.previousInputsDigest) {
+      //   node.needsUpdate = false;
+      //   return false;
+      // }
+      return true;
+    }));
+  }
+
+  /// Computes a single [Digest] based on the combined [Digest]s of [ids].
+  Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids) async {
+    var innerSink = new DigestSink();
+    var outerSink = md5.startChunkedConversion(innerSink);
+    for (var id in ids) {
+      var node = _assetGraph.get(id);
+      if (node is SyntheticAssetNode) continue;
+      if (node.lastKnownDigest == null) {
+        node.lastKnownDigest = await _reader.digest(id);
+      }
+      outerSink.add(node.lastKnownDigest.bytes);
+    }
+    outerSink.close();
+    return innerSink.value;
   }
 
   /// Sets the state for all [declaredOutputs] of a build step, by:
@@ -443,6 +473,11 @@ class BuildImpl {
         assert(inputNode != null, 'Asset Graph is missing $input');
         inputNode.outputs.add(output);
       }
+
+      // And finally compute the combined digest for all inputs.
+      _logger.warning('Computing inputs digest for ${node.id}');
+      node.previousInputsDigest = await _computeCombinedDigest(node.inputs);
+      _logger.warning('Done computing inputs digest for ${node.id}');
     }
 
     // Mark the actual outputs as output.

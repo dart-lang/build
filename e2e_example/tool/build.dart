@@ -42,13 +42,13 @@ Future main() async {
   );
 
   var server =
-      await shelf_io.serve(serveHandler.handlerFor('web'), 'localhost', 8080);
+      await shelf_io.serve(serveHandler.handlerFor('web'), 'localhost', 8086);
   var testServer =
-      await shelf_io.serve(serveHandler.handlerFor('test'), 'localhost', 8081);
+      await shelf_io.serve(serveHandler.handlerFor('test'), 'localhost', 8087);
 
   await serveHandler.currentBuild;
-  stderr.writeln('Serving `web` at http://localhost:8080/');
-  stderr.writeln('Serving `test` at http://localhost:8081/');
+  stderr.writeln('Serving `web` at http://localhost:8086/');
+  stderr.writeln('Serving `test` at http://localhost:8087/');
 
   await serveHandler.buildResults.drain();
   await server.close();

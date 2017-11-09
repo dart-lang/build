@@ -76,6 +76,11 @@ class GeneratedAssetNode extends AssetNode {
   /// to generate it.
   final Set<AssetId> inputs;
 
+  /// A digest combining all digests of all previous inputs.
+  ///
+  /// This is used to determine if a node really needs to be output or not.
+  Digest previousInputsDigest;
+
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
       this.wasOutput, AssetId id,
       {Digest lastKnownDigest, Set<Glob> globs, Iterable<AssetId> inputs})
