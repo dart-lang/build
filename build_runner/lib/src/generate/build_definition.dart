@@ -202,7 +202,10 @@ class _Loader {
     var inputSets = _options.packageGraph.allPackages.values.map((package) =>
         new InputSet(package.name, package.includes,
             excludes: package.excludes));
-    var sources = _listAssetIds(inputSets).toSet();
+    var sources = (await _listAssetIds(inputSets).toSet())
+      ..addAll(await _options.reader
+          .findAssets(new Glob('$entryPointDir/**'))
+          .toSet());
     return sources;
   }
 
