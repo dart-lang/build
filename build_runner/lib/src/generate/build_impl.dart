@@ -401,16 +401,17 @@ class BuildImpl {
     // A build should be ran if any output needs updating
     return Future.any(outputs.map((output) async {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
-      if (!node.needsUpdate) {
-        return false;
-      }
-      if (node.previousInputsDigest == null) return true;
+      return node.needsUpdate;
+      // if (!node.needsUpdate) {
+      //   return false;
+      // }
+      // if (node.previousInputsDigest == null) return true;
       // if (await _computeCombinedDigest(node.inputs) ==
       //     node.previousInputsDigest) {
       //   node.needsUpdate = false;
       //   return false;
       // }
-      return true;
+      // return true;
     }));
   }
 
@@ -475,9 +476,11 @@ class BuildImpl {
       }
 
       // And finally compute the combined digest for all inputs.
-      _logger.warning('Computing inputs digest for ${node.id}');
-      node.previousInputsDigest = await _computeCombinedDigest(node.inputs);
-      _logger.warning('Done computing inputs digest for ${node.id}');
+      node.previousInputsDigest = await _computeCombinedDigest(node.inputs)
+          .timeout(new Duration(seconds: 1), onTimeout: () {
+        _logger.warning('Slow computeCombinedDigest for ${node.id}');
+        return null;
+      });
     }
 
     // Mark the actual outputs as output.
