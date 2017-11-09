@@ -202,16 +202,9 @@ class _Loader {
     var inputSets = _options.packageGraph.allPackages.values.map((package) =>
         new InputSet(package.name, package.includes,
             excludes: package.excludes));
-    var sources = _listAssetIds(inputSets).where(_isValidInput).toSet();
+    var sources = _listAssetIds(inputSets).toSet();
     return sources;
   }
-
-  /// Checks whether [input] is allowed to be read over the course of a build.
-  bool _isValidInput(AssetId input) =>
-      input.package != _options.packageGraph.root.name
-          ? input.path.startsWith('lib/')
-          : !toolDirs.any((d) => input.path.startsWith(d)) ||
-              input.path.startsWith(entryPointDir);
 
   Stream<AssetId> _listAssetIds(Iterable<InputSet> inputSets) async* {
     var seenAssets = new Set<AssetId>();
