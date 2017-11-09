@@ -121,6 +121,17 @@ main() {
         var buildDefinition = await BuildDefinition.load(options, []);
         expect(buildDefinition.assetGraph.contains(entryPoint), isTrue);
       });
+
+      test('does not run Builders on generated entrypoint', () async {
+        var entryPoint =
+            new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
+        var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
+        var buildDefinition = await BuildDefinition.load(options, buildActions);
+        expect(
+            buildDefinition.assetGraph
+                .contains(entryPoint.addExtension('.copy')),
+            isFalse);
+      });
     });
   });
 }
