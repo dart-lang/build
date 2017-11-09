@@ -12,9 +12,10 @@ import 'package:dart_style/dart_style.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/logging.dart';
+import '../util/constants.dart';
 import 'types.dart' as types;
 
-const scriptLocation = '.dart_tool/build/build.dart';
+const scriptLocation = '$entryPointDir/build.dart';
 
 Future<Null> ensureBuildScript() async {
   var log = new Logger('ensureBuildScript');

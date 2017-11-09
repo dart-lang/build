@@ -24,6 +24,11 @@ const toolDirs = const [
   '.idea'
 ];
 
+/// Directory containing automatically generated build entrypoints.
+///
+/// Files in this directory must be read to do build script invalidation.
+const entryPointDir = '.dart_tool/build/entrypoint';
+
 /// The directory to which assets will be written when `writeToCache` is
 /// enabled.
 const generatedOutputDirectory = '$cacheDir/generated';

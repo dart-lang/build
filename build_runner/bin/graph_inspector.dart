@@ -59,7 +59,12 @@ Future main(List<String> args) async {
     stdout.write('> ');
     var nextCommand = stdin.readLineSync();
     stdout.writeln('');
-    await commandRunner.run(nextCommand.split(' '));
+    try {
+      await commandRunner.run(nextCommand.split(' '));
+    } on UsageException {
+      stdout.writeln('Unrecognized option');
+      await commandRunner.run(['help']);
+    }
   }
 }
 

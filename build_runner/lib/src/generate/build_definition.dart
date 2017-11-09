@@ -202,15 +202,12 @@ class _Loader {
     var inputSets = _options.packageGraph.allPackages.values.map((package) =>
         new InputSet(package.name, package.includes,
             excludes: package.excludes));
-    var sources = _listAssetIds(inputSets).where(_isValidInput).toSet();
+    var sources = (await _listAssetIds(inputSets).toSet())
+      ..addAll(await _options.reader
+          .findAssets(new Glob('$entryPointDir/**'))
+          .toSet());
     return sources;
   }
-
-  /// Checks if an [input] is valid.
-  bool _isValidInput(AssetId input) =>
-      input.package != _options.packageGraph.root.name
-          ? input.path.startsWith('lib/')
-          : !toolDirs.any((d) => input.path.startsWith(d));
 
   Stream<AssetId> _listAssetIds(Iterable<InputSet> inputSets) async* {
     var seenAssets = new Set<AssetId>();
