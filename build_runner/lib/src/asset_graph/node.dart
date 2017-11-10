@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:collection';
+
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -74,7 +76,10 @@ class GeneratedAssetNode extends AssetNode {
 
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
-  final Set<AssetId> inputs;
+  ///
+  /// This needs to be an ordered set because we compute combined input digests
+  /// using this later on.
+  final SplayTreeSet<AssetId> inputs;
 
   /// A digest combining all digests of all previous inputs.
   ///
@@ -85,7 +90,9 @@ class GeneratedAssetNode extends AssetNode {
       this.wasOutput, AssetId id,
       {Digest lastKnownDigest, Set<Glob> globs, Iterable<AssetId> inputs})
       : this.globs = globs ?? new Set<Glob>(),
-        this.inputs = inputs?.toSet() ?? new Set<AssetId>(),
+        this.inputs = inputs != null
+            ? new SplayTreeSet.from(inputs)
+            : new SplayTreeSet<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override

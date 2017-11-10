@@ -453,6 +453,7 @@ class BuildImpl {
     //
     // Also updates the `inputs` set for each output, and the `outputs` sets for
     // all inputs.
+    var inputsDigest = await _computeCombinedDigest(reader.assetsRead, reader);
     for (var output in declaredOutputs) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
       node
@@ -484,8 +485,7 @@ class BuildImpl {
       }
 
       // And finally compute the combined digest for all inputs.
-      node.previousInputsDigest =
-          await _computeCombinedDigest(node.inputs, reader);
+      node.previousInputsDigest = inputsDigest;
     }
 
     // Mark the actual outputs as output.
