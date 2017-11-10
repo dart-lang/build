@@ -14,10 +14,12 @@ const moduleExtension = '.module';
 
 /// Creates `.module` files for any `.dart` file that is the primary dart
 /// source of a [Module].
-class ModuleBuilder extends Builder {
+class ModuleBuilder implements Builder {
+  const ModuleBuilder();
+
   @override
-  final buildExtensions = {
-    '.dart': [moduleExtension]
+  final buildExtensions = const {
+    '.dart': const [moduleExtension]
   };
 
   @override
