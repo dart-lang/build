@@ -7,8 +7,8 @@ analyzer:
     dead_code: error
     override_on_non_overriding_method: error
   exclude:
-    - bazel-*
-    - **/goldens/**
+    - "bazel-*"
+    - "**/goldens/**"
 linter:
   rules:
     # Errors
