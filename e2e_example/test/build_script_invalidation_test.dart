@@ -11,7 +11,7 @@ void main() {
   group('Build script changes', () {
     setUp(() async {
       ensureCleanGitClient();
-      await startServer(ensureCleanBuild: true, verbose: true);
+      await startManualServer(ensureCleanBuild: true, verbose: true);
       addTearDown(() => stopServer(cleanUp: true));
     });
 
@@ -22,7 +22,7 @@ void main() {
           'tool/build.dart', 'ThrowingBuilder', 'FailingBuilder');
       await terminateLine;
       await stopServer();
-      await startServer(extraExpects: [
+      await startManualServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),
@@ -33,7 +33,7 @@ void main() {
       await stopServer();
       await replaceAllInFile(
           'tool/build.dart', 'ThrowingBuilder', 'FailingBuilder');
-      await startServer(extraExpects: [
+      await startManualServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),

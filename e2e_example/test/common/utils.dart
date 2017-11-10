@@ -27,7 +27,32 @@ Stream<String> _stdOutLines;
 ///
 /// For debugging purposes you can enable printing of the build script output by
 /// setting [verbose] to `true`.
-Future<Null> startServer(
+Future<Null> startManualServer(
+        {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
+    _startServer('dart', ['tool/build.dart'],
+        ensureCleanBuild: ensureCleanBuild,
+        verbose: verbose,
+        extraExpects: extraExpects);
+
+/// Runs `pub run build_runner:serve` in this package, and waits for the first
+/// build to complete.
+///
+/// To ensure a clean build, set [ensureCleanBuild] to `true`.
+///
+/// This expects the first build to complete successfully, but you can add extra
+/// expects that happen before that using [extraExpects]. All of these will be
+/// invoked and awaited before awaiting the next successful build.
+///
+/// For debugging purposes you can enable printing of the build script output by
+/// setting [verbose] to `true`.
+Future<Null> startAutoServer(
+        {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
+    _startServer('pub', ['run', 'build_runner:serve'],
+        ensureCleanBuild: ensureCleanBuild,
+        verbose: verbose,
+        extraExpects: extraExpects);
+
+Future<Null> _startServer(String command, List<String> args,
     {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) async {
   ensureCleanBuild ??= false;
   verbose ??= false;
@@ -38,7 +63,7 @@ Future<Null> startServer(
     await _toolDir.delete(recursive: true);
   }
 
-  _process = await Process.start('dart', ['tool/build.dart']);
+  _process = await Process.start(command, args);
   _stdOutLines = _process.stdout
       .transform(UTF8.decoder)
       .transform(const LineSplitter())
