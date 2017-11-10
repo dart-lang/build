@@ -138,7 +138,7 @@ Code _packageBuilders(BuildConfig config, String varName) =>
 
 Iterable<Expression> _builderInstantiations(BuilderDefinition builder) =>
     builder.builderFactories
-        .map((f) => refer(f, builder.import).call([literalList([])]));
+        .map((f) => refer(f, builder.import).call([refer('args')]));
 
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
     BuildConfig.fromPackageDir(
