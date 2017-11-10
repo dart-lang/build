@@ -146,30 +146,25 @@ class AssetGraph {
       Future delete(AssetId id),
       DigestAssetReader digestReader) async {
     var invalidatedIds = new Set<AssetId>();
-    // All the assets that should be deleted.
-    var idsToDelete = new Set<AssetId>();
 
     // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
     // the outputs of `id`.
-    void clearNodeAndDeps(AssetId id, ChangeType rootChangeType) {
+    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType) {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
       if (node is GeneratedAssetNode) {
-        idsToDelete.add(id);
         node.needsUpdate = true;
-        node.wasOutput = false;
-        node.globs = new Set();
       }
 
       // Update all outputs of this asset as well.
       for (var output in node.outputs) {
-        clearNodeAndDeps(output, rootChangeType);
+        invalidateNodeAndDeps(output, rootChangeType);
       }
     }
 
-    updates.forEach(clearNodeAndDeps);
+    updates.forEach(invalidateNodeAndDeps);
 
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
@@ -197,6 +192,13 @@ class AssetGraph {
         newAndModifiedNodes.where((node) => node.outputs.isNotEmpty),
         digestReader);
 
+    // Remove all deleted source assets from the graph, which also recursively
+    // removes all their primary outputs.
+    var idsToDelete = new Set<AssetId>();
+    removeIds
+        .where((id) => get(id) is SourceAssetNode)
+        .forEach((id) => _remove(id, removedIds: idsToDelete));
+
     var allNewAndDeletedIds =
         _addOutputsForSources(buildActions, newIds, rootPackage)
           ..addAll(removeIds)
@@ -211,7 +213,7 @@ class AssetGraph {
             .globs
             .any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
-          clearNodeAndDeps(node.id, null);
+          invalidateNodeAndDeps(node.id, null);
         }
       }
     }
@@ -220,10 +222,6 @@ class AssetGraph {
     // order is important because some `AssetWriter`s throw if the id is not in
     // the graph.
     await Future.wait(idsToDelete.map(delete));
-
-    // Remove all deleted source assets from the graph, which also recursively
-    // removes all their primary outputs.
-    removeIds.where((id) => get(id) is SourceAssetNode).forEach(_remove);
 
     return invalidatedIds;
   }

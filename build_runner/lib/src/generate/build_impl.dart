@@ -158,8 +158,7 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
-      // final trace = foldInternalFrames(chain.toTrace()).terse;
-      final trace = chain.toTrace();
+      final trace = foldInternalFrames(chain.toTrace()).terse;
       done.complete(new BuildResult(BuildStatus.failure, [],
           exception: e, stackTrace: trace));
     });
@@ -332,14 +331,18 @@ class BuildImpl {
                 .where((id) => !inputNode.primaryOutputs.contains(id))
                 .join(', '));
 
-    if (!await _buildShouldRun(builderOutputs)) return <AssetId>[];
-
     var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
         input.package,
         (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
+
+    if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
+      return <AssetId>[];
+    }
+    wrappedReader.assetsRead.clear();
+
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new Logger('$builder on $input');
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
@@ -361,14 +364,18 @@ class BuildImpl {
       PackageBuilder builder, ResourceManager resourceManager) async {
     var builderOutputs = outputIdsForBuilder(builder, package);
 
-    if (!await _buildShouldRun(builderOutputs)) return <AssetId>[];
-
     var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
         package,
         (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
+
+    if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
+      return <AssetId>[];
+    }
+    wrappedReader.assetsRead.clear();
+
     var wrappedWriter = new AssetWriterSpy(_writer);
 
     var logger = new Logger('$builder on $package');
@@ -392,38 +399,39 @@ class BuildImpl {
   }
 
   /// Checks and returns whether any [outputs] need to be updated.
-  Future<bool> _buildShouldRun(Iterable<AssetId> outputs) {
+  Future<bool> _buildShouldRun(
+      Iterable<AssetId> outputs, DigestAssetReader reader) async {
     assert(
         outputs.every((o) => _assetGraph.contains(o)),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
 
     // A build should be ran if any output needs updating
-    return Future.any(outputs.map((output) async {
+    for (var output in outputs) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
-      return node.needsUpdate;
-      // if (!node.needsUpdate) {
-      //   return false;
-      // }
-      // if (node.previousInputsDigest == null) return true;
-      // if (await _computeCombinedDigest(node.inputs) ==
-      //     node.previousInputsDigest) {
-      //   node.needsUpdate = false;
-      //   return false;
-      // }
-      // return true;
-    }));
+      if (!node.needsUpdate) continue;
+      if (node.previousInputsDigest == null) return true;
+      if (await _computeCombinedDigest(node.inputs, reader) !=
+          node.previousInputsDigest) {
+        return true;
+      } else {
+        node.needsUpdate = false;
+      }
+    }
+    return false;
   }
 
   /// Computes a single [Digest] based on the combined [Digest]s of [ids].
-  Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids) async {
+  Future<Digest> _computeCombinedDigest(
+      Iterable<AssetId> ids, DigestAssetReader reader) async {
     var innerSink = new DigestSink();
     var outerSink = md5.startChunkedConversion(innerSink);
     for (var id in ids) {
       var node = _assetGraph.get(id);
       if (node is SyntheticAssetNode) continue;
+      if (!await reader.canRead(id)) continue;
       if (node.lastKnownDigest == null) {
-        node.lastKnownDigest = await _reader.digest(id);
+        node.lastKnownDigest = await reader.digest(id);
       }
       outerSink.add(node.lastKnownDigest.bytes);
     }
@@ -476,11 +484,8 @@ class BuildImpl {
       }
 
       // And finally compute the combined digest for all inputs.
-      node.previousInputsDigest = await _computeCombinedDigest(node.inputs)
-          .timeout(new Duration(seconds: 1), onTimeout: () {
-        _logger.warning('Slow computeCombinedDigest for ${node.id}');
-        return null;
-      });
+      node.previousInputsDigest =
+          await _computeCombinedDigest(node.inputs, reader);
     }
 
     // Mark the actual outputs as output.
