@@ -5,7 +5,7 @@ import 'package:shelf/shelf_io.dart' as _3;
 List<_1.BuildAction> _buildActions(_1.PackageGraph packageGraph) {
   var actions = new List<_1.BuildAction>();
   var args = <String>[];
-  var buildersForprovides_builder = [_2.someBuilder([])];
+  var buildersForprovides_builder = [_2.someBuilder(args)];
   packageGraph.dependentsOf('provides_builder').map((p) => p.name).forEach(
       (p) => actions.addAll(
           buildersForprovides_builder.map((b) => new _1.BuildAction(b, p))));

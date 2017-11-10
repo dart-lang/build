@@ -8,6 +8,7 @@ analyzer:
     override_on_non_overriding_method: error
   exclude:
     - bazel-*
+    - **/goldens/**
 linter:
   rules:
     # Errors
