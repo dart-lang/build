@@ -1,4 +1,4 @@
-timeout: 2x
+timeout: 4x
 # These test suites must not run in parallel, they modify actual sources in the
 # package.
 concurrency: 1
