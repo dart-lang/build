@@ -10,7 +10,6 @@ import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:crypto/crypto.dart';
-import 'package:crypto/src/digest_sink.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -341,6 +340,8 @@ class BuildImpl {
     if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
       return <AssetId>[];
     }
+    // We may have read some inputs in the call to `_buildShouldRun`, we want
+    // to remove those.
     wrappedReader.assetsRead.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
@@ -374,6 +375,8 @@ class BuildImpl {
     if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
       return <AssetId>[];
     }
+    // We may have read some inputs in the call to `_buildShouldRun`, we want
+    // to remove those.
     wrappedReader.assetsRead.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
@@ -410,12 +413,18 @@ class BuildImpl {
     for (var output in outputs) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
       if (!node.needsUpdate) continue;
-      if (node.previousInputsDigest == null) return true;
-      if (await _computeCombinedDigest(node.inputs, reader) !=
-          node.previousInputsDigest) {
+      if (node.previousInputsDigest == null) {
+        return true;
+      }
+      var digest = await _computeCombinedDigest(node.inputs, reader);
+      if (digest != node.previousInputsDigest) {
         return true;
       } else {
         node.needsUpdate = false;
+        // TODO: return `false` early here? Technically all `outputs` should
+        // have the same inputs and get invalidated together. We are doing some
+        // extra work here in the name of safety. We would need to mark all the
+        // outputs as `needsUpdate = false` as well if we do this.
       }
     }
     return false;
@@ -424,8 +433,7 @@ class BuildImpl {
   /// Computes a single [Digest] based on the combined [Digest]s of [ids].
   Future<Digest> _computeCombinedDigest(
       Iterable<AssetId> ids, DigestAssetReader reader) async {
-    var innerSink = new DigestSink();
-    var outerSink = md5.startChunkedConversion(innerSink);
+    var allBytes = <int>[];
     for (var id in ids) {
       var node = _assetGraph.get(id);
       if (node is SyntheticAssetNode) continue;
@@ -433,10 +441,9 @@ class BuildImpl {
       if (node.lastKnownDigest == null) {
         node.lastKnownDigest = await reader.digest(id);
       }
-      outerSink.add(node.lastKnownDigest.bytes);
+      allBytes.addAll(node.lastKnownDigest.bytes);
     }
-    outerSink.close();
-    return innerSink.value;
+    return md5.convert(allBytes);
   }
 
   /// Sets the state for all [declaredOutputs] of a build step, by:
@@ -453,7 +460,7 @@ class BuildImpl {
     //
     // Also updates the `inputs` set for each output, and the `outputs` sets for
     // all inputs.
-    var inputsDigest = await _computeCombinedDigest(reader.assetsRead, reader);
+    Digest inputsDigest;
     for (var output in declaredOutputs) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
       node
@@ -485,7 +492,8 @@ class BuildImpl {
       }
 
       // And finally compute the combined digest for all inputs.
-      node.previousInputsDigest = inputsDigest;
+      node.previousInputsDigest =
+          inputsDigest ??= await _computeCombinedDigest(node.inputs, reader);
     }
 
     // Mark the actual outputs as output.
