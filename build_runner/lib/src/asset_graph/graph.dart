@@ -194,10 +194,13 @@ class AssetGraph {
 
     // Remove all deleted source assets from the graph, which also recursively
     // removes all their primary outputs.
-    var idsToDelete = new Set<AssetId>();
-    removeIds
-        .where((id) => get(id) is SourceAssetNode)
-        .forEach((id) => _remove(id, removedIds: idsToDelete));
+    var removedSources =
+        removeIds.where((id) => get(id) is SourceAssetNode).toSet();
+    var transitiveRemovedIds = new Set<AssetId>();
+    removedSources
+        .forEach((id) => _remove(id, removedIds: transitiveRemovedIds));
+    // The generated nodes to delete.
+    var idsToDelete = transitiveRemovedIds..removeAll(removeIds);
 
     var allNewAndDeletedIds =
         _addOutputsForSources(buildActions, newIds, rootPackage)

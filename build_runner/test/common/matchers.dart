@@ -92,6 +92,12 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
+          if (node.previousInputsDigest != expectedNode.previousInputsDigest) {
+            matchState['previousInputDigest of ${node.id}'] = [
+              node.previousInputsDigest,
+              expectedNode.previousInputsDigest
+            ];
+          }
         } else {
           matchState['Type of ${node.id}'] = [
             node.runtimeType,
