@@ -46,6 +46,10 @@ class BuildDefinition {
 
   final BuildScriptUpdates buildScriptUpdates;
 
+  /// Whether or not to run in a mode that conserves RAM at the cost of build
+  /// speed.
+  final bool enableLowResourcesMode;
+
   BuildDefinition._(
       this.assetGraph,
       this.updates,
@@ -55,7 +59,8 @@ class BuildDefinition {
       this.packageGraph,
       this.deleteFilesByDefault,
       this.resourceManager,
-      this.buildScriptUpdates);
+      this.buildScriptUpdates,
+      this.enableLowResourcesMode);
 
   static Future<BuildDefinition> load(
           BuildOptions options, List<BuildAction> buildActions) =>
@@ -136,7 +141,8 @@ class _Loader {
         _options.packageGraph,
         _options.deleteFilesByDefault,
         new ResourceManager(),
-        buildScriptUpdates);
+        buildScriptUpdates,
+        _options.enableLowResourcesMode);
   }
 
   /// Reads in an [AssetGraph] from disk.

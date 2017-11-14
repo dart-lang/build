@@ -201,6 +201,13 @@ void main() {
               makeAssetId('a|web/a.txt.copy.clone'),
             ]));
       });
+
+      test('in low resources mode', () async {
+        await testActions(
+            [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+            outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
+            enableLowResourcesMode: true);
+      });
     });
 
     test('can\'t output files in non-root packages', () async {
