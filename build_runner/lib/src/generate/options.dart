@@ -20,6 +20,7 @@ class BuildOptions {
   RunnerAssetReader reader;
   RunnerAssetWriter writer;
   bool deleteFilesByDefault;
+  bool enableLowResourcesMode;
 
   /// Whether to write to a cache directory rather than the package's source
   /// directory.
@@ -45,7 +46,8 @@ class BuildOptions {
       this.packageGraph,
       this.reader,
       this.writer,
-      this.skipBuildScriptCheck}) {
+      this.skipBuildScriptCheck,
+      this.enableLowResourcesMode}) {
     /// Set up logging
     logLevel ??= Level.INFO;
     Logger.root.level = logLevel;
@@ -60,5 +62,6 @@ class BuildOptions {
     deleteFilesByDefault ??= writeToCache ?? false;
     writeToCache ??= false;
     skipBuildScriptCheck ??= false;
+    enableLowResourcesMode ??= false;
   }
 }

@@ -72,7 +72,8 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     onLog(LogRecord record),
     bool writeToCache,
     bool checkBuildStatus: true,
-    bool deleteFilesByDefault: true}) async {
+    bool deleteFilesByDefault: true,
+    bool enableLowResourcesMode: false}) async {
   writer ??= new InMemoryRunnerAssetWriter();
   writeToCache ??= false;
   final actualAssets = writer.assets;
@@ -101,7 +102,8 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
       packageGraph: packageGraph,
       logLevel: logLevel,
       onLog: onLog,
-      skipBuildScriptCheck: true);
+      skipBuildScriptCheck: true,
+      enableLowResourcesMode: enableLowResourcesMode);
 
   if (checkBuildStatus) {
     checkBuild(result,

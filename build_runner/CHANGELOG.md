@@ -1,3 +1,9 @@
+## 0.6.1-dev
+
+- Add an `enableLowResourcesMode` option to `build` and `watch`, which will
+  consume less memory at the cost of slower builds. This is intended for use in
+  resource constrained environments such as Travis.
+
 ## 0.6.0+1
 
 ### Internal Improvements
