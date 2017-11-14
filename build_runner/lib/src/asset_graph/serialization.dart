@@ -57,9 +57,7 @@ class _AssetGraphDeserializer {
     var typeId = _NodeType.values[serializedNode[_Field.NodeType.index] as int];
     var id = _idToAssetId[serializedNode[_Field.Id.index] as int];
     var serializedDigest = serializedNode[_Field.Digest.index] as String;
-    var digest = serializedDigest == null
-        ? null
-        : new Digest(BASE64.decode(serializedDigest));
+    var digest = _deserializeDigest(serializedDigest);
     switch (typeId) {
       case _NodeType.Source:
         assert(serializedNode.length == _WrappedAssetNode._length);
@@ -72,16 +70,17 @@ class _AssetGraphDeserializer {
       case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
         node = new GeneratedAssetNode(
-          serializedNode[_Field.PhaseNumber.index] as int,
-          _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
-          _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
-          _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
-          id,
-          globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
-              .map((pattern) => new Glob(pattern))
-              .toSet(),
-          lastKnownDigest: digest,
-        );
+            serializedNode[_Field.PhaseNumber.index] as int,
+            _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
+            _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
+            _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
+            id,
+            globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
+                .map((pattern) => new Glob(pattern))
+                .toSet(),
+            lastKnownDigest: digest,
+            previousInputsDigest: _deserializeDigest(
+                serializedNode[_Field.PreviousInputsDigest.index] as String));
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(
@@ -95,6 +94,10 @@ class _AssetGraphDeserializer {
       serializedIds.map((id) => _idToAssetId[id]).toList();
 
   bool _deserializeBool(int value) => value == 0 ? false : true;
+
+  Digest _deserializeDigest(String serializedDigest) => serializedDigest == null
+      ? null
+      : new Digest(BASE64.decode(serializedDigest));
 }
 
 /// Serializes an [AssetGraph] into a [Map].

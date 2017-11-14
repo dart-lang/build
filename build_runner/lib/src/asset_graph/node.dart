@@ -88,7 +88,10 @@ class GeneratedAssetNode extends AssetNode {
 
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
       this.wasOutput, AssetId id,
-      {Digest lastKnownDigest, Set<Glob> globs, Iterable<AssetId> inputs})
+      {Digest lastKnownDigest,
+      Set<Glob> globs,
+      Iterable<AssetId> inputs,
+      this.previousInputsDigest})
       : this.globs = globs ?? new Set<Glob>(),
         this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)

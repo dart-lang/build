@@ -650,5 +650,46 @@ void main() {
       expect(bTxtNode.outputs, isEmpty);
       expect(cTxtNode.outputs, unorderedEquals([outputNode.id]));
     });
+
+    test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
+      var buildActions = [
+        new BuildAction(
+            new CopyBuilder(copyFromAsset: new AssetId('a', 'lib/b.txt')), 'a',
+            inputs: ['lib/a.txt']),
+        new BuildAction(new CopyBuilder(), 'a', inputs: ['lib/a.txt.copy']),
+      ];
+
+      // Initial build.
+      var writer = new InMemoryRunnerAssetWriter();
+      await testActions(
+          buildActions,
+          {
+            'a|lib/a.txt': 'a',
+            'a|lib/b.txt': 'b',
+          },
+          outputs: {
+            'a|lib/a.txt.copy': 'b',
+            'a|lib/a.txt.copy.copy': 'b',
+          },
+          writer: writer);
+
+      // Modify the primary input of `a.txt.copy`, but its output doesn't change
+      // so `a.txt.copy.copy` shouldn't be rebuilt.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+      await testActions(
+          buildActions,
+          {
+            'a|lib/a.txt': 'a2',
+            'a|lib/b.txt': 'b',
+            'a|lib/a.txt.copy': 'b',
+            'a|lib/a.txt.copy.copy': 'b',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {
+            'a|lib/a.txt.copy': 'b',
+          },
+          writer: writer);
+    });
   });
 }
