@@ -3,6 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+import 'dart:io';
+
+import 'package:build_runner/src/util/constants.dart';
 import 'package:test/test.dart';
 
 import 'common/utils.dart';
@@ -36,6 +39,19 @@ void main() {
       await startManualServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
+        () => nextStdOutLine('Building new asset graph'),
+      ], verbose: true);
+    });
+
+    test('Invalid asset graph version causes a new full build', () async {
+      await stopServer();
+      var assetGraph =
+          assetGraphPathFor(new File('tool/build.dart').absolute.path);
+      // Prepend a 1 to the version number
+      await replaceAllInFile(assetGraph, '"version":', '"version":1');
+      await startManualServer(extraExpects: [
+        () => nextStdOutLine(
+            'Throwing away cached asset graph due to version mismatch.'),
         () => nextStdOutLine('Building new asset graph'),
       ], verbose: true);
     });

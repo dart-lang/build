@@ -99,11 +99,11 @@ class _Loader {
     if (await _options.reader.canRead(assetGraphId)) {
       assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
           () => _readAssetGraph(assetGraphId));
-      buildScriptUpdates =
-          await BuildScriptUpdates.create(_options, assetGraph);
     }
 
     if (assetGraph != null) {
+      buildScriptUpdates =
+          await BuildScriptUpdates.create(_options, assetGraph);
       updates.addAll(await _findUpdates(
           assetGraph, inputSources, cacheDirSources, allSources));
       if (!_options.skipBuildScriptCheck &&
