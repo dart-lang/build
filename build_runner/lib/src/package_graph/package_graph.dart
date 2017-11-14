@@ -8,6 +8,8 @@ import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'dependency_ordering.dart';
+
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
 final PackageNode _sdkPackageNode = new PackageNode(
@@ -133,6 +135,7 @@ class PackageGraph {
   ///
   /// See [orderedPackages] for ordering guarantees. The node for [packageName]
   /// will not be included in the result.
+  @Deprecated('Use `applyBuilders` to filter `orderedPackageCycles`')
   Iterable<PackageNode> dependentsOf(String packageName) {
     if (!allPackages.containsKey(packageName)) return const [];
     var node = allPackages[packageName];
@@ -147,8 +150,25 @@ class PackageGraph {
   /// last. For any two packages for which neither is a transitive dependency of
   /// the other the relative position of the packages within the cycle is
   /// non-deterministic.
+  @Deprecated('Use orderedPackageCycles instead')
   Iterable<PackageNode> get orderedPackages =>
-      _orderedPackages(root, new Set<PackageNode>());
+      orderedPackageCycles.expand((c) => c);
+
+  /// Collects packages into strongly connected subcomponents and orders those
+  /// components in reverse dependency order.
+  ///
+  /// A cycle is defined as a collection of packages where each package is
+  /// present in the transitive dependency graph of each other package.
+  ///
+  /// Cycles are ordered in reverse dependency order, so if package `A` depends
+  /// on package `B`, and they are not in a cycle, package `A` will exist in a
+  /// later sublist than `B`. Ordering within a cycle is non-deterministic,
+  /// except if the [root] package is part of a cycle it will always be the last
+  /// element of it's cycle. Relative ordering of two cycles for which neither
+  /// is a dependent of the other is non-deterministic.
+  List<List<PackageNode>> get orderedPackageCycles =>
+      stronglyConnectedComponents<String, PackageNode>(
+          [root], (node) => node.name, (node) => node.dependencies);
 
   @override
   String toString() {
@@ -158,16 +178,6 @@ class PackageGraph {
     }
     return buffer.toString();
   }
-}
-
-Iterable<PackageNode> _orderedPackages(
-    PackageNode current, Set<PackageNode> seen) sync* {
-  seen.add(current);
-  for (var dep in current.dependencies) {
-    if (seen.contains(dep)) continue;
-    yield* _orderedPackages(dep, seen);
-  }
-  yield current;
 }
 
 /// A node in a [PackageGraph].
