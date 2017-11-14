@@ -39,7 +39,8 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
     Duration debounceDelay,
     DirectoryWatcherFactory directoryWatcherFactory,
     Stream terminateEventStream,
-    bool skipBuildScriptCheck}) async {
+    bool skipBuildScriptCheck,
+    bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
       deleteFilesByDefault: deleteFilesByDefault,
       writeToCache: writeToCache,
@@ -50,7 +51,8 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
       onLog: onLog,
       debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory,
-      skipBuildScriptCheck: skipBuildScriptCheck);
+      skipBuildScriptCheck: skipBuildScriptCheck,
+      enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 

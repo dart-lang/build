@@ -43,7 +43,8 @@ Future<BuildResult> build(List<BuildAction> buildActions,
     Level logLevel,
     onLog(LogRecord record),
     Stream terminateEventStream,
-    bool skipBuildScriptCheck}) async {
+    bool skipBuildScriptCheck,
+    bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
       deleteFilesByDefault: deleteFilesByDefault,
       writeToCache: writeToCache,
@@ -52,7 +53,8 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       writer: writer,
       logLevel: logLevel,
       onLog: onLog,
-      skipBuildScriptCheck: skipBuildScriptCheck);
+      skipBuildScriptCheck: skipBuildScriptCheck,
+      enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
 
   var result = await singleBuild(options, buildActions);
@@ -81,7 +83,7 @@ class BuildImpl {
   final List<BuildAction> _buildActions;
   final _OnDelete _onDelete;
   final PackageGraph _packageGraph;
-  final CachingAssetReader _reader;
+  final DigestAssetReader _reader;
   final _resolvers = const BarbackResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
@@ -89,7 +91,9 @@ class BuildImpl {
   BuildImpl._(
       BuildDefinition buildDefinition, this._buildActions, this._onDelete)
       : _packageGraph = buildDefinition.packageGraph,
-        _reader = new CachingAssetReader(buildDefinition.reader),
+        _reader = buildDefinition.enableLowResourcesMode
+            ? buildDefinition.reader
+            : new CachingAssetReader(buildDefinition.reader),
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager;
@@ -133,8 +137,11 @@ class BuildImpl {
   }
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    _reader.invalidate(await _assetGraph.updateAndInvalidate(
-        _buildActions, updates, _packageGraph.root.name, _delete, _reader));
+    var invalidated = await _assetGraph.updateAndInvalidate(
+        _buildActions, updates, _packageGraph.root.name, _delete, _reader);
+    if (_reader is CachingAssetReader) {
+      (_reader as CachingAssetReader).invalidate(invalidated);
+    }
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
