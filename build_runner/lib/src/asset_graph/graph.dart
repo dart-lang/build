@@ -66,8 +66,8 @@ class AssetGraph {
     var existing = get(node.id);
     if (existing != null) {
       if (existing is SyntheticAssetNode) {
-        // Don't call _remove, that transitively removes primary outputs. We
-        // only want to remove this node.
+        // Don't call _removeRecursive, that recursively removes all transitive
+        // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package].remove(existing.id.path);
         node.outputs.addAll(existing.outputs);
         node.primaryOutputs.addAll(existing.primaryOutputs);
@@ -102,14 +102,16 @@ class AssetGraph {
   /// Removes the node representing [id] from the graph, and all of its
   /// `primaryOutput`s.
   ///
+  /// Also removes all edges between all removed nodes and other nodes.
+  ///
   /// Returns a [Set<AssetId>] of all removed nodes.
-  Set<AssetId> _remove(AssetId id, {Set<AssetId> removedIds}) {
+  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId> removedIds}) {
     removedIds ??= new Set<AssetId>();
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
     for (var output in node.primaryOutputs) {
-      _remove(output, removedIds: removedIds);
+      _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
       var generatedNode = get(output) as GeneratedAssetNode;
@@ -242,7 +244,9 @@ class AssetGraph {
 
     // Remove all deleted source assets from the graph, which also recursively
     // removes all their primary outputs.
-    removeIds.where((id) => get(id) is SourceAssetNode).forEach(_remove);
+    removeIds
+        .where((id) => get(id) is SourceAssetNode)
+        .forEach(_removeRecursive);
 
     return invalidatedIds;
   }
@@ -309,7 +313,7 @@ class AssetGraph {
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
         assert(get(output) is! GeneratedAssetNode);
-        _remove(output, removedIds: removed);
+        _removeRecursive(output, removedIds: removed);
       }
 
       _add(new GeneratedAssetNode(
@@ -323,5 +327,5 @@ class AssetGraph {
 
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
-  Set<AssetId> remove(AssetId id) => _remove(id);
+  Set<AssetId> remove(AssetId id) => _removeRecursive(id);
 }
