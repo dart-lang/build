@@ -83,7 +83,8 @@ class GeneratedAssetNode extends AssetNode {
 
   /// A digest combining all digests of all previous inputs.
   ///
-  /// This is used to determine if a node really needs to be output or not.
+  /// Used to determine whether all the inputs to a build step are identical to
+  /// the previous run, indicating that the previous output is still valid.
   Digest previousInputsDigest;
 
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,

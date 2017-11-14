@@ -485,14 +485,12 @@ class BuildImpl {
   /// - Setting `globs` on each output based on `reader.globsRan`
   /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
+  /// - Setting the `previousInputsDigest` on each output based on the inputs.
   Future<Null> _setOutputsState(Iterable<AssetId> declaredOutputs,
       SingleStepReader reader, AssetWriterSpy writer) async {
-    // Reset the state for each output, setting `wasOutput` to false for now
-    // (will set to true in the next loop for written assets).
-    //
-    // Also updates the `inputs` set for each output, and the `outputs` sets for
-    // all inputs.
+    // All inputs are the same, so we only compute this once, but lazily.
     Digest inputsDigest;
+
     for (var output in declaredOutputs) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
       node
@@ -501,39 +499,47 @@ class BuildImpl {
         ..lastKnownDigest = null
         ..globs = reader.globsRan.toSet();
 
-      // Update dependencies that don't exist any more.
-      var removedInputs = node.inputs.difference(reader.assetsRead);
-      node.inputs.removeAll(removedInputs);
-      for (var input in removedInputs) {
-        // TODO: special type of dependency here? This means the primary input
-        // was never actually read.
-        if (input == node.primaryInput) continue;
+      _removeOldInputs(node, reader.assetsRead);
+      _addNewInputs(node, reader.assetsRead);
 
-        var inputNode = _assetGraph.get(input);
-        assert(inputNode != null, 'Asset Graph is missing $input');
-        inputNode.outputs.remove(output);
-      }
-
-      // Add the new dependencies.
-      var newInputs = reader.assetsRead.difference(node.inputs);
-      node.inputs.addAll(newInputs);
-      for (var input in newInputs) {
-        var inputNode = _assetGraph.get(input);
-        assert(inputNode != null, 'Asset Graph is missing $input');
-        inputNode.outputs.add(output);
-      }
-
-      // And finally compute the combined digest for all inputs.
       node.previousInputsDigest =
           inputsDigest ??= await _computeCombinedDigest(node.inputs, reader);
     }
 
-    // Mark the actual outputs as output.
+    // Mark the actual outputs as output, and update their digests.
     await Future.wait(writer.assetsWritten.map((output) async {
       (_assetGraph.get(output) as GeneratedAssetNode)
         ..wasOutput = true
         ..lastKnownDigest = await _reader.digest(output);
     }));
+  }
+
+  /// Removes old inputs from [node] based on [updatedInputs], and cleans up all
+  /// the old edges.
+  void _removeOldInputs(GeneratedAssetNode node, Set<AssetId> updatedInputs) {
+    var removedInputs = node.inputs.difference(updatedInputs);
+    node.inputs.removeAll(removedInputs);
+    for (var input in removedInputs) {
+      // TODO: special type of dependency here? This means the primary input
+      // was never actually read.
+      if (input == node.primaryInput) continue;
+
+      var inputNode = _assetGraph.get(input);
+      assert(inputNode != null, 'Asset Graph is missing $input');
+      inputNode.outputs.remove(node.id);
+    }
+  }
+
+  /// Adds new inputs to [node] based on [updatedInputs], and adds the
+  /// appropriate edges.
+  void _addNewInputs(GeneratedAssetNode node, Set<AssetId> updatedInputs) {
+    var newInputs = updatedInputs.difference(node.inputs);
+    node.inputs.addAll(newInputs);
+    for (var input in newInputs) {
+      var inputNode = _assetGraph.get(input);
+      assert(inputNode != null, 'Asset Graph is missing $input');
+      inputNode.outputs.add(node.id);
+    }
   }
 
   Future _delete(AssetId id) {
