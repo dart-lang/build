@@ -45,7 +45,7 @@ abstract class Md5DigestReader implements DigestAssetReader {
 ///
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
-class SingleStepReader implements AssetReader {
+class SingleStepReader implements DigestAssetReader {
   final AssetGraph _assetGraph;
   final _assetsRead = new Set<AssetId>();
   final DigestAssetReader _delegate;
@@ -96,6 +96,13 @@ class SingleStepReader implements AssetReader {
   }
 
   @override
+  Future<Digest> digest(AssetId id) async {
+    if (!_isReadable(id)) throw new AssetNotFoundException(id);
+    await _ensureAssetIsBuilt(id);
+    return _ensureDigest(id);
+  }
+
+  @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
     await _ensureAssetIsBuilt(id);
@@ -135,8 +142,8 @@ class SingleStepReader implements AssetReader {
     }
   }
 
-  Future<Null> _ensureDigest(AssetId id) async {
+  Future<Digest> _ensureDigest(AssetId id) async {
     var node = _assetGraph.get(id);
-    node.lastKnownDigest ??= await _delegate.digest(id);
+    return node.lastKnownDigest ??= await _delegate.digest(id);
   }
 }

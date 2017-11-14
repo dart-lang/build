@@ -115,6 +115,8 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = new Set<AssetId>()
+    // TODO: Why can't we just add the unlinked summary?
+    // That would help invalidation.
     ..addAll(module.sources)
     ..addAll(transitiveLinkedSummaryDeps)
     ..addAll(transitiveUnlinkedSummaryDeps);
@@ -141,7 +143,8 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
   var analyzer = await buildStep.fetchResource(analyzerDriverResource);
   var response = await analyzer.doWork(request);
-  if (response.exitCode == EXIT_CODE_ERROR) {
+  var summaryFile = scratchSpace.fileFor(module.linkedSummaryId);
+  if (response.exitCode == EXIT_CODE_ERROR || !await summaryFile.exists()) {
     throw new AnalyzerSummaryException(module.linkedSummaryId, response.output);
   }
 

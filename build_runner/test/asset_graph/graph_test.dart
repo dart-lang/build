@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -89,6 +90,12 @@ void main() {
             syntheticNode.outputs.add(generatedNode.id);
 
             generatedNode.inputs.addAll([node.id, syntheticNode.id]);
+            if (g % 2 == 1) {
+              // Fake a digest using the id, we just care that this gets
+              // serialized/deserialized properly.
+              generatedNode.previousInputsDigest =
+                  md5.convert(UTF8.encode(generatedNode.id.toString()));
+            }
 
             graph.add(syntheticNode);
             graph.add(generatedNode);
@@ -175,7 +182,11 @@ void main() {
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
-          expect(deletes, equals([primaryOutputId]));
+          // We don't pre-emptively delete the file in the case of modifications
+          expect(deletes, equals([]));
+          var outputNode = graph.get(primaryOutputId) as GeneratedAssetNode;
+          // But we should mark it as needing an update
+          expect(outputNode.needsUpdate, isTrue);
         });
 
         test('add new primary input which replaces a synthetic node', () async {

@@ -9,6 +9,8 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -235,10 +237,10 @@ class BuildImpl {
           outputs.addAll(await _runPackageBuilder(
               phase, action.package, action.builder, resourceManager));
         } else if (action is AssetBuildAction) {
-          var inputs =
-              await _matchingInputs(action.inputSet, phase, resourceManager);
+          var primaryInputs =
+              await _matchingPrimaryInputs(action, phase, resourceManager);
           outputs.addAll(await _runBuilder(
-              phase, action.builder, inputs, resourceManager));
+              phase, action.builder, primaryInputs, resourceManager));
         } else {
           throw new InvalidBuildActionException.unrecognizedType(action);
         }
@@ -252,16 +254,24 @@ class BuildImpl {
         performance: performanceTracker..stop());
   }
 
-  /// Gets a list of all inputs matching [inputSet].
+  /// Gets a list of all inputs matching the [InputSet] of [action], as well as
+  /// its [Builder]s primary inputs.
   ///
-  /// Lazily builds any optional build actions matching [inputSet].
-  Future<Set<AssetId>> _matchingInputs(InputSet inputSet, int phaseNumber,
-      ResourceManager resourceManager) async {
+  /// Lazily builds any optional build actions that might potentially produce
+  /// a primary input to [action].
+  Future<Set<AssetId>> _matchingPrimaryInputs(AssetBuildAction action,
+      int phaseNumber, ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
+    var inputSet = action.inputSet;
+    var builder = action.builder;
     await Future
         .wait(_assetGraph.packageNodes(inputSet.package).map((node) async {
       if (node is SyntheticAssetNode) return;
       if (!inputSet.matches(node.id)) return;
+      if (!builder.buildExtensions.keys
+          .any((inputExtension) => node.id.path.endsWith(inputExtension))) {
+        return;
+      }
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
         if (node.needsUpdate) {
@@ -336,14 +346,20 @@ class BuildImpl {
                 .where((id) => !inputNode.primaryOutputs.contains(id))
                 .join(', '));
 
-    if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
-
     var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
         input.package,
         (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
+
+    if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
+      return <AssetId>[];
+    }
+    // We may have read some inputs in the call to `_buildShouldRun`, we want
+    // to remove those.
+    wrappedReader.assetsRead.clear();
+
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new Logger('$builder on $input');
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
@@ -365,14 +381,20 @@ class BuildImpl {
       PackageBuilder builder, ResourceManager resourceManager) async {
     var builderOutputs = outputIdsForBuilder(builder, package);
 
-    if (!_buildShouldRun(builderOutputs)) return <AssetId>[];
-
     var wrappedReader = new SingleStepReader(
         _reader,
         _assetGraph,
         phaseNumber,
         package,
         (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
+
+    if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
+      return <AssetId>[];
+    }
+    // We may have read some inputs in the call to `_buildShouldRun`, we want
+    // to remove those.
+    wrappedReader.assetsRead.clear();
+
     var wrappedWriter = new AssetWriterSpy(_writer);
 
     var logger = new Logger('$builder on $package');
@@ -396,15 +418,64 @@ class BuildImpl {
   }
 
   /// Checks and returns whether any [outputs] need to be updated.
-  bool _buildShouldRun(Iterable<AssetId> outputs) {
+  Future<bool> _buildShouldRun(
+      Iterable<AssetId> outputs, DigestAssetReader reader) async {
     assert(
         outputs.every((o) => _assetGraph.contains(o)),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
+    assert(outputs.length >= 1, 'Can\'t run a build with zero outputs');
+    var firstOutput = outputs.first;
+    var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
+    assert(
+        outputs.skip(1).every((output) =>
+            (_assetGraph.get(output) as GeneratedAssetNode)
+                .inputs
+                .difference(node.inputs)
+                .isEmpty),
+        'All outputs of a build action should share the same inputs.');
 
-    // A build should be ran if any output needs updating
-    return outputs.any((output) =>
-        (_assetGraph.get(output) as GeneratedAssetNode).needsUpdate);
+    // We only check the first output, because all outputs share the same inputs
+    // and invalidation state.
+    if (!node.needsUpdate) return false;
+    if (node.previousInputsDigest == null) {
+      return true;
+    }
+    var digest = await _computeCombinedDigest(node.inputs, reader);
+    if (digest != node.previousInputsDigest) {
+      return true;
+    } else {
+      // Make sure to update the `needsUpdate` field for all outputs.
+      for (var id in outputs) {
+        (_assetGraph.get(id) as GeneratedAssetNode).needsUpdate = false;
+      }
+      return false;
+    }
+  }
+
+  /// Computes a single [Digest] based on the combined [Digest]s of [ids].
+  Future<Digest> _computeCombinedDigest(
+      Iterable<AssetId> ids, DigestAssetReader reader) async {
+    var digestSink = new AccumulatorSink<Digest>();
+    var bytesSink = md5.startChunkedConversion(digestSink);
+
+    for (var id in ids) {
+      var node = _assetGraph.get(id);
+      if (node is SyntheticAssetNode || !await reader.canRead(id)) {
+        // We want to add something here, a missing/unreadable input should be
+        // different from no input at all.
+        bytesSink.add([1]);
+        continue;
+      }
+      if (node.lastKnownDigest == null) {
+        node.lastKnownDigest = await reader.digest(id);
+      }
+      bytesSink.add(node.lastKnownDigest.bytes);
+    }
+
+    bytesSink.close();
+    assert(digestSink.events.length == 1);
+    return digestSink.events.first;
   }
 
   /// Sets the state for all [declaredOutputs] of a build step, by:
@@ -414,13 +485,12 @@ class BuildImpl {
   /// - Setting `globs` on each output based on `reader.globsRan`
   /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
+  /// - Setting the `previousInputsDigest` on each output based on the inputs.
   Future<Null> _setOutputsState(Iterable<AssetId> declaredOutputs,
       SingleStepReader reader, AssetWriterSpy writer) async {
-    // Reset the state for each output, setting `wasOutput` to false for now
-    // (will set to true in the next loop for written assets).
-    //
-    // Also updates the `inputs` set for each output, and the `outputs` sets for
-    // all inputs.
+    // All inputs are the same, so we only compute this once, but lazily.
+    Digest inputsDigest;
+
     for (var output in declaredOutputs) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
       node
@@ -429,35 +499,47 @@ class BuildImpl {
         ..lastKnownDigest = null
         ..globs = reader.globsRan.toSet();
 
-      // Update dependencies that don't exist any more.
-      var removedInputs = node.inputs.difference(reader.assetsRead);
-      node.inputs.removeAll(removedInputs);
-      for (var input in removedInputs) {
-        // TODO: special type of dependency here? This means the primary input
-        // was never actually read.
-        if (input == node.primaryInput) continue;
+      _removeOldInputs(node, reader.assetsRead);
+      _addNewInputs(node, reader.assetsRead);
 
-        var inputNode = _assetGraph.get(input);
-        assert(inputNode != null, 'Asset Graph is missing $input');
-        inputNode.outputs.remove(output);
-      }
-
-      // Add the new dependencies.
-      var newInputs = reader.assetsRead.difference(node.inputs);
-      node.inputs.addAll(newInputs);
-      for (var input in newInputs) {
-        var inputNode = _assetGraph.get(input);
-        assert(inputNode != null, 'Asset Graph is missing $input');
-        inputNode.outputs.add(output);
-      }
+      node.previousInputsDigest =
+          inputsDigest ??= await _computeCombinedDigest(node.inputs, reader);
     }
 
-    // Mark the actual outputs as output.
+    // Mark the actual outputs as output, and update their digests.
     await Future.wait(writer.assetsWritten.map((output) async {
       (_assetGraph.get(output) as GeneratedAssetNode)
         ..wasOutput = true
         ..lastKnownDigest = await _reader.digest(output);
     }));
+  }
+
+  /// Removes old inputs from [node] based on [updatedInputs], and cleans up all
+  /// the old edges.
+  void _removeOldInputs(GeneratedAssetNode node, Set<AssetId> updatedInputs) {
+    var removedInputs = node.inputs.difference(updatedInputs);
+    node.inputs.removeAll(removedInputs);
+    for (var input in removedInputs) {
+      // TODO: special type of dependency here? This means the primary input
+      // was never actually read.
+      if (input == node.primaryInput) continue;
+
+      var inputNode = _assetGraph.get(input);
+      assert(inputNode != null, 'Asset Graph is missing $input');
+      inputNode.outputs.remove(node.id);
+    }
+  }
+
+  /// Adds new inputs to [node] based on [updatedInputs], and adds the
+  /// appropriate edges.
+  void _addNewInputs(GeneratedAssetNode node, Set<AssetId> updatedInputs) {
+    var newInputs = updatedInputs.difference(node.inputs);
+    node.inputs.addAll(newInputs);
+    for (var input in newInputs) {
+      var inputNode = _assetGraph.get(input);
+      assert(inputNode != null, 'Asset Graph is missing $input');
+      inputNode.outputs.add(node.id);
+    }
   }
 
   Future _delete(AssetId id) {
