@@ -193,19 +193,20 @@ class AssetGraph {
         newAndModifiedNodes.where((node) => node.outputs.isNotEmpty),
         digestReader);
 
-    // Remove all deleted source assets from the graph, which also recursively
-    // removes all their primary outputs.
-    var removedSources =
-        removeIds.where((id) => get(id) is SourceAssetNode).toSet();
+    // Collects the set of all transitive ids to be removed from the graph,
+    // based on the removed `SourceAssetNode`s by following the
+    // `primaryOutputs`.
     var transitiveRemovedIds = new Set<AssetId>();
     addTransitivePrimaryOutputs(AssetId id) {
       transitiveRemovedIds.add(id);
       get(id).primaryOutputs.forEach(addTransitivePrimaryOutputs);
     }
 
-    removedSources.forEach(addTransitivePrimaryOutputs);
+    removeIds
+        .where((id) => get(id) is SourceAssetNode)
+        .forEach(addTransitivePrimaryOutputs);
 
-    // The generated nodes to delete.
+    // The generated nodes to actually delete from the file system.
     var idsToDelete = new Set<AssetId>.from(transitiveRemovedIds)
       ..removeAll(removeIds);
 

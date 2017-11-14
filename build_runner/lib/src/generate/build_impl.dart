@@ -230,10 +230,10 @@ class BuildImpl {
           outputs.addAll(await _runPackageBuilder(
               phase, action.package, action.builder, resourceManager));
         } else if (action is AssetBuildAction) {
-          var inputs =
-              await _matchingInputs(action.inputSet, phase, resourceManager);
+          var primaryInputs =
+              await _matchingPrimaryInputs(action, phase, resourceManager);
           outputs.addAll(await _runBuilder(
-              phase, action.builder, inputs, resourceManager));
+              phase, action.builder, primaryInputs, resourceManager));
         } else {
           throw new InvalidBuildActionException.unrecognizedType(action);
         }
@@ -247,16 +247,24 @@ class BuildImpl {
         performance: performanceTracker..stop());
   }
 
-  /// Gets a list of all inputs matching [inputSet].
+  /// Gets a list of all inputs matching the [InputSet] of [action], as well as
+  /// its [Builder]s primary inputs.
   ///
-  /// Lazily builds any optional build actions matching [inputSet].
-  Future<Set<AssetId>> _matchingInputs(InputSet inputSet, int phaseNumber,
-      ResourceManager resourceManager) async {
+  /// Lazily builds any optional build actions that might potentially produce
+  /// a primary input to [action].
+  Future<Set<AssetId>> _matchingPrimaryInputs(AssetBuildAction action,
+      int phaseNumber, ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
+    var inputSet = action.inputSet;
+    var builder = action.builder;
     await Future
         .wait(_assetGraph.packageNodes(inputSet.package).map((node) async {
       if (node is SyntheticAssetNode) return;
       if (!inputSet.matches(node.id)) return;
+      if (!builder.buildExtensions.keys
+          .any((inputExtension) => node.id.path.endsWith(inputExtension))) {
+        return;
+      }
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
         if (node.needsUpdate) {
@@ -409,26 +417,33 @@ class BuildImpl {
         outputs.every((o) => _assetGraph.contains(o)),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
+    assert(outputs.length >= 1, 'Can\'t run a build with zero outputs');
+    var firstOutput = outputs.first;
+    var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
+    assert(
+        outputs.skip(1).every((output) =>
+            (_assetGraph.get(output) as GeneratedAssetNode)
+                .inputs
+                .difference(node.inputs)
+                .isEmpty),
+        'All outputs of a build action should share the same inputs.');
 
-    // A build should be ran if any output needs updating
-    for (var output in outputs) {
-      var node = _assetGraph.get(output) as GeneratedAssetNode;
-      if (!node.needsUpdate) continue;
-      if (node.previousInputsDigest == null) {
-        return true;
-      }
-      var digest = await _computeCombinedDigest(node.inputs, reader);
-      if (digest != node.previousInputsDigest) {
-        return true;
-      } else {
-        node.needsUpdate = false;
-        // TODO: return `false` early here? Technically all `outputs` should
-        // have the same inputs and get invalidated together. We are doing some
-        // extra work here in the name of safety. We would need to mark all the
-        // outputs as `needsUpdate = false` as well if we do this.
-      }
+    // We only check the first output, because all outputs share the same inputs
+    // and invalidation state.
+    if (!node.needsUpdate) return false;
+    if (node.previousInputsDigest == null) {
+      return true;
     }
-    return false;
+    var digest = await _computeCombinedDigest(node.inputs, reader);
+    if (digest != node.previousInputsDigest) {
+      return true;
+    } else {
+      // Make sure to update the `needsUpdate` field for all outputs.
+      for (var id in outputs) {
+        (_assetGraph.get(id) as GeneratedAssetNode).needsUpdate = false;
+      }
+      return false;
+    }
   }
 
   /// Computes a single [Digest] based on the combined [Digest]s of [ids].
