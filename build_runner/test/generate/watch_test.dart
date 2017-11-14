@@ -331,11 +331,11 @@ void main() {
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt.copy')));
 
         result = await results.next;
-        // Should rebuild the generated asset and its outputs.
+        // Should rebuild the generated asset, but not its outputs because its
+        // content didn't change.
         checkBuild(result,
             outputs: {
               'a|web/a.txt.copy': 'a',
-              'a|web/a.txt.copy.copy': 'a',
             },
             writer: writer);
       });

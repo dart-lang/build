@@ -66,7 +66,9 @@ class AssetGraph {
     var existing = get(node.id);
     if (existing != null) {
       if (existing is SyntheticAssetNode) {
-        _remove(existing.id);
+        // Don't call _remove, that transitively removes primary outputs. We
+        // only want to remove this node.
+        _nodesByPackage[existing.id.package].remove(existing.id.path);
         node.outputs.addAll(existing.outputs);
         node.primaryOutputs.addAll(existing.primaryOutputs);
       } else {
@@ -147,8 +149,7 @@ class AssetGraph {
       DigestAssetReader digestReader) async {
     var invalidatedIds = new Set<AssetId>();
 
-    // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
-    // the outputs of `id`.
+    // Transitively invalidates all assets.
     void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType) {
       var node = this.get(id);
       if (node == null) return;
@@ -197,15 +198,27 @@ class AssetGraph {
     var removedSources =
         removeIds.where((id) => get(id) is SourceAssetNode).toSet();
     var transitiveRemovedIds = new Set<AssetId>();
-    removedSources
-        .forEach((id) => _remove(id, removedIds: transitiveRemovedIds));
+    addTransitivePrimaryOutputs(AssetId id) {
+      transitiveRemovedIds.add(id);
+      get(id).primaryOutputs.forEach(addTransitivePrimaryOutputs);
+    }
+
+    removedSources.forEach(addTransitivePrimaryOutputs);
+
     // The generated nodes to delete.
-    var idsToDelete = transitiveRemovedIds..removeAll(removeIds);
+    var idsToDelete = new Set<AssetId>.from(transitiveRemovedIds)
+      ..removeAll(removeIds);
+
+    // For manually deleted generated outputs, we bash away their
+    // `previousInputsDigest` to make sure they actually get regenerated.
+    for (var deletedOutput
+        in removeIds.where((id) => get(id) is GeneratedAssetNode)) {
+      (get(deletedOutput) as GeneratedAssetNode).previousInputsDigest = null;
+    }
 
     var allNewAndDeletedIds =
         _addOutputsForSources(buildActions, newIds, rootPackage)
-          ..addAll(removeIds)
-          ..addAll(idsToDelete);
+          ..addAll(transitiveRemovedIds);
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
@@ -225,6 +238,10 @@ class AssetGraph {
     // order is important because some `AssetWriter`s throw if the id is not in
     // the graph.
     await Future.wait(idsToDelete.map(delete));
+
+    // Remove all deleted source assets from the graph, which also recursively
+    // removes all their primary outputs.
+    removeIds.where((id) => get(id) is SourceAssetNode).forEach(_remove);
 
     return invalidatedIds;
   }

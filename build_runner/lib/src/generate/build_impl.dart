@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
@@ -433,17 +434,26 @@ class BuildImpl {
   /// Computes a single [Digest] based on the combined [Digest]s of [ids].
   Future<Digest> _computeCombinedDigest(
       Iterable<AssetId> ids, DigestAssetReader reader) async {
-    var allBytes = <int>[];
+    var digestSink = new AccumulatorSink<Digest>();
+    var bytesSink = md5.startChunkedConversion(digestSink);
+
     for (var id in ids) {
       var node = _assetGraph.get(id);
-      if (node is SyntheticAssetNode) continue;
-      if (!await reader.canRead(id)) continue;
+      if (node is SyntheticAssetNode || !await reader.canRead(id)) {
+        // We want to add something here, a missing/unreadable input should be
+        // different from no input at all.
+        bytesSink.add([1]);
+        continue;
+      }
       if (node.lastKnownDigest == null) {
         node.lastKnownDigest = await reader.digest(id);
       }
-      allBytes.addAll(node.lastKnownDigest.bytes);
+      bytesSink.add(node.lastKnownDigest.bytes);
     }
-    return md5.convert(allBytes);
+
+    bytesSink.close();
+    assert(digestSink.events.length == 1);
+    return digestSink.events.first;
   }
 
   /// Sets the state for all [declaredOutputs] of a build step, by:
