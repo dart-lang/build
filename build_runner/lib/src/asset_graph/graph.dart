@@ -119,6 +119,13 @@ class AssetGraph {
         generatedNode.inputs.remove(id);
       }
     }
+    if (node is GeneratedAssetNode) {
+      for (var input in node.inputs) {
+        var inputNode = get(input);
+        // We may have already removed this node entirely.
+        if (inputNode != null) inputNode.outputs.remove(id);
+      }
+    }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;
   }

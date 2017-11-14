@@ -219,6 +219,28 @@ void main() {
               new isInstanceOf<GeneratedAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
         });
+
+        test('removing nodes deletes primary outputs and secondary edges',
+            () async {
+          var secondaryId = makeAssetId('foo|secondary');
+          var secondaryNode = new SourceAssetNode(secondaryId);
+          secondaryNode.outputs.add(primaryOutputId);
+          var primaryOutputNode =
+              graph.get(primaryOutputId) as GeneratedAssetNode;
+          primaryOutputNode.inputs.add(secondaryNode.id);
+
+          graph.add(secondaryNode);
+          expect(graph.get(secondaryId), secondaryNode);
+
+          var changes = {primaryInputId: ChangeType.REMOVE};
+          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+              (_) => new Future.value(null), digestReader);
+
+          expect(graph.contains(primaryInputId), isFalse);
+          expect(graph.contains(primaryOutputId), isFalse);
+          expect(
+              graph.get(secondaryId).outputs, isNot(contains(primaryOutputId)));
+        });
       });
     });
   });
