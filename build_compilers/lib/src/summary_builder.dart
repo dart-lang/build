@@ -71,12 +71,10 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
 
   var summaryOutputFile = scratchSpace.fileFor(module.unlinkedSummaryId);
   var request = new WorkRequest();
-  // TODO(jakemac53): Diet parsing results in erroneous errors in later steps,
-  // but ideally we would do that (pass '--build-summary-only-diet').
   request.arguments.addAll([
     '--build-summary-only',
     '--build-summary-only-unlinked',
-    '--build-summary-output=${summaryOutputFile.path}',
+    '--build-summary-output-semantic=${summaryOutputFile.path}',
     '--strong',
   ]);
 
@@ -123,11 +121,9 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var summaryOutputFile = scratchSpace.fileFor(module.linkedSummaryId);
   var request = new WorkRequest();
-  // TODO(jakemac53): Diet parsing results in erroneous errors in later steps,
-  // but ideally we would do that (pass '--build-summary-only-diet').
   request.arguments.addAll([
     '--build-summary-only',
-    '--build-summary-output=${summaryOutputFile.path}',
+    '--build-summary-output-semantic=${summaryOutputFile.path}',
     '--strong',
   ]);
 
