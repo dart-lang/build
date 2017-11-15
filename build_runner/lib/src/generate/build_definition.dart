@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
@@ -30,13 +31,6 @@ final _logger = new Logger('BuildDefinition');
 class BuildDefinition {
   final AssetGraph assetGraph;
 
-  /// Assets which have changed since the cached asset graph was created.
-  final Map<AssetId, ChangeType> updates;
-
-  /// Assets which should be generated but already exist on disk and can't be
-  /// proven to be from the last build.
-  final Set<AssetId> conflictingAssets;
-
   final DigestAssetReader reader;
   final RunnerAssetWriter writer;
 
@@ -50,28 +44,31 @@ class BuildDefinition {
   /// speed.
   final bool enableLowResourcesMode;
 
+  final OnDelete onDelete;
+
   BuildDefinition._(
       this.assetGraph,
-      this.updates,
-      this.conflictingAssets,
       this.reader,
       this.writer,
       this.packageGraph,
       this.deleteFilesByDefault,
       this.resourceManager,
       this.buildScriptUpdates,
-      this.enableLowResourcesMode);
+      this.enableLowResourcesMode,
+      this.onDelete);
 
   static Future<BuildDefinition> load(
-          BuildOptions options, List<BuildAction> buildActions) =>
-      new _Loader(options, buildActions).load();
+          BuildOptions options, List<BuildAction> buildActions,
+          {void onDelete(AssetId id)}) =>
+      new _Loader(options, buildActions, onDelete).load();
 }
 
 class _Loader {
   final List<BuildAction> _buildActions;
   final BuildOptions _options;
+  final OnDelete _onDelete;
 
-  _Loader(this._options, this._buildActions);
+  _Loader(this._options, this._buildActions, this._onDelete);
 
   Future<BuildDefinition> load() async {
     if (!_options.writeToCache) {
@@ -93,7 +90,6 @@ class _Loader {
       cacheDirSources.addAll(await _listGeneratedAssetIds().toList());
     }
     var allSources = inputSources.union(cacheDirSources);
-    var updates = <AssetId, ChangeType>{};
     DigestAssetReader reader = _options.reader;
     BuildScriptUpdates buildScriptUpdates;
     if (await _options.reader.canRead(assetGraphId)) {
@@ -101,11 +97,23 @@ class _Loader {
           () => _readAssetGraph(assetGraphId));
     }
 
+    var writer = _options.writer;
+    if (_options.writeToCache) {
+      reader = new BuildCacheReader(
+          reader, assetGraph, _options.packageGraph.root.name);
+      writer = new BuildCacheWriter(
+          writer, assetGraph, _options.packageGraph.root.name);
+    }
+
     if (assetGraph != null) {
+      var updates = await _findUpdates(
+          assetGraph, inputSources, cacheDirSources, allSources);
+      await assetGraph.updateAndInvalidate(_buildActions, updates,
+          _options.packageGraph.root.name, (id) => _delete(id, writer), reader);
+
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
-      updates.addAll(await _findUpdates(
-          assetGraph, inputSources, cacheDirSources, allSources));
+
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
         _logger.warning('Invalidating asset graph due to build script update');
@@ -123,26 +131,25 @@ class _Loader {
             await BuildScriptUpdates.create(_options, assetGraph);
         conflictingOutputs
             .addAll(assetGraph.outputs.where(allSources.contains).toSet());
+
+        await logTimedAsync(
+            _logger,
+            'Checking for unexpected pre-existing outputs.',
+            () => _initialBuildCleanup(
+                conflictingOutputs, _options.deleteFilesByDefault, writer));
       });
     }
-    var writer = _options.writer;
-    if (_options.writeToCache) {
-      reader = new BuildCacheReader(
-          reader, assetGraph, _options.packageGraph.root.name);
-      writer = new BuildCacheWriter(
-          writer, assetGraph, _options.packageGraph.root.name);
-    }
+
     return new BuildDefinition._(
         assetGraph,
-        updates,
-        conflictingOutputs,
         reader,
         writer,
         _options.packageGraph,
         _options.deleteFilesByDefault,
         new ResourceManager(),
         buildScriptUpdates,
-        _options.enableLowResourcesMode);
+        _options.enableLowResourcesMode,
+        _onDelete);
   }
 
   /// Reads in an [AssetGraph] from disk.
@@ -238,5 +245,64 @@ class _Loader {
       var path = packagePath.substring(firstSlash + 1);
       yield new AssetId(package, path);
     }
+  }
+
+  /// Handles cleanup of pre-existing outputs for initial builds (where there is
+  /// no cached graph).
+  Future<Null> _initialBuildCleanup(Set<AssetId> conflictingAssets,
+      bool deleteFilesByDefault, RunnerAssetWriter writer) async {
+    if (conflictingAssets.isEmpty) return;
+
+    // Skip the prompt if using this option.
+    if (deleteFilesByDefault) {
+      _logger.info('Deleting ${conflictingAssets.length} declared outputs '
+          'which already existed on disk.');
+      await Future.wait(conflictingAssets.map((id) => _delete(id, writer)));
+      return;
+    }
+
+    // Prompt the user to delete files that are declared as outputs.
+    _logger.info('Found ${conflictingAssets.length} declared outputs '
+        'which already exist on disk. This is likely because the'
+        '`$cacheDir` folder was deleted, or you are submitting generated '
+        'files to your source repository.');
+
+    // If not in a standard terminal then we just exit, since there is no way
+    // for the user to provide a yes/no answer.
+    bool runningInPubRunTest() => Platform.script.scheme == 'data';
+    if (stdioType(stdin) != StdioType.TERMINAL || runningInPubRunTest()) {
+      throw new UnexpectedExistingOutputsException(conflictingAssets);
+    }
+
+    // Give a little extra space after the last message, need to make it clear
+    // this is a prompt.
+    stdout.writeln();
+    var done = false;
+    while (!done) {
+      stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
+      var input = stdin.readLineSync();
+      switch (input.toLowerCase()) {
+        case 'y':
+          stdout.writeln('Deleting files...');
+          done = true;
+          await Future.wait(conflictingAssets.map((id) => _delete(id, writer)));
+          break;
+        case 'n':
+          throw new UnexpectedExistingOutputsException(conflictingAssets);
+          break;
+        case 'l':
+          for (var output in conflictingAssets) {
+            stdout.writeln(output);
+          }
+          break;
+        default:
+          stdout.writeln('Unrecognized option $input, (y/n/l) expected.');
+      }
+    }
+  }
+
+  Future _delete(AssetId id, RunnerAssetWriter writer) {
+    _onDelete?.call(id);
+    return writer.delete(id);
   }
 }
