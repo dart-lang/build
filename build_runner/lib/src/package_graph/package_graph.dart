@@ -135,7 +135,7 @@ class PackageGraph {
   ///
   /// See [orderedPackages] for ordering guarantees. The node for [packageName]
   /// will not be included in the result.
-  @Deprecated('Use `applyBuilders` to filter `orderedPackageCycles`')
+  @Deprecated('Use `applyBuilders` rather than adding actions manually')
   Iterable<PackageNode> dependentsOf(String packageName) {
     if (!allPackages.containsKey(packageName)) return const [];
     var node = allPackages[packageName];
@@ -150,27 +150,13 @@ class PackageGraph {
   /// last. For any two packages for which neither is a transitive dependency of
   /// the other the relative position of the packages within the cycle is
   /// non-deterministic.
-  @Deprecated('Use orderedPackageCycles instead')
+  @Deprecated('Use `applyBuilders` rather than adding actions manually')
   Iterable<PackageNode> get orderedPackages =>
-      orderedPackageCycles.expand((c) => c);
-
-  /// Collects packages into strongly connected subcomponents and orders those
-  /// components in reverse dependency order.
-  ///
-  /// A cycle is defined as a collection of packages where each package is
-  /// present in the transitive dependency graph of each other package.
-  ///
-  /// Cycles are ordered in reverse dependency order, so if package `A` depends
-  /// on package `B`, and they are not in a cycle, package `A` will exist in a
-  /// later sublist than `B`. Ordering within a cycle is non-deterministic,
-  /// except if the [root] package is part of a cycle it will always be the last
-  /// element of it's cycle. Relative ordering of two cycles for which neither
-  /// is a dependent of the other is non-deterministic.
-  List<List<PackageNode>> get orderedPackageCycles =>
       stronglyConnectedComponents<String, PackageNode>(
-          [root], (node) => node.name, (node) => node.dependencies);
+              [root], (node) => node.name, (node) => node.dependencies)
+          .expand((c) => c);
 
-  @override
+@override
   String toString() {
     var buffer = new StringBuffer();
     for (var package in allPackages.values) {

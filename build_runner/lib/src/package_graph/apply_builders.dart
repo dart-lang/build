@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 
 import '../generate/phase.dart';
+import 'dependency_ordering.dart';
 import 'package_graph.dart';
 
 typedef bool _PackageFilter(PackageNode node);
@@ -44,19 +45,20 @@ class BuilderApplication {
 }
 
 /// Creates a [BuildAction] to apply each builder in [builders] to each package
-/// in [packages] such that all builders are run for earlier subcomponents
-/// before moving on to later packages.
+/// in [packageGraph] such that all builders are run for dependencies before
+/// moving on to later packages.
 ///
-/// For example, given the builders `[b1, b2]` and package components
-/// `[[p1], [p2, p3], [p4]]` where `p2` and `p3` represent a dependenency cycle
-/// which depends on `p1` this will return actions
-/// `[b1p1, b2p1, b1p2, b1p3, b2p2, b2p3, b1p4, b2p4]`.
+/// When there is a package cycle the builders are applied to each packages
+/// within the cycle before moving on to packages that depend on any package
+/// within the cycle.
 ///
 /// Builders may be filtered, for instance to run only on package which have a
-/// dependency on some other package.
-List<BuildAction> applyBuilders(Iterable<Iterable<PackageNode>> packages,
-        Iterable<BuilderApplication> builders) =>
-    packages
+/// dependency on some other package by choosing the appropriate
+/// [BuilderApplication].
+List<BuildAction> applyBuilders(
+        PackageGraph packageGraph, Iterable<BuilderApplication> builders) =>
+    stronglyConnectedComponents<String, PackageNode>([packageGraph.root],
+            (node) => node.name, (node) => node.dependencies)
         .expand((cycle) => builders.expand((b) => cycle
             .where(b._filter)
             .map((p) => new BuildAction(b.builder, p.name))))
