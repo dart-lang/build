@@ -233,6 +233,7 @@ void main() {
       right1.dependencies.add(right2);
       var graph = new PackageGraph.fromRoot(a);
       var inOrder = graph.orderedPackageCycles.map((c) => c.map((p) => p.name));
+      expect(inOrder, hasLength(5));
       expect(
           inOrder,
           containsAllInOrder([
@@ -269,6 +270,7 @@ void main() {
       c.dependencies.add(b);
       var graph = new PackageGraph.fromRoot(a);
       var inOrder = graph.orderedPackageCycles.map((c) => c.map((p) => p.name));
+      expect(inOrder, hasLength(2));
       expect(
           inOrder,
           containsAllInOrder([
@@ -290,6 +292,7 @@ void main() {
       right.dependencies.add(sharedDep);
       var graph = new PackageGraph.fromRoot(a);
       var inOrder = graph.orderedPackageCycles.map((c) => c.map((p) => p.name));
+      expect(inOrder, hasLength(4));
       expect(
           inOrder,
           containsAllInOrder([

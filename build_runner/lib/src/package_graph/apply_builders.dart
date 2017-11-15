@@ -7,38 +7,40 @@ import 'package:build/build.dart';
 import '../generate/phase.dart';
 import 'package_graph.dart';
 
+typedef bool _PackageFilter(PackageNode node);
+
 bool _alwaysTrue(_) => true;
 
-bool Function(PackageNode) _dependencyFilter(String dependency) =>
+_PackageFilter _hasDependency(String dependency) =>
     (p) => p.dependencies.any((d) => d.name == dependency);
 
-bool Function(PackageNode) _isPackage(String package) =>
-    (p) => p.name == package;
+_PackageFilter _isPackage(String package) => (p) => p.name == package;
 
-bool Function(PackageNode) _packagesContains(Set<String> packages) =>
+_PackageFilter _isInSet(Set<String> packages) =>
     (p) => packages.contains(p.name);
 
+/// A description of which packages need a given [Builder] applied.
 class BuilderApplication {
   final Builder builder;
 
-  /// Determines which package need [builder] applied.
-  final bool Function(PackageNode) filter;
+  /// Determines whether a given package needs [builder] applied.
+  final _PackageFilter _filter;
 
   /// Apply [builder] to all packages in the dependency graph.
-  const BuilderApplication.allPackage(this.builder) : filter = _alwaysTrue;
+  const BuilderApplication.allPackages(this.builder) : _filter = _alwaysTrue;
 
-  /// Apply [builder] to the pacakges which have a direct dependency on the
+  /// Apply [builder] to the packages which have a direct dependency on the
   /// package named [dependency].
   BuilderApplication.dependentsOf(this.builder, String dependency)
-      : filter = _dependencyFilter(dependency);
+      : _filter = _hasDependency(dependency);
 
   /// Apply [builder] to a single package in the graph.
   BuilderApplication.singlePackage(this.builder, String package)
-      : filter = _isPackage(package);
+      : _filter = _isPackage(package);
 
   /// Apply [builder] to a set of explicitly listed packages.
   BuilderApplication.onPackages(this.builder, Set<String> packages)
-      : filter = _packagesContains(packages);
+      : _filter = _isInSet(packages);
 }
 
 /// Creates a [BuildAction] to apply each builder in [builders] to each package
@@ -56,6 +58,6 @@ List<BuildAction> applyBuilders(Iterable<Iterable<PackageNode>> packages,
         Iterable<BuilderApplication> builders) =>
     packages
         .expand((cycle) => builders.expand((b) => cycle
-            .where(b.filter)
+            .where(b._filter)
             .map((p) => new BuildAction(b.builder, p.name))))
         .toList();
