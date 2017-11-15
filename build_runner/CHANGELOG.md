@@ -6,6 +6,7 @@
 - Add `applyBuilders` and `PackageGraph.orderedPackageCycles`. After finding a
   list of Builders to run, use these tools to apply them in the correct order
   across packages.
+- Deprecate `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
 
 ## 0.6.0+1
 
