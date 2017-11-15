@@ -156,7 +156,7 @@ class PackageGraph {
               [root], (node) => node.name, (node) => node.dependencies)
           .expand((c) => c);
 
-@override
+  @override
   String toString() {
     var buffer = new StringBuffer();
     for (var package in allPackages.values) {

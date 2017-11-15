@@ -217,7 +217,6 @@ void main() {
     });
   });
 
-
   group('dependentsOf', () {
     test('with two sub trees', () {
       var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
