@@ -12,6 +12,13 @@ export 'src/generate/performance_tracker.dart'
 export 'src/generate/phase.dart';
 export 'src/package_builder/package_builder.dart' show PackageBuilder;
 export 'src/package_graph/apply_builders.dart'
-    show BuilderApplication, applyBuilders;
+    show
+        BuilderApplication,
+        applyBuilders,
+        apply,
+        toPackage,
+        toAllPackages,
+        toDependentsOf,
+        toPackages;
 export 'src/package_graph/package_graph.dart';
 export 'src/server/server.dart' show ServeHandler;

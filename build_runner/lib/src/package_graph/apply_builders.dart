@@ -8,40 +8,45 @@ import '../generate/phase.dart';
 import 'dependency_ordering.dart';
 import 'package_graph.dart';
 
-typedef bool _PackageFilter(PackageNode node);
+typedef bool PackageFilter(PackageNode node);
 
-bool _alwaysTrue(_) => true;
+/// Run a builder on all packages in the package graph.
+PackageFilter toAllPackages() => (_) => true;
 
-_PackageFilter _hasDependency(String dependency) =>
-    (p) => p.dependencies.any((d) => d.name == dependency);
+/// Run a builder on all packages with an immediate dependency on [packageName].
+PackageFilter toDependentsOf(String packageName) =>
+    (p) => p.dependencies.any((d) => d.name == packageName);
 
-_PackageFilter _isPackage(String package) => (p) => p.name == package;
+/// Run a builder on a single package.
+PackageFilter toPackage(String package) => (p) => p.name == package;
 
-_PackageFilter _isInSet(Set<String> packages) =>
+/// Run a builder on a collection of packages.
+PackageFilter toPackages(Set<String> packages) =>
     (p) => packages.contains(p.name);
+
+/// Indcates that [builder] should be run against all packages matching
+/// [filter].
+///
+/// If the builder should only run on a subset of files within a package pass
+/// globs to [inputs] or [excludes];
+BuilderApplication apply(Builder builder, PackageFilter filter,
+        {List<String> inputs, List<String> excludes, bool isOptional}) =>
+    new BuilderApplication(builder, filter,
+        inputs: inputs, excludes: excludes, isOptional: isOptional);
 
 /// A description of which packages need a given [Builder] applied.
 class BuilderApplication {
   final Builder builder;
 
   /// Determines whether a given package needs [builder] applied.
-  final _PackageFilter _filter;
+  final PackageFilter filter;
 
-  /// Apply [builder] to all packages in the dependency graph.
-  const BuilderApplication.allPackages(this.builder) : _filter = _alwaysTrue;
+  final List<String> inputs;
+  final List<String> excludes;
+  final bool isOptional;
 
-  /// Apply [builder] to the packages which have a direct dependency on the
-  /// package named [dependency].
-  BuilderApplication.dependentsOf(this.builder, String dependency)
-      : _filter = _hasDependency(dependency);
-
-  /// Apply [builder] to a single package in the graph.
-  BuilderApplication.singlePackage(this.builder, String package)
-      : _filter = _isPackage(package);
-
-  /// Apply [builder] to a set of explicitly listed packages.
-  BuilderApplication.onPackages(this.builder, Set<String> packages)
-      : _filter = _isInSet(packages);
+  const BuilderApplication(this.builder, this.filter,
+      {this.inputs, this.excludes, this.isOptional});
 }
 
 /// Creates a [BuildAction] to apply each builder in [builders] to each package
@@ -57,9 +62,11 @@ class BuilderApplication {
 /// [BuilderApplication].
 List<BuildAction> applyBuilders(
         PackageGraph packageGraph, Iterable<BuilderApplication> builders) =>
-    stronglyConnectedComponents<String, PackageNode>([packageGraph.root],
-            (node) => node.name, (node) => node.dependencies)
-        .expand((cycle) => builders.expand((b) => cycle
-            .where(b._filter)
-            .map((p) => new BuildAction(b.builder, p.name))))
+    stronglyConnectedComponents<String, PackageNode>(
+            [packageGraph.root], (node) => node.name, (node) => node.dependencies)
+        .expand((cycle) => builders.expand((b) => cycle.where(b.filter).map(
+            (p) => new BuildAction(b.builder, p.name,
+                inputs: b.inputs,
+                excludes: b.excludes,
+                isOptional: b.isOptional))))
         .toList();
