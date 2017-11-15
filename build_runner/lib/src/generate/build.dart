@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
@@ -106,27 +105,3 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
         directoryWatcherFactory: directoryWatcherFactory,
         terminateEventStream: terminateEventStream,
         enableLowResourcesMode: enableLowResourcesMode);
-
-/// Creates a [BuildAction] to apply each builder in [builders] to each package
-/// in [packages] such that all builders are run for earlier subcomponents
-/// before moving on to later packages.
-///
-/// For example, given the builders `[b1, b2]` and package components
-/// `[[p1], [p2, p3], [p4]]` where `p2` and `p3` represent a dependenency cycle
-/// which depends on `p1` this will return actions
-/// `[b1p1, b2p1, b1p2, b1p3, b2p2, b2p3, b1p4, b2p4]`.
-///
-/// Optionally provide [filterToDependentsOf] to apply builders to packages only
-/// with a certain dependency rather than all packages.
-List<BuildAction> applyBuilders(
-        Iterable<Iterable<PackageNode>> packages, Iterable<Builder> builders,
-        {String filterToDependentsOf}) =>
-    packages
-        .expand((cycle) => builders.expand((b) {
-              final applyTo = filterToDependentsOf != null
-                  ? cycle.where((p) =>
-                      p.dependencies.any((d) => d.name == filterToDependentsOf))
-                  : cycle;
-              return applyTo.map((p) => new BuildAction(b, p.name));
-            }))
-        .toList();

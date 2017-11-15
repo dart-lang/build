@@ -3,6 +3,9 @@
 - Add an `enableLowResourcesMode` option to `build` and `watch`, which will
   consume less memory at the cost of slower builds. This is intended for use in
   resource constrained environments such as Travis.
+- Add `applyBuilders` and `PackageGraph.orderedPackageCycles`. After finding a
+  list of Builders to run, use these tools to apply them in the correct order
+  across packages.
 
 ## 0.6.0+1
 
