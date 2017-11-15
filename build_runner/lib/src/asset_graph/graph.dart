@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
@@ -25,7 +26,13 @@ class AssetGraph {
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final _nodesByPackage = <String, Map<String, AssetNode>>{};
 
-  AssetGraph._();
+  /// A [Digest] of the build actions this graph was originally created with.
+  ///
+  /// When an [AssetGraph] is deserialized we check whether or not it matches
+  /// the new [BuildAction]s and throw away the graph if it doesn't.
+  final Digest buildActionsDigest;
+
+  AssetGraph._(this.buildActionsDigest);
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(Map serializedGraph) =>
@@ -36,7 +43,7 @@ class AssetGraph {
       Set<AssetId> sources,
       String rootPackage,
       DigestAssetReader digestReader) async {
-    var graph = new AssetGraph._();
+    var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
     var newNodes = graph._addSources(sources);
     graph._addOutputsForSources(buildActions, sources, rootPackage);
     // Pre-emptively compute digests for the nodes we know have outputs.
@@ -335,4 +342,30 @@ class AssetGraph {
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
   Set<AssetId> remove(AssetId id) => _removeRecursive(id);
+}
+
+/// Computes a [Digest] for [buildActions] which can be used to compare one set
+/// of [BuildAction]s against another.
+Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
+  var digestSink = new AccumulatorSink<Digest>();
+  var bytesSink = md5.startChunkedConversion(digestSink);
+  for (var action in buildActions) {
+    bytesSink.add(UTF8.encode(action.package));
+    if (action is AssetBuildAction) {
+      bytesSink.add([0]);
+      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
+      for (var glob in action.inputSet.globs) {
+        bytesSink.add([glob.pattern.hashCode]);
+      }
+      for (var glob in action.inputSet.excludes) {
+        bytesSink.add([glob.pattern.hashCode]);
+      }
+    } else if (action is PackageBuildAction) {
+      bytesSink.add([1]);
+      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
+    }
+  }
+  bytesSink.close();
+  assert(digestSink.events.length == 1);
+  return digestSink.events.first;
 }

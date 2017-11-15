@@ -161,8 +161,19 @@ class _Loader {
 
     return logTimedAsync(_logger, 'Reading cached asset graph', () async {
       try {
-        return new AssetGraph.deserialize(JSON
+        var cachedGraph = new AssetGraph.deserialize(JSON
             .decode(await _options.reader.readAsString(assetGraphId)) as Map);
+        if (computeBuildActionsDigest(_buildActions) !=
+            cachedGraph.buildActionsDigest) {
+          _logger.warning(
+              'Throwing away cached asset graph because the build actions have '
+              'changed. This could happen as a result of adding a new '
+              'dependency, or if you are using a build script which changes '
+              'the build structure based on command line flags or other '
+              'configuration.');
+          return null;
+        }
+        return cachedGraph;
       } on AssetGraphVersionException catch (_) {
         // Start fresh if the cached asset_graph version doesn't match up with
         // the current version. We don't currently support old graph versions.

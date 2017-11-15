@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 11;
+const _version = 12;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -24,7 +24,8 @@ class _AssetGraphDeserializer {
           _serializedGraph['version'] as int, _version);
     }
 
-    var graph = new AssetGraph._();
+    var graph = new AssetGraph._(
+        _deserializeDigest(_serializedGraph['buildActionsDigest'] as String));
 
     // Read in the id => AssetId map from the graph first.
     for (var descriptor in _serializedGraph['serializedAssetIds']) {
@@ -94,10 +95,6 @@ class _AssetGraphDeserializer {
       serializedIds.map((id) => _idToAssetId[id]).toList();
 
   bool _deserializeBool(int value) => value == 0 ? false : true;
-
-  Digest _deserializeDigest(String serializedDigest) => serializedDigest == null
-      ? null
-      : new Digest(BASE64.decode(serializedDigest));
 }
 
 /// Serializes an [AssetGraph] into a [Map].
@@ -120,6 +117,7 @@ class _AssetGraphSerializer {
     var result = <String, dynamic>{
       'version': _version,
       'nodes': _graph.allNodes.map(_serializeNode).toList(),
+      'buildActionsDigest': _serializeDigest(_graph.buildActionsDigest),
     };
 
     // Store the id => AssetId mapping as a nested list so we don't have to
@@ -207,9 +205,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .map((id) => serializer._assetIdToId[id])
             .toList();
       case _Field.Digest:
-        return node.lastKnownDigest == null
-            ? null
-            : BASE64.encode(node.lastKnownDigest.bytes);
+        return _serializeDigest(node.lastKnownDigest);
       default:
         throw new RangeError.index(index, this);
     }
@@ -258,13 +254,18 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
       case _Field.NeedsUpdate:
         return _serializeBool(generatedNode.needsUpdate);
       case _Field.PreviousInputsDigest:
-        return generatedNode.previousInputsDigest == null
-            ? null
-            : BASE64.encode(generatedNode.previousInputsDigest.bytes);
+        return _serializeDigest(generatedNode.previousInputsDigest);
       default:
         throw new RangeError.index(index, this);
     }
   }
 }
+
+Digest _deserializeDigest(String serializedDigest) => serializedDigest == null
+    ? null
+    : new Digest(BASE64.decode(serializedDigest));
+
+String _serializeDigest(Digest digest) =>
+    digest == null ? null : BASE64.encode(digest.bytes);
 
 int _serializeBool(bool value) => value ? 1 : 0;
