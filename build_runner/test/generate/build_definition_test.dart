@@ -90,7 +90,8 @@ main() {
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await deleteFile(p.join('lib', 'b.txt'));
-        var buildDefinition = await BuildDefinition.load(options, buildActions);
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
@@ -112,7 +113,8 @@ main() {
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await createFile(p.join('lib', 'a.txt'), 'a');
-        var buildDefinition = await BuildDefinition.load(options, buildActions);
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/a.txt')), isTrue);
@@ -134,7 +136,8 @@ main() {
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
-        var buildDefinition = await BuildDefinition.load(options, buildActions);
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         var generatedANode = newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
@@ -159,7 +162,8 @@ main() {
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
-        var buildDefinition = await BuildDefinition.load(options, buildActions);
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, buildActions);
         expect(buildDefinition.assetGraph.contains(generatedSrcId), isTrue);
       });
     });
@@ -177,7 +181,8 @@ main() {
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
-        var buildDefinition = await BuildDefinition.load(options, buildActions);
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, buildActions);
 
         expect(buildDefinition.assetGraph.contains(generatedId), isFalse);
       });
@@ -185,7 +190,8 @@ main() {
       test('includes generated entrypoint', () async {
         var entryPoint =
             new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
-        var buildDefinition = await BuildDefinition.load(options, []);
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, []);
         expect(buildDefinition.assetGraph.contains(entryPoint), isTrue);
       });
 
@@ -193,7 +199,8 @@ main() {
         var entryPoint =
             new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
-        var buildDefinition = await BuildDefinition.load(options, buildActions);
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, buildActions);
         expect(
             buildDefinition.assetGraph
                 .contains(entryPoint.addExtension('.copy')),

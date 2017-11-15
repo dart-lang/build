@@ -57,10 +57,10 @@ class BuildDefinition {
       this.enableLowResourcesMode,
       this.onDelete);
 
-  static Future<BuildDefinition> load(
+  static Future<BuildDefinition> prepareWorkspace(
           BuildOptions options, List<BuildAction> buildActions,
           {void onDelete(AssetId id)}) =>
-      new _Loader(options, buildActions, onDelete).load();
+      new _Loader(options, buildActions, onDelete).prepareWorkspace();
 }
 
 class _Loader {
@@ -70,7 +70,7 @@ class _Loader {
 
   _Loader(this._options, this._buildActions, this._onDelete);
 
-  Future<BuildDefinition> load() async {
+  Future<BuildDefinition> prepareWorkspace() async {
     if (!_options.writeToCache) {
       final root = _options.packageGraph.root.name;
       for (final action in _buildActions) {

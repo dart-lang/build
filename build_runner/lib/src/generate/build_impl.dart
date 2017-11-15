@@ -68,7 +68,8 @@ Future<BuildResult> build(List<BuildAction> buildActions,
 
 Future<BuildResult> singleBuild(
     BuildOptions options, List<BuildAction> buildActions) async {
-  var buildDefinition = await BuildDefinition.load(options, buildActions);
+  var buildDefinition =
+      await BuildDefinition.prepareWorkspace(options, buildActions);
   var result =
       (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
   await buildDefinition.resourceManager.beforeExit();
