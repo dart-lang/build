@@ -68,14 +68,13 @@ Future<BuildResult> build(List<BuildAction> buildActions,
 
 Future<BuildResult> singleBuild(
     BuildOptions options, List<BuildAction> buildActions) async {
-  var buildDefinition = await BuildDefinition.load(options, buildActions);
+  var buildDefinition =
+      await BuildDefinition.prepareWorkspace(options, buildActions);
   var result =
       (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
   await buildDefinition.resourceManager.beforeExit();
   return result;
 }
-
-typedef void _OnDelete(AssetId id);
 
 class BuildImpl {
   BuildResult _firstBuild;
@@ -83,35 +82,29 @@ class BuildImpl {
 
   final AssetGraph _assetGraph;
   final List<BuildAction> _buildActions;
-  final _OnDelete _onDelete;
+  final OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final DigestAssetReader _reader;
   final _resolvers = const BarbackResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
 
-  BuildImpl._(
-      BuildDefinition buildDefinition, this._buildActions, this._onDelete)
+  BuildImpl._(BuildDefinition buildDefinition, this._buildActions)
       : _packageGraph = buildDefinition.packageGraph,
         _reader = buildDefinition.enableLowResourcesMode
             ? buildDefinition.reader
             : new CachingAssetReader(buildDefinition.reader),
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
-        _resourceManager = buildDefinition.resourceManager;
+        _resourceManager = buildDefinition.resourceManager,
+        _onDelete = buildDefinition.onDelete;
 
   static Future<BuildImpl> create(
       BuildDefinition buildDefinition, List<BuildAction> buildActions,
       {void onDelete(AssetId id)}) async {
-    var build = new BuildImpl._(buildDefinition, buildActions, onDelete);
+    var build = new BuildImpl._(buildDefinition, buildActions);
 
-    await logTimedAsync(
-        _logger,
-        'Checking for stale files',
-        () => build._firstBuildCleanup(buildDefinition.conflictingAssets,
-            buildDefinition.deleteFilesByDefault));
-
-    build._firstBuild = await build.run(buildDefinition.updates);
+    build._firstBuild = await build.run({});
     return build;
   }
 
@@ -170,58 +163,6 @@ class BuildImpl {
           exception: e, stackTrace: trace));
     });
     return done.future;
-  }
-
-  Future<Null> _firstBuildCleanup(
-      Set<AssetId> conflictingAssets, bool deleteFilesByDefault) async {
-    if (conflictingAssets.isEmpty) return;
-
-    // Skip the prompt if using this option.
-    if (deleteFilesByDefault) {
-      _logger.info('Deleting ${conflictingAssets.length} declared outputs '
-          'which already existed on disk.');
-      await Future.wait(conflictingAssets.map(_delete));
-      return;
-    }
-
-    // Prompt the user to delete files that are declared as outputs.
-    _logger.info('Found ${conflictingAssets.length} declared outputs '
-        'which already exist on disk. This is likely because the'
-        '`$cacheDir` folder was deleted, or you are submitting generated '
-        'files to your source repository.');
-
-    // If not in a standard terminal then we just exit, since there is no way
-    // for the user to provide a yes/no answer.
-    bool runningInPubRunTest() => Platform.script.scheme == 'data';
-    if (stdioType(stdin) != StdioType.TERMINAL || runningInPubRunTest()) {
-      throw new UnexpectedExistingOutputsException(conflictingAssets);
-    }
-
-    // Give a little extra space after the last message, need to make it clear
-    // this is a prompt.
-    stdout.writeln();
-    var done = false;
-    while (!done) {
-      stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
-      var input = stdin.readLineSync();
-      switch (input.toLowerCase()) {
-        case 'y':
-          stdout.writeln('Deleting files...');
-          done = true;
-          await Future.wait(conflictingAssets.map(_delete));
-          break;
-        case 'n':
-          throw new UnexpectedExistingOutputsException(conflictingAssets);
-          break;
-        case 'l':
-          for (var output in conflictingAssets) {
-            stdout.writeln(output);
-          }
-          break;
-        default:
-          stdout.writeln('Unrecognized option $input, (y/n/l) expected.');
-      }
-    }
   }
 
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]

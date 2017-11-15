@@ -174,7 +174,9 @@ class WatchImpl implements BuildState {
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
-      _buildDefinition = await BuildDefinition.load(options, buildActions);
+      _buildDefinition = await BuildDefinition.prepareWorkspace(
+          options, buildActions,
+          onDelete: _expectedDeletes.add);
       _readerCompleter.complete(_buildDefinition.reader);
       _assetGraph = _buildDefinition.assetGraph;
       build = await BuildImpl.create(_buildDefinition, buildActions,

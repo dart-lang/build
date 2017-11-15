@@ -278,7 +278,8 @@ void main() {
         var writer = new InMemoryRunnerAssetWriter()
           ..onDelete = (AssetId assetId) {
             if (assetId.package != 'a') {
-              throw 'Should not delete outside of package:a';
+              throw 'Should not delete outside of package:a, '
+                  'tried to delete $assetId';
             }
           };
         await testActions(
