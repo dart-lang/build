@@ -97,19 +97,24 @@ class _Loader {
           () => _readAssetGraph(assetGraphId));
     }
 
-    var writer = _options.writer;
-    if (_options.writeToCache) {
-      reader = new BuildCacheReader(
-          reader, assetGraph, _options.packageGraph.root.name);
-      writer = new BuildCacheWriter(
-          writer, assetGraph, _options.packageGraph.root.name);
+    // Wraps `original` in a `BuildCacheWriter` if `_options.writeToCache` is
+    // enabled.
+    RunnerAssetWriter maybeWrapWriter(RunnerAssetWriter original) {
+      assert(assetGraph != null);
+      if (!_options.writeToCache) return original;
+      return new BuildCacheWriter(
+          original, assetGraph, _options.packageGraph.root.name);
     }
 
     if (assetGraph != null) {
       var updates = await _findUpdates(
           assetGraph, inputSources, cacheDirSources, allSources);
-      await assetGraph.updateAndInvalidate(_buildActions, updates,
-          _options.packageGraph.root.name, (id) => _delete(id, writer), reader);
+      await assetGraph.updateAndInvalidate(
+          _buildActions,
+          updates,
+          _options.packageGraph.root.name,
+          (id) => _delete(id, maybeWrapWriter(_options.writer)),
+          reader);
 
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
@@ -136,8 +141,16 @@ class _Loader {
             _logger,
             'Checking for unexpected pre-existing outputs.',
             () => _initialBuildCleanup(
-                conflictingOutputs, _options.deleteFilesByDefault, writer));
+                conflictingOutputs,
+                _options.deleteFilesByDefault,
+                maybeWrapWriter(_options.writer)));
       });
+    }
+
+    var writer = maybeWrapWriter(_options.writer);
+    if (_options.writeToCache) {
+      reader = new BuildCacheReader(
+          reader, assetGraph, _options.packageGraph.root.name);
     }
 
     return new BuildDefinition._(
