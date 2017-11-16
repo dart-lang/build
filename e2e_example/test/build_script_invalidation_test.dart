@@ -21,8 +21,7 @@ void main() {
     test('while serving prompt the user to restart', () async {
       var terminateLine =
           nextStdOutLine('Terminating. No further builds will be scheduled');
-      await replaceAllInFile(
-          'tool/build.dart', 'ThrowingBuilder', 'FailingBuilder');
+      await replaceAllInFile('tool/build.dart', 'Serving', 'Now serving');
       await terminateLine;
       await stopServer();
       await startManualServer(extraExpects: [
@@ -34,8 +33,7 @@ void main() {
 
     test('while not serving invalidate the next build', () async {
       await stopServer();
-      await replaceAllInFile(
-          'tool/build.dart', 'ThrowingBuilder', 'FailingBuilder');
+      await replaceAllInFile('tool/build.dart', 'Serving', 'Now serving');
       await startManualServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
