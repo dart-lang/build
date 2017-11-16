@@ -143,11 +143,11 @@ class _Loader {
 
   /// If `_options.writeToCache` is `true` then this returns the all the sources
   /// found in the cache directory, otherwise it returns an empty set.
-  Future<Set<AssetId>> _findCacheDirSources() async {
+  Future<Set<AssetId>> _findCacheDirSources() {
     if (_options.writeToCache) {
-      return await _listGeneratedAssetIds().toSet();
+      return _listGeneratedAssetIds().toSet();
     }
-    return new Set<AssetId>();
+    return new Future.value(new Set<AssetId>());
   }
 
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
