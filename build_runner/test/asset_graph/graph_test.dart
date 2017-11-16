@@ -243,6 +243,16 @@ void main() {
         });
       });
     });
+
+    test('overlapping build actions cause an error', () async {
+      expect(
+          () => AssetGraph.build(
+              new List.filled(2, new BuildAction(new CopyBuilder(), 'foo')),
+              [makeAssetId('foo|file')].toSet(),
+              'foo',
+              digestReader),
+          throwsA(duplicateAssetNodeException));
+    });
   });
 }
 

@@ -13,7 +13,9 @@ class DuplicateAssetNodeException implements Exception {
   DuplicateAssetNodeException(this.assetNode);
 
   @override
-  String toString() => 'DuplicateAssetNodeError: $assetNode';
+  String toString() => 'DuplicateAssetNodeError: $assetNode\n'
+      'This probably means you have multiple actions that are trying to output '
+      'the same file.';
 }
 
 class AssetGraphVersionException implements Exception {

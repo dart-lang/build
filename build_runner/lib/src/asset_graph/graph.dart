@@ -319,7 +319,10 @@ class AssetGraph {
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
-        assert(get(output) is! GeneratedAssetNode);
+        var node = get(output);
+        if (node is GeneratedAssetNode) {
+          throw new DuplicateAssetNodeException(node);
+        }
         _removeRecursive(output, removedIds: removed);
       }
 
