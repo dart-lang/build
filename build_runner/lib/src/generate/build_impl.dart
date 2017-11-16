@@ -11,6 +11,7 @@ import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -379,7 +380,9 @@ class BuildImpl {
     // We only check the first output, because all outputs share the same inputs
     // and invalidation state.
     if (!node.needsUpdate) return false;
-    if (node.previousInputsDigest == null) {
+    // TODO: Don't assume the worst for globs
+    // https://github.com/dart-lang/build/issues/624
+    if (node.previousInputsDigest == null || node.globs.isNotEmpty) {
       return true;
     }
     var digest = await _computeCombinedDigest(node.inputs, reader);
@@ -431,15 +434,18 @@ class BuildImpl {
       SingleStepReader reader, AssetWriterSpy writer) async {
     // All inputs are the same, so we only compute this once, but lazily.
     Digest inputsDigest;
+    Set<Glob> globsRan = reader.globsRan.toSet();
 
     for (var output in declaredOutputs) {
       var wasOutput = writer.assetsWritten.contains(output);
       var digest = wasOutput ? await _reader.digest(output) : null;
       var node = _assetGraph.get(output) as GeneratedAssetNode;
 
-      var allInputs = reader.assetsRead;
-      if (node.primaryInput != null) allInputs.add(node.primaryInput);
-      inputsDigest ??= await _computeCombinedDigest(node.inputs, reader);
+      inputsDigest ??= await () {
+        var allInputs = reader.assetsRead.toSet();
+        if (node.primaryInput != null) allInputs.add(node.primaryInput);
+        return _computeCombinedDigest(allInputs, reader);
+      }();
 
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
       // builders we can run arbitrary code between updates otherwise, at which
@@ -450,7 +456,7 @@ class BuildImpl {
         ..needsUpdate = false
         ..wasOutput = wasOutput
         ..lastKnownDigest = digest
-        ..globs = reader.globsRan.toSet()
+        ..globs = globsRan
         ..previousInputsDigest = inputsDigest;
     }
   }
