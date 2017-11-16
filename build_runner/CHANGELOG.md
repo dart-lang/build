@@ -3,6 +3,10 @@
 - Add an `enableLowResourcesMode` option to `build` and `watch`, which will
   consume less memory at the cost of slower builds. This is intended for use in
   resource constrained environments such as Travis.
+- Add `createBuildActions`. After finding a list of Builders to run, and defining
+  which packages need them applied, use this tool to apply them in the correct
+  order across the package graph.
+- Deprecate `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
 
 ## 0.6.0+1
 

@@ -30,9 +30,7 @@ abstract class BuildAction {
   /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
   /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
   factory BuildAction(Builder builder, String package,
-      {List<String> inputs = const ['**'],
-      List<String> excludes = const [],
-      bool isOptional}) {
+      {List<String> inputs, List<String> excludes, bool isOptional}) {
     var inputSet = new InputSet(package, inputs, excludes: excludes);
     return new AssetBuildAction._(builder, inputSet, isOptional: isOptional);
   }
