@@ -13,7 +13,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 
 Future main() async {
   var graph = new PackageGraph.forThisPackage();
-  var builders = <BuilderApplication>[
+  var builders = [
     apply(new TestBootstrapBuilder(), toPackage(graph.root.name),
         inputs: ['test/**_test.dart']),
     apply(new ThrowingBuilder(), toPackage(graph.root.name)),
@@ -24,7 +24,7 @@ Future main() async {
     apply(new DevCompilerBootstrapBuilder(), toPackage(graph.root.name),
         inputs: ['web/**.dart', 'test/**.browser_test.dart'])
   ];
-  var buildActions = applyBuilders(graph, builders);
+  var buildActions = createBuildActions(graph, builders);
 
   var serveHandler = await watch(
     buildActions,

@@ -60,12 +60,13 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-List<BuildAction> applyBuilders(
-        PackageGraph packageGraph, Iterable<BuilderApplication> builders) =>
+List<BuildAction> createBuildActions(PackageGraph packageGraph,
+        Iterable<BuilderApplication> builderApplications) =>
     stronglyConnectedComponents<String, PackageNode>(
             [packageGraph.root], (node) => node.name, (node) => node.dependencies)
-        .expand((cycle) => builders.expand((b) => cycle.where(b.filter).map(
-            (p) => new BuildAction(b.builder, p.name,
+        .expand((cycle) => builderApplications.expand((b) => cycle
+            .where(b.filter)
+            .map((p) => new BuildAction(b.builder, p.name,
                 inputs: b.inputs,
                 excludes: b.excludes,
                 isOptional: b.isOptional))))

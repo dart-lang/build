@@ -135,7 +135,7 @@ class PackageGraph {
   ///
   /// See [orderedPackages] for ordering guarantees. The node for [packageName]
   /// will not be included in the result.
-  @Deprecated('Use `applyBuilders` rather than adding actions manually')
+  @Deprecated('Use `createBuildActions` rather than adding actions manually')
   Iterable<PackageNode> dependentsOf(String packageName) {
     if (!allPackages.containsKey(packageName)) return const [];
     var node = allPackages[packageName];
@@ -150,7 +150,7 @@ class PackageGraph {
   /// last. For any two packages for which neither is a transitive dependency of
   /// the other the relative position of the packages within the cycle is
   /// non-deterministic.
-  @Deprecated('Use `applyBuilders` rather than adding actions manually')
+  @Deprecated('Use `createBuildActions` rather than adding actions manually')
   Iterable<PackageNode> get orderedPackages =>
       stronglyConnectedComponents<String, PackageNode>(
               [root], (node) => node.name, (node) => node.dependencies)
