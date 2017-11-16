@@ -49,9 +49,9 @@ class BuilderApplication {
       {this.inputs, this.excludes, this.isOptional});
 }
 
-/// Creates a [BuildAction] to apply each builder in [builders] to each package
-/// in [packageGraph] such that all builders are run for dependencies before
-/// moving on to later packages.
+/// Creates a [BuildAction] to apply each builder in [builderApplications] to
+/// each package in [packageGraph] such that all builders are run for
+/// dependencies before moving on to later packages.
 ///
 /// When there is a package cycle the builders are applied to each packages
 /// within the cycle before moving on to packages that depend on any package

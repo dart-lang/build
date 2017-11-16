@@ -35,6 +35,7 @@ linter:
     - library_names
     - library_prefixes
     - non_constant_identifier_names
+    - prefer_typing_uninitialized_variables
     - prefer_final_fields
     - prefer_is_not_empty
     - slash_for_doc_comments
