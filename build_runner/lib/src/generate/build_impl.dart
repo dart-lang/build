@@ -249,7 +249,7 @@ class BuildImpl {
       // actually output. If it wasn't then we just return an empty list here.
       var inputNode = _assetGraph.get(input);
       if (inputNode is GeneratedAssetNode) {
-        // Make sure the `inputNode` is up to date, generate run it.
+        // Make sure the `inputNode` is up to date, and rebuild it if not.
         if (inputNode.needsUpdate) {
           await _runLazyPhaseForInput(
               inputNode.phaseNumber, inputNode.primaryInput, resourceManager);
@@ -433,26 +433,26 @@ class BuildImpl {
     Digest inputsDigest;
 
     for (var output in declaredOutputs) {
+      var wasOutput = writer.assetsWritten.contains(output);
+      var digest = wasOutput ? await _reader.digest(output) : null;
       var node = _assetGraph.get(output) as GeneratedAssetNode;
-      node
-        ..needsUpdate = false
-        ..wasOutput = false
-        ..lastKnownDigest = null
-        ..globs = reader.globsRan.toSet();
 
+      var allInputs = reader.assetsRead;
+      if (node.primaryInput != null) allInputs.add(node.primaryInput);
+      inputsDigest ??= await _computeCombinedDigest(node.inputs, reader);
+
+      // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
+      // builders we can run arbitrary code between updates otherwise, at which
+      // time a node might not be in a valid state.
       _removeOldInputs(node, reader.assetsRead);
       _addNewInputs(node, reader.assetsRead);
-
-      node.previousInputsDigest =
-          inputsDigest ??= await _computeCombinedDigest(node.inputs, reader);
+      node
+        ..needsUpdate = false
+        ..wasOutput = wasOutput
+        ..lastKnownDigest = digest
+        ..globs = reader.globsRan.toSet()
+        ..previousInputsDigest = inputsDigest;
     }
-
-    // Mark the actual outputs as output, and update their digests.
-    await Future.wait(writer.assetsWritten.map((output) async {
-      (_assetGraph.get(output) as GeneratedAssetNode)
-        ..wasOutput = true
-        ..lastKnownDigest = await _reader.digest(output);
-    }));
   }
 
   /// Removes old inputs from [node] based on [updatedInputs], and cleans up all
