@@ -1,12 +1,36 @@
 ## 0.6.1-dev
 
+### New Features
+
 - Add an `enableLowResourcesMode` option to `build` and `watch`, which will
   consume less memory at the cost of slower builds. This is intended for use in
   resource constrained environments such as Travis.
 - Add `createBuildActions`. After finding a list of Builders to run, and defining
   which packages need them applied, use this tool to apply them in the correct
   order across the package graph.
+
+### Deprecations
+
 - Deprecate `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+
+### Internal Improvements
+
+- Outputs will no longer be rebuilt unless their inputs actually changed,
+  previously if any transtive dependency changed they would be invalidated.
+- Switched to using semantic analyzer summaries, this combined with the better
+  input validation means that, ddc/summary builds are much faster on non-api
+  affecting edits (dependent modules will no longer be rebuilt).
+- Build script invalidation is now much faster, which speeds up all builds.
+
+### Bug Fixes
+
+- The build actions are now checked against the previous builds actions, and if
+  they do not match then a full build is performed. Previously the behavior in
+  this case was undefined.
+- Fixed an issue where once an edge between an output and an input was created
+  it was never removed, causing extra builds to happen that weren't necessary.
+- Build actions are now checked for overlapping outputs in non-checked mode,
+  previously this was only an assert.
 
 ## 0.6.0+1
 
