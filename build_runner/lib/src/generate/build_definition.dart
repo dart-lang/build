@@ -75,7 +75,7 @@ class _Loader {
 
     _logger.info('Initializing inputs');
     var inputSources = await _findInputSources();
-    var cacheDirSources = await _getCacheDirSources();
+    var cacheDirSources = await _findCacheDirSources();
     var allSources = inputSources.union(cacheDirSources);
 
     var assetGraph = await _tryReadCachedAssetGraph();
@@ -143,7 +143,7 @@ class _Loader {
 
   /// If `_options.writeToCache` is `true` then this returns the all the sources
   /// found in the cache directory, otherwise it returns an empty set.
-  Future<Set<AssetId>> _getCacheDirSources() async {
+  Future<Set<AssetId>> _findCacheDirSources() async {
     if (_options.writeToCache) {
       return await _listGeneratedAssetIds().toSet();
     }
