@@ -16,9 +16,10 @@ export 'src/package_graph/apply_builders.dart'
         BuilderApplication,
         createBuildActions,
         apply,
-        toPackage,
         toAllPackages,
+        toAny,
         toDependentsOf,
+        toPackage,
         toPackages;
 export 'src/package_graph/package_graph.dart';
 export 'src/server/server.dart' show ServeHandler;
