@@ -69,6 +69,10 @@ main() {
           skipBuildScriptCheck: true);
     });
 
+    tearDown(() async {
+      await options.logListener.cancel();
+    });
+
     group('updates the asset graph', () {
       test('for deleted source and generated nodes', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
@@ -206,6 +210,45 @@ main() {
                 .contains(entryPoint.addExtension('.copy')),
             isFalse);
       });
+    });
+
+    test('invalidates the graph if the build actions change', () async {
+      // Gets rid of console spam during tests, we are setting up a new options
+      // object.
+      await options.logListener.cancel();
+
+      var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
+      var logs = <LogRecord>[];
+      options = new BuildOptions(
+          packageGraph: options.packageGraph,
+          logLevel: Level.WARNING,
+          writeToCache: true,
+          skipBuildScriptCheck: true,
+          onLog: logs.add);
+
+      var originalAssetGraph = await AssetGraph.build(
+          buildActions, <AssetId>[].toSet(), 'a', options.reader);
+
+      await createFile(
+          assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+
+      buildActions
+          .add(new BuildAction(new CopyBuilder(), 'a', inputs: ['.copy']));
+      logs.clear();
+
+      var buildDefinition =
+          await BuildDefinition.prepareWorkspace(options, buildActions);
+      expect(
+          logs.any(
+            (log) =>
+                log.level == Level.WARNING &&
+                log.message.contains('build actions have changed'),
+          ),
+          isTrue);
+
+      var newAssetGraph = buildDefinition.assetGraph;
+      expect(originalAssetGraph.buildActionsDigest,
+          isNot(newAssetGraph.buildActionsDigest));
     });
   });
 }
