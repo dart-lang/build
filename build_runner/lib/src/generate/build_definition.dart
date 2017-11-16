@@ -71,92 +71,55 @@ class _Loader {
   _Loader(this._options, this._buildActions, this._onDelete);
 
   Future<BuildDefinition> prepareWorkspace() async {
-    if (!_options.writeToCache) {
-      final root = _options.packageGraph.root.name;
-      for (final action in _buildActions) {
-        if (action.package != _options.packageGraph.root.name) {
-          throw new InvalidBuildActionException.nonRootPackage(action, root);
-        }
-      }
-    }
-    final assetGraphId =
-        new AssetId(_options.packageGraph.root.name, assetGraphPath);
-    AssetGraph assetGraph;
-    final conflictingOutputs = new Set<AssetId>();
+    _checkBuildActions();
+
     _logger.info('Initializing inputs');
     var inputSources = await _findInputSources();
-    var cacheDirSources = new Set<AssetId>();
-    if (_options.writeToCache) {
-      cacheDirSources.addAll(await _listGeneratedAssetIds().toList());
-    }
+    var cacheDirSources = await _findCacheDirSources();
     var allSources = inputSources.union(cacheDirSources);
-    DigestAssetReader reader = _options.reader;
+
+    var assetGraph = await _tryReadCachedAssetGraph();
+
     BuildScriptUpdates buildScriptUpdates;
-    if (await _options.reader.canRead(assetGraphId)) {
-      assetGraph = await logTimedAsync(_logger, 'Reading cached asset graph',
-          () => _readAssetGraph(assetGraphId));
-    }
-
-    // Wraps `original` in a `BuildCacheWriter` if `_options.writeToCache` is
-    // enabled.
-    RunnerAssetWriter maybeWrapWriter(RunnerAssetWriter original) {
-      assert(assetGraph != null);
-      if (!_options.writeToCache) return original;
-      return new BuildCacheWriter(
-          original, assetGraph, _options.packageGraph.root.name);
-    }
-
     if (assetGraph != null) {
-      var updates = await _findUpdates(
+      var updates = await _updateAssetGraph(
           assetGraph, inputSources, cacheDirSources, allSources);
-      await assetGraph.updateAndInvalidate(
-          _buildActions,
-          updates,
-          _options.packageGraph.root.name,
-          (id) => _delete(id, maybeWrapWriter(_options.writer)),
-          reader);
 
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
-
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
         _logger.warning('Invalidating asset graph due to build script update');
         assetGraph = null;
         buildScriptUpdates = null;
-        updates.clear();
       }
     }
 
     if (assetGraph == null) {
+      Set<AssetId> conflictingOutputs;
+
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
-            _options.packageGraph.root.name, reader);
+            _options.packageGraph.root.name, _options.reader);
         buildScriptUpdates =
             await BuildScriptUpdates.create(_options, assetGraph);
-        conflictingOutputs
-            .addAll(assetGraph.outputs.where(allSources.contains).toSet());
-
-        await logTimedAsync(
-            _logger,
-            'Checking for unexpected pre-existing outputs.',
-            () => _initialBuildCleanup(
-                conflictingOutputs,
-                _options.deleteFilesByDefault,
-                maybeWrapWriter(_options.writer)));
+        conflictingOutputs =
+            assetGraph.outputs.where(allSources.contains).toSet();
       });
-    }
 
-    var writer = maybeWrapWriter(_options.writer);
-    if (_options.writeToCache) {
-      reader = new BuildCacheReader(
-          reader, assetGraph, _options.packageGraph.root.name);
+      await logTimedAsync(
+          _logger,
+          'Checking for unexpected pre-existing outputs.',
+          () => _initialBuildCleanup(
+              conflictingOutputs,
+              _options.deleteFilesByDefault,
+              _maybeWrapWriter(_options.writer, assetGraph)));
     }
 
     return new BuildDefinition._(
         assetGraph,
-        reader,
-        writer,
+        _maybeWrapReader(_options.reader, assetGraph),
+        _maybeWrapWriter(_options.writer, assetGraph),
         _options.packageGraph,
         _options.deleteFilesByDefault,
         new ResourceManager(),
@@ -165,17 +128,89 @@ class _Loader {
         _onDelete);
   }
 
-  /// Reads in an [AssetGraph] from disk.
-  Future<AssetGraph> _readAssetGraph(AssetId assetGraphId) async {
-    try {
-      return new AssetGraph.deserialize(
-          JSON.decode(await _options.reader.readAsString(assetGraphId)) as Map);
-    } on AssetGraphVersionException catch (_) {
-      // Start fresh if the cached asset_graph version doesn't match up with
-      // the current version. We don't currently support old graph versions.
-      _logger.info('Throwing away cached asset graph due to version mismatch.');
+  /// Checks that the [_buildActions] are valid based on the
+  /// `_options.writeToCache` setting.
+  void _checkBuildActions() {
+    if (!_options.writeToCache) {
+      final root = _options.packageGraph.root.name;
+      for (final action in _buildActions) {
+        if (action.package != _options.packageGraph.root.name) {
+          throw new InvalidBuildActionException.nonRootPackage(action, root);
+        }
+      }
+    }
+  }
+
+  /// If `_options.writeToCache` is `true` then this returns the all the sources
+  /// found in the cache directory, otherwise it returns an empty set.
+  Future<Set<AssetId>> _findCacheDirSources() {
+    if (_options.writeToCache) {
+      return _listGeneratedAssetIds().toSet();
+    }
+    return new Future.value(new Set<AssetId>());
+  }
+
+  /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
+  /// fails for any reason.
+  Future<AssetGraph> _tryReadCachedAssetGraph() async {
+    final assetGraphId =
+        new AssetId(_options.packageGraph.root.name, assetGraphPath);
+    if (!await _options.reader.canRead(assetGraphId)) {
       return null;
     }
+
+    return logTimedAsync(_logger, 'Reading cached asset graph', () async {
+      try {
+        return new AssetGraph.deserialize(JSON
+            .decode(await _options.reader.readAsString(assetGraphId)) as Map);
+      } on AssetGraphVersionException catch (_) {
+        // Start fresh if the cached asset_graph version doesn't match up with
+        // the current version. We don't currently support old graph versions.
+        _logger.warning(
+            'Throwing away cached asset graph due to version mismatch.');
+        return null;
+      }
+    });
+  }
+
+  /// Updates [assetGraph] based on a the new view of the world.
+  ///
+  /// Once done, this returns a map of [AssetId] to [ChangeType] for all the
+  /// changes.
+  Future<Map<AssetId, ChangeType>> _updateAssetGraph(
+      AssetGraph assetGraph,
+      Set<AssetId> inputSources,
+      Set<AssetId> cacheDirSources,
+      Set<AssetId> allSources) async {
+    var updates = await _findUpdates(
+        assetGraph, inputSources, cacheDirSources, allSources);
+    await assetGraph.updateAndInvalidate(
+        _buildActions,
+        updates,
+        _options.packageGraph.root.name,
+        (id) => _delete(id, _maybeWrapWriter(_options.writer, assetGraph)),
+        _maybeWrapReader(_options.reader, assetGraph));
+    return updates;
+  }
+
+  /// Wraps [original] in a [BuildCacheWriter] if `_options.writeToCache` is
+  /// `true`.
+  RunnerAssetWriter _maybeWrapWriter(
+      RunnerAssetWriter original, AssetGraph assetGraph) {
+    assert(assetGraph != null);
+    if (!_options.writeToCache) return original;
+    return new BuildCacheWriter(
+        original, assetGraph, _options.packageGraph.root.name);
+  }
+
+  /// Wraps [original] in a [BuildCacheReader] if `_options.writeToCache` is
+  /// `true`.
+  DigestAssetReader _maybeWrapReader(
+      DigestAssetReader original, AssetGraph assetGraph) {
+    assert(assetGraph != null);
+    if (!_options.writeToCache) return original;
+    return new BuildCacheReader(
+        original, assetGraph, _options.packageGraph.root.name);
   }
 
   /// Finds the asset changes which have happened while unwatched between builds
