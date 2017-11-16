@@ -3,113 +3,146 @@ Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito).
 [![Pub](https://img.shields.io/pub/v/mockito.svg)]()
 [![Build Status](https://travis-ci.org/dart-lang/mockito.svg?branch=master)](https://travis-ci.org/dart-lang/mockito)
 
-Current mock libraries suffer from specifying method names as strings, which cause a lot of problems:
-  * Poor refactoring support: rename method and you need manually search/replace it's usage in when/verify clauses.
-  * Poor support from IDE: no code-completion, no hints on argument types, can't jump to definition
+Current mock libraries suffer from specifying method names as strings, which
+cause a lot of problems:
 
-Dart-mockito fixes it - stubbing and verifying are first-class citizens.
+* Poor refactoring support: rename method and you need manually search/replace
+  it's usage in when/verify clauses.
+* Poor support from IDE: no code-completion, no hints on argument types, can't
+  jump to definition
+
+Dart's mockito package fixes these issues - stubbing and verifying are
+first-class citizens.
 
 ## Let's create mocks
+
 ```dart
 import 'package:mockito/mockito.dart';
 
-//Real class
+// Real class
 class Cat {
   String sound() => "Meow";
   bool eatFood(String food, {bool hungry}) => true;
   int walk(List<String> places);
-  void sleep(){}
+  void sleep() {}
+  void hunt(String place, String prey) {}
   int lives = 9;
 }
 
-//Mock class
+// Mock class
 class MockCat extends Mock implements Cat {}
 
-//mock creation
+// mock creation
 var cat = new MockCat();
 ```
 
 ## Let's verify some behaviour!
+
 ```dart
 //using mock object
 cat.sound();
 //verify interaction
 verify(cat.sound());
 ```
-Once created, mock will remember all interactions. Then you can selectively verify whatever interaction you are
-interested in.
+
+Once created, mock will remember all interactions. Then you can selectively
+verify whatever interaction you are interested in.
 
 ## How about some stubbing?
+
 ```dart
-//unstubbed methods return null
+// Unstubbed methods return null:
 expect(cat.sound(), nullValue);
-//stubbing - before execution
+
+// Stubbing - before execution:
 when(cat.sound()).thenReturn("Purr");
 expect(cat.sound(), "Purr");
-//you can call it again
+
+// You can call it again:
 expect(cat.sound(), "Purr");
-//let's change stub
+
+// Let's change the stub:
 when(cat.sound()).thenReturn("Meow");
 expect(cat.sound(), "Meow");
-//you can stub getters
+
+// You can stub getters:
 when(cat.lives).thenReturn(9);
 expect(cat.lives, 9);
-//you can stub a method to throw
+
+// You can stub a method to throw:
 when(cat.lives).thenThrow(new RangeError('Boo'));
 expect(() => cat.lives, throwsRangeError);
-//we can calculate a response at call time:
+
+// We can calculate a response at call time:
 var responses = ["Purr", "Meow"];
 when(cat.sound()).thenAnswer(() => responses.removeAt(0));
 expect(cat.sound(), "Purr");
 expect(cat.sound(), "Meow");
 ```
 
-By default, for all methods that return value, mock returns null.
-Stubbing can be overridden: for example common stubbing can go to fixture setup but the test methods can override it.
-Please note that overridding stubbing is a potential code smell that points out too much stubbing.
-Once stubbed, the method will always return stubbed value regardless of how many times it is called.
-Last stubbing is more important - when you stubbed the same method with the same arguments many times. Other words: the
-order of stubbing matters but it is only meaningful rarely, e.g. when stubbing exactly the same method calls or
-sometimes when argument matchers are used, etc.
+By default, for all methods that return a value, `mock` returns `null`.
+Stubbing can be overridden: for example common stubbing can go to fixture setup
+but the test methods can override it.  Please note that overridding stubbing is
+a potential code smell that points out too much stubbing.  Once stubbed, the
+method will always return stubbed value regardless of how many times it is
+called.  Last stubbing is more important, when you stubbed the same method with
+the same arguments many times. In other words: the order of stubbing matters,
+but it is meaningful rarely, e.g. when stubbing exactly the same method calls
+or sometimes when argument matchers are used, etc.
 
 ## Argument matchers
+
 ```dart
-//you can use arguments itself...
+// You can use arguments itself:
 when(cat.eatFood("fish")).thenReturn(true);
-//..or collections
+
+// ... or collections:
 when(cat.walk(["roof","tree"])).thenReturn(2);
-//..or matchers
+
+// ... or matchers:
 when(cat.eatFood(argThat(startsWith("dry"))).thenReturn(false);
-//..or mix aguments with matchers
+
+// ... or mix aguments with matchers:
 when(cat.eatFood(argThat(startsWith("dry")), true).thenReturn(true);
 expect(cat.eatFood("fish"), isTrue);
 expect(cat.walk(["roof","tree"]), equals(2));
 expect(cat.eatFood("dry food"), isFalse);
 expect(cat.eatFood("dry food", hungry: true), isTrue);
-//you can also verify using an argument matcher
+
+// You can also verify using an argument matcher:
 verify(cat.eatFood("fish"));
 verify(cat.walk(["roof","tree"]));
 verify(cat.eatFood(argThat(contains("food"))));
-//you can verify setters
+
+// You can verify setters:
 cat.lives = 9;
 verify(cat.lives=9);
 ```
-By default equals matcher is used to argument matching (since 0.11.0). It simplifies matching for collections as
-arguments. If you need more strict matching consider use `argThat(identical(arg))`.
-Argument matchers allow flexible verification or stubbing
+
+If an argument other than an ArgMatcher (like `any`, `anyNamed()`, `argThat`,
+`captureArg`, etc.) is passed to a mock method, then the `equals` matcher is
+used for argument matching. If you need more strict matching consider use
+`argThat(identical(arg))`.
+
 
 ## Verifying exact number of invocations / at least x / never
+
 ```dart
 cat.sound();
 cat.sound();
-//exact number of invocations
+
+// Exact number of invocations:
 verify(cat.sound()).called(2);
-//or using matcher
+
+// Or using matcher:
 verify(cat.sound()).called(greaterThan(1));
-//or never called
+
+// Or never called:
 verifyNever(cat.eatFood(any));
 ```
+
 ## Verification in order
+
 ```dart
 cat.eatFood("Milk");
 cat.sound();
@@ -120,15 +153,18 @@ verifyInOrder([
   cat.eatFood("Fish")
 ]);
 ```
-Verification in order is flexible - you don't have to verify all interactions one-by-one but only those that you are
-interested in testing in order.
+
+Verification in order is flexible - you don't have to verify all interactions
+one-by-one but only those that you are interested in testing in order.
 
 ## Making sure interaction(s) never happened on mock
+
 ```dart
   verifyZeroInteractions(cat);
 ```
 
 ## Finding redundant invocations
+
 ```dart
 cat.sound();
 verify(cat.sound());
@@ -136,38 +172,45 @@ verifyNoMoreInteractions(cat);
 ```
 
 ## Capturing arguments for further assertions
+
 ```dart
-//simple capture
+// Simple capture:
 cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureAny)).captured.single, "Fish");
-//capture multiple calls
+
+// Capture multiple calls:
 cat.eatFood("Milk");
 cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureAny)).captured, ["Milk", "Fish"]);
-//conditional capture
+
+// Conditional capture:
 cat.eatFood("Milk");
 cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureThat(startsWith("F")).captured, ["Fish"]);
 ```
 
 ## Waiting for an interaction
+
 ```dart
-//waiting for a call
+// Waiting for a call:
 cat.eatFood("Fish");
 await untilCalled(cat.chew()); //completes when cat.chew() is called
-//waiting for a call that has already happened
+
+// Waiting for a call that has already happened:
 cat.eatFood("Fish");
 await untilCalled(cat.eatFood(any)); //will complete immediately
 ```
 
 ## Resetting mocks
+
 ```dart
-//clearing collected interactions
+// Clearing collected interactions:
 cat.eatFood("Fish");
 clearInteractions(cat);
 cat.eatFood("Fish");
 verify(cat.eatFood("Fish")).called(1);
-//resetting stubs and collected interactions
+
+// Resetting stubs and collected interactions:
 when(cat.eatFood("Fish")).thenReturn(true);
 cat.eatFood("Fish");
 reset(cat);
@@ -176,22 +219,28 @@ expect(cat.eatFood("Fish"), false);
 ```
 
 ## Spy
+
 ```dart
-//spy creation
+// Spy creation:
 var cat = spy(new MockCat(), new Cat());
-//stubbing - before execution
+
+// Stubbing - before execution:
 when(cat.sound()).thenReturn("Purr");
-//using mocked interaction
-expect(cat.sound(), "Purr");  
-//using real object
-expect(cat.lives, 9);   
+
+// Using mocked interaction:
+expect(cat.sound(), "Purr");
+
+// Using a real object:
+expect(cat.lives, 9);
 ```
 
 ## Debugging
+
 ```dart
-//print all collected invocations of any mock methods of a list of mock objects
+// Print all collected invocations of any mock methods of a list of mock objects:
 logInvocations([catOne, catTwo]);
-//throw every time that a mock method is called without a stub being matched
+
+// Throw every time that a mock method is called without a stub being matched:
 throwOnMissingStub(cat);
 ```
 
@@ -277,6 +326,7 @@ when(cat.eatFood(
 [Strong mode]: https://github.com/dart-lang/dev_compiler/blob/master/STRONG_MODE.md
 
 ## How it works
+
 The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to catch
 all method invocations, and returns the value that you have configured beforehand with
 `when()` calls.
@@ -284,9 +334,10 @@ all method invocations, and returns the value that you have configured beforehan
 The implementation of `when()` is a bit more tricky. Take this example:
 
 ```dart
-//unstubbed methods return null
+// Unstubbed methods return null:
 expect(cat.sound(), nullValue);
-//stubbing - before execution
+
+// Stubbing - before execution:
 when(cat.sound()).thenReturn("Purr");
 ```
 
@@ -306,6 +357,7 @@ The same goes for "chaining" mock objects in a test call. This will fail:
 ```dart
 var mockUtils = new MockUtils();
 var mockStringUtils = new MockStringUtils();
+
 // Setting up mockUtils.stringUtils to return a mock StringUtils implementation
 when(mockUtils.stringUtils).thenReturn(mockStringUtils);
 
