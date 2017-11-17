@@ -15,6 +15,7 @@ import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   group('ServeHandler', () {
@@ -117,9 +118,9 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
   }));
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
-  final rootPackage = new PackageNode.noPubspec('a',
-      path: path.absolute('a'), includes: ['**']);
-  final packageGraph = new PackageGraph.fromRoot(rootPackage);
+  final packageGraph = buildPackageGraph('a', {
+    package('a', path: path.absolute('a'), includes: ['**']): []
+  });
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   return watch_impl.watch(buildActions,

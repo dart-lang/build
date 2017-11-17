@@ -7,6 +7,8 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
 
+import '../common/package_graphs.dart';
+
 void main() {
   PackageGraph graph;
 
@@ -159,59 +161,45 @@ void main() {
 
   group('orderedPackages', () {
     test('with two sub trees', () {
-      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
-      var left1 =
-          new PackageNode('left1', '1.0.0', PackageDependencyType.pub, null);
-      var left2 =
-          new PackageNode('left2', '1.0.0', PackageDependencyType.pub, null);
-      var right1 =
-          new PackageNode('right1', '1.0.0', PackageDependencyType.pub, null);
-      var right2 =
-          new PackageNode('right2', '1.0.0', PackageDependencyType.pub, null);
-      a.dependencies.addAll([left1, right1]);
-      left1.dependencies.add(left2);
-      right1.dependencies.add(right2);
-      var graph = new PackageGraph.fromRoot(a);
+      var graph = buildPackageGraph('a', {
+        package('a'): ['left1', 'right1'],
+        package('left1'): ['left2'],
+        package('left2'): [],
+        package('right1'): ['right2'],
+        package('right2'): []
+      });
       var inOrder = graph.orderedPackages.map((n) => n.name).toList();
       expect(inOrder, containsAllInOrder(['left2', 'left1', 'a']));
       expect(inOrder, containsAllInOrder(['right2', 'right1', 'a']));
     });
 
     test('includes root last in cycle', () {
-      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
-      var b = new PackageNode('b', '1.0.0', PackageDependencyType.path, null);
-      a.dependencies.add(b);
-      b.dependencies.add(a);
-      var graph = new PackageGraph.fromRoot(a);
+      var graph = buildPackageGraph('a', {
+        package('a'): ['b'],
+        package('b'): ['a']
+      });
       var inOrder = graph.orderedPackages.map((n) => n.name).toList();
       expect(inOrder, ['b', 'a']);
     });
 
     test('handles cycles from beneath the root', () {
-      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
-      var b = new PackageNode('b', '1.0.0', PackageDependencyType.path, null);
-      var c = new PackageNode('c', '1.0.0', PackageDependencyType.path, null);
-      a.dependencies.add(b);
-      b.dependencies.add(c);
-      c.dependencies.add(b);
-      var graph = new PackageGraph.fromRoot(a);
+      var graph = buildPackageGraph('a', {
+        package('a'): ['b'],
+        package('b'): ['c'],
+        package('c'): ['b']
+      });
       var inOrder = graph.orderedPackages.map((n) => n.name).toList();
       expect(inOrder, containsAllInOrder(['b', 'a']));
       expect(inOrder, containsAllInOrder(['c', 'a']));
     });
 
     test('handles diamonds', () {
-      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
-      var left =
-          new PackageNode('left', '1.0.0', PackageDependencyType.path, null);
-      var right =
-          new PackageNode('right', '1.0.0', PackageDependencyType.path, null);
-      var sharedDep = new PackageNode(
-          'sharedDep', '1.0.0', PackageDependencyType.path, null);
-      a.dependencies.addAll([left, right]);
-      left.dependencies.add(sharedDep);
-      right.dependencies.add(sharedDep);
-      var graph = new PackageGraph.fromRoot(a);
+      var graph = buildPackageGraph('a', {
+        package('a'): ['left', 'right'],
+        package('left'): ['sharedDep'],
+        package('right'): ['sharedDep'],
+        package('sharedDep'): []
+      });
       var inOrder = graph.orderedPackages.map((n) => n.name).toList();
       expect(inOrder, hasLength(4));
     });
@@ -219,22 +207,14 @@ void main() {
 
   group('dependentsOf', () {
     test('with two sub trees', () {
-      var a = new PackageNode('a', '1.0.0', PackageDependencyType.path, null);
-      var left1 =
-          new PackageNode('left1', '1.0.0', PackageDependencyType.pub, null);
-      var left2 =
-          new PackageNode('left2', '1.0.0', PackageDependencyType.pub, null);
-      var right1 =
-          new PackageNode('right1', '1.0.0', PackageDependencyType.pub, null);
-      var right2 =
-          new PackageNode('right2', '1.0.0', PackageDependencyType.pub, null);
-      var needle =
-          new PackageNode('needle', '1.0.0', PackageDependencyType.pub, null);
-      a.dependencies.addAll([left1, right1, needle]);
-      left1.dependencies.addAll([left2, needle]);
-      right1.dependencies.add(right2);
-      right2.dependencies.add(needle);
-      var graph = new PackageGraph.fromRoot(a);
+      var graph = buildPackageGraph('a', {
+        package('a'): ['left1', 'right1', 'needle'],
+        package('left1'): ['left2', 'needle'],
+        package('left2'): [],
+        package('right1'): ['right2'],
+        package('right2'): ['needle'],
+        package('needle'): []
+      });
       var dependents = graph.dependentsOf('needle').map((n) => n.name).toList();
       expect(dependents, containsAllInOrder(['left1', 'a']));
       expect(dependents, containsAllInOrder(['right2', 'a']));

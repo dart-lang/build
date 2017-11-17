@@ -14,6 +14,7 @@ import 'package:build_runner/src/generate/build_impl.dart' as build_impl;
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
+import 'package_graphs.dart';
 
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
@@ -89,10 +90,9 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     }
   });
 
-  if (packageGraph == null) {
-    var rootPackage = new PackageNode.noPubspec('a', includes: ['**']);
-    packageGraph = new PackageGraph.fromRoot(rootPackage);
-  }
+  packageGraph ??= buildPackageGraph('a', {
+    package('a', includes: ['**']): []
+  });
 
   var result = await build_impl.build(buildActions,
       deleteFilesByDefault: deleteFilesByDefault,
