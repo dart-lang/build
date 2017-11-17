@@ -161,7 +161,7 @@ void main() {
 
   group('orderedPackages', () {
     test('with two sub trees', () {
-      var graph = buildGraph('a', {
+      var graph = buildPackageGraph('a', {
         package('a'): ['left1', 'right1'],
         package('left1'): ['left2'],
         package('left2'): [],
@@ -174,7 +174,7 @@ void main() {
     });
 
     test('includes root last in cycle', () {
-      var graph = buildGraph('a', {
+      var graph = buildPackageGraph('a', {
         package('a'): ['b'],
         package('b'): ['a']
       });
@@ -183,7 +183,7 @@ void main() {
     });
 
     test('handles cycles from beneath the root', () {
-      var graph = buildGraph('a', {
+      var graph = buildPackageGraph('a', {
         package('a'): ['b'],
         package('b'): ['c'],
         package('c'): ['b']
@@ -194,7 +194,7 @@ void main() {
     });
 
     test('handles diamonds', () {
-      var graph = buildGraph('a', {
+      var graph = buildPackageGraph('a', {
         package('a'): ['left', 'right'],
         package('left'): ['sharedDep'],
         package('right'): ['sharedDep'],
@@ -207,7 +207,7 @@ void main() {
 
   group('dependentsOf', () {
     test('with two sub trees', () {
-      var graph = buildGraph('a', {
+      var graph = buildPackageGraph('a', {
         package('a'): ['left1', 'right1', 'needle'],
         package('left1'): ['left2', 'needle'],
         package('left2'): [],

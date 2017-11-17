@@ -90,7 +90,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     }
   });
 
-  packageGraph ??= buildGraph('a', {
+  packageGraph ??= buildPackageGraph('a', {
     package('a', includes: ['**']): []
   });
 

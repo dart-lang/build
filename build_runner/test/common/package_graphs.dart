@@ -4,7 +4,7 @@
 
 import 'package:build_runner/build_runner.dart';
 
-PackageGraph buildGraph(
+PackageGraph buildPackageGraph(
     String rootPackage, Map<PackageNode, Iterable<String>> packages) {
   var packagesByName = new Map<String, PackageNode>.fromIterable(packages.keys,
       key: (p) => (p as PackageNode).name);

@@ -212,7 +212,7 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      final packageGraph = buildGraph('a', {
+      final packageGraph = buildPackageGraph('a', {
         package('a', path: 'a/'): ['b'],
         package('b', path: 'a/b', includes: ['**']): []
       });
@@ -227,7 +227,7 @@ void main() {
       PackageGraph packageGraph;
 
       setUp(() {
-        packageGraph = buildGraph('a', {
+        packageGraph = buildPackageGraph('a', {
           package('a', path: 'a/'): ['b'],
           package('b', path: 'a/b/', includes: ['**']): []
         });
@@ -304,7 +304,7 @@ void main() {
     });
 
     test('can glob files from packages', () async {
-      final packageGraph = buildGraph('a', {
+      final packageGraph = buildPackageGraph('a', {
         package('a', path: 'a/', includes: ['**']): ['b'],
         package('b', path: 'a/b/'): []
       });
@@ -361,7 +361,7 @@ void main() {
     });
 
     test('won\'t try to delete files from other packages', () async {
-      final packageGraph = buildGraph('a', {
+      final packageGraph = buildPackageGraph('a', {
         package('a', path: 'a/'): ['b'],
         package('b', path: 'a/b', includes: ['**']): []
       });

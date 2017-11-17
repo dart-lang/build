@@ -28,7 +28,8 @@ void main() {
   final path = p.absolute('example');
 
   setUp(() async {
-    final graph = buildGraph('example', {package('example', path: path): []});
+    final graph =
+        buildPackageGraph('example', {package('example', path: path): []});
     writer = new InMemoryRunnerAssetWriter();
     reader = new InMemoryRunnerAssetReader(writer.assets, 'example');
     reader.cacheStringAsset(

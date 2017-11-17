@@ -18,7 +18,7 @@ import '../common/package_graphs.dart';
 void main() {
   group('PackageGraphWatcher', () {
     test('should aggregate changes from all nodes', () {
-      final graph = buildGraph('a', {
+      final graph = buildPackageGraph('a', {
         package('a', path: '/g/a'): ['b'],
         package('b', path: '/g/b'): []
       });
@@ -43,7 +43,7 @@ void main() {
     });
 
     test('should avoid duplicate changes with nested packages', () {
-      final graph = buildGraph('a', {
+      final graph = buildPackageGraph('a', {
         package('a', path: '/g/a'): ['b'],
         package('b', path: '/g/a/b'): []
       });

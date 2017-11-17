@@ -154,7 +154,7 @@ void main() {
 
       test('ignores events from nested packages', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        final packageGraph = buildGraph('a', {
+        final packageGraph = buildPackageGraph('a', {
           package('a', path: path.absolute('a'), includes: ['**']): ['b'],
           package('b', path: path.absolute('a', 'b')): []
         });
@@ -407,7 +407,7 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
   });
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
-  packageGraph ??= buildGraph('a', {
+  packageGraph ??= buildPackageGraph('a', {
     package('a', path: path.absolute('a'), includes: ['**']): []
   });
   final watcherFactory = (String path) => new FakeWatcher(path);

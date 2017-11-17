@@ -21,7 +21,8 @@ void main() {
           )
         ],
         {},
-        packageGraph: buildGraph('root_package', {package('root_package'): []}),
+        packageGraph:
+            buildPackageGraph('root_package', {package('root_package'): []}),
       );
     } catch (e) {
       // TODO: Write a throwsAWith(...) matcher?
@@ -43,7 +44,7 @@ void main() {
           'a|lib/a.dart': '',
           'a|lib/a.dart.copy': '',
         },
-        packageGraph: buildGraph('a', {package('a'): []}),
+        packageGraph: buildPackageGraph('a', {package('a'): []}),
         deleteFilesByDefault: false,
       ),
       throwsA(const isInstanceOf<UnexpectedExistingOutputsException>()),
