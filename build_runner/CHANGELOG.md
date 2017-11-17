@@ -31,6 +31,8 @@
   it was never removed, causing extra builds to happen that weren't necessary.
 - Build actions are now checked for overlapping outputs in non-checked mode,
   previously this was only an assert.
+- Fixed an issue where nodes could get in an inconsistent state for short
+  periods of time, leading to various errors.
 
 ## 0.6.0+1
 

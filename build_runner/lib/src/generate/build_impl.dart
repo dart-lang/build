@@ -11,6 +11,7 @@ import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
@@ -249,7 +250,7 @@ class BuildImpl {
       // actually output. If it wasn't then we just return an empty list here.
       var inputNode = _assetGraph.get(input);
       if (inputNode is GeneratedAssetNode) {
-        // Make sure the `inputNode` is up to date, generate run it.
+        // Make sure the `inputNode` is up to date, and rebuild it if not.
         if (inputNode.needsUpdate) {
           await _runLazyPhaseForInput(
               inputNode.phaseNumber, inputNode.primaryInput, resourceManager);
@@ -379,7 +380,9 @@ class BuildImpl {
     // We only check the first output, because all outputs share the same inputs
     // and invalidation state.
     if (!node.needsUpdate) return false;
-    if (node.previousInputsDigest == null) {
+    // TODO: Don't assume the worst for globs
+    // https://github.com/dart-lang/build/issues/624
+    if (node.previousInputsDigest == null || node.globs.isNotEmpty) {
       return true;
     }
     var digest = await _computeCombinedDigest(node.inputs, reader);
@@ -431,28 +434,31 @@ class BuildImpl {
       SingleStepReader reader, AssetWriterSpy writer) async {
     // All inputs are the same, so we only compute this once, but lazily.
     Digest inputsDigest;
+    Set<Glob> globsRan = reader.globsRan.toSet();
 
     for (var output in declaredOutputs) {
+      var wasOutput = writer.assetsWritten.contains(output);
+      var digest = wasOutput ? await _reader.digest(output) : null;
       var node = _assetGraph.get(output) as GeneratedAssetNode;
-      node
-        ..needsUpdate = false
-        ..wasOutput = false
-        ..lastKnownDigest = null
-        ..globs = reader.globsRan.toSet();
 
+      inputsDigest ??= await () {
+        var allInputs = reader.assetsRead.toSet();
+        if (node.primaryInput != null) allInputs.add(node.primaryInput);
+        return _computeCombinedDigest(allInputs, reader);
+      }();
+
+      // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
+      // builders we can run arbitrary code between updates otherwise, at which
+      // time a node might not be in a valid state.
       _removeOldInputs(node, reader.assetsRead);
       _addNewInputs(node, reader.assetsRead);
-
-      node.previousInputsDigest =
-          inputsDigest ??= await _computeCombinedDigest(node.inputs, reader);
+      node
+        ..needsUpdate = false
+        ..wasOutput = wasOutput
+        ..lastKnownDigest = digest
+        ..globs = globsRan
+        ..previousInputsDigest = inputsDigest;
     }
-
-    // Mark the actual outputs as output, and update their digests.
-    await Future.wait(writer.assetsWritten.map((output) async {
-      (_assetGraph.get(output) as GeneratedAssetNode)
-        ..wasOutput = true
-        ..lastKnownDigest = await _reader.digest(output);
-    }));
   }
 
   /// Removes old inputs from [node] based on [updatedInputs], and cleans up all
