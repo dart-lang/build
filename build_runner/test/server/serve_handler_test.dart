@@ -14,6 +14,7 @@ import 'package:build_runner/src/generate/watch_impl.dart';
 import 'package:build_runner/src/server/server.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   ServeHandler serveHandler;
@@ -22,8 +23,7 @@ void main() {
 
   setUp(() async {
     reader = new InMemoryRunnerAssetReader();
-    var packageGraph =
-        new PackageGraph.fromRoot(new PackageNode.noPubspec('a'));
+    final packageGraph = buildGraph('a', {package('a'): []});
     watchImpl = new MockWatchImpl(reader, packageGraph);
     serveHandler = await createServeHandler(watchImpl);
     watchImpl.addFutureResult(

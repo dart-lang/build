@@ -14,6 +14,7 @@ import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
@@ -211,13 +212,10 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, 'a/b/',
-          includes: ['**']);
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-            ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
+      final packageGraph = buildGraph('a', {
+        package('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b', includes: ['**']): []
+      });
       expect(
           testActions(
               [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
@@ -229,13 +227,10 @@ void main() {
       PackageGraph packageGraph;
 
       setUp(() {
-        var packageB = new PackageNode(
-            'b', '0.1.0', PackageDependencyType.path, 'a/b/',
-            includes: ['**']);
-        var packageA =
-            new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-              ..dependencies.add(packageB);
-        packageGraph = new PackageGraph.fromRoot(packageA);
+        packageGraph = buildGraph('a', {
+          package('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b/', includes: ['**']): []
+        });
       });
       test('can output files in non-root packages', () async {
         await testActions(
@@ -309,13 +304,10 @@ void main() {
     });
 
     test('can glob files from packages', () async {
-      var packageB =
-          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, 'a/',
-          includes: ['**'])
-        ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
+      final packageGraph = buildGraph('a', {
+        package('a', path: 'a/', includes: ['**']): ['b'],
+        package('b', path: 'a/b/'): []
+      });
 
       var buildActions = [
         new BuildAction(globBuilder, 'a'),
@@ -369,13 +361,10 @@ void main() {
     });
 
     test('won\'t try to delete files from other packages', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, 'a/b/',
-          includes: ['**']);
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-            ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
+      final packageGraph = buildGraph('a', {
+        package('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b', includes: ['**']): []
+      });
       var writer = new InMemoryRunnerAssetWriter()
         ..onDelete = (AssetId assetId) {
           if (assetId.package != 'a') {

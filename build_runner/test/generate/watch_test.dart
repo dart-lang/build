@@ -17,6 +17,7 @@ import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
@@ -153,13 +154,10 @@ void main() {
 
       test('ignores events from nested packages', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var packageA = new PackageNode(
-            'a', '0.1.0', PackageDependencyType.path, path.absolute('a'),
-            includes: ['**']);
-        var packageB = new PackageNode(
-            'b', '0.1.0', PackageDependencyType.path, path.absolute('a', 'b'));
-        packageA.dependencies.add(packageB);
-        var packageGraph = new PackageGraph.fromRoot(packageA);
+        final packageGraph = buildGraph('a', {
+          package('a', path: path.absolute('a'), includes: ['**']): ['b'],
+          package('b', path: path.absolute('a', 'b')): []
+        });
 
         var results = new StreamQueue(startWatch([
           copyABuildAction,
@@ -409,10 +407,9 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
   });
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
-  if (packageGraph == null) {
-    packageGraph ??= new PackageGraph.fromRoot(new PackageNode.noPubspec('a',
-        path: path.absolute('a'), includes: ['**']));
-  }
+  packageGraph ??= buildGraph('a', {
+    package('a', path: path.absolute('a'), includes: ['**']): []
+  });
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   var buildState = watch_impl.watch(buildActions,
