@@ -271,17 +271,26 @@ class _Loader {
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> _findInputSources() async {
-    var inputSets = _options.packageGraph.allPackages.values.map((package) =>
-        new InputSet(
-            package.name,
-            package.name == _options.packageGraph.root.name
-                ? const ['**']
-                : const ['lib/**']));
+    var inputSets =
+        _options.packageGraph.allPackages.values.map(_inputSetForPackage);
     var sources = (await _listAssetIds(inputSets).toSet())
       ..addAll(await _options.reader
           .findAssets(new Glob('$entryPointDir/**'))
           .toSet());
     return sources;
+  }
+
+  /// Only allow reads into `lib/` for non-root packages.
+  ///
+  /// As an optimization, also limit the SDK package to the files necessary for
+  /// DDC.
+  InputSet _inputSetForPackage(PackageNode package) {
+    List<String> includes = package.name == r'$sdk'
+        ? const ['lib/dev_compiler/**.js']
+        : package.name == _options.packageGraph.root.name
+            ? const ['**']
+            : const ['lib/**'];
+    return new InputSet(package.name, includes);
   }
 
   Stream<AssetId> _listAssetIds(Iterable<InputSet> inputSets) async* {
