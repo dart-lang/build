@@ -119,7 +119,7 @@ Future<ServeHandler> createHandler(List<BuildAction> buildActions,
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
   final packageGraph = buildPackageGraph('a', {
-    package('a', path: path.absolute('a'), includes: ['**']): []
+    package('a', path: path.absolute('a')): []
   });
   final watcherFactory = (String path) => new FakeWatcher(path);
 
