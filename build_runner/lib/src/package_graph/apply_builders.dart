@@ -28,29 +28,58 @@ PackageFilter toPackages(Set<String> packages) =>
 PackageFilter toAll(Iterable<PackageFilter> filters) =>
     (p) => filters.any((f) => f(p));
 
-/// Indcates that [builder] should be run against all packages matching
+typedef Builder BuilderFactory(List<String> args);
+
+/// Apply [builder] to the root package.
+BuilderApplication applyToRoot(Builder builder,
+        {List<String> inputs, List<String> excludes}) =>
+    new BuilderApplication._('', '', [(_) => builder], null,
+        inputs: inputs, excludes: excludes);
+
+/// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
 ///
 /// If the builder should only run on a subset of files within a package pass
 /// globs to [inputs] or [excludes];
-BuilderApplication apply(Builder builder, PackageFilter filter,
+BuilderApplication apply(String providingPackage, String builderName,
+        List<BuilderFactory> builderFactories, PackageFilter filter,
         {List<String> inputs, List<String> excludes, bool isOptional}) =>
-    new BuilderApplication(builder, filter,
+    new BuilderApplication._(
+        providingPackage, builderName, builderFactories, filter,
         inputs: inputs, excludes: excludes, isOptional: isOptional);
 
 /// A description of which packages need a given [Builder] applied.
 class BuilderApplication {
-  final Builder builder;
+  final List<BuilderFactory> builderFactories;
 
-  /// Determines whether a given package needs [builder] applied.
+  /// Determines whether a given package needs builder applied.
   final PackageFilter filter;
+
+  /// The package which provides this builder.
+  ///
+  /// Along with the [builderName] makes up a key that uniquely identifies the
+  /// builder.
+  final String providingPackage;
+
+  /// A name for this builder.
+  ///
+  /// Along with the [providingPackage] makes up a key that uniquely identifies the
+  /// builder.
+  final String builderName;
 
   final List<String> inputs;
   final List<String> excludes;
   final bool isOptional;
 
-  const BuilderApplication(this.builder, this.filter,
-      {this.inputs, this.excludes, this.isOptional});
+  /// Whether to skip [filter] and only apply this package to the root of the
+  /// package graph.
+  // TODO: this is a hack until we can add `isRoot` to `PackageNode`.
+  final bool _applyToRoot;
+
+  const BuilderApplication._(this.providingPackage, this.builderName,
+      this.builderFactories, this.filter,
+      {this.inputs, this.excludes, this.isOptional, bool applyToRoot: false})
+      : _applyToRoot = applyToRoot;
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -65,13 +94,37 @@ class BuilderApplication {
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
 List<BuildAction> createBuildActions(PackageGraph packageGraph,
-        Iterable<BuilderApplication> builderApplications) =>
-    stronglyConnectedComponents<String, PackageNode>(
-            [packageGraph.root], (node) => node.name, (node) => node.dependencies)
-        .expand((cycle) => builderApplications.expand((b) => cycle
-            .where(b.filter)
-            .map((p) => new BuildAction(b.builder, p.name,
-                inputs: b.inputs,
-                excludes: b.excludes,
-                isOptional: b.isOptional))))
-        .toList();
+    Iterable<BuilderApplication> builderApplications, List<String> args) {
+  var cycles = stronglyConnectedComponents<String, PackageNode>(
+      [packageGraph.root], (node) => node.name, (node) => node.dependencies);
+  return cycles
+      .expand((cycle) => _createBuildActionsWithinCycle(
+          cycle, packageGraph, builderApplications, args))
+      .toList();
+}
+
+Iterable<BuildAction> _createBuildActionsWithinCycle(
+        Iterable<PackageNode> cycle,
+        PackageGraph packageGraph,
+        Iterable<BuilderApplication> builderApplications,
+        List<String> args) =>
+    builderApplications.expand((builderApplication) =>
+        _createBuildActionsForBuilderInCycle(
+            cycle, packageGraph, builderApplication, args));
+
+Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
+    Iterable<PackageNode> cycle,
+    PackageGraph packageGraph,
+    BuilderApplication builderApplication,
+    List<String> args) {
+  bool filter(PackageNode packageNode) =>
+      //TODO: this is a hack until we can add `isRoot` to `PackageNode`
+      (builderApplication._applyToRoot && packageNode == packageGraph.root) ||
+      builderApplication.filter(packageNode);
+  return builderApplication.builderFactories.expand((b) => cycle
+      .where(filter)
+      .map((p) => new BuildAction(b(args), p.name,
+          inputs: builderApplication.inputs,
+          excludes: builderApplication.excludes,
+          isOptional: builderApplication.isOptional)));
+}
