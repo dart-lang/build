@@ -17,7 +17,7 @@ export 'src/package_graph/apply_builders.dart'
         createBuildActions,
         apply,
         toAllPackages,
-        toAny,
+        toAll,
         toDependentsOf,
         toPackage,
         toPackages;

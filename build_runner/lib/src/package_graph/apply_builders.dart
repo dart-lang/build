@@ -25,7 +25,7 @@ PackageFilter toPackages(Set<String> packages) =>
     (p) => packages.contains(p.name);
 
 /// Run a builders if the package matches any of [filters]
-PackageFilter toAny(Iterable<PackageFilter> filters) =>
+PackageFilter toAll(Iterable<PackageFilter> filters) =>
     (p) => filters.any((f) => f(p));
 
 /// Indcates that [builder] should be run against all packages matching
