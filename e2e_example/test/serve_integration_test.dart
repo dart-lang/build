@@ -24,8 +24,12 @@ void main() {
         isNot(contains('Hello World!')));
   });
 
-  test('Can run passing tests', () async {
+  test('Can run passing tests with --pub-serve', () async {
     await expectTestsPass();
+  });
+
+  test('Can run passing tests with --precompiled', () async {
+    await expectTestsPass(usePrecompiled: true);
   });
 
   group('File changes', () {
@@ -52,14 +56,14 @@ void main() {
       var nextBuild = nextSuccessfulBuild;
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
       await nextBuild;
-      await expectTestsPass(3);
+      await expectTestsPass(expectedNumRan: 3);
     });
 
     test('delete test', () async {
       var nextBuild = nextSuccessfulBuild;
       await deleteFile(p.join('test', 'subdir', 'subdir_test.dart'));
       await nextBuild;
-      await expectTestsPass(1);
+      await expectTestsPass(expectedNumRan: 1);
     });
 
     test('ddc errors can be fixed', () async {
