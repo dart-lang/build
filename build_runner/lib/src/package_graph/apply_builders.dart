@@ -93,8 +93,9 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-List<BuildAction> createBuildActions(PackageGraph packageGraph,
-    Iterable<BuilderApplication> builderApplications, List<String> args) {
+List<BuildAction> createBuildActions(
+    PackageGraph packageGraph, Iterable<BuilderApplication> builderApplications,
+    {List<String> args = const []}) {
   var cycles = stronglyConnectedComponents<String, PackageNode>(
       [packageGraph.root], (node) => node.name, (node) => node.dependencies);
   return cycles
