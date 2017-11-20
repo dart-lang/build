@@ -1,0 +1,26 @@
+builders:
+  ddc:
+    target: "build_compilers"
+    import: "package:build_compilers/builders.dart"
+    builder_factories:
+      - moduleBuilder
+      - unlinkedSummaryBuilder
+      - linkedSummaryBuilder
+      - devCompilerBuilder
+    build_extensions:
+      .dart:
+        - .module
+        - .linked.sum
+        - .unlinked.sum
+        - .js.errors
+        - .js
+        - .js.map
+  ddc_bootstrap:
+    target: "build_compilers"
+    import: "package:build_compilers/builders.dart"
+    builder_factories: ["devCompilerBootstrapBuilder"]
+    build_extensions:
+      .dart:
+        - .dart.bootstrap.js
+        - .dart.js
+        - .dart.js.map
