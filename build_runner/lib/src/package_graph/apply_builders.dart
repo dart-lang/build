@@ -33,8 +33,8 @@ typedef Builder BuilderFactory(List<String> args);
 /// Apply [builder] to the root package.
 BuilderApplication applyToRoot(Builder builder,
         {List<String> inputs, List<String> excludes}) =>
-    new BuilderApplication._('', '', [(_) => builder], null,
-        inputs: inputs, excludes: excludes);
+    new BuilderApplication._('', '', [(_) => builder], (_) => false,
+        inputs: inputs, excludes: excludes, applyToRoot: true);
 
 /// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
