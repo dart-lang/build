@@ -40,7 +40,12 @@ BuilderApplication applyToRoot(Builder builder,
 /// [filter].
 ///
 /// If the builder should only run on a subset of files within a package pass
-/// globs to [inputs] or [excludes];
+/// globs to [inputs] or [excludes].
+///
+/// If [isOptional] is true the builder will only run if one of its outputs is
+/// read by a later builder, or is used as a primary input to a later builder.
+/// If no build actions read the output of an optional action, then it will
+/// never run.
 BuilderApplication apply(String providingPackage, String builderName,
         List<BuilderFactory> builderFactories, PackageFilter filter,
         {List<String> inputs, List<String> excludes, bool isOptional}) =>
