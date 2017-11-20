@@ -12,6 +12,7 @@
 ### Deprecations
 
 - Deprecate `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+- Deprecate `PackageNdoe.includes` and `PackageGraph.excludes`.
 
 ### Internal Improvements
 

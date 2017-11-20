@@ -214,7 +214,7 @@ void main() {
     test('can\'t output files in non-root packages', () async {
       final packageGraph = buildPackageGraph('a', {
         package('a', path: 'a/'): ['b'],
-        package('b', path: 'a/b', includes: ['**']): []
+        package('b', path: 'a/b'): []
       });
       expect(
           testActions(
@@ -229,7 +229,7 @@ void main() {
       setUp(() {
         packageGraph = buildPackageGraph('a', {
           package('a', path: 'a/'): ['b'],
-          package('b', path: 'a/b/', includes: ['**']): []
+          package('b', path: 'a/b/'): []
         });
       });
       test('can output files in non-root packages', () async {
@@ -305,7 +305,7 @@ void main() {
 
     test('can glob files from packages', () async {
       final packageGraph = buildPackageGraph('a', {
-        package('a', path: 'a/', includes: ['**']): ['b'],
+        package('a', path: 'a/'): ['b'],
         package('b', path: 'a/b/'): []
       });
 
@@ -363,7 +363,7 @@ void main() {
     test('won\'t try to delete files from other packages', () async {
       final packageGraph = buildPackageGraph('a', {
         package('a', path: 'a/'): ['b'],
-        package('b', path: 'a/b', includes: ['**']): []
+        package('b', path: 'a/b'): []
       });
       var writer = new InMemoryRunnerAssetWriter()
         ..onDelete = (AssetId assetId) {

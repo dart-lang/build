@@ -191,20 +191,20 @@ class PackageNode {
   ///
   /// Only the files matching these patterns will end up in the asset graph,
   /// unless they also match a pattern in [excludes].
-  final List<String> _includes;
-  Iterable<String> get includes => _includes;
+  @deprecated
+  final Iterable<String> includes;
 
   /// The glob patterns to exclude from this package.
   ///
   /// Any files matching these pattern will be excluded from the asset graph.
-  final List<String> _excludes;
-  Iterable<String> get excludes => _excludes;
+  @deprecated
+  final Iterable<String> excludes;
 
   PackageNode(this.name, this.version, this.dependencyType, String path,
       {Iterable<String> includes, Iterable<String> excludes})
       : path = _toAbsolute(path),
-        this._includes = includes?.toList() ?? ['lib/**'],
-        this._excludes = excludes?.toList() ?? <String>[];
+        includes = includes?.toList() ?? const ['lib/**'],
+        excludes = excludes?.toList() ?? const [];
 
   /// Create a [PackageNode] without any details from a `pubspec.yaml` file.
   ///
