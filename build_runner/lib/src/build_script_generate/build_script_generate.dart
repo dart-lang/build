@@ -53,7 +53,8 @@ Method _findBuildActions(Iterable<BuildConfig> buildConfigs) =>
               .statement,
           _findBuilders(buildConfigs).assignVar('builders').statement,
           refer('createBuildActions', 'package:build_runner/build_runner.dart')
-              .call([refer('packageGraph'), refer('builders')])
+              .call([refer('packageGraph'), refer('builders')],
+                  {'args': refer('args')})
               .returned
               .statement,
         ])));
@@ -102,13 +103,15 @@ Expression _findBuilders(Iterable<BuildConfig> configs) =>
     literalList(configs.expand(_applyBuilders).toList());
 
 Iterable<Expression> _applyBuilders(BuildConfig config) =>
-    config.builderDefinitions.values.expand((definition) => definition
-        .builderFactories
-        .map((factory) => _applyBuilder(definition, factory)));
+    config.builderDefinitions.values.map(_applyBuilder);
 
-Expression _applyBuilder(BuilderDefinition definition, String factory) =>
+Expression _applyBuilder(BuilderDefinition definition) =>
     refer('apply', 'package:build_runner/build_runner.dart').call([
-      refer(factory, definition.import).call([refer('args')]),
+      literalString(definition.package),
+      literalString(definition.name),
+      literalList(definition.builderFactories
+          .map((f) => refer(f, definition.import))
+          .toList()),
       refer('toDependentsOf', 'package:build_runner/build_runner.dart')
           .call([literalString(definition.package)])
     ]);

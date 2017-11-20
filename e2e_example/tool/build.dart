@@ -14,14 +14,20 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 Future main() async {
   var graph = new PackageGraph.forThisPackage();
   var builders = [
-    apply(new TestBootstrapBuilder(), toPackage(graph.root.name),
-        inputs: ['test/**_test.dart']),
-    apply(new ThrowingBuilder(), toPackage(graph.root.name)),
-    apply(new ModuleBuilder(), toAllPackages(), isOptional: true),
-    apply(new UnlinkedSummaryBuilder(), toAllPackages(), isOptional: true),
-    apply(new LinkedSummaryBuilder(), toAllPackages(), isOptional: true),
-    apply(new DevCompilerBuilder(), toAllPackages(), isOptional: true),
-    apply(new DevCompilerBootstrapBuilder(), toPackage(graph.root.name),
+    applyToRoot(new TestBootstrapBuilder(), inputs: ['test/**_test.dart']),
+    applyToRoot(new ThrowingBuilder()),
+    apply(
+        'build_compilers',
+        'ddc',
+        [
+          (_) => new ModuleBuilder(),
+          (_) => new UnlinkedSummaryBuilder(),
+          (_) => new LinkedSummaryBuilder(),
+          (_) => new DevCompilerBuilder()
+        ],
+        toAllPackages(),
+        isOptional: true),
+    applyToRoot(new DevCompilerBootstrapBuilder(),
         inputs: ['web/**.dart', 'test/**.browser_test.dart'])
   ];
   var buildActions = createBuildActions(graph, builders);
