@@ -82,8 +82,11 @@ class _Loader {
 
     BuildScriptUpdates buildScriptUpdates;
     if (assetGraph != null) {
-      var updates = await _updateAssetGraph(
-          assetGraph, inputSources, cacheDirSources, allSources);
+      var updates = await logTimedAsync(
+          _logger,
+          'Checking for updates since last build',
+          () => _updateAssetGraph(
+              assetGraph, inputSources, cacheDirSources, allSources));
 
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
