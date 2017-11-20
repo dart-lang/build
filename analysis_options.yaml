@@ -7,8 +7,7 @@ analyzer:
     dead_code: error
     override_on_non_overriding_method: error
   exclude:
-    - "bazel-*"
-    - "**/goldens/**"
+    - "test/goldens/generated_build_script.dart"
 linter:
   rules:
     # Errors
