@@ -8,7 +8,7 @@ List<_1.BuildAction> _buildActions(_1.PackageGraph packageGraph) {
     _1.apply('provides_builder', 'some_builder', [_2.someBuilder],
         _1.toDependentsOf('provides_builder'))
   ];
-  return _1.createBuildActions(packageGraph, builders);
+  return _1.createBuildActions(packageGraph, builders, args: args);
 }
 
 main() async {

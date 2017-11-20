@@ -53,7 +53,8 @@ Method _findBuildActions(Iterable<BuildConfig> buildConfigs) =>
               .statement,
           _findBuilders(buildConfigs).assignVar('builders').statement,
           refer('createBuildActions', 'package:build_runner/build_runner.dart')
-              .call([refer('packageGraph'), refer('builders')])
+              .call([refer('packageGraph'), refer('builders')],
+                  {'args': refer('args')})
               .returned
               .statement,
         ])));
