@@ -667,7 +667,7 @@ _InOrderVerification get verifyInOrder {
   return (List<dynamic> _) {
     _verificationInProgress = false;
     DateTime dt = new DateTime.fromMillisecondsSinceEpoch(0);
-    var tmpVerifyCalls = new List.from(_verifyCalls);
+    var tmpVerifyCalls = new List<_VerifyCall>.from(_verifyCalls);
     _verifyCalls.clear();
     List<RealCall> matchedCalls = [];
     for (_VerifyCall verifyCall in tmpVerifyCalls) {
