@@ -1,3 +1,7 @@
+## 0.1.1-dev
+
+- Add `auto_apply` option to Builder configuration.
+
 ## 0.1.0
 
 - Initial release - pulled from `package:dazel`. Updated to support

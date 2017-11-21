@@ -37,6 +37,7 @@ void main() {
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
       'h': new BuilderDefinition(
         builderFactories: ['createBuilder'],
+        autoApply: true,
         import: 'package:example/e.dart',
         buildExtensions: {
           '.dart': [
@@ -66,6 +67,7 @@ void main() {
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
       'a': new BuilderDefinition(
         builderFactories: ['createBuilder'],
+        autoApply: false,
         import: 'package:example/builder.dart',
         name: 'a',
         buildExtensions: {
@@ -114,6 +116,7 @@ builders:
     import: package:example/e.dart
     build_extensions: {".dart": [".g.dart", ".json"]}
     target: e
+    auto_apply: True
 ''';
 
 var buildYamlNoTargets = '''
@@ -149,6 +152,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       item is BuilderDefinition &&
       equals(_expected.builderFactories).matches(item.builderFactories, _) &&
       equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
+      item.autoApply == _expected.autoApply &&
       item.import == _expected.import &&
       item.name == _expected.name &&
       item.package == _expected.package &&

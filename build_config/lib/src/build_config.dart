@@ -44,11 +44,13 @@ class BuildConfig {
     _import,
     _buildExtensions,
     _target,
+    _autoApply,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
   static const _buildExtensions = 'build_extensions';
   static const _target = 'target';
+  static const _autoApply = 'auto_apply';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
   ///
@@ -167,6 +169,8 @@ class BuildConfig {
       final import = _readStringOrThrow(builderConfig, _import);
       final buildExtensions = _readBuildExtensions(builderConfig);
       final target = _readStringOrThrow(builderConfig, _target);
+      final autoApply =
+          _readBoolOrThrow(builderConfig, _autoApply, defaultValue: false);
 
       builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
@@ -175,6 +179,7 @@ class BuildConfig {
         name: builderName,
         package: pubspec.pubPackageName,
         target: target,
+        autoApply: autoApply,
       );
     }
   }
@@ -305,13 +310,18 @@ class BuilderDefinition {
   /// The name of the dart_library target that contains `import`.
   final String target;
 
+  /// Whether the builder should be automatically applied to packages which have
+  /// a dependency on [package].
+  final bool autoApply;
+
   BuilderDefinition(
       {this.builderFactories,
       this.buildExtensions,
       this.import,
       this.name,
       this.package,
-      this.target});
+      this.target,
+      this.autoApply});
 }
 
 class BuildTarget {

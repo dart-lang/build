@@ -23,6 +23,8 @@ the following keys:
 - **build_extensions**: Required. A map from input extension to the list of
   output extensions that may be created for that input. This must match the
   merged `buildExtensions` maps from each `Builder` in `builder_factories`.
+- **auto_apply**: Optional. Whether to apply this builder automatically to
+  packages which have a dependency to this package. Defaults to `False`.
 
 Example `builders` config:
 
@@ -43,4 +45,5 @@ builders:
     import: "package:my_package/builder.dart"
     builder_factories: ["myBuilder"]
     build_extensions: {".dart": [".my_package.dart"]}
+    auto_apply: True
 ```
