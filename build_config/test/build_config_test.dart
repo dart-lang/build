@@ -37,7 +37,7 @@ void main() {
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
       'h': new BuilderDefinition(
         builderFactories: ['createBuilder'],
-        autoApply: true,
+        autoApply: AutoApply.dependents,
         import: 'package:example/e.dart',
         buildExtensions: {
           '.dart': [
@@ -68,7 +68,7 @@ void main() {
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
       'a': new BuilderDefinition(
         builderFactories: ['createBuilder'],
-        autoApply: false,
+        autoApply: AutoApply.none,
         import: 'package:example/builder.dart',
         name: 'a',
         buildExtensions: {
@@ -118,7 +118,7 @@ builders:
     import: package:example/e.dart
     build_extensions: {".dart": [".g.dart", ".json"]}
     target: e
-    auto_apply: True
+    auto_apply: dependents
     required_inputs: [".dart"]
 ''';
 

@@ -48,16 +48,18 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
       (await Future.wait(packageGraph.orderedPackages.map(_packageBuildConfig)))
           .expand((c) => c.builderDefinitions.values);
 
-  final autoAppliedBuilders = builderDefinitions.where((c) => c.autoApply);
-  builderApplications.addAll(autoAppliedBuilders.map(_applyToDependents));
+  builderApplications.addAll(builderDefinitions
+      .map((definition) => _applyBuilder(definition, packageGraph)));
   var ddcBuilder = builderDefinitions
       .firstWhere((b) => b.package == 'build_compilers' && b.name == 'ddc');
-  builderApplications
-      .add(_applyToAllPackages(ddcBuilder, {'isOptional': literalTrue}));
+  builderApplications.add(_applyBuilderWithFilter(
+      ddcBuilder,
+      refer('toAllPackages', 'package:build_runner/build_runner.dart').call([]),
+      {'isOptional': literalTrue}));
   var ddcBootstrap = builderDefinitions.firstWhere(
       (b) => b.package == 'build_compilers' && b.name == 'ddc_bootstrap');
   // TODO - should this be configurable?
-  builderApplications.add(_applyBuilder(
+  builderApplications.add(_applyBuilderWithFilter(
       ddcBootstrap,
       refer('toPackage', 'package:build_runner/build_runner.dart')
           .call([literalString(packageGraph.root.name)]),
@@ -127,23 +129,14 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
     BuildConfig.fromPackageDir(
         await Pubspec.fromPackageDir(package.path), package.path);
 
-/// An expression calling `apply` to apply [definition] to all packages which
-/// depend on it's vending package.
-Expression _applyToDependents(BuilderDefinition definition) {
-  final to = refer('toDependentsOf', 'package:build_runner/build_runner.dart')
-      .call([literalString(definition.package)]);
-  return _applyBuilder(definition, to);
-}
+/// An expression calling `apply` with appropriate setup for a Builder.
+Expression _applyBuilder(
+        BuilderDefinition definition, PackageGraph packageGraph) =>
+    _applyBuilderWithFilter(
+        definition, _findToExpression(definition, packageGraph));
 
-/// An expression calling `apply` to apply [definition] to all packages.
-Expression _applyToAllPackages(BuilderDefinition definition,
-    [Map<String, Expression> namedArgs = const {}]) {
-  final to =
-      refer('toAllPackages', 'package:build_runner/build_runner.dart').call([]);
-  return _applyBuilder(definition, to, namedArgs);
-}
-
-Expression _applyBuilder(BuilderDefinition definition, Expression toExpression,
+Expression _applyBuilderWithFilter(
+        BuilderDefinition definition, Expression toExpression,
         [Map<String, Expression> namedArgs = const {}]) =>
     refer('apply', 'package:build_runner/build_runner.dart').call([
       literalString(definition.package),
@@ -153,3 +146,24 @@ Expression _applyBuilder(BuilderDefinition definition, Expression toExpression,
           .toList()),
       toExpression,
     ], namedArgs);
+
+// TODO - graph argument should be removed once `toRoot()` is a supported
+// PackageFilter
+Expression _findToExpression(
+    BuilderDefinition definition, PackageGraph packageGraph) {
+  switch (definition.autoApply) {
+    case AutoApply.none:
+      return refer('toNoneByDefault', 'package:build_runner/build_runner.dart')
+          .call([]);
+    case AutoApply.dependents:
+      return refer('toDependentsOf', 'package:build_runner/build_runner.dart')
+          .call([literalString(definition.package)]);
+    case AutoApply.allPackages:
+      return refer('toAllPackages', 'package:build_runner/build_runner.dart')
+          .call([]);
+    case AutoApply.rootPackage:
+      return refer('toPackage', 'package:build_runner/build_runner.dart')
+          .call([literalString(packageGraph.root.name)]);
+  }
+  throw 'Unreachable';
+}

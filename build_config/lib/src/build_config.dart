@@ -171,8 +171,8 @@ class BuildConfig {
       final import = _readStringOrThrow(builderConfig, _import);
       final buildExtensions = _readBuildExtensions(builderConfig);
       final target = _readStringOrThrow(builderConfig, _target);
-      final autoApply =
-          _readBoolOrThrow(builderConfig, _autoApply, defaultValue: false);
+      final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
+          defaultValue: AutoApply.none);
       final requiredInputs = _readListOfStringsOrThrow(
           builderConfig, _requiredInputs,
           defaultValue: const []);
@@ -296,6 +296,24 @@ class BuildConfig {
     }
     return value as bool;
   }
+
+  static AutoApply _readAutoApplyOrThrow(
+      Map<String, dynamic> options, String option,
+      {AutoApply defaultValue}) {
+    final value = options[option];
+    if (value == null && defaultValue != null) return defaultValue;
+    final allowedValues = const {
+      'none': AutoApply.none,
+      'dependents': AutoApply.dependents,
+      'all_packages': AutoApply.allPackages,
+      'root_package': AutoApply.rootPackage
+    };
+    if (value is! String || !allowedValues.containsKey(value)) {
+      throw new ArgumentError('Expected one of ${allowedValues.keys.toList()} '
+          'for `$option` but got `$value`');
+    }
+    return allowedValues[value];
+  }
 }
 
 class BuilderDefinition {
@@ -316,9 +334,8 @@ class BuilderDefinition {
   /// The name of the dart_library target that contains `import`.
   final String target;
 
-  /// Whether the builder should be automatically applied to packages which have
-  /// a dependency on [package].
-  final bool autoApply;
+  /// Which packages should have this builder applied automatically.
+  final AutoApply autoApply;
 
   /// A list of file extensions which are required to run this builder.
   ///
@@ -336,6 +353,8 @@ class BuilderDefinition {
       this.autoApply,
       this.requiredInputs});
 }
+
+enum AutoApply { none, dependents, allPackages, rootPackage }
 
 class BuildTarget {
   final Iterable<String> dependencies;
