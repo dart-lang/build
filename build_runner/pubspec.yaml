@@ -13,7 +13,7 @@ dependencies:
   async: ">=1.13.3 <3.0.0"
   build: ^0.11.0
   build_barback: ^0.4.0
-  build_config: ^0.1.0
+  build_config: ^0.1.1
   cli_util: ^0.1.2
   code_builder: ^2.0.0
   crypto: ">=0.9.2 <3.0.0"
@@ -35,3 +35,7 @@ dev_dependencies:
   package_resolver: ^1.0.2
   test: ^0.12.0
   test_descriptor: ^1.0.0
+
+dependency_overrides:
+  build_config:
+    path: ../build_config

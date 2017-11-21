@@ -4,3 +4,9 @@ builders:
     import: "package:provides_builder/builders.dart"
     builder_factories: ["someBuilder"]
     build_extensions: {".dart": [".something.dart"]}
+    auto_apply: True
+  some_not_applied_builder:
+    target: "provides_builder"
+    import: "package:provides_builder/builders.dart"
+    builder_factories: ["notApplied"]
+    build_extensions: {".dart": [".something.dart"]}

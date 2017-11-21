@@ -29,16 +29,17 @@ Future<Null> ensureBuildScript() async {
 
 Future<String> _generateBuildScript() async {
   var packageGraph = new PackageGraph.forThisPackage();
-  var buildConfigs =
+  var builderDefinitions =
       (await Future.wait(packageGraph.orderedPackages.map(_packageBuildConfig)))
-          .where((c) => c.builderDefinitions.isNotEmpty);
+          .expand((c) => c.builderDefinitions.values)
+          .where((c) => c.autoApply);
   final library = new File(
-      (b) => b.body.addAll([_findBuildActions(buildConfigs), _main()]));
+      (b) => b.body.addAll([_findBuildActions(builderDefinitions), _main()]));
   final emitter = new DartEmitter(new Allocator.simplePrefixing());
   return new DartFormatter().format('${library.accept(emitter)}');
 }
 
-Method _findBuildActions(Iterable<BuildConfig> buildConfigs) =>
+Method _findBuildActions(Iterable<BuilderDefinition> builderDefinitions) =>
     new Method((b) => b
       ..name = '_buildActions'
       ..requiredParameters.add(new Parameter((b) => b
@@ -51,7 +52,7 @@ Method _findBuildActions(Iterable<BuildConfig> buildConfigs) =>
           literalList([], new TypeReference((b) => b..symbol = 'String'))
               .assignVar('args')
               .statement,
-          _findBuilders(buildConfigs).assignVar('builders').statement,
+          _findBuilders(builderDefinitions).assignVar('builders').statement,
           refer('createBuildActions', 'package:build_runner/build_runner.dart')
               .call([refer('packageGraph'), refer('builders')],
                   {'args': refer('args')})
@@ -99,11 +100,8 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
 
 /// Returns a [LiteralListExpression] with `BuilderApplication` instances
 /// created using `apply`.
-Expression _findBuilders(Iterable<BuildConfig> configs) =>
-    literalList(configs.expand(_applyBuilders).toList());
-
-Iterable<Expression> _applyBuilders(BuildConfig config) =>
-    config.builderDefinitions.values.map(_applyBuilder);
+Expression _findBuilders(Iterable<BuilderDefinition> builderDefinitions) =>
+    literalList(builderDefinitions.map(_applyBuilder).toList());
 
 Expression _applyBuilder(BuilderDefinition definition) =>
     refer('apply', 'package:build_runner/build_runner.dart').call([
