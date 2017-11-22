@@ -1,3 +1,12 @@
+- Internally uses `AnalysisOptions` with the following changes:
+  - Does not `preserveFunctionBodies`.
+  - Does `preserveComments` (the default).
+  - Uses `strongMode`.
+
+This makes the resolver implementation identical to the experience using the
+[bazel_codegen](https://goo.gl/Fm13FP), but it is technically a breaking change
+if you relied on the current behavior.
+
 ## 0.4.0+2
 
 - `TransformerAssetReader#findAssets` now returns a `Stream<AssetId>` to match

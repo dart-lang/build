@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:code_transformers/resolver.dart' as code_transformers
-    show Resolver, Resolvers, dartSdkDirectory;
+    show Resolver;
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -16,13 +16,13 @@ import 'package:build_barback/src/util/barback.dart';
 
 class ResolversSpy implements BarbackResolvers {
   code_transformers.Resolver lastResolved;
-  static final code_transformers.Resolvers _resolvers =
-      new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
-    lastResolved = await _resolvers.get(toBarbackTransform(buildStep),
-        [toBarbackAssetId(buildStep.inputId)], false);
+    lastResolved = await codeTransformerResolvers.get(
+        toBarbackTransform(buildStep),
+        [toBarbackAssetId(buildStep.inputId)],
+        false);
     return new BarbackResolver(lastResolved);
   }
 }
@@ -169,6 +169,42 @@ void main() {
           validator: (resolver) async {
             var lib = await resolver.libraryFor(entryPoint);
             expect(lib.importedLibraries, hasLength(2));
+          });
+    });
+
+    test('supports strong-mode', () {
+      return validateResolver(
+          inputs: {
+            'a|web/main.dart': '''
+              import 'dart:async';
+
+              // Is 'dynamic' in non-strong-mode.
+              FutureOr<Null> foo() {}
+             ''',
+          },
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
+            expect(
+                lib.definingCompilationUnit.functions.first.returnType
+                    .toString(),
+                'FutureOr<Null>');
+          });
+    });
+
+    test('supports documentation comments', () {
+      return validateResolver(
+          inputs: {
+            'a|web/main.dart': '''
+              import 'dart:async';
+
+              /// This is Foo, a great class.
+              class Foo {}
+             ''',
+          },
+          validator: (resolver) async {
+            var lib = await resolver.libraryFor(entryPoint);
+            expect(lib.getType('Foo').documentationComment,
+                '/// This is Foo, a great class.');
           });
     });
 
