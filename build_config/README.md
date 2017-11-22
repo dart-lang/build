@@ -25,12 +25,12 @@ the following keys:
   merged `buildExtensions` maps from each `Builder` in `builder_factories`.
 - **auto_apply**: Optional. Whether to apply this builder automatically to
   packages which have a dependency to this package. Defaults to `False`.
-- **required_inputs**: Optional. If a Builder must see every input with one or
-  more file extensions they can be specified here and it will be guaranteed to
-  run after any Builder which might produce an output of that type. For instance
-  a compiler must run after any Builder which can produce `.dart` outputs or
-  those libraries can't be compiled. This option should be rare. Defaults to an
-  empty list.
+- **required_inputs**: Optional, list of extensions. If a Builder must see every
+  input with one or more file extensions they can be specified here and it will
+  be guaranteed to run after any Builder which might produce an output of that
+  type. For instance a compiler must run after any Builder which can produce
+  `.dart` outputs or those libraries can't be compiled. This option should be
+  rare. Defaults to an empty list.
 
 Example `builders` config:
 
