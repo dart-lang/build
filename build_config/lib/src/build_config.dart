@@ -45,12 +45,14 @@ class BuildConfig {
     _buildExtensions,
     _target,
     _autoApply,
+    _requiredInputs,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
   static const _buildExtensions = 'build_extensions';
   static const _target = 'target';
   static const _autoApply = 'auto_apply';
+  static const _requiredInputs = 'required_inputs';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
   ///
@@ -171,6 +173,9 @@ class BuildConfig {
       final target = _readStringOrThrow(builderConfig, _target);
       final autoApply =
           _readBoolOrThrow(builderConfig, _autoApply, defaultValue: false);
+      final requiredInputs = _readListOfStringsOrThrow(
+          builderConfig, _requiredInputs,
+          defaultValue: const []);
 
       builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
@@ -180,6 +185,7 @@ class BuildConfig {
         package: pubspec.pubPackageName,
         target: target,
         autoApply: autoApply,
+        requiredInputs: requiredInputs,
       );
     }
   }
@@ -314,6 +320,12 @@ class BuilderDefinition {
   /// a dependency on [package].
   final bool autoApply;
 
+  /// A list of file extensions which are required to run this builder.
+  ///
+  /// No builder which outputs any extension in this list is allowed to run
+  /// after this builder.
+  final List<String> requiredInputs;
+
   BuilderDefinition(
       {this.builderFactories,
       this.buildExtensions,
@@ -321,7 +333,8 @@ class BuilderDefinition {
       this.name,
       this.package,
       this.target,
-      this.autoApply});
+      this.autoApply,
+      this.requiredInputs});
 }
 
 class BuildTarget {

@@ -48,6 +48,7 @@ void main() {
         name: 'h',
         package: 'example',
         target: 'e',
+        requiredInputs: ['.dart'],
       ),
     });
   });
@@ -78,6 +79,7 @@ void main() {
         },
         package: 'example',
         target: 'example',
+        requiredInputs: const [],
       ),
     });
   });
@@ -117,6 +119,7 @@ builders:
     build_extensions: {".dart": [".g.dart", ".json"]}
     target: e
     auto_apply: True
+    required_inputs: [".dart"]
 ''';
 
 var buildYamlNoTargets = '''
@@ -152,6 +155,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       item is BuilderDefinition &&
       equals(_expected.builderFactories).matches(item.builderFactories, _) &&
       equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
+      equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
       item.autoApply == _expected.autoApply &&
       item.import == _expected.import &&
       item.name == _expected.name &&
