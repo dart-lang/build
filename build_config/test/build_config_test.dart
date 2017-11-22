@@ -38,6 +38,7 @@ void main() {
       'h': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.dependents,
+        isOptional: true,
         import: 'package:example/e.dart',
         buildExtensions: {
           '.dart': [
@@ -69,6 +70,7 @@ void main() {
       'a': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.none,
+        isOptional: false,
         import: 'package:example/builder.dart',
         name: 'a',
         buildExtensions: {
@@ -120,6 +122,7 @@ builders:
     target: e
     auto_apply: dependents
     required_inputs: [".dart"]
+    is_optional: True
 ''';
 
 var buildYamlNoTargets = '''
@@ -157,6 +160,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
       item.autoApply == _expected.autoApply &&
+      item.isOptional == _expected.isOptional &&
       item.import == _expected.import &&
       item.name == _expected.name &&
       item.package == _expected.package &&

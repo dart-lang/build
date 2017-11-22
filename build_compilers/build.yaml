@@ -15,6 +15,7 @@ builders:
         - .js.errors
         - .js
         - .js.map
+    is_optional: True
   ddc_bootstrap:
     target: "build_compilers"
     import: "package:build_compilers/builders.dart"

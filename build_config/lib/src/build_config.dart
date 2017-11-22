@@ -46,6 +46,7 @@ class BuildConfig {
     _target,
     _autoApply,
     _requiredInputs,
+    _isOptional,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
@@ -53,6 +54,7 @@ class BuildConfig {
   static const _target = 'target';
   static const _autoApply = 'auto_apply';
   static const _requiredInputs = 'required_inputs';
+  static const _isOptional = 'is_optional';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
   ///
@@ -176,6 +178,8 @@ class BuildConfig {
       final requiredInputs = _readListOfStringsOrThrow(
           builderConfig, _requiredInputs,
           defaultValue: const []);
+      final isOptional =
+          _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
 
       builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
@@ -186,6 +190,7 @@ class BuildConfig {
         target: target,
         autoApply: autoApply,
         requiredInputs: requiredInputs,
+        isOptional: isOptional,
       );
     }
   }
@@ -343,15 +348,24 @@ class BuilderDefinition {
   /// after this builder.
   final List<String> requiredInputs;
 
-  BuilderDefinition(
-      {this.builderFactories,
-      this.buildExtensions,
-      this.import,
-      this.name,
-      this.package,
-      this.target,
-      this.autoApply,
-      this.requiredInputs});
+  /// Whether this Builder should be deferred until it's output is requested.
+  ///
+  /// Optional builders are lazy and will not run unless some later builder
+  /// requests one of it's possible outputs through either `readAs*` or
+  /// `canRead`.
+  final bool isOptional;
+
+  BuilderDefinition({
+    this.builderFactories,
+    this.buildExtensions,
+    this.import,
+    this.name,
+    this.package,
+    this.target,
+    this.autoApply,
+    this.requiredInputs,
+    this.isOptional,
+  });
 }
 
 enum AutoApply { none, dependents, allPackages, rootPackage }

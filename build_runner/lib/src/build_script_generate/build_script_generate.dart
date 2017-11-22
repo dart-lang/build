@@ -54,8 +54,8 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
       .firstWhere((b) => b.package == 'build_compilers' && b.name == 'ddc');
   builderApplications.add(_applyBuilderWithFilter(
       ddcBuilder,
-      refer('toAllPackages', 'package:build_runner/build_runner.dart').call([]),
-      {'isOptional': literalTrue}));
+      refer('toAllPackages', 'package:build_runner/build_runner.dart')
+          .call([])));
   var ddcBootstrap = builderDefinitions.firstWhere(
       (b) => b.package == 'build_compilers' && b.name == 'ddc_bootstrap');
   // TODO - should this be configurable?
@@ -63,12 +63,7 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
       ddcBootstrap,
       refer('toPackage', 'package:build_runner/build_runner.dart')
           .call([literalString(packageGraph.root.name)]),
-      {
-        'inputs': literalList([
-          literalString('web/**.dart'),
-          literalString('test/**.browser_test.dart')
-        ])
-      }));
+      inputs: ['web/**.dart', 'test/**.browser_test.dart']));
   return builderApplications;
 }
 
@@ -136,16 +131,24 @@ Expression _applyBuilder(
         definition, _findToExpression(definition, packageGraph));
 
 Expression _applyBuilderWithFilter(
-        BuilderDefinition definition, Expression toExpression,
-        [Map<String, Expression> namedArgs = const {}]) =>
-    refer('apply', 'package:build_runner/build_runner.dart').call([
-      literalString(definition.package),
-      literalString(definition.name),
-      literalList(definition.builderFactories
-          .map((f) => refer(f, definition.import))
-          .toList()),
-      toExpression,
-    ], namedArgs);
+    BuilderDefinition definition, Expression toExpression,
+    {List<String> inputs}) {
+  final namedArgs = <String, Expression>{};
+  if (inputs != null) {
+    namedArgs['inputs'] = literalList(inputs);
+  }
+  if (definition.isOptional) {
+    namedArgs['isOptional'] = literalTrue;
+  }
+  return refer('apply', 'package:build_runner/build_runner.dart').call([
+    literalString(definition.package),
+    literalString(definition.name),
+    literalList(definition.builderFactories
+        .map((f) => refer(f, definition.import))
+        .toList()),
+    toExpression,
+  ], namedArgs);
+}
 
 // TODO - graph argument should be removed once `toRoot()` is a supported
 // PackageFilter
