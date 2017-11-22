@@ -50,6 +50,10 @@ matrix:
     - dart: stable
       env: PKG=build_test TASK=dartfmt
     - dart: stable
+      env: PKG=e2e_example TASK=dartanalyzer
+    - dart: stable
+      env: PKG=e2e_example TASK=test
+    - dart: stable
       env: PKG=scratch_space TASK=dartfmt
 
 script: ./tool/travis.sh

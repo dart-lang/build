@@ -6,8 +6,6 @@ analyzer:
     unused_local_variable: error
     dead_code: error
     override_on_non_overriding_method: error
-  exclude:
-    - "test/goldens/generated_build_script.dart"
 linter:
   rules:
     # Errors
