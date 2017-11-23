@@ -81,9 +81,7 @@ Method _findBuildActions(Iterable<Expression> builderApplications) =>
       ..returns = types.buildActions
       ..body = new Block.of([
         // TODO - Pass actual arguments
-        literalList([], new TypeReference((b) => b..symbol = 'String'))
-            .assignVar('args')
-            .statement,
+        literalList([], refer('String')).assignVar('args').statement,
         literalList(builderApplications.toList())
             .assignVar('builders')
             .statement,
