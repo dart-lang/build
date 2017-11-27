@@ -10,10 +10,8 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-String _dartBinary =
-    p.join(getSdkPath(), 'bin', Platform.isWindows ? 'dart.bat' : 'dart');
-String _pubBinary =
-    p.join(getSdkPath(), 'bin', Platform.isWindows ? 'pub.bat' : 'pub');
+String _dartBinary = p.join(getSdkPath(), 'bin', 'dart');
+String _pubBinary = p.join(getSdkPath(), 'bin', 'pub');
 
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
