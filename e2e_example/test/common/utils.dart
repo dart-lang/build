@@ -63,7 +63,7 @@ Future<Null> _startServer(String command, List<String> args,
     await _toolDir.delete(recursive: true);
   }
 
-  _process = await Process.start(command, args);
+  _process = await Process.start(command, args, runInShell: true);
   _stdOutLines = _process.stdout
       .transform(UTF8.decoder)
       .transform(const LineSplitter())
@@ -102,7 +102,7 @@ Future<Null> stopServer({bool cleanUp}) async {
     _stdErrLines = null;
   }
 
-  if (cleanUp) await _toolDir.delete(recursive: true);
+  if (cleanUp && await _toolDir.exists()) await _toolDir.delete(recursive: true);
 }
 
 /// Checks whether the current git client is "clean" (no pending changes) for
