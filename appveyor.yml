@@ -1,0 +1,13 @@
+version: '{build}.{version}'
+pull_requests:
+  do_not_increment_build_number: true
+branches:
+  only:
+  - master
+shallow_clone: true
+build_script:
+- ps: >-
+    cd e2e_example
+
+    pub run test
+test: off
