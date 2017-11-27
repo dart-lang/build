@@ -8,12 +8,12 @@ install:
   - choco install dart-sdk-dev
   - RefreshEnv
   - cd e2e_example
-  - C:\tools\dart-sdk\bin\pub.bat get && exit 0
+  - pub.bat get && exit 0
 
 build: off
 
 test_script:
-  - C:\tools\dart-sdk\bin\pub.bat run test
+  - pub.bat run test
 
 cache:
   - C:\ProgramData\chocolatey\bin
