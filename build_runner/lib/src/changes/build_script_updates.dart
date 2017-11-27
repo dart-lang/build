@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:build/build.dart';
@@ -22,6 +23,10 @@ class BuildScriptUpdates {
       BuildOptions options, AssetGraph graph) async {
     bool supportsIncrementalRebuilds = true;
     var rootPackage = options.packageGraph.root.name;
+    // TODO: Remove this windows-specific hack and handle it elsewhere.
+    if (Platform.isWindows && rootPackage.startsWith('/')) {
+      rootPackage = rootPackage.substring(1);
+    }
     Set<AssetId> allSources;
     var logger = new Logger('BuildScriptUpdates');
     try {
