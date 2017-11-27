@@ -23,10 +23,6 @@ class BuildScriptUpdates {
       BuildOptions options, AssetGraph graph) async {
     bool supportsIncrementalRebuilds = true;
     var rootPackage = options.packageGraph.root.name;
-    // TODO: Remove this windows-specific hack and handle it elsewhere.
-    if (Platform.isWindows && rootPackage.startsWith('/')) {
-      rootPackage = rootPackage.substring(1);
-    }
     Set<AssetId> allSources;
     var logger = new Logger('BuildScriptUpdates');
     try {
@@ -73,6 +69,7 @@ class BuildScriptUpdates {
   /// Returns `null` if the uri should be ignored, or throws an [ArgumentError]
   /// if the [uri] is not recognized.
   static AssetId _idForUri(Uri uri, String _rootPackage) {
+    print('>>> uri: $uri, rootPackage: $_rootPackage');
     switch (uri.scheme) {
       case 'dart':
         // TODO: check for sdk updates!
