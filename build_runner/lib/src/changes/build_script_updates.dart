@@ -23,10 +23,6 @@ class BuildScriptUpdates {
       BuildOptions options, AssetGraph graph) async {
     bool supportsIncrementalRebuilds = true;
     var rootPackage = options.packageGraph.root.name;
-    // TODO: Remove this windows-specific hack and handle it elsewhere.
-    if (Platform.isWindows && rootPackage.startsWith('/')) {
-      rootPackage = rootPackage.substring(1);
-    }
     Set<AssetId> allSources;
     var logger = new Logger('BuildScriptUpdates');
     try {
@@ -82,7 +78,7 @@ class BuildScriptUpdates {
         return new AssetId(parts[0],
             p.url.joinAll(['lib']..addAll(parts.getRange(1, parts.length))));
       case 'file':
-        var relativePath = p.relative(uri.path, from: p.current);
+        var relativePath = p.relative(uri.toFilePath(), from: p.current);
         return new AssetId(_rootPackage, relativePath);
       case 'data':
         // Test runner uses a `data` scheme, don't invalidate for those.
