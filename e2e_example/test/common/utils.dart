@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+final pubExecutable = Platform.isWindows ? 'pub.bat' : 'pub';
+
 Directory _generatedDir = new Directory(p.join(_toolDir.path, 'generated'));
 Directory _toolDir = new Directory(p.join('.dart_tool', 'build'));
 
@@ -47,7 +49,7 @@ Future<Null> startManualServer(
 /// setting [verbose] to `true`.
 Future<Null> startAutoServer(
         {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
-    _startServer('pub', ['run', 'build_runner:serve'],
+    _startServer(pubExecutable, ['run', 'build_runner:serve'],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
@@ -155,7 +157,7 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
 Future<ProcessResult> runTests() =>
-    Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
+    Process.run(pubExecutable, ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
 
 Future<Null> expectTestsFail() async {
   var result = await runTests();

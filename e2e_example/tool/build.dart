@@ -11,7 +11,7 @@ import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
-Future main() async {
+Future main(List<String> args) async {
   var graph = new PackageGraph.forThisPackage();
   var builders = [
     applyToRoot(new TestBootstrapBuilder(), inputs: ['test/**_test.dart']),
