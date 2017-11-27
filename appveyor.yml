@@ -5,17 +5,19 @@ branches:
 version: '1.0.{build}'
 
 install:
-  - choco install dart-sdk-dev
+  - ps: wget https://gsdview.appspot.com/dart-archive/channels/dev/raw/latest/sdk/dartsdk-windows-x64-release.zip -OutFile dart-sdk.zip
+  - cmd: echo "Unzipping dart-sdk..."
+  - cmd: 7z x dart-sdk.zip -o"C:\tools" -y > nul
+  - set PATH=%PATH%;C:\tools\dart-sdk\bin
+  - set PATH=%PATH%;%APPDATA%\Pub\Cache\bin
   - RefreshEnv
   - cd e2e_example
-  - C:\tools\dart-sdk\bin\pub.bat get && exit 0
+  - pub get && exit 0
 
 build: off
 
 test_script:
-  - C:\tools\dart-sdk\bin\pub.bat run test
+  - pub run test -j 1
 
 cache:
-  - C:\ProgramData\chocolatey\bin
-  - C:\ProgramData\chocolatey\lib
   - C:\Users\appveyor\AppData\Roaming\Pub\Cache
