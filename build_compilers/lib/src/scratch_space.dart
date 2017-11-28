@@ -43,7 +43,7 @@ final scratchSpaceResource = new Resource<ScratchSpace>(() {
     numTries++;
     if (numTries > 3) {
       _logger.warning(
-          'Failed to clean up temp dir ' '${scratchSpace.tempDir.path}.');
+          'Failed to clean up temp dir ${scratchSpace.tempDir.path}.');
       return;
     }
     try {
