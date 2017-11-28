@@ -47,8 +47,9 @@ final scratchSpaceResource = new Resource<ScratchSpace>(() {
       return;
     }
     try {
-      // The scratch space throws on `delete` if it thinks it was already
-      // deleted. Manually clean up in this case.
+      // TODO(https://github.com/dart-lang/build/issues/656):  The scratch
+      // space throws on `delete` if it thinks it was already deleted.
+      // Manually clean up in this case.
       if (scratchSpace.exists) {
         await scratchSpace.delete();
       } else {
