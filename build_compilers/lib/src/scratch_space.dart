@@ -56,7 +56,7 @@ final scratchSpaceResource = new Resource<ScratchSpace>(() {
       }
       return;
     } on FileSystemException {
-      var delayMs = math.pow(10, numTries);
+      var delayMs = math.pow(10, numTries).floor();
       _logger.info('Failed to delete temp dir ${scratchSpace.tempDir.path}, '
           'retrying in ${delayMs}ms');
       await new Future.delayed(new Duration(milliseconds: delayMs));
