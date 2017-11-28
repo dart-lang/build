@@ -6,7 +6,9 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 
 /// Relative path to the asset graph from the root package dir.
-final String assetGraphPath = assetGraphPathFor(Platform.script.path);
+final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
+    ? Platform.script.toFilePath()
+    : Platform.script.path);
 
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>

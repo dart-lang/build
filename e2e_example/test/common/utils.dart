@@ -16,6 +16,8 @@ Process _process;
 Stream<String> _stdErrLines;
 Stream<String> _stdOutLines;
 
+final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
+
 /// Runs the build script in this package, and waits for the first build to
 /// complete.
 ///
@@ -47,7 +49,7 @@ Future<Null> startManualServer(
 /// setting [verbose] to `true`.
 Future<Null> startAutoServer(
         {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
-    _startServer('pub', ['run', 'build_runner:serve'],
+    _startServer(_pubBinary, ['run', 'build_runner:serve'],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
@@ -93,16 +95,10 @@ Future<Null> stopServer({bool cleanUp}) async {
     await _process.exitCode;
     _process = null;
   }
-  if (_stdOutLines != null) {
-    await _stdOutLines.drain();
-    _stdOutLines = null;
-  }
-  if (_stdErrLines != null) {
-    await _stdErrLines.drain();
-    _stdErrLines = null;
-  }
+  _stdOutLines = null;
+  _stdErrLines = null;
 
-  if (cleanUp) await _toolDir.delete(recursive: true);
+  if (cleanUp && await _toolDir.exists()) await _toolDir.delete(recursive: true);
 }
 
 /// Checks whether the current git client is "clean" (no pending changes) for
@@ -155,7 +151,7 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
 Future<ProcessResult> runTests() =>
-    Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
+    Process.run(_pubBinary, ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
 
 Future<Null> expectTestsFail() async {
   var result = await runTests();

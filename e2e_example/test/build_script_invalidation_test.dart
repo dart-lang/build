@@ -6,6 +6,7 @@
 import 'dart:io';
 
 import 'package:build_runner/src/util/constants.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'common/utils.dart';
@@ -44,7 +45,7 @@ void main() {
     test('Invalid asset graph version causes a new full build', () async {
       await stopServer();
       var assetGraph =
-          assetGraphPathFor(new File('tool/build.dart').absolute.path);
+          assetGraphPathFor(new File(p.join('tool', 'build.dart')).absolute.path);
       // Prepend a 1 to the version number
       await replaceAllInFile(assetGraph, '"version":', '"version":1');
       await startManualServer(extraExpects: [

@@ -33,6 +33,7 @@
   previously this was only an assert.
 - Fixed an issue where nodes could get in an inconsistent state for short
   periods of time, leading to various errors.
+- Fixed an issue on windows where incremental builds didn't work.
 
 ## 0.6.0+1
 

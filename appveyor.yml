@@ -1,0 +1,22 @@
+branches:
+  only:
+    - master
+
+version: '1.0.{build}'
+
+install:
+  - ps: wget https://gsdview.appspot.com/dart-archive/channels/dev/raw/latest/sdk/dartsdk-windows-x64-release.zip -OutFile dart-sdk.zip
+  - cmd: echo "Unzipping dart-sdk..."
+  - cmd: 7z x dart-sdk.zip -o"C:\tools" -y > nul
+  - set PATH=%PATH%;C:\tools\dart-sdk\bin
+  - set PATH=%PATH%;%APPDATA%\Pub\Cache\bin
+  - cd e2e_example
+  - pub get && exit 0
+
+build: off
+
+test_script:
+  - pub run test -j 1
+
+cache:
+  - C:\Users\appveyor\AppData\Roaming\Pub\Cache
