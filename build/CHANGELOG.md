@@ -1,3 +1,9 @@
+## 0.11.1-dev
+
+- Add `BuilderOptions` and `BuilderFactory` interfaces. Along with
+  `package:build_config` this will offer a consistent way to describe and create
+  the Builder instances exposed by a package.
+
 ## 0.11.0
 
 - **Breaking**: `AssetReader.findAssets` now returns a `Stream<AssetId>`

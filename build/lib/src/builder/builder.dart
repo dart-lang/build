@@ -23,3 +23,16 @@ abstract class Builder {
   /// extensions.
   Map<String, List<String>> get buildExtensions;
 }
+
+class BuilderOptions {
+  /// The configuration to apply to a given usage of a [Builder].
+  ///
+  /// A `Map` parsed from json or yaml. The value types will be `String`, `num`,
+  /// `bool` or `List` or `Map` of these types.
+  final Map<String, dynamic> config;
+
+  const BuilderOptions(this.config);
+}
+
+/// Creates a [Builder] honoring the configuation in [options].
+typedef Builder BuilderFactory(BuilderOptions options);
