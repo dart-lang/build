@@ -1,4 +1,4 @@
-## 0.11.1-dev
+## 0.11.1
 
 - Add `BuilderOptions` and `BuilderFactory` interfaces. Along with
   `package:build_config` this will offer a consistent way to describe and create
