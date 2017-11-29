@@ -113,17 +113,20 @@ final dartdevkDriverResource = new Resource<BazelWorkerDriver>(
 });
 
 /// Manages a shared set of persistent common frontend workers.
-BazelWorkerDriver get _frontendDriver =>
-    __frontendDriver ??= new BazelWorkerDriver(
-        () => Process.start(
-            p.join(sdkDir, 'bin', 'dart'),
-            [
-              p.join(
-                  sdkDir, 'bin', 'snapshots', 'front_end_worker.dart.snapshot'),
-              '--persistent_worker'
-            ],
-            workingDirectory: scratchSpace.tempDir.path),
-        maxWorkers: _maxWorkersPerTask);
+BazelWorkerDriver get _frontendDriver {
+  _frontendWorkersAreDoneCompleter ??= new Completer<Null>();
+  return __frontendDriver ??= new BazelWorkerDriver(
+      () => Process.start(
+          p.join(sdkDir, 'bin', 'dart'),
+          [
+            p.join(
+                sdkDir, 'bin', 'snapshots', 'front_end_worker.dart.snapshot'),
+            '--persistent_worker'
+          ],
+          workingDirectory: scratchSpace.tempDir.path),
+      maxWorkers: _maxWorkersPerTask);
+}
+
 BazelWorkerDriver __frontendDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for common frontend.
