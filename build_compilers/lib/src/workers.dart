@@ -23,6 +23,16 @@ Future<Null> get dartdevcWorkersAreDone =>
     _dartdevcWorkersAreDoneCompleter?.future ?? new Future.value(null);
 Completer<Null> _dartdevcWorkersAreDoneCompleter;
 
+/// Completes once the dartdevk workers have been shut down.
+Future<Null> get dartdevkWorkersAreDone =>
+    _dartdevkWorkersAreDoneCompleter?.future ?? new Future.value(null);
+Completer<Null> _dartdevkWorkersAreDoneCompleter;
+
+/// Completes once the common frontend workers have been shut down.
+Future<Null> get frontendWorkersAreDone =>
+    _frontendWorkersAreDoneCompleter?.future ?? new Future.value(null);
+Completer<Null> _frontendWorkersAreDoneCompleter;
+
 String get _scriptExtension => Platform.isWindows ? '.bat' : '';
 
 final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
@@ -79,6 +89,50 @@ final dartdevcDriverResource = new Resource<BazelWorkerDriver>(
   _dartdevcWorkersAreDoneCompleter.complete();
   _dartdevcWorkersAreDoneCompleter = null;
   __dartdevcDriver = null;
+});
+
+/// Manages a shared set of persistent dartdevk workers.
+BazelWorkerDriver get _dartdevkDriver {
+  _dartdevkWorkersAreDoneCompleter ??= new Completer<Null>();
+  return __dartdevkDriver ??= new BazelWorkerDriver(
+      () => Process.start(p.join(sdkDir, 'bin', 'dartdevk$_scriptExtension'),
+          ['--persistent_worker'],
+          workingDirectory: scratchSpace.tempDir.path),
+      maxWorkers: _maxWorkersPerTask);
+}
+
+BazelWorkerDriver __dartdevkDriver;
+
+/// Resource for fetching the current [BazelWorkerDriver] for dartdevk.
+final dartdevkDriverResource = new Resource<BazelWorkerDriver>(
+    () => _dartdevkDriver, beforeExit: () async {
+  await _dartdevkDriver?.terminateWorkers();
+  _dartdevkWorkersAreDoneCompleter.complete();
+  _dartdevkWorkersAreDoneCompleter = null;
+  __dartdevkDriver = null;
+});
+
+/// Manages a shared set of persistent common frontend workers.
+BazelWorkerDriver get _frontendDriver =>
+    __frontendDriver ??= new BazelWorkerDriver(
+        () => Process.start(
+            p.join(sdkDir, 'bin', 'dart'),
+            [
+              p.join(
+                  sdkDir, 'bin', 'snapshots', 'front_end_worker.dart.snapshot'),
+              '--persistent_worker'
+            ],
+            workingDirectory: scratchSpace.tempDir.path),
+        maxWorkers: _maxWorkersPerTask);
+BazelWorkerDriver __frontendDriver;
+
+/// Resource for fetching the current [BazelWorkerDriver] for common frontend.
+final frontendDriverResource = new Resource<BazelWorkerDriver>(
+    () => _frontendDriver, beforeExit: () async {
+  await _frontendDriver?.terminateWorkers();
+  _frontendWorkersAreDoneCompleter.complete();
+  _frontendWorkersAreDoneCompleter = null;
+  __frontendDriver = null;
 });
 
 final sdkDir = cli_util.getSdkPath();
