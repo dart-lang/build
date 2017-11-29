@@ -27,7 +27,7 @@ the following keys:
   automatically to applied. Defaults to `'none'` The possibilities are:
   - `"none"`: Never apply this Builder unless it is manually configured
   - `"dependents"`: Apply this Builder to the package with a direct dependency
-    on the package exposign the builder.
+    on the package exposing the builder.
   - `"all_packages"`: Apply this Builder to all packages in the transitive
     dependency graph.
   - `"root_package"`; Apply this Builder only to the top-level package.

@@ -165,5 +165,5 @@ Expression _findToExpression(
       return refer('toPackage', 'package:build_runner/build_runner.dart')
           .call([literalString(packageGraph.root.name)]);
   }
-  throw 'Unreachable';
+  throw new StateError('Unhandled AutoApply type: ${definition.autoApply}');
 }
