@@ -15,6 +15,7 @@ import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
 import 'scratch_space.dart';
+import 'summary_builder.dart';
 import 'workers.dart';
 
 const jsModuleErrorsExtension = '.js.errors';
@@ -67,7 +68,6 @@ Future createDevCompilerModule(
     ..addAll(transitiveSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var jsOutputFile = scratchSpace.fileFor(module.jsId);
-  // var libraryRoot = '/${p.split(p.dirname(module.jsId.path)).first}';
   var sdkSummary =
       p.url.join(sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
   var request = new WorkRequest();
@@ -75,13 +75,22 @@ Future createDevCompilerModule(
   request.arguments.addAll([
     '--dart-sdk-summary=$sdkSummary',
     '--modules=amd',
-    // '--module-root=.',
-    // '--library-root=$libraryRoot',
-    // '--summary-extension=${(useKernel ? kernelSummaryExtension : linkedSummaryExtension).substring(1)}',
-    // '--no-summarize',
     '-o',
     jsOutputFile.path,
   ]);
+
+  if (!useKernel) {
+    // Add the default analysis_options.
+    await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
+    var libraryRoot = '/${p.split(p.dirname(module.jsId.path)).first}';
+    request.arguments.addAll([
+      '--module-root=.',
+      '--library-root=$libraryRoot',
+      '--summary-extension=${linkedSummaryExtension.substring(1)}',
+      '--no-summarize',
+      defaultAnalysisOptionsArg(scratchSpace),
+    ]);
+  }
 
   if (debugMode) {
     request.arguments.addAll([
@@ -91,12 +100,6 @@ Future createDevCompilerModule(
     ]);
   } else {
     request.arguments.add('--no-source-map');
-  }
-
-  // Add the default analysis_options.
-  await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-  if (!useKernel) {
-    request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
   }
 
   // Add all the linked summaries as summary inputs.
