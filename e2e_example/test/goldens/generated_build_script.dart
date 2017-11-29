@@ -4,7 +4,6 @@ import 'package:build_compilers/builders.dart' as _i3;
 import 'package:shelf/shelf_io.dart' as _i4;
 
 List<_i1.BuildAction> _buildActions(_i1.PackageGraph packageGraph) {
-  var args = <String>[];
   var builders = [
     _i1.apply('provides_builder', 'some_builder', [_i2.someBuilder],
         _i1.toDependentsOf('provides_builder')),
@@ -23,7 +22,7 @@ List<_i1.BuildAction> _buildActions(_i1.PackageGraph packageGraph) {
         [_i3.devCompilerBootstrapBuilder], _i1.toPackage('e2e_example'),
         inputs: ['web/**.dart', 'test/**.browser_test.dart'])
   ];
-  return _i1.createBuildActions(packageGraph, builders, args: args);
+  return _i1.createBuildActions(packageGraph, builders);
 }
 
 main() async {
