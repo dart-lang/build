@@ -20,7 +20,7 @@ Iterable<BuilderDefinition> findBuilderOrder(
 
 List<BuilderDefinition> _findOrder(Iterable<BuilderDefinition> builders) {
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
-      builders.where((child) => _hasDependency(parent, child));
+      builders.where((child) => _hasInputDependency(parent, child));
   var components = stronglyConnectedComponents<String, BuilderDefinition>(
       builders, _builderKey, dependencies);
   return components.map((component) {
@@ -31,7 +31,9 @@ List<BuilderDefinition> _findOrder(Iterable<BuilderDefinition> builders) {
   }).toList();
 }
 
-bool _hasDependency(BuilderDefinition parent, BuilderDefinition child) {
+/// Whether [parent] has a `required_input` that wants to read outputs produced
+/// by [child].
+bool _hasInputDependency(BuilderDefinition parent, BuilderDefinition child) {
   final childOutputs = child.buildExtensions.values.expand((v) => v).toSet();
   return parent.requiredInputs
       .any((input) => childOutputs.any((output) => output.endsWith(input)));
