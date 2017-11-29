@@ -77,14 +77,11 @@ Method _findBuildActions(Iterable<Expression> builderApplications) =>
         ..type = types.packageGraph))
       ..returns = types.buildActions
       ..body = new Block.of([
-        // TODO - Pass actual arguments
-        literalList([], refer('String')).assignVar('args').statement,
         literalList(builderApplications.toList())
             .assignVar('builders')
             .statement,
         refer('createBuildActions', 'package:build_runner/build_runner.dart')
-            .call([refer('packageGraph'), refer('builders')],
-                {'args': refer('args')})
+            .call([refer('packageGraph'), refer('builders')])
             .returned
             .statement,
       ]));
@@ -168,5 +165,5 @@ Expression _findToExpression(
       return refer('toPackage', 'package:build_runner/build_runner.dart')
           .call([literalString(packageGraph.root.name)]);
   }
-  throw 'Unreachable';
+  throw new ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }
