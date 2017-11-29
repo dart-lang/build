@@ -37,6 +37,9 @@ the following keys:
   type. For instance a compiler must run after any Builder which can produce
   `.dart` outputs or those libraries can't be compiled. This option should be
   rare. Defaults to an empty list.
+- **is_optional**: Optional, boolean. Specifies whether a Builder can be run
+  lazily, such that it won't execute until one of it's outputs is requested by a
+  later Builder. This option should be rare. Defaults to `False`.
 
 Example `builders` config:
 

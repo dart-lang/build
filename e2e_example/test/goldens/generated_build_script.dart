@@ -20,7 +20,8 @@ List<_i1.BuildAction> _buildActions(_i1.PackageGraph packageGraph) {
           _i3.linkedSummaryBuilder,
           _i3.devCompilerBuilder
         ],
-        _i1.toNoneByDefault()),
+        _i1.toNoneByDefault(),
+        isOptional: true),
     _i1.apply(
         'build_compilers',
         'ddc',
