@@ -4,20 +4,20 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
+import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
 
-const kernelSummaryExtension = '.sum.dill';
+const kernelSummaryExtension = '.dill';
 
 /// A builder which can output unlinked summaries!
 class KernelSummaryBuilder implements Builder {
@@ -68,39 +68,33 @@ Future createKernelSummary(Module module, BuildStep buildStep,
   var summaryOutputFile = scratchSpace.fileFor(module.kernelSummaryId);
   var request = new WorkRequest();
 
-  var allPackages =
-      new Set<String>.from(transitiveSummaryDeps.map((id) => id.package))
-        ..addAll(module.sources.map((id) => id.package));
-
-  // TODO: better solution for a .packages file, today we just create a new one
-  // for every kernel build action.
-  var packagesFileDir =
-      await Directory.systemTemp.createTemp('kernel_builder_');
-  var packagesFile = new File(p.join(packagesFileDir.path, '.packages'));
+  var allDeps = <AssetId>[]
+    ..addAll(transitiveSummaryDeps)
+    ..addAll(module.sources);
+  var packagesFile = await createPackagesFile(allDeps, scratchSpace);
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    await packagesFile.create();
-    await packagesFile.writeAsString(allPackages
-        .map((pkg) =>
-            '$pkg:file://${p.join(scratchSpace.tempDir.path, 'packages', pkg)}')
-        .join('\r\n'));
-
     var sdkSummary = p.url.join(sdkDir, 'lib', '_internal', 'ddc_sdk.dill');
     request.arguments.addAll([
-      "--dart-sdk-summary",
+      '--dart-sdk-summary',
       sdkSummary,
-      "--output",
+      '--output',
       summaryOutputFile.path,
-      "--packages-file",
+      '--packages-file',
       packagesFile.path,
+      '--multi-root=.'
     ]);
 
     // Add all summaries as summary inputs.
     request.arguments.addAll(transitiveSummaryDeps
         .map((id) => '--input-summary=${scratchSpace.fileFor(id).uri}'));
-    request.arguments
-        .addAll(module.sources.map((id) => '--source=${canonicalUriFor(id)}'));
+    request.arguments.addAll(module.sources.map((id) {
+      var uri = id.path.startsWith('lib')
+          ? canonicalUriFor(id)
+          : 'multi-root:/${id.path}';
+      return '--source=$uri';
+    }));
 
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
     var response = await analyzer.doWork(request);
@@ -112,6 +106,6 @@ Future createKernelSummary(Module module, BuildStep buildStep,
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(module.kernelSummaryId, buildStep);
   } finally {
-    await packagesFileDir.delete(recursive: true);
+    await packagesFile.parent.delete(recursive: true);
   }
 }

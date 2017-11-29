@@ -20,11 +20,11 @@ Future main() async {
         [
           (_) => new ModuleBuilder(),
           (_) => new KernelSummaryBuilder(),
+          (_) => new DevCompilerBuilder(useKernel: true),
         ],
         toAllPackages(),
-        isOptional: false /*true*/),
-    // applyToRoot(new DevCompilerBootstrapBuilder(),
-    //     inputs: ['web/**.dart', 'test/**.browser_test.dart'])
+        isOptional: true),
+    applyToRoot(new DevCompilerBootstrapBuilder(), inputs: ['web/**.dart'])
   ];
   var buildActions = createBuildActions(graph, builders);
 
