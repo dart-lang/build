@@ -13,6 +13,7 @@ import 'package:logging/logging.dart';
 
 import '../logging/logging.dart';
 import '../util/constants.dart';
+import 'builder_ordering.dart';
 import 'types.dart' as types;
 
 const scriptLocation = '$entryPointDir/build.dart';
@@ -48,14 +49,9 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
       (await Future.wait(packageGraph.orderedPackages.map(_packageBuildConfig)))
           .expand((c) => c.builderDefinitions.values);
 
-  builderApplications.addAll(builderDefinitions
-      .map((definition) => _applyBuilder(definition, packageGraph)));
-  var ddcBuilder = builderDefinitions
-      .firstWhere((b) => b.package == 'build_compilers' && b.name == 'ddc');
-  builderApplications.add(_applyBuilderWithFilter(
-      ddcBuilder,
-      refer('toAllPackages', 'package:build_runner/build_runner.dart')
-          .call([])));
+  final orderedBuilders = findBuilderOrder(builderDefinitions);
+  builderApplications
+      .addAll(orderedBuilders.map((b) => _applyBuilder(b, packageGraph)));
   var ddcBootstrap = builderDefinitions.firstWhere(
       (b) => b.package == 'build_compilers' && b.name == 'ddc_bootstrap');
   // TODO - should this be configurable?

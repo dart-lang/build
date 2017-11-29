@@ -16,6 +16,8 @@ builders:
         - .js
         - .js.map
     is_optional: True
+    auto_apply: all_packages
+    required_inputs: [".dart"]
   ddc_bootstrap:
     target: "build_compilers"
     import: "package:build_compilers/builders.dart"
@@ -25,3 +27,4 @@ builders:
         - .dart.bootstrap.js
         - .dart.js
         - .dart.js.map
+    required_inputs:  [".dart", ".js"]
