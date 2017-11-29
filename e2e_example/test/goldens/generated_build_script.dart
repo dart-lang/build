@@ -5,8 +5,22 @@ import 'package:shelf/shelf_io.dart' as _i4;
 
 List<_i1.BuildAction> _buildActions(_i1.PackageGraph packageGraph) {
   var builders = [
+    _i1.apply('provides_builder', 'some_not_applied_builder', [_i2.notApplied],
+        _i1.toNoneByDefault()),
     _i1.apply('provides_builder', 'some_builder', [_i2.someBuilder],
         _i1.toDependentsOf('provides_builder')),
+    _i1.apply('build_compilers', 'ddc_bootstrap',
+        [_i3.devCompilerBootstrapBuilder], _i1.toNoneByDefault()),
+    _i1.apply(
+        'build_compilers',
+        'ddc',
+        [
+          _i3.moduleBuilder,
+          _i3.unlinkedSummaryBuilder,
+          _i3.linkedSummaryBuilder,
+          _i3.devCompilerBuilder
+        ],
+        _i1.toNoneByDefault()),
     _i1.apply(
         'build_compilers',
         'ddc',

@@ -13,6 +13,9 @@ typedef bool PackageFilter(PackageNode node);
 /// Run a builder on all packages in the package graph.
 PackageFilter toAllPackages() => (_) => true;
 
+/// Require manual configuration to opt in to a builder.
+PackageFilter toNoneByDefault() => (_) => false;
+
 /// Run a builder on all packages with an immediate dependency on [packageName].
 PackageFilter toDependentsOf(String packageName) =>
     (p) => p.dependencies.any((d) => d.name == packageName);
