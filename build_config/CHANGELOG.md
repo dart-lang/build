@@ -1,7 +1,8 @@
-## 0.1.1-dev
+## 0.1.1
 
 - Add `auto_apply` option to Builder configuration.
 - Add `required_inputs` option to Builder configuration.
+- Add `is_optional` option to Builder configuration.
 
 ## 0.1.0
 
