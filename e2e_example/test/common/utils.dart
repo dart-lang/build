@@ -166,7 +166,7 @@ Future<ProcessResult> runTests({bool usePrecompiled}) async {
     expect(mergedDirResult.exitCode, 0,
         reason: 'stdout:${mergedDirResult.stdout}\n'
             'stderr${mergedDirResult.stderr}');
-    args.addAll(['--precompiled', '${precompiledTmpDir}/']);
+    args.addAll(['--precompiled', '${precompiledTmpDir.path}/']);
   } else {
     args.addAll(['--pub-serve', '8081']);
   }
