@@ -97,7 +97,6 @@ Future main(List<String> args) async {
         new AssetId(packageGraph.root.name, p.url.join(dir, '.packages')),
         packagesFileContent);
     var link = new Link(p.join(outputDir.path, dir, 'packages'));
-    print(link.path);
     link.createSync(p.join('..', 'packages'), recursive: true);
   }
 }
