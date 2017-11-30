@@ -151,15 +151,27 @@ Future<String> nextStdErrLine(String message) =>
 Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
-Future<ProcessResult> runTests({bool usePrecompiled}) {
+Future<ProcessResult> runTests({bool usePrecompiled}) async {
   usePrecompiled ??= false;
   var args = ['run', 'test', '-p', 'chrome'];
   if (usePrecompiled) {
+    var result = await Process.run(_pubBinary, [
+      'run',
+      'build_runner:create_merged_dir',
+      '--script=tool/build.dart',
+      '--output-dir=build'
+    ]);
+    expect(result.exitCode, 0,
+        reason: 'stdout:${result.stdout}\nstderr${result.stderr}');
     args.addAll(['--precompiled', 'build/']);
   } else {
     args.addAll(['--pub-serve', '8081']);
   }
-  return Process.run(_pubBinary, args);
+  var result = Process.run(_pubBinary, args);
+  if (usePrecompiled) {
+    await new Directory('build').delete(recursive: true);
+  }
+  return result;
 }
 
 Future<Null> expectTestsFail() async {
