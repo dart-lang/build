@@ -154,22 +154,25 @@ Future<String> nextStdOutLine(String message) =>
 Future<ProcessResult> runTests({bool usePrecompiled}) async {
   usePrecompiled ??= false;
   var args = ['run', 'test', '-p', 'chrome'];
+  Directory precompiledTmpDir;
   if (usePrecompiled) {
-    var result = await Process.run(_pubBinary, [
+    precompiledTmpDir = await Directory.systemTemp.createTemp('build_e2e_test');
+    var mergedDirResult = await Process.run(_pubBinary, [
       'run',
       'build_runner:create_merged_dir',
       '--script=${p.join('tool', 'build.dart')}',
-      '--output-dir=build'
+      '--output-dir=${precompiledTmpDir.path}'
     ]);
-    expect(result.exitCode, 0,
-        reason: 'stdout:${result.stdout}\nstderr${result.stderr}');
-    args.addAll(['--precompiled', 'build/']);
+    expect(mergedDirResult.exitCode, 0,
+        reason: 'stdout:${mergedDirResult.stdout}\n'
+            'stderr${mergedDirResult.stderr}');
+    args.addAll(['--precompiled', '${precompiledTmpDir}/']);
   } else {
     args.addAll(['--pub-serve', '8081']);
   }
-  var result = Process.run(_pubBinary, args);
+  var result = await Process.run(_pubBinary, args);
   if (usePrecompiled) {
-    await new Directory('build').delete(recursive: true);
+    await precompiledTmpDir.delete(recursive: true);
   }
   return result;
 }
