@@ -158,7 +158,7 @@ Future<ProcessResult> runTests({bool usePrecompiled}) async {
     var result = await Process.run(_pubBinary, [
       'run',
       'build_runner:create_merged_dir',
-      '--script=tool/build.dart',
+      '--script=${p.join('tool', 'build.dart')}',
       '--output-dir=build'
     ]);
     expect(result.exitCode, 0,

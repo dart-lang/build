@@ -33,13 +33,6 @@ Future main(List<String> args) async {
     throw new ArgumentError.notNull('--script');
   }
 
-  var outputDir = new Directory(parsedArgs['output-dir'] as String);
-  if (outputDir.existsSync()) {
-    stdout.writeln('Deleting existing output dir `$outputDir`');
-    outputDir.deleteSync(recursive: true);
-  }
-  outputDir.createSync(recursive: true);
-
   var scriptFile = new File(scriptPath);
   if (!scriptFile.existsSync()) {
     throw new ArgumentError(
@@ -51,6 +44,14 @@ Future main(List<String> args) async {
     throw new ArgumentError(
         'Unable to find AssetGraph for $scriptPath at ${assetGraphFile.path}');
   }
+
+  var outputDir = new Directory(parsedArgs['output-dir'] as String);
+  if (outputDir.existsSync()) {
+    stdout.writeln('Deleting existing output dir `$outputDir`');
+    outputDir.deleteSync(recursive: true);
+  }
+  outputDir.createSync(recursive: true);
+
   stdout.writeln('Loading asset graph at ${assetGraphFile.path}...');
 
   assetGraph = new AssetGraph.deserialize(
