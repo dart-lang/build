@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Remove `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+
 The following changes are technically breaking but should not impact most
 clients:
 

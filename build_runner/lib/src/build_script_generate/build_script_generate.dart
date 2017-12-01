@@ -12,6 +12,7 @@ import 'package:dart_style/dart_style.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/logging.dart';
+import '../package_graph/dependency_ordering.dart';
 import '../util/constants.dart';
 import 'builder_ordering.dart';
 import 'types.dart' as types;
@@ -45,8 +46,11 @@ Future<String> _generateBuildScript() async {
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
   final packageGraph = new PackageGraph.forThisPackage();
+  final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
+          [packageGraph.root], (node) => node.name, (node) => node.dependencies)
+      .expand((c) => c);
   final builderDefinitions =
-      (await Future.wait(packageGraph.orderedPackages.map(_packageBuildConfig)))
+      (await Future.wait(orderedPackages.map(_packageBuildConfig)))
           .expand((c) => c.builderDefinitions.values);
 
   final orderedBuilders = findBuilderOrder(builderDefinitions);
