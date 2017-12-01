@@ -3,11 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:code_builder/code_builder.dart';
+import 'package:code_builder/code_builder.dart' hide File;
 import 'package:dart_style/dart_style.dart';
 import 'package:logging/logging.dart';
 
@@ -20,7 +20,7 @@ const scriptLocation = '$entryPointDir/build.dart';
 
 Future<Null> ensureBuildScript() async {
   var log = new Logger('ensureBuildScript');
-  var scriptFile = new io.File(scriptLocation);
+  var scriptFile = new File(scriptLocation);
   // TODO - how can we invalidate this?
   //if (scriptFile.existsSync()) return;
   scriptFile.createSync(recursive: true);
@@ -31,7 +31,7 @@ Future<Null> ensureBuildScript() async {
 Future<String> _generateBuildScript() async {
   final builders = await _findBuilderApplications();
   final library =
-      new File((b) => b.body.addAll([_findBuildActions(builders), _main()]));
+      new Library((b) => b.body.addAll([_findBuildActions(builders), _main()]));
   final emitter = new DartEmitter(new Allocator.simplePrefixing());
   return new DartFormatter().format('${library.accept(emitter)}');
 }
