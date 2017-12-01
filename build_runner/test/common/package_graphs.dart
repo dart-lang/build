@@ -4,16 +4,19 @@
 
 import 'package:build_runner/build_runner.dart';
 
-PackageGraph buildPackageGraph(
-    String rootPackage, Map<PackageNode, Iterable<String>> packages) {
+PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
   var packagesByName = new Map<String, PackageNode>.fromIterable(packages.keys,
       key: (p) => (p as PackageNode).name);
   for (final package in packages.keys) {
     package.dependencies
         .addAll(packages[package].map((name) => packagesByName[name]));
   }
-  return new PackageGraph.fromRoot(packagesByName[rootPackage]);
+  var root = packages.keys.singleWhere((n) => n.isRoot);
+  return new PackageGraph.fromRoot(root);
 }
 
 PackageNode package(String packageName, {String path}) =>
     new PackageNode(packageName, path);
+
+PackageNode rootPackage(String packageName, {String path}) =>
+    new PackageNode(packageName, path, isRoot: true);

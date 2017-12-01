@@ -109,7 +109,7 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      var a = new PackageNode('a', null);
+      var a = new PackageNode('a', null, isRoot: true);
       var b = new PackageNode('b', null);
       var c = new PackageNode('c', null);
       var d = new PackageNode('d', null);
@@ -138,8 +138,8 @@ void main() {
 
   group('orderedPackages', () {
     test('with two sub trees', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['left1', 'right1'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['left1', 'right1'],
         package('left1'): ['left2'],
         package('left2'): [],
         package('right1'): ['right2'],
@@ -151,8 +151,8 @@ void main() {
     });
 
     test('includes root last in cycle', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['b'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['b'],
         package('b'): ['a']
       });
       var inOrder = graph.orderedPackages.map((n) => n.name).toList();
@@ -160,8 +160,8 @@ void main() {
     });
 
     test('handles cycles from beneath the root', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['b'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['b'],
         package('b'): ['c'],
         package('c'): ['b']
       });
@@ -171,8 +171,8 @@ void main() {
     });
 
     test('handles diamonds', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['left', 'right'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['left', 'right'],
         package('left'): ['sharedDep'],
         package('right'): ['sharedDep'],
         package('sharedDep'): []
@@ -184,8 +184,8 @@ void main() {
 
   group('dependentsOf', () {
     test('with two sub trees', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['left1', 'right1', 'needle'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['left1', 'right1', 'needle'],
         package('left1'): ['left2', 'needle'],
         package('left2'): [],
         package('right1'): ['right2'],

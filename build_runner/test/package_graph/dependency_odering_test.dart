@@ -8,8 +8,8 @@ import '../common/package_graphs.dart';
 void main() {
   group('stronglyConnectedComponents', () {
     test('with two sub trees', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['left1', 'right1'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['left1', 'right1'],
         package('left1'): ['left2'],
         package('left2'): [],
         package('right1'): ['right2'],
@@ -36,8 +36,8 @@ void main() {
     });
 
     test('includes the root last in the strongly connected component', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['b'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['b'],
         package('b'): ['a']
       });
       var inOrder = stronglyConnectedComponents<String, PackageNode>(
@@ -48,8 +48,8 @@ void main() {
     });
 
     test('handles cycles from beneath the root', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['b'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['b'],
         package('b'): ['c'],
         package('c'): ['b']
       });
@@ -66,8 +66,8 @@ void main() {
     });
 
     test('handles diamonds', () {
-      var graph = buildPackageGraph('a', {
-        package('a'): ['left', 'right'],
+      var graph = buildPackageGraph({
+        rootPackage('a'): ['left', 'right'],
         package('left'): ['sharedDep'],
         package('right'): ['sharedDep'],
         package('sharedDep'): []

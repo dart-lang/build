@@ -50,15 +50,12 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
           .expand((c) => c.builderDefinitions.values);
 
   final orderedBuilders = findBuilderOrder(builderDefinitions);
-  builderApplications
-      .addAll(orderedBuilders.map((b) => _applyBuilder(b, packageGraph)));
+  builderApplications.addAll(orderedBuilders.map(_applyBuilder));
   var ddcBootstrap = builderDefinitions.firstWhere(
       (b) => b.package == 'build_compilers' && b.name == 'ddc_bootstrap');
   // TODO - should this be configurable?
-  builderApplications.add(_applyBuilderWithFilter(
-      ddcBootstrap,
-      refer('toPackage', 'package:build_runner/build_runner.dart')
-          .call([literalString(packageGraph.root.name)]),
+  builderApplications.add(_applyBuilderWithFilter(ddcBootstrap,
+      refer('toRoot', 'package:build_runner/build_runner.dart').call([]),
       inputs: ['web/**.dart', 'test/**.browser_test.dart']));
   return builderApplications;
 }
@@ -118,10 +115,8 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
         await Pubspec.fromPackageDir(package.path), package.path);
 
 /// An expression calling `apply` with appropriate setup for a Builder.
-Expression _applyBuilder(
-        BuilderDefinition definition, PackageGraph packageGraph) =>
-    _applyBuilderWithFilter(
-        definition, _findToExpression(definition, packageGraph));
+Expression _applyBuilder(BuilderDefinition definition) =>
+    _applyBuilderWithFilter(definition, _findToExpression(definition));
 
 Expression _applyBuilderWithFilter(
     BuilderDefinition definition, Expression toExpression,
@@ -143,10 +138,7 @@ Expression _applyBuilderWithFilter(
   ], namedArgs);
 }
 
-// TODO - graph argument should be removed once `toRoot()` is a supported
-// PackageFilter
-Expression _findToExpression(
-    BuilderDefinition definition, PackageGraph packageGraph) {
+Expression _findToExpression(BuilderDefinition definition) {
   switch (definition.autoApply) {
     case AutoApply.none:
       return refer('toNoneByDefault', 'package:build_runner/build_runner.dart')
@@ -158,8 +150,7 @@ Expression _findToExpression(
       return refer('toAllPackages', 'package:build_runner/build_runner.dart')
           .call([]);
     case AutoApply.rootPackage:
-      return refer('toPackage', 'package:build_runner/build_runner.dart')
-          .call([literalString(packageGraph.root.name)]);
+      return refer('toRoot', 'package:build_runner/build_runner.dart').call([]);
   }
   throw new ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }

@@ -90,7 +90,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     }
   });
 
-  packageGraph ??= buildPackageGraph('a', {package('a'): []});
+  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
 
   var result = await build_impl.build(buildActions,
       deleteFilesByDefault: deleteFilesByDefault,

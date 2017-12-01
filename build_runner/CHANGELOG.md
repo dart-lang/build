@@ -1,5 +1,9 @@
 ## 0.7.0-dev
 
+### New Features
+
+- Added `toRoot` Package filter.
+
 ### Breaking Changes
 
 The following changes are technically breaking but should not impact most
@@ -9,7 +13,8 @@ clients:
   `PackageNode`.
 - Removed `PackageNode.noPubspec` constructor.
 - Removed `InputSet`.
-
+- PackageGraph instances enforce that the `root` node is the only node with
+  `isRoot == true`.
 
 ## 0.6.1
 
