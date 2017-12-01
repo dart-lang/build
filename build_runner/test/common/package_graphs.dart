@@ -15,6 +15,5 @@ PackageGraph buildPackageGraph(
   return new PackageGraph.fromRoot(packagesByName[rootPackage]);
 }
 
-PackageNode package(String packageName, {String path, List<String> includes}) =>
-    new PackageNode(packageName, '1.0.0', PackageDependencyType.path, path,
-        includes: includes);
+PackageNode package(String packageName, {String path}) =>
+    new PackageNode(packageName, path);
