@@ -6,10 +6,13 @@
 
 ### Breaking Changes
 
+The following changes are technically breaking but should not impact most
+clients:
+
 - Removed `dependencyType`, `version`, `includes`, and `excludes` from
-  `PackageNode`. Nothing outside of this package should have been reading or
-  setting these so there should be no impact for most clients.
+  `PackageNode`.
 - Removed `PackageNode.noPubspec` constructor.
+- Removed `InputSet`.
 - PackageGraph instances enforce that the `root` node is the only node with
   `isRoot == true`.
 
