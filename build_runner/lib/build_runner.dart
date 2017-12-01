@@ -22,6 +22,7 @@ export 'src/package_graph/apply_builders.dart'
         toDependentsOf,
         toNoneByDefault,
         toPackage,
-        toPackages;
+        toPackages,
+        toRoot;
 export 'src/package_graph/package_graph.dart';
 export 'src/server/server.dart' show ServeHandler;

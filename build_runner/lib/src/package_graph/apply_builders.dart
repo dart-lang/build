@@ -31,11 +31,13 @@ PackageFilter toPackages(Set<String> packages) =>
 PackageFilter toAll(Iterable<PackageFilter> filters) =>
     (p) => filters.any((f) => f(p));
 
+PackageFilter toRoot() => (p) => p.isRoot;
+
 /// Apply [builder] to the root package.
 BuilderApplication applyToRoot(Builder builder,
         {List<String> inputs, List<String> excludes}) =>
-    new BuilderApplication._('', '', [(_) => builder], (_) => false,
-        inputs: inputs, excludes: excludes, applyToRoot: true);
+    new BuilderApplication._('', '', [(_) => builder], toRoot(),
+        inputs: inputs, excludes: excludes);
 
 /// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
@@ -77,15 +79,9 @@ class BuilderApplication {
   final List<String> excludes;
   final bool isOptional;
 
-  /// Whether to skip [filter] and only apply this package to the root of the
-  /// package graph.
-  // TODO: this is a hack until we can add `isRoot` to `PackageNode`.
-  final bool _applyToRoot;
-
   const BuilderApplication._(this.providingPackage, this.builderName,
       this.builderFactories, this.filter,
-      {this.inputs, this.excludes, this.isOptional, bool applyToRoot: false})
-      : _applyToRoot = applyToRoot;
+      {this.inputs, this.excludes, this.isOptional});
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -121,12 +117,8 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
     Iterable<PackageNode> cycle,
     PackageGraph packageGraph,
     BuilderApplication builderApplication) {
-  bool filter(PackageNode packageNode) =>
-      //TODO: this is a hack until we can add `isRoot` to `PackageNode`
-      (builderApplication._applyToRoot && packageNode == packageGraph.root) ||
-      builderApplication.filter(packageNode);
   return builderApplication.builderFactories.expand((b) => cycle
-      .where(filter)
+      .where(builderApplication.filter)
       .map((p) => new BuildAction(b(const BuilderOptions(const {})), p.name,
           inputs: builderApplication.inputs,
           excludes: builderApplication.excludes,

@@ -1,12 +1,17 @@
 ## 0.7.0-dev
 
+### New Features
+
+- Added `toRoot` Package filter.
+
 ### Breaking Changes
 
 - Removed `dependencyType`, `version`, `includes`, and `excludes` from
   `PackageNode`. Nothing outside of this package should have been reading or
   setting these so there should be no impact for most clients.
 - Removed `PackageNode.noPubspec` constructor.
-
+- PackageGraph instances enforce that the `root` node is the only node with
+  `isRoot == true`.
 
 ## 0.6.1
 

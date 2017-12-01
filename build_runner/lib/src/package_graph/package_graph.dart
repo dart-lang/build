@@ -25,7 +25,15 @@ class PackageGraph {
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
       : allPackages = new Map.unmodifiable(
             new Map<String, PackageNode>.from(allPackages)
-              ..putIfAbsent(r'$sdk', () => _sdkPackageNode));
+              ..putIfAbsent(r'$sdk', () => _sdkPackageNode)) {
+    if (!root.isRoot) {
+      throw new ArgumentError('Root node must indicate `isRoot`');
+    }
+    if (allPackages.values.where((n) => n != root).any((n) => n.isRoot)) {
+      throw new ArgumentError(
+          'No nodes other than the root may indicate `isRoot`');
+    }
+  }
 
   /// Creates a [PackageGraph] given the [root] [PackageNode].
   factory PackageGraph.fromRoot(PackageNode root) {
@@ -91,7 +99,7 @@ class PackageGraph {
     PackageNode addNodeAndDeps(YamlMap yaml, {bool isRoot: false}) {
       var name = yaml['name'] as String;
       assert(!nodes.containsKey(name));
-      var node = new PackageNode(name, packageLocations[name]);
+      var node = new PackageNode(name, packageLocations[name], isRoot: isRoot);
       nodes[name] = node;
 
       var deps = _depsFromYaml(yaml, isRoot: isRoot);
@@ -169,7 +177,12 @@ class PackageNode {
   /// The absolute path of the current version of this package.
   final String path;
 
-  PackageNode(this.name, String path) : path = _toAbsolute(path);
+  /// Whether this node is the [PackageGraph.root].
+  final bool isRoot;
+
+  PackageNode(this.name, String path, {bool isRoot})
+      : path = _toAbsolute(path),
+        isRoot = isRoot ?? false;
 
   @override
   String toString() => '''

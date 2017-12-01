@@ -23,7 +23,7 @@ void main() {
 
   setUp(() async {
     reader = new InMemoryRunnerAssetReader();
-    final packageGraph = buildPackageGraph('a', {package('a'): []});
+    final packageGraph = buildPackageGraph({rootPackage('a'): []});
     watchImpl = new MockWatchImpl(reader, packageGraph);
     serveHandler = await createServeHandler(watchImpl);
     watchImpl.addFutureResult(

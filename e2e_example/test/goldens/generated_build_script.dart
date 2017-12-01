@@ -23,7 +23,7 @@ List<_i1.BuildAction> _buildActions(_i1.PackageGraph packageGraph) {
     _i1.apply('build_compilers', 'ddc_bootstrap',
         [_i3.devCompilerBootstrapBuilder], _i1.toNoneByDefault()),
     _i1.apply('build_compilers', 'ddc_bootstrap',
-        [_i3.devCompilerBootstrapBuilder], _i1.toPackage('e2e_example'),
+        [_i3.devCompilerBootstrapBuilder], _i1.toRoot(),
         inputs: ['web/**.dart', 'test/**.browser_test.dart'])
   ];
   return _i1.createBuildActions(packageGraph, builders);
