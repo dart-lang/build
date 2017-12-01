@@ -8,8 +8,6 @@ import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-import 'dependency_ordering.dart';
-
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
 final PackageNode _sdkPackageNode = new PackageNode(r'$sdk', getSdkPath());
@@ -129,32 +127,6 @@ class PackageGraph {
 
   /// Shorthand to get a package by name.
   PackageNode operator [](String packageName) => allPackages[packageName];
-
-  /// Finds all packages which depend on [packageName] in postorder by
-  /// dependencies.
-  ///
-  /// See [orderedPackages] for ordering guarantees. The node for [packageName]
-  /// will not be included in the result.
-  @Deprecated('Use `createBuildActions` rather than adding actions manually')
-  Iterable<PackageNode> dependentsOf(String packageName) {
-    if (!allPackages.containsKey(packageName)) return const [];
-    var node = allPackages[packageName];
-    return orderedPackages.where((n) => n.dependencies.contains(node));
-  }
-
-  /// All of the packages in postorder by dependencies.
-  ///
-  /// Depedencies of a package will come before the package in the result. If
-  /// there is a package cycle the relative position of packages within the
-  /// cycle is non-deterministic, except that the root package will always come
-  /// last. For any two packages for which neither is a transitive dependency of
-  /// the other the relative position of the packages within the cycle is
-  /// non-deterministic.
-  @Deprecated('Use `createBuildActions` rather than adding actions manually')
-  Iterable<PackageNode> get orderedPackages =>
-      stronglyConnectedComponents<String, PackageNode>(
-              [root], (node) => node.name, (node) => node.dependencies)
-          .expand((c) => c);
 
   @override
   String toString() {
