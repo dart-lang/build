@@ -7,8 +7,6 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
 
-import '../common/package_graphs.dart';
-
 void main() {
   PackageGraph graph;
 
