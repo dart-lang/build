@@ -274,9 +274,18 @@ class _Loader {
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> _findInputSources() async {
-    var inputSets = _options.packageGraph.allPackages.values.map((package) =>
-        new InputSet(package.name, package.includes,
-            excludes: package.excludes));
+    List<String> packageIncludes(String packageName) {
+      if (packageName == _options.packageGraph.root.name) {
+        return const ['**'];
+      }
+      if (packageName == r'$sdk') {
+        return const ['lib/dev_compiler/**.js'];
+      }
+      return const ['lib/**'];
+    }
+
+    var inputSets = _options.packageGraph.allPackages.values.map(
+        (package) => new InputSet(package.name, packageIncludes(package.name)));
     var sources = (await _listAssetIds(inputSets).toSet())
       ..addAll(await _options.reader
           .findAssets(new Glob('$entryPointDir/**'))

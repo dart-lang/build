@@ -1,3 +1,13 @@
+## 0.7.0-dev
+
+### Breaking Changes
+
+- Removed `dependencyType`, `version`, `includes`, and `excludes` from
+  `PackageNode`. Nothing outside of this package should have been reading or
+  setting these so there should be no impact for most clients.
+- Removed `PackageNode.noPubspec` constructor.
+
+
 ## 0.6.1
 
 ### New Features

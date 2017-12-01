@@ -41,7 +41,7 @@ void main() {
     }
 
     test('should emit a changed asset', () async {
-      var node = new PackageNode.noPubspec('a', path: p.join(tmpDir.path, 'a'));
+      var node = new PackageNode('a', p.join(tmpDir.path, 'a'));
       var nodeWatcher = new PackageNodeWatcher(node);
 
       initFiles(node);
@@ -69,8 +69,8 @@ void main() {
     });
 
     test('should also respect relative watch URLs', () async {
-      var node = new PackageNode.noPubspec('a',
-          path: p.relative(p.join(tmpDir.path, 'a'), from: p.current));
+      var node = new PackageNode(
+          'a', p.relative(p.join(tmpDir.path, 'a'), from: p.current));
       var nodeWatcher = new PackageNodeWatcher(node);
 
       initFiles(node);
