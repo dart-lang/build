@@ -70,8 +70,8 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
   await scratchSpace.ensureAssets(module.sources, buildStep);
 
   var summaryOutputFile = scratchSpace.fileFor(module.unlinkedSummaryId);
-  var request = new WorkRequest();
-  request.arguments.addAll([
+  var request = <String>[];
+  request.addAll([
     '--build-summary-only',
     '--build-summary-only-unlinked',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
@@ -80,12 +80,12 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
 
   // Add the default analysis_options.
   await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-  request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
+  request.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the files to include in the unlinked summary bundle.
-  request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
-  var analyzer = await buildStep.fetchResource(analyzerDriverResource);
-  var response = await analyzer.doWork(request);
+  request.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
+  var analyzer = await buildStep.fetchResource(analyzerWorker.resource);
+  var response = await analyzer.execute(request);
   if (response.exitCode == EXIT_CODE_ERROR) {
     throw new AnalyzerSummaryException(
         module.unlinkedSummaryId, response.output);
@@ -122,8 +122,8 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
     ..addAll(transitiveUnlinkedSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var summaryOutputFile = scratchSpace.fileFor(module.linkedSummaryId);
-  var request = new WorkRequest();
-  request.arguments.addAll([
+  var request = <String>[];
+  request.addAll([
     '--build-summary-only',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
     '--strong',
@@ -131,18 +131,18 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
 
   // Add the default analysis_options.
   await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-  request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
+  request.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the unlinked and linked summaries as build summary inputs.
-  request.arguments.addAll(transitiveUnlinkedSummaryDeps.map((id) =>
+  request.addAll(transitiveUnlinkedSummaryDeps.map((id) =>
       '--build-summary-unlinked-input=${scratchSpace.fileFor(id).path}'));
-  request.arguments.addAll(transitiveLinkedSummaryDeps
+  request.addAll(transitiveLinkedSummaryDeps
       .map((id) => '--build-summary-input=${scratchSpace.fileFor(id).path}'));
 
   // Add all the files to include in the linked summary bundle.
-  request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
-  var analyzer = await buildStep.fetchResource(analyzerDriverResource);
-  var response = await analyzer.doWork(request);
+  request.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
+  var analyzer = await buildStep.fetchResource(analyzerWorker.resource);
+  var response = await analyzer.execute(request);
   var summaryFile = scratchSpace.fileFor(module.linkedSummaryId);
   if (response.exitCode == EXIT_CODE_ERROR || !await summaryFile.exists()) {
     throw new AnalyzerSummaryException(module.linkedSummaryId, response.output);
