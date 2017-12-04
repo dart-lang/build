@@ -268,10 +268,12 @@ class _Loader {
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    var remainingSources = assetGraph.sources.toSet().intersection(inputSources)
-      ..addAll(internalSources);
+    var originalGraphSources = assetGraph.sources.toSet();
+    var remainingSources = originalGraphSources.intersection(inputSources)
+      ..addAll(originalGraphSources.intersection(internalSources));
     var modifyChecks = remainingSources.map((id) async {
       var node = assetGraph.get(id);
+      if (node == null) throw id;
       var originalDigest = node.lastKnownDigest;
       var currentDigest = await _options.reader.digest(id);
       if (currentDigest != originalDigest) {

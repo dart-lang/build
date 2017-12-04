@@ -412,7 +412,8 @@ void main() {
     var cachedGraph = new AssetGraph.deserialize(
         JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
 
-    var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
+    var expectedGraph =
+        await AssetGraph.build([], new Set(), new Set(), 'a', null);
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
         false, true, makeAssetId('a|web/a.txt.copy'),
         lastKnownDigest: computeDigest('a'),

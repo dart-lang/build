@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 12;
+const _version = 13;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {

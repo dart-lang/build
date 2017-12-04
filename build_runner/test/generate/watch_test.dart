@@ -133,7 +133,8 @@ void main() {
             as Map;
         var cachedGraph = new AssetGraph.deserialize(serialized);
 
-        var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
+        var expectedGraph =
+            await AssetGraph.build([], new Set(), new Set(), 'a', null);
         var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/b.txt'),
             false, true, makeAssetId('a|web/b.txt.copy'),
             lastKnownDigest: computeDigest('b2'),
