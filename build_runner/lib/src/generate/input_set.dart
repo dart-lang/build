@@ -5,11 +5,6 @@
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
-import '../util/constants.dart';
-
-final List<Glob> _alwaysExclude =
-    new List.unmodifiable(toolDirs.map((d) => new Glob('$d/**')));
-
 final List<Glob> _defaultInclude = new List.unmodifiable([new Glob('**')]);
 
 /// A set of files in a package to use as primary inputs to a `Builder`.
@@ -33,10 +28,9 @@ class InputSet {
             ? _defaultInclude
             : new List.unmodifiable(globs.map((pattern) => new Glob(pattern))),
         this.excludes = excludes == null
-            ? _alwaysExclude
-            : new List.unmodifiable([]
-              ..addAll(excludes?.map((pattern) => new Glob(pattern)))
-              ..addAll(_alwaysExclude));
+            ? const []
+            : new List.unmodifiable(
+                excludes.map((pattern) => new Glob(pattern)));
 
   /// Returns whether [input] is included in [globs] and not in [excludes].
   bool matches(AssetId input) =>

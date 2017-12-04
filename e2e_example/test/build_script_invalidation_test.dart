@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+import 'dart:async';
 import 'dart:io';
 
 import 'package:build_runner/src/util/constants.dart';
@@ -12,7 +13,7 @@ import 'package:test/test.dart';
 import 'common/utils.dart';
 
 void main() {
-  group('Build script changes', () {
+  group('Manual build script changes', () {
     setUp(() async {
       ensureCleanGitClient();
       await startManualServer(ensureCleanBuild: true, verbose: true);
@@ -20,33 +21,17 @@ void main() {
     });
 
     test('while serving prompt the user to restart', () async {
-      var terminateLine =
-          nextStdOutLine('Terminating. No further builds will be scheduled');
-      await replaceAllInFile('tool/build.dart', 'Serving', 'Now serving');
-      await terminateLine;
-      await stopServer();
-      await startManualServer(extraExpects: [
-        () => nextStdOutLine(
-            'Invalidating asset graph due to build script update'),
-        () => nextStdOutLine('Building new asset graph'),
-      ], verbose: true);
+      await testEditWhileServing(true);
     });
 
     test('while not serving invalidate the next build', () async {
-      await stopServer();
-      await replaceAllInFile('tool/build.dart', 'Serving', 'Now serving');
-
       // Create a random file in the generated dir, this should get cleaned up.
       var extraFilePath =
           p.join('.dart_tool', 'build', 'generated', 'foo', 'foo.txt');
       await createFile(extraFilePath, 'bar');
       expect(await new File(extraFilePath).exists(), isTrue);
 
-      await startManualServer(extraExpects: [
-        () => nextStdOutLine(
-            'Invalidating asset graph due to build script update'),
-        () => nextStdOutLine('Building new asset graph'),
-      ], verbose: true);
+      await testEditBetweenBuilds(true);
 
       expect(await new File(extraFilePath).exists(), isFalse,
           reason: 'The cache dir should get deleted when the build '
@@ -77,4 +62,49 @@ void main() {
               'can\'t be parsed');
     });
   });
+
+  group('Generated build script changes', () {
+    setUp(() async {
+      ensureCleanGitClient();
+      await startAutoServer(ensureCleanBuild: true, verbose: true);
+      addTearDown(() => stopServer(cleanUp: true));
+    });
+
+    test('while serving prompt the user to restart', () async {
+      await testEditWhileServing(false);
+    });
+
+    test('while not serving invalidate the next build', () async {
+      await testEditBetweenBuilds(false);
+    });
+  });
+}
+
+Future<Null> testEditWhileServing(bool manualScript) async {
+  var filePath = manualScript
+      ? 'tool/build.dart'
+      : '.dart_tool/build/entrypoint/build.dart';
+  var terminateLine =
+      nextStdOutLine('Terminating. No further builds will be scheduled');
+  await replaceAllInFile(filePath, 'await server.close();',
+      'await server.close(); // close the server');
+  await terminateLine;
+  await stopServer();
+  await startManualServer(extraExpects: [
+    () => nextStdOutLine('Invalidating asset graph due to build script update'),
+    () => nextStdOutLine('Building new asset graph'),
+  ], scriptPath: filePath, verbose: true);
+}
+
+Future<Null> testEditBetweenBuilds(bool manualScript) async {
+  var filePath = manualScript
+      ? 'tool/build.dart'
+      : '.dart_tool/build/entrypoint/build.dart';
+  await stopServer();
+  await replaceAllInFile(filePath, 'await server.close();',
+      'await server.close(); // close the server');
+  await startManualServer(extraExpects: [
+    () => nextStdOutLine('Invalidating asset graph due to build script update'),
+    () => nextStdOutLine('Building new asset graph'),
+  ], scriptPath: filePath, verbose: true);
 }

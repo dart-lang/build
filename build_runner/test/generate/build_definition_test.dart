@@ -82,6 +82,7 @@ main() {
         var originalAssetGraph = await AssetGraph.build(
             buildActions,
             [makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')].toSet(),
+            new Set(),
             'a',
             options.reader);
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
@@ -111,7 +112,7 @@ main() {
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
         var originalAssetGraph = await AssetGraph.build(
-            buildActions, <AssetId>[].toSet(), 'a', options.reader);
+            buildActions, <AssetId>[].toSet(), new Set(), 'a', options.reader);
 
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
@@ -133,8 +134,12 @@ main() {
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
-        var originalAssetGraph = await AssetGraph.build(buildActions,
-            [makeAssetId('a|lib/a.txt')].toSet(), 'a', options.reader);
+        var originalAssetGraph = await AssetGraph.build(
+            buildActions,
+            [makeAssetId('a|lib/a.txt')].toSet(),
+            new Set(),
+            'a',
+            options.reader);
 
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
@@ -156,8 +161,12 @@ main() {
           new BuildAction(new OverDeclaringCopyBuilder(), 'a')
         ];
 
-        var originalAssetGraph = await AssetGraph.build(buildActions,
-            [makeAssetId('a|lib/test.txt')].toSet(), 'a', options.reader);
+        var originalAssetGraph = await AssetGraph.build(
+            buildActions,
+            [makeAssetId('a|lib/test.txt')].toSet(),
+            new Set(),
+            'a',
+            options.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -180,7 +189,7 @@ main() {
         var buildActions = [new BuildAction(new CopyBuilder(), 'a')];
 
         var assetGraph = await AssetGraph.build(
-            buildActions, new Set<AssetId>(), 'a', options.reader);
+            buildActions, new Set<AssetId>(), new Set(), 'a', options.reader);
         expect(assetGraph.allNodes, isEmpty);
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
@@ -227,7 +236,7 @@ main() {
           onLog: logs.add);
 
       var originalAssetGraph = await AssetGraph.build(
-          buildActions, <AssetId>[].toSet(), 'a', options.reader);
+          buildActions, <AssetId>[].toSet(), new Set(), 'a', options.reader);
 
       await createFile(
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));

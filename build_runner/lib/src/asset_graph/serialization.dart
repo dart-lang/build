@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 12;
+const _version = 13;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -83,6 +83,10 @@ class _AssetGraphDeserializer {
             previousInputsDigest: _deserializeDigest(
                 serializedNode[_Field.PreviousInputsDigest.index] as String));
         break;
+      case _NodeType.Internal:
+        assert(serializedNode.length == _WrappedAssetNode._length);
+        node = new InternalAssetNode(id, lastKnownDigest: digest);
+        break;
     }
     node.outputs.addAll(_deserializeAssetIds(
         serializedNode[_Field.Outputs.index] as List<int>));
@@ -142,7 +146,7 @@ class _AssetGraphSerializer {
 }
 
 /// Used to serialize the type of a node using an int.
-enum _NodeType { Source, Synthetic, Generated }
+enum _NodeType { Source, Synthetic, Generated, Internal }
 
 /// Field indexes for serialized nodes.
 enum _Field {
@@ -192,6 +196,8 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
           return _NodeType.Generated.index;
         } else if (node is SyntheticAssetNode) {
           return _NodeType.Synthetic.index;
+        } else if (node is InternalAssetNode) {
+          return _NodeType.Internal.index;
         } else {
           throw new StateError('Unrecognized node type');
         }

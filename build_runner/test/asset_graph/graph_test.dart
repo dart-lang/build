@@ -43,7 +43,8 @@ void main() {
 
     group('simple graph', () {
       setUp(() async {
-        graph = await AssetGraph.build([], new Set(), 'foo', digestReader);
+        graph = await AssetGraph
+            .build([], new Set(), new Set(), 'foo', digestReader);
       });
 
       test('add, contains, get, allNodes', () {
@@ -125,11 +126,14 @@ void main() {
       final primaryOutputId = makeAssetId('foo|file.copy');
       final syntheticId = makeAssetId('foo|synthetic');
       final syntheticOutputId = makeAssetId('foo|synthetic.copy');
+      final internalId =
+          makeAssetId('foo|.dart_tool/build/entrypoint/serve.dart');
 
       setUp(() async {
         graph = await AssetGraph.build(
             buildActions,
             new Set.from([primaryInputId, excludedInputId]),
+            [internalId].toSet(),
             'foo',
             digestReader);
       });
@@ -142,6 +146,7 @@ void main() {
               primaryInputId,
               excludedInputId,
               primaryOutputId,
+              internalId,
             ]));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
@@ -153,6 +158,8 @@ void main() {
         expect(excludedNode, isNotNull);
         expect(excludedNode.lastKnownDigest, isNull,
             reason: 'Nodes with no output shouldn\'t get an eager digest.');
+
+        expect(graph.get(internalId), new isInstanceOf<InternalAssetNode>());
       });
 
       group('updateAndInvalidate', () {
@@ -249,6 +256,7 @@ void main() {
           () => AssetGraph.build(
               new List.filled(2, new BuildAction(new CopyBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
+              new Set(),
               'foo',
               digestReader),
           throwsA(duplicateAssetNodeException));

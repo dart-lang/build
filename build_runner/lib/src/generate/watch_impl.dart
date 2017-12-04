@@ -195,41 +195,50 @@ class WatchImpl implements BuildState {
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
     assert(_assetGraph != null);
-    if (_isCacheFile(change)) return false;
-    if (_isGitFile(change)) return false;
-    // If we haven't computed a digest for this asset and it has not outputs,
-    // then we don't care about changes to it.
-    //
-    // Checking for a digest alone isn't enough because a file may be deleted
-    // and re-added, in which case it won't have a digest.
-    if (_hasNoOutputs(change) && _hasNoDigest(change)) return false;
-    if (_isEditOnGeneratedFile(change)) return false;
+    if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
+    var node = _assetGraph.get(change.id);
+    if (node != null) {
+      if (_isUninterestingNode(node)) return false;
+      if (_isEditOnGeneratedFile(node, change.type)) return false;
+    } else {
+      if (change.type == ChangeType.REMOVE) return false;
+      if (!_isWhitelistedPath(change.id)) return false;
+    }
     if (_isExpectedDelete(change)) return false;
-    if (_isUnwatchedDelete(change)) return false;
     return true;
   }
 
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
-  bool _isGitFile(AssetChange change) => change.id.path.startsWith('.git/');
+  bool _isUninterestingNode(AssetNode node) {
+    if (node is InternalAssetNode) {
+      // All `InternalAssetNode`s are interesting, at least for now.
+      return false;
+    } else if (node.outputs.isEmpty && node.lastKnownDigest == null) {
+      // If we haven't computed a digest for this asset and it has no outputs,
+      // then we don't care about changes to it.
+      //
+      // Checking for a digest alone isn't enough because a file may be deleted
+      // and re-added, in which case it won't have a digest.
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-  bool _hasNoDigest(AssetChange change) =>
-      _assetGraph.contains(change.id) &&
-      _assetGraph.get(change.id).lastKnownDigest == null;
-
-  bool _hasNoOutputs(AssetChange change) =>
-      _assetGraph.contains(change.id) &&
-      _assetGraph.get(change.id).outputs.isEmpty;
-
-  bool _isEditOnGeneratedFile(AssetChange change) =>
-      _assetGraph.get(change.id) is GeneratedAssetNode &&
-      change.type != ChangeType.REMOVE;
+  bool _isEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
+      node is GeneratedAssetNode && changeType != ChangeType.REMOVE;
 
   bool _isExpectedDelete(AssetChange change) =>
       _expectedDeletes.remove(change.id);
 
-  bool _isUnwatchedDelete(AssetChange change) =>
-      change.type == ChangeType.REMOVE && !_assetGraph.contains(change.id);
+  bool _isWhitelistedPath(AssetId id) {
+    if (packageGraph[id.package].isRoot) {
+      return rootPackageGlobsWhitelist.any((glob) => glob.matches(id.path));
+    } else {
+      return id.path.startsWith('lib/');
+    }
+  }
 }
 
 Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {

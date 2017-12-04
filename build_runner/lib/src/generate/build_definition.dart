@@ -76,7 +76,10 @@ class _Loader {
     _logger.info('Initializing inputs');
     var inputSources = await _findInputSources();
     var cacheDirSources = await _findCacheDirSources();
-    var allSources = inputSources.union(cacheDirSources);
+    var internalSources = await _findInternalSources();
+    var allSources = inputSources.toSet()
+      ..addAll(cacheDirSources)
+      ..addAll(internalSources);
 
     var assetGraph = await _tryReadCachedAssetGraph();
 
@@ -85,8 +88,8 @@ class _Loader {
       var updates = await logTimedAsync(
           _logger,
           'Checking for updates since last build',
-          () => _updateAssetGraph(
-              assetGraph, inputSources, cacheDirSources, allSources));
+          () => _updateAssetGraph(assetGraph, inputSources, cacheDirSources,
+              internalSources, allSources));
 
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
@@ -104,7 +107,7 @@ class _Loader {
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
-            _options.packageGraph.root.name, _options.reader);
+            internalSources, _options.packageGraph.root.name, _options.reader);
         buildScriptUpdates =
             await BuildScriptUpdates.create(_options, assetGraph);
         conflictingOutputs =
@@ -164,6 +167,11 @@ class _Loader {
     return new Future.value(new Set<AssetId>());
   }
 
+  /// Returns all the internal sources, such as those under [entryPointDir].
+  Future<Set<AssetId>> _findInternalSources() {
+    return _options.reader.findAssets(new Glob('$entryPointDir/**')).toSet();
+  }
+
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
   /// fails for any reason.
   Future<AssetGraph> _tryReadCachedAssetGraph() async {
@@ -207,9 +215,10 @@ class _Loader {
       AssetGraph assetGraph,
       Set<AssetId> inputSources,
       Set<AssetId> cacheDirSources,
+      Set<AssetId> internalSources,
       Set<AssetId> allSources) async {
     var updates = await _findUpdates(
-        assetGraph, inputSources, cacheDirSources, allSources);
+        assetGraph, inputSources, cacheDirSources, internalSources, allSources);
     await assetGraph.updateAndInvalidate(
         _buildActions,
         updates,
@@ -246,6 +255,7 @@ class _Loader {
       AssetGraph assetGraph,
       Set<AssetId> inputSources,
       Set<AssetId> generatedSources,
+      Set<AssetId> internalSources,
       Set<AssetId> allSources) async {
     var updates = <AssetId, ChangeType>{};
     addUpdates(Iterable<AssetId> assets, ChangeType type) {
@@ -270,11 +280,14 @@ class _Loader {
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    var remainingSources =
-        assetGraph.sources.toSet().intersection(inputSources);
-    var modifyChecks = remainingSources.map((id) async {
+    var originalGraphSources = assetGraph.sources.toSet();
+    var preExistingSources = originalGraphSources.intersection(inputSources)
+      ..addAll(internalSources.where((id) => assetGraph.contains(id)));
+    var modifyChecks = preExistingSources.map((id) async {
       var node = assetGraph.get(id);
+      if (node == null) throw id;
       var originalDigest = node.lastKnownDigest;
+      if (originalDigest == null) return;
       var currentDigest = await _options.reader.digest(id);
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
@@ -288,7 +301,7 @@ class _Loader {
   Future<Set<AssetId>> _findInputSources() async {
     List<String> packageIncludes(String packageName) {
       if (packageName == _options.packageGraph.root.name) {
-        return const ['**'];
+        return rootPackageFilesWhitelist;
       }
       if (packageName == r'$sdk') {
         return const ['lib/dev_compiler/**.js'];
@@ -298,10 +311,7 @@ class _Loader {
 
     var inputSets = _options.packageGraph.allPackages.values.map(
         (package) => new InputSet(package.name, packageIncludes(package.name)));
-    var sources = (await _listAssetIds(inputSets).toSet())
-      ..addAll(await _options.reader
-          .findAssets(new Glob('$entryPointDir/**'))
-          .toSet());
+    var sources = (await _listAssetIds(inputSets).toSet());
     return sources;
   }
 
