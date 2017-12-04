@@ -269,12 +269,13 @@ class _Loader {
     addUpdates(removedAssets, ChangeType.REMOVE);
 
     var originalGraphSources = assetGraph.sources.toSet();
-    var remainingSources = originalGraphSources.intersection(inputSources)
-      ..addAll(originalGraphSources.intersection(internalSources));
-    var modifyChecks = remainingSources.map((id) async {
+    var preExistingSources = originalGraphSources.intersection(inputSources)
+      ..addAll(internalSources.where((id) => assetGraph.contains(id)));
+    var modifyChecks = preExistingSources.map((id) async {
       var node = assetGraph.get(id);
       if (node == null) throw id;
       var originalDigest = node.lastKnownDigest;
+      if (originalDigest == null) return;
       var currentDigest = await _options.reader.digest(id);
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
@@ -288,15 +289,7 @@ class _Loader {
   Future<Set<AssetId>> _findInputSources() async {
     List<String> packageIncludes(String packageName) {
       if (packageName == _options.packageGraph.root.name) {
-        return const [
-          'benchmark/**',
-          'bin/**',
-          'example/**',
-          'lib/**',
-          'test/**',
-          'tool/**',
-          'web/**',
-        ];
+        return rootPackageFilesWhitelist;
       }
       if (packageName == r'$sdk') {
         return const ['lib/dev_compiler/**.js'];

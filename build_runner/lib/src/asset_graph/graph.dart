@@ -45,12 +45,14 @@ class AssetGraph {
       String rootPackage,
       DigestAssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
-    var newNodes = graph._addSources(sources);
-    graph._addInternalSources(internalSources);
+    var sourceNodes = graph._addSources(sources);
     graph._addOutputsForSources(buildActions, sources, rootPackage);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
-        newNodes.where((node) => node.outputs.isNotEmpty), digestReader);
+        sourceNodes.where((node) => node.outputs.isNotEmpty), digestReader);
+    // Always compute digests for all internal nodes.
+    var internalNodes = graph._addInternalSources(internalSources);
+    await graph._setLastKnownDigests(internalNodes, digestReader);
     return graph;
   }
 
@@ -90,10 +92,11 @@ class AssetGraph {
   }
 
   /// Adds [assetIds] as [InternalAssetNode]s to this graph.
-  void _addInternalSources(Set<AssetId> assetIds) {
+  Iterable<AssetNode> _addInternalSources(Set<AssetId> assetIds) sync* {
     for (var id in assetIds) {
       var node = new InternalAssetNode(id);
       _add(node);
+      yield node;
     }
   }
 
