@@ -276,7 +276,15 @@ class _Loader {
   Future<Set<AssetId>> _findInputSources() async {
     List<String> packageIncludes(String packageName) {
       if (packageName == _options.packageGraph.root.name) {
-        return const ['**'];
+        return const [
+          'benchmark/**',
+          'bin/**',
+          'example/**',
+          'lib/**',
+          'test/**',
+          'tool/**',
+          'web/**',
+        ];
       }
       if (packageName == r'$sdk') {
         return const ['lib/dev_compiler/**.js'];
