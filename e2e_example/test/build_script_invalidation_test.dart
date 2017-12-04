@@ -35,11 +35,22 @@ void main() {
     test('while not serving invalidate the next build', () async {
       await stopServer();
       await replaceAllInFile('tool/build.dart', 'Serving', 'Now serving');
+
+      // Create a random file in the generated dir, this should get cleaned up.
+      var extraFilePath =
+          p.join('.dart_tool', 'build', 'generated', 'foo', 'foo.txt');
+      await createFile(extraFilePath, 'bar');
+      expect(await new File(extraFilePath).exists(), isTrue);
+
       await startManualServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),
       ], verbose: true);
+
+      expect(await new File(extraFilePath).exists(), isFalse,
+          reason: 'The cache dir should get deleted when the build '
+              'script changes.');
     });
 
     test('Invalid asset graph version causes a new full build', () async {
