@@ -30,8 +30,11 @@ final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 /// For debugging purposes you can enable printing of the build script output by
 /// setting [verbose] to `true`.
 Future<Null> startManualServer(
-        {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
-    _startServer('dart', ['tool/build.dart'],
+        {bool ensureCleanBuild,
+        bool verbose,
+        List<Function> extraExpects,
+        String scriptPath = 'tool/build.dart'}) =>
+    _startServer('dart', [scriptPath],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);

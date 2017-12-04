@@ -63,27 +63,27 @@ Future<Null> testEditWhileServing(bool manualScript) async {
   var filePath = manualScript
       ? 'tool/build.dart'
       : '.dart_tool/build/entrypoint/build.dart';
-  var startServer = manualScript ? startManualServer : startAutoServer;
   var terminateLine =
       nextStdOutLine('Terminating. No further builds will be scheduled');
-  await replaceAllInFile(filePath, 'Serving', 'Now serving');
+  await replaceAllInFile(filePath, 'await server.close();',
+      'await server.close(); // close the server');
   await terminateLine;
   await stopServer();
-  await startServer(extraExpects: [
+  await startManualServer(extraExpects: [
     () => nextStdOutLine('Invalidating asset graph due to build script update'),
     () => nextStdOutLine('Building new asset graph'),
-  ], verbose: true);
+  ], scriptPath: filePath, verbose: true);
 }
 
 Future<Null> testEditBetweenBuilds(bool manualScript) async {
   var filePath = manualScript
       ? 'tool/build.dart'
       : '.dart_tool/build/entrypoint/build.dart';
-  var startServer = manualScript ? startManualServer : startAutoServer;
   await stopServer();
-  await replaceAllInFile(filePath, 'Serving', 'Now serving');
-  await startServer(extraExpects: [
+  await replaceAllInFile(filePath, 'await server.close();',
+      'await server.close(); // close the server');
+  await startManualServer(extraExpects: [
     () => nextStdOutLine('Invalidating asset graph due to build script update'),
     () => nextStdOutLine('Building new asset graph'),
-  ], verbose: true);
+  ], scriptPath: filePath, verbose: true);
 }
