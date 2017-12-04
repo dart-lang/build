@@ -25,7 +25,17 @@ void main() {
     });
 
     test('while not serving invalidate the next build', () async {
+      // Create a random file in the generated dir, this should get cleaned up.
+      var extraFilePath =
+          p.join('.dart_tool', 'build', 'generated', 'foo', 'foo.txt');
+      await createFile(extraFilePath, 'bar');
+      expect(await new File(extraFilePath).exists(), isTrue);
+
       await testEditBetweenBuilds(true);
+
+      expect(await new File(extraFilePath).exists(), isFalse,
+          reason: 'The cache dir should get deleted when the build '
+              'script changes.');
     });
 
     test('Invalid asset graph version causes a new full build', () async {
@@ -34,11 +44,22 @@ void main() {
           new File(p.join('tool', 'build.dart')).absolute.path);
       // Prepend a 1 to the version number
       await replaceAllInFile(assetGraph, '"version":', '"version":1');
+
+      // Create a random file in the generated dir, this should get cleaned up.
+      var extraFilePath =
+          p.join('.dart_tool', 'build', 'generated', 'foo', 'foo.txt');
+      await createFile(extraFilePath, 'bar');
+      expect(await new File(extraFilePath).exists(), isTrue);
+
       await startManualServer(extraExpects: [
         () => nextStdOutLine(
             'Throwing away cached asset graph due to version mismatch.'),
         () => nextStdOutLine('Building new asset graph'),
       ], verbose: true);
+
+      expect(await new File(extraFilePath).exists(), isFalse,
+          reason: 'The cache dir should get deleted when the asset graph '
+              'can\'t be parsed');
     });
   });
 

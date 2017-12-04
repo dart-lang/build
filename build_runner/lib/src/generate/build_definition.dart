@@ -96,6 +96,7 @@ class _Loader {
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
         _logger.warning('Invalidating asset graph due to build script update');
+        await _deleteGeneratedDir();
         assetGraph = null;
         buildScriptUpdates = null;
       }
@@ -147,6 +148,16 @@ class _Loader {
     }
   }
 
+  /// Deletes the generated output directory.
+  ///
+  /// Typically this should be done whenever an asset graph is thrown away.
+  Future<Null> _deleteGeneratedDir() async {
+    var generatedDir = new Directory(generatedOutputDirectory);
+    if (await generatedDir.exists()) {
+      await generatedDir.delete(recursive: true);
+    }
+  }
+
   /// If `_options.writeToCache` is `true` then this returns the all the sources
   /// found in the cache directory, otherwise it returns an empty set.
   Future<Set<AssetId>> _findCacheDirSources() {
@@ -190,6 +201,7 @@ class _Loader {
         // the current version. We don't currently support old graph versions.
         _logger.warning(
             'Throwing away cached asset graph due to version mismatch.');
+        await _deleteGeneratedDir();
         return null;
       }
     });
