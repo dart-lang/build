@@ -14,18 +14,6 @@ final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
 String assetGraphPathFor(String path) =>
     '$cacheDir/${scriptHashFor(path)}/asset_graph.json';
 
-/// Directories used for build tooling.
-///
-/// Reading from these directories may cause non-hermetic builds.
-const toolDirs = const [
-  '.dart_tool',
-  'build',
-  'packages',
-  '.pub',
-  '.git',
-  '.idea'
-];
-
 /// Directory containing automatically generated build entrypoints.
 ///
 /// Files in this directory must be read to do build script invalidation.
