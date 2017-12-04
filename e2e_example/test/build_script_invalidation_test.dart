@@ -50,7 +50,8 @@ void main() {
       await replaceAllInFile(assetGraph, '"version":', '"version":1');
 
       // Create a random file in the generated dir, this should get cleaned up.
-      var extraFilePath = p.join('.dart_tool', 'build', 'generated', 'foo.txt');
+      var extraFilePath =
+          p.join('.dart_tool', 'build', 'generated', 'foo', 'foo.txt');
       await createFile(extraFilePath, 'bar');
       expect(await new File(extraFilePath).exists(), isTrue);
 
