@@ -41,10 +41,12 @@ class AssetGraph {
   static Future<AssetGraph> build(
       List<BuildAction> buildActions,
       Set<AssetId> sources,
+      Set<AssetId> internalSources,
       String rootPackage,
       DigestAssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
     var newNodes = graph._addSources(sources);
+    graph._addInternalSources(internalSources);
     graph._addOutputsForSources(buildActions, sources, rootPackage);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
@@ -85,6 +87,14 @@ class AssetGraph {
       }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
+  }
+
+  /// Adds [assetIds] as [InternalAssetNode]s to this graph.
+  void _addInternalSources(Set<AssetId> assetIds) {
+    for (var id in assetIds) {
+      var node = new InternalAssetNode(id);
+      _add(node);
+    }
   }
 
   /// Adds [assetIds] as [AssetNode]s to this graph, and returns the newly

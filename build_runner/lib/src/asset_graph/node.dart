@@ -32,6 +32,18 @@ abstract class AssetNode {
   String toString() => 'AssetNode: $id';
 }
 
+/// A node representing some internal asset.
+///
+/// These nodes are not used as primary inputs, but they are tracked in the
+/// asset graph and are readable.
+class InternalAssetNode extends AssetNode {
+  InternalAssetNode(AssetId id, {Digest lastKnownDigest})
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  @override
+  String toString() => 'InternalAssetNode: $id';
+}
+
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
   SourceAssetNode(AssetId id, {Digest lastKnownDigest})
