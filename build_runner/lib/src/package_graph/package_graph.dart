@@ -68,7 +68,7 @@ class PackageGraph {
           'This program must be ran from the root directory of your package.';
     }
     var packageLocations = <String, String>{};
-    packagesFile.readAsLinesSync().skip(1).forEach((line) {
+    for (final line in packagesFile.readAsLinesSync().skip(1)) {
       var firstColon = line.indexOf(':');
       var name = line.substring(0, firstColon);
       assert(line.endsWith('lib/'));
@@ -90,7 +90,7 @@ class PackageGraph {
         uri = new Uri.file(p.join(packagePath, uri.path));
       }
       packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
-    });
+    }
 
     /// Create all [PackageNode]s for all deps.
     var nodes = <String, PackageNode>{};
