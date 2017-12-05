@@ -20,7 +20,7 @@ void assertHasField(ClassElement root, String name) {
     element = element.supertype?.element;
   }
   final allFields = root.fields.toSet();
-  root.allSupertypes.forEach((t) => allFields.addAll(t.element.fields));
+  allFields.addAll(root.allSupertypes.expand((t) => t.element.fields));
   throw new FormatException(
     'Class ${root.name} does not have field "$name".',
     'Fields: \n  - ${allFields.map((e) => e.name).join('\n  - ')}',

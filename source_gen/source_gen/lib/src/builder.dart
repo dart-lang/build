@@ -146,6 +146,7 @@ class _Builder extends Builder {
           stack);
     }
 
+    // ignore: unawaited_futures
     buildStep.writeAsString(outputId, genPartContent);
   }
 }

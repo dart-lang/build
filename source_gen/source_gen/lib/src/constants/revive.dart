@@ -13,7 +13,7 @@ import '../utils.dart';
 ///
 /// Optionally specify the [library] type that contains the reference.
 ///
-/// Returns [null] if not revivable.
+/// Returns `null` if not revivable.
 Revivable reviveInstance(DartObject object, [LibraryElement library]) {
   library ??= object.type.element.library;
   var url = Uri.parse(urlOfElement(object.type.element));

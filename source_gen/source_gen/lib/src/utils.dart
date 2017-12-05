@@ -136,7 +136,7 @@ Uri packageToAssetUrl(Uri url) => url.scheme == 'package'
 /// are not describable using `package:...`, such as files in the `bin`, `tool`,
 /// `web`, or even root directory of a package - `asset:some_lib/web/main.dart`.
 Uri assetToPackageUrl(Uri url) => url.scheme == 'asset' &&
-        url.pathSegments.length >= 1 &&
+        url.pathSegments.isNotEmpty &&
         url.pathSegments[1] == 'lib'
     ? url.replace(
         scheme: 'package',

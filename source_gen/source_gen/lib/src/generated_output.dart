@@ -9,7 +9,7 @@ import 'generator.dart';
 class GeneratedOutput {
   final String output;
   final Generator generator;
-  final error;
+  final dynamic error;
   final StackTrace stackTrace;
 
   bool get isError => error != null;

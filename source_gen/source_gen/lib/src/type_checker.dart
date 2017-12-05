@@ -253,7 +253,7 @@ class _UriTypeChecker extends TypeChecker {
   bool isExactly(Element element) => hasSameUrl(urlOfElement(element));
 
   @override
-  String toString() => '${uri}';
+  String toString() => '$uri';
 }
 
 class _AnyChecker extends TypeChecker {
