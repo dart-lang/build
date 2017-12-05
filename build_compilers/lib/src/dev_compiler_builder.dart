@@ -69,7 +69,7 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   request.arguments.addAll([
     '--dart-sdk-summary=$sdkSummary',
     '--modules=amd',
-    '--dart-sdk=${sdkDir}',
+    '--dart-sdk=$sdkDir',
     '--module-root=.',
     '--library-root=$libraryRoot',
     '--summary-extension=${linkedSummaryExtension.substring(1)}',

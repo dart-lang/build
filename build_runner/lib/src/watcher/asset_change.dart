@@ -34,7 +34,7 @@ class AssetChange {
     var absoluteEventPath =
         p.isAbsolute(event.path) ? event.path : p.absolute(event.path);
     if (!p.isWithin(pkgPath, absoluteEventPath)) {
-      throw new ArgumentError('"${absoluteEventPath}" is not in "$pkgPath".');
+      throw new ArgumentError('"$absoluteEventPath" is not in "$pkgPath".');
     }
     return p.relative(absoluteEventPath, from: pkgPath);
   }

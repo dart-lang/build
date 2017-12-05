@@ -371,7 +371,7 @@ class BuildImpl {
         outputs.every((o) => _assetGraph.contains(o)),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
-    assert(outputs.length >= 1, 'Can\'t run a build with zero outputs');
+    assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
     var firstOutput = outputs.first;
     var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
     assert(
@@ -416,9 +416,7 @@ class BuildImpl {
         bytesSink.add([1]);
         continue;
       }
-      if (node.lastKnownDigest == null) {
-        node.lastKnownDigest = await reader.digest(id);
-      }
+      node.lastKnownDigest ??= await reader.digest(id);
       bytesSink.add(node.lastKnownDigest.bytes);
     }
 
