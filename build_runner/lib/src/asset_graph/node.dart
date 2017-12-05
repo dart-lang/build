@@ -53,18 +53,6 @@ class SourceAssetNode extends AssetNode {
   String toString() => 'SourceAssetNode: $id';
 }
 
-/// A node which is not a generated or source asset.
-///
-/// Typically these are created as a result of `canRead` calls for assets that
-/// don't exist in the graph. We still need to set up proper dependencies so
-/// that if that asset gets added later the outputs are properly invalidated.
-class SyntheticAssetNode extends AssetNode {
-  SyntheticAssetNode(AssetId id) : super(id);
-
-  @override
-  String toString() => 'SyntheticAssetNode: $id';
-}
-
 /// A generated node in the asset graph.
 class GeneratedAssetNode extends AssetNode {
   /// The phase which generated this asset.
@@ -114,4 +102,30 @@ class GeneratedAssetNode extends AssetNode {
   @override
   String toString() =>
       'GeneratedAssetNode: $id generated from input $primaryInput.';
+}
+
+/// A node which is not a generated or source asset.
+abstract class SyntheticAssetNode implements AssetNode {}
+
+/// A [SyntheticAssetNode] representing a non-existent source.
+///
+/// Typically these are created as a result of `canRead` calls for assets that
+/// don't exist in the graph. We still need to set up proper dependencies so
+/// that if that asset gets added later the outputs are properly invalidated.
+class SyntheticSourceAssetNode extends AssetNode implements SyntheticAssetNode {
+  SyntheticSourceAssetNode(AssetId id) : super(id);
+}
+
+/// A [SyntheticAssetNode] which represents an individual [BuilderOptions]
+/// object.
+///
+/// These are used to track the state of a [BuilderOptions] object, and all
+/// [GeneratedAssetNode]s should depend on one of these nodes, which represents
+/// their configuration.
+class BuilderOptionsAssetNode extends AssetNode implements SyntheticAssetNode {
+  BuilderOptionsAssetNode(AssetId id, {Digest lastKnownDigest})
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  @override
+  String toString() => 'BuildOptionsAssetNode: $id';
 }

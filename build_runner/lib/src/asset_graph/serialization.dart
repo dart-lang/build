@@ -64,9 +64,9 @@ class _AssetGraphDeserializer {
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new SourceAssetNode(id, lastKnownDigest: digest);
         break;
-      case _NodeType.Synthetic:
+      case _NodeType.SyntheticSource:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new SyntheticAssetNode(id);
+        node = new SyntheticSourceAssetNode(id);
         break;
       case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
@@ -86,6 +86,10 @@ class _AssetGraphDeserializer {
       case _NodeType.Internal:
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new InternalAssetNode(id, lastKnownDigest: digest);
+        break;
+      case _NodeType.BuilderOptions:
+        assert(serializedNode.length == _WrappedAssetNode._length);
+        node = new BuilderOptionsAssetNode(id, lastKnownDigest: digest);
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(
@@ -146,7 +150,7 @@ class _AssetGraphSerializer {
 }
 
 /// Used to serialize the type of a node using an int.
-enum _NodeType { Source, Synthetic, Generated, Internal }
+enum _NodeType { Source, SyntheticSource, Generated, Internal, BuilderOptions }
 
 /// Field indexes for serialized nodes.
 enum _Field {
@@ -194,10 +198,12 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
           return _NodeType.Source.index;
         } else if (node is GeneratedAssetNode) {
           return _NodeType.Generated.index;
-        } else if (node is SyntheticAssetNode) {
-          return _NodeType.Synthetic.index;
+        } else if (node is SyntheticSourceAssetNode) {
+          return _NodeType.SyntheticSource.index;
         } else if (node is InternalAssetNode) {
           return _NodeType.Internal.index;
+        } else if (node is BuilderOptionsAssetNode) {
+          return _NodeType.BuilderOptions.index;
         } else {
           throw new StateError('Unrecognized node type');
         }

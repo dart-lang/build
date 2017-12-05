@@ -410,7 +410,9 @@ class BuildImpl {
 
     for (var id in ids) {
       var node = _assetGraph.get(id);
-      if (node is SyntheticAssetNode || !await reader.canRead(id)) {
+      if (node is BuilderOptionsAssetNode) {
+        bytesSink.add(node.lastKnownDigest.bytes);
+      } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
         bytesSink.add([1]);

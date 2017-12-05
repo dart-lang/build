@@ -87,10 +87,14 @@ void main() {
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
 
-            var syntheticNode = new SyntheticAssetNode(makeAssetId());
+            var syntheticNode = new SyntheticSourceAssetNode(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);
 
-            generatedNode.inputs.addAll([node.id, syntheticNode.id]);
+            var builderOptionsNode = new BuilderOptionsAssetNode(makeAssetId());
+            builderOptionsNode.outputs.add(generatedNode.id);
+
+            generatedNode.inputs
+                .addAll([node.id, syntheticNode.id, builderOptionsNode.id]);
             if (g % 2 == 1) {
               // Fake a digest using the id, we just care that this gets
               // serialized/deserialized properly.
@@ -100,6 +104,7 @@ void main() {
 
             graph.add(syntheticNode);
             graph.add(generatedNode);
+            graph.add(builderOptionsNode);
           }
         }
 
@@ -197,7 +202,7 @@ void main() {
         });
 
         test('add new primary input which replaces a synthetic node', () async {
-          var syntheticNode = new SyntheticAssetNode(syntheticId);
+          var syntheticNode = new SyntheticSourceAssetNode(syntheticId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticId), syntheticNode);
 
@@ -207,13 +212,13 @@ void main() {
 
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId),
-              isNot(new isInstanceOf<SyntheticAssetNode>()));
+              isNot(new isInstanceOf<SyntheticSourceAssetNode>()));
           expect(graph.contains(syntheticOutputId), isTrue);
         });
 
         test('add new generated asset which replaces a synthetic node',
             () async {
-          var syntheticNode = new SyntheticAssetNode(syntheticOutputId);
+          var syntheticNode = new SyntheticSourceAssetNode(syntheticOutputId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticOutputId), syntheticNode);
 

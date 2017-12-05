@@ -76,7 +76,7 @@ class AssetGraph {
   void _add(AssetNode node) {
     var existing = get(node.id);
     if (existing != null) {
-      if (existing is SyntheticAssetNode) {
+      if (existing is SyntheticSourceAssetNode) {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package].remove(existing.id.path);
@@ -326,8 +326,8 @@ class AssetGraph {
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
   ///
-  /// If there are existing [SourceAssetNode]s or [SyntheticAssetNode]s  that
-  /// overlap the [GeneratedAssetNode]s, then they will be replaced with
+  /// If there are existing [SourceAssetNode]s or [SyntheticSourceAssetNode]s
+  /// that overlap the [GeneratedAssetNode]s, then they will be replaced with
   /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
   /// from the graph as well. The return value is the set of assets that were
   /// removed from the graph.
