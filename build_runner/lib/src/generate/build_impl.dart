@@ -29,6 +29,7 @@ import 'build_definition.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
 import 'fold_frames.dart';
+import 'heartbeat.dart';
 import 'input_set.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
@@ -144,6 +145,10 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
+    var heartbeat = new HeartbeatLogger()..start();
+    done.future.then((_) {
+      heartbeat.stop();
+    });
     Chain.capture(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
