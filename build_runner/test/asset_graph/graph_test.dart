@@ -82,12 +82,16 @@ void main() {
           var node = makeAssetNode();
           graph.add(node);
           for (int g = 0; g < 5 - n; g++) {
-            var generatedNode = new GeneratedAssetNode(
-                0, node.id, g % 2 == 1, g % 2 == 0, makeAssetId());
+            var builderOptionsNode = new BuilderOptionsAssetNode(
+                makeAssetId(), md5.convert(UTF8.encode('test')));
+
+            var generatedNode = new GeneratedAssetNode(0, node.id, g % 2 == 1,
+                g % 2 == 0, makeAssetId(), builderOptionsNode.id);
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
+            builderOptionsNode.outputs.add(generatedNode.id);
 
-            var syntheticNode = new SyntheticAssetNode(makeAssetId());
+            var syntheticNode = new SyntheticSourceAssetNode(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);
 
             generatedNode.inputs.addAll([node.id, syntheticNode.id]);
@@ -100,6 +104,7 @@ void main() {
 
             graph.add(syntheticNode);
             graph.add(generatedNode);
+            graph.add(builderOptionsNode);
           }
         }
 
@@ -128,6 +133,7 @@ void main() {
       final syntheticOutputId = makeAssetId('foo|synthetic.copy');
       final internalId =
           makeAssetId('foo|.dart_tool/build/entrypoint/serve.dart');
+      final builderOptionsId = makeAssetId('foo|Phase0.builderOptions');
 
       setUp(() async {
         graph = await AssetGraph.build(
@@ -147,6 +153,7 @@ void main() {
               excludedInputId,
               primaryOutputId,
               internalId,
+              builderOptionsId,
             ]));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
@@ -160,6 +167,17 @@ void main() {
             reason: 'Nodes with no output shouldn\'t get an eager digest.');
 
         expect(graph.get(internalId), new isInstanceOf<InternalAssetNode>());
+
+        var primaryOutputNode =
+            graph.get(primaryOutputId) as GeneratedAssetNode;
+        expect(primaryOutputNode.builderOptionsId, builderOptionsId);
+        // Didn't actually do a build yet so this starts out empty.
+        expect(primaryOutputNode.inputs, isEmpty);
+        expect(primaryOutputNode.primaryInput, primaryInputId);
+
+        var builderOptionsNode =
+            graph.get(builderOptionsId) as BuilderOptionsAssetNode;
+        expect(builderOptionsNode.outputs, unorderedEquals([primaryOutputId]));
       });
 
       group('updateAndInvalidate', () {
@@ -197,7 +215,7 @@ void main() {
         });
 
         test('add new primary input which replaces a synthetic node', () async {
-          var syntheticNode = new SyntheticAssetNode(syntheticId);
+          var syntheticNode = new SyntheticSourceAssetNode(syntheticId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticId), syntheticNode);
 
@@ -207,13 +225,13 @@ void main() {
 
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId),
-              isNot(new isInstanceOf<SyntheticAssetNode>()));
+              isNot(new isInstanceOf<SyntheticSourceAssetNode>()));
           expect(graph.contains(syntheticOutputId), isTrue);
         });
 
         test('add new generated asset which replaces a synthetic node',
             () async {
-          var syntheticNode = new SyntheticAssetNode(syntheticOutputId);
+          var syntheticNode = new SyntheticSourceAssetNode(syntheticOutputId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticOutputId), syntheticNode);
 

@@ -69,7 +69,7 @@ class SingleStepReader implements DigestAssetReader {
     _assetsRead.add(id);
     var node = _assetGraph.get(id);
     if (node == null) {
-      _assetGraph.add(new SyntheticAssetNode(id));
+      _assetGraph.add(new SyntheticSourceAssetNode(id));
       return false;
     }
     if (node is SyntheticAssetNode) return false;

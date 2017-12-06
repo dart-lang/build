@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 13;
+const _version = 14;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -43,6 +43,9 @@ class _AssetGraphDeserializer {
     // Update the inputs of all generated nodes based on the outputs of the
     // current nodes.
     for (var node in graph.allNodes) {
+      // These aren't explicitly added as inputs.
+      if (node is BuilderOptionsAssetNode) continue;
+
       for (var output in node.outputs) {
         var generatedNode = graph.get(output) as GeneratedAssetNode;
         assert(generatedNode != null, 'Asset Graph is missing $output');
@@ -64,9 +67,9 @@ class _AssetGraphDeserializer {
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new SourceAssetNode(id, lastKnownDigest: digest);
         break;
-      case _NodeType.Synthetic:
+      case _NodeType.SyntheticSource:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new SyntheticAssetNode(id);
+        node = new SyntheticSourceAssetNode(id);
         break;
       case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
@@ -76,6 +79,7 @@ class _AssetGraphDeserializer {
             _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
             _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
             id,
+            _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
             globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
                 .map((pattern) => new Glob(pattern))
                 .toSet(),
@@ -86,6 +90,10 @@ class _AssetGraphDeserializer {
       case _NodeType.Internal:
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new InternalAssetNode(id, lastKnownDigest: digest);
+        break;
+      case _NodeType.BuilderOptions:
+        assert(serializedNode.length == _WrappedAssetNode._length);
+        node = new BuilderOptionsAssetNode(id, digest);
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(
@@ -146,7 +154,7 @@ class _AssetGraphSerializer {
 }
 
 /// Used to serialize the type of a node using an int.
-enum _NodeType { Source, Synthetic, Generated, Internal }
+enum _NodeType { Source, SyntheticSource, Generated, Internal, BuilderOptions }
 
 /// Field indexes for serialized nodes.
 enum _Field {
@@ -165,7 +173,8 @@ enum _Field {
   PhaseNumber,
   Globs,
   NeedsUpdate,
-  PreviousInputsDigest
+  PreviousInputsDigest,
+  BuilderOptions,
 }
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
@@ -194,10 +203,12 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
           return _NodeType.Source.index;
         } else if (node is GeneratedAssetNode) {
           return _NodeType.Generated.index;
-        } else if (node is SyntheticAssetNode) {
-          return _NodeType.Synthetic.index;
+        } else if (node is SyntheticSourceAssetNode) {
+          return _NodeType.SyntheticSource.index;
         } else if (node is InternalAssetNode) {
           return _NodeType.Internal.index;
+        } else if (node is BuilderOptionsAssetNode) {
+          return _NodeType.BuilderOptions.index;
         } else {
           throw new StateError('Unrecognized node type');
         }
@@ -261,6 +272,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
         return _serializeBool(generatedNode.needsUpdate);
       case _Field.PreviousInputsDigest:
         return _serializeDigest(generatedNode.previousInputsDigest);
+      case _Field.BuilderOptions:
+        return serializer._assetIdToId[generatedNode.builderOptionsId];
       default:
         throw new RangeError.index(index, this);
     }

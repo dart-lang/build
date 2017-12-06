@@ -46,6 +46,7 @@ class AssetGraph {
       DigestAssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
     var sourceNodes = graph._addSources(sources);
+    graph._addBuilderOptionsNodes(buildActions);
     graph._addOutputsForSources(buildActions, sources, rootPackage);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
@@ -76,7 +77,7 @@ class AssetGraph {
   void _add(AssetNode node) {
     var existing = get(node.id);
     if (existing != null) {
-      if (existing is SyntheticAssetNode) {
+      if (existing is SyntheticSourceAssetNode) {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package].remove(existing.id.path);
@@ -108,6 +109,16 @@ class AssetGraph {
       _add(node);
       return node;
     }).toList();
+  }
+
+  /// Adds [BuilderOptionsAssetNode]s for all [buildActions] to this graph.
+  void _addBuilderOptionsNodes(List<BuildAction> buildActions) {
+    for (var phase = 0; phase < buildActions.length; phase++) {
+      var action = buildActions[phase];
+      add(new BuilderOptionsAssetNode(
+          builderOptionsIdForPhase(action.package, phase),
+          computeBuilderOptionsDigest(action.builderOptions)));
+    }
   }
 
   /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
@@ -145,6 +156,8 @@ class AssetGraph {
         // We may have already removed this node entirely.
         if (inputNode != null) inputNode.outputs.remove(id);
       }
+      var builderOptionsNode = get(node.builderOptionsId);
+      builderOptionsNode.outputs.remove(id);
     }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;
@@ -219,7 +232,8 @@ class AssetGraph {
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(
-        newAndModifiedNodes.where((node) => node.outputs.isNotEmpty),
+        newAndModifiedNodes.where(
+            (node) => node is! SyntheticAssetNode && node.outputs.isNotEmpty),
         digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,
@@ -287,6 +301,9 @@ class AssetGraph {
     for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = <AssetId>[];
       var action = buildActions[phase];
+      var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
+      var builderOptionsNode =
+          get(buildOptionsNodeId) as BuilderOptionsAssetNode;
       if (action is PackageBuildAction) {
         var outputs = outputIdsForBuilder(action.builder, action.package);
         var invalidOutputs = outputs.where(
@@ -299,7 +316,8 @@ class AssetGraph {
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
-          allInputs.removeAll(_addGeneratedOutputs(outputs, phase));
+          allInputs.removeAll(
+              _addGeneratedOutputs(outputs, phase, builderOptionsNode));
         }
       } else if (action is AssetBuildAction) {
         var inputs = allInputs.where(action.inputSet.matches).toList();
@@ -313,8 +331,9 @@ class AssetGraph {
           var node = get(input);
           node.primaryOutputs.addAll(outputs);
           node.outputs.addAll(outputs);
-          allInputs.removeAll(
-              _addGeneratedOutputs(outputs, phase, primaryInput: input));
+          allInputs.removeAll(_addGeneratedOutputs(
+              outputs, phase, builderOptionsNode,
+              primaryInput: input));
         }
       } else {
         throw new InvalidBuildActionException.unrecognizedType(action);
@@ -326,12 +345,13 @@ class AssetGraph {
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
   ///
-  /// If there are existing [SourceAssetNode]s or [SyntheticAssetNode]s  that
-  /// overlap the [GeneratedAssetNode]s, then they will be replaced with
+  /// If there are existing [SourceAssetNode]s or [SyntheticSourceAssetNode]s
+  /// that overlap the [GeneratedAssetNode]s, then they will be replaced with
   /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
   /// from the graph as well. The return value is the set of assets that were
   /// removed from the graph.
   Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+      BuilderOptionsAssetNode builderOptionsNode,
       {AssetId primaryInput}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
@@ -346,8 +366,10 @@ class AssetGraph {
         _removeRecursive(output, removedIds: removed);
       }
 
-      _add(new GeneratedAssetNode(
-          phaseNumber, primaryInput, true, false, output));
+      var newNode = new GeneratedAssetNode(phaseNumber, primaryInput, true,
+          false, output, builderOptionsNode.id);
+      builderOptionsNode.outputs.add(output);
+      _add(newNode);
     }
     return removed;
   }
@@ -385,3 +407,9 @@ Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
   assert(digestSink.events.length == 1);
   return digestSink.events.first;
 }
+
+Digest computeBuilderOptionsDigest(BuilderOptions options) =>
+    md5.convert(UTF8.encode(JSON.encode(options.config)));
+
+AssetId builderOptionsIdForPhase(String package, int phase) =>
+    new AssetId(package, 'Phase$phase.builderOptions');

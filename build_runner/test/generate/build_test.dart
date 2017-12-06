@@ -24,6 +24,7 @@ void main() {
       new TxtFilePackageBuilder(
           'a', {'web/hello.txt': 'hello', 'web/world.txt': 'world'}),
       'a');
+  final defaultBuilderOptions = const BuilderOptions(const {});
 
   group('build', () {
     group('with root package inputs', () {
@@ -193,6 +194,8 @@ void main() {
               makeAssetId('a|web/a.txt'),
               makeAssetId('a|web/a.txt.copy'),
               makeAssetId('a|web/a.txt.copy.clone'),
+              makeAssetId('a|Phase0.builderOptions'),
+              makeAssetId('a|Phase1.builderOptions'),
             ]));
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
@@ -414,17 +417,26 @@ void main() {
 
     var expectedGraph =
         await AssetGraph.build([], new Set(), new Set(), 'a', null);
+
+    var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
+    var builderOptionsNode = new BuilderOptionsAssetNode(
+        builderOptionsId, computeBuilderOptionsDigest(defaultBuilderOptions));
+    expectedGraph.add(builderOptionsNode);
+
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
-        false, true, makeAssetId('a|web/a.txt.copy'),
+        false, true, makeAssetId('a|web/a.txt.copy'), builderOptionsId,
         lastKnownDigest: computeDigest('a'),
         inputs: [makeAssetId('a|web/a.txt')]);
+    builderOptionsNode.outputs.add(aCopyNode.id);
     expectedGraph.add(aCopyNode);
     expectedGraph
         .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
+
     var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
-        false, true, makeAssetId('a|lib/b.txt.copy'),
+        false, true, makeAssetId('a|lib/b.txt.copy'), builderOptionsId,
         lastKnownDigest: computeDigest('b'),
         inputs: [makeAssetId('a|lib/b.txt')]);
+    builderOptionsNode.outputs.add(bCopyNode.id);
     expectedGraph.add(bCopyNode);
     expectedGraph
         .add(makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b')));
