@@ -88,8 +88,8 @@ class _Loader {
       var updates = await logTimedAsync(
           _logger,
           'Checking for updates since last build',
-          () => _updateAssetGraph(assetGraph, inputSources, cacheDirSources,
-              internalSources, allSources));
+          () => _updateAssetGraph(assetGraph, _buildActions, inputSources,
+              cacheDirSources, internalSources, allSources));
 
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
@@ -213,12 +213,14 @@ class _Loader {
   /// changes.
   Future<Map<AssetId, ChangeType>> _updateAssetGraph(
       AssetGraph assetGraph,
+      List<BuildAction> buildActions,
       Set<AssetId> inputSources,
       Set<AssetId> cacheDirSources,
       Set<AssetId> internalSources,
       Set<AssetId> allSources) async {
-    var updates = await _findUpdates(
+    var updates = await _findSourceUpdates(
         assetGraph, inputSources, cacheDirSources, internalSources, allSources);
+    updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildActions));
     await assetGraph.updateAndInvalidate(
         _buildActions,
         updates,
@@ -251,7 +253,7 @@ class _Loader {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the graph and the assets on
   /// disk.
-  Future<Map<AssetId, ChangeType>> _findUpdates(
+  Future<Map<AssetId, ChangeType>> _findSourceUpdates(
       AssetGraph assetGraph,
       Set<AssetId> inputSources,
       Set<AssetId> generatedSources,
@@ -295,6 +297,26 @@ class _Loader {
     });
     await Future.wait(modifyChecks);
     return updates;
+  }
+
+  /// Checks for any updates to the [BuilderOptionsAssetNode]s for
+  /// [buildActions] compared to the last known state.
+  Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
+      AssetGraph assetGraph, List<BuildAction> buildActions) {
+    var result = <AssetId, ChangeType>{};
+    for (var phase = 0; phase < buildActions.length; phase++) {
+      var action = buildActions[phase];
+      var builderOptionsId = builderOptionsIdForPhase(action.package, phase);
+      var builderOptionsNode =
+          assetGraph.get(builderOptionsId) as BuilderOptionsAssetNode;
+      var oldDigest = builderOptionsNode.lastKnownDigest;
+      builderOptionsNode.lastKnownDigest =
+          computeBuilderOptionsDigest(action.builderOptions);
+      if (builderOptionsNode.lastKnownDigest != oldDigest) {
+        result[builderOptionsId] = ChangeType.MODIFY;
+      }
+    }
+    return result;
   }
 
   /// Returns the set of original package inputs on disk.

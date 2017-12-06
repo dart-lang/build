@@ -46,6 +46,7 @@ class AssetGraph {
       DigestAssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
     var sourceNodes = graph._addSources(sources);
+    graph._addBuilderOptionsNodes(buildActions);
     graph._addOutputsForSources(buildActions, sources, rootPackage);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
@@ -108,6 +109,16 @@ class AssetGraph {
       _add(node);
       return node;
     }).toList();
+  }
+
+  /// Adds [BuilderOptionsAssetNode]s for all [buildActions] to this graph.
+  void _addBuilderOptionsNodes(List<BuildAction> buildActions) {
+    for (var phase = 0; phase < buildActions.length; phase++) {
+      var action = buildActions[phase];
+      add(new BuilderOptionsAssetNode(
+          builderOptionsIdForPhase(action.package, phase),
+          computeBuilderOptionsDigest(action.builderOptions)));
+    }
   }
 
   /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
@@ -221,7 +232,8 @@ class AssetGraph {
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(
-        newAndModifiedNodes.where((node) => node.outputs.isNotEmpty),
+        newAndModifiedNodes.where(
+            (node) => node is! SyntheticAssetNode && node.outputs.isNotEmpty),
         digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,
@@ -289,16 +301,9 @@ class AssetGraph {
     for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = <AssetId>[];
       var action = buildActions[phase];
-      var buildOptionsNodeId =
-          new AssetId(action.package, 'Phase$phase.builderOptions');
-      BuilderOptionsAssetNode builderOptionsNode;
-      if (contains(buildOptionsNodeId)) {
-        builderOptionsNode = get(buildOptionsNodeId) as BuilderOptionsAssetNode;
-      } else {
-        builderOptionsNode = new BuilderOptionsAssetNode(buildOptionsNodeId,
-            computeBuilderOptionsDigest(action.builderOptions));
-        _add(builderOptionsNode);
-      }
+      var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
+      var builderOptionsNode =
+          get(buildOptionsNodeId) as BuilderOptionsAssetNode;
       if (action is PackageBuildAction) {
         var outputs = outputIdsForBuilder(action.builder, action.package);
         var invalidOutputs = outputs.where(
@@ -405,3 +410,6 @@ Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
 
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>
     md5.convert(UTF8.encode(JSON.encode(options.config)));
+
+AssetId builderOptionsIdForPhase(String package, int phase) =>
+    new AssetId(package, 'Phase$phase.builderOptions');

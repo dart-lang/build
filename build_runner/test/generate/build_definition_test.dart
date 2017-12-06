@@ -179,6 +179,55 @@ main() {
             await BuildDefinition.prepareWorkspace(options, buildActions);
         expect(buildDefinition.assetGraph.contains(generatedSrcId), isTrue);
       });
+
+      test('for changed BuilderOptions', () async {
+        await createFile(p.join('lib', 'a.txt'), 'a');
+        var buildActions = [
+          new BuildAction(new CopyBuilder(), 'a'),
+          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+              inputs: ['**/*.txt']),
+        ];
+
+        var originalAssetGraph = await AssetGraph.build(
+            buildActions,
+            [makeAssetId('a|lib/a.txt')].toSet(),
+            new Set(),
+            'a',
+            options.reader);
+        var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
+        var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
+        for (var id in [generatedACopyId, generatedACloneId]) {
+          var node = originalAssetGraph.get(id) as GeneratedAssetNode;
+          node.wasOutput = true;
+          node.needsUpdate = false;
+        }
+
+        await createFile(
+            assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+
+        // Same as before, but change the `BuilderOptions` for the first action.
+        var newBuildActions = [
+          new BuildAction(new CopyBuilder(), 'a',
+              builderOptions: new BuilderOptions({'test': 'option'})),
+          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+              inputs: ['**/*.txt']),
+        ];
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(options, newBuildActions);
+        var newAssetGraph = buildDefinition.assetGraph;
+
+        // The *.copy node should be invalidated, its builder options changed.
+        var generatedACopyNode =
+            newAssetGraph.get(generatedACopyId) as GeneratedAssetNode;
+        expect(generatedACopyNode, isNotNull);
+        expect(generatedACopyNode.needsUpdate, isTrue);
+
+        // But the *.clone node should remain the same since its options didn't.
+        var generatedACloneNode =
+            newAssetGraph.get(generatedACloneId) as GeneratedAssetNode;
+        expect(generatedACloneNode, isNotNull);
+        expect(generatedACloneNode.needsUpdate, isTrue);
+      });
     });
 
     group('assetGraph', () {
