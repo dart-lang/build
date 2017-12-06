@@ -390,11 +390,8 @@ class BuildImpl {
     if (node.previousInputsDigest == null || node.globs.isNotEmpty) {
       return true;
     }
-    var allInputs = <Iterable<AssetId>>[
-      node.inputs,
-      [node.builderOptionsId]
-    ].expand((i) => i);
-    var digest = await _computeCombinedDigest(allInputs, reader);
+    var digest = await _computeCombinedDigest(
+        node.inputs, node.builderOptionsId, reader);
     if (digest != node.previousInputsDigest) {
       return true;
     } else {
@@ -406,18 +403,19 @@ class BuildImpl {
     }
   }
 
-  /// Computes a single [Digest] based on the combined [Digest]s of [ids].
-  Future<Digest> _computeCombinedDigest(
-      Iterable<AssetId> ids, DigestAssetReader reader) async {
+  /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
+  /// [builderOptionsId].
+  Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
+      AssetId builderOptionsId, DigestAssetReader reader) async {
     var digestSink = new AccumulatorSink<Digest>();
     var bytesSink = md5.startChunkedConversion(digestSink);
 
+    var builderOptionsNode = _assetGraph.get(builderOptionsId);
+    bytesSink.add(builderOptionsNode.lastKnownDigest.bytes);
+
     for (var id in ids) {
       var node = _assetGraph.get(id);
-      if (node is BuilderOptionsAssetNode) {
-        bytesSink.add(node.lastKnownDigest.bytes);
-        continue;
-      } else if (!await reader.canRead(id)) {
+      if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
         bytesSink.add([1]);
@@ -456,8 +454,7 @@ class BuildImpl {
       inputsDigest ??= await () {
         var allInputs = reader.assetsRead.toSet();
         if (node.primaryInput != null) allInputs.add(node.primaryInput);
-        allInputs.add(node.builderOptionsId);
-        return _computeCombinedDigest(allInputs, reader);
+        return _computeCombinedDigest(allInputs, node.builderOptionsId, reader);
       }();
 
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
