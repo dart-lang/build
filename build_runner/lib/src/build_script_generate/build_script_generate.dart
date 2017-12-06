@@ -22,8 +22,6 @@ const scriptLocation = '$entryPointDir/build.dart';
 Future<Null> ensureBuildScript() async {
   var log = new Logger('ensureBuildScript');
   var scriptFile = new File(scriptLocation);
-  // TODO - how can we invalidate this?
-  //if (scriptFile.existsSync()) return;
   scriptFile.createSync(recursive: true);
   await logTimedAsync(log, 'Generating build script',
       () async => scriptFile.writeAsString(await _generateBuildScript()));
