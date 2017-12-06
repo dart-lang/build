@@ -3,6 +3,8 @@
 ### New Features
 
 - Added `toRoot` Package filter.
+- Actions are now invalidated at a fine grained level when `BuilderOptions`
+  change.
 
 ### Breaking Changes
 
