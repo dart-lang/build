@@ -23,16 +23,24 @@ abstract class BuildAction {
   /// never run.
   final bool isOptional;
 
-  BuildAction._(bool isOptional) : this.isOptional = isOptional ?? false;
+  final BuilderOptions builderOptions;
+
+  BuildAction._(this.builderOptions, bool isOptional)
+      : this.isOptional = isOptional ?? false;
 
   /// Creates an [AssetBuildAction] for a normal [Builder].
   ///
   /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
   /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
   factory BuildAction(Builder builder, String package,
-      {List<String> inputs, List<String> excludes, bool isOptional}) {
+      {List<String> inputs,
+      List<String> excludes,
+      BuilderOptions builderOptions,
+      bool isOptional}) {
     var inputSet = new InputSet(package, inputs, excludes: excludes);
-    return new AssetBuildAction._(builder, inputSet, isOptional: isOptional);
+    builderOptions ??= const BuilderOptions(const {});
+    return new AssetBuildAction._(builder, inputSet, builderOptions,
+        isOptional: isOptional);
   }
 }
 
@@ -46,8 +54,9 @@ class AssetBuildAction extends BuildAction {
   @override
   String get package => inputSet.package;
 
-  AssetBuildAction._(this.builder, this.inputSet, {bool isOptional})
-      : super._(isOptional);
+  AssetBuildAction._(this.builder, this.inputSet, BuilderOptions builderOptions,
+      {bool isOptional})
+      : super._(builderOptions, isOptional);
 
   @override
   String toString() => '$builder on $inputSet';
@@ -62,6 +71,7 @@ class PackageBuildAction extends BuildAction {
   @override
   final String package;
 
-  PackageBuildAction(this.builder, this.package, {bool isOptional})
-      : super._(isOptional);
+  PackageBuildAction(this.builder, this.package,
+      {BuilderOptions builderOptions, bool isOptional})
+      : super._(builderOptions ?? const BuilderOptions(const {}), isOptional);
 }

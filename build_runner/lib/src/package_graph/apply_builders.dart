@@ -117,9 +117,11 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
     Iterable<PackageNode> cycle,
     PackageGraph packageGraph,
     BuilderApplication builderApplication) {
+  var options = const BuilderOptions(const {});
   return builderApplication.builderFactories.expand((b) => cycle
       .where(builderApplication.filter)
-      .map((p) => new BuildAction(b(const BuilderOptions(const {})), p.name,
+      .map((p) => new BuildAction(b(options), p.name,
+          builderOptions: options,
           inputs: builderApplication.inputs,
           excludes: builderApplication.excludes,
           isOptional: builderApplication.isOptional)));

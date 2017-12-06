@@ -190,7 +190,8 @@ main() {
 
         var assetGraph = await AssetGraph.build(
             buildActions, new Set<AssetId>(), new Set(), 'a', options.reader);
-        expect(assetGraph.allNodes, isEmpty);
+        expect(assetGraph.allNodes.map((node) => node.id),
+            unorderedEquals([makeAssetId('a|Phase0.builderOptions')]));
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 

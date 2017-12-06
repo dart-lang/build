@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 13;
+const _version = 14;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -43,6 +43,9 @@ class _AssetGraphDeserializer {
     // Update the inputs of all generated nodes based on the outputs of the
     // current nodes.
     for (var node in graph.allNodes) {
+      // These aren't explicitly added as inputs.
+      if (node is BuilderOptionsAssetNode) continue;
+
       for (var output in node.outputs) {
         var generatedNode = graph.get(output) as GeneratedAssetNode;
         assert(generatedNode != null, 'Asset Graph is missing $output');
@@ -76,6 +79,7 @@ class _AssetGraphDeserializer {
             _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
             _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
             id,
+            _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
             globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
                 .map((pattern) => new Glob(pattern))
                 .toSet(),
@@ -89,7 +93,7 @@ class _AssetGraphDeserializer {
         break;
       case _NodeType.BuilderOptions:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new BuilderOptionsAssetNode(id, lastKnownDigest: digest);
+        node = new BuilderOptionsAssetNode(id, digest);
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(
@@ -169,7 +173,8 @@ enum _Field {
   PhaseNumber,
   Globs,
   NeedsUpdate,
-  PreviousInputsDigest
+  PreviousInputsDigest,
+  BuilderOptions,
 }
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
@@ -267,6 +272,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
         return _serializeBool(generatedNode.needsUpdate);
       case _Field.PreviousInputsDigest:
         return _serializeDigest(generatedNode.previousInputsDigest);
+      case _Field.BuilderOptions:
+        return serializer._assetIdToId[generatedNode.builderOptionsId];
       default:
         throw new RangeError.index(index, this);
     }

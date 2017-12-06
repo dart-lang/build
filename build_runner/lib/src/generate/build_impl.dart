@@ -390,7 +390,11 @@ class BuildImpl {
     if (node.previousInputsDigest == null || node.globs.isNotEmpty) {
       return true;
     }
-    var digest = await _computeCombinedDigest(node.inputs, reader);
+    var allInputs = <Iterable<AssetId>>[
+      node.inputs,
+      [node.builderOptionsId]
+    ].expand((i) => i);
+    var digest = await _computeCombinedDigest(allInputs, reader);
     if (digest != node.previousInputsDigest) {
       return true;
     } else {
@@ -412,6 +416,7 @@ class BuildImpl {
       var node = _assetGraph.get(id);
       if (node is BuilderOptionsAssetNode) {
         bytesSink.add(node.lastKnownDigest.bytes);
+        continue;
       } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
@@ -451,6 +456,7 @@ class BuildImpl {
       inputsDigest ??= await () {
         var allInputs = reader.assetsRead.toSet();
         if (node.primaryInput != null) allInputs.add(node.primaryInput);
+        allInputs.add(node.builderOptionsId);
         return _computeCombinedDigest(allInputs, reader);
       }();
 

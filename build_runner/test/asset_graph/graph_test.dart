@@ -82,19 +82,19 @@ void main() {
           var node = makeAssetNode();
           graph.add(node);
           for (int g = 0; g < 5 - n; g++) {
-            var generatedNode = new GeneratedAssetNode(
-                0, node.id, g % 2 == 1, g % 2 == 0, makeAssetId());
+            var builderOptionsNode = new BuilderOptionsAssetNode(
+                makeAssetId(), md5.convert(UTF8.encode('test')));
+
+            var generatedNode = new GeneratedAssetNode(0, node.id, g % 2 == 1,
+                g % 2 == 0, makeAssetId(), builderOptionsNode.id);
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
+            builderOptionsNode.outputs.add(generatedNode.id);
 
             var syntheticNode = new SyntheticSourceAssetNode(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);
 
-            var builderOptionsNode = new BuilderOptionsAssetNode(makeAssetId());
-            builderOptionsNode.outputs.add(generatedNode.id);
-
-            generatedNode.inputs
-                .addAll([node.id, syntheticNode.id, builderOptionsNode.id]);
+            generatedNode.inputs.addAll([node.id, syntheticNode.id]);
             if (g % 2 == 1) {
               // Fake a digest using the id, we just care that this gets
               // serialized/deserialized properly.
@@ -133,6 +133,7 @@ void main() {
       final syntheticOutputId = makeAssetId('foo|synthetic.copy');
       final internalId =
           makeAssetId('foo|.dart_tool/build/entrypoint/serve.dart');
+      final builderOptionsId = makeAssetId('foo|Phase0.builderOptions');
 
       setUp(() async {
         graph = await AssetGraph.build(
@@ -152,6 +153,7 @@ void main() {
               excludedInputId,
               primaryOutputId,
               internalId,
+              builderOptionsId,
             ]));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
@@ -165,6 +167,17 @@ void main() {
             reason: 'Nodes with no output shouldn\'t get an eager digest.');
 
         expect(graph.get(internalId), new isInstanceOf<InternalAssetNode>());
+
+        var primaryOutputNode =
+            graph.get(primaryOutputId) as GeneratedAssetNode;
+        expect(primaryOutputNode.builderOptionsId, builderOptionsId);
+        // Didn't actually do a build yet so this starts out empty.
+        expect(primaryOutputNode.inputs, isEmpty);
+        expect(primaryOutputNode.primaryInput, primaryInputId);
+
+        var builderOptionsNode =
+            graph.get(builderOptionsId) as BuilderOptionsAssetNode;
+        expect(builderOptionsNode.outputs, unorderedEquals([primaryOutputId]));
       });
 
       group('updateAndInvalidate', () {

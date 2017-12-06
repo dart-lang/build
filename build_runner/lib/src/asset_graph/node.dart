@@ -87,8 +87,12 @@ class GeneratedAssetNode extends AssetNode {
   /// the previous run, indicating that the previous output is still valid.
   Digest previousInputsDigest;
 
+  /// The [AssetId] of the node representing the [BuilderOptions] used to create
+  /// this node.
+  final AssetId builderOptionsId;
+
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
-      this.wasOutput, AssetId id,
+      this.wasOutput, AssetId id, this.builderOptionsId,
       {Digest lastKnownDigest,
       Set<Glob> globs,
       Iterable<AssetId> inputs,
@@ -123,7 +127,7 @@ class SyntheticSourceAssetNode extends AssetNode implements SyntheticAssetNode {
 /// [GeneratedAssetNode]s should depend on one of these nodes, which represents
 /// their configuration.
 class BuilderOptionsAssetNode extends AssetNode implements SyntheticAssetNode {
-  BuilderOptionsAssetNode(AssetId id, {Digest lastKnownDigest})
+  BuilderOptionsAssetNode(AssetId id, Digest lastKnownDigest)
       : super(id, lastKnownDigest: lastKnownDigest);
 
   @override

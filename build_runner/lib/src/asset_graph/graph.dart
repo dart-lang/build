@@ -145,6 +145,8 @@ class AssetGraph {
         // We may have already removed this node entirely.
         if (inputNode != null) inputNode.outputs.remove(id);
       }
+      var builderOptionsNode = get(node.builderOptionsId);
+      builderOptionsNode.outputs.remove(id);
     }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;
@@ -287,6 +289,16 @@ class AssetGraph {
     for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = <AssetId>[];
       var action = buildActions[phase];
+      var buildOptionsNodeId =
+          new AssetId(action.package, 'Phase$phase.builderOptions');
+      BuilderOptionsAssetNode builderOptionsNode;
+      if (contains(buildOptionsNodeId)) {
+        builderOptionsNode = get(buildOptionsNodeId) as BuilderOptionsAssetNode;
+      } else {
+        builderOptionsNode = new BuilderOptionsAssetNode(buildOptionsNodeId,
+            computeBuilderOptionsDigest(action.builderOptions));
+        _add(builderOptionsNode);
+      }
       if (action is PackageBuildAction) {
         var outputs = outputIdsForBuilder(action.builder, action.package);
         var invalidOutputs = outputs.where(
@@ -299,7 +311,8 @@ class AssetGraph {
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
-          allInputs.removeAll(_addGeneratedOutputs(outputs, phase));
+          allInputs.removeAll(
+              _addGeneratedOutputs(outputs, phase, builderOptionsNode));
         }
       } else if (action is AssetBuildAction) {
         var inputs = allInputs.where(action.inputSet.matches).toList();
@@ -313,8 +326,9 @@ class AssetGraph {
           var node = get(input);
           node.primaryOutputs.addAll(outputs);
           node.outputs.addAll(outputs);
-          allInputs.removeAll(
-              _addGeneratedOutputs(outputs, phase, primaryInput: input));
+          allInputs.removeAll(_addGeneratedOutputs(
+              outputs, phase, builderOptionsNode,
+              primaryInput: input));
         }
       } else {
         throw new InvalidBuildActionException.unrecognizedType(action);
@@ -332,6 +346,7 @@ class AssetGraph {
   /// from the graph as well. The return value is the set of assets that were
   /// removed from the graph.
   Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+      BuilderOptionsAssetNode builderOptionsNode,
       {AssetId primaryInput}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
@@ -346,8 +361,10 @@ class AssetGraph {
         _removeRecursive(output, removedIds: removed);
       }
 
-      _add(new GeneratedAssetNode(
-          phaseNumber, primaryInput, true, false, output));
+      var newNode = new GeneratedAssetNode(phaseNumber, primaryInput, true,
+          false, output, builderOptionsNode.id);
+      builderOptionsNode.outputs.add(output);
+      _add(newNode);
     }
     return removed;
   }
@@ -385,3 +402,6 @@ Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
   assert(digestSink.events.length == 1);
   return digestSink.events.first;
 }
+
+Digest computeBuilderOptionsDigest(BuilderOptions options) =>
+    md5.convert(UTF8.encode(JSON.encode(options.config)));
