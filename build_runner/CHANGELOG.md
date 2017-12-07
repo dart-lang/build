@@ -1,3 +1,67 @@
+## 0.7.0-dev
+
+### New Features
+
+- Added `toRoot` Package filter.
+- Actions are now invalidated at a fine grained level when `BuilderOptions`
+  change.
+
+### Breaking Changes
+
+- There is now a whitelist of top level directories that will be used as a part
+  of the build, and other files will be ignored. For now those directories
+  include 'benchmark', 'bin', 'example', 'lib', 'test', 'tool', and 'web'.
+  - If this breaks your workflow please file an issue and we can look at either
+    adding additional directories or making the list configurable per project.
+- Remove `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+
+The following changes are technically breaking but should not impact most
+clients:
+
+- Removed `dependencyType`, `version`, `includes`, and `excludes` from
+  `PackageNode`.
+- Removed `PackageNode.noPubspec` constructor.
+- Removed `InputSet`.
+- PackageGraph instances enforce that the `root` node is the only node with
+  `isRoot == true`.
+
+## 0.6.1
+
+### New Features
+
+- Add an `enableLowResourcesMode` option to `build` and `watch`, which will
+  consume less memory at the cost of slower builds. This is intended for use in
+  resource constrained environments such as Travis.
+- Add `createBuildActions`. After finding a list of Builders to run, and defining
+  which packages need them applied, use this tool to apply them in the correct
+  order across the package graph.
+
+### Deprecations
+
+- Deprecate `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+
+### Internal Improvements
+
+- Outputs will no longer be rebuilt unless their inputs actually changed,
+  previously if any transtive dependency changed they would be invalidated.
+- Switched to using semantic analyzer summaries, this combined with the better
+  input validation means that, ddc/summary builds are much faster on non-api
+  affecting edits (dependent modules will no longer be rebuilt).
+- Build script invalidation is now much faster, which speeds up all builds.
+
+### Bug Fixes
+
+- The build actions are now checked against the previous builds actions, and if
+  they do not match then a full build is performed. Previously the behavior in
+  this case was undefined.
+- Fixed an issue where once an edge between an output and an input was created
+  it was never removed, causing extra builds to happen that weren't necessary.
+- Build actions are now checked for overlapping outputs in non-checked mode,
+  previously this was only an assert.
+- Fixed an issue where nodes could get in an inconsistent state for short
+  periods of time, leading to various errors.
+- Fixed an issue on windows where incremental builds didn't work.
+
 ## 0.6.0+1
 
 ### Internal Improvements

@@ -50,7 +50,7 @@ void checkOutputs(
           reason: 'Builder failed to write asset $assetId');
       modifiableActualAssets.remove(assetId);
       var actual = writer.assets[mapAssetIds(assetId)];
-      var expected;
+      Object expected;
       if (contentsMatcher is String) {
         expected = UTF8.decode(actual);
       } else if (contentsMatcher is List<int>) {

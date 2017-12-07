@@ -4,25 +4,16 @@
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 
 /// Relative path to the asset graph from the root package dir.
-final String assetGraphPath = assetGraphPathFor(Platform.script.path);
+final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
+    ? Platform.script.toFilePath()
+    : Platform.script.path);
 
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>
     '$cacheDir/${scriptHashFor(path)}/asset_graph.json';
-
-/// Directories used for build tooling.
-///
-/// Reading from these directories may cause non-hermetic builds.
-const toolDirs = const [
-  '.dart_tool',
-  'build',
-  'packages',
-  '.pub',
-  '.git',
-  '.idea'
-];
 
 /// Directory containing automatically generated build entrypoints.
 ///
@@ -38,3 +29,17 @@ const String cacheDir = '.dart_tool/build';
 
 /// Returns a hash for a given path.
 String scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
+
+/// Whitelist of files in the root package to include.
+const List<String> rootPackageFilesWhitelist = const [
+  'benchmark/**',
+  'bin/**',
+  'example/**',
+  'lib/**',
+  'test/**',
+  'tool/**',
+  'web/**',
+];
+
+final List<Glob> rootPackageGlobsWhitelist = new List.unmodifiable(
+    rootPackageFilesWhitelist.map((pattern) => new Glob(pattern)));

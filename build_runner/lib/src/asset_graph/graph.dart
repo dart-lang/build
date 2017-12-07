@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
@@ -25,7 +26,13 @@ class AssetGraph {
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final _nodesByPackage = <String, Map<String, AssetNode>>{};
 
-  AssetGraph._();
+  /// A [Digest] of the build actions this graph was originally created with.
+  ///
+  /// When an [AssetGraph] is deserialized we check whether or not it matches
+  /// the new [BuildAction]s and throw away the graph if it doesn't.
+  final Digest buildActionsDigest;
+
+  AssetGraph._(this.buildActionsDigest);
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(Map serializedGraph) =>
@@ -34,14 +41,19 @@ class AssetGraph {
   static Future<AssetGraph> build(
       List<BuildAction> buildActions,
       Set<AssetId> sources,
+      Set<AssetId> internalSources,
       String rootPackage,
       DigestAssetReader digestReader) async {
-    var graph = new AssetGraph._();
-    var newNodes = graph._addSources(sources);
+    var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
+    var sourceNodes = graph._addSources(sources);
+    graph._addBuilderOptionsNodes(buildActions);
     graph._addOutputsForSources(buildActions, sources, rootPackage);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
-        newNodes.where((node) => node.outputs.isNotEmpty), digestReader);
+        sourceNodes.where((node) => node.outputs.isNotEmpty), digestReader);
+    // Always compute digests for all internal nodes.
+    var internalNodes = graph._addInternalSources(internalSources);
+    await graph._setLastKnownDigests(internalNodes, digestReader);
     return graph;
   }
 
@@ -65,8 +77,10 @@ class AssetGraph {
   void _add(AssetNode node) {
     var existing = get(node.id);
     if (existing != null) {
-      if (existing is SyntheticAssetNode) {
-        _remove(existing.id);
+      if (existing is SyntheticSourceAssetNode) {
+        // Don't call _removeRecursive, that recursively removes all transitive
+        // primary outputs. We only want to remove this node.
+        _nodesByPackage[existing.id.package].remove(existing.id.path);
         node.outputs.addAll(existing.outputs);
         node.primaryOutputs.addAll(existing.primaryOutputs);
       } else {
@@ -78,6 +92,15 @@ class AssetGraph {
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
   }
 
+  /// Adds [assetIds] as [InternalAssetNode]s to this graph.
+  Iterable<AssetNode> _addInternalSources(Set<AssetId> assetIds) sync* {
+    for (var id in assetIds) {
+      var node = new InternalAssetNode(id);
+      _add(node);
+      yield node;
+    }
+  }
+
   /// Adds [assetIds] as [AssetNode]s to this graph, and returns the newly
   /// created nodes.
   List<AssetNode> _addSources(Set<AssetId> assetIds) {
@@ -86,6 +109,16 @@ class AssetGraph {
       _add(node);
       return node;
     }).toList();
+  }
+
+  /// Adds [BuilderOptionsAssetNode]s for all [buildActions] to this graph.
+  void _addBuilderOptionsNodes(List<BuildAction> buildActions) {
+    for (var phase = 0; phase < buildActions.length; phase++) {
+      var action = buildActions[phase];
+      add(new BuilderOptionsAssetNode(
+          builderOptionsIdForPhase(action.package, phase),
+          computeBuilderOptionsDigest(action.builderOptions)));
+    }
   }
 
   /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
@@ -100,20 +133,31 @@ class AssetGraph {
   /// Removes the node representing [id] from the graph, and all of its
   /// `primaryOutput`s.
   ///
+  /// Also removes all edges between all removed nodes and other nodes.
+  ///
   /// Returns a [Set<AssetId>] of all removed nodes.
-  Set<AssetId> _remove(AssetId id, {Set<AssetId> removedIds}) {
+  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId> removedIds}) {
     removedIds ??= new Set<AssetId>();
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
     for (var output in node.primaryOutputs) {
-      _remove(output, removedIds: removedIds);
+      _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
       var generatedNode = get(output) as GeneratedAssetNode;
       if (generatedNode != null) {
         generatedNode.inputs.remove(id);
       }
+    }
+    if (node is GeneratedAssetNode) {
+      for (var input in node.inputs) {
+        var inputNode = get(input);
+        // We may have already removed this node entirely.
+        if (inputNode != null) inputNode.outputs.remove(id);
+      }
+      var builderOptionsNode = get(node.builderOptionsId);
+      builderOptionsNode.outputs.remove(id);
     }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;
@@ -146,30 +190,24 @@ class AssetGraph {
       Future delete(AssetId id),
       DigestAssetReader digestReader) async {
     var invalidatedIds = new Set<AssetId>();
-    // All the assets that should be deleted.
-    var idsToDelete = new Set<AssetId>();
 
-    // Builds up `idsToDelete` and `idsToRemove` by recursively invalidating
-    // the outputs of `id`.
-    void clearNodeAndDeps(AssetId id, ChangeType rootChangeType) {
+    // Transitively invalidates all assets.
+    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType) {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
       if (node is GeneratedAssetNode) {
-        idsToDelete.add(id);
         node.needsUpdate = true;
-        node.wasOutput = false;
-        node.globs = new Set();
       }
 
       // Update all outputs of this asset as well.
       for (var output in node.outputs) {
-        clearNodeAndDeps(output, rootChangeType);
+        invalidateNodeAndDeps(output, rootChangeType);
       }
     }
 
-    updates.forEach(clearNodeAndDeps);
+    updates.forEach(invalidateNodeAndDeps);
 
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
@@ -194,13 +232,37 @@ class AssetGraph {
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(
-        newAndModifiedNodes.where((node) => node.outputs.isNotEmpty),
+        newAndModifiedNodes.where(
+            (node) => node is! SyntheticAssetNode && node.outputs.isNotEmpty),
         digestReader);
+
+    // Collects the set of all transitive ids to be removed from the graph,
+    // based on the removed `SourceAssetNode`s by following the
+    // `primaryOutputs`.
+    var transitiveRemovedIds = new Set<AssetId>();
+    addTransitivePrimaryOutputs(AssetId id) {
+      transitiveRemovedIds.add(id);
+      get(id).primaryOutputs.forEach(addTransitivePrimaryOutputs);
+    }
+
+    removeIds
+        .where((id) => get(id) is SourceAssetNode)
+        .forEach(addTransitivePrimaryOutputs);
+
+    // The generated nodes to actually delete from the file system.
+    var idsToDelete = new Set<AssetId>.from(transitiveRemovedIds)
+      ..removeAll(removeIds);
+
+    // For manually deleted generated outputs, we bash away their
+    // `previousInputsDigest` to make sure they actually get regenerated.
+    for (var deletedOutput
+        in removeIds.where((id) => get(id) is GeneratedAssetNode)) {
+      (get(deletedOutput) as GeneratedAssetNode).previousInputsDigest = null;
+    }
 
     var allNewAndDeletedIds =
         _addOutputsForSources(buildActions, newIds, rootPackage)
-          ..addAll(removeIds)
-          ..addAll(idsToDelete);
+          ..addAll(transitiveRemovedIds);
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
@@ -211,7 +273,7 @@ class AssetGraph {
             .globs
             .any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
-          clearNodeAndDeps(node.id, null);
+          invalidateNodeAndDeps(node.id, null);
         }
       }
     }
@@ -223,7 +285,9 @@ class AssetGraph {
 
     // Remove all deleted source assets from the graph, which also recursively
     // removes all their primary outputs.
-    removeIds.where((id) => get(id) is SourceAssetNode).forEach(_remove);
+    removeIds
+        .where((id) => get(id) is SourceAssetNode)
+        .forEach(_removeRecursive);
 
     return invalidatedIds;
   }
@@ -237,6 +301,9 @@ class AssetGraph {
     for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = <AssetId>[];
       var action = buildActions[phase];
+      var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
+      var builderOptionsNode =
+          get(buildOptionsNodeId) as BuilderOptionsAssetNode;
       if (action is PackageBuildAction) {
         var outputs = outputIdsForBuilder(action.builder, action.package);
         var invalidOutputs = outputs.where(
@@ -249,7 +316,8 @@ class AssetGraph {
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
-          allInputs.removeAll(_addGeneratedOutputs(outputs, phase));
+          allInputs.removeAll(
+              _addGeneratedOutputs(outputs, phase, builderOptionsNode));
         }
       } else if (action is AssetBuildAction) {
         var inputs = allInputs.where(action.inputSet.matches).toList();
@@ -263,8 +331,9 @@ class AssetGraph {
           var node = get(input);
           node.primaryOutputs.addAll(outputs);
           node.outputs.addAll(outputs);
-          allInputs.removeAll(
-              _addGeneratedOutputs(outputs, phase, primaryInput: input));
+          allInputs.removeAll(_addGeneratedOutputs(
+              outputs, phase, builderOptionsNode,
+              primaryInput: input));
         }
       } else {
         throw new InvalidBuildActionException.unrecognizedType(action);
@@ -276,12 +345,13 @@ class AssetGraph {
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
   ///
-  /// If there are existing [SourceAssetNode]s or [SyntheticAssetNode]s  that
-  /// overlap the [GeneratedAssetNode]s, then they will be replaced with
+  /// If there are existing [SourceAssetNode]s or [SyntheticSourceAssetNode]s
+  /// that overlap the [GeneratedAssetNode]s, then they will be replaced with
   /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
   /// from the graph as well. The return value is the set of assets that were
   /// removed from the graph.
   Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+      BuilderOptionsAssetNode builderOptionsNode,
       {AssetId primaryInput}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
@@ -289,12 +359,17 @@ class AssetGraph {
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
-        assert(get(output) is! GeneratedAssetNode);
-        _remove(output, removedIds: removed);
+        var node = get(output);
+        if (node is GeneratedAssetNode) {
+          throw new DuplicateAssetNodeException(node);
+        }
+        _removeRecursive(output, removedIds: removed);
       }
 
-      _add(new GeneratedAssetNode(
-          phaseNumber, primaryInput, true, false, output));
+      var newNode = new GeneratedAssetNode(phaseNumber, primaryInput, true,
+          false, output, builderOptionsNode.id);
+      builderOptionsNode.outputs.add(output);
+      _add(newNode);
     }
     return removed;
   }
@@ -304,5 +379,37 @@ class AssetGraph {
 
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
-  Set<AssetId> remove(AssetId id) => _remove(id);
+  Set<AssetId> remove(AssetId id) => _removeRecursive(id);
 }
+
+/// Computes a [Digest] for [buildActions] which can be used to compare one set
+/// of [BuildAction]s against another.
+Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
+  var digestSink = new AccumulatorSink<Digest>();
+  var bytesSink = md5.startChunkedConversion(digestSink);
+  for (var action in buildActions) {
+    bytesSink.add(UTF8.encode(action.package));
+    if (action is AssetBuildAction) {
+      bytesSink.add([0]);
+      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
+      for (var glob in action.inputSet.globs) {
+        bytesSink.add([glob.pattern.hashCode]);
+      }
+      for (var glob in action.inputSet.excludes) {
+        bytesSink.add([glob.pattern.hashCode]);
+      }
+    } else if (action is PackageBuildAction) {
+      bytesSink.add([1]);
+      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
+    }
+  }
+  bytesSink.close();
+  assert(digestSink.events.length == 1);
+  return digestSink.events.first;
+}
+
+Digest computeBuilderOptionsDigest(BuilderOptions options) =>
+    md5.convert(UTF8.encode(JSON.encode(options.config)));
+
+AssetId builderOptionsIdForPhase(String package, int phase) =>
+    new AssetId(package, 'Phase$phase.builderOptions');

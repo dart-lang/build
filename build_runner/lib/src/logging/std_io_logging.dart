@@ -16,7 +16,7 @@ final _isPosixTerminal =
     !Platform.isWindows && stdioType(stdout) == StdioType.TERMINAL;
 
 void stdIOLogListener(LogRecord record) {
-  var color;
+  String color;
   if (record.level < Level.WARNING) {
     color = _cyan;
   } else if (record.level < Level.SEVERE) {

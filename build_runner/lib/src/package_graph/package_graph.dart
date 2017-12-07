@@ -10,9 +10,7 @@ import 'package:yaml/yaml.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
-final PackageNode _sdkPackageNode = new PackageNode(
-    r'$sdk', null, null, getSdkPath(),
-    includes: ['lib/dev_compiler/**.js']);
+final PackageNode _sdkPackageNode = new PackageNode(r'$sdk', getSdkPath());
 
 /// A graph of the package dependencies for an application.
 class PackageGraph {
@@ -25,7 +23,15 @@ class PackageGraph {
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
       : allPackages = new Map.unmodifiable(
             new Map<String, PackageNode>.from(allPackages)
-              ..putIfAbsent(r'$sdk', () => _sdkPackageNode));
+              ..putIfAbsent(r'$sdk', () => _sdkPackageNode)) {
+    if (!root.isRoot) {
+      throw new ArgumentError('Root node must indicate `isRoot`');
+    }
+    if (allPackages.values.where((n) => n != root).any((n) => n.isRoot)) {
+      throw new ArgumentError(
+          'No nodes other than the root may indicate `isRoot`');
+    }
+  }
 
   /// Creates a [PackageGraph] given the [root] [PackageNode].
   factory PackageGraph.fromRoot(PackageNode root) {
@@ -62,7 +68,7 @@ class PackageGraph {
           'This program must be ran from the root directory of your package.';
     }
     var packageLocations = <String, String>{};
-    packagesFile.readAsLinesSync().skip(1).forEach((line) {
+    for (final line in packagesFile.readAsLinesSync().skip(1)) {
       var firstColon = line.indexOf(':');
       var name = line.substring(0, firstColon);
       assert(line.endsWith('lib/'));
@@ -84,23 +90,18 @@ class PackageGraph {
         uri = new Uri.file(p.join(packagePath, uri.path));
       }
       packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
-    });
+    }
 
     /// Create all [PackageNode]s for all deps.
     var nodes = <String, PackageNode>{};
-    Map<String, dynamic> rootDeps;
-    PackageNode addNodeAndDeps(YamlMap yaml, PackageDependencyType type,
-        {bool isRoot: false}) {
+    PackageNode addNodeAndDeps(YamlMap yaml, {bool isRoot: false}) {
       var name = yaml['name'] as String;
       assert(!nodes.containsKey(name));
-      var node = new PackageNode(
-          name, yaml['version'] as String, type, packageLocations[name],
-          includes: isRoot ? ['**'] : ['lib/**']);
+      var node = new PackageNode(name, packageLocations[name], isRoot: isRoot);
       nodes[name] = node;
 
       var deps = _depsFromYaml(yaml, isRoot: isRoot);
-      if (isRoot) rootDeps = deps;
-      deps.forEach((name, source) {
+      for (final name in deps) {
         var dep = nodes[name];
         if (dep == null) {
           var uri = packageLocations[name];
@@ -108,16 +109,15 @@ class PackageGraph {
             throw 'No package found for $name.';
           }
           var pubspec = _pubspecForPath(uri);
-          dep = addNodeAndDeps(pubspec, _dependencyType(rootDeps[name]));
+          dep = addNodeAndDeps(pubspec);
         }
         node.dependencies.add(dep);
-      });
+      }
 
       return node;
     }
 
-    var root =
-        addNodeAndDeps(rootYaml, PackageDependencyType.path, isRoot: true);
+    var root = addNodeAndDeps(rootYaml, isRoot: true);
     return new PackageGraph._(root, nodes);
   }
 
@@ -127,28 +127,6 @@ class PackageGraph {
 
   /// Shorthand to get a package by name.
   PackageNode operator [](String packageName) => allPackages[packageName];
-
-  /// Finds all packages which depend on [packageName] in postorder by
-  /// dependencies.
-  ///
-  /// See [orderedPackages] for ordering guarantees. The node for [packageName]
-  /// will not be included in the result.
-  Iterable<PackageNode> dependentsOf(String packageName) {
-    if (!allPackages.containsKey(packageName)) return const [];
-    var node = allPackages[packageName];
-    return orderedPackages.where((n) => n.dependencies.contains(node));
-  }
-
-  /// All of the packages in postorder by dependencies.
-  ///
-  /// Depedencies of a package will come before the package in the result. If
-  /// there is a package cycle the relative position of packages within the
-  /// cycle is non-deterministic, except that the root package will always come
-  /// last. For any two packages for which neither is a transitive dependency of
-  /// the other the relative position of the packages within the cycle is
-  /// non-deterministic.
-  Iterable<PackageNode> get orderedPackages =>
-      _orderedPackages(root, new Set<PackageNode>());
 
   @override
   String toString() {
@@ -160,30 +138,10 @@ class PackageGraph {
   }
 }
 
-Iterable<PackageNode> _orderedPackages(
-    PackageNode current, Set<PackageNode> seen) sync* {
-  seen.add(current);
-  for (var dep in current.dependencies) {
-    if (seen.contains(dep)) continue;
-    yield* _orderedPackages(dep, seen);
-  }
-  yield current;
-}
-
 /// A node in a [PackageGraph].
 class PackageNode {
   /// The name of the package as listed in `pubspec.yaml`.
   final String name;
-
-  /// The version of the package as listed in `pubspec.yaml`.
-  ///
-  /// May be `null` if [PackageNode.noPubspec] was used.
-  final String version;
-
-  /// The type of dependency being used to pull in this package.
-  ///
-  /// May be `null` if [PackageNode.noPubspec] was used.
-  final PackageDependencyType dependencyType;
 
   /// All the packages that this package directly depends on.
   final List<PackageNode> dependencies = [];
@@ -191,40 +149,16 @@ class PackageNode {
   /// The absolute path of the current version of this package.
   final String path;
 
-  /// The glob patterns to include from this package.
-  ///
-  /// Only the files matching these patterns will end up in the asset graph,
-  /// unless they also match a pattern in [excludes].
-  final List<String> _includes;
-  Iterable<String> get includes => _includes;
+  /// Whether this node is the [PackageGraph.root].
+  final bool isRoot;
 
-  /// The glob patterns to exclude from this package.
-  ///
-  /// Any files matching these pattern will be excluded from the asset graph.
-  final List<String> _excludes;
-  Iterable<String> get excludes => _excludes;
-
-  PackageNode(this.name, this.version, this.dependencyType, String path,
-      {Iterable<String> includes, Iterable<String> excludes})
+  PackageNode(this.name, String path, {bool isRoot})
       : path = _toAbsolute(path),
-        this._includes = includes?.toList() ?? ['lib/**'],
-        this._excludes = excludes?.toList() ?? <String>[];
-
-  /// Create a [PackageNode] without any details from a `pubspec.yaml` file.
-  ///
-  /// This is useful for testing, or in cases where a package may be synthetic.
-  factory PackageNode.noPubspec(String name,
-          {String path,
-          Iterable<String> includes,
-          Iterable<String> excludes}) =>
-      new PackageNode(name, null, null, _toAbsolute(path),
-          includes: includes, excludes: excludes);
+        isRoot = isRoot ?? false;
 
   @override
   String toString() => '''
   $name:
-    version: $version
-    type: $dependencyType
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
 
@@ -235,38 +169,13 @@ class PackageNode {
   }
 }
 
-/// The type of dependency being used. This dictates how the package should be
-/// watched for changes.
-enum PackageDependencyType { pub, github, path, hosted }
-
-PackageDependencyType _dependencyType(source) {
-  if (source is String || source == null) return PackageDependencyType.pub;
-
-  assert(source is YamlMap);
-  var map = source as YamlMap;
-
-  for (var key in map.keys) {
-    switch (key as String) {
-      case 'git':
-        return PackageDependencyType.github;
-      case 'hosted':
-        return PackageDependencyType.hosted;
-      case 'path':
-      case 'sdk': // Until Flutter supports another type, assume same as path.
-        return PackageDependencyType.path;
-    }
-  }
-  throw 'Unable to determine dependency type:\n$source';
-}
-
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
-Map<String, dynamic> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
-  var deps = new Map<String, dynamic>.from(yaml['dependencies'] as Map ?? {});
+Iterable<String> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
+  var deps = new Set<String>.from((yaml['dependencies'] as Map)?.keys ?? []);
   if (isRoot) {
-    deps.addAll(new Map.from(yaml['dev_dependencies'] as Map ?? {}));
-    yaml['dependency_overrides']?.forEach((dep, source) {
-      deps[dep as String] = source;
-    });
+    deps.addAll((yaml['dev_dependencies'] as Map<String, dynamic>)?.keys ?? []);
+    deps.addAll(
+        (yaml['dependency_overrides'] as Map<String, dynamic>)?.keys ?? []);
   }
   return deps;
 }

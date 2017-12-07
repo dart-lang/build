@@ -48,6 +48,8 @@ main() {
         contains('require(["web/index", "dart_sdk"]'),
         // Calls main on the top level module.
         contains('index.main()'),
+        isNot(contains('lib/a')),
+        isNot(contains('packages/a/a')),
       ])),
     };
     await testBuilder(new DevCompilerBootstrapBuilder(), assets,

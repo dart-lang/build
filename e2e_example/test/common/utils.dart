@@ -16,6 +16,8 @@ Process _process;
 Stream<String> _stdErrLines;
 Stream<String> _stdOutLines;
 
+final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
+
 /// Runs the build script in this package, and waits for the first build to
 /// complete.
 ///
@@ -28,8 +30,11 @@ Stream<String> _stdOutLines;
 /// For debugging purposes you can enable printing of the build script output by
 /// setting [verbose] to `true`.
 Future<Null> startManualServer(
-        {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
-    _startServer('dart', ['tool/build.dart'],
+        {bool ensureCleanBuild,
+        bool verbose,
+        List<Function> extraExpects,
+        String scriptPath = 'tool/build.dart'}) =>
+    _startServer('dart', [scriptPath],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
@@ -47,7 +52,7 @@ Future<Null> startManualServer(
 /// setting [verbose] to `true`.
 Future<Null> startAutoServer(
         {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
-    _startServer('pub', ['run', 'build_runner:serve'],
+    _startServer(_pubBinary, ['run', 'build_runner:serve'],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
@@ -93,16 +98,11 @@ Future<Null> stopServer({bool cleanUp}) async {
     await _process.exitCode;
     _process = null;
   }
-  if (_stdOutLines != null) {
-    await _stdOutLines.drain();
-    _stdOutLines = null;
-  }
-  if (_stdErrLines != null) {
-    await _stdErrLines.drain();
-    _stdErrLines = null;
-  }
+  _stdOutLines = null;
+  _stdErrLines = null;
 
-  if (cleanUp) await _toolDir.delete(recursive: true);
+  if (cleanUp && await _toolDir.exists())
+    await _toolDir.delete(recursive: true);
 }
 
 /// Checks whether the current git client is "clean" (no pending changes) for
@@ -154,20 +154,43 @@ Future<String> nextStdErrLine(String message) =>
 Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
-Future<ProcessResult> runTests() =>
-    Process.run('pub', ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
+Future<ProcessResult> runTests({bool usePrecompiled}) async {
+  usePrecompiled ??= false;
+  var args = ['run', 'test', '-p', 'chrome'];
+  Directory precompiledTmpDir;
+  if (usePrecompiled) {
+    precompiledTmpDir = await Directory.systemTemp.createTemp('build_e2e_test');
+    var mergedDirResult = await Process.run(_pubBinary, [
+      'run',
+      'build_runner:create_merged_dir',
+      '--script=${p.join('tool', 'build.dart')}',
+      '--output-dir=${precompiledTmpDir.path}'
+    ]);
+    expect(mergedDirResult.exitCode, 0,
+        reason: 'stdout:${mergedDirResult.stdout}\n'
+            'stderr${mergedDirResult.stderr}');
+    args.addAll(['--precompiled', '${precompiledTmpDir.path}/']);
+  } else {
+    args.addAll(['--pub-serve', '8081']);
+  }
+  var result = await Process.run(_pubBinary, args);
+  if (usePrecompiled) {
+    await precompiledTmpDir.delete(recursive: true);
+  }
+  return result;
+}
 
 Future<Null> expectTestsFail() async {
   var result = await runTests();
   expect(result.stdout, contains('Some tests failed'));
 }
 
-Future<Null> expectTestsPass([int numRan]) async {
-  var result = await runTests();
+Future<Null> expectTestsPass({int expectedNumRan, bool usePrecompiled}) async {
+  var result = await runTests(usePrecompiled: usePrecompiled);
   expect(result.stdout, contains('All tests passed!'));
-  if (numRan != null) {
-    expect(result.stdout, contains('+$numRan'));
-    expect(result.stdout, isNot(contains('+${numRan + 1}')));
+  if (expectedNumRan != null) {
+    expect(result.stdout, contains('+$expectedNumRan'));
+    expect(result.stdout, isNot(contains('+${expectedNumRan + 1}')));
   }
 }
 

@@ -23,3 +23,4 @@ class _SomeBuilder implements Builder {
 }
 
 Builder someBuilder(_) => const _SomeBuilder();
+Builder notApplied(_) => null;

@@ -44,11 +44,17 @@ class BuildConfig {
     _import,
     _buildExtensions,
     _target,
+    _autoApply,
+    _requiredInputs,
+    _isOptional,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
   static const _buildExtensions = 'build_extensions';
   static const _target = 'target';
+  static const _autoApply = 'auto_apply';
+  static const _requiredInputs = 'required_inputs';
+  static const _isOptional = 'is_optional';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
   ///
@@ -167,6 +173,13 @@ class BuildConfig {
       final import = _readStringOrThrow(builderConfig, _import);
       final buildExtensions = _readBuildExtensions(builderConfig);
       final target = _readStringOrThrow(builderConfig, _target);
+      final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
+          defaultValue: AutoApply.none);
+      final requiredInputs = _readListOfStringsOrThrow(
+          builderConfig, _requiredInputs,
+          defaultValue: const []);
+      final isOptional =
+          _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
 
       builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
@@ -175,6 +188,9 @@ class BuildConfig {
         name: builderName,
         package: pubspec.pubPackageName,
         target: target,
+        autoApply: autoApply,
+        requiredInputs: requiredInputs,
+        isOptional: isOptional,
       );
     }
   }
@@ -285,6 +301,24 @@ class BuildConfig {
     }
     return value as bool;
   }
+
+  static AutoApply _readAutoApplyOrThrow(
+      Map<String, dynamic> options, String option,
+      {AutoApply defaultValue}) {
+    final value = options[option];
+    if (value == null && defaultValue != null) return defaultValue;
+    final allowedValues = const {
+      'none': AutoApply.none,
+      'dependents': AutoApply.dependents,
+      'all_packages': AutoApply.allPackages,
+      'root_package': AutoApply.rootPackage
+    };
+    if (value is! String || !allowedValues.containsKey(value)) {
+      throw new ArgumentError('Expected one of ${allowedValues.keys.toList()} '
+          'for `$option` but got `$value`');
+    }
+    return allowedValues[value];
+  }
 }
 
 class BuilderDefinition {
@@ -305,14 +339,36 @@ class BuilderDefinition {
   /// The name of the dart_library target that contains `import`.
   final String target;
 
-  BuilderDefinition(
-      {this.builderFactories,
-      this.buildExtensions,
-      this.import,
-      this.name,
-      this.package,
-      this.target});
+  /// Which packages should have this builder applied automatically.
+  final AutoApply autoApply;
+
+  /// A list of file extensions which are required to run this builder.
+  ///
+  /// No builder which outputs any extension in this list is allowed to run
+  /// after this builder.
+  final List<String> requiredInputs;
+
+  /// Whether this Builder should be deferred until it's output is requested.
+  ///
+  /// Optional builders are lazy and will not run unless some later builder
+  /// requests one of it's possible outputs through either `readAs*` or
+  /// `canRead`.
+  final bool isOptional;
+
+  BuilderDefinition({
+    this.builderFactories,
+    this.buildExtensions,
+    this.import,
+    this.name,
+    this.package,
+    this.target,
+    this.autoApply,
+    this.requiredInputs,
+    this.isOptional,
+  });
 }
+
+enum AutoApply { none, dependents, allPackages, rootPackage }
 
 class BuildTarget {
   final Iterable<String> dependencies;

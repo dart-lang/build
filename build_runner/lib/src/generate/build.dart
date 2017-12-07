@@ -48,7 +48,8 @@ Future<BuildResult> build(List<BuildAction> buildActions,
         RunnerAssetWriter writer,
         Level logLevel,
         onLog(LogRecord record),
-        Stream terminateEventStream}) =>
+        Stream terminateEventStream,
+        bool enableLowResourcesMode}) =>
     build_impl.build(buildActions,
         deleteFilesByDefault: deleteFilesByDefault,
         writeToCache: writeToCache,
@@ -57,7 +58,8 @@ Future<BuildResult> build(List<BuildAction> buildActions,
         writer: writer,
         logLevel: logLevel,
         onLog: onLog,
-        terminateEventStream: terminateEventStream);
+        terminateEventStream: terminateEventStream,
+        enableLowResourcesMode: enableLowResourcesMode);
 
 /// Same as [build], except it watches the file system and re-runs builds
 /// automatically.
@@ -89,7 +91,8 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
         onLog(LogRecord record),
         Duration debounceDelay,
         DirectoryWatcherFactory directoryWatcherFactory,
-        Stream terminateEventStream}) =>
+        Stream terminateEventStream,
+        bool enableLowResourcesMode}) =>
     watch_impl.watch(buildActions,
         deleteFilesByDefault: deleteFilesByDefault,
         writeToCache: writeToCache,
@@ -100,4 +103,5 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
         onLog: onLog,
         debounceDelay: debounceDelay,
         directoryWatcherFactory: directoryWatcherFactory,
-        terminateEventStream: terminateEventStream);
+        terminateEventStream: terminateEventStream,
+        enableLowResourcesMode: enableLowResourcesMode);

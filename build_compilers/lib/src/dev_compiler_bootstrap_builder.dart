@@ -65,9 +65,9 @@ class DevCompilerBootstrapBuilder implements Builder {
 
     // Map from module name to module path for custom modules.
     var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
-    var transitiveNoneLibJsModules = [module.jsId]
-      ..addAll((transitiveDeps).map((module) => module.jsId))
-      ..where((id) => !id.path.startsWith('lib/'));
+    var transitiveNoneLibJsModules = ([module.jsId]
+          ..addAll((transitiveDeps).map((module) => module.jsId)))
+        .where((id) => !id.path.startsWith('lib/'));
     for (var module in transitiveNoneLibJsModules) {
       // Strip out the top level dir from the path for any non-lib module. We
       // set baseUrl to `/` to simplify things, and we only allow you to serve
@@ -153,16 +153,18 @@ $_initializeTools
 String _entryPointJs(String bootstrapModuleName) => '''
 (function() {
   $_currentDirectoryScript
+  $_baseUrlScript
   var el;
   el = document.createElement("script");
   el.defer = true;
   el.async = false;
-  el.src = "/packages/\$sdk/dev_compiler/web/dart_stack_trace_mapper.js";
+  el.src =
+    baseUrl + "packages/\$sdk/dev_compiler/web/dart_stack_trace_mapper.js";
   document.head.appendChild(el);
   el = document.createElement("script");
   el.defer = true;
   el.async = false;
-  el.src = "/packages/\$sdk/dev_compiler/amd/require.js";
+  el.src = baseUrl + "packages/\$sdk/dev_compiler/amd/require.js";
   el.setAttribute("data-main", _currentDirectory + "$bootstrapModuleName");
   document.head.appendChild(el);
 })();
@@ -276,9 +278,28 @@ final _requireJsConfig = '''
     if (oldOnError) oldOnError(e);
   };
 }());
+
+$_baseUrlScript;
+
 require.config({
-    baseUrl: "/",
+    baseUrl: baseUrl,
     waitSeconds: 0,
     paths: customModulePaths
 });
+''';
+
+final _baseUrlScript = '''
+// Attempt to detect --precompiled mode for tests, and set the base url
+// appropriately, otherwise set it to "/".
+var baseUrl = (function() {
+  var pathParts = location.pathname.split("/");
+  if (pathParts[0] == "") {
+    pathParts.shift();
+  }
+  var baseUrl;
+  if (pathParts.length > 1 && pathParts[1] == "test") {
+    return "/" + pathParts.slice(0, 2).join("/") + "/";
+  }
+  return "/";
+}());
 ''';

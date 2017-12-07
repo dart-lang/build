@@ -3,143 +3,156 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:code_builder/code_builder.dart';
+import 'package:code_builder/code_builder.dart' hide File;
 import 'package:dart_style/dart_style.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/logging.dart';
+import '../package_graph/dependency_ordering.dart';
 import '../util/constants.dart';
+import 'builder_ordering.dart';
 import 'types.dart' as types;
 
 const scriptLocation = '$entryPointDir/build.dart';
 
 Future<Null> ensureBuildScript() async {
   var log = new Logger('ensureBuildScript');
-  var scriptFile = new io.File(scriptLocation);
-  // TODO - how can we invalidate this?
-  //if (scriptFile.existsSync()) return;
+  var scriptFile = new File(scriptLocation);
   scriptFile.createSync(recursive: true);
   await logTimedAsync(log, 'Generating build script',
       () async => scriptFile.writeAsString(await _generateBuildScript()));
 }
 
 Future<String> _generateBuildScript() async {
-  var packageGraph = new PackageGraph.forThisPackage();
-  var buildConfigs =
-      (await Future.wait(packageGraph.orderedPackages.map(_packageBuildConfig)))
-          .where((c) => c.builderDefinitions.isNotEmpty);
-  final library = new File(
-      (b) => b.body.addAll([_findBuildActions(buildConfigs), _main()]));
+  final builders = await _findBuilderApplications();
+  final library =
+      new Library((b) => b.body.addAll([_findBuildActions(builders), _main()]));
   final emitter = new DartEmitter(new Allocator.simplePrefixing());
   return new DartFormatter().format('${library.accept(emitter)}');
 }
 
-Method _findBuildActions(Iterable<BuildConfig> buildConfigs) {
-  var statements = <Code>[
-    types.buildActions.newInstance([]).assignVar('actions').statement,
-    // TODO - Pass actual arguments
-    literalList([], new TypeReference((b) => b..symbol = 'String'))
-        .assignVar('args')
-        .statement,
-  ];
-  statements.addAll(_addBuildActions(buildConfigs));
-  statements.add(refer('actions').returned.statement);
-  return new Method((b) => b
-    ..name = '_buildActions'
-    ..requiredParameters.add(new Parameter((b) => b
-      ..name = 'packageGraph'
-      ..type = types.packageGraph))
-    ..returns = types.buildActions
-    ..body = new Block((b) => b..statements.addAll(statements)));
+/// Finds expressions to create all the [BuilderApplication] instances that
+/// should be applied packages in the build.
+///
+/// - Add any builders which specify `auto_apply: True` in their `build.yaml`
+/// - Add the DDC builders which apply to all packages
+/// - Add the DDC bootstrap builder to the root package
+Future<Iterable<Expression>> _findBuilderApplications() async {
+  final builderApplications = <Expression>[];
+  final packageGraph = new PackageGraph.forThisPackage();
+  final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
+          [packageGraph.root], (node) => node.name, (node) => node.dependencies)
+      .expand((c) => c);
+  final builderDefinitions =
+      (await Future.wait(orderedPackages.map(_packageBuildConfig)))
+          .expand((c) => c.builderDefinitions.values);
+
+  final orderedBuilders = findBuilderOrder(builderDefinitions);
+  builderApplications.addAll(orderedBuilders.map(_applyBuilder));
+  var ddcBootstrap = builderDefinitions.firstWhere(
+      (b) => b.package == 'build_compilers' && b.name == 'ddc_bootstrap');
+  // TODO - should this be configurable?
+  builderApplications.add(_applyBuilderWithFilter(ddcBootstrap,
+      refer('toRoot', 'package:build_runner/build_runner.dart').call([]),
+      inputs: ['web/**.dart', 'test/**.browser_test.dart']));
+  return builderApplications;
 }
+
+/// A method which creates a list literal containing [builderApplications] and
+/// calls `createBuildActions` to resolve them.
+Method _findBuildActions(Iterable<Expression> builderApplications) =>
+    new Method((b) => b
+      ..name = '_buildActions'
+      ..requiredParameters.add(new Parameter((b) => b
+        ..name = 'packageGraph'
+        ..type = types.packageGraph))
+      ..returns = types.buildActions
+      ..body = new Block.of([
+        literalList(builderApplications.toList())
+            .assignVar('builders')
+            .statement,
+        refer('createBuildActions', 'package:build_runner/build_runner.dart')
+            .call([refer('packageGraph'), refer('builders')])
+            .returned
+            .statement,
+      ]));
 
 Method _main() => new Method((b) => b
   ..name = 'main'
   ..modifier = MethodModifier.async
-  ..body = new Block((b) => b
-    ..statements.addAll([
-      refer('_buildActions')
-          .call([types.packageGraph.newInstanceNamed('forThisPackage', [])])
-          .assignVar('actions')
-          .statement,
-      refer('watch', 'package:build_runner/build_runner.dart')
-          .call([refer('actions')], {'writeToCache': literalTrue})
-          .awaited
-          .assignVar('handler')
-          .statement,
-      refer('serve', 'package:shelf/shelf_io.dart')
-          .call([
-            refer('handler')
-                .property('handlerFor')
-                .call([literalString('web')]),
-            literalString('localhost'),
-            literal(8000)
-          ])
-          .awaited
-          .assignVar('server')
-          .statement,
-      refer('handler')
-          .property('buildResults')
-          .property('drain')
-          .call([])
-          .awaited
-          .statement,
-      refer('server').property('close').call([]).awaited.statement
-    ])));
-
-Iterable<Code> _addBuildActions(Iterable<BuildConfig> configs) {
-  var statements = <Code>[];
-  for (var config in configs) {
-    var varName = 'buildersFor${config.packageName}';
-    statements.addAll([
-      _packageBuilders(config, varName),
-      refer('packageGraph')
-          .property('dependentsOf')
-          .call([literalString(config.packageName)])
-          .property('map')
-          .call([
-            new Method((b) => b
-              ..requiredParameters.add(new Parameter((b) => b..name = 'p'))
-              ..body = refer('p').property('name').code
-              ..lambda = true).closure
-          ])
-          .property('forEach')
-          .call([
-            new Method((b) => b
-              ..requiredParameters.add(new Parameter((b) => b..name = 'p'))
-              ..lambda = true
-              ..body = refer('actions').property('addAll').call([
-                refer(varName).property('map').call([
-                  new Method((b) => b
-                    ..requiredParameters
-                        .add(new Parameter((b) => b..name = 'b'))
-                    ..lambda = true
-                    ..body = types.buildAction
-                        .newInstance([refer('b'), refer('p')]).code).closure
-                ])
-              ]).code).closure
-          ])
-          .statement
-    ]);
-  }
-  return statements;
-}
-
-Code _packageBuilders(BuildConfig config, String varName) =>
-    literalList(config.builderDefinitions.values
-            .expand(_builderInstantiations)
-            .toList())
-        .assignVar(varName)
-        .statement;
-
-Iterable<Expression> _builderInstantiations(BuilderDefinition builder) =>
-    builder.builderFactories
-        .map((f) => refer(f, builder.import).call([refer('args')]));
+  ..body = new Block.of([
+    refer('_buildActions')
+        .call([types.packageGraph.newInstanceNamed('forThisPackage', [])])
+        .assignVar('actions')
+        .statement,
+    refer('watch', 'package:build_runner/build_runner.dart')
+        .call([refer('actions')], {'writeToCache': literalTrue})
+        .awaited
+        .assignVar('handler')
+        .statement,
+    refer('serve', 'package:shelf/shelf_io.dart')
+        .call([
+          refer('handler').property('handlerFor').call([literalString('web')]),
+          literalString('localhost'),
+          literal(8000)
+        ])
+        .awaited
+        .assignVar('server')
+        .statement,
+    refer('handler')
+        .property('buildResults')
+        .property('drain')
+        .call([])
+        .awaited
+        .statement,
+    refer('server').property('close').call([]).awaited.statement
+  ]));
 
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
     BuildConfig.fromPackageDir(
         await Pubspec.fromPackageDir(package.path), package.path);
+
+/// An expression calling `apply` with appropriate setup for a Builder.
+Expression _applyBuilder(BuilderDefinition definition) =>
+    _applyBuilderWithFilter(definition, _findToExpression(definition));
+
+Expression _applyBuilderWithFilter(
+    BuilderDefinition definition, Expression toExpression,
+    {List<String> inputs}) {
+  final namedArgs = <String, Expression>{};
+  if (inputs != null) {
+    namedArgs['inputs'] = literalList(inputs);
+  }
+  if (definition.isOptional) {
+    namedArgs['isOptional'] = literalTrue;
+  }
+  return refer('apply', 'package:build_runner/build_runner.dart').call([
+    literalString(definition.package),
+    literalString(definition.name),
+    literalList(definition.builderFactories
+        .map((f) => refer(f, definition.import))
+        .toList()),
+    toExpression,
+  ], namedArgs);
+}
+
+Expression _findToExpression(BuilderDefinition definition) {
+  switch (definition.autoApply) {
+    case AutoApply.none:
+      return refer('toNoneByDefault', 'package:build_runner/build_runner.dart')
+          .call([]);
+    case AutoApply.dependents:
+      return refer('toDependentsOf', 'package:build_runner/build_runner.dart')
+          .call([literalString(definition.package)]);
+    case AutoApply.allPackages:
+      return refer('toAllPackages', 'package:build_runner/build_runner.dart')
+          .call([]);
+    case AutoApply.rootPackage:
+      return refer('toRoot', 'package:build_runner/build_runner.dart').call([]);
+  }
+  throw new ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
+}

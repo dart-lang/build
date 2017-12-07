@@ -14,6 +14,7 @@ import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
@@ -23,6 +24,7 @@ void main() {
       new TxtFilePackageBuilder(
           'a', {'web/hello.txt': 'hello', 'web/world.txt': 'world'}),
       'a');
+  final defaultBuilderOptions = const BuilderOptions(const {});
 
   group('build', () {
     group('with root package inputs', () {
@@ -192,6 +194,8 @@ void main() {
               makeAssetId('a|web/a.txt'),
               makeAssetId('a|web/a.txt.copy'),
               makeAssetId('a|web/a.txt.copy.clone'),
+              makeAssetId('a|Phase0.builderOptions'),
+              makeAssetId('a|Phase1.builderOptions'),
             ]));
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
@@ -201,16 +205,20 @@ void main() {
               makeAssetId('a|web/a.txt.copy.clone'),
             ]));
       });
+
+      test('in low resources mode', () async {
+        await testActions(
+            [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+            outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
+            enableLowResourcesMode: true);
+      });
     });
 
     test('can\'t output files in non-root packages', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, 'a/b/',
-          includes: ['**']);
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-            ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
+      final packageGraph = buildPackageGraph({
+        rootPackage('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b'): []
+      });
       expect(
           testActions(
               [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
@@ -222,13 +230,10 @@ void main() {
       PackageGraph packageGraph;
 
       setUp(() {
-        var packageB = new PackageNode(
-            'b', '0.1.0', PackageDependencyType.path, 'a/b/',
-            includes: ['**']);
-        var packageA =
-            new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-              ..dependencies.add(packageB);
-        packageGraph = new PackageGraph.fromRoot(packageA);
+        packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b/'): []
+        });
       });
       test('can output files in non-root packages', () async {
         await testActions(
@@ -271,7 +276,8 @@ void main() {
         var writer = new InMemoryRunnerAssetWriter()
           ..onDelete = (AssetId assetId) {
             if (assetId.package != 'a') {
-              throw 'Should not delete outside of package:a';
+              throw 'Should not delete outside of package:a, '
+                  'tried to delete $assetId';
             }
           };
         await testActions(
@@ -301,13 +307,10 @@ void main() {
     });
 
     test('can glob files from packages', () async {
-      var packageB =
-          new PackageNode('b', '0.1.0', PackageDependencyType.path, 'a/b/');
-      var packageA = new PackageNode(
-          'a', '0.1.0', PackageDependencyType.path, 'a/',
-          includes: ['**'])
-        ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
+      final packageGraph = buildPackageGraph({
+        rootPackage('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b/'): []
+      });
 
       var buildActions = [
         new BuildAction(globBuilder, 'a'),
@@ -361,13 +364,10 @@ void main() {
     });
 
     test('won\'t try to delete files from other packages', () async {
-      var packageB = new PackageNode(
-          'b', '0.1.0', PackageDependencyType.path, 'a/b/',
-          includes: ['**']);
-      var packageA =
-          new PackageNode('a', '0.1.0', PackageDependencyType.path, 'a/')
-            ..dependencies.add(packageB);
-      var packageGraph = new PackageGraph.fromRoot(packageA);
+      final packageGraph = buildPackageGraph({
+        rootPackage('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b'): []
+      });
       var writer = new InMemoryRunnerAssetWriter()
         ..onDelete = (AssetId assetId) {
           if (assetId.package != 'a') {
@@ -415,18 +415,28 @@ void main() {
     var cachedGraph = new AssetGraph.deserialize(
         JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
 
-    var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
+    var expectedGraph =
+        await AssetGraph.build([], new Set(), new Set(), 'a', null);
+
+    var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
+    var builderOptionsNode = new BuilderOptionsAssetNode(
+        builderOptionsId, computeBuilderOptionsDigest(defaultBuilderOptions));
+    expectedGraph.add(builderOptionsNode);
+
     var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
-        false, true, makeAssetId('a|web/a.txt.copy'),
+        false, true, makeAssetId('a|web/a.txt.copy'), builderOptionsId,
         lastKnownDigest: computeDigest('a'),
         inputs: [makeAssetId('a|web/a.txt')]);
+    builderOptionsNode.outputs.add(aCopyNode.id);
     expectedGraph.add(aCopyNode);
     expectedGraph
         .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
+
     var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
-        false, true, makeAssetId('a|lib/b.txt.copy'),
+        false, true, makeAssetId('a|lib/b.txt.copy'), builderOptionsId,
         lastKnownDigest: computeDigest('b'),
         inputs: [makeAssetId('a|lib/b.txt')]);
+    builderOptionsNode.outputs.add(bCopyNode.id);
     expectedGraph.add(bCopyNode);
     expectedGraph
         .add(makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b')));
@@ -649,6 +659,47 @@ void main() {
       expect(aTxtNode.outputs, contains(outputNode.id));
       expect(bTxtNode.outputs, isEmpty);
       expect(cTxtNode.outputs, unorderedEquals([outputNode.id]));
+    });
+
+    test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
+      var buildActions = [
+        new BuildAction(
+            new CopyBuilder(copyFromAsset: new AssetId('a', 'lib/b.txt')), 'a',
+            inputs: ['lib/a.txt']),
+        new BuildAction(new CopyBuilder(), 'a', inputs: ['lib/a.txt.copy']),
+      ];
+
+      // Initial build.
+      var writer = new InMemoryRunnerAssetWriter();
+      await testActions(
+          buildActions,
+          {
+            'a|lib/a.txt': 'a',
+            'a|lib/b.txt': 'b',
+          },
+          outputs: {
+            'a|lib/a.txt.copy': 'b',
+            'a|lib/a.txt.copy.copy': 'b',
+          },
+          writer: writer);
+
+      // Modify the primary input of `a.txt.copy`, but its output doesn't change
+      // so `a.txt.copy.copy` shouldn't be rebuilt.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+      await testActions(
+          buildActions,
+          {
+            'a|lib/a.txt': 'a2',
+            'a|lib/b.txt': 'b',
+            'a|lib/a.txt.copy': 'b',
+            'a|lib/a.txt.copy.copy': 'b',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {
+            'a|lib/a.txt.copy': 'b',
+          },
+          writer: writer);
     });
   });
 }

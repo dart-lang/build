@@ -1,4 +1,5 @@
-# [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
+[![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
+[![Build Status](https://ci.appveyor.com/api/projects/status/wga4jexvmjih346p?svg=true)](https://ci.appveyor.com/project/kevmoo/build)
 
 These packages provide utilities for generating Dart code.
 

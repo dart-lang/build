@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:collection';
+
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -30,6 +32,18 @@ abstract class AssetNode {
   String toString() => 'AssetNode: $id';
 }
 
+/// A node representing some internal asset.
+///
+/// These nodes are not used as primary inputs, but they are tracked in the
+/// asset graph and are readable.
+class InternalAssetNode extends AssetNode {
+  InternalAssetNode(AssetId id, {Digest lastKnownDigest})
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  @override
+  String toString() => 'InternalAssetNode: $id';
+}
+
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
   SourceAssetNode(AssetId id, {Digest lastKnownDigest})
@@ -37,18 +51,6 @@ class SourceAssetNode extends AssetNode {
 
   @override
   String toString() => 'SourceAssetNode: $id';
-}
-
-/// A node which is not a generated or source asset.
-///
-/// Typically these are created as a result of `canRead` calls for assets that
-/// don't exist in the graph. We still need to set up proper dependencies so
-/// that if that asset gets added later the outputs are properly invalidated.
-class SyntheticAssetNode extends AssetNode {
-  SyntheticAssetNode(AssetId id) : super(id);
-
-  @override
-  String toString() => 'SyntheticAssetNode: $id';
 }
 
 /// A generated node in the asset graph.
@@ -74,16 +76,60 @@ class GeneratedAssetNode extends AssetNode {
 
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
-  final Set<AssetId> inputs;
+  ///
+  /// This needs to be an ordered set because we compute combined input digests
+  /// using this later on.
+  final SplayTreeSet<AssetId> inputs;
+
+  /// A digest combining all digests of all previous inputs.
+  ///
+  /// Used to determine whether all the inputs to a build step are identical to
+  /// the previous run, indicating that the previous output is still valid.
+  Digest previousInputsDigest;
+
+  /// The [AssetId] of the node representing the [BuilderOptions] used to create
+  /// this node.
+  final AssetId builderOptionsId;
 
   GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
-      this.wasOutput, AssetId id,
-      {Digest lastKnownDigest, Set<Glob> globs, Iterable<AssetId> inputs})
+      this.wasOutput, AssetId id, this.builderOptionsId,
+      {Digest lastKnownDigest,
+      Set<Glob> globs,
+      Iterable<AssetId> inputs,
+      this.previousInputsDigest})
       : this.globs = globs ?? new Set<Glob>(),
-        this.inputs = inputs?.toSet() ?? new Set<AssetId>(),
+        this.inputs = inputs != null
+            ? new SplayTreeSet.from(inputs)
+            : new SplayTreeSet<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override
   String toString() =>
       'GeneratedAssetNode: $id generated from input $primaryInput.';
+}
+
+/// A node which is not a generated or source asset.
+abstract class SyntheticAssetNode implements AssetNode {}
+
+/// A [SyntheticAssetNode] representing a non-existent source.
+///
+/// Typically these are created as a result of `canRead` calls for assets that
+/// don't exist in the graph. We still need to set up proper dependencies so
+/// that if that asset gets added later the outputs are properly invalidated.
+class SyntheticSourceAssetNode extends AssetNode implements SyntheticAssetNode {
+  SyntheticSourceAssetNode(AssetId id) : super(id);
+}
+
+/// A [SyntheticAssetNode] which represents an individual [BuilderOptions]
+/// object.
+///
+/// These are used to track the state of a [BuilderOptions] object, and all
+/// [GeneratedAssetNode]s should depend on one of these nodes, which represents
+/// their configuration.
+class BuilderOptionsAssetNode extends AssetNode implements SyntheticAssetNode {
+  BuilderOptionsAssetNode(AssetId id, Digest lastKnownDigest)
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  @override
+  String toString() => 'BuildOptionsAssetNode: $id';
 }

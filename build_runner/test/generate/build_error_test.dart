@@ -4,10 +4,10 @@
 
 import 'package:build_runner/src/generate/exceptions.dart';
 import 'package:build_runner/src/generate/phase.dart';
-import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   test('fail with a nice error if the root package is not right', () async {
@@ -21,9 +21,7 @@ void main() {
           )
         ],
         {},
-        packageGraph: new PackageGraph.fromRoot(
-          new PackageNode.noPubspec('root_package', path: ''),
-        ),
+        packageGraph: buildPackageGraph({rootPackage('root_package'): []}),
       );
     } catch (e) {
       // TODO: Write a throwsAWith(...) matcher?
@@ -45,9 +43,7 @@ void main() {
           'a|lib/a.dart': '',
           'a|lib/a.dart.copy': '',
         },
-        packageGraph: new PackageGraph.fromRoot(
-          new PackageNode.noPubspec('a', path: ''),
-        ),
+        packageGraph: buildPackageGraph({rootPackage('a'): []}),
         deleteFilesByDefault: false,
       ),
       throwsA(const isInstanceOf<UnexpectedExistingOutputsException>()),

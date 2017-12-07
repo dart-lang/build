@@ -68,7 +68,7 @@ AssetId cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
     return id;
   }
   if (!assetGraph.contains(id)) {
-    throw new ArgumentError('$id  is not a valid asset');
+    return id;
   }
   if (assetGraph.get(id) is GeneratedAssetNode) {
     return new AssetId(

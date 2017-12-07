@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -17,10 +18,12 @@ import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyABuildAction = new BuildAction(new CopyBuilder(), 'a');
+  final defaultBuilderOptions = const BuilderOptions(const {});
 
   group('watch', () {
     setUp(() {
@@ -132,18 +135,28 @@ void main() {
             as Map;
         var cachedGraph = new AssetGraph.deserialize(serialized);
 
-        var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
-        var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/b.txt'),
-            false, true, makeAssetId('a|web/b.txt.copy'),
+        var expectedGraph =
+            await AssetGraph.build([], new Set(), new Set(), 'a', null);
+
+        var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
+        var builderOptionsNode = new BuilderOptionsAssetNode(builderOptionsId,
+            computeBuilderOptionsDigest(defaultBuilderOptions));
+        expectedGraph.add(builderOptionsNode);
+
+        var bCopyNode = new GeneratedAssetNode(0, makeAssetId('a|web/b.txt'),
+            false, true, makeAssetId('a|web/b.txt.copy'), builderOptionsId,
             lastKnownDigest: computeDigest('b2'),
             inputs: [makeAssetId('a|web/b.txt')]);
+        builderOptionsNode.outputs.add(bCopyNode.id);
         expectedGraph.add(bCopyNode);
         expectedGraph.add(
             makeAssetNode('a|web/b.txt', [bCopyNode.id], computeDigest('b2')));
-        var cCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/c.txt'),
-            false, true, makeAssetId('a|web/c.txt.copy'),
+
+        var cCopyNode = new GeneratedAssetNode(0, makeAssetId('a|web/c.txt'),
+            false, true, makeAssetId('a|web/c.txt.copy'), builderOptionsId,
             lastKnownDigest: computeDigest('c'),
             inputs: [makeAssetId('a|web/c.txt')]);
+        builderOptionsNode.outputs.add(cCopyNode.id);
         expectedGraph.add(cCopyNode);
         expectedGraph.add(
             makeAssetNode('a|web/c.txt', [cCopyNode.id], computeDigest('c')));
@@ -153,13 +166,10 @@ void main() {
 
       test('ignores events from nested packages', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var packageA = new PackageNode(
-            'a', '0.1.0', PackageDependencyType.path, path.absolute('a'),
-            includes: ['**']);
-        var packageB = new PackageNode(
-            'b', '0.1.0', PackageDependencyType.path, path.absolute('a', 'b'));
-        packageA.dependencies.add(packageB);
-        var packageGraph = new PackageGraph.fromRoot(packageA);
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: path.absolute('a')): ['b'],
+          package('b', path: path.absolute('a', 'b')): []
+        });
 
         var results = new StreamQueue(startWatch([
           copyABuildAction,
@@ -331,11 +341,11 @@ void main() {
             ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt.copy')));
 
         result = await results.next;
-        // Should rebuild the generated asset and its outputs.
+        // Should rebuild the generated asset, but not its outputs because its
+        // content didn't change.
         checkBuild(result,
             outputs: {
               'a|web/a.txt.copy': 'a',
-              'a|web/a.txt.copy.copy': 'a',
             },
             writer: writer);
       });
@@ -409,10 +419,8 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
   });
   final actualAssets = writer.assets;
   final reader = new InMemoryRunnerAssetReader(actualAssets);
-  if (packageGraph == null) {
-    packageGraph ??= new PackageGraph.fromRoot(new PackageNode.noPubspec('a',
-        path: path.absolute('a'), includes: ['**']));
-  }
+  packageGraph ??=
+      buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   var buildState = watch_impl.watch(buildActions,

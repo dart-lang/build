@@ -3,25 +3,28 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+
 import 'package:build/build.dart';
+import 'package:test/test.dart';
+import 'package:watcher/watcher.dart';
+
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
-import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
+
+import '../common/package_graphs.dart';
 
 void main() {
   group('PackageGraphWatcher', () {
     test('should aggregate changes from all nodes', () {
-      final pkgA = new PackageNode.noPubspec('a', path: '/g/a');
-      final pkgB = new PackageNode.noPubspec('b', path: '/g/b');
-      pkgA.dependencies.add(pkgB);
-
-      final graph = new PackageGraph.fromRoot(pkgA);
+      final graph = buildPackageGraph({
+        rootPackage('a', path: '/g/a'): ['b'],
+        package('b', path: '/g/b'): []
+      });
       final nodes = {
-        'a': new FakeNodeWatcher(pkgA),
-        'b': new FakeNodeWatcher(pkgB),
+        'a': new FakeNodeWatcher(graph['a']),
+        'b': new FakeNodeWatcher(graph['b']),
         r'$sdk': new FakeNodeWatcher(null),
       };
       final watcher = new PackageGraphWatcher(graph, watch: (node) {
@@ -40,14 +43,13 @@ void main() {
     });
 
     test('should avoid duplicate changes with nested packages', () {
-      final pkgA = new PackageNode.noPubspec('a', path: '/g/a');
-      final pkgB = new PackageNode.noPubspec('b', path: '/g/a/b');
-      pkgA.dependencies.add(pkgB);
-
-      final graph = new PackageGraph.fromRoot(pkgA);
+      final graph = buildPackageGraph({
+        rootPackage('a', path: '/g/a'): ['b'],
+        package('b', path: '/g/a/b'): []
+      });
       final nodes = {
-        'a': new FakeNodeWatcher(pkgA),
-        'b': new FakeNodeWatcher(pkgB),
+        'a': new FakeNodeWatcher(graph['a']),
+        'b': new FakeNodeWatcher(graph['b']),
         r'$sdk': new FakeNodeWatcher(null),
       };
       final watcher = new PackageGraphWatcher(graph, watch: (node) {

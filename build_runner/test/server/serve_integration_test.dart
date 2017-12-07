@@ -15,6 +15,7 @@ import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   FutureOr<Response> Function(Request) handler;
@@ -27,9 +28,7 @@ void main() {
   final path = p.absolute('example');
 
   setUp(() async {
-    final graph = new PackageGraph.fromRoot(
-      new PackageNode.noPubspec('example', path: path),
-    );
+    final graph = buildPackageGraph({rootPackage('example', path: path): []});
     writer = new InMemoryRunnerAssetWriter();
     reader = new InMemoryRunnerAssetReader(writer.assets, 'example');
     reader.cacheStringAsset(

@@ -14,6 +14,7 @@ import 'package:build_runner/src/generate/build_impl.dart' as build_impl;
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
+import 'package_graphs.dart';
 
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
@@ -72,7 +73,8 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     onLog(LogRecord record),
     bool writeToCache,
     bool checkBuildStatus: true,
-    bool deleteFilesByDefault: true}) async {
+    bool deleteFilesByDefault: true,
+    bool enableLowResourcesMode: false}) async {
   writer ??= new InMemoryRunnerAssetWriter();
   writeToCache ??= false;
   final actualAssets = writer.assets;
@@ -88,10 +90,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     }
   });
 
-  if (packageGraph == null) {
-    var rootPackage = new PackageNode.noPubspec('a', includes: ['**']);
-    packageGraph = new PackageGraph.fromRoot(rootPackage);
-  }
+  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
 
   var result = await build_impl.build(buildActions,
       deleteFilesByDefault: deleteFilesByDefault,
@@ -101,7 +100,8 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
       packageGraph: packageGraph,
       logLevel: logLevel,
       onLog: onLog,
-      skipBuildScriptCheck: true);
+      skipBuildScriptCheck: true,
+      enableLowResourcesMode: enableLowResourcesMode);
 
   if (checkBuildStatus) {
     checkBuild(result,

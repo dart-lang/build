@@ -41,9 +41,7 @@ class BuildScriptUpdates {
         // Make sure we are tracking changes for all ids in [allSources].
         for (var id in allSources) {
           var node = graph.get(id);
-          if (node.lastKnownDigest == null) {
-            node.lastKnownDigest = await options.reader.digest(id);
-          }
+          node.lastKnownDigest ??= await options.reader.digest(id);
         }
       }
     } on ArgumentError catch (_) {
@@ -77,7 +75,7 @@ class BuildScriptUpdates {
         return new AssetId(parts[0],
             p.url.joinAll(['lib']..addAll(parts.getRange(1, parts.length))));
       case 'file':
-        var relativePath = p.relative(uri.path, from: p.current);
+        var relativePath = p.relative(uri.toFilePath(), from: p.current);
         return new AssetId(_rootPackage, relativePath);
       case 'data':
         // Test runner uses a `data` scheme, don't invalidate for those.

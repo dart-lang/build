@@ -13,27 +13,24 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 
 Future main() async {
   var graph = new PackageGraph.forThisPackage();
-  var buildActions = <BuildAction>[
-    new BuildAction(new TestBootstrapBuilder(), graph.root.name,
-        inputs: ['test/**_test.dart']),
-    new BuildAction(new ThrowingBuilder(), graph.root.name),
+  var builders = [
+    applyToRoot(new TestBootstrapBuilder(), inputs: ['test/**_test.dart']),
+    applyToRoot(new ThrowingBuilder()),
+    apply(
+        'build_compilers',
+        'ddc',
+        [
+          (_) => new ModuleBuilder(),
+          (_) => new UnlinkedSummaryBuilder(),
+          (_) => new LinkedSummaryBuilder(),
+          (_) => new DevCompilerBuilder()
+        ],
+        toAllPackages(),
+        isOptional: true),
+    applyToRoot(new DevCompilerBootstrapBuilder(),
+        inputs: ['web/**.dart', 'test/**.browser_test.dart'])
   ];
-
-  void addBuilderForAll(Builder builder, String inputExtension) {
-    for (var packageNode in graph.orderedPackages) {
-      buildActions
-          .add(new BuildAction(builder, packageNode.name, isOptional: true));
-    }
-  }
-
-  addBuilderForAll(new ModuleBuilder(), '.dart');
-  addBuilderForAll(new UnlinkedSummaryBuilder(), moduleExtension);
-  addBuilderForAll(new LinkedSummaryBuilder(), moduleExtension);
-  addBuilderForAll(new DevCompilerBuilder(), moduleExtension);
-
-  buildActions.add(new BuildAction(
-      new DevCompilerBootstrapBuilder(), graph.root.name,
-      inputs: ['web/**.dart', 'test/**.browser_test.dart']));
+  var buildActions = createBuildActions(graph, builders);
 
   var serveHandler = await watch(
     buildActions,
