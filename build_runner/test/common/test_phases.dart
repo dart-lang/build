@@ -71,12 +71,10 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     InMemoryRunnerAssetWriter writer,
     Level logLevel: Level.OFF,
     onLog(LogRecord record),
-    bool writeToCache,
     bool checkBuildStatus: true,
     bool deleteFilesByDefault: true,
     bool enableLowResourcesMode: false}) async {
   writer ??= new InMemoryRunnerAssetWriter();
-  writeToCache ??= false;
   final actualAssets = writer.assets;
   reader ??=
       new InMemoryRunnerAssetReader(actualAssets, packageGraph?.root?.name);
@@ -94,7 +92,6 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
 
   var result = await build_impl.build(buildActions,
       deleteFilesByDefault: deleteFilesByDefault,
-      writeToCache: writeToCache,
       reader: reader,
       writer: writer,
       packageGraph: packageGraph,
@@ -109,7 +106,6 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
         writer: writer,
         status: status,
         exceptionMatcher: exceptionMatcher,
-        writeToCache: writeToCache,
         rootPackage: packageGraph.root.name);
   }
 
@@ -121,19 +117,31 @@ void checkBuild(BuildResult result,
     InMemoryAssetWriter writer,
     BuildStatus status = BuildStatus.success,
     Matcher exceptionMatcher,
-    bool writeToCache: false,
     String rootPackage}) {
   expect(result.status, status, reason: '$result');
   if (exceptionMatcher != null) {
     expect(result.exception, exceptionMatcher);
   }
 
-  var mapAssetIds = writeToCache
-      ? (AssetId id) => new AssetId(
+  final unhiddenOutputs = <String, dynamic>{};
+  final unhiddenAssets = new Set<AssetId>();
+  for (final id in outputs?.keys ?? const []) {
+    if (id.startsWith(r'$$')) {
+      final unhidden = id.substring(2);
+      unhiddenAssets.add(makeAssetId(unhidden));
+      unhiddenOutputs[unhidden] = outputs[id];
+    } else {
+      unhiddenOutputs[id] = outputs[id];
+    }
+  }
+
+  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
+      ? new AssetId(
           rootPackage, '.dart_tool/build/generated/${id.package}/${id.path}')
-      : (AssetId id) => id;
+      : id;
 
   if (status == BuildStatus.success) {
-    checkOutputs(outputs, result.outputs, writer, mapAssetIds: mapAssetIds);
+    checkOutputs(unhiddenOutputs, result.outputs, writer,
+        mapAssetIds: mapHidden);
   }
 }

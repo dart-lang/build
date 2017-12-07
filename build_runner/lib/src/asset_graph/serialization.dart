@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 14;
+const _version = 15;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -74,18 +74,21 @@ class _AssetGraphDeserializer {
       case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
         node = new GeneratedAssetNode(
-            serializedNode[_Field.PhaseNumber.index] as int,
-            _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
-            _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
-            _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
-            id,
-            _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
-            globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
-                .map((pattern) => new Glob(pattern))
-                .toSet(),
-            lastKnownDigest: digest,
-            previousInputsDigest: _deserializeDigest(
-                serializedNode[_Field.PreviousInputsDigest.index] as String));
+          serializedNode[_Field.PhaseNumber.index] as int,
+          _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
+          _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
+          _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
+          id,
+          _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
+          globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
+              .map((pattern) => new Glob(pattern))
+              .toSet(),
+          lastKnownDigest: digest,
+          previousInputsDigest: _deserializeDigest(
+              serializedNode[_Field.PreviousInputsDigest.index] as String),
+          isHidden:
+              _deserializeBool(serializedNode[_Field.IsHidden.index] as int),
+        );
         break;
       case _NodeType.Internal:
         assert(serializedNode.length == _WrappedAssetNode._length);
@@ -175,6 +178,7 @@ enum _Field {
   NeedsUpdate,
   PreviousInputsDigest,
   BuilderOptions,
+  IsHidden,
 }
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
@@ -274,6 +278,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
         return _serializeDigest(generatedNode.previousInputsDigest);
       case _Field.BuilderOptions:
         return serializer._assetIdToId[generatedNode.builderOptionsId];
+      case _Field.IsHidden:
+        return _serializeBool(generatedNode.isHidden);
       default:
         throw new RangeError.index(index, this);
     }

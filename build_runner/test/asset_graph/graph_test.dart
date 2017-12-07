@@ -86,7 +86,8 @@ void main() {
                 makeAssetId(), md5.convert(UTF8.encode('test')));
 
             var generatedNode = new GeneratedAssetNode(0, node.id, g % 2 == 1,
-                g % 2 == 0, makeAssetId(), builderOptionsNode.id);
+                g % 2 == 0, makeAssetId(), builderOptionsNode.id,
+                isHidden: false);
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
             builderOptionsNode.outputs.add(generatedNode.id);

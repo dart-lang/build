@@ -146,7 +146,8 @@ void main() {
         var bCopyNode = new GeneratedAssetNode(0, makeAssetId('a|web/b.txt'),
             false, true, makeAssetId('a|web/b.txt.copy'), builderOptionsId,
             lastKnownDigest: computeDigest('b2'),
-            inputs: [makeAssetId('a|web/b.txt')]);
+            inputs: [makeAssetId('a|web/b.txt')],
+            isHidden: false);
         builderOptionsNode.outputs.add(bCopyNode.id);
         expectedGraph.add(bCopyNode);
         expectedGraph.add(
@@ -155,7 +156,8 @@ void main() {
         var cCopyNode = new GeneratedAssetNode(0, makeAssetId('a|web/c.txt'),
             false, true, makeAssetId('a|web/c.txt.copy'), builderOptionsId,
             lastKnownDigest: computeDigest('c'),
-            inputs: [makeAssetId('a|web/c.txt')]);
+            inputs: [makeAssetId('a|web/c.txt')],
+            isHidden: false);
         builderOptionsNode.outputs.add(cCopyNode.id);
         expectedGraph.add(cCopyNode);
         expectedGraph.add(

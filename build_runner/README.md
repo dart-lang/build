@@ -160,9 +160,8 @@ information.
 
 * You may output files anywhere in the current package.
 
-> **NOTE**: When using the `writeToCache: true` option with either `build` or
-> `watch`, builders _are_ allowed to output under the `lib` folder of _any_
-> package you depend on.
+> **NOTE**: When a `BuilderApplication` specifies `hideOutput: true` it may
+> output under the `lib` folder of _any_ package you depend on.
 
 * You are not allowed to overwrite existing files, only create new ones.
 * Outputs from previous builds will not be treated as inputs to later ones.

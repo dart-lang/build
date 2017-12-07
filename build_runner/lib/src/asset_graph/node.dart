@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 
 /// A node in the asset graph which may be an input to other assets.
 abstract class AssetNode {
@@ -91,12 +92,22 @@ class GeneratedAssetNode extends AssetNode {
   /// this node.
   final AssetId builderOptionsId;
 
-  GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
-      this.wasOutput, AssetId id, this.builderOptionsId,
-      {Digest lastKnownDigest,
-      Set<Glob> globs,
-      Iterable<AssetId> inputs,
-      this.previousInputsDigest})
+  /// Whether the asset should be placed in the build cache.
+  final bool isHidden;
+
+  GeneratedAssetNode(
+    this.phaseNumber,
+    this.primaryInput,
+    this.needsUpdate,
+    this.wasOutput,
+    AssetId id,
+    this.builderOptionsId, {
+    Digest lastKnownDigest,
+    Set<Glob> globs,
+    Iterable<AssetId> inputs,
+    this.previousInputsDigest,
+    @required this.isHidden,
+  })
       : this.globs = globs ?? new Set<Glob>(),
         this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
