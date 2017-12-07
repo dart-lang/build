@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:analyzer/src/generated/engine.dart';
 import 'package:build/build.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_transformers/resolver.dart' as code_transformers
@@ -38,14 +39,18 @@ class BarbackResolver implements ReleasableResolver {
       _resolver.getLibraryByName(libraryName);
 }
 
-class BarbackResolvers implements Resolvers {
-  static final code_transformers.Resolvers _resolvers =
-      new code_transformers.Resolvers(code_transformers.dartSdkDirectory);
+final code_transformers.Resolvers codeTransformerResolvers =
+    new code_transformers.Resolvers(code_transformers.dartSdkDirectory,
+        // Same as bazel_codegen/src/summaries/analysis_context.dart
+        options: new AnalysisOptionsImpl()..strongMode = true);
 
+class BarbackResolvers implements Resolvers {
   const BarbackResolvers();
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async =>
-      new BarbackResolver(await _resolvers.get(toBarbackTransform(buildStep),
-          [toBarbackAssetId(buildStep.inputId)], false));
+      new BarbackResolver(await codeTransformerResolvers.get(
+          toBarbackTransform(buildStep),
+          [toBarbackAssetId(buildStep.inputId)],
+          false));
 }
