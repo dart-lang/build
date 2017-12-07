@@ -18,6 +18,8 @@
 The following changes are technically breaking but should not impact most
 clients:
 
+- Upgrade to `build_barback` v0.5.0 which uses strong mode analysis and no
+  longer analyzes method bodies.
 - Removed `dependencyType`, `version`, `includes`, and `excludes` from
   `PackageNode`.
 - Removed `PackageNode.noPubspec` constructor.
