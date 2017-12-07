@@ -135,7 +135,7 @@ class _Loader {
         _onDelete);
   }
 
-  /// Checks that the [_buildActions] are valid based on whethere they are
+  /// Checks that the [_buildActions] are valid based on whether they are
   /// written to the build cache.
   void _checkBuildActions() {
     final root = _options.packageGraph.root.name;

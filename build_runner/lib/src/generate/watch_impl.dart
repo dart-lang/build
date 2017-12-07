@@ -53,7 +53,7 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
       directoryWatcherFactory: directoryWatcherFactory,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
-  if (writeToCache ?? false) {
+  if (writeToCache == true) {
     buildActions = buildActions.map(hiddenAction).toList();
   }
   var terminator = new Terminator(terminateEventStream);

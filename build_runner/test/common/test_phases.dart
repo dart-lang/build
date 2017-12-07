@@ -28,11 +28,15 @@ Future wait(int milliseconds) =>
 /// The keys in [inputs] and [outputs] are paths to file assets and the values
 /// are file contents. The paths must use the following format:
 ///
-///     PACKAGE_NAME:PATH_WITHIN_PACKAGE
+///     PACKAGE_NAME|PATH_WITHIN_PACKAGE
 ///
 /// Where `PACKAGE_NAME` is the name of the package, and `PATH_WITHIN_PACKAGE`
 /// is the path to a file relative to the package. `PATH_WITHIN_PACKAGE` must
 /// include `lib`, `web`, `bin` or `test`. Example: "myapp|lib/utils.dart".
+///
+/// When an output is expected in the build cache start the package with `$$`.
+/// For example `$$myapp|lib/utils.copy.dart` will check that the generated
+/// output was written to the build cache.
 ///
 /// [packageGraph] supplies the root package into which the outputs are to be
 /// written.
@@ -112,6 +116,8 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
   return result;
 }
 
+/// Translates expected outptus which start with `$$` to the build cache and
+/// validates the success and outputs of the build.
 void checkBuild(BuildResult result,
     {Map<String, dynamic> outputs,
     InMemoryAssetWriter writer,

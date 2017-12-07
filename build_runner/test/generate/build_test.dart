@@ -252,6 +252,22 @@ void main() {
             });
       });
 
+      test('handles mixed hidden and non-hidden outputs', () async {
+        await testActions(
+            [
+              new BuildAction(new CopyBuilder(), 'a'),
+              new BuildAction(new CopyBuilder(extension: 'hiddencopy'), 'a',
+                  hideOutput: true),
+            ],
+            {'a|lib/a.txt': 'a'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$a|lib/a.txt.hiddencopy': 'a',
+              r'$$a|lib/a.txt.copy.hiddencopy': 'a',
+              r'a|lib/a.txt.copy': 'a',
+            });
+      });
+
       test(
           'PackageBuilder can\'t output files outside of `lib` in non-root '
           'packages.', () async {
