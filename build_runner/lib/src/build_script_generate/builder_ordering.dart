@@ -1,6 +1,9 @@
-import 'package:build_config/build_config.dart';
+// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
 
-import '../package_graph/dependency_ordering.dart';
+import 'package:build_config/build_config.dart';
+import 'package:graphs/graphs.dart';
 
 /// Put [builders] into an order such that any builder which specifies
 /// [BuilderDefinition.requiredInputs] will come after any builder which
