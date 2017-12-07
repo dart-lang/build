@@ -3,9 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:graphs/graphs.dart';
 
 import '../generate/phase.dart';
-import 'dependency_ordering.dart';
 import 'package_graph.dart';
 
 typedef bool PackageFilter(PackageNode node);
