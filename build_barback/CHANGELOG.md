@@ -1,3 +1,5 @@
+## 0.5.0
+
 - Internally uses `AnalysisOptions` with the following changes:
   - Does not `preserveFunctionBodies`.
   - Does `preserveComments` (the default).
