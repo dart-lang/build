@@ -4,6 +4,22 @@
 # Fast fail the script on failures.
 set -e
 
+# Custom hand-written code - this needs to be added back in after mono_repo
+# commands.
+if [ ! -z "$TRAVIS_OS_NAME" ]; then
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    echo "starting xvfb"
+    export DISPLAY=:99.0
+    sh -e /etc/init.d/xvfb start
+    t=0
+    until (xdpyinfo -display :99 &> /dev/null || test $t -gt 10);
+      do sleep 1
+      let t=$t+1
+    done
+  fi
+fi
+# End custom code
+
 if [ -z "$PKG" ]; then
   echo -e "PKG environment variable must be set!"
   exit 1
