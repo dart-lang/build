@@ -47,6 +47,7 @@ class BuildConfig {
     _autoApply,
     _requiredInputs,
     _isOptional,
+    _hideOutput,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
@@ -55,6 +56,7 @@ class BuildConfig {
   static const _autoApply = 'auto_apply';
   static const _requiredInputs = 'required_inputs';
   static const _isOptional = 'is_optional';
+  static const _hideOutput = 'hide_output';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
   ///
@@ -181,6 +183,16 @@ class BuildConfig {
       final isOptional =
           _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
 
+      final mustHideOutput = autoApply == AutoApply.dependents ||
+          autoApply == AutoApply.allPackages;
+      final hideOutput = _readBoolOrThrow(builderConfig, _hideOutput,
+          defaultValue: mustHideOutput);
+
+      if (mustHideOutput && !hideOutput) {
+        throw new ArgumentError('`hide_output` may not be set to `False` '
+            'when using `auto_apply: ${builderConfig[_autoApply]}`');
+      }
+
       builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
         import: import,
@@ -191,6 +203,7 @@ class BuildConfig {
         autoApply: autoApply,
         requiredInputs: requiredInputs,
         isOptional: isOptional,
+        hideOutput: hideOutput,
       );
     }
   }
@@ -355,6 +368,9 @@ class BuilderDefinition {
   /// `canRead`.
   final bool isOptional;
 
+  /// Whether the outputs from this Builder should go to the build cache.
+  final bool hideOutput;
+
   BuilderDefinition({
     this.builderFactories,
     this.buildExtensions,
@@ -365,6 +381,7 @@ class BuilderDefinition {
     this.autoApply,
     this.requiredInputs,
     this.isOptional,
+    this.hideOutput,
   });
 }
 
