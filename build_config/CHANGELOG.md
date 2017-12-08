@@ -1,4 +1,4 @@
-## 0.1.2
+## 0.1.2-dev
 
 - Add `hide_output` option to Builder configuration.
 
