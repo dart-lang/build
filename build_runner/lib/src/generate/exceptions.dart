@@ -39,11 +39,13 @@ class InvalidBuildActionException extends FatalBuildException {
       : _reason = 'A build action ($action) is attempting to operate on '
             'package "${action.package}", but the build script is '
             'located in package "$root". It\'s not valid to attempt to '
-            'generate files for another package unless "writeToCache: true" '
-            'is used.'
+            'generate files for another package unless the BuilderApplication'
+            'specified "hideOutput".'
             '\n\n'
             'Did you mean to write:\n'
-            '  new BuildAction(..., \'$root\')\n'
+            '  new BuilderApplication(..., toRoot())\n'
+            'or\n'
+            '  new BuilderApplication(..., hideOutput: true)\n'
             '... instead?';
 
   InvalidBuildActionException.unrecognizedType(BuildAction action)

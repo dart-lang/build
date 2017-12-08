@@ -28,11 +28,15 @@ Future wait(int milliseconds) =>
 /// The keys in [inputs] and [outputs] are paths to file assets and the values
 /// are file contents. The paths must use the following format:
 ///
-///     PACKAGE_NAME:PATH_WITHIN_PACKAGE
+///     PACKAGE_NAME|PATH_WITHIN_PACKAGE
 ///
 /// Where `PACKAGE_NAME` is the name of the package, and `PATH_WITHIN_PACKAGE`
 /// is the path to a file relative to the package. `PATH_WITHIN_PACKAGE` must
 /// include `lib`, `web`, `bin` or `test`. Example: "myapp|lib/utils.dart".
+///
+/// When an output is expected in the build cache start the package with `$$`.
+/// For example `$$myapp|lib/utils.copy.dart` will check that the generated
+/// output was written to the build cache.
 ///
 /// [packageGraph] supplies the root package into which the outputs are to be
 /// written.
@@ -71,12 +75,10 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
     InMemoryRunnerAssetWriter writer,
     Level logLevel: Level.OFF,
     onLog(LogRecord record),
-    bool writeToCache,
     bool checkBuildStatus: true,
     bool deleteFilesByDefault: true,
     bool enableLowResourcesMode: false}) async {
   writer ??= new InMemoryRunnerAssetWriter();
-  writeToCache ??= false;
   final actualAssets = writer.assets;
   reader ??=
       new InMemoryRunnerAssetReader(actualAssets, packageGraph?.root?.name);
@@ -94,7 +96,6 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
 
   var result = await build_impl.build(buildActions,
       deleteFilesByDefault: deleteFilesByDefault,
-      writeToCache: writeToCache,
       reader: reader,
       writer: writer,
       packageGraph: packageGraph,
@@ -109,31 +110,44 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
         writer: writer,
         status: status,
         exceptionMatcher: exceptionMatcher,
-        writeToCache: writeToCache,
         rootPackage: packageGraph.root.name);
   }
 
   return result;
 }
 
+/// Translates expected outptus which start with `$$` to the build cache and
+/// validates the success and outputs of the build.
 void checkBuild(BuildResult result,
     {Map<String, dynamic> outputs,
     InMemoryAssetWriter writer,
     BuildStatus status = BuildStatus.success,
     Matcher exceptionMatcher,
-    bool writeToCache: false,
     String rootPackage}) {
   expect(result.status, status, reason: '$result');
   if (exceptionMatcher != null) {
     expect(result.exception, exceptionMatcher);
   }
 
-  var mapAssetIds = writeToCache
-      ? (AssetId id) => new AssetId(
+  final unhiddenOutputs = <String, dynamic>{};
+  final unhiddenAssets = new Set<AssetId>();
+  for (final id in outputs?.keys ?? const []) {
+    if (id.startsWith(r'$$')) {
+      final unhidden = id.substring(2);
+      unhiddenAssets.add(makeAssetId(unhidden));
+      unhiddenOutputs[unhidden] = outputs[id];
+    } else {
+      unhiddenOutputs[id] = outputs[id];
+    }
+  }
+
+  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
+      ? new AssetId(
           rootPackage, '.dart_tool/build/generated/${id.package}/${id.path}')
-      : (AssetId id) => id;
+      : id;
 
   if (status == BuildStatus.success) {
-    checkOutputs(outputs, result.outputs, writer, mapAssetIds: mapAssetIds);
+    checkOutputs(unhiddenOutputs, result.outputs, writer,
+        mapAssetIds: mapHidden);
   }
 }

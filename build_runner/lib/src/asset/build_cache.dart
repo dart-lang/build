@@ -70,7 +70,8 @@ AssetId cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
   if (!assetGraph.contains(id)) {
     return id;
   }
-  if (assetGraph.get(id) is GeneratedAssetNode) {
+  final assetNode = assetGraph.get(id);
+  if (assetNode is GeneratedAssetNode && assetNode.isHidden) {
     return new AssetId(
         rootPackage, '$cacheDir/generated/${id.package}/${id.path}');
   }

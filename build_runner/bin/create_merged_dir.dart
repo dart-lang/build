@@ -23,8 +23,7 @@ PackageGraph packageGraph;
 Future main(List<String> args) async {
   stdout.writeln(
       'Warning: this tool is unsupported and usage may change at any time, '
-      'use at your own risk.\n\n'
-      'This tool also assumes you are using the `writeToCache=true` option.');
+      'use at your own risk.\n\n');
 
   var parsedArgs = argParser.parse(args);
 

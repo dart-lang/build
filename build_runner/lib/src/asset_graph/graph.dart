@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/reader.dart';
@@ -316,8 +317,9 @@ class AssetGraph {
         // add the outputs if they don't already exist.
         if (outputs.any((output) => !contains(output))) {
           phaseOutputs.addAll(outputs);
-          allInputs.removeAll(
-              _addGeneratedOutputs(outputs, phase, builderOptionsNode));
+          allInputs.removeAll(_addGeneratedOutputs(
+              outputs, phase, builderOptionsNode,
+              isHidden: action.hideOutput));
         }
       } else if (action is AssetBuildAction) {
         var inputs = allInputs.where(action.inputSet.matches).toList();
@@ -333,7 +335,7 @@ class AssetGraph {
           node.outputs.addAll(outputs);
           allInputs.removeAll(_addGeneratedOutputs(
               outputs, phase, builderOptionsNode,
-              primaryInput: input));
+              primaryInput: input, isHidden: action.hideOutput));
         }
       } else {
         throw new InvalidBuildActionException.unrecognizedType(action);
@@ -352,10 +354,10 @@ class AssetGraph {
   /// removed from the graph.
   Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       BuilderOptionsAssetNode builderOptionsNode,
-      {AssetId primaryInput}) {
+      {AssetId primaryInput, @required bool isHidden}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
-      // When `writeToCache` is false we can pick up old generated outputs as
+      // When any outputs aren't hidden we can pick up old generated outputs as
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
@@ -366,8 +368,9 @@ class AssetGraph {
         _removeRecursive(output, removedIds: removed);
       }
 
-      var newNode = new GeneratedAssetNode(phaseNumber, primaryInput, true,
-          false, output, builderOptionsNode.id);
+      var newNode = new GeneratedAssetNode(
+          phaseNumber, primaryInput, true, false, output, builderOptionsNode.id,
+          isHidden: isHidden);
       builderOptionsNode.outputs.add(output);
       _add(newNode);
     }

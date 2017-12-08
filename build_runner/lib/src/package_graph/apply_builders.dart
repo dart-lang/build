@@ -51,10 +51,16 @@ BuilderApplication applyToRoot(Builder builder,
 /// never run.
 BuilderApplication apply(String providingPackage, String builderName,
         List<BuilderFactory> builderFactories, PackageFilter filter,
-        {List<String> inputs, List<String> excludes, bool isOptional}) =>
+        {List<String> inputs,
+        List<String> excludes,
+        bool isOptional,
+        bool hideOutput}) =>
     new BuilderApplication._(
         providingPackage, builderName, builderFactories, filter,
-        inputs: inputs, excludes: excludes, isOptional: isOptional);
+        inputs: inputs,
+        excludes: excludes,
+        isOptional: isOptional,
+        hideOutput: hideOutput);
 
 /// A description of which packages need a given [Builder] applied.
 class BuilderApplication {
@@ -79,9 +85,12 @@ class BuilderApplication {
   final List<String> excludes;
   final bool isOptional;
 
+  /// Whether genereated assets should be placed in the build cache.
+  final bool hideOutput;
+
   const BuilderApplication._(this.providingPackage, this.builderName,
       this.builderFactories, this.filter,
-      {this.inputs, this.excludes, this.isOptional});
+      {this.inputs, this.excludes, this.isOptional, this.hideOutput});
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -124,5 +133,6 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
           builderOptions: options,
           inputs: builderApplication.inputs,
           excludes: builderApplication.excludes,
-          isOptional: builderApplication.isOptional)));
+          isOptional: builderApplication.isOptional,
+          hideOutput: builderApplication.hideOutput)));
 }

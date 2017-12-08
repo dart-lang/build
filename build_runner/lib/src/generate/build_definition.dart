@@ -120,13 +120,13 @@ class _Loader {
           () => _initialBuildCleanup(
               conflictingOutputs,
               _options.deleteFilesByDefault,
-              _maybeWrapWriter(_options.writer, assetGraph)));
+              _wrapWriter(_options.writer, assetGraph)));
     }
 
     return new BuildDefinition._(
         assetGraph,
-        _maybeWrapReader(_options.reader, assetGraph),
-        _maybeWrapWriter(_options.writer, assetGraph),
+        _wrapReader(_options.reader, assetGraph),
+        _wrapWriter(_options.writer, assetGraph),
         _options.packageGraph,
         _options.deleteFilesByDefault,
         new ResourceManager(),
@@ -135,15 +135,14 @@ class _Loader {
         _onDelete);
   }
 
-  /// Checks that the [_buildActions] are valid based on the
-  /// `_options.writeToCache` setting.
+  /// Checks that the [_buildActions] are valid based on whether they are
+  /// written to the build cache.
   void _checkBuildActions() {
-    if (!_options.writeToCache) {
-      final root = _options.packageGraph.root.name;
-      for (final action in _buildActions) {
-        if (action.package != _options.packageGraph.root.name) {
-          throw new InvalidBuildActionException.nonRootPackage(action, root);
-        }
+    final root = _options.packageGraph.root.name;
+    for (final action in _buildActions) {
+      if (!action.hideOutput &&
+          action.package != _options.packageGraph.root.name) {
+        throw new InvalidBuildActionException.nonRootPackage(action, root);
       }
     }
   }
@@ -158,14 +157,9 @@ class _Loader {
     }
   }
 
-  /// If `_options.writeToCache` is `true` then this returns the all the sources
-  /// found in the cache directory, otherwise it returns an empty set.
-  Future<Set<AssetId>> _findCacheDirSources() {
-    if (_options.writeToCache) {
-      return _listGeneratedAssetIds().toSet();
-    }
-    return new Future.value(new Set<AssetId>());
-  }
+  /// Returns the all the sources found in the cache directory.
+  Future<Set<AssetId>> _findCacheDirSources() =>
+      _listGeneratedAssetIds().toSet();
 
   /// Returns all the internal sources, such as those under [entryPointDir].
   Future<Set<AssetId>> _findInternalSources() {
@@ -225,27 +219,23 @@ class _Loader {
         _buildActions,
         updates,
         _options.packageGraph.root.name,
-        (id) => _delete(id, _maybeWrapWriter(_options.writer, assetGraph)),
-        _maybeWrapReader(_options.reader, assetGraph));
+        (id) => _delete(id, _wrapWriter(_options.writer, assetGraph)),
+        _wrapReader(_options.reader, assetGraph));
     return updates;
   }
 
-  /// Wraps [original] in a [BuildCacheWriter] if `_options.writeToCache` is
-  /// `true`.
-  RunnerAssetWriter _maybeWrapWriter(
+  /// Wraps [original] in a [BuildCacheWriter].
+  RunnerAssetWriter _wrapWriter(
       RunnerAssetWriter original, AssetGraph assetGraph) {
     assert(assetGraph != null);
-    if (!_options.writeToCache) return original;
     return new BuildCacheWriter(
         original, assetGraph, _options.packageGraph.root.name);
   }
 
-  /// Wraps [original] in a [BuildCacheReader] if `_options.writeToCache` is
-  /// `true`.
-  DigestAssetReader _maybeWrapReader(
+  /// Wraps [original] in a [BuildCacheReader].
+  DigestAssetReader _wrapReader(
       DigestAssetReader original, AssetGraph assetGraph) {
     assert(assetGraph != null);
-    if (!_options.writeToCache) return original;
     return new BuildCacheReader(
         original, assetGraph, _options.packageGraph.root.name);
   }

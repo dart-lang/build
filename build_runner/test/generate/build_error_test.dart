@@ -29,7 +29,7 @@ void main() {
     } finally {
       expect(error, isNotNull, reason: 'Did not throw!');
       expect(error, contains('operate on package "not_root_package"'));
-      expect(error, contains('new BuildAction(..., \'root_package\')'));
+      expect(error, contains('new BuilderApplication(..., toRoot())'));
     }
   });
 

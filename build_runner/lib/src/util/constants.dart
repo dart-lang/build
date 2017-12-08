@@ -20,8 +20,7 @@ String assetGraphPathFor(String path) =>
 /// Files in this directory must be read to do build script invalidation.
 const entryPointDir = '.dart_tool/build/entrypoint';
 
-/// The directory to which assets will be written when `writeToCache` is
-/// enabled.
+/// The directory to which hidden assets will be written.
 const generatedOutputDirectory = '$cacheDir/generated';
 
 /// Relative path to the cache directory from the root package dir.
