@@ -438,8 +438,12 @@ void main() {
         builderOptionsId, computeBuilderOptionsDigest(defaultBuilderOptions));
     expectedGraph.add(builderOptionsNode);
 
-    var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
-        false, true, makeAssetId('a|web/a.txt.copy'), builderOptionsId,
+    var aCopyNode = new GeneratedAssetNode(makeAssetId('a|web/a.txt.copy'),
+        phaseNumber: null,
+        primaryInput: makeAssetId('a|web/a.txt'),
+        needsUpdate: false,
+        wasOutput: true,
+        builderOptionsId: builderOptionsId,
         lastKnownDigest: computeDigest('a'),
         inputs: [makeAssetId('a|web/a.txt')],
         isHidden: false);
@@ -448,8 +452,12 @@ void main() {
     expectedGraph
         .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
 
-    var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
-        false, true, makeAssetId('a|lib/b.txt.copy'), builderOptionsId,
+    var bCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/b.txt.copy'),
+        phaseNumber: null,
+        primaryInput: makeAssetId('a|lib/b.txt'),
+        needsUpdate: false,
+        wasOutput: true,
+        builderOptionsId: builderOptionsId,
         lastKnownDigest: computeDigest('b'),
         inputs: [makeAssetId('a|lib/b.txt')],
         isHidden: false);

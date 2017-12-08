@@ -85,8 +85,12 @@ void main() {
             var builderOptionsNode = new BuilderOptionsAssetNode(
                 makeAssetId(), md5.convert(UTF8.encode('test')));
 
-            var generatedNode = new GeneratedAssetNode(0, node.id, g % 2 == 1,
-                g % 2 == 0, makeAssetId(), builderOptionsNode.id,
+            var generatedNode = new GeneratedAssetNode(makeAssetId(),
+                phaseNumber: 0,
+                primaryInput: node.id,
+                needsUpdate: g % 2 == 1,
+                wasOutput: g % 2 == 0,
+                builderOptionsId: builderOptionsNode.id,
                 isHidden: g % 3 == 0);
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
