@@ -13,6 +13,7 @@ dependencies:
   build: ^0.11.0
   code_transformers: ">=0.5.1 <0.6.0"
   glob: ^1.1.0
+  graphs: ^0.1.0
   logging: ^0.11.2
 
 dev_dependencies:

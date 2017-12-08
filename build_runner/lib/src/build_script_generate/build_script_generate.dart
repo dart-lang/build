@@ -9,10 +9,10 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:code_builder/code_builder.dart' hide File;
 import 'package:dart_style/dart_style.dart';
+import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/logging.dart';
-import '../package_graph/dependency_ordering.dart';
 import '../util/constants.dart';
 import 'builder_ordering.dart';
 import 'types.dart' as types;
