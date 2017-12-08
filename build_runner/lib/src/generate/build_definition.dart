@@ -77,9 +77,6 @@ class _Loader {
     var inputSources = await _findInputSources();
     var cacheDirSources = await _findCacheDirSources();
     var internalSources = await _findInternalSources();
-    var allSources = inputSources.toSet()
-      ..addAll(cacheDirSources)
-      ..addAll(internalSources);
 
     var assetGraph = await _tryReadCachedAssetGraph();
 
@@ -89,7 +86,7 @@ class _Loader {
           _logger,
           'Checking for updates since last build',
           () => _updateAssetGraph(assetGraph, _buildActions, inputSources,
-              cacheDirSources, internalSources, allSources));
+              cacheDirSources, internalSources));
 
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
@@ -111,7 +108,7 @@ class _Loader {
         buildScriptUpdates =
             await BuildScriptUpdates.create(_options, assetGraph);
         conflictingOutputs =
-            assetGraph.outputs.where(allSources.contains).toSet();
+            assetGraph.outputs.where(inputSources.contains).toSet();
       });
 
       await logTimedAsync(
@@ -210,10 +207,9 @@ class _Loader {
       List<BuildAction> buildActions,
       Set<AssetId> inputSources,
       Set<AssetId> cacheDirSources,
-      Set<AssetId> internalSources,
-      Set<AssetId> allSources) async {
+      Set<AssetId> internalSources) async {
     var updates = await _findSourceUpdates(
-        assetGraph, inputSources, cacheDirSources, internalSources, allSources);
+        assetGraph, inputSources, cacheDirSources, internalSources);
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildActions));
     await assetGraph.updateAndInvalidate(
         _buildActions,
@@ -247,8 +243,11 @@ class _Loader {
       AssetGraph assetGraph,
       Set<AssetId> inputSources,
       Set<AssetId> generatedSources,
-      Set<AssetId> internalSources,
-      Set<AssetId> allSources) async {
+      Set<AssetId> internalSources) async {
+    final allSources = new Set<AssetId>()
+      ..addAll(inputSources)
+      ..addAll(generatedSources)
+      ..addAll(internalSources);
     var updates = <AssetId, ChangeType>{};
     addUpdates(Iterable<AssetId> assets, ChangeType type) {
       for (var asset in assets) {
