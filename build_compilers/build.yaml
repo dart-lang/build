@@ -28,3 +28,4 @@ builders:
         - .dart.js
         - .dart.js.map
     required_inputs:  [".dart", ".js"]
+    build_to: cache
