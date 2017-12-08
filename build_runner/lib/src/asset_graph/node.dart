@@ -96,17 +96,17 @@ class GeneratedAssetNode extends AssetNode {
   final bool isHidden;
 
   GeneratedAssetNode(
-    this.phaseNumber,
-    this.primaryInput,
-    this.needsUpdate,
-    this.wasOutput,
-    AssetId id,
-    this.builderOptionsId, {
+    AssetId id, {
     Digest lastKnownDigest,
     Set<Glob> globs,
     Iterable<AssetId> inputs,
     this.previousInputsDigest,
     @required this.isHidden,
+    @required this.needsUpdate,
+    @required this.phaseNumber,
+    @required this.wasOutput,
+    @required this.primaryInput,
+    @required this.builderOptionsId,
   })
       : this.globs = globs ?? new Set<Glob>(),
         this.inputs = inputs != null

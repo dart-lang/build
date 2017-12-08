@@ -368,8 +368,12 @@ class AssetGraph {
         _removeRecursive(output, removedIds: removed);
       }
 
-      var newNode = new GeneratedAssetNode(
-          phaseNumber, primaryInput, true, false, output, builderOptionsNode.id,
+      var newNode = new GeneratedAssetNode(output,
+          phaseNumber: phaseNumber,
+          primaryInput: primaryInput,
+          needsUpdate: true,
+          wasOutput: false,
+          builderOptionsId: builderOptionsNode.id,
           isHidden: isHidden);
       builderOptionsNode.outputs.add(output);
       _add(newNode);

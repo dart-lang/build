@@ -74,12 +74,16 @@ class _AssetGraphDeserializer {
       case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
         node = new GeneratedAssetNode(
-          serializedNode[_Field.PhaseNumber.index] as int,
-          _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
-          _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
-          _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
           id,
-          _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
+          phaseNumber: serializedNode[_Field.PhaseNumber.index] as int,
+          primaryInput:
+              _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
+          needsUpdate:
+              _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
+          wasOutput:
+              _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
+          builderOptionsId:
+              _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
           globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
               .map((pattern) => new Glob(pattern))
               .toSet(),
