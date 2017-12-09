@@ -26,7 +26,8 @@ class CopyBuilder implements Builder {
 
   /// The extension of assets this Builder will take as inputs.
   ///
-  /// Defaults to the empty string so that all assets are inputs.
+  /// Defaults to the empty string so that all assets are inputs. If any inputs
+  /// are passed which do not match the input extension then [build] will throw.
   final String inputExtension;
 
   CopyBuilder(
