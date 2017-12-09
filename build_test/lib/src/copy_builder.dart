@@ -24,15 +24,26 @@ class CopyBuilder implements Builder {
   /// re-assigned in between builds.
   Future blockUntil;
 
+  /// The extension of assets this Builder will take as inputs.
+  ///
+  /// Defaults to the empty string so that all assets are inputs. If any inputs
+  /// are passed which do not match the input extension then [build] will throw.
+  final String inputExtension;
+
   CopyBuilder(
       {this.numCopies: 1,
       this.extension: 'copy',
       this.copyFromAsset,
       this.touchAsset,
+      this.inputExtension: '',
       this.blockUntil});
 
   @override
   Future build(BuildStep buildStep) async {
+    if (!buildStep.inputId.path.endsWith(inputExtension)) {
+      throw new ArgumentError('Only expected inputs with extension '
+          '$inputExtension but got ${buildStep.inputId}');
+    }
     if (blockUntil != null) await blockUntil;
 
     var ids = new Iterable<int>.generate(numCopies)
@@ -52,12 +63,16 @@ class CopyBuilder implements Builder {
     for (int i = 0; i < numCopies; i++) {
       outputs.add(_copiedAssetExtension(i));
     }
-    return {'': outputs};
+    return {inputExtension: outputs};
   }
 
-  AssetId _copiedAssetId(AssetId inputId, int copyNum) =>
-      inputId.addExtension(_copiedAssetExtension(copyNum));
+  AssetId _copiedAssetId(AssetId inputId, int copyNum) => new AssetId(
+      inputId.package,
+      _replaceSuffix(inputId.path, _copiedAssetExtension(copyNum)));
 
   String _copiedAssetExtension(int copyNum) =>
       '.$extension${numCopies == 1 ? '' : '.$copyNum'}';
+
+  String _replaceSuffix(String path, String replacement) =>
+      path.substring(0, path.length - inputExtension.length) + replacement;
 }

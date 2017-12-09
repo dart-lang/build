@@ -1,3 +1,8 @@
+## 0.9.2
+
+- Add `inputExtension` argument to `CopyBuilder`. When used the builder with
+  throw if any assets are provided that don't match the input extension.
+
 ## 0.9.1
 
 - Allow `build_barback` version `0.5.x`. The breaking behavior change should not
