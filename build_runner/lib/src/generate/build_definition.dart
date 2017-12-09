@@ -107,8 +107,17 @@ class _Loader {
             internalSources, _options.packageGraph.root.name, _options.reader);
         buildScriptUpdates =
             await BuildScriptUpdates.create(_options, assetGraph);
-        conflictingOutputs =
-            assetGraph.outputs.where(inputSources.contains).toSet();
+        conflictingOutputs = assetGraph.outputs
+            .where((n) => n.package == _options.packageGraph.root.name)
+            .where(inputSources.contains)
+            .toSet();
+        final conflictsInDeps = assetGraph.outputs
+            .where((n) => n.package != _options.packageGraph.root.name)
+            .where(inputSources.contains)
+            .length;
+        _logger.warning('There are $conflictsInDeps sources in dependencies '
+            'that will be ignored since they are overwritten by '
+            'generated assets');
       });
 
       await logTimedAsync(
