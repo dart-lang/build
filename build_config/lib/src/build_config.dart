@@ -47,7 +47,7 @@ class BuildConfig {
     _autoApply,
     _requiredInputs,
     _isOptional,
-    _hideOutput,
+    _buildTo,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
@@ -56,7 +56,7 @@ class BuildConfig {
   static const _autoApply = 'auto_apply';
   static const _requiredInputs = 'required_inputs';
   static const _isOptional = 'is_optional';
-  static const _hideOutput = 'hide_output';
+  static const _buildTo = 'build_to';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
   ///
@@ -183,12 +183,12 @@ class BuildConfig {
       final isOptional =
           _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
 
-      final mustHideOutput = autoApply == AutoApply.dependents ||
+      final mustBuildToCache = autoApply == AutoApply.dependents ||
           autoApply == AutoApply.allPackages;
-      final hideOutput = _readBoolOrThrow(builderConfig, _hideOutput,
-          defaultValue: mustHideOutput);
+      final buildTo = _readBuildToOrThrow(builderConfig, _buildTo,
+          defaultValue: mustBuildToCache ? BuildTo.cache : BuildTo.source);
 
-      if (mustHideOutput && !hideOutput) {
+      if (mustBuildToCache && buildTo != BuildTo.cache) {
         throw new ArgumentError('`hide_output` may not be set to `False` '
             'when using `auto_apply: ${builderConfig[_autoApply]}`');
       }
@@ -203,7 +203,7 @@ class BuildConfig {
         autoApply: autoApply,
         requiredInputs: requiredInputs,
         isOptional: isOptional,
-        hideOutput: hideOutput,
+        buildTo: buildTo,
       );
     }
   }
@@ -332,6 +332,22 @@ class BuildConfig {
     }
     return allowedValues[value];
   }
+
+  static BuildTo _readBuildToOrThrow(
+      Map<String, dynamic> options, String option,
+      {BuildTo defaultValue}) {
+    final value = options[option];
+    if (value == null && defaultValue != null) return defaultValue;
+    final allowedValues = const {
+      'source': BuildTo.source,
+      'cache': BuildTo.cache,
+    };
+    if (value is! String || !allowedValues.containsKey(value)) {
+      throw new ArgumentError('Expected one of ${allowedValues.keys.toList()} '
+          'for `$option` but got `$value`');
+    }
+    return allowedValues[value];
+  }
 }
 
 class BuilderDefinition {
@@ -368,8 +384,8 @@ class BuilderDefinition {
   /// `canRead`.
   final bool isOptional;
 
-  /// Whether the outputs from this Builder should go to the build cache.
-  final bool hideOutput;
+  /// Where the outputs of this builder should be written.
+  final BuildTo buildTo;
 
   BuilderDefinition({
     this.builderFactories,
@@ -381,11 +397,20 @@ class BuilderDefinition {
     this.autoApply,
     this.requiredInputs,
     this.isOptional,
-    this.hideOutput,
+    this.buildTo,
   });
 }
 
 enum AutoApply { none, dependents, allPackages, rootPackage }
+
+enum BuildTo {
+  /// Generated files are written to the source directory next to their primary
+  /// inputs.
+  source,
+
+  /// Generated files are written to the hidden 'generated' directory.
+  cache
+}
 
 class BuildTarget {
   final Iterable<String> dependencies;
