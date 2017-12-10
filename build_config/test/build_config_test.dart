@@ -39,6 +39,7 @@ void main() {
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.dependents,
         isOptional: true,
+        buildTo: BuildTo.cache, // defaulted because of AutoApply.dependents
         import: 'package:example/e.dart',
         buildExtensions: {
           '.dart': [
@@ -71,6 +72,7 @@ void main() {
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.none,
         isOptional: false,
+        buildTo: BuildTo.source,
         import: 'package:example/builder.dart',
         name: 'a',
         buildExtensions: {
@@ -161,6 +163,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
       item.autoApply == _expected.autoApply &&
       item.isOptional == _expected.isOptional &&
+      item.buildTo == _expected.buildTo &&
       item.import == _expected.import &&
       item.name == _expected.name &&
       item.package == _expected.package &&

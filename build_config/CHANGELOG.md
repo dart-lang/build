@@ -1,3 +1,7 @@
+## 0.1.2-dev
+
+- Add `build_to` option to Builder configuration.
+
 ## 0.1.1
 
 - Add `auto_apply` option to Builder configuration.
