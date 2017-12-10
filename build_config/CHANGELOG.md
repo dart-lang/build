@@ -1,6 +1,6 @@
 ## 0.1.2-dev
 
-- Add `hide_output` option to Builder configuration.
+- Add `build_to` option to Builder configuration.
 
 ## 0.1.1
 

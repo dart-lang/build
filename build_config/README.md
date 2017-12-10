@@ -40,11 +40,14 @@ the following keys:
 - **is_optional**: Optional, boolean. Specifies whether a Builder can be run
   lazily, such that it won't execute until one of it's outputs is requested by a
   later Builder. This option should be rare. Defaults to `False`.
-- **hide_output**: Optional, boolean. Specifies whether the outputs produced by
-  the Builder should go to the build cache rather than the source tree. Only
-  builders which hide output may run on primary inputs outside the root
-  package. Defaults to `False`, unless `auto_apply` is set to either
-  `"all_packages"` or `"dependents"` in which case it defaults to `True`.
+- **build_to**: Optional. The location that generated assets should be output
+  to. The possibilities are:
+  - `"source"`: Outputs go to the source tree next to their primary inputs.
+  - `"cache"`: Outputs go to a hidden build cache and won't be published.
+  Only builders which output to the build cache may run on primary inputs
+  outside the root package. Defaults to `"source"`, unless `auto_apply` is set
+  to either `"all_packages"` or `"dependents"` in which case it defaults to
+  `"cache"`.
 
 Example `builders` config:
 
