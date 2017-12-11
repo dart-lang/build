@@ -8,8 +8,8 @@ import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:logging/logging.dart';
-import 'package:watcher/watcher.dart';
 import 'package:stream_transform/stream_transform.dart';
+import 'package:watcher/watcher.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -30,6 +30,7 @@ final _logger = new Logger('Watch');
 
 Future<ServeHandler> watch(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
+    bool assumeTty,
     //TODO - remove `writeToCache`
     bool writeToCache,
     PackageGraph packageGraph,
@@ -43,6 +44,7 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
     bool skipBuildScriptCheck,
     bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
+      assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault ?? writeToCache,
       packageGraph: packageGraph,
       reader: reader,

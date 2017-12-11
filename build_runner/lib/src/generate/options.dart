@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 
 import '../asset/file_based.dart';
@@ -21,6 +22,7 @@ class BuildOptions {
   RunnerAssetWriter writer;
   bool deleteFilesByDefault;
   bool enableLowResourcesMode;
+  bool assumeTty;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -31,6 +33,7 @@ class BuildOptions {
 
   BuildOptions(
       {this.debounceDelay,
+      this.assumeTty,
       this.deleteFilesByDefault,
       this.directoryWatcherFactory,
       Level logLevel,
@@ -43,7 +46,10 @@ class BuildOptions {
     /// Set up logging
     logLevel ??= Level.INFO;
     Logger.root.level = logLevel;
-    logListener = Logger.root.onRecord.listen(onLog ?? stdIOLogListener);
+
+    overrideAnsiOutput(assumeTty ?? ansiOutputEnabled, () {
+      logListener = Logger.root.onRecord.listen(onLog ?? stdIOLogListener);
+    });
 
     /// Set up other defaults.
     debounceDelay ??= const Duration(milliseconds: 250);
@@ -51,6 +57,7 @@ class BuildOptions {
     reader ??= new FileBasedAssetReader(packageGraph);
     writer ??= new FileBasedAssetWriter(packageGraph);
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
+    assumeTty ??= false;
     deleteFilesByDefault ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
