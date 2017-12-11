@@ -15,7 +15,6 @@ import 'package:logging/logging.dart';
 import '../logging/logging.dart';
 import '../util/constants.dart';
 import 'builder_ordering.dart';
-import 'types.dart' as types;
 
 const scriptLocation = '$entryPointDir/build.dart';
 
@@ -29,8 +28,8 @@ Future<Null> ensureBuildScript() async {
 
 Future<String> _generateBuildScript() async {
   final builders = await _findBuilderApplications();
-  final library =
-      new Library((b) => b.body.addAll([_findBuildActions(builders), _main()]));
+  final library = new Library((b) => b.body.addAll(
+      [literalList(builders).assignFinal('_builders').statement, _main()]));
   final emitter = new DartEmitter(new Allocator.simplePrefixing());
   return new DartFormatter().format('${library.accept(emitter)}');
 }
@@ -62,57 +61,18 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
   return builderApplications;
 }
 
-/// A method which creates a list literal containing [builderApplications] and
-/// calls `createBuildActions` to resolve them.
-Method _findBuildActions(Iterable<Expression> builderApplications) =>
-    new Method((b) => b
-      ..name = '_buildActions'
-      ..requiredParameters.add(new Parameter((b) => b
-        ..name = 'packageGraph'
-        ..type = types.packageGraph))
-      ..returns = types.buildActions
-      ..body = new Block.of([
-        literalList(builderApplications.toList())
-            .assignVar('builders')
-            .statement,
-        refer('createBuildActions', 'package:build_runner/build_runner.dart')
-            .call([refer('packageGraph'), refer('builders')])
-            .returned
-            .statement,
-      ]));
-
+/// A method forwarding to `serveMain`.
 Method _main() => new Method((b) => b
   ..name = 'main'
-  ..modifier = MethodModifier.async
-  ..body = new Block.of([
-    refer('_buildActions')
-        .call([types.packageGraph.newInstanceNamed('forThisPackage', [])])
-        .assignVar('actions')
-        .statement,
-    refer('watch', 'package:build_runner/build_runner.dart')
-        // TODO - remove `deleteFileByDefault` once we have resolved handling
-        // conflicts in deps
-        .call([refer('actions')], {'deleteFilesByDefault': literalTrue})
-        .awaited
-        .assignVar('handler')
-        .statement,
-    refer('serve', 'package:shelf/shelf_io.dart')
-        .call([
-          refer('handler').property('handlerFor').call([literalString('web')]),
-          literalString('localhost'),
-          literal(8000)
-        ])
-        .awaited
-        .assignVar('server')
-        .statement,
-    refer('handler')
-        .property('buildResults')
-        .property('drain')
-        .call([])
-        .awaited
-        .statement,
-    refer('server').property('close').call([]).awaited.statement
-  ]));
+  ..lambda = true
+  ..requiredParameters.add(new Parameter((b) => b
+    ..name = 'args'
+    ..type = new TypeReference((b) => b
+      ..symbol = 'List'
+      ..types.add(refer('String')))))
+  ..body = refer('serveMain',
+          'package:build_runner/src/build_script_generate/serve_main.dart')
+      .call([refer('args'), refer('_builders')]).code);
 
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
     BuildConfig.fromPackageDir(

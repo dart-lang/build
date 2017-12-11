@@ -212,7 +212,7 @@ Future<String> readGeneratedFileAsString(String path) async {
   return file.readAsString();
 }
 
-Future<Null> replaceAllInFile(String path, String from, String replace) async {
+Future<Null> replaceAllInFile(String path, Pattern from, String replace) async {
   var file = new File(path);
   expect(await file.exists(), isTrue);
   var content = await file.readAsString();
