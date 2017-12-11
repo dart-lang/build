@@ -1,5 +1,5 @@
 name: build_compilers
-version: 0.1.0
+version: 0.1.1-dev
 description: Builder implementations wrapping Dart compilers.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build

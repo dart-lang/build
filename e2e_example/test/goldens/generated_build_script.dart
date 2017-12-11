@@ -8,7 +8,8 @@ List<_i1.BuildAction> _buildActions(_i1.PackageGraph packageGraph) {
     _i1.apply('provides_builder', 'some_not_applied_builder', [_i2.notApplied],
         _i1.toNoneByDefault()),
     _i1.apply('provides_builder', 'some_builder', [_i2.someBuilder],
-        _i1.toDependentsOf('provides_builder')),
+        _i1.toDependentsOf('provides_builder'),
+        hideOutput: true),
     _i1.apply(
         'build_compilers',
         'ddc',
@@ -19,19 +20,21 @@ List<_i1.BuildAction> _buildActions(_i1.PackageGraph packageGraph) {
           _i3.devCompilerBuilder
         ],
         _i1.toAllPackages(),
-        isOptional: true),
+        isOptional: true,
+        hideOutput: true),
     _i1.apply('build_compilers', 'ddc_bootstrap',
-        [_i3.devCompilerBootstrapBuilder], _i1.toNoneByDefault()),
+        [_i3.devCompilerBootstrapBuilder], _i1.toNoneByDefault(),
+        hideOutput: true),
     _i1.apply('build_compilers', 'ddc_bootstrap',
         [_i3.devCompilerBootstrapBuilder], _i1.toRoot(),
-        inputs: ['web/**.dart', 'test/**.browser_test.dart'])
+        inputs: ['web/**.dart', 'test/**.browser_test.dart'], hideOutput: true)
   ];
   return _i1.createBuildActions(packageGraph, builders);
 }
 
 main() async {
   var actions = _buildActions(new _i1.PackageGraph.forThisPackage());
-  var handler = await _i1.watch(actions, writeToCache: true);
+  var handler = await _i1.watch(actions, deleteFilesByDefault: true);
   var server = await _i4.serve(handler.handlerFor('web'), 'localhost', 8000);
   await handler.buildResults.drain();
   await server.close();

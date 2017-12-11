@@ -90,7 +90,9 @@ Method _main() => new Method((b) => b
         .assignVar('actions')
         .statement,
     refer('watch', 'package:build_runner/build_runner.dart')
-        .call([refer('actions')], {'writeToCache': literalTrue})
+        // TODO - remove `deleteFileByDefault` once we have resolved handling
+        // conflicts in deps
+        .call([refer('actions')], {'deleteFilesByDefault': literalTrue})
         .awaited
         .assignVar('handler')
         .statement,
@@ -129,6 +131,9 @@ Expression _applyBuilderWithFilter(
   }
   if (definition.isOptional) {
     namedArgs['isOptional'] = literalTrue;
+  }
+  if (definition.buildTo == BuildTo.cache) {
+    namedArgs['hideOutput'] = literalTrue;
   }
   return refer('apply', 'package:build_runner/build_runner.dart').call([
     literalString(definition.package),
