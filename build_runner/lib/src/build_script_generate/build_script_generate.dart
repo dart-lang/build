@@ -61,9 +61,9 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
   return builderApplications;
 }
 
+/// A method forwarding to `serveMain`.
 Method _main() => new Method((b) => b
   ..name = 'main'
-  ..modifier = MethodModifier.async
   ..lambda = true
   ..requiredParameters.add(new Parameter((b) => b
     ..name = 'args'

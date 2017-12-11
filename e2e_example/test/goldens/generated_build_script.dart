@@ -28,4 +28,4 @@ final _builders = [
       [_i3.devCompilerBootstrapBuilder], _i1.toRoot(),
       inputs: ['web/**.dart', 'test/**.browser_test.dart'], hideOutput: true)
 ];
-main(List<String> args) async => _i4.serveMain(args, _builders);
+main(List<String> args) => _i4.serveMain(args, _builders);
