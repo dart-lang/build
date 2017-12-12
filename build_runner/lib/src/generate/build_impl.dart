@@ -40,7 +40,7 @@ final _logger = new Logger('Build');
 
 Future<BuildResult> build(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
-      bool assumeTty,
+    bool assumeTty,
     //TODO - remove `writeToCache`
     bool writeToCache,
     PackageGraph packageGraph,
