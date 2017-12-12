@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 
 /// Relative path to the asset graph from the root package dir.
 final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
@@ -14,25 +15,12 @@ final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
 String assetGraphPathFor(String path) =>
     '$cacheDir/${scriptHashFor(path)}/asset_graph.json';
 
-/// Directories used for build tooling.
-///
-/// Reading from these directories may cause non-hermetic builds.
-const toolDirs = const [
-  '.dart_tool',
-  'build',
-  'packages',
-  '.pub',
-  '.git',
-  '.idea'
-];
-
 /// Directory containing automatically generated build entrypoints.
 ///
 /// Files in this directory must be read to do build script invalidation.
 const entryPointDir = '.dart_tool/build/entrypoint';
 
-/// The directory to which assets will be written when `writeToCache` is
-/// enabled.
+/// The directory to which hidden assets will be written.
 const generatedOutputDirectory = '$cacheDir/generated';
 
 /// Relative path to the cache directory from the root package dir.
@@ -40,3 +28,17 @@ const String cacheDir = '.dart_tool/build';
 
 /// Returns a hash for a given path.
 String scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
+
+/// Whitelist of files in the root package to include.
+const List<String> rootPackageFilesWhitelist = const [
+  'benchmark/**',
+  'bin/**',
+  'example/**',
+  'lib/**',
+  'test/**',
+  'tool/**',
+  'web/**',
+];
+
+final List<Glob> rootPackageGlobsWhitelist = new List.unmodifiable(
+    rootPackageFilesWhitelist.map((pattern) => new Glob(pattern)));

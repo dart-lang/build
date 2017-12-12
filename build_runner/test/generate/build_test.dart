@@ -24,6 +24,7 @@ void main() {
       new TxtFilePackageBuilder(
           'a', {'web/hello.txt': 'hello', 'web/world.txt': 'world'}),
       'a');
+  final defaultBuilderOptions = const BuilderOptions(const {});
 
   group('build', () {
     group('with root package inputs', () {
@@ -193,6 +194,8 @@ void main() {
               makeAssetId('a|web/a.txt'),
               makeAssetId('a|web/a.txt.copy'),
               makeAssetId('a|web/a.txt.copy.clone'),
+              makeAssetId('a|Phase0.builderOptions'),
+              makeAssetId('a|Phase1.builderOptions'),
             ]));
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
@@ -212,9 +215,9 @@ void main() {
     });
 
     test('can\'t output files in non-root packages', () async {
-      final packageGraph = buildPackageGraph('a', {
-        package('a', path: 'a/'): ['b'],
-        package('b', path: 'a/b', includes: ['**']): []
+      final packageGraph = buildPackageGraph({
+        rootPackage('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b'): []
       });
       expect(
           testActions(
@@ -223,30 +226,46 @@ void main() {
           throwsA(anything));
     });
 
-    group('with `writeToCache: true`', () {
+    group('with `hideOutput: true`', () {
       PackageGraph packageGraph;
 
       setUp(() {
-        packageGraph = buildPackageGraph('a', {
-          package('a', path: 'a/'): ['b'],
-          package('b', path: 'a/b/', includes: ['**']): []
+        packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b/'): []
         });
       });
       test('can output files in non-root packages', () async {
         await testActions(
             [
-              new BuildAction(new CopyBuilder(), 'b'),
+              new BuildAction(new CopyBuilder(), 'b', hideOutput: true),
               new PackageBuildAction(
                   new TxtFilePackageBuilder('b', {'lib/hello.txt': 'hello'}),
-                  'b')
+                  'b',
+                  hideOutput: true)
             ],
             {'b|lib/b.txt': 'b'},
             packageGraph: packageGraph,
             outputs: {
-              'b|lib/b.txt.copy': 'b',
-              'b|lib/hello.txt': 'hello',
-            },
-            writeToCache: true);
+              r'$$b|lib/b.txt.copy': 'b',
+              r'$$b|lib/hello.txt': 'hello',
+            });
+      });
+
+      test('handles mixed hidden and non-hidden outputs', () async {
+        await testActions(
+            [
+              new BuildAction(new CopyBuilder(), 'a'),
+              new BuildAction(new CopyBuilder(extension: 'hiddencopy'), 'a',
+                  hideOutput: true),
+            ],
+            {'a|lib/a.txt': 'a'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$a|lib/a.txt.hiddencopy': 'a',
+              r'$$a|lib/a.txt.copy.hiddencopy': 'a',
+              r'a|lib/a.txt.copy': 'a',
+            });
       });
 
       test(
@@ -258,14 +277,14 @@ void main() {
                   new PackageBuildAction(
                       new TxtFilePackageBuilder(
                           'b', {'web/hello.txt': 'hello'}),
-                      'b')
+                      'b',
+                      hideOutput: true)
                 ],
                 {},
                 packageGraph: packageGraph,
                 outputs: {
-                  'b|web/hello.txt': 'hello',
-                },
-                writeToCache: true),
+                  r'$$b|web/hello.txt': 'hello',
+                }),
             throwsA(new isInstanceOf<InvalidPackageBuilderOutputsException>()));
       });
 
@@ -278,15 +297,14 @@ void main() {
             }
           };
         await testActions(
-            [new BuildAction(new CopyBuilder(), 'b')],
+            [new BuildAction(new CopyBuilder(), 'b', hideOutput: true)],
             {
               'b|lib/b.txt': 'b',
               'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b'
             },
             packageGraph: packageGraph,
             writer: writer,
-            outputs: {'b|lib/b.txt.copy': 'b'},
-            writeToCache: true);
+            outputs: {r'$$b|lib/b.txt.copy': 'b'});
       });
     });
 
@@ -304,14 +322,14 @@ void main() {
     });
 
     test('can glob files from packages', () async {
-      final packageGraph = buildPackageGraph('a', {
-        package('a', path: 'a/', includes: ['**']): ['b'],
+      final packageGraph = buildPackageGraph({
+        rootPackage('a', path: 'a/'): ['b'],
         package('b', path: 'a/b/'): []
       });
 
       var buildActions = [
-        new BuildAction(globBuilder, 'a'),
-        new BuildAction(globBuilder, 'b'),
+        new BuildAction(globBuilder, 'a', hideOutput: true),
+        new BuildAction(globBuilder, 'b', hideOutput: true),
       ];
 
       await testActions(
@@ -327,25 +345,25 @@ void main() {
             'b|web/b.txt': '',
           },
           outputs: {
-            'a|lib/a.matchingFiles': 'a|lib/a.txt\na|lib/b.txt\na|web/a.txt',
-            'b|lib/b.matchingFiles': 'b|lib/c.txt\nb|lib/d.txt',
+            r'$$a|lib/a.matchingFiles': 'a|lib/a.txt\na|lib/b.txt\na|web/a.txt',
+            r'$$b|lib/b.matchingFiles': 'b|lib/c.txt\nb|lib/d.txt',
           },
-          packageGraph: packageGraph,
-          writeToCache: true);
+          packageGraph: packageGraph);
     });
 
     test('can glob files from packages with excludes applied', () async {
       await testActions([
-        new BuildAction(new CopyBuilder(), 'a', excludes: ['lib/a/*.txt'])
+        new BuildAction(new CopyBuilder(), 'a',
+            excludes: ['lib/a/*.txt'], hideOutput: true)
       ], {
         'a|lib/a/1.txt': '',
         'a|lib/a/2.txt': '',
         'a|lib/b/1.txt': '',
         'a|lib/b/2.txt': '',
       }, outputs: {
-        'a|lib/b/1.txt.copy': '',
-        'a|lib/b/2.txt.copy': '',
-      }, writeToCache: true);
+        r'$$a|lib/b/1.txt.copy': '',
+        r'$$a|lib/b/2.txt.copy': '',
+      });
     });
 
     test('can\'t read files in .dart_tool', () async {
@@ -361,9 +379,9 @@ void main() {
     });
 
     test('won\'t try to delete files from other packages', () async {
-      final packageGraph = buildPackageGraph('a', {
-        package('a', path: 'a/'): ['b'],
-        package('b', path: 'a/b', includes: ['**']): []
+      final packageGraph = buildPackageGraph({
+        rootPackage('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b'): []
       });
       var writer = new InMemoryRunnerAssetWriter()
         ..onDelete = (AssetId assetId) {
@@ -412,18 +430,38 @@ void main() {
     var cachedGraph = new AssetGraph.deserialize(
         JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
 
-    var expectedGraph = await AssetGraph.build([], new Set(), 'a', null);
-    var aCopyNode = new GeneratedAssetNode(null, makeAssetId('a|web/a.txt'),
-        false, true, makeAssetId('a|web/a.txt.copy'),
+    var expectedGraph =
+        await AssetGraph.build([], new Set(), new Set(), 'a', null);
+
+    var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
+    var builderOptionsNode = new BuilderOptionsAssetNode(
+        builderOptionsId, computeBuilderOptionsDigest(defaultBuilderOptions));
+    expectedGraph.add(builderOptionsNode);
+
+    var aCopyNode = new GeneratedAssetNode(makeAssetId('a|web/a.txt.copy'),
+        phaseNumber: null,
+        primaryInput: makeAssetId('a|web/a.txt'),
+        needsUpdate: false,
+        wasOutput: true,
+        builderOptionsId: builderOptionsId,
         lastKnownDigest: computeDigest('a'),
-        inputs: [makeAssetId('a|web/a.txt')]);
+        inputs: [makeAssetId('a|web/a.txt')],
+        isHidden: false);
+    builderOptionsNode.outputs.add(aCopyNode.id);
     expectedGraph.add(aCopyNode);
     expectedGraph
         .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
-    var bCopyNode = new GeneratedAssetNode(null, makeAssetId('a|lib/b.txt'),
-        false, true, makeAssetId('a|lib/b.txt.copy'),
+
+    var bCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/b.txt.copy'),
+        phaseNumber: null,
+        primaryInput: makeAssetId('a|lib/b.txt'),
+        needsUpdate: false,
+        wasOutput: true,
+        builderOptionsId: builderOptionsId,
         lastKnownDigest: computeDigest('b'),
-        inputs: [makeAssetId('a|lib/b.txt')]);
+        inputs: [makeAssetId('a|lib/b.txt')],
+        isHidden: false);
+    builderOptionsNode.outputs.add(bCopyNode.id);
     expectedGraph.add(bCopyNode);
     expectedGraph
         .add(makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b')));
@@ -573,29 +611,24 @@ void main() {
       }, outputs: {});
     });
 
-    test('no outputs if no changed sources using `writeToCache`', () async {
-      var buildActions = [copyABuildAction];
+    test('no outputs if no changed sources using `hideOutput: true`', () async {
+      var buildActions = [hiddenAction(copyABuildAction)];
 
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
       await testActions(buildActions, {'a|web/a.txt': 'a'},
           // Note that `testActions` converts generated cache dir paths to the
           // original ones for matching.
-          outputs: {'a|web/a.txt.copy': 'a'},
-          writer: writer,
-          writeToCache: true);
+          outputs: {r'$$a|web/a.txt.copy': 'a'},
+          writer: writer);
 
       // Followup build with same sources + cached graph.
       var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
-      await testActions(
-          buildActions,
-          {
-            'a|web/a.txt': 'a',
-            'a|web/a.txt.copy': 'a',
-            'a|$assetGraphPath': serializedGraph,
-          },
-          outputs: {},
-          writeToCache: true);
+      await testActions(buildActions, {
+        'a|web/a.txt': 'a',
+        'a|web/a.txt.copy': 'a',
+        'a|$assetGraphPath': serializedGraph,
+      }, outputs: {});
     });
 
     test('inputs/outputs are updated if they change', () async {

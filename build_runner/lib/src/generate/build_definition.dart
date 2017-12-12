@@ -76,7 +76,10 @@ class _Loader {
     _logger.info('Initializing inputs');
     var inputSources = await _findInputSources();
     var cacheDirSources = await _findCacheDirSources();
-    var allSources = inputSources.union(cacheDirSources);
+    var internalSources = await _findInternalSources();
+    var allSources = inputSources.toSet()
+      ..addAll(cacheDirSources)
+      ..addAll(internalSources);
 
     var assetGraph = await _tryReadCachedAssetGraph();
 
@@ -85,14 +88,15 @@ class _Loader {
       var updates = await logTimedAsync(
           _logger,
           'Checking for updates since last build',
-          () => _updateAssetGraph(
-              assetGraph, inputSources, cacheDirSources, allSources));
+          () => _updateAssetGraph(assetGraph, _buildActions, inputSources,
+              cacheDirSources, internalSources, allSources));
 
       buildScriptUpdates =
           await BuildScriptUpdates.create(_options, assetGraph);
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
         _logger.warning('Invalidating asset graph due to build script update');
+        await _deleteGeneratedDir();
         assetGraph = null;
         buildScriptUpdates = null;
       }
@@ -103,7 +107,7 @@ class _Loader {
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
-            _options.packageGraph.root.name, _options.reader);
+            internalSources, _options.packageGraph.root.name, _options.reader);
         buildScriptUpdates =
             await BuildScriptUpdates.create(_options, assetGraph);
         conflictingOutputs =
@@ -116,13 +120,13 @@ class _Loader {
           () => _initialBuildCleanup(
               conflictingOutputs,
               _options.deleteFilesByDefault,
-              _maybeWrapWriter(_options.writer, assetGraph)));
+              _wrapWriter(_options.writer, assetGraph)));
     }
 
     return new BuildDefinition._(
         assetGraph,
-        _maybeWrapReader(_options.reader, assetGraph),
-        _maybeWrapWriter(_options.writer, assetGraph),
+        _wrapReader(_options.reader, assetGraph),
+        _wrapWriter(_options.writer, assetGraph),
         _options.packageGraph,
         _options.deleteFilesByDefault,
         new ResourceManager(),
@@ -131,26 +135,35 @@ class _Loader {
         _onDelete);
   }
 
-  /// Checks that the [_buildActions] are valid based on the
-  /// `_options.writeToCache` setting.
+  /// Checks that the [_buildActions] are valid based on whether they are
+  /// written to the build cache.
   void _checkBuildActions() {
-    if (!_options.writeToCache) {
-      final root = _options.packageGraph.root.name;
-      for (final action in _buildActions) {
-        if (action.package != _options.packageGraph.root.name) {
-          throw new InvalidBuildActionException.nonRootPackage(action, root);
-        }
+    final root = _options.packageGraph.root.name;
+    for (final action in _buildActions) {
+      if (!action.hideOutput &&
+          action.package != _options.packageGraph.root.name) {
+        throw new InvalidBuildActionException.nonRootPackage(action, root);
       }
     }
   }
 
-  /// If `_options.writeToCache` is `true` then this returns the all the sources
-  /// found in the cache directory, otherwise it returns an empty set.
-  Future<Set<AssetId>> _findCacheDirSources() {
-    if (_options.writeToCache) {
-      return _listGeneratedAssetIds().toSet();
+  /// Deletes the generated output directory.
+  ///
+  /// Typically this should be done whenever an asset graph is thrown away.
+  Future<Null> _deleteGeneratedDir() async {
+    var generatedDir = new Directory(generatedOutputDirectory);
+    if (await generatedDir.exists()) {
+      await generatedDir.delete(recursive: true);
     }
-    return new Future.value(new Set<AssetId>());
+  }
+
+  /// Returns the all the sources found in the cache directory.
+  Future<Set<AssetId>> _findCacheDirSources() =>
+      _listGeneratedAssetIds().toSet();
+
+  /// Returns all the internal sources, such as those under [entryPointDir].
+  Future<Set<AssetId>> _findInternalSources() {
+    return _options.reader.findAssets(new Glob('$entryPointDir/**')).toSet();
   }
 
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
@@ -182,6 +195,7 @@ class _Loader {
         // the current version. We don't currently support old graph versions.
         _logger.warning(
             'Throwing away cached asset graph due to version mismatch.');
+        await _deleteGeneratedDir();
         return null;
       }
     });
@@ -193,36 +207,35 @@ class _Loader {
   /// changes.
   Future<Map<AssetId, ChangeType>> _updateAssetGraph(
       AssetGraph assetGraph,
+      List<BuildAction> buildActions,
       Set<AssetId> inputSources,
       Set<AssetId> cacheDirSources,
+      Set<AssetId> internalSources,
       Set<AssetId> allSources) async {
-    var updates = await _findUpdates(
-        assetGraph, inputSources, cacheDirSources, allSources);
+    var updates = await _findSourceUpdates(
+        assetGraph, inputSources, cacheDirSources, internalSources, allSources);
+    updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildActions));
     await assetGraph.updateAndInvalidate(
         _buildActions,
         updates,
         _options.packageGraph.root.name,
-        (id) => _delete(id, _maybeWrapWriter(_options.writer, assetGraph)),
-        _maybeWrapReader(_options.reader, assetGraph));
+        (id) => _delete(id, _wrapWriter(_options.writer, assetGraph)),
+        _wrapReader(_options.reader, assetGraph));
     return updates;
   }
 
-  /// Wraps [original] in a [BuildCacheWriter] if `_options.writeToCache` is
-  /// `true`.
-  RunnerAssetWriter _maybeWrapWriter(
+  /// Wraps [original] in a [BuildCacheWriter].
+  RunnerAssetWriter _wrapWriter(
       RunnerAssetWriter original, AssetGraph assetGraph) {
     assert(assetGraph != null);
-    if (!_options.writeToCache) return original;
     return new BuildCacheWriter(
         original, assetGraph, _options.packageGraph.root.name);
   }
 
-  /// Wraps [original] in a [BuildCacheReader] if `_options.writeToCache` is
-  /// `true`.
-  DigestAssetReader _maybeWrapReader(
+  /// Wraps [original] in a [BuildCacheReader].
+  DigestAssetReader _wrapReader(
       DigestAssetReader original, AssetGraph assetGraph) {
     assert(assetGraph != null);
-    if (!_options.writeToCache) return original;
     return new BuildCacheReader(
         original, assetGraph, _options.packageGraph.root.name);
   }
@@ -230,10 +243,11 @@ class _Loader {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the graph and the assets on
   /// disk.
-  Future<Map<AssetId, ChangeType>> _findUpdates(
+  Future<Map<AssetId, ChangeType>> _findSourceUpdates(
       AssetGraph assetGraph,
       Set<AssetId> inputSources,
       Set<AssetId> generatedSources,
+      Set<AssetId> internalSources,
       Set<AssetId> allSources) async {
     var updates = <AssetId, ChangeType>{};
     addUpdates(Iterable<AssetId> assets, ChangeType type) {
@@ -258,11 +272,14 @@ class _Loader {
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    var remainingSources =
-        assetGraph.sources.toSet().intersection(inputSources);
-    var modifyChecks = remainingSources.map((id) async {
+    var originalGraphSources = assetGraph.sources.toSet();
+    var preExistingSources = originalGraphSources.intersection(inputSources)
+      ..addAll(internalSources.where((id) => assetGraph.contains(id)));
+    var modifyChecks = preExistingSources.map((id) async {
       var node = assetGraph.get(id);
+      if (node == null) throw id;
       var originalDigest = node.lastKnownDigest;
+      if (originalDigest == null) return;
       var currentDigest = await _options.reader.digest(id);
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
@@ -272,15 +289,41 @@ class _Loader {
     return updates;
   }
 
+  /// Checks for any updates to the [BuilderOptionsAssetNode]s for
+  /// [buildActions] compared to the last known state.
+  Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
+      AssetGraph assetGraph, List<BuildAction> buildActions) {
+    var result = <AssetId, ChangeType>{};
+    for (var phase = 0; phase < buildActions.length; phase++) {
+      var action = buildActions[phase];
+      var builderOptionsId = builderOptionsIdForPhase(action.package, phase);
+      var builderOptionsNode =
+          assetGraph.get(builderOptionsId) as BuilderOptionsAssetNode;
+      var oldDigest = builderOptionsNode.lastKnownDigest;
+      builderOptionsNode.lastKnownDigest =
+          computeBuilderOptionsDigest(action.builderOptions);
+      if (builderOptionsNode.lastKnownDigest != oldDigest) {
+        result[builderOptionsId] = ChangeType.MODIFY;
+      }
+    }
+    return result;
+  }
+
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> _findInputSources() async {
-    var inputSets = _options.packageGraph.allPackages.values.map((package) =>
-        new InputSet(package.name, package.includes,
-            excludes: package.excludes));
-    var sources = (await _listAssetIds(inputSets).toSet())
-      ..addAll(await _options.reader
-          .findAssets(new Glob('$entryPointDir/**'))
-          .toSet());
+    List<String> packageIncludes(String packageName) {
+      if (packageName == _options.packageGraph.root.name) {
+        return rootPackageFilesWhitelist;
+      }
+      if (packageName == r'$sdk') {
+        return const ['lib/dev_compiler/**.js'];
+      }
+      return const ['lib/**'];
+    }
+
+    var inputSets = _options.packageGraph.allPackages.values.map(
+        (package) => new InputSet(package.name, packageIncludes(package.name)));
+    var sources = (await _listAssetIds(inputSets).toSet());
     return sources;
   }
 

@@ -1,5 +1,5 @@
 name: build_barback
-version: 0.4.1-dev
+version: 0.5.0
 description: Utilities for translating between builders and transformers.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
@@ -13,6 +13,7 @@ dependencies:
   build: ^0.11.0
   code_transformers: ">=0.5.1 <0.6.0"
   glob: ^1.1.0
+  graphs: ^0.1.0
   logging: ^0.11.2
 
 dev_dependencies:

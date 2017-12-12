@@ -23,16 +23,41 @@ abstract class BuildAction {
   /// never run.
   final bool isOptional;
 
-  BuildAction._(bool isOptional) : this.isOptional = isOptional ?? false;
+  final BuilderOptions builderOptions;
+
+  /// Whether generated assets should be placed in the build cache.
+  ///
+  /// When this is `false` the Builder may not run on any [package] other than
+  /// the root.
+  final bool hideOutput;
+
+  BuildAction._(this.builderOptions, {bool isOptional, bool hideOutput})
+      : this.isOptional = isOptional ?? false,
+        this.hideOutput = hideOutput ?? false;
 
   /// Creates an [AssetBuildAction] for a normal [Builder].
   ///
   /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
   /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
-  factory BuildAction(Builder builder, String package,
-      {List<String> inputs, List<String> excludes, bool isOptional}) {
+  ///
+  /// [isOptional] specifies that a Builder may not be run unless some other
+  /// Builder in a later phase attempts to read one of the potential outputs.
+  ///
+  /// [hideOutput] specifies that the generated asses should be placed in the
+  /// build cache rather than the source tree.
+  factory BuildAction(
+    Builder builder,
+    String package, {
+    List<String> inputs,
+    List<String> excludes,
+    BuilderOptions builderOptions,
+    bool isOptional,
+    bool hideOutput,
+  }) {
     var inputSet = new InputSet(package, inputs, excludes: excludes);
-    return new AssetBuildAction._(builder, inputSet, isOptional: isOptional);
+    builderOptions ??= const BuilderOptions(const {});
+    return new AssetBuildAction._(builder, inputSet, builderOptions,
+        isOptional: isOptional, hideOutput: hideOutput);
   }
 }
 
@@ -46,8 +71,9 @@ class AssetBuildAction extends BuildAction {
   @override
   String get package => inputSet.package;
 
-  AssetBuildAction._(this.builder, this.inputSet, {bool isOptional})
-      : super._(isOptional);
+  AssetBuildAction._(this.builder, this.inputSet, BuilderOptions builderOptions,
+      {bool isOptional, bool hideOutput})
+      : super._(builderOptions, isOptional: isOptional, hideOutput: hideOutput);
 
   @override
   String toString() => '$builder on $inputSet';
@@ -62,6 +88,24 @@ class PackageBuildAction extends BuildAction {
   @override
   final String package;
 
-  PackageBuildAction(this.builder, this.package, {bool isOptional})
-      : super._(isOptional);
+  PackageBuildAction(this.builder, this.package,
+      {BuilderOptions builderOptions, bool isOptional, bool hideOutput})
+      : super._(builderOptions ?? const BuilderOptions(const {}),
+            isOptional: isOptional, hideOutput: hideOutput);
+}
+
+// TODO - remove this once we are no longer using `writeToCache` argument
+BuildAction hiddenAction(BuildAction action) {
+  if (action is AssetBuildAction) {
+    return new AssetBuildAction._(
+        action.builder, action.inputSet, action.builderOptions,
+        isOptional: action.isOptional, hideOutput: true);
+  }
+  if (action is PackageBuildAction) {
+    return new PackageBuildAction(action.builder, action.package,
+        builderOptions: action.builderOptions,
+        isOptional: action.isOptional,
+        hideOutput: true);
+  }
+  throw new ArgumentError('must be AssetBuildAction or PackageBuildAction');
 }

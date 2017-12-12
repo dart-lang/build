@@ -1,3 +1,13 @@
+## 0.9.2
+
+- Add `inputExtension` argument to `CopyBuilder`. When used the builder with
+  throw if any assets are provided that don't match the input extension.
+
+## 0.9.1
+
+- Allow `build_barback` version `0.5.x`. The breaking behavior change should not
+  impact test uses that don't already have a version constraint on that package.
+
 ## 0.9.0
 
 - Added the `TestBootstrapBuilder` under the `builder.dart` library. This can

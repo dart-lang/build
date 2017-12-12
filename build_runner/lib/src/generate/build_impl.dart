@@ -29,6 +29,7 @@ import 'build_definition.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
 import 'fold_frames.dart';
+import 'heartbeat.dart';
 import 'input_set.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
@@ -39,6 +40,7 @@ final _logger = new Logger('Build');
 
 Future<BuildResult> build(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
+    //TODO - remove `writeToCache`
     bool writeToCache,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
@@ -49,8 +51,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
     bool skipBuildScriptCheck,
     bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
-      deleteFilesByDefault: deleteFilesByDefault,
-      writeToCache: writeToCache,
+      deleteFilesByDefault: deleteFilesByDefault ?? writeToCache,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
@@ -58,6 +59,9 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       onLog: onLog,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
+  if (writeToCache == true) {
+    buildActions = buildActions.map(hiddenAction).toList();
+  }
   var terminator = new Terminator(terminateEventStream);
 
   var result = await singleBuild(options, buildActions);
@@ -144,6 +148,10 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
+    var heartbeat = new HeartbeatLogger()..start();
+    done.future.then((_) {
+      heartbeat.stop();
+    });
     Chain.capture(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
@@ -208,7 +216,7 @@ class BuildImpl {
     var builder = action.builder;
     await Future
         .wait(_assetGraph.packageNodes(inputSet.package).map((node) async {
-      if (node is SyntheticAssetNode) return;
+      if (node is SyntheticAssetNode || node is InternalAssetNode) return;
       if (!inputSet.matches(node.id)) return;
       if (!builder.buildExtensions.keys
           .any((inputExtension) => node.id.path.endsWith(inputExtension))) {
@@ -366,7 +374,7 @@ class BuildImpl {
         outputs.every((o) => _assetGraph.contains(o)),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
-    assert(outputs.length >= 1, 'Can\'t run a build with zero outputs');
+    assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
     var firstOutput = outputs.first;
     var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
     assert(
@@ -385,7 +393,8 @@ class BuildImpl {
     if (node.previousInputsDigest == null || node.globs.isNotEmpty) {
       return true;
     }
-    var digest = await _computeCombinedDigest(node.inputs, reader);
+    var digest = await _computeCombinedDigest(
+        node.inputs, node.builderOptionsId, reader);
     if (digest != node.previousInputsDigest) {
       return true;
     } else {
@@ -397,23 +406,25 @@ class BuildImpl {
     }
   }
 
-  /// Computes a single [Digest] based on the combined [Digest]s of [ids].
-  Future<Digest> _computeCombinedDigest(
-      Iterable<AssetId> ids, DigestAssetReader reader) async {
+  /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
+  /// [builderOptionsId].
+  Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
+      AssetId builderOptionsId, DigestAssetReader reader) async {
     var digestSink = new AccumulatorSink<Digest>();
     var bytesSink = md5.startChunkedConversion(digestSink);
 
+    var builderOptionsNode = _assetGraph.get(builderOptionsId);
+    bytesSink.add(builderOptionsNode.lastKnownDigest.bytes);
+
     for (var id in ids) {
       var node = _assetGraph.get(id);
-      if (node is SyntheticAssetNode || !await reader.canRead(id)) {
+      if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
         bytesSink.add([1]);
         continue;
       }
-      if (node.lastKnownDigest == null) {
-        node.lastKnownDigest = await reader.digest(id);
-      }
+      node.lastKnownDigest ??= await reader.digest(id);
       bytesSink.add(node.lastKnownDigest.bytes);
     }
 
@@ -444,7 +455,7 @@ class BuildImpl {
       inputsDigest ??= await () {
         var allInputs = reader.assetsRead.toSet();
         if (node.primaryInput != null) allInputs.add(node.primaryInput);
-        return _computeCombinedDigest(allInputs, reader);
+        return _computeCombinedDigest(allInputs, node.builderOptionsId, reader);
       }();
 
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy

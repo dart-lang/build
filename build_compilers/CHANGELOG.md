@@ -1,7 +1,12 @@
-# 0.1.0-dev
+# 0.1.1-dev
+
+- Mark `ddc_bootstrap` builder with `build_to: cache`.
+
+# 0.1.0
 
 - Add builder factories.
 - Fixed temp dir cleanup bug on windows.
+- Enabled support for running tests in --precompiled mode.
 
 # 0.0.1
 

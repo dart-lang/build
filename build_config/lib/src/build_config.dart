@@ -46,6 +46,8 @@ class BuildConfig {
     _target,
     _autoApply,
     _requiredInputs,
+    _isOptional,
+    _buildTo,
   ];
   static const _builderFactories = 'builder_factories';
   static const _import = 'import';
@@ -53,6 +55,8 @@ class BuildConfig {
   static const _target = 'target';
   static const _autoApply = 'auto_apply';
   static const _requiredInputs = 'required_inputs';
+  static const _isOptional = 'is_optional';
+  static const _buildTo = 'build_to';
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists.
   ///
@@ -171,11 +175,23 @@ class BuildConfig {
       final import = _readStringOrThrow(builderConfig, _import);
       final buildExtensions = _readBuildExtensions(builderConfig);
       final target = _readStringOrThrow(builderConfig, _target);
-      final autoApply =
-          _readBoolOrThrow(builderConfig, _autoApply, defaultValue: false);
+      final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
+          defaultValue: AutoApply.none);
       final requiredInputs = _readListOfStringsOrThrow(
           builderConfig, _requiredInputs,
           defaultValue: const []);
+      final isOptional =
+          _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
+
+      final mustBuildToCache = autoApply == AutoApply.dependents ||
+          autoApply == AutoApply.allPackages;
+      final buildTo = _readBuildToOrThrow(builderConfig, _buildTo,
+          defaultValue: mustBuildToCache ? BuildTo.cache : BuildTo.source);
+
+      if (mustBuildToCache && buildTo != BuildTo.cache) {
+        throw new ArgumentError('`hide_output` may not be set to `False` '
+            'when using `auto_apply: ${builderConfig[_autoApply]}`');
+      }
 
       builderDefinitions[builderName] = new BuilderDefinition(
         builderFactories: builderFactories,
@@ -186,6 +202,8 @@ class BuildConfig {
         target: target,
         autoApply: autoApply,
         requiredInputs: requiredInputs,
+        isOptional: isOptional,
+        buildTo: buildTo,
       );
     }
   }
@@ -296,6 +314,40 @@ class BuildConfig {
     }
     return value as bool;
   }
+
+  static AutoApply _readAutoApplyOrThrow(
+      Map<String, dynamic> options, String option,
+      {AutoApply defaultValue}) {
+    final value = options[option];
+    if (value == null && defaultValue != null) return defaultValue;
+    final allowedValues = const {
+      'none': AutoApply.none,
+      'dependents': AutoApply.dependents,
+      'all_packages': AutoApply.allPackages,
+      'root_package': AutoApply.rootPackage
+    };
+    if (value is! String || !allowedValues.containsKey(value)) {
+      throw new ArgumentError('Expected one of ${allowedValues.keys.toList()} '
+          'for `$option` but got `$value`');
+    }
+    return allowedValues[value];
+  }
+
+  static BuildTo _readBuildToOrThrow(
+      Map<String, dynamic> options, String option,
+      {BuildTo defaultValue}) {
+    final value = options[option];
+    if (value == null && defaultValue != null) return defaultValue;
+    final allowedValues = const {
+      'source': BuildTo.source,
+      'cache': BuildTo.cache,
+    };
+    if (value is! String || !allowedValues.containsKey(value)) {
+      throw new ArgumentError('Expected one of ${allowedValues.keys.toList()} '
+          'for `$option` but got `$value`');
+    }
+    return allowedValues[value];
+  }
 }
 
 class BuilderDefinition {
@@ -316,9 +368,8 @@ class BuilderDefinition {
   /// The name of the dart_library target that contains `import`.
   final String target;
 
-  /// Whether the builder should be automatically applied to packages which have
-  /// a dependency on [package].
-  final bool autoApply;
+  /// Which packages should have this builder applied automatically.
+  final AutoApply autoApply;
 
   /// A list of file extensions which are required to run this builder.
   ///
@@ -326,15 +377,39 @@ class BuilderDefinition {
   /// after this builder.
   final List<String> requiredInputs;
 
-  BuilderDefinition(
-      {this.builderFactories,
-      this.buildExtensions,
-      this.import,
-      this.name,
-      this.package,
-      this.target,
-      this.autoApply,
-      this.requiredInputs});
+  /// Whether this Builder should be deferred until it's output is requested.
+  ///
+  /// Optional builders are lazy and will not run unless some later builder
+  /// requests one of it's possible outputs through either `readAs*` or
+  /// `canRead`.
+  final bool isOptional;
+
+  /// Where the outputs of this builder should be written.
+  final BuildTo buildTo;
+
+  BuilderDefinition({
+    this.builderFactories,
+    this.buildExtensions,
+    this.import,
+    this.name,
+    this.package,
+    this.target,
+    this.autoApply,
+    this.requiredInputs,
+    this.isOptional,
+    this.buildTo,
+  });
+}
+
+enum AutoApply { none, dependents, allPackages, rootPackage }
+
+enum BuildTo {
+  /// Generated files are written to the source directory next to their primary
+  /// inputs.
+  source,
+
+  /// Generated files are written to the hidden 'generated' directory.
+  cache
 }
 
 class BuildTarget {

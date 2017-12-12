@@ -1,4 +1,33 @@
-## 0.6.1-dev
+## 0.7.0-dev
+
+### New Features
+
+- Added `toRoot` Package filter.
+- Actions are now invalidated at a fine grained level when `BuilderOptions`
+  change.
+
+### Breaking Changes
+
+- There is now a whitelist of top level directories that will be used as a part
+  of the build, and other files will be ignored. For now those directories
+  include 'benchmark', 'bin', 'example', 'lib', 'test', 'tool', and 'web'.
+  - If this breaks your workflow please file an issue and we can look at either
+    adding additional directories or making the list configurable per project.
+- Remove `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+
+The following changes are technically breaking but should not impact most
+clients:
+
+- Upgrade to `build_barback` v0.5.0 which uses strong mode analysis and no
+  longer analyzes method bodies.
+- Removed `dependencyType`, `version`, `includes`, and `excludes` from
+  `PackageNode`.
+- Removed `PackageNode.noPubspec` constructor.
+- Removed `InputSet`.
+- PackageGraph instances enforce that the `root` node is the only node with
+  `isRoot == true`.
+
+## 0.6.1
 
 ### New Features
 

@@ -101,7 +101,7 @@ class Module extends Object with _$ModuleSerializerMixin {
       seenDependencies.addAll(cycle.map((l) => l.source.uri));
     }
 
-    AssetId toAssetId(Uri uri) => new AssetId.resolve('${uri}');
+    AssetId toAssetId(Uri uri) => new AssetId.resolve('$uri');
 
     return new Module(
         toAssetId(_earliest(cycle)),

@@ -30,8 +30,11 @@ final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 /// For debugging purposes you can enable printing of the build script output by
 /// setting [verbose] to `true`.
 Future<Null> startManualServer(
-        {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
-    _startServer('dart', ['tool/build.dart'],
+        {bool ensureCleanBuild,
+        bool verbose,
+        List<Function> extraExpects,
+        String scriptPath = 'tool/build.dart'}) =>
+    _startServer('dart', [scriptPath],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
@@ -98,7 +101,8 @@ Future<Null> stopServer({bool cleanUp}) async {
   _stdOutLines = null;
   _stdErrLines = null;
 
-  if (cleanUp && await _toolDir.exists()) await _toolDir.delete(recursive: true);
+  if (cleanUp && await _toolDir.exists())
+    await _toolDir.delete(recursive: true);
 }
 
 /// Checks whether the current git client is "clean" (no pending changes) for
@@ -150,20 +154,43 @@ Future<String> nextStdErrLine(String message) =>
 Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
-Future<ProcessResult> runTests() =>
-    Process.run(_pubBinary, ['run', 'test', '--pub-serve', '8081', '-p', 'chrome']);
+Future<ProcessResult> runTests({bool usePrecompiled}) async {
+  usePrecompiled ??= false;
+  var args = ['run', 'test', '-p', 'chrome'];
+  Directory precompiledTmpDir;
+  if (usePrecompiled) {
+    precompiledTmpDir = await Directory.systemTemp.createTemp('build_e2e_test');
+    var mergedDirResult = await Process.run(_pubBinary, [
+      'run',
+      'build_runner:create_merged_dir',
+      '--script=${p.join('tool', 'build.dart')}',
+      '--output-dir=${precompiledTmpDir.path}'
+    ]);
+    expect(mergedDirResult.exitCode, 0,
+        reason: 'stdout:${mergedDirResult.stdout}\n'
+            'stderr${mergedDirResult.stderr}');
+    args.addAll(['--precompiled', '${precompiledTmpDir.path}/']);
+  } else {
+    args.addAll(['--pub-serve', '8081']);
+  }
+  var result = await Process.run(_pubBinary, args);
+  if (usePrecompiled) {
+    await precompiledTmpDir.delete(recursive: true);
+  }
+  return result;
+}
 
 Future<Null> expectTestsFail() async {
   var result = await runTests();
   expect(result.stdout, contains('Some tests failed'));
 }
 
-Future<Null> expectTestsPass([int numRan]) async {
-  var result = await runTests();
+Future<Null> expectTestsPass({int expectedNumRan, bool usePrecompiled}) async {
+  var result = await runTests(usePrecompiled: usePrecompiled);
   expect(result.stdout, contains('All tests passed!'));
-  if (numRan != null) {
-    expect(result.stdout, contains('+$numRan'));
-    expect(result.stdout, isNot(contains('+${numRan + 1}')));
+  if (expectedNumRan != null) {
+    expect(result.stdout, contains('+$expectedNumRan'));
+    expect(result.stdout, isNot(contains('+${expectedNumRan + 1}')));
   }
 }
 
@@ -185,7 +212,7 @@ Future<String> readGeneratedFileAsString(String path) async {
   return file.readAsString();
 }
 
-Future<Null> replaceAllInFile(String path, String from, String replace) async {
+Future<Null> replaceAllInFile(String path, Pattern from, String replace) async {
   var file = new File(path);
   expect(await file.exists(), isTrue);
   var content = await file.readAsString();

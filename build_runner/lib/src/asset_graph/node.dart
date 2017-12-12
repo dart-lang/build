@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 
 /// A node in the asset graph which may be an input to other assets.
 abstract class AssetNode {
@@ -32,6 +33,18 @@ abstract class AssetNode {
   String toString() => 'AssetNode: $id';
 }
 
+/// A node representing some internal asset.
+///
+/// These nodes are not used as primary inputs, but they are tracked in the
+/// asset graph and are readable.
+class InternalAssetNode extends AssetNode {
+  InternalAssetNode(AssetId id, {Digest lastKnownDigest})
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  @override
+  String toString() => 'InternalAssetNode: $id';
+}
+
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
   SourceAssetNode(AssetId id, {Digest lastKnownDigest})
@@ -39,18 +52,6 @@ class SourceAssetNode extends AssetNode {
 
   @override
   String toString() => 'SourceAssetNode: $id';
-}
-
-/// A node which is not a generated or source asset.
-///
-/// Typically these are created as a result of `canRead` calls for assets that
-/// don't exist in the graph. We still need to set up proper dependencies so
-/// that if that asset gets added later the outputs are properly invalidated.
-class SyntheticAssetNode extends AssetNode {
-  SyntheticAssetNode(AssetId id) : super(id);
-
-  @override
-  String toString() => 'SyntheticAssetNode: $id';
 }
 
 /// A generated node in the asset graph.
@@ -87,12 +88,26 @@ class GeneratedAssetNode extends AssetNode {
   /// the previous run, indicating that the previous output is still valid.
   Digest previousInputsDigest;
 
-  GeneratedAssetNode(this.phaseNumber, this.primaryInput, this.needsUpdate,
-      this.wasOutput, AssetId id,
-      {Digest lastKnownDigest,
-      Set<Glob> globs,
-      Iterable<AssetId> inputs,
-      this.previousInputsDigest})
+  /// The [AssetId] of the node representing the [BuilderOptions] used to create
+  /// this node.
+  final AssetId builderOptionsId;
+
+  /// Whether the asset should be placed in the build cache.
+  final bool isHidden;
+
+  GeneratedAssetNode(
+    AssetId id, {
+    Digest lastKnownDigest,
+    Set<Glob> globs,
+    Iterable<AssetId> inputs,
+    this.previousInputsDigest,
+    @required this.isHidden,
+    @required this.needsUpdate,
+    @required this.phaseNumber,
+    @required this.wasOutput,
+    @required this.primaryInput,
+    @required this.builderOptionsId,
+  })
       : this.globs = globs ?? new Set<Glob>(),
         this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
@@ -102,4 +117,30 @@ class GeneratedAssetNode extends AssetNode {
   @override
   String toString() =>
       'GeneratedAssetNode: $id generated from input $primaryInput.';
+}
+
+/// A node which is not a generated or source asset.
+abstract class SyntheticAssetNode implements AssetNode {}
+
+/// A [SyntheticAssetNode] representing a non-existent source.
+///
+/// Typically these are created as a result of `canRead` calls for assets that
+/// don't exist in the graph. We still need to set up proper dependencies so
+/// that if that asset gets added later the outputs are properly invalidated.
+class SyntheticSourceAssetNode extends AssetNode implements SyntheticAssetNode {
+  SyntheticSourceAssetNode(AssetId id) : super(id);
+}
+
+/// A [SyntheticAssetNode] which represents an individual [BuilderOptions]
+/// object.
+///
+/// These are used to track the state of a [BuilderOptions] object, and all
+/// [GeneratedAssetNode]s should depend on one of these nodes, which represents
+/// their configuration.
+class BuilderOptionsAssetNode extends AssetNode implements SyntheticAssetNode {
+  BuilderOptionsAssetNode(AssetId id, Digest lastKnownDigest)
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  @override
+  String toString() => 'BuildOptionsAssetNode: $id';
 }

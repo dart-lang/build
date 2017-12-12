@@ -21,8 +21,7 @@ void main() {
           )
         ],
         {},
-        packageGraph:
-            buildPackageGraph('root_package', {package('root_package'): []}),
+        packageGraph: buildPackageGraph({rootPackage('root_package'): []}),
       );
     } catch (e) {
       // TODO: Write a throwsAWith(...) matcher?
@@ -30,7 +29,7 @@ void main() {
     } finally {
       expect(error, isNotNull, reason: 'Did not throw!');
       expect(error, contains('operate on package "not_root_package"'));
-      expect(error, contains('new BuildAction(..., \'root_package\')'));
+      expect(error, contains('new BuilderApplication(..., toRoot())'));
     }
   });
 
@@ -44,7 +43,7 @@ void main() {
           'a|lib/a.dart': '',
           'a|lib/a.dart.copy': '',
         },
-        packageGraph: buildPackageGraph('a', {package('a'): []}),
+        packageGraph: buildPackageGraph({rootPackage('a'): []}),
         deleteFilesByDefault: false,
       ),
       throwsA(const isInstanceOf<UnexpectedExistingOutputsException>()),
