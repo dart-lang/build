@@ -42,6 +42,7 @@ import 'watch_impl.dart' as watch_impl;
 /// Multiple termination events will cause a normal shutdown.
 Future<BuildResult> build(List<BuildAction> buildActions,
         {bool deleteFilesByDefault,
+        bool assumeTty,
         bool writeToCache,
         PackageGraph packageGraph,
         RunnerAssetReader reader,
@@ -51,6 +52,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
         Stream terminateEventStream,
         bool enableLowResourcesMode}) =>
     build_impl.build(buildActions,
+        assumeTty: assumeTty,
         deleteFilesByDefault: deleteFilesByDefault,
         writeToCache: writeToCache,
         packageGraph: packageGraph,

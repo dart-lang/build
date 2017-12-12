@@ -40,6 +40,7 @@ final _logger = new Logger('Build');
 
 Future<BuildResult> build(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
+      bool assumeTty,
     //TODO - remove `writeToCache`
     bool writeToCache,
     PackageGraph packageGraph,
@@ -51,6 +52,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
     bool skipBuildScriptCheck,
     bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
+      assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault ?? writeToCache,
       packageGraph: packageGraph,
       reader: reader,
