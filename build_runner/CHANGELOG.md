@@ -14,6 +14,8 @@
   - If this breaks your workflow please file an issue and we can look at either
     adding additional directories or making the list configurable per project.
 - Remove `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+- Remove `writeToCache` argument of `build` and `watch`. Each `apply` call
+  should specify `hideOutput` to keep this behavior.
 
 The following changes are technically breaking but should not impact most
 clients:

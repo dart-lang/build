@@ -41,8 +41,6 @@ final _logger = new Logger('Build');
 Future<BuildResult> build(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
     bool assumeTty,
-    //TODO - remove `writeToCache`
-    bool writeToCache,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
     RunnerAssetWriter writer,
@@ -53,7 +51,7 @@ Future<BuildResult> build(List<BuildAction> buildActions,
     bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
       assumeTty: assumeTty,
-      deleteFilesByDefault: deleteFilesByDefault ?? writeToCache,
+      deleteFilesByDefault: deleteFilesByDefault,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
@@ -61,9 +59,6 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       onLog: onLog,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
-  if (writeToCache == true) {
-    buildActions = buildActions.map(hiddenAction).toList();
-  }
   var terminator = new Terminator(terminateEventStream);
 
   var result = await singleBuild(options, buildActions);

@@ -31,8 +31,6 @@ final _logger = new Logger('Watch');
 Future<ServeHandler> watch(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
     bool assumeTty,
-    //TODO - remove `writeToCache`
-    bool writeToCache,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
     RunnerAssetWriter writer,
@@ -45,7 +43,7 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
     bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
       assumeTty: assumeTty,
-      deleteFilesByDefault: deleteFilesByDefault ?? writeToCache,
+      deleteFilesByDefault: deleteFilesByDefault,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
@@ -55,9 +53,6 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
       directoryWatcherFactory: directoryWatcherFactory,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
-  if (writeToCache == true) {
-    buildActions = buildActions.map(hiddenAction).toList();
-  }
   var terminator = new Terminator(terminateEventStream);
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 

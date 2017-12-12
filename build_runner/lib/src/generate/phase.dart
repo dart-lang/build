@@ -93,19 +93,3 @@ class PackageBuildAction extends BuildAction {
       : super._(builderOptions ?? const BuilderOptions(const {}),
             isOptional: isOptional, hideOutput: hideOutput);
 }
-
-// TODO - remove this once we are no longer using `writeToCache` argument
-BuildAction hiddenAction(BuildAction action) {
-  if (action is AssetBuildAction) {
-    return new AssetBuildAction._(
-        action.builder, action.inputSet, action.builderOptions,
-        isOptional: action.isOptional, hideOutput: true);
-  }
-  if (action is PackageBuildAction) {
-    return new PackageBuildAction(action.builder, action.package,
-        builderOptions: action.builderOptions,
-        isOptional: action.isOptional,
-        hideOutput: true);
-  }
-  throw new ArgumentError('must be AssetBuildAction or PackageBuildAction');
-}
