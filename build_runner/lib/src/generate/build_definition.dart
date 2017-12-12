@@ -114,10 +114,14 @@ class _Loader {
         final conflictsInDeps = assetGraph.outputs
             .where((n) => n.package != _options.packageGraph.root.name)
             .where(inputSources.contains)
-            .length;
-        _logger.warning('There are $conflictsInDeps sources in dependencies '
-            'that will be ignored since they are overwritten by '
-            'generated assets');
+            .toSet();
+        // TODO(https://github.com/dart-lang/build/issues/706) - stop special
+        // casing this conflict
+        conflictsInDeps
+            .remove((new AssetId('node_preamble', 'lib/preamble.js')));
+        if (conflictsInDeps.isNotEmpty) {
+          throw new UnexpectedExistingOutputsException(conflictsInDeps);
+        }
       });
 
       await logTimedAsync(
