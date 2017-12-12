@@ -43,13 +43,15 @@ main() {
       'a|web/index.dart.js.map': anything,
       'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
         // Maps non-lib modules to remove the top level dir.
-        contains('"web/index": "index"'),
+        contains('"web/index": "index.ddc"'),
+        // Maps lib modules to packages path
+        contains('"packages/a/a": "packages/a/a.ddc"'),
+        contains('"packages/b/b": "packages/b/b.ddc"'),
         // Requires the top level module and dart sdk.
         contains('require(["web/index", "dart_sdk"]'),
         // Calls main on the top level module.
         contains('index.main()'),
         isNot(contains('lib/a')),
-        isNot(contains('packages/a/a')),
       ])),
     };
     await testBuilder(new DevCompilerBootstrapBuilder(), assets,

@@ -17,9 +17,9 @@ import 'scratch_space.dart';
 import 'summary_builder.dart';
 import 'workers.dart';
 
-const jsModuleErrorsExtension = '.js.errors';
-const jsModuleExtension = '.js';
-const jsSourceMapExtension = '.js.map';
+const jsModuleErrorsExtension = '.ddc.js.errors';
+const jsModuleExtension = '.ddc.js';
+const jsSourceMapExtension = '.ddc.js.map';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
