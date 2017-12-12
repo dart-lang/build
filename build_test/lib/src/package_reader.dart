@@ -20,7 +20,8 @@ import 'package:path/path.dart' as p;
 /// ```dart
 /// var assetReader = await PackageAssetReader.currentIsolate();
 /// ```
-class PackageAssetReader implements MultiPackageAssetReader {
+class PackageAssetReader extends AssetReader
+    implements MultiPackageAssetReader {
   final SyncPackageResolver _packageResolver;
 
   /// What package is the originating build occurring in.
@@ -32,7 +33,7 @@ class PackageAssetReader implements MultiPackageAssetReader {
   /// ```
   /// new PackageAssetReader(await packageResolver.asSync);
   /// ```
-  const PackageAssetReader(this._packageResolver, [this._rootPackage]);
+  PackageAssetReader(this._packageResolver, [this._rootPackage]);
 
   /// A [PackageAssetReader] with a single [packageRoot] configured.
   ///

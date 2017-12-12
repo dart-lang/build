@@ -13,26 +13,8 @@ import '../asset_graph/node.dart';
 
 typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
-abstract class DigestAssetReader implements AssetReader {
-  /// Asynchronously compute the digest for [id].
-  ///
-  /// Throws a [AssetNotFoundException] if [id] is not found.
-  Future<Digest> digest(AssetId id);
-}
-
-/// A [RunnerAssetReader] must implement both [MultiPackageAssetReader] and
-/// [DigestAssetReader].
-abstract class RunnerAssetReader
-    implements MultiPackageAssetReader, DigestAssetReader {}
-
-/// A [DigestAssetReader] that uses [md5] to compute [Digest]s.
-abstract class Md5DigestReader implements DigestAssetReader {
-  @override
-  Future<Digest> digest(AssetId id) async {
-    var bytes = await readAsBytes(id);
-    return md5.convert(bytes);
-  }
-}
+/// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
+abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
@@ -45,10 +27,10 @@ abstract class Md5DigestReader implements DigestAssetReader {
 ///
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
-class SingleStepReader implements DigestAssetReader {
+class SingleStepReader implements AssetReader {
   final AssetGraph _assetGraph;
   final _assetsRead = new Set<AssetId>();
-  final DigestAssetReader _delegate;
+  final AssetReader _delegate;
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;

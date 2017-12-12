@@ -13,7 +13,7 @@ abstract class RecordingAssetReader implements AssetReader {
 }
 
 /// An implementation of [AssetReader] with primed in-memory assets.
-class InMemoryAssetReader
+class InMemoryAssetReader extends AssetReader
     implements MultiPackageAssetReader, RecordingAssetReader {
   final Map<AssetId, List<int>> assets;
   final String rootPackage;

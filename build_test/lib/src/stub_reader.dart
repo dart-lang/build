@@ -5,11 +5,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 /// A no-op implementation of [AssetReader].
-class StubAssetReader implements MultiPackageAssetReader {
-  const StubAssetReader();
+class StubAssetReader extends AssetReader implements MultiPackageAssetReader {
+  StubAssetReader();
 
   @override
   Future<bool> canRead(_) => new Future.value(null);
@@ -22,4 +23,7 @@ class StubAssetReader implements MultiPackageAssetReader {
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) => null;
+
+  @override
+  Future<Digest> digest(_) => new Future.value(new Digest([1, 2, 3]));
 }

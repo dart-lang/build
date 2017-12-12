@@ -12,7 +12,6 @@ import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
-import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -31,7 +30,7 @@ final _logger = new Logger('BuildDefinition');
 class BuildDefinition {
   final AssetGraph assetGraph;
 
-  final DigestAssetReader reader;
+  final AssetReader reader;
   final RunnerAssetWriter writer;
 
   final PackageGraph packageGraph;
@@ -233,8 +232,7 @@ class _Loader {
   }
 
   /// Wraps [original] in a [BuildCacheReader].
-  DigestAssetReader _wrapReader(
-      DigestAssetReader original, AssetGraph assetGraph) {
+  AssetReader _wrapReader(AssetReader original, AssetGraph assetGraph) {
     assert(assetGraph != null);
     return new BuildCacheReader(
         original, assetGraph, _options.packageGraph.root.name);

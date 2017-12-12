@@ -89,7 +89,7 @@ class BuildImpl {
   final List<BuildAction> _buildActions;
   final OnDelete _onDelete;
   final PackageGraph _packageGraph;
-  final DigestAssetReader _reader;
+  final AssetReader _reader;
   final _resolvers = const BarbackResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
@@ -369,7 +369,7 @@ class BuildImpl {
 
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
-      Iterable<AssetId> outputs, DigestAssetReader reader) async {
+      Iterable<AssetId> outputs, AssetReader reader) async {
     assert(
         outputs.every((o) => _assetGraph.contains(o)),
         'Outputs should be known statically. Missing '
@@ -409,7 +409,7 @@ class BuildImpl {
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
-      AssetId builderOptionsId, DigestAssetReader reader) async {
+      AssetId builderOptionsId, AssetReader reader) async {
     var digestSink = new AccumulatorSink<Digest>();
     var bytesSink = md5.startChunkedConversion(digestSink);
 

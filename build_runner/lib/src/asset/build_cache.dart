@@ -8,13 +8,12 @@ import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/constants.dart';
-import 'reader.dart';
 import 'writer.dart';
 
 /// Wraps an [AssetReader] and translates reads for generated files into reads
 /// from the build cache directory
-class BuildCacheReader implements DigestAssetReader {
-  final DigestAssetReader _delegate;
+class BuildCacheReader implements AssetReader {
+  final AssetReader _delegate;
   final AssetGraph _assetGraph;
   final String _rootPackage;
 

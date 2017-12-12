@@ -4,25 +4,15 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/asset/reader.dart'
-    show Md5DigestReader, RunnerAssetReader;
+import 'package:build_runner/src/asset/reader.dart' show RunnerAssetReader;
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 
-/// Workaround class for mixin application limitations, if
-/// [InMemoryRunnerAssetReader] extends [InMemoryAssetReader] directly then it
-/// can't use mixins ([Md5DigestReader] in this case).
-class _InMemoryAssetReader extends InMemoryAssetReader {
-  _InMemoryAssetReader(Map<AssetId, dynamic> sourceAssets, String rootPackage)
-      : super(sourceAssets: sourceAssets, rootPackage: rootPackage);
-}
-
-class InMemoryRunnerAssetReader extends _InMemoryAssetReader
-    with Md5DigestReader
+class InMemoryRunnerAssetReader extends InMemoryAssetReader
     implements RunnerAssetReader {
   InMemoryRunnerAssetReader(
       [Map<AssetId, dynamic> sourceAssets, String rootPackage])
-      : super(sourceAssets, rootPackage);
+      : super(sourceAssets: sourceAssets, rootPackage: rootPackage);
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) {

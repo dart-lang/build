@@ -26,6 +26,8 @@ clients:
 - Removed `InputSet`.
 - PackageGraph instances enforce that the `root` node is the only node with
   `isRoot == true`.
+- Removed the `DigestAssetReader` interface, the `digest` method has now moved
+  to the core `AssetReader` interface.
 
 ## 0.6.1
 

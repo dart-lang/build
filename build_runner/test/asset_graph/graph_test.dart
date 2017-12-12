@@ -9,7 +9,6 @@ import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner/src/asset/reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/phase.dart';
@@ -18,7 +17,7 @@ import 'package:build_test/build_test.dart';
 import '../common/common.dart';
 
 void main() {
-  final digestReader = new MockDigestReader();
+  final digestReader = new StubAssetReader();
 
   group('AssetGraph', () {
     AssetGraph graph;
@@ -285,9 +284,4 @@ void main() {
           throwsA(duplicateAssetNodeException));
     });
   });
-}
-
-class MockDigestReader extends StubAssetReader with Md5DigestReader {
-  @override
-  Future<List<int>> readAsBytes(AssetId id) async => UTF8.encode('$id');
 }

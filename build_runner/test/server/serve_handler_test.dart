@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
+import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
@@ -96,13 +97,13 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final Future<DigestAssetReader> reader;
+  final Future<AssetReader> reader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(DigestAssetReader reader, this.packageGraph)
+  MockWatchImpl(AssetReader reader, this.packageGraph)
       : this.reader = new Future.value(reader) {
     _futureBuildResultsController.stream.listen((futureBuildResult) {
       if (_currentBuild != null) {

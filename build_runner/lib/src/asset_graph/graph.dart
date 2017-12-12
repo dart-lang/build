@@ -13,7 +13,6 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/reader.dart';
 import '../generate/exceptions.dart';
 import '../generate/phase.dart';
 import '../package_builder/package_builder.dart';
@@ -44,7 +43,7 @@ class AssetGraph {
       Set<AssetId> sources,
       Set<AssetId> internalSources,
       String rootPackage,
-      DigestAssetReader digestReader) async {
+      AssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
     var sourceNodes = graph._addSources(sources);
     graph._addBuilderOptionsNodes(buildActions);
@@ -125,7 +124,7 @@ class AssetGraph {
   /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
   /// `lastKnownDigest` field.
   Future<Null> _setLastKnownDigests(
-      Iterable<AssetNode> nodes, DigestAssetReader digestReader) async {
+      Iterable<AssetNode> nodes, AssetReader digestReader) async {
     await Future.wait(nodes.map((node) async {
       node.lastKnownDigest = await digestReader.digest(node.id);
     }));
@@ -189,7 +188,7 @@ class AssetGraph {
       Map<AssetId, ChangeType> updates,
       String rootPackage,
       Future delete(AssetId id),
-      DigestAssetReader digestReader) async {
+      AssetReader digestReader) async {
     var invalidatedIds = new Set<AssetId>();
 
     // Transitively invalidates all assets.
