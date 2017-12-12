@@ -1,4 +1,4 @@
-## 2.3.0
+## 3.0.0
 
 * `thenReturn` now throws an `ArgumentError` if either a `Future` or `Stream`
   is provided. `thenReturn` calls with futures and streams should be changed to
