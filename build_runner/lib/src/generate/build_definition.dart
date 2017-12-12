@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
@@ -128,9 +129,9 @@ class _Loader {
           _logger,
           'Checking for unexpected pre-existing outputs.',
           () => _initialBuildCleanup(
-              conflictingOutputs,
-              _options.deleteFilesByDefault,
-              _wrapWriter(_options.writer, assetGraph)));
+              conflictingOutputs, _wrapWriter(_options.writer, assetGraph),
+              deleteFilesByDefault: _options.deleteFilesByDefault,
+              assumeTty: _options.assumeTty));
     }
 
     return new BuildDefinition._(
@@ -366,8 +367,9 @@ class _Loader {
 
   /// Handles cleanup of pre-existing outputs for initial builds (where there is
   /// no cached graph).
-  Future<Null> _initialBuildCleanup(Set<AssetId> conflictingAssets,
-      bool deleteFilesByDefault, RunnerAssetWriter writer) async {
+  Future<Null> _initialBuildCleanup(
+      Set<AssetId> conflictingAssets, RunnerAssetWriter writer,
+      {@required bool deleteFilesByDefault, @required bool assumeTty}) async {
     if (conflictingAssets.isEmpty) return;
 
     // Skip the prompt if using this option.
@@ -387,7 +389,8 @@ class _Loader {
     // If not in a standard terminal then we just exit, since there is no way
     // for the user to provide a yes/no answer.
     bool runningInPubRunTest() => Platform.script.scheme == 'data';
-    if (stdioType(stdin) != StdioType.TERMINAL || runningInPubRunTest()) {
+    if (!assumeTty &&
+        (stdioType(stdin) != StdioType.TERMINAL || runningInPubRunTest())) {
       throw new UnexpectedExistingOutputsException(conflictingAssets);
     }
 
