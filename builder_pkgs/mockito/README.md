@@ -90,6 +90,46 @@ the same arguments many times. In other words: the order of stubbing matters,
 but it is meaningful rarely, e.g. when stubbing exactly the same method calls
 or sometimes when argument matchers are used, etc.
 
+### A quick word on async stubbing
+
+**Using `thenReturn` to return a `Future` or `Stream` will throw an
+`ArgumentError`.** This is because it can lead to unexpected behaviors. For
+example:
+
+* If the method is stubbed in a different zone than the zone that consumes the
+  `Future`, unexpected behavior could occur.
+* If the method is stubbed to return a failed `Future` or `Stream` and it
+  doesn't get consumed in the same run loop, it might get consumed by the
+  global exception handler instead of an exception handler the consumer applies.
+
+Instead, use `thenAnswer` to stub methods that return a `Future` or `Stream`.
+
+```
+// BAD
+when(mock.methodThatReturnsAFuture())
+    .thenReturn(new Future.value('Stub'));
+when(mock.methodThatReturnsAStream())
+    .thenReturn(new Stream.fromIterable(['Stub']));
+
+// GOOD
+when(mock.methodThatReturnsAFuture())
+    .thenAnswer((_) => new Future.value('Stub'));
+when(mock.methodThatReturnsAStream())
+    .thenAnswer((_) => new Stream.fromIterable(['Stub']));
+
+````
+
+If, for some reason, you desire the behavior of `thenReturn`, you can return a
+pre-defined instance.
+
+```
+// Use the above method unless you're sure you want to create the Future ahead
+// of time.
+final future = new Future.value('Stub');
+when(mock.methodThatReturnsAFuture()).thenAnswer((_) => future);
+```
+
+
 ## Argument matchers
 
 ```dart

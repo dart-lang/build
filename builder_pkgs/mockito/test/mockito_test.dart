@@ -28,6 +28,8 @@ class RealClass {
   String methodWithNamedArgs(int x, {int y}) => "Real";
   String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
   String methodWithObjArgs(RealClass x) => "Real";
+  Future<String> methodReturningFuture() => new Future.value("Real");
+  Stream<String> methodReturningStream() => new Stream.fromIterable(["Real"]);
   // "SpecialArgs" here means type-parameterized args. But that makes for a long
   // method name.
   String typeParameterizedFn(List<int> w, List<int> x,
@@ -284,6 +286,34 @@ void main() {
         };
         when(mock.innerObj).thenReturn(responseHelper());
       }, throwsStateError);
+    });
+
+    test("thenReturn throws if provided Future", () {
+      expect(
+          () => when(mock.methodReturningFuture())
+              .thenReturn(new Future.value("stub")),
+          throwsArgumentError);
+    });
+
+    test("thenReturn throws if provided Stream", () {
+      expect(
+          () => when(mock.methodReturningStream())
+              .thenReturn(new Stream.fromIterable(["stub"])),
+          throwsArgumentError);
+    });
+
+    test("thenAnswer supports stubbing method returning a Future", () async {
+      when(mock.methodReturningFuture())
+          .thenAnswer((_) => new Future.value("stub"));
+
+      expect(await mock.methodReturningFuture(), "stub");
+    });
+
+    test("thenAnswer supports stubbing method returning a Stream", () async {
+      when(mock.methodReturningStream())
+          .thenAnswer((_) => new Stream.fromIterable(["stub"]));
+
+      expect(await mock.methodReturningStream().toList(), ["stub"]);
     });
 
     // [typed] API

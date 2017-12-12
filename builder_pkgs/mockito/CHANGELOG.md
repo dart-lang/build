@@ -1,3 +1,9 @@
+## 2.3.0
+
+* `thenReturn` now throws an `ArgumentError` if either a `Future` or `Stream`
+  is provided. `thenReturn` calls with futures and streams should be changed to
+  `thenAnswer`. See the README for more information.
+
 ## 2.2.0
 
 * Add new feature to wait for an interaction: `untilCalled`. See the README for
