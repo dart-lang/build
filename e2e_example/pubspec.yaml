@@ -4,9 +4,11 @@ description: A basic web app
 environment:
   sdk: '>=1.24.0 <2.0.0'
 
+dependencies:
+  path: ^1.4.2
+
 dev_dependencies:
   browser: any
-  path: ^1.4.2
   test: ^0.12.0
   provides_builder:
     path: pkgs/provides_builder/

@@ -18,6 +18,7 @@ import 'scratch_space.dart';
 import 'workers.dart';
 
 const kernelSummaryExtension = '.dill';
+const multiRootScheme = 'org-dartlang-app';
 
 /// A builder which can output unlinked summaries!
 class KernelSummaryBuilder implements Builder {
@@ -83,16 +84,20 @@ Future createKernelSummary(Module module, BuildStep buildStep,
       summaryOutputFile.path,
       '--packages-file',
       packagesFile.path,
-      '--multi-root=.'
+      '--multi-root-scheme',
+      multiRootScheme
     ]);
 
     // Add all summaries as summary inputs.
-    request.arguments.addAll(transitiveSummaryDeps
-        .map((id) => '--input-summary=${scratchSpace.fileFor(id).uri}'));
+    request.arguments.addAll(transitiveSummaryDeps.map((id) {
+      var relativePath = p.url.relative(scratchSpace.fileFor(id).path,
+          from: scratchSpace.tempDir.path);
+      return '--input-summary=$multiRootScheme:///$relativePath';
+    }));
     request.arguments.addAll(module.sources.map((id) {
       var uri = id.path.startsWith('lib')
           ? canonicalUriFor(id)
-          : 'multi-root:/${id.path}';
+          : '$multiRootScheme:///${id.path}';
       return '--source=$uri';
     }));
 

@@ -24,7 +24,10 @@ Future main() async {
         ],
         toAllPackages(),
         isOptional: true),
-    applyToRoot(new DevCompilerBootstrapBuilder(), inputs: ['web/**.dart'])
+    applyToRoot(new DevCompilerBootstrapBuilder(useKernel: true), inputs: [
+      'web/**.dart',
+      'test/**.browser_test.dart',
+    ])
   ];
   var buildActions = createBuildActions(graph, builders);
 

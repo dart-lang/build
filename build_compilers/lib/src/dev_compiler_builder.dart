@@ -12,6 +12,7 @@ import 'package:scratch_space/scratch_space.dart';
 
 import 'common.dart';
 import 'errors.dart';
+import 'kernel_builder.dart';
 import 'module_builder.dart';
 import 'modules.dart';
 import 'scratch_space.dart';
@@ -90,6 +91,8 @@ Future createDevCompilerModule(
       '--no-summarize',
       defaultAnalysisOptionsArg(scratchSpace),
     ]);
+  } else {
+    request.arguments.addAll(['--multi-root-scheme', multiRootScheme]);
   }
 
   if (debugMode) {
@@ -104,7 +107,13 @@ Future createDevCompilerModule(
 
   // Add all the linked summaries as summary inputs.
   for (var id in transitiveSummaryDeps) {
-    request.arguments.addAll(['-s', scratchSpace.fileFor(id).path]);
+    if (useKernel) {
+      var path = p.url.relative(scratchSpace.fileFor(id).path,
+          from: scratchSpace.tempDir.path);
+      request.arguments.addAll(['-s', '$multiRootScheme:///$path']);
+    } else {
+      request.arguments.addAll(['-s', scratchSpace.fileFor(id).path]);
+    }
   }
 
   // Add URL mappings for all the package: files to tell DartDevc where to
@@ -127,12 +136,12 @@ Future createDevCompilerModule(
   File packagesFile;
   if (useKernel) {
     var allDeps = <AssetId>[]
-      ..addAll(transitiveSummaryDeps)
-      ..addAll(module.sources);
+      ..addAll(module.sources)
+      ..addAll(transitiveSummaryDeps);
     packagesFile = await createPackagesFile(allDeps, scratchSpace);
     request.arguments.addAll([
       "--packages",
-      packagesFile.path,
+      packagesFile.absolute.uri.toString(),
     ]);
   }
 
@@ -144,7 +153,7 @@ Future createDevCompilerModule(
       return uri;
     }
     if (useKernel) {
-      return id.path;
+      return '$multiRootScheme:///${id.path}';
     } else {
       return new Uri.file('/${id.path}').toString();
     }
@@ -153,14 +162,10 @@ Future createDevCompilerModule(
   WorkResponse response;
   if (useKernel) {
     // Make sure to clean up the .packages file.
+    assert(packagesFile != null);
     try {
-      var result = await Process.run(
-          p.join(sdkDir, 'bin', 'dartdevk${Platform.isWindows ? '.bat' : ''}'),
-          request.arguments,
-          workingDirectory: scratchSpace.tempDir.path);
-      response = new WorkResponse()
-        ..exitCode = result.exitCode
-        ..output = result.stdout as String;
+      var dartdevk = await buildStep.fetchResource(dartdevkDriverResource);
+      response = await dartdevk.doWork(request);
     } finally {
       await packagesFile.parent.delete(recursive: true);
     }

@@ -9,6 +9,8 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
+import 'kernel_builder.dart';
+
 final defaultAnalysisOptionsId =
     new AssetId('build_compilers', 'lib/src/analysis_options.default.yaml');
 
@@ -25,8 +27,7 @@ Future<File> createPackagesFile(
   var packagesFile = new File(p.join(packagesFileDir.path, '.packages'));
   await packagesFile.create();
   await packagesFile.writeAsString(allPackages
-      .map((pkg) =>
-          '$pkg:file://${p.join(scratchSpace.tempDir.path, 'packages', pkg)}')
+      .map((pkg) => '$pkg:$multiRootScheme:///packages/$pkg')
       .join('\r\n'));
   return packagesFile;
 }

@@ -20,7 +20,9 @@ const jsEntrypointExtension = '.dart.js';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 
 class DevCompilerBootstrapBuilder implements Builder {
-  const DevCompilerBootstrapBuilder();
+  final bool useKernel;
+
+  const DevCompilerBootstrapBuilder({this.useKernel: false});
 
   @override
   final buildExtensions = const {
@@ -57,11 +59,17 @@ class DevCompilerBootstrapBuilder implements Builder {
     // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
     // which will allow us to not rely on the naming schemes that dartdevc uses
     // internally, but instead specify our own.
-    var appModuleScope = p
-        .split(p.withoutExtension(module.jsId.path))
-        .skip(1)
-        .join('__')
-        .replaceAll('.', '\$46');
+    var appModuleScope = () {
+      if (useKernel) {
+        return p.withoutExtension(p.basename(module.jsId.path));
+      } else {
+        return p
+            .split(p.withoutExtension(module.jsId.path))
+            .skip(1)
+            .join('__')
+            .replaceAll('.', '\$46');
+      }
+    }();
 
     // Map from module name to module path for custom modules.
     var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
