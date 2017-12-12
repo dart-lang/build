@@ -612,7 +612,9 @@ void main() {
     });
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
-      var buildActions = [hiddenAction(copyABuildAction)];
+      var buildActions = [
+        new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+      ];
 
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();

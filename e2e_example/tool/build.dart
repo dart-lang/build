@@ -15,7 +15,8 @@ Future main() async {
   var graph = new PackageGraph.forThisPackage();
   var builders = [
     apply('e2e_example', 'throwing_builder', [(_) => new ThrowingBuilder()],
-        toRoot()),
+        toRoot(),
+        hideOutput: true),
     apply('build_test', 'test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
         inputs: ['test/**_test.dart'], hideOutput: true),
