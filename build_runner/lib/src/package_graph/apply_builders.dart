@@ -54,13 +54,15 @@ BuilderApplication apply(String providingPackage, String builderName,
         {List<String> inputs,
         List<String> excludes,
         bool isOptional,
-        bool hideOutput}) =>
+        bool hideOutput,
+        bool allowDeclaredOutputConflicts}) =>
     new BuilderApplication._(
         providingPackage, builderName, builderFactories, filter,
         inputs: inputs,
         excludes: excludes,
         isOptional: isOptional,
-        hideOutput: hideOutput);
+        hideOutput: hideOutput,
+        allowDeclaredOutputConflicts: allowDeclaredOutputConflicts);
 
 /// A description of which packages need a given [Builder] applied.
 class BuilderApplication {
@@ -85,12 +87,25 @@ class BuilderApplication {
   final List<String> excludes;
   final bool isOptional;
 
-  /// Whether genereated assets should be placed in the build cache.
+  /// Whether generated assets should be placed in the build cache.
   final bool hideOutput;
+
+  /// Whether to allow declaring outputs that conflict with pre-existing assets.
+  ///
+  /// This doesn't allow you to actually overwrite those assets, it just allows
+  /// the builder to decide not skip writing the file at build time.
+  ///
+  /// If a builder tries to overwrite another asset it will result in a build
+  /// time error.
+  final bool allowDeclaredOutputConflicts;
 
   const BuilderApplication._(this.providingPackage, this.builderName,
       this.builderFactories, this.filter,
-      {this.inputs, this.excludes, this.isOptional, this.hideOutput});
+      {this.inputs,
+      this.excludes,
+      this.isOptional,
+      this.hideOutput,
+      this.allowDeclaredOutputConflicts});
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
