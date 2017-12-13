@@ -19,7 +19,7 @@ import 'package_graphs.dart';
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 
-/// Runs [buildActions] in a test environment.
+/// Runs [builders] in a test environment.
 ///
 /// The test environment supplies in-memory build [inputs] to the builders under
 /// test. [outputs] may be optionally provided to verify that the builders
@@ -65,7 +65,7 @@ Future wait(int milliseconds) =>
 ///       });
 ///     }
 ///
-Future<BuildResult> testActions(List<BuildAction> buildActions,
+Future<BuildResult> testBuilders(List<BuilderApplication> builders,
     Map<String, /*String|List<int>*/ dynamic> inputs,
     {Map<String, /*String|List<int>*/ dynamic> outputs,
     PackageGraph packageGraph,
@@ -94,7 +94,7 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
 
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
 
-  var result = await build_impl.build(buildActions,
+  var result = await build_impl.build(builders,
       deleteFilesByDefault: deleteFilesByDefault,
       reader: reader,
       writer: writer,

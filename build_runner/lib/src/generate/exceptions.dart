@@ -47,12 +47,6 @@ class InvalidBuildActionException extends FatalBuildException {
             'or\n'
             '  new BuilderApplication(..., hideOutput: true)\n'
             '... instead?';
-
-  InvalidBuildActionException.unrecognizedType(BuildAction action)
-      : _reason = 'Unrecognized BuildAction type ${action.runtimeType}, only'
-            '`AssetBuildAction` (the default) and `PackageBuildAction` are '
-            'supported.';
-
   @override
   String toString() => 'InvalidBuildActionException: $_reason';
 }

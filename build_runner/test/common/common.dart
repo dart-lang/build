@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 
@@ -31,27 +30,6 @@ class OverDeclaringCopyBuilder extends CopyBuilder {
   // Override to not actually output anything.
   @override
   Future build(BuildStep buildStep) async {}
-}
-
-/// Outputs a fixed set of [outputContents] for [package].
-class TxtFilePackageBuilder extends PackageBuilder {
-  /// The files to write, each key represents the path to a file under
-  /// [package], and each value is the content of that file.
-  final Map<String, String> outputContents;
-
-  /// The package that this builder operates on.
-  final String package;
-
-  @override
-  Iterable<String> get outputs => outputContents.keys;
-
-  TxtFilePackageBuilder(this.package, this.outputContents);
-
-  @override
-  Future<Null> build(BuildStep buildStep) async {
-    outputContents.forEach((path, content) =>
-        buildStep.writeAsString(new AssetId(package, path), content));
-  }
 }
 
 class ExistsBuilder extends Builder {

@@ -10,10 +10,9 @@ import 'package:shelf/shelf_io.dart';
 import 'options.dart';
 
 Future serveMain(List<String> args, List<BuilderApplication> builders) async {
-  var actions = createBuildActions(new PackageGraph.forThisPackage(), builders);
   var options = new Options.parse(args);
   // TODO - remove `delteFileByDefault` once we resolve handling conflicts
-  var handler = await watch(actions,
+  var handler = await watch(builders,
       deleteFilesByDefault: true, assumeTty: options.assumeTty);
   var server = await serve(handler.handlerFor('web'), 'localhost', 8000);
   await handler.buildResults.drain();

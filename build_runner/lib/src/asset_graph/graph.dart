@@ -14,9 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/reader.dart';
-import '../generate/exceptions.dart';
 import '../generate/phase.dart';
-import '../package_builder/package_builder.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
@@ -305,40 +303,20 @@ class AssetGraph {
       var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
-      if (action is PackageBuildAction) {
-        var outputs = outputIdsForBuilder(action.builder, action.package);
-        var invalidOutputs = outputs.where(
-            (o) => o.package != rootPackage && !o.path.startsWith('lib/'));
-        if (invalidOutputs.isNotEmpty) {
-          throw new InvalidPackageBuilderOutputsException(
-              action, invalidOutputs, rootPackage);
-        }
-        // `PackageBuilder`s don't generally care about new files, so we only
-        // add the outputs if they don't already exist.
-        if (outputs.any((output) => !contains(output))) {
-          phaseOutputs.addAll(outputs);
-          allInputs.removeAll(_addGeneratedOutputs(
-              outputs, phase, builderOptionsNode,
-              isHidden: action.hideOutput));
-        }
-      } else if (action is AssetBuildAction) {
-        var inputs = allInputs.where(action.inputSet.matches).toList();
-        for (var input in inputs) {
-          // We might have deleted some inputs during this loop, if they turned
-          // out to be generated assets.
-          if (!allInputs.contains(input)) continue;
+      var inputs = allInputs.where(action.inputSet.matches).toList();
+      for (var input in inputs) {
+        // We might have deleted some inputs during this loop, if they turned
+        // out to be generated assets.
+        if (!allInputs.contains(input)) continue;
 
-          var outputs = expectedOutputs(action.builder, input);
-          phaseOutputs.addAll(outputs);
-          var node = get(input);
-          node.primaryOutputs.addAll(outputs);
-          node.outputs.addAll(outputs);
-          allInputs.removeAll(_addGeneratedOutputs(
-              outputs, phase, builderOptionsNode,
-              primaryInput: input, isHidden: action.hideOutput));
-        }
-      } else {
-        throw new InvalidBuildActionException.unrecognizedType(action);
+        var outputs = expectedOutputs(action.builder, input);
+        phaseOutputs.addAll(outputs);
+        var node = get(input);
+        node.primaryOutputs.addAll(outputs);
+        node.outputs.addAll(outputs);
+        allInputs.removeAll(_addGeneratedOutputs(
+            outputs, phase, builderOptionsNode,
+            primaryInput: input, isHidden: action.hideOutput));
       }
       allInputs.addAll(phaseOutputs);
     }
@@ -396,18 +374,12 @@ Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
   var bytesSink = md5.startChunkedConversion(digestSink);
   for (var action in buildActions) {
     bytesSink.add(UTF8.encode(action.package));
-    if (action is AssetBuildAction) {
-      bytesSink.add([0]);
-      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
-      for (var glob in action.inputSet.globs) {
-        bytesSink.add([glob.pattern.hashCode]);
-      }
-      for (var glob in action.inputSet.excludes) {
-        bytesSink.add([glob.pattern.hashCode]);
-      }
-    } else if (action is PackageBuildAction) {
-      bytesSink.add([1]);
-      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
+    bytesSink.add([action.builder.runtimeType.toString().hashCode]);
+    for (var glob in action.inputSet.globs) {
+      bytesSink.add([glob.pattern.hashCode]);
+    }
+    for (var glob in action.inputSet.excludes) {
+      bytesSink.add([glob.pattern.hashCode]);
     }
   }
   bytesSink.close();
