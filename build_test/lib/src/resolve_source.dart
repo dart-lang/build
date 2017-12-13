@@ -148,14 +148,14 @@ Future<T> _resolveAssets<T>(
   final assetReader = new PackageAssetReader(syncResolver, rootPackage);
   final resolveBuilder = new _ResolveSourceBuilder(action, tearDown);
   final inputAssets = <AssetId, String>{};
-  await Future.forEach(inputs.keys, (String rawAssetId) async {
+  await Future.wait(inputs.keys.map((String rawAssetId) async {
     final assetId = new AssetId.parse(rawAssetId);
     var assetValue = inputs[rawAssetId];
     if (assetValue == _useAssetReader) {
       assetValue = await assetReader.readAsString(assetId);
     }
     inputAssets[assetId] = assetValue;
-  });
+  }));
   final inMemory = new InMemoryAssetReader(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
