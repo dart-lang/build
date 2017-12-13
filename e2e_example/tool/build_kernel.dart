@@ -13,7 +13,9 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 Future main() async {
   var graph = new PackageGraph.forThisPackage();
   var builders = [
-    applyToRoot(new TestBootstrapBuilder(), inputs: ['test/**_test.dart']),
+    apply('e2e_example', 'test_bootstrap', [(_) => new TestBootstrapBuilder()],
+        toRoot(),
+        inputs: ['test/**_test.dart'], hideOutput: true),
     apply(
         'build_compilers',
         'ddc',
@@ -23,18 +25,21 @@ Future main() async {
           (_) => new DevCompilerBuilder(useKernel: true),
         ],
         toAllPackages(),
-        isOptional: true),
-    applyToRoot(new DevCompilerBootstrapBuilder(useKernel: true), inputs: [
-      'web/**.dart',
-      'test/**.browser_test.dart',
-    ])
+        isOptional: true,
+        hideOutput: true),
+    apply('build_compilers', 'ddc_bootstrap',
+        [(_) => new DevCompilerBootstrapBuilder(useKernel: true)], toRoot(),
+        inputs: [
+          'web/**.dart',
+          'test/**.browser_test.dart',
+        ],
+        hideOutput: true)
   ];
   var buildActions = createBuildActions(graph, builders);
 
   var serveHandler = await watch(
     buildActions,
     deleteFilesByDefault: true,
-    writeToCache: true,
   );
 
   var server =

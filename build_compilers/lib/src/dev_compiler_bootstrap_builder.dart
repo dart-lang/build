@@ -62,7 +62,9 @@ class DevCompilerBootstrapBuilder implements Builder {
     // internally, but instead specify our own.
     var appModuleScope = () {
       if (useKernel) {
-        return p.withoutExtension(p.basename(module.jsId.path));
+        var basename = p.basename(module.jsId.path);
+        return basename.substring(
+            0, basename.length - jsModuleExtension.length);
       } else {
         return p
             .split(_ddcModuleName(module.jsId))
