@@ -116,10 +116,6 @@ class _Loader {
             .where((n) => n.package != _options.packageGraph.root.name)
             .where(inputSources.contains)
             .toSet();
-        // TODO(https://github.com/dart-lang/build/issues/706) - stop special
-        // casing this conflict
-        conflictsInDeps
-            .remove((new AssetId('node_preamble', 'lib/preamble.js')));
         if (conflictsInDeps.isNotEmpty) {
           throw new UnexpectedExistingOutputsException(conflictsInDeps);
         }
