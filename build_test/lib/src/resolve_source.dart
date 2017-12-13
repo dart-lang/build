@@ -198,8 +198,13 @@ class _ResolveSourceBuilder<T> implements Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
+    if (onDone.isCompleted) return;
     var result = await _action(buildStep.resolver);
-    onDone.complete(result);
+    if (!onDone.isCompleted) {
+      // With resolveSources (plural), this function is called multiple times
+      // but we only care about it once to get a handle to "Resolver".
+      onDone.complete(result);
+    }
     await _tearDown;
   }
 
