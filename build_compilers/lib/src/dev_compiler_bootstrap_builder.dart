@@ -280,6 +280,9 @@ final _requireJsConfig = '''
       xhr.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
           console.error(this.responseText);
+          var errorEvent = new CustomEvent(
+            'dartLoadException', { detail: this.responseText });
+          window.dispatchEvent(errorEvent);
         }
       };
       xhr.open("GET", e.originalError.srcElement.src + ".errors", true);

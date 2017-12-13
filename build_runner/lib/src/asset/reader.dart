@@ -136,6 +136,7 @@ class SingleStepReader implements DigestAssetReader {
   }
 
   Future<Null> _ensureAssetIsBuilt(AssetId id) async {
+    if (_runPhaseForInput == null) return null;
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
       await _runPhaseForInput(node.phaseNumber, node.primaryInput);

@@ -177,7 +177,12 @@ class WatchImpl implements BuildState {
       _buildDefinition = await BuildDefinition.prepareWorkspace(
           options, buildActions,
           onDelete: _expectedDeletes.add);
-      _readerCompleter.complete(_buildDefinition.reader);
+      _readerCompleter.complete(new SingleStepReader(
+          _buildDefinition.reader,
+          _buildDefinition.assetGraph,
+          buildActions.length,
+          packageGraph.root.name,
+          null));
       _assetGraph = _buildDefinition.assetGraph;
       build = await BuildImpl.create(_buildDefinition, buildActions,
           onDelete: _expectedDeletes.add);

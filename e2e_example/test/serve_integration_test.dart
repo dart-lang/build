@@ -75,6 +75,7 @@ void main() {
       await deleteFile(path);
       await error;
       await nextBuild;
+      await expectTestsFail();
 
       nextBuild = nextSuccessfulBuild;
       await createFile(path, "String get message => 'Hello World!';");
