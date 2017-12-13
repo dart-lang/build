@@ -16,6 +16,7 @@ import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/build_definition.dart';
 import 'package:build_runner/src/generate/options.dart';
+import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/util/constants.dart';
 

@@ -12,8 +12,8 @@ import '../common/test_phases.dart';
 
 void main() {
   test('should resolve a dart file with a part file', () async {
-    await testActions([
-      new BuildAction(new ListClassesAndHierarchyBuilder(), 'a')
+    await testBuilders([
+      applyToRoot(new ListClassesAndHierarchyBuilder())
     ], {
       'a|lib/a.dart': r'''
         library a;

@@ -60,8 +60,6 @@ class GeneratedAssetNode extends AssetNode {
   final int phaseNumber;
 
   /// The primary input which generated this node.
-  ///
-  /// May be `null` in the case of a `PackageBuilder`.
   final AssetId primaryInput;
 
   /// Whether or not this asset needs to be updated.

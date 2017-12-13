@@ -18,7 +18,7 @@ import 'package:build_test/build_test.dart';
 
 main() async {
   await build(
-    [new BuildAction(new CopyBuilder(), 'a')], deleteFilesByDefault: true);
+    [applyToRoot(new CopyBuilder())], deleteFilesByDefault: true);
 }
 ''';
       setUp(() async {
@@ -83,7 +83,7 @@ import 'package:glob/glob.dart';
 
 main() async {
   await build(
-    [new BuildAction(new GlobbingBuilder(new Glob('**.txt')), 'a')]);
+    [applyToRoot(new GlobbingBuilder(new Glob('**.txt')))]);
 }
 ''')
           ]),
@@ -186,8 +186,8 @@ import 'package:glob/glob.dart';
 
 main() async {
   await build(
-    [new BuildAction(new OverDeclaringGlobbingBuilder(
-        new Glob('**.txt')), 'a')]);
+    [applyToRoot(new OverDeclaringGlobbingBuilder(
+        new Glob('**.txt')))]);
 }
 
 class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
@@ -257,8 +257,8 @@ import 'package:build_test/build_test.dart';
 
 main() async {
   await build([
-    new BuildAction(new CopyBuilder(), 'a'),
-    new BuildAction(new CopyBuilder(), 'a', inputs: ['**.txt.copy']),
+    applyToRoot(new CopyBuilder()),
+    applyToRoot(new CopyBuilder(), inputs: ['**.txt.copy']),
   ]);
 }
 ''')

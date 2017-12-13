@@ -35,9 +35,7 @@ void main() {
         new AssetId('example', 'web/initial.txt'), 'initial');
     terminateController = new StreamController();
     final server = (await watch_impl.watch(
-      [
-        new BuildAction(const UppercaseBuilder(), 'example'),
-      ],
+      [applyToRoot(const UppercaseBuilder())],
       packageGraph: graph,
       reader: reader,
       writer: writer,

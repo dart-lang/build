@@ -6,8 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build/src/builder/build_step_impl.dart';
-import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
@@ -22,7 +20,7 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/logging.dart';
-import '../package_builder/package_builder.dart';
+import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -38,7 +36,7 @@ import 'terminator.dart';
 
 final _logger = new Logger('Build');
 
-Future<BuildResult> build(List<BuildAction> buildActions,
+Future<BuildResult> build(List<BuilderApplication> builders,
     {bool deleteFilesByDefault,
     bool assumeTty,
     PackageGraph packageGraph,
@@ -60,6 +58,8 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
+
+  final buildActions = createBuildActions(options.packageGraph, builders);
 
   var result = await singleBuild(options, buildActions);
 
@@ -180,17 +180,10 @@ class BuildImpl {
       var action = _buildActions[phase];
       if (action.isOptional) continue;
       await performanceTracker.trackAction(action, () async {
-        if (action is PackageBuildAction) {
-          outputs.addAll(await _runPackageBuilder(
-              phase, action.package, action.builder, resourceManager));
-        } else if (action is AssetBuildAction) {
-          var primaryInputs =
-              await _matchingPrimaryInputs(action, phase, resourceManager);
-          outputs.addAll(await _runBuilder(
-              phase, action.builder, primaryInputs, resourceManager));
-        } else {
-          throw new InvalidBuildActionException.unrecognizedType(action);
-        }
+        var primaryInputs =
+            await _matchingPrimaryInputs(action, phase, resourceManager);
+        outputs.addAll(await _runBuilder(
+            phase, action.builder, primaryInputs, resourceManager));
       });
     }
     await Future.forEach(
@@ -206,7 +199,7 @@ class BuildImpl {
   ///
   /// Lazily builds any optional build actions that might potentially produce
   /// a primary input to [action].
-  Future<Set<AssetId>> _matchingPrimaryInputs(AssetBuildAction action,
+  Future<Set<AssetId>> _matchingPrimaryInputs(BuildAction action,
       int phaseNumber, ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
     var inputSet = action.inputSet;
@@ -265,15 +258,7 @@ class BuildImpl {
 
       var action = _buildActions[phaseNumber];
 
-      if (action is PackageBuildAction) {
-        return _runPackageBuilder(
-            phaseNumber, action.package, action.builder, resourceManager);
-      } else if (action is AssetBuildAction) {
-        return _runForInput(
-            phaseNumber, action.builder, input, resourceManager);
-      } else {
-        throw new InvalidBuildActionException.unrecognizedType(action);
-      }
+      return _runForInput(phaseNumber, action.builder, input, resourceManager);
     });
   }
 
@@ -311,51 +296,6 @@ class BuildImpl {
     var logger = new Logger('$builder on $input');
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
         logger: logger, resourceManager: resourceManager);
-
-    // Reset the state for all the `builderOutputs` nodes based on what was
-    // read and written.
-    await _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
-
-    return wrappedWriter.assetsWritten;
-  }
-
-  /// Runs the [PackageBuilder] [builder] and returns only the outputs
-  /// that were newly created.
-  ///
-  /// Does not return outputs that didn't need to be re-ran or were declared
-  /// but not output.
-  Future<Iterable<AssetId>> _runPackageBuilder(int phaseNumber, String package,
-      PackageBuilder builder, ResourceManager resourceManager) async {
-    var builderOutputs = outputIdsForBuilder(builder, package);
-
-    var wrappedReader = new SingleStepReader(
-        _reader,
-        _assetGraph,
-        phaseNumber,
-        package,
-        (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
-
-    if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
-      return <AssetId>[];
-    }
-    // We may have read some inputs in the call to `_buildShouldRun`, we want
-    // to remove those.
-    wrappedReader.assetsRead.clear();
-
-    var wrappedWriter = new AssetWriterSpy(_writer);
-
-    var logger = new Logger('$builder on $package');
-    var buildStep = new BuildStepImpl(null, builderOutputs, wrappedReader,
-        wrappedWriter, _packageGraph.root.name, _resolvers, resourceManager);
-    try {
-      // Wrapping in `new Future.value` to work around
-      // https://github.com/dart-lang/sdk/issues/31237, users might return
-      // synchronously and not have any analysis errors today.
-      await scopeLogAsync(
-          () => new Future.value(builder.build(buildStep)), logger);
-    } finally {
-      await buildStep.complete();
-    }
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.

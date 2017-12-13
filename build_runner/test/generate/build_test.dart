@@ -9,7 +9,6 @@ import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/asset_graph/exceptions.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 
@@ -18,25 +17,21 @@ import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuildAction = new BuildAction(new CopyBuilder(), 'a');
+  final copyABuilderApplication = applyToRoot(new CopyBuilder());
   final globBuilder = new GlobbingBuilder(new Glob('**.txt'));
-  final txtFilePackageBuilderAction = new PackageBuildAction(
-      new TxtFilePackageBuilder(
-          'a', {'web/hello.txt': 'hello', 'web/world.txt': 'world'}),
-      'a');
   final defaultBuilderOptions = const BuilderOptions(const {});
 
   group('build', () {
     group('with root package inputs', () {
       test('one phase, one builder, one-to-one outputs', () async {
-        await testActions(
-            [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+        await testBuilders(
+            [copyABuilderApplication], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
       test('one phase, one builder, one-to-many outputs', () async {
-        await testActions([
-          new BuildAction(new CopyBuilder(numCopies: 2), 'a')
+        await testBuilders([
+          applyToRoot(new CopyBuilder(numCopies: 2))
         ], {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
@@ -48,37 +43,26 @@ void main() {
         });
       });
 
-      test('one package builder', () async {
-        await testActions([txtFilePackageBuilderAction], {},
-            outputs: {'a|web/hello.txt': 'hello', 'a|web/world.txt': 'world'});
-      });
-
       test('optional build actions don\'t run if their outputs aren\'t read',
           () async {
-        await testActions([
-          new PackageBuildAction(
-              new TxtFilePackageBuilder('a', {'web/a.txt': 'a'}), 'a',
-              isOptional: true),
-          new BuildAction(new CopyBuilder(extension: '1'), 'a',
-              isOptional: true),
-          new BuildAction(new CopyBuilder(extension: '2'), 'a',
+        await testBuilders([
+          apply('', '', [(_) => new CopyBuilder()], toRoot(), isOptional: true),
+          apply('', '', [(_) => new CopyBuilder()], toRoot(),
               isOptional: true, inputs: ['**.1']),
         ], {}, outputs: {});
       });
 
       test('optional build actions do run if their outputs are read', () async {
-        await testActions([
-          new PackageBuildAction(
-              new TxtFilePackageBuilder('a', {'web/a.txt': 'a'}), 'a',
+        await testBuilders([
+          apply('', '', [(_) => new CopyBuilder(extension: '1')], toRoot(),
               isOptional: true),
-          new BuildAction(new CopyBuilder(extension: '1'), 'a',
-              isOptional: true),
-          new BuildAction(new CopyBuilder(extension: '2'), 'a',
+          apply('', '', [(_) => new CopyBuilder(extension: '2')], toRoot(),
               isOptional: true, inputs: ['**.1']),
-          new BuildAction(new CopyBuilder(extension: '3'), 'a',
+          apply('', '', [(_) => new CopyBuilder(extension: '3')], toRoot(),
               inputs: ['**.2']),
-        ], {}, outputs: {
-          'a|web/a.txt': 'a',
+        ], {
+          'a|web/a.txt': 'a'
+        }, outputs: {
           'a|web/a.txt.1': 'a',
           'a|web/a.txt.1.2': 'a',
           'a|web/a.txt.1.2.3': 'a',
@@ -86,16 +70,14 @@ void main() {
       });
 
       test('multiple mixed build actions', () async {
-        var buildActions = [
-          copyABuildAction,
-          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+        var builders = [
+          copyABuilderApplication,
+          apply('', '', [(_) => new CopyBuilder(extension: 'clone')], toRoot(),
               inputs: ['**/*.txt'], isOptional: true),
-          txtFilePackageBuilderAction,
-          new BuildAction(new CopyBuilder(numCopies: 2), 'a',
+          apply('', '', [(_) => new CopyBuilder(numCopies: 2)], toRoot(),
               inputs: ['web/*.txt.clone']),
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['web/hello.txt']),
         ];
-        await testActions(buildActions, {
+        await testBuilders(builders, {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
@@ -105,21 +87,20 @@ void main() {
           // No b.txt.clone since nothing else read it and its optional.
           'a|web/a.txt.clone.copy.0': 'a',
           'a|web/a.txt.clone.copy.1': 'a',
-          'a|web/hello.txt': 'hello',
-          'a|web/world.txt': 'world',
-          'a|web/hello.txt.copy': 'hello',
         });
       });
 
       test('early step touches a not-yet-generated asset', () async {
         var copyId = new AssetId('a', 'lib/a.txt.copy');
-        var buildActions = [
-          new BuildAction(new CopyBuilder(touchAsset: copyId), 'a',
+        var builders = [
+          apply('', '', [(_) => new CopyBuilder(touchAsset: copyId)], toRoot(),
               inputs: ['lib/b.txt']),
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['lib/a.txt']),
-          new BuildAction(new ExistsBuilder(copyId), 'a', inputs: ['lib/a.txt'])
+          apply('', '', [(_) => new CopyBuilder()], toRoot(),
+              inputs: ['lib/a.txt']),
+          apply('', '', [(_) => new ExistsBuilder(copyId)], toRoot(),
+              inputs: ['lib/a.txt'])
         ];
-        await testActions(buildActions, {
+        await testBuilders(builders, {
           'a|lib/a.txt': 'a',
           'a|lib/b.txt': 'b',
         }, outputs: {
@@ -135,9 +116,13 @@ void main() {
         var firstBuilder = new ExistsBuilder(aTxtId);
         var writer = new InMemoryRunnerAssetWriter();
         var reader = new InMemoryRunnerAssetReader(writer.assets, 'a');
-        var buildActions = [
-          new BuildAction(firstBuilder, 'a', inputs: ['lib/a.txt']),
-          new BuildAction(new ExistsBuilder(aTxtId, waitFor: ready.future), 'a',
+        var builders = [
+          apply('', '', [(_) => firstBuilder], toRoot(), inputs: ['lib/a.txt']),
+          apply(
+              '',
+              '',
+              [(_) => new ExistsBuilder(aTxtId, waitFor: ready.future)],
+              toRoot(),
               inputs: ['lib/b.txt']),
         ];
 
@@ -150,8 +135,8 @@ void main() {
           ready.complete();
         });
 
-        await testActions(
-            buildActions,
+        await testBuilders(
+            builders,
             {
               'a|lib/a.txt': '',
               'a|lib/b.txt': '',
@@ -165,16 +150,16 @@ void main() {
       });
 
       test('one phase, one builder, one-to-one outputs', () async {
-        await testActions(
-            [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+        await testBuilders(
+            [copyABuilderApplication], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
       test('pre-existing outputs', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        await testActions([
-          copyABuildAction,
-          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+        await testBuilders([
+          copyABuilderApplication,
+          apply('', '', [(_) => new CopyBuilder(extension: 'clone')], toRoot(),
               inputs: ['**.txt.copy'])
         ], {
           'a|web/a.txt': 'a',
@@ -207,8 +192,8 @@ void main() {
       });
 
       test('in low resources mode', () async {
-        await testActions(
-            [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+        await testBuilders(
+            [copyABuilderApplication], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
             enableLowResourcesMode: true);
       });
@@ -220,9 +205,11 @@ void main() {
         package('b', path: 'a/b'): []
       });
       expect(
-          testActions(
-              [new BuildAction(new CopyBuilder(), 'b')], {'b|lib/b.txt': 'b'},
-              packageGraph: packageGraph),
+          testBuilders([
+            apply('', '', [(_) => new CopyBuilder()], toPackage('b'))
+          ], {
+            'b|lib/b.txt': 'b'
+          }, packageGraph: packageGraph),
           throwsA(anything));
     });
 
@@ -236,27 +223,24 @@ void main() {
         });
       });
       test('can output files in non-root packages', () async {
-        await testActions(
+        await testBuilders(
             [
-              new BuildAction(new CopyBuilder(), 'b', hideOutput: true),
-              new PackageBuildAction(
-                  new TxtFilePackageBuilder('b', {'lib/hello.txt': 'hello'}),
-                  'b',
-                  hideOutput: true)
+              apply('', '', [(_) => new CopyBuilder()], toPackage('b'),
+                  hideOutput: true),
             ],
             {'b|lib/b.txt': 'b'},
             packageGraph: packageGraph,
             outputs: {
               r'$$b|lib/b.txt.copy': 'b',
-              r'$$b|lib/hello.txt': 'hello',
             });
       });
 
       test('handles mixed hidden and non-hidden outputs', () async {
-        await testActions(
+        await testBuilders(
             [
-              new BuildAction(new CopyBuilder(), 'a'),
-              new BuildAction(new CopyBuilder(extension: 'hiddencopy'), 'a',
+              apply('', '', [(_) => new CopyBuilder()], toRoot()),
+              apply('', '', [(_) => new CopyBuilder(extension: 'hiddencopy')],
+                  toRoot(),
                   hideOutput: true),
             ],
             {'a|lib/a.txt': 'a'},
@@ -268,26 +252,6 @@ void main() {
             });
       });
 
-      test(
-          'PackageBuilder can\'t output files outside of `lib` in non-root '
-          'packages.', () async {
-        expect(
-            testActions(
-                [
-                  new PackageBuildAction(
-                      new TxtFilePackageBuilder(
-                          'b', {'web/hello.txt': 'hello'}),
-                      'b',
-                      hideOutput: true)
-                ],
-                {},
-                packageGraph: packageGraph,
-                outputs: {
-                  r'$$b|web/hello.txt': 'hello',
-                }),
-            throwsA(new isInstanceOf<InvalidPackageBuilderOutputsException>()));
-      });
-
       test('Will not delete from non-root packages', () async {
         var writer = new InMemoryRunnerAssetWriter()
           ..onDelete = (AssetId assetId) {
@@ -296,8 +260,11 @@ void main() {
                   'tried to delete $assetId';
             }
           };
-        await testActions(
-            [new BuildAction(new CopyBuilder(), 'b', hideOutput: true)],
+        await testBuilders(
+            [
+              apply('', '', [(_) => new CopyBuilder()], toPackage('b'),
+                  hideOutput: true)
+            ],
             {
               'b|lib/b.txt': 'b',
               'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b'
@@ -309,11 +276,14 @@ void main() {
     });
 
     test('can read files from external packages', () async {
-      var buildActions = [
-        new BuildAction(
-            new CopyBuilder(touchAsset: makeAssetId('b|lib/b.txt')), 'a')
+      var builders = [
+        apply(
+            '',
+            '',
+            [(_) => new CopyBuilder(touchAsset: makeAssetId('b|lib/b.txt'))],
+            toRoot())
       ];
-      await testActions(buildActions, {
+      await testBuilders(builders, {
         'a|lib/a.txt': 'a',
         'b|lib/b.txt': 'b'
       }, outputs: {
@@ -327,13 +297,13 @@ void main() {
         package('b', path: 'a/b/'): []
       });
 
-      var buildActions = [
-        new BuildAction(globBuilder, 'a', hideOutput: true),
-        new BuildAction(globBuilder, 'b', hideOutput: true),
+      var builders = [
+        apply('', '', [(_) => globBuilder], toRoot(), hideOutput: true),
+        apply('', '', [(_) => globBuilder], toPackage('b'), hideOutput: true),
       ];
 
-      await testActions(
-          buildActions,
+      await testBuilders(
+          builders,
           {
             'a|lib/a.globPlaceholder': '',
             'a|lib/a.txt': '',
@@ -352,8 +322,8 @@ void main() {
     });
 
     test('can glob files from packages with excludes applied', () async {
-      await testActions([
-        new BuildAction(new CopyBuilder(), 'a',
+      await testBuilders([
+        apply('', '', [(_) => new CopyBuilder()], toRoot(),
             excludes: ['lib/a/*.txt'], hideOutput: true)
       ], {
         'a|lib/a/1.txt': '',
@@ -367,11 +337,15 @@ void main() {
     });
 
     test('can\'t read files in .dart_tool', () async {
-      await testActions([
-        new BuildAction(
-            new CopyBuilder(
-                copyFromAsset: makeAssetId('a|.dart_tool/any_file')),
-            'a')
+      await testBuilders([
+        apply(
+            '',
+            '',
+            [
+              (_) => new CopyBuilder(
+                  copyFromAsset: makeAssetId('a|.dart_tool/any_file'))
+            ],
+            toRoot())
       ], {
         'a|lib/a.txt': 'a',
         'a|.dart_tool/any_file': 'content'
@@ -389,7 +363,10 @@ void main() {
             throw 'Should not delete outside of package:a';
           }
         };
-      await testActions([new BuildAction(new CopyBuilder(), 'a')],
+      await testBuilders(
+          [
+            apply('', '', [(_) => new CopyBuilder()], toRoot())
+          ],
           {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b', 'b|lib/b.txt.copy': 'b'},
           packageGraph: packageGraph,
           writer: writer,
@@ -400,16 +377,24 @@ void main() {
 
     test('Overdeclared outputs are not treated as inputs to later steps',
         () async {
-      var buildActions = [
-        new BuildAction(
-            new OverDeclaringCopyBuilder(numCopies: 1, extension: 'unexpected'),
-            'a'),
-        new BuildAction(
-            new CopyBuilder(numCopies: 1, extension: 'expected'), 'a'),
-        new BuildAction(new CopyBuilder(numCopies: 1), 'a',
+      var builders = [
+        apply(
+            '',
+            '',
+            [
+              (_) => new OverDeclaringCopyBuilder(
+                  numCopies: 1, extension: 'unexpected')
+            ],
+            toRoot()),
+        apply(
+            '',
+            '',
+            [(_) => new CopyBuilder(numCopies: 1, extension: 'expected')],
+            toRoot()),
+        apply('', '', [(_) => new CopyBuilder(numCopies: 1)], toRoot(),
             inputs: ['**.expected', '**.unexpected']),
       ];
-      await testActions(buildActions, {
+      await testBuilders(builders, {
         'a|lib/a.txt': 'a',
       }, outputs: {
         'a|lib/a.txt.expected': 'a',
@@ -420,8 +405,8 @@ void main() {
 
   test('tracks dependency graph in a asset_graph.json file', () async {
     final writer = new InMemoryRunnerAssetWriter();
-    await testActions(
-        [copyABuildAction], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
+    await testBuilders(
+        [copyABuilderApplication], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
         outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
         writer: writer);
 
@@ -478,10 +463,11 @@ void main() {
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testActions([copyABuildAction], inputs,
+    await testBuilders([copyABuilderApplication], inputs,
         outputs: outputs, writer: writer);
     // Second run, should have no outputs.
-    await testActions([copyABuildAction], inputs, outputs: {}, writer: writer);
+    await testBuilders([copyABuilderApplication], inputs,
+        outputs: {}, writer: writer);
   });
 
   test('can recover from a deleted asset_graph.json cache', () async {
@@ -492,7 +478,7 @@ void main() {
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testActions([copyABuildAction], inputs,
+    await testBuilders([copyABuilderApplication], inputs,
         outputs: outputs, writer: writer);
 
     // Delete the `asset_graph.json` file!
@@ -500,7 +486,7 @@ void main() {
     await writer.delete(outputId);
 
     // Second run, should have no extra outputs.
-    var done = testActions([copyABuildAction], inputs,
+    var done = testBuilders([copyABuilderApplication], inputs,
         outputs: outputs, writer: writer);
     // Should block on user input.
     await new Future.delayed(new Duration(seconds: 1));
@@ -510,12 +496,12 @@ void main() {
 
   group('incremental builds with cached graph', () {
     test('one new asset, one modified asset, one unchanged asset', () async {
-      var buildActions = [copyABuildAction];
+      var builders = [copyABuilderApplication];
 
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-      await testActions(
-          buildActions,
+      await testBuilders(
+          builders,
           {
             'a|web/a.txt': 'a',
             'a|lib/b.txt': 'b',
@@ -529,8 +515,8 @@ void main() {
       // Followup build with modified inputs.
       var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
       writer.assets.clear();
-      await testActions(
-          buildActions,
+      await testBuilders(
+          builders,
           {
             'a|web/a.txt': 'a2',
             'a|web/a.txt.copy': 'a',
@@ -547,16 +533,16 @@ void main() {
     });
 
     test('graph/file system get cleaned up for deleted inputs', () async {
-      var buildActions = [
-        copyABuildAction,
-        new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+      var builders = [
+        copyABuilderApplication,
+        apply('', '', [(_) => new CopyBuilder(extension: 'clone')], toRoot(),
             inputs: ['**/*.txt.copy'])
       ];
 
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-      await testActions(
-          buildActions,
+      await testBuilders(
+          builders,
           {
             'a|lib/a.txt': 'a',
           },
@@ -569,8 +555,8 @@ void main() {
       // Followup build with deleted input + cached graph.
       var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
       writer.assets.clear();
-      await testActions(
-          buildActions,
+      await testBuilders(
+          builders,
           {
             'a|lib/a.txt.copy': 'a',
             'a|lib/a.txt.copy.clone': 'a',
@@ -595,16 +581,16 @@ void main() {
     });
 
     test('no outputs if no changed sources', () async {
-      var buildActions = [copyABuildAction];
+      var builders = [copyABuilderApplication];
 
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-      await testActions(buildActions, {'a|web/a.txt': 'a'},
+      await testBuilders(builders, {'a|web/a.txt': 'a'},
           outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       // Followup build with same sources + cached graph.
       var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
-      await testActions(buildActions, {
+      await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
         'a|$assetGraphPath': serializedGraph,
@@ -612,21 +598,21 @@ void main() {
     });
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
-      var buildActions = [
-        new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+      var builders = [
+        apply('', '', [(_) => new CopyBuilder()], toRoot(), hideOutput: true)
       ];
 
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-      await testActions(buildActions, {'a|web/a.txt': 'a'},
-          // Note that `testActions` converts generated cache dir paths to the
+      await testBuilders(builders, {'a|web/a.txt': 'a'},
+          // Note that `testBuilders` converts generated cache dir paths to the
           // original ones for matching.
           outputs: {r'$$a|web/a.txt.copy': 'a'},
           writer: writer);
 
       // Followup build with same sources + cached graph.
       var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
-      await testActions(buildActions, {
+      await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
         'a|$assetGraphPath': serializedGraph,
@@ -636,9 +622,12 @@ void main() {
     test('inputs/outputs are updated if they change', () async {
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-      await testActions([
-        new BuildAction(
-            new CopyBuilder(copyFromAsset: makeAssetId('a|lib/b.txt')), 'a',
+      await testBuilders([
+        apply(
+            '',
+            '',
+            [(_) => new CopyBuilder(copyFromAsset: makeAssetId('a|lib/b.txt'))],
+            toRoot(),
             inputs: ['lib/a.txt'])
       ], {
         'a|lib/a.txt': 'a',
@@ -653,9 +642,12 @@ void main() {
       var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
       writer.assets.clear();
 
-      await testActions([
-        new BuildAction(
-            new CopyBuilder(copyFromAsset: makeAssetId('a|lib/c.txt')), 'a',
+      await testBuilders([
+        apply(
+            '',
+            '',
+            [(_) => new CopyBuilder(copyFromAsset: makeAssetId('a|lib/c.txt'))],
+            toRoot(),
             inputs: ['lib/a.txt'])
       ], {
         'a|lib/a.txt': 'a',
@@ -684,17 +676,24 @@ void main() {
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
-      var buildActions = [
-        new BuildAction(
-            new CopyBuilder(copyFromAsset: new AssetId('a', 'lib/b.txt')), 'a',
+      var builders = [
+        apply(
+            '',
+            '',
+            [
+              (_) =>
+                  new CopyBuilder(copyFromAsset: new AssetId('a', 'lib/b.txt'))
+            ],
+            toRoot(),
             inputs: ['lib/a.txt']),
-        new BuildAction(new CopyBuilder(), 'a', inputs: ['lib/a.txt.copy']),
+        apply('', '', [(_) => new CopyBuilder()], toRoot(),
+            inputs: ['lib/a.txt.copy']),
       ];
 
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
-      await testActions(
-          buildActions,
+      await testBuilders(
+          builders,
           {
             'a|lib/a.txt': 'a',
             'a|lib/b.txt': 'b',
@@ -709,8 +708,8 @@ void main() {
       // so `a.txt.copy.copy` shouldn't be rebuilt.
       var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
       writer.assets.clear();
-      await testActions(
-          buildActions,
+      await testBuilders(
+          builders,
           {
             'a|lib/a.txt': 'a2',
             'a|lib/b.txt': 'b',

@@ -12,7 +12,6 @@ import 'package:build_test/builder.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
 Future main() async {
-  var graph = new PackageGraph.forThisPackage();
   var builders = [
     apply('e2e_example', 'throwing_builder', [(_) => new ThrowingBuilder()],
         toRoot(),
@@ -36,10 +35,9 @@ Future main() async {
         [(_) => new DevCompilerBootstrapBuilder()], toRoot(),
         inputs: ['web/**.dart', 'test/**.browser_test.dart'], hideOutput: true)
   ];
-  var buildActions = createBuildActions(graph, builders);
 
   var serveHandler = await watch(
-    buildActions,
+    builders,
     deleteFilesByDefault: true,
   );
 

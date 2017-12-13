@@ -24,8 +24,8 @@ const _badOutput = r'''
 // Regression test for https://github.com/dart-lang/build/issues/427.
 void main() {
   test('should throw a readable/terse stack trace', () async {
-    final result = await testActions([
-      new BuildAction(new BadCodeBuilder(), 'a'),
+    final result = await testBuilders([
+      applyToRoot(new BadCodeBuilder())
     ], {
       'a|lib/a.dart': 'class Foo {}',
     }, outputs: {

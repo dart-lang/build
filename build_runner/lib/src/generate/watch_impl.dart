@@ -15,6 +15,7 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
@@ -28,7 +29,7 @@ import 'terminator.dart';
 
 final _logger = new Logger('Watch');
 
-Future<ServeHandler> watch(List<BuildAction> buildActions,
+Future<ServeHandler> watch(List<BuilderApplication> builders,
     {bool deleteFilesByDefault,
     bool assumeTty,
     PackageGraph packageGraph,
@@ -54,6 +55,9 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
+
+  final buildActions = createBuildActions(options.packageGraph, builders);
+
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 
   // ignore: unawaited_futures

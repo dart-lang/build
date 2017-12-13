@@ -22,7 +22,7 @@ import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuildAction = new BuildAction(new CopyBuilder(), 'a');
+  final copyABuildApplication = applyToRoot(new CopyBuilder());
   final defaultBuilderOptions = const BuilderOptions(const {});
 
   group('watch', () {
@@ -39,7 +39,7 @@ void main() {
       test('rebuilds on file updates', () async {
         var writer = new InMemoryRunnerAssetWriter();
         var results = new StreamQueue(
-            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
+            startWatch([copyABuildApplication], {'a|web/a.txt': 'a'}, writer));
 
         var result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
@@ -55,7 +55,7 @@ void main() {
       test('rebuilds on new files', () async {
         var writer = new InMemoryRunnerAssetWriter();
         var results = new StreamQueue(
-            startWatch([copyABuildAction], {'a|web/a.txt': 'a'}, writer));
+            startWatch([copyABuildApplication], {'a|web/a.txt': 'a'}, writer));
 
         var result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
@@ -74,7 +74,7 @@ void main() {
       test('rebuilds on deleted files', () async {
         var writer = new InMemoryRunnerAssetWriter();
         var results = new StreamQueue(startWatch([
-          copyABuildAction
+          copyABuildApplication
         ], {
           'a|web/a.txt': 'a',
           'a|web/b.txt': 'b',
@@ -104,7 +104,7 @@ void main() {
 
       test('rebuilds properly update asset_graph.json', () async {
         var writer = new InMemoryRunnerAssetWriter();
-        var results = new StreamQueue(startWatch([copyABuildAction],
+        var results = new StreamQueue(startWatch([copyABuildApplication],
             {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer));
 
         var result = await results.next;
@@ -182,7 +182,7 @@ void main() {
         });
 
         var results = new StreamQueue(startWatch([
-          copyABuildAction,
+          copyABuildApplication,
         ], {
           'a|web/a.txt': 'a',
           'b|web/b.txt': 'b'
@@ -209,7 +209,7 @@ void main() {
       test('rebuilds on file updates during first build', () async {
         var blocker = new Completer<Null>();
         var buildAction =
-            new BuildAction(new CopyBuilder(blockUntil: blocker.future), 'a');
+            applyToRoot(new CopyBuilder(blockUntil: blocker.future));
         var writer = new InMemoryRunnerAssetWriter();
         var results = new StreamQueue(
             startWatch([buildAction], {'a|web/a.txt': 'a'}, writer));
@@ -234,8 +234,8 @@ void main() {
     group('multiple phases', () {
       test('edits propagate through all phases', () async {
         var buildActions = [
-          copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy'])
+          copyABuildApplication,
+          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -259,8 +259,8 @@ void main() {
 
       test('adds propagate through all phases', () async {
         var buildActions = [
-          copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy'])
+          copyABuildApplication,
+          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -289,8 +289,8 @@ void main() {
 
       test('deletes propagate through all phases', () async {
         var buildActions = [
-          copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy'])
+          copyABuildApplication,
+          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy'])
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -329,8 +329,8 @@ void main() {
 
       test('deleted generated outputs are regenerated', () async {
         var buildActions = [
-          copyABuildAction,
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['**/*.copy']),
+          copyABuildApplication,
+          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy']),
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -365,8 +365,8 @@ void main() {
     group('secondary dependency', () {
       test('of an output file is edited', () async {
         var buildActions = [
-          new BuildAction(
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')), 'a',
+          applyToRoot(
+              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
               inputs: ['web/a.txt'])
         ];
 
@@ -389,9 +389,9 @@ void main() {
           'of an output which is derived from another generated file is edited',
           () async {
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', inputs: ['web/a.txt']),
-          new BuildAction(
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')), 'a',
+          applyToRoot(new CopyBuilder(), inputs: ['web/a.txt']),
+          applyToRoot(
+              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
               inputs: ['web/a.txt.copy'])
         ];
 
@@ -420,7 +420,7 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateWatchController;
 
 /// Start watching files and running builds.
-Stream<BuildResult> startWatch(List<BuildAction> buildActions,
+Stream<BuildResult> startWatch(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
     {PackageGraph packageGraph}) {
   var buildResults = new StreamController<BuildResult>.broadcast();
@@ -433,7 +433,7 @@ Stream<BuildResult> startWatch(List<BuildAction> buildActions,
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  var buildState = watch_impl.watch(buildActions,
+  var buildState = watch_impl.watch(builders,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
