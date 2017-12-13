@@ -303,6 +303,7 @@ class BuildImpl {
 
     return wrappedWriter.assetsWritten;
   }
+
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
       Iterable<AssetId> outputs, DigestAssetReader reader) async {
