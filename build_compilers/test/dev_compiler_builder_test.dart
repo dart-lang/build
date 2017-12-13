@@ -36,12 +36,13 @@ main() {
 
   test("can compile ddc modules under lib and web", () async {
     var expectedOutputs = {
-      'b|lib/b.js': decodedMatches(contains('world')),
-      'b|lib/b.js.map': decodedMatches(contains('b.dart')),
-      'a|lib/a.js': decodedMatches(contains('hello')),
-      'a|lib/a.js.map': decodedMatches(contains('a.dart')),
-      'a|web/index.js': decodedMatches(contains('main')),
-      'a|web/index.js.map': decodedMatches(contains('index.dart')),
+      'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
+      'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
+      'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
+      'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
+      'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
+      'a|web/index$jsSourceMapExtension':
+          decodedMatches(contains('index.dart')),
     };
     await testBuilder(new DevCompilerBuilder(), assets,
         outputs: expectedOutputs);
