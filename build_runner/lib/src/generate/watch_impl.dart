@@ -8,8 +8,8 @@ import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:logging/logging.dart';
-import 'package:watcher/watcher.dart';
 import 'package:stream_transform/stream_transform.dart';
+import 'package:watcher/watcher.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -30,8 +30,7 @@ final _logger = new Logger('Watch');
 
 Future<ServeHandler> watch(List<BuildAction> buildActions,
     {bool deleteFilesByDefault,
-    //TODO - remove `writeToCache`
-    bool writeToCache,
+    bool assumeTty,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
     RunnerAssetWriter writer,
@@ -43,7 +42,8 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
     bool skipBuildScriptCheck,
     bool enableLowResourcesMode}) async {
   var options = new BuildOptions(
-      deleteFilesByDefault: deleteFilesByDefault ?? writeToCache,
+      assumeTty: assumeTty,
+      deleteFilesByDefault: deleteFilesByDefault,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
@@ -53,9 +53,6 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
       directoryWatcherFactory: directoryWatcherFactory,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
-  if (writeToCache == true) {
-    buildActions = buildActions.map(hiddenAction).toList();
-  }
   var terminator = new Terminator(terminateEventStream);
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 

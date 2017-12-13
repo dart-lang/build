@@ -20,7 +20,8 @@ void main() {
   });
 
   test('Doesn\'t compile submodules into the root module', () {
-    expect(readGeneratedFileAsString('e2e_example/test/hello_world_test.js'),
+    expect(
+        readGeneratedFileAsString('e2e_example/test/hello_world_test.ddc.js'),
         isNot(contains('Hello World!')));
   });
 
@@ -69,7 +70,7 @@ void main() {
     test('ddc errors can be fixed', () async {
       var path = p.join('test', 'common', 'message.dart');
       var error = nextStdErrLine('Error compiling dartdevc module:'
-          'e2e_example|test/hello_world_test.js');
+          'e2e_example|test/hello_world_test.ddc.js');
       var nextBuild = nextSuccessfulBuild;
       await deleteFile(path);
       await error;

@@ -9,6 +9,7 @@ import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 
+import 'dev_compiler_builder.dart';
 import 'module_builder.dart';
 import 'modules.dart';
 
@@ -47,7 +48,7 @@ class DevCompilerBootstrapBuilder implements Builder {
     // First, ensure all transitive modules are built.
     var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
 
-    var appModuleName = p.withoutExtension(module.jsId.path);
+    var appModuleName = _ddcModuleName(module.jsId);
 
     // The name of the entrypoint dart library within the entrypoint JS module.
     //
@@ -64,7 +65,7 @@ class DevCompilerBootstrapBuilder implements Builder {
         return p.withoutExtension(p.basename(module.jsId.path));
       } else {
         return p
-            .split(p.withoutExtension(module.jsId.path))
+            .split(_ddcModuleName(module.jsId))
             .skip(1)
             .join('__')
             .replaceAll('.', '\$46');
@@ -73,15 +74,16 @@ class DevCompilerBootstrapBuilder implements Builder {
 
     // Map from module name to module path for custom modules.
     var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
-    var transitiveNoneLibJsModules = ([module.jsId]
-          ..addAll((transitiveDeps).map((module) => module.jsId)))
-        .where((id) => !id.path.startsWith('lib/'));
-    for (var module in transitiveNoneLibJsModules) {
-      // Strip out the top level dir from the path for any non-lib module. We
-      // set baseUrl to `/` to simplify things, and we only allow you to serve
-      // top level directories.
-      var moduleName = p.withoutExtension(module.path);
-      modulePaths[moduleName] = p.joinAll(p.split(moduleName).skip(1));
+    var transitiveJsModules = [module.jsId]
+      ..addAll(transitiveDeps.map((dep) => dep.jsId));
+    for (var jsId in transitiveJsModules) {
+      // Strip out the top level dir from the path for any module, and set it to
+      // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
+      // and we only allow you to serve top level directories.
+      var moduleName = _ddcModuleName(jsId);
+      modulePaths[moduleName] = p.withoutExtension(jsId.path.startsWith('lib')
+          ? '$moduleName$jsModuleExtension'
+          : p.joinAll(p.split(jsId.path).skip(1)));
     }
 
     var bootstrapContent = new StringBuffer('(function() {\n');
@@ -141,6 +143,15 @@ class DevCompilerBootstrapBuilder implements Builder {
           node.functionExpression.parameters.parameters.length <= 2;
     });
   }
+}
+
+/// The module name according to ddc for [jsId] which represents the real js
+/// module file.
+String _ddcModuleName(AssetId jsId) {
+  var jsPath = jsId.path.startsWith('lib/')
+      ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
+      : jsId.path;
+  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
 /// Code that actually imports the [moduleName] module, and calls the
