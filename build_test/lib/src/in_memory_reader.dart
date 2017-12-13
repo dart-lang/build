@@ -28,21 +28,24 @@ class InMemoryAssetReader
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
   InMemoryAssetReader({Map<AssetId, dynamic> sourceAssets, this.rootPackage})
-      : assets = _convertAssetsToBytes(sourceAssets) ?? <AssetId, List<int>>{},
+      : assets = _assetsAsBytes(sourceAssets) ?? <AssetId, List<int>>{},
         assetsRead = new Set<AssetId>();
 
-  static Map<AssetId, List<int>> _convertAssetsToBytes(
-      Map<AssetId, dynamic> original) {
-    if (original == null) return null;
-
-    var updates = <AssetId, List<int>>{};
-    original.forEach((id, content) {
-      if (content is String) updates[id] = UTF8.encode(content);
+  static Map<AssetId, List<int>> _assetsAsBytes(Map<AssetId, dynamic> assets) {
+    if (assets == null || assets.isEmpty) {
+      return {};
+    }
+    final output = <AssetId, List<int>>{};
+    assets.forEach((id, stringOrBytes) {
+      if (stringOrBytes is List<int>) {
+        output[id] = stringOrBytes;
+      } else if (stringOrBytes is String) {
+        output[id] = UTF8.encode(stringOrBytes);
+      } else {
+        throw new UnsupportedError('Invalid asset contents: $stringOrBytes.');
+      }
     });
-    updates.forEach((id, bytes) {
-      original[id] = bytes;
-    });
-    return original as Map<AssetId, List<int>>;
+    return output;
   }
 
   @override
