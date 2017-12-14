@@ -23,7 +23,6 @@ import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
-import 'input_set.dart';
 import 'options.dart';
 import 'phase.dart';
 
