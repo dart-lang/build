@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
+import 'package:build_config/build_config.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -35,17 +36,20 @@ import 'terminator.dart';
 
 final _logger = new Logger('Build');
 
-Future<BuildResult> build(List<BuilderApplication> builders,
-    {bool deleteFilesByDefault,
-    bool assumeTty,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Stream terminateEventStream,
-    bool skipBuildScriptCheck,
-    bool enableLowResourcesMode}) async {
+Future<BuildResult> build(
+  List<BuilderApplication> builders, {
+  bool deleteFilesByDefault,
+  bool assumeTty,
+  PackageGraph packageGraph,
+  RunnerAssetReader reader,
+  RunnerAssetWriter writer,
+  Level logLevel,
+  onLog(LogRecord record),
+  Stream terminateEventStream,
+  bool skipBuildScriptCheck,
+  bool enableLowResourcesMode,
+  Map<String, BuildConfig> overrideBuildConfig,
+}) async {
   var options = new BuildOptions(
       assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault,
@@ -58,7 +62,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildActions = createBuildActions(options.packageGraph, builders);
+  final buildActions = await createBuildActions(options.packageGraph, builders,
+      overrideBuildConfig: overrideBuildConfig);
 
   var result = await singleBuild(options, buildActions);
 

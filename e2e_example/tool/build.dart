@@ -13,10 +13,10 @@ Future main(List<String> args) async {
   var builders = [
     apply('e2e_example', 'throwing_builder', [(_) => new ThrowingBuilder()],
         toRoot(),
-        hideOutput: true),
+        hideOutput: true, defaultGenerateFor: const ['test/**']),
     apply('build_test', 'test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
-        inputs: ['test/**_test.dart'], hideOutput: true),
+        hideOutput: true),
     apply(
         'build_compilers',
         'ddc',
@@ -29,9 +29,10 @@ Future main(List<String> args) async {
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
-    apply('build_compilers', 'ddc_boostrap',
+    apply('build_compilers', 'ddc_bootstrap',
         [(_) => new DevCompilerBootstrapBuilder()], toRoot(),
-        inputs: ['web/**.dart', 'test/**.browser_test.dart'], hideOutput: true)
+        hideOutput: true,
+        defaultGenerateFor: const ['web/**', 'test/**.browser_test.dart'])
   ];
 
   await run(args, builders);

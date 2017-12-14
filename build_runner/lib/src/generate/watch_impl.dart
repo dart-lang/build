@@ -56,7 +56,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildActions = createBuildActions(options.packageGraph, builders);
+  final buildActions = await createBuildActions(options.packageGraph, builders);
 
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 

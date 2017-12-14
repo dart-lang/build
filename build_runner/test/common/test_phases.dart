@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -65,19 +66,22 @@ Future wait(int milliseconds) =>
 ///       });
 ///     }
 ///
-Future<BuildResult> testBuilders(List<BuilderApplication> builders,
-    Map<String, /*String|List<int>*/ dynamic> inputs,
-    {Map<String, /*String|List<int>*/ dynamic> outputs,
-    PackageGraph packageGraph,
-    BuildStatus status: BuildStatus.success,
-    Matcher exceptionMatcher,
-    InMemoryRunnerAssetReader reader,
-    InMemoryRunnerAssetWriter writer,
-    Level logLevel: Level.OFF,
-    onLog(LogRecord record),
-    bool checkBuildStatus: true,
-    bool deleteFilesByDefault: true,
-    bool enableLowResourcesMode: false}) async {
+Future<BuildResult> testBuilders(
+  List<BuilderApplication> builders,
+  Map<String, /*String|List<int>*/ dynamic> inputs, {
+  Map<String, /*String|List<int>*/ dynamic> outputs,
+  PackageGraph packageGraph,
+  BuildStatus status: BuildStatus.success,
+  Matcher exceptionMatcher,
+  InMemoryRunnerAssetReader reader,
+  InMemoryRunnerAssetWriter writer,
+  Level logLevel: Level.OFF,
+  onLog(LogRecord record),
+  bool checkBuildStatus: true,
+  bool deleteFilesByDefault: true,
+  bool enableLowResourcesMode: false,
+  Map<String, BuildConfig> overrideBuildConfig,
+}) async {
   writer ??= new InMemoryRunnerAssetWriter();
   reader ??= new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph?.root?.name);
@@ -93,15 +97,18 @@ Future<BuildResult> testBuilders(List<BuilderApplication> builders,
 
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
 
-  var result = await build_impl.build(builders,
-      deleteFilesByDefault: deleteFilesByDefault,
-      reader: reader,
-      writer: writer,
-      packageGraph: packageGraph,
-      logLevel: logLevel,
-      onLog: onLog,
-      skipBuildScriptCheck: true,
-      enableLowResourcesMode: enableLowResourcesMode);
+  var result = await build_impl.build(
+    builders,
+    deleteFilesByDefault: deleteFilesByDefault,
+    reader: reader,
+    writer: writer,
+    packageGraph: packageGraph,
+    logLevel: logLevel,
+    onLog: onLog,
+    skipBuildScriptCheck: true,
+    enableLowResourcesMode: enableLowResourcesMode,
+    overrideBuildConfig: overrideBuildConfig,
+  );
 
   if (checkBuildStatus) {
     checkBuild(result,

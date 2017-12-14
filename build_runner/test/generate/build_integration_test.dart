@@ -258,7 +258,8 @@ import 'package:build_test/build_test.dart';
 main() async {
   await build([
     applyToRoot(new CopyBuilder()),
-    applyToRoot(new CopyBuilder(), inputs: ['**.txt.copy']),
+    applyToRoot(new CopyBuilder(
+        inputExtension: '.txt.copy', extension: 'txt.copy.copy')),
   ]);
 }
 ''')
