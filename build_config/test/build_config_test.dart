@@ -8,8 +8,7 @@ import 'package:build_config/build_config.dart';
 
 void main() {
   test('build.yaml can be parsed', () {
-    var pubspec = new Pubspec.parse(pubspecYaml);
-    var buildConfig = new BuildConfig.parse(pubspec, buildYaml);
+    var buildConfig = new BuildConfig.parse('example', ['a', 'b'], buildYaml);
     expectBuildTargets(buildConfig.buildTargets, {
       'a': new BuildTarget(
         builders: {
@@ -56,8 +55,8 @@ void main() {
   });
 
   test('build.yaml can omit a targets section', () {
-    var pubspec = new Pubspec.parse(pubspecYaml);
-    var buildConfig = new BuildConfig.parse(pubspec, buildYamlNoTargets);
+    var buildConfig =
+        new BuildConfig.parse('example', ['a', 'b'], buildYamlNoTargets);
     expectBuildTargets(buildConfig.buildTargets, {
       'example': new BuildTarget(
         dependencies: ['a', 'b'],
@@ -134,13 +133,6 @@ builders:
     import: package:example/builder.dart
     build_extensions: {".dart": [".g.dart", ".json"]}
     target: example
-''';
-
-var pubspecYaml = '''
-name: example
-dependencies:
-  a: 1.0.0
-  b: 2.0.0
 ''';
 
 void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
