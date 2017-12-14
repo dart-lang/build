@@ -1,3 +1,7 @@
+## 0.7.3
+
+* Allow null and empty outputs form `GeneratorForAnnotation`.
+
 ## 0.7.2+1
 
 * Allow `package:build` version 0.11.0

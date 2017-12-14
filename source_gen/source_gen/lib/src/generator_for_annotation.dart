@@ -39,7 +39,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     var allOutput = await Future.wait(elements.map((e) async =>
         await generateForAnnotatedElement(e.element, e.annotation, buildStep)));
     // TODO interleave comments indicating which element produced the output?
-    return allOutput.join('\n');
+    return allOutput.where((o) => o != null && o.isNotEmpty).join('\n');
   }
 
   /// Override to return source code to generate for [element].
