@@ -13,7 +13,7 @@ import 'package:glob/glob.dart';
 /// [InMemoryRunnerAssetReader] extends [InMemoryAssetReader] directly then it
 /// can't use mixins ([Md5DigestReader] in this case).
 ///
-/// Classes with Mixings can't call a `super` constructor with named arguments.
+/// Classes with mixins can't call a `super` constructor with named arguments.
 class _InMemoryAssetReader extends InMemoryAssetReader {
   _InMemoryAssetReader(Map<AssetId, dynamic> sourceAssets, String rootPackage)
       : super(sourceAssets: sourceAssets, rootPackage: rootPackage);
