@@ -61,7 +61,7 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
   return builderApplications;
 }
 
-/// A method forwarding to `serveMain`.
+/// A method forwarding to `run`.
 Method _main() => new Method((b) => b
   ..name = 'main'
   ..lambda = true
@@ -70,8 +70,7 @@ Method _main() => new Method((b) => b
     ..type = new TypeReference((b) => b
       ..symbol = 'List'
       ..types.add(refer('String')))))
-  ..body = refer('serveMain',
-          'package:build_runner/src/build_script_generate/serve_main.dart')
+  ..body = refer('run', 'package:build_runner/build_runner.dart')
       .call([refer('args'), refer('_builders')]).code);
 
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
