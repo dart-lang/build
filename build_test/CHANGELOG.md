@@ -1,3 +1,9 @@
+## 0.9.4
+
+- Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
+  case where the reader should be kept up to date as assets are written through
+  a writer.
+
 ## 0.9.3
 
 - Added `resolveSources`, a way to resolve multiple libraries for testing,

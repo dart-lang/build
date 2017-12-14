@@ -19,7 +19,7 @@ class InMemoryAssetReader
   final String rootPackage;
 
   @override
-  final Set<AssetId> assetsRead;
+  final Set<AssetId> assetsRead = new Set<AssetId>();
 
   /// Create a new asset reader that contains [sourceAssets].
   ///
@@ -28,8 +28,10 @@ class InMemoryAssetReader
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
   InMemoryAssetReader({Map<AssetId, dynamic> sourceAssets, this.rootPackage})
-      : assets = _assetsAsBytes(sourceAssets) ?? <AssetId, List<int>>{},
-        assetsRead = new Set<AssetId>();
+      : assets = _assetsAsBytes(sourceAssets) ?? <AssetId, List<int>>{};
+
+  /// Create a new asset reader backed by [assets].
+  InMemoryAssetReader.shareAssetCache(this.assets, {this.rootPackage});
 
   static Map<AssetId, List<int>> _assetsAsBytes(Map<AssetId, dynamic> assets) {
     if (assets == null || assets.isEmpty) {

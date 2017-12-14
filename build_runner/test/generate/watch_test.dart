@@ -427,8 +427,7 @@ Stream<BuildResult> startWatch(List<BuilderApplication> builders,
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });
-  final actualAssets = writer.assets;
-  final reader = new InMemoryRunnerAssetReader(actualAssets);
+  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets);
   packageGraph ??=
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
   final watcherFactory = (String path) => new FakeWatcher(path);
