@@ -74,9 +74,9 @@ Method _main() => new Method((b) => b
           'package:build_runner/src/build_script_generate/serve_main.dart')
       .call([refer('args'), refer('_builders')]).code);
 
-Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
-    BuildConfig.fromPackageDir(
-        await Pubspec.fromPackageDir(package.path), package.path);
+Future<BuildConfig> _packageBuildConfig(PackageNode package) =>
+    BuildConfig.fromBuildConfigDir(
+        package.name, package.dependencies.map((n) => n.name), package.path);
 
 /// An expression calling `apply` with appropriate setup for a Builder.
 Expression _applyBuilder(BuilderDefinition definition) =>

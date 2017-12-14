@@ -58,18 +58,34 @@ class BuildConfig {
   static const _isOptional = 'is_optional';
   static const _buildTo = 'build_to';
 
-  /// Returns a parsed [BuildConfig] file in [path], if one exists.
+  /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
+  /// default config.
   ///
-  /// Otherwise uses the default setup.
-  static Future<BuildConfig> fromPackageDir(Pubspec pubspec, String path,
+  /// [path] must be a directory chich contains a `pubspec.yaml` file and
+  /// optionally a `build.yaml`.
+  static Future<BuildConfig> fromPackageDir(String path,
+      {bool includeWebSources: false}) async {
+    final pubspec = await Pubspec.fromPackageDir(path);
+    return fromBuildConfigDir(
+        pubspec.pubPackageName, pubspec.dependencies, path,
+        includeWebSources: includeWebSources);
+  }
+
+  /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
+  /// default config.
+  ///
+  /// [path] maybe be a directory which contains a `build.yaml`.
+  static Future<BuildConfig> fromBuildConfigDir(
+      String packageName, Iterable<String> dependencies, String path,
       {bool includeWebSources: false}) async {
     final configPath = p.join(path, 'build.yaml');
     final file = new File(configPath);
     if (await file.exists()) {
-      return new BuildConfig.parse(pubspec, await file.readAsString(),
+      return new BuildConfig.parse(
+          packageName, dependencies, await file.readAsString(),
           includeWebSources: includeWebSources);
     } else {
-      return new BuildConfig.useDefault(pubspec,
+      return new BuildConfig.useDefault(packageName, dependencies,
           includeWebSources: includeWebSources);
     }
   }
@@ -83,27 +99,26 @@ class BuildConfig {
   final buildTargets = <String, BuildTarget>{};
 
   /// The default config if you have no `build.yaml` file.
-  BuildConfig.useDefault(Pubspec pubspec,
+  BuildConfig.useDefault(this.packageName, Iterable<String> dependencies,
       {bool includeWebSources: false,
       List<String> platforms: const [],
-      Iterable<String> excludeSources: const []})
-      : packageName = pubspec.pubPackageName {
+      Iterable<String> excludeSources: const []}) {
     var sources = ["lib/**"];
     if (includeWebSources) sources.add("web/**");
     buildTargets[packageName] = new BuildTarget(
-        dependencies: pubspec.dependencies,
+        dependencies: dependencies,
         platforms: platforms,
         isDefault: true,
         name: packageName,
-        package: pubspec.pubPackageName,
+        package: packageName,
         sources: sources,
         excludeSources: excludeSources);
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].
-  BuildConfig.parse(Pubspec pubspec, String configYaml,
-      {bool includeWebSources: false})
-      : packageName = pubspec.pubPackageName {
+  BuildConfig.parse(
+      this.packageName, Iterable<String> dependencies, String configYaml,
+      {bool includeWebSources: false}) {
     final config = loadYaml(configYaml);
 
     final Map<String, Map> targetConfigs =
@@ -150,11 +165,11 @@ class BuildConfig {
     if (buildTargets.isEmpty) {
       var sources = ["lib/**"];
       if (includeWebSources) sources.add("web/**");
-      buildTargets[pubspec.pubPackageName] = new BuildTarget(
-          dependencies: pubspec.dependencies,
+      buildTargets[packageName] = new BuildTarget(
+          dependencies: dependencies,
           isDefault: true,
-          name: pubspec.pubPackageName,
-          package: pubspec.pubPackageName,
+          name: packageName,
+          package: packageName,
           sources: sources);
     }
 
@@ -198,7 +213,7 @@ class BuildConfig {
         import: import,
         buildExtensions: buildExtensions,
         name: builderName,
-        package: pubspec.pubPackageName,
+        package: packageName,
         target: target,
         autoApply: autoApply,
         requiredInputs: requiredInputs,
