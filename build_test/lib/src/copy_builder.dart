@@ -38,8 +38,13 @@ class CopyBuilder implements Builder {
       this.inputExtension: '',
       this.blockUntil});
 
+  /// A stream which emits the primary input each time [build] is called.
+  Stream<AssetId> get builds => _builds.stream;
+  final _builds = new StreamController<AssetId>.broadcast();
+
   @override
   Future build(BuildStep buildStep) async {
+    _builds.add(buildStep.inputId);
     if (!buildStep.inputId.path.endsWith(inputExtension)) {
       throw new ArgumentError('Only expected inputs with extension '
           '$inputExtension but got ${buildStep.inputId}');

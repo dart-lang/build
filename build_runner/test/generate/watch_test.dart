@@ -208,13 +208,14 @@ void main() {
 
       test('rebuilds on file updates during first build', () async {
         var blocker = new Completer<Null>();
-        var buildAction =
-            applyToRoot(new CopyBuilder(blockUntil: blocker.future));
+        var builder = new CopyBuilder(blockUntil: blocker.future);
+        var firstBuildStarted = builder.builds.first;
+        var buildAction = applyToRoot(builder);
         var writer = new InMemoryRunnerAssetWriter();
         var results = new StreamQueue(
             startWatch([buildAction], {'a|web/a.txt': 'a'}, writer));
 
-        await new Future(() {});
+        await firstBuildStarted;
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
         blocker.complete();

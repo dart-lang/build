@@ -1,8 +1,9 @@
 ## 0.9.4
 
-- Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
-  case where the reader should be kept up to date as assets are written through
-  a writer.
+- Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for
+  the case where the reader should be kept up to date as assets are written
+  through a writer.
+- Added `CopyBuilder.builds` stream which emits each time a build is started.
 
 ## 0.9.3
 
