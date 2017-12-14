@@ -9,7 +9,9 @@ import 'package:shelf/shelf_io.dart';
 
 import 'options.dart';
 
-Future serveMain(List<String> args, List<BuilderApplication> builders) async {
+/// A common entrypoint to parse command line arguments and build or serve with
+/// [builders].
+Future run(List<String> args, List<BuilderApplication> builders) async {
   var options = new Options.parse(args);
   // TODO - remove `delteFileByDefault` once we resolve handling conflicts
   var handler = await watch(builders,
