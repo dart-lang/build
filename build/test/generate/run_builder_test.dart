@@ -28,7 +28,7 @@ main() {
     });
     builder = new FetchingCopyBuilder(resource);
     writer = new InMemoryAssetWriter();
-    reader = new InMemoryAssetReader(sourceAssets: writer.assets);
+    reader = new InMemoryAssetReader.shareAssetCache(writer.assets);
     addAssets(inputs, writer);
   });
 
