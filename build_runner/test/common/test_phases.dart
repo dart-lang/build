@@ -79,9 +79,8 @@ Future<BuildResult> testBuilders(List<BuilderApplication> builders,
     bool deleteFilesByDefault: true,
     bool enableLowResourcesMode: false}) async {
   writer ??= new InMemoryRunnerAssetWriter();
-  final actualAssets = writer.assets;
-  reader ??=
-      new InMemoryRunnerAssetReader(actualAssets, packageGraph?.root?.name);
+  reader ??= new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+      rootPackage: packageGraph?.root?.name);
 
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);

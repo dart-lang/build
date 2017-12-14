@@ -115,7 +115,9 @@ void main() {
         var ready = new Completer();
         var firstBuilder = new ExistsBuilder(aTxtId);
         var writer = new InMemoryRunnerAssetWriter();
-        var reader = new InMemoryRunnerAssetReader(writer.assets, 'a');
+        var reader = new InMemoryRunnerAssetReader.shareAssetCache(
+            writer.assets,
+            rootPackage: 'a');
         var builders = [
           apply('', '', [(_) => firstBuilder], toRoot(), inputs: ['lib/a.txt']),
           apply(
