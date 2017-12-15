@@ -77,6 +77,9 @@ class BuildAction {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BuildAction &&
+          // Risky, but we don't want to force all Builders to implement a sane
+          // hashcode/equals
+          other.builder.runtimeType == builder.runtimeType &&
           other.inputSet == inputSet &&
           other.isOptional == isOptional &&
           other.hideOutput == hideOutput &&
@@ -84,8 +87,13 @@ class BuildAction {
               other.builderOptions.config, builderOptions.config);
 
   @override
-  int get hashCode => _deepEquals
-      .hash([inputSet, isOptional, hideOutput, builderOptions.config]);
+  int get hashCode => _deepEquals.hash([
+        builder.runtimeType,
+        inputSet,
+        isOptional,
+        hideOutput,
+        builderOptions.config
+      ]);
 }
 
 final _deepEquals = const DeepCollectionEquality();
