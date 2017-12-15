@@ -61,7 +61,7 @@ class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
   /// default config.
   ///
-  /// [path] must be a directory chich contains a `pubspec.yaml` file and
+  /// [path] must be a directory which contains a `pubspec.yaml` file and
   /// optionally a `build.yaml`.
   static Future<BuildConfig> fromPackageDir(String path,
       {bool includeWebSources: false}) async {
@@ -74,7 +74,7 @@ class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
   /// default config.
   ///
-  /// [path] maybe be a directory which contains a `build.yaml`.
+  /// [path] shouldd the path to a directory which may contain a `build.yaml`.
   static Future<BuildConfig> fromBuildConfigDir(
       String packageName, Iterable<String> dependencies, String path,
       {bool includeWebSources: false}) async {
