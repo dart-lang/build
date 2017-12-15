@@ -7,7 +7,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf_io.dart';
 
@@ -47,6 +46,46 @@ class _SharedOptions {
         assumeTty: argResults[_assumeTty] as bool,
         deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool);
   }
+}
+
+/// Options specific to the [_ServeCommand].
+class _ServeOptions extends _SharedOptions {
+  final List<_ServeTarget> serveTargets;
+
+  _ServeOptions._(
+      {@required this.serveTargets,
+      @required bool assumeTty,
+      @required bool deleteFilesByDefault})
+      : super._(
+            assumeTty: assumeTty, deleteFilesByDefault: deleteFilesByDefault);
+
+  factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
+    var serveTargets = <_ServeTarget>[];
+    for (var arg in argResults.rest) {
+      var parts = arg.split(':');
+      var path = parts.first;
+      var port = parts.length == 2 ? int.parse(parts[1]) : 8080;
+      serveTargets.add(new _ServeTarget(path, port));
+    }
+    if (serveTargets.isEmpty) {
+      serveTargets.addAll([
+        new _ServeTarget('web', 8080),
+        new _ServeTarget('test', 8081),
+      ]);
+    }
+    return new _ServeOptions._(
+        serveTargets: serveTargets,
+        assumeTty: argResults[_assumeTty] as bool,
+        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool);
+  }
+}
+
+/// A target to serve, representing a directory and a port.
+class _ServeTarget {
+  final String dir;
+  final int port;
+
+  _ServeTarget(this.dir, this.port);
 }
 
 abstract class _BaseCommand extends Command {
@@ -131,7 +170,8 @@ class _ServeCommand extends _WatchCommand {
       'Runs a development server that serves the specified targets and runs '
       'builds based on file system updates.';
 
-  final logger = new Logger('Serve');
+  @override
+  _ServeOptions _readOptions() => new _ServeOptions.fromParsedArgs(argResults);
 
   @override
   Future<Null> run() async {
@@ -139,10 +179,13 @@ class _ServeCommand extends _WatchCommand {
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         assumeTty: options.assumeTty);
-    var server = await serve(handler.handlerFor('web'), 'localhost', 8000);
+    var servers = await Future.wait(options.serveTargets.map((target) =>
+        serve(handler.handlerFor(target.dir), 'localhost', target.port)));
     await handler.currentBuild;
-    stdout.writeln('Serving `web` on port 8000\n');
+    for (var target in options.serveTargets) {
+      stdout.writeln('Serving `${target.dir}` on port ${target.port}');
+    }
     await handler.buildResults.drain();
-    await server.close();
+    await Future.wait(servers.map((server) => server.close()));
   }
 }

@@ -47,7 +47,7 @@ class BuildOptions {
     logLevel ??= Level.INFO;
     Logger.root.level = logLevel;
 
-    overrideAnsiOutput(assumeTty ?? ansiOutputEnabled, () {
+    overrideAnsiOutput(assumeTty == true || ansiOutputEnabled, () {
       logListener = Logger.root.onRecord.listen(onLog ?? stdIOLogListener);
     });
 
