@@ -18,7 +18,7 @@ pub upgrade
 case $TASK in
 dartanalyzer) echo
   echo -e "TASK: dartanalyzer"
-  dartanalyzer .
+  dartanalyzer --fatal-infos --fatal-warnings .
   ;;
 dartfmt) echo
   echo -e "TASK: dartfmt"
