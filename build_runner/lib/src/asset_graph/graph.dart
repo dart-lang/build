@@ -372,16 +372,7 @@ class AssetGraph {
 Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
   var digestSink = new AccumulatorSink<Digest>();
   var bytesSink = md5.startChunkedConversion(digestSink);
-  for (var action in buildActions) {
-    bytesSink.add(UTF8.encode(action.package));
-    bytesSink.add([action.builder.runtimeType.toString().hashCode]);
-    for (var glob in action.inputSet.globs) {
-      bytesSink.add([glob.pattern.hashCode]);
-    }
-    for (var glob in action.inputSet.excludes) {
-      bytesSink.add([glob.pattern.hashCode]);
-    }
-  }
+  bytesSink.add(buildActions.map((a) => a.hashCode).toList());
   bytesSink.close();
   assert(digestSink.events.length == 1);
   return digestSink.events.first;

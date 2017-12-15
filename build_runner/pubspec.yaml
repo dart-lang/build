@@ -17,6 +17,7 @@ dependencies:
   build_config: ^0.1.1
   cli_util: ^0.1.2
   code_builder: ^2.3.0
+  collection: ^1.14.0
   convert: ^2.0.1
   crypto: ">=0.9.2 <3.0.0"
   dart_style: ^1.0.0
