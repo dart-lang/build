@@ -79,7 +79,7 @@ class BuildAction {
       other is BuildAction &&
           // Risky, but we don't want to force all Builders to implement a sane
           // hashcode/equals
-          other.builder.runtimeType == builder.runtimeType &&
+          '${other.builder.runtimeType}' == '${builder.runtimeType}' &&
           other.inputSet == inputSet &&
           other.isOptional == isOptional &&
           other.hideOutput == hideOutput &&
@@ -88,7 +88,7 @@ class BuildAction {
 
   @override
   int get hashCode => _deepEquals.hash([
-        builder.runtimeType,
+        '${builder.runtimeType}',
         inputSet,
         isOptional,
         hideOutput,
