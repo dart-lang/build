@@ -78,6 +78,9 @@ class BuildAction implements InputSet {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BuildAction &&
+          // Risky, but we don't want to force all Builders to implement a sane
+          // hashcode/equals
+          '${other.builder.runtimeType}' == '${builder.runtimeType}' &&
           other.package == package &&
           other._inputSet == _inputSet &&
           other.isOptional == isOptional &&
@@ -86,8 +89,14 @@ class BuildAction implements InputSet {
               other.builderOptions.config, builderOptions.config);
 
   @override
-  int get hashCode => _deepEquals.hash(
-      [package, _inputSet, isOptional, hideOutput, builderOptions.config]);
+  int get hashCode => _deepEquals.hash([
+        '${builder.runtimeType}',
+        package,
+        _inputSet,
+        isOptional,
+        hideOutput,
+        builderOptions.config
+      ]);
 }
 
 final _deepEquals = const DeepCollectionEquality();

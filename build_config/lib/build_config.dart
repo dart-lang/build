@@ -3,5 +3,3 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/build_config.dart';
-export 'src/config_set.dart';
-export 'src/pubspec.dart';

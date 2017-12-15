@@ -4,6 +4,7 @@
 export 'src/asset/file_based.dart';
 export 'src/asset/reader.dart' show RunnerAssetReader, DigestAssetReader;
 export 'src/asset/writer.dart';
+export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/performance_tracker.dart'
