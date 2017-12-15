@@ -74,7 +74,7 @@ class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
   /// default config.
   ///
-  /// [path] shouldd the path to a directory which may contain a `build.yaml`.
+  /// [path] should the path to a directory which may contain a `build.yaml`.
   static Future<BuildConfig> fromBuildConfigDir(
       String packageName, Iterable<String> dependencies, String path,
       {bool includeWebSources: false}) async {
