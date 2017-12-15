@@ -15,7 +15,7 @@ Future<Null> main() async {
   var logListener = Logger.root.onRecord.listen(stdIOLogListener);
   await ensureBuildScript();
   var dart = Platform.resolvedExecutable;
-  final args = [scriptLocation];
+  final args = [scriptLocation, 'serve'];
   if (stdioType(stdin) == StdioType.TERMINAL) args.add('--assume-tty');
   var buildRun = await new ProcessManager().spawn(dart, args);
   await buildRun.exitCode;
