@@ -5,14 +5,14 @@
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 
-import 'input_set.dart';
+import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a [Builder] on a
 /// specific [package].
-class BuildAction implements InputSet {
+class BuildAction implements InputMatcher {
   final String package;
   final Builder builder;
-  final InputSet _inputSet;
+  final InputMatcher _inputs;
 
   /// Whether to run lazily when an output is read.
   ///
@@ -31,7 +31,7 @@ class BuildAction implements InputSet {
   /// the root.
   final bool hideOutput;
 
-  BuildAction._(this.package, this.builder, this._inputSet, this.builderOptions,
+  BuildAction._(this.package, this.builder, this._inputs, this.builderOptions,
       {bool isOptional, bool hideOutput})
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
@@ -55,21 +55,21 @@ class BuildAction implements InputSet {
     bool isOptional,
     bool hideOutput,
   }) {
-    var inputSet = new InputSet(include: include, exclude: exclude);
+    var inputs = new InputMatcher(include: include, exclude: exclude);
     builderOptions ??= const BuilderOptions(const {});
-    return new BuildAction._(package, builder, inputSet, builderOptions,
+    return new BuildAction._(package, builder, inputs, builderOptions,
         isOptional: isOptional, hideOutput: hideOutput);
   }
 
   @override
-  bool matches(AssetId id) => id.package == package && _inputSet.matches(id);
+  bool matches(AssetId id) => id.package == package && _inputs.matches(id);
 
   @override
   String toString() {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
     if (hideOutput) settings.add('hidden');
-    var result = '$builder on $_inputSet';
+    var result = '$builder on $_inputs';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
   }
@@ -82,7 +82,7 @@ class BuildAction implements InputSet {
           // hashcode/equals
           '${other.builder.runtimeType}' == '${builder.runtimeType}' &&
           other.package == package &&
-          other._inputSet == _inputSet &&
+          other._inputs == _inputs &&
           other.isOptional == isOptional &&
           other.hideOutput == hideOutput &&
           _deepEquals.equals(
@@ -92,7 +92,7 @@ class BuildAction implements InputSet {
   int get hashCode => _deepEquals.hash([
         '${builder.runtimeType}',
         package,
-        _inputSet,
+        _inputs,
         isOptional,
         hideOutput,
         builderOptions.config

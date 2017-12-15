@@ -6,15 +6,15 @@ import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 
-/// A set of file paths to match inputs to for a builder.
-abstract class InputSet {
+/// A filter on files to run through a Builder.
+abstract class InputMatcher {
   /// Whether [input] is included in this set of assets.
   bool matches(AssetId input);
-  factory InputSet({Iterable<String> include, Iterable<String> exclude}) =
-      _GlobInputSet;
+  factory InputMatcher({Iterable<String> include, Iterable<String> exclude}) =
+      _GlobInputMatcher;
 }
 
-class _GlobInputSet implements InputSet {
+class _GlobInputMatcher implements InputMatcher {
   /// The files to include
   ///
   /// Null or empty means include everything.
@@ -25,7 +25,8 @@ class _GlobInputSet implements InputSet {
   /// Null or empty means exclude nothing.
   final List<Glob> exclude;
 
-  _GlobInputSet({Iterable<String> include, Iterable<String> exclude: const []})
+  _GlobInputMatcher(
+      {Iterable<String> include, Iterable<String> exclude: const []})
       : this.include = include?.map((p) => new Glob(p))?.toList(),
         this.exclude = exclude?.map((p) => new Glob(p))?.toList();
 
@@ -59,7 +60,7 @@ class _GlobInputSet implements InputSet {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is _GlobInputSet &&
+      (other is _GlobInputMatcher &&
           _deepEquals.equals(_patterns(include), _patterns(exclude)) &&
           _deepEquals.equals(_patterns(exclude), _patterns(other.exclude)));
 
