@@ -97,6 +97,8 @@ class BuilderApplication {
   ///
   /// If a builder tries to overwrite another asset it will result in a build
   /// time error.
+  ///
+  /// This may only be `true` if `hideOutput` is also `true`.
   final bool allowDeclaredOutputConflicts;
 
   const BuilderApplication._(this.providingPackage, this.builderName,
