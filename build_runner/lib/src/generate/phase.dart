@@ -9,12 +9,10 @@ import 'input_set.dart';
 
 /// A "phase" in the build graph, which represents running a [Builder] on a
 /// specific [package].
-class BuildAction {
+class BuildAction implements InputSet {
+  final String package;
   final Builder builder;
-
-  final InputSet inputSet;
-
-  String get package => inputSet.package;
+  final InputSet _inputSet;
 
   /// Whether to run lazily when an output is read.
   ///
@@ -33,15 +31,15 @@ class BuildAction {
   /// the root.
   final bool hideOutput;
 
-  BuildAction._(this.builder, this.inputSet, this.builderOptions,
+  BuildAction._(this.package, this.builder, this._inputSet, this.builderOptions,
       {bool isOptional, bool hideOutput})
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
 
   /// Creates an [BuildAction] for a normal [Builder].
   ///
-  /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
-  /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
+  /// Runs [builder] on [package] with [include] as primary inputs, excluding
+  /// [exclude]. Glob syntax is supported for both [include] and [exclude].
   ///
   /// [isOptional] specifies that a Builder may not be run unless some other
   /// Builder in a later phase attempts to read one of the potential outputs.
@@ -51,24 +49,27 @@ class BuildAction {
   factory BuildAction(
     Builder builder,
     String package, {
-    List<String> inputs,
-    List<String> excludes,
+    Iterable<String> include,
+    Iterable<String> exclude,
     BuilderOptions builderOptions,
     bool isOptional,
     bool hideOutput,
   }) {
-    var inputSet = new InputSet(package, inputs, excludes: excludes);
+    var inputSet = new InputSet(include: include, exclude: exclude);
     builderOptions ??= const BuilderOptions(const {});
-    return new BuildAction._(builder, inputSet, builderOptions,
+    return new BuildAction._(package, builder, inputSet, builderOptions,
         isOptional: isOptional, hideOutput: hideOutput);
   }
+
+  @override
+  bool matches(AssetId id) => id.package == package && _inputSet.matches(id);
 
   @override
   String toString() {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
     if (hideOutput) settings.add('hidden');
-    var result = '$builder on $inputSet';
+    var result = '$builder on $_inputSet';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
   }
@@ -77,15 +78,16 @@ class BuildAction {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BuildAction &&
-          other.inputSet == inputSet &&
+          other.package == package &&
+          other._inputSet == _inputSet &&
           other.isOptional == isOptional &&
           other.hideOutput == hideOutput &&
           _deepEquals.equals(
               other.builderOptions.config, builderOptions.config);
 
   @override
-  int get hashCode => _deepEquals
-      .hash([inputSet, isOptional, hideOutput, builderOptions.config]);
+  int get hashCode => _deepEquals.hash(
+      [package, _inputSet, isOptional, hideOutput, builderOptions.config]);
 }
 
 final _deepEquals = const DeepCollectionEquality();

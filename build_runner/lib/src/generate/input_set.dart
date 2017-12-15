@@ -6,67 +6,66 @@ import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 
-final List<Glob> _defaultInclude = new List.unmodifiable([new Glob('**')]);
+/// A set of file paths to match inputs to for a builder.
+abstract class InputSet {
+  /// Whether [input] is included in this set of assets.
+  bool matches(AssetId input);
+  factory InputSet({Iterable<String> include, Iterable<String> exclude}) =
+      _GlobInputSet;
+}
 
-/// A set of files in a package to use as primary inputs to a `Builder`.
-class InputSet {
-  /// The package name that the [globs] should be ran on.
-  final String package;
-
-  /// Files in [package] that are used as inputs to a builder.
+class _GlobInputSet implements InputSet {
+  /// The files to include
   ///
-  /// **NOTE**: If [package] is a package _dependency_, then only files under
-  /// `lib` will be available. For the current application package any files can
-  /// be listed (such as `bin`, `web`, `tool`, etc).
-  final List<Glob> globs;
+  /// Null or empty means include everything.
+  final List<Glob> include;
 
-  /// Files that are excluded when processing [globs].
-  final List<Glob> excludes;
+  /// The files within [include] to exclude.
+  ///
+  /// Null or empty means exclude nothing.
+  final List<Glob> exclude;
 
-  InputSet(this.package, Iterable<String> globs,
-      {Iterable<String> excludes: const []})
-      : this.globs = globs == null
-            ? _defaultInclude
-            : new List.unmodifiable(globs.map((pattern) => new Glob(pattern))),
-        this.excludes = excludes == null
-            ? const []
-            : new List.unmodifiable(
-                excludes.map((pattern) => new Glob(pattern)));
+  _GlobInputSet({Iterable<String> include, Iterable<String> exclude: const []})
+      : this.include = include?.map((p) => new Glob(p))?.toList(),
+        this.exclude = exclude?.map((p) => new Glob(p))?.toList();
 
-  /// Returns whether [input] is included in [globs] and not in [excludes].
-  bool matches(AssetId input) =>
-      package == input.package &&
-      globs.any((g) => g.matches(input.path)) &&
-      !excludes.any((g) => g.matches(input.path));
+  @override
+  bool matches(AssetId input) => _include(input) && !_exclude(input);
+
+  bool _include(AssetId input) =>
+      include == null ||
+      include.isEmpty ||
+      include.any((g) => g.matches(input.path));
+
+  bool _exclude(AssetId input) =>
+      exclude != null &&
+      exclude.isNotEmpty &&
+      exclude.any((g) => g.matches(input.path));
 
   @override
   String toString() {
-    var buffer = new StringBuffer()
-      ..write('InputSet: package `$package` with globs');
-    for (var glob in globs) {
-      buffer.write(' `${glob.pattern}`');
+    final result = new StringBuffer();
+    if (include == null || include.isEmpty) {
+      result.write('any assets');
+    } else {
+      result.write('assets matching ${_patterns(include).toList()}');
     }
-    if (excludes.isNotEmpty) {
-      buffer.write(' excluding ');
+    if (exclude != null && exclude.isNotEmpty) {
+      result.write(' except ${_patterns(exclude).toList()}');
     }
-    for (var glob in excludes) {
-      buffer.write(' `${glob.pattern}`');
-    }
-    buffer.writeln('');
-    return buffer.toString();
+    return '$result';
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is InputSet &&
-          other.package == package &&
-          _deepEquals.equals(_patterns(globs), _patterns(other.globs)) &&
-          _deepEquals.equals(_patterns(excludes), _patterns(other.excludes)));
+      (other is _GlobInputSet &&
+          _deepEquals.equals(_patterns(include), _patterns(exclude)) &&
+          _deepEquals.equals(_patterns(exclude), _patterns(other.exclude)));
 
   @override
   int get hashCode =>
-      _deepEquals.hash([package, _patterns(globs), _patterns(excludes)]);
+      _deepEquals.hash([_patterns(include), _patterns(exclude)]);
 }
 
 final _deepEquals = const DeepCollectionEquality();

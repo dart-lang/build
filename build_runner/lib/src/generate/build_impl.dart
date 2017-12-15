@@ -202,12 +202,11 @@ class BuildImpl {
   Future<Set<AssetId>> _matchingPrimaryInputs(BuildAction action,
       int phaseNumber, ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
-    var inputSet = action.inputSet;
     var builder = action.builder;
     await Future
-        .wait(_assetGraph.packageNodes(inputSet.package).map((node) async {
+        .wait(_assetGraph.packageNodes(action.package).map((node) async {
       if (node is SyntheticAssetNode || node is InternalAssetNode) return;
-      if (!inputSet.matches(node.id)) return;
+      if (!action.matches(node.id)) return;
       if (!builder.buildExtensions.keys
           .any((inputExtension) => node.id.path.endsWith(inputExtension))) {
         return;

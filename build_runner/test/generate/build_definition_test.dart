@@ -191,7 +191,7 @@ main() {
         var buildActions = [
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true),
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-              inputs: ['**/*.txt'], hideOutput: true),
+              include: ['**/*.txt'], hideOutput: true),
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -217,7 +217,7 @@ main() {
               builderOptions: new BuilderOptions({'test': 'option'}),
               hideOutput: true),
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-              inputs: ['**/*.txt'], hideOutput: true),
+              include: ['**/*.txt'], hideOutput: true),
         ];
         var buildDefinition =
             await BuildDefinition.prepareWorkspace(options, newBuildActions);
@@ -304,7 +304,7 @@ main() {
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
       buildActions.add(new BuildAction(new CopyBuilder(), 'a',
-          inputs: ['.copy'], hideOutput: true));
+          include: ['.copy'], hideOutput: true));
       logs.clear();
 
       var buildDefinition =

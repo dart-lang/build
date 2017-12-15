@@ -129,7 +129,7 @@ void main() {
 
     group('with buildActions', () {
       final buildActions = [
-        new BuildAction(new CopyBuilder(), 'foo', excludes: ['excluded'])
+        new BuildAction(new CopyBuilder(), 'foo', exclude: ['excluded'])
       ];
       final primaryInputId = makeAssetId('foo|file');
       final excludedInputId = makeAssetId('foo|excluded');

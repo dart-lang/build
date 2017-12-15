@@ -131,8 +131,8 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
       .where(builderApplication.filter)
       .map((p) => new BuildAction(b(options), p.name,
           builderOptions: options,
-          inputs: builderApplication.inputs,
-          excludes: builderApplication.excludes,
+          include: builderApplication.inputs,
+          exclude: builderApplication.excludes,
           isOptional: builderApplication.isOptional,
           hideOutput: builderApplication.hideOutput)));
 }
