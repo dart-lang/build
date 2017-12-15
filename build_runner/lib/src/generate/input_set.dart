@@ -70,4 +70,5 @@ class _GlobInputSet implements InputSet {
 
 final _deepEquals = const DeepCollectionEquality();
 
-Iterable<String> _patterns(Iterable<Glob> globs) => globs?.map((g) => g.pattern);
+Iterable<String> _patterns(Iterable<Glob> globs) =>
+    globs?.map((g) => g.pattern);
