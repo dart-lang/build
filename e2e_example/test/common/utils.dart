@@ -34,7 +34,7 @@ Future<Null> startManualServer(
         bool verbose,
         List<Function> extraExpects,
         String scriptPath = 'tool/build.dart'}) =>
-    _startServer('dart', [scriptPath],
+    _startServer('dart', [scriptPath, 'serve'],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
