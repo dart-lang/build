@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 
 import 'input_set.dart';
 
@@ -63,5 +64,36 @@ class BuildAction {
   }
 
   @override
-  String toString() => '$builder on $inputSet';
+  String toString() {
+    final settings = <String>[];
+    if (isOptional) settings.add('optional');
+    if (hideOutput) settings.add('hidden');
+    var result = '$builder on $inputSet';
+    if (settings.isNotEmpty) result += ' $settings';
+    return result;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BuildAction &&
+          // Risky, but we don't want to force all Builders to implement a sane
+          // hashcode/equals
+          '${other.builder.runtimeType}' == '${builder.runtimeType}' &&
+          other.inputSet == inputSet &&
+          other.isOptional == isOptional &&
+          other.hideOutput == hideOutput &&
+          _deepEquals.equals(
+              other.builderOptions.config, builderOptions.config);
+
+  @override
+  int get hashCode => _deepEquals.hash([
+        '${builder.runtimeType}',
+        inputSet,
+        isOptional,
+        hideOutput,
+        builderOptions.config
+      ]);
 }
+
+final _deepEquals = const DeepCollectionEquality();

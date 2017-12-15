@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 
 final List<Glob> _defaultInclude = new List.unmodifiable([new Glob('**')]);
@@ -54,4 +55,20 @@ class InputSet {
     buffer.writeln('');
     return buffer.toString();
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InputSet &&
+          other.package == package &&
+          _deepEquals.equals(_patterns(globs), _patterns(other.globs)) &&
+          _deepEquals.equals(_patterns(excludes), _patterns(other.excludes)));
+
+  @override
+  int get hashCode =>
+      _deepEquals.hash([package, _patterns(globs), _patterns(excludes)]);
 }
+
+final _deepEquals = const DeepCollectionEquality();
+
+Iterable<String> _patterns(Iterable<Glob> globs) => globs.map((g) => g.pattern);
