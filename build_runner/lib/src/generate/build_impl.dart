@@ -28,7 +28,6 @@ import 'build_result.dart';
 import 'exceptions.dart';
 import 'fold_frames.dart';
 import 'heartbeat.dart';
-import 'input_set.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
@@ -194,7 +193,7 @@ class BuildImpl {
         performance: performanceTracker..stop());
   }
 
-  /// Gets a list of all inputs matching the [InputSet] of [action], as well as
+  /// Gets a list of all inputs matching the [action], as well as
   /// its [Builder]s primary inputs.
   ///
   /// Lazily builds any optional build actions that might potentially produce
