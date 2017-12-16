@@ -303,7 +303,7 @@ class AssetGraph {
       var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
-      var inputs = allInputs.where(action.inputSet.matches).toList();
+      var inputs = allInputs.where(action.matches).toList();
       for (var input in inputs) {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.

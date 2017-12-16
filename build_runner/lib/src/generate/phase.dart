@@ -5,16 +5,14 @@
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 
-import 'input_set.dart';
+import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a [Builder] on a
 /// specific [package].
-class BuildAction {
+class BuildAction implements InputMatcher {
+  final String package;
   final Builder builder;
-
-  final InputSet inputSet;
-
-  String get package => inputSet.package;
+  final InputMatcher _inputs;
 
   /// Whether to run lazily when an output is read.
   ///
@@ -33,15 +31,15 @@ class BuildAction {
   /// the root.
   final bool hideOutput;
 
-  BuildAction._(this.builder, this.inputSet, this.builderOptions,
+  BuildAction._(this.package, this.builder, this._inputs, this.builderOptions,
       {bool isOptional, bool hideOutput})
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
 
   /// Creates an [BuildAction] for a normal [Builder].
   ///
-  /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
-  /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
+  /// Runs [builder] on [package] with [include] as primary inputs, excluding
+  /// [exclude]. Glob syntax is supported for both [include] and [exclude].
   ///
   /// [isOptional] specifies that a Builder may not be run unless some other
   /// Builder in a later phase attempts to read one of the potential outputs.
@@ -51,24 +49,27 @@ class BuildAction {
   factory BuildAction(
     Builder builder,
     String package, {
-    List<String> inputs,
-    List<String> excludes,
+    Iterable<String> include,
+    Iterable<String> exclude,
     BuilderOptions builderOptions,
     bool isOptional,
     bool hideOutput,
   }) {
-    var inputSet = new InputSet(package, inputs, excludes: excludes);
+    var inputs = new InputMatcher(include: include, exclude: exclude);
     builderOptions ??= const BuilderOptions(const {});
-    return new BuildAction._(builder, inputSet, builderOptions,
+    return new BuildAction._(package, builder, inputs, builderOptions,
         isOptional: isOptional, hideOutput: hideOutput);
   }
+
+  @override
+  bool matches(AssetId id) => id.package == package && _inputs.matches(id);
 
   @override
   String toString() {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
     if (hideOutput) settings.add('hidden');
-    var result = '$builder on $inputSet';
+    var result = '$builder on $_inputs';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
   }
@@ -80,7 +81,8 @@ class BuildAction {
           // Risky, but we don't want to force all Builders to implement a sane
           // hashcode/equals
           '${other.builder.runtimeType}' == '${builder.runtimeType}' &&
-          other.inputSet == inputSet &&
+          other.package == package &&
+          other._inputs == _inputs &&
           other.isOptional == isOptional &&
           other.hideOutput == hideOutput &&
           _deepEquals.equals(
@@ -89,7 +91,8 @@ class BuildAction {
   @override
   int get hashCode => _deepEquals.hash([
         '${builder.runtimeType}',
-        inputSet,
+        package,
+        _inputs,
         isOptional,
         hideOutput,
         builderOptions.config
