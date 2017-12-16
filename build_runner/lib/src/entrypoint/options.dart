@@ -26,7 +26,7 @@ class BuildCommandRunner extends CommandRunner {
   }
 }
 
-/// Base ptions that are shared among all commands.
+/// Base options that are shared among all commands.
 class _SharedOptions {
   /// Skip the `stdioType()` check and assume the output is going to a terminal
   /// and that we can accept input on stdin.
@@ -138,7 +138,7 @@ class _BuildCommand extends _BaseCommand {
   }
 }
 
-/// A [Command] that does watches the file system for updates and rebuilds as
+/// A [Command] that watches the file system for updates and rebuilds as
 /// appropriate.
 class _WatchCommand extends _BaseCommand {
   @override
