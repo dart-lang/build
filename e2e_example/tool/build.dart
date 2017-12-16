@@ -3,15 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_compilers/build_compilers.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
-import 'package:shelf/shelf_io.dart' as shelf_io;
 
-Future main() async {
+Future main(List<String> args) async {
   var builders = [
     apply('e2e_example', 'throwing_builder', [(_) => new ThrowingBuilder()],
         toRoot(),
@@ -36,23 +34,7 @@ Future main() async {
         inputs: ['web/**.dart', 'test/**.browser_test.dart'], hideOutput: true)
   ];
 
-  var serveHandler = await watch(
-    builders,
-    deleteFilesByDefault: true,
-  );
-
-  var server =
-      await shelf_io.serve(serveHandler.handlerFor('web'), 'localhost', 8080);
-  var testServer =
-      await shelf_io.serve(serveHandler.handlerFor('test'), 'localhost', 8081);
-
-  await serveHandler.currentBuild;
-  stderr.writeln('Serving `web` at http://localhost:8080/');
-  stderr.writeln('Serving `test` at http://localhost:8081/');
-
-  await serveHandler.buildResults.drain();
-  await server.close();
-  await testServer.close();
+  await run(args, builders);
 }
 
 class ThrowingBuilder extends Builder {
