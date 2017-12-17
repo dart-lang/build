@@ -64,9 +64,9 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   var jsOutputFile = scratchSpace.fileFor(module.jsId);
   var libraryRoot = '/${p.split(p.dirname(module.jsId.path)).first}';
   var sdkSummary = p.url.join(sdkDir, 'lib/_internal/ddc_sdk.sum');
-  var request = new WorkRequest();
+  var request = <String>[];
 
-  request.arguments.addAll([
+  request.addAll([
     '--dart-sdk-summary=$sdkSummary',
     '--modules=amd',
     '--dart-sdk=$sdkDir',
@@ -79,22 +79,22 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   ]);
 
   if (debugMode) {
-    request.arguments.addAll([
+    request.addAll([
       '--source-map',
       '--source-map-comment',
       '--inline-source-map',
     ]);
   } else {
-    request.arguments.add('--no-source-map');
+    request.add('--no-source-map');
   }
 
   // Add the default analysis_options.
   await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-  request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
+  request.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the linked summaries as summary inputs.
   for (var id in transitiveSummaryDeps) {
-    request.arguments.addAll(['-s', scratchSpace.fileFor(id).path]);
+    request.addAll(['-s', scratchSpace.fileFor(id).path]);
   }
 
   // Add URL mappings for all the package: files to tell DartDevc where to
@@ -104,17 +104,16 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
   for (var id in module.sources) {
     var uri = canonicalUriFor(id);
     if (uri.startsWith('package:')) {
-      request.arguments
-          .add('--url-mapping=$uri,${scratchSpace.fileFor(id).path}');
+      request.add('--url-mapping=$uri,${scratchSpace.fileFor(id).path}');
     } else {
       var absoluteFileUri = new Uri.file('/${id.path}');
-      request.arguments.add('--url-mapping=$absoluteFileUri,${id.path}');
+      request.add('--url-mapping=$absoluteFileUri,${id.path}');
     }
   }
 
   // And finally add all the urls to compile, using the package: path for
   // files under lib and the full absolute path for other files.
-  request.arguments.addAll(module.sources.map((id) {
+  request.addAll(module.sources.map((id) {
     var uri = canonicalUriFor(id);
     if (uri.startsWith('package:')) {
       return uri;
@@ -122,8 +121,8 @@ Future createDevCompilerModule(Module module, BuildStep buildStep,
     return new Uri.file('/${id.path}').toString();
   }));
 
-  var dartdevc = await buildStep.fetchResource(dartdevcDriverResource);
-  var response = await dartdevc.doWork(request);
+  var dartdevc = await buildStep.fetchResource(dartdevcWorker.resource);
+  var response = await dartdevc.execute(request);
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
   // status code if something failed. Today we just make sure there is an output
   // JS file to verify it was successful.
