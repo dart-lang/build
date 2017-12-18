@@ -24,7 +24,6 @@ void main() {
       ),
       'e': new BuildTarget(
         dependencies: ['f', ':a'],
-        platforms: ['vm'],
         excludeSources: ['lib/src/e/g.dart'],
         isDefault: true,
         name: 'e',
@@ -62,7 +61,7 @@ void main() {
         isDefault: true,
         name: 'example',
         package: 'example',
-        sources: ['lib/**'],
+        sources: ['**'],
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
@@ -113,8 +112,6 @@ targets:
       - "lib/src/e/**"
     exclude_sources:
       - "lib/src/e/g.dart"
-    platforms:
-      - vm
 builders:
   h:
     builder_factories: ["createBuilder"]
@@ -170,8 +167,7 @@ void expectBuildTargets(
     Map<String, BuildTarget> actual, Map<String, BuildTarget> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], new _BuildTargetMatcher(expected[p]),
-        reason: '${actual[p].platforms} vs ${expected[p].platforms}');
+    expect(actual[p], new _BuildTargetMatcher(expected[p]));
   }
 }
 
@@ -185,7 +181,6 @@ class _BuildTargetMatcher extends Matcher {
       item.name == _expected.name &&
       item.package == _expected.package &&
       item.isDefault == _expected.isDefault &&
-      equals(_expected.platforms).matches(item.platforms, _) &&
       new _BuilderConfigsMatcher(_expected.builders)
           .matches(item.builders, _) &&
       equals(_expected.dependencies).matches(item.dependencies, _) &&

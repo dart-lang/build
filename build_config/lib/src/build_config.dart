@@ -19,12 +19,11 @@ class BuildConfig {
   ///
   /// [path] must be a directory which contains a `pubspec.yaml` file and
   /// optionally a `build.yaml`.
-  static Future<BuildConfig> fromPackageDir(String path,
-      {bool includeWebSources: false}) async {
+  static Future<BuildConfig> fromPackageDir(String path) async {
     final pubspec = await Pubspec.fromPackageDir(path);
     return fromBuildConfigDir(
-        pubspec.pubPackageName, pubspec.dependencies, path,
-        includeWebSources: includeWebSources);
+        pubspec.pubPackageName, pubspec.dependencies, path
+        );
   }
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
@@ -32,17 +31,15 @@ class BuildConfig {
   ///
   /// [path] should the path to a directory which may contain a `build.yaml`.
   static Future<BuildConfig> fromBuildConfigDir(
-      String packageName, Iterable<String> dependencies, String path,
-      {bool includeWebSources: false}) async {
+      String packageName, Iterable<String> dependencies, String path) async {
     final configPath = p.join(path, 'build.yaml');
     final file = new File(configPath);
     if (await file.exists()) {
       return new BuildConfig.parse(
-          packageName, dependencies, await file.readAsString(),
-          includeWebSources: includeWebSources);
+          packageName, dependencies, await file.readAsString());
     } else {
-      return new BuildConfig.useDefault(packageName, dependencies,
-          includeWebSources: includeWebSources);
+      return new BuildConfig.useDefault(packageName, dependencies
+          );
     }
   }
 
@@ -57,15 +54,12 @@ class BuildConfig {
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies,
-      {bool includeWebSources: false,
-      List<String> platforms: const [],
+      {
       Iterable<String> excludeSources: const []}) {
-    final sources = ["lib/**"];
-    if (includeWebSources) sources.add("web/**");
+    final sources = ['**'];
     final buildTargets = {
       packageName: new BuildTarget(
           dependencies: dependencies,
-          platforms: platforms,
           isDefault: true,
           name: packageName,
           package: packageName,
@@ -80,10 +74,9 @@ class BuildConfig {
 
   /// Create a [BuildConfig] by parsing [configYaml].
   factory BuildConfig.parse(
-          String packageName, Iterable<String> dependencies, String configYaml,
-          {bool includeWebSources: false}) =>
-      parseFromYaml(packageName, dependencies, configYaml,
-          includeWebSources: includeWebSources);
+          String packageName, Iterable<String> dependencies, String configYaml) =>
+      parseFromYaml(packageName, dependencies, configYaml
+          );
 
   BuildConfig({
     @required this.packageName,
@@ -175,12 +168,6 @@ class BuildTarget {
   /// those which have configuration customized against the default.
   final Map<String, TargetBuilderConfig> builders;
 
-  /// The platforms supported by this target.
-  ///
-  /// May be limited by, for isntance, importing core libraries that are not
-  /// cross platform. An empty list indicates all platforms are supported.
-  final List<String> platforms;
-
   /// Whether or not this is the default dart library for the package.
   final bool isDefault;
 
@@ -191,7 +178,6 @@ class BuildTarget {
     this.excludeSources: const [],
     this.dependencies,
     this.builders: const {},
-    this.platforms: const [],
     this.isDefault: false,
   });
 
@@ -203,7 +189,6 @@ class BuildTarget {
         excludeSources: other.excludeSources,
         dependencies: other.dependencies,
         builders: other.builders,
-        platforms: other.platforms,
       );
 
   @override

@@ -7,29 +7,17 @@ import 'package:yaml/yaml.dart';
 
 import 'build_config.dart';
 
-/// Supported values for the `platforms` attribute.
-const _allPlatforms = const [
-  _vmPlatform,
-  _webPlatform,
-  _flutterPlatform,
-];
-const _vmPlatform = 'vm';
-const _webPlatform = 'web';
-const _flutterPlatform = 'flutter';
-
 const _targetOptions = const [
   _builders,
   _default,
   _dependencies,
   _excludeSources,
-  _platforms,
   _sources,
 ];
 const _builders = 'builders';
 const _default = 'default';
 const _dependencies = 'dependencies';
 const _excludeSources = 'exclude_sources';
-const _platforms = 'platforms';
 const _sources = 'sources';
 
 const _builderConfigOptions = const [
@@ -61,10 +49,7 @@ const _isOptional = 'is_optional';
 const _buildTo = 'build_to';
 
 BuildConfig parseFromYaml(
-    String packageName, Iterable<String> dependencies, String configYaml,
-    {bool includeWebSources}) {
-  includeWebSources ??= false;
-
+    String packageName, Iterable<String> dependencies, String configYaml) {
   final buildTargets = <String, BuildTarget>{};
   final builderDefinitions = <String, BuilderDefinition>{};
 
@@ -88,15 +73,11 @@ BuildConfig parseFromYaml(
     var isDefault =
         _readBoolOrThrow(targetConfig, _default, defaultValue: false);
 
-    final platforms = _readListOfStringsOrThrow(targetConfig, _platforms,
-        defaultValue: [], validValues: _allPlatforms);
-
     final sources = _readListOfStringsOrThrow(targetConfig, _sources);
 
     buildTargets[targetName] = new BuildTarget(
       builders: builders,
       dependencies: dependencies,
-      platforms: platforms,
       excludeSources: excludeSources,
       isDefault: isDefault,
       name: targetName,
@@ -107,8 +88,7 @@ BuildConfig parseFromYaml(
 
   if (buildTargets.isEmpty) {
     // Add the default dart library if there are no targets discovered.
-    var sources = ["lib/**"];
-    if (includeWebSources) sources.add("web/**");
+    var sources = ['**'];
     buildTargets[packageName] = new BuildTarget(
         dependencies: dependencies,
         isDefault: true,
