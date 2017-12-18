@@ -81,7 +81,7 @@ class BuildConfig {
   factory BuildConfig.parse(
           String packageName, Iterable<String> dependencies, String configYaml,
           {bool includeWebSources: false}) =>
-      parse(packageName, dependencies, configYaml,
+      parseFromYaml(packageName, dependencies, configYaml,
           includeWebSources: includeWebSources);
 
   BuildConfig({

@@ -52,7 +52,7 @@ const _requiredInputs = 'required_inputs';
 const _isOptional = 'is_optional';
 const _buildTo = 'build_to';
 
-BuildConfig parse(
+BuildConfig parseFromYaml(
     String packageName, Iterable<String> dependencies, String configYaml,
     {bool includeWebSources}) {
   includeWebSources ??= false;
