@@ -3,6 +3,7 @@
 - Add `build_to` option to Builder configuration.
 - Add `BuildConfig.fromBuildConfigDir` for cases where the package name and
   dependencies are already known.
+- Add `BuilderConfig` class to configure builders applied to specific targets.
 
 ### Breaking
 
