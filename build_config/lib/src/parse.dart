@@ -88,13 +88,12 @@ BuildConfig parseFromYaml(
 
   if (buildTargets.isEmpty) {
     // Add the default dart library if there are no targets discovered.
-    var sources = ['**'];
     buildTargets[packageName] = new BuildTarget(
         dependencies: dependencies,
         isDefault: true,
         name: packageName,
         package: packageName,
-        sources: sources);
+        sources: const ['**']);
   } else if (buildTargets.length == 1 &&
       !buildTargets.values.single.isDefault) {
     // Allow omitting `isDefault` if there is exactly 1 target.

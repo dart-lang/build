@@ -56,14 +56,13 @@ class BuildConfig {
       String packageName, Iterable<String> dependencies,
       {
       Iterable<String> excludeSources: const []}) {
-    final sources = ['**'];
     final buildTargets = {
       packageName: new BuildTarget(
           dependencies: dependencies,
           isDefault: true,
           name: packageName,
           package: packageName,
-          sources: sources,
+          sources: const ['**'],
           excludeSources: excludeSources)
     };
     return new BuildConfig(
