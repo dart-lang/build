@@ -155,9 +155,8 @@ class WatchImpl implements BuildState {
     // Start watching files immediately, before the first build is even started.
     new PackageGraphWatcher(packageGraph,
             logger: _logger,
-            watch: (node) => new PackageNodeWatcher(node, watch: (path) {
-                  return _directoryWatcherFactory(path);
-                }))
+            watch: (node) =>
+                new PackageNodeWatcher(node, watch: _directoryWatcherFactory))
         .watch()
         .asyncMap<AssetChange>((change) {
           // Delay any events until the first build is completed.

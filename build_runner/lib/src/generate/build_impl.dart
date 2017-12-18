@@ -309,7 +309,7 @@ class BuildImpl {
   Future<bool> _buildShouldRun(
       Iterable<AssetId> outputs, DigestAssetReader reader) async {
     assert(
-        outputs.every((o) => _assetGraph.contains(o)),
+        outputs.every(_assetGraph.contains),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
     assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');

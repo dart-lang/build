@@ -47,6 +47,6 @@ linter:
     - slash_for_doc_comments
     - type_init_formals
     - unnecessary_brace_in_string_interps
-    - unnecessary_getter_setters
-    - unnecessary_lambda
+    - unnecessary_getters_setters
+    - unnecessary_lambdas
     - unnecessary_null_aware_assignments
