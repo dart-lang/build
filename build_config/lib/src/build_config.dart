@@ -84,6 +84,12 @@ class BuildConfig {
       parseFromYaml(packageName, dependencies, configYaml,
           includeWebSources: includeWebSources);
 
+  /// Create a [BuildConfig] read a map which was already parsed.
+  factory BuildConfig.fromMap(String packageName, Iterable<String> dependencies,
+          Map<String, dynamic> config, {bool includeWebSources: false}) =>
+      parseFromMap(packageName, dependencies, config,
+          includeWebSources: includeWebSources);
+
   BuildConfig({
     @required this.packageName,
     @required this.buildTargets,
