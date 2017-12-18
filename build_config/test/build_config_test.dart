@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build/build.dart';
 import 'package:test/test.dart';
 
 import 'package:build_config/build_config.dart';
@@ -12,13 +13,11 @@ void main() {
     expectBuildTargets(buildConfig.buildTargets, {
       'a': new BuildTarget(
         builders: {
-          'b:b': {},
-          ':h': {'foo': 'bar'},
+          'b|b': new TargetBuilderConfig(generateFor: ['lib/a.dart']),
+          'a|h': new TargetBuilderConfig(
+              options: new BuilderOptions({'foo': 'bar'})),
         },
         dependencies: ['b', 'c:d'],
-        generateFor: [
-          'lib/a.dart',
-        ],
         name: 'a',
         package: 'example',
         sources: ['lib/a.dart', 'lib/src/a/**'],
@@ -92,14 +91,15 @@ var buildYaml = '''
 targets:
   a:
     builders:
-      - :h:
+      a|h:
+        options:
           foo: bar
-      - b:b
+      b|b:
+        generate_for:
+          - lib/a.dart
     dependencies:
       - b
       - c:d
-    generate_for:
-      - lib/a.dart
     sources:
       - "lib/a.dart"
       - "lib/src/a/**"
@@ -186,11 +186,48 @@ class _BuildTargetMatcher extends Matcher {
       item.package == _expected.package &&
       item.isDefault == _expected.isDefault &&
       equals(_expected.platforms).matches(item.platforms, _) &&
-      equals(_expected.builders).matches(item.builders, _) &&
+      new _BuilderConfigsMatcher(_expected.builders)
+          .matches(item.builders, _) &&
       equals(_expected.dependencies).matches(item.dependencies, _) &&
-      equals(_expected.generateFor).matches(item.generateFor, _) &&
       equals(_expected.sources).matches(item.sources, _) &&
       equals(_expected.excludeSources).matches(item.excludeSources, _);
+
+  @override
+  Description describe(Description description) =>
+      description.addDescriptionOf(_expected);
+}
+
+class _BuilderConfigsMatcher extends Matcher {
+  final Map<String, TargetBuilderConfig> _expected;
+  _BuilderConfigsMatcher(this._expected);
+
+  @override
+  bool matches(item, _) {
+    if (item is! Map<String, TargetBuilderConfig>) return false;
+    final other = item as Map<String, TargetBuilderConfig>;
+    if (!equals(_expected.keys).matches(other.keys, _)) return false;
+    for (final key in _expected.keys) {
+      final matcher = new _BuilderConfigMatcher(_expected[key]);
+      if (!matcher.matches(other[key], _)) return false;
+    }
+    return true;
+  }
+
+  @override
+  Description describe(Description description) =>
+      description.addDescriptionOf(_expected);
+}
+
+class _BuilderConfigMatcher extends Matcher {
+  final TargetBuilderConfig _expected;
+  _BuilderConfigMatcher(this._expected);
+
+  @override
+  bool matches(item, _) =>
+      item is TargetBuilderConfig &&
+      item.isEnabled == _expected.isEnabled &&
+      equals(_expected.generateFor).matches(item.generateFor, _) &&
+      equals(_expected.options.config).matches(item.options.config, _);
 
   @override
   Description describe(Description description) =>
