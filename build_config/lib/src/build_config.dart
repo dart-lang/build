@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
@@ -167,8 +168,10 @@ class BuildTarget {
 
   final Iterable<String> sources;
 
-  /// A map from builder name to the configuration used for this target.
-  final Map<String, Map<String, dynamic>> builders;
+  /// A map from builder key to the configuration used for this target.
+  ///
+  /// Builder keys are in the format `"$package|$builder"`.
+  final Map<String, BuilderConfig> builders;
 
   /// The platforms supported by this target.
   ///
@@ -179,18 +182,59 @@ class BuildTarget {
   /// Whether or not this is the default dart library for the package.
   final bool isDefault;
 
-  /// Sources to use as inputs for `builders`. May be `null`, in which case
-  /// it should fall back on `sources`.
-  final Iterable<String> generateFor;
-
   BuildTarget(
       {this.builders: const {},
       this.dependencies,
       this.platforms: const [],
       this.excludeSources: const [],
-      this.generateFor,
       this.isDefault: false,
       this.name,
       this.package,
       this.sources: const ['lib/**']});
+
+  @override
+  String toString() => {
+        'package': package,
+        'name': name,
+        'isDefault': isDefault,
+        'sources': sources,
+        'excludeSources': excludeSources,
+        'builders': builders
+      }.toString();
+}
+
+/// The configuration a particular [BuildTarget] applies to a Builder.
+///
+/// Build targets may have builders applied automatically based on
+/// [BuilderDefinition.autoApply] and may override with more specific
+/// configuration.
+class BuilderConfig {
+  /// Overrides the setting of whether the Builder would run on this target.
+  ///
+  /// Builders may run on this target by default based on the `apply_to`
+  /// argument. If this value is set it overrides the default.
+  final bool isEnabled;
+
+  /// Sources to use as inputs for this Builder in glob format.
+  ///
+  /// This is always a subset of the `include` argument in the containing
+  /// [BuildTarget].
+  ///
+  /// May be `null`, in which case it should fall back on `sources`.
+  final Iterable<String> generateFor;
+
+  final BuilderOptions options;
+
+  BuilderConfig({
+    this.isEnabled,
+    this.generateFor,
+    this.options: const BuilderOptions(const {}),
+  });
+
+  @override
+  String toString() => {
+        'isEnable': isEnabled,
+        'generateFor': generateFor,
+        'options': options?.config
+      }.toString();
 }
