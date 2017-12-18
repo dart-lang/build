@@ -49,11 +49,14 @@ const _isOptional = 'is_optional';
 const _buildTo = 'build_to';
 
 BuildConfig parseFromYaml(
-    String packageName, Iterable<String> dependencies, String configYaml) {
+        String packageName, Iterable<String> dependencies, String configYaml) =>
+    parseFromMap(packageName, dependencies,
+        loadYaml(configYaml) as Map<String, dynamic>);
+
+BuildConfig parseFromMap(String packageName, Iterable<String> dependencies,
+    Map<String, dynamic> config) {
   final buildTargets = <String, BuildTarget>{};
   final builderDefinitions = <String, BuilderDefinition>{};
-
-  final config = loadYaml(configYaml);
 
   final Map<String, Map> targetConfigs =
       config['targets'] as Map<String, Map> ?? {};

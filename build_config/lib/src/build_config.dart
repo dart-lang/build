@@ -22,8 +22,7 @@ class BuildConfig {
   static Future<BuildConfig> fromPackageDir(String path) async {
     final pubspec = await Pubspec.fromPackageDir(path);
     return fromBuildConfigDir(
-        pubspec.pubPackageName, pubspec.dependencies, path
-        );
+        pubspec.pubPackageName, pubspec.dependencies, path);
   }
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
@@ -38,8 +37,7 @@ class BuildConfig {
       return new BuildConfig.parse(
           packageName, dependencies, await file.readAsString());
     } else {
-      return new BuildConfig.useDefault(packageName, dependencies
-          );
+      return new BuildConfig.useDefault(packageName, dependencies);
     }
   }
 
@@ -54,8 +52,7 @@ class BuildConfig {
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies,
-      {
-      Iterable<String> excludeSources: const []}) {
+      {Iterable<String> excludeSources: const []}) {
     final buildTargets = {
       packageName: new BuildTarget(
           dependencies: dependencies,
@@ -72,10 +69,15 @@ class BuildConfig {
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].
-  factory BuildConfig.parse(
-          String packageName, Iterable<String> dependencies, String configYaml) =>
-      parseFromYaml(packageName, dependencies, configYaml
-          );
+  factory BuildConfig.parse(String packageName, Iterable<String> dependencies,
+          String configYaml) =>
+      parseFromYaml(packageName, dependencies, configYaml);
+
+  /// Create a [BuildConfig] read a map which was already parsed.
+  factory BuildConfig.fromMap(String packageName, Iterable<String> dependencies,
+          Map<String, dynamic> config, {bool includeWebSources: false}) =>
+      parseFromMap(packageName, dependencies, config,
+          includeWebSources: includeWebSources);
 
   BuildConfig({
     @required this.packageName,
