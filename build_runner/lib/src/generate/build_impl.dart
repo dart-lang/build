@@ -344,7 +344,7 @@ class BuildImpl {
     }
   }
 
-  /// Deletes any of `outputs` which previously were output.
+  /// Deletes any of [outputs] which previously were output.
   ///
   /// This should be called after deciding that an asset really needs to be
   /// regenerated based on its inputs hash changing.

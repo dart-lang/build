@@ -33,7 +33,7 @@ class CopyBuilder implements Builder {
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
   /// Events are added at the top of the [build] method.
-  final _buildInputsController = new StreamController<AssetId>();
+  final _buildInputsController = new StreamController<AssetId>.broadcast();
   Stream<AssetId> get buildInputs => _buildInputsController.stream;
 
   CopyBuilder(
