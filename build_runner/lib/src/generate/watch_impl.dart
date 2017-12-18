@@ -168,11 +168,15 @@ class WatchImpl implements BuildState {
         .transform(debounceBuffer(_debounceDelay))
         .transform(takeUntil(terminate))
         .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
-        .listen(controller.add)
+        .listen((BuildResult buildResult) {
+          if (controller.isClosed) return;
+          controller.add(buildResult);
+        })
         .onDone(() async {
+          await currentBuild;
           await _buildDefinition.resourceManager.beforeExit();
           await controller.close();
-          _logger.info('Builds finished. Safe to exit');
+          _logger.info('Builds finished. Safe to exit\n');
         });
 
     // Schedule the actual first build for the future so we can return the
@@ -191,7 +195,10 @@ class WatchImpl implements BuildState {
       build = await BuildImpl.create(_buildDefinition, buildActions,
           onDelete: _expectedDeletes.add);
 
-      controller.add(build.firstBuild);
+      // It is possible this is already closed if the user kills the process
+      // early, which results in an exception without this check.
+      if (!controller.isClosed) controller.add(build.firstBuild);
+
       firstBuildCompleter.complete(build.firstBuild);
     }();
 
