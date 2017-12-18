@@ -170,8 +170,10 @@ class BuildTarget {
 
   /// A map from builder key to the configuration used for this target.
   ///
-  /// Builder keys are in the format `"$package|$builder"`.
-  final Map<String, BuilderConfig> builders;
+  /// Builder keys are in the format `"$package|$builder"`. This does not
+  /// represent the full set of builders that are applied to the target, only
+  /// those which have configuration customized against the default.
+  final Map<String, TargetBuilderConfig> builders;
 
   /// The platforms supported by this target.
   ///
@@ -208,7 +210,7 @@ class BuildTarget {
 /// Build targets may have builders applied automatically based on
 /// [BuilderDefinition.autoApply] and may override with more specific
 /// configuration.
-class BuilderConfig {
+class TargetBuilderConfig {
   /// Overrides the setting of whether the Builder would run on this target.
   ///
   /// Builders may run on this target by default based on the `apply_to`
@@ -223,9 +225,13 @@ class BuilderConfig {
   /// May be `null`, in which case it should fall back on `sources`.
   final Iterable<String> generateFor;
 
+  /// The options to pass to the `BuilderFactory` when constructing this
+  /// builder.
+  ///
+  /// The `options` key in the configuration.
   final BuilderOptions options;
 
-  BuilderConfig({
+  TargetBuilderConfig({
     this.isEnabled,
     this.generateFor,
     this.options: const BuilderOptions(const {}),
@@ -235,6 +241,6 @@ class BuilderConfig {
   String toString() => {
         'isEnable': isEnabled,
         'generateFor': generateFor,
-        'options': options?.config
+        'options': options.config
       }.toString();
 }

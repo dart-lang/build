@@ -256,7 +256,7 @@ BuildTo _readBuildToOrThrow(Map<String, dynamic> options, String option,
   return allowedValues[value];
 }
 
-Map<String, BuilderConfig> _readBuildersOrThrow(
+Map<String, TargetBuilderConfig> _readBuildersOrThrow(
     Map<String, dynamic> options, String option) {
   final values = options[option];
   if (values == null) return const {};
@@ -266,7 +266,7 @@ Map<String, BuilderConfig> _readBuildersOrThrow(
   }
   final builderConfigs = values as Map<String, dynamic>;
 
-  final parsedConfigs = <String, BuilderConfig>{};
+  final parsedConfigs = <String, TargetBuilderConfig>{};
   for (final builderKey in builderConfigs.keys) {
     final builderConfig = _readMapOrThrow(builderConfigs, builderKey,
         _builderConfigOptions, 'builder config `$builderKey`',
@@ -278,19 +278,19 @@ Map<String, BuilderConfig> _readBuildersOrThrow(
     final generateFor =
         _readListOfStringsOrThrow(builderConfig, _generateFor, allowNull: true);
 
-    var parsedOptions = <String, dynamic>{};
+    var parsedOptions = const BuilderOptions(const {});
     if (builderConfig.containsKey(_options)) {
       final options = builderConfig[_options];
       if (options is! Map) {
         throw new ArgumentError('Invalid builder options for `$builderKey`, '
             'got `$options` but expected a Map');
       }
-      parsedOptions = options as Map<String, dynamic>;
+      parsedOptions = new BuilderOptions(options as Map<String, dynamic>);
     }
-    parsedConfigs[builderKey] = new BuilderConfig(
+    parsedConfigs[builderKey] = new TargetBuilderConfig(
       isEnabled: isEnabled,
       generateFor: generateFor,
-      options: new BuilderOptions(parsedOptions),
+      options: parsedOptions,
     );
   }
   return parsedConfigs;

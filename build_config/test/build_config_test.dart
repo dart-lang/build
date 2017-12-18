@@ -13,8 +13,9 @@ void main() {
     expectBuildTargets(buildConfig.buildTargets, {
       'a': new BuildTarget(
         builders: {
-          'b|b': new BuilderConfig(generateFor: ['lib/a.dart']),
-          'a|h': new BuilderConfig(options: new BuilderOptions({'foo': 'bar'})),
+          'b|b': new TargetBuilderConfig(generateFor: ['lib/a.dart']),
+          'a|h': new TargetBuilderConfig(
+              options: new BuilderOptions({'foo': 'bar'})),
         },
         dependencies: ['b', 'c:d'],
         name: 'a',
@@ -197,13 +198,13 @@ class _BuildTargetMatcher extends Matcher {
 }
 
 class _BuilderConfigsMatcher extends Matcher {
-  final Map<String, BuilderConfig> _expected;
+  final Map<String, TargetBuilderConfig> _expected;
   _BuilderConfigsMatcher(this._expected);
 
   @override
   bool matches(item, _) {
-    if (item is! Map<String, BuilderConfig>) return false;
-    final other = item as Map<String, BuilderConfig>;
+    if (item is! Map<String, TargetBuilderConfig>) return false;
+    final other = item as Map<String, TargetBuilderConfig>;
     if (!equals(_expected.keys).matches(other.keys, _)) return false;
     for (final key in _expected.keys) {
       final matcher = new _BuilderConfigMatcher(_expected[key]);
@@ -218,12 +219,12 @@ class _BuilderConfigsMatcher extends Matcher {
 }
 
 class _BuilderConfigMatcher extends Matcher {
-  final BuilderConfig _expected;
+  final TargetBuilderConfig _expected;
   _BuilderConfigMatcher(this._expected);
 
   @override
   bool matches(item, _) =>
-      item is BuilderConfig &&
+      item is TargetBuilderConfig &&
       item.isEnabled == _expected.isEnabled &&
       equals(_expected.generateFor).matches(item.generateFor, _) &&
       equals(_expected.options.config).matches(item.options.config, _);
