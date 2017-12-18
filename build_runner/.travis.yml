@@ -5,4 +5,10 @@ dart:
 dart_task:
   - test
   - dartfmt: sdk
-  - dartanalyzer
+  - dartanalyzer: --fatal-infos --fatal-warnings .
+
+matrix:
+  exclude:
+    - dart: stable
+      dart_task:
+        dartfmt: sdk
