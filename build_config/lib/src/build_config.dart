@@ -184,15 +184,27 @@ class BuildTarget {
   /// Whether or not this is the default dart library for the package.
   final bool isDefault;
 
-  BuildTarget(
-      {this.builders: const {},
-      this.dependencies,
-      this.platforms: const [],
-      this.excludeSources: const [],
-      this.isDefault: false,
-      this.name,
-      this.package,
-      this.sources: const ['lib/**']});
+  BuildTarget({
+    this.name,
+    this.package,
+    this.sources: const ['lib/**'],
+    this.excludeSources: const [],
+    this.dependencies,
+    this.builders: const {},
+    this.platforms: const [],
+    this.isDefault: false,
+  });
+
+  factory BuildTarget.asDefault(BuildTarget other) => new BuildTarget(
+        isDefault: true,
+        name: other.name,
+        package: other.package,
+        sources: other.sources,
+        excludeSources: other.excludeSources,
+        dependencies: other.dependencies,
+        builders: other.builders,
+        platforms: other.platforms,
+      );
 
   @override
   String toString() => {
