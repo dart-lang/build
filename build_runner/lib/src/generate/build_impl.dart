@@ -286,6 +286,9 @@ class BuildImpl {
     if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
       return <AssetId>[];
     }
+
+    await _cleanUpStaleOutputs(builderOutputs);
+
     // We may have read some inputs in the call to `_buildShouldRun`, we want
     // to remove those.
     wrappedReader.assetsRead.clear();
@@ -339,6 +342,18 @@ class BuildImpl {
       }
       return false;
     }
+  }
+
+  /// Deletes any of [outputs] which previously were output.
+  ///
+  /// This should be called after deciding that an asset really needs to be
+  /// regenerated based on its inputs hash changing.
+  Future<Null> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
+    await Future.wait(outputs.map((output) {
+      var node = _assetGraph.get(output) as GeneratedAssetNode;
+      if (node.wasOutput) return _writer.delete(output);
+      return new Future.value(null);
+    }));
   }
 
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
