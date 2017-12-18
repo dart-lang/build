@@ -1,8 +1,10 @@
-## 0.9.4
+## 0.9.4-dev
 
 - Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
   case where the reader should be kept up to date as assets are written through
   a writer.
+- Added `buildInputs` stream to `CopyBuilder` which emits an event for each
+  `BuildStep.inputId` at the top of the `build` method.
 
 ## 0.9.3
 

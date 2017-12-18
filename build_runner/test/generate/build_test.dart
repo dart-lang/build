@@ -199,6 +199,31 @@ void main() {
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
             enableLowResourcesMode: true);
       });
+
+      test('previous outputs are cleaned up', () async {
+        final writer = new InMemoryRunnerAssetWriter();
+        await testBuilders([copyABuilderApplication], {'a|web/a.txt': 'a'},
+            outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+
+        var blockingCompleter = new Completer<Null>();
+        var builder = new CopyBuilder(blockUntil: blockingCompleter.future);
+        var done = testBuilders([applyToRoot(builder)], {'a|web/a.txt': 'b'},
+            outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
+
+        // Before the build starts we should still see the asset, we haven't
+        // actually deleted it yet.
+        var copyId = makeAssetId('a|web/a.txt.copy');
+        expect(writer.assets, contains(copyId));
+
+        // But we should delete it before actually running the builder.
+        var inputId = makeAssetId('a|web/a.txt');
+        await builder.buildInputs.firstWhere((id) => id == inputId);
+        expect(writer.assets, isNot(contains(copyId)));
+
+        // Now let the build finish.
+        blockingCompleter.complete();
+        await done;
+      });
     });
 
     test('can\'t output files in non-root packages', () async {
