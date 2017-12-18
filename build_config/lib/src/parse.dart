@@ -118,17 +118,8 @@ BuildConfig parseFromYaml(
   } else if (buildTargets.length == 1 &&
       !buildTargets.values.single.isDefault) {
     // Allow omitting `isDefault` if there is exactly 1 target.
-    var nonDefaultTarget = buildTargets.values.single;
-    buildTargets[buildTargets.keys.single] = new BuildTarget(
-      name: nonDefaultTarget.name,
-      package: nonDefaultTarget.package,
-      builders: nonDefaultTarget.builders,
-      dependencies: nonDefaultTarget.dependencies,
-      platforms: nonDefaultTarget.platforms,
-      sources: nonDefaultTarget.sources,
-      excludeSources: nonDefaultTarget.excludeSources,
-      isDefault: true,
-    );
+    buildTargets[buildTargets.keys.single] =
+        new BuildTarget.asDefault(buildTargets.values.single);
   }
 
   if (buildTargets.values.where((l) => l.isDefault).length != 1) {
