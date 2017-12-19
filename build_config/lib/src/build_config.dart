@@ -12,6 +12,37 @@ import 'package:path/path.dart' as p;
 import 'parse.dart';
 import 'pubspec.dart';
 
+/// A glob filter on files inputs or sources.
+///
+/// Takes a list of strings in glob format for [include] and [exclude]. Matches
+/// the `glob()` function in skylark.
+class InputSet {
+  /// The globs to include in the set.
+  ///
+  /// May be null or empty which means every possible path (like `'**'`).
+  final List<String> include;
+
+  /// The globs as a subset of [include] to remove from the set.
+  ///
+  /// May be null or empty which means every path in [include].
+  final List<String> exclude;
+  const InputSet({this.include, this.exclude});
+
+  @override
+  String toString() {
+    final result = new StringBuffer()..write('paths matching $include');
+    if (include == null || include.isEmpty) {
+      result.write('any path');
+    } else {
+      result.write('paths matching $include');
+    }
+    if (exclude != null && exclude.isNotEmpty) {
+      result.write(' except $exclude');
+    }
+    return '$result';
+  }
+}
+
 /// The parsed values from a `build.yaml` file.
 class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
@@ -51,16 +82,15 @@ class BuildConfig {
 
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
-      String packageName, Iterable<String> dependencies,
-      {Iterable<String> excludeSources: const []}) {
+      String packageName, Iterable<String> dependencies) {
     final buildTargets = {
       packageName: new BuildTarget(
-          dependencies: dependencies,
-          isDefault: true,
-          name: packageName,
-          package: packageName,
-          sources: const ['**'],
-          excludeSources: excludeSources)
+        dependencies: dependencies,
+        isDefault: true,
+        name: packageName,
+        package: packageName,
+        sources: const InputSet(),
+      )
     };
     return new BuildConfig(
       packageName: packageName,
@@ -145,7 +175,7 @@ class BuilderDefinition {
 /// Default values that builder authors can specify when users don't fill in the
 /// corresponding key for [TargetBuilderConfig].
 class TargetBuilderConfigDefaults {
-  final List<String> generateFor;
+  final InputSet generateFor;
 
   TargetBuilderConfigDefaults({this.generateFor});
 }
@@ -164,13 +194,11 @@ enum BuildTo {
 class BuildTarget {
   final Iterable<String> dependencies;
 
-  final Iterable<String> excludeSources;
-
   final String name;
 
   final String package;
 
-  final Iterable<String> sources;
+  final InputSet sources;
 
   /// A map from builder key to the configuration used for this target.
   ///
@@ -185,8 +213,7 @@ class BuildTarget {
   BuildTarget({
     this.name,
     this.package,
-    this.sources: const ['lib/**'],
-    this.excludeSources: const [],
+    this.sources: const InputSet(),
     this.dependencies,
     this.builders: const {},
     this.isDefault: false,
@@ -197,7 +224,6 @@ class BuildTarget {
         name: other.name,
         package: other.package,
         sources: other.sources,
-        excludeSources: other.excludeSources,
         dependencies: other.dependencies,
         builders: other.builders,
       );
@@ -208,7 +234,6 @@ class BuildTarget {
         'name': name,
         'isDefault': isDefault,
         'sources': sources,
-        'excludeSources': excludeSources,
         'builders': builders
       }.toString();
 }
@@ -228,10 +253,9 @@ class TargetBuilderConfig {
   /// Sources to use as inputs for this Builder in glob format.
   ///
   /// This is always a subset of the `include` argument in the containing
-  /// [BuildTarget].
-  ///
-  /// May be `null`, in which case it should fall back on `sources`.
-  final Iterable<String> generateFor;
+  /// [BuildTarget]. May be `null` in which cases it will be all the sources in
+  /// the target.
+  final InputSet generateFor;
 
   /// The options to pass to the `BuilderFactory` when constructing this
   /// builder.

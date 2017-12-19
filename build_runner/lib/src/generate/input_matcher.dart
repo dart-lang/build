@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 
@@ -10,8 +11,7 @@ import 'package:glob/glob.dart';
 abstract class InputMatcher {
   /// Whether [input] is included in this set of assets.
   bool matches(AssetId input);
-  factory InputMatcher({Iterable<String> include, Iterable<String> exclude}) =
-      _GlobInputMatcher;
+  factory InputMatcher(InputSet inputSet) = _GlobInputMatcher;
 
   /// Returns a matcher on the intersection of all [matchers].
   factory InputMatcher.allOf(Iterable<InputMatcher> matchers) =>
@@ -29,10 +29,9 @@ class _GlobInputMatcher implements InputMatcher {
   /// Null or empty means exclude nothing.
   final List<Glob> exclude;
 
-  _GlobInputMatcher(
-      {Iterable<String> include, Iterable<String> exclude: const []})
-      : this.include = include?.map((p) => new Glob(p))?.toList(),
-        this.exclude = exclude?.map((p) => new Glob(p))?.toList();
+  _GlobInputMatcher(InputSet inputSet)
+      : this.include = inputSet.include?.map((p) => new Glob(p))?.toList(),
+        this.exclude = inputSet.exclude?.map((p) => new Glob(p))?.toList();
 
   @override
   bool matches(AssetId input) => _include(input) && !_exclude(input);

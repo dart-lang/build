@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 
 import 'input_matcher.dart';
@@ -51,17 +52,15 @@ class BuildAction implements InputMatcher {
   factory BuildAction(
     Builder builder,
     String package, {
-    Iterable<String> include,
-    Iterable<String> exclude,
-    Iterable<String> generateFor,
+    InputSet targetSources,
+    InputSet generateFor,
     BuilderOptions builderOptions,
     bool isOptional,
     bool hideOutput,
   }) {
-    var inputs = new InputMatcher(include: include, exclude: exclude);
-    if (generateFor != null && generateFor.isNotEmpty) {
-      inputs = new InputMatcher.allOf(
-          [inputs, new InputMatcher(include: generateFor)]);
+    var inputs = new InputMatcher(targetSources);
+    if (generateFor != null) {
+      inputs = new InputMatcher.allOf([inputs, new InputMatcher(generateFor)]);
     }
     builderOptions ??= const BuilderOptions(const {});
     return new BuildAction._(package, builder, inputs, builderOptions,

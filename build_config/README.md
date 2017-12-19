@@ -52,7 +52,8 @@ the following keys:
   the corresponding key in their `builders` section. May contain the following
   keys:
   - **generate_for**: A list of globs that this Builder should run on as a
-    subset of the corresponding target.
+    subset of the corresponding target, or a map with `include` and `exclude`
+    lists of globs.
 
 Example `builders` config:
 
