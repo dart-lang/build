@@ -104,7 +104,7 @@ class _Loader {
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
-            internalSources, _options.packageGraph.root.name, _options.reader);
+            internalSources, _options.packageGraph, _options.reader);
         buildScriptUpdates =
             await BuildScriptUpdates.create(_options, assetGraph);
         conflictingOutputs = assetGraph.outputs
@@ -265,13 +265,13 @@ class _Loader {
     }
 
     var newSources = inputSources.difference(assetGraph.allNodes
-        .where((node) => node is! SyntheticAssetNode)
+        .where((node) => node.isValidInput)
         .map((node) => node.id)
         .toSet());
     addUpdates(newSources, ChangeType.ADD);
     var removedAssets = assetGraph.allNodes
         .where((n) {
-          if (n is SyntheticAssetNode) return false;
+          if (!n.isReadable) return false;
           if (n is GeneratedAssetNode) return n.wasOutput;
           return true;
         })

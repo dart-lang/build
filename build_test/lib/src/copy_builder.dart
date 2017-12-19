@@ -46,6 +46,9 @@ class CopyBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
+    // Skip placeholder files from build_runner.
+    if (buildStep.inputId.path.endsWith(r'$')) return;
+
     _buildInputsController.add(buildStep.inputId);
     if (!buildStep.inputId.path.endsWith(inputExtension)) {
       throw new ArgumentError('Only expected inputs with extension '

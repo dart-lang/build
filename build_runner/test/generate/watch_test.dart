@@ -22,7 +22,8 @@ import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuildApplication = applyToRoot(new CopyBuilder());
+  final copyABuildApplication = applyToRoot(
+      new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'));
   final defaultBuilderOptions = const BuilderOptions(const {});
 
   group('watch', () {
@@ -139,8 +140,8 @@ void main() {
             as Map;
         var cachedGraph = new AssetGraph.deserialize(serialized);
 
-        var expectedGraph =
-            await AssetGraph.build([], new Set(), new Set(), 'a', null);
+        var expectedGraph = await AssetGraph.build([], new Set(), new Set(),
+            buildPackageGraph({rootPackage('a'): []}), null);
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = new BuilderOptionsAssetNode(builderOptionsId,

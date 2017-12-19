@@ -21,8 +21,11 @@ import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/util/constants.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 main() {
+  final aPackageGraph = buildPackageGraph({rootPackage('a'): []});
+
   group('BuildDefinition.load', () {
     BuildOptions options;
     String pkgARoot;
@@ -85,7 +88,7 @@ main() {
             buildActions,
             [makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')].toSet(),
             new Set(),
-            'a',
+            aPackageGraph,
             options.reader);
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
         var generatedANode =
@@ -115,8 +118,8 @@ main() {
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
         ];
 
-        var originalAssetGraph = await AssetGraph.build(
-            buildActions, <AssetId>[].toSet(), new Set(), 'a', options.reader);
+        var originalAssetGraph = await AssetGraph.build(buildActions,
+            <AssetId>[].toSet(), new Set(), aPackageGraph, options.reader);
 
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
@@ -144,7 +147,7 @@ main() {
             buildActions,
             [makeAssetId('a|lib/a.txt')].toSet(),
             new Set(),
-            'a',
+            aPackageGraph,
             options.reader);
 
         await createFile(
@@ -171,7 +174,7 @@ main() {
             buildActions,
             [makeAssetId('a|lib/test.txt')].toSet(),
             new Set(),
-            'a',
+            aPackageGraph,
             options.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
@@ -198,7 +201,7 @@ main() {
             buildActions,
             [makeAssetId('a|lib/a.txt')].toSet(),
             new Set(),
-            'a',
+            aPackageGraph,
             options.reader);
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
@@ -243,13 +246,18 @@ main() {
             'a', p.url.join(generatedOutputDirectory, 'a', 'lib', 'test.txt'));
         await createFile(generatedId.path, 'a');
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+          new BuildAction(
+              new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
+              'a',
+              hideOutput: true)
         ];
 
-        var assetGraph = await AssetGraph.build(
-            buildActions, new Set<AssetId>(), new Set(), 'a', options.reader);
+        var assetGraph = await AssetGraph.build(buildActions,
+            new Set<AssetId>(), new Set(), aPackageGraph, options.reader);
+        var expectedIds = placeholderIdsFor(aPackageGraph)
+          ..addAll([makeAssetId('a|Phase0.builderOptions')]);
         expect(assetGraph.allNodes.map((node) => node.id),
-            unorderedEquals([makeAssetId('a|Phase0.builderOptions')]));
+            unorderedEquals(expectedIds));
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
@@ -297,8 +305,8 @@ main() {
           skipBuildScriptCheck: true,
           onLog: logs.add);
 
-      var originalAssetGraph = await AssetGraph.build(
-          buildActions, <AssetId>[].toSet(), new Set(), 'a', options.reader);
+      var originalAssetGraph = await AssetGraph.build(buildActions,
+          <AssetId>[].toSet(), new Set(), aPackageGraph, options.reader);
 
       await createFile(
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));

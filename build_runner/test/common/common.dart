@@ -56,3 +56,32 @@ class ExistsBuilder extends Builder {
     _hasRanCompleter.complete(null);
   }
 }
+
+class PlaceholderBuilder extends Builder {
+  final String inputExtension;
+  final Map<String, String> outputExtensionsToContent;
+
+  @override
+  Map<String, List<String>> get buildExtensions =>
+      {inputExtension: outputExtensionsToContent.keys.toList()};
+
+  PlaceholderBuilder(this.outputExtensionsToContent,
+      {this.inputExtension: r'$lib$'});
+
+  @override
+  Future build(BuildStep buildStep) async {
+    outputExtensionsToContent.forEach((extension, content) {
+      buildStep.writeAsString(
+          _outputId(buildStep.inputId, inputExtension, extension), content);
+    });
+  }
+}
+
+AssetId _outputId(
+    AssetId inputId, String inputExtension, String outputExtension) {
+  assert(inputId.path.endsWith(inputExtension));
+  var newPath =
+      inputId.path.substring(0, inputId.path.length - inputExtension.length) +
+          outputExtension;
+  return new AssetId(inputId.package, newPath);
+}
