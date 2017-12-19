@@ -65,7 +65,7 @@ void main() {
         isDefault: true,
         name: 'example',
         package: 'example',
-        sources: new InputSet(include: ['**']),
+        sources: new InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
