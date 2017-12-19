@@ -38,8 +38,10 @@ class BuildAction implements InputMatcher {
 
   /// Creates an [BuildAction] for a normal [Builder].
   ///
-  /// Runs [builder] on [package] with [include] as primary inputs, excluding
-  /// [exclude]. Glob syntax is supported for both [include] and [exclude].
+  /// The build target is defined by [package] as well as [include] and
+  /// [exclude]. By default all sources in the target are used as primary inputs
+  /// to the builder, but it can be further filtered with [generateFor]. Glob
+  /// syntax is supported for [include], [exclude], and [generateFor].
   ///
   /// [isOptional] specifies that a Builder may not be run unless some other
   /// Builder in a later phase attempts to read one of the potential outputs.
@@ -51,11 +53,16 @@ class BuildAction implements InputMatcher {
     String package, {
     Iterable<String> include,
     Iterable<String> exclude,
+    Iterable<String> generateFor,
     BuilderOptions builderOptions,
     bool isOptional,
     bool hideOutput,
   }) {
     var inputs = new InputMatcher(include: include, exclude: exclude);
+    if (generateFor != null && generateFor.isNotEmpty) {
+      inputs = new InputMatcher.allOf(
+          [inputs, new InputMatcher(include: generateFor)]);
+    }
     builderOptions ??= const BuilderOptions(const {});
     return new BuildAction._(package, builder, inputs, builderOptions,
         isOptional: isOptional, hideOutput: hideOutput);

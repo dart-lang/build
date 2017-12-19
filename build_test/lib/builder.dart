@@ -26,3 +26,5 @@ class TestBootstrapBuilder extends TransformerBuilder {
     await super.build(buildStep);
   }
 }
+
+Builder testBootstrapBuilder(_) => new TestBootstrapBuilder();

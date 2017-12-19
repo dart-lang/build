@@ -29,3 +29,6 @@ builders:
         - .dart.js.map
     required_inputs:  [".dart", ".js"]
     build_to: cache
+    auto_apply: root_package
+    defaults:
+      generate_for: ["web/**", "test/**.browser_test.dart"]

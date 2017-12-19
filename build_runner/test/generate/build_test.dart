@@ -12,6 +12,7 @@ import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 
+import '../common/build_configs.dart';
 import '../common/common.dart';
 import '../common/package_graphs.dart';
 
@@ -59,7 +60,8 @@ void main() {
         await testBuilders([
           apply('', '', [(_) => new CopyBuilder(extension: '1')], toRoot(),
               isOptional: true),
-          apply('', '', [(_) => new CopyBuilder(inputExtension: '1')], toRoot(),
+          apply('a', 'only_on_1', [(_) => new CopyBuilder(inputExtension: '1')],
+              toRoot(),
               isOptional: true),
         ], {
           'a|lib/a.txt': 'a'
@@ -91,25 +93,47 @@ void main() {
         });
       });
 
-      test('multiple mixed build actions', () async {
+      test('multiple mixed build actions with custom build config', () async {
         var builders = [
           copyABuilderApplication,
-          apply('', '', [(_) => new CopyBuilder(extension: 'clone')], toRoot(),
+          apply('a', 'clone_txt', [(_) => new CopyBuilder(extension: 'clone')],
+              toRoot(),
               isOptional: true),
-          apply('', '', [(_) => new CopyBuilder(numCopies: 2)], toRoot(),
-              inputs: ['web/*.txt.clone']),
+          apply('a', 'copy_web_clones', [(_) => new CopyBuilder(numCopies: 2)],
+              toRoot()),
         ];
-        await testBuilders(builders, {
-          'a|web/a.txt': 'a',
-          'a|lib/b.txt': 'b',
-        }, outputs: {
-          'a|web/a.txt.copy': 'a',
-          'a|web/a.txt.clone': 'a',
-          'a|lib/b.txt.copy': 'b',
-          // No b.txt.clone since nothing else read it and its optional.
-          'a|web/a.txt.clone.copy.0': 'a',
-          'a|web/a.txt.clone.copy.1': 'a',
+        var buildConfigs = parseBuildConfigs({
+          'a': {
+            'targets': {
+              'a': {
+                'sources': ['**'],
+                'builders': {
+                  'a|clone_txt': {
+                    'generate_for': ['**/*.txt']
+                  },
+                  'a|copy_web_clones': {
+                    'generate_for': ['web/*.txt.clone']
+                  }
+                }
+              }
+            }
+          }
         });
+        await testBuilders(
+            builders,
+            {
+              'a|web/a.txt': 'a',
+              'a|lib/b.txt': 'b',
+            },
+            overrideBuildConfig: buildConfigs,
+            outputs: {
+              'a|web/a.txt.copy': 'a',
+              'a|web/a.txt.clone': 'a',
+              'a|lib/b.txt.copy': 'b',
+              // No b.txt.clone since nothing else read it and its optional.
+              'a|web/a.txt.clone.copy.0': 'a',
+              'a|web/a.txt.clone.copy.1': 'a',
+            });
       });
 
       test('early step touches a not-yet-generated asset', () async {
@@ -369,18 +393,28 @@ void main() {
     });
 
     test('can glob files from packages with excludes applied', () async {
-      await testBuilders([
-        apply('', '', [(_) => new CopyBuilder()], toRoot(),
-            excludes: ['lib/a/*.txt'], hideOutput: true)
-      ], {
-        'a|lib/a/1.txt': '',
-        'a|lib/a/2.txt': '',
-        'a|lib/b/1.txt': '',
-        'a|lib/b/2.txt': '',
-      }, outputs: {
-        r'$$a|lib/b/1.txt.copy': '',
-        r'$$a|lib/b/2.txt.copy': '',
-      });
+      await testBuilders(
+          [applyToRoot(new CopyBuilder())],
+          {
+            'a|lib/a/1.txt': '',
+            'a|lib/a/2.txt': '',
+            'a|lib/b/1.txt': '',
+            'a|lib/b/2.txt': '',
+          },
+          overrideBuildConfig: parseBuildConfigs({
+            'a': {
+              'targets': {
+                'a': {
+                  'sources': ['**'],
+                  'exclude_sources': ['lib/a/**']
+                }
+              }
+            }
+          }),
+          outputs: {
+            'a|lib/b/1.txt.copy': '',
+            'a|lib/b/2.txt.copy': '',
+          });
     });
 
     test('can\'t read files in .dart_tool', () async {

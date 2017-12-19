@@ -37,9 +37,8 @@ Future<String> _generateBuildScript() async {
 /// Finds expressions to create all the [BuilderApplication] instances that
 /// should be applied packages in the build.
 ///
-/// - Add any builders which specify `auto_apply: True` in their `build.yaml`
-/// - Add the DDC builders which apply to all packages
-/// - Add the DDC bootstrap builder to the root package
+/// Adds `apply` expressions based on the BuildefDefinitions from any package
+/// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
   final packageGraph = new PackageGraph.forThisPackage();
@@ -52,12 +51,6 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
 
   final orderedBuilders = findBuilderOrder(builderDefinitions);
   builderApplications.addAll(orderedBuilders.map(_applyBuilder));
-  var ddcBootstrap = builderDefinitions.firstWhere(
-      (b) => b.package == 'build_compilers' && b.name == 'ddc_bootstrap');
-  // TODO - should this be configurable?
-  builderApplications.add(_applyBuilderWithFilter(ddcBootstrap,
-      refer('toRoot', 'package:build_runner/build_runner.dart').call([]),
-      inputs: ['web/**.dart', 'test/**.browser_test.dart']));
   return builderApplications;
 }
 
@@ -93,6 +86,10 @@ Expression _applyBuilderWithFilter(
   }
   if (definition.buildTo == BuildTo.cache) {
     namedArgs['hideOutput'] = literalTrue;
+  }
+  if (definition.defaults?.generateFor != null) {
+    namedArgs['defaultGenerateFor'] =
+        literalList(definition.defaults.generateFor);
   }
   return refer('apply', 'package:build_runner/build_runner.dart').call([
     literalString(definition.package),

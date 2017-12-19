@@ -12,6 +12,10 @@ abstract class InputMatcher {
   bool matches(AssetId input);
   factory InputMatcher({Iterable<String> include, Iterable<String> exclude}) =
       _GlobInputMatcher;
+
+  /// Returns a matcher on the intersection of all [matchers].
+  factory InputMatcher.allOf(Iterable<InputMatcher> matchers) =>
+      new _MultiMatcher(matchers.toList());
 }
 
 class _GlobInputMatcher implements InputMatcher {
@@ -61,12 +65,33 @@ class _GlobInputMatcher implements InputMatcher {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is _GlobInputMatcher &&
-          _deepEquals.equals(_patterns(include), _patterns(exclude)) &&
+          _deepEquals.equals(_patterns(include), _patterns(other.include)) &&
           _deepEquals.equals(_patterns(exclude), _patterns(other.exclude)));
 
   @override
   int get hashCode =>
       _deepEquals.hash([_patterns(include), _patterns(exclude)]);
+}
+
+class _MultiMatcher implements InputMatcher {
+  final List<InputMatcher> delegates;
+
+  _MultiMatcher(this.delegates);
+
+  @override
+  matches(AssetId input) => delegates.every((d) => d.matches(input));
+
+  @override
+  String toString() => 'All of $delegates';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is _MultiMatcher &&
+          _deepEquals.equals(delegates, other.delegates));
+
+  @override
+  int get hashCode => _deepEquals.hash(delegates);
 }
 
 final _deepEquals = const DeepCollectionEquality();
