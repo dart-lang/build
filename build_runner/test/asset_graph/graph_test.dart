@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
@@ -136,7 +137,7 @@ void main() {
         new BuildAction(
             new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
             'foo',
-            exclude: ['excluded.txt'])
+            targetSources: const InputSet(include: const ['excluded.txt']))
       ];
       final primaryInputId = makeAssetId('foo|file.txt');
       final excludedInputId = makeAssetId('foo|excluded.txt');

@@ -39,10 +39,9 @@ class BuildAction implements InputMatcher {
 
   /// Creates an [BuildAction] for a normal [Builder].
   ///
-  /// The build target is defined by [package] as well as [include] and
-  /// [exclude]. By default all sources in the target are used as primary inputs
-  /// to the builder, but it can be further filtered with [generateFor]. Glob
-  /// syntax is supported for [include], [exclude], and [generateFor].
+  /// The build target is defined by [package] as well as [targetSources]. By
+  /// default all sources in the target are used as primary inputs to the
+  /// builder, but it can be further filtered with [generateFor].
   ///
   /// [isOptional] specifies that a Builder may not be run unless some other
   /// Builder in a later phase attempts to read one of the potential outputs.
