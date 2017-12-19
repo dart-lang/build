@@ -35,16 +35,17 @@ class OverDeclaringCopyBuilder extends CopyBuilder {
 class ExistsBuilder extends Builder {
   final AssetId idToCheck;
   final Future waitFor;
+  final String inputExtension;
 
   final _hasRanCompleter = new Completer<Null>();
   Future get hasRan => _hasRanCompleter.future;
 
-  ExistsBuilder(this.idToCheck, {this.waitFor});
+  ExistsBuilder(this.idToCheck, {this.waitFor, this.inputExtension: ''});
 
   @override
-  final buildExtensions = {
-    '': ['.exists']
-  };
+  Map<String, List<String>> get buildExtensions => {
+        inputExtension: ['$inputExtension.exists']
+      };
 
   @override
   Future<Null> build(BuildStep buildStep) async {

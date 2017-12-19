@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
@@ -18,12 +19,10 @@ class BuildConfig {
   ///
   /// [path] must be a directory which contains a `pubspec.yaml` file and
   /// optionally a `build.yaml`.
-  static Future<BuildConfig> fromPackageDir(String path,
-      {bool includeWebSources: false}) async {
+  static Future<BuildConfig> fromPackageDir(String path) async {
     final pubspec = await Pubspec.fromPackageDir(path);
     return fromBuildConfigDir(
-        pubspec.pubPackageName, pubspec.dependencies, path,
-        includeWebSources: includeWebSources);
+        pubspec.pubPackageName, pubspec.dependencies, path);
   }
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
@@ -31,17 +30,14 @@ class BuildConfig {
   ///
   /// [path] should the path to a directory which may contain a `build.yaml`.
   static Future<BuildConfig> fromBuildConfigDir(
-      String packageName, Iterable<String> dependencies, String path,
-      {bool includeWebSources: false}) async {
+      String packageName, Iterable<String> dependencies, String path) async {
     final configPath = p.join(path, 'build.yaml');
     final file = new File(configPath);
     if (await file.exists()) {
       return new BuildConfig.parse(
-          packageName, dependencies, await file.readAsString(),
-          includeWebSources: includeWebSources);
+          packageName, dependencies, await file.readAsString());
     } else {
-      return new BuildConfig.useDefault(packageName, dependencies,
-          includeWebSources: includeWebSources);
+      return new BuildConfig.useDefault(packageName, dependencies);
     }
   }
 
@@ -56,19 +52,14 @@ class BuildConfig {
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies,
-      {bool includeWebSources: false,
-      List<String> platforms: const [],
-      Iterable<String> excludeSources: const []}) {
-    final sources = ["lib/**"];
-    if (includeWebSources) sources.add("web/**");
+      {Iterable<String> excludeSources: const []}) {
     final buildTargets = {
       packageName: new BuildTarget(
           dependencies: dependencies,
-          platforms: platforms,
           isDefault: true,
           name: packageName,
           package: packageName,
-          sources: sources,
+          sources: const ['**'],
           excludeSources: excludeSources)
     };
     return new BuildConfig(
@@ -78,11 +69,14 @@ class BuildConfig {
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].
-  factory BuildConfig.parse(
-          String packageName, Iterable<String> dependencies, String configYaml,
-          {bool includeWebSources: false}) =>
-      parseFromYaml(packageName, dependencies, configYaml,
-          includeWebSources: includeWebSources);
+  factory BuildConfig.parse(String packageName, Iterable<String> dependencies,
+          String configYaml) =>
+      parseFromYaml(packageName, dependencies, configYaml);
+
+  /// Create a [BuildConfig] read a map which was already parsed.
+  factory BuildConfig.fromMap(String packageName, Iterable<String> dependencies,
+          Map<String, dynamic> config) =>
+      parseFromMap(packageName, dependencies, config);
 
   BuildConfig({
     @required this.packageName,
@@ -167,30 +161,83 @@ class BuildTarget {
 
   final Iterable<String> sources;
 
-  /// A map from builder name to the configuration used for this target.
-  final Map<String, Map<String, dynamic>> builders;
-
-  /// The platforms supported by this target.
+  /// A map from builder key to the configuration used for this target.
   ///
-  /// May be limited by, for isntance, importing core libraries that are not
-  /// cross platform. An empty list indicates all platforms are supported.
-  final List<String> platforms;
+  /// Builder keys are in the format `"$package|$builder"`. This does not
+  /// represent the full set of builders that are applied to the target, only
+  /// those which have configuration customized against the default.
+  final Map<String, TargetBuilderConfig> builders;
 
   /// Whether or not this is the default dart library for the package.
   final bool isDefault;
 
-  /// Sources to use as inputs for `builders`. May be `null`, in which case
-  /// it should fall back on `sources`.
+  BuildTarget({
+    this.name,
+    this.package,
+    this.sources: const ['lib/**'],
+    this.excludeSources: const [],
+    this.dependencies,
+    this.builders: const {},
+    this.isDefault: false,
+  });
+
+  factory BuildTarget.asDefault(BuildTarget other) => new BuildTarget(
+        isDefault: true,
+        name: other.name,
+        package: other.package,
+        sources: other.sources,
+        excludeSources: other.excludeSources,
+        dependencies: other.dependencies,
+        builders: other.builders,
+      );
+
+  @override
+  String toString() => {
+        'package': package,
+        'name': name,
+        'isDefault': isDefault,
+        'sources': sources,
+        'excludeSources': excludeSources,
+        'builders': builders
+      }.toString();
+}
+
+/// The configuration a particular [BuildTarget] applies to a Builder.
+///
+/// Build targets may have builders applied automatically based on
+/// [BuilderDefinition.autoApply] and may override with more specific
+/// configuration.
+class TargetBuilderConfig {
+  /// Overrides the setting of whether the Builder would run on this target.
+  ///
+  /// Builders may run on this target by default based on the `apply_to`
+  /// argument. If this value is set it overrides the default.
+  final bool isEnabled;
+
+  /// Sources to use as inputs for this Builder in glob format.
+  ///
+  /// This is always a subset of the `include` argument in the containing
+  /// [BuildTarget].
+  ///
+  /// May be `null`, in which case it should fall back on `sources`.
   final Iterable<String> generateFor;
 
-  BuildTarget(
-      {this.builders: const {},
-      this.dependencies,
-      this.platforms: const [],
-      this.excludeSources: const [],
-      this.generateFor,
-      this.isDefault: false,
-      this.name,
-      this.package,
-      this.sources: const ['lib/**']});
+  /// The options to pass to the `BuilderFactory` when constructing this
+  /// builder.
+  ///
+  /// The `options` key in the configuration.
+  final BuilderOptions options;
+
+  TargetBuilderConfig({
+    this.isEnabled,
+    this.generateFor,
+    this.options: const BuilderOptions(const {}),
+  });
+
+  @override
+  String toString() => {
+        'isEnable': isEnabled,
+        'generateFor': generateFor,
+        'options': options.config
+      }.toString();
 }
