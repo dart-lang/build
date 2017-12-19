@@ -15,6 +15,7 @@ import 'package:watcher/watcher.dart';
 
 import '../asset/reader.dart';
 import '../generate/phase.dart';
+import '../package_graph/package_graph.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
@@ -41,12 +42,13 @@ class AssetGraph {
       List<BuildAction> buildActions,
       Set<AssetId> sources,
       Set<AssetId> internalSources,
-      String rootPackage,
+      PackageGraph packageGraph,
       DigestAssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
+    graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
     graph._addBuilderOptionsNodes(buildActions);
-    graph._addOutputsForSources(buildActions, sources, rootPackage);
+    graph._addOutputsForSources(buildActions, sources, packageGraph.root.name);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
         sourceNodes.where((node) => node.outputs.isNotEmpty), digestReader);
@@ -97,6 +99,13 @@ class AssetGraph {
       var node = new InternalAssetNode(id);
       _add(node);
       yield node;
+    }
+  }
+
+  /// Adds [PlaceHolderAssetNode]s for every package in [packageGraph].
+  _addPlaceHolderNodes(PackageGraph packageGraph) {
+    for (var package in packageGraph.allPackages.keys) {
+      _add(new PlaceHolderAssetNode(new AssetId(package, r'lib/$lib$')));
     }
   }
 
@@ -172,7 +181,7 @@ class AssetGraph {
 
   /// All the generated outputs in the graph.
   Iterable<AssetId> get outputs =>
-      allNodes.where((n) => n is GeneratedAssetNode).map((n) => n.id);
+      allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -231,8 +240,8 @@ class AssetGraph {
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(
-        newAndModifiedNodes.where(
-            (node) => node is! SyntheticAssetNode && node.outputs.isNotEmpty),
+        newAndModifiedNodes
+            .where((node) => node.isValidInput && node.outputs.isNotEmpty),
         digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,

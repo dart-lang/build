@@ -204,7 +204,7 @@ class BuildImpl {
     var builder = action.builder;
     await Future
         .wait(_assetGraph.packageNodes(action.package).map((node) async {
-      if (node is SyntheticAssetNode || node is InternalAssetNode) return;
+      if (!node.isValidInput) return;
       if (!action.matches(node.id)) return;
       if (!builder.buildExtensions.keys
           .any((inputExtension) => node.id.path.endsWith(inputExtension))) {

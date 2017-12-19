@@ -213,7 +213,7 @@ class WatchImpl implements BuildState {
     if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
     var node = _assetGraph.get(change.id);
     if (node != null) {
-      if (_isUninterestingNode(node)) return false;
+      if (!node.isInteresting) return false;
       if (_isEditOnGeneratedFile(node, change.type)) return false;
     } else {
       if (change.type == ChangeType.REMOVE) return false;
@@ -225,24 +225,8 @@ class WatchImpl implements BuildState {
 
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
-  bool _isUninterestingNode(AssetNode node) {
-    if (node is InternalAssetNode) {
-      // All `InternalAssetNode`s are interesting, at least for now.
-      return false;
-    } else if (node.outputs.isEmpty && node.lastKnownDigest == null) {
-      // If we haven't computed a digest for this asset and it has no outputs,
-      // then we don't care about changes to it.
-      //
-      // Checking for a digest alone isn't enough because a file may be deleted
-      // and re-added, in which case it won't have a digest.
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   bool _isEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
-      node is GeneratedAssetNode && changeType != ChangeType.REMOVE;
+      node.isGenerated && changeType != ChangeType.REMOVE;
 
   bool _isExpectedDelete(AssetChange change) =>
       _expectedDeletes.remove(change.id);

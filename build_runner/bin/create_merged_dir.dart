@@ -72,7 +72,7 @@ Future main(List<String> args) async {
       assetGraph, packageGraph.root.name);
 
   for (var node in assetGraph.allNodes) {
-    if (node is SyntheticAssetNode) continue;
+    if (!node.isReadable) continue;
     if (node is GeneratedAssetNode && !node.wasOutput) continue;
     if (node.id.path == '.packages') continue;
     var assetPaths = <String>[];
