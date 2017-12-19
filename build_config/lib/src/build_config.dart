@@ -12,7 +12,7 @@ import 'package:path/path.dart' as p;
 import 'parse.dart';
 import 'pubspec.dart';
 
-/// A glob filter on files inputs or sources.
+/// A filter on files inputs or sources.
 ///
 /// Takes a list of strings in glob format for [include] and [exclude]. Matches
 /// the `glob()` function in skylark.
@@ -26,11 +26,12 @@ class InputSet {
   ///
   /// May be null or empty which means every path in [include].
   final List<String> exclude;
+
   const InputSet({this.include, this.exclude});
 
   @override
   String toString() {
-    final result = new StringBuffer()..write('paths matching $include');
+    final result = new StringBuffer();
     if (include == null || include.isEmpty) {
       result.write('any path');
     } else {
