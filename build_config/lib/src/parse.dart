@@ -53,8 +53,8 @@ BuildConfig parseFromYaml(
     parseFromMap(packageName, dependencies,
         loadYaml(configYaml) as Map<String, dynamic>);
 
-BuildConfig parseFromMap(String packageName, Iterable<String> dependencies,
-    Map<String, dynamic> config) {
+BuildConfig parseFromMap(String packageName,
+    Iterable<String> packageDependencies, Map<String, dynamic> config) {
   final buildTargets = <String, BuildTarget>{};
   final builderDefinitions = <String, BuilderDefinition>{};
 
@@ -67,7 +67,7 @@ BuildConfig parseFromMap(String packageName, Iterable<String> dependencies,
     final builders = _readBuildersOrThrow(targetConfig, _builders);
 
     final dependencies = _readListOfStringsOrThrow(targetConfig, _dependencies,
-        defaultValue: []);
+        defaultValue: packageDependencies.toList());
 
     final excludeSources = _readListOfStringsOrThrow(
         targetConfig, _excludeSources,
@@ -76,7 +76,8 @@ BuildConfig parseFromMap(String packageName, Iterable<String> dependencies,
     var isDefault =
         _readBoolOrThrow(targetConfig, _default, defaultValue: false);
 
-    final sources = _readListOfStringsOrThrow(targetConfig, _sources);
+    final sources =
+        _readListOfStringsOrThrow(targetConfig, _sources, defaultValue: ["**"]);
 
     buildTargets[targetName] = new BuildTarget(
       builders: builders,
@@ -285,10 +286,10 @@ Map<String, TargetBuilderConfig> _readBuildersOrThrow(
 
 List<String> _readListOfStringsOrThrow(
     Map<String, dynamic> options, String option,
-    {List<String> defaultValue,
+    {Iterable<String> defaultValue,
     Iterable<String> validValues,
     bool allowNull: false}) {
-  var value = options[option] ?? defaultValue;
+  var value = options[option] ?? defaultValue.toList();
   if (value == null && allowNull) return null;
 
   if (value is! List || (value as List).any((v) => v is! String)) {
