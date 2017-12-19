@@ -7,29 +7,17 @@ import 'package:yaml/yaml.dart';
 
 import 'build_config.dart';
 
-/// Supported values for the `platforms` attribute.
-const _allPlatforms = const [
-  _vmPlatform,
-  _webPlatform,
-  _flutterPlatform,
-];
-const _vmPlatform = 'vm';
-const _webPlatform = 'web';
-const _flutterPlatform = 'flutter';
-
 const _targetOptions = const [
   _builders,
   _default,
   _dependencies,
   _excludeSources,
-  _platforms,
   _sources,
 ];
 const _builders = 'builders';
 const _default = 'default';
 const _dependencies = 'dependencies';
 const _excludeSources = 'exclude_sources';
-const _platforms = 'platforms';
 const _sources = 'sources';
 
 const _builderConfigOptions = const [
@@ -61,17 +49,12 @@ const _isOptional = 'is_optional';
 const _buildTo = 'build_to';
 
 BuildConfig parseFromYaml(
-        String packageName, Iterable<String> dependencies, String configYaml,
-        {bool includeWebSources}) =>
-    parseFromMap(
-        packageName, dependencies, loadYaml(configYaml) as Map<String, dynamic>,
-        includeWebSources: includeWebSources);
+        String packageName, Iterable<String> dependencies, String configYaml) =>
+    parseFromMap(packageName, dependencies,
+        loadYaml(configYaml) as Map<String, dynamic>);
 
 BuildConfig parseFromMap(String packageName, Iterable<String> dependencies,
-    Map<String, dynamic> config,
-    {bool includeWebSources}) {
-  includeWebSources ??= false;
-
+    Map<String, dynamic> config) {
   final buildTargets = <String, BuildTarget>{};
   final builderDefinitions = <String, BuilderDefinition>{};
 
@@ -93,15 +76,11 @@ BuildConfig parseFromMap(String packageName, Iterable<String> dependencies,
     var isDefault =
         _readBoolOrThrow(targetConfig, _default, defaultValue: false);
 
-    final platforms = _readListOfStringsOrThrow(targetConfig, _platforms,
-        defaultValue: [], validValues: _allPlatforms);
-
     final sources = _readListOfStringsOrThrow(targetConfig, _sources);
 
     buildTargets[targetName] = new BuildTarget(
       builders: builders,
       dependencies: dependencies,
-      platforms: platforms,
       excludeSources: excludeSources,
       isDefault: isDefault,
       name: targetName,
@@ -112,14 +91,12 @@ BuildConfig parseFromMap(String packageName, Iterable<String> dependencies,
 
   if (buildTargets.isEmpty) {
     // Add the default dart library if there are no targets discovered.
-    var sources = ["lib/**"];
-    if (includeWebSources) sources.add("web/**");
     buildTargets[packageName] = new BuildTarget(
         dependencies: dependencies,
         isDefault: true,
         name: packageName,
         package: packageName,
-        sources: sources);
+        sources: const ['**']);
   } else if (buildTargets.length == 1 &&
       !buildTargets.values.single.isDefault) {
     // Allow omitting `isDefault` if there is exactly 1 target.
