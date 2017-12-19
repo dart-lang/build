@@ -167,8 +167,8 @@ void main() {
         var writer = new InMemoryRunnerAssetWriter();
         await testBuilders([
           copyABuilderApplication,
-          apply('', '', [(_) => new CopyBuilder(extension: 'clone')], toRoot(),
-              inputs: ['**.txt.copy'])
+          applyToRoot(
+              new CopyBuilder(inputExtension: '.copy', extension: 'copy.clone'))
         ], {
           'a|web/a.txt': 'a',
           'a|web/a.txt.copy': 'a',
