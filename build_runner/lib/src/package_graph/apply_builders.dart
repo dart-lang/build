@@ -54,7 +54,7 @@ BuilderApplication applyToRoot(Builder builder) =>
 /// never run.
 BuilderApplication apply(String providingPackage, String builderName,
         List<BuilderFactory> builderFactories, PackageFilter filter,
-        {bool isOptional, bool hideOutput, List<String> defaultGenerateFor}) =>
+        {bool isOptional, bool hideOutput, InputSet defaultGenerateFor}) =>
     new BuilderApplication._(
         providingPackage, builderName, builderFactories, filter,
         isOptional: isOptional,
@@ -87,7 +87,7 @@ class BuilderApplication {
 
   /// The default filter for primary inputs if the [TargetBuilderConfig] does
   /// not specify one.
-  final List<String> defaultGenerateFor;
+  final InputSet defaultGenerateFor;
 
   const BuilderApplication._(this.providingPackage, this.builderName,
       this.builderFactories, this.filter,
@@ -146,8 +146,7 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
             builderConfig?.options ?? const BuilderOptions(const {});
         return new BuildAction(b(options), node.package.name,
             builderOptions: options,
-            include: node.target.sources,
-            exclude: node.target.excludeSources,
+            targetSources: node.target.sources,
             generateFor: generateFor,
             isOptional: builderApplication.isOptional,
             hideOutput: builderApplication.hideOutput);

@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -194,7 +195,8 @@ main() {
         var buildActions = [
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true),
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-              include: ['**/*.txt'], hideOutput: true),
+              targetSources: const InputSet(include: const ['**/*.txt']),
+              hideOutput: true),
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -220,7 +222,8 @@ main() {
               builderOptions: new BuilderOptions({'test': 'option'}),
               hideOutput: true),
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-              include: ['**/*.txt'], hideOutput: true),
+              targetSources: const InputSet(include: const ['**/*.txt']),
+              hideOutput: true),
         ];
         var buildDefinition =
             await BuildDefinition.prepareWorkspace(options, newBuildActions);
@@ -312,7 +315,8 @@ main() {
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
       buildActions.add(new BuildAction(new CopyBuilder(), 'a',
-          include: ['.copy'], hideOutput: true));
+          targetSources: const InputSet(include: const ['.copy']),
+          hideOutput: true));
       logs.clear();
 
       var buildDefinition =

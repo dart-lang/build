@@ -7,6 +7,7 @@
   targets.
 - Add `TargetBuilderConfigDefaults` class for Builder authors to provide default
   configuration.
+- Add `InputSet` and change `sources` and `generate_for` to use it.
 
 ### Breaking
 

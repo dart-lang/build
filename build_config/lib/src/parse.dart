@@ -11,13 +11,11 @@ const _targetOptions = const [
   _builders,
   _default,
   _dependencies,
-  _excludeSources,
   _sources,
 ];
 const _builders = 'builders';
 const _default = 'default';
 const _dependencies = 'dependencies';
-const _excludeSources = 'exclude_sources';
 const _sources = 'sources';
 
 const _builderConfigOptions = const [
@@ -77,20 +75,15 @@ BuildConfig parseFromMap(String packageName,
     final dependencies = _readListOfStringsOrThrow(targetConfig, _dependencies,
         defaultValue: packageDependencies);
 
-    final excludeSources = _readListOfStringsOrThrow(
-        targetConfig, _excludeSources,
-        defaultValue: []);
-
     var isDefault =
         _readBoolOrThrow(targetConfig, _default, defaultValue: false);
 
-    final sources =
-        _readListOfStringsOrThrow(targetConfig, _sources, defaultValue: ["**"]);
+    final sources = _readInputSetOrThrow(targetConfig, _sources,
+        defaultValue: const InputSet());
 
     buildTargets[targetName] = new BuildTarget(
       builders: builders,
       dependencies: dependencies,
-      excludeSources: excludeSources,
       isDefault: isDefault,
       name: targetName,
       package: packageName,
@@ -101,11 +94,12 @@ BuildConfig parseFromMap(String packageName,
   if (buildTargets.isEmpty) {
     // Add the default dart library if there are no targets discovered.
     buildTargets[packageName] = new BuildTarget(
-        dependencies: packageDependencies,
-        isDefault: true,
-        name: packageName,
-        package: packageName,
-        sources: const ['**']);
+      dependencies: packageDependencies,
+      isDefault: true,
+      name: packageName,
+      package: packageName,
+      sources: const InputSet(),
+    );
   } else if (buildTargets.length == 1 &&
       !buildTargets.values.single.isDefault) {
     // Allow omitting `isDefault` if there is exactly 1 target.
@@ -146,9 +140,8 @@ BuildConfig parseFromMap(String packageName,
     final defaultOptions = _readMapOrThrow(
         builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
         defaultValue: {});
-    final defaultGenerateFor = _readListOfStringsOrThrow(
-        defaultOptions, _generateFor,
-        allowNull: true);
+    final defaultGenerateFor =
+        _readInputSetOrThrow(defaultOptions, _generateFor, allowNull: true);
 
     if (mustBuildToCache && buildTo != BuildTo.cache) {
       throw new ArgumentError('`hide_output` may not be set to `False` '
@@ -281,7 +274,7 @@ Map<String, TargetBuilderConfig> _readBuildersOrThrow(
         _readBoolOrThrow(builderConfig, _enabled, allowNull: true);
 
     final generateFor =
-        _readListOfStringsOrThrow(builderConfig, _generateFor, allowNull: true);
+        _readInputSetOrThrow(builderConfig, _generateFor, allowNull: true);
 
     var parsedOptions = const BuilderOptions(const {});
     if (builderConfig.containsKey(_options)) {
@@ -321,4 +314,34 @@ List<String> _readListOfStringsOrThrow(
     }
   }
   return new List<String>.from(value as List);
+}
+
+InputSet _readInputSetOrThrow(Map<String, dynamic> options, String option,
+    {InputSet defaultValue, bool allowNull: false}) {
+  final value = options[option];
+  if (value == null && defaultValue != null) return defaultValue;
+  if (value == null && allowNull) return null;
+
+  if (value is List && value.every((v) => v is String)) {
+    final include = new List<String>.from(value);
+    return new InputSet(include: include);
+  }
+
+  if (value is Map) {
+    final invalidOptions = value.keys.toList()
+      ..removeWhere((k) => k == 'include' || k == 'exclude');
+    if (invalidOptions.isNotEmpty) {
+      throw new ArgumentError('Got invalid options `$invalidOptions` '
+          'for $option. Only "include", and "exclude" are allowed');
+    }
+    final include = value.containsKey('include')
+        ? new List<String>.from(value['include'] as List)
+        : null;
+    final exclude = value.containsKey('exclude')
+        ? new List<String>.from(value['exclude'] as List)
+        : null;
+    return new InputSet(include: include, exclude: exclude);
+  }
+  throw new ArgumentError('Got `$value` for `$option` '
+      'but expected a List<String> or a Map');
 }

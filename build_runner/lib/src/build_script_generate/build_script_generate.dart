@@ -88,8 +88,18 @@ Expression _applyBuilderWithFilter(
     namedArgs['hideOutput'] = literalTrue;
   }
   if (definition.defaults?.generateFor != null) {
+    final inputSetArgs = <String, Expression>{};
+    if (definition.defaults.generateFor.include != null) {
+      inputSetArgs['include'] =
+          literalConstList(definition.defaults.generateFor.include);
+    }
+    if (definition.defaults.generateFor.exclude != null) {
+      inputSetArgs['exclude'] =
+          literalConstList(definition.defaults.generateFor.exclude);
+    }
     namedArgs['defaultGenerateFor'] =
-        literalList(definition.defaults.generateFor);
+        refer('InputSet', 'package:build_config/build_config.dart')
+            .constInstance([], inputSetArgs);
   }
   return refer('apply', 'package:build_runner/build_runner.dart').call([
     literalString(definition.package),

@@ -13,22 +13,24 @@ void main() {
     expectBuildTargets(buildConfig.buildTargets, {
       'a': new BuildTarget(
         builders: {
-          'b|b': new TargetBuilderConfig(generateFor: ['lib/a.dart']),
+          'b|b': new TargetBuilderConfig(
+              generateFor: new InputSet(include: ['lib/a.dart'])),
           'a|h': new TargetBuilderConfig(
               options: new BuilderOptions({'foo': 'bar'})),
         },
         dependencies: ['b', 'c:d'],
         name: 'a',
         package: 'example',
-        sources: ['lib/a.dart', 'lib/src/a/**'],
+        sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
       'e': new BuildTarget(
         dependencies: ['f', ':a'],
-        excludeSources: ['lib/src/e/g.dart'],
         isDefault: true,
         name: 'e',
         package: 'example',
-        sources: ['lib/e.dart', 'lib/src/e/**'],
+        sources: new InputSet(
+            include: ['lib/e.dart', 'lib/src/e/**'],
+            exclude: ['lib/src/e/g.dart']),
       )
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
@@ -48,7 +50,8 @@ void main() {
         package: 'example',
         target: 'e',
         requiredInputs: ['.dart'],
-        defaults: new TargetBuilderConfigDefaults(generateFor: ['lib/**']),
+        defaults: new TargetBuilderConfigDefaults(
+            generateFor: new InputSet(include: ['lib/**'])),
       ),
     });
   });
@@ -62,7 +65,7 @@ void main() {
         isDefault: true,
         name: 'example',
         package: 'example',
-        sources: ['**'],
+        sources: new InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
@@ -109,10 +112,11 @@ targets:
       - f
       - :a
     sources:
-      - "lib/e.dart"
-      - "lib/src/e/**"
-    exclude_sources:
-      - "lib/src/e/g.dart"
+      include:
+        - "lib/e.dart"
+        - "lib/src/e/**"
+      exclude:
+        - "lib/src/e/g.dart"
 builders:
   h:
     builder_factories: ["createBuilder"]
@@ -153,8 +157,10 @@ class _BuilderDefinitionMatcher extends Matcher {
       equals(_expected.builderFactories).matches(item.builderFactories, _) &&
       equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
-      equals(_expected.defaults?.generateFor)
-          .matches(item.defaults?.generateFor, _) &&
+      equals(_expected.defaults?.generateFor?.include)
+          .matches(item.defaults?.generateFor?.include, _) &&
+      equals(_expected.defaults?.generateFor?.exclude)
+          .matches(item.defaults?.generateFor?.exclude, _) &&
       item.autoApply == _expected.autoApply &&
       item.isOptional == _expected.isOptional &&
       item.buildTo == _expected.buildTo &&
@@ -189,8 +195,8 @@ class _BuildTargetMatcher extends Matcher {
       new _BuilderConfigsMatcher(_expected.builders)
           .matches(item.builders, _) &&
       equals(_expected.dependencies).matches(item.dependencies, _) &&
-      equals(_expected.sources).matches(item.sources, _) &&
-      equals(_expected.excludeSources).matches(item.excludeSources, _);
+      equals(_expected.sources.include).matches(item.sources.include, _) &&
+      equals(_expected.sources.exclude).matches(item.sources.exclude, _);
 
   @override
   Description describe(Description description) =>
@@ -226,7 +232,10 @@ class _BuilderConfigMatcher extends Matcher {
   bool matches(item, _) =>
       item is TargetBuilderConfig &&
       item.isEnabled == _expected.isEnabled &&
-      equals(_expected.generateFor).matches(item.generateFor, _) &&
+      equals(_expected.generateFor?.include)
+          .matches(item.generateFor?.include, _) &&
+      equals(_expected.generateFor?.exclude)
+          .matches(item.generateFor?.exclude, _) &&
       equals(_expected.options.config).matches(item.options.config, _);
 
   @override
