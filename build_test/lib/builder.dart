@@ -12,11 +12,11 @@ import 'package:test/pub_serve.dart';
 class TestBootstrapBuilder extends TransformerBuilder {
   TestBootstrapBuilder()
       : super(new PubServeTransformer.asPlugin(), {
-          '.dart': [
-            '.dart.vm_test.dart',
-            '.dart.browser_test.dart',
-            '.dart.node_test.dart',
-            '.html',
+          '_test.dart': [
+            '_test.dart.vm_test.dart',
+            '_test.dart.browser_test.dart',
+            '_test.dart.node_test.dart',
+            '_test.html',
           ]
         });
 

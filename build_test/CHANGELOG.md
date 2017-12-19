@@ -5,6 +5,7 @@
   a writer.
 - Added `buildInputs` stream to `CopyBuilder` which emits an event for each
   `BuildStep.inputId` at the top of the `build` method.
+- Changed `TestBootstrapBuilder` to only target `_test.dart` files.
 
 ## 0.9.3
 
