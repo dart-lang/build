@@ -13,10 +13,10 @@ Future main(List<String> args) async {
   var builders = [
     apply('e2e_example', 'throwing_builder', [(_) => new ThrowingBuilder()],
         toRoot(),
-        hideOutput: true, defaultGenerateFor: const ['test/**']),
+        hideOutput: true),
     apply('build_test', 'test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
-        hideOutput: true),
+        hideOutput: true, defaultGenerateFor: const ['test/**']),
     apply(
         'build_compilers',
         'ddc',

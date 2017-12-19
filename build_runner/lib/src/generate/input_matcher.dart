@@ -12,6 +12,8 @@ abstract class InputMatcher {
   bool matches(AssetId input);
   factory InputMatcher({Iterable<String> include, Iterable<String> exclude}) =
       _GlobInputMatcher;
+
+  /// Returns a matcher on the intersection of all [matchers].
   factory InputMatcher.allOf(Iterable<InputMatcher> matchers) =>
       new _MultiMatcher(matchers.toList());
 }

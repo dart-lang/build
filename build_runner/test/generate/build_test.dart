@@ -93,7 +93,7 @@ void main() {
         });
       });
 
-      test('multiple mixed build actions', () async {
+      test('multiple mixed build actions with custom build config', () async {
         var builders = [
           copyABuilderApplication,
           apply('a', 'clone_txt', [(_) => new CopyBuilder(extension: 'clone')],
