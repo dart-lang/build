@@ -292,7 +292,7 @@ List<String> _readListOfStringsOrThrow(
     {Iterable<String> defaultValue,
     Iterable<String> validValues,
     bool allowNull: false}) {
-  var value = options[option] ?? defaultValue.toList();
+  var value = options[option] ?? defaultValue?.toList();
   if (value == null && allowNull) return null;
 
   if (value is! List || (value as List).any((v) => v is! String)) {
