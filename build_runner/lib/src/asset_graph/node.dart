@@ -36,11 +36,11 @@ abstract class AssetNode {
   /// at this moment in time.
   bool get isReadable => true;
 
-  /// Whether or not this node can be used as a primary or secondary input.
+  /// Whether or not this node can be used as a primary input.
   ///
-  /// Some nodes are valid inputs but are not readable (see
-  /// [PlaceHolderAssetNode]), while others can are readable but are not valid
-  /// inputs (see [InternalAssetNode]).
+  /// Some nodes are valid primary inputs but are not readable (see
+  /// [PlaceHolderAssetNode]), while others are readable but are not valid
+  /// primary inputs (see [InternalAssetNode]).
   bool get isValidInput => true;
 
   /// Whether or not changes to this node will have any effect on other nodes.
