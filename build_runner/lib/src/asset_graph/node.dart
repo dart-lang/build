@@ -30,10 +30,17 @@ abstract class AssetNode {
   /// Whether or not this node was an output of this build.
   bool get isGenerated => false;
 
-  /// Whether or not this asset can be read.
+  /// Whether or not this asset type can be read.
+  ///
+  /// This does not indicate whether or not this specific node actually exists
+  /// at this moment in time.
   bool get isReadable => true;
 
   /// Whether or not this node can be used as a primary or secondary input.
+  ///
+  /// Some nodes are valid inputs but are not readable (see
+  /// [PlaceHolderAssetNode]), while others can are readable but are not valid
+  /// inputs (see [InternalAssetNode]).
   bool get isValidInput => true;
 
   /// Whether or not changes to this node will have any effect on other nodes.
