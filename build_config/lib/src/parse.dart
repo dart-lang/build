@@ -55,6 +55,9 @@ BuildConfig parseFromYaml(
 
 BuildConfig parseFromMap(String packageName,
     Iterable<String> packageDependencies, Map<String, dynamic> config) {
+  assert(packageName != null);
+  assert(packageDependencies != null);
+
   final buildTargets = <String, BuildTarget>{};
   final builderDefinitions = <String, BuilderDefinition>{};
 
@@ -67,7 +70,7 @@ BuildConfig parseFromMap(String packageName,
     final builders = _readBuildersOrThrow(targetConfig, _builders);
 
     final dependencies = _readListOfStringsOrThrow(targetConfig, _dependencies,
-        defaultValue: packageDependencies.toList());
+        defaultValue: packageDependencies);
 
     final excludeSources = _readListOfStringsOrThrow(
         targetConfig, _excludeSources,
