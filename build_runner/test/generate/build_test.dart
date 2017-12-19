@@ -405,8 +405,9 @@ void main() {
             'a': {
               'targets': {
                 'a': {
-                  'sources': ['**'],
-                  'exclude_sources': ['lib/a/**']
+                  'sources': {
+                    'exclude': ['lib/a/**']
+                  }
                 }
               }
             }

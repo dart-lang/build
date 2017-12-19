@@ -137,7 +137,7 @@ void main() {
         new BuildAction(
             new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
             'foo',
-            targetSources: const InputSet(include: const ['excluded.txt']))
+            targetSources: const InputSet(exclude: const ['excluded.txt']))
       ];
       final primaryInputId = makeAssetId('foo|file.txt');
       final excludedInputId = makeAssetId('foo|excluded.txt');

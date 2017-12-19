@@ -57,7 +57,7 @@ class BuildAction implements InputMatcher {
     bool isOptional,
     bool hideOutput,
   }) {
-    var inputs = new InputMatcher(targetSources);
+    var inputs = new InputMatcher(targetSources ?? const InputSet());
     if (generateFor != null) {
       inputs = new InputMatcher.allOf([inputs, new InputMatcher(generateFor)]);
     }
