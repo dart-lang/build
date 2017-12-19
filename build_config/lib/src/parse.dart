@@ -96,7 +96,7 @@ BuildConfig parseFromMap(String packageName,
   if (buildTargets.isEmpty) {
     // Add the default dart library if there are no targets discovered.
     buildTargets[packageName] = new BuildTarget(
-        dependencies: dependencies,
+        dependencies: packageDependencies,
         isDefault: true,
         name: packageName,
         package: packageName,
