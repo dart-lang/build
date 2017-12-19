@@ -403,5 +403,8 @@ AssetId builderOptionsIdForPhase(String package, int phase) =>
     new AssetId(package, 'Phase$phase.builderOptions');
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
-    new Set<AssetId>.from(packageGraph.allPackages.keys
-        .map((package) => new AssetId(package, r'lib/$lib$')));
+    new Set<AssetId>.from(packageGraph.allPackages.keys.expand((package) => [
+          new AssetId(package, r'lib/$lib$'),
+          new AssetId(package, r'test/$test$'),
+          new AssetId(package, r'web/$web$'),
+        ]));
