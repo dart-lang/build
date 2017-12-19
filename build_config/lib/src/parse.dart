@@ -38,6 +38,7 @@ const _builderDefinitionOptions = const [
   _requiredInputs,
   _isOptional,
   _buildTo,
+  _defaults,
 ];
 const _builderFactories = 'builder_factories';
 const _import = 'import';
@@ -47,6 +48,10 @@ const _autoApply = 'auto_apply';
 const _requiredInputs = 'required_inputs';
 const _isOptional = 'is_optional';
 const _buildTo = 'build_to';
+const _defaults = 'defaults';
+const _builderConfigDefaultOptions = const [
+  _generateFor,
+];
 
 BuildConfig parseFromYaml(
         String packageName, Iterable<String> dependencies, String configYaml) =>
@@ -138,6 +143,13 @@ BuildConfig parseFromMap(String packageName,
     final buildTo = _readBuildToOrThrow(builderConfig, _buildTo,
         defaultValue: mustBuildToCache ? BuildTo.cache : BuildTo.source);
 
+    final defaultOptions = _readMapOrThrow(
+        builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
+        defaultValue: {});
+    final defaultGenerateFor = _readListOfStringsOrThrow(
+        defaultOptions, _generateFor,
+        allowNull: true);
+
     if (mustBuildToCache && buildTo != BuildTo.cache) {
       throw new ArgumentError('`hide_output` may not be set to `False` '
           'when using `auto_apply: ${builderConfig[_autoApply]}`');
@@ -154,6 +166,8 @@ BuildConfig parseFromMap(String packageName,
       requiredInputs: requiredInputs,
       isOptional: isOptional,
       buildTo: buildTo,
+      defaults:
+          new TargetBuilderConfigDefaults(generateFor: defaultGenerateFor),
     );
   }
   return new BuildConfig(

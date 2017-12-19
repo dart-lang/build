@@ -48,6 +48,7 @@ void main() {
         package: 'example',
         target: 'e',
         requiredInputs: ['.dart'],
+        defaults: new TargetBuilderConfigDefaults(generateFor: ['lib/**']),
       ),
     });
   });
@@ -121,6 +122,8 @@ builders:
     auto_apply: dependents
     required_inputs: [".dart"]
     is_optional: True
+    defaults:
+      generate_for: ["lib/**"]
 ''';
 
 var buildYamlNoTargets = '''
@@ -150,6 +153,8 @@ class _BuilderDefinitionMatcher extends Matcher {
       equals(_expected.builderFactories).matches(item.builderFactories, _) &&
       equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
+      equals(_expected.defaults?.generateFor)
+          .matches(item.defaults?.generateFor, _) &&
       item.autoApply == _expected.autoApply &&
       item.isOptional == _expected.isOptional &&
       item.buildTo == _expected.buildTo &&

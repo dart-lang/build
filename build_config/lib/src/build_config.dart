@@ -125,6 +125,8 @@ class BuilderDefinition {
   /// Where the outputs of this builder should be written.
   final BuildTo buildTo;
 
+  final TargetBuilderConfigDefaults defaults;
+
   BuilderDefinition({
     this.builderFactories,
     this.buildExtensions,
@@ -136,7 +138,16 @@ class BuilderDefinition {
     this.requiredInputs,
     this.isOptional,
     this.buildTo,
+    this.defaults,
   });
+}
+
+/// Default values that builder authors can specify when users don't fill in the
+/// corresponding key for [TargetBuilderConfig].
+class TargetBuilderConfigDefaults {
+  final List<String> generateFor;
+
+  TargetBuilderConfigDefaults({this.generateFor});
 }
 
 enum AutoApply { none, dependents, allPackages, rootPackage }

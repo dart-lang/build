@@ -48,6 +48,11 @@ the following keys:
   outside the root package. Defaults to `"source"`, unless `auto_apply` is set
   to either `"all_packages"` or `"dependents"` in which case it defaults to
   `"cache"`.
+- **defaults**: Optional: Default values to apply when a user does not specify
+  the corresponding key in their `builders` section. May contain the following
+  keys:
+  - **generate_for**: A list of globs that this Builder should run on as a
+    subset of the corresponding target.
 
 Example `builders` config:
 
