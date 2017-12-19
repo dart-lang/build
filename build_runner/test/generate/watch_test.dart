@@ -240,7 +240,8 @@ void main() {
       test('edits propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy'])
+          applyToRoot(
+              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -266,7 +267,8 @@ void main() {
       test('adds propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy'])
+          applyToRoot(
+              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -297,7 +299,8 @@ void main() {
       test('deletes propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy'])
+          applyToRoot(
+              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -338,7 +341,8 @@ void main() {
       test('deleted generated outputs are regenerated', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(new CopyBuilder(), inputs: ['**/*.copy']),
+          applyToRoot(
+              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
@@ -374,54 +378,57 @@ void main() {
     group('secondary dependency', () {
       test('of an output file is edited', () async {
         var buildActions = [
-          applyToRoot(
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
-              inputs: ['web/a.txt'])
+          applyToRoot(new CopyBuilder(
+              inputExtension: '.a',
+              extension: 'a.copy',
+              copyFromAsset: makeAssetId('a|web/file.b')))
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch(
-            buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer);
+            buildActions, {'a|web/file.a': 'a', 'a|web/file.b': 'b'}, writer);
         var results = new StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
+        checkBuild(result, outputs: {'a|web/file.a.copy': 'b'}, writer: writer);
 
-        await writer.writeAsString(makeAssetId('a|web/b.txt'), 'c');
+        await writer.writeAsString(makeAssetId('a|web/file.b'), 'c');
         FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
+            ChangeType.MODIFY, path.absolute('a', 'web', 'file.b')));
 
         result = await results.next;
-        checkBuild(result, outputs: {'a|web/a.txt.copy': 'c'}, writer: writer);
+        checkBuild(result, outputs: {'a|web/file.a.copy': 'c'}, writer: writer);
       });
 
       test(
           'of an output which is derived from another generated file is edited',
           () async {
         var buildActions = [
-          applyToRoot(new CopyBuilder(), inputs: ['web/a.txt']),
           applyToRoot(
-              new CopyBuilder(copyFromAsset: makeAssetId('a|web/b.txt')),
-              inputs: ['web/a.txt.copy'])
+              new CopyBuilder(inputExtension: '.a', extension: 'a.copy')),
+          applyToRoot(new CopyBuilder(
+              copyFromAsset: makeAssetId('a|web/file.b'),
+              inputExtension: '.a.copy',
+              extension: 'a.copy.copy'))
         ];
 
         var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch(
-            buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer);
+            buildActions, {'a|web/file.a': 'a', 'a|web/file.b': 'b'}, writer);
         var results = new StreamQueue(buildState.buildResults);
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'b'},
+            outputs: {'a|web/file.a.copy': 'a', 'a|web/file.a.copy.copy': 'b'},
             writer: writer);
 
-        await writer.writeAsString(makeAssetId('a|web/b.txt'), 'c');
+        await writer.writeAsString(makeAssetId('a|web/file.b'), 'c');
         FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
+            ChangeType.MODIFY, path.absolute('a', 'web', 'file.b')));
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy.copy': 'c'}, writer: writer);
+            outputs: {'a|web/file.a.copy.copy': 'c'}, writer: writer);
       });
     });
   });
