@@ -5,6 +5,8 @@
   dependencies are already known.
 - Add `TargetBuilderConfig` class to configure builders applied to specific
   targets.
+- Add `TargetBuilderConfigDefaults` class for Builder authors to provide default
+  configuration.
 
 ### Breaking
 
