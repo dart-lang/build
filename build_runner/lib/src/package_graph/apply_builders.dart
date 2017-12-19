@@ -135,13 +135,15 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
     Iterable<TargetNode> cycle,
     PackageGraph packageGraph,
     BuilderApplication builderApplication) {
-  var options = const BuilderOptions(const {});
   return builderApplication.builderFactories.expand((b) => cycle
           .where((node) => builderApplication.filter(node.package))
           .map((node) {
+        final builderConfig =
+            node.target.builders[builderApplication.builderKey];
         final generateFor =
-            node.target.builders[builderApplication.builderKey]?.generateFor ??
-                builderApplication.defaultGenerateFor;
+            builderConfig?.generateFor ?? builderApplication.defaultGenerateFor;
+        final options =
+            builderConfig?.options ?? const BuilderOptions(const {});
         return new BuildAction(b(options), node.package.name,
             builderOptions: options,
             include: node.target.sources,
