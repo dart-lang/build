@@ -32,6 +32,14 @@ void main() {
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
+      test('with placeholder as input', () async {
+        await testBuilders([
+          applyToRoot(new PlaceholderBuilder({'placeholder.txt': 'sometext'}))
+        ], {}, outputs: {
+          'a|lib/placeholder.txt': 'sometext'
+        });
+      });
+
       test('one phase, one builder, one-to-many outputs', () async {
         await testBuilders([
           applyToRoot(new CopyBuilder(numCopies: 2))
