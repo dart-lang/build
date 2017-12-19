@@ -17,9 +17,12 @@ import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuilderApplication = applyToRoot(new CopyBuilder());
+  final copyABuilderApplication = applyToRoot(
+      new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'));
   final globBuilder = new GlobbingBuilder(new Glob('**.txt'));
   final defaultBuilderOptions = const BuilderOptions(const {});
+  final placeholders =
+      placeholderIdsFor(buildPackageGraph({rootPackage('a'): []}));
 
   group('build', () {
     group('with root package inputs', () {
@@ -183,7 +186,7 @@ void main() {
               makeAssetId('a|web/a.txt.copy.clone'),
               makeAssetId('a|Phase0.builderOptions'),
               makeAssetId('a|Phase1.builderOptions'),
-            ]));
+            ]..addAll(placeholders)));
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
             cachedGraph.outputs,
@@ -206,7 +209,10 @@ void main() {
             outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         var blockingCompleter = new Completer<Null>();
-        var builder = new CopyBuilder(blockUntil: blockingCompleter.future);
+        var builder = new CopyBuilder(
+            blockUntil: blockingCompleter.future,
+            inputExtension: '.txt',
+            extension: 'txt.copy');
         var done = testBuilders([applyToRoot(builder)], {'a|web/a.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
@@ -442,8 +448,8 @@ void main() {
     var cachedGraph = new AssetGraph.deserialize(
         JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
 
-    var expectedGraph =
-        await AssetGraph.build([], new Set(), new Set(), 'a', null);
+    var expectedGraph = await AssetGraph.build([], new Set(), new Set(),
+        buildPackageGraph({rootPackage('a'): []}), null);
 
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
     var builderOptionsNode = new BuilderOptionsAssetNode(

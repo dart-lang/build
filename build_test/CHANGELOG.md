@@ -5,6 +5,9 @@
   a writer.
 - Added `buildInputs` stream to `CopyBuilder` which emits an event for each
   `BuildStep.inputId` at the top of the `build` method.
+- `CopyBuilder` automatically skips the placeholder files (any file ending in
+  `$`). This is technically breaking but should not affect any real users and is
+  not being released as a breaking change.
 
 ## 0.9.3
 

@@ -16,9 +16,11 @@ import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_test/build_test.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 void main() {
   final digestReader = new MockDigestReader();
+  final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   group('AssetGraph', () {
     AssetGraph graph;
@@ -44,7 +46,7 @@ void main() {
     group('simple graph', () {
       setUp(() async {
         graph = await AssetGraph
-            .build([], new Set(), new Set(), 'foo', digestReader);
+            .build([], new Set(), new Set(), fooPackageGraph, digestReader);
       });
 
       test('add, contains, get, allNodes', () {
@@ -52,6 +54,8 @@ void main() {
         for (int i = 0; i < 5; i++) {
           expectedNodes.add(testAddNode());
         }
+        expectedNodes.addAll(
+            placeholderIdsFor(fooPackageGraph).map((id) => graph.get(id)));
         expect(graph.allNodes, unorderedEquals(expectedNodes));
       });
 
@@ -129,23 +133,27 @@ void main() {
 
     group('with buildActions', () {
       final buildActions = [
-        new BuildAction(new CopyBuilder(), 'foo', exclude: ['excluded'])
+        new BuildAction(
+            new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
+            'foo',
+            exclude: ['excluded.txt'])
       ];
-      final primaryInputId = makeAssetId('foo|file');
-      final excludedInputId = makeAssetId('foo|excluded');
-      final primaryOutputId = makeAssetId('foo|file.copy');
-      final syntheticId = makeAssetId('foo|synthetic');
-      final syntheticOutputId = makeAssetId('foo|synthetic.copy');
+      final primaryInputId = makeAssetId('foo|file.txt');
+      final excludedInputId = makeAssetId('foo|excluded.txt');
+      final primaryOutputId = makeAssetId('foo|file.txt.copy');
+      final syntheticId = makeAssetId('foo|synthetic.txt');
+      final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
       final internalId =
           makeAssetId('foo|.dart_tool/build/entrypoint/serve.dart');
       final builderOptionsId = makeAssetId('foo|Phase0.builderOptions');
+      final placeholders = placeholderIdsFor(fooPackageGraph);
 
       setUp(() async {
         graph = await AssetGraph.build(
             buildActions,
             new Set.from([primaryInputId, excludedInputId]),
             [internalId].toSet(),
-            'foo',
+            fooPackageGraph,
             digestReader);
       });
 
@@ -159,7 +167,7 @@ void main() {
               primaryOutputId,
               internalId,
               builderOptionsId,
-            ]));
+            ]..addAll(placeholders)));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, [primaryOutputId]);
@@ -187,10 +195,10 @@ void main() {
 
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
-          var changes = {new AssetId('foo', 'new'): ChangeType.ADD};
+          var changes = {new AssetId('foo', 'new.txt'): ChangeType.ADD};
           await graph.updateAndInvalidate(
               buildActions, changes, 'foo', null, digestReader);
-          expect(graph.contains(new AssetId('foo', 'new.copy')), isTrue);
+          expect(graph.contains(new AssetId('foo', 'new.txt.copy')), isTrue);
         });
 
         test('delete old primary input', () async {
@@ -252,7 +260,7 @@ void main() {
 
         test('removing nodes deletes primary outputs and secondary edges',
             () async {
-          var secondaryId = makeAssetId('foo|secondary');
+          var secondaryId = makeAssetId('foo|secondary.txt');
           var secondaryNode = new SourceAssetNode(secondaryId);
           secondaryNode.outputs.add(primaryOutputId);
           var primaryOutputNode =
@@ -280,7 +288,7 @@ void main() {
               new List.filled(2, new BuildAction(new CopyBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
               new Set(),
-              'foo',
+              fooPackageGraph,
               digestReader),
           throwsA(duplicateAssetNodeException));
     });
