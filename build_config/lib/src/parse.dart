@@ -117,7 +117,8 @@ BuildConfig parseFromMap(String packageName,
         _readListOfStringsOrThrow(builderConfig, _builderFactories);
     final import = _readStringOrThrow(builderConfig, _import);
     final buildExtensions = _readBuildExtensions(builderConfig);
-    final target = _readStringOrThrow(builderConfig, _target);
+    final target = normalizeTargetKeyUsage(
+        _readStringOrThrow(builderConfig, _target), packageName);
     final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
         defaultValue: AutoApply.none);
     final requiredInputs = _readListOfStringsOrThrow(
