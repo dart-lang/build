@@ -23,6 +23,11 @@ keys.
   used can only have the keys `include` and `exclude`. Any file which matches
   any glob in `include` and no globs in `exclude` is considered a source of the
   target. When `include` is omitted every file is considered a match.
+- **dependencies**: List of Strings, Optional. The targets that this target
+  depends on. Strings in the format `'$packageName:$targetName'` to depend on a
+  target within a package or `$packageName` to depend on a package's default
+  target. By default this is all of the package names this package depends on
+  (from the `pubspec.yaml`).
 - **builders**: Map, Optional. See "configuring builders" below.
 
 ## Configuring `Builder`s applied to your package
