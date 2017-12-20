@@ -13,6 +13,7 @@ import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/logging.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../util/constants.dart';
 import 'builder_ordering.dart';
 
@@ -45,6 +46,15 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
   final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
           [packageGraph.root], (node) => node.name, (node) => node.dependencies)
       .expand((c) => c);
+  final buildConfigOverrides = await findBuildConfigOverrides(packageGraph);
+  Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
+    if (buildConfigOverrides.containsKey(package.name)) {
+      return buildConfigOverrides[package.name];
+    }
+    return BuildConfig.fromBuildConfigDir(
+        package.name, package.dependencies.map((n) => n.name), package.path);
+  }
+
   final builderDefinitions =
       (await Future.wait(orderedPackages.map(_packageBuildConfig)))
           .expand((c) => c.builderDefinitions.values);
@@ -65,10 +75,6 @@ Method _main() => new Method((b) => b
       ..types.add(refer('String')))))
   ..body = refer('run', 'package:build_runner/build_runner.dart')
       .call([refer('args'), refer('_builders')]).code);
-
-Future<BuildConfig> _packageBuildConfig(PackageNode package) =>
-    BuildConfig.fromBuildConfigDir(
-        package.name, package.dependencies.map((n) => n.name), package.path);
 
 /// An expression calling `apply` with appropriate setup for a Builder.
 Expression _applyBuilder(BuilderDefinition definition) =>

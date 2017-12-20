@@ -22,6 +22,7 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -62,6 +63,7 @@ Future<BuildResult> build(
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
 
+  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
   final buildActions = await createBuildActions(options.packageGraph, builders,
       overrideBuildConfig: overrideBuildConfig);
 

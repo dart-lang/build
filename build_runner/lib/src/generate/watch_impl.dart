@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
@@ -16,6 +17,7 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../package_graph/apply_builders.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
@@ -29,19 +31,22 @@ import 'terminator.dart';
 
 final _logger = new Logger('Watch');
 
-Future<ServeHandler> watch(List<BuilderApplication> builders,
-    {bool deleteFilesByDefault,
-    bool assumeTty,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Duration debounceDelay,
-    DirectoryWatcherFactory directoryWatcherFactory,
-    Stream terminateEventStream,
-    bool skipBuildScriptCheck,
-    bool enableLowResourcesMode}) async {
+Future<ServeHandler> watch(
+  List<BuilderApplication> builders, {
+  bool deleteFilesByDefault,
+  bool assumeTty,
+  PackageGraph packageGraph,
+  RunnerAssetReader reader,
+  RunnerAssetWriter writer,
+  Level logLevel,
+  onLog(LogRecord record),
+  Duration debounceDelay,
+  DirectoryWatcherFactory directoryWatcherFactory,
+  Stream terminateEventStream,
+  bool skipBuildScriptCheck,
+  bool enableLowResourcesMode,
+  Map<String, BuildConfig> overrideBuildConfig,
+}) async {
   var options = new BuildOptions(
       assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault,
@@ -56,7 +61,9 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildActions = await createBuildActions(options.packageGraph, builders);
+  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
+  final buildActions = await createBuildActions(options.packageGraph, builders,
+      overrideBuildConfig: overrideBuildConfig);
 
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 
