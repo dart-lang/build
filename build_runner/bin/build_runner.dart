@@ -16,7 +16,10 @@ Future<Null> main(List<String> args) async {
   await ensureBuildScript();
   var dart = Platform.resolvedExecutable;
   final innerArgs = [scriptLocation]..addAll(args);
-  if (stdioType(stdin) == StdioType.TERMINAL) innerArgs.add('--assume-tty');
+  if (stdioType(stdin) == StdioType.TERMINAL &&
+      !args.any((a) => a.contains('assume-tty'))) {
+    innerArgs.add('--assume-tty');
+  }
   var buildRun = await new ProcessManager().spawn(dart, innerArgs);
   await buildRun.exitCode;
   await ProcessManager.terminateStdIn();
