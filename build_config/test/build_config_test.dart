@@ -18,15 +18,14 @@ void main() {
           'a|h': new TargetBuilderConfig(
               options: new BuilderOptions({'foo': 'bar'})),
         },
-        dependencies: ['b', 'c:d'],
+        dependencies: ['b:b', 'c:d'].toSet(),
         name: 'a',
         package: 'example',
         sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
-      'e': new BuildTarget(
-        dependencies: ['f', ':a'],
-        isDefault: true,
-        name: 'e',
+      'example': new BuildTarget(
+        dependencies: ['f:f', 'example:a'].toSet(),
+        name: 'example',
         package: 'example',
         sources: new InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
@@ -61,8 +60,7 @@ void main() {
         new BuildConfig.parse('example', ['a', 'b'], buildYamlNoTargets);
     expectBuildTargets(buildConfig.buildTargets, {
       'example': new BuildTarget(
-        dependencies: ['a', 'b'],
-        isDefault: true,
+        dependencies: ['a:a', 'b:b'].toSet(),
         name: 'example',
         package: 'example',
         sources: new InputSet(),
@@ -106,8 +104,7 @@ targets:
     sources:
       - "lib/a.dart"
       - "lib/src/a/**"
-  e:
-    default: true
+  example:
     dependencies:
       - f
       - :a
@@ -191,7 +188,6 @@ class _BuildTargetMatcher extends Matcher {
       item is BuildTarget &&
       item.name == _expected.name &&
       item.package == _expected.package &&
-      item.isDefault == _expected.isDefault &&
       new _BuilderConfigsMatcher(_expected.builders)
           .matches(item.builders, _) &&
       equals(_expected.dependencies).matches(item.dependencies, _) &&

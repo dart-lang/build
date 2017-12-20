@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import 'key_normalization.dart';
 import 'parse.dart';
 import 'pubspec.dart';
 
@@ -86,8 +87,9 @@ class BuildConfig {
       String packageName, Iterable<String> dependencies) {
     final buildTargets = {
       packageName: new BuildTarget(
-        dependencies: dependencies,
-        isDefault: true,
+        dependencies: dependencies
+            .map((dep) => normalizeTargetKey(dep, packageName))
+            .toSet(),
         name: packageName,
         package: packageName,
         sources: const InputSet(),
@@ -114,9 +116,6 @@ class BuildConfig {
     @required this.buildTargets,
     this.builderDefinitions: const {},
   });
-
-  BuildTarget get defaultBuildTarget =>
-      buildTargets.values.singleWhere((l) => l.isDefault);
 }
 
 class BuilderDefinition {
@@ -193,7 +192,7 @@ enum BuildTo {
 }
 
 class BuildTarget {
-  final Iterable<String> dependencies;
+  final Set<String> dependencies;
 
   final String name;
 
@@ -208,34 +207,21 @@ class BuildTarget {
   /// those which have configuration customized against the default.
   final Map<String, TargetBuilderConfig> builders;
 
-  /// Whether or not this is the default dart library for the package.
-  final bool isDefault;
-
   BuildTarget({
     this.name,
     this.package,
     this.sources: const InputSet(),
     this.dependencies,
     this.builders: const {},
-    this.isDefault: false,
   });
-
-  factory BuildTarget.asDefault(BuildTarget other) => new BuildTarget(
-        isDefault: true,
-        name: other.name,
-        package: other.package,
-        sources: other.sources,
-        dependencies: other.dependencies,
-        builders: other.builders,
-      );
 
   @override
   String toString() => {
         'package': package,
         'name': name,
-        'isDefault': isDefault,
         'sources': sources,
-        'builders': builders
+        'dependencies': dependencies,
+        'builders': builders,
       }.toString();
 }
 

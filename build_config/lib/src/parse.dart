@@ -6,15 +6,14 @@ import 'package:build/build.dart';
 import 'package:yaml/yaml.dart';
 
 import 'build_config.dart';
+import 'key_normalization.dart';
 
 const _targetOptions = const [
   _builders,
-  _default,
   _dependencies,
   _sources,
 ];
 const _builders = 'builders';
-const _default = 'default';
 const _dependencies = 'dependencies';
 const _sources = 'sources';
 
@@ -70,13 +69,12 @@ BuildConfig parseFromMap(String packageName,
     var targetConfig = _readMapOrThrow(
         targetConfigs, targetName, _targetOptions, 'target `$targetName`');
 
-    final builders = _readBuildersOrThrow(targetConfig, _builders);
+    final builders = _readBuildersOrThrow(packageName, targetConfig, _builders);
 
     final dependencies = _readListOfStringsOrThrow(targetConfig, _dependencies,
-        defaultValue: packageDependencies);
-
-    var isDefault =
-        _readBoolOrThrow(targetConfig, _default, defaultValue: false);
+            defaultValue: packageDependencies)
+        .map((dep) => normalizeTargetKey(dep, packageName))
+        .toSet();
 
     final sources = _readInputSetOrThrow(targetConfig, _sources,
         defaultValue: const InputSet());
@@ -84,7 +82,6 @@ BuildConfig parseFromMap(String packageName,
     buildTargets[targetName] = new BuildTarget(
       builders: builders,
       dependencies: dependencies,
-      isDefault: isDefault,
       name: targetName,
       package: packageName,
       sources: sources,
@@ -94,22 +91,17 @@ BuildConfig parseFromMap(String packageName,
   if (buildTargets.isEmpty) {
     // Add the default dart library if there are no targets discovered.
     buildTargets[packageName] = new BuildTarget(
-      dependencies: packageDependencies,
-      isDefault: true,
+      dependencies: packageDependencies
+          .map((dep) => normalizeTargetKey(dep, packageName))
+          .toSet(),
       name: packageName,
       package: packageName,
       sources: const InputSet(),
     );
-  } else if (buildTargets.length == 1 &&
-      !buildTargets.values.single.isDefault) {
-    // Allow omitting `isDefault` if there is exactly 1 target.
-    buildTargets[buildTargets.keys.single] =
-        new BuildTarget.asDefault(buildTargets.values.single);
   }
 
-  if (buildTargets.values.where((l) => l.isDefault).length != 1) {
-    throw new ArgumentError('Found no targets with `$_default: true`. '
-        'Expected exactly one.');
+  if (!buildTargets.containsKey(packageName)) {
+    throw new ArgumentError('Must specify a target with the name $packageName');
   }
 
   final Map<String, Map> builderConfigs =
@@ -255,7 +247,7 @@ BuildTo _readBuildToOrThrow(Map<String, dynamic> options, String option,
 }
 
 Map<String, TargetBuilderConfig> _readBuildersOrThrow(
-    Map<String, dynamic> options, String option) {
+    String packageName, Map<String, dynamic> options, String option) {
   final values = options[option];
   if (values == null) return const {};
 
@@ -285,7 +277,8 @@ Map<String, TargetBuilderConfig> _readBuildersOrThrow(
       }
       parsedOptions = new BuilderOptions(options as Map<String, dynamic>);
     }
-    parsedConfigs[builderKey] = new TargetBuilderConfig(
+    parsedConfigs[normalizeBuilderKey(builderKey, packageName)] =
+        new TargetBuilderConfig(
       isEnabled: isEnabled,
       generateFor: generateFor,
       options: parsedOptions,
