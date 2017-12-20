@@ -39,7 +39,7 @@ Future<Null> startManualServer(
         verbose: verbose,
         extraExpects: extraExpects);
 
-/// Runs `pub run build_runner:serve` in this package, and waits for the first
+/// Runs `pub run build_runner serve` in this package, and waits for the first
 /// build to complete.
 ///
 /// To ensure a clean build, set [ensureCleanBuild] to `true`.
@@ -52,7 +52,7 @@ Future<Null> startManualServer(
 /// setting [verbose] to `true`.
 Future<Null> startAutoServer(
         {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
-    _startServer(_pubBinary, ['run', 'build_runner:serve'],
+    _startServer(_pubBinary, ['run', 'build_runner', 'serve'],
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
