@@ -14,8 +14,8 @@ import 'package_graph.dart';
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     PackageGraph packageGraph) async {
   final configs = <String, BuildConfig>{};
-  final configFiles = await new Glob('*.build.yaml').list().toList();
-  for (final file in configFiles) {
+  final configFiles = new Glob('*.build.yaml').list();
+  await for (final file in configFiles) {
     if (file is File) {
       final packageName = p.basename(file.path).split('.').first;
       final packageNode = packageGraph.allPackages[packageName];
