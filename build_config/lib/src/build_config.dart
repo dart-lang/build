@@ -85,12 +85,13 @@ class BuildConfig {
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
+    final defaultTarget = '$packageName:$packageName';
     final buildTargets = {
-      packageName: new BuildTarget(
+      defaultTarget: new BuildTarget(
         dependencies: dependencies
             .map((dep) => normalizeTargetKey(dep, packageName))
             .toSet(),
-        name: packageName,
+        name: defaultTarget,
         package: packageName,
         sources: const InputSet(),
       )

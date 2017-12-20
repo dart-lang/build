@@ -79,28 +79,30 @@ BuildConfig parseFromMap(String packageName,
     final sources = _readInputSetOrThrow(targetConfig, _sources,
         defaultValue: const InputSet());
 
-    buildTargets[targetName] = new BuildTarget(
+    final targetKey = normalizeTargetKey(targetName, packageName);
+    buildTargets[targetKey] = new BuildTarget(
       builders: builders,
       dependencies: dependencies,
-      name: targetName,
+      name: targetKey,
       package: packageName,
       sources: sources,
     );
   }
 
+  final defaultTarget = '$packageName:$packageName';
   if (buildTargets.isEmpty) {
     // Add the default dart library if there are no targets discovered.
-    buildTargets[packageName] = new BuildTarget(
+    buildTargets[defaultTarget] = new BuildTarget(
       dependencies: packageDependencies
           .map((dep) => normalizeTargetKey(dep, packageName))
           .toSet(),
-      name: packageName,
+      name: defaultTarget,
       package: packageName,
       sources: const InputSet(),
     );
   }
 
-  if (!buildTargets.containsKey(packageName)) {
+  if (!buildTargets.containsKey(defaultTarget)) {
     throw new ArgumentError('Must specify a target with the name $packageName');
   }
 
@@ -140,11 +142,12 @@ BuildConfig parseFromMap(String packageName,
           'when using `auto_apply: ${builderConfig[_autoApply]}`');
     }
 
-    builderDefinitions[builderName] = new BuilderDefinition(
+    final builderKey = normalizeBuilderKey(builderName, packageName);
+    builderDefinitions[builderKey] = new BuilderDefinition(
       builderFactories: builderFactories,
       import: import,
       buildExtensions: buildExtensions,
-      name: builderName,
+      name: builderKey,
       package: packageName,
       target: target,
       autoApply: autoApply,
