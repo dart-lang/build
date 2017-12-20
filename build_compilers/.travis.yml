@@ -7,7 +7,7 @@ dart_task:
   # Run the presubmit tests as well (usually skipped).
   - test: --run-skipped
   - dartfmt: sdk
-  - dartanalyzer
+  - dartanalyzer: --fatal-infos --fatal-warnings .
 
 matrix:
   exclude:

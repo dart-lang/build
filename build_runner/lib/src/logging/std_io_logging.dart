@@ -20,7 +20,7 @@ void stdIOLogListener(LogRecord record) {
   }
   final level = color.wrap('[${record.level}]');
   var header = '${ansiOutputEnabled ? '\x1b[2K\r' : ''}'
-      '$level${record.loggerName}: '
+      '$level ${record.loggerName}: '
       '${record.message}';
   var lines = <Object>[header];
 

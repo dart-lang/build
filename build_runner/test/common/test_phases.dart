@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -19,7 +20,7 @@ import 'package_graphs.dart';
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 
-/// Runs [buildActions] in a test environment.
+/// Runs [builders] in a test environment.
 ///
 /// The test environment supplies in-memory build [inputs] to the builders under
 /// test. [outputs] may be optionally provided to verify that the builders
@@ -65,23 +66,25 @@ Future wait(int milliseconds) =>
 ///       });
 ///     }
 ///
-Future<BuildResult> testActions(List<BuildAction> buildActions,
-    Map<String, /*String|List<int>*/ dynamic> inputs,
-    {Map<String, /*String|List<int>*/ dynamic> outputs,
-    PackageGraph packageGraph,
-    BuildStatus status: BuildStatus.success,
-    Matcher exceptionMatcher,
-    InMemoryRunnerAssetReader reader,
-    InMemoryRunnerAssetWriter writer,
-    Level logLevel: Level.OFF,
-    onLog(LogRecord record),
-    bool checkBuildStatus: true,
-    bool deleteFilesByDefault: true,
-    bool enableLowResourcesMode: false}) async {
+Future<BuildResult> testBuilders(
+  List<BuilderApplication> builders,
+  Map<String, /*String|List<int>*/ dynamic> inputs, {
+  Map<String, /*String|List<int>*/ dynamic> outputs,
+  PackageGraph packageGraph,
+  BuildStatus status: BuildStatus.success,
+  Matcher exceptionMatcher,
+  InMemoryRunnerAssetReader reader,
+  InMemoryRunnerAssetWriter writer,
+  Level logLevel: Level.OFF,
+  onLog(LogRecord record),
+  bool checkBuildStatus: true,
+  bool deleteFilesByDefault: true,
+  bool enableLowResourcesMode: false,
+  Map<String, BuildConfig> overrideBuildConfig,
+}) async {
   writer ??= new InMemoryRunnerAssetWriter();
-  final actualAssets = writer.assets;
-  reader ??=
-      new InMemoryRunnerAssetReader(actualAssets, packageGraph?.root?.name);
+  reader ??= new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+      rootPackage: packageGraph?.root?.name);
 
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
@@ -94,15 +97,18 @@ Future<BuildResult> testActions(List<BuildAction> buildActions,
 
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
 
-  var result = await build_impl.build(buildActions,
-      deleteFilesByDefault: deleteFilesByDefault,
-      reader: reader,
-      writer: writer,
-      packageGraph: packageGraph,
-      logLevel: logLevel,
-      onLog: onLog,
-      skipBuildScriptCheck: true,
-      enableLowResourcesMode: enableLowResourcesMode);
+  var result = await build_impl.build(
+    builders,
+    deleteFilesByDefault: deleteFilesByDefault,
+    reader: reader,
+    writer: writer,
+    packageGraph: packageGraph,
+    logLevel: logLevel,
+    onLog: onLog,
+    skipBuildScriptCheck: true,
+    enableLowResourcesMode: enableLowResourcesMode,
+    overrideBuildConfig: overrideBuildConfig,
+  );
 
   if (checkBuildStatus) {
     checkBuild(result,

@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
@@ -15,6 +16,8 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../package_graph/apply_builders.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
@@ -28,19 +31,22 @@ import 'terminator.dart';
 
 final _logger = new Logger('Watch');
 
-Future<ServeHandler> watch(List<BuildAction> buildActions,
-    {bool deleteFilesByDefault,
-    bool assumeTty,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Duration debounceDelay,
-    DirectoryWatcherFactory directoryWatcherFactory,
-    Stream terminateEventStream,
-    bool skipBuildScriptCheck,
-    bool enableLowResourcesMode}) async {
+Future<ServeHandler> watch(
+  List<BuilderApplication> builders, {
+  bool deleteFilesByDefault,
+  bool assumeTty,
+  PackageGraph packageGraph,
+  RunnerAssetReader reader,
+  RunnerAssetWriter writer,
+  Level logLevel,
+  onLog(LogRecord record),
+  Duration debounceDelay,
+  DirectoryWatcherFactory directoryWatcherFactory,
+  Stream terminateEventStream,
+  bool skipBuildScriptCheck,
+  bool enableLowResourcesMode,
+  Map<String, BuildConfig> overrideBuildConfig,
+}) async {
   var options = new BuildOptions(
       assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault,
@@ -54,6 +60,11 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
+
+  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
+  final buildActions = await createBuildActions(options.packageGraph, builders,
+      overrideBuildConfig: overrideBuildConfig);
+
   var watch = runWatch(options, buildActions, terminator.shouldTerminate);
 
   // ignore: unawaited_futures
@@ -145,15 +156,14 @@ class WatchImpl implements BuildState {
     }
 
     var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
-      _logger.info('Terminating. No further builds will be scheduled');
+      _logger.info('Terminating. No further builds will be scheduled\n');
     });
 
     // Start watching files immediately, before the first build is even started.
     new PackageGraphWatcher(packageGraph,
             logger: _logger,
-            watch: (node) => new PackageNodeWatcher(node, watch: (path) {
-                  return _directoryWatcherFactory(path);
-                }))
+            watch: (node) =>
+                new PackageNodeWatcher(node, watch: _directoryWatcherFactory))
         .watch()
         .asyncMap<AssetChange>((change) {
           // Delay any events until the first build is completed.
@@ -164,11 +174,15 @@ class WatchImpl implements BuildState {
         .transform(debounceBuffer(_debounceDelay))
         .transform(takeUntil(terminate))
         .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
-        .listen(controller.add)
+        .listen((BuildResult buildResult) {
+          if (controller.isClosed) return;
+          controller.add(buildResult);
+        })
         .onDone(() async {
+          await currentBuild;
           await _buildDefinition.resourceManager.beforeExit();
           await controller.close();
-          _logger.info('Builds finished. Safe to exit');
+          _logger.info('Builds finished. Safe to exit\n');
         });
 
     // Schedule the actual first build for the future so we can return the
@@ -187,7 +201,10 @@ class WatchImpl implements BuildState {
       build = await BuildImpl.create(_buildDefinition, buildActions,
           onDelete: _expectedDeletes.add);
 
-      controller.add(build.firstBuild);
+      // It is possible this is already closed if the user kills the process
+      // early, which results in an exception without this check.
+      if (!controller.isClosed) controller.add(build.firstBuild);
+
       firstBuildCompleter.complete(build.firstBuild);
     }();
 
@@ -203,7 +220,7 @@ class WatchImpl implements BuildState {
     if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
     var node = _assetGraph.get(change.id);
     if (node != null) {
-      if (_isUninterestingNode(node)) return false;
+      if (!node.isInteresting) return false;
       if (_isEditOnGeneratedFile(node, change.type)) return false;
     } else {
       if (change.type == ChangeType.REMOVE) return false;
@@ -215,24 +232,8 @@ class WatchImpl implements BuildState {
 
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
-  bool _isUninterestingNode(AssetNode node) {
-    if (node is InternalAssetNode) {
-      // All `InternalAssetNode`s are interesting, at least for now.
-      return false;
-    } else if (node.outputs.isEmpty && node.lastKnownDigest == null) {
-      // If we haven't computed a digest for this asset and it has no outputs,
-      // then we don't care about changes to it.
-      //
-      // Checking for a digest alone isn't enough because a file may be deleted
-      // and re-added, in which case it won't have a digest.
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   bool _isEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
-      node is GeneratedAssetNode && changeType != ChangeType.REMOVE;
+      node.isGenerated && changeType != ChangeType.REMOVE;
 
   bool _isExpectedDelete(AssetChange change) =>
       _expectedDeletes.remove(change.id);

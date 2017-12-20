@@ -4,18 +4,16 @@
 export 'src/asset/file_based.dart';
 export 'src/asset/reader.dart' show RunnerAssetReader, DigestAssetReader;
 export 'src/asset/writer.dart';
+export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuildActionPerformance;
-export 'src/generate/phase.dart';
-export 'src/package_builder/package_builder.dart' show PackageBuilder;
 export 'src/package_graph/apply_builders.dart'
     show
         BuilderApplication,
         apply,
         applyToRoot,
-        createBuildActions,
         toAll,
         toAllPackages,
         toDependentsOf,

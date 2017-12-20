@@ -5,7 +5,7 @@
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/util/clock.dart';
 import 'package:build_test/build_test.dart';
 

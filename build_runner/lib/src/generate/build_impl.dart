@@ -6,9 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build/src/builder/build_step_impl.dart';
-import 'package:build/src/builder/logging.dart';
 import 'package:build_barback/build_barback.dart' show BarbackResolvers;
+import 'package:build_config/build_config.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -22,7 +21,8 @@ import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../logging/logging.dart';
-import '../package_builder/package_builder.dart';
+import '../package_graph/apply_builders.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -30,7 +30,6 @@ import 'build_result.dart';
 import 'exceptions.dart';
 import 'fold_frames.dart';
 import 'heartbeat.dart';
-import 'input_set.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
@@ -38,17 +37,20 @@ import 'terminator.dart';
 
 final _logger = new Logger('Build');
 
-Future<BuildResult> build(List<BuildAction> buildActions,
-    {bool deleteFilesByDefault,
-    bool assumeTty,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Stream terminateEventStream,
-    bool skipBuildScriptCheck,
-    bool enableLowResourcesMode}) async {
+Future<BuildResult> build(
+  List<BuilderApplication> builders, {
+  bool deleteFilesByDefault,
+  bool assumeTty,
+  PackageGraph packageGraph,
+  RunnerAssetReader reader,
+  RunnerAssetWriter writer,
+  Level logLevel,
+  onLog(LogRecord record),
+  Stream terminateEventStream,
+  bool skipBuildScriptCheck,
+  bool enableLowResourcesMode,
+  Map<String, BuildConfig> overrideBuildConfig,
+}) async {
   var options = new BuildOptions(
       assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault,
@@ -60,6 +62,10 @@ Future<BuildResult> build(List<BuildAction> buildActions,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
+
+  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
+  final buildActions = await createBuildActions(options.packageGraph, builders,
+      overrideBuildConfig: overrideBuildConfig);
 
   var result = await singleBuild(options, buildActions);
 
@@ -180,17 +186,10 @@ class BuildImpl {
       var action = _buildActions[phase];
       if (action.isOptional) continue;
       await performanceTracker.trackAction(action, () async {
-        if (action is PackageBuildAction) {
-          outputs.addAll(await _runPackageBuilder(
-              phase, action.package, action.builder, resourceManager));
-        } else if (action is AssetBuildAction) {
-          var primaryInputs =
-              await _matchingPrimaryInputs(action, phase, resourceManager);
-          outputs.addAll(await _runBuilder(
-              phase, action.builder, primaryInputs, resourceManager));
-        } else {
-          throw new InvalidBuildActionException.unrecognizedType(action);
-        }
+        var primaryInputs =
+            await _matchingPrimaryInputs(action, phase, resourceManager);
+        outputs.addAll(await _runBuilder(
+            phase, action.builder, primaryInputs, resourceManager));
       });
     }
     await Future.forEach(
@@ -201,20 +200,19 @@ class BuildImpl {
         performance: performanceTracker..stop());
   }
 
-  /// Gets a list of all inputs matching the [InputSet] of [action], as well as
+  /// Gets a list of all inputs matching the [action], as well as
   /// its [Builder]s primary inputs.
   ///
   /// Lazily builds any optional build actions that might potentially produce
   /// a primary input to [action].
-  Future<Set<AssetId>> _matchingPrimaryInputs(AssetBuildAction action,
+  Future<Set<AssetId>> _matchingPrimaryInputs(BuildAction action,
       int phaseNumber, ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
-    var inputSet = action.inputSet;
     var builder = action.builder;
     await Future
-        .wait(_assetGraph.packageNodes(inputSet.package).map((node) async {
-      if (node is SyntheticAssetNode || node is InternalAssetNode) return;
-      if (!inputSet.matches(node.id)) return;
+        .wait(_assetGraph.packageNodes(action.package).map((node) async {
+      if (!node.isValidInput) return;
+      if (!action.matches(node.id)) return;
       if (!builder.buildExtensions.keys
           .any((inputExtension) => node.id.path.endsWith(inputExtension))) {
         return;
@@ -265,15 +263,7 @@ class BuildImpl {
 
       var action = _buildActions[phaseNumber];
 
-      if (action is PackageBuildAction) {
-        return _runPackageBuilder(
-            phaseNumber, action.package, action.builder, resourceManager);
-      } else if (action is AssetBuildAction) {
-        return _runForInput(
-            phaseNumber, action.builder, input, resourceManager);
-      } else {
-        throw new InvalidBuildActionException.unrecognizedType(action);
-      }
+      return _runForInput(phaseNumber, action.builder, input, resourceManager);
     });
   }
 
@@ -303,6 +293,9 @@ class BuildImpl {
     if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
       return <AssetId>[];
     }
+
+    await _cleanUpStaleOutputs(builderOutputs);
+
     // We may have read some inputs in the call to `_buildShouldRun`, we want
     // to remove those.
     wrappedReader.assetsRead.clear();
@@ -319,56 +312,11 @@ class BuildImpl {
     return wrappedWriter.assetsWritten;
   }
 
-  /// Runs the [PackageBuilder] [builder] and returns only the outputs
-  /// that were newly created.
-  ///
-  /// Does not return outputs that didn't need to be re-ran or were declared
-  /// but not output.
-  Future<Iterable<AssetId>> _runPackageBuilder(int phaseNumber, String package,
-      PackageBuilder builder, ResourceManager resourceManager) async {
-    var builderOutputs = outputIdsForBuilder(builder, package);
-
-    var wrappedReader = new SingleStepReader(
-        _reader,
-        _assetGraph,
-        phaseNumber,
-        package,
-        (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
-
-    if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
-      return <AssetId>[];
-    }
-    // We may have read some inputs in the call to `_buildShouldRun`, we want
-    // to remove those.
-    wrappedReader.assetsRead.clear();
-
-    var wrappedWriter = new AssetWriterSpy(_writer);
-
-    var logger = new Logger('$builder on $package');
-    var buildStep = new BuildStepImpl(null, builderOutputs, wrappedReader,
-        wrappedWriter, _packageGraph.root.name, _resolvers, resourceManager);
-    try {
-      // Wrapping in `new Future.value` to work around
-      // https://github.com/dart-lang/sdk/issues/31237, users might return
-      // synchronously and not have any analysis errors today.
-      await scopeLogAsync(
-          () => new Future.value(builder.build(buildStep)), logger);
-    } finally {
-      await buildStep.complete();
-    }
-
-    // Reset the state for all the `builderOutputs` nodes based on what was
-    // read and written.
-    await _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
-
-    return wrappedWriter.assetsWritten;
-  }
-
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
       Iterable<AssetId> outputs, DigestAssetReader reader) async {
     assert(
-        outputs.every((o) => _assetGraph.contains(o)),
+        outputs.every(_assetGraph.contains),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
     assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
@@ -401,6 +349,18 @@ class BuildImpl {
       }
       return false;
     }
+  }
+
+  /// Deletes any of [outputs] which previously were output.
+  ///
+  /// This should be called after deciding that an asset really needs to be
+  /// regenerated based on its inputs hash changing.
+  Future<Null> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
+    await Future.wait(outputs.map((output) {
+      var node = _assetGraph.get(output) as GeneratedAssetNode;
+      if (node.wasOutput) return _writer.delete(output);
+      return new Future.value(null);
+    }));
   }
 
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and

@@ -30,14 +30,13 @@ void main() {
   setUp(() async {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
     writer = new InMemoryRunnerAssetWriter();
-    reader = new InMemoryRunnerAssetReader(writer.assets, 'example');
+    reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+        rootPackage: 'example');
     reader.cacheStringAsset(
         new AssetId('example', 'web/initial.txt'), 'initial');
     terminateController = new StreamController();
     final server = (await watch_impl.watch(
-      [
-        new BuildAction(const UppercaseBuilder(), 'example'),
-      ],
+      [applyToRoot(const UppercaseBuilder())],
       packageGraph: graph,
       reader: reader,
       writer: writer,

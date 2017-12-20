@@ -72,10 +72,10 @@ class SingleStepReader implements DigestAssetReader {
       _assetGraph.add(new SyntheticSourceAssetNode(id));
       return false;
     }
-    if (node is SyntheticAssetNode) return false;
-    if (node is SourceAssetNode) return true;
-    assert(node is GeneratedAssetNode);
-    return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+    if (node.isGenerated) {
+      return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+    }
+    return node.isReadable;
   }
 
   @override

@@ -1,0 +1,16 @@
+builders:
+  test_bootstrap:
+    target: "build_test"
+    import: "package:build_test/builder.dart"
+    builder_factories: ["testBootstrapBuilder"]
+    build_extensions:
+      _test.dart:
+        - _test.dart.vm_test.dart
+        - _test.dart.browser_test.dart
+        - _test.dart.node_test.dart
+        - _test.html
+    is_optional: True
+    build_to: cache
+    auto_apply: root_package
+    defaults:
+      generate_for: ["test/**"]

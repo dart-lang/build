@@ -2,9 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner/src/generate/exceptions.dart';
-import 'package:build_runner/src/generate/phase.dart';
 import 'package:test/test.dart';
+
+import 'package:build_runner/src/generate/exceptions.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 
 import '../common/common.dart';
 import '../common/package_graphs.dart';
@@ -13,15 +14,16 @@ void main() {
   test('fail with a nice error if the root package is not right', () async {
     String error;
     try {
-      await testActions(
+      await testBuilders(
         [
-          new BuildAction(
-            new CopyBuilder(),
-            'not_root_package',
-          )
+          apply(
+              '', '', [(_) => new CopyBuilder()], toPackage('not_root_package'))
         ],
         {},
-        packageGraph: buildPackageGraph({rootPackage('root_package'): []}),
+        packageGraph: buildPackageGraph({
+          rootPackage('root_package'): ['not_root_package'],
+          package('not_root_package'): [],
+        }),
       );
     } catch (e) {
       // TODO: Write a throwsAWith(...) matcher?
@@ -35,9 +37,9 @@ void main() {
 
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
     expect(
-      testActions(
+      testBuilders(
         [
-          new BuildAction(new CopyBuilder(), 'a'),
+          apply('', '', [(_) => new CopyBuilder()], toRoot())
         ],
         {
           'a|lib/a.dart': '',

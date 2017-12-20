@@ -14,9 +14,8 @@ import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/reader.dart';
-import '../generate/exceptions.dart';
 import '../generate/phase.dart';
-import '../package_builder/package_builder.dart';
+import '../package_graph/package_graph.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
@@ -43,12 +42,14 @@ class AssetGraph {
       List<BuildAction> buildActions,
       Set<AssetId> sources,
       Set<AssetId> internalSources,
-      String rootPackage,
+      PackageGraph packageGraph,
       DigestAssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
+    var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
     graph._addBuilderOptionsNodes(buildActions);
-    graph._addOutputsForSources(buildActions, sources, rootPackage);
+    graph._addOutputsForSources(buildActions, sources, packageGraph.root.name,
+        placeholders: placeholders);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
         sourceNodes.where((node) => node.outputs.isNotEmpty), digestReader);
@@ -100,6 +101,15 @@ class AssetGraph {
       _add(node);
       yield node;
     }
+  }
+
+  /// Adds [PlaceHolderAssetNode]s for every package in [packageGraph].
+  Set<AssetId> _addPlaceHolderNodes(PackageGraph packageGraph) {
+    var placeholders = placeholderIdsFor(packageGraph);
+    for (var id in placeholders) {
+      _add(new PlaceHolderAssetNode(id));
+    }
+    return placeholders;
   }
 
   /// Adds [assetIds] as [AssetNode]s to this graph, and returns the newly
@@ -174,7 +184,7 @@ class AssetGraph {
 
   /// All the generated outputs in the graph.
   Iterable<AssetId> get outputs =>
-      allNodes.where((n) => n is GeneratedAssetNode).map((n) => n.id);
+      allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -233,8 +243,8 @@ class AssetGraph {
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(
-        newAndModifiedNodes.where(
-            (node) => node is! SyntheticAssetNode && node.outputs.isNotEmpty),
+        newAndModifiedNodes
+            .where((node) => node.isValidInput && node.outputs.isNotEmpty),
         digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,
@@ -296,49 +306,35 @@ class AssetGraph {
   /// Returns a set containing [newSources] plus any new generated sources
   /// based on [buildActions], and updates this graph to contain all the
   /// new outputs.
+  ///
+  /// If [placeholders] is supplied they will be added to [newSources] to create
+  /// the full input set.
   Set<AssetId> _addOutputsForSources(List<BuildAction> buildActions,
-      Set<AssetId> newSources, String rootPackage) {
+      Set<AssetId> newSources, String rootPackage,
+      {Set<AssetId> placeholders}) {
     var allInputs = new Set<AssetId>.from(newSources);
+    if (placeholders != null) allInputs.addAll(placeholders);
+
     for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = <AssetId>[];
       var action = buildActions[phase];
       var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
-      if (action is PackageBuildAction) {
-        var outputs = outputIdsForBuilder(action.builder, action.package);
-        var invalidOutputs = outputs.where(
-            (o) => o.package != rootPackage && !o.path.startsWith('lib/'));
-        if (invalidOutputs.isNotEmpty) {
-          throw new InvalidPackageBuilderOutputsException(
-              action, invalidOutputs, rootPackage);
-        }
-        // `PackageBuilder`s don't generally care about new files, so we only
-        // add the outputs if they don't already exist.
-        if (outputs.any((output) => !contains(output))) {
-          phaseOutputs.addAll(outputs);
-          allInputs.removeAll(_addGeneratedOutputs(
-              outputs, phase, builderOptionsNode,
-              isHidden: action.hideOutput));
-        }
-      } else if (action is AssetBuildAction) {
-        var inputs = allInputs.where(action.inputSet.matches).toList();
-        for (var input in inputs) {
-          // We might have deleted some inputs during this loop, if they turned
-          // out to be generated assets.
-          if (!allInputs.contains(input)) continue;
+      var inputs = allInputs.where(action.matches).toList();
+      for (var input in inputs) {
+        // We might have deleted some inputs during this loop, if they turned
+        // out to be generated assets.
+        if (!allInputs.contains(input)) continue;
 
-          var outputs = expectedOutputs(action.builder, input);
-          phaseOutputs.addAll(outputs);
-          var node = get(input);
-          node.primaryOutputs.addAll(outputs);
-          node.outputs.addAll(outputs);
-          allInputs.removeAll(_addGeneratedOutputs(
-              outputs, phase, builderOptionsNode,
-              primaryInput: input, isHidden: action.hideOutput));
-        }
-      } else {
-        throw new InvalidBuildActionException.unrecognizedType(action);
+        var outputs = expectedOutputs(action.builder, input);
+        phaseOutputs.addAll(outputs);
+        var node = get(input);
+        node.primaryOutputs.addAll(outputs);
+        node.outputs.addAll(outputs);
+        allInputs.removeAll(_addGeneratedOutputs(
+            outputs, phase, builderOptionsNode,
+            primaryInput: input, isHidden: action.hideOutput));
       }
       allInputs.addAll(phaseOutputs);
     }
@@ -394,22 +390,7 @@ class AssetGraph {
 Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
   var digestSink = new AccumulatorSink<Digest>();
   var bytesSink = md5.startChunkedConversion(digestSink);
-  for (var action in buildActions) {
-    bytesSink.add(UTF8.encode(action.package));
-    if (action is AssetBuildAction) {
-      bytesSink.add([0]);
-      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
-      for (var glob in action.inputSet.globs) {
-        bytesSink.add([glob.pattern.hashCode]);
-      }
-      for (var glob in action.inputSet.excludes) {
-        bytesSink.add([glob.pattern.hashCode]);
-      }
-    } else if (action is PackageBuildAction) {
-      bytesSink.add([1]);
-      bytesSink.add([action.builder.runtimeType.toString().hashCode]);
-    }
-  }
+  bytesSink.add(buildActions.map((a) => a.hashCode).toList());
   bytesSink.close();
   assert(digestSink.events.length == 1);
   return digestSink.events.first;
@@ -420,3 +401,10 @@ Digest computeBuilderOptionsDigest(BuilderOptions options) =>
 
 AssetId builderOptionsIdForPhase(String package, int phase) =>
     new AssetId(package, 'Phase$phase.builderOptions');
+
+Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
+    new Set<AssetId>.from(packageGraph.allPackages.keys.expand((package) => [
+          new AssetId(package, r'lib/$lib$'),
+          new AssetId(package, r'test/$test$'),
+          new AssetId(package, r'web/$web$'),
+        ]));

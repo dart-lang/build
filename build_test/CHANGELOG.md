@@ -1,3 +1,46 @@
+## 0.9.4-dev
+
+- Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
+  case where the reader should be kept up to date as assets are written through
+  a writer.
+- Added `buildInputs` stream to `CopyBuilder` which emits an event for each
+  `BuildStep.inputId` at the top of the `build` method.
+- `CopyBuilder` automatically skips the placeholder files (any file ending in
+  `$`). This is technically breaking but should not affect any real users and is
+  not being released as a breaking change.
+- Changed `TestBootstrapBuilder` to only target `_test.dart` files.
+
+## 0.9.3
+
+- Added `resolveSources`, a way to resolve multiple libraries for testing,
+  including any combination of fake files (in-memory, created in the test) and
+  real ones (from on-disk packages):
+
+```dart
+test('multiple assets, some mock, some on disk', () async {
+  final real = 'build_test|test/_files/example_lib.dart';
+  final mock = 'build_test|test/_files/not_really_here.dart';
+  final library = await resolveSources(
+    {
+      real: useAssetReader,
+      mock: r'''
+        // This is a fake library that we're mocking.
+        library example;
+
+        // This is a real on-disk library we are using.
+        import 'example_lib.dart';
+
+        class ExamplePrime extends Example {}
+      ''',
+    },
+    (resolver) => resolver.findLibraryByName('example'),
+  );
+  final type = library.getType('ExamplePrime');
+  expect(type, isNotNull);
+  expect(type.supertype.name, 'Example');
+});
+```  
+
 ## 0.9.2
 
 - Add `inputExtension` argument to `CopyBuilder`. When used the builder with

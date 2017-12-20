@@ -5,9 +5,22 @@
 - Added `toRoot` Package filter.
 - Actions are now invalidated at a fine grained level when `BuilderOptions`
   change.
+- Added magic placeholder files in all packages, which can be used when your
+  builder doesn't have a clear primary input file.
+  - For non-root packages the placeholder exists at `lib/$lib$`, you should
+    declare your `buildExtensions` like this `{r'$lib$': 'my_output_file.txt'}`,
+    which would result in an output file at `lib/my_output_file.txt` in the
+    package.
+  - For the root package there are also placeholders at `web/$web$` and
+    `test/$test$` which should cover most use cases. Please file an issue if you
+    need additional placeholders.
+  - Note that these placeholders are not real assets and attempting to read them
+    will result in an `AssetNotFoundException`.
 
 ### Breaking Changes
 
+- Removed `BuildAction`. Changed `build` and `watch` to take a
+  `List<BuilderApplication>`. See `apply` and `applyToRoot` to set these up.
 - There is now a whitelist of top level directories that will be used as a part
   of the build, and other files will be ignored. For now those directories
   include 'benchmark', 'bin', 'example', 'lib', 'test', 'tool', and 'web'.
@@ -16,6 +29,8 @@
 - Remove `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
 - Remove `writeToCache` argument of `build` and `watch`. Each `apply` call
   should specify `hideOutput` to keep this behavior.
+- Removed `PackageBuilder` and `PackageBuildActions` classes. Use the new
+  magic placeholder files instead (see new features section for this release).
 
 The following changes are technically breaking but should not impact most
 clients:

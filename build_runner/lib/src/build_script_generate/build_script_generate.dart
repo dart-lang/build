@@ -13,6 +13,7 @@ import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/logging.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../util/constants.dart';
 import 'builder_ordering.dart';
 
@@ -37,31 +38,33 @@ Future<String> _generateBuildScript() async {
 /// Finds expressions to create all the [BuilderApplication] instances that
 /// should be applied packages in the build.
 ///
-/// - Add any builders which specify `auto_apply: True` in their `build.yaml`
-/// - Add the DDC builders which apply to all packages
-/// - Add the DDC bootstrap builder to the root package
+/// Adds `apply` expressions based on the BuildefDefinitions from any package
+/// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
   final packageGraph = new PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
           [packageGraph.root], (node) => node.name, (node) => node.dependencies)
       .expand((c) => c);
+  final buildConfigOverrides = await findBuildConfigOverrides(packageGraph);
+  Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
+    if (buildConfigOverrides.containsKey(package.name)) {
+      return buildConfigOverrides[package.name];
+    }
+    return BuildConfig.fromBuildConfigDir(
+        package.name, package.dependencies.map((n) => n.name), package.path);
+  }
+
   final builderDefinitions =
       (await Future.wait(orderedPackages.map(_packageBuildConfig)))
           .expand((c) => c.builderDefinitions.values);
 
   final orderedBuilders = findBuilderOrder(builderDefinitions);
   builderApplications.addAll(orderedBuilders.map(_applyBuilder));
-  var ddcBootstrap = builderDefinitions.firstWhere(
-      (b) => b.package == 'build_compilers' && b.name == 'ddc_bootstrap');
-  // TODO - should this be configurable?
-  builderApplications.add(_applyBuilderWithFilter(ddcBootstrap,
-      refer('toRoot', 'package:build_runner/build_runner.dart').call([]),
-      inputs: ['web/**.dart', 'test/**.browser_test.dart']));
   return builderApplications;
 }
 
-/// A method forwarding to `serveMain`.
+/// A method forwarding to `run`.
 Method _main() => new Method((b) => b
   ..name = 'main'
   ..lambda = true
@@ -70,13 +73,8 @@ Method _main() => new Method((b) => b
     ..type = new TypeReference((b) => b
       ..symbol = 'List'
       ..types.add(refer('String')))))
-  ..body = refer('serveMain',
-          'package:build_runner/src/build_script_generate/serve_main.dart')
+  ..body = refer('run', 'package:build_runner/build_runner.dart')
       .call([refer('args'), refer('_builders')]).code);
-
-Future<BuildConfig> _packageBuildConfig(PackageNode package) async =>
-    BuildConfig.fromPackageDir(
-        await Pubspec.fromPackageDir(package.path), package.path);
 
 /// An expression calling `apply` with appropriate setup for a Builder.
 Expression _applyBuilder(BuilderDefinition definition) =>
@@ -94,6 +92,20 @@ Expression _applyBuilderWithFilter(
   }
   if (definition.buildTo == BuildTo.cache) {
     namedArgs['hideOutput'] = literalTrue;
+  }
+  if (definition.defaults?.generateFor != null) {
+    final inputSetArgs = <String, Expression>{};
+    if (definition.defaults.generateFor.include != null) {
+      inputSetArgs['include'] =
+          literalConstList(definition.defaults.generateFor.include);
+    }
+    if (definition.defaults.generateFor.exclude != null) {
+      inputSetArgs['exclude'] =
+          literalConstList(definition.defaults.generateFor.exclude);
+    }
+    namedArgs['defaultGenerateFor'] =
+        refer('InputSet', 'package:build_config/build_config.dart')
+            .constInstance([], inputSetArgs);
   }
   return refer('apply', 'package:build_runner/build_runner.dart').call([
     literalString(definition.package),

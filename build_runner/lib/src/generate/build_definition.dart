@@ -23,7 +23,6 @@ import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
-import 'input_set.dart';
 import 'options.dart';
 import 'phase.dart';
 
@@ -105,7 +104,7 @@ class _Loader {
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
-            internalSources, _options.packageGraph.root.name, _options.reader);
+            internalSources, _options.packageGraph, _options.reader);
         buildScriptUpdates =
             await BuildScriptUpdates.create(_options, assetGraph);
         conflictingOutputs = assetGraph.outputs
@@ -266,13 +265,13 @@ class _Loader {
     }
 
     var newSources = inputSources.difference(assetGraph.allNodes
-        .where((node) => node is! SyntheticAssetNode)
+        .where((node) => node.isValidInput)
         .map((node) => node.id)
         .toSet());
     addUpdates(newSources, ChangeType.ADD);
     var removedAssets = assetGraph.allNodes
         .where((n) {
-          if (n is SyntheticAssetNode) return false;
+          if (!n.isReadable) return false;
           if (n is GeneratedAssetNode) return n.wasOutput;
           return true;
         })
@@ -319,36 +318,23 @@ class _Loader {
   }
 
   /// Returns the set of original package inputs on disk.
-  Future<Set<AssetId>> _findInputSources() async {
-    List<String> packageIncludes(String packageName) {
-      if (packageName == _options.packageGraph.root.name) {
-        return rootPackageFilesWhitelist;
-      }
-      if (packageName == r'$sdk') {
-        return const ['lib/dev_compiler/**.js'];
-      }
-      return const ['lib/**'];
-    }
-
-    var inputSets = _options.packageGraph.allPackages.values.map(
-        (package) => new InputSet(package.name, packageIncludes(package.name)));
-    var sources = (await _listAssetIds(inputSets).toSet());
-    return sources;
+  Future<Set<AssetId>> _findInputSources() {
+    final packageNames = new Stream<PackageNode>.fromIterable(
+        _options.packageGraph.allPackages.values);
+    return packageNames.asyncExpand(_listAssetIds).toSet();
   }
 
-  Stream<AssetId> _listAssetIds(Iterable<InputSet> inputSets) async* {
-    var seenAssets = new Set<AssetId>();
-    for (var inputSet in inputSets) {
-      for (var glob in inputSet.globs) {
-        var assetIds =
-            _options.reader.findAssets(glob, package: inputSet.package);
-        await for (var id in assetIds) {
-          if (!seenAssets.add(id) || !inputSet.matches(id)) continue;
-          yield id;
-        }
-      }
+  Stream<AssetId> _listAssetIds(PackageNode package) async* {
+    for (final glob in _packageIncludes(package)) {
+      yield* _options.reader.findAssets(new Glob(glob), package: package.name);
     }
   }
+
+  List<String> _packageIncludes(PackageNode package) => package.isRoot
+      ? rootPackageFilesWhitelist
+      : package.name == r'$sdk'
+          ? const ['lib/dev_compiler/**.js']
+          : const ['lib/**'];
 
   Stream<AssetId> _listGeneratedAssetIds() async* {
     var glob = new Glob('$generatedOutputDirectory/**');

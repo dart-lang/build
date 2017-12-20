@@ -30,6 +30,12 @@ class CopyBuilder implements Builder {
   /// are passed which do not match the input extension then [build] will throw.
   final String inputExtension;
 
+  /// A stream of all the [BuildStep.inputId]s that are seen.
+  ///
+  /// Events are added at the top of the [build] method.
+  final _buildInputsController = new StreamController<AssetId>.broadcast();
+  Stream<AssetId> get buildInputs => _buildInputsController.stream;
+
   CopyBuilder(
       {this.numCopies: 1,
       this.extension: 'copy',
@@ -40,6 +46,10 @@ class CopyBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
+    // Skip placeholder files from build_runner.
+    if (buildStep.inputId.path.endsWith(r'$')) return;
+
+    _buildInputsController.add(buildStep.inputId);
     if (!buildStep.inputId.path.endsWith(inputExtension)) {
       throw new ArgumentError('Only expected inputs with extension '
           '$inputExtension but got ${buildStep.inputId}');

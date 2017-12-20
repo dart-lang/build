@@ -102,6 +102,10 @@ class _AssetGraphDeserializer {
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new BuilderOptionsAssetNode(id, digest);
         break;
+      case _NodeType.Placeholder:
+        assert(serializedNode.length == _WrappedAssetNode._length);
+        node = new PlaceHolderAssetNode(id);
+        break;
     }
     node.outputs.addAll(_deserializeAssetIds(
         serializedNode[_Field.Outputs.index] as List<int>));
@@ -161,7 +165,14 @@ class _AssetGraphSerializer {
 }
 
 /// Used to serialize the type of a node using an int.
-enum _NodeType { Source, SyntheticSource, Generated, Internal, BuilderOptions }
+enum _NodeType {
+  Source,
+  SyntheticSource,
+  Generated,
+  Internal,
+  BuilderOptions,
+  Placeholder
+}
 
 /// Field indexes for serialized nodes.
 enum _Field {
@@ -217,6 +228,8 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
           return _NodeType.Internal.index;
         } else if (node is BuilderOptionsAssetNode) {
           return _NodeType.BuilderOptions.index;
+        } else if (node is PlaceHolderAssetNode) {
+          return _NodeType.Placeholder.index;
         } else {
           throw new StateError('Unrecognized node type');
         }

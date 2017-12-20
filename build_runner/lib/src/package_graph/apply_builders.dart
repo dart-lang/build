@@ -2,11 +2,15 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 
 import '../generate/phase.dart';
 import 'package_graph.dart';
+import 'target_graph.dart';
 
 typedef bool PackageFilter(PackageNode node);
 
@@ -34,16 +38,15 @@ PackageFilter toAll(Iterable<PackageFilter> filters) =>
 PackageFilter toRoot() => (p) => p.isRoot;
 
 /// Apply [builder] to the root package.
-BuilderApplication applyToRoot(Builder builder,
-        {List<String> inputs, List<String> excludes}) =>
-    new BuilderApplication._('', '', [(_) => builder], toRoot(),
-        inputs: inputs, excludes: excludes);
+BuilderApplication applyToRoot(Builder builder) =>
+    new BuilderApplication._('', '', [(_) => builder], toRoot());
 
 /// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
 ///
-/// If the builder should only run on a subset of files within a package pass
-/// globs to [inputs] or [excludes].
+/// If the builder should only run on a subset of files within a target pass
+/// globs to [defaultGenerateFor]. This can be overridden by any target which
+/// configured the builder manually.
 ///
 /// If [isOptional] is true the builder will only run if one of its outputs is
 /// read by a later builder, or is used as a primary input to a later builder.
@@ -51,17 +54,15 @@ BuilderApplication applyToRoot(Builder builder,
 /// never run.
 BuilderApplication apply(String providingPackage, String builderName,
         List<BuilderFactory> builderFactories, PackageFilter filter,
-        {List<String> inputs,
-        List<String> excludes,
-        bool isOptional,
+        {bool isOptional,
         bool hideOutput,
+        InputSet defaultGenerateFor,
         bool allowDeclaredOutputConflicts}) =>
     new BuilderApplication._(
         providingPackage, builderName, builderFactories, filter,
-        inputs: inputs,
-        excludes: excludes,
         isOptional: isOptional,
         hideOutput: hideOutput,
+        defaultGenerateFor: defaultGenerateFor,
         allowDeclaredOutputConflicts: allowDeclaredOutputConflicts);
 
 /// A description of which packages need a given [Builder] applied.
@@ -83,8 +84,6 @@ class BuilderApplication {
   /// builder.
   final String builderName;
 
-  final List<String> inputs;
-  final List<String> excludes;
   final bool isOptional;
 
   /// Whether generated assets should be placed in the build cache.
@@ -101,13 +100,18 @@ class BuilderApplication {
   /// This may only be `true` if `hideOutput` is also `true`.
   final bool allowDeclaredOutputConflicts;
 
+  /// The default filter for primary inputs if the [TargetBuilderConfig] does
+  /// not specify one.
+  final InputSet defaultGenerateFor;
+
   const BuilderApplication._(this.providingPackage, this.builderName,
       this.builderFactories, this.filter,
-      {this.inputs,
-      this.excludes,
-      this.isOptional,
+      {this.isOptional,
       this.hideOutput,
+      this.defaultGenerateFor,
       this.allowDeclaredOutputConflicts});
+
+  String get builderKey => '$providingPackage|$builderName';
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -121,10 +125,16 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-List<BuildAction> createBuildActions(PackageGraph packageGraph,
-    Iterable<BuilderApplication> builderApplications) {
-  var cycles = stronglyConnectedComponents<String, PackageNode>(
-      [packageGraph.root], (node) => node.name, (node) => node.dependencies);
+Future<List<BuildAction>> createBuildActions(
+    PackageGraph packageGraph, Iterable<BuilderApplication> builderApplications,
+    {Map<String, BuildConfig> overrideBuildConfig}) async {
+  final moduleGraph = await TargetGraph.forPackageGraph(packageGraph,
+      overrideBuildConfig: overrideBuildConfig);
+  var cycles = stronglyConnectedComponents<String, TargetNode>(
+      moduleGraph.allModules.values,
+      (node) => node.target.name,
+      (node) =>
+          node.target.dependencies?.map((key) => moduleGraph.allModules[key]));
   return cycles
       .expand((cycle) => _createBuildActionsWithinCycle(
           cycle, packageGraph, builderApplications))
@@ -132,7 +142,7 @@ List<BuildAction> createBuildActions(PackageGraph packageGraph,
 }
 
 Iterable<BuildAction> _createBuildActionsWithinCycle(
-        Iterable<PackageNode> cycle,
+        Iterable<TargetNode> cycle,
         PackageGraph packageGraph,
         Iterable<BuilderApplication> builderApplications) =>
     builderApplications.expand((builderApplication) =>
@@ -140,16 +150,31 @@ Iterable<BuildAction> _createBuildActionsWithinCycle(
             cycle, packageGraph, builderApplication));
 
 Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
-    Iterable<PackageNode> cycle,
+    Iterable<TargetNode> cycle,
     PackageGraph packageGraph,
     BuilderApplication builderApplication) {
-  var options = const BuilderOptions(const {});
-  return builderApplication.builderFactories.expand((b) => cycle
-      .where(builderApplication.filter)
-      .map((p) => new BuildAction(b(options), p.name,
-          builderOptions: options,
-          inputs: builderApplication.inputs,
-          excludes: builderApplication.excludes,
-          isOptional: builderApplication.isOptional,
-          hideOutput: builderApplication.hideOutput)));
+  TargetBuilderConfig targetConfig(TargetNode node) =>
+      node.target.builders[builderApplication.builderKey];
+  bool shouldRun(TargetNode node) {
+    final builderConfig = targetConfig(node);
+    if (builderConfig?.isEnabled != null) {
+      return builderConfig.isEnabled;
+    }
+    return builderApplication.filter(node.package);
+  }
+
+  return builderApplication.builderFactories
+      .expand((b) => cycle.where(shouldRun).map((node) {
+            final builderConfig = targetConfig(node);
+            final generateFor = builderConfig?.generateFor ??
+                builderApplication.defaultGenerateFor;
+            final options =
+                builderConfig?.options ?? const BuilderOptions(const {});
+            return new BuildAction(b(options), node.package.name,
+                builderOptions: options,
+                targetSources: node.target.sources,
+                generateFor: generateFor,
+                isOptional: builderApplication.isOptional,
+                hideOutput: builderApplication.hideOutput);
+          }));
 }
