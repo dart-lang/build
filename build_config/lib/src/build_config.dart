@@ -272,7 +272,7 @@ class TargetBuilderConfig {
 
   @override
   String toString() => {
-        'isEnable': isEnabled,
+        'isEnabled': isEnabled,
         'generateFor': generateFor,
         'options': options.config
       }.toString();

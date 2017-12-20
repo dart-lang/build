@@ -3,6 +3,51 @@
 Customizing the build behavior of a package is done  by creating a `build.yaml`
 file, which describes your configuration.
 
+## Dividing a package into Build targets
+When a `Builder` should be applied to a subset of files in a package the package
+can be broken up into multiple 'targets'. Targets are configured in the
+`targets` section of the `build.yaml`. Each target may contain the following
+keys.
+
+- **name**: String, Required. The name of the target within the package. Targets
+  can be referred to by `'$packageName:$targetName'` keys. If the target is the
+  default target for the package it can also be referred to as just
+  `'$packageName'`. Usually the 'default' target will use the package name as
+  the target name.
+- **default**: Boolean, Optional. Whether this is the default target within the
+  package. If there is only one target in the package this can be omitted,
+  otherwise exactly 1 target must specify `default: True`.
+- **sources**: List of Strings or Map, Optional. The set of files within the
+  package which make up this target. Files are specified using glob syntax. If a
+  List of Strings is used they are considered the 'include' globs. If a Map is
+  used can only have the keys `include` and `exclude`. Any file which matches
+  any glob in `include` and no globs in `exclude` is considered a source of the
+  target. When `include` is omitted every file is considered a match.
+- **dependencies**: List of Strings, Optional. The targets that this target
+  depends on. Strings in the format `'$packageName:$targetName'` to depend on a
+  target within a package or `$packageName` to depend on a package's default
+  target. By default this is all of the package names this package depends on
+  (from the `pubspec.yaml`).
+- **builders**: Map, Optional. See "configuring builders" below.
+
+## Configuring `Builder`s applied to your package
+Each target can specify a `builders` key which configures the builders which are
+applied to that target. The value is a Map from builder to configuration for
+that builder. The key is in the format `'$packageName|$builderName'`. The
+configuration may have the following keys:
+
+- **enabled**: Boolean, Optional: Whether to apply the builder to this target.
+  Omit this key if you want the default behavior based on the builder's
+  `auto_apply` configuration. Builders which are manually applied
+  (`auto_apply: none`) are only ever used when there is a target specifying the
+  builder with `enabled: True`.
+- **generate_for**: List of String or Map, Optional:. The subset of files within
+  the target's `sources` which should have this Builder applied. See `sources`
+  configuration above for how to configure this.
+- **options**: Map, Optional: A free-form map which will be passed to the
+  `Builder` as a `BuilderOptions` when it is constructed. Usage varies depending
+  on the particular builder.
+
 ## Defining `Builder`s to apply to dependents (similar to transformers)
 
 If users of your package need to apply some code generation to their package,
