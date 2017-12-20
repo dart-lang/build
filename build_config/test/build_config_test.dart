@@ -47,7 +47,7 @@ void main() {
         },
         package: 'example',
         key: 'example|h',
-        target: 'e',
+        target: 'example:example',
         requiredInputs: ['.dart'],
         defaults: new TargetBuilderConfigDefaults(
             generateFor: new InputSet(include: ['lib/**'])),
@@ -81,7 +81,7 @@ void main() {
         },
         package: 'example',
         key: 'example|a',
-        target: 'example',
+        target: 'example:example',
         requiredInputs: const [],
       ),
     });
@@ -119,7 +119,7 @@ builders:
     builder_factories: ["createBuilder"]
     import: package:example/e.dart
     build_extensions: {".dart": [".g.dart", ".json"]}
-    target: e
+    target: ":example"
     auto_apply: dependents
     required_inputs: [".dart"]
     is_optional: True
