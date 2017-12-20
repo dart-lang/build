@@ -73,17 +73,16 @@ BuildConfig parseFromMap(String packageName,
 
     final dependencies = _readListOfStringsOrThrow(targetConfig, _dependencies,
             defaultValue: packageDependencies)
-        .map((dep) => normalizeTargetKey(dep, packageName))
+        .map((dep) => normalizeTargetKeyUsage(dep, packageName))
         .toSet();
 
     final sources = _readInputSetOrThrow(targetConfig, _sources,
         defaultValue: const InputSet());
 
-    final targetKey = normalizeTargetKey(targetName, packageName);
+    final targetKey = normalizeTargetKeyDefinition(targetName, packageName);
     buildTargets[targetKey] = new BuildTarget(
       builders: builders,
       dependencies: dependencies,
-      name: targetKey,
       package: packageName,
       sources: sources,
     );
@@ -94,9 +93,8 @@ BuildConfig parseFromMap(String packageName,
     // Add the default dart library if there are no targets discovered.
     buildTargets[defaultTarget] = new BuildTarget(
       dependencies: packageDependencies
-          .map((dep) => normalizeTargetKey(dep, packageName))
+          .map((dep) => normalizeTargetKeyUsage(dep, packageName))
           .toSet(),
-      name: defaultTarget,
       package: packageName,
       sources: const InputSet(),
     );
@@ -142,12 +140,11 @@ BuildConfig parseFromMap(String packageName,
           'when using `auto_apply: ${builderConfig[_autoApply]}`');
     }
 
-    final builderKey = normalizeBuilderKey(builderName, packageName);
+    final builderKey = normalizeBuilderKeyDefinition(builderName, packageName);
     builderDefinitions[builderKey] = new BuilderDefinition(
       builderFactories: builderFactories,
       import: import,
       buildExtensions: buildExtensions,
-      name: builderKey,
       package: packageName,
       target: target,
       autoApply: autoApply,
@@ -280,7 +277,7 @@ Map<String, TargetBuilderConfig> _readBuildersOrThrow(
       }
       parsedOptions = new BuilderOptions(options as Map<String, dynamic>);
     }
-    parsedConfigs[normalizeBuilderKey(builderKey, packageName)] =
+    parsedConfigs[normalizeBuilderKeyUsage(builderKey, packageName)] =
         new TargetBuilderConfig(
       isEnabled: isEnabled,
       generateFor: generateFor,

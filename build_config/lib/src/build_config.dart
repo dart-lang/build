@@ -89,9 +89,8 @@ class BuildConfig {
     final buildTargets = {
       defaultTarget: new BuildTarget(
         dependencies: dependencies
-            .map((dep) => normalizeTargetKey(dep, packageName))
+            .map((dep) => normalizeTargetKeyUsage(dep, packageName))
             .toSet(),
-        name: defaultTarget,
         package: packageName,
         sources: const InputSet(),
       )
@@ -120,8 +119,6 @@ class BuildConfig {
 }
 
 class BuilderDefinition {
-  final String name;
-
   final String package;
 
   /// The names of the top-level methods in [import] from args -> Builder.
@@ -162,7 +159,6 @@ class BuilderDefinition {
     this.builderFactories,
     this.buildExtensions,
     this.import,
-    this.name,
     this.package,
     this.target,
     this.autoApply,
@@ -171,6 +167,19 @@ class BuilderDefinition {
     this.buildTo,
     this.defaults,
   });
+
+  @override
+  String toString() => {
+        'target': target,
+        'autoApply': autoApply,
+        'import': import,
+        'builderFactories': builderFactories,
+        'buildExtensions': buildExtensions,
+        'requiredInputs': requiredInputs,
+        'isOptional': isOptional,
+        'buildTo': buildTo,
+        'defaults': defaults,
+      }.toString();
 }
 
 /// Default values that builder authors can specify when users don't fill in the
@@ -195,8 +204,6 @@ enum BuildTo {
 class BuildTarget {
   final Set<String> dependencies;
 
-  final String name;
-
   final String package;
 
   final InputSet sources;
@@ -209,7 +216,6 @@ class BuildTarget {
   final Map<String, TargetBuilderConfig> builders;
 
   BuildTarget({
-    this.name,
     this.package,
     this.sources: const InputSet(),
     this.dependencies,
@@ -219,7 +225,6 @@ class BuildTarget {
   @override
   String toString() => {
         'package': package,
-        'name': name,
         'sources': sources,
         'dependencies': dependencies,
         'builders': builders,

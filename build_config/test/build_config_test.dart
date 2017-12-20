@@ -11,21 +11,19 @@ void main() {
   test('build.yaml can be parsed', () {
     var buildConfig = new BuildConfig.parse('example', ['a', 'b'], buildYaml);
     expectBuildTargets(buildConfig.buildTargets, {
-      'a': new BuildTarget(
+      'example:a': new BuildTarget(
         builders: {
           'b|b': new TargetBuilderConfig(
               generateFor: new InputSet(include: ['lib/a.dart'])),
-          'a|h': new TargetBuilderConfig(
+          'example|h': new TargetBuilderConfig(
               options: new BuilderOptions({'foo': 'bar'})),
         },
         dependencies: ['b:b', 'c:d'].toSet(),
-        name: 'a',
         package: 'example',
         sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
-      'example': new BuildTarget(
+      'example:example': new BuildTarget(
         dependencies: ['f:f', 'example:a'].toSet(),
-        name: 'example',
         package: 'example',
         sources: new InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
@@ -33,7 +31,7 @@ void main() {
       )
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'h': new BuilderDefinition(
+      'example|h': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.dependents,
         isOptional: true,
@@ -45,7 +43,6 @@ void main() {
             '.json',
           ]
         },
-        name: 'h',
         package: 'example',
         target: 'e',
         requiredInputs: ['.dart'],
@@ -59,21 +56,19 @@ void main() {
     var buildConfig =
         new BuildConfig.parse('example', ['a', 'b'], buildYamlNoTargets);
     expectBuildTargets(buildConfig.buildTargets, {
-      'example': new BuildTarget(
+      'example:example': new BuildTarget(
         dependencies: ['a:a', 'b:b'].toSet(),
-        name: 'example',
         package: 'example',
         sources: new InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'a': new BuilderDefinition(
+      'example|a': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.none,
         isOptional: false,
         buildTo: BuildTo.source,
         import: 'package:example/builder.dart',
-        name: 'a',
         buildExtensions: {
           '.dart': [
             '.g.dart',
@@ -92,7 +87,7 @@ var buildYaml = '''
 targets:
   a:
     builders:
-      a|h:
+      "|h":
         options:
           foo: bar
       b|b:
@@ -162,7 +157,6 @@ class _BuilderDefinitionMatcher extends Matcher {
       item.isOptional == _expected.isOptional &&
       item.buildTo == _expected.buildTo &&
       item.import == _expected.import &&
-      item.name == _expected.name &&
       item.package == _expected.package &&
       item.target == _expected.target;
 
@@ -186,7 +180,6 @@ class _BuildTargetMatcher extends Matcher {
   @override
   bool matches(item, _) =>
       item is BuildTarget &&
-      item.name == _expected.name &&
       item.package == _expected.package &&
       new _BuilderConfigsMatcher(_expected.builders)
           .matches(item.builders, _) &&
