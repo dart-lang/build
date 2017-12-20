@@ -25,7 +25,7 @@ String normalizeTargetKeyUsage(String targetKey, String packageName) =>
 /// dependency on the globally unique `angular:angular`.
 String _normalizeUsage(String name, String packageName, String separator) {
   if (name.startsWith(separator)) return '$packageName$name';
-  if (!name.contains(separator)) return '$name|$name';
+  if (!name.contains(separator)) return '$name$separator$name';
   return name;
 }
 
