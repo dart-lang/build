@@ -20,6 +20,9 @@ String normalizeTargetKeyUsage(String targetKey, String packageName) =>
 /// builder named after a package (which is not this package). If [name] starts
 /// with the separator we assume it's referring to a target within the package
 /// it's used from.
+///
+/// For example: If I depend on `angular` from `my_package` it is treated as a
+/// dependency on the globally unique `angular:angular`.
 String _normalizeUsage(String name, String packageName, String separator) {
   if (name.startsWith(separator)) return '$packageName$name';
   if (!name.contains(separator)) return '$name|$name';
@@ -30,6 +33,9 @@ String _normalizeUsage(String name, String packageName, String separator) {
 ///
 /// The result is always '$packageName$separator$name since at definition the
 /// key must be referring to something within [packageName].
+///
+/// For example: If I expose a builder `my_builder` within `my_package` it is
+/// turned into the globally unique `my_package|my_builder`.
 String _normalizeDefinition(String name, String packageName, String separator) {
   if (name.startsWith(separator)) return '$packageName$name';
   if (!name.contains(separator)) return '$packageName$separator$name';
