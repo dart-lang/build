@@ -135,20 +135,28 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
     Iterable<TargetNode> cycle,
     PackageGraph packageGraph,
     BuilderApplication builderApplication) {
-  return builderApplication.builderFactories.expand((b) => cycle
-          .where((node) => builderApplication.filter(node.package))
-          .map((node) {
-        final builderConfig =
-            node.target.builders[builderApplication.builderKey];
-        final generateFor =
-            builderConfig?.generateFor ?? builderApplication.defaultGenerateFor;
-        final options =
-            builderConfig?.options ?? const BuilderOptions(const {});
-        return new BuildAction(b(options), node.package.name,
-            builderOptions: options,
-            targetSources: node.target.sources,
-            generateFor: generateFor,
-            isOptional: builderApplication.isOptional,
-            hideOutput: builderApplication.hideOutput);
-      }));
+  TargetBuilderConfig targetConfig(TargetNode node) =>
+      node.target.builders[builderApplication.builderKey];
+  bool shouldRun(TargetNode node) {
+    final builderConfig = targetConfig(node);
+    if (builderConfig?.isEnabled != null) {
+      return builderConfig.isEnabled;
+    }
+    return builderApplication.filter(node.package);
+  }
+
+  return builderApplication.builderFactories
+      .expand((b) => cycle.where(shouldRun).map((node) {
+            final builderConfig = targetConfig(node);
+            final generateFor = builderConfig?.generateFor ??
+                builderApplication.defaultGenerateFor;
+            final options =
+                builderConfig?.options ?? const BuilderOptions(const {});
+            return new BuildAction(b(options), node.package.name,
+                builderOptions: options,
+                targetSources: node.target.sources,
+                generateFor: generateFor,
+                isOptional: builderApplication.isOptional,
+                hideOutput: builderApplication.hideOutput);
+          }));
 }
