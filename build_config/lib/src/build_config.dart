@@ -92,6 +92,7 @@ class BuildConfig {
             .map((dep) => normalizeTargetKeyUsage(dep, packageName))
             .toSet(),
         package: packageName,
+        key: defaultTarget,
         sources: const InputSet(),
       )
     };
@@ -119,7 +120,11 @@ class BuildConfig {
 }
 
 class BuilderDefinition {
+  /// The package which provides this Builder.
   final String package;
+
+  /// A unique key for this Builder in `'$package|$builder'` format.
+  final String key;
 
   /// The names of the top-level methods in [import] from args -> Builder.
   final List<String> builderFactories;
@@ -156,11 +161,12 @@ class BuilderDefinition {
   final TargetBuilderConfigDefaults defaults;
 
   BuilderDefinition({
-    this.builderFactories,
-    this.buildExtensions,
-    this.import,
-    this.package,
-    this.target,
+    @required this.package,
+    @required this.key,
+    @required this.builderFactories,
+    @required this.buildExtensions,
+    @required this.import,
+    @required this.target,
     this.autoApply,
     this.requiredInputs,
     this.isOptional,
@@ -206,6 +212,9 @@ class BuildTarget {
 
   final String package;
 
+  /// A unique key for this target in `'$package:$target'` format.
+  final String key;
+
   final InputSet sources;
 
   /// A map from builder key to the configuration used for this target.
@@ -216,7 +225,8 @@ class BuildTarget {
   final Map<String, TargetBuilderConfig> builders;
 
   BuildTarget({
-    this.package,
+    @required this.package,
+    @required this.key,
     this.sources: const InputSet(),
     this.dependencies,
     this.builders: const {},

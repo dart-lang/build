@@ -12,16 +12,15 @@ import 'package:build_test/builder.dart';
 
 Future main(List<String> args) async {
   var builders = [
-    apply('e2e_example', 'throwing_builder', [(_) => new ThrowingBuilder()],
+    apply('e2e_example|throwing_builder', [(_) => new ThrowingBuilder()],
         toRoot(),
         hideOutput: true),
-    apply('build_test', 'test_bootstrap', [(_) => new TestBootstrapBuilder()],
+    apply('build_test|test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
         hideOutput: true,
         defaultGenerateFor: const InputSet(include: const ['test/**'])),
     apply(
-        'build_compilers',
-        'ddc',
+        'build_compilers|ddc',
         [
           (_) => new ModuleBuilder(),
           (_) => new UnlinkedSummaryBuilder(),
@@ -31,7 +30,7 @@ Future main(List<String> args) async {
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
-    apply('build_compilers', 'ddc_bootstrap',
+    apply('build_compilers|ddc_bootstrap',
         [(_) => new DevCompilerBootstrapBuilder()], toRoot(),
         hideOutput: true,
         defaultGenerateFor: const InputSet(

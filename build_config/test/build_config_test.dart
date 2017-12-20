@@ -20,11 +20,13 @@ void main() {
         },
         dependencies: ['b:b', 'c:d'].toSet(),
         package: 'example',
+        key: 'example:a',
         sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
       'example:example': new BuildTarget(
         dependencies: ['f:f', 'example:a'].toSet(),
         package: 'example',
+        key: 'example:example',
         sources: new InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
             exclude: ['lib/src/e/g.dart']),
@@ -44,6 +46,7 @@ void main() {
           ]
         },
         package: 'example',
+        key: 'example|h',
         target: 'e',
         requiredInputs: ['.dart'],
         defaults: new TargetBuilderConfigDefaults(
@@ -59,6 +62,7 @@ void main() {
       'example:example': new BuildTarget(
         dependencies: ['a:a', 'b:b'].toSet(),
         package: 'example',
+        key: 'example:example',
         sources: new InputSet(),
       ),
     });
@@ -76,6 +80,7 @@ void main() {
           ]
         },
         package: 'example',
+        key: 'example|a',
         target: 'example',
         requiredInputs: const [],
       ),
@@ -157,6 +162,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       item.isOptional == _expected.isOptional &&
       item.buildTo == _expected.buildTo &&
       item.import == _expected.import &&
+      item.key == _expected.key &&
       item.package == _expected.package &&
       item.target == _expected.target;
 

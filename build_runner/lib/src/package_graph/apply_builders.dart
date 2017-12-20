@@ -39,7 +39,7 @@ PackageFilter toRoot() => (p) => p.isRoot;
 
 /// Apply [builder] to the root package.
 BuilderApplication applyToRoot(Builder builder) =>
-    new BuilderApplication._('', '', [(_) => builder], toRoot());
+    new BuilderApplication._('', [(_) => builder], toRoot());
 
 /// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
@@ -52,11 +52,10 @@ BuilderApplication applyToRoot(Builder builder) =>
 /// read by a later builder, or is used as a primary input to a later builder.
 /// If no build actions read the output of an optional action, then it will
 /// never run.
-BuilderApplication apply(String providingPackage, String builderName,
+BuilderApplication apply(String builderKey,
         List<BuilderFactory> builderFactories, PackageFilter filter,
         {bool isOptional, bool hideOutput, InputSet defaultGenerateFor}) =>
-    new BuilderApplication._(
-        providingPackage, builderName, builderFactories, filter,
+    new BuilderApplication._(builderKey, builderFactories, filter,
         isOptional: isOptional,
         hideOutput: hideOutput,
         defaultGenerateFor: defaultGenerateFor);
@@ -68,17 +67,8 @@ class BuilderApplication {
   /// Determines whether a given package needs builder applied.
   final PackageFilter filter;
 
-  /// The package which provides this builder.
-  ///
-  /// Along with the [builderName] makes up a key that uniquely identifies the
-  /// builder.
-  final String providingPackage;
-
-  /// A name for this builder.
-  ///
-  /// Along with the [providingPackage] makes up a key that uniquely identifies the
-  /// builder.
-  final String builderName;
+  /// A uniqe key for this builder.
+  final String builderKey;
 
   final bool isOptional;
 
@@ -89,11 +79,9 @@ class BuilderApplication {
   /// not specify one.
   final InputSet defaultGenerateFor;
 
-  const BuilderApplication._(this.providingPackage, this.builderName,
-      this.builderFactories, this.filter,
+  const BuilderApplication._(
+      this.builderKey, this.builderFactories, this.filter,
       {this.isOptional, this.hideOutput, this.defaultGenerateFor});
-
-  String get builderKey => '$providingPackage|$builderName';
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -114,7 +102,7 @@ Future<List<BuildAction>> createBuildActions(
       overrideBuildConfig: overrideBuildConfig);
   var cycles = stronglyConnectedComponents<String, TargetNode>(
       moduleGraph.allModules.values,
-      (node) => node.target.name,
+      (node) => node.target.key,
       (node) =>
           node.target.dependencies?.map((key) => moduleGraph.allModules[key]));
   return cycles

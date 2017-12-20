@@ -84,6 +84,7 @@ BuildConfig parseFromMap(String packageName,
       builders: builders,
       dependencies: dependencies,
       package: packageName,
+      key: targetKey,
       sources: sources,
     );
   }
@@ -96,6 +97,7 @@ BuildConfig parseFromMap(String packageName,
           .map((dep) => normalizeTargetKeyUsage(dep, packageName))
           .toSet(),
       package: packageName,
+      key: defaultTarget,
       sources: const InputSet(),
     );
   }
@@ -142,6 +144,7 @@ BuildConfig parseFromMap(String packageName,
 
     final builderKey = normalizeBuilderKeyDefinition(builderName, packageName);
     builderDefinitions[builderKey] = new BuilderDefinition(
+      key: builderKey,
       builderFactories: builderFactories,
       import: import,
       buildExtensions: buildExtensions,
