@@ -11,13 +11,16 @@ import 'package:logging/logging.dart';
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 
-Future<Null> main() async {
+Future<Null> main(List<String> args) async {
   var logListener = Logger.root.onRecord.listen(stdIOLogListener);
   await ensureBuildScript();
   var dart = Platform.resolvedExecutable;
-  final args = [scriptLocation, 'serve'];
-  if (stdioType(stdin) == StdioType.TERMINAL) args.add('--assume-tty');
-  var buildRun = await new ProcessManager().spawn(dart, args);
+  final innerArgs = [scriptLocation]..addAll(args);
+  if (stdioType(stdin) == StdioType.TERMINAL &&
+      !args.any((a) => a.contains('assume-tty'))) {
+    innerArgs.add('--assume-tty');
+  }
+  var buildRun = await new ProcessManager().spawn(dart, innerArgs);
   await buildRun.exitCode;
   await ProcessManager.terminateStdIn();
   await logListener.cancel();
