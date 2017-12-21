@@ -12,6 +12,7 @@ import 'package:shelf/shelf_io.dart';
 
 const _assumeTty = 'assume-tty';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
+const _hostname = 'hostname';
 
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner {
@@ -50,12 +51,15 @@ class _SharedOptions {
 
 /// Options specific to the [_ServeCommand].
 class _ServeOptions extends _SharedOptions {
+  final String hostName;
   final List<_ServeTarget> serveTargets;
 
-  _ServeOptions._(
-      {@required this.serveTargets,
-      @required bool assumeTty,
-      @required bool deleteFilesByDefault})
+  _ServeOptions._({
+    @required this.hostName,
+    @required this.serveTargets,
+    @required bool assumeTty,
+    @required bool deleteFilesByDefault,
+  })
       : super._(
             assumeTty: assumeTty, deleteFilesByDefault: deleteFilesByDefault);
 
@@ -74,6 +78,7 @@ class _ServeOptions extends _SharedOptions {
       ]);
     }
     return new _ServeOptions._(
+        hostName: argResults[_hostname] as String,
         serveTargets: serveTargets,
         assumeTty: argResults[_assumeTty] as bool,
         deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool);
@@ -162,6 +167,12 @@ class _WatchCommand extends _BaseCommand {
 
 /// Extends [_WatchCommand] with dev server functionality.
 class _ServeCommand extends _WatchCommand {
+  _ServeCommand() {
+    argParser
+      ..addOption(_hostname,
+          help: 'Specify the hostname to serve on', defaultsTo: 'localhost');
+  }
+
   @override
   String get name => 'serve';
 
@@ -180,7 +191,7 @@ class _ServeCommand extends _WatchCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         assumeTty: options.assumeTty);
     var servers = await Future.wait(options.serveTargets.map((target) =>
-        serve(handler.handlerFor(target.dir), 'localhost', target.port)));
+        serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
     for (var target in options.serveTargets) {
       stdout.writeln('Serving `${target.dir}` on port ${target.port}');
