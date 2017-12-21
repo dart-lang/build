@@ -92,6 +92,8 @@ Expression _applyBuilderWithFilter(
   }
   if (definition.buildTo == BuildTo.cache) {
     namedArgs['hideOutput'] = literalTrue;
+  } else {
+    namedArgs['hideOutput'] = literalFalse;
   }
   if (definition.defaults?.generateFor != null) {
     final inputSetArgs = <String, Expression>{};

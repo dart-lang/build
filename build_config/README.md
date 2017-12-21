@@ -89,10 +89,10 @@ the following keys:
   to. The possibilities are:
   - `"source"`: Outputs go to the source tree next to their primary inputs.
   - `"cache"`: Outputs go to a hidden build cache and won't be published.
-  Only builders which output to the build cache may run on primary inputs
-  outside the root package. Defaults to `"source"`, unless `auto_apply` is set
-  to either `"all_packages"` or `"dependents"` in which case it defaults to
-  `"cache"`.
+  The default is "cache". If a Builder specifies that it outputs to "source" it
+  will never run on any package other than the root - but does not necessarily
+  need to use the "root_package" value for "auto_apply". If it would otherwise
+  run on a non-root package it will be filtered out.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:

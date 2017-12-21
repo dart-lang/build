@@ -30,7 +30,8 @@ void main() {
     });
     await testBuilders(
         [
-          apply('a|optioned_builder', [copyBuilder], toRoot()),
+          apply('a|optioned_builder', [copyBuilder], toRoot(),
+              hideOutput: false),
         ],
         {
           'a|lib/file.nomatch': 'a',

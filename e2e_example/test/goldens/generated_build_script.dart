@@ -6,7 +6,8 @@ import 'package:build_compilers/builders.dart' as _i5;
 
 final _builders = [
   _i1.apply('provides_builder|some_not_applied_builder', [_i2.notApplied],
-      _i1.toNoneByDefault()),
+      _i1.toNoneByDefault(),
+      hideOutput: true),
   _i1.apply('provides_builder|some_builder', [_i2.someBuilder],
       _i1.toDependentsOf('provides_builder'),
       hideOutput: true),

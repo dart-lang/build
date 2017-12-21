@@ -11,29 +11,6 @@ import '../common/common.dart';
 import '../common/package_graphs.dart';
 
 void main() {
-  test('fail with a nice error if the root package is not right', () async {
-    String error;
-    try {
-      await testBuilders(
-        [
-          apply('', [(_) => new CopyBuilder()], toPackage('not_root_package'))
-        ],
-        {},
-        packageGraph: buildPackageGraph({
-          rootPackage('root_package'): ['not_root_package'],
-          package('not_root_package'): [],
-        }),
-      );
-    } catch (e) {
-      // TODO: Write a throwsAWith(...) matcher?
-      error = e.toString();
-    } finally {
-      expect(error, isNotNull, reason: 'Did not throw!');
-      expect(error, contains('operate on package "not_root_package"'));
-      expect(error, contains('new BuilderApplication(..., toRoot())'));
-    }
-  });
-
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
     expect(
       testBuilders(
