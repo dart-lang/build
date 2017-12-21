@@ -9,6 +9,9 @@
   `$`). This is technically breaking but should not affect any real users and is
   not being released as a breaking change.
 - Changed `TestBootstrapBuilder` to only target `_test.dart` files.
+- `CopyBuilder` now has an option `checkPreExistingOutputs` which will check if
+  outputs already exist before trying to write them. This allows testing with
+  the `allowDeclaredOutputConflicts` option.
 
 ## 0.9.3
 

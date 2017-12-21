@@ -89,15 +89,16 @@ class BuilderApplication {
   /// Whether generated assets should be placed in the build cache.
   final bool hideOutput;
 
-  /// Whether to allow declaring outputs that conflict with pre-existing assets.
+  /// Whether to allow declaring outputs that conflict with pre-existing source
+  /// assets.
   ///
-  /// This doesn't allow you to actually overwrite those assets, it just allows
-  /// the builder to decide to skip writing the file at build time.
-  ///
-  /// If a builder tries to overwrite another asset it will result in a build
-  /// time error.
-  ///
-  /// This may only be `true` if `hideOutput` is also `true`.
+  /// - Does not allow declaring conflicting outputs with generated assets -
+  ///   only original sources.
+  /// - Does not allow you to actually overwrite any assets, it only allows a
+  ///   builder to decide to skip writing the file at build time.
+  /// - If a builder tries to overwrite another asset it will result in a build
+  ///   time error.
+  /// - May only be `true` if [hideOutput] is also `true`.
   final bool allowDeclaredOutputConflicts;
 
   /// The default filter for primary inputs if the [TargetBuilderConfig] does

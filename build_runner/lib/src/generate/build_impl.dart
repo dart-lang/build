@@ -305,7 +305,9 @@ class BuildImpl {
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new Logger('$builder on $input');
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
-        logger: logger, resourceManager: resourceManager);
+        logger: logger,
+        resourceManager: resourceManager,
+        allowedOutputs: builderOutputs);
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.

@@ -1,3 +1,8 @@
+## 0.11.3-dev
+
+- `runBuilder` now has an optional `allowedOutputs` parameter which can be used
+  to override the default allowed outputs.
+
 ## 0.11.2
 
 - Bug Fix: `MultiplexingBuilder` now filters inputs rather than calling _every_

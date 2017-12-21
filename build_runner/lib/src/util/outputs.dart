@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 
+import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../generate/phase.dart';
@@ -20,20 +21,21 @@ List<AssetId> expectedActualOutputs(
 
   if (!action.allowDeclaredOutputConflicts) {
     return allExpectedOutputs.toList();
+  } else {
+    return allExpectedOutputs.where((outputId) {
+      if (!graph.contains(outputId)) return true;
+
+      var node = graph.get(outputId);
+      if (node is GeneratedAssetNode && node.phaseNumber == phaseNumber) {
+        return true;
+      } else if (!node.isGenerated) {
+        // Only allow declaring conflicting outputs with source nodes, just
+        // filter them from the list here.
+        return false;
+      } else {
+        // Throw an exception for duplicate generated nodes.
+        throw new DuplicateAssetNodeException(node);
+      }
+    }).toList();
   }
-
-  return allExpectedOutputs.where((outputId) {
-    if (!graph.contains(outputId)) return true;
-
-    var node = graph.get(outputId);
-    if (node is GeneratedAssetNode && node.phaseNumber == phaseNumber) {
-      return true;
-    } else if (action.allowDeclaredOutputConflicts) {
-      return false;
-    } else {
-      throw new StateError(
-          'Found node $node but expected a GeneratedAssetNode generated in '
-          'phase $phaseNumber.');
-    }
-  }).toList();
 }

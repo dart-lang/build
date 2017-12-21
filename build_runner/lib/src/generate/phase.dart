@@ -32,15 +32,16 @@ class BuildAction implements InputMatcher {
   /// the root.
   final bool hideOutput;
 
-  /// Whether to allow declaring outputs that conflict with pre-existing assets.
+  /// Whether to allow declaring outputs that conflict with pre-existing source
+  /// assets.
   ///
-  /// This doesn't allow you to actually overwrite those assets, it just allows
-  /// the builder to decide to skip writing the file at build time.
-  ///
-  /// If a builder tries to overwrite another asset it will result in a build
-  /// time error.
-  ///
-  /// This may only be `true` if `hideOutput` is also `true`.
+  /// - Does not allow declaring conflicting outputs with generated assets -
+  ///   only original sources.
+  /// - Does not allow you to actually overwrite any assets, it only allows a
+  ///   builder to decide to skip writing the file at build time.
+  /// - If a builder tries to overwrite another asset it will result in a build
+  ///   time error.
+  /// - May only be `true` if [hideOutput] is also `true`.
   final bool allowDeclaredOutputConflicts;
 
   BuildAction._(this.package, this.builder, this._inputs, this.builderOptions,
@@ -49,7 +50,7 @@ class BuildAction implements InputMatcher {
         this.hideOutput = hideOutput ?? false,
         this.allowDeclaredOutputConflicts =
             allowDeclaredOutputConflicts ?? false {
-    if (!hideOutput && allowDeclaredOutputConflicts) {
+    if (!this.hideOutput && this.allowDeclaredOutputConflicts) {
       throw new StateError(
           'Builder $builder has invalid configuration. When setting '
           '`allowDeclaredOutputConflicts` to `true` you must also set '

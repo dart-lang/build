@@ -25,17 +25,21 @@ import 'expected_outputs.dart';
 /// automatically disposed of (its up to the caller to dispose of it later). If
 /// one is not provided then one will be created and disposed at the end of
 /// this function call.
+///
+/// If [allowedOutputs] is provided then that overrides the default allowed
+/// outputs. Otherwise [expectedOutputs] will be used.
 Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
-    String rootPackage}) async {
+    String rootPackage,
+    Iterable<AssetId> allowedOutputs}) async {
   var shouldDisposeResourceManager = resourceManager == null;
   resourceManager ??= new ResourceManager();
   logger ??= new Logger('runBuilder');
   //TODO(nbosch) check overlapping outputs?
   Future<Null> buildForInput(AssetId input) async {
-    var outputs = expectedOutputs(builder, input);
+    var outputs = allowedOutputs ?? expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
     var buildStep = new BuildStepImpl(input, outputs, reader, writer,
         rootPackage ?? input.package, resolvers, resourceManager);

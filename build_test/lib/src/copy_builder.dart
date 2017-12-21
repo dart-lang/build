@@ -30,6 +30,11 @@ class CopyBuilder implements Builder {
   /// are passed which do not match the input extension then [build] will throw.
   final String inputExtension;
 
+  /// Whether or not to check if outputs already exist before trying to write
+  /// them. This allows testing with the `allowDeclaredOutputConflicts` option
+  /// in `build_runner`.
+  final bool checkPreExistingOutputs;
+
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
   /// Events are added at the top of the [build] method.
@@ -42,7 +47,8 @@ class CopyBuilder implements Builder {
       this.copyFromAsset,
       this.touchAsset,
       this.inputExtension: '',
-      this.blockUntil});
+      this.blockUntil,
+      this.checkPreExistingOutputs: false});
 
   @override
   Future build(BuildStep buildStep) async {
@@ -59,6 +65,9 @@ class CopyBuilder implements Builder {
     var ids = new Iterable<int>.generate(numCopies)
         .map((copy) => _copiedAssetId(buildStep.inputId, copy));
     for (var id in ids) {
+      // Skip already existing outputs, if specified.
+      if (checkPreExistingOutputs && await buildStep.canRead(id)) continue;
+
       var toCopy = copyFromAsset ?? buildStep.inputId;
       // ignore: unawaited_futures
       buildStep.writeAsString(id, buildStep.readAsString(toCopy));
