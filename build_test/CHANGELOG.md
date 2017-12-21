@@ -1,4 +1,4 @@
-## 0.9.4-dev
+## 0.9.4
 
 - Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
   case where the reader should be kept up to date as assets are written through
