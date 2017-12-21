@@ -8,8 +8,8 @@
 - Add `TargetBuilderConfigDefaults` class for Builder authors to provide default
   configuration.
 - Add `InputSet` and change `sources` and `generate_for` to use it.
-- Remove `BuildTarget.isDefault`. The default will be determined by the target
-  which matches the package name.
+- Remove `BuildTarget.isDefault` and related config parsing. The default will be
+  determined by the target which matches the package name.
 - Normalize Target and Builder names so they are scoped to the package they are
   defined in.
 

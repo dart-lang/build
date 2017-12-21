@@ -127,6 +127,6 @@ builders:
 `build.yaml` configuration should be published to pub with the package and
 checked in to source control. Whenever a package is published with a
 `build.yaml` it should mark a `dependency` on `build_config` to ensure that
-the package consuming the config has a compatible versions. Breaking version
+the package consuming the config has a compatible version. Breaking version
 changes which do not impact the configuration file format will be clearly marked
 in the changelog.
