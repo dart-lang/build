@@ -92,7 +92,7 @@ class BuilderApplication {
   /// Whether to allow declaring outputs that conflict with pre-existing assets.
   ///
   /// This doesn't allow you to actually overwrite those assets, it just allows
-  /// the builder to decide not skip writing the file at build time.
+  /// the builder to decide to skip writing the file at build time.
   ///
   /// If a builder tries to overwrite another asset it will result in a build
   /// time error.
@@ -175,6 +175,8 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
                 targetSources: node.target.sources,
                 generateFor: generateFor,
                 isOptional: builderApplication.isOptional,
-                hideOutput: builderApplication.hideOutput);
+                hideOutput: builderApplication.hideOutput,
+                allowDeclaredOutputConflicts:
+                    builderApplication.allowDeclaredOutputConflicts);
           }));
 }
