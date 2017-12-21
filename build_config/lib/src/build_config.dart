@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import 'key_normalization.dart';
 import 'parse.dart';
 import 'pubspec.dart';
 
@@ -84,12 +85,14 @@ class BuildConfig {
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
+    final defaultTarget = '$packageName:$packageName';
     final buildTargets = {
-      packageName: new BuildTarget(
-        dependencies: dependencies,
-        isDefault: true,
-        name: packageName,
+      defaultTarget: new BuildTarget(
+        dependencies: dependencies
+            .map((dep) => normalizeTargetKeyUsage(dep, packageName))
+            .toSet(),
         package: packageName,
+        key: defaultTarget,
         sources: const InputSet(),
       )
     };
@@ -114,15 +117,14 @@ class BuildConfig {
     @required this.buildTargets,
     this.builderDefinitions: const {},
   });
-
-  BuildTarget get defaultBuildTarget =>
-      buildTargets.values.singleWhere((l) => l.isDefault);
 }
 
 class BuilderDefinition {
-  final String name;
-
+  /// The package which provides this Builder.
   final String package;
+
+  /// A unique key for this Builder in `'$package|$builder'` format.
+  final String key;
 
   /// The names of the top-level methods in [import] from args -> Builder.
   final List<String> builderFactories;
@@ -159,18 +161,31 @@ class BuilderDefinition {
   final TargetBuilderConfigDefaults defaults;
 
   BuilderDefinition({
-    this.builderFactories,
-    this.buildExtensions,
-    this.import,
-    this.name,
-    this.package,
-    this.target,
+    @required this.package,
+    @required this.key,
+    @required this.builderFactories,
+    @required this.buildExtensions,
+    @required this.import,
+    @required this.target,
     this.autoApply,
     this.requiredInputs,
     this.isOptional,
     this.buildTo,
     this.defaults,
   });
+
+  @override
+  String toString() => {
+        'target': target,
+        'autoApply': autoApply,
+        'import': import,
+        'builderFactories': builderFactories,
+        'buildExtensions': buildExtensions,
+        'requiredInputs': requiredInputs,
+        'isOptional': isOptional,
+        'buildTo': buildTo,
+        'defaults': defaults,
+      }.toString();
 }
 
 /// Default values that builder authors can specify when users don't fill in the
@@ -193,11 +208,12 @@ enum BuildTo {
 }
 
 class BuildTarget {
-  final Iterable<String> dependencies;
-
-  final String name;
+  final Set<String> dependencies;
 
   final String package;
+
+  /// A unique key for this target in `'$package:$target'` format.
+  final String key;
 
   final InputSet sources;
 
@@ -208,34 +224,20 @@ class BuildTarget {
   /// those which have configuration customized against the default.
   final Map<String, TargetBuilderConfig> builders;
 
-  /// Whether or not this is the default dart library for the package.
-  final bool isDefault;
-
   BuildTarget({
-    this.name,
-    this.package,
+    @required this.package,
+    @required this.key,
     this.sources: const InputSet(),
     this.dependencies,
     this.builders: const {},
-    this.isDefault: false,
   });
-
-  factory BuildTarget.asDefault(BuildTarget other) => new BuildTarget(
-        isDefault: true,
-        name: other.name,
-        package: other.package,
-        sources: other.sources,
-        dependencies: other.dependencies,
-        builders: other.builders,
-      );
 
   @override
   String toString() => {
         'package': package,
-        'name': name,
-        'isDefault': isDefault,
         'sources': sources,
-        'builders': builders
+        'dependencies': dependencies,
+        'builders': builders,
       }.toString();
 }
 

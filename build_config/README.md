@@ -6,17 +6,13 @@ file, which describes your configuration.
 ## Dividing a package into Build targets
 When a `Builder` should be applied to a subset of files in a package the package
 can be broken up into multiple 'targets'. Targets are configured in the
-`targets` section of the `build.yaml`. Each target may contain the following
-keys.
+`targets` section of the `build.yaml`. The key for each target makes up the name
+for that target. Targets can be referred to in
+`'$definingPackageName:$targetname'`. When the target name matches the package
+name it can also be referred to as just the package name. One target in every
+package _must_ use the package name so that consumers will use it by default.
+Each target may also contain the following keys.
 
-- **name**: String, Required. The name of the target within the package. Targets
-  can be referred to by `'$packageName:$targetName'` keys. If the target is the
-  default target for the package it can also be referred to as just
-  `'$packageName'`. Usually the 'default' target will use the package name as
-  the target name.
-- **default**: Boolean, Optional. Whether this is the default target within the
-  package. If there is only one target in the package this can be omitted,
-  otherwise exactly 1 target must specify `default: True`.
 - **sources**: List of Strings or Map, Optional. The set of files within the
   package which make up this target. Files are specified using glob syntax. If a
   List of Strings is used they are considered the 'include' globs. If a Map is
@@ -53,6 +49,10 @@ configuration may have the following keys:
 If users of your package need to apply some code generation to their package,
 then you can define `Builder`s and have those applied to packages with a
 dependency on yours.
+
+The key for a Builder will be normalized so that consumers of the builder can
+refer to it in `'$definingPackageName|$builderName'` format. If the builder name
+matches the package name it can also be referred to with just the package name.
 
 Exposed `Builder`s are configured in the `builders` section of the `build.yaml`.
 This is a map of builder names to configuration. Each builder config may contain
@@ -121,3 +121,12 @@ builders:
     build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
 ```
+
+# Publishing `build.yaml` files
+
+`build.yaml` configuration should be published to pub with the package and
+checked in to source control. Whenever a package is published with a
+`build.yaml` it should mark a `dependency` on `build_config` to ensure that
+the package consuming the config has a compatible version. Breaking version
+changes which do not impact the configuration file format will be clearly marked
+in the changelog.

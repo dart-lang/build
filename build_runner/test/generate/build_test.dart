@@ -59,9 +59,9 @@ void main() {
       test('optional build actions don\'t run if their outputs aren\'t read',
           () async {
         await testBuilders([
-          apply('', '', [(_) => new CopyBuilder(extension: '1')], toRoot(),
+          apply('', [(_) => new CopyBuilder(extension: '1')], toRoot(),
               isOptional: true),
-          apply('a', 'only_on_1', [(_) => new CopyBuilder(inputExtension: '1')],
+          apply('a|only_on_1', [(_) => new CopyBuilder(inputExtension: '1')],
               toRoot(),
               isOptional: true),
         ], {
@@ -71,16 +71,14 @@ void main() {
 
       test('optional build actions do run if their outputs are read', () async {
         await testBuilders([
-          apply('', '', [(_) => new CopyBuilder(extension: '1')], toRoot(),
+          apply('', [(_) => new CopyBuilder(extension: '1')], toRoot(),
               isOptional: true),
           apply(
-              '',
               '',
               [(_) => new CopyBuilder(inputExtension: '.1', extension: '2')],
               toRoot(),
               isOptional: true),
           apply(
-            '',
             '',
             [(_) => new CopyBuilder(inputExtension: '.2', extension: '3')],
             toRoot(),
@@ -97,10 +95,10 @@ void main() {
       test('multiple mixed build actions with custom build config', () async {
         var builders = [
           copyABuilderApplication,
-          apply('a', 'clone_txt', [(_) => new CopyBuilder(extension: 'clone')],
+          apply('a|clone_txt', [(_) => new CopyBuilder(extension: 'clone')],
               toRoot(),
               isOptional: true),
-          apply('a', 'copy_web_clones', [(_) => new CopyBuilder(numCopies: 2)],
+          apply('a|copy_web_clones', [(_) => new CopyBuilder(numCopies: 2)],
               toRoot()),
         ];
         var buildConfigs = parseBuildConfigs({
@@ -274,7 +272,6 @@ void main() {
         test('allows source conflicts', () async {
           var builderApplication = apply(
               '',
-              '',
               [
                 (_) => new CopyBuilder(
                     inputExtension: '.txt', extension: 'txt.copy')
@@ -290,7 +287,6 @@ void main() {
         test('allows source conflicts for some outputs and not others',
             () async {
           var builderApplication = apply(
-              '',
               '',
               [
                 (_) => new CopyBuilder(
@@ -310,7 +306,6 @@ void main() {
         test('throws if you try to actually overwrite a source', () async {
           var builderApplication = apply(
               '',
-              '',
               [
                 (_) => new CopyBuilder(
                     inputExtension: '.txt', extension: 'txt.copy', numCopies: 2)
@@ -327,7 +322,6 @@ void main() {
 
         test('doesnt allow conflicts with generated sources', () async {
           var builderApplication = apply(
-              '',
               '',
               [
                 (_) => new CopyBuilder(
@@ -351,7 +345,7 @@ void main() {
       });
       expect(
           testBuilders([
-            apply('', '', [(_) => new CopyBuilder()], toPackage('b'))
+            apply('', [(_) => new CopyBuilder()], toPackage('b'))
           ], {
             'b|lib/b.txt': 'b'
           }, packageGraph: packageGraph),
@@ -370,7 +364,7 @@ void main() {
       test('can output files in non-root packages', () async {
         await testBuilders(
             [
-              apply('', '', [(_) => new CopyBuilder()], toPackage('b'),
+              apply('', [(_) => new CopyBuilder()], toPackage('b'),
                   hideOutput: true),
             ],
             {'b|lib/b.txt': 'b'},
@@ -383,8 +377,8 @@ void main() {
       test('handles mixed hidden and non-hidden outputs', () async {
         await testBuilders(
             [
-              apply('', '', [(_) => new CopyBuilder()], toRoot()),
-              apply('', '', [(_) => new CopyBuilder(extension: 'hiddencopy')],
+              apply('', [(_) => new CopyBuilder()], toRoot()),
+              apply('', [(_) => new CopyBuilder(extension: 'hiddencopy')],
                   toRoot(),
                   hideOutput: true),
             ],
@@ -407,7 +401,7 @@ void main() {
           };
         await testBuilders(
             [
-              apply('', '', [(_) => new CopyBuilder()], toPackage('b'),
+              apply('', [(_) => new CopyBuilder()], toPackage('b'),
                   hideOutput: true)
             ],
             {
@@ -423,7 +417,6 @@ void main() {
     test('can read files from external packages', () async {
       var builders = [
         apply(
-            '',
             '',
             [(_) => new CopyBuilder(touchAsset: makeAssetId('b|lib/b.txt'))],
             toRoot())
@@ -443,8 +436,8 @@ void main() {
       });
 
       var builders = [
-        apply('', '', [(_) => globBuilder], toRoot(), hideOutput: true),
-        apply('', '', [(_) => globBuilder], toPackage('b'), hideOutput: true),
+        apply('', [(_) => globBuilder], toRoot(), hideOutput: true),
+        apply('', [(_) => globBuilder], toPackage('b'), hideOutput: true),
       ];
 
       await testBuilders(
@@ -496,7 +489,6 @@ void main() {
       await testBuilders([
         apply(
             '',
-            '',
             [
               (_) => new CopyBuilder(
                   copyFromAsset: makeAssetId('a|.dart_tool/any_file'))
@@ -519,10 +511,7 @@ void main() {
             throw 'Should not delete outside of package:a';
           }
         };
-      await testBuilders(
-          [
-            apply('', '', [(_) => new CopyBuilder()], toRoot())
-          ],
+      await testBuilders([applyToRoot(new CopyBuilder())],
           {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b', 'b|lib/b.txt.copy': 'b'},
           packageGraph: packageGraph,
           writer: writer,
@@ -745,7 +734,7 @@ void main() {
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
       var builders = [
-        apply('', '', [(_) => new CopyBuilder()], toRoot(), hideOutput: true)
+        apply('', [(_) => new CopyBuilder()], toRoot(), hideOutput: true)
       ];
 
       // Initial build.

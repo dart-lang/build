@@ -108,8 +108,7 @@ Expression _applyBuilderWithFilter(
             .constInstance([], inputSetArgs);
   }
   return refer('apply', 'package:build_runner/build_runner.dart').call([
-    literalString(definition.package),
-    literalString(definition.name),
+    literalString(definition.key),
     literalList(definition.builderFactories
         .map((f) => refer(f, definition.import))
         .toList()),

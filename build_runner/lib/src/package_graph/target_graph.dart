@@ -26,7 +26,7 @@ class TargetGraph {
       final nodes = config.buildTargets.values
           .map((target) => new TargetNode(target, package));
       for (final node in nodes) {
-        modules[node.target.name] = node;
+        modules[node.target.key] = node;
       }
     }
     return new TargetGraph._(modules);
@@ -39,7 +39,7 @@ class TargetNode {
   TargetNode(this.target, this.package);
 
   @override
-  String toString() => '${package.name}:${target.name}';
+  String toString() => target.key;
 }
 
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
