@@ -6,11 +6,16 @@ import '../builder/builder.dart';
 
 /// Collects the expected AssetIds created by [builder] when given [input] based
 /// on the extension configuration.
-Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) {
+///
+/// If [allowedOutputsFilter] is provided then the allowed outputs will be
+/// filtered using that function.
+Iterable<AssetId> expectedOutputs(Builder builder, AssetId input,
+    {bool allowedOutputsFilter(AssetId output)}) {
   var matchingExtensions =
       builder.buildExtensions.keys.where((e) => input.path.endsWith(e));
   return matchingExtensions
-      .expand((e) => _replaceExtensions(input, e, builder.buildExtensions[e]));
+      .expand((e) => _replaceExtensions(input, e, builder.buildExtensions[e]))
+      .where(allowedOutputsFilter ?? (_) => true);
 }
 
 Iterable<AssetId> _replaceExtensions(

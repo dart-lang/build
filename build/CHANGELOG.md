@@ -1,7 +1,7 @@
 ## 0.11.3-dev
 
-- `runBuilder` now has an optional `allowedOutputs` parameter which can be used
-  to override the default allowed outputs.
+- `runBuilder` and `expectedOutputs` now have an optional `allowedOutputsFilter`
+  parameter which can be used to filter the allowed outputs.
 
 ## 0.11.2
 

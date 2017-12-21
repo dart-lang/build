@@ -7,35 +7,28 @@ import 'package:build/build.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../generate/phase.dart';
 
-/// Collects the expected AssetIds created by [action] when given [input] based
-/// on the extension configuration.
+/// Returns whether [output] conflicts with an existing asset.
 ///
-/// If `action.allowDeclaredOutputConflicts` then this filters the regular
-/// [expectedOutputs] to not include pre-existing assets using the [graph].
-List<AssetId> expectedActualOutputs(
-    BuildAction action, AssetId input, AssetGraph graph, int phaseNumber) {
-  // The expected outputs, not taking into account pre-existing assets.
-  var allExpectedOutputs = expectedOutputs(action.builder, input);
+/// Returns `true` if [output] is not in the graph, or is a
+/// generated asset with a matching [phaseNumber].
+///
+/// Returns `false` if [output] is an existing source asset.
+///
+/// Throws a [DuplicateAssetNodeException] if [output] is a generated asset with
+/// a different phase number;
+bool shouldOutputForPhase(AssetId output, int phaseNumber, AssetGraph graph) {
+  if (!graph.contains(output)) return true;
 
-  if (!action.allowDeclaredOutputConflicts) {
-    return allExpectedOutputs.toList();
+  var node = graph.get(output);
+  if (!node.isGenerated) {
+    return false;
+  } else if ((node as GeneratedAssetNode).phaseNumber == phaseNumber) {
+    // Only allow declaring conflicting outputs with source nodes, just
+    // filter them from the list here.
+    return true;
   } else {
-    return allExpectedOutputs.where((outputId) {
-      if (!graph.contains(outputId)) return true;
-
-      var node = graph.get(outputId);
-      if (node is GeneratedAssetNode && node.phaseNumber == phaseNumber) {
-        return true;
-      } else if (!node.isGenerated) {
-        // Only allow declaring conflicting outputs with source nodes, just
-        // filter them from the list here.
-        return false;
-      } else {
-        // Throw an exception for duplicate generated nodes.
-        throw new DuplicateAssetNodeException(node);
-      }
-    }).toList();
+    // Throw an exception for duplicate generated nodes.
+    throw new DuplicateAssetNodeException(node);
   }
 }

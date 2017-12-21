@@ -270,8 +270,9 @@ class BuildImpl {
 
   Future<Iterable<AssetId>> _runForInput(int phaseNumber, Builder builder,
       AssetId input, ResourceManager resourceManager) async {
-    var builderOutputs = expectedActualOutputs(
-        _buildActions[phaseNumber], input, _assetGraph, phaseNumber);
+    var builderOutputs = expectedOutputs(builder, input,
+        allowedOutputsFilter: (output) =>
+            shouldOutputForPhase(output, phaseNumber, _assetGraph));
 
     // Add `builderOutputs` to the primary outputs of the input.
     var inputNode = _assetGraph.get(input);
@@ -307,7 +308,8 @@ class BuildImpl {
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
         logger: logger,
         resourceManager: resourceManager,
-        allowedOutputs: builderOutputs);
+        allowedOutputsFilter: (output) =>
+            shouldOutputForPhase(output, phaseNumber, _assetGraph));
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.

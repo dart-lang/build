@@ -328,7 +328,9 @@ class AssetGraph {
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
 
-        var outputs = expectedActualOutputs(action, input, this, phase);
+        var outputs = expectedOutputs(action.builder, input,
+            allowedOutputsFilter: (output) =>
+                shouldOutputForPhase(output, phase, this));
         phaseOutputs.addAll(outputs);
         var node = get(input);
         node.primaryOutputs.addAll(outputs);
