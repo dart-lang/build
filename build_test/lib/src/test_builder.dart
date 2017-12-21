@@ -50,6 +50,8 @@ void checkOutputs(
           reason: 'Builder failed to write asset $assetId');
       modifiableActualAssets.remove(assetId);
       var actual = writer.assets[mapAssetIds(assetId)];
+      expect(actual, isNotNull,
+          reason: 'Missing ${mapAssetIds(assetId)} got ${writer.assets}');
       Object expected;
       if (contentsMatcher is String) {
         expected = UTF8.decode(actual);

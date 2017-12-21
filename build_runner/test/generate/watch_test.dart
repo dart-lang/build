@@ -235,6 +235,186 @@ void main() {
         result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
       });
+
+      group('with allowDeclaredOutputConflicts', () {
+        test('can replace synthetic nodes', () async {
+          var writer = new InMemoryRunnerAssetWriter();
+          var builderApplications = [
+            apply(
+                '',
+                [
+                  (_) => new CopyBuilder(
+                      inputExtension: '.txt', extension: 'txt.copy'),
+                ],
+                toRoot(),
+                allowDeclaredOutputConflicts: true,
+                hideOutput: true),
+            apply(
+                '',
+                [
+                  (_) => new CopyBuilder(
+                      inputExtension: '.copy',
+                      extension: 'copy.clone',
+                      touchAsset: makeAssetId('a|web/a.txt.copy')),
+                ],
+                toRoot()),
+          ];
+          var buildState = await startWatch(
+              builderApplications,
+              {
+                'a|web/b.txt': 'b',
+              },
+              writer);
+          var results = new StreamQueue(buildState.buildResults);
+
+          var result = await results.next;
+          checkBuild(result,
+              outputs: {
+                r'$$a|web/b.txt.copy': 'b',
+                r'a|web/b.txt.copy.clone': 'b',
+              },
+              writer: writer);
+
+          {
+            // Should see a synthetic node in the asset graph
+            var serialized = JSON.decode(UTF8.decode(
+                writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
+            var cachedGraph = new AssetGraph.deserialize(serialized);
+            expect(cachedGraph.get(makeAssetId('a|web/a.txt.copy')),
+                new isInstanceOf<SyntheticSourceAssetNode>());
+          }
+
+          await writer.writeAsString(makeAssetId('a|web/a.txt'), 'a');
+          FakeWatcher.notifyWatchers(new WatchEvent(
+              ChangeType.ADD, path.absolute('a', 'web', 'a.txt')));
+
+          result = await results.next;
+          checkBuild(result,
+              outputs: {
+                r'$$a|web/a.txt.copy': 'a',
+                r'a|web/a.txt.copy.clone': 'a',
+              },
+              writer: writer);
+
+          {
+            // Should now see a generated node in the asset graph
+            var serialized = JSON.decode(UTF8.decode(
+                writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
+            var cachedGraph = new AssetGraph.deserialize(serialized);
+            expect(cachedGraph.get(makeAssetId('a|web/a.txt.copy')),
+                new isInstanceOf<GeneratedAssetNode>());
+          }
+        });
+
+        test('can replace source nodes', () async {
+          var writer = new InMemoryRunnerAssetWriter();
+          var builderApplications = [
+            apply(
+                '',
+                [
+                  (_) => new CopyBuilder(
+                      inputExtension: '.txt', extension: 'txt.copy'),
+                ],
+                toRoot(),
+                allowDeclaredOutputConflicts: true,
+                hideOutput: true),
+          ];
+          var buildState = await startWatch(
+              builderApplications,
+              {
+                'a|web/a.txt': 'a',
+                'a|web/a.txt.copy': 'b',
+              },
+              writer);
+          var results = new StreamQueue(buildState.buildResults);
+
+          var result = await results.next;
+          checkBuild(result, outputs: {}, writer: writer);
+
+          {
+            // Should see a source node in the asset graph
+            var serialized = JSON.decode(UTF8.decode(
+                writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
+            var cachedGraph = new AssetGraph.deserialize(serialized);
+            expect(cachedGraph.get(makeAssetId('a|web/a.txt.copy')),
+                new isInstanceOf<SourceAssetNode>());
+          }
+
+          await writer.delete(makeAssetId('a|web/a.txt.copy'));
+          FakeWatcher.notifyWatchers(new WatchEvent(
+              ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt.copy')));
+
+          result = await results.next;
+          checkBuild(result,
+              outputs: {
+                r'$$a|web/a.txt.copy': 'a',
+              },
+              writer: writer);
+
+          {
+            // Should now see a generated node in the asset graph
+            var serialized = JSON.decode(UTF8.decode(
+                writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
+            var cachedGraph = new AssetGraph.deserialize(serialized);
+            expect(cachedGraph.get(makeAssetId('a|web/a.txt.copy')),
+                new isInstanceOf<GeneratedAssetNode>());
+          }
+        });
+
+        test('can be replaced by source nodes', () async {
+          var writer = new InMemoryRunnerAssetWriter();
+          var builderApplications = [
+            apply(
+                '',
+                [
+                  (_) => new CopyBuilder(
+                      inputExtension: '.txt', extension: 'txt.copy'),
+                ],
+                toRoot(),
+                allowDeclaredOutputConflicts: true,
+                hideOutput: true),
+          ];
+          var buildState = await startWatch(
+              builderApplications,
+              {
+                'a|web/a.txt': 'a',
+              },
+              writer);
+          var results = new StreamQueue(buildState.buildResults);
+
+          var result = await results.next;
+          checkBuild(result,
+              outputs: {
+                r'$$a|web/a.txt.copy': 'a',
+              },
+              writer: writer);
+
+          {
+            // Should see a generated node in the asset graph
+            var serialized = JSON.decode(UTF8.decode(
+                writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
+            var cachedGraph = new AssetGraph.deserialize(serialized);
+            expect(cachedGraph.get(makeAssetId('a|web/a.txt.copy')),
+                new isInstanceOf<GeneratedAssetNode>());
+          }
+
+          await writer.writeAsString(makeAssetId('a|web/a.txt.copy'), 'b');
+          FakeWatcher.notifyWatchers(new WatchEvent(
+              ChangeType.ADD, path.absolute('a', 'web', 'a.txt.copy')));
+
+          result = await results.next;
+          checkBuild(result, outputs: {}, writer: writer);
+
+          {
+            // Should now see a source node in the asset graph
+            var serialized = JSON.decode(UTF8.decode(
+                writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
+            var cachedGraph = new AssetGraph.deserialize(serialized);
+            expect(cachedGraph.get(makeAssetId('a|web/a.txt.copy')),
+                new isInstanceOf<SourceAssetNode>());
+          }
+        });
+      });
     });
 
     group('multiple phases', () {

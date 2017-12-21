@@ -323,23 +323,23 @@ class AssetGraph {
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
       var inputs = allInputs.where(action.matches).toList();
+      var outputsFilter = action.allowDeclaredOutputConflicts
+          ? (AssetId output) => shouldOutputForPhase(output, phase, this)
+          : null;
       for (var input in inputs) {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
 
         var outputs = expectedOutputs(action.builder, input,
-            allowedOutputsFilter: (output) =>
-                shouldOutputForPhase(output, phase, this));
+            allowedOutputsFilter: outputsFilter);
         phaseOutputs.addAll(outputs);
         var node = get(input);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
         allInputs.removeAll(_addGeneratedOutputs(
             outputs, phase, builderOptionsNode,
-            primaryInput: input,
-            isHidden: action.hideOutput,
-            allowDeclaredOutputConflicts: action.allowDeclaredOutputConflicts));
+            primaryInput: input, isHidden: action.hideOutput));
       }
       allInputs.addAll(phaseOutputs);
     }
@@ -355,9 +355,7 @@ class AssetGraph {
   /// removed from the graph.
   Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       BuilderOptionsAssetNode builderOptionsNode,
-      {AssetId primaryInput,
-      @required bool isHidden,
-      @required bool allowDeclaredOutputConflicts}) {
+      {AssetId primaryInput, @required bool isHidden}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
       // When any outputs aren't hidden we can pick up old generated outputs as
@@ -365,9 +363,7 @@ class AssetGraph {
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
         var node = get(output);
-        if (allowDeclaredOutputConflicts) {
-          continue;
-        } else if (node is GeneratedAssetNode) {
+        if (node is GeneratedAssetNode) {
           throw new DuplicateAssetNodeException(node);
         } else {
           _removeRecursive(output, removedIds: removed);

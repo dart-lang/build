@@ -129,7 +129,7 @@ void checkBuild(BuildResult result,
     InMemoryAssetWriter writer,
     BuildStatus status = BuildStatus.success,
     Matcher exceptionMatcher,
-    String rootPackage}) {
+    String rootPackage: 'a'}) {
   expect(result.status, status, reason: '$result');
   if (exceptionMatcher != null) {
     expect(result.exception, exceptionMatcher);
