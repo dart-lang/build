@@ -27,7 +27,6 @@ tools such as [Bazel][].
 
 * [Installation](#installation)
 * [Usage](#usage)
-  * [Configuring](#configuring)
   * [Inputs](#inputs)
   * [Outputs](#outputs)
   * [Source control](#source-control)
@@ -48,99 +47,15 @@ dev_dependencies:
 
 ## Usage
 
-To run a build, write a simple script to do the work. Every package which
-*uses* a [`Builder`][builder] must have it's own script, they cannot be reused
-from other packages. Often a package which defines a [`Builder`][builder] will
-have an example you can reference, but a unique script must be written for the
-consuming packages as well.
+When the packages providing `Builder`s are configured with a `build.yaml` file
+they are designed to be consumed using an generated build script. Most builders
+should need little or no configuration, see the documentation provided with the
+Builder to decide whether the build needs to be customized. If it does you may
+also provide a `build.yaml` with the configuration. See the
+`package:build_config` README for more information on this file.
 
-Your script should use one of the two functions defined by this library:
-
-- [**`build`**][build_fn]: Run a single build and exit.
-- [**`watch`**][watch_fn]: Continuously run builds as you edit files.
-
-### Configuring
-
-Both [`build`][build_fn] and [`watch`][watch_fn] have a single required
-argument, a `List<BuildAction>` - each of these [`BuildAction`][build_action]s
-may run in parallel, but they may only read outputs from steps _earlier_ in the
-list.
-
-A [`BuildAction`][build_action] is a combination of a single
-[`Builder`][builder], which actually generates outputs, and a single
-[`InputSet`][input_set] , which determines what the primary inputs to that
-builder will be.
-
-Lets look at a very simple example, with a single `BuildAction`. You can ignore
-the `CopyBuilder` for now, just know that its a `Builder` which copies files:
-
-```dart
-main() async {
-  await build([
-    new BuildAction(
-      new CopyBuilder('.copy'), 
-      'my_package', 
-      inputs: ['lib/*.dart'],
-    ),
-  ]);
-}
-```
-
-> Copies all `*.dart` files under `lib` to a corresponding `*.dart.copy`.
-
-Every time you run a `build`, `build_runner` checks for any changes to the
-inputs specified, and reruns the `CopyBuilder` for the inputs that actually
-changed.
-
-A build with multiple steps may look like:
-
-```dart
-main() async {
-  await build([
-    new BuildAction(
-      new CopyBuilder('.copy1'), 
-      'my_package', 
-      inputs: ['lib/*.dart'],
-    ),
-    new BuildAction(
-      new CopyBuilder('.copy2'), 
-      'my_package', 
-      inputs: ['lib/*.dart'],
-    ),
-  ]);
-}
-```
-
-> Makes _two_ copies of every `*.dart` file, a `.copy1` and `.copy2`.
-
-Let's say, however, you want to use the _previous_ output as an input to the
-next build action - for example, you want to convert `.md` (Markdown) to
-`.html`, and then convert `.html` into a `.png` (screenshot of the page):
-
-```dart
-main() async {
-  await build([
-    new BuildAction(
-      new MarkdownToHtmlBuilder(), 
-      'my_package', 
-      inputs: ['web/**.md'],
-    ),
-    new BuildAction(
-      new ChromeScreenshotBuilder(), 
-      'my_package', 
-      inputs: ['web/**.html'],
-    ),
-  ]);
-}
-```
-
-> This time, all the `*.html` files will be created first, and since the next
-> `BuildAction` is waiting for `*.html` inputs, it will _wait_ for them to be
-> created, and then create the `*.png` (screenshot) files.
-
-**NOTE**: Any time you change your build script (or any of its dependencies),
-the next build will be a full rebuild. This is because the system has no way
-of knowing how that change may have affected the outputs.
+Run `pub run build_runner serve` to start up a development server. To have web
+code compiled with DDC add a `dev_dependency` on `build_compilers`.
 
 ### Inputs
 
@@ -153,9 +68,6 @@ because all matching files will be checked against a `Builder`'s
 [`buildExtensions`][build_extensions] - see [outputs](#outputs) for more
 information.
 
-> Future versions of `build_runner` may aid in automatically generating
-> `InputSet`s based on the builders being used! See [issue #353][issue_353].
-
 ### Outputs
 
 * You may output files anywhere in the current package.
@@ -163,9 +75,10 @@ information.
 > **NOTE**: When a `BuilderApplication` specifies `hideOutput: true` it may
 > output under the `lib` folder of _any_ package you depend on.
 
-* You are not allowed to overwrite existing files, only create new ones.
+* Builders are not allowed to overwrite existing files, only create new ones.
 * Outputs from previous builds will not be treated as inputs to later ones.
-* You may use a previous `BuildAction`'s outputs as an input to a later action.
+* You may use a previous `BuilderApplications`'s outputs as an input to a later
+  action.
 
 ### Source control
 
@@ -194,6 +107,39 @@ you can type `n` to abandon the build without taking any action.
 In general generated files **should** be published with your package, but this
 may not always be the case. Some `Builder`s may provide a recommendation for
 this as well.
+
+
+## Legacy Usage
+
+If the generated script does not do everything you need it's possible to
+manually write one. With this approach every package which *uses* a
+[`Builder`][builder] must have it's own script, they cannot be reused
+from other packages. A package which defines a [`Builder`][builder] may have an
+example you can reference, but a unique script must be written for the consuming
+packages as well. You can reference the generated script at
+`.dart_tool/build/entrypoint/build.dart` for an example.
+
+Your script should use one of the following functions defined by this library:
+
+- [**`run`**][run_fn]: Use the same argument parsing as the generated approach.
+- [**`build`**][build_fn]: Run a single build and exit.
+- [**`watch`**][watch_fn]: Continuously run builds as you edit files.
+
+### Configuring
+
+[`run`][run_fn], [`build`][build_fn], and [`watch`][watch_fn] have a required
+argument which is a `List<BuilderApplication>`. These correspond to the
+`BuilderDefinition` class from `package:build_config`. See `apply` and
+`applyToRoot` to create instances of this class. These will be translated into
+actions by crawling through dependencies. The order of this list is important.
+Each Builder may read the generated outputs of any Builder that ran on a package
+earlier in the dependency graph, but for the package it is running on it may
+only read the generated outputs from Builders earlier in the list of
+`BuilderApplication`s.
+
+**NOTE**: Any time you change your build script (or any of its dependencies),
+the next build will be a full rebuild. This is because the system has no way
+of knowing how that change may have affected the outputs.
 
 ## Contributing
 
@@ -233,17 +179,14 @@ $ pub run test
 
 [Bazel]: https://bazel.build/
 [`package:build`]: https://pub.dartlang.org/packages/build
-[`shelf`]: https://pub.dartlang.org/packages/shelf
 [analysis_options]: https://github.com/dart-lang/build/blob/master/analysis_options.yaml
 
 [builder]: https://www.dartdocs.org/documentation/build/latest/build/Builder-class.html
+[run_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/run.html
 [build_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/build.html
 [watch_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/watch.html
-[build_action]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/BuildAction-class.html
-[input_set]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/InputSet-class.html
+[builder_application]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/BuilderApplication-class.html
 [build_extensions]: https://www.dartdocs.org/documentation/build/latest/build/Builder/buildExtensions.html
-
-[issue_353]: https://github.com/dart-lang/build/issues/353
 
 [travis]: https://travis-ci.org/
 [dev_sdk]: https://www.dartlang.org/install

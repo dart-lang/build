@@ -21,6 +21,8 @@
 
 - Removed `BuildAction`. Changed `build` and `watch` to take a
   `List<BuilderApplication>`. See `apply` and `applyToRoot` to set these up.
+- Changed `apply` to take a single String argument - a Builder key from
+  `package:build_config` rather than a separate package and builder name.
 - There is now a whitelist of top level directories that will be used as a part
   of the build, and other files will be ignored. For now those directories
   include 'benchmark', 'bin', 'example', 'lib', 'test', 'tool', and 'web'.
