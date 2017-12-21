@@ -1,6 +1,11 @@
 # Created with https://github.com/dart-lang/mono_repo
 language: dart
 
+# https://docs.travis-ci.com/user/multi-os/
+os:
+  - linux
+  - osx
+
 # Handcoded, need to update mono_repo to be able to include this. Based on
 # https://github.com/travis-ci/travis-ci/issues/6683#issuecomment-251938932.
 sudo: required
@@ -9,6 +14,9 @@ dist: trusty
 dart:
   - dev
   - stable
+
+addons:
+  chrome: stable
 
 env:
   - PKG=build TASK=dartanalyzer
@@ -37,6 +45,41 @@ env:
 
 matrix:
   exclude:
+    # Exclude re-running dartanalyzer/dartfmt on OSX.
+    - os: osx
+      env: PKG=build TASK=dartfmt
+    - os: osx
+      env: PKG=build TASK=dartanalyzer
+    - os: osx
+      env: PKG=build_barback TASK=dartfmt
+    - os: osx
+      env: PKG=build_barback TASK=dartanalyzer
+    - os: osx
+      env: PKG=build_compilers TASK=dartfmt
+    - os: osx
+      env: PKG=build_compilers TASK=dartanalyzer
+    - os: osx
+      env: PKG=build_config TASK=dartfmt
+    - os: osx
+      env: PKG=build_config TASK=dartanalyzer
+    - os: osx
+      env: PKG=build_runner TASK=dartfmt
+    - os: osx
+      env: PKG=build_runner TASK=dartanalyzer
+    - os: osx
+      env: PKG=build_test TASK=dartfmt
+    - os: osx
+      env: PKG=build_test TASK=dartanalyzer
+    - os: osx
+      env: PKG=e2e_example TASK=dartfmt
+    - os: osx
+      env: PKG=e2e_example TASK=dartanalyzer
+    - os: osx
+      env: PKG=scratch_space TASK=dartfmt
+    - os: osx
+      env: PKG=scratch_space TASK=dartanalyzer
+
+    # Exclude re-running dartanalyzer/dartfmt on stable.
     - dart: stable
       env: PKG=build TASK=dartfmt
     - dart: stable
@@ -69,15 +112,3 @@ branches:
 cache:
  directories:
    - $HOME/.pub-cache
-
-# Handcoded, need to update mono_repo to be able to include this. Based on
-# https://github.com/travis-ci/travis-ci/issues/6683#issuecomment-251938932.
-before_install:
- - export CHROME_BIN=/usr/bin/google-chrome
- - export DISPLAY=:99.0
- - sh -e /etc/init.d/xvfb start
- - sudo apt-get update
- - sudo apt-get install -y libappindicator1 fonts-liberation
- - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
- - sudo dpkg -i google-chrome*.deb
- - "t=0; until (xdpyinfo -display :99 &> /dev/null || test $t -gt 10); do sleep 1; let t=$t+1; done"
