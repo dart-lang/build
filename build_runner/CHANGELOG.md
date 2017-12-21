@@ -16,6 +16,14 @@
     need additional placeholders.
   - Note that these placeholders are not real assets and attempting to read them
     will result in an `AssetNotFoundException`.
+- Added `allowDeclaredOutputConflicts` field to `BuilderApplication`. This
+  allows output extensions to conflict with source assets when specified.
+  - When using this option `Builder`s should use `canRead` to check if an asset
+    already exists before actually writing outputs. Failing to do so will result
+    in a build error if the asset exists.
+  - You are only allowed to have overlapping declared outputs with source
+    assets, not other generated assets (simply due to complexity in supporting
+    that).
 
 ### Breaking Changes
 
