@@ -25,7 +25,7 @@ List<BuilderDefinition> _findOrder(Iterable<BuilderDefinition> builders) {
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
       builders.where((child) => _hasInputDependency(parent, child));
   var components = stronglyConnectedComponents<String, BuilderDefinition>(
-      builders, _builderKey, dependencies);
+      builders, (b) => b.key, dependencies);
   return components.map((component) {
     if (component.length > 1) {
       throw new ArgumentError('Required input cycle for ${component.toList()}');
@@ -41,5 +41,3 @@ bool _hasInputDependency(BuilderDefinition parent, BuilderDefinition child) {
   return parent.requiredInputs
       .any((input) => childOutputs.any((output) => output.endsWith(input)));
 }
-
-String _builderKey(BuilderDefinition b) => '${b.package}|${b.name}';

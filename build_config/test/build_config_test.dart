@@ -11,30 +11,29 @@ void main() {
   test('build.yaml can be parsed', () {
     var buildConfig = new BuildConfig.parse('example', ['a', 'b'], buildYaml);
     expectBuildTargets(buildConfig.buildTargets, {
-      'a': new BuildTarget(
+      'example:a': new BuildTarget(
         builders: {
           'b|b': new TargetBuilderConfig(
               generateFor: new InputSet(include: ['lib/a.dart'])),
-          'a|h': new TargetBuilderConfig(
+          'example|h': new TargetBuilderConfig(
               options: new BuilderOptions({'foo': 'bar'})),
         },
-        dependencies: ['b', 'c:d'],
-        name: 'a',
+        dependencies: ['b:b', 'c:d'].toSet(),
         package: 'example',
+        key: 'example:a',
         sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
-      'e': new BuildTarget(
-        dependencies: ['f', ':a'],
-        isDefault: true,
-        name: 'e',
+      'example:example': new BuildTarget(
+        dependencies: ['f:f', 'example:a'].toSet(),
         package: 'example',
+        key: 'example:example',
         sources: new InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
             exclude: ['lib/src/e/g.dart']),
       )
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'h': new BuilderDefinition(
+      'example|h': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.dependents,
         isOptional: true,
@@ -46,9 +45,9 @@ void main() {
             '.json',
           ]
         },
-        name: 'h',
         package: 'example',
-        target: 'e',
+        key: 'example|h',
+        target: 'example:example',
         requiredInputs: ['.dart'],
         defaults: new TargetBuilderConfigDefaults(
             generateFor: new InputSet(include: ['lib/**'])),
@@ -60,22 +59,20 @@ void main() {
     var buildConfig =
         new BuildConfig.parse('example', ['a', 'b'], buildYamlNoTargets);
     expectBuildTargets(buildConfig.buildTargets, {
-      'example': new BuildTarget(
-        dependencies: ['a', 'b'],
-        isDefault: true,
-        name: 'example',
+      'example:example': new BuildTarget(
+        dependencies: ['a:a', 'b:b'].toSet(),
         package: 'example',
+        key: 'example:example',
         sources: new InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'a': new BuilderDefinition(
+      'example|a': new BuilderDefinition(
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.none,
         isOptional: false,
         buildTo: BuildTo.source,
         import: 'package:example/builder.dart',
-        name: 'a',
         buildExtensions: {
           '.dart': [
             '.g.dart',
@@ -83,7 +80,8 @@ void main() {
           ]
         },
         package: 'example',
-        target: 'example',
+        key: 'example|a',
+        target: 'example:example',
         requiredInputs: const [],
       ),
     });
@@ -94,7 +92,7 @@ var buildYaml = '''
 targets:
   a:
     builders:
-      a|h:
+      "|h":
         options:
           foo: bar
       b|b:
@@ -106,8 +104,7 @@ targets:
     sources:
       - "lib/a.dart"
       - "lib/src/a/**"
-  e:
-    default: true
+  example:
     dependencies:
       - f
       - :a
@@ -122,7 +119,7 @@ builders:
     builder_factories: ["createBuilder"]
     import: package:example/e.dart
     build_extensions: {".dart": [".g.dart", ".json"]}
-    target: e
+    target: ":example"
     auto_apply: dependents
     required_inputs: [".dart"]
     is_optional: True
@@ -165,7 +162,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       item.isOptional == _expected.isOptional &&
       item.buildTo == _expected.buildTo &&
       item.import == _expected.import &&
-      item.name == _expected.name &&
+      item.key == _expected.key &&
       item.package == _expected.package &&
       item.target == _expected.target;
 
@@ -189,9 +186,7 @@ class _BuildTargetMatcher extends Matcher {
   @override
   bool matches(item, _) =>
       item is BuildTarget &&
-      item.name == _expected.name &&
       item.package == _expected.package &&
-      item.isDefault == _expected.isDefault &&
       new _BuilderConfigsMatcher(_expected.builders)
           .matches(item.builders, _) &&
       equals(_expected.dependencies).matches(item.dependencies, _) &&

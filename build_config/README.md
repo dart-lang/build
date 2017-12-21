@@ -10,13 +10,10 @@ can be broken up into multiple 'targets'. Targets are configured in the
 keys.
 
 - **name**: String, Required. The name of the target within the package. Targets
-  can be referred to by `'$packageName:$targetName'` keys. If the target is the
-  default target for the package it can also be referred to as just
-  `'$packageName'`. Usually the 'default' target will use the package name as
-  the target name.
-- **default**: Boolean, Optional. Whether this is the default target within the
-  package. If there is only one target in the package this can be omitted,
-  otherwise exactly 1 target must specify `default: True`.
+  can be referred to by `'$packageName:$targetName'` keys. If the target has the
+  same name as the package it can also be referred to as `'$packageName'`, at
+  least one target must use the package name so that other packages which depend
+  on this one can pick it up as a dependency.
 - **sources**: List of Strings or Map, Optional. The set of files within the
   package which make up this target. Files are specified using glob syntax. If a
   List of Strings is used they are considered the 'include' globs. If a Map is

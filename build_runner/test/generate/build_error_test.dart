@@ -16,8 +16,7 @@ void main() {
     try {
       await testBuilders(
         [
-          apply(
-              '', '', [(_) => new CopyBuilder()], toPackage('not_root_package'))
+          apply('', [(_) => new CopyBuilder()], toPackage('not_root_package'))
         ],
         {},
         packageGraph: buildPackageGraph({
@@ -38,9 +37,7 @@ void main() {
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
     expect(
       testBuilders(
-        [
-          apply('', '', [(_) => new CopyBuilder()], toRoot())
-        ],
+        [applyToRoot(new CopyBuilder())],
         {
           'a|lib/a.dart': '',
           'a|lib/a.dart.copy': '',
