@@ -9,6 +9,7 @@ import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/asset_graph/exceptions.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 
@@ -265,6 +266,75 @@ void main() {
         // Now let the build finish.
         blockingCompleter.complete();
         await done;
+      });
+
+      group('allowDeclaredOutputConflicts', () {
+        test('allows source conflicts', () async {
+          var builderApplication = apply(
+              '',
+              [
+                (_) => new CopyBuilder(
+                    inputExtension: '.txt', extension: 'txt.copy')
+              ],
+              toRoot(),
+              allowDeclaredOutputConflicts: true,
+              hideOutput: true);
+          await testBuilders([builderApplication],
+              {'a|web/a.txt': 'a', 'a|web/b.txt': 'b', 'a|web/b.txt.copy': 'c'},
+              outputs: {r'$$a|web/a.txt.copy': 'a'});
+        });
+
+        test('allows source conflicts for some outputs and not others',
+            () async {
+          var builderApplication = apply(
+              '',
+              [
+                (_) => new CopyBuilder(
+                    inputExtension: '.txt',
+                    extension: 'txt.copy',
+                    numCopies: 2,
+                    checkPreExistingOutputs: true)
+              ],
+              toRoot(),
+              allowDeclaredOutputConflicts: true,
+              hideOutput: true);
+          await testBuilders([builderApplication],
+              {'a|web/a.txt': 'a', 'a|web/a.txt.copy.0': 'b'},
+              outputs: {r'$$a|web/a.txt.copy.1': 'a'});
+        });
+
+        test('throws if you try to actually overwrite a source', () async {
+          var builderApplication = apply(
+              '',
+              [
+                (_) => new CopyBuilder(
+                    inputExtension: '.txt', extension: 'txt.copy', numCopies: 2)
+              ],
+              toRoot(),
+              allowDeclaredOutputConflicts: true,
+              hideOutput: true);
+          await testBuilders([builderApplication],
+              {'a|web/a.txt': 'a', 'a|web/a.txt.copy.0': 'c'},
+              outputs: {r'$$a|web/a.txt.copy': 'a'},
+              exceptionMatcher: new isInstanceOf<UnexpectedOutputException>(),
+              status: BuildStatus.failure);
+        });
+
+        test('doesnt allow conflicts with generated sources', () async {
+          var builderApplication = apply(
+              '',
+              [
+                (_) => new CopyBuilder(
+                    inputExtension: '.txt', extension: 'txt.copy'),
+                (_) => new CopyBuilder(
+                    inputExtension: '.txt', extension: 'txt.copy'),
+              ],
+              toRoot(),
+              allowDeclaredOutputConflicts: true,
+              hideOutput: true);
+          expect(testBuilders([builderApplication], {'a|web/a.txt': 'a'}),
+              throwsA(new isInstanceOf<DuplicateAssetNodeException>()));
+        });
       });
     });
 

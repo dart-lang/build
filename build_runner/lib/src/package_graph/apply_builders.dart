@@ -54,11 +54,15 @@ BuilderApplication applyToRoot(Builder builder) =>
 /// never run.
 BuilderApplication apply(String builderKey,
         List<BuilderFactory> builderFactories, PackageFilter filter,
-        {bool isOptional, bool hideOutput, InputSet defaultGenerateFor}) =>
+        {bool isOptional,
+        bool hideOutput,
+        InputSet defaultGenerateFor,
+        bool allowDeclaredOutputConflicts}) =>
     new BuilderApplication._(builderKey, builderFactories, filter,
         isOptional: isOptional,
         hideOutput: hideOutput,
-        defaultGenerateFor: defaultGenerateFor);
+        defaultGenerateFor: defaultGenerateFor,
+        allowDeclaredOutputConflicts: allowDeclaredOutputConflicts);
 
 /// A description of which packages need a given [Builder] applied.
 class BuilderApplication {
@@ -72,8 +76,20 @@ class BuilderApplication {
 
   final bool isOptional;
 
-  /// Whether genereated assets should be placed in the build cache.
+  /// Whether generated assets should be placed in the build cache.
   final bool hideOutput;
+
+  /// Whether to allow declaring outputs that conflict with pre-existing source
+  /// assets.
+  ///
+  /// - Does not allow declaring conflicting outputs with generated assets -
+  ///   only original sources.
+  /// - Does not allow you to actually overwrite any assets, it only allows a
+  ///   builder to decide to skip writing the file at build time.
+  /// - If a builder tries to overwrite another asset it will result in a build
+  ///   time error.
+  /// - May only be `true` if [hideOutput] is also `true`.
+  final bool allowDeclaredOutputConflicts;
 
   /// The default filter for primary inputs if the [TargetBuilderConfig] does
   /// not specify one.
@@ -81,7 +97,10 @@ class BuilderApplication {
 
   const BuilderApplication._(
       this.builderKey, this.builderFactories, this.filter,
-      {this.isOptional, this.hideOutput, this.defaultGenerateFor});
+      {this.isOptional,
+      this.hideOutput,
+      this.defaultGenerateFor,
+      this.allowDeclaredOutputConflicts});
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -145,6 +164,8 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
                 targetSources: node.target.sources,
                 generateFor: generateFor,
                 isOptional: builderApplication.isOptional,
-                hideOutput: builderApplication.hideOutput);
+                hideOutput: builderApplication.hideOutput,
+                allowDeclaredOutputConflicts:
+                    builderApplication.allowDeclaredOutputConflicts);
           }));
 }

@@ -32,10 +32,31 @@ class BuildAction implements InputMatcher {
   /// the root.
   final bool hideOutput;
 
+  /// Whether to allow declaring outputs that conflict with pre-existing source
+  /// assets.
+  ///
+  /// - Does not allow declaring conflicting outputs with generated assets -
+  ///   only original sources.
+  /// - Does not allow you to actually overwrite any assets, it only allows a
+  ///   builder to decide to skip writing the file at build time.
+  /// - If a builder tries to overwrite another asset it will result in a build
+  ///   time error.
+  /// - May only be `true` if [hideOutput] is also `true`.
+  final bool allowDeclaredOutputConflicts;
+
   BuildAction._(this.package, this.builder, this._inputs, this.builderOptions,
-      {bool isOptional, bool hideOutput})
+      {bool isOptional, bool hideOutput, bool allowDeclaredOutputConflicts})
       : this.isOptional = isOptional ?? false,
-        this.hideOutput = hideOutput ?? false;
+        this.hideOutput = hideOutput ?? false,
+        this.allowDeclaredOutputConflicts =
+            allowDeclaredOutputConflicts ?? false {
+    if (!this.hideOutput && this.allowDeclaredOutputConflicts) {
+      throw new StateError(
+          'Builder $builder has invalid configuration. When setting '
+          '`allowDeclaredOutputConflicts` to `true` you must also set '
+          '`hideOutput` to `true`.');
+    }
+  }
 
   /// Creates an [BuildAction] for a normal [Builder].
   ///
@@ -56,6 +77,7 @@ class BuildAction implements InputMatcher {
     BuilderOptions builderOptions,
     bool isOptional,
     bool hideOutput,
+    bool allowDeclaredOutputConflicts,
   }) {
     var inputs = new InputMatcher(targetSources ?? const InputSet());
     if (generateFor != null) {
@@ -63,7 +85,9 @@ class BuildAction implements InputMatcher {
     }
     builderOptions ??= const BuilderOptions(const {});
     return new BuildAction._(package, builder, inputs, builderOptions,
-        isOptional: isOptional, hideOutput: hideOutput);
+        isOptional: isOptional,
+        hideOutput: hideOutput,
+        allowDeclaredOutputConflicts: allowDeclaredOutputConflicts);
   }
 
   @override
@@ -90,6 +114,7 @@ class BuildAction implements InputMatcher {
           other._inputs == _inputs &&
           other.isOptional == isOptional &&
           other.hideOutput == hideOutput &&
+          other.allowDeclaredOutputConflicts == allowDeclaredOutputConflicts &&
           _deepEquals.equals(
               other.builderOptions.config, builderOptions.config);
 
@@ -100,6 +125,7 @@ class BuildAction implements InputMatcher {
         _inputs,
         isOptional,
         hideOutput,
+        allowDeclaredOutputConflicts,
         builderOptions.config
       ]);
 }

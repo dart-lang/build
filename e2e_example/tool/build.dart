@@ -18,7 +18,9 @@ Future main(List<String> args) async {
     apply('build_test|test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
         hideOutput: true,
-        defaultGenerateFor: const InputSet(include: const ['test/**'])),
+        defaultGenerateFor:
+            const InputSet(include: const ['test/**_test.dart']),
+        allowDeclaredOutputConflicts: true),
     apply(
         'build_compilers|ddc',
         [

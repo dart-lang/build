@@ -1,3 +1,8 @@
+## 0.11.3-dev
+
+- `runBuilder` and `expectedOutputs` now have an optional `allowedOutputsFilter`
+  parameter which can be used to filter the allowed outputs.
+
 ## 0.11.2
 
 - Bug Fix: `MultiplexingBuilder` now filters inputs rather than calling _every_

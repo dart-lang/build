@@ -25,6 +25,7 @@ import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
+import '../util/outputs.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
@@ -269,7 +270,9 @@ class BuildImpl {
 
   Future<Iterable<AssetId>> _runForInput(int phaseNumber, Builder builder,
       AssetId input, ResourceManager resourceManager) async {
-    var builderOutputs = expectedOutputs(builder, input);
+    var builderOutputs = expectedOutputs(builder, input,
+        allowedOutputsFilter: (output) =>
+            shouldOutputForPhase(output, phaseNumber, _assetGraph));
 
     // Add `builderOutputs` to the primary outputs of the input.
     var inputNode = _assetGraph.get(input);
@@ -303,7 +306,10 @@ class BuildImpl {
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new Logger('$builder on $input');
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
-        logger: logger, resourceManager: resourceManager);
+        logger: logger,
+        resourceManager: resourceManager,
+        allowedOutputsFilter: (output) =>
+            shouldOutputForPhase(output, phaseNumber, _assetGraph));
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
@@ -315,11 +321,13 @@ class BuildImpl {
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
       Iterable<AssetId> outputs, DigestAssetReader reader) async {
+    if (outputs.isEmpty) return false;
+
     assert(
         outputs.every(_assetGraph.contains),
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
-    assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
+
     var firstOutput = outputs.first;
     var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
     assert(

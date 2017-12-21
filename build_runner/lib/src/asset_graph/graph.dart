@@ -16,6 +16,7 @@ import 'package:watcher/watcher.dart';
 import '../asset/reader.dart';
 import '../generate/phase.dart';
 import '../package_graph/package_graph.dart';
+import '../util/outputs.dart';
 import 'exceptions.dart';
 import 'node.dart';
 
@@ -327,14 +328,18 @@ class AssetGraph {
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
 
-        var outputs = expectedOutputs(action.builder, input);
+        var outputs = expectedOutputs(action.builder, input,
+            allowedOutputsFilter: (output) =>
+                shouldOutputForPhase(output, phase, this));
         phaseOutputs.addAll(outputs);
         var node = get(input);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
         allInputs.removeAll(_addGeneratedOutputs(
             outputs, phase, builderOptionsNode,
-            primaryInput: input, isHidden: action.hideOutput));
+            primaryInput: input,
+            isHidden: action.hideOutput,
+            allowDeclaredOutputConflicts: action.allowDeclaredOutputConflicts));
       }
       allInputs.addAll(phaseOutputs);
     }
@@ -350,7 +355,9 @@ class AssetGraph {
   /// removed from the graph.
   Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       BuilderOptionsAssetNode builderOptionsNode,
-      {AssetId primaryInput, @required bool isHidden}) {
+      {AssetId primaryInput,
+      @required bool isHidden,
+      @required bool allowDeclaredOutputConflicts}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
       // When any outputs aren't hidden we can pick up old generated outputs as
@@ -358,10 +365,13 @@ class AssetGraph {
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
         var node = get(output);
-        if (node is GeneratedAssetNode) {
+        if (allowDeclaredOutputConflicts) {
+          continue;
+        } else if (node is GeneratedAssetNode) {
           throw new DuplicateAssetNodeException(node);
+        } else {
+          _removeRecursive(output, removedIds: removed);
         }
-        _removeRecursive(output, removedIds: removed);
       }
 
       var newNode = new GeneratedAssetNode(output,
