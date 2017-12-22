@@ -38,8 +38,17 @@ PackageFilter toAll(Iterable<PackageFilter> filters) =>
 PackageFilter toRoot() => (p) => p.isRoot;
 
 /// Apply [builder] to the root package.
-BuilderApplication applyToRoot(Builder builder) =>
-    new BuilderApplication._('', [(_) => builder], toRoot());
+///
+/// Creates a `BuilderApplication` which corresponds to an empty builder key so
+/// that no other `build.yaml` based configuration will apply.
+BuilderApplication applyToRoot(Builder builder,
+        {bool isOptional: false,
+        bool hideOutput: false,
+        InputSet generateFor}) =>
+    new BuilderApplication._('', [(_) => builder], toRoot(),
+        isOptional: isOptional,
+        hideOutput: hideOutput,
+        defaultGenerateFor: generateFor);
 
 /// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
@@ -81,7 +90,8 @@ class BuilderApplication {
 
   const BuilderApplication._(
       this.builderKey, this.builderFactories, this.filter,
-      {this.isOptional, this.hideOutput, this.defaultGenerateFor});
+      {this.isOptional, bool hideOutput, this.defaultGenerateFor})
+      : hideOutput = hideOutput ?? true;
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -126,6 +136,9 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   bool shouldRun(TargetNode node) {
+    if (!builderApplication.hideOutput && !node.package.isRoot) {
+      return false;
+    }
     final builderConfig = targetConfig(node);
     if (builderConfig?.isEnabled != null) {
       return builderConfig.isEnabled;

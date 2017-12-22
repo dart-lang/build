@@ -127,21 +127,14 @@ BuildConfig parseFromMap(String packageName,
     final isOptional =
         _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
 
-    final mustBuildToCache =
-        autoApply == AutoApply.dependents || autoApply == AutoApply.allPackages;
     final buildTo = _readBuildToOrThrow(builderConfig, _buildTo,
-        defaultValue: mustBuildToCache ? BuildTo.cache : BuildTo.source);
+        defaultValue: BuildTo.cache);
 
     final defaultOptions = _readMapOrThrow(
         builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
         defaultValue: {});
     final defaultGenerateFor =
         _readInputSetOrThrow(defaultOptions, _generateFor, allowNull: true);
-
-    if (mustBuildToCache && buildTo != BuildTo.cache) {
-      throw new ArgumentError('`hide_output` may not be set to `False` '
-          'when using `auto_apply: ${builderConfig[_autoApply]}`');
-    }
 
     final builderKey = normalizeBuilderKeyDefinition(builderName, packageName);
     builderDefinitions[builderKey] = new BuilderDefinition(
@@ -267,7 +260,7 @@ Map<String, TargetBuilderConfig> _readBuildersOrThrow(
         defaultValue: {});
 
     final isEnabled =
-        _readBoolOrThrow(builderConfig, _enabled, allowNull: true);
+        _readBoolOrThrow(builderConfig, _enabled, defaultValue: true);
 
     final generateFor =
         _readInputSetOrThrow(builderConfig, _generateFor, allowNull: true);

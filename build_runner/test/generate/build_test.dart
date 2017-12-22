@@ -71,17 +71,18 @@ void main() {
       test('optional build actions do run if their outputs are read', () async {
         await testBuilders([
           apply('', [(_) => new CopyBuilder(extension: '1')], toRoot(),
-              isOptional: true),
+              isOptional: true, hideOutput: false),
           apply(
               '',
               [(_) => new CopyBuilder(inputExtension: '.1', extension: '2')],
               toRoot(),
-              isOptional: true),
+              isOptional: true,
+              hideOutput: false),
           apply(
-            '',
-            [(_) => new CopyBuilder(inputExtension: '.2', extension: '3')],
-            toRoot(),
-          ),
+              '',
+              [(_) => new CopyBuilder(inputExtension: '.2', extension: '3')],
+              toRoot(),
+              hideOutput: false),
         ], {
           'a|web/a.txt': 'a'
         }, outputs: {
@@ -96,9 +97,10 @@ void main() {
           copyABuilderApplication,
           apply('a|clone_txt', [(_) => new CopyBuilder(extension: 'clone')],
               toRoot(),
-              isOptional: true),
+              isOptional: true, hideOutput: false),
           apply('a|copy_web_clones', [(_) => new CopyBuilder(numCopies: 2)],
-              toRoot()),
+              toRoot(),
+              hideOutput: false),
         ];
         var buildConfigs = parseBuildConfigs({
           'a': {
@@ -268,18 +270,20 @@ void main() {
       });
     });
 
-    test('can\'t output files in non-root packages', () async {
+    test('skips builders which would output files in non-root packages',
+        () async {
       final packageGraph = buildPackageGraph({
         rootPackage('a', path: 'a/'): ['b'],
         package('b', path: 'a/b'): []
       });
-      expect(
-          testBuilders([
-            apply('', [(_) => new CopyBuilder()], toPackage('b'))
-          ], {
-            'b|lib/b.txt': 'b'
-          }, packageGraph: packageGraph),
-          throwsA(anything));
+      await testBuilders(
+          [
+            apply('', [(_) => new CopyBuilder()], toPackage('b'),
+                hideOutput: false)
+          ],
+          {'b|lib/b.txt': 'b'},
+          packageGraph: packageGraph,
+          outputs: {});
     });
 
     group('with `hideOutput: true`', () {
@@ -307,7 +311,8 @@ void main() {
       test('handles mixed hidden and non-hidden outputs', () async {
         await testBuilders(
             [
-              apply('', [(_) => new CopyBuilder()], toRoot()),
+              apply('', [(_) => new CopyBuilder()], toRoot(),
+                  hideOutput: false),
               apply('', [(_) => new CopyBuilder(extension: 'hiddencopy')],
                   toRoot(),
                   hideOutput: true),
@@ -349,7 +354,8 @@ void main() {
         apply(
             '',
             [(_) => new CopyBuilder(touchAsset: makeAssetId('b|lib/b.txt'))],
-            toRoot())
+            toRoot(),
+            hideOutput: false)
       ];
       await testBuilders(builders, {
         'a|lib/a.txt': 'a',
