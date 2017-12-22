@@ -37,7 +37,7 @@ void main() {
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.dependents,
         isOptional: true,
-        buildTo: BuildTo.cache, // defaulted because of AutoApply.dependents
+        buildTo: BuildTo.cache,
         import: 'package:example/e.dart',
         buildExtensions: {
           '.dart': [
@@ -71,7 +71,7 @@ void main() {
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.none,
         isOptional: false,
-        buildTo: BuildTo.source,
+        buildTo: BuildTo.cache,
         import: 'package:example/builder.dart',
         buildExtensions: {
           '.dart': [
