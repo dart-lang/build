@@ -4,6 +4,8 @@
   Builders which want to operate on the source tree will need to explicitly opt
   in. Allow this regardless of the value of `autoApply` and the build system
   will need to filter out the builders that can't run.
+- By default including any configuration for a Builder within a BuildTarget will
+  enabled that builder.
 
 ## 0.2.0
 

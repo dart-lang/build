@@ -260,7 +260,7 @@ Map<String, TargetBuilderConfig> _readBuildersOrThrow(
         defaultValue: {});
 
     final isEnabled =
-        _readBoolOrThrow(builderConfig, _enabled, allowNull: true);
+        _readBoolOrThrow(builderConfig, _enabled, defaultValue: true);
 
     final generateFor =
         _readInputSetOrThrow(builderConfig, _generateFor, allowNull: true);
