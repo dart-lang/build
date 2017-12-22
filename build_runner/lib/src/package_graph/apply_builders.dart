@@ -38,8 +38,12 @@ PackageFilter toAll(Iterable<PackageFilter> filters) =>
 PackageFilter toRoot() => (p) => p.isRoot;
 
 /// Apply [builder] to the root package.
-BuilderApplication applyToRoot(Builder builder) =>
-    new BuilderApplication._('', [(_) => builder], toRoot(), hideOutput: false);
+///
+/// Creates a `BuilderApplication` which corresponds to an empty builder key so
+/// that no other `build.yaml` based configuration will apply.
+BuilderApplication applyToRoot(Builder builder, {InputSet generateFor}) =>
+    new BuilderApplication._('', [(_) => builder], toRoot(),
+        hideOutput: false, defaultGenerateFor: generateFor);
 
 /// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
