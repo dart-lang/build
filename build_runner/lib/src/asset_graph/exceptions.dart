@@ -12,7 +12,7 @@ class DuplicateAssetNodeException implements Exception {
   @override
   String toString() => 'DuplicateAssetNodeError: $assetNode\n'
       'This probably means you have multiple actions that are trying to output '
-      'the same file.';
+      'the same file, or a generated output conficts with a source asset.';
 }
 
 class AssetGraphVersionException implements Exception {

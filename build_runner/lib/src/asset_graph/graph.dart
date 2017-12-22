@@ -115,7 +115,7 @@ class AssetGraph {
 
   /// Adds [assetIds] as [AssetNode]s to this graph, and returns the newly
   /// created nodes.
-  List<AssetNode> _addSources(Set<AssetId> assetIds) {
+  List<AssetNode> _addSources(Iterable<AssetId> assetIds) {
     return assetIds.map((id) {
       var node = new SourceAssetNode(id);
       _add(node);
@@ -228,13 +228,46 @@ class AssetGraph {
       if (changeType != ChangeType.ADD && get(id) == null) return;
       switch (changeType) {
         case ChangeType.ADD:
-          newIds.add(id);
+          var existing = get(id);
+          if (existing is GeneratedAssetNode) {
+            if (existing.isShadowNode) {
+              // Special case, we replace shadow nodes with `SourceAssetNode`s
+              // and treat it as a `modify` event.
+              _nodesByPackage[id.package].remove(id.path);
+              _add(new SourceAssetNode.fromShadowNode(existing));
+              modifyIds.add(id);
+            } else {
+              // Only shadow nodes can be replaced, creating a new asset which
+              // conflicts with a generated one is an error.
+              throw new DuplicateAssetNodeException(existing);
+            }
+          } else {
+            newIds.add(id);
+          }
           break;
         case ChangeType.MODIFY:
           modifyIds.add(id);
           break;
         case ChangeType.REMOVE:
-          removeIds.add(id);
+          var node = get(id);
+          if (node is SourceAssetNode && node.shadowNode != null) {
+            // Special case, we just replace the `SourceAssetNode` with
+            // `shadowNode`, and reset the state of the `shadowNode` to match
+            // that of the original source node.
+            var shadowNode = node.shadowNode;
+            _nodesByPackage[id.package][id.path] = shadowNode;
+            shadowNode.resetShadowNode();
+            shadowNode.outputs.addAll(node.outputs);
+
+            // Note that we don't want to add this to `modifyIds`, even though
+            // that would be the intuitive thing to do.
+            //
+            // We have already invalidated all dependent nodes above, the
+            // `modifyIds` list is used to reset the `lastKnownDigest` which we
+            // don't actually want to do for these nodes.
+          } else {
+            removeIds.add(id);
+          }
           break;
       }
     });
@@ -323,13 +356,20 @@ class AssetGraph {
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
       var inputs = allInputs.where(action.matches).toList();
-      var outputsFilter = action.allowDeclaredOutputConflicts
-          ? (AssetId output) => shouldOutputForPhase(output, phase, this)
-          : null;
       for (var input in inputs) {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
+
+        var outputsFilter = action.allowDeclaredOutputConflicts
+            ? (AssetId output) => shouldOutputForPhase(output, phase, this,
+                createShadowNode: () => _createGeneratedAssetNode(output,
+                    builderOptionsId:
+                        builderOptionsIdForPhase(output.package, phase),
+                    isHidden: action.hideOutput,
+                    phaseNumber: phase,
+                    primaryInput: input))
+            : null;
 
         var outputs = expectedOutputs(action.builder, input,
             allowedOutputsFilter: outputsFilter);
@@ -355,7 +395,7 @@ class AssetGraph {
   /// removed from the graph.
   Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
       BuilderOptionsAssetNode builderOptionsNode,
-      {AssetId primaryInput, @required bool isHidden}) {
+      {@required AssetId primaryInput, @required bool isHidden}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
       // When any outputs aren't hidden we can pick up old generated outputs as
@@ -370,11 +410,9 @@ class AssetGraph {
         }
       }
 
-      var newNode = new GeneratedAssetNode(output,
-          phaseNumber: phaseNumber,
+      var newNode = _createGeneratedAssetNode(output,
           primaryInput: primaryInput,
-          needsUpdate: true,
-          wasOutput: false,
+          phaseNumber: phaseNumber,
           builderOptionsId: builderOptionsNode.id,
           isHidden: isHidden);
       builderOptionsNode.outputs.add(output);
@@ -390,6 +428,20 @@ class AssetGraph {
   void add(AssetNode node) => _add(node);
   Set<AssetId> remove(AssetId id) => _removeRecursive(id);
 }
+
+/// Creates a new [GeneratedAssetNode] with standard defaults and required args.
+GeneratedAssetNode _createGeneratedAssetNode(AssetId id,
+        {@required AssetId primaryInput,
+        @required int phaseNumber,
+        @required AssetId builderOptionsId,
+        @required bool isHidden}) =>
+    new GeneratedAssetNode(id,
+        phaseNumber: phaseNumber,
+        primaryInput: primaryInput,
+        builderOptionsId: builderOptionsId,
+        isHidden: isHidden,
+        needsUpdate: true,
+        wasOutput: false);
 
 /// Computes a [Digest] for [buildActions] which can be used to compare one set
 /// of [BuildAction]s against another.

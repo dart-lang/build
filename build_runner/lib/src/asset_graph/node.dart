@@ -87,8 +87,30 @@ class InternalAssetNode extends AssetNode {
 
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
+  /// A node which would have been generated if this source asset didn't exist.
+  ///
+  /// If this node is deleted, it should be replaced with this node.
+  GeneratedAssetNode shadowNode;
+
+  /// If there is a [shadowNode], then this node is interesting.
+  ///
+  /// Technically edits are not interesting (only deletes), but we don't have a
+  /// obvious way to make that distinction today, and the impact is minimal.
+  @override
+  bool get isInteresting => shadowNode != null ? true : super.isInteresting;
+
   SourceAssetNode(AssetId id, {Digest lastKnownDigest})
       : super(id, lastKnownDigest: lastKnownDigest);
+
+  /// Used when a source is added which conflicts with an existing
+  /// [GeneratedAssetNode] but that node is a shadow node.
+  ///
+  /// This node should retain much of the state from the [shadowNode].
+  SourceAssetNode.fromShadowNode(this.shadowNode)
+      : super(shadowNode.id, lastKnownDigest: shadowNode.lastKnownDigest) {
+    outputs.addAll(shadowNode.outputs);
+    primaryOutputs.addAll(shadowNode.primaryOutputs);
+  }
 
   @override
   String toString() => 'SourceAssetNode: $id';
@@ -98,6 +120,17 @@ class SourceAssetNode extends AssetNode {
 class GeneratedAssetNode extends AssetNode {
   @override
   bool get isGenerated => true;
+
+  /// Shadow nodes may overlap with [SourceAssetNode]s.
+  ///
+  /// If that is the case then they will be assigned to the `shadowNode`
+  /// property of the [SourceAssetNode]. If that asset is deleted this node will
+  /// replace it.
+  ///
+  /// If a new [SourceAssetNode] is added that has the same [id] then this node
+  /// will be replaced with that source, and this node will be assigned to that
+  /// nodes `shadowNode` property.
+  final bool isShadowNode;
 
   /// The phase which generated this asset.
   final int phaseNumber;
@@ -142,6 +175,7 @@ class GeneratedAssetNode extends AssetNode {
     Set<Glob> globs,
     Iterable<AssetId> inputs,
     this.previousInputsDigest,
+    bool isShadowNode,
     @required this.isHidden,
     @required this.needsUpdate,
     @required this.phaseNumber,
@@ -153,11 +187,29 @@ class GeneratedAssetNode extends AssetNode {
         this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
             : new SplayTreeSet<AssetId>(),
+        this.isShadowNode = isShadowNode ?? false,
         super(id, lastKnownDigest: lastKnownDigest);
+
+  /// Resets this nodes dynamic state to a clean slate, but retains the parts
+  /// that should never change.
+  ///
+  /// As the method name implies this may only be invoked if [isShadowNode] is
+  /// `true`.
+  void resetShadowNode() {
+    assert(isShadowNode, 'Only shadow nodes can be reset, tried to reset $id');
+    globs.clear();
+    inputs.clear();
+    outputs.clear(); // primary outputs don't need to be reset, they are fixed.
+    lastKnownDigest = null;
+    previousInputsDigest = null;
+    needsUpdate = true;
+    wasOutput = false;
+  }
 
   @override
   String toString() =>
-      'GeneratedAssetNode: $id generated from input $primaryInput.';
+      'GeneratedAssetNode: $id generated from input $primaryInput in phase '
+      '$phaseNumber.';
 }
 
 /// A node which is not a generated or source asset.
