@@ -19,7 +19,7 @@ env:
   - PKG=build_barback TASK=test
   - PKG=build_web_compilers TASK=dartanalyzer
   - PKG=build_web_compilers TASK=dartfmt
-  - PKG=build_web_compilers TASK=test_1
+  - PKG=build_web_compilers TASK=test
   - PKG=build_config TASK=dartanalyzer
   - PKG=build_config TASK=dartfmt
   - PKG=build_config TASK=test
