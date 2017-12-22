@@ -10,7 +10,7 @@ environment:
 dependencies:
   async: ">=1.2.0 <3.0.0"
   build: ^0.11.0
-  build_barback: ">=0.2.0 <0.6.0"
+  build_barback: ">=0.5.0+1 <0.6.0"
   build_config: ^0.2.0
   collection: ^1.14.0
   glob: ^1.1.0
@@ -23,3 +23,7 @@ dependencies:
 
 dev_dependencies:
   analyzer: ">=0.27.1 <0.31.0"
+
+dependency_overrides:
+  build_barback:
+    path: ../build_barback
