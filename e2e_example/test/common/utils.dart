@@ -18,6 +18,15 @@ Stream<String> _stdOutLines;
 
 final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
+/// Runs a single build using the build script in this package, and returns the
+/// [ProcessResult].
+///
+/// To ensure a clean build, set [ensureCleanBuild] to `true`.
+Future<ProcessResult> runManualBuild(
+        {bool ensureCleanBuild, String scriptPath = 'tool/build.dart'}) =>
+    _runBuild('dart', [scriptPath, 'build'],
+        ensureCleanBuild: ensureCleanBuild);
+
 /// Runs the build script in this package, and waits for the first build to
 /// complete.
 ///
@@ -56,6 +65,18 @@ Future<Null> startAutoServer(
         ensureCleanBuild: ensureCleanBuild,
         verbose: verbose,
         extraExpects: extraExpects);
+
+Future<ProcessResult> _runBuild(String command, List<String> args,
+    {bool ensureCleanBuild}) async {
+  ensureCleanBuild ??= false;
+
+  // Make sure this is a clean build
+  if (ensureCleanBuild && await _toolDir.exists()) {
+    await _toolDir.delete(recursive: true);
+  }
+
+  return await Process.run(command, args);
+}
 
 Future<Null> _startServer(String command, List<String> args,
     {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) async {
@@ -155,29 +176,15 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
 Future<ProcessResult> runTests({bool usePrecompiled}) async {
-  usePrecompiled ??= false;
-  var args = ['run', 'test', '-p', 'chrome'];
-  Directory precompiledTmpDir;
+  usePrecompiled ??= true;
+  var testArgs = ['-p', 'chrome'];
   if (usePrecompiled) {
-    precompiledTmpDir = await Directory.systemTemp.createTemp('build_e2e_test');
-    var mergedDirResult = await Process.run(_pubBinary, [
-      'run',
-      'build_runner:create_merged_dir',
-      '--script=${p.join('tool', 'build.dart')}',
-      '--output-dir=${precompiledTmpDir.path}'
-    ]);
-    expect(mergedDirResult.exitCode, 0,
-        reason: 'stdout:${mergedDirResult.stdout}\n'
-            'stderr${mergedDirResult.stderr}');
-    args.addAll(['--precompiled', '${precompiledTmpDir.path}/']);
+    var args = [p.join('tool', 'build.dart'), 'test', '--']..addAll(testArgs);
+    return Process.run('dart', args);
   } else {
-    args.addAll(['--pub-serve', '8081']);
+    var args = ['run', 'test', '--pub-serve', '8081']..addAll(testArgs);
+    return Process.run(_pubBinary, args);
   }
-  var result = await Process.run(_pubBinary, args);
-  if (usePrecompiled) {
-    await precompiledTmpDir.delete(recursive: true);
-  }
-  return result;
 }
 
 Future<Null> expectTestsFail() async {
