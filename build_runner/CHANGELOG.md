@@ -1,3 +1,8 @@
+## 0.7.1
+
+- Run Builders which write to the source tree before those which write to the
+  build cache.
+
 ## 0.7.0
 
 ### New Features
