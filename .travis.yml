@@ -52,6 +52,12 @@ matrix:
     - dart: stable
       env: PKG=build_runner TASK=test
     - dart: stable
+      env: PKG=build_web_compilers TASK=dartanalyzer
+    - dart: stable
+      env: PKG=build_web_compilers TASK=dartfmt
+    - dart: stable
+      env: PKG=build_web_compilers TASK=test
+    - dart: stable
       env: PKG=build_test TASK=dartfmt
     - dart: stable
       env: PKG=e2e_example TASK=dartanalyzer
