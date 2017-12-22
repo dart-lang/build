@@ -1,25 +1,25 @@
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:json_serializable/json_serializable.dart';
 import 'package:json_serializable/type_helper.dart';
 import 'package:source_gen/source_gen.dart';
 
 main(List<String> arguments) async {
-  var buildActions = [
-    new BuildAction(
+  var builders = [
+    applyToRoot(
         new PartBuilder([
           new JsonSerializableGenerator.withDefaultHelpers(
               [const _AssetIdTypeHelper()])
         ], requireLibraryDirective: false),
-        'build_compilers',
-        inputs: ['lib/src/modules.dart']),
+        generateFor: const InputSet(include: const ['lib/src/modules.dart'])),
   ];
 
   if (arguments.isEmpty) {
-    await watch(buildActions, deleteFilesByDefault: true);
+    await watch(builders, deleteFilesByDefault: true);
   } else if (arguments.length == 1 && arguments.first == '--single-build') {
-    await build(buildActions, deleteFilesByDefault: true);
+    await build(builders, deleteFilesByDefault: true);
   } else {
     throw new ArgumentError(
         'Expected zero arguments or a --single-build argument');

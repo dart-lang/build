@@ -6,8 +6,8 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_compilers/build_compilers.dart';
-import 'package:build_compilers/src/modules.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/src/modules.dart';
 
 import 'matchers.dart';
 
