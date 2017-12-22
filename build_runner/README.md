@@ -55,7 +55,7 @@ also provide a `build.yaml` with the configuration. See the
 `package:build_config` README for more information on this file.
 
 Run `pub run build_runner serve` to start up a development server. To have web
-code compiled with DDC add a `dev_dependency` on `build_compilers`.
+code compiled with DDC add a `dev_dependency` on `build_web_compilers`.
 
 ### Inputs
 

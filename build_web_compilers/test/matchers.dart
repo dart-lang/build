@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'package:analyzer/src/summary/idl.dart';
 import 'package:test/test.dart';
 
-import 'package:build_compilers/src/modules.dart';
+import 'package:build_web_compilers/src/modules.dart';
 
 /// Matches an encoded [Module] against an [expected] Module instance.
 encodedMatchesModule(Module expected) => new EncodedModuleMatcher(expected);
