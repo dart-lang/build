@@ -24,6 +24,7 @@ dependencies:
   graphs: ^0.1.0
   io: ^0.3.0
   logging: ^0.11.2
+  meta: ^1.1.0
   millisecond: ^0.1.0
   mime: ^0.9.3
   path: ^1.1.0
