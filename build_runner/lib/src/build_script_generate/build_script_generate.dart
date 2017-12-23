@@ -38,11 +38,12 @@ Future<String> _generateBuildScript() async {
 /// Finds expressions to create all the [BuilderApplication] instances that
 /// should be applied packages in the build.
 ///
-/// Adds `apply` expressions based on the BuildefDefinitions from any package
+/// Adds `apply` expressions based on the BuilderDefinitions from any package
 /// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
   final packageGraph = new PackageGraph.forThisPackage();
+  await createLock(packageGraph);
   final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
           [packageGraph.root], (node) => node.name, (node) => node.dependencies)
       .expand((c) => c);

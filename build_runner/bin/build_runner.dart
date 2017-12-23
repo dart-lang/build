@@ -9,11 +9,17 @@ import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
+import 'package:build_runner/src/generate/exceptions.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 
 Future<Null> main(List<String> args) async {
   var logListener = Logger.root.onRecord.listen(stdIOLogListener);
-  await ensureBuildScript();
+  try {
+    await ensureBuildScript();
+  } on ConcurrentBuildException catch (e) {
+    Logger.root.log(Level.SEVERE, '$e');
+    return;
+  }
   var dart = Platform.resolvedExecutable;
   final innerArgs = [scriptLocation]..addAll(args);
   if (stdioType(stdin) == StdioType.TERMINAL &&

@@ -25,6 +25,7 @@ import 'build_definition.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
+import 'lock_file.dart';
 import 'options.dart';
 import 'phase.dart';
 import 'terminator.dart';
@@ -71,6 +72,7 @@ Future<ServeHandler> watch(
   watch.buildResults.drain().then((_) async {
     await terminator.cancel();
     await options.logListener.cancel();
+    await clearLock(options.packageGraph);
   });
 
   return createServeHandler(watch);
