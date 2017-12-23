@@ -18,6 +18,7 @@ Future<Null> main(List<String> args) async {
     await ensureBuildScript();
   } on ConcurrentBuildException catch (e) {
     Logger.root.log(Level.SEVERE, '$e');
+    exitCode = 1;
     return;
   }
   var dart = Platform.resolvedExecutable;
