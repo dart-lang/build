@@ -1,3 +1,8 @@
+## 0.7.1+1
+
+- **BUG FIX**: Running the `build_runner` binary without arguments no longer
+  causes a crash saying `Could not find an option named "assume-tty".`.
+
 ## 0.7.1
 
 - Run Builders which write to the source tree before those which write to the
