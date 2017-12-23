@@ -9,15 +9,30 @@ import 'package:graphs/graphs.dart';
 /// [BuilderDefinition.requiredInputs] will come after any builder which
 /// produces a desired output.
 ///
-/// All builders which don't specify required inputs will come first, followed
-/// by the builders with required inputs. If there is a cycle in required inputs
-/// this will throw.
+/// Builders will be put in the following order:
+/// - Builders which write to the source tree and don't have required inputs.
+/// - Builders which write to the source tree and have required inputs (these
+/// inputs can only be also on disk)
+/// - Builders which write to the build cache and don't have requried inputs.
+/// - Builders which write to the build cache and have required inputs
 Iterable<BuilderDefinition> findBuilderOrder(
     Iterable<BuilderDefinition> builders) {
   final result = <BuilderDefinition>[];
-  result.addAll(builders.where((b) => b.requiredInputs.isEmpty));
-  final toOrder = builders.where((b) => b.requiredInputs.isNotEmpty);
-  result.addAll(_findOrder(toOrder));
+
+  result.addAll(builders
+      .where((b) => b.buildTo == BuildTo.source && b.requiredInputs.isEmpty));
+
+  final requiredInSource = builders
+      .where((b) => b.buildTo == BuildTo.source && b.requiredInputs.isNotEmpty);
+  result.addAll(_findOrder(requiredInSource));
+
+  result.addAll(builders
+      .where(((b) => b.buildTo == BuildTo.cache && b.requiredInputs.isEmpty)));
+
+  final requiredInCache = builders
+      .where((b) => b.buildTo == BuildTo.cache && b.requiredInputs.isNotEmpty);
+  result.addAll(_findOrder(requiredInCache));
+
   return result;
 }
 
