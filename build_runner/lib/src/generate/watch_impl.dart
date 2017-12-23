@@ -34,6 +34,7 @@ final _logger = new Logger('Watch');
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
   bool deleteFilesByDefault,
+  bool failOnSevere,
   bool assumeTty,
   PackageGraph packageGraph,
   RunnerAssetReader reader,
@@ -50,6 +51,7 @@ Future<ServeHandler> watch(
   var options = new BuildOptions(
       assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault,
+      failOnSevere: failOnSevere,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
@@ -174,9 +176,20 @@ class WatchImpl implements BuildState {
         .transform(debounceBuffer(_debounceDelay))
         .transform(takeUntil(terminate))
         .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
-        .listen((BuildResult buildResult) {
+        .listen((BuildResult result) {
           if (controller.isClosed) return;
-          controller.add(buildResult);
+          if (result.status != BuildStatus.failure &&
+              options.failOnSevere &&
+              options.severeLogHandled) {
+            options.severeLogHandled = false;
+            result = new BuildResult(
+              BuildStatus.failure,
+              result.outputs,
+              exception: 'A severe log was handled. See log for details',
+              performance: result.performance,
+            );
+          }
+          controller.add(result);
         })
         .onDone(() async {
           await currentBuild;
