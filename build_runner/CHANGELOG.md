@@ -1,3 +1,5 @@
+## 0.7.1+1
+
 - **BUG FIX**: Running the `build_runner` binary without arguments no longer
   causes a crash saying `Could not find an option named "assume-tty".`.
 
