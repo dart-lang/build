@@ -8,32 +8,26 @@ dist: trusty
 
 dart:
   - dev
+  - dev/release/2.0.0-dev.14.0
+  - dev/release/2.0.0-dev.13.0
+  - dev/release/2.0.0-dev.12.0
+  - dev/release/2.0.0-dev.11.0
+  - dev/release/2.0.0-dev.10.0
+  - dev/release/2.0.0-dev.9.0
+  - dev/release/2.0.0-dev.8.0
+  - dev/release/2.0.0-dev.7.0
+  - dev/release/2.0.0-dev.6.0
+  - dev/release/2.0.0-dev.5.0
+  - dev/release/2.0.0-dev.4.0
+  - dev/release/2.0.0-dev.3.0
+  - dev/release/2.0.0-dev.2.0
+  - dev/release/2.0.0-dev.1.0
+  - dev/release/2.0.0-dev.0.0
   - stable
 
 env:
-  - PKG=build TASK=dartanalyzer
-  - PKG=build TASK=dartfmt
-  - PKG=build TASK=test
-  - PKG=build_barback TASK=dartanalyzer
-  - PKG=build_barback TASK=dartfmt
-  - PKG=build_barback TASK=test
-  - PKG=build_web_compilers TASK=dartanalyzer
-  - PKG=build_web_compilers TASK=dartfmt
-  - PKG=build_web_compilers TASK=test
-  - PKG=build_config TASK=dartanalyzer
-  - PKG=build_config TASK=dartfmt
-  - PKG=build_config TASK=test
-  - PKG=build_runner TASK=dartanalyzer
-  - PKG=build_runner TASK=dartfmt
-  - PKG=build_runner TASK=test
-  - PKG=build_test TASK=dartanalyzer
-  - PKG=build_test TASK=dartfmt
-  - PKG=build_test TASK=test
   - PKG=e2e_example TASK=dartanalyzer
   - PKG=e2e_example TASK=test
-  - PKG=scratch_space TASK=dartanalyzer
-  - PKG=scratch_space TASK=dartfmt
-  - PKG=scratch_space TASK=test
 
 matrix:
   exclude:
