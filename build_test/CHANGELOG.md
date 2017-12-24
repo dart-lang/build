@@ -1,3 +1,9 @@
+## 0.9.5
+
+- Add support for the special placeholder `{$lib/$test/$web}` assets supported
+  by the `build_runner` and `bazel_codegen` implementations of `package:build`.
+  For an example see `test/test_builder_test.dart`.
+
 ## 0.9.4
 
 - Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
