@@ -7,6 +7,7 @@ export 'src/asset/writer.dart';
 export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
+export 'src/generate/lock_file.dart' show clearLock, createLock;
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuildActionPerformance;
 export 'src/package_graph/apply_builders.dart'

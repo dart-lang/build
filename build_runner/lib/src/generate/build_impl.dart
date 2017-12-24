@@ -30,6 +30,7 @@ import 'build_result.dart';
 import 'exceptions.dart';
 import 'fold_frames.dart';
 import 'heartbeat.dart';
+import 'lock_file.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
@@ -71,6 +72,7 @@ Future<BuildResult> build(
 
   await terminator.cancel();
   await options.logListener.cancel();
+  await clearLock(options.packageGraph);
   return result;
 }
 

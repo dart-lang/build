@@ -25,6 +25,7 @@ import 'build_definition.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
+import 'lock_file.dart';
 import 'options.dart';
 import 'phase.dart';
 import 'terminator.dart';
@@ -65,12 +66,14 @@ Future<ServeHandler> watch(
   final buildActions = await createBuildActions(options.packageGraph, builders,
       overrideBuildConfig: overrideBuildConfig);
 
-  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
+  var watch = runWatch(options, buildActions,
+      terminator.shouldTerminate.then((_) => clearLock(options.packageGraph)));
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
     await terminator.cancel();
     await options.logListener.cancel();
+    await clearLock(options.packageGraph);
   });
 
   return createServeHandler(watch);
@@ -149,6 +152,7 @@ class WatchImpl implements BuildState {
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           fatalBuildCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
+          await clearLock(options.packageGraph);
           return new BuildResult(BuildStatus.failure, []);
         }
       }
@@ -182,6 +186,7 @@ class WatchImpl implements BuildState {
           await currentBuild;
           await _buildDefinition.resourceManager.beforeExit();
           await controller.close();
+          await clearLock(options.packageGraph);
           _logger.info('Builds finished. Safe to exit\n');
         });
 

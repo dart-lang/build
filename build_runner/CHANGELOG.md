@@ -1,7 +1,11 @@
-## 0.7.1+1
+## 0.7.2
 
 - **BUG FIX**: Running the `build_runner` binary without arguments no longer
   causes a crash saying `Could not find an option named "assume-tty".`.
+
+- Builds now automatically generate a `build.lock` file in the package
+  directory while a build is in progress (including watchers and servers), and
+  fail if a lock file is already created.
 
 ## 0.7.1
 

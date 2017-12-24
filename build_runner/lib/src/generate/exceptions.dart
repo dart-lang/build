@@ -8,11 +8,14 @@ import 'package:build_runner/src/generate/phase.dart';
 import 'phase.dart';
 
 class ConcurrentBuildException implements Exception {
-  const ConcurrentBuildException();
+  final String lockFilePath;
+
+  const ConcurrentBuildException(this.lockFilePath);
 
   @override
-  String toString() =>
-      'ConcurrentBuildException: Only one build may be running at a time.';
+  String toString() => 'Only one build may be running at a time!\n'
+      'If a build process has failed, or you want to remove the lock \n'
+      'manually simple delete the file "$lockFilePath".';
 }
 
 abstract class FatalBuildException implements Exception {
