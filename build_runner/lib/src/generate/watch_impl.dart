@@ -151,6 +151,7 @@ class WatchImpl implements BuildState {
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           fatalBuildCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
+          await clearLock(options.packageGraph);
           return new BuildResult(BuildStatus.failure, []);
         }
       }
@@ -159,7 +160,6 @@ class WatchImpl implements BuildState {
 
     var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled\n');
-      return clearLock(options.packageGraph);
     });
 
     // Start watching files immediately, before the first build is even started.
