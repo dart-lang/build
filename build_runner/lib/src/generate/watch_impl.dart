@@ -159,6 +159,7 @@ class WatchImpl implements BuildState {
 
     var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled\n');
+      return clearLock(options.packageGraph);
     });
 
     // Start watching files immediately, before the first build is even started.
