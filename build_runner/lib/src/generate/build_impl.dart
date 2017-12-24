@@ -40,6 +40,7 @@ final _logger = new Logger('Build');
 Future<BuildResult> build(
   List<BuilderApplication> builders, {
   bool deleteFilesByDefault,
+  bool failOnSevere,
   bool assumeTty,
   PackageGraph packageGraph,
   RunnerAssetReader reader,
@@ -54,6 +55,7 @@ Future<BuildResult> build(
   var options = new BuildOptions(
       assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault,
+      failOnSevere: failOnSevere,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
@@ -81,6 +83,17 @@ Future<BuildResult> singleBuild(
   var result =
       (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
   await buildDefinition.resourceManager.beforeExit();
+  if (result.status == BuildStatus.success &&
+      options.failOnSevere &&
+      options.severeLogHandled) {
+    options.severeLogHandled = false;
+    return new BuildResult(
+      BuildStatus.failure,
+      result.outputs,
+      exception: 'A severe log was handled. See log for details',
+      performance: result.performance,
+    );
+  }
   return result;
 }
 

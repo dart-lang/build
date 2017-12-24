@@ -20,7 +20,9 @@ class BuildOptions {
   PackageGraph packageGraph;
   RunnerAssetReader reader;
   RunnerAssetWriter writer;
+
   bool deleteFilesByDefault;
+  bool failOnSevere;
   bool enableLowResourcesMode;
   bool assumeTty;
 
@@ -31,10 +33,14 @@ class BuildOptions {
   // For testing only, skips the build script updates check.
   bool skipBuildScriptCheck;
 
+  // For internal use only, flipped when a severe log occurred.
+  bool severeLogHandled = false;
+
   BuildOptions(
       {this.debounceDelay,
       this.assumeTty,
       this.deleteFilesByDefault,
+      this.failOnSevere,
       this.directoryWatcherFactory,
       Level logLevel,
       onLog(LogRecord record),
@@ -43,12 +49,24 @@ class BuildOptions {
       this.writer,
       this.skipBuildScriptCheck,
       this.enableLowResourcesMode}) {
-    /// Set up logging
+    // Set up logging
     logLevel ??= Level.INFO;
+
+    // Invalid to have Level.OFF but want severe logs to fail the build.
+    if (logLevel == Level.OFF && failOnSevere == true) {
+      logLevel = Level.SEVERE;
+    }
+
     Logger.root.level = logLevel;
 
     overrideAnsiOutput(assumeTty == true || ansiOutputEnabled, () {
-      logListener = Logger.root.onRecord.listen(onLog ?? stdIOLogListener);
+      onLog ??= stdIOLogListener;
+      logListener = Logger.root.onRecord.listen((r) {
+        if (r.level == Level.SEVERE) {
+          severeLogHandled = true;
+        }
+        onLog(r);
+      });
     });
 
     /// Set up other defaults.
@@ -59,6 +77,7 @@ class BuildOptions {
     directoryWatcherFactory ??= defaultDirectoryWatcherFactory;
     assumeTty ??= false;
     deleteFilesByDefault ??= false;
+    failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
   }

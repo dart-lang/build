@@ -20,6 +20,8 @@ import 'package_graphs.dart';
 Future wait(int milliseconds) =>
     new Future.delayed(new Duration(milliseconds: milliseconds));
 
+void _nullLog(_) {}
+
 /// Runs [builders] in a test environment.
 ///
 /// The test environment supplies in-memory build [inputs] to the builders under
@@ -75,9 +77,11 @@ Future<BuildResult> testBuilders(
   Matcher exceptionMatcher,
   InMemoryRunnerAssetReader reader,
   InMemoryRunnerAssetWriter writer,
-  Level logLevel: Level.OFF,
-  onLog(LogRecord record),
+  Level logLevel,
+  // A better way to "silence" logging than setting logLevel to OFF.
+  onLog(LogRecord record): _nullLog,
   bool checkBuildStatus: true,
+  bool failOnSevere: false,
   bool deleteFilesByDefault: true,
   bool enableLowResourcesMode: false,
   Map<String, BuildConfig> overrideBuildConfig,
@@ -100,6 +104,7 @@ Future<BuildResult> testBuilders(
   var result = await build_impl.build(
     builders,
     deleteFilesByDefault: deleteFilesByDefault,
+    failOnSevere: failOnSevere,
     reader: reader,
     writer: writer,
     packageGraph: packageGraph,
