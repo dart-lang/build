@@ -66,7 +66,8 @@ Future<ServeHandler> watch(
   final buildActions = await createBuildActions(options.packageGraph, builders,
       overrideBuildConfig: overrideBuildConfig);
 
-  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
+  var watch = runWatch(options, buildActions,
+      terminator.shouldTerminate.then((_) => clearLock(options.packageGraph)));
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
@@ -160,7 +161,6 @@ class WatchImpl implements BuildState {
 
     var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled\n');
-      return clearLock(options.packageGraph);
     });
 
     // Start watching files immediately, before the first build is even started.
@@ -186,6 +186,7 @@ class WatchImpl implements BuildState {
           await currentBuild;
           await _buildDefinition.resourceManager.beforeExit();
           await controller.close();
+          await clearLock(options.packageGraph);
           _logger.info('Builds finished. Safe to exit\n');
         });
 
