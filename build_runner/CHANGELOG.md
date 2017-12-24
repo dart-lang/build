@@ -1,3 +1,10 @@
+## 0.7.2
+
+- Added the flag `--fail-on-severe`, which defaults to `false`. In a future
+  version this will default to `true`, which means that logging a message via
+  `log.severe` will fail the build instead of just printing to the terminal.
+  This would match the current behavior in `bazel_codegen`. 
+
 ## 0.7.1+1
 
 - **BUG FIX**: Running the `build_runner` binary without arguments no longer
