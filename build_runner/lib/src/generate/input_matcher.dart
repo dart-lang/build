@@ -11,6 +11,9 @@ import 'package:glob/glob.dart';
 abstract class InputMatcher {
   /// Whether [input] is included in this set of assets.
   bool matches(AssetId input);
+
+  // Remove after https://github.com/dart-lang/linter/issues/863 fixed.
+  // ignore: avoid_unused_constructor_parameters
   factory InputMatcher(InputSet inputSet) = _GlobInputMatcher;
 
   /// Returns a matcher on the intersection of all [matchers].
