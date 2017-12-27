@@ -1,3 +1,7 @@
+# 0.2.0
+
+**DEPRECATED** This package was moved to `build_web_compilers`.
+
 # 0.1.1-dev
 
 - Mark `ddc_bootstrap` builder with `build_to: cache`.
