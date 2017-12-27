@@ -12,7 +12,6 @@ import 'package:scratch_space/scratch_space.dart';
 
 import 'common.dart';
 import 'errors.dart';
-import 'kernel_builder.dart';
 import 'module_builder.dart';
 import 'modules.dart';
 import 'scratch_space.dart';
@@ -91,8 +90,6 @@ Future createDevCompilerModule(
       '--no-summarize',
       defaultAnalysisOptionsArg(scratchSpace),
     ]);
-  } else {
-    request.arguments.addAll(['--multi-root-scheme', multiRootScheme]);
   }
 
   if (debugMode) {
@@ -110,7 +107,7 @@ Future createDevCompilerModule(
     if (useKernel) {
       var path = p.url.relative(scratchSpace.fileFor(id).path,
           from: scratchSpace.tempDir.path);
-      request.arguments.addAll(['-s', '$multiRootScheme:///$path']);
+      request.arguments.addAll(['-s', path]);
     } else {
       request.arguments.addAll(['-s', scratchSpace.fileFor(id).path]);
     }
@@ -153,7 +150,7 @@ Future createDevCompilerModule(
       return uri;
     }
     if (useKernel) {
-      return '$multiRootScheme:///${id.path}';
+      return '${id.path}';
     } else {
       return new Uri.file('/${id.path}').toString();
     }
