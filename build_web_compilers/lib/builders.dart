@@ -9,4 +9,4 @@ Builder moduleBuilder(_) => const ModuleBuilder();
 Builder unlinkedSummaryBuilder(_) => const UnlinkedSummaryBuilder();
 Builder linkedSummaryBuilder(_) => const LinkedSummaryBuilder();
 Builder devCompilerBuilder(_) => const DevCompilerBuilder();
-Builder devCompilerBootstrapBuilder(_) => const DevCompilerBootstrapBuilder();
+Builder webEntrypointBuilder(_) => const WebEntrypointBuilder();

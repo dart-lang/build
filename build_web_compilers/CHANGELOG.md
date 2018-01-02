@@ -1,3 +1,12 @@
+# 0.2.0-dev
+
+## Breaking Changes
+
+- Renamed `ddc_bootstrap` builder to `web_entrypoint`, the exposed class also
+  changed from `DevCompilerBootstrapBuilder` to `WebEntrypointBuilder`.
+- Renamed `jsBootstrapExtension` to `ddcBootstrapExtension` since it is only
+  required when using the dev compiler.
+
 # 0.1.1
 
 - Mark `ddc_bootstrap` builder with `build_to: cache`.

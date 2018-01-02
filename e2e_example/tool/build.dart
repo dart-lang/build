@@ -32,7 +32,7 @@ Future main(List<String> args) async {
         isOptional: true,
         hideOutput: true),
     apply('build_web_compilers|ddc_bootstrap',
-        [(_) => new DevCompilerBootstrapBuilder()], toRoot(),
+        [(_) => new WebEntrypointBuilder()], toRoot(),
         hideOutput: true,
         defaultGenerateFor: const InputSet(
             include: const ['web/**', 'test/**.browser_test.dart']))
