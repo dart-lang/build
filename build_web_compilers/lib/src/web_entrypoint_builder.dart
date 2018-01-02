@@ -7,14 +7,23 @@ import 'dart:async';
 import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 
+import 'dart2js_bootstrap.dart';
 import 'dev_compiler_bootstrap.dart';
 
 const ddcBootstrapExtension = '.dart.bootstrap.js';
 const jsEntrypointExtension = '.dart.js';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 
+/// Which compiler to use when compiling web entrypoints.
+enum WebCompiler {
+  Dart2Js,
+  DartDevc,
+}
+
 class WebEntrypointBuilder implements Builder {
-  const WebEntrypointBuilder();
+  final WebCompiler webCompiler;
+
+  const WebEntrypointBuilder(this.webCompiler);
 
   @override
   final buildExtensions = const {
@@ -30,7 +39,11 @@ class WebEntrypointBuilder implements Builder {
     var dartEntrypointId = buildStep.inputId;
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
-    await bootstrapDdc(buildStep);
+    if (webCompiler == WebCompiler.DartDevc) {
+      await bootstrapDdc(buildStep);
+    } else if (webCompiler == WebCompiler.Dart2Js) {
+      await bootstrapDart2Js(buildStep);
+    }
   }
 }
 

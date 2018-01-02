@@ -12,9 +12,9 @@ builders:
         - .module
         - .linked.sum
         - .unlinked.sum
-        - .js.errors
-        - .js
-        - .js.map
+        - .ddc.js.errors
+        - .ddc.js
+        - .ddc.js.map
     is_optional: True
     auto_apply: all_packages
     required_inputs: [".dart"]
@@ -27,7 +27,7 @@ builders:
         - .dart.bootstrap.js
         - .dart.js
         - .dart.js.map
-    required_inputs:  [".dart", ".js"]
+    required_inputs:  [".dart", ".ddc.js", ".module"]
     build_to: cache
     auto_apply: root_package
     defaults:
