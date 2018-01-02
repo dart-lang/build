@@ -27,6 +27,7 @@ tools such as [Bazel][].
 
 * [Installation](#installation)
 * [Usage](#usage)
+  * [Built-in commands](#built-in-commands)
   * [Inputs](#inputs)
   * [Outputs](#outputs)
   * [Source control](#source-control)
