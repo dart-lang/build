@@ -17,6 +17,7 @@ import 'package:build_runner/build_runner.dart';
 
 const _assumeTty = 'assume-tty';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
+const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
 
@@ -51,16 +52,22 @@ class _SharedOptions {
   /// Any log of type `SEVERE` should fail the current build.
   final bool failOnSevere;
 
-  _SharedOptions._(
-      {@required this.assumeTty,
-      @required this.deleteFilesByDefault,
-      @required this.failOnSevere});
+  final bool enableLowResourcesMode;
+
+  _SharedOptions._({
+    @required this.assumeTty,
+    @required this.deleteFilesByDefault,
+    @required this.failOnSevere,
+    @required this.enableLowResourcesMode,
+  });
 
   factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
     return new _SharedOptions._(
-        assumeTty: argResults[_assumeTty] as bool,
-        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
-        failOnSevere: argResults[_failOnSevere] as bool);
+      assumeTty: argResults[_assumeTty] as bool,
+      deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
+      failOnSevere: argResults[_failOnSevere] as bool,
+      enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+    );
   }
 }
 
@@ -75,11 +82,14 @@ class _ServeOptions extends _SharedOptions {
     @required bool assumeTty,
     @required bool deleteFilesByDefault,
     @required bool failOnSevere,
+    @required bool enableLowResourcesMode,
   })
       : super._(
-            assumeTty: assumeTty,
-            deleteFilesByDefault: deleteFilesByDefault,
-            failOnSevere: failOnSevere);
+          assumeTty: assumeTty,
+          deleteFilesByDefault: deleteFilesByDefault,
+          failOnSevere: failOnSevere,
+          enableLowResourcesMode: enableLowResourcesMode,
+        );
 
   factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
     var serveTargets = <_ServeTarget>[];
@@ -96,11 +106,13 @@ class _ServeOptions extends _SharedOptions {
       ]);
     }
     return new _ServeOptions._(
-        hostName: argResults[_hostname] as String,
-        serveTargets: serveTargets,
-        assumeTty: argResults[_assumeTty] as bool,
-        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
-        failOnSevere: argResults[_failOnSevere] as bool);
+      hostName: argResults[_hostname] as String,
+      serveTargets: serveTargets,
+      assumeTty: argResults[_assumeTty] as bool,
+      deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
+      failOnSevere: argResults[_failOnSevere] as bool,
+      enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+    );
   }
 }
 
@@ -137,6 +149,12 @@ abstract class _BaseCommand extends Command {
               'and tests, but not otherwise.',
           negatable: false,
           defaultsTo: false)
+      ..addFlag(_lowResourcesMode,
+          help: 'Reduce the amount of memory consumed by the build process. '
+              'This will slow down builds but allow them to progress in '
+              'resource constrained environments.',
+          negatable: false,
+          defaultsTo: false)
       ..addFlag(_failOnSevere,
           help: 'Whether to consider the build a failure on an error logged.',
           negatable: true,
@@ -165,6 +183,7 @@ class _BuildCommand extends _BaseCommand {
     var options = _readOptions();
     await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty);
   }
 }
@@ -185,6 +204,7 @@ class _WatchCommand extends _BaseCommand {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty);
     await handler.currentBuild;
     await handler.buildResults.drain();
@@ -215,6 +235,7 @@ class _ServeCommand extends _WatchCommand {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty);
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
@@ -246,6 +267,7 @@ class _TestCommand extends _BaseCommand {
     var options = _readOptions();
     await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty);
 
     // Create the merged output directory.

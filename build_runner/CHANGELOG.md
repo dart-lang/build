@@ -1,3 +1,7 @@
+## 0.7.3
+
+- Added the flag `--low-resources-mode`, which defaults to `false`.
+
 ## 0.7.2
 
 - Added the flag `--fail-on-severe`, which defaults to `false`. In a future
