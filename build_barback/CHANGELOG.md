@@ -1,3 +1,8 @@
+## 0.5.0+1
+
+- Stop casting `BuildStep` to `BuildStepImpl` and remove `src` import from
+  package:build.
+
 ## 0.5.0
 
 - Internally uses `AnalysisOptions` with the following changes:

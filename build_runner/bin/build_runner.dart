@@ -19,7 +19,9 @@ Future<Null> main(List<String> args) async {
   if (stdioType(stdin) == StdioType.TERMINAL &&
       !args.any((a) => a.contains('assume-tty')) &&
       args.isNotEmpty) {
-    innerArgs.add('--assume-tty');
+    // We want to insert this as the first arg after the command, trailing args
+    // might get forwarded elsewhere (such as package:test).
+    innerArgs.insert(2, '--assume-tty');
   }
   var buildRun = await new ProcessManager().spawn(dart, innerArgs);
   await buildRun.exitCode;
