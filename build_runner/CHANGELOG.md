@@ -1,3 +1,7 @@
+## 0.7.3
+
+- Added the `test` command to the `build_runner` binary.
+
 ## 0.7.2
 
 - Added the flag `--fail-on-severe`, which defaults to `false`. In a future
