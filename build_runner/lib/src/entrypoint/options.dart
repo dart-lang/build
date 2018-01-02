@@ -20,6 +20,8 @@ const _deleteFilesByDefault = 'delete-conflicting-outputs';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
 
+final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
+
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner {
   final List<BuilderApplication> builderApplications;
@@ -263,7 +265,7 @@ class _TestCommand extends _BaseCommand {
     var tmpDir = await Directory.systemTemp.createTemp('build_runner_test');
     var tmpDirPath = tmpDir.absolute.uri.toFilePath();
     var scriptLocation = Platform.script.path;
-    var process = await new ProcessManager().spawn('pub', [
+    var process = await new ProcessManager().spawn(_pubBinary, [
       'run',
       'build_runner:create_merged_dir',
       '--script',
