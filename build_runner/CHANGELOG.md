@@ -4,6 +4,7 @@
   version this will default to `true`, which means that logging a message via
   `log.severe` will fail the build instead of just printing to the terminal.
   This would match the current behavior in `bazel_codegen`. 
+- Added the `test` command to the `build_runner` binary.
 
 ## 0.7.1+1
 
