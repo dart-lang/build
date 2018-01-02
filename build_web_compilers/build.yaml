@@ -18,10 +18,10 @@ builders:
     is_optional: True
     auto_apply: all_packages
     required_inputs: [".dart"]
-  ddc_bootstrap:
+  web_entrypoint:
     target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
-    builder_factories: ["devCompilerBootstrapBuilder"]
+    builder_factories: ["webEntrypointBuilder"]
     build_extensions:
       .dart:
         - .dart.bootstrap.js

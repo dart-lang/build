@@ -1,3 +1,8 @@
+# 0.2.0-dev
+
+- Renamed `ddc_bootstrap` builder to `web_entrypoint`, the exposed class also
+  changed from `DevCompilerBootstrapBuilder` to `WebEntrypointBuilder`.
+
 # 0.1.1
 
 - Mark `ddc_bootstrap` builder with `build_to: cache`.

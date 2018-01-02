@@ -5,136 +5,94 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 
 import 'dev_compiler_builder.dart';
 import 'module_builder.dart';
 import 'modules.dart';
+import 'web_entrypoint_builder.dart';
 
 /// Alias `_p.url` to `p`.
 _p.Context get p => _p.url;
 
-const bootstrapJsExtension = '.dart.bootstrap.js';
-const jsEntrypointExtension = '.dart.js';
-const jsEntrypointSourceMapExtension = '.dart.js.map';
+Future<Null> bootstrapDdc(BuildStep buildStep) async {
+  var dartEntrypointId = buildStep.inputId;
+  var moduleId = buildStep.inputId.changeExtension(moduleExtension);
+  var module = new Module.fromJson(JSON
+      .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
-class DevCompilerBootstrapBuilder implements Builder {
-  const DevCompilerBootstrapBuilder();
+  // First, ensure all transitive modules are built.
+  var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
 
-  @override
-  final buildExtensions = const {
-    '.dart': const [
-      bootstrapJsExtension,
-      jsEntrypointExtension,
-      jsEntrypointSourceMapExtension
-    ],
-  };
+  var appModuleName = _ddcModuleName(module.jsId);
 
-  @override
-  Future<Null> build(BuildStep buildStep) async {
-    var dartEntrypointId = buildStep.inputId;
-    var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
-    if (!isAppEntrypoint) return;
+  // The name of the entrypoint dart library within the entrypoint JS module.
+  //
+  // This is used to invoke `main()` from within the bootstrap script.
+  //
+  // TODO(jakemac53): Sane module name creation, this only works in the most
+  // basic of cases.
+  //
+  // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
+  // which will allow us to not rely on the naming schemes that dartdevc uses
+  // internally, but instead specify our own.
+  var appModuleScope = p
+      .split(_ddcModuleName(module.jsId))
+      .skip(1)
+      .join('__')
+      .replaceAll('.', '\$46');
 
-    var moduleId = buildStep.inputId.changeExtension(moduleExtension);
-    var module = new Module.fromJson(
-        JSON.decode(await buildStep.readAsString(moduleId))
-            as Map<String, dynamic>);
-
-    // First, ensure all transitive modules are built.
-    var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
-
-    var appModuleName = _ddcModuleName(module.jsId);
-
-    // The name of the entrypoint dart library within the entrypoint JS module.
-    //
-    // This is used to invoke `main()` from within the bootstrap script.
-    //
-    // TODO(jakemac53): Sane module name creation, this only works in the most
-    // basic of cases.
-    //
-    // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
-    // which will allow us to not rely on the naming schemes that dartdevc uses
-    // internally, but instead specify our own.
-    var appModuleScope = p
-        .split(_ddcModuleName(module.jsId))
-        .skip(1)
-        .join('__')
-        .replaceAll('.', '\$46');
-
-    // Map from module name to module path for custom modules.
-    var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
-    var transitiveJsModules = [module.jsId]
-      ..addAll(transitiveDeps.map((dep) => dep.jsId));
-    for (var jsId in transitiveJsModules) {
-      // Strip out the top level dir from the path for any module, and set it to
-      // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
-      // and we only allow you to serve top level directories.
-      var moduleName = _ddcModuleName(jsId);
-      modulePaths[moduleName] = p.withoutExtension(jsId.path.startsWith('lib')
-          ? '$moduleName$jsModuleExtension'
-          : p.joinAll(p.split(jsId.path).skip(1)));
-    }
-
-    var bootstrapContent = new StringBuffer('(function() {\n');
-    bootstrapContent.write(_dartLoaderSetup(modulePaths));
-    bootstrapContent.write(_requireJsConfig);
-
-    bootstrapContent.write(_appBootstrap(appModuleName, appModuleScope));
-
-    var bootstrapId = dartEntrypointId.changeExtension(bootstrapJsExtension);
-    await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
-
-    var bootstrapModuleName = p.withoutExtension(
-        p.relative(bootstrapId.path, from: p.dirname(dartEntrypointId.path)));
-
-    var entrypointJsContent = _entryPointJs(bootstrapModuleName);
-    await buildStep.writeAsString(
-        dartEntrypointId.changeExtension(jsEntrypointExtension),
-        entrypointJsContent);
-    await buildStep.writeAsString(
-        dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension),
-        '{"version":3,"sourceRoot":"","sources":[],"names":[],"mappings":"",'
-        '"file":""}');
+  // Map from module name to module path for custom modules.
+  var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
+  var transitiveJsModules = [module.jsId]
+    ..addAll(transitiveDeps.map((dep) => dep.jsId));
+  for (var jsId in transitiveJsModules) {
+    // Strip out the top level dir from the path for any module, and set it to
+    // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
+    // and we only allow you to serve top level directories.
+    var moduleName = _ddcModuleName(jsId);
+    modulePaths[moduleName] = p.withoutExtension(jsId.path.startsWith('lib')
+        ? '$moduleName$jsModuleExtension'
+        : p.joinAll(p.split(jsId.path).skip(1)));
   }
 
-  /// Ensures that all transitive js modules are available and built.
-  Future<List<Module>> _ensureTransitiveModules(
-      Module module, AssetReader reader) async {
-    // Collect all the modules this module depends on, plus this module.
-    var transitiveDeps = await module.computeTransitiveDependencies(reader);
-    var jsModules = transitiveDeps.map((module) => module.jsId).toList()
-      ..add(module.jsId);
-    // Check that each module is readable, and warn otherwise.
-    await Future.wait(jsModules.map((jsId) async {
-      if (await reader.canRead(jsId)) return;
-      log.warning(
-          'Unable to read $jsId, check your console for compilation errors.');
-    }));
-    return transitiveDeps;
-  }
+  var bootstrapContent = new StringBuffer('(function() {\n');
+  bootstrapContent.write(_dartLoaderSetup(modulePaths));
+  bootstrapContent.write(_requireJsConfig);
 
-  /// Returns whether or not [dartId] is an app entrypoint (basically, whether
-  /// or not it has a `main` function).
-  Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
-    assert(dartId.extension == '.dart');
-    // Skip reporting errors here, dartdevc will report them later with nicer
-    // formatting.
-    var parsed = parseCompilationUnit(await reader.readAsString(dartId),
-        suppressErrors: true);
-    // Allow two or fewer arguments so that entrypoints intended for use with
-    // [spawnUri] get counted.
-    //
-    // TODO: This misses the case where a Dart file doesn't contain main(),
-    // but has a part that does, or it exports a `main` from another library.
-    return parsed.declarations.any((node) {
-      return node is FunctionDeclaration &&
-          node.name.name == "main" &&
-          node.functionExpression.parameters.parameters.length <= 2;
-    });
-  }
+  bootstrapContent.write(_appBootstrap(appModuleName, appModuleScope));
+
+  var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
+  await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
+
+  var bootstrapModuleName = p.withoutExtension(
+      p.relative(bootstrapId.path, from: p.dirname(dartEntrypointId.path)));
+
+  var entrypointJsContent = _entryPointJs(bootstrapModuleName);
+  await buildStep.writeAsString(
+      dartEntrypointId.changeExtension(jsEntrypointExtension),
+      entrypointJsContent);
+  await buildStep.writeAsString(
+      dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension),
+      '{"version":3,"sourceRoot":"","sources":[],"names":[],"mappings":"",'
+      '"file":""}');
+}
+
+/// Ensures that all transitive js modules for [module] are available and built.
+Future<List<Module>> _ensureTransitiveModules(
+    Module module, AssetReader reader) async {
+  // Collect all the modules this module depends on, plus this module.
+  var transitiveDeps = await module.computeTransitiveDependencies(reader);
+  var jsModules = transitiveDeps.map((module) => module.jsId).toList()
+    ..add(module.jsId);
+  // Check that each module is readable, and warn otherwise.
+  await Future.wait(jsModules.map((jsId) async {
+    if (await reader.canRead(jsId)) return;
+    log.warning(
+        'Unable to read $jsId, check your console for compilation errors.');
+  }));
+  return transitiveDeps;
 }
 
 /// The module name according to ddc for [jsId] which represents the real js
