@@ -13,7 +13,8 @@ import 'modules.dart';
 import 'scratch_space.dart';
 import 'web_entrypoint_builder.dart';
 
-Future<Null> bootstrapDart2Js(BuildStep buildStep) async {
+Future<Null> bootstrapDart2Js(
+    BuildStep buildStep, List<String> dart2JsArgs) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId = dartEntrypointId.changeExtension(moduleExtension);
   var module = new Module.fromJson(JSON
@@ -25,13 +26,13 @@ Future<Null> bootstrapDart2Js(BuildStep buildStep) async {
   await scratchSpace.ensureAssets(allSrcs, buildStep);
 
   var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
-  var result = await Process.run(
-      'dart2js',
-      [
-        '-p${scratchSpace.packagesDir.path}',
-        '-o${jsOutputId.path}',
-        dartEntrypointId.path,
-      ],
+  var args = dart2JsArgs.toList()
+    ..addAll([
+      '-p${scratchSpace.packagesDir.path}',
+      '-o${jsOutputId.path}',
+      dartEntrypointId.path,
+    ]);
+  var result = await Process.run('dart2js', args,
       workingDirectory: scratchSpace.tempDir.path);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
   if (result.exitCode == 0 && await jsOutputFile.exists()) {

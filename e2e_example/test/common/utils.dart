@@ -175,25 +175,44 @@ Future<String> nextStdErrLine(String message) =>
 Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
-Future<ProcessResult> runTests({bool usePrecompiled}) async {
+/// Runs tests using the manual build script.
+Future<ProcessResult> _runManualTests({bool usePrecompiled}) {
+  return _runTests('dart', [p.join('tool', 'build.dart')],
+      usePrecompiled: usePrecompiled);
+}
+
+/// Runs tests using the manual auto script.
+Future<ProcessResult> _runAutoTests({bool usePrecompiled}) {
+  return _runTests(_pubBinary, ['run', 'build_runner'],
+      usePrecompiled: usePrecompiled);
+}
+
+Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
+    {bool usePrecompiled}) async {
   usePrecompiled ??= true;
   var testArgs = ['-p', 'chrome'];
   if (usePrecompiled) {
-    var args = [p.join('tool', 'build.dart'), 'test', '--']..addAll(testArgs);
-    return Process.run('dart', args);
+    var args = scriptArgs.toList()..addAll(['test', '--'])..addAll(testArgs);
+    return Process.run(executable, args);
   } else {
     var args = ['run', 'test', '--pub-serve', '8081']..addAll(testArgs);
     return Process.run(_pubBinary, args);
   }
 }
 
-Future<Null> expectTestsFail() async {
-  var result = await runTests();
+Future<Null> expectTestsFail({bool useManualScript}) async {
+  useManualScript ??= true;
+  var result =
+      useManualScript ? await _runManualTests() : await _runAutoTests();
   expect(result.stdout, contains('Some tests failed'));
 }
 
-Future<Null> expectTestsPass({int expectedNumRan, bool usePrecompiled}) async {
-  var result = await runTests(usePrecompiled: usePrecompiled);
+Future<Null> expectTestsPass(
+    {int expectedNumRan, bool usePrecompiled, bool useManualScript}) async {
+  useManualScript ??= true;
+  var result = useManualScript
+      ? await _runManualTests(usePrecompiled: usePrecompiled)
+      : await _runAutoTests(usePrecompiled: usePrecompiled);
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {
     expect(result.stdout, contains('+$expectedNumRan'));

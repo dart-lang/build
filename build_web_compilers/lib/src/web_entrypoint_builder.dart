@@ -20,10 +20,46 @@ enum WebCompiler {
   DartDevc,
 }
 
+const _supportedOptions = const ['compiler', 'dart2js_args'];
+
 class WebEntrypointBuilder implements Builder {
   final WebCompiler webCompiler;
+  final List<String> dart2JsArgs;
 
-  const WebEntrypointBuilder(this.webCompiler);
+  const WebEntrypointBuilder(this.webCompiler, {this.dart2JsArgs: const []});
+
+  factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
+    var unsupportedOptions =
+        options.config.keys.where((o) => !_supportedOptions.contains(o));
+    if (unsupportedOptions.isNotEmpty) {
+      throw new ArgumentError.value(
+          unsupportedOptions.join(', '),
+          'build_web_compilers|web_entrypoint',
+          'only $_supportedOptions are supported options, but got');
+    }
+    var compilerOption = options.config['compiler'] as String ?? 'dartdevc';
+    WebCompiler compiler;
+    switch (compilerOption) {
+      case 'dartdevc':
+        compiler = WebCompiler.DartDevc;
+        break;
+      case 'dart2js':
+        compiler = WebCompiler.Dart2Js;
+        break;
+      default:
+        throw new ArgumentError.value(compilerOption, 'compiler',
+            'Only `dartdevc` and `dart2js` are supported.');
+    }
+
+    var dart2JsArgs = options.config['dart2js_args'] ?? <String>[];
+    if (dart2JsArgs is! List<String>) {
+      throw new ArgumentError.value(dart2JsArgs, 'dart2js_args',
+          'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
+    }
+
+    return new WebEntrypointBuilder(compiler,
+        dart2JsArgs: dart2JsArgs as List<String>);
+  }
 
   @override
   final buildExtensions = const {
@@ -42,7 +78,7 @@ class WebEntrypointBuilder implements Builder {
     if (webCompiler == WebCompiler.DartDevc) {
       await bootstrapDdc(buildStep);
     } else if (webCompiler == WebCompiler.Dart2Js) {
-      await bootstrapDart2Js(buildStep);
+      await bootstrapDart2Js(buildStep, dart2JsArgs);
     }
   }
 }
