@@ -4,6 +4,8 @@
   version this will default to `true`, which means that logging a message via
   `log.severe` will fail the build instead of just printing to the terminal.
   This would match the current behavior in `bazel_codegen`. 
+- Added the `test` command which creates a merged output directory and runs
+  `pub run test --precompiled` inside it.
 
 ## 0.7.1+1
 
