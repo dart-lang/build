@@ -264,7 +264,7 @@ class _TestCommand extends _BaseCommand {
   Future<String> _createMergedDir() async {
     var tmpDir = await Directory.systemTemp.createTemp('build_runner_test');
     var tmpDirPath = tmpDir.absolute.uri.toFilePath();
-    var scriptLocation = Platform.script.path;
+    var scriptLocation = Platform.script.toFilePath();
     var process = await new ProcessManager().spawn(_pubBinary, [
       'run',
       'build_runner:create_merged_dir',
@@ -315,7 +315,7 @@ class _TestCommand extends _BaseCommand {
   Future<Null> _runTests(String precompiledPath) async {
     var extraTestArgs = argResults.rest;
     var testProcess = await new ProcessManager().spawn(
-        'pub',
+        _pubBinary,
         [
           'run',
           'test',
