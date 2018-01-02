@@ -23,7 +23,3 @@ dependencies:
 
 dev_dependencies:
   analyzer: ">=0.27.1 <0.31.0"
-
-dependency_overrides:
-  build_barback:
-    path: ../build_barback
