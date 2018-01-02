@@ -20,5 +20,7 @@ dev_dependencies:
   test: ^0.12.0
 
 dependency_overrides:
+  build_barback:
+    path: ../build_barback
   build_test:
     path: ../build_test
