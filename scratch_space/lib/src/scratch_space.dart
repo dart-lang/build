@@ -35,7 +35,7 @@ class ScratchSpace {
 
   factory ScratchSpace() {
     var tempDir = new Directory(Directory.systemTemp
-        .createTempSync('build_compilers')
+        .createTempSync('scratch_space')
         .resolveSymbolicLinksSync());
     return new ScratchSpace._(tempDir);
   }

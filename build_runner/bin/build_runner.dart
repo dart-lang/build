@@ -17,7 +17,8 @@ Future<Null> main(List<String> args) async {
   var dart = Platform.resolvedExecutable;
   final innerArgs = [scriptLocation]..addAll(args);
   if (stdioType(stdin) == StdioType.TERMINAL &&
-      !args.any((a) => a.contains('assume-tty'))) {
+      !args.any((a) => a.contains('assume-tty')) &&
+      args.isNotEmpty) {
     // We want to insert this as the first arg after the command, trailing args
     // might get forwarded elsewhere (such as package:test).
     innerArgs.insert(2, '--assume-tty');

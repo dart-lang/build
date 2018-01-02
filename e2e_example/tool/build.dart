@@ -5,7 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_compilers/build_compilers.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
@@ -21,7 +21,7 @@ Future main(List<String> args) async {
         defaultGenerateFor:
             const InputSet(include: const ['test/**_test.dart'])),
     apply(
-        'build_compilers|ddc',
+        'build_web_compilers|ddc',
         [
           (_) => new ModuleBuilder(),
           (_) => new UnlinkedSummaryBuilder(),
@@ -31,7 +31,7 @@ Future main(List<String> args) async {
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
-    apply('build_compilers|ddc_bootstrap',
+    apply('build_web_compilers|ddc_bootstrap',
         [(_) => new DevCompilerBootstrapBuilder()], toRoot(),
         hideOutput: true,
         defaultGenerateFor: const InputSet(

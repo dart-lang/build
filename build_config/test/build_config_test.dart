@@ -14,9 +14,10 @@ void main() {
       'example:a': new BuildTarget(
         builders: {
           'b|b': new TargetBuilderConfig(
+              isEnabled: true,
               generateFor: new InputSet(include: ['lib/a.dart'])),
           'example|h': new TargetBuilderConfig(
-              options: new BuilderOptions({'foo': 'bar'})),
+              isEnabled: true, options: new BuilderOptions({'foo': 'bar'})),
         },
         dependencies: ['b:b', 'c:d'].toSet(),
         package: 'example',

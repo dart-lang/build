@@ -1,6 +1,7 @@
-# 0.1.1-dev
+# 0.1.1
 
 - Mark `ddc_bootstrap` builder with `build_to: cache`.
+- Publish as `build_web_compilers`
 
 # 0.1.0
 

@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_compilers/build_compilers.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
 
 Builder moduleBuilder(_) => const ModuleBuilder();
 Builder unlinkedSummaryBuilder(_) => const UnlinkedSummaryBuilder();

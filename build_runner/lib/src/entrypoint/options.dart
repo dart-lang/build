@@ -17,6 +17,7 @@ import 'package:build_runner/build_runner.dart';
 
 const _assumeTty = 'assume-tty';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
+const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
 
 /// Unified command runner for all build_runner commands.
@@ -45,13 +46,19 @@ class _SharedOptions {
   /// This option can be set to `true` to skip this prompt.
   final bool deleteFilesByDefault;
 
+  /// Any log of type `SEVERE` should fail the current build.
+  final bool failOnSevere;
+
   _SharedOptions._(
-      {@required this.assumeTty, @required this.deleteFilesByDefault});
+      {@required this.assumeTty,
+      @required this.deleteFilesByDefault,
+      @required this.failOnSevere});
 
   factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
     return new _SharedOptions._(
         assumeTty: argResults[_assumeTty] as bool,
-        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool);
+        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
+        failOnSevere: argResults[_failOnSevere] as bool);
   }
 }
 
@@ -65,9 +72,12 @@ class _ServeOptions extends _SharedOptions {
     @required this.serveTargets,
     @required bool assumeTty,
     @required bool deleteFilesByDefault,
+    @required bool failOnSevere,
   })
       : super._(
-            assumeTty: assumeTty, deleteFilesByDefault: deleteFilesByDefault);
+            assumeTty: assumeTty,
+            deleteFilesByDefault: deleteFilesByDefault,
+            failOnSevere: failOnSevere);
 
   factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
     var serveTargets = <_ServeTarget>[];
@@ -87,7 +97,8 @@ class _ServeOptions extends _SharedOptions {
         hostName: argResults[_hostname] as String,
         serveTargets: serveTargets,
         assumeTty: argResults[_assumeTty] as bool,
-        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool);
+        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
+        failOnSevere: argResults[_failOnSevere] as bool);
   }
 }
 
@@ -123,6 +134,10 @@ abstract class _BaseCommand extends Command {
               'This should typically be used in continues integration servers '
               'and tests, but not otherwise.',
           negatable: false,
+          defaultsTo: false)
+      ..addFlag(_failOnSevere,
+          help: 'Whether to consider the build a failure on an error logged.',
+          negatable: true,
           defaultsTo: false);
   }
 

@@ -250,7 +250,9 @@ class TargetBuilderConfig {
   /// Overrides the setting of whether the Builder would run on this target.
   ///
   /// Builders may run on this target by default based on the `apply_to`
-  /// argument. If this value is set it overrides the default.
+  /// argument, set to `false` to disable a Builder which would otherwise run.
+  ///
+  /// By default including a config for a Builder enables that builder.
   final bool isEnabled;
 
   /// Sources to use as inputs for this Builder in glob format.
