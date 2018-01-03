@@ -17,6 +17,9 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../environment/build_environment.dart';
+import '../environment/io_environment.dart';
+import '../environment/overridable_environment.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
@@ -49,17 +52,19 @@ Future<ServeHandler> watch(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
 }) async {
-  var options = new BuildOptions(
-      assumeTty: assumeTty,
+  packageGraph ??= new PackageGraph.forThisPackage();
+  var environment = new OverrideableEnvironment(
+      new IOEnvironment(packageGraph, assumeTty),
+      reader: reader,
+      writer: writer,
+      directoryWatcherFactory: directoryWatcherFactory,
+      onLog: onLog);
+  var options = new BuildOptions(environment,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
       logLevel: logLevel,
-      onLog: onLog,
       debounceDelay: debounceDelay,
-      directoryWatcherFactory: directoryWatcherFactory,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
@@ -68,7 +73,8 @@ Future<ServeHandler> watch(
   final buildActions = await createBuildActions(options.packageGraph, builders,
       overrideBuildConfig: overrideBuildConfig);
 
-  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
+  var watch =
+      runWatch(environment, options, buildActions, terminator.shouldTerminate);
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
@@ -87,9 +93,9 @@ Future<ServeHandler> watch(
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-WatchImpl runWatch(
-        BuildOptions options, List<BuildAction> buildActions, Future until) =>
-    new WatchImpl(options, buildActions, until);
+WatchImpl runWatch(BuildEnvironment environment, BuildOptions options,
+        List<BuildAction> buildActions, Future until) =>
+    new WatchImpl(environment, options, buildActions, until);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
@@ -118,11 +124,13 @@ class WatchImpl implements BuildState {
   final _readerCompleter = new Completer<DigestAssetReader>();
   Future<DigestAssetReader> get reader => _readerCompleter.future;
 
-  WatchImpl(BuildOptions options, List<BuildAction> buildActions, Future until)
-      : _directoryWatcherFactory = options.directoryWatcherFactory,
+  WatchImpl(BuildEnvironment environment, BuildOptions options,
+      List<BuildAction> buildActions, Future until)
+      : _directoryWatcherFactory = environment.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
-    buildResults = _run(options, buildActions, until).asBroadcastStream();
+    buildResults =
+        _run(environment, options, buildActions, until).asBroadcastStream();
   }
 
   @override
@@ -133,8 +141,8 @@ class WatchImpl implements BuildState {
   /// Only one build will run at a time, and changes are batched.
   ///
   /// File watchers are scheduled synchronously.
-  Stream<BuildResult> _run(
-      BuildOptions options, List<BuildAction> buildActions, Future until) {
+  Stream<BuildResult> _run(BuildEnvironment environment, BuildOptions options,
+      List<BuildAction> buildActions, Future until) {
     var firstBuildCompleter = new Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = new StreamController<BuildResult>();
@@ -182,7 +190,7 @@ class WatchImpl implements BuildState {
           // Kill future builds if the root packages file changes.
           assert(originalRootPackagesDigest != null);
           if (change.id != rootPackagesId) return change;
-          return options.reader.readAsBytes(rootPackagesId).then((bytes) {
+          return environment.reader.readAsBytes(rootPackagesId).then((bytes) {
             if (md5.convert(bytes) != originalRootPackagesDigest) {
               _terminateCompleter.complete();
               _logger.severe('Terminating builds due to package graph update, '
@@ -221,10 +229,10 @@ class WatchImpl implements BuildState {
     // stream synchronously.
     () async {
       originalRootPackagesDigest =
-          md5.convert(await options.reader.readAsBytes(rootPackagesId));
+          md5.convert(await environment.reader.readAsBytes(rootPackagesId));
 
       _buildDefinition = await BuildDefinition.prepareWorkspace(
-          options, buildActions,
+          environment, options, buildActions,
           onDelete: _expectedDeletes.add);
       _readerCompleter.complete(new SingleStepReader(
           _buildDefinition.reader,

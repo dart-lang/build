@@ -79,29 +79,13 @@ class BuildAction implements InputMatcher {
     return result;
   }
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is BuildAction &&
-          // Risky, but we don't want to force all Builders to implement a sane
-          // hashcode/equals
-          '${other.builder.runtimeType}' == '${builder.runtimeType}' &&
-          other.package == package &&
-          other._inputs == _inputs &&
-          other.isOptional == isOptional &&
-          other.hideOutput == hideOutput &&
-          _deepEquals.equals(
-              other.builderOptions.config, builderOptions.config);
-
-  @override
-  int get hashCode => _deepEquals.hash([
-        '${builder.runtimeType}',
-        package,
-        _inputs,
-        isOptional,
-        hideOutput,
-        builderOptions.config
-      ]);
+  /// The identity of this action in terms of a build graph.
+  ///
+  /// This takes into account everything except for the [builderOptions], which
+  /// are tracked separately via a `BuilderOptionsNode` which supports more fine
+  /// grained invalidation.
+  int get identity => _deepEquals.hash(
+      ['${builder.runtimeType}', package, _inputs, isOptional, hideOutput]);
 }
 
 final _deepEquals = const DeepCollectionEquality();
