@@ -12,6 +12,7 @@ import 'module_builder.dart';
 import 'modules.dart';
 import 'scratch_space.dart';
 import 'web_entrypoint_builder.dart';
+import 'workers.dart';
 
 Future<Null> bootstrapDart2Js(
     BuildStep buildStep, List<String> dart2JsArgs) async {
@@ -32,7 +33,7 @@ Future<Null> bootstrapDart2Js(
       '-o${jsOutputId.path}',
       dartEntrypointId.path,
     ]);
-  var result = await Process.run('dart2js', args,
+  var result = await Process.run(dart2jsPath, args,
       workingDirectory: scratchSpace.tempDir.path);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
   if (result.exitCode == 0 && await jsOutputFile.exists()) {
