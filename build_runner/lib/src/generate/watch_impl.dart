@@ -19,6 +19,7 @@ import '../asset_graph/node.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -64,10 +65,12 @@ Future<ServeHandler> watch(
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final buildActions = await createBuildActions(options.packageGraph, builders,
+  final targetGraph = await TargetGraph.forPackageGraph(options.packageGraph);
+  final buildActions = await createBuildActions(targetGraph, builders,
       overrideBuildConfig: overrideBuildConfig);
 
-  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
+  var watch = runWatch(options, buildActions, terminator.shouldTerminate,
+      targetGraph.rootPackageConfig);
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
@@ -86,15 +89,16 @@ Future<ServeHandler> watch(
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-WatchImpl runWatch(
-        BuildOptions options, List<BuildAction> buildActions, Future until) =>
-    new WatchImpl(options, buildActions, until);
+WatchImpl runWatch(BuildOptions options, List<BuildAction> buildActions,
+        Future until, BuildConfig rootPackageConfig) =>
+    new WatchImpl(options, buildActions, until, rootPackageConfig);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
 class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
   BuildDefinition _buildDefinition;
+  final BuildConfig _rootPackageConfig;
 
   /// Delay to wait for more file watcher events.
   final Duration _debounceDelay;
@@ -114,7 +118,8 @@ class WatchImpl implements BuildState {
   final _readerCompleter = new Completer<DigestAssetReader>();
   Future<DigestAssetReader> get reader => _readerCompleter.future;
 
-  WatchImpl(BuildOptions options, List<BuildAction> buildActions, Future until)
+  WatchImpl(BuildOptions options, List<BuildAction> buildActions, Future until,
+      this._rootPackageConfig)
       : _directoryWatcherFactory = options.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
@@ -202,7 +207,7 @@ class WatchImpl implements BuildState {
     // stream synchronously.
     () async {
       _buildDefinition = await BuildDefinition.prepareWorkspace(
-          options, buildActions,
+          options, buildActions, _rootPackageConfig,
           onDelete: _expectedDeletes.add);
       _readerCompleter.complete(new SingleStepReader(
           _buildDefinition.reader,

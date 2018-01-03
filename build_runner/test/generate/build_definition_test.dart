@@ -102,7 +102,7 @@ main() {
 
         await deleteFile(p.join('lib', 'b.txt'));
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+            await BuildDefinition.prepareWorkspace(options, buildActions, null);
         var newAssetGraph = buildDefinition.assetGraph;
 
         generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
@@ -127,7 +127,7 @@ main() {
 
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+            await BuildDefinition.prepareWorkspace(options, buildActions, null);
         var newAssetGraph = buildDefinition.assetGraph;
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/a.txt')), isTrue);
@@ -156,7 +156,7 @@ main() {
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+            await BuildDefinition.prepareWorkspace(options, buildActions, null);
         var newAssetGraph = buildDefinition.assetGraph;
 
         var generatedANode = newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
@@ -186,7 +186,7 @@ main() {
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+            await BuildDefinition.prepareWorkspace(options, buildActions, null);
         expect(buildDefinition.assetGraph.contains(generatedSrcId), isTrue);
       });
 
@@ -225,8 +225,8 @@ main() {
               targetSources: const InputSet(include: const ['**/*.txt']),
               hideOutput: true),
         ];
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, newBuildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            options, newBuildActions, null);
         var newAssetGraph = buildDefinition.assetGraph;
 
         // The *.copy node should be invalidated, its builder options changed.
@@ -265,7 +265,7 @@ main() {
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+            await BuildDefinition.prepareWorkspace(options, buildActions, null);
 
         expect(buildDefinition.assetGraph.contains(generatedId), isFalse);
       });
@@ -274,7 +274,7 @@ main() {
         var entryPoint =
             new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, []);
+            await BuildDefinition.prepareWorkspace(options, [], null);
         expect(buildDefinition.assetGraph.contains(entryPoint), isTrue);
       });
 
@@ -285,7 +285,7 @@ main() {
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
         ];
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+            await BuildDefinition.prepareWorkspace(options, buildActions, null);
         expect(
             buildDefinition.assetGraph
                 .contains(entryPoint.addExtension('.copy')),
@@ -320,7 +320,7 @@ main() {
       logs.clear();
 
       var buildDefinition =
-          await BuildDefinition.prepareWorkspace(options, buildActions);
+          await BuildDefinition.prepareWorkspace(options, buildActions, null);
       expect(
           logs.any(
             (log) =>

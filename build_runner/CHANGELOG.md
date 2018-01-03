@@ -1,6 +1,6 @@
 ## 0.7.4
 
-- Whitelist any files used in a builder's `generate_for` as a valid source.
+- Whitelist files used in any target in the root package as valid sources.
 
 ## 0.7.3
 

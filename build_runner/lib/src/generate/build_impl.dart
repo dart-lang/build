@@ -24,6 +24,7 @@ import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
@@ -66,20 +67,22 @@ Future<BuildResult> build(
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final buildActions = await createBuildActions(options.packageGraph, builders,
+  final targetGraph = await TargetGraph.forPackageGraph(options.packageGraph);
+  final buildActions = await createBuildActions(targetGraph, builders,
       overrideBuildConfig: overrideBuildConfig);
 
-  var result = await singleBuild(options, buildActions);
+  var result =
+      await singleBuild(options, buildActions, targetGraph.rootPackageConfig);
 
   await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
 
-Future<BuildResult> singleBuild(
-    BuildOptions options, List<BuildAction> buildActions) async {
-  var buildDefinition =
-      await BuildDefinition.prepareWorkspace(options, buildActions);
+Future<BuildResult> singleBuild(BuildOptions options,
+    List<BuildAction> buildActions, BuildConfig rootPackageConfig) async {
+  var buildDefinition = await BuildDefinition.prepareWorkspace(
+      options, buildActions, rootPackageConfig);
   var result =
       (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
   await buildDefinition.resourceManager.beforeExit();
