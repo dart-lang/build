@@ -18,7 +18,7 @@ builders:
     is_optional: True
     auto_apply: all_packages
     required_inputs: [".dart"]
-  web_entrypoint:
+  entrypoint:
     target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
     builder_factories: ["webEntrypointBuilder"]

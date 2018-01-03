@@ -31,7 +31,7 @@ Future main(List<String> args) async {
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
-    apply('build_web_compilers|web_entrypoint',
+    apply('build_web_compilers|entrypoint',
         [(_) => new WebEntrypointBuilder(WebCompiler.DartDevc)], toRoot(),
         hideOutput: true,
         defaultGenerateFor: const InputSet(

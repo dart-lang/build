@@ -1,7 +1,7 @@
 targets:
   e2e_example:
     builders:
-      build_web_compilers|web_entrypoint:
+      build_web_compilers|entrypoint:
         options:
           compiler: dart2js
           dart2js_args:

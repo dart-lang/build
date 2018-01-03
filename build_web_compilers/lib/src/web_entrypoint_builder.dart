@@ -20,8 +20,13 @@ enum WebCompiler {
   DartDevc,
 }
 
+/// The top level keys supported for the `options` config for the
+/// [WebEntrypointBuilder].
 const _supportedOptions = const ['compiler', 'dart2js_args'];
 
+/// A builder which compiles entrypoints for the web.
+///
+/// Supports `dart2js` and `dartdevc` today.
 class WebEntrypointBuilder implements Builder {
   final WebCompiler webCompiler;
   final List<String> dart2JsArgs;
@@ -34,7 +39,7 @@ class WebEntrypointBuilder implements Builder {
     if (unsupportedOptions.isNotEmpty) {
       throw new ArgumentError.value(
           unsupportedOptions.join(', '),
-          'build_web_compilers|web_entrypoint',
+          'build_web_compilers|entrypoint',
           'only $_supportedOptions are supported options, but got');
     }
     var compilerOption = options.config['compiler'] as String ?? 'dartdevc';
