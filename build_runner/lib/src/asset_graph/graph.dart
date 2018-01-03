@@ -390,7 +390,7 @@ class AssetGraph {
 Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
   var digestSink = new AccumulatorSink<Digest>();
   var bytesSink = md5.startChunkedConversion(digestSink);
-  bytesSink.add(buildActions.map((a) => a.hashCode).toList());
+  bytesSink.add(buildActions.map((a) => a.identity).toList());
   bytesSink.close();
   assert(digestSink.events.length == 1);
   return digestSink.events.first;

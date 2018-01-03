@@ -333,5 +333,51 @@ main() {
       expect(originalAssetGraph.buildActionsDigest,
           isNot(newAssetGraph.buildActionsDigest));
     });
+
+    test('does not invalidate the graph if the BuilderOptions change',
+        () async {
+      // Gets rid of console spam during tests, we are setting up a new options
+      // object.
+      await options.logListener.cancel();
+
+      var buildActions = [
+        new BuildAction(new CopyBuilder(), 'a',
+            hideOutput: true,
+            builderOptions: new BuilderOptions({'foo': 'bar'}))
+      ];
+      var logs = <LogRecord>[];
+      options = new BuildOptions(
+          packageGraph: options.packageGraph,
+          logLevel: Level.WARNING,
+          skipBuildScriptCheck: true,
+          onLog: logs.add);
+
+      var originalAssetGraph = await AssetGraph.build(buildActions,
+          <AssetId>[].toSet(), new Set(), aPackageGraph, options.reader);
+
+      await createFile(
+          assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+
+      buildActions = [
+        new BuildAction(new CopyBuilder(), 'a',
+            hideOutput: true,
+            builderOptions: new BuilderOptions({'baz': 'zap'}))
+      ];
+      logs.clear();
+
+      var buildDefinition =
+          await BuildDefinition.prepareWorkspace(options, buildActions);
+      expect(
+          logs.any(
+            (log) =>
+                log.level == Level.WARNING &&
+                log.message.contains('build actions have changed'),
+          ),
+          isFalse);
+
+      var newAssetGraph = buildDefinition.assetGraph;
+      expect(originalAssetGraph.buildActionsDigest,
+          equals(newAssetGraph.buildActionsDigest));
+    });
   });
 }
