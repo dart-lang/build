@@ -12,13 +12,13 @@ builders:
         - .module
         - .linked.sum
         - .unlinked.sum
-        - .js.errors
-        - .js
-        - .js.map
+        - .ddc.js.errors
+        - .ddc.js
+        - .ddc.js.map
     is_optional: True
     auto_apply: all_packages
     required_inputs: [".dart"]
-  web_entrypoint:
+  entrypoint:
     target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
     builder_factories: ["webEntrypointBuilder"]
@@ -27,7 +27,7 @@ builders:
         - .dart.bootstrap.js
         - .dart.js
         - .dart.js.map
-    required_inputs:  [".dart", ".js"]
+    required_inputs:  [".dart", ".ddc.js", ".module"]
     build_to: cache
     auto_apply: root_package
     defaults:

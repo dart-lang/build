@@ -16,4 +16,4 @@ export 'src/summary_builder.dart'
         linkedSummaryExtension,
         unlinkedSummaryExtension;
 export 'src/web_entrypoint_builder.dart'
-    show WebEntrypointBuilder, ddcBootstrapExtension;
+    show WebCompiler, WebEntrypointBuilder, ddcBootstrapExtension;

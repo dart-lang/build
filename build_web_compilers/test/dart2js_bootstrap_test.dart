@@ -14,7 +14,6 @@ main() {
 
   setUp(() async {
     assets = {
-      'build_web_compilers|lib/src/analysis_options.default.yaml': '',
       'b|lib/b.dart': '''final world = 'world';''',
       'a|lib/a.dart': '''
         import 'package:b/b.dart';
@@ -30,31 +29,16 @@ main() {
 
     // Set up all the other required inputs for this test.
     await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
-    await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
-    await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
-    await testBuilderAndCollectAssets(new DevCompilerBuilder(), assets);
   });
 
-  test("can bootstrap dart entrypoints", () async {
+  test('can bootstrap dart entrypoints', () async {
     // Just do some basic sanity checking, integration tests will validate
     // things actually work.
     var expectedOutputs = {
-      'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
+      'a|web/index.dart.js': decodedMatches(contains('world')),
       'a|web/index.dart.js.map': anything,
-      'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
-        // Maps non-lib modules to remove the top level dir.
-        contains('"web/index": "index.ddc"'),
-        // Maps lib modules to packages path
-        contains('"packages/a/a": "packages/a/a.ddc"'),
-        contains('"packages/b/b": "packages/b/b.ddc"'),
-        // Requires the top level module and dart sdk.
-        contains('require(["web/index", "dart_sdk"]'),
-        // Calls main on the top level module.
-        contains('index.main()'),
-        isNot(contains('lib/a')),
-      ])),
     };
-    await testBuilder(new WebEntrypointBuilder(WebCompiler.DartDevc), assets,
+    await testBuilder(new WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
         outputs: expectedOutputs);
   });
 }
