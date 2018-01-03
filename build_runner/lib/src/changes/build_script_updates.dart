@@ -9,8 +9,9 @@ import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import '../asset/reader.dart';
 import '../asset_graph/graph.dart';
-import '../generate/options.dart';
+import '../package_graph/package_graph.dart';
 
 class BuildScriptUpdates {
   final Set<AssetId> _allSources;
@@ -18,10 +19,10 @@ class BuildScriptUpdates {
 
   BuildScriptUpdates._(this._supportsIncrementalRebuilds, this._allSources);
 
-  static Future<BuildScriptUpdates> create(
-      BuildOptions options, AssetGraph graph) async {
+  static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
+      PackageGraph packageGraph, AssetGraph graph) async {
     bool supportsIncrementalRebuilds = true;
-    var rootPackage = options.packageGraph.root.name;
+    var rootPackage = packageGraph.root.name;
     Set<AssetId> allSources;
     var logger = new Logger('BuildScriptUpdates');
     try {
@@ -41,7 +42,7 @@ class BuildScriptUpdates {
         // Make sure we are tracking changes for all ids in [allSources].
         for (var id in allSources) {
           var node = graph.get(id);
-          node.lastKnownDigest ??= await options.reader.digest(id);
+          node.lastKnownDigest ??= await reader.digest(id);
         }
       }
     } on ArgumentError catch (_) {
