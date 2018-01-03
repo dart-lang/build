@@ -94,8 +94,14 @@ class BuildAction implements InputMatcher {
               other.builderOptions.config, builderOptions.config);
 
   @override
-  int get hashCode => _deepEquals.hash(
-      ['${builder.runtimeType}', package, _inputs, isOptional, hideOutput]);
+  int get hashCode => _deepEquals.hash([
+        '${builder.runtimeType}',
+        package,
+        _inputs,
+        isOptional,
+        hideOutput,
+        builderOptions.config
+      ]);
 }
 
 final _deepEquals = const DeepCollectionEquality();

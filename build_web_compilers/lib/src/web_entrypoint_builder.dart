@@ -26,7 +26,7 @@ const _supportedOptions = const ['compiler', 'dart2js_args'];
 
 /// A builder which compiles entrypoints for the web.
 ///
-/// Supports `dart2js` and `dartdevc` today.
+/// Supports `dart2js` and `dartdevc`.
 class WebEntrypointBuilder implements Builder {
   final WebCompiler webCompiler;
   final List<String> dart2JsArgs;

@@ -31,7 +31,7 @@ main() {
     await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
   });
 
-  test("can bootstrap dart entrypoints", () async {
+  test('can bootstrap dart entrypoints', () async {
     // Just do some basic sanity checking, integration tests will validate
     // things actually work.
     var expectedOutputs = {
