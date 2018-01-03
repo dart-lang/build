@@ -15,6 +15,7 @@ void main() {
   test('uses builder options', () async {
     Builder copyBuilder(BuilderOptions options) => new CopyBuilder(
         inputExtension: options.config['inputExtension'] as String ?? '');
+
     final buildConfigs = parseBuildConfigs({
       'a': {
         'targets': {

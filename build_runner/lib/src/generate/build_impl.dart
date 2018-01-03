@@ -72,9 +72,9 @@ Future<BuildResult> build(
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final targetGraph = await TargetGraph.forPackageGraph(options.packageGraph);
-  final buildActions = await createBuildActions(targetGraph, builders,
+  final targetGraph = await TargetGraph.forPackageGraph(options.packageGraph,
       overrideBuildConfig: overrideBuildConfig);
+  final buildActions = await createBuildActions(targetGraph, builders);
 
   var result = await singleBuild(
       environment, options, buildActions, targetGraph.rootPackageConfig);

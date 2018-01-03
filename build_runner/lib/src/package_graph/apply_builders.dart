@@ -105,9 +105,8 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-Future<List<BuildAction>> createBuildActions(
-    TargetGraph targetGraph, Iterable<BuilderApplication> builderApplications,
-    {Map<String, BuildConfig> overrideBuildConfig}) async {
+Future<List<BuildAction>> createBuildActions(TargetGraph targetGraph,
+    Iterable<BuilderApplication> builderApplications) async {
   var cycles = stronglyConnectedComponents<String, TargetNode>(
       targetGraph.allModules.values,
       (node) => node.target.key,
