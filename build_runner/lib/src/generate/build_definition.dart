@@ -10,7 +10,6 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
@@ -20,6 +19,7 @@ import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
+import '../environment/build_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
@@ -58,21 +58,26 @@ class BuildDefinition {
       this.enableLowResourcesMode,
       this.onDelete);
 
-  static Future<BuildDefinition> prepareWorkspace(BuildOptions options,
-          List<BuildAction> buildActions, BuildConfig rootPackageConfig,
+  static Future<BuildDefinition> prepareWorkspace(
+          BuildEnvironment environment,
+          BuildOptions options,
+          List<BuildAction> buildActions,
+          BuildConfig rootPackageConfig,
           {void onDelete(AssetId id)}) =>
-      new _Loader(options, buildActions, rootPackageConfig, onDelete)
+      new _Loader(
+              environment, options, buildActions, rootPackageConfig, onDelete)
           .prepareWorkspace();
 }
 
 class _Loader {
   final List<BuildAction> _buildActions;
   final BuildOptions _options;
+  final BuildEnvironment _environment;
   final OnDelete _onDelete;
   final BuildConfig _rootPackageConfig;
 
-  _Loader(this._options, this._buildActions, this._rootPackageConfig,
-      this._onDelete);
+  _Loader(this._environment, this._options, this._buildActions,
+      this._rootPackageConfig, this._onDelete);
 
   Future<BuildDefinition> prepareWorkspace() async {
     _checkBuildActions();
@@ -92,8 +97,8 @@ class _Loader {
           () => _updateAssetGraph(assetGraph, _buildActions, inputSources,
               cacheDirSources, internalSources));
 
-      buildScriptUpdates =
-          await BuildScriptUpdates.create(_options, assetGraph);
+      buildScriptUpdates = await BuildScriptUpdates.create(
+          _environment.reader, _options.packageGraph, assetGraph);
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
         _logger.warning('Invalidating asset graph due to build script update');
@@ -108,9 +113,9 @@ class _Loader {
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         assetGraph = await AssetGraph.build(_buildActions, inputSources,
-            internalSources, _options.packageGraph, _options.reader);
-        buildScriptUpdates =
-            await BuildScriptUpdates.create(_options, assetGraph);
+            internalSources, _options.packageGraph, _environment.reader);
+        buildScriptUpdates = await BuildScriptUpdates.create(
+            _environment.reader, _options.packageGraph, assetGraph);
         conflictingOutputs = assetGraph.outputs
             .where((n) => n.package == _options.packageGraph.root.name)
             .where(inputSources.contains)
@@ -127,16 +132,14 @@ class _Loader {
       await logTimedAsync(
           _logger,
           'Checking for unexpected pre-existing outputs.',
-          () => _initialBuildCleanup(
-              conflictingOutputs, _wrapWriter(_options.writer, assetGraph),
-              deleteFilesByDefault: _options.deleteFilesByDefault,
-              assumeTty: _options.assumeTty));
+          () => _initialBuildCleanup(conflictingOutputs,
+              _wrapWriter(_environment.writer, assetGraph)));
     }
 
     return new BuildDefinition._(
         assetGraph,
-        _wrapReader(_options.reader, assetGraph),
-        _wrapWriter(_options.writer, assetGraph),
+        _wrapReader(_environment.reader, assetGraph),
+        _wrapWriter(_environment.writer, assetGraph),
         _options.packageGraph,
         _options.deleteFilesByDefault,
         new ResourceManager(),
@@ -173,7 +176,9 @@ class _Loader {
 
   /// Returns all the internal sources, such as those under [entryPointDir].
   Future<Set<AssetId>> _findInternalSources() {
-    return _options.reader.findAssets(new Glob('$entryPointDir/**')).toSet();
+    return _environment.reader
+        .findAssets(new Glob('$entryPointDir/**'))
+        .toSet();
   }
 
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
@@ -181,14 +186,15 @@ class _Loader {
   Future<AssetGraph> _tryReadCachedAssetGraph() async {
     final assetGraphId =
         new AssetId(_options.packageGraph.root.name, assetGraphPath);
-    if (!await _options.reader.canRead(assetGraphId)) {
+    if (!await _environment.reader.canRead(assetGraphId)) {
       return null;
     }
 
     return logTimedAsync(_logger, 'Reading cached asset graph', () async {
       try {
-        var cachedGraph = new AssetGraph.deserialize(JSON
-            .decode(await _options.reader.readAsString(assetGraphId)) as Map);
+        var cachedGraph = new AssetGraph.deserialize(
+            JSON.decode(await _environment.reader.readAsString(assetGraphId))
+                as Map);
         if (computeBuildActionsDigest(_buildActions) !=
             cachedGraph.buildActionsDigest) {
           _logger.warning(
@@ -228,8 +234,8 @@ class _Loader {
         _buildActions,
         updates,
         _options.packageGraph.root.name,
-        (id) => _delete(id, _wrapWriter(_options.writer, assetGraph)),
-        _wrapReader(_options.reader, assetGraph));
+        (id) => _delete(id, _wrapWriter(_environment.writer, assetGraph)),
+        _wrapReader(_environment.reader, assetGraph));
     return updates;
   }
 
@@ -292,7 +298,7 @@ class _Loader {
       if (node == null) throw id;
       var originalDigest = node.lastKnownDigest;
       if (originalDigest == null) return;
-      var currentDigest = await _options.reader.digest(id);
+      var currentDigest = await _environment.reader.digest(id);
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
@@ -330,7 +336,8 @@ class _Loader {
 
   Stream<AssetId> _listAssetIds(PackageNode package) async* {
     for (final glob in _packageIncludes(package)) {
-      yield* _options.reader.findAssets(new Glob(glob), package: package.name);
+      yield* _environment.reader
+          .findAssets(new Glob(glob), package: package.name);
     }
     if (!package.isRoot) return;
     for (final target in _rootPackageConfig?.buildTargets?.values ?? const []) {
@@ -349,7 +356,7 @@ class _Loader {
 
   Stream<AssetId> _listGeneratedAssetIds() async* {
     var glob = new Glob('$generatedOutputDirectory/**');
-    await for (var id in _options.reader.findAssets(glob)) {
+    await for (var id in _environment.reader.findAssets(glob)) {
       var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
       var firstSlash = packagePath.indexOf('/');
       var package = packagePath.substring(0, firstSlash);
@@ -361,12 +368,11 @@ class _Loader {
   /// Handles cleanup of pre-existing outputs for initial builds (where there is
   /// no cached graph).
   Future<Null> _initialBuildCleanup(
-      Set<AssetId> conflictingAssets, RunnerAssetWriter writer,
-      {@required bool deleteFilesByDefault, @required bool assumeTty}) async {
+      Set<AssetId> conflictingAssets, RunnerAssetWriter writer) async {
     if (conflictingAssets.isEmpty) return;
 
     // Skip the prompt if using this option.
-    if (deleteFilesByDefault) {
+    if (_options.deleteFilesByDefault) {
       _logger.info('Deleting ${conflictingAssets.length} declared outputs '
           'which already existed on disk.');
       await Future.wait(conflictingAssets.map((id) => _delete(id, writer)));
@@ -379,37 +385,28 @@ class _Loader {
         '`$cacheDir` folder was deleted, or you are submitting generated '
         'files to your source repository.');
 
-    // If not in a standard terminal then we just exit, since there is no way
-    // for the user to provide a yes/no answer.
-    bool runningInPubRunTest() => Platform.script.scheme == 'data';
-    if (!assumeTty &&
-        (stdioType(stdin) != StdioType.TERMINAL || runningInPubRunTest())) {
-      throw new UnexpectedExistingOutputsException(conflictingAssets);
-    }
-
-    // Give a little extra space after the last message, need to make it clear
-    // this is a prompt.
-    stdout.writeln();
     var done = false;
     while (!done) {
-      stdout.write('\nDelete these files (y/n) (or list them (l))?: ');
-      var input = stdin.readLineSync();
-      switch (input.toLowerCase()) {
-        case 'y':
-          stdout.writeln('Deleting files...');
-          done = true;
-          await Future.wait(conflictingAssets.map((id) => _delete(id, writer)));
-          break;
-        case 'n':
-          throw new UnexpectedExistingOutputsException(conflictingAssets);
-          break;
-        case 'l':
-          for (var output in conflictingAssets) {
-            stdout.writeln(output);
-          }
-          break;
-        default:
-          stdout.writeln('Unrecognized option $input, (y/n/l) expected.');
+      try {
+        var choice = await _environment.prompt('Delete these files?',
+            ['Delete', 'Cancel build', 'List conflicts']);
+        switch (choice) {
+          case 0:
+            _logger.info('Deleting files...');
+            done = true;
+            await Future
+                .wait(conflictingAssets.map((id) => _delete(id, writer)));
+            break;
+          case 1:
+            throw new UnexpectedExistingOutputsException(conflictingAssets);
+            break;
+          case 2:
+            _logger.info('Conflicts:\n${conflictingAssets.join('\n')}');
+            // Logging should be sync :(
+            await new Future(() {});
+        }
+      } on NonInteractiveBuildException {
+        throw new UnexpectedExistingOutputsException(conflictingAssets);
       }
     }
   }

@@ -82,3 +82,5 @@ final dartdevcDriverResource = new Resource<BazelWorkerDriver>(
 });
 
 final sdkDir = cli_util.getSdkPath();
+
+final dart2jsPath = p.join(sdkDir, 'bin', 'dart2js$_scriptExtension');

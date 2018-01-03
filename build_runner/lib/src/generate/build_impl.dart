@@ -20,6 +20,9 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../environment/build_environment.dart';
+import '../environment/io_environment.dart';
+import '../environment/overridable_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
@@ -53,15 +56,17 @@ Future<BuildResult> build(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
 }) async {
-  var options = new BuildOptions(
-      assumeTty: assumeTty,
+  packageGraph ??= new PackageGraph.forThisPackage();
+  var environment = new OverrideableEnvironment(
+      new IOEnvironment(packageGraph, assumeTty),
+      reader: reader,
+      writer: writer,
+      onLog: onLog);
+  var options = new BuildOptions(environment,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
       logLevel: logLevel,
-      onLog: onLog,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
@@ -71,18 +76,21 @@ Future<BuildResult> build(
   final buildActions = await createBuildActions(targetGraph, builders,
       overrideBuildConfig: overrideBuildConfig);
 
-  var result =
-      await singleBuild(options, buildActions, targetGraph.rootPackageConfig);
+  var result = await singleBuild(
+      environment, options, buildActions, targetGraph.rootPackageConfig);
 
   await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
 
-Future<BuildResult> singleBuild(BuildOptions options,
-    List<BuildAction> buildActions, BuildConfig rootPackageConfig) async {
+Future<BuildResult> singleBuild(
+    BuildEnvironment environment,
+    BuildOptions options,
+    List<BuildAction> buildActions,
+    BuildConfig rootPackageConfig) async {
   var buildDefinition = await BuildDefinition.prepareWorkspace(
-      options, buildActions, rootPackageConfig);
+      environment, options, buildActions, rootPackageConfig);
   var result =
       (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
   await buildDefinition.resourceManager.beforeExit();
