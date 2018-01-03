@@ -8,6 +8,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
@@ -163,6 +164,9 @@ class WatchImpl implements BuildState {
       _logger.info('Terminating. No further builds will be scheduled\n');
     });
 
+    Digest originalRootPackagesDigest;
+    final rootPackagesId = new AssetId(packageGraph.root.name, '.packages');
+
     // Start watching files immediately, before the first build is even started.
     new PackageGraphWatcher(packageGraph,
             logger: _logger,
@@ -170,16 +174,22 @@ class WatchImpl implements BuildState {
                 new PackageNodeWatcher(node, watch: _directoryWatcherFactory))
         .watch()
         .asyncMap<AssetChange>((change) {
-          // Kill future builds if the root packages file changes.
-          if (_isRootPackagesFile(change.id)) {
-            _terminateCompleter.complete();
-            _logger.severe('Terminating builds due to package graph update, '
-                'please restart the build.');
-          }
-
           // Delay any events until the first build is completed.
           if (firstBuildCompleter.isCompleted) return change;
           return firstBuildCompleter.future.then((_) => change);
+        })
+        .asyncMap<AssetChange>((change) {
+          // Kill future builds if the root packages file changes.
+          assert(originalRootPackagesDigest != null);
+          if (change.id != rootPackagesId) return change;
+          return options.reader.readAsBytes(rootPackagesId).then((bytes) {
+            if (md5.convert(bytes) != originalRootPackagesDigest) {
+              _terminateCompleter.complete();
+              _logger.severe('Terminating builds due to package graph update, '
+                  'please restart the build.');
+            }
+            return change;
+          });
         })
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
@@ -210,6 +220,9 @@ class WatchImpl implements BuildState {
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
+      originalRootPackagesDigest =
+          md5.convert(await options.reader.readAsBytes(rootPackagesId));
+
       _buildDefinition = await BuildDefinition.prepareWorkspace(
           options, buildActions,
           onDelete: _expectedDeletes.add);
@@ -251,9 +264,6 @@ class WatchImpl implements BuildState {
     if (_isExpectedDelete(change)) return false;
     return true;
   }
-
-  bool _isRootPackagesFile(AssetId id) =>
-      id.package == packageGraph.root.name && id.path == '.packages';
 
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
