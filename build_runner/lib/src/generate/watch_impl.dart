@@ -103,7 +103,7 @@ class WatchImpl implements BuildState {
   final DirectoryWatcherFactory _directoryWatcherFactory;
 
   /// Should complete when we need to kill the build.
-  final _fatalBuildCompleter = new Completer<Null>();
+  final _terminateCompleter = new Completer<Null>();
 
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
@@ -151,7 +151,7 @@ class WatchImpl implements BuildState {
       if (!options.skipBuildScriptCheck) {
         if (_buildDefinition.buildScriptUpdates
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
-          _fatalBuildCompleter.complete();
+          _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
           return new BuildResult(BuildStatus.failure, []);
         }
@@ -159,7 +159,7 @@ class WatchImpl implements BuildState {
       return build.run(mergedChanges);
     }
 
-    var terminate = Future.any([until, _fatalBuildCompleter.future]).then((_) {
+    var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled\n');
     });
 
@@ -170,6 +170,13 @@ class WatchImpl implements BuildState {
                 new PackageNodeWatcher(node, watch: _directoryWatcherFactory))
         .watch()
         .asyncMap<AssetChange>((change) {
+          // Kill future builds if the root packages file changes.
+          if (_isRootPackagesFile(change.id)) {
+            _terminateCompleter.complete();
+            _logger.severe('Terminating builds due to package graph update, '
+                'please restart the build.');
+          }
+
           // Delay any events until the first build is completed.
           if (firstBuildCompleter.isCompleted) return change;
           return firstBuildCompleter.future.then((_) => change);
@@ -232,12 +239,6 @@ class WatchImpl implements BuildState {
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
     assert(_assetGraph != null);
-    if (_isRootPackagesFile(change.id)) {
-      _fatalBuildCompleter.complete();
-      _logger.severe('Terminating builds due to package graph update, '
-          'please restart the build.');
-      return false;
-    }
     if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
     var node = _assetGraph.get(change.id);
     if (node != null) {
