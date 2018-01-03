@@ -15,6 +15,9 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/environment/build_environment.dart';
+import 'package:build_runner/src/environment/io_environment.dart';
+import 'package:build_runner/src/environment/overridable_environment.dart';
 import 'package:build_runner/src/generate/build_definition.dart';
 import 'package:build_runner/src/generate/options.dart';
 import 'package:build_runner/src/generate/phase.dart';
@@ -29,6 +32,7 @@ main() {
 
   group('BuildDefinition.load', () {
     BuildOptions options;
+    BuildEnvironment environment;
     String pkgARoot;
 
     Future<Null> createFile(String path, String contents) async {
@@ -67,7 +71,8 @@ main() {
       ).create();
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       var packageGraph = new PackageGraph.forPath(pkgARoot);
-      options = new BuildOptions(
+      environment = new IOEnvironment(packageGraph, null);
+      options = new BuildOptions(environment,
           packageGraph: packageGraph,
           logLevel: Level.OFF,
           skipBuildScriptCheck: true);
@@ -90,7 +95,7 @@ main() {
             [makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')].toSet(),
             new Set(),
             aPackageGraph,
-            options.reader);
+            environment.reader);
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
         var generatedANode =
             originalAssetGraph.get(generatedAId) as GeneratedAssetNode;
@@ -101,8 +106,8 @@ main() {
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await deleteFile(p.join('lib', 'b.txt'));
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
@@ -120,14 +125,14 @@ main() {
         ];
 
         var originalAssetGraph = await AssetGraph.build(buildActions,
-            <AssetId>[].toSet(), new Set(), aPackageGraph, options.reader);
+            <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await createFile(p.join('lib', 'a.txt'), 'a');
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/a.txt')), isTrue);
@@ -149,14 +154,14 @@ main() {
             [makeAssetId('a|lib/a.txt')].toSet(),
             new Set(),
             aPackageGraph,
-            options.reader);
+            environment.reader);
 
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         var generatedANode = newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
@@ -176,7 +181,7 @@ main() {
             [makeAssetId('a|lib/test.txt')].toSet(),
             new Set(),
             aPackageGraph,
-            options.reader);
+            environment.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -185,8 +190,8 @@ main() {
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         expect(buildDefinition.assetGraph.contains(generatedSrcId), isTrue);
       });
 
@@ -204,7 +209,7 @@ main() {
             [makeAssetId('a|lib/a.txt')].toSet(),
             new Set(),
             aPackageGraph,
-            options.reader);
+            environment.reader);
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
         for (var id in [generatedACopyId, generatedACloneId]) {
@@ -225,8 +230,8 @@ main() {
               targetSources: const InputSet(include: const ['**/*.txt']),
               hideOutput: true),
         ];
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, newBuildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, newBuildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         // The *.copy node should be invalidated, its builder options changed.
@@ -256,7 +261,7 @@ main() {
         ];
 
         var assetGraph = await AssetGraph.build(buildActions,
-            new Set<AssetId>(), new Set(), aPackageGraph, options.reader);
+            new Set<AssetId>(), new Set(), aPackageGraph, environment.reader);
         var expectedIds = placeholderIdsFor(aPackageGraph)
           ..addAll([makeAssetId('a|Phase0.builderOptions')]);
         expect(assetGraph.allNodes.map((node) => node.id),
@@ -264,8 +269,8 @@ main() {
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
 
         expect(buildDefinition.assetGraph.contains(generatedId), isFalse);
       });
@@ -274,7 +279,7 @@ main() {
         var entryPoint =
             new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, []);
+            await BuildDefinition.prepareWorkspace(environment, options, []);
         expect(buildDefinition.assetGraph.contains(entryPoint), isTrue);
       });
 
@@ -284,8 +289,8 @@ main() {
         var buildActions = [
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
         ];
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         expect(
             buildDefinition.assetGraph
                 .contains(entryPoint.addExtension('.copy')),
@@ -302,14 +307,14 @@ main() {
         new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
       ];
       var logs = <LogRecord>[];
-      options = new BuildOptions(
+      environment = new OverrideableEnvironment(environment, onLog: logs.add);
+      options = new BuildOptions(environment,
           packageGraph: options.packageGraph,
           logLevel: Level.WARNING,
-          skipBuildScriptCheck: true,
-          onLog: logs.add);
+          skipBuildScriptCheck: true);
 
       var originalAssetGraph = await AssetGraph.build(buildActions,
-          <AssetId>[].toSet(), new Set(), aPackageGraph, options.reader);
+          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
       await createFile(
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
@@ -319,8 +324,8 @@ main() {
           hideOutput: true));
       logs.clear();
 
-      var buildDefinition =
-          await BuildDefinition.prepareWorkspace(options, buildActions);
+      var buildDefinition = await BuildDefinition.prepareWorkspace(
+          environment, options, buildActions);
       expect(
           logs.any(
             (log) =>
