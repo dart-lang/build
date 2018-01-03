@@ -235,6 +235,29 @@ void main() {
         result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
       });
+
+      test('edits to .packages prevent future builds and ask you to restart',
+          () async {
+        var writer = new InMemoryRunnerAssetWriter();
+        var logs = <LogRecord>[];
+        var buildState = await startWatch(
+            [copyABuildApplication], {'a|web/a.txt': 'a'}, writer,
+            logLevel: Level.SEVERE, onLog: logs.add);
+        var results = new StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+
+        FakeWatcher.notifyWatchers(
+            new WatchEvent(ChangeType.MODIFY, path.absolute('a', '.packages')));
+
+        expect(await results.hasNext, isFalse);
+        expect(logs.length, 1);
+        expect(
+            logs.first.message,
+            contains('Terminating builds due to package graph update, '
+                'please restart the build.'));
+      });
     });
 
     group('multiple phases', () {
@@ -441,7 +464,9 @@ StreamController _terminateWatchController;
 /// Start watching files and running builds.
 Future<BuildState> startWatch(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
-    {PackageGraph packageGraph}) {
+    {PackageGraph packageGraph,
+    onLog(LogRecord record),
+    Level logLevel: Level.OFF}) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });
@@ -458,7 +483,8 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       writer: writer,
       packageGraph: packageGraph,
       terminateEventStream: _terminateWatchController.stream,
-      logLevel: Level.OFF,
+      logLevel: logLevel,
+      onLog: onLog,
       skipBuildScriptCheck: true);
 }
 

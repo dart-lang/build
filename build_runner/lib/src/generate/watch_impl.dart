@@ -102,6 +102,9 @@ class WatchImpl implements BuildState {
   /// Injectable factory for creating directory watchers.
   final DirectoryWatcherFactory _directoryWatcherFactory;
 
+  /// Should complete when we need to kill the build.
+  final _fatalBuildCompleter = new Completer<Null>();
+
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
 
@@ -131,7 +134,6 @@ class WatchImpl implements BuildState {
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(
       BuildOptions options, List<BuildAction> buildActions, Future until) {
-    var fatalBuildCompleter = new Completer();
     var firstBuildCompleter = new Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = new StreamController<BuildResult>();
@@ -149,7 +151,7 @@ class WatchImpl implements BuildState {
       if (!options.skipBuildScriptCheck) {
         if (_buildDefinition.buildScriptUpdates
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
-          fatalBuildCompleter.complete();
+          _fatalBuildCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
           return new BuildResult(BuildStatus.failure, []);
         }
@@ -157,7 +159,7 @@ class WatchImpl implements BuildState {
       return build.run(mergedChanges);
     }
 
-    var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
+    var terminate = Future.any([until, _fatalBuildCompleter.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled\n');
     });
 
@@ -230,6 +232,12 @@ class WatchImpl implements BuildState {
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
     assert(_assetGraph != null);
+    if (_isRootPackagesFile(change.id)) {
+      _fatalBuildCompleter.complete();
+      _logger.severe('Terminating builds due to package graph update, '
+          'please restart the build.');
+      return false;
+    }
     if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
     var node = _assetGraph.get(change.id);
     if (node != null) {
@@ -242,6 +250,9 @@ class WatchImpl implements BuildState {
     if (_isExpectedDelete(change)) return false;
     return true;
   }
+
+  bool _isRootPackagesFile(AssetId id) =>
+      id.package == packageGraph.root.name && id.path == '.packages';
 
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
