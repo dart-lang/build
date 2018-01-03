@@ -5,4 +5,4 @@ targets:
         options:
           compiler: dart2js
           dart2js_args:
-          - --minify
+          - --checked

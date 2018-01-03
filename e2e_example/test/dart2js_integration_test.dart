@@ -25,5 +25,10 @@ void main() {
 
   test('Can run tests using dart2js', () async {
     await expectTestsPass(usePrecompiled: true, useManualScript: false);
+    var jsFile =
+        new File('.dart_tool/build/generated/e2e_example/web/main.dart.js');
+    expect(await jsFile.exists(), isTrue);
+    // sanity check that it was indeed compiled with dart2js
+    expect(await jsFile.readAsString(), contains('dart2js'));
   });
 }
