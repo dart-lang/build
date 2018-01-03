@@ -1,3 +1,7 @@
+## 0.7.4
+
+- Whitelist any files used in a builder's `generate_for` as a valid source.
+
 ## 0.7.3
 
 - Added the flag `--low-resources-mode`, which defaults to `false`.

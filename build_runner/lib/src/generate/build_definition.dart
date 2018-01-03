@@ -328,6 +328,14 @@ class _Loader {
     for (final glob in _packageIncludes(package)) {
       yield* _options.reader.findAssets(new Glob(glob), package: package.name);
     }
+    if (!package.isRoot) return;
+    for (final action
+        in _buildActions.where((a) => a.package == package.name)) {
+      for (final glob in action.generateFor?.include ?? const []) {
+        yield* _options.reader
+            .findAssets(new Glob(glob), package: package.name);
+      }
+    }
   }
 
   List<String> _packageIncludes(PackageNode package) => package.isRoot
