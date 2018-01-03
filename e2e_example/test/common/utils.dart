@@ -181,7 +181,7 @@ Future<ProcessResult> _runManualTests({bool usePrecompiled}) {
       usePrecompiled: usePrecompiled);
 }
 
-/// Runs tests using the manual auto script.
+/// Runs tests using the auto build script.
 Future<ProcessResult> _runAutoTests({bool usePrecompiled}) {
   return _runTests(_pubBinary, ['run', 'build_runner'],
       usePrecompiled: usePrecompiled);
