@@ -351,14 +351,14 @@ main() {
             builderOptions: new BuilderOptions({'foo': 'bar'}))
       ];
       var logs = <LogRecord>[];
-      options = new BuildOptions(
+      environment = new OverrideableEnvironment(environment, onLog: logs.add);
+      options = new BuildOptions(environment,
           packageGraph: options.packageGraph,
           logLevel: Level.WARNING,
-          skipBuildScriptCheck: true,
-          onLog: logs.add);
+          skipBuildScriptCheck: true);
 
       var originalAssetGraph = await AssetGraph.build(buildActions,
-          <AssetId>[].toSet(), new Set(), aPackageGraph, options.reader);
+          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
       await createFile(
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
@@ -370,8 +370,8 @@ main() {
       ];
       logs.clear();
 
-      var buildDefinition =
-          await BuildDefinition.prepareWorkspace(options, buildActions, null);
+      var buildDefinition = await BuildDefinition.prepareWorkspace(
+          environment, options, buildActions, null);
       expect(
           logs.any(
             (log) =>
