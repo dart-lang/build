@@ -85,7 +85,8 @@ Future createKernelSummary(Module module, BuildStep buildStep,
       '--packages-file',
       packagesFile.path,
       '--multi-root-scheme',
-      multiRootScheme
+      multiRootScheme,
+      '--exclude-non-sources',
     ]);
 
     // Add all summaries as summary inputs.
