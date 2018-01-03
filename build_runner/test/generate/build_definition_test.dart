@@ -325,7 +325,7 @@ main() {
       logs.clear();
 
       var buildDefinition = await BuildDefinition.prepareWorkspace(
-          environment, options, buildActions);
+          environment, options, buildActions, null);
       expect(
           logs.any(
             (log) =>

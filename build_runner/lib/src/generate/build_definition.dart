@@ -342,7 +342,7 @@ class _Loader {
     if (!package.isRoot) return;
     for (final target in _rootPackageConfig?.buildTargets?.values ?? const []) {
       for (final glob in target.sources.include ?? const []) {
-        yield* _options.reader
+        yield* _environment.reader
             .findAssets(new Glob(glob), package: package.name);
       }
     }
