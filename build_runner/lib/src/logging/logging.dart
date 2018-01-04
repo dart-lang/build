@@ -7,6 +7,8 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 
+import 'human_readable_duration.dart';
+
 // Ensures on windows this message does not get overwritten by later logs.
 final _logSuffix = '${Platform.isWindows ? '' : '\n'}';
 
@@ -23,7 +25,7 @@ Future<T> logTimedAsync<T>(
   logger.log(level, '$description...');
   final result = await action();
   watch.stop();
-  final time = '${watch.elapsedMilliseconds}ms$_logSuffix';
+  final time = '${humanReadable(watch.elapsed)}$_logSuffix';
   logger.log(level, '$description completed, took $time');
   return result;
 }
@@ -41,7 +43,7 @@ T logTimedSync<T>(
   logger.log(level, '$description...');
   final result = action();
   watch.stop();
-  final time = '${watch.elapsedMilliseconds}ms$_logSuffix';
+  final time = '${humanReadable(watch.elapsed)}$_logSuffix';
   logger.log(level, '$description completed, took $time');
   return result;
 }

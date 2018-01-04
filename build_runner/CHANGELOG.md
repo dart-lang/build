@@ -1,3 +1,7 @@
+## 0.7.5-dev
+
+- Add more human friendly duration printing.
+
 ## 0.7.4
 
 - Allows using files in any build targets in the root package as sources if they
