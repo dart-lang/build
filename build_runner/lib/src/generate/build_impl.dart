@@ -57,6 +57,8 @@ Future<BuildResult> build(
   Map<String, BuildConfig> overrideBuildConfig,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
+  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+      overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
@@ -66,31 +68,26 @@ Future<BuildResult> build(
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
+      rootPackageConfig: targetGraph.rootPackageConfig,
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final targetGraph = await TargetGraph.forPackageGraph(options.packageGraph,
-      overrideBuildConfig: overrideBuildConfig);
   final buildActions = await createBuildActions(targetGraph, builders);
 
-  var result = await singleBuild(
-      environment, options, buildActions, targetGraph.rootPackageConfig);
+  var result = await singleBuild(environment, options, buildActions);
 
   await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
 
-Future<BuildResult> singleBuild(
-    BuildEnvironment environment,
-    BuildOptions options,
-    List<BuildAction> buildActions,
-    BuildConfig rootPackageConfig) async {
+Future<BuildResult> singleBuild(BuildEnvironment environment,
+    BuildOptions options, List<BuildAction> buildActions) async {
   var buildDefinition = await BuildDefinition.prepareWorkspace(
-      environment, options, buildActions, rootPackageConfig);
+      environment, options, buildActions);
   var result =
       (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
   await buildDefinition.resourceManager.beforeExit();

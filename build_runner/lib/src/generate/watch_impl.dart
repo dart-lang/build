@@ -8,6 +8,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
@@ -53,6 +54,8 @@ Future<ServeHandler> watch(
   Map<String, BuildConfig> overrideBuildConfig,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
+  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+      overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
@@ -63,6 +66,7 @@ Future<ServeHandler> watch(
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
+      rootPackageConfig: targetGraph.rootPackageConfig,
       logLevel: logLevel,
       debounceDelay: debounceDelay,
       skipBuildScriptCheck: skipBuildScriptCheck,
@@ -70,8 +74,6 @@ Future<ServeHandler> watch(
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final targetGraph = await TargetGraph.forPackageGraph(options.packageGraph,
-      overrideBuildConfig: overrideBuildConfig);
   final buildActions = await createBuildActions(targetGraph, builders);
 
   var watch = runWatch(environment, options, buildActions,
@@ -100,14 +102,15 @@ WatchImpl runWatch(
         List<BuildAction> buildActions,
         Future until,
         BuildConfig rootPackageConfig) =>
-    new WatchImpl(environment, options, buildActions, until, rootPackageConfig);
+    new WatchImpl(environment, options, buildActions, until,
+        options.rootPackageFilesWhitelist.map((g) => new Glob(g)));
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
 class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
   BuildDefinition _buildDefinition;
-  final BuildConfig _rootPackageConfig;
+  final Iterable<Glob> _rootPackageFilesWhitelist;
 
   /// Delay to wait for more file watcher events.
   final Duration _debounceDelay;
@@ -127,8 +130,12 @@ class WatchImpl implements BuildState {
   final _readerCompleter = new Completer<DigestAssetReader>();
   Future<DigestAssetReader> get reader => _readerCompleter.future;
 
-  WatchImpl(BuildEnvironment environment, BuildOptions options,
-      List<BuildAction> buildActions, Future until, this._rootPackageConfig)
+  WatchImpl(
+      BuildEnvironment environment,
+      BuildOptions options,
+      List<BuildAction> buildActions,
+      Future until,
+      this._rootPackageFilesWhitelist)
       : _directoryWatcherFactory = environment.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
@@ -217,7 +224,7 @@ class WatchImpl implements BuildState {
     // stream synchronously.
     () async {
       _buildDefinition = await BuildDefinition.prepareWorkspace(
-          environment, options, buildActions, _rootPackageConfig,
+          environment, options, buildActions,
           onDelete: _expectedDeletes.add);
       _readerCompleter.complete(new SingleStepReader(
           _buildDefinition.reader,
@@ -268,7 +275,7 @@ class WatchImpl implements BuildState {
 
   bool _isWhitelistedPath(AssetId id) {
     if (packageGraph[id.package].isRoot) {
-      return rootPackageGlobsWhitelist.any((glob) => glob.matches(id.path));
+      return _rootPackageFilesWhitelist.any((glob) => glob.matches(id.path));
     } else {
       return id.path.startsWith('lib/');
     }

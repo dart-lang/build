@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
@@ -58,14 +57,10 @@ class BuildDefinition {
       this.enableLowResourcesMode,
       this.onDelete);
 
-  static Future<BuildDefinition> prepareWorkspace(
-          BuildEnvironment environment,
-          BuildOptions options,
-          List<BuildAction> buildActions,
-          BuildConfig rootPackageConfig,
+  static Future<BuildDefinition> prepareWorkspace(BuildEnvironment environment,
+          BuildOptions options, List<BuildAction> buildActions,
           {void onDelete(AssetId id)}) =>
-      new _Loader(
-              environment, options, buildActions, rootPackageConfig, onDelete)
+      new _Loader(environment, options, buildActions, onDelete)
           .prepareWorkspace();
 }
 
@@ -74,10 +69,8 @@ class _Loader {
   final BuildOptions _options;
   final BuildEnvironment _environment;
   final OnDelete _onDelete;
-  final BuildConfig _rootPackageConfig;
 
-  _Loader(this._environment, this._options, this._buildActions,
-      this._rootPackageConfig, this._onDelete);
+  _Loader(this._environment, this._options, this._buildActions, this._onDelete);
 
   Future<BuildDefinition> prepareWorkspace() async {
     _checkBuildActions();
@@ -339,17 +332,10 @@ class _Loader {
       yield* _environment.reader
           .findAssets(new Glob(glob), package: package.name);
     }
-    if (!package.isRoot) return;
-    for (final target in _rootPackageConfig?.buildTargets?.values ?? const []) {
-      for (final glob in target.sources.include ?? const []) {
-        yield* _environment.reader
-            .findAssets(new Glob(glob), package: package.name);
-      }
-    }
   }
 
   List<String> _packageIncludes(PackageNode package) => package.isRoot
-      ? rootPackageFilesWhitelist
+      ? _options.rootPackageFilesWhitelist
       : package.name == r'$sdk'
           ? const ['lib/dev_compiler/**.js']
           : const ['lib/**'];

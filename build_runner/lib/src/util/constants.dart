@@ -4,7 +4,6 @@
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 
 /// Relative path to the asset graph from the root package dir.
 final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
@@ -28,17 +27,3 @@ const String cacheDir = '.dart_tool/build';
 
 /// Returns a hash for a given path.
 String scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
-
-/// Whitelist of files in the root package to include.
-const List<String> rootPackageFilesWhitelist = const [
-  'benchmark/**',
-  'bin/**',
-  'example/**',
-  'lib/**',
-  'test/**',
-  'tool/**',
-  'web/**',
-];
-
-final List<Glob> rootPackageGlobsWhitelist = new List.unmodifiable(
-    rootPackageFilesWhitelist.map((pattern) => new Glob(pattern)));
