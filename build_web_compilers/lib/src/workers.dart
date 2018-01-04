@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show min;
 
@@ -22,6 +24,11 @@ Completer<Null> _analyzerWorkersAreDoneCompleter;
 Future<Null> get dartdevcWorkersAreDone =>
     _dartdevcWorkersAreDoneCompleter?.future ?? new Future.value(null);
 Completer<Null> _dartdevcWorkersAreDoneCompleter;
+
+/// Completes once the dart2js workers have been shut down.
+Future<Null> get dart2jsWorkersAreDone =>
+    _dart2jsWorkersAreDoneCompleter?.future ?? new Future.value(null);
+Completer<Null> _dart2jsWorkersAreDoneCompleter;
 
 String get _scriptExtension => Platform.isWindows ? '.bat' : '';
 
@@ -83,4 +90,125 @@ final dartdevcDriverResource = new Resource<BazelWorkerDriver>(
 
 final sdkDir = cli_util.getSdkPath();
 
-final dart2jsPath = p.join(sdkDir, 'bin', 'dart2js$_scriptExtension');
+/// Manages a shared set of persistent dart2js workers.
+Dart2JsBatchWorker get _dart2jsWorker {
+  _dart2jsWorkersAreDoneCompleter ??= new Completer<Null>();
+  return __dart2jsWorker ??= new Dart2JsBatchWorker(() => Process.start(
+      p.join(sdkDir, 'bin', 'dart2js$_scriptExtension'), ['--batch'],
+      workingDirectory: scratchSpace.tempDir.path));
+}
+
+Dart2JsBatchWorker __dart2jsWorker;
+
+/// Resource for fetching the current [Dart2JsBatchWorker] for dart2js.
+final dart2JsWorkerResource = new Resource<Dart2JsBatchWorker>(
+    () => _dart2jsWorker, beforeExit: () async {
+  await _dart2jsWorker.terminateWorkers();
+  _dart2jsWorkersAreDoneCompleter.complete();
+  _dart2jsWorkersAreDoneCompleter = null;
+});
+
+/// Manages a persistent dart2js worker running in batch mode and schedules jobs
+/// one at a time.
+class Dart2JsBatchWorker {
+  final Future<Process> Function() _spawnWorker;
+
+  Stream<String> __workerStderrLines;
+  Stream<String> get _workerStderrLines {
+    assert(__worker != null);
+    return __workerStderrLines ??= __worker.stderr
+        .transform(UTF8.decoder)
+        .transform(const LineSplitter())
+        .asBroadcastStream();
+  }
+
+  Stream<String> __workerStdoutLines;
+  Stream<String> get _workerStdoutLines {
+    assert(__worker != null);
+    return __workerStdoutLines ??= __worker.stdout
+        .transform(UTF8.decoder)
+        .transform(const LineSplitter())
+        .asBroadcastStream();
+  }
+
+  Process __worker;
+  Future<Process> get _worker async {
+    __worker ??= await _spawnWorker();
+    return __worker;
+  }
+
+  final _workQueue = new Queue<_Dart2JsJob>();
+
+  bool _queueIsActive = false;
+
+  Dart2JsBatchWorker(this._spawnWorker);
+
+  Future<Dart2JsResult> compile(List<String> args) async {
+    var job = new _Dart2JsJob(args);
+    _workQueue.add(job);
+    if (!_queueIsActive) _startWorkQueue();
+    return job.result;
+  }
+
+  void _startWorkQueue() {
+    assert(!_queueIsActive);
+    _queueIsActive = true;
+    () async {
+      var worker = await _worker;
+      while (_workQueue.isNotEmpty) {
+        var next = _workQueue.removeFirst();
+        var output = new StringBuffer();
+        var sawError = false;
+        var stderrListener = _workerStderrLines.listen((line) {
+          if (line == '>>> EOF STDERR') {
+            next.resultCompleter.complete(new Dart2JsResult(
+                !sawError, 'Dart2Js finished with:\n\n$output'));
+          }
+          if (!line.startsWith('>>> ')) {
+            output.writeln(line);
+          }
+        });
+        var stdoutListener = _workerStdoutLines.listen((line) {
+          if (line.contains('>>> TEST FAIL')) {
+            sawError = true;
+          }
+          if (!line.startsWith('>>> ')) {
+            output.writeln(line);
+          }
+        });
+
+        log.info('Running dart2js with ${next.args.join(' ')}\n');
+        worker.stdin.writeln(next.args.join(' '));
+
+        await next.result;
+        await stderrListener.cancel();
+        await stdoutListener.cancel();
+      }
+      _queueIsActive = false;
+    }();
+  }
+
+  Future<Null> terminateWorkers() async {
+    var worker = await _worker;
+    worker.kill();
+    await worker.exitCode;
+  }
+}
+
+/// A single dart2js job, consisting of [args] and a [result].
+class _Dart2JsJob {
+  final List<String> args;
+
+  final resultCompleter = new Completer<Dart2JsResult>();
+  Future<Dart2JsResult> get result => resultCompleter.future;
+
+  _Dart2JsJob(this.args);
+}
+
+/// The result of a [_Dart2JsJob]
+class Dart2JsResult {
+  final bool succeeded;
+  final String output;
+
+  Dart2JsResult(this.succeeded, this.output);
+}

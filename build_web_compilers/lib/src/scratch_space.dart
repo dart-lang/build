@@ -35,6 +35,7 @@ final scratchSpaceResource = new Resource<ScratchSpace>(() {
   // shut down before deleting it.
   await analyzerWorkersAreDone;
   await dartdevcWorkersAreDone;
+  await dart2jsWorkersAreDone;
   // Attempt to clean up the scratch space. Even after waiting for the workers
   // to shut down we might get file system exceptions on windows for an
   // arbitrary amount of time, so do retries with an exponential backoff.
