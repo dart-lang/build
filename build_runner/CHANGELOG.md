@@ -1,3 +1,8 @@
+## 0.7.3+1-dev
+
+- Changes to the root `.packages` file during watch mode will now cause the
+  build script to exit and prompt the user to restart the build.
+
 ## 0.7.3
 
 - Added the flag `--low-resources-mode`, which defaults to `false`.

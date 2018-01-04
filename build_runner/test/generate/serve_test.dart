@@ -23,9 +23,13 @@ void main() {
     CopyBuilder copyBuilder;
     BuilderApplication copyABuildApplication;
 
-    setUp(() {
+    setUp(() async {
       _terminateServeController = new StreamController();
       writer = new InMemoryRunnerAssetWriter();
+      await writer.writeAsString(makeAssetId('a|.packages'), '''
+# Fake packages file
+a:file://fake/pkg/path
+''');
 
       copyBuilder = new CopyBuilder();
       copyABuildApplication = applyToRoot(copyBuilder);
