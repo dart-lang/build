@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
 
@@ -29,20 +28,20 @@ Future<Null> bootstrapDart2Js(
   var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
   var args = dart2JsArgs.toList()
     ..addAll([
-      '-p${scratchSpace.packagesDir.path}',
+      '-ppackages',
       '-o${jsOutputId.path}',
       dartEntrypointId.path,
     ]);
-  var result = await Process.run(dart2jsPath, args,
-      workingDirectory: scratchSpace.tempDir.path);
+  var dart2js = await buildStep.fetchResource(dart2JsWorkerResource);
+  var result = await dart2js.compile(args);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
-  if (result.exitCode == 0 && await jsOutputFile.exists()) {
+  if (result.succeeded && await jsOutputFile.exists()) {
+    log.info(result.output);
     await scratchSpace.copyOutput(jsOutputId, buildStep);
     var jsSourceMapId =
         dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
     await scratchSpace.copyOutput(jsSourceMapId, buildStep);
   } else {
-    log.severe('Failed to compile $jsOutputId with dart2js:'
-        '\n\n${result.stdout}\n${result.stderr}');
+    log.severe(result.output);
   }
 }
