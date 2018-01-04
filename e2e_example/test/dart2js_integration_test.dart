@@ -31,5 +31,5 @@ void main() {
     expect(await jsFile.exists(), isTrue);
     // sanity check that it was indeed compiled with dart2js
     expect(await jsFile.readAsString(), contains('dart2js'));
-  });
+  }, onPlatform: {'windows': const Skip('flaky on windows')});
 }
