@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -20,7 +22,7 @@ Future<Null> createMergedOutputDir(String outputPath, AssetGraph assetGraph,
     await logTimedAsync(_logger, 'Deleting existing output dir `$outputPath`',
         () => outputDir.delete(recursive: true));
   }
-  await logTimedAsync(_logger, 'Creating merged output dir at $outputPath',
+  await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
       () async {
     await outputDir.create(recursive: true);
     var rootDirs = new Set<String>();
@@ -48,6 +50,8 @@ Future<Null> createMergedOutputDir(String outputPath, AssetGraph assetGraph,
         _writeAsBytes(outputDir, outputId, await reader.readAsBytes(node.id));
       }
     }
+
+    await _createMissingTestHtmlFiles(outputPath);
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
@@ -92,4 +96,36 @@ File _fileFor(Directory outputDir, AssetId id) {
   var file = new File(p.join(outputDir.path, relativePath));
   file.createSync(recursive: true);
   return file;
+}
+
+/// Creates html files for tests in [outputDir] that are missing them.
+///
+/// This only exists as a hack until we have something like
+/// https://github.com/dart-lang/build/issues/508.
+Future<Null> _createMissingTestHtmlFiles(String outputDir) async {
+  var dartBrowserTestSuffix = '_test.dart.browser_test.dart';
+  var htmlTestSuffix = '_test.html';
+  var dartFiles =
+      new Glob('test/**$dartBrowserTestSuffix').list(root: outputDir);
+  await for (var file in dartFiles) {
+    var dartPath = p.relative(file.path, from: outputDir);
+    var htmlPath =
+        dartPath.substring(0, dartPath.length - dartBrowserTestSuffix.length) +
+            htmlTestSuffix;
+    var htmlFile = new File(p.join(outputDir, htmlPath));
+    if (!await htmlFile.exists()) {
+      var originalDartPath = p.basename(
+          dartPath.substring(0, dartPath.length - '.browser_test.dart'.length));
+      await htmlFile.writeAsString('''
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${HTML_ESCAPE.convert(htmlPath)} Test</title>
+  <link rel="x-dart-test"
+        href="${HTML_ESCAPE.convert(originalDartPath)}">
+  <script src="packages/test/dart.js"></script>
+</head>
+</html>''');
+    }
+  }
 }

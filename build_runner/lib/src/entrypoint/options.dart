@@ -2,15 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:glob/glob.dart';
 import 'package:io/io.dart';
 import 'package:meta/meta.dart';
-import 'package:path/path.dart' as p;
 import 'package:shelf/shelf_io.dart';
 
 import 'package:build_runner/build_runner.dart';
@@ -279,76 +276,34 @@ class _TestCommand extends _BaseCommand {
   @override
   Future<Null> run() async {
     var options = _readOptions();
+    // We always need an output dir when running tests, so we create a tmp dir
+    // if the user didn't specify one.
+    var outputDir = options.outputDir ??
+        Directory.systemTemp
+            .createTempSync('build_runner_test')
+            .absolute
+            .uri
+            .toFilePath();
     await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
-        assumeTty: options.assumeTty);
-
-    // Create the merged output directory.
-    String precompiledPath = await _createMergedDir();
-
-    // Create missing *_test.html files.
-    await _createMissingHtmlFiles(precompiledPath);
+        assumeTty: options.assumeTty,
+        outputDir: outputDir);
 
     // Run the tests!
-    await _runTests(precompiledPath);
+    await _runTests(outputDir);
+
+    // Clean up the output dir if one wasn't explicitly asked for.
+    if (options.outputDir == null) {
+      await new Directory(outputDir).delete(recursive: true);
+    }
 
     await ProcessManager.terminateStdIn();
   }
 
-  /// Creates a merged directory for the current build script.
-  Future<String> _createMergedDir() async {
-    var tmpDir = await Directory.systemTemp.createTemp('build_runner_test');
-    var tmpDirPath = tmpDir.absolute.uri.toFilePath();
-    var scriptLocation = Platform.script.toFilePath();
-    var process = await new ProcessManager().spawn(_pubBinary, [
-      'run',
-      'build_runner:create_merged_dir',
-      '--script',
-      scriptLocation,
-      '--output-dir',
-      tmpDirPath,
-    ]);
-
-    var processExitCode = await process.exitCode;
-    if (processExitCode != 0) {
-      print('Error creating merged dir! :(');
-      exit(processExitCode);
-    }
-    return tmpDirPath;
-  }
-
-  /// Creates html files for tests in [tmpDirPath] that are missing them.
-  Future<Null> _createMissingHtmlFiles(String tmpDirPath) async {
-    var dartBrowserTestSuffix = '_test.dart.browser_test.dart';
-    var htmlTestSuffix = '_test.html';
-    var dartFiles =
-        new Glob('test/**$dartBrowserTestSuffix').list(root: tmpDirPath);
-    await for (var file in dartFiles) {
-      var dartPath = p.relative(file.path, from: tmpDirPath);
-      var htmlPath = dartPath.substring(
-              0, dartPath.length - dartBrowserTestSuffix.length) +
-          htmlTestSuffix;
-      var htmlFile = new File(p.join(tmpDirPath, htmlPath));
-      if (!await htmlFile.exists()) {
-        var originalDartPath = p.basename(dartPath.substring(
-            0, dartPath.length - '.browser_test.dart'.length));
-        await htmlFile.writeAsString('''
-<!DOCTYPE html>
-<html>
-<head>
-  <title>${HTML_ESCAPE.convert(htmlPath)} Test</title>
-  <link rel="x-dart-test"
-        href="${HTML_ESCAPE.convert(originalDartPath)}">
-  <script src="packages/test/dart.js"></script>
-</head>
-</html>''');
-      }
-    }
-  }
-
   /// Runs tests using [precompiledPath] as the precompiled test directory.
   Future<Null> _runTests(String precompiledPath) async {
+    stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
     var testProcess = await new ProcessManager().spawn(
         _pubBinary,
@@ -361,7 +316,7 @@ class _TestCommand extends _BaseCommand {
     var testExitCode = await testProcess.exitCode;
     if (testExitCode != 0) {
       // No need to log - should see failed tests in the console.
-      exit(testExitCode);
+      exitCode = testExitCode;
     }
   }
 }
