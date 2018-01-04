@@ -76,8 +76,8 @@ Future<ServeHandler> watch(
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
   final buildActions = await createBuildActions(targetGraph, builders);
 
-  var watch = runWatch(environment, options, buildActions,
-      terminator.shouldTerminate, targetGraph.rootPackageConfig);
+  var watch =
+      runWatch(environment, options, buildActions, terminator.shouldTerminate);
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
@@ -96,12 +96,8 @@ Future<ServeHandler> watch(
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-WatchImpl runWatch(
-        BuildEnvironment environment,
-        BuildOptions options,
-        List<BuildAction> buildActions,
-        Future until,
-        BuildConfig rootPackageConfig) =>
+WatchImpl runWatch(BuildEnvironment environment, BuildOptions options,
+        List<BuildAction> buildActions, Future until) =>
     new WatchImpl(environment, options, buildActions, until,
         options.rootPackageFilesWhitelist.map((g) => new Glob(g)));
 

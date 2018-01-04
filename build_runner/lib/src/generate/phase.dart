@@ -15,8 +15,6 @@ class BuildAction implements InputMatcher {
   final Builder builder;
   final InputMatcher _inputs;
 
-  final InputSet generateFor;
-
   /// Whether to run lazily when an output is read.
   ///
   /// An optional build action will only run if one of its outputs is read by
@@ -34,8 +32,7 @@ class BuildAction implements InputMatcher {
   /// the root.
   final bool hideOutput;
 
-  BuildAction._(this.package, this.builder, this._inputs, this.generateFor,
-      this.builderOptions,
+  BuildAction._(this.package, this.builder, this._inputs, this.builderOptions,
       {bool isOptional, bool hideOutput})
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
@@ -65,8 +62,7 @@ class BuildAction implements InputMatcher {
       inputs = new InputMatcher.allOf([inputs, new InputMatcher(generateFor)]);
     }
     builderOptions ??= const BuilderOptions(const {});
-    return new BuildAction._(
-        package, builder, inputs, generateFor, builderOptions,
+    return new BuildAction._(package, builder, inputs, builderOptions,
         isOptional: isOptional, hideOutput: hideOutput);
   }
 
