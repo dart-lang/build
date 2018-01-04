@@ -25,6 +25,15 @@ void main() {
   final copyABuildApplication = applyToRoot(
       new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'));
   final defaultBuilderOptions = const BuilderOptions(const {});
+  InMemoryRunnerAssetWriter writer;
+
+  setUp(() async {
+    writer = new InMemoryRunnerAssetWriter();
+    await writer.writeAsString(makeAssetId('a|.packages'), '''
+# Fake packages file
+a:file://fake/pkg/path
+''');
+  });
 
   group('watch', () {
     setUp(() {
@@ -38,7 +47,6 @@ void main() {
 
     group('simple', () {
       test('rebuilds on file updates', () async {
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch(
             [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -55,7 +63,6 @@ void main() {
       });
 
       test('rebuilds on new files', () async {
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch(
             [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -75,7 +82,6 @@ void main() {
       });
 
       test('rebuilds on deleted files', () async {
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch([
           copyABuildApplication
         ], {
@@ -107,7 +113,6 @@ void main() {
       });
 
       test('rebuilds properly update asset_graph.json', () async {
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch([copyABuildApplication],
             {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -180,7 +185,6 @@ void main() {
       });
 
       test('ignores events from nested packages', () async {
-        var writer = new InMemoryRunnerAssetWriter();
         final packageGraph = buildPackageGraph({
           rootPackage('a', path: path.absolute('a')): ['b'],
           package('b', path: path.absolute('a', 'b')): []
@@ -216,7 +220,6 @@ void main() {
         var blocker = new Completer<Null>();
         var buildAction =
             applyToRoot(new CopyBuilder(blockUntil: blocker.future));
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState =
             await startWatch([buildAction], {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -238,7 +241,6 @@ void main() {
 
       test('edits to .packages prevent future builds and ask you to restart',
           () async {
-        var writer = new InMemoryRunnerAssetWriter();
         var logs = <LogRecord>[];
         var buildState = await startWatch(
             [copyABuildApplication], {'a|web/a.txt': 'a'}, writer,
@@ -248,6 +250,10 @@ void main() {
         var result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
+        await writer.writeAsString(new AssetId('a', '.packages'), '''
+# Fake packages file
+a:file://different/fake/pkg/path
+''');
         FakeWatcher.notifyWatchers(
             new WatchEvent(ChangeType.MODIFY, path.absolute('a', '.packages')));
 
@@ -268,7 +274,6 @@ void main() {
               new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState =
             await startWatch(buildActions, {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -295,7 +300,6 @@ void main() {
               new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState =
             await startWatch(buildActions, {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -327,7 +331,6 @@ void main() {
               new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch(
             buildActions, {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -369,7 +372,6 @@ void main() {
               new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
         ];
 
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState =
             await startWatch(buildActions, {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -408,7 +410,6 @@ void main() {
               copyFromAsset: makeAssetId('a|web/file.b')))
         ];
 
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch(
             buildActions, {'a|web/file.a': 'a', 'a|web/file.b': 'b'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -436,7 +437,6 @@ void main() {
               extension: 'a.copy.copy'))
         ];
 
-        var writer = new InMemoryRunnerAssetWriter();
         var buildState = await startWatch(
             buildActions, {'a|web/file.a': 'a', 'a|web/file.b': 'b'}, writer);
         var results = new StreamQueue(buildState.buildResults);
