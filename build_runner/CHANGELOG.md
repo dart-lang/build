@@ -1,6 +1,9 @@
 ## 0.7.4
 
-- Whitelist files used in any target in the root package as valid sources.
+- Allows using files in any build targets in the root package as sources if they
+  fall outside the hardcoded whitelist.
+- Changes to the root `.packages` file during watch mode will now cause the
+  build script to exit and prompt the user to restart the build.
 
 ## 0.7.3
 

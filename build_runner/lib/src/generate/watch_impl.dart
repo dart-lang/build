@@ -8,6 +8,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -114,6 +115,9 @@ class WatchImpl implements BuildState {
   /// Injectable factory for creating directory watchers.
   final DirectoryWatcherFactory _directoryWatcherFactory;
 
+  /// Should complete when we need to kill the build.
+  final _terminateCompleter = new Completer<Null>();
+
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
 
@@ -149,7 +153,6 @@ class WatchImpl implements BuildState {
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(BuildEnvironment environment, BuildOptions options,
       List<BuildAction> buildActions, Future until) {
-    var fatalBuildCompleter = new Completer();
     var firstBuildCompleter = new Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = new StreamController<BuildResult>();
@@ -167,7 +170,7 @@ class WatchImpl implements BuildState {
       if (!options.skipBuildScriptCheck) {
         if (_buildDefinition.buildScriptUpdates
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
-          fatalBuildCompleter.complete();
+          _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
           return new BuildResult(BuildStatus.failure, []);
         }
@@ -175,9 +178,12 @@ class WatchImpl implements BuildState {
       return build.run(mergedChanges);
     }
 
-    var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
+    var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
       _logger.info('Terminating. No further builds will be scheduled\n');
     });
+
+    Digest originalRootPackagesDigest;
+    final rootPackagesId = new AssetId(packageGraph.root.name, '.packages');
 
     // Start watching files immediately, before the first build is even started.
     new PackageGraphWatcher(packageGraph,
@@ -189,6 +195,19 @@ class WatchImpl implements BuildState {
           // Delay any events until the first build is completed.
           if (firstBuildCompleter.isCompleted) return change;
           return firstBuildCompleter.future.then((_) => change);
+        })
+        .asyncMap<AssetChange>((change) {
+          // Kill future builds if the root packages file changes.
+          assert(originalRootPackagesDigest != null);
+          if (change.id != rootPackagesId) return change;
+          return environment.reader.readAsBytes(rootPackagesId).then((bytes) {
+            if (md5.convert(bytes) != originalRootPackagesDigest) {
+              _terminateCompleter.complete();
+              _logger.severe('Terminating builds due to package graph update, '
+                  'please restart the build.');
+            }
+            return change;
+          });
         })
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
@@ -219,6 +238,9 @@ class WatchImpl implements BuildState {
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
+      originalRootPackagesDigest =
+          md5.convert(await environment.reader.readAsBytes(rootPackagesId));
+
       _buildDefinition = await BuildDefinition.prepareWorkspace(
           environment, options, buildActions,
           onDelete: _expectedDeletes.add);

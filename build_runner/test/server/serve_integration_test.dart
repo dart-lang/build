@@ -34,6 +34,10 @@ void main() {
         rootPackage: 'example');
     reader.cacheStringAsset(
         new AssetId('example', 'web/initial.txt'), 'initial');
+    reader.cacheStringAsset(new AssetId('example', '.packages'), '''
+# Fake packages file
+example:file://fake/pkg/path
+''');
     terminateController = new StreamController();
     final server = (await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],
