@@ -30,6 +30,7 @@ import '../package_graph/package_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
+import 'create_merged_dir.dart';
 import 'exceptions.dart';
 import 'fold_frames.dart';
 import 'heartbeat.dart';
@@ -54,6 +55,7 @@ Future<BuildResult> build(
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
+  String outputDir,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
   var environment = new OverrideableEnvironment(
@@ -67,7 +69,8 @@ Future<BuildResult> build(
       packageGraph: packageGraph,
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
-      enableLowResourcesMode: enableLowResourcesMode);
+      enableLowResourcesMode: enableLowResourcesMode,
+      outputDir: outputDir);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
@@ -85,8 +88,8 @@ Future<BuildResult> singleBuild(BuildEnvironment environment,
     BuildOptions options, List<BuildAction> buildActions) async {
   var buildDefinition = await BuildDefinition.prepareWorkspace(
       environment, options, buildActions);
-  var result =
-      (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
+  var result = (await BuildImpl.create(buildDefinition, options, buildActions))
+      .firstBuild;
   await buildDefinition.resourceManager.beforeExit();
   if (result.status == BuildStatus.success &&
       options.failOnSevere &&
@@ -114,21 +117,24 @@ class BuildImpl {
   final _resolvers = const BarbackResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
+  final String _outputDir;
 
-  BuildImpl._(BuildDefinition buildDefinition, this._buildActions)
+  BuildImpl._(
+      BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
       : _packageGraph = buildDefinition.packageGraph,
-        _reader = buildDefinition.enableLowResourcesMode
+        _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : new CachingAssetReader(buildDefinition.reader),
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
-        _onDelete = buildDefinition.onDelete;
+        _onDelete = buildDefinition.onDelete,
+        _outputDir = options.outputDir;
 
-  static Future<BuildImpl> create(
-      BuildDefinition buildDefinition, List<BuildAction> buildActions,
+  static Future<BuildImpl> create(BuildDefinition buildDefinition,
+      BuildOptions options, List<BuildAction> buildActions,
       {void onDelete(AssetId id)}) async {
-    var build = new BuildImpl._(buildDefinition, buildActions);
+    var build = new BuildImpl._(buildDefinition, options, buildActions);
 
     build._firstBuild = await build.run({});
     return build;
@@ -138,11 +144,14 @@ class BuildImpl {
     var watch = new Stopwatch()..start();
     _lazyPhases.clear();
     if (updates.isNotEmpty) {
-      await logTimedAsync(
-          _logger, 'Updating asset graph', () => _updateAssetGraph(updates));
+      await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
     await _resourceManager.disposeAll();
+    if (_outputDir != null) {
+      await createMergedOutputDir(
+          _outputDir, _assetGraph, _packageGraph, _reader);
+    }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
           '${result.outputs.length} outputs\n\n');
@@ -158,11 +167,13 @@ class BuildImpl {
   }
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    var invalidated = await _assetGraph.updateAndInvalidate(
-        _buildActions, updates, _packageGraph.root.name, _delete, _reader);
-    if (_reader is CachingAssetReader) {
-      (_reader as CachingAssetReader).invalidate(invalidated);
-    }
+    await logTimedAsync(_logger, 'Updating asset graph', () async {
+      var invalidated = await _assetGraph.updateAndInvalidate(
+          _buildActions, updates, _packageGraph.root.name, _delete, _reader);
+      if (_reader is CachingAssetReader) {
+        (_reader as CachingAssetReader).invalidate(invalidated);
+      }
+    });
   }
 
   /// Runs a build inside a zone with an error handler and stack chain

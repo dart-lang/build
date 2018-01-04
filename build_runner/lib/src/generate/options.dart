@@ -17,6 +17,7 @@ class BuildOptions {
   bool deleteFilesByDefault;
   bool failOnSevere;
   bool enableLowResourcesMode;
+  final String outputDir;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -34,7 +35,8 @@ class BuildOptions {
       Level logLevel,
       this.packageGraph,
       this.skipBuildScriptCheck,
-      this.enableLowResourcesMode}) {
+      this.enableLowResourcesMode,
+      this.outputDir}) {
     // Set up logging
     logLevel ??= Level.INFO;
 

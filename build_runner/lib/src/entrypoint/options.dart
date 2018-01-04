@@ -20,6 +20,7 @@ const _deleteFilesByDefault = 'delete-conflicting-outputs';
 const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
+const _output = 'output';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
@@ -54,11 +55,15 @@ class _SharedOptions {
 
   final bool enableLowResourcesMode;
 
+  /// Path to the merged output directory, if applicable.
+  final String outputDir;
+
   _SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
     @required this.failOnSevere,
     @required this.enableLowResourcesMode,
+    @required this.outputDir,
   });
 
   factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
@@ -67,6 +72,7 @@ class _SharedOptions {
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      outputDir: argResults[_output] as String,
     );
   }
 }
@@ -83,12 +89,14 @@ class _ServeOptions extends _SharedOptions {
     @required bool deleteFilesByDefault,
     @required bool failOnSevere,
     @required bool enableLowResourcesMode,
+    @required String outputDir,
   })
       : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
           failOnSevere: failOnSevere,
           enableLowResourcesMode: enableLowResourcesMode,
+          outputDir: outputDir,
         );
 
   factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
@@ -112,6 +120,7 @@ class _ServeOptions extends _SharedOptions {
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      outputDir: argResults[_output] as String,
     );
   }
 }
@@ -158,7 +167,9 @@ abstract class _BaseCommand extends Command {
       ..addFlag(_failOnSevere,
           help: 'Whether to consider the build a failure on an error logged.',
           negatable: true,
-          defaultsTo: false);
+          defaultsTo: false)
+      ..addOption(_output,
+          help: 'A directory to write the result of a build to.', abbr: 'o');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -184,7 +195,8 @@ class _BuildCommand extends _BaseCommand {
     await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
-        assumeTty: options.assumeTty);
+        assumeTty: options.assumeTty,
+        outputDir: options.outputDir);
   }
 }
 
@@ -205,7 +217,8 @@ class _WatchCommand extends _BaseCommand {
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
-        assumeTty: options.assumeTty);
+        assumeTty: options.assumeTty,
+        outputDir: options.outputDir);
     await handler.currentBuild;
     await handler.buildResults.drain();
   }
@@ -236,7 +249,8 @@ class _ServeCommand extends _WatchCommand {
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
-        assumeTty: options.assumeTty);
+        assumeTty: options.assumeTty,
+        outputDir: options.outputDir);
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
