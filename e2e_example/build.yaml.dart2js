@@ -2,6 +2,9 @@ targets:
   e2e_example:
     builders:
       build_web_compilers|entrypoint:
+        generate_for:
+        - test/hello_world_*.browser_test.dart
+        - web/**.dart
         options:
           compiler: dart2js
           dart2js_args:
