@@ -421,6 +421,21 @@ void main() {
           });
     });
 
+    test('can build on files outside the hardcoded whitelist', () async {
+      await testBuilders(
+          [applyToRoot(new CopyBuilder())], {'a|test_files/a.txt': 'a'},
+          overrideBuildConfig: parseBuildConfigs({
+            'a': {
+              'targets': {
+                'a': {
+                  'sources': ['test_files/**']
+                }
+              }
+            }
+          }),
+          outputs: {'a|test_files/a.txt.copy': 'a'});
+    });
+
     test('can\'t read files in .dart_tool', () async {
       await testBuilders([
         apply(

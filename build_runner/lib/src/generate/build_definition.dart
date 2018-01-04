@@ -335,7 +335,7 @@ class _Loader {
   }
 
   List<String> _packageIncludes(PackageNode package) => package.isRoot
-      ? rootPackageFilesWhitelist
+      ? _options.rootPackageFilesWhitelist
       : package.name == r'$sdk'
           ? const ['lib/dev_compiler/**.js']
           : const ['lib/**'];

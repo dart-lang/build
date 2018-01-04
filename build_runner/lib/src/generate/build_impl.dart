@@ -27,6 +27,7 @@ import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
@@ -56,6 +57,8 @@ Future<BuildResult> build(
   Map<String, BuildConfig> overrideBuildConfig,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
+  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+      overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
@@ -65,14 +68,14 @@ Future<BuildResult> build(
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
+      rootPackageConfig: targetGraph.rootPackageConfig,
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final buildActions = await createBuildActions(options.packageGraph, builders,
-      overrideBuildConfig: overrideBuildConfig);
+  final buildActions = await createBuildActions(targetGraph, builders);
 
   var result = await singleBuild(environment, options, buildActions);
 

@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -17,6 +18,7 @@ import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
+import '../common/build_configs.dart';
 import '../common/common.dart';
 import '../common/package_graphs.dart';
 
@@ -62,6 +64,33 @@ a:file://fake/pkg/path
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
       });
 
+      test('rebuilds on file updates outside hardcoded whitelist', () async {
+        var buildState = await startWatch(
+            [copyABuildApplication], {'a|test_files/a.txt': 'a'}, writer,
+            overrideBuildConfig: parseBuildConfigs({
+              'a': {
+                'targets': {
+                  'a': {
+                    'sources': ['test_files/**']
+                  }
+                }
+              }
+            }));
+        var results = new StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(result,
+            outputs: {'a|test_files/a.txt.copy': 'a'}, writer: writer);
+
+        await writer.writeAsString(makeAssetId('a|test_files/a.txt'), 'b');
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.MODIFY, path.absolute('a', 'test_files', 'a.txt')));
+
+        result = await results.next;
+        checkBuild(result,
+            outputs: {'a|test_files/a.txt.copy': 'b'}, writer: writer);
+      });
+
       test('rebuilds on new files', () async {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
@@ -78,6 +107,36 @@ a:file://fake/pkg/path
         checkBuild(result, outputs: {'a|web/b.txt.copy': 'b'}, writer: writer);
         // Previous outputs should still exist.
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')],
+            decodedMatches('a'));
+      });
+
+      test('rebuilds on new files outside hardcoded whitelist', () async {
+        var buildState = await startWatch(
+            [copyABuildApplication], {'a|test_files/a.txt': 'a'}, writer,
+            overrideBuildConfig: parseBuildConfigs({
+              'a': {
+                'targets': {
+                  'a': {
+                    'sources': ['test_files/**']
+                  }
+                }
+              }
+            }));
+        var results = new StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(result,
+            outputs: {'a|test_files/a.txt.copy': 'a'}, writer: writer);
+
+        await writer.writeAsString(makeAssetId('a|test_files/b.txt'), 'b');
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.ADD, path.absolute('a', 'test_files', 'b.txt')));
+
+        result = await results.next;
+        checkBuild(result,
+            outputs: {'a|test_files/b.txt.copy': 'b'}, writer: writer);
+        // Previous outputs should still exist.
+        expect(writer.assets[makeAssetId('a|test_files/a.txt.copy')],
             decodedMatches('a'));
       });
 
@@ -109,6 +168,49 @@ a:file://fake/pkg/path
         expect(writer.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         // Previous outputs should still exist.
         expect(writer.assets[makeAssetId('a|web/b.txt.copy')],
+            decodedMatches('b'));
+      });
+
+      test('rebuilds on deleted files outside hardcoded whitelist', () async {
+        var buildState = await startWatch([
+          copyABuildApplication
+        ], {
+          'a|test_files/a.txt': 'a',
+          'a|test_files/b.txt': 'b',
+        }, writer,
+            overrideBuildConfig: parseBuildConfigs({
+              'a': {
+                'targets': {
+                  'a': {
+                    'sources': ['test_files/**']
+                  }
+                }
+              }
+            }));
+        var results = new StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(result,
+            outputs: {
+              'a|test_files/a.txt.copy': 'a',
+              'a|test_files/b.txt.copy': 'b'
+            },
+            writer: writer);
+
+        // Don't call writer.delete, that has side effects.
+        writer.assets.remove(makeAssetId('a|test_files/a.txt'));
+        FakeWatcher.notifyWatchers(new WatchEvent(
+            ChangeType.REMOVE, path.absolute('a', 'test_files', 'a.txt')));
+
+        result = await results.next;
+
+        // Shouldn't rebuild anything, no outputs.
+        checkBuild(result, outputs: {}, writer: writer);
+
+        // The old output file should no longer exist either.
+        expect(writer.assets[makeAssetId('a|test_files/a.txt.copy')], isNull);
+        // Previous outputs should still exist.
+        expect(writer.assets[makeAssetId('a|test_files/b.txt.copy')],
             decodedMatches('b'));
       });
 
@@ -465,6 +567,7 @@ StreamController _terminateWatchController;
 Future<BuildState> startWatch(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
     {PackageGraph packageGraph,
+    Map<String, BuildConfig> overrideBuildConfig,
     onLog(LogRecord record),
     Level logLevel: Level.OFF}) {
   inputs.forEach((serializedId, contents) {
@@ -479,6 +582,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
+      overrideBuildConfig: overrideBuildConfig,
       reader: reader,
       writer: writer,
       packageGraph: packageGraph,

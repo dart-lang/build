@@ -3,16 +3,29 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
+
+const List<String> _defaultRootPackageWhitelist = const [
+  'benchmark/**',
+  'bin/**',
+  'example/**',
+  'lib/**',
+  'test/**',
+  'tool/**',
+  'web/**',
+];
 
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
   // Build mode options.
   StreamSubscription logListener;
   PackageGraph packageGraph;
+  List<String> rootPackageFilesWhitelist;
 
   bool deleteFilesByDefault;
   bool failOnSevere;
@@ -28,11 +41,12 @@ class BuildOptions {
   bool severeLogHandled = false;
 
   BuildOptions(BuildEnvironment environment,
-      {this.debounceDelay,
+      {@required this.packageGraph,
+      BuildConfig rootPackageConfig,
+      this.debounceDelay,
       this.deleteFilesByDefault,
       this.failOnSevere,
       Level logLevel,
-      this.packageGraph,
       this.skipBuildScriptCheck,
       this.enableLowResourcesMode}) {
     // Set up logging
@@ -54,10 +68,20 @@ class BuildOptions {
 
     /// Set up other defaults.
     debounceDelay ??= const Duration(milliseconds: 250);
-    packageGraph ??= new PackageGraph.forThisPackage();
     deleteFilesByDefault ??= false;
     failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
+
+    if (rootPackageConfig == null ||
+        (rootPackageConfig.buildTargets.length == 1 &&
+            rootPackageConfig.buildTargets.values.single.sources.include ==
+                null)) {
+      rootPackageFilesWhitelist = _defaultRootPackageWhitelist;
+    } else {
+      rootPackageFilesWhitelist = rootPackageConfig.buildTargets.values
+          .expand((target) => target.sources.include)
+          .toList();
+    }
   }
 }

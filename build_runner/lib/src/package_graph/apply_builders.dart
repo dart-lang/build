@@ -95,8 +95,8 @@ class BuilderApplication {
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
-/// each package in [packageGraph] such that all builders are run for
-/// dependencies before moving on to later packages.
+/// each target in [targetGraph] such that all builders are run for dependencies
+/// before moving on to later packages.
 ///
 /// When there is a package cycle the builders are applied to each packages
 /// within the cycle before moving on to packages that depend on any package
@@ -105,34 +105,26 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-Future<List<BuildAction>> createBuildActions(
-    PackageGraph packageGraph, Iterable<BuilderApplication> builderApplications,
-    {Map<String, BuildConfig> overrideBuildConfig}) async {
-  final moduleGraph = await TargetGraph.forPackageGraph(packageGraph,
-      overrideBuildConfig: overrideBuildConfig);
+Future<List<BuildAction>> createBuildActions(TargetGraph targetGraph,
+    Iterable<BuilderApplication> builderApplications) async {
   var cycles = stronglyConnectedComponents<String, TargetNode>(
-      moduleGraph.allModules.values,
+      targetGraph.allModules.values,
       (node) => node.target.key,
       (node) =>
-          node.target.dependencies?.map((key) => moduleGraph.allModules[key]));
+          node.target.dependencies?.map((key) => targetGraph.allModules[key]));
   return cycles
-      .expand((cycle) => _createBuildActionsWithinCycle(
-          cycle, packageGraph, builderApplications))
+      .expand(
+          (cycle) => _createBuildActionsWithinCycle(cycle, builderApplications))
       .toList();
 }
 
-Iterable<BuildAction> _createBuildActionsWithinCycle(
-        Iterable<TargetNode> cycle,
-        PackageGraph packageGraph,
+Iterable<BuildAction> _createBuildActionsWithinCycle(Iterable<TargetNode> cycle,
         Iterable<BuilderApplication> builderApplications) =>
     builderApplications.expand((builderApplication) =>
-        _createBuildActionsForBuilderInCycle(
-            cycle, packageGraph, builderApplication));
+        _createBuildActionsForBuilderInCycle(cycle, builderApplication));
 
 Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
-    Iterable<TargetNode> cycle,
-    PackageGraph packageGraph,
-    BuilderApplication builderApplication) {
+    Iterable<TargetNode> cycle, BuilderApplication builderApplication) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   bool shouldRun(TargetNode node) {
