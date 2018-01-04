@@ -9,7 +9,7 @@
 ///
 /// Always attempts 2 'levels' of precision. Will show hours/minutes,
 /// minutes/seconds, seconds/tenths of a second, or milliseconds depending on
-/// the largets level that needs to be displayed.
+/// the largest level that needs to be displayed.
 String humanReadable(Duration duration) {
   if (duration < const Duration(seconds: 1)) {
     return '${duration.inMilliseconds}ms';
