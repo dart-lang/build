@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'dev_compiler_builder.dart';
+import 'kernel_builder.dart';
 import 'module_builder.dart';
 import 'summary_builder.dart';
 
@@ -28,6 +29,10 @@ class Module extends Object with _$ModuleSerializerMixin {
   // The sourcemap for the JS file for this module.
   AssetId get jsSourceMapId =>
       primarySource.changeExtension(jsSourceMapExtension);
+
+  // The kernel summary for this module.
+  AssetId get kernelSummaryId =>
+      primarySource.changeExtension(kernelSummaryExtension);
 
   /// The linked summary for this module.
   AssetId get linkedSummaryId =>

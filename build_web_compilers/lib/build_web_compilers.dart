@@ -8,6 +8,8 @@ export 'src/dev_compiler_builder.dart'
         jsModuleErrorsExtension,
         jsModuleExtension,
         jsSourceMapExtension;
+export 'src/kernel_builder.dart'
+    show KernelSummaryBuilder, kernelSummaryExtension;
 export 'src/module_builder.dart' show ModuleBuilder, moduleExtension;
 export 'src/summary_builder.dart'
     show

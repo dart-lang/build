@@ -16,7 +16,7 @@ import 'web_entrypoint_builder.dart';
 /// Alias `_p.url` to `p`.
 _p.Context get p => _p.url;
 
-Future<Null> bootstrapDdc(BuildStep buildStep) async {
+Future<Null> bootstrapDdc(BuildStep buildStep, {bool useKernel}) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId.changeExtension(moduleExtension);
   var module = new Module.fromJson(JSON
@@ -37,11 +37,15 @@ Future<Null> bootstrapDdc(BuildStep buildStep) async {
   // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
   // which will allow us to not rely on the naming schemes that dartdevc uses
   // internally, but instead specify our own.
-  var appModuleScope = p
-      .split(_ddcModuleName(module.jsId))
-      .skip(1)
-      .join('__')
-      .replaceAll('.', '\$46');
+  var appModuleScope = () {
+    if (useKernel) {
+      var basename = p.basename(module.jsId.path);
+      return basename.substring(0, basename.length - jsModuleExtension.length);
+    } else {
+      return p.split(_ddcModuleName(module.jsId)).skip(1).join('__');
+    }
+  }();
+  appModuleScope = appModuleScope.replaceAll('.', '\$46');
 
   // Map from module name to module path for custom modules.
   var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};

@@ -30,8 +30,10 @@ const _supportedOptions = const ['compiler', 'dart2js_args'];
 class WebEntrypointBuilder implements Builder {
   final WebCompiler webCompiler;
   final List<String> dart2JsArgs;
+  final bool useKernel;
 
-  const WebEntrypointBuilder(this.webCompiler, {this.dart2JsArgs: const []});
+  const WebEntrypointBuilder(this.webCompiler,
+      {this.dart2JsArgs: const [], this.useKernel: false});
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
     var unsupportedOptions =
@@ -81,7 +83,7 @@ class WebEntrypointBuilder implements Builder {
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
     if (webCompiler == WebCompiler.DartDevc) {
-      await bootstrapDdc(buildStep);
+      await bootstrapDdc(buildStep, useKernel: useKernel);
     } else if (webCompiler == WebCompiler.Dart2Js) {
       await bootstrapDart2Js(buildStep, dart2JsArgs);
     }

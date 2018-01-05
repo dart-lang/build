@@ -1,1 +1,3 @@
-String get message => 'Hello World';
+import 'package:path/path.dart' as p;
+
+String get message => p.join('Hello', 'World');

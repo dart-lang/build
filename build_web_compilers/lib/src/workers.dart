@@ -15,6 +15,8 @@ import 'package:path/path.dart' as p;
 
 import 'scratch_space.dart';
 
+final sdkDir = cli_util.getSdkPath();
+
 /// Completes once the analyzer workers have been shut down.
 Future<Null> get analyzerWorkersAreDone =>
     _analyzerWorkersAreDoneCompleter?.future ?? new Future.value(null);
@@ -25,10 +27,20 @@ Future<Null> get dartdevcWorkersAreDone =>
     _dartdevcWorkersAreDoneCompleter?.future ?? new Future.value(null);
 Completer<Null> _dartdevcWorkersAreDoneCompleter;
 
+/// Completes once the dartdevk workers have been shut down.
+Future<Null> get dartdevkWorkersAreDone =>
+    _dartdevkWorkersAreDoneCompleter?.future ?? new Future.value(null);
+Completer<Null> _dartdevkWorkersAreDoneCompleter;
+
 /// Completes once the dart2js workers have been shut down.
 Future<Null> get dart2jsWorkersAreDone =>
     _dart2jsWorkersAreDoneCompleter?.future ?? new Future.value(null);
 Completer<Null> _dart2jsWorkersAreDoneCompleter;
+
+/// Completes once the common frontend workers have been shut down.
+Future<Null> get frontendWorkersAreDone =>
+    _frontendWorkersAreDoneCompleter?.future ?? new Future.value(null);
+Completer<Null> _frontendWorkersAreDoneCompleter;
 
 String get _scriptExtension => Platform.isWindows ? '.bat' : '';
 
@@ -88,7 +100,52 @@ final dartdevcDriverResource = new Resource<BazelWorkerDriver>(
   __dartdevcDriver = null;
 });
 
-final sdkDir = cli_util.getSdkPath();
+/// Manages a shared set of persistent dartdevk workers.
+BazelWorkerDriver get _dartdevkDriver {
+  _dartdevkWorkersAreDoneCompleter ??= new Completer<Null>();
+  return __dartdevkDriver ??= new BazelWorkerDriver(
+      () => Process.start(p.join(sdkDir, 'bin', 'dartdevk$_scriptExtension'),
+          ['--persistent_worker'],
+          workingDirectory: scratchSpace.tempDir.path),
+      maxWorkers: _maxWorkersPerTask);
+}
+
+BazelWorkerDriver __dartdevkDriver;
+
+/// Resource for fetching the current [BazelWorkerDriver] for dartdevk.
+final dartdevkDriverResource = new Resource<BazelWorkerDriver>(
+    () => _dartdevkDriver, beforeExit: () async {
+  await _dartdevkDriver?.terminateWorkers();
+  _dartdevkWorkersAreDoneCompleter.complete();
+  _dartdevkWorkersAreDoneCompleter = null;
+  __dartdevkDriver = null;
+});
+
+/// Manages a shared set of persistent common frontend workers.
+BazelWorkerDriver get _frontendDriver {
+  _frontendWorkersAreDoneCompleter ??= new Completer<Null>();
+  return __frontendDriver ??= new BazelWorkerDriver(
+      () => Process.start(
+          p.join(sdkDir, 'bin', 'dart'),
+          [
+            p.join(sdkDir, 'bin', 'snapshots',
+                'kernel_summary_worker.dart.snapshot'),
+            '--persistent_worker'
+          ],
+          workingDirectory: scratchSpace.tempDir.path),
+      maxWorkers: _maxWorkersPerTask);
+}
+
+BazelWorkerDriver __frontendDriver;
+
+/// Resource for fetching the current [BazelWorkerDriver] for common frontend.
+final frontendDriverResource = new Resource<BazelWorkerDriver>(
+    () => _frontendDriver, beforeExit: () async {
+  await _frontendDriver?.terminateWorkers();
+  _frontendWorkersAreDoneCompleter.complete();
+  _frontendWorkersAreDoneCompleter = null;
+  __frontendDriver = null;
+});
 
 /// Manages a shared set of persistent dart2js workers.
 Dart2JsBatchWorker get _dart2jsWorker {
