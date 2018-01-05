@@ -53,6 +53,7 @@ Future<ServeHandler> watch(
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
+  String outputDir,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -71,7 +72,8 @@ Future<ServeHandler> watch(
       logLevel: logLevel,
       debounceDelay: debounceDelay,
       skipBuildScriptCheck: skipBuildScriptCheck,
-      enableLowResourcesMode: enableLowResourcesMode);
+      enableLowResourcesMode: enableLowResourcesMode,
+      outputDir: outputDir);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
@@ -251,7 +253,7 @@ class WatchImpl implements BuildState {
           packageGraph.root.name,
           null));
       _assetGraph = _buildDefinition.assetGraph;
-      build = await BuildImpl.create(_buildDefinition, buildActions,
+      build = await BuildImpl.create(_buildDefinition, options, buildActions,
           onDelete: _expectedDeletes.add);
 
       // It is possible this is already closed if the user kills the process

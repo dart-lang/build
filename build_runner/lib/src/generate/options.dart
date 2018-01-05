@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 
 import 'package:build_config/build_config.dart';
@@ -30,6 +31,7 @@ class BuildOptions {
   bool deleteFilesByDefault;
   bool failOnSevere;
   bool enableLowResourcesMode;
+  final String outputDir;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -48,7 +50,8 @@ class BuildOptions {
       this.failOnSevere,
       Level logLevel,
       this.skipBuildScriptCheck,
-      this.enableLowResourcesMode}) {
+      this.enableLowResourcesMode,
+      this.outputDir}) {
     // Set up logging
     logLevel ??= Level.INFO;
 
