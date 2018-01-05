@@ -23,6 +23,7 @@ import '../asset_graph/node.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
+import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
@@ -147,14 +148,14 @@ class BuildImpl {
     var result = await _safeBuild(_resourceManager);
     await _resourceManager.disposeAll();
     if (result.status == BuildStatus.success) {
-      _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
+      _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs\n\n');
     } else {
       if (result.exception is FatalBuildException) {
         // TODO(???) Really bad idea. Should not set exit codes in libraries!
         exitCode = 1;
       }
-      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms',
+      _logger.severe('Failed after ${humanReadable(watch.elapsed)}',
           result.exception, result.stackTrace);
     }
     return result;
