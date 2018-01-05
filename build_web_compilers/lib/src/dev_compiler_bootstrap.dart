@@ -42,13 +42,10 @@ Future<Null> bootstrapDdc(BuildStep buildStep, {bool useKernel}) async {
       var basename = p.basename(module.jsId.path);
       return basename.substring(0, basename.length - jsModuleExtension.length);
     } else {
-      return p
-          .split(_ddcModuleName(module.jsId))
-          .skip(1)
-          .join('__')
-          .replaceAll('.', '\$46');
+      return p.split(_ddcModuleName(module.jsId)).skip(1).join('__');
     }
   }();
+  appModuleScope = appModuleScope.replaceAll('.', '\$46');
 
   // Map from module name to module path for custom modules.
   var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
