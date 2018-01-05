@@ -14,8 +14,6 @@ import 'package:build_runner/src/logging/std_io_logging.dart';
 
 Future<Null> main(List<String> args) async {
   var logListener = Logger.root.onRecord.listen(stdIOLogListener);
-  await ensureBuildScript();
-  var dart = Platform.resolvedExecutable;
 
   // Use the actual command runner to parse the args and immediately print the
   // usage information if there is no command provided or the help command was
@@ -27,6 +25,9 @@ Future<Null> main(List<String> args) async {
     commandRunner.printUsage();
     return;
   }
+
+  await ensureBuildScript();
+  var dart = Platform.resolvedExecutable;
 
   // The actual args we will pass to the generated entrypoint script.
   final innerArgs = [scriptLocation]..addAll(args);
