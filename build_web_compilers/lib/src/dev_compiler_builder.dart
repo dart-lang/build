@@ -104,13 +104,11 @@ Future createDevCompilerModule(
 
   // Add all the linked summaries as summary inputs.
   for (var id in transitiveSummaryDeps) {
-    if (useKernel) {
-      var path = p.url.relative(scratchSpace.fileFor(id).path,
-          from: scratchSpace.tempDir.path);
-      request.arguments.addAll(['-s', path]);
-    } else {
-      request.arguments.addAll(['-s', scratchSpace.fileFor(id).path]);
-    }
+    var summaryPath = useKernel
+        ? p.url.relative(scratchSpace.fileFor(id).path,
+            from: scratchSpace.tempDir.path)
+        : scratchSpace.fileFor(id).path;
+    request.arguments.addAll(['-s', summaryPath]);
   }
 
   // Add URL mappings for all the package: files to tell DartDevc where to
@@ -149,26 +147,17 @@ Future createDevCompilerModule(
     if (uri.startsWith('package:')) {
       return uri;
     }
-    if (useKernel) {
-      return '${id.path}';
-    } else {
-      return new Uri.file('/${id.path}').toString();
-    }
+    return useKernel ? id.path : new Uri.file('/${id.path}').toString();
   }));
 
   WorkResponse response;
-  if (useKernel) {
-    // Make sure to clean up the .packages file.
-    assert(packagesFile != null);
-    try {
-      var dartdevk = await buildStep.fetchResource(dartdevkDriverResource);
-      response = await dartdevk.doWork(request);
-    } finally {
-      await packagesFile.parent.delete(recursive: true);
-    }
-  } else {
-    var dartdevc = await buildStep.fetchResource(dartdevcDriverResource);
-    response = await dartdevc.doWork(request);
+  try {
+    var driverResource =
+        useKernel ? dartdevkDriverResource : dartdevcDriverResource;
+    var driver = await buildStep.fetchResource(driverResource);
+    response = await driver.doWork(request);
+  } finally {
+    if (useKernel) await packagesFile.parent.delete(recursive: true);
   }
 
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
@@ -177,7 +166,7 @@ Future createDevCompilerModule(
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
     var message =
         response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-    throw new DartDevcCompilationException(module.jsId, '$message\n$request}');
+    throw new DartDevcCompilationException(module.jsId, '$message}');
   } else {
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(module.jsId, buildStep);
