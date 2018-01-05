@@ -52,7 +52,8 @@ class _SharedOptions {
 
   final bool enableLowResourcesMode;
 
-  /// Path to the merged output directory, if applicable.
+  /// Path to the merged output directory, or null if no directory should be
+  /// created.
   final String outputDir;
 
   _SharedOptions._({
