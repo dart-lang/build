@@ -3,15 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
-import 'package:shelf/shelf_io.dart' as shelf_io;
 
-Future main() async {
+Future main(List<String> args) async {
   var builders = [
     apply('e2e_example|test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
@@ -41,21 +39,5 @@ Future main() async {
         hideOutput: true)
   ];
 
-  var serveHandler = await watch(
-    builders,
-    deleteFilesByDefault: true,
-  );
-
-  var server =
-      await shelf_io.serve(serveHandler.handlerFor('web'), 'localhost', 8080);
-  var testServer =
-      await shelf_io.serve(serveHandler.handlerFor('test'), 'localhost', 8081);
-
-  await serveHandler.currentBuild;
-  stderr.writeln('Serving `web` at http://localhost:8080/');
-  stderr.writeln('Serving `test` at http://localhost:8081/');
-
-  await serveHandler.buildResults.drain();
-  await server.close();
-  await testServer.close();
+  await run(args, builders);
 }
