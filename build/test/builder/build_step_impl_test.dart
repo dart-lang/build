@@ -79,7 +79,7 @@ void main() {
 
     setUp(() {
       writer = new InMemoryAssetWriter();
-      reader = new InMemoryAssetReader(sourceAssets: writer.assets);
+      reader = new InMemoryAssetReader.shareAssetCache(writer.assets);
     });
 
     test('tracks outputs created by a builder', () async {

@@ -21,7 +21,7 @@ import 'package:build_test/build_test.dart';
 
 main() async {
   await watch(
-    [new BuildAction(new CopyBuilder(), 'a')], deleteFilesByDefault: true);
+    [applyToRoot(new CopyBuilder())], deleteFilesByDefault: true);
 }
 ''';
 

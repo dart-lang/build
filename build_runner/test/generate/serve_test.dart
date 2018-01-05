@@ -21,14 +21,18 @@ void main() {
   group('ServeHandler', () {
     InMemoryRunnerAssetWriter writer;
     CopyBuilder copyBuilder;
-    BuildAction copyABuildAction;
+    BuilderApplication copyABuildApplication;
 
-    setUp(() {
+    setUp(() async {
       _terminateServeController = new StreamController();
       writer = new InMemoryRunnerAssetWriter();
+      await writer.writeAsString(makeAssetId('a|.packages'), '''
+# Fake packages file
+a:file://fake/pkg/path
+''');
 
       copyBuilder = new CopyBuilder();
-      copyABuildAction = new BuildAction(copyBuilder, 'a');
+      copyABuildApplication = applyToRoot(copyBuilder);
     });
 
     tearDown(() async {
@@ -37,8 +41,8 @@ void main() {
     });
 
     test('does basic builds', () async {
-      var handler =
-          await createHandler([copyABuildAction], {'a|web/a.txt': 'a'}, writer);
+      var handler = await createHandler(
+          [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
       var results = new StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
@@ -55,8 +59,8 @@ void main() {
       var buildBlocker1 = new Completer();
       copyBuilder.blockUntil = buildBlocker1.future;
 
-      var handler =
-          await createHandler([copyABuildAction], {'a|web/a.txt': 'a'}, writer);
+      var handler = await createHandler(
+          [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
       var webHandler = handler.handlerFor('web');
       var results = new StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
@@ -111,18 +115,17 @@ final _debounceDelay = new Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
-Future<ServeHandler> createHandler(List<BuildAction> buildActions,
+Future<ServeHandler> createHandler(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer) async {
   await Future.wait(inputs.keys.map((serializedId) async {
     await writer.writeAsString(makeAssetId(serializedId), inputs[serializedId]);
   }));
-  final actualAssets = writer.assets;
-  final reader = new InMemoryRunnerAssetReader(actualAssets);
+  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets);
   final packageGraph =
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
   final watcherFactory = (String path) => new FakeWatcher(path);
 
-  return watch_impl.watch(buildActions,
+  return watch_impl.watch(builders,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,

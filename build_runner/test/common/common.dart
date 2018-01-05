@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 
@@ -33,40 +32,20 @@ class OverDeclaringCopyBuilder extends CopyBuilder {
   Future build(BuildStep buildStep) async {}
 }
 
-/// Outputs a fixed set of [outputContents] for [package].
-class TxtFilePackageBuilder extends PackageBuilder {
-  /// The files to write, each key represents the path to a file under
-  /// [package], and each value is the content of that file.
-  final Map<String, String> outputContents;
-
-  /// The package that this builder operates on.
-  final String package;
-
-  @override
-  Iterable<String> get outputs => outputContents.keys;
-
-  TxtFilePackageBuilder(this.package, this.outputContents);
-
-  @override
-  Future<Null> build(BuildStep buildStep) async {
-    outputContents.forEach((path, content) =>
-        buildStep.writeAsString(new AssetId(package, path), content));
-  }
-}
-
 class ExistsBuilder extends Builder {
   final AssetId idToCheck;
   final Future waitFor;
+  final String inputExtension;
 
   final _hasRanCompleter = new Completer<Null>();
   Future get hasRan => _hasRanCompleter.future;
 
-  ExistsBuilder(this.idToCheck, {this.waitFor});
+  ExistsBuilder(this.idToCheck, {this.waitFor, this.inputExtension: ''});
 
   @override
-  final buildExtensions = {
-    '': ['.exists']
-  };
+  Map<String, List<String>> get buildExtensions => {
+        inputExtension: ['$inputExtension.exists']
+      };
 
   @override
   Future<Null> build(BuildStep buildStep) async {
@@ -76,4 +55,33 @@ class ExistsBuilder extends Builder {
         buildStep.inputId.addExtension('.exists'), '$exists');
     _hasRanCompleter.complete(null);
   }
+}
+
+class PlaceholderBuilder extends Builder {
+  final String inputExtension;
+  final Map<String, String> outputExtensionsToContent;
+
+  @override
+  Map<String, List<String>> get buildExtensions =>
+      {inputExtension: outputExtensionsToContent.keys.toList()};
+
+  PlaceholderBuilder(this.outputExtensionsToContent,
+      {this.inputExtension: r'$lib$'});
+
+  @override
+  Future build(BuildStep buildStep) async {
+    outputExtensionsToContent.forEach((extension, content) {
+      buildStep.writeAsString(
+          _outputId(buildStep.inputId, inputExtension, extension), content);
+    });
+  }
+}
+
+AssetId _outputId(
+    AssetId inputId, String inputExtension, String outputExtension) {
+  assert(inputId.path.endsWith(inputExtension));
+  var newPath =
+      inputId.path.substring(0, inputId.path.length - inputExtension.length) +
+          outputExtension;
+  return new AssetId(inputId.package, newPath);
 }

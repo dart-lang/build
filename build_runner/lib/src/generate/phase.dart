@@ -3,16 +3,17 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
+import 'package:collection/collection.dart';
 
-import '../package_builder/package_builder.dart';
-import 'input_set.dart';
+import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a [Builder] on a
 /// specific [package].
-///
-/// See the [BuildAction] and [PackageBuildAction] implementations.
-abstract class BuildAction {
-  String get package;
+class BuildAction implements InputMatcher {
+  final String package;
+  final Builder builder;
+  final InputMatcher _inputs;
 
   /// Whether to run lazily when an output is read.
   ///
@@ -31,14 +32,16 @@ abstract class BuildAction {
   /// the root.
   final bool hideOutput;
 
-  BuildAction._(this.builderOptions, {bool isOptional, bool hideOutput})
+  BuildAction._(this.package, this.builder, this._inputs, this.builderOptions,
+      {bool isOptional, bool hideOutput})
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
 
-  /// Creates an [AssetBuildAction] for a normal [Builder].
+  /// Creates an [BuildAction] for a normal [Builder].
   ///
-  /// Runs [builder] on [package] with [inputs] as primary inputs, excluding
-  /// [excludes]. Glob syntax is supported for both [inputs] and [excludes].
+  /// The build target is defined by [package] as well as [targetSources]. By
+  /// default all sources in the target are used as primary inputs to the
+  /// builder, but it can be further filtered with [generateFor].
   ///
   /// [isOptional] specifies that a Builder may not be run unless some other
   /// Builder in a later phase attempts to read one of the potential outputs.
@@ -48,48 +51,41 @@ abstract class BuildAction {
   factory BuildAction(
     Builder builder,
     String package, {
-    List<String> inputs,
-    List<String> excludes,
+    InputSet targetSources,
+    InputSet generateFor,
     BuilderOptions builderOptions,
     bool isOptional,
     bool hideOutput,
   }) {
-    var inputSet = new InputSet(package, inputs, excludes: excludes);
+    var inputs = new InputMatcher(targetSources ?? const InputSet());
+    if (generateFor != null) {
+      inputs = new InputMatcher.allOf([inputs, new InputMatcher(generateFor)]);
+    }
     builderOptions ??= const BuilderOptions(const {});
-    return new AssetBuildAction._(builder, inputSet, builderOptions,
+    return new BuildAction._(package, builder, inputs, builderOptions,
         isOptional: isOptional, hideOutput: hideOutput);
   }
-}
-
-/// The default type of [BuildAction], takes a normal [Builder] and an
-/// [InputSet] of primary inputs to run on.
-class AssetBuildAction extends BuildAction {
-  final Builder builder;
-
-  final InputSet inputSet;
 
   @override
-  String get package => inputSet.package;
-
-  AssetBuildAction._(this.builder, this.inputSet, BuilderOptions builderOptions,
-      {bool isOptional, bool hideOutput})
-      : super._(builderOptions, isOptional: isOptional, hideOutput: hideOutput);
+  bool matches(AssetId id) => id.package == package && _inputs.matches(id);
 
   @override
-  String toString() => '$builder on $inputSet';
+  String toString() {
+    final settings = <String>[];
+    if (isOptional) settings.add('optional');
+    if (hideOutput) settings.add('hidden');
+    var result = '$builder on $_inputs';
+    if (settings.isNotEmpty) result += ' $settings';
+    return result;
+  }
+
+  /// The identity of this action in terms of a build graph.
+  ///
+  /// This takes into account everything except for the [builderOptions], which
+  /// are tracked separately via a `BuilderOptionsNode` which supports more fine
+  /// grained invalidation.
+  int get identity => _deepEquals.hash(
+      ['${builder.runtimeType}', package, _inputs, isOptional, hideOutput]);
 }
 
-/// A special type of [BuildAction] which takes a [PackageBuilder] instead
-/// of a normal [Builder], and runs a single time on [package] instead of once
-/// per input file.
-class PackageBuildAction extends BuildAction {
-  final PackageBuilder builder;
-
-  @override
-  final String package;
-
-  PackageBuildAction(this.builder, this.package,
-      {BuilderOptions builderOptions, bool isOptional, bool hideOutput})
-      : super._(builderOptions ?? const BuilderOptions(const {}),
-            isOptional: isOptional, hideOutput: hideOutput);
-}
+final _deepEquals = const DeepCollectionEquality();

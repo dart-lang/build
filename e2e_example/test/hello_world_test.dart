@@ -12,9 +12,7 @@ import 'package:e2e_example/app.dart';
 import 'common/message.dart';
 
 void main() {
-  setUp(() {
-    startApp();
-  });
+  setUp(startApp);
 
   tearDown(() {
     document.body.innerHtml = '';

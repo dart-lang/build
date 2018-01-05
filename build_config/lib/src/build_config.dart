@@ -5,355 +5,126 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build/build.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
 
+import 'key_normalization.dart';
+import 'parse.dart';
 import 'pubspec.dart';
+
+/// A filter on files inputs or sources.
+///
+/// Takes a list of strings in glob format for [include] and [exclude]. Matches
+/// the `glob()` function in skylark.
+class InputSet {
+  /// The globs to include in the set.
+  ///
+  /// May be null or empty which means every possible path (like `'**'`).
+  final List<String> include;
+
+  /// The globs as a subset of [include] to remove from the set.
+  ///
+  /// May be null or empty which means every path in [include].
+  final List<String> exclude;
+
+  const InputSet({this.include, this.exclude});
+
+  @override
+  String toString() {
+    final result = new StringBuffer();
+    if (include == null || include.isEmpty) {
+      result.write('any path');
+    } else {
+      result.write('paths matching $include');
+    }
+    if (exclude != null && exclude.isNotEmpty) {
+      result.write(' except $exclude');
+    }
+    return '$result';
+  }
+}
 
 /// The parsed values from a `build.yaml` file.
 class BuildConfig {
-  /// Supported values for the `platforms` attribute.
-  static const _allPlatforms = const [
-    _vmPlatform,
-    _webPlatform,
-    _flutterPlatform,
-  ];
-  static const _vmPlatform = 'vm';
-  static const _webPlatform = 'web';
-  static const _flutterPlatform = 'flutter';
-
-  static const _targetOptions = const [
-    _builders,
-    _default,
-    _dependencies,
-    _excludeSources,
-    _generateFor,
-    _platforms,
-    _sources,
-  ];
-  static const _builders = 'builders';
-  static const _default = 'default';
-  static const _dependencies = 'dependencies';
-  static const _excludeSources = 'exclude_sources';
-  static const _generateFor = 'generate_for';
-  static const _platforms = 'platforms';
-  static const _sources = 'sources';
-
-  static const _builderOptions = const [
-    _builderFactories,
-    _import,
-    _buildExtensions,
-    _target,
-    _autoApply,
-    _requiredInputs,
-    _isOptional,
-    _buildTo,
-  ];
-  static const _builderFactories = 'builder_factories';
-  static const _import = 'import';
-  static const _buildExtensions = 'build_extensions';
-  static const _target = 'target';
-  static const _autoApply = 'auto_apply';
-  static const _requiredInputs = 'required_inputs';
-  static const _isOptional = 'is_optional';
-  static const _buildTo = 'build_to';
-
-  /// Returns a parsed [BuildConfig] file in [path], if one exists.
+  /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
+  /// default config.
   ///
-  /// Otherwise uses the default setup.
-  static Future<BuildConfig> fromPackageDir(Pubspec pubspec, String path,
-      {bool includeWebSources: false}) async {
+  /// [path] must be a directory which contains a `pubspec.yaml` file and
+  /// optionally a `build.yaml`.
+  static Future<BuildConfig> fromPackageDir(String path) async {
+    final pubspec = await Pubspec.fromPackageDir(path);
+    return fromBuildConfigDir(
+        pubspec.pubPackageName, pubspec.dependencies, path);
+  }
+
+  /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
+  /// default config.
+  ///
+  /// [path] should the path to a directory which may contain a `build.yaml`.
+  static Future<BuildConfig> fromBuildConfigDir(
+      String packageName, Iterable<String> dependencies, String path) async {
     final configPath = p.join(path, 'build.yaml');
     final file = new File(configPath);
     if (await file.exists()) {
-      return new BuildConfig.parse(pubspec, await file.readAsString(),
-          includeWebSources: includeWebSources);
+      return new BuildConfig.parse(
+          packageName, dependencies, await file.readAsString());
     } else {
-      return new BuildConfig.useDefault(pubspec,
-          includeWebSources: includeWebSources);
+      return new BuildConfig.useDefault(packageName, dependencies);
     }
   }
 
   final String packageName;
 
   /// All the `builders` defined in a `build.yaml` file.
-  final builderDefinitions = <String, BuilderDefinition>{};
+  final Map<String, BuilderDefinition> builderDefinitions;
 
   /// All the `targets` defined in a `build.yaml` file.
-  final buildTargets = <String, BuildTarget>{};
+  final Map<String, BuildTarget> buildTargets;
 
   /// The default config if you have no `build.yaml` file.
-  BuildConfig.useDefault(Pubspec pubspec,
-      {bool includeWebSources: false,
-      List<String> platforms: const [],
-      Iterable<String> excludeSources: const []})
-      : packageName = pubspec.pubPackageName {
-    var sources = ["lib/**"];
-    if (includeWebSources) sources.add("web/**");
-    buildTargets[packageName] = new BuildTarget(
-        dependencies: pubspec.dependencies,
-        platforms: platforms,
-        isDefault: true,
-        name: packageName,
-        package: pubspec.pubPackageName,
-        sources: sources,
-        excludeSources: excludeSources);
+  factory BuildConfig.useDefault(
+      String packageName, Iterable<String> dependencies) {
+    final defaultTarget = '$packageName:$packageName';
+    final buildTargets = {
+      defaultTarget: new BuildTarget(
+        dependencies: dependencies
+            .map((dep) => normalizeTargetKeyUsage(dep, packageName))
+            .toSet(),
+        package: packageName,
+        key: defaultTarget,
+        sources: const InputSet(),
+      )
+    };
+    return new BuildConfig(
+      packageName: packageName,
+      buildTargets: buildTargets,
+    );
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].
-  BuildConfig.parse(Pubspec pubspec, String configYaml,
-      {bool includeWebSources: false})
-      : packageName = pubspec.pubPackageName {
-    final config = loadYaml(configYaml);
+  factory BuildConfig.parse(String packageName, Iterable<String> dependencies,
+          String configYaml) =>
+      parseFromYaml(packageName, dependencies, configYaml);
 
-    final Map<String, Map> targetConfigs =
-        config['targets'] as Map<String, Map> ?? {};
-    for (var targetName in targetConfigs.keys) {
-      var targetConfig = _readMapOrThrow(
-          targetConfigs, targetName, _targetOptions, 'target `$targetName`');
+  /// Create a [BuildConfig] read a map which was already parsed.
+  factory BuildConfig.fromMap(String packageName, Iterable<String> dependencies,
+          Map<String, dynamic> config) =>
+      parseFromMap(packageName, dependencies, config);
 
-      final builders = _readBuildersOrThrow(targetConfig, _builders);
-
-      final dependencies = _readListOfStringsOrThrow(
-          targetConfig, _dependencies,
-          defaultValue: []);
-
-      final excludeSources = _readListOfStringsOrThrow(
-          targetConfig, _excludeSources,
-          defaultValue: []);
-
-      var isDefault =
-          _readBoolOrThrow(targetConfig, _default, defaultValue: false);
-
-      final platforms = _readListOfStringsOrThrow(targetConfig, _platforms,
-          defaultValue: [], validValues: _allPlatforms);
-
-      final sources = _readListOfStringsOrThrow(targetConfig, _sources);
-
-      final generateFor = _readListOfStringsOrThrow(targetConfig, _generateFor,
-          allowNull: true);
-
-      buildTargets[targetName] = new BuildTarget(
-        builders: builders,
-        dependencies: dependencies,
-        platforms: platforms,
-        excludeSources: excludeSources,
-        generateFor: generateFor,
-        isDefault: isDefault,
-        name: targetName,
-        package: packageName,
-        sources: sources,
-      );
-    }
-
-    // Add the default dart library if there are no targets discovered.
-    if (buildTargets.isEmpty) {
-      var sources = ["lib/**"];
-      if (includeWebSources) sources.add("web/**");
-      buildTargets[pubspec.pubPackageName] = new BuildTarget(
-          dependencies: pubspec.dependencies,
-          isDefault: true,
-          name: pubspec.pubPackageName,
-          package: pubspec.pubPackageName,
-          sources: sources);
-    }
-
-    if (buildTargets.values.where((l) => l.isDefault).length != 1) {
-      throw new ArgumentError('Found no targets with `$_default: true`. '
-          'Expected exactly one.');
-    }
-
-    final Map<String, Map> builderConfigs =
-        config['builders'] as Map<String, Map> ?? {};
-    for (var builderName in builderConfigs.keys) {
-      final builderConfig = _readMapOrThrow(builderConfigs, builderName,
-          _builderOptions, 'builder `$builderName`',
-          defaultValue: <String, dynamic>{});
-
-      final builderFactories =
-          _readListOfStringsOrThrow(builderConfig, _builderFactories);
-      final import = _readStringOrThrow(builderConfig, _import);
-      final buildExtensions = _readBuildExtensions(builderConfig);
-      final target = _readStringOrThrow(builderConfig, _target);
-      final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
-          defaultValue: AutoApply.none);
-      final requiredInputs = _readListOfStringsOrThrow(
-          builderConfig, _requiredInputs,
-          defaultValue: const []);
-      final isOptional =
-          _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
-
-      final mustBuildToCache = autoApply == AutoApply.dependents ||
-          autoApply == AutoApply.allPackages;
-      final buildTo = _readBuildToOrThrow(builderConfig, _buildTo,
-          defaultValue: mustBuildToCache ? BuildTo.cache : BuildTo.source);
-
-      if (mustBuildToCache && buildTo != BuildTo.cache) {
-        throw new ArgumentError('`hide_output` may not be set to `False` '
-            'when using `auto_apply: ${builderConfig[_autoApply]}`');
-      }
-
-      builderDefinitions[builderName] = new BuilderDefinition(
-        builderFactories: builderFactories,
-        import: import,
-        buildExtensions: buildExtensions,
-        name: builderName,
-        package: pubspec.pubPackageName,
-        target: target,
-        autoApply: autoApply,
-        requiredInputs: requiredInputs,
-        isOptional: isOptional,
-        buildTo: buildTo,
-      );
-    }
-  }
-
-  BuildTarget get defaultBuildTarget =>
-      buildTargets.values.singleWhere((l) => l.isDefault);
-
-  static Map<String, Map<String, dynamic>> _readBuildersOrThrow(
-      Map<String, dynamic> options, String option) {
-    var values = options[option];
-    if (values == null) return const {};
-
-    if (values is! List) {
-      throw new ArgumentError(
-          'Got `$values` for `$option` but expected a List.');
-    }
-
-    final normalizedValues = <String, Map<String, dynamic>>{};
-    for (var value in values) {
-      if (value is String) {
-        normalizedValues[value] = {};
-      } else if (value is Map<String, dynamic>) {
-        if (value.length == 1) {
-          normalizedValues[value.keys.first] =
-              value.values.first as Map<String, dynamic>;
-        } else {
-          throw value;
-        }
-      } else {
-        throw new ArgumentError(
-            'Got `$value` for builder but expected a String or Map');
-      }
-    }
-    return normalizedValues;
-  }
-
-  static List<String> _readListOfStringsOrThrow(
-      Map<String, dynamic> options, String option,
-      {List<String> defaultValue,
-      Iterable<String> validValues,
-      bool allowNull: false}) {
-    var value = options[option] ?? defaultValue;
-    if (value == null && allowNull) return null;
-
-    if (value is! List || (value as List).any((v) => v is! String)) {
-      throw new ArgumentError(
-          'Got `$value` for `$option` but expected a List<String>.');
-    }
-    if (validValues != null) {
-      var invalidValues =
-          (value as List).where((v) => !validValues.contains(v));
-      if (invalidValues.isNotEmpty) {
-        throw new ArgumentError('Got invalid values ``$invalidValues` for '
-            '`$option`. Only `$validValues` are supported.');
-      }
-    }
-    return new List<String>.from(value as List);
-  }
-
-  static Map<String, List<String>> _readBuildExtensions(
-      Map<String, dynamic> options) {
-    dynamic value = options[_buildExtensions];
-    if (value == null) {
-      throw new ArgumentError('Missing configuratino for build_extensions');
-    }
-    if (value is! Map<String, List<String>>) {
-      throw new ArgumentError('Invalid value for build_extensions, '
-          'got `$value` but expected a Map');
-    }
-    return value as Map<String, List<String>>;
-  }
-
-  static Map<String, dynamic> _readMapOrThrow(Map<String, dynamic> options,
-      String option, Iterable<String> validKeys, String description,
-      {Map<String, dynamic> defaultValue}) {
-    var value = options[option] ?? defaultValue;
-    if (value is! Map) {
-      throw new ArgumentError('Invalid options for `$option`, got `$value` but '
-          'expected a Map.');
-    }
-    var mapValue = value as Map<String, dynamic>;
-    var invalidOptions = mapValue.keys.toList()
-      ..removeWhere((k) => validKeys.contains(k));
-    if (invalidOptions.isNotEmpty) {
-      throw new ArgumentError('Got invalid options `$invalidOptions` for '
-          '$description. Only `$validKeys` are supported keys.');
-    }
-    return mapValue;
-  }
-
-  static String _readStringOrThrow(Map<String, dynamic> options, String option,
-      {String defaultValue, bool allowNull: false}) {
-    var value = options[option];
-    if (value == null && allowNull) return null;
-    if (value is! String) {
-      throw new ArgumentError(
-          'Expected a String for `$option` but got `$value`.');
-    }
-    return value as String;
-  }
-
-  static bool _readBoolOrThrow(Map<String, dynamic> options, String option,
-      {bool defaultValue}) {
-    var value = options[option] ?? defaultValue;
-    if (value is! bool) {
-      throw new ArgumentError(
-          'Expected a boolean for `$option` but got `$value`.');
-    }
-    return value as bool;
-  }
-
-  static AutoApply _readAutoApplyOrThrow(
-      Map<String, dynamic> options, String option,
-      {AutoApply defaultValue}) {
-    final value = options[option];
-    if (value == null && defaultValue != null) return defaultValue;
-    final allowedValues = const {
-      'none': AutoApply.none,
-      'dependents': AutoApply.dependents,
-      'all_packages': AutoApply.allPackages,
-      'root_package': AutoApply.rootPackage
-    };
-    if (value is! String || !allowedValues.containsKey(value)) {
-      throw new ArgumentError('Expected one of ${allowedValues.keys.toList()} '
-          'for `$option` but got `$value`');
-    }
-    return allowedValues[value];
-  }
-
-  static BuildTo _readBuildToOrThrow(
-      Map<String, dynamic> options, String option,
-      {BuildTo defaultValue}) {
-    final value = options[option];
-    if (value == null && defaultValue != null) return defaultValue;
-    final allowedValues = const {
-      'source': BuildTo.source,
-      'cache': BuildTo.cache,
-    };
-    if (value is! String || !allowedValues.containsKey(value)) {
-      throw new ArgumentError('Expected one of ${allowedValues.keys.toList()} '
-          'for `$option` but got `$value`');
-    }
-    return allowedValues[value];
-  }
+  BuildConfig({
+    @required this.packageName,
+    @required this.buildTargets,
+    this.builderDefinitions: const {},
+  });
 }
 
 class BuilderDefinition {
-  final String name;
-
+  /// The package which provides this Builder.
   final String package;
+
+  /// A unique key for this Builder in `'$package|$builder'` format.
+  final String key;
 
   /// The names of the top-level methods in [import] from args -> Builder.
   final List<String> builderFactories;
@@ -387,18 +158,42 @@ class BuilderDefinition {
   /// Where the outputs of this builder should be written.
   final BuildTo buildTo;
 
+  final TargetBuilderConfigDefaults defaults;
+
   BuilderDefinition({
-    this.builderFactories,
-    this.buildExtensions,
-    this.import,
-    this.name,
-    this.package,
-    this.target,
+    @required this.package,
+    @required this.key,
+    @required this.builderFactories,
+    @required this.buildExtensions,
+    @required this.import,
+    @required this.target,
     this.autoApply,
     this.requiredInputs,
     this.isOptional,
     this.buildTo,
+    this.defaults,
   });
+
+  @override
+  String toString() => {
+        'target': target,
+        'autoApply': autoApply,
+        'import': import,
+        'builderFactories': builderFactories,
+        'buildExtensions': buildExtensions,
+        'requiredInputs': requiredInputs,
+        'isOptional': isOptional,
+        'buildTo': buildTo,
+        'defaults': defaults,
+      }.toString();
+}
+
+/// Default values that builder authors can specify when users don't fill in the
+/// corresponding key for [TargetBuilderConfig].
+class TargetBuilderConfigDefaults {
+  final InputSet generateFor;
+
+  TargetBuilderConfigDefaults({this.generateFor});
 }
 
 enum AutoApply { none, dependents, allPackages, rootPackage }
@@ -413,40 +208,76 @@ enum BuildTo {
 }
 
 class BuildTarget {
-  final Iterable<String> dependencies;
-
-  final Iterable<String> excludeSources;
-
-  final String name;
+  final Set<String> dependencies;
 
   final String package;
 
-  final Iterable<String> sources;
+  /// A unique key for this target in `'$package:$target'` format.
+  final String key;
 
-  /// A map from builder name to the configuration used for this target.
-  final Map<String, Map<String, dynamic>> builders;
+  final InputSet sources;
 
-  /// The platforms supported by this target.
+  /// A map from builder key to the configuration used for this target.
   ///
-  /// May be limited by, for isntance, importing core libraries that are not
-  /// cross platform. An empty list indicates all platforms are supported.
-  final List<String> platforms;
+  /// Builder keys are in the format `"$package|$builder"`. This does not
+  /// represent the full set of builders that are applied to the target, only
+  /// those which have configuration customized against the default.
+  final Map<String, TargetBuilderConfig> builders;
 
-  /// Whether or not this is the default dart library for the package.
-  final bool isDefault;
+  BuildTarget({
+    @required this.package,
+    @required this.key,
+    this.sources: const InputSet(),
+    this.dependencies,
+    this.builders: const {},
+  });
 
-  /// Sources to use as inputs for `builders`. May be `null`, in which case
-  /// it should fall back on `sources`.
-  final Iterable<String> generateFor;
+  @override
+  String toString() => {
+        'package': package,
+        'sources': sources,
+        'dependencies': dependencies,
+        'builders': builders,
+      }.toString();
+}
 
-  BuildTarget(
-      {this.builders: const {},
-      this.dependencies,
-      this.platforms: const [],
-      this.excludeSources: const [],
-      this.generateFor,
-      this.isDefault: false,
-      this.name,
-      this.package,
-      this.sources: const ['lib/**']});
+/// The configuration a particular [BuildTarget] applies to a Builder.
+///
+/// Build targets may have builders applied automatically based on
+/// [BuilderDefinition.autoApply] and may override with more specific
+/// configuration.
+class TargetBuilderConfig {
+  /// Overrides the setting of whether the Builder would run on this target.
+  ///
+  /// Builders may run on this target by default based on the `apply_to`
+  /// argument, set to `false` to disable a Builder which would otherwise run.
+  ///
+  /// By default including a config for a Builder enables that builder.
+  final bool isEnabled;
+
+  /// Sources to use as inputs for this Builder in glob format.
+  ///
+  /// This is always a subset of the `include` argument in the containing
+  /// [BuildTarget]. May be `null` in which cases it will be all the sources in
+  /// the target.
+  final InputSet generateFor;
+
+  /// The options to pass to the `BuilderFactory` when constructing this
+  /// builder.
+  ///
+  /// The `options` key in the configuration.
+  final BuilderOptions options;
+
+  TargetBuilderConfig({
+    this.isEnabled,
+    this.generateFor,
+    this.options: const BuilderOptions(const {}),
+  });
+
+  @override
+  String toString() => {
+        'isEnabled': isEnabled,
+        'generateFor': generateFor,
+        'options': options.config
+      }.toString();
 }

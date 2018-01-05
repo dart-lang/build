@@ -1,0 +1,34 @@
+builders:
+  ddc:
+    target: "build_web_compilers"
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories:
+      - moduleBuilder
+      - unlinkedSummaryBuilder
+      - linkedSummaryBuilder
+      - devCompilerBuilder
+    build_extensions:
+      .dart:
+        - .module
+        - .linked.sum
+        - .unlinked.sum
+        - .ddc.js.errors
+        - .ddc.js
+        - .ddc.js.map
+    is_optional: True
+    auto_apply: all_packages
+    required_inputs: [".dart"]
+  entrypoint:
+    target: "build_web_compilers"
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories: ["webEntrypointBuilder"]
+    build_extensions:
+      .dart:
+        - .dart.bootstrap.js
+        - .dart.js
+        - .dart.js.map
+    required_inputs:  [".dart", ".ddc.js", ".module"]
+    build_to: cache
+    auto_apply: root_package
+    defaults:
+      generate_for: ["web/**", "test/**.browser_test.dart"]

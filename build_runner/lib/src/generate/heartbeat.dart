@@ -4,9 +4,9 @@
 
 import 'dart:async';
 
-import 'package:async/async.dart';
 import 'package:logging/logging.dart';
-import 'package:millisecond/millisecond.dart' as ms;
+
+import '../logging/human_readable_duration.dart';
 
 var _logger = new Logger('Heartbeat');
 
@@ -14,9 +14,10 @@ var _logger = new Logger('Heartbeat');
 /// will log a heartbeat message with the current elapsed time since [start] was
 /// originally invoked.
 class HeartbeatLogger {
-  CancelableOperation _nextHeartbeat;
   StreamSubscription<LogRecord> _listener;
-  Stopwatch _watch;
+  Stopwatch _totalWatch;
+  Stopwatch _intervalWatch;
+  Timer _timer;
 
   /// The amount of time between heartbeats.
   final Duration waitDuration;
@@ -26,35 +27,50 @@ class HeartbeatLogger {
 
   /// Starts this heartbeat logger, must not already be started.
   void start() {
-    if (_watch != null || _nextHeartbeat != null || _listener != null) {
+    if (_totalWatch != null ||
+        _intervalWatch != null ||
+        _listener != null ||
+        _timer != null) {
       throw new StateError('HeartbeatLogger already started');
     }
-    _watch = new Stopwatch()..start();
+    _totalWatch = new Stopwatch()..start();
+    _intervalWatch = new Stopwatch()..start();
     _resetHeartbeat();
     _listener = Logger.root.onRecord.listen((_) => _resetHeartbeat());
+    _timer = new Timer.periodic(
+        const Duration(milliseconds: 100), _logIfDurationIsMet);
   }
 
   /// Stops this heartbeat logger, must already be started.
   void stop() {
-    if (_watch == null || _nextHeartbeat == null || _listener == null) {
+    if (_totalWatch == null ||
+        _intervalWatch == null ||
+        _listener == null ||
+        _timer == null) {
       throw new StateError('HeartbeatLogger was never started');
     }
-    _watch.stop();
-    _watch = null;
-    _nextHeartbeat.cancel();
-    _nextHeartbeat = null;
+    _totalWatch.stop();
+    _totalWatch = null;
+    _intervalWatch.stop();
+    _intervalWatch = null;
     _listener.cancel();
     _listener = null;
+    _timer.cancel();
+    _timer = null;
   }
 
-  /// Resets the current [_nextHeartbeat] operation.
+  /// Resets the current [_intervalWatch].
   void _resetHeartbeat() {
-    _nextHeartbeat?.cancel();
-    _nextHeartbeat =
-        new CancelableOperation.fromFuture(new Future.delayed(waitDuration));
-    _nextHeartbeat.value.then((_) {
-      var formattedTime = ms.format(_watch.elapsedMilliseconds, long: true);
-      _logger.info('... still running ($formattedTime so far)');
-    });
+    _intervalWatch.reset();
+  }
+
+  /// Logs a heartbeat message if [_intervalWatch] has been running for
+  /// [waitDuration] or more.
+  void _logIfDurationIsMet(_) {
+    if (_intervalWatch.elapsed < waitDuration) return;
+
+    var formattedTime = humanReadable(_totalWatch.elapsed);
+    _logger.info('... still running ($formattedTime so far)');
+    _resetHeartbeat();
   }
 }

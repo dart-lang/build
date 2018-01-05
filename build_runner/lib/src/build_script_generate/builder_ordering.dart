@@ -9,15 +9,30 @@ import 'package:graphs/graphs.dart';
 /// [BuilderDefinition.requiredInputs] will come after any builder which
 /// produces a desired output.
 ///
-/// All builders which don't specify required inputs will come first, followed
-/// by the builders with required inputs. If there is a cycle in required inputs
-/// this will throw.
+/// Builders will be put in the following order:
+/// - Builders which write to the source tree and don't have required inputs.
+/// - Builders which write to the source tree and have required inputs (these
+/// inputs can only be also on disk)
+/// - Builders which write to the build cache and don't have requried inputs.
+/// - Builders which write to the build cache and have required inputs
 Iterable<BuilderDefinition> findBuilderOrder(
     Iterable<BuilderDefinition> builders) {
   final result = <BuilderDefinition>[];
-  result.addAll(builders.where((b) => b.requiredInputs.isEmpty));
-  final toOrder = builders.where((b) => b.requiredInputs.isNotEmpty);
-  result.addAll(_findOrder(toOrder));
+
+  result.addAll(builders
+      .where((b) => b.buildTo == BuildTo.source && b.requiredInputs.isEmpty));
+
+  final requiredInSource = builders
+      .where((b) => b.buildTo == BuildTo.source && b.requiredInputs.isNotEmpty);
+  result.addAll(_findOrder(requiredInSource));
+
+  result.addAll(builders
+      .where(((b) => b.buildTo == BuildTo.cache && b.requiredInputs.isEmpty)));
+
+  final requiredInCache = builders
+      .where((b) => b.buildTo == BuildTo.cache && b.requiredInputs.isNotEmpty);
+  result.addAll(_findOrder(requiredInCache));
+
   return result;
 }
 
@@ -25,7 +40,7 @@ List<BuilderDefinition> _findOrder(Iterable<BuilderDefinition> builders) {
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
       builders.where((child) => _hasInputDependency(parent, child));
   var components = stronglyConnectedComponents<String, BuilderDefinition>(
-      builders, _builderKey, dependencies);
+      builders, (b) => b.key, dependencies);
   return components.map((component) {
     if (component.length > 1) {
       throw new ArgumentError('Required input cycle for ${component.toList()}');
@@ -41,5 +56,3 @@ bool _hasInputDependency(BuilderDefinition parent, BuilderDefinition child) {
   return parent.requiredInputs
       .any((input) => childOutputs.any((output) => output.endsWith(input)));
 }
-
-String _builderKey(BuilderDefinition b) => '${b.package}|${b.name}';

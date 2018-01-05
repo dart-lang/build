@@ -27,7 +27,40 @@ abstract class AssetNode {
   /// exist.
   Digest lastKnownDigest;
 
+  /// Whether or not this node was an output of this build.
+  bool get isGenerated => false;
+
+  /// Whether or not this asset type can be read.
+  ///
+  /// This does not indicate whether or not this specific node actually exists
+  /// at this moment in time.
+  bool get isReadable => true;
+
+  /// Whether or not this node can be used as a primary input.
+  ///
+  /// Some nodes are valid primary inputs but are not readable (see
+  /// [PlaceHolderAssetNode]), while others are readable but are not valid
+  /// primary inputs (see [InternalAssetNode]).
+  bool get isValidInput => true;
+
+  /// Whether or not changes to this node will have any effect on other nodes.
+  ///
+  /// Be default, if we haven't computed a digest for this asset and it has no
+  /// outputs, then it isn't interesting.
+  ///
+  /// Checking for a digest alone isn't enough because a file may be deleted
+  /// and re-added, in which case it won't have a digest.
+  bool get isInteresting => outputs.isNotEmpty || lastKnownDigest != null;
+
   AssetNode(this.id, {this.lastKnownDigest});
+
+  /// Work around issue where you can't mixin classes into a class with optional
+  /// constructor args.
+  AssetNode._forMixins(this.id);
+
+  /// Work around issue where you can't mixin classes into a class with optional
+  /// constructor args, this one includes the digest.
+  AssetNode._forMixinsWithDigest(this.id, this.lastKnownDigest);
 
   @override
   String toString() => 'AssetNode: $id';
@@ -38,6 +71,13 @@ abstract class AssetNode {
 /// These nodes are not used as primary inputs, but they are tracked in the
 /// asset graph and are readable.
 class InternalAssetNode extends AssetNode {
+  // These don't have [outputs] but they are interesting regardless.
+  @override
+  bool get isInteresting => true;
+
+  @override
+  bool get isValidInput => false;
+
   InternalAssetNode(AssetId id, {Digest lastKnownDigest})
       : super(id, lastKnownDigest: lastKnownDigest);
 
@@ -56,12 +96,13 @@ class SourceAssetNode extends AssetNode {
 
 /// A generated node in the asset graph.
 class GeneratedAssetNode extends AssetNode {
+  @override
+  bool get isGenerated => true;
+
   /// The phase which generated this asset.
   final int phaseNumber;
 
   /// The primary input which generated this node.
-  ///
-  /// May be `null` in the case of a `PackageBuilder`.
   final AssetId primaryInput;
 
   /// Whether or not this asset needs to be updated.
@@ -120,15 +161,23 @@ class GeneratedAssetNode extends AssetNode {
 }
 
 /// A node which is not a generated or source asset.
-abstract class SyntheticAssetNode implements AssetNode {}
+///
+/// These are typically not readable or valid as inputs.
+abstract class SyntheticAssetNode implements AssetNode {
+  @override
+  bool get isReadable => false;
+
+  @override
+  bool get isValidInput => false;
+}
 
 /// A [SyntheticAssetNode] representing a non-existent source.
 ///
 /// Typically these are created as a result of `canRead` calls for assets that
 /// don't exist in the graph. We still need to set up proper dependencies so
 /// that if that asset gets added later the outputs are properly invalidated.
-class SyntheticSourceAssetNode extends AssetNode implements SyntheticAssetNode {
-  SyntheticSourceAssetNode(AssetId id) : super(id);
+class SyntheticSourceAssetNode extends AssetNode with SyntheticAssetNode {
+  SyntheticSourceAssetNode(AssetId id) : super._forMixins(id);
 }
 
 /// A [SyntheticAssetNode] which represents an individual [BuilderOptions]
@@ -137,10 +186,22 @@ class SyntheticSourceAssetNode extends AssetNode implements SyntheticAssetNode {
 /// These are used to track the state of a [BuilderOptions] object, and all
 /// [GeneratedAssetNode]s should depend on one of these nodes, which represents
 /// their configuration.
-class BuilderOptionsAssetNode extends AssetNode implements SyntheticAssetNode {
+class BuilderOptionsAssetNode extends AssetNode with SyntheticAssetNode {
   BuilderOptionsAssetNode(AssetId id, Digest lastKnownDigest)
-      : super(id, lastKnownDigest: lastKnownDigest);
+      : super._forMixinsWithDigest(id, lastKnownDigest);
 
   @override
   String toString() => 'BuildOptionsAssetNode: $id';
+}
+
+/// Placeholder assets are magic files that are usable as inputs but are not
+/// readable.
+class PlaceHolderAssetNode extends AssetNode with SyntheticAssetNode {
+  @override
+  bool get isValidInput => true;
+
+  PlaceHolderAssetNode(AssetId id) : super._forMixins(id);
+
+  @override
+  String toString() => 'PlaceHolderAssetNode: $id';
 }

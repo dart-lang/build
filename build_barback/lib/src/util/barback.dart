@@ -6,7 +6,6 @@ import 'dart:convert';
 
 import 'package:barback/barback.dart' as barback;
 import 'package:build/build.dart' as build;
-import 'package:build/src/builder/build_step_impl.dart';
 import 'package:logging/logging.dart';
 
 import 'stream.dart';
@@ -64,7 +63,7 @@ class BuildStepTransform implements barback.Transform {
 
   @override
   void addOutput(barback.Asset output) {
-    (buildStep as BuildStepImpl).writeAsBytes(
+    buildStep.writeAsBytes(
         toBuildAssetId(output.id), combineByteStream(output.read()));
   }
 

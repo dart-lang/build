@@ -2,43 +2,24 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner/src/generate/exceptions.dart';
-import 'package:build_runner/src/generate/phase.dart';
+import 'dart:async';
+
+import 'package:build/build.dart';
+import 'package:build_runner/src/generate/build_result.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
+
+import 'package:build_runner/src/generate/exceptions.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
 
 import '../common/common.dart';
 import '../common/package_graphs.dart';
 
 void main() {
-  test('fail with a nice error if the root package is not right', () async {
-    String error;
-    try {
-      await testActions(
-        [
-          new BuildAction(
-            new CopyBuilder(),
-            'not_root_package',
-          )
-        ],
-        {},
-        packageGraph: buildPackageGraph({rootPackage('root_package'): []}),
-      );
-    } catch (e) {
-      // TODO: Write a throwsAWith(...) matcher?
-      error = e.toString();
-    } finally {
-      expect(error, isNotNull, reason: 'Did not throw!');
-      expect(error, contains('operate on package "not_root_package"'));
-      expect(error, contains('new BuilderApplication(..., toRoot())'));
-    }
-  });
-
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
     expect(
-      testActions(
-        [
-          new BuildAction(new CopyBuilder(), 'a'),
-        ],
+      testBuilders(
+        [applyToRoot(new CopyBuilder())],
         {
           'a|lib/a.dart': '',
           'a|lib/a.dart.copy': '',
@@ -49,4 +30,53 @@ void main() {
       throwsA(const isInstanceOf<UnexpectedExistingOutputsException>()),
     );
   });
+
+  test('should not fail if a severe is logged without failOnSevere', () async {
+    await testBuilders(
+      [applyToRoot(new _LoggingBuilder(Level.SEVERE))],
+      {
+        'a|lib/a.dart': '',
+      },
+      packageGraph: buildPackageGraph({rootPackage('a'): []}),
+      failOnSevere: false,
+      checkBuildStatus: true,
+      status: BuildStatus.success,
+      outputs: {
+        'a|lib/a.dart.empty': '',
+      },
+    );
+  });
+
+  test('should fail if a servere logged and failOnSevere is set', () async {
+    await testBuilders(
+      [applyToRoot(new _LoggingBuilder(Level.SEVERE))],
+      {
+        'a|lib/a.dart': '',
+      },
+      packageGraph: buildPackageGraph({rootPackage('a'): []}),
+      failOnSevere: true,
+      checkBuildStatus: true,
+      status: BuildStatus.failure,
+      outputs: {
+        'a|lib/a.dart.empty': '',
+      },
+    );
+  });
+}
+
+class _LoggingBuilder implements Builder {
+  final Level _level;
+
+  const _LoggingBuilder(this._level);
+
+  @override
+  Future<Null> build(BuildStep buildStep) async {
+    log.log(_level, buildStep.inputId.toString());
+    await buildStep.writeAsString(buildStep.inputId.addExtension('.empty'), '');
+  }
+
+  @override
+  final buildExtensions = const {
+    '.dart': const ['.dart.empty'],
+  };
 }

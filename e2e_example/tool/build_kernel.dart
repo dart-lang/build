@@ -5,20 +5,21 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_compilers/build_compilers.dart';
+import 'package:build_config/build_config.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
 Future main() async {
-  var graph = new PackageGraph.forThisPackage();
   var builders = [
-    apply('e2e_example', 'test_bootstrap', [(_) => new TestBootstrapBuilder()],
+    apply('e2e_example|test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
-        inputs: ['test/**_test.dart'], hideOutput: true),
+        defaultGenerateFor:
+            const InputSet(include: const ['test/**_test.dart']),
+        hideOutput: true),
     apply(
-        'build_compilers',
-        'ddc',
+        'build_compilers|ddc',
         [
           (_) => new ModuleBuilder(),
           (_) => new KernelSummaryBuilder(),
@@ -27,18 +28,21 @@ Future main() async {
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
-    apply('build_compilers', 'ddc_bootstrap',
-        [(_) => new DevCompilerBootstrapBuilder(useKernel: true)], toRoot(),
-        inputs: [
+    apply(
+        'build_web_compilers|entrypoint',
+        [
+          (_) => new WebEntrypointBuilder(WebCompiler.DartDevc, useKernel: true)
+        ],
+        toRoot(),
+        defaultGenerateFor: const InputSet(include: const [
           'web/**.dart',
           'test/**.browser_test.dart',
-        ],
+        ]),
         hideOutput: true)
   ];
-  var buildActions = createBuildActions(graph, builders);
 
   var serveHandler = await watch(
-    buildActions,
+    builders,
     deleteFilesByDefault: true,
   );
 
