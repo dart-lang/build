@@ -32,6 +32,7 @@ class BuildOptions {
   bool failOnSevere;
   bool enableLowResourcesMode;
   final String outputDir;
+  bool verbose;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -51,9 +52,10 @@ class BuildOptions {
       Level logLevel,
       this.skipBuildScriptCheck,
       this.enableLowResourcesMode,
-      this.outputDir}) {
+      this.outputDir,
+      this.verbose}) {
     // Set up logging
-    logLevel ??= Level.INFO;
+    logLevel ??= verbose ? Level.ALL : Level.INFO;
 
     // Invalid to have Level.OFF but want severe logs to fail the build.
     if (logLevel == Level.OFF && failOnSevere == true) {
@@ -75,6 +77,7 @@ class BuildOptions {
     failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
+    verbose ??= false;
 
     if (rootPackageConfig == null ||
         (rootPackageConfig.buildTargets.length == 1 &&

@@ -54,6 +54,7 @@ Future<ServeHandler> watch(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
+  bool verbose,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -73,7 +74,8 @@ Future<ServeHandler> watch(
       debounceDelay: debounceDelay,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputDir: outputDir);
+      outputDir: outputDir,
+      verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);

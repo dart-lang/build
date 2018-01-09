@@ -85,6 +85,7 @@ Future<BuildResult> testBuilders(
   bool deleteFilesByDefault: true,
   bool enableLowResourcesMode: false,
   Map<String, BuildConfig> overrideBuildConfig,
+  bool verbose: false,
 }) async {
   writer ??= new InMemoryRunnerAssetWriter();
   reader ??= new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
@@ -113,6 +114,7 @@ Future<BuildResult> testBuilders(
     skipBuildScriptCheck: true,
     enableLowResourcesMode: enableLowResourcesMode,
     overrideBuildConfig: overrideBuildConfig,
+    verbose: verbose,
   );
 
   if (checkBuildStatus) {
