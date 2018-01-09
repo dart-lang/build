@@ -168,11 +168,11 @@ class PartBuilder extends _Builder {
   /// If [header] is an empty `String` no header is added.
   ///
   /// May set [requireLibraryDirective] to `false` in order to opt-in to
-  /// supporting a `1.25.0` feature of `part of` being usable without an
+  /// supporting a `2.0.0-dev` feature of `part of` being usable without an
   /// explicit `library` directive. Developers should restrict their `pubspec`
   /// accordingly:
   /// ```yaml
-  /// sdk: '>=1.25.0 <2.0.0'
+  /// sdk: '>=2.0.0-dev <2.0.0'
   /// ```
   PartBuilder(List<Generator> generators,
       {String formatOutput(String code),
