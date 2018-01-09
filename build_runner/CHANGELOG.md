@@ -7,6 +7,8 @@
   - Disables stack trace folding and terse stack traces.
   - Disables the overwriting of previous info logs.
   - Sets the default log level to `Level.ALL`.
+- Added `pubspec.yaml` and `pubspec.lock` to the whitelist for the root package
+  sources.
 
 ## 0.7.4
 
