@@ -9,13 +9,17 @@ import 'package:analyzer/src/dart/constant/value.dart';
 
 import '../utils.dart';
 
-/// Returns a revivable instance of [object].
+/// Attempts to extract what source code could be used to represent [object].
 ///
-/// Optionally specify the [library] type that contains the reference.
+/// Returns `null` if it wasn't possible to parse [object], or [object] is a
+/// primitive value (such as a number, string, boolean) that does not need to be
+/// revived in order to represent it.
 ///
-/// Returns `null` if not revivable.
-Revivable reviveInstance(DartObject object, [LibraryElement library]) {
-  library ??= object.type.element.library;
+/// **NOTE**: Some returned [Revivable] instances are not representable as valid
+/// Dart source code (such as referencing private constructors). It is up to the
+/// build tool(s) using this library to surface error messages to the user.
+Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
+  origin ??= object.type.element.library;
   var url = Uri.parse(urlOfElement(object.type.element));
   final clazz = object?.type?.element as ClassElement;
   for (final e in clazz.fields.where(
@@ -35,14 +39,14 @@ Revivable reviveInstance(DartObject object, [LibraryElement library]) {
       positionalArguments: i.positionalArguments,
     );
   }
-  if (library == null) {
+  if (origin == null) {
     return null;
   }
-  for (final e in library.definingCompilationUnit.topLevelVariables.where(
+  for (final e in origin.definingCompilationUnit.topLevelVariables.where(
     (f) => f.isPublic && f.isConst && f.computeConstantValue() == object,
   )) {
     return new Revivable._(
-      source: Uri.parse(urlOfElement(library)).replace(fragment: ''),
+      source: Uri.parse(urlOfElement(origin)).replace(fragment: ''),
       accessor: e.name,
     );
   }
@@ -55,7 +59,9 @@ class Revivable {
   ///
   /// For example, `LinkedHashMap` looks like: `dart:collection#LinkedHashMap`.
   ///
-  /// An accessor to a top-level do does not have a fragment.
+  /// An accessor to a top-level field or method does not have a fragment and
+  /// is instead represented as just something like `dart:collection`, with the
+  /// [accessor] field as the name of the symbol.
   final Uri source;
 
   /// Constructor or getter name used to invoke `const Class(...)`.
@@ -77,5 +83,8 @@ class Revivable {
   });
 
   /// Whether this instance is visible outside the same library.
+  ///
+  /// Builds tools may use this to fail when the symbol is expected to be
+  /// importable (i.e. isn't used with `part of`).
   bool get isPrivate => accessor.startsWith('_');
 }
