@@ -9,7 +9,8 @@ import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-void stdIOLogListener(LogRecord record) {
+void stdIOLogListener(LogRecord record, {bool verbose}) {
+  verbose ??= false;
   AnsiCode color;
   if (record.level < Level.WARNING) {
     color = cyan;
@@ -19,9 +20,8 @@ void stdIOLogListener(LogRecord record) {
     color = red;
   }
   final level = color.wrap('[${record.level}]');
-  var header = '${ansiOutputEnabled ? '\x1b[2K\r' : ''}'
-      '$level ${record.loggerName}: '
-      '${record.message}';
+  final eraseLine = ansiOutputEnabled && !verbose ? '\x1b[2K\r' : '';
+  var header = '$eraseLine$level ${record.loggerName}: ${record.message}';
   var lines = <Object>[header];
 
   if (record.error != null) {
@@ -42,7 +42,7 @@ void stdIOLogListener(LogRecord record) {
   // isn't multiline unless we see > 2 lines.
   var multiLine = LineSplitter.split(message.toString()).length > 2;
 
-  if (record.level > Level.INFO || !ansiOutputEnabled || multiLine) {
+  if (record.level > Level.INFO || !ansiOutputEnabled || multiLine || verbose) {
     // Add an extra line to the output so the last line isn't written over.
     message.writeln('');
   }

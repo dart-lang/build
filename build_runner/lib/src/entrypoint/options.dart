@@ -18,6 +18,7 @@ const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
 const _output = 'output';
+const _verbose = 'verbose';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
@@ -56,12 +57,15 @@ class _SharedOptions {
   /// created.
   final String outputDir;
 
+  final bool verbose;
+
   _SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
     @required this.failOnSevere,
     @required this.enableLowResourcesMode,
     @required this.outputDir,
+    @required this.verbose,
   });
 
   factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
@@ -71,6 +75,7 @@ class _SharedOptions {
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       outputDir: argResults[_output] as String,
+      verbose: argResults[_verbose] as bool,
     );
   }
 }
@@ -88,6 +93,7 @@ class _ServeOptions extends _SharedOptions {
     @required bool failOnSevere,
     @required bool enableLowResourcesMode,
     @required String outputDir,
+    @required bool verbose,
   })
       : super._(
           assumeTty: assumeTty,
@@ -95,6 +101,7 @@ class _ServeOptions extends _SharedOptions {
           failOnSevere: failOnSevere,
           enableLowResourcesMode: enableLowResourcesMode,
           outputDir: outputDir,
+          verbose: verbose,
         );
 
   factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
@@ -119,6 +126,7 @@ class _ServeOptions extends _SharedOptions {
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       outputDir: argResults[_output] as String,
+      verbose: argResults[_verbose] as bool,
     );
   }
 }
@@ -167,7 +175,12 @@ abstract class _BaseCommand extends Command {
           negatable: true,
           defaultsTo: false)
       ..addOption(_output,
-          help: 'A directory to write the result of a build to.', abbr: 'o');
+          help: 'A directory to write the result of a build to.', abbr: 'o')
+      ..addFlag('verbose',
+          abbr: 'v',
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables verbose logging.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -194,7 +207,8 @@ class _BuildCommand extends _BaseCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
-        outputDir: options.outputDir);
+        outputDir: options.outputDir,
+        verbose: options.verbose);
   }
 }
 
@@ -216,7 +230,8 @@ class _WatchCommand extends _BaseCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
-        outputDir: options.outputDir);
+        outputDir: options.outputDir,
+        verbose: options.verbose);
     await handler.currentBuild;
     await handler.buildResults.drain();
   }
@@ -248,7 +263,8 @@ class _ServeCommand extends _WatchCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
-        outputDir: options.outputDir);
+        outputDir: options.outputDir,
+        verbose: options.verbose);
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
@@ -289,7 +305,8 @@ class _TestCommand extends _BaseCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
-        outputDir: outputDir);
+        outputDir: outputDir,
+        verbose: options.verbose);
 
     // Run the tests!
     await _runTests(outputDir);

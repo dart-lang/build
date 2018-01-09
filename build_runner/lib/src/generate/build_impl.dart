@@ -58,12 +58,13 @@ Future<BuildResult> build(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
+  bool verbose,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
       overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty),
+      new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
       reader: reader,
       writer: writer,
       onLog: onLog);
@@ -75,7 +76,8 @@ Future<BuildResult> build(
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputDir: outputDir);
+      outputDir: outputDir,
+      verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
@@ -122,6 +124,7 @@ class BuildImpl {
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final String _outputDir;
+  final bool _verbose;
 
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
@@ -133,7 +136,8 @@ class BuildImpl {
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
         _onDelete = buildDefinition.onDelete,
-        _outputDir = options.outputDir;
+        _outputDir = options.outputDir,
+        _verbose = options.verbose;
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
@@ -203,7 +207,9 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
-      final trace = foldInternalFrames(chain.toTrace()).terse;
+      final trace = _verbose
+          ? chain.toTrace()
+          : foldInternalFrames(chain.toTrace()).terse;
       done.complete(new BuildResult(BuildStatus.failure, [],
           exception: e, stackTrace: trace));
     });

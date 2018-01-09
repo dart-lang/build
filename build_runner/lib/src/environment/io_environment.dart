@@ -29,10 +29,12 @@ class IOEnvironment implements BuildEnvironment {
 
   final bool _isInteractive;
   final bool _assumeTty;
+  final bool _verbose;
 
-  IOEnvironment(PackageGraph packageGraph, bool assumeTty)
+  IOEnvironment(PackageGraph packageGraph, bool assumeTty, {bool verbose})
       : _isInteractive = assumeTty ?? _canPrompt(),
         _assumeTty = assumeTty,
+        _verbose = verbose ?? false,
         reader = new FileBasedAssetReader(packageGraph),
         writer = new FileBasedAssetWriter(packageGraph),
         directoryWatcherFactory = defaultDirectoryWatcherFactory;
@@ -40,7 +42,7 @@ class IOEnvironment implements BuildEnvironment {
   @override
   void onLog(LogRecord record) {
     overrideAnsiOutput(_assumeTty == true || ansiOutputEnabled, () {
-      stdIOLogListener(record);
+      stdIOLogListener(record, verbose: _verbose);
     });
   }
 
