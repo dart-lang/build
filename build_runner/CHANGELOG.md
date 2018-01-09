@@ -1,6 +1,12 @@
 ## 0.7.5-dev
 
 - Add more human friendly duration printing.
+- Added the `--output <dir>` (or `-o`) argument which will create a merged
+  output directory after each build. 
+- Added the `--verbose` (or `-v`) flag which enables verbose logging.
+  - Disables stack trace folding and terse stack traces.
+  - Disables the overwriting of previous info logs.
+  - Sets the default log level to `Level.ALL`.
 
 ## 0.7.4
 
