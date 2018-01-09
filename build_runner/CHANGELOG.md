@@ -1,4 +1,4 @@
-## 0.7.5-dev
+## 0.7.5
 
 - Add more human friendly duration printing.
 - Added the `--output <dir>` (or `-o`) argument which will create a merged

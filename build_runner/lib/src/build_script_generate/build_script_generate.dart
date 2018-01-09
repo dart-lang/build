@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
+// ignore: undefined_hidden_name
 import 'package:code_builder/code_builder.dart' hide File;
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
