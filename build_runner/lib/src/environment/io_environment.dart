@@ -32,7 +32,7 @@ class IOEnvironment implements BuildEnvironment {
   final bool _verbose;
 
   IOEnvironment(PackageGraph packageGraph, bool assumeTty, {bool verbose})
-      : _isInteractive = assumeTty ?? _canPrompt(),
+      : _isInteractive = assumeTty == true || _canPrompt(),
         _assumeTty = assumeTty,
         _verbose = verbose ?? false,
         reader = new FileBasedAssetReader(packageGraph),
