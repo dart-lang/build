@@ -19,6 +19,8 @@ const List<String> _defaultRootPackageWhitelist = const [
   'test/**',
   'tool/**',
   'web/**',
+  'pubspec.yaml',
+  'pubspec.lock',
 ];
 
 /// Manages setting up consistent defaults for all options and build modes.
