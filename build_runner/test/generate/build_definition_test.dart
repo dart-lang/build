@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -14,16 +15,24 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/environment/build_environment.dart';
+import 'package:build_runner/src/environment/io_environment.dart';
+import 'package:build_runner/src/environment/overridable_environment.dart';
 import 'package:build_runner/src/generate/build_definition.dart';
 import 'package:build_runner/src/generate/options.dart';
+import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/util/constants.dart';
 
 import '../common/common.dart';
+import '../common/package_graphs.dart';
 
 main() {
+  final aPackageGraph = buildPackageGraph({rootPackage('a'): []});
+
   group('BuildDefinition.load', () {
     BuildOptions options;
+    BuildEnvironment environment;
     String pkgARoot;
 
     Future<Null> createFile(String path, String contents) async {
@@ -62,7 +71,8 @@ main() {
       ).create();
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       var packageGraph = new PackageGraph.forPath(pkgARoot);
-      options = new BuildOptions(
+      environment = new IOEnvironment(packageGraph, null);
+      options = new BuildOptions(environment,
           packageGraph: packageGraph,
           logLevel: Level.OFF,
           skipBuildScriptCheck: true);
@@ -84,8 +94,8 @@ main() {
             buildActions,
             [makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')].toSet(),
             new Set(),
-            'a',
-            options.reader);
+            aPackageGraph,
+            environment.reader);
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
         var generatedANode =
             originalAssetGraph.get(generatedAId) as GeneratedAssetNode;
@@ -96,8 +106,8 @@ main() {
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await deleteFile(p.join('lib', 'b.txt'));
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
@@ -114,15 +124,15 @@ main() {
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
         ];
 
-        var originalAssetGraph = await AssetGraph.build(
-            buildActions, <AssetId>[].toSet(), new Set(), 'a', options.reader);
+        var originalAssetGraph = await AssetGraph.build(buildActions,
+            <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await createFile(p.join('lib', 'a.txt'), 'a');
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/a.txt')), isTrue);
@@ -143,15 +153,15 @@ main() {
             buildActions,
             [makeAssetId('a|lib/a.txt')].toSet(),
             new Set(),
-            'a',
-            options.reader);
+            aPackageGraph,
+            environment.reader);
 
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         var generatedANode = newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
@@ -170,8 +180,8 @@ main() {
             buildActions,
             [makeAssetId('a|lib/test.txt')].toSet(),
             new Set(),
-            'a',
-            options.reader);
+            aPackageGraph,
+            environment.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
         var generatedNode =
             originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode;
@@ -180,8 +190,8 @@ main() {
         await createFile(
             assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         expect(buildDefinition.assetGraph.contains(generatedSrcId), isTrue);
       });
 
@@ -190,15 +200,16 @@ main() {
         var buildActions = [
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true),
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-              inputs: ['**/*.txt'], hideOutput: true),
+              targetSources: const InputSet(include: const ['**/*.txt']),
+              hideOutput: true),
         ];
 
         var originalAssetGraph = await AssetGraph.build(
             buildActions,
             [makeAssetId('a|lib/a.txt')].toSet(),
             new Set(),
-            'a',
-            options.reader);
+            aPackageGraph,
+            environment.reader);
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
         for (var id in [generatedACopyId, generatedACloneId]) {
@@ -216,10 +227,11 @@ main() {
               builderOptions: new BuilderOptions({'test': 'option'}),
               hideOutput: true),
           new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
-              inputs: ['**/*.txt'], hideOutput: true),
+              targetSources: const InputSet(include: const ['**/*.txt']),
+              hideOutput: true),
         ];
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, newBuildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, newBuildActions);
         var newAssetGraph = buildDefinition.assetGraph;
 
         // The *.copy node should be invalidated, its builder options changed.
@@ -242,18 +254,23 @@ main() {
             'a', p.url.join(generatedOutputDirectory, 'a', 'lib', 'test.txt'));
         await createFile(generatedId.path, 'a');
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+          new BuildAction(
+              new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
+              'a',
+              hideOutput: true)
         ];
 
-        var assetGraph = await AssetGraph.build(
-            buildActions, new Set<AssetId>(), new Set(), 'a', options.reader);
+        var assetGraph = await AssetGraph.build(buildActions,
+            new Set<AssetId>(), new Set(), aPackageGraph, environment.reader);
+        var expectedIds = placeholderIdsFor(aPackageGraph)
+          ..addAll([makeAssetId('a|Phase0.builderOptions')]);
         expect(assetGraph.allNodes.map((node) => node.id),
-            unorderedEquals([makeAssetId('a|Phase0.builderOptions')]));
+            unorderedEquals(expectedIds));
 
         await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
 
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
 
         expect(buildDefinition.assetGraph.contains(generatedId), isFalse);
       });
@@ -262,7 +279,7 @@ main() {
         var entryPoint =
             new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
         var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, []);
+            await BuildDefinition.prepareWorkspace(environment, options, []);
         expect(buildDefinition.assetGraph.contains(entryPoint), isTrue);
       });
 
@@ -272,8 +289,8 @@ main() {
         var buildActions = [
           new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
         ];
-        var buildDefinition =
-            await BuildDefinition.prepareWorkspace(options, buildActions);
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildActions);
         expect(
             buildDefinition.assetGraph
                 .contains(entryPoint.addExtension('.copy')),
@@ -290,24 +307,25 @@ main() {
         new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
       ];
       var logs = <LogRecord>[];
-      options = new BuildOptions(
+      environment = new OverrideableEnvironment(environment, onLog: logs.add);
+      options = new BuildOptions(environment,
           packageGraph: options.packageGraph,
           logLevel: Level.WARNING,
-          skipBuildScriptCheck: true,
-          onLog: logs.add);
+          skipBuildScriptCheck: true);
 
-      var originalAssetGraph = await AssetGraph.build(
-          buildActions, <AssetId>[].toSet(), new Set(), 'a', options.reader);
+      var originalAssetGraph = await AssetGraph.build(buildActions,
+          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
       await createFile(
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
       buildActions.add(new BuildAction(new CopyBuilder(), 'a',
-          inputs: ['.copy'], hideOutput: true));
+          targetSources: const InputSet(include: const ['.copy']),
+          hideOutput: true));
       logs.clear();
 
-      var buildDefinition =
-          await BuildDefinition.prepareWorkspace(options, buildActions);
+      var buildDefinition = await BuildDefinition.prepareWorkspace(
+          environment, options, buildActions);
       expect(
           logs.any(
             (log) =>
@@ -319,6 +337,52 @@ main() {
       var newAssetGraph = buildDefinition.assetGraph;
       expect(originalAssetGraph.buildActionsDigest,
           isNot(newAssetGraph.buildActionsDigest));
+    });
+
+    test('does not invalidate the graph if the BuilderOptions change',
+        () async {
+      // Gets rid of console spam during tests, we are setting up a new options
+      // object.
+      await options.logListener.cancel();
+
+      var buildActions = [
+        new BuildAction(new CopyBuilder(), 'a',
+            hideOutput: true,
+            builderOptions: new BuilderOptions({'foo': 'bar'}))
+      ];
+      var logs = <LogRecord>[];
+      environment = new OverrideableEnvironment(environment, onLog: logs.add);
+      options = new BuildOptions(environment,
+          packageGraph: options.packageGraph,
+          logLevel: Level.WARNING,
+          skipBuildScriptCheck: true);
+
+      var originalAssetGraph = await AssetGraph.build(buildActions,
+          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
+
+      await createFile(
+          assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+
+      buildActions = [
+        new BuildAction(new CopyBuilder(), 'a',
+            hideOutput: true,
+            builderOptions: new BuilderOptions({'baz': 'zap'}))
+      ];
+      logs.clear();
+
+      var buildDefinition = await BuildDefinition.prepareWorkspace(
+          environment, options, buildActions);
+      expect(
+          logs.any(
+            (log) =>
+                log.level == Level.WARNING &&
+                log.message.contains('build actions have changed'),
+          ),
+          isFalse);
+
+      var newAssetGraph = buildDefinition.assetGraph;
+      expect(originalAssetGraph.buildActionsDigest,
+          equals(newAssetGraph.buildActionsDigest));
     });
   });
 }

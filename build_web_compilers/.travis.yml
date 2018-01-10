@@ -1,0 +1,9 @@
+language: dart
+dart:
+  - dev
+
+dart_task:
+  # Run the presubmit tests as well (usually skipped).
+  - test: --run-skipped
+  - dartfmt: sdk
+  - dartanalyzer: --fatal-infos --fatal-warnings .

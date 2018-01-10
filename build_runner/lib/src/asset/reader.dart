@@ -54,10 +54,10 @@ class SingleStepReader implements AssetReader {
       _assetGraph.add(new SyntheticSourceAssetNode(id));
       return false;
     }
-    if (node is SyntheticAssetNode) return false;
-    if (node is SourceAssetNode) return true;
-    assert(node is GeneratedAssetNode);
-    return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+    if (node.isGenerated) {
+      return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+    }
+    return node.isReadable;
   }
 
   @override
@@ -118,6 +118,7 @@ class SingleStepReader implements AssetReader {
   }
 
   Future<Null> _ensureAssetIsBuilt(AssetId id) async {
+    if (_runPhaseForInput == null) return null;
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
       await _runPhaseForInput(node.phaseNumber, node.primaryInput);

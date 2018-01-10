@@ -4,18 +4,27 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
+import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:watcher/watcher.dart';
 import 'package:stream_transform/stream_transform.dart';
+import 'package:watcher/watcher.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../environment/build_environment.dart';
+import '../environment/io_environment.dart';
+import '../environment/overridable_environment.dart';
+import '../package_graph/apply_builders.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -28,36 +37,52 @@ import 'terminator.dart';
 
 final _logger = new Logger('Watch');
 
-Future<ServeHandler> watch(List<BuildAction> buildActions,
-    {bool deleteFilesByDefault,
-    //TODO - remove `writeToCache`
-    bool writeToCache,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Level logLevel,
-    onLog(LogRecord record),
-    Duration debounceDelay,
-    DirectoryWatcherFactory directoryWatcherFactory,
-    Stream terminateEventStream,
-    bool skipBuildScriptCheck,
-    bool enableLowResourcesMode}) async {
-  var options = new BuildOptions(
-      deleteFilesByDefault: deleteFilesByDefault ?? writeToCache,
-      packageGraph: packageGraph,
+Future<ServeHandler> watch(
+  List<BuilderApplication> builders, {
+  bool deleteFilesByDefault,
+  bool failOnSevere,
+  bool assumeTty,
+  PackageGraph packageGraph,
+  RunnerAssetReader reader,
+  RunnerAssetWriter writer,
+  Level logLevel,
+  onLog(LogRecord record),
+  Duration debounceDelay,
+  DirectoryWatcherFactory directoryWatcherFactory,
+  Stream terminateEventStream,
+  bool skipBuildScriptCheck,
+  bool enableLowResourcesMode,
+  Map<String, BuildConfig> overrideBuildConfig,
+  String outputDir,
+  bool verbose,
+}) async {
+  packageGraph ??= new PackageGraph.forThisPackage();
+  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+      overrideBuildConfig: overrideBuildConfig);
+  var environment = new OverrideableEnvironment(
+      new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
       writer: writer,
-      logLevel: logLevel,
-      onLog: onLog,
-      debounceDelay: debounceDelay,
       directoryWatcherFactory: directoryWatcherFactory,
+      onLog: onLog);
+  var options = new BuildOptions(environment,
+      deleteFilesByDefault: deleteFilesByDefault,
+      failOnSevere: failOnSevere,
+      packageGraph: packageGraph,
+      rootPackageConfig: targetGraph.rootPackageConfig,
+      logLevel: logLevel,
+      debounceDelay: debounceDelay,
       skipBuildScriptCheck: skipBuildScriptCheck,
-      enableLowResourcesMode: enableLowResourcesMode);
-  if (writeToCache == true) {
-    buildActions = buildActions.map(hiddenAction).toList();
-  }
+      enableLowResourcesMode: enableLowResourcesMode,
+      outputDir: outputDir,
+      verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
-  var watch = runWatch(options, buildActions, terminator.shouldTerminate);
+
+  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
+  final buildActions = await createBuildActions(targetGraph, builders);
+
+  var watch =
+      runWatch(environment, options, buildActions, terminator.shouldTerminate);
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
@@ -76,21 +101,26 @@ Future<ServeHandler> watch(List<BuildAction> buildActions,
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-WatchImpl runWatch(
-        BuildOptions options, List<BuildAction> buildActions, Future until) =>
-    new WatchImpl(options, buildActions, until);
+WatchImpl runWatch(BuildEnvironment environment, BuildOptions options,
+        List<BuildAction> buildActions, Future until) =>
+    new WatchImpl(environment, options, buildActions, until,
+        options.rootPackageFilesWhitelist.map((g) => new Glob(g)));
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
 class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
   BuildDefinition _buildDefinition;
+  final Iterable<Glob> _rootPackageFilesWhitelist;
 
   /// Delay to wait for more file watcher events.
   final Duration _debounceDelay;
 
   /// Injectable factory for creating directory watchers.
   final DirectoryWatcherFactory _directoryWatcherFactory;
+
+  /// Should complete when we need to kill the build.
+  final _terminateCompleter = new Completer<Null>();
 
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
@@ -104,11 +134,17 @@ class WatchImpl implements BuildState {
   final _readerCompleter = new Completer<AssetReader>();
   Future<AssetReader> get reader => _readerCompleter.future;
 
-  WatchImpl(BuildOptions options, List<BuildAction> buildActions, Future until)
-      : _directoryWatcherFactory = options.directoryWatcherFactory,
+  WatchImpl(
+      BuildEnvironment environment,
+      BuildOptions options,
+      List<BuildAction> buildActions,
+      Future until,
+      this._rootPackageFilesWhitelist)
+      : _directoryWatcherFactory = environment.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
-    buildResults = _run(options, buildActions, until).asBroadcastStream();
+    buildResults =
+        _run(environment, options, buildActions, until).asBroadcastStream();
   }
 
   @override
@@ -119,9 +155,8 @@ class WatchImpl implements BuildState {
   /// Only one build will run at a time, and changes are batched.
   ///
   /// File watchers are scheduled synchronously.
-  Stream<BuildResult> _run(
-      BuildOptions options, List<BuildAction> buildActions, Future until) {
-    var fatalBuildCompleter = new Completer();
+  Stream<BuildResult> _run(BuildEnvironment environment, BuildOptions options,
+      List<BuildAction> buildActions, Future until) {
     var firstBuildCompleter = new Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = new StreamController<BuildResult>();
@@ -139,7 +174,7 @@ class WatchImpl implements BuildState {
       if (!options.skipBuildScriptCheck) {
         if (_buildDefinition.buildScriptUpdates
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
-          fatalBuildCompleter.complete();
+          _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
           return new BuildResult(BuildStatus.failure, []);
         }
@@ -147,45 +182,86 @@ class WatchImpl implements BuildState {
       return build.run(mergedChanges);
     }
 
-    var terminate = Future.any([until, fatalBuildCompleter.future]).then((_) {
-      _logger.info('Terminating. No further builds will be scheduled');
+    var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
+      _logger.info('Terminating. No further builds will be scheduled\n');
     });
+
+    Digest originalRootPackagesDigest;
+    final rootPackagesId = new AssetId(packageGraph.root.name, '.packages');
 
     // Start watching files immediately, before the first build is even started.
     new PackageGraphWatcher(packageGraph,
             logger: _logger,
-            watch: (node) => new PackageNodeWatcher(node, watch: (path) {
-                  return _directoryWatcherFactory(path);
-                }))
+            watch: (node) =>
+                new PackageNodeWatcher(node, watch: _directoryWatcherFactory))
         .watch()
         .asyncMap<AssetChange>((change) {
           // Delay any events until the first build is completed.
           if (firstBuildCompleter.isCompleted) return change;
           return firstBuildCompleter.future.then((_) => change);
         })
+        .asyncMap<AssetChange>((change) {
+          // Kill future builds if the root packages file changes.
+          assert(originalRootPackagesDigest != null);
+          if (change.id != rootPackagesId) return change;
+          return environment.reader.readAsBytes(rootPackagesId).then((bytes) {
+            if (md5.convert(bytes) != originalRootPackagesDigest) {
+              _terminateCompleter.complete();
+              _logger.severe('Terminating builds due to package graph update, '
+                  'please restart the build.');
+            }
+            return change;
+          });
+        })
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
         .transform(takeUntil(terminate))
         .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
-        .listen(controller.add)
+        .listen((BuildResult result) {
+          if (controller.isClosed) return;
+          if (result.status != BuildStatus.failure &&
+              options.failOnSevere &&
+              options.severeLogHandled) {
+            options.severeLogHandled = false;
+            result = new BuildResult(
+              BuildStatus.failure,
+              result.outputs,
+              exception: 'A severe log was handled. See log for details',
+              performance: result.performance,
+            );
+          }
+          controller.add(result);
+        })
         .onDone(() async {
+          await currentBuild;
           await _buildDefinition.resourceManager.beforeExit();
           await controller.close();
-          _logger.info('Builds finished. Safe to exit');
+          _logger.info('Builds finished. Safe to exit\n');
         });
 
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
+      originalRootPackagesDigest =
+          md5.convert(await environment.reader.readAsBytes(rootPackagesId));
+
       _buildDefinition = await BuildDefinition.prepareWorkspace(
-          options, buildActions,
+          environment, options, buildActions,
           onDelete: _expectedDeletes.add);
-      _readerCompleter.complete(_buildDefinition.reader);
+      _readerCompleter.complete(new SingleStepReader(
+          _buildDefinition.reader,
+          _buildDefinition.assetGraph,
+          buildActions.length,
+          packageGraph.root.name,
+          null));
       _assetGraph = _buildDefinition.assetGraph;
-      build = await BuildImpl.create(_buildDefinition, buildActions,
+      build = await BuildImpl.create(_buildDefinition, options, buildActions,
           onDelete: _expectedDeletes.add);
 
-      controller.add(build.firstBuild);
+      // It is possible this is already closed if the user kills the process
+      // early, which results in an exception without this check.
+      if (!controller.isClosed) controller.add(build.firstBuild);
+
       firstBuildCompleter.complete(build.firstBuild);
     }();
 
@@ -201,7 +277,7 @@ class WatchImpl implements BuildState {
     if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
     var node = _assetGraph.get(change.id);
     if (node != null) {
-      if (_isUninterestingNode(node)) return false;
+      if (!node.isInteresting) return false;
       if (_isEditOnGeneratedFile(node, change.type)) return false;
     } else {
       if (change.type == ChangeType.REMOVE) return false;
@@ -213,31 +289,15 @@ class WatchImpl implements BuildState {
 
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
-  bool _isUninterestingNode(AssetNode node) {
-    if (node is InternalAssetNode) {
-      // All `InternalAssetNode`s are interesting, at least for now.
-      return false;
-    } else if (node.outputs.isEmpty && node.lastKnownDigest == null) {
-      // If we haven't computed a digest for this asset and it has no outputs,
-      // then we don't care about changes to it.
-      //
-      // Checking for a digest alone isn't enough because a file may be deleted
-      // and re-added, in which case it won't have a digest.
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   bool _isEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
-      node is GeneratedAssetNode && changeType != ChangeType.REMOVE;
+      node.isGenerated && changeType != ChangeType.REMOVE;
 
   bool _isExpectedDelete(AssetChange change) =>
       _expectedDeletes.remove(change.id);
 
   bool _isWhitelistedPath(AssetId id) {
     if (packageGraph[id.package].isRoot) {
-      return rootPackageGlobsWhitelist.any((glob) => glob.matches(id.path));
+      return _rootPackageFilesWhitelist.any((glob) => glob.matches(id.path));
     } else {
       return id.path.startsWith('lib/');
     }

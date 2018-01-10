@@ -3,11 +3,56 @@
 Customizing the build behavior of a package is done  by creating a `build.yaml`
 file, which describes your configuration.
 
+## Dividing a package into Build targets
+When a `Builder` should be applied to a subset of files in a package the package
+can be broken up into multiple 'targets'. Targets are configured in the
+`targets` section of the `build.yaml`. The key for each target makes up the name
+for that target. Targets can be referred to in
+`'$definingPackageName:$targetname'`. When the target name matches the package
+name it can also be referred to as just the package name. One target in every
+package _must_ use the package name so that consumers will use it by default.
+Each target may also contain the following keys.
+
+- **sources**: List of Strings or Map, Optional. The set of files within the
+  package which make up this target. Files are specified using glob syntax. If a
+  List of Strings is used they are considered the 'include' globs. If a Map is
+  used can only have the keys `include` and `exclude`. Any file which matches
+  any glob in `include` and no globs in `exclude` is considered a source of the
+  target. When `include` is omitted every file is considered a match.
+- **dependencies**: List of Strings, Optional. The targets that this target
+  depends on. Strings in the format `'$packageName:$targetName'` to depend on a
+  target within a package or `$packageName` to depend on a package's default
+  target. By default this is all of the package names this package depends on
+  (from the `pubspec.yaml`).
+- **builders**: Map, Optional. See "configuring builders" below.
+
+## Configuring `Builder`s applied to your package
+Each target can specify a `builders` key which configures the builders which are
+applied to that target. The value is a Map from builder to configuration for
+that builder. The key is in the format `'$packageName|$builderName'`. The
+configuration may have the following keys:
+
+- **enabled**: Boolean, Optional: Whether to apply the builder to this target.
+  Omit this key if you want the default behavior based on the builder's
+  `auto_apply` configuration. Builders which are manually applied
+  (`auto_apply: none`) are only ever used when there is a target specifying the
+  builder with `enabled: True`.
+- **generate_for**: List of String or Map, Optional:. The subset of files within
+  the target's `sources` which should have this Builder applied. See `sources`
+  configuration above for how to configure this.
+- **options**: Map, Optional: A free-form map which will be passed to the
+  `Builder` as a `BuilderOptions` when it is constructed. Usage varies depending
+  on the particular builder.
+
 ## Defining `Builder`s to apply to dependents (similar to transformers)
 
 If users of your package need to apply some code generation to their package,
 then you can define `Builder`s and have those applied to packages with a
 dependency on yours.
+
+The key for a Builder will be normalized so that consumers of the builder can
+refer to it in `'$definingPackageName|$builderName'` format. If the builder name
+matches the package name it can also be referred to with just the package name.
 
 Exposed `Builder`s are configured in the `builders` section of the `build.yaml`.
 This is a map of builder names to configuration. Each builder config may contain
@@ -44,10 +89,16 @@ the following keys:
   to. The possibilities are:
   - `"source"`: Outputs go to the source tree next to their primary inputs.
   - `"cache"`: Outputs go to a hidden build cache and won't be published.
-  Only builders which output to the build cache may run on primary inputs
-  outside the root package. Defaults to `"source"`, unless `auto_apply` is set
-  to either `"all_packages"` or `"dependents"` in which case it defaults to
-  `"cache"`.
+  The default is "cache". If a Builder specifies that it outputs to "source" it
+  will never run on any package other than the root - but does not necessarily
+  need to use the "root_package" value for "auto_apply". If it would otherwise
+  run on a non-root package it will be filtered out.
+- **defaults**: Optional: Default values to apply when a user does not specify
+  the corresponding key in their `builders` section. May contain the following
+  keys:
+  - **generate_for**: A list of globs that this Builder should run on as a
+    subset of the corresponding target, or a map with `include` and `exclude`
+    lists of globs.
 
 Example `builders` config:
 
@@ -70,3 +121,12 @@ builders:
     build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
 ```
+
+# Publishing `build.yaml` files
+
+`build.yaml` configuration should be published to pub with the package and
+checked in to source control. Whenever a package is published with a
+`build.yaml` it should mark a `dependency` on `build_config` to ensure that
+the package consuming the config has a compatible version. Breaking version
+changes which do not impact the configuration file format will be clearly marked
+in the changelog.

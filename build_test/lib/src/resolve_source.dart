@@ -13,116 +13,174 @@ import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'package_reader.dart';
 
-/// Runs [action] using a created Resolver for [inputSource] and returns the
-/// result.
+/// Marker constant that may be used in combination with [resolveSources].
 ///
-/// Example use:
-/// ```dart
-/// var library = await resolveSource(r'''
-///   library example;
-///
-///   import 'dart:collection';
-///
-///   abstract class Foo implements Map {}
-/// ''', (resolver) => resolver.findLibraryByName('example'));
-/// expect(library.getType('Foo'), isNotNull);
-/// ```
-///
-/// By default the [Resolver] is unusable after the [action] completes so
-/// references should not be kept after the future fires. To do more work in
-/// multiple tests with a Resolver from the same source use the [tearDown]
-/// argument:
-///
-/// ```dart
-/// Completer<Null> resolverDone;
-/// Resolver resolver;
-///
-/// setUpAll(() async {
-///   resolverDone = new Completer<Null>();
-///   resolver = await resolveSource('...', (resover) => resolver,
-///       tearDown: resolverDone.future);
-/// });
-///
-/// tearDown(() => resolverDone.complete());
-///
-/// test('...', () async {
-///   // Use resolver.
-/// });
-/// ```
-///
-/// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
-/// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
-/// be provided to map files not visible to the current package's runtime.
+/// Use of this string means instead of using the contents of the string as the
+/// source of a given asset, instead read the file from the default or provided
+/// [AssetReader].
+const useAssetReader = '__useAssetReader__';
+
+/// A convenience method for using [resolveSources] with a single source file.
 Future<T> resolveSource<T>(
-        String inputSource, FutureOr<T> action(Resolver resolver),
-        {AssetId inputId, PackageResolver resolver, Future tearDown}) =>
-    _resolveAsset(
-        inputId ?? new AssetId('_resolver_source', 'lib/_resolve_source.dart'),
-        action,
-        inputContents: inputSource,
-        resolver: resolver,
-        tearDown: tearDown);
+  String inputSource,
+  FutureOr<T> action(Resolver resolver), {
+  AssetId inputId,
+  PackageResolver resolver,
+  Future<Null> tearDown,
+}) {
+  inputId ??= new AssetId('_resolve_source', 'lib/_resolve_source.dart');
+  return _resolveAssets(
+    {
+      '${inputId.package}|${inputId.path}': inputSource,
+    },
+    inputId.package,
+    action,
+    resolver: resolver,
+    tearDown: tearDown,
+  );
+}
 
-/// Runs [action] using a created Resolver for [input] and returns the result.
+/// Resolves and runs [action] using a created resolver for [inputs].
 ///
-/// Example use:
-/// ```dart
-/// var pkgBuildTest = new AssetId('build_test', 'lib/build_test.dart');
-/// var library = await resolveSource(
-///     pkgBuildTest, (resolver) => resolver.libraryFor(pkgBuildTest));
+/// Inputs accepts the pattern of `<package>|<path>.dart`, for example:
+/// ```
+/// {
+///   'test_lib|lib/test_lib.dart': r'''
+///     // Contents of test_lib.dart go here.
+///   ''',
+/// }
 /// ```
 ///
-/// By default the [Resolver] is unusable after the [action] completes so
-/// references should not be kept after the future fires. To do more work in
-/// multiple tests with a Resolver from the same source use the [tearDown]
-/// argument:
+/// You may provide [useAssetReader] as the value of any input in order to read
+/// it from the file system instead of being forced to provide it inline as a
+/// string. This is useful for mixing real and mocked assets.
 ///
-/// ```dart
-/// Completer<Null> resolverDone;
-/// Resolver resolver;
+/// Example use:
+/// ```
+/// import 'package:build_test/build_test.dart';
+/// import 'package:test/test.dart';
 ///
-/// setUpAll(() async {
-///   resolverDone = new Completer<Null>();
-///   resolver = await resolveAsset('...', (resover) => resolver,
-///       tearDown: resolverDone.future);
-/// });
+/// void main() {
+///   test('should find a Foo type', () async {
+///     var library = await resolveSources({
+///       'test_lib|lib/test_lib.dart': r'''
+///         library example;
 ///
-/// tearDown(() => resolverDone.complete());
+///         class Foo {}
+///       ''',
+///     }, (resolver) => resolver.findLibraryByName('example'));
+///     expect(library.getType('Foo'), isNotNull);
+///   });
+/// }
+/// ```
 ///
-/// test('...', () async {
-///   // Use resolver.
-/// });
+/// By default the [Resolver] is unusable after [action] completes. To keep the
+/// resolver active across multiple tests (for example, use `setUpAll` and
+/// `tearDownAll`, provide a `tearDown` [Future]:
+/// ```
+/// import 'dart:async';
+/// import 'package:build/build.dart';
+/// import 'package:build_test/build_test.dart';
+/// import 'package:test/test.dart';
+///
+/// void main() {
+///   Resolver resolver;
+///   var resolverDone = new Completer<Null>();
+///
+///   setUpAll(() async {
+///     resolver = await resolveSources(
+///       {...},
+///       (resolver) => resolver,
+///       tearDown: resolverDone.future,
+///     );
+///   });
+///
+///   tearDownAll(() => resolverDone.complete());
+///
+///   test('...', () async {
+///     // Use the resolver here, and in other tests.
+///   });
+/// }
 /// ```
 ///
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
 /// be provided to map files not visible to the current package's runtime.
-Future<T> resolveAsset<T>(AssetId input, FutureOr<T> action(Resolver resolver),
-        {PackageResolver resolver, Future tearDown}) =>
-    _resolveAsset(input, action, resolver: resolver, tearDown: tearDown);
+Future<T> resolveSources<T>(
+  Map<String, String> inputs,
+  FutureOr<T> action(Resolver resolver), {
+  PackageResolver resolver,
+  String rootPackage,
+  Future<Null> tearDown,
+}) {
+  if (inputs == null || inputs.isEmpty) {
+    throw new ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
+  }
+  return _resolveAssets(
+    inputs,
+    rootPackage ?? new AssetId.parse(inputs.keys.first).package,
+    action,
+    resolver: resolver,
+    tearDown: tearDown,
+  );
+}
 
-/// Internal only backing implementation of `resolveAsset` and `resolveSource`.
-///
-/// If [inputContents] is non-null, it is used instead of reading [input] from
-/// the file system.
-Future<T> _resolveAsset<T>(AssetId input, FutureOr<T> action(Resolver resolver),
-    {String inputContents, PackageResolver resolver, Future tearDown}) async {
-  resolver ??= PackageResolver.current;
-  var syncResolver = await resolver.asSync;
-  var reader = new PackageAssetReader(syncResolver, input.package);
-  var builder = new _ResolveSourceBuilder(action, tearDown);
-  var inputs = [input];
-  var inMemory = new InMemoryAssetReader(
-    sourceAssets: {
-      input: inputContents ?? await reader.readAsString(input),
+/// A convenience for using [resolveSources] with a single [inputId] from disk.
+Future<T> resolveAsset<T>(
+  AssetId inputId,
+  FutureOr<T> action(Resolver resolver), {
+  PackageResolver resolver,
+  Future<Null> tearDown,
+}) {
+  return _resolveAssets(
+    {
+      '${inputId.package}|${inputId.path}': useAssetReader,
     },
-    rootPackage: input.package,
+    inputId.package,
+    action,
+    resolver: resolver,
+    tearDown: tearDown,
+  );
+}
+
+/// Internal-only backing implementation of `resolve{Asset|Source(s)}`.
+///
+/// If the value of an entry of [inputs] is [useAssetReader] then the value is
+/// instead read from the file system, otherwise the provided text is used as
+/// the contents of the asset.
+Future<T> _resolveAssets<T>(
+  Map<String, String> inputs,
+  String rootPackage,
+  FutureOr<T> action(Resolver resolver), {
+  PackageResolver resolver,
+  Future<Null> tearDown,
+}) async {
+  final syncResolver = await (resolver ?? PackageResolver.current).asSync;
+  final assetReader = new PackageAssetReader(syncResolver, rootPackage);
+  final resolveBuilder = new _ResolveSourceBuilder(action, tearDown);
+  final inputAssets = <AssetId, String>{};
+  await Future.wait(inputs.keys.map((String rawAssetId) async {
+    final assetId = new AssetId.parse(rawAssetId);
+    var assetValue = inputs[rawAssetId];
+    if (assetValue == useAssetReader) {
+      assetValue = await assetReader.readAsString(assetId);
+    }
+    inputAssets[assetId] = assetValue;
+  }));
+  final inMemory = new InMemoryAssetReader(
+    sourceAssets: inputAssets,
+    rootPackage: rootPackage,
   );
   // We don't care about the results of this build.
   // ignore: unawaited_futures
-  runBuilder(builder, inputs, new MultiAssetReader([inMemory, reader]),
-      new InMemoryAssetWriter(), const BarbackResolvers());
-  return builder.onDone.future;
+  runBuilder(
+    resolveBuilder,
+    inputAssets.keys,
+    new MultiAssetReader([inMemory, assetReader]),
+    new InMemoryAssetWriter(),
+    const BarbackResolvers(),
+  );
+  return resolveBuilder.onDone.future;
 }
 
 typedef FutureOr<T> _ResolverAction<T>(Resolver resolver);
@@ -140,8 +198,13 @@ class _ResolveSourceBuilder<T> implements Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
+    if (onDone.isCompleted) return;
     var result = await _action(buildStep.resolver);
-    onDone.complete(result);
+    if (!onDone.isCompleted) {
+      // With resolveSources (plural), this function is called multiple times
+      // but we only care about it once to get a handle to "Resolver".
+      onDone.complete(result);
+    }
     await _tearDown;
   }
 

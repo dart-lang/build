@@ -23,24 +23,42 @@ const _badOutput = r'''
 //
 // Regression test for https://github.com/dart-lang/build/issues/427.
 void main() {
-  test('should throw a readable/terse stack trace', () async {
-    final result = await testActions([
-      new BuildAction(new BadCodeBuilder(), 'a'),
-    ], {
+  group('stack traces', () {
+    final builderApplications = [applyToRoot(new BadCodeBuilder())];
+    final inputs = {
       'a|lib/a.dart': 'class Foo {}',
-    }, outputs: {
-      'a|lib/a.g.dart': _badOutput
-    }, checkBuildStatus: false);
+    };
+    final outputs = {'a|lib/a.g.dart': _badOutput};
 
-    expect(result.status, BuildStatus.failure,
-        reason: 'Dartfmt should fail due to invalid code emitted');
-    final trace = new Trace.from(result.stackTrace);
-    expect(trace.frames.map((f) => f.package), contains('dart_style'),
-        reason: 'Should have failed due to a dartfmt error');
-    expect(trace.toString(), trace.terse.toString(), reason: 'Should be terse');
-    expect(trace.foldFrames((f) => f.package == 'build_runner').toString(),
-        trace.toString(),
-        reason: 'Should fold build package frames');
+    test('should be folded/terse by default', () async {
+      final result = await testBuilders(builderApplications, inputs,
+          outputs: outputs, checkBuildStatus: false);
+      expect(result.status, BuildStatus.failure,
+          reason: 'Dartfmt should fail due to invalid code emitted');
+      final trace = new Trace.from(result.stackTrace);
+      expect(trace.frames.map((f) => f.package), contains('dart_style'),
+          reason: 'Should have failed due to a dartfmt error');
+      expect(trace.toString(), trace.terse.toString(),
+          reason: 'Should be terse');
+      expect(trace.foldFrames((f) => f.package == 'build_runner').toString(),
+          trace.toString(),
+          reason: 'Should fold build package frames');
+    });
+
+    test('should not be folded/terse in verbose mode', () async {
+      final result = await testBuilders(builderApplications, inputs,
+          outputs: outputs, checkBuildStatus: false, verbose: true);
+      expect(result.status, BuildStatus.failure,
+          reason: 'Dartfmt should fail due to invalid code emitted');
+      final trace = new Trace.from(result.stackTrace);
+      expect(trace.frames.map((f) => f.package), contains('dart_style'),
+          reason: 'Should have failed due to a dartfmt error');
+      expect(trace.toString(), isNot(trace.terse.toString()),
+          reason: 'Should not be terse');
+      expect(trace.foldFrames((f) => f.package == 'build_runner').toString(),
+          isNot(trace.toString()),
+          reason: 'Should not fold build package frames');
+    });
   });
 }
 

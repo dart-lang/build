@@ -50,6 +50,29 @@ void main() {
       );
     });
 
+    test('multiple assets, some mock, some on disk', () async {
+      final real = 'build_test|test/_files/example_lib.dart';
+      final mock = 'build_test|test/_files/not_really_here.dart';
+      final library = await resolveSources(
+        {
+          real: useAssetReader,
+          mock: r'''
+            // This is a fake library that we're mocking.
+            library example;
+
+            // This is a real on-disk library we are using.
+            import 'example_lib.dart';
+
+            class ExamplePrime extends Example {}
+          ''',
+        },
+        (resolver) => resolver.findLibraryByName('example'),
+      );
+      final type = library.getType('ExamplePrime');
+      expect(type, isNotNull);
+      expect(type.supertype.name, 'Example');
+    });
+
     test('waits for tearDown', () async {
       var resolverDone = new Completer<Null>();
       var resolver = await resolveSource(r'''

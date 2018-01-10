@@ -24,7 +24,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib/gallery/example_code.dart
     - packages/flutter_gallery_assets/appbar_background.jpg
     - packages/flutter_gallery_assets/appbar/appbar_background_layer0.png
     - packages/flutter_gallery_assets/appbar/appbar_background_layer1.png

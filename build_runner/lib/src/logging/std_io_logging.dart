@@ -5,28 +5,23 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-final _cyan = _isPosixTerminal ? '\u001b[36m' : '';
-final _yellow = _isPosixTerminal ? '\u001b[33m' : '';
-final _red = _isPosixTerminal ? '\u001b[31m' : '';
-final _endColor = _isPosixTerminal ? '\u001b[0m' : '';
-final _isPosixTerminal =
-    !Platform.isWindows && stdioType(stdout) == StdioType.TERMINAL;
-
-void stdIOLogListener(LogRecord record) {
-  String color;
+void stdIOLogListener(LogRecord record, {bool verbose}) {
+  verbose ??= false;
+  AnsiCode color;
   if (record.level < Level.WARNING) {
-    color = _cyan;
+    color = cyan;
   } else if (record.level < Level.SEVERE) {
-    color = _yellow;
+    color = yellow;
   } else {
-    color = _red;
+    color = red;
   }
-  var header = '${_isPosixTerminal ? '\x1b[2K\r' : ''}'
-      '$color[${record.level}]$_endColor ${record.loggerName}: '
-      '${record.message}';
+  final level = color.wrap('[${record.level}]');
+  final eraseLine = ansiOutputEnabled && !verbose ? '\x1b[2K\r' : '';
+  var header = '$eraseLine$level ${record.loggerName}: ${record.message}';
   var lines = <Object>[header];
 
   if (record.error != null) {
@@ -47,7 +42,7 @@ void stdIOLogListener(LogRecord record) {
   // isn't multiline unless we see > 2 lines.
   var multiLine = LineSplitter.split(message.toString()).length > 2;
 
-  if (record.level > Level.INFO || !_isPosixTerminal || multiLine) {
+  if (record.level > Level.INFO || !ansiOutputEnabled || multiLine || verbose) {
     // Add an extra line to the output so the last line isn't written over.
     message.writeln('');
   }

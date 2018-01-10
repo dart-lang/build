@@ -1,19 +1,81 @@
-## 0.7.0-dev
+## 0.7.5
+
+- Add more human friendly duration printing.
+- Added the `--output <dir>` (or `-o`) argument which will create a merged
+  output directory after each build. 
+- Added the `--verbose` (or `-v`) flag which enables verbose logging.
+  - Disables stack trace folding and terse stack traces.
+  - Disables the overwriting of previous info logs.
+  - Sets the default log level to `Level.ALL`.
+- Added `pubspec.yaml` and `pubspec.lock` to the whitelist for the root package
+  sources.
+
+## 0.7.4
+
+- Allows using files in any build targets in the root package as sources if they
+  fall outside the hardcoded whitelist.
+- Changes to the root `.packages` file during watch mode will now cause the
+  build script to exit and prompt the user to restart the build.
+
+## 0.7.3
+
+- Added the flag `--low-resources-mode`, which defaults to `false`.
+
+## 0.7.2
+
+- Added the flag `--fail-on-severe`, which defaults to `false`. In a future
+  version this will default to `true`, which means that logging a message via
+  `log.severe` will fail the build instead of just printing to the terminal.
+  This would match the current behavior in `bazel_codegen`. 
+- Added the `test` command to the `build_runner` binary.
+
+## 0.7.1+1
+
+- **BUG FIX**: Running the `build_runner` binary without arguments no longer
+  causes a crash saying `Could not find an option named "assume-tty".`.
+
+## 0.7.1
+
+- Run Builders which write to the source tree before those which write to the
+  build cache.
+
+## 0.7.0
 
 ### New Features
 
 - Added `toRoot` Package filter.
 - Actions are now invalidated at a fine grained level when `BuilderOptions`
   change.
+- Added magic placeholder files in all packages, which can be used when your
+  builder doesn't have a clear primary input file.
+  - For non-root packages the placeholder exists at `lib/$lib$`, you should
+    declare your `buildExtensions` like this `{r'$lib$': 'my_output_file.txt'}`,
+    which would result in an output file at `lib/my_output_file.txt` in the
+    package.
+  - For the root package there are also placeholders at `web/$web$` and
+    `test/$test$` which should cover most use cases. Please file an issue if you
+    need additional placeholders.
+  - Note that these placeholders are not real assets and attempting to read them
+    will result in an `AssetNotFoundException`.
 
 ### Breaking Changes
 
+- Removed `BuildAction`. Changed `build` and `watch` to take a
+  `List<BuilderApplication>`. See `apply` and `applyToRoot` to set these up.
+- Changed `apply` to take a single String argument - a Builder key from
+  `package:build_config` rather than a separate package and builder name.
+- Changed the default value of `hideOutput` from `false` to `true` for `apply`.
+  With `applyToRoot` the value remains `false`.
 - There is now a whitelist of top level directories that will be used as a part
   of the build, and other files will be ignored. For now those directories
   include 'benchmark', 'bin', 'example', 'lib', 'test', 'tool', and 'web'.
   - If this breaks your workflow please file an issue and we can look at either
     adding additional directories or making the list configurable per project.
 - Remove `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
+- Remove `writeToCache` argument of `build` and `watch`. Each `apply` call
+  should specify `hideOutput` to keep this behavior.
+- Removed `PackageBuilder` and `PackageBuildActions` classes. Use the new
+  magic placeholder files instead (see new features section for this release).
 
 The following changes are technically breaking but should not impact most
 clients:

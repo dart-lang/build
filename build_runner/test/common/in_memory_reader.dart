@@ -4,15 +4,17 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/asset/reader.dart' show RunnerAssetReader;
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 
-class InMemoryRunnerAssetReader extends InMemoryAssetReader
-    implements RunnerAssetReader {
+class InMemoryRunnerAssetReader extends InMemoryAssetReader {
   InMemoryRunnerAssetReader(
       [Map<AssetId, dynamic> sourceAssets, String rootPackage])
       : super(sourceAssets: sourceAssets, rootPackage: rootPackage);
+
+  InMemoryRunnerAssetReader.shareAssetCache(Map<AssetId, List<int>> assetCache,
+      {String rootPackage})
+      : super.shareAssetCache(assetCache, rootPackage: rootPackage);
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) {

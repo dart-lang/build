@@ -3,22 +3,25 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_compilers/build_compilers.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
-import 'package:shelf/shelf_io.dart' as shelf_io;
 
-Future main() async {
-  var graph = new PackageGraph.forThisPackage();
+Future main(List<String> args) async {
   var builders = [
-    applyToRoot(new TestBootstrapBuilder(), inputs: ['test/**_test.dart']),
-    applyToRoot(new ThrowingBuilder()),
+    apply('e2e_example|throwing_builder', [(_) => new ThrowingBuilder()],
+        toRoot(),
+        hideOutput: true),
+    apply('build_test|test_bootstrap', [(_) => new TestBootstrapBuilder()],
+        toRoot(),
+        hideOutput: true,
+        defaultGenerateFor:
+            const InputSet(include: const ['test/**_test.dart'])),
     apply(
-        'build_compilers',
-        'ddc',
+        'build_web_compilers|ddc',
         [
           (_) => new ModuleBuilder(),
           (_) => new UnlinkedSummaryBuilder(),
@@ -26,30 +29,16 @@ Future main() async {
           (_) => new DevCompilerBuilder()
         ],
         toAllPackages(),
-        isOptional: true),
-    applyToRoot(new DevCompilerBootstrapBuilder(),
-        inputs: ['web/**.dart', 'test/**.browser_test.dart'])
+        isOptional: true,
+        hideOutput: true),
+    apply('build_web_compilers|entrypoint',
+        [(_) => new WebEntrypointBuilder(WebCompiler.DartDevc)], toRoot(),
+        hideOutput: true,
+        defaultGenerateFor: const InputSet(
+            include: const ['web/**', 'test/**.browser_test.dart']))
   ];
-  var buildActions = createBuildActions(graph, builders);
 
-  var serveHandler = await watch(
-    buildActions,
-    deleteFilesByDefault: true,
-    writeToCache: true,
-  );
-
-  var server =
-      await shelf_io.serve(serveHandler.handlerFor('web'), 'localhost', 8080);
-  var testServer =
-      await shelf_io.serve(serveHandler.handlerFor('test'), 'localhost', 8081);
-
-  await serveHandler.currentBuild;
-  stderr.writeln('Serving `web` at http://localhost:8080/');
-  stderr.writeln('Serving `test` at http://localhost:8081/');
-
-  await serveHandler.buildResults.drain();
-  await server.close();
-  await testServer.close();
+  await run(args, builders);
 }
 
 class ThrowingBuilder extends Builder {

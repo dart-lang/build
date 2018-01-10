@@ -16,8 +16,8 @@ dependency_overrides:
     path: ../build
   build_barback:
     path: ../build_barback
-  build_compilers:
-    path: ../build_compilers
+  build_web_compilers:
+    path: ../build_web_compilers
   build_config:
     path: ../build_config
   build_runner:
