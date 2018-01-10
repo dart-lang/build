@@ -174,7 +174,9 @@ void main() {
               extraWork: (buildStep, _) => buildStep.canRead(copyId))),
           applyToRoot(new TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.a'))),
-          applyToRoot(new ExistsBuilder(copyId, inputExtension: '.a')),
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.exists', from: '.a'),
+              build: checkCanRead(copyId))),
         ];
         await testBuilders(builders, {
           'a|lib/file.a': 'a',
@@ -189,22 +191,27 @@ void main() {
       test('asset is deleted mid-build, use cached canRead result', () async {
         var aTxtId = new AssetId('a', 'lib/file.a');
         var ready = new Completer();
-        var firstBuilder = new ExistsBuilder(aTxtId, inputExtension: 'a');
+        var firstBuilder = new TestBuilder(
+            buildExtensions: appendExtension('.exists', from: '.a'),
+            build: checkCanRead(aTxtId));
         var writer = new InMemoryRunnerAssetWriter();
         var reader = new InMemoryRunnerAssetReader.shareAssetCache(
             writer.assets,
             rootPackage: 'a');
         var builders = [
           applyToRoot(firstBuilder),
-          applyToRoot(new ExistsBuilder(aTxtId,
-              waitFor: ready.future, inputExtension: 'b')),
+          applyToRoot(new TestBuilder(
+            buildExtensions: appendExtension('.exists', from: '.b'),
+            build: (_, __) => ready.future,
+            extraWork: checkCanRead(aTxtId),
+          )),
         ];
 
         // After the first builder runs, delete the asset from the reader and
         // allow the 2nd builder to run.
         //
         // ignore: unawaited_futures
-        firstBuilder.hasRan.then((_) {
+        firstBuilder.buildsCompleted.first.then((_) {
           reader.assets.remove(aTxtId);
           ready.complete();
         });
@@ -341,15 +348,10 @@ void main() {
       test('handles mixed hidden and non-hidden outputs', () async {
         await testBuilders(
             [
-              apply('', [(_) => new TestBuilder()], toRoot(),
-                  hideOutput: false),
-              apply(
-                  '',
-                  [
-                    (_) => new TestBuilder(
-                        buildExtensions: appendExtension('.hiddencopy'))
-                  ],
-                  toRoot(),
+              applyToRoot(new TestBuilder()),
+              applyToRoot(
+                  new TestBuilder(
+                      buildExtensions: appendExtension('.hiddencopy')),
                   hideOutput: true),
             ],
             {'a|lib/a.txt': 'a'},
@@ -358,6 +360,23 @@ void main() {
               r'$$a|lib/a.txt.hiddencopy': 'a',
               r'$$a|lib/a.txt.copy.hiddencopy': 'a',
               r'a|lib/a.txt.copy': 'a',
+            });
+      });
+
+      test('disallows reading hidden outputs to create a non-hidden output',
+          () async {
+        await testBuilders(
+            [
+              applyToRoot(new TestBuilder(), hideOutput: true),
+              applyToRoot(new TestBuilder(
+                  buildExtensions: appendExtension('.clone'),
+                  build: checkCanRead(makeAssetId('a|lib/a.txt.copy'))))
+            ],
+            {'a|lib/a.txt': 'a'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$a|lib/a.txt.copy': 'a',
+              r'a|lib/a.txt.clone': 'false',
             });
       });
 

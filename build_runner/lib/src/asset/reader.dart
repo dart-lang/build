@@ -54,8 +54,14 @@ class SingleStepReader implements DigestAssetReader {
   final String _primaryPackage;
   final RunPhaseForInput _runPhaseForInput;
 
+  /// Whether the action using this reader writes to the generated directory.
+  ///
+  /// Actions which do not hide their outptus may not read assets produced by
+  /// actions which do hide their outputs.
+  final bool _outputsHidden;
+
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage, this._runPhaseForInput);
+      this._outputsHidden, this._primaryPackage, this._runPhaseForInput);
 
   Set<AssetId> get assetsRead => _assetsRead;
 
@@ -73,7 +79,9 @@ class SingleStepReader implements DigestAssetReader {
       return false;
     }
     if (node.isGenerated) {
-      return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+      final generatedNode = node as GeneratedAssetNode;
+      return generatedNode.phaseNumber < _phaseNumber &&
+          (_outputsHidden || !generatedNode.isHidden);
     }
     return node.isReadable;
   }

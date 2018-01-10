@@ -13,12 +13,17 @@ typedef FutureOr BuildBehavior(
 /// Copy the input asset to all possible output assets.
 void _defaultBehavior(
         BuildStep buildStep, Map<String, List<String>> buildExtensions) =>
-    _copyToAll(buildStep, buildExtensions, (id) => id);
+    _copyToAll(buildStep, buildExtensions);
 
-/// Pass the input assetId through [readFrom] and duplicate the content of that
-/// asset into every matching output based on [buildExtensions].
+T _identity<T>(T value) => value;
+Future<String> _readAsset(BuildStep buildStep, AssetId assetId) =>
+    buildStep.readAsString(assetId);
+
+/// Pass the input assetId through [readFrom] and duplicate the results of
+/// [read] on that asset into every matching output based on [buildExtensions].
 void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
-    AssetId readFrom(AssetId assetId)) {
+    {AssetId readFrom(AssetId assetId): _identity,
+    Future<String> read(BuildStep buildStep, AssetId assetId): _readAsset}) {
   if (!buildExtensions.keys.any((e) => buildStep.inputId.path.endsWith(e))) {
     throw new ArgumentError('Only expected inputs with extension in '
         '${buildExtensions.keys.toList()} but got ${buildStep.inputId}');
@@ -29,8 +34,7 @@ void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
       final newPath = _replaceSuffix(
           buildStep.inputId.path, inputExtension, outputExtension);
       final id = new AssetId(buildStep.inputId.package, newPath);
-      buildStep.writeAsString(
-          id, buildStep.readAsString(readFrom(buildStep.inputId)));
+      buildStep.writeAsString(id, read(buildStep, readFrom(buildStep.inputId)));
     }
   }
 }
@@ -38,7 +42,16 @@ void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
 /// A build behavior which reads [assetId] and copies it's content into every
 /// output.
 BuildBehavior copyFrom(AssetId assetId) => (buildStep, buildExtensions) =>
-    _copyToAll(buildStep, buildExtensions, (_) => assetId);
+    _copyToAll(buildStep, buildExtensions, readFrom: (_) => assetId);
+
+/// A build behavior which writes either 'true' or 'false' depending on whether
+/// [assetId] can be read.
+BuildBehavior checkCanRead(AssetId assetId) =>
+    (BuildStep buildStep, Map<String, List<String>> buildExtensions) =>
+        _copyToAll(buildStep, buildExtensions,
+            readFrom: (_) => assetId,
+            read: (buildStep, assetId) async =>
+                '${await buildStep.canRead(assetId)}');
 
 /// A [Builder.buildExtensions] which operats on assets ending in [from] and
 /// creates outputs with [postFix] appended as the extension.
@@ -66,9 +79,15 @@ class TestBuilder implements Builder {
 
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
-  /// Events are added at the top of the [build] method.
+  /// Events are added at the start of the [build] method.
   final _buildInputsController = new StreamController<AssetId>.broadcast();
   Stream<AssetId> get buildInputs => _buildInputsController.stream;
+
+  /// A stream of all the [BuildStep.inputId]s that are completed.
+  ///
+  /// Events are added at the end of the [build] method.
+  final _buildsCompletedController = new StreamController<AssetId>.broadcast();
+  Stream<AssetId> get buildsCompleted => _buildsCompletedController.stream;
 
   TestBuilder({
     Map<String, List<String>> buildExtensions,
@@ -85,6 +104,7 @@ class TestBuilder implements Builder {
     _buildInputsController.add(buildStep.inputId);
     await _build(buildStep, buildExtensions);
     if (_extraWork != null) await _extraWork(buildStep, buildExtensions);
+    _buildsCompletedController.add(buildStep.inputId);
   }
 }
 
