@@ -107,6 +107,8 @@ File _fileFor(Directory outputDir, AssetId id) {
 /// This only exists as a hack until we have something like
 /// https://github.com/dart-lang/build/issues/508.
 Future<Null> _createMissingTestHtmlFiles(String outputDir) async {
+  if (!await new Directory(p.join(outputDir, 'test')).exists()) return;
+
   var dartBrowserTestSuffix = '_test.dart.browser_test.dart';
   var htmlTestSuffix = '_test.html';
   var dartFiles =
