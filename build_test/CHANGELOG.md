@@ -1,3 +1,9 @@
+## 0.9.5-dev
+
+- Deprecate `CopyBuilder` in favor of `TestBuilder` which takes closures to
+  change behavior rather than adding configuration for every possible
+  modification.
+
 ## 0.9.4
 
 - Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the

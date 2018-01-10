@@ -135,7 +135,8 @@ void main() {
     group('with buildActions', () {
       final buildActions = [
         new BuildAction(
-            new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
+            new TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.txt')),
             'foo',
             targetSources: const InputSet(exclude: const ['excluded.txt']))
       ];
@@ -286,7 +287,7 @@ void main() {
     test('overlapping build actions cause an error', () async {
       expect(
           () => AssetGraph.build(
-              new List.filled(2, new BuildAction(new CopyBuilder(), 'foo')),
+              new List.filled(2, new BuildAction(new TestBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
               new Set(),
               fooPackageGraph,

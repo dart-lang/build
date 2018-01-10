@@ -25,7 +25,7 @@ import '../common/package_graphs.dart';
 void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyABuildApplication = applyToRoot(
-      new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'));
+      new TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final defaultBuilderOptions = const BuilderOptions(const {});
   InMemoryRunnerAssetWriter writer;
 
@@ -321,7 +321,7 @@ a:file://fake/pkg/path
       test('rebuilds on file updates during first build', () async {
         var blocker = new Completer<Null>();
         var buildAction =
-            applyToRoot(new CopyBuilder(blockUntil: blocker.future));
+            applyToRoot(new TestBuilder(extraWork: (_, __) => blocker.future));
         var buildState =
             await startWatch([buildAction], {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -372,8 +372,8 @@ a:file://different/fake/pkg/path
       test('edits propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(
-              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy')))
         ];
 
         var buildState =
@@ -398,8 +398,8 @@ a:file://different/fake/pkg/path
       test('adds propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(
-              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy')))
         ];
 
         var buildState =
@@ -429,8 +429,8 @@ a:file://different/fake/pkg/path
       test('deletes propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(
-              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy')))
         ];
 
         var buildState = await startWatch(
@@ -470,8 +470,8 @@ a:file://different/fake/pkg/path
       test('deleted generated outputs are regenerated', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(
-              new CopyBuilder(inputExtension: '.copy', extension: 'copy.copy'))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy')))
         ];
 
         var buildState =
@@ -506,10 +506,9 @@ a:file://different/fake/pkg/path
     group('secondary dependency', () {
       test('of an output file is edited', () async {
         var buildActions = [
-          applyToRoot(new CopyBuilder(
-              inputExtension: '.a',
-              extension: 'a.copy',
-              copyFromAsset: makeAssetId('a|web/file.b')))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.a'),
+              build: copyFrom(makeAssetId('a|web/file.b'))))
         ];
 
         var buildState = await startWatch(
@@ -531,12 +530,11 @@ a:file://different/fake/pkg/path
           'of an output which is derived from another generated file is edited',
           () async {
         var buildActions = [
-          applyToRoot(
-              new CopyBuilder(inputExtension: '.a', extension: 'a.copy')),
-          applyToRoot(new CopyBuilder(
-              copyFromAsset: makeAssetId('a|web/file.b'),
-              inputExtension: '.a.copy',
-              extension: 'a.copy.copy'))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.a'))),
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.a.copy'),
+              build: copyFrom(makeAssetId('a|web/file.b'))))
         ];
 
         var buildState = await startWatch(

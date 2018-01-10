@@ -20,8 +20,6 @@ import '../common/package_graphs.dart';
 void main() {
   group('ServeHandler', () {
     InMemoryRunnerAssetWriter writer;
-    CopyBuilder copyBuilder;
-    BuilderApplication copyABuildApplication;
 
     setUp(() async {
       _terminateServeController = new StreamController();
@@ -30,9 +28,6 @@ void main() {
 # Fake packages file
 a:file://fake/pkg/path
 ''');
-
-      copyBuilder = new CopyBuilder();
-      copyABuildApplication = applyToRoot(copyBuilder);
     });
 
     tearDown(() async {
@@ -42,7 +37,7 @@ a:file://fake/pkg/path
 
     test('does basic builds', () async {
       var handler = await createHandler(
-          [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
+          [applyToRoot(new TestBuilder())], {'a|web/a.txt': 'a'}, writer);
       var results = new StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
@@ -56,11 +51,15 @@ a:file://fake/pkg/path
     });
 
     test('blocks serving files until the build is done', () async {
+      var blockContainer = <Future>[];
       var buildBlocker1 = new Completer();
-      copyBuilder.blockUntil = buildBlocker1.future;
+      blockContainer.add(buildBlocker1.future);
 
-      var handler = await createHandler(
-          [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
+      var handler = await createHandler([
+        applyToRoot(new TestBuilder(extraWork: (_, __) => blockContainer.first))
+      ], {
+        'a|web/a.txt': 'a'
+      }, writer);
       var webHandler = handler.handlerFor('web');
       var results = new StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
@@ -87,7 +86,7 @@ a:file://fake/pkg/path
       });
 
       /// Make an edit to force another build, and we should block again.
-      copyBuilder.blockUntil = buildBlocker2.future;
+      blockContainer[0] = buildBlocker2.future;
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       FakeWatcher.notifyWatchers(new WatchEvent(
           ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));

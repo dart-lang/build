@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
+@Deprecated('Use TestBuilder instead')
 class CopyBuilder implements Builder {
   /// If > 1, then multiple copies will be output, using the copy number as an
   /// additional extension.
