@@ -16,9 +16,9 @@ main() {
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
-main() async {
-  await build(
-    [applyToRoot(new CopyBuilder())], deleteFilesByDefault: true);
+main(List<String> args) async {
+  await run(
+      args, [applyToRoot(new CopyBuilder())]);
 }
 ''';
       setUp(() async {
@@ -39,7 +39,7 @@ main() async {
         await pubGet('a');
 
         // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
           d.dir('web', [d.file('a.txt.copy', 'a')])
@@ -53,7 +53,8 @@ main() async {
         ]).create();
 
         // Run a build and validate the full rebuild output.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart',
+            args: ['build', '--delete-conflicting-outputs']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
             result.stdout,
@@ -61,6 +62,18 @@ main() async {
                 'build script update'));
         await d.dir('a', [
           d.dir('web', [d.file('a.txt.copy', 'a')])
+        ]).validate();
+      });
+
+      test('--output creates a merged directory', () async {
+        // Run a build and validate the full rebuild output.
+        var result = await runDart('a', 'tool/build.dart',
+            args: ['build', '--output', 'build']);
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        await d.dir('a', [
+          d.dir('build', [
+            d.dir('web', [d.file('a.txt.copy', 'a')])
+          ])
         ]).validate();
       });
     });
@@ -97,7 +110,7 @@ main() async {
         await pubGet('a');
 
         // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
           d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
@@ -111,7 +124,7 @@ main() async {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 1 outputs'));
         await d.dir('a', [
@@ -127,7 +140,7 @@ main() async {
         aTxtFile.deleteSync();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 1 outputs'));
         await d.dir('a', [
@@ -144,7 +157,7 @@ main() async {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 0 outputs'));
         await d.dir('a', [
@@ -159,7 +172,7 @@ main() async {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 0 outputs'));
         await d.dir('a', [
@@ -213,7 +226,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         await pubGet('a');
 
         // Run a build and validate the output.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 0 outputs'));
         await d.dir('a', [
@@ -228,7 +241,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         ]).create();
 
         // Run a new build and validate.
-        var result = await runDart('a', 'tool/build.dart');
+        var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 1 outputs'));
         await d.dir('a', [
@@ -272,7 +285,7 @@ main() async {
 
       await pubGet('a');
 
-      var result = await runDart('a', 'tool/build.dart');
+      var result = await runDart('a', 'tool/build.dart', args: ['build']);
 
       expect(result.exitCode, isNot(0),
           reason: 'build should fail due to conflicting outputs');
