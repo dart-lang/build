@@ -4,8 +4,8 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
-import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
@@ -26,26 +26,12 @@ Future<Null> main(List<String> args) async {
     return;
   }
 
-  await ensureBuildScript();
-  var dart = Platform.resolvedExecutable;
+  var buildScript = await generateBuildScript();
+  var scriptFile = new File(scriptLocation)..createSync(recursive: true);
+  scriptFile.writeAsStringSync(buildScript);
 
-  // The actual args we will pass to the generated entrypoint script.
-  final innerArgs = [scriptLocation]..addAll(args);
-
-  // For commands that support the `assume-tty` flag, we want to force the right
-  // setting unless it was explicitly provided.
-  var command = commandRunner.commands[commandName];
-  var commandParser = command.argParser;
-  if (stdioType(stdin) == StdioType.TERMINAL &&
-      commandParser.options.containsKey('assume-tty') &&
-      !args.any((a) => a.contains('assume-tty'))) {
-    // We want to insert this as the first arg after the command, trailing args
-    // might get forwarded elsewhere (such as package:test).
-    innerArgs.insert(innerArgs.indexOf(commandName) + 1, '--assume-tty');
-  }
-
-  var buildRun = await new ProcessManager().spawn(dart, innerArgs);
-  await buildRun.exitCode;
-  await ProcessManager.terminateStdIn();
+  var exitPort = new ReceivePort();
+  await Isolate.spawnUri(scriptFile.uri, args, null, onExit: exitPort.sendPort);
+  await exitPort.first;
   await logListener.cancel();
 }
