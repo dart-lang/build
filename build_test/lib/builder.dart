@@ -77,4 +77,7 @@ class _WrappedBuildStep implements BuildStep {
 
   @override
   findAssets(_) => _delegate.findAssets(_);
+
+  @override
+  digest(_) => _delegate.digest(_);
 }

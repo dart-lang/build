@@ -78,10 +78,9 @@ class SingleStepReader implements AssetReader {
   }
 
   @override
-  Future<Digest> digest(AssetId id) async {
+  Future<Digest> digest(AssetId id) {
     if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureAssetIsBuilt(id);
-    return _ensureDigest(id);
+    return toFuture(doAfter(_ensureAssetIsBuilt(id), (_) => _ensureDigest(id)));
   }
 
   @override
@@ -117,16 +116,32 @@ class SingleStepReader implements AssetReader {
     }
   }
 
-  Future<Null> _ensureAssetIsBuilt(AssetId id) async {
+  FutureOr<dynamic> _ensureAssetIsBuilt(AssetId id) {
     if (_runPhaseForInput == null) return null;
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
-      await _runPhaseForInput(node.phaseNumber, node.primaryInput);
+      return _runPhaseForInput(node.phaseNumber, node.primaryInput);
     }
+    return null;
   }
 
-  Future<Digest> _ensureDigest(AssetId id) async {
+  FutureOr<Digest> _ensureDigest(AssetId id) {
     var node = _assetGraph.get(id);
-    return node.lastKnownDigest ??= await _delegate.digest(id);
+    if (node?.lastKnownDigest != null) return node.lastKnownDigest;
+    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
   }
 }
+
+/// Invokes [callback] and returns the result as soon as possible. This will
+/// happen synchronously if [value] is available.
+FutureOr<S> doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
+  if (value is Future<T>) {
+    return value.then(callback);
+  } else {
+    return callback(value as T);
+  }
+}
+
+/// Converts [value] to a [Future] if it is not already.
+Future<T> toFuture<T>(FutureOr<T> value) =>
+    value is Future<T> ? value : new Future.value(value);

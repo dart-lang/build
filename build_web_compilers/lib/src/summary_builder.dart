@@ -143,11 +143,13 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
   // Add all the files to include in the linked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
 
-  /// Add the [Input]s with [Digest]s.
-  await Future.wait(allAssetIds.map((input) async {
-    request.inputs.add(new Input()
-      ..digest = (await buildStep.digest(input)).bytes
-      ..path = scratchSpace.fileFor(input).path);
+  /// Add the [Input]s with `Digest`s.
+  await Future.wait(allAssetIds.map((input) {
+    return buildStep.digest(input).then((digest) {
+      request.inputs.add(new Input()
+        ..digest = digest.bytes
+        ..path = scratchSpace.fileFor(input).path);
+    });
   }));
 
   var analyzer = await buildStep.fetchResource(analyzerDriverResource);
