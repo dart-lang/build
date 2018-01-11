@@ -1,3 +1,7 @@
+## 0.7.6-dev
+
+- Update to package:build version `0.12.0`.
+
 ## 0.7.5+1
 
 - Bug fix for using the `--output` flag when you have no `test` directory.

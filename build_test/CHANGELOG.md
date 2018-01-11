@@ -1,3 +1,7 @@
+## 0.9.5-dev
+
+- Update to package:build version `0.12.0`.
+
 ## 0.9.4
 
 - Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
