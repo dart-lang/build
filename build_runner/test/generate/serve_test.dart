@@ -51,12 +51,11 @@ a:file://fake/pkg/path
     });
 
     test('blocks serving files until the build is done', () async {
-      var blockContainer = <Future>[];
       var buildBlocker1 = new Completer();
-      blockContainer.add(buildBlocker1.future);
+      var nextBuildBlocker = buildBlocker1.future;
 
       var handler = await createHandler([
-        applyToRoot(new TestBuilder(extraWork: (_, __) => blockContainer.first))
+        applyToRoot(new TestBuilder(extraWork: (_, __) => nextBuildBlocker))
       ], {
         'a|web/a.txt': 'a'
       }, writer);
@@ -86,7 +85,7 @@ a:file://fake/pkg/path
       });
 
       /// Make an edit to force another build, and we should block again.
-      blockContainer[0] = buildBlocker2.future;
+      nextBuildBlocker = buildBlocker2.future;
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       FakeWatcher.notifyWatchers(new WatchEvent(
           ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));

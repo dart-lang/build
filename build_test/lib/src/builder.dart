@@ -6,13 +6,19 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
+/// Overridable behavior for a [Builder.build] method.
+typedef FutureOr BuildBehavior(
+    BuildStep buildStep, Map<String, List<String>> buildExtensions);
+
 /// Copy the input asset to all possible output assets.
 void _defaultBehavior(
         BuildStep buildStep, Map<String, List<String>> buildExtensions) =>
     _copyToAll(buildStep, buildExtensions, (id) => id);
 
+/// Pass the input assetId through [readFrom] and duplicate the content of that
+/// asset into every matching output based on [buildExtensions].
 void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
-    AssetId Function(AssetId) readFrom) {
+    AssetId readFrom(AssetId assetId)) {
   if (!buildExtensions.keys.any((e) => buildStep.inputId.path.endsWith(e))) {
     throw new ArgumentError('Only expected inputs with extension in '
         '${buildExtensions.keys.toList()} but got ${buildStep.inputId}');
@@ -29,11 +35,15 @@ void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
   }
 }
 
-FutureOr Function(BuildStep, Map<String, List<String>>) copyFrom(
-        AssetId assetId) =>
-    (buildStep, buildExtensions) =>
-        _copyToAll(buildStep, buildExtensions, (_) => assetId);
+/// A build behavior which reads [assetId] and copies it's content into every
+/// output.
+BuildBehavior copyFrom(AssetId assetId) => (buildStep, buildExtensions) =>
+    _copyToAll(buildStep, buildExtensions, (_) => assetId);
 
+/// A [Builder.buildExtensions] which operats on assets ending in [from] and
+/// creates outputs with [postFix] appended as the extension.
+///
+/// If [numCopies] is greater than 1 the postFix will also get a `.0`, `.1`...
 Map<String, List<String>> appendExtension(String postFix,
         {String from: '', int numCopies: 1}) =>
     {
@@ -51,8 +61,8 @@ class TestBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
 
-  final FutureOr Function(BuildStep, Map<String, List<String>>) _build;
-  final FutureOr Function(BuildStep, Map<String, List<String>>) _extraWork;
+  final BuildBehavior _build;
+  final BuildBehavior _extraWork;
 
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
@@ -62,8 +72,8 @@ class TestBuilder implements Builder {
 
   TestBuilder({
     Map<String, List<String>> buildExtensions,
-    FutureOr Function(BuildStep, Map<String, List<String>>) build,
-    FutureOr Function(BuildStep, Map<String, List<String>>) extraWork,
+    BuildBehavior build,
+    BuildBehavior extraWork,
   })
       : buildExtensions = buildExtensions ?? appendExtension('.copy'),
         _build = build ?? _defaultBehavior,
@@ -71,7 +81,7 @@ class TestBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    if (buildStep.inputId.path.endsWith(r'$')) return;
+    if (!await buildStep.canRead(buildStep.inputId)) return;
     _buildInputsController.add(buildStep.inputId);
     await _build(buildStep, buildExtensions);
     if (_extraWork != null) await _extraWork(buildStep, buildExtensions);
