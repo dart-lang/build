@@ -1,3 +1,7 @@
+## 0.7.5+1
+
+- Bug fix for using the `--output` flag when you have no `test` directory.
+
 ## 0.7.5
 
 - Add more human friendly duration printing.
