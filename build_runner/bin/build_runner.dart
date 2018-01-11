@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
@@ -31,7 +32,8 @@ Future<Null> main(List<String> args) async {
   scriptFile.writeAsStringSync(buildScript);
 
   var exitPort = new ReceivePort();
-  await Isolate.spawnUri(scriptFile.uri, args, null, onExit: exitPort.sendPort);
+  await Isolate.spawnUri(new Uri.file(p.absolute(scriptLocation)), args, null,
+      onExit: exitPort.sendPort);
   await exitPort.first;
   await logListener.cancel();
 }
