@@ -73,6 +73,8 @@ class SingleStepReader implements DigestAssetReader {
   /// builder may behave differently on the next build.
   Iterable<Glob> get globsRan => _globsRan;
 
+  /// Checks whether [id] can be read by this step - attempting to build the
+  /// asset if necessary.
   Future<bool> _isReadable(AssetId id) {
     _assetsRead.add(id);
     var node = _assetGraph.get(id);
@@ -83,6 +85,8 @@ class SingleStepReader implements DigestAssetReader {
     return _isReadableNode(node);
   }
 
+  /// Checks whether [node] can be read by this step - attempting to build the
+  /// asset if necessary.
   Future<bool> _isReadableNode(AssetNode node) async {
     if (node.isGenerated) {
       final generatedNode = node as GeneratedAssetNode;
