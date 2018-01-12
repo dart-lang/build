@@ -380,6 +380,25 @@ void main() {
             });
       });
 
+      test(
+          'disallows reading hidden outputs in dep to create a non-hidden output',
+          () async {
+        await testBuilders(
+            [
+              apply('b|hidden', [(_) => new TestBuilder()], toPackage('b'),
+                  hideOutput: true),
+              applyToRoot(new TestBuilder(
+                  buildExtensions: appendExtension('.clone'),
+                  build: writeCanRead(makeAssetId('b|lib/b.txt.copy'))))
+            ],
+            {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$b|lib/b.txt.copy': 'b',
+              r'a|lib/a.txt.clone': 'false',
+            });
+      });
+
       test('Will not delete from non-root packages', () async {
         var writer = new InMemoryRunnerAssetWriter()
           ..onDelete = (AssetId assetId) {
