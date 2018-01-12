@@ -214,9 +214,7 @@ class _ResolveSourceBuilder<T> implements Builder {
   Future<Null> build(BuildStep buildStep) async {
     if (onDone.isCompleted) return;
     var result = await _action(buildStep.resolver);
-    if (!onDone.isCompleted && _resolverFor == buildStep.inputId) {
-      // With resolveSources (plural), this function is called multiple times
-      // but we only care about it once to get a handle to "Resolver".
+    if (_resolverFor == buildStep.inputId) {
       onDone.complete(result);
     }
     await _tearDown;
