@@ -46,7 +46,7 @@ BuildBehavior copyFrom(AssetId assetId) => (buildStep, buildExtensions) =>
 
 /// A build behavior which writes either 'true' or 'false' depending on whether
 /// [assetId] can be read.
-BuildBehavior checkCanRead(AssetId assetId) =>
+BuildBehavior writeCanRead(AssetId assetId) =>
     (BuildStep buildStep, Map<String, List<String>> buildExtensions) =>
         _copyToAll(buildStep, buildExtensions,
             readFrom: (_) => assetId,

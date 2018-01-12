@@ -176,7 +176,7 @@ void main() {
               buildExtensions: appendExtension('.copy', from: '.a'))),
           applyToRoot(new TestBuilder(
               buildExtensions: appendExtension('.exists', from: '.a'),
-              build: checkCanRead(copyId))),
+              build: writeCanRead(copyId))),
         ];
         await testBuilders(builders, {
           'a|lib/file.a': 'a',
@@ -193,7 +193,7 @@ void main() {
         var ready = new Completer();
         var firstBuilder = new TestBuilder(
             buildExtensions: appendExtension('.exists', from: '.a'),
-            build: checkCanRead(aTxtId));
+            build: writeCanRead(aTxtId));
         var writer = new InMemoryRunnerAssetWriter();
         var reader = new InMemoryRunnerAssetReader.shareAssetCache(
             writer.assets,
@@ -203,7 +203,7 @@ void main() {
           applyToRoot(new TestBuilder(
             buildExtensions: appendExtension('.exists', from: '.b'),
             build: (_, __) => ready.future,
-            extraWork: checkCanRead(aTxtId),
+            extraWork: writeCanRead(aTxtId),
           )),
         ];
 
@@ -370,7 +370,7 @@ void main() {
               applyToRoot(new TestBuilder(), hideOutput: true),
               applyToRoot(new TestBuilder(
                   buildExtensions: appendExtension('.clone'),
-                  build: checkCanRead(makeAssetId('a|lib/a.txt.copy'))))
+                  build: writeCanRead(makeAssetId('a|lib/a.txt.copy'))))
             ],
             {'a|lib/a.txt': 'a'},
             packageGraph: packageGraph,
