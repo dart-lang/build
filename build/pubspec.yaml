@@ -23,5 +23,7 @@ dev_dependencies:
 dependency_overrides:
   build_barback:
     path: ../build_barback
+  build_config:
+    path: ../build_config
   build_test:
     path: ../build_test
