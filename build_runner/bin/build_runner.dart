@@ -50,7 +50,8 @@ const _generateCommand = 'generate-build-script';
 
 class _GenerateBuildScript extends Command {
   @override
-  final description = 'Generate a script to run builds and print the file path';
+  final description = 'Generate a script to run builds and print the file path '
+      'with no other logging. Useful for wrapping builds with other tools.';
 
   @override
   final name = _generateCommand;
