@@ -1,6 +1,9 @@
 ## 0.7.6-dev
 
 - Update to package:build version `0.12.0`.
+- Removed the `DigestAssetReader` interface, the `digest` method has now moved
+  to the core `AssetReader` interface. We are treating this as a non-breaking
+  change because there are no known users of this interface.
 
 ## 0.7.5+1
 
@@ -96,8 +99,6 @@ clients:
 - Removed `InputSet`.
 - PackageGraph instances enforce that the `root` node is the only node with
   `isRoot == true`.
-- Removed the `DigestAssetReader` interface, the `digest` method has now moved
-  to the core `AssetReader` interface.
 
 ## 0.6.1
 
