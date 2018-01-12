@@ -36,6 +36,7 @@ Future<T> resolveSource<T>(
     inputId.package,
     action,
     resolver: resolver,
+    resolverFor: inputId,
     tearDown: tearDown,
   );
 }
@@ -103,6 +104,9 @@ Future<T> resolveSource<T>(
 /// }
 /// ```
 ///
+/// May provide [resolverFor] to return the [Resolver] for the asset provided,
+/// otherwise defaults to the first one in [inputs].
+///
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
 /// be provided to map files not visible to the current package's runtime.
@@ -110,6 +114,7 @@ Future<T> resolveSources<T>(
   Map<String, String> inputs,
   FutureOr<T> action(Resolver resolver), {
   PackageResolver resolver,
+  String resolverFor,
   String rootPackage,
   Future<Null> tearDown,
 }) {
@@ -121,6 +126,7 @@ Future<T> resolveSources<T>(
     rootPackage ?? new AssetId.parse(inputs.keys.first).package,
     action,
     resolver: resolver,
+    resolverFor: new AssetId.parse(resolverFor ?? inputs.keys.first),
     tearDown: tearDown,
   );
 }
@@ -139,6 +145,7 @@ Future<T> resolveAsset<T>(
     inputId.package,
     action,
     resolver: resolver,
+    resolverFor: inputId,
     tearDown: tearDown,
   );
 }
@@ -153,11 +160,16 @@ Future<T> _resolveAssets<T>(
   String rootPackage,
   FutureOr<T> action(Resolver resolver), {
   PackageResolver resolver,
+  AssetId resolverFor,
   Future<Null> tearDown,
 }) async {
   final syncResolver = await (resolver ?? PackageResolver.current).asSync;
   final assetReader = new PackageAssetReader(syncResolver, rootPackage);
-  final resolveBuilder = new _ResolveSourceBuilder(action, tearDown);
+  final resolveBuilder = new _ResolveSourceBuilder(
+    action,
+    resolverFor,
+    tearDown,
+  );
   final inputAssets = <AssetId, String>{};
   await Future.wait(inputs.keys.map((String rawAssetId) async {
     final assetId = new AssetId.parse(rawAssetId);
@@ -192,17 +204,17 @@ typedef FutureOr<T> _ResolverAction<T>(Resolver resolver);
 class _ResolveSourceBuilder<T> implements Builder {
   final _ResolverAction<T> _action;
   final Future _tearDown;
+  final AssetId _resolverFor;
+
   final onDone = new Completer<T>();
 
-  _ResolveSourceBuilder(this._action, this._tearDown);
+  _ResolveSourceBuilder(this._action, this._resolverFor, this._tearDown);
 
   @override
   Future<Null> build(BuildStep buildStep) async {
     if (onDone.isCompleted) return;
     var result = await _action(buildStep.resolver);
-    if (!onDone.isCompleted) {
-      // With resolveSources (plural), this function is called multiple times
-      // but we only care about it once to get a handle to "Resolver".
+    if (_resolverFor == buildStep.inputId) {
       onDone.complete(result);
     }
     await _tearDown;
