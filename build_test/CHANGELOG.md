@@ -10,6 +10,11 @@
   this is technically a **BREAKING CHANGE**, as additional inputs will be
   matched for overzealous builders (like `CopyBuilder`).
 
+- Added `resolverFor` as an optional parameter to `resolveSources`. By default
+  a `Resolver` is returned for the _first_ asset provided; to modify that the
+  name of another asset may be provided. This is a **BREAKING CHANGE**, as
+  previously the last asset was used.
+
 ## 0.9.4
 
 - Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the

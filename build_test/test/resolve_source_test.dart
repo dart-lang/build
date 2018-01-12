@@ -67,6 +67,7 @@ void main() {
           ''',
         },
         (resolver) => resolver.findLibraryByName('example'),
+        resolverFor: mock,
       );
       final type = library.getType('ExamplePrime');
       expect(type, isNotNull);
