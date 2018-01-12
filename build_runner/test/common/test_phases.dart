@@ -87,6 +87,7 @@ Future<BuildResult> testBuilders(
   Map<String, BuildConfig> overrideBuildConfig,
   bool verbose: false,
 }) async {
+  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= new InMemoryRunnerAssetWriter();
   reader ??= new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph?.root?.name);
@@ -99,8 +100,6 @@ Future<BuildResult> testBuilders(
       reader.cacheBytesAsset(id, contents);
     }
   });
-
-  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
 
   var result = await build_impl.build(
     builders,

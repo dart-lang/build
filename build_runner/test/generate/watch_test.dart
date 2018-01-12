@@ -571,9 +571,10 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });
-  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets);
   packageGraph ??=
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
+  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+      rootPackage: packageGraph.root.name);
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   return watch_impl.watch(builders,

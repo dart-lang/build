@@ -118,9 +118,10 @@ Future<ServeHandler> createHandler(List<BuilderApplication> builders,
   await Future.wait(inputs.keys.map((serializedId) async {
     await writer.writeAsString(makeAssetId(serializedId), inputs[serializedId]);
   }));
-  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets);
   final packageGraph =
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
+  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+      rootPackage: packageGraph.root.name);
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   return watch_impl.watch(builders,
