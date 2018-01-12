@@ -32,5 +32,7 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
+  build_runner:
+    path: ../build_runner
   build_test:
     path: ../build_test
