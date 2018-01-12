@@ -19,7 +19,7 @@ void main() {
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
     expect(
       testBuilders(
-        [applyToRoot(new CopyBuilder())],
+        [applyToRoot(new TestBuilder())],
         {
           'a|lib/a.dart': '',
           'a|lib/a.dart.copy': '',
