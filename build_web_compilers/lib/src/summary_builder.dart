@@ -143,7 +143,7 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
   // Add all the files to include in the linked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
 
-  /// Add the [Input]s with `Digest`s.
+  // Add the [Input]s with `Digest`s.
   await Future.wait(allAssetIds.map((input) {
     return buildStep.digest(input).then((digest) {
       request.inputs.add(new Input()
