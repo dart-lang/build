@@ -18,7 +18,7 @@ import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
   await run(
-      args, [applyToRoot(new CopyBuilder())]);
+      args, [applyToRoot(new TestBuilder())]);
 }
 ''';
       setUp(() async {
@@ -270,9 +270,9 @@ import 'package:build_test/build_test.dart';
 
 main() async {
   await build([
-    applyToRoot(new CopyBuilder()),
-    applyToRoot(new CopyBuilder(
-        inputExtension: '.txt.copy', extension: 'txt.copy.copy')),
+    applyToRoot(new TestBuilder()),
+    applyToRoot(new TestBuilder(
+        buildExtensions: appendExtension('.copy', from: '.txt.copy'))),
   ]);
 }
 ''')

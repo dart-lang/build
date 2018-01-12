@@ -43,7 +43,7 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
-  build_test:
-    path: ../build_test
   build_config:
     path: ../build_config
+  build_test:
+    path: ../build_test

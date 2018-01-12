@@ -13,8 +13,10 @@ import '../common/common.dart';
 
 void main() {
   test('uses builder options', () async {
-    Builder copyBuilder(BuilderOptions options) => new CopyBuilder(
-        inputExtension: options.config['inputExtension'] as String ?? '');
+    Builder copyBuilder(BuilderOptions options) => new TestBuilder(
+        buildExtensions: replaceExtension(
+            options.config['inputExtension'] as String, '.copy'));
+
     final buildConfigs = parseBuildConfigs({
       'a': {
         'targets': {

@@ -38,7 +38,7 @@ main() {
     test('can track multiple actions', () async {
       await scopeClock(fakeClock, () async {
         var packages = ['a', 'b', 'c'];
-        var builder = new CopyBuilder();
+        var builder = new TestBuilder();
         var actions = packages.map((p) => new BuildAction(builder, p)).toList();
 
         for (var action in actions) {
