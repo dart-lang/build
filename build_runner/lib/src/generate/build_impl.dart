@@ -258,6 +258,7 @@ class BuildImpl {
       }
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
+        if (node.isHidden && !action.hideOutput) return;
         if (node.needsUpdate) {
           await _runLazyPhaseForInput(node.phaseNumber, node.isHidden,
               node.primaryInput, resourceManager);
