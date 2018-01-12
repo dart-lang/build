@@ -144,7 +144,7 @@ void checkBuild(BuildResult result,
 
   final unhiddenOutputs = <String, dynamic>{};
   final unhiddenAssets = new Set<AssetId>();
-  for (final id in outputs?.keys ?? const []) {
+  for (final String id in outputs?.keys ?? const []) {
     if (id.startsWith(r'$$')) {
       final unhidden = id.substring(2);
       unhiddenAssets.add(makeAssetId(unhidden));
