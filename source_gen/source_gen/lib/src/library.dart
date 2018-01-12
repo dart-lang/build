@@ -7,9 +7,11 @@ import 'package:analyzer/dart/ast/standard_resolution_map.dart';
 import 'package:analyzer/dart/element/element.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/resolver/scope.dart';
+import 'package:path/path.dart' as p;
 
 import 'constants/reader.dart';
 import 'type_checker.dart';
+import 'utils.dart';
 
 /// Result of finding an [annotation] on [element] through [LibraryReader].
 class AnnotatedElement {
@@ -68,6 +70,82 @@ class LibraryReader {
         yield new AnnotatedElement(new ConstantReader(annotation), element);
       }
     }
+  }
+
+  /// Returns a [Uri] from the current library to the one provided.
+  ///
+  /// If possible, a `package:` or `dart:` URL scheme will be used to reference
+  /// the library, falling back to relative paths if required (such as in the
+  /// `test` directory).
+  ///
+  /// The support [Uri.scheme]s are (others throw [ArgumentError]):
+  /// * `dart`
+  /// * `package`
+  /// * `asset`
+  ///
+  /// May throw [ArgumentError] if it is not possible to resolve a path.
+  Uri pathToUrl(dynamic toUrlOrString) {
+    final to = toUrlOrString is Uri
+        ? toUrlOrString
+        : Uri.parse(toUrlOrString as String);
+    if (to.scheme == 'dart') {
+      // Convert dart:core/map.dart to dart:core.
+      return normalizeDartUrl(to);
+    }
+    if (to.scheme == 'package') {
+      // Identity (no-op).
+      return to;
+    }
+    if (to.scheme == 'asset') {
+      // This is the same thing as a package: URL.
+      //
+      // i.e.
+      //   asset:foo/lib/foo.dart ===
+      //   package:foo/foo.dart
+      if (to.pathSegments.length > 1 && to.pathSegments[1] == 'lib') {
+        return assetToPackageUrl(to);
+      }
+      var from = element.source.uri;
+      if (from == null) {
+        throw new StateError('Current library has no source URL');
+      }
+      // Normalize (convert to an asset: URL).
+      from = normalizeUrl(from);
+      if (_isRelative(from, to)) {
+        if (from == to) {
+          // Edge-case: p.relative('a.dart', 'a.dart') == '.', but that is not
+          // a valid import URL in Dart source code.
+          return new Uri(path: to.pathSegments.last);
+        }
+        final relative = Uri.parse(p.relative(
+          to.toString(),
+          from: from.toString(),
+        ));
+        // We now have a URL like "../b.dart", but we just want "b.dart".
+        return relative.replace(
+          pathSegments: relative.pathSegments.skip(1),
+        );
+      }
+      throw new ArgumentError.value(to, 'to', 'Not relative to $from');
+    }
+    throw new ArgumentError.value(to, 'to', 'Cannot use scheme "${to.scheme}"');
+  }
+
+  /// Returns whether both [from] and [to] are in the same package and folder.
+  ///
+  /// For example these are considered relative:
+  /// * `asset:foo/test/foo.dart` and `asset:foo/test/bar.dart`.
+  ///
+  /// But these are not:
+  /// * `asset:foo/test/foo.dart` and `asset:foo/bin/bar.dart`.
+  /// * `asset:foo/test/foo.dart` and `asset:bar/test/foo.dart`.
+  static bool _isRelative(Uri from, Uri to) {
+    final fromSegments = from.pathSegments;
+    final toSegments = to.pathSegments;
+    return fromSegments.length >= 2 &&
+        toSegments.length >= 2 &&
+        fromSegments[0] == toSegments[0] &&
+        fromSegments[1] == toSegments[1];
   }
 
   /// All of the `class` elements in this library.

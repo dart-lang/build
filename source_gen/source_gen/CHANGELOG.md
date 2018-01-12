@@ -1,3 +1,8 @@
+## 0.7.4-dev
+
+* Added `LibraryReader.pathToUrl(Uri|String)`, which computes the `import` or
+  `export` path necessary to reach the provided URL from the current library.
+
 ## 0.7.3
 
 * Allow null and empty outputs form `GeneratorForAnnotation`.
