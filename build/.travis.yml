@@ -6,7 +6,8 @@ dart:
 dart_task:
   - test
   - dartfmt: sdk
-  - dartanalyzer: --fatal-infos --fatal-warnings .
+  # TODO: restore https://github.com/dart-lang/build/issues/842
+  - dartanalyzer: --fatal-warnings .
 
 matrix:
   exclude:
