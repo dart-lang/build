@@ -1,8 +1,14 @@
-## 0.9.5-dev
+## 0.10.0-dev
 
 - Deprecate `CopyBuilder` in favor of `TestBuilder` which takes closures to
   change behavior rather than adding configuration for every possible
   modification.
+
+- Added support for the special placeholder `{$lib/$test/$web}` assets
+  supported by the `build_runner` and `bazel_codegen` implementations of
+  `package:build`. For an example see `test/test_builder_test.dart`. Note that
+  this is technically a **BREAKING CHANGE**, as additional inputs will be
+  matched for overzealous builders (like `CopyBuilder`).
 
 ## 0.9.4
 

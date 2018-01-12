@@ -1,6 +1,10 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
+import 'dart:async';
+
+import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -45,4 +49,53 @@ void main() {
     await testBuilder(new GlobbingBuilder(new Glob('**.txt')), assets,
         rootPackage: 'a', outputs: expectedOutputs);
   });
+
+  group('can output special placeholder outpout files', () {
+    const placeholders = const ['lib', 'web', 'test'];
+
+    for (var dir in placeholders) {
+      test('using the special "$dir" sset', () async {
+        var assets = {
+          'a|data/1.txt': '1',
+          'a|data/2.txt': '2',
+          'a|data/3.txt': '3',
+        };
+
+        var outputs = {
+          'a|$dir/concat.txt': '1\n2\n3\n',
+        };
+
+        await testBuilder(
+          new _ConcatBuilder(dir),
+          assets,
+          rootPackage: 'a',
+          outputs: outputs,
+        );
+      });
+    }
+  });
+}
+
+/// Concatenates the contents of multiple text files into a single output.
+class _ConcatBuilder implements Builder {
+  final String _input;
+
+  _ConcatBuilder(this._input) {
+    buildExtensions = {
+      '\$$_input\$': ['concat.txt'],
+    };
+  }
+
+  @override
+  Future<Null> build(BuildStep buildStep) async {
+    final results = new StringBuffer();
+    await for (final asset in buildStep.findAssets(new Glob('data/*.txt'))) {
+      results.writeln(await buildStep.readAsString(asset));
+    }
+    final output = new AssetId(buildStep.inputId.package, '$_input/concat.txt');
+    await buildStep.writeAsString(output, results.toString());
+  }
+
+  @override
+  Map<String, List<String>> buildExtensions;
 }

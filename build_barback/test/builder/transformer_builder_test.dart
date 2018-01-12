@@ -14,7 +14,7 @@ void main() {
     final copyTransformerBuilder = new TransformerBuilder(
       new CopyTransformer(),
       const {
-        '': const ['.copy']
+        '.txt': const ['.txt.copy']
       },
     );
 
