@@ -25,10 +25,6 @@ dartanalyzer) echo
   echo -e "[1mTASK: dartanalyzer[22m"
   dartanalyzer --fatal-infos --fatal-warnings .
   ;;
-dartanalyzer_1) echo
-  echo -e "[1mTASK: dartanalyzer_1[22m"
-  dartanalyzer --fatal-warnings .
-  ;;
 dartfmt) echo
   echo -e "[1mTASK: dartfmt[22m"
   dartfmt -n --set-exit-if-changed .

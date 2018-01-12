@@ -11,10 +11,10 @@ dart:
   - stable
 
 env:
-  - PKG=build TASK=dartanalyzer_1
+  - PKG=build TASK=dartanalyzer
   - PKG=build TASK=dartfmt
   - PKG=build TASK=test
-  - PKG=build_barback TASK=dartanalyzer_1
+  - PKG=build_barback TASK=dartanalyzer
   - PKG=build_barback TASK=dartfmt
   - PKG=build_barback TASK=test
   - PKG=build_config TASK=dartanalyzer
