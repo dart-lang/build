@@ -26,7 +26,8 @@ main() {
     resource = new Resource(() => 0, dispose: (_) {
       resourceDisposed = true;
     });
-    builder = new FetchingCopyBuilder(resource);
+    builder = new TestBuilder(
+        extraWork: (buildStep, __) => buildStep.fetchResource(resource));
     writer = new InMemoryAssetWriter();
     reader = new InMemoryAssetReader.shareAssetCache(writer.assets);
     addAssets(inputs, writer);
@@ -84,17 +85,5 @@ class TrackingResourceManager extends ResourceManager {
   Future<Null> disposeAll() {
     disposed = true;
     return super.disposeAll();
-  }
-}
-
-class FetchingCopyBuilder<T> extends CopyBuilder {
-  final Resource<T> resourceToFetch;
-
-  FetchingCopyBuilder(this.resourceToFetch) : super();
-
-  @override
-  Future build(BuildStep buildStep) async {
-    await super.build(buildStep);
-    await buildStep.fetchResource(resourceToFetch);
   }
 }

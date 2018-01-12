@@ -283,6 +283,22 @@ void main() {
       });
     });
 
+    test('non-hidden action following hidden action', () async {
+      final graph = await AssetGraph.build([
+        new BuildAction(
+            new TestBuilder(buildExtensions: appendExtension('.hidden')), 'foo',
+            hideOutput: true),
+        new BuildAction(
+            new TestBuilder(buildExtensions: appendExtension('.visible')),
+            'foo',
+            hideOutput: false)
+      ], [makeAssetId('foo|lib/file.txt')].toSet(), new Set<AssetId>(),
+          fooPackageGraph, digestReader);
+
+      expect(graph.outputs,
+          isNot(contains(makeAssetId('foo|lib/file.txt.hidden.visible'))));
+    });
+
     test('overlapping build actions cause an error', () async {
       expect(
           () => AssetGraph.build(

@@ -119,6 +119,14 @@ Future testBuilder(
     inputIds.add(id);
   });
 
+  var allPackages = reader.assets.keys.map((a) => a.package).toSet();
+  for (var pkg in allPackages) {
+    for (var dir in const ['lib', 'web', 'test']) {
+      var asset = new AssetId(pkg, '$dir/\$$dir\$');
+      inputIds.add(asset);
+    }
+  }
+
   isInput ??= generateFor?.contains ?? (_) => true;
   inputIds = inputIds.where((id) => isInput('$id')).toList();
 

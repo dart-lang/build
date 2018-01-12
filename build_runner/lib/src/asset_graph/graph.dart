@@ -325,10 +325,13 @@ class AssetGraph {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
+        var node = get(input);
+        if (!action.hideOutput && node is GeneratedAssetNode && node.isHidden) {
+          continue;
+        }
 
         var outputs = expectedOutputs(action.builder, input);
         phaseOutputs.addAll(outputs);
-        var node = get(input);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
         allInputs.removeAll(_addGeneratedOutputs(
