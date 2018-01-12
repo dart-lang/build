@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
@@ -37,6 +38,26 @@ String friendlyNameForElement(Element element) {
   }
 
   return names.join(' ');
+}
+
+/// Returns a non-null name for the provided [type].
+///
+/// In newer versions of the Dart analyzer, a `typedef` does not keep the
+/// existing `name`, because it is used an alias:
+/// ```
+/// // Used to return `VoidFunc` for name, is now `null`.
+/// typedef VoidFunc = void Function();
+/// ```
+///
+/// This function will return `'VoidFunc'`, unlike [DartType.name].
+String typeNameOf(DartType type) {
+  if (type is FunctionType) {
+    final element = type.element;
+    if (element is GenericFunctionTypeElement) {
+      return element.enclosingElement.name;
+    }
+  }
+  return type.name;
 }
 
 /// Returns a name suitable for `part of "..."` when pointing to [element].

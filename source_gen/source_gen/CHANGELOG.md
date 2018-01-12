@@ -1,5 +1,9 @@
 ## 0.7.4-dev
 
+* Added `typeNameOf`, which is a safe way to get the name of a `DartType`,
+  even when the type is a `FunctionType`, which has a `null` name in newer
+  versions of the Dart analyzer.
+
 * Added `LibraryReader.pathToUrl(Uri|String)`, which computes the `import` or
   `export` path necessary to reach the provided URL from the current library.
   Also added `pathToAsset` and `pathToElement` as convenience functions.
