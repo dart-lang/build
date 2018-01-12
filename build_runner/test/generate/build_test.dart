@@ -361,6 +361,22 @@ void main() {
             });
       });
 
+      test('handles non-hidden following hidden action', () async {
+        await testBuilders(
+            [
+              applyToRoot(new TestBuilder(), hideOutput: true),
+              applyToRoot(new TestBuilder(
+                buildExtensions: appendExtension('.clone'),
+              ))
+            ],
+            {'a|lib/a.txt': 'a'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$a|lib/a.txt.copy': 'a',
+              r'a|lib/a.txt.clone': 'a',
+            });
+      });
+
       test('Will not delete from non-root packages', () async {
         var writer = new InMemoryRunnerAssetWriter()
           ..onDelete = (AssetId assetId) {
