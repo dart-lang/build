@@ -7,6 +7,7 @@ import 'package:analyzer/dart/ast/standard_resolution_map.dart';
 import 'package:analyzer/dart/element/element.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/resolver/scope.dart';
+import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
 import 'constants/reader.dart';
@@ -72,6 +73,18 @@ class LibraryReader {
     }
   }
 
+  /// Returns a [Uri] from the current library to the target [asset].
+  ///
+  /// This is a typed convenience function for using [pathToUrl], and the same
+  /// API restrictions hold around supported schemes and relative paths.
+  Uri pathToAsset(AssetId asset) => pathToUrl(asset.uri);
+
+  /// Returns a [Uri] from the current library to the target [element].
+  ///
+  /// This is a typed convenience function for using [pathToUrl], and the same
+  /// API restrictions hold around supported schemes and relative paths.
+  Uri pathToElement(Element element) => pathToUrl(element.source.uri);
+
   /// Returns a [Uri] from the current library to the one provided.
   ///
   /// If possible, a `package:` or `dart:` URL scheme will be used to reference
@@ -85,6 +98,9 @@ class LibraryReader {
   ///
   /// May throw [ArgumentError] if it is not possible to resolve a path.
   Uri pathToUrl(dynamic toUrlOrString) {
+    if (toUrlOrString == null) {
+      throw new ArgumentError.notNull('toUrlOrString');
+    }
     final to = toUrlOrString is Uri
         ? toUrlOrString
         : Uri.parse(toUrlOrString as String);
