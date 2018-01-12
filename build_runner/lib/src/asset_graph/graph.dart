@@ -326,10 +326,13 @@ class AssetGraph {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
+        var node = get(input);
+        if (!action.hideOutput && node is GeneratedAssetNode && node.isHidden) {
+          continue;
+        }
 
         var outputs = expectedOutputs(action.builder, input);
         phaseOutputs.addAll(outputs);
-        var node = get(input);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
         allInputs.removeAll(_addGeneratedOutputs(
@@ -390,7 +393,7 @@ class AssetGraph {
 Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
   var digestSink = new AccumulatorSink<Digest>();
   var bytesSink = md5.startChunkedConversion(digestSink);
-  bytesSink.add(buildActions.map((a) => a.hashCode).toList());
+  bytesSink.add(buildActions.map((a) => a.identity).toList());
   bytesSink.close();
   assert(digestSink.events.length == 1);
   return digestSink.events.first;

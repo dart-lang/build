@@ -14,22 +14,27 @@ class TargetGraph {
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
 
-  TargetGraph._(this.allModules);
+  /// The [BuildConfig] of the root package.
+  final BuildConfig rootPackageConfig;
+
+  TargetGraph._(this.allModules, this.rootPackageConfig);
 
   static Future<TargetGraph> forPackageGraph(PackageGraph packageGraph,
       {Map<String, BuildConfig> overrideBuildConfig}) async {
     overrideBuildConfig ??= const {};
     final modules = <String, TargetNode>{};
+    BuildConfig rootPackageConfig;
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
+      if (package.isRoot) rootPackageConfig = config;
       final nodes = config.buildTargets.values
           .map((target) => new TargetNode(target, package));
       for (final node in nodes) {
         modules[node.target.key] = node;
       }
     }
-    return new TargetGraph._(modules);
+    return new TargetGraph._(modules, rootPackageConfig);
   }
 }
 

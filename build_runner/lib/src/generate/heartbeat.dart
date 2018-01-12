@@ -5,7 +5,8 @@
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:millisecond/millisecond.dart' as ms;
+
+import '../logging/human_readable_duration.dart';
 
 var _logger = new Logger('Heartbeat');
 
@@ -66,11 +67,9 @@ class HeartbeatLogger {
   /// Logs a heartbeat message if [_intervalWatch] has been running for
   /// [waitDuration] or more.
   void _logIfDurationIsMet(_) {
-    if (_intervalWatch.elapsedMilliseconds < waitDuration.inMilliseconds) {
-      return;
-    }
+    if (_intervalWatch.elapsed < waitDuration) return;
 
-    var formattedTime = ms.format(_totalWatch.elapsedMilliseconds, long: true);
+    var formattedTime = humanReadable(_totalWatch.elapsed);
     _logger.info('... still running ($formattedTime so far)');
     _resetHeartbeat();
   }

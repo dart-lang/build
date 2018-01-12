@@ -20,13 +20,19 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../environment/build_environment.dart';
+import '../environment/io_environment.dart';
+import '../environment/overridable_environment.dart';
+import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
+import 'create_merged_dir.dart';
 import 'exceptions.dart';
 import 'fold_frames.dart';
 import 'heartbeat.dart';
@@ -51,37 +57,45 @@ Future<BuildResult> build(
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
+  String outputDir,
+  bool verbose,
 }) async {
-  var options = new BuildOptions(
-      assumeTty: assumeTty,
+  packageGraph ??= new PackageGraph.forThisPackage();
+  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+      overrideBuildConfig: overrideBuildConfig);
+  var environment = new OverrideableEnvironment(
+      new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
+      reader: reader,
+      writer: writer,
+      onLog: onLog);
+  var options = new BuildOptions(environment,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
+      rootPackageConfig: targetGraph.rootPackageConfig,
       logLevel: logLevel,
-      onLog: onLog,
       skipBuildScriptCheck: skipBuildScriptCheck,
-      enableLowResourcesMode: enableLowResourcesMode);
+      enableLowResourcesMode: enableLowResourcesMode,
+      outputDir: outputDir,
+      verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final buildActions = await createBuildActions(options.packageGraph, builders,
-      overrideBuildConfig: overrideBuildConfig);
+  final buildActions = await createBuildActions(targetGraph, builders);
 
-  var result = await singleBuild(options, buildActions);
+  var result = await singleBuild(environment, options, buildActions);
 
   await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
 
-Future<BuildResult> singleBuild(
+Future<BuildResult> singleBuild(BuildEnvironment environment,
     BuildOptions options, List<BuildAction> buildActions) async {
-  var buildDefinition =
-      await BuildDefinition.prepareWorkspace(options, buildActions);
-  var result =
-      (await BuildImpl.create(buildDefinition, buildActions)).firstBuild;
+  var buildDefinition = await BuildDefinition.prepareWorkspace(
+      environment, options, buildActions);
+  var result = (await BuildImpl.create(buildDefinition, options, buildActions))
+      .firstBuild;
   await buildDefinition.resourceManager.beforeExit();
   if (result.status == BuildStatus.success &&
       options.failOnSevere &&
@@ -109,21 +123,26 @@ class BuildImpl {
   final _resolvers = const BarbackResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
+  final String _outputDir;
+  final bool _verbose;
 
-  BuildImpl._(BuildDefinition buildDefinition, this._buildActions)
+  BuildImpl._(
+      BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
       : _packageGraph = buildDefinition.packageGraph,
-        _reader = buildDefinition.enableLowResourcesMode
+        _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : new CachingAssetReader(buildDefinition.reader),
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
-        _onDelete = buildDefinition.onDelete;
+        _onDelete = buildDefinition.onDelete,
+        _outputDir = options.outputDir,
+        _verbose = options.verbose;
 
-  static Future<BuildImpl> create(
-      BuildDefinition buildDefinition, List<BuildAction> buildActions,
+  static Future<BuildImpl> create(BuildDefinition buildDefinition,
+      BuildOptions options, List<BuildAction> buildActions,
       {void onDelete(AssetId id)}) async {
-    var build = new BuildImpl._(buildDefinition, buildActions);
+    var build = new BuildImpl._(buildDefinition, options, buildActions);
 
     build._firstBuild = await build.run({});
     return build;
@@ -133,31 +152,36 @@ class BuildImpl {
     var watch = new Stopwatch()..start();
     _lazyPhases.clear();
     if (updates.isNotEmpty) {
-      await logTimedAsync(
-          _logger, 'Updating asset graph', () => _updateAssetGraph(updates));
+      await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
     await _resourceManager.disposeAll();
+    if (_outputDir != null) {
+      await createMergedOutputDir(
+          _outputDir, _assetGraph, _packageGraph, _reader);
+    }
     if (result.status == BuildStatus.success) {
-      _logger.info('Succeeded after ${watch.elapsedMilliseconds}ms with '
+      _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs\n\n');
     } else {
       if (result.exception is FatalBuildException) {
         // TODO(???) Really bad idea. Should not set exit codes in libraries!
         exitCode = 1;
       }
-      _logger.severe('Failed after ${watch.elapsedMilliseconds}ms',
+      _logger.severe('Failed after ${humanReadable(watch.elapsed)}',
           result.exception, result.stackTrace);
     }
     return result;
   }
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    var invalidated = await _assetGraph.updateAndInvalidate(
-        _buildActions, updates, _packageGraph.root.name, _delete, _reader);
-    if (_reader is CachingAssetReader) {
-      (_reader as CachingAssetReader).invalidate(invalidated);
-    }
+    await logTimedAsync(_logger, 'Updating asset graph', () async {
+      var invalidated = await _assetGraph.updateAndInvalidate(
+          _buildActions, updates, _packageGraph.root.name, _delete, _reader);
+      if (_reader is CachingAssetReader) {
+        (_reader as CachingAssetReader).invalidate(invalidated);
+      }
+    });
   }
 
   /// Runs a build inside a zone with an error handler and stack chain
@@ -183,7 +207,9 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
-      final trace = foldInternalFrames(chain.toTrace()).terse;
+      final trace = _verbose
+          ? chain.toTrace()
+          : foldInternalFrames(chain.toTrace()).terse;
       done.complete(new BuildResult(BuildStatus.failure, [],
           exception: e, stackTrace: trace));
     });

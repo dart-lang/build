@@ -5,6 +5,7 @@
 export 'package:build/src/builder/logging.dart' show scopeLogAsync;
 
 export 'src/assets.dart';
+export 'src/builder.dart';
 export 'src/copy_builder.dart';
 export 'src/fake_watcher.dart';
 export 'src/globbing_builder.dart';

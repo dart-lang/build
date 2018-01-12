@@ -35,3 +35,13 @@ class DartDevcCompilationException extends _WorkerException {
 
   DartDevcCompilationException(AssetId jsId, String error) : super(jsId, error);
 }
+
+/// An [Exception] that is thrown when the common frontend fails to create a
+/// kernel summary.
+class KernelSummaryException extends _WorkerException {
+  @override
+  final String message = 'Error creating kernel summary for module';
+
+  KernelSummaryException(AssetId summaryId, String error)
+      : super(summaryId, error);
+}

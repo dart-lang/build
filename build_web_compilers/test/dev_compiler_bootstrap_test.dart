@@ -54,7 +54,7 @@ main() {
         isNot(contains('lib/a')),
       ])),
     };
-    await testBuilder(new DevCompilerBootstrapBuilder(), assets,
+    await testBuilder(new WebEntrypointBuilder(WebCompiler.DartDevc), assets,
         outputs: expectedOutputs);
   });
 }

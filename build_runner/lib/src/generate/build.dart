@@ -40,6 +40,13 @@ import 'watch_impl.dart' as watch_impl;
 /// By default the [ProcessSignal.SIGINT] stream is used. In this mode, it
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
+///
+/// If [outputDir] is supplied then after each build a merged output directory
+/// will be created containing all original sources and built sources.
+///
+/// If [verbose] is `true` then verbose logging will be enabled. This changes
+/// the default [logLevel] to [Level.ALL] and removes stack frame folding, among
+/// other things.
 Future<BuildResult> build(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
         bool failOnSevere,
@@ -50,7 +57,9 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         Level logLevel,
         onLog(LogRecord record),
         Stream terminateEventStream,
-        bool enableLowResourcesMode}) =>
+        bool enableLowResourcesMode,
+        String outputDir,
+        bool verbose}) =>
     build_impl.build(builders,
         assumeTty: assumeTty,
         deleteFilesByDefault: deleteFilesByDefault,
@@ -61,7 +70,9 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         logLevel: logLevel,
         onLog: onLog,
         terminateEventStream: terminateEventStream,
-        enableLowResourcesMode: enableLowResourcesMode);
+        enableLowResourcesMode: enableLowResourcesMode,
+        outputDir: outputDir,
+        verbose: verbose);
 
 /// Same as [build], except it watches the file system and re-runs builds
 /// automatically.
@@ -81,8 +92,11 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// The [terminateEventStream] is a stream which can send termination events.
 /// By default the [ProcessSignal.SIGINT] stream is used. In this mode, the
 /// first event will allow any ongoing builds to finish, and then the program
-///  will complete normally. Subsequent events are not handled (and will
-///  typically cause a shutdown).
+/// will complete normally. Subsequent events are not handled (and will
+/// typically cause a shutdown).
+///
+/// If [outputDir] is supplied then after each build a merged output directory
+/// will be created containing all original sources and built sources.
 Future<ServeHandler> watch(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
         bool failOnSevere,
@@ -95,7 +109,9 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         Duration debounceDelay,
         DirectoryWatcherFactory directoryWatcherFactory,
         Stream terminateEventStream,
-        bool enableLowResourcesMode}) =>
+        bool enableLowResourcesMode,
+        String outputDir,
+        bool verbose}) =>
     watch_impl.watch(builders,
         assumeTty: assumeTty,
         deleteFilesByDefault: deleteFilesByDefault,
@@ -108,4 +124,6 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         debounceDelay: debounceDelay,
         directoryWatcherFactory: directoryWatcherFactory,
         terminateEventStream: terminateEventStream,
-        enableLowResourcesMode: enableLowResourcesMode);
+        enableLowResourcesMode: enableLowResourcesMode,
+        outputDir: outputDir,
+        verbose: verbose);

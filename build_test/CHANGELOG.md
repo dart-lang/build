@@ -1,4 +1,8 @@
-## 0.9.5
+## 0.9.5-dev
+
+- Deprecate `CopyBuilder` in favor of `TestBuilder` which takes closures to
+  change behavior rather than adding configuration for every possible
+  modification.
 
 - Add support for the special placeholder `{$lib/$test/$web}` assets supported
   by the `build_runner` and `bazel_codegen` implementations of `package:build`.

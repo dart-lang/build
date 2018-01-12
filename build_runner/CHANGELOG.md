@@ -1,9 +1,37 @@
+## 0.7.5+1
+
+- Bug fix for using the `--output` flag when you have no `test` directory.
+
+## 0.7.5
+
+- Add more human friendly duration printing.
+- Added the `--output <dir>` (or `-o`) argument which will create a merged
+  output directory after each build. 
+- Added the `--verbose` (or `-v`) flag which enables verbose logging.
+  - Disables stack trace folding and terse stack traces.
+  - Disables the overwriting of previous info logs.
+  - Sets the default log level to `Level.ALL`.
+- Added `pubspec.yaml` and `pubspec.lock` to the whitelist for the root package
+  sources.
+
+## 0.7.4
+
+- Allows using files in any build targets in the root package as sources if they
+  fall outside the hardcoded whitelist.
+- Changes to the root `.packages` file during watch mode will now cause the
+  build script to exit and prompt the user to restart the build.
+
+## 0.7.3
+
+- Added the flag `--low-resources-mode`, which defaults to `false`.
+
 ## 0.7.2
 
 - Added the flag `--fail-on-severe`, which defaults to `false`. In a future
   version this will default to `true`, which means that logging a message via
   `log.severe` will fail the build instead of just printing to the terminal.
   This would match the current behavior in `bazel_codegen`. 
+- Added the `test` command to the `build_runner` binary.
 
 ## 0.7.1+1
 

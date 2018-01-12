@@ -38,9 +38,18 @@ This package generally only be a dev_dependency as it introduces a dependency on
 package:test. The exception to that would be if you were creating another
 testing-only package that wraps this one.
 
+## [build_web_compilers](https://github.com/dart-lang/build/blob/master/build_web_compilers/README.md)
+
+Provides the `dart2js` and `dartdevc` support for your package. To use this
+package you should add it as a dev_dependency.
+
+If you are using the automated build scripts, your project will automatically
+start being compiled with dartdevc, and you can start developing with chrome
+without any configuration.
+
 ## Examples
 
 The [e2e_example](https://github.com/dart-lang/build/tree/master/e2e_example) directory has demonstrations of running a `Builder` both
 through pub (see the transformers section of `pubspec.yaml`) and in place (see
-the files `build.dart` and `watch.dart`). In real situations a project would
-choose one or the other approach rather than mix both.
+the `tool/build.dart` file). In real situations a project would choose one or
+the other approach rather than mix both.

@@ -20,15 +20,14 @@ import '../common/package_graphs.dart';
 void main() {
   group('ServeHandler', () {
     InMemoryRunnerAssetWriter writer;
-    CopyBuilder copyBuilder;
-    BuilderApplication copyABuildApplication;
 
-    setUp(() {
+    setUp(() async {
       _terminateServeController = new StreamController();
       writer = new InMemoryRunnerAssetWriter();
-
-      copyBuilder = new CopyBuilder();
-      copyABuildApplication = applyToRoot(copyBuilder);
+      await writer.writeAsString(makeAssetId('a|.packages'), '''
+# Fake packages file
+a:file://fake/pkg/path
+''');
     });
 
     tearDown(() async {
@@ -38,7 +37,7 @@ void main() {
 
     test('does basic builds', () async {
       var handler = await createHandler(
-          [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
+          [applyToRoot(new TestBuilder())], {'a|web/a.txt': 'a'}, writer);
       var results = new StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
@@ -53,10 +52,13 @@ void main() {
 
     test('blocks serving files until the build is done', () async {
       var buildBlocker1 = new Completer();
-      copyBuilder.blockUntil = buildBlocker1.future;
+      var nextBuildBlocker = buildBlocker1.future;
 
-      var handler = await createHandler(
-          [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
+      var handler = await createHandler([
+        applyToRoot(new TestBuilder(extraWork: (_, __) => nextBuildBlocker))
+      ], {
+        'a|web/a.txt': 'a'
+      }, writer);
       var webHandler = handler.handlerFor('web');
       var results = new StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
@@ -83,7 +85,7 @@ void main() {
       });
 
       /// Make an edit to force another build, and we should block again.
-      copyBuilder.blockUntil = buildBlocker2.future;
+      nextBuildBlocker = buildBlocker2.future;
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       FakeWatcher.notifyWatchers(new WatchEvent(
           ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));

@@ -135,7 +135,8 @@ void main() {
     group('with buildActions', () {
       final buildActions = [
         new BuildAction(
-            new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
+            new TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.txt')),
             'foo',
             targetSources: const InputSet(exclude: const ['excluded.txt']))
       ];
@@ -283,10 +284,26 @@ void main() {
       });
     });
 
+    test('non-hidden action following hidden action', () async {
+      final graph = await AssetGraph.build([
+        new BuildAction(
+            new TestBuilder(buildExtensions: appendExtension('.hidden')), 'foo',
+            hideOutput: true),
+        new BuildAction(
+            new TestBuilder(buildExtensions: appendExtension('.visible')),
+            'foo',
+            hideOutput: false)
+      ], [makeAssetId('foo|lib/file.txt')].toSet(), new Set<AssetId>(),
+          fooPackageGraph, digestReader);
+
+      expect(graph.outputs,
+          isNot(contains(makeAssetId('foo|lib/file.txt.hidden.visible'))));
+    });
+
     test('overlapping build actions cause an error', () async {
       expect(
           () => AssetGraph.build(
-              new List.filled(2, new BuildAction(new CopyBuilder(), 'foo')),
+              new List.filled(2, new BuildAction(new TestBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
               new Set(),
               fooPackageGraph,

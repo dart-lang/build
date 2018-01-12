@@ -27,8 +27,8 @@ final _builders = [
       _i1.toAllPackages(),
       isOptional: true,
       hideOutput: true),
-  _i1.apply('build_web_compilers|ddc_bootstrap',
-      [_i5.devCompilerBootstrapBuilder], _i1.toRoot(),
+  _i1.apply('build_web_compilers|entrypoint', [_i5.webEntrypointBuilder],
+      _i1.toRoot(),
       hideOutput: true,
       defaultGenerateFor: const _i4.InputSet(
           include: const ['web/**', 'test/**.browser_test.dart']))

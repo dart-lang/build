@@ -4,25 +4,36 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
-import 'package:io/io.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
+import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 
 Future<Null> main(List<String> args) async {
   var logListener = Logger.root.onRecord.listen(stdIOLogListener);
-  await ensureBuildScript();
-  var dart = Platform.resolvedExecutable;
-  final innerArgs = [scriptLocation]..addAll(args);
-  if (stdioType(stdin) == StdioType.TERMINAL &&
-      !args.any((a) => a.contains('assume-tty')) &&
-      args.isNotEmpty) {
-    innerArgs.add('--assume-tty');
+
+  // Use the actual command runner to parse the args and immediately print the
+  // usage information if there is no command provided or the help command was
+  // explicitly invoked.
+  var commandRunner = new BuildCommandRunner([]);
+  var parsedArgs = commandRunner.parse(args);
+  var commandName = parsedArgs.command?.name;
+  if (commandName == null || commandName == 'help') {
+    commandRunner.printUsage();
+    return;
   }
-  var buildRun = await new ProcessManager().spawn(dart, innerArgs);
-  await buildRun.exitCode;
-  await ProcessManager.terminateStdIn();
+
+  var buildScript = await generateBuildScript();
+  var scriptFile = new File(scriptLocation)..createSync(recursive: true);
+  scriptFile.writeAsStringSync(buildScript);
+
+  var exitPort = new ReceivePort();
+  await Isolate.spawnUri(new Uri.file(p.absolute(scriptLocation)), args, null,
+      onExit: exitPort.sendPort);
+  await exitPort.first;
   await logListener.cancel();
 }

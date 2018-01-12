@@ -27,6 +27,7 @@ tools such as [Bazel][].
 
 * [Installation](#installation)
 * [Usage](#usage)
+  * [Built-in commands](#built-in-commands)
   * [Inputs](#inputs)
   * [Outputs](#outputs)
   * [Source control](#source-control)
@@ -54,8 +55,58 @@ Builder to decide whether the build needs to be customized. If it does you may
 also provide a `build.yaml` with the configuration. See the
 `package:build_config` README for more information on this file.
 
-Run `pub run build_runner serve` to start up a development server. To have web
-code compiled with DDC add a `dev_dependency` on `build_web_compilers`.
+To have web code compiled to js add a `dev_dependency` on `build_web_compilers`.
+
+### Built-in Commands
+
+The `build_runner` package exposes a binary by the same name, which can be
+invoked using `pub run build_runner <command>`.
+
+The available commands are `build`, `watch`, `serve`, and `test`.
+
+- `build`: Runs a single build and exits.
+- `watch`: Runs a persistent build server that watches the files system for
+  edits and does rebuilds as necessary.
+- `serve`: Same as `watch`, but runs a development server as well.
+  - By default this serves the `web` and `test` directories, on port `8080` and
+    `8081` respectively. See below for how to configure this.
+- `test`: Runs a single build, creates a merged output directory, and then runs
+  `pub run test --precompiled <merged-output-dir>`. See below for instructions
+  on passing custom args to the test command.
+
+#### Command Line Options
+
+All the above commands support the following arguments:
+
+- `--help`: Print usage information for the command.
+- `--assume-tty`: Enables colors and interactive input when the script does not
+  appear to be running directly in a terminal, for instance when it is a
+  subprocess.
+- `--delete-conflicting-outputs`: Assume conflicting outputs in the users
+  package are from previous builds, and skip the user prompt that would usually
+  be provided.
+- `--[no-]fail-on-severe`: Whether to consider the build a failure on an error
+  logged. By default this is false.
+
+Some commands also have additional options:
+
+##### serve
+
+- `--hostname`: The host to run the server on.
+
+Trailing args of the form `<directory>:<port>` are supported to customize what
+directories are served, and on what ports.
+
+For example to serve the `example` and `web` directories on ports 8000 and 8001
+you would do `pub run build_runner serve example:8000 web:8001`.
+
+##### test
+
+The test command will forward any arguments after an empty `--` arg to the
+`pub run test` command.
+
+For example if you wanted to pass `-p chrome` you would do
+`pub run build_runner test -- -p chrome`.
 
 ### Inputs
 

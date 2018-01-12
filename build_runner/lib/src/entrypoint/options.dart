@@ -6,14 +6,21 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner/build_runner.dart';
+import 'package:io/io.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf_io.dart';
 
+import 'package:build_runner/build_runner.dart';
+
 const _assumeTty = 'assume-tty';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
+const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
+const _output = 'output';
+const _verbose = 'verbose';
+
+final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner {
@@ -25,6 +32,7 @@ class BuildCommandRunner extends CommandRunner {
     addCommand(new _BuildCommand());
     addCommand(new _WatchCommand());
     addCommand(new _ServeCommand());
+    addCommand(new _TestCommand());
   }
 }
 
@@ -43,16 +51,32 @@ class _SharedOptions {
   /// Any log of type `SEVERE` should fail the current build.
   final bool failOnSevere;
 
-  _SharedOptions._(
-      {@required this.assumeTty,
-      @required this.deleteFilesByDefault,
-      @required this.failOnSevere});
+  final bool enableLowResourcesMode;
+
+  /// Path to the merged output directory, or null if no directory should be
+  /// created.
+  final String outputDir;
+
+  final bool verbose;
+
+  _SharedOptions._({
+    @required this.assumeTty,
+    @required this.deleteFilesByDefault,
+    @required this.failOnSevere,
+    @required this.enableLowResourcesMode,
+    @required this.outputDir,
+    @required this.verbose,
+  });
 
   factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
     return new _SharedOptions._(
-        assumeTty: argResults[_assumeTty] as bool,
-        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
-        failOnSevere: argResults[_failOnSevere] as bool);
+      assumeTty: argResults[_assumeTty] as bool,
+      deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
+      failOnSevere: argResults[_failOnSevere] as bool,
+      enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      outputDir: argResults[_output] as String,
+      verbose: argResults[_verbose] as bool,
+    );
   }
 }
 
@@ -67,11 +91,18 @@ class _ServeOptions extends _SharedOptions {
     @required bool assumeTty,
     @required bool deleteFilesByDefault,
     @required bool failOnSevere,
+    @required bool enableLowResourcesMode,
+    @required String outputDir,
+    @required bool verbose,
   })
       : super._(
-            assumeTty: assumeTty,
-            deleteFilesByDefault: deleteFilesByDefault,
-            failOnSevere: failOnSevere);
+          assumeTty: assumeTty,
+          deleteFilesByDefault: deleteFilesByDefault,
+          failOnSevere: failOnSevere,
+          enableLowResourcesMode: enableLowResourcesMode,
+          outputDir: outputDir,
+          verbose: verbose,
+        );
 
   factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
     var serveTargets = <_ServeTarget>[];
@@ -88,11 +119,15 @@ class _ServeOptions extends _SharedOptions {
       ]);
     }
     return new _ServeOptions._(
-        hostName: argResults[_hostname] as String,
-        serveTargets: serveTargets,
-        assumeTty: argResults[_assumeTty] as bool,
-        deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
-        failOnSevere: argResults[_failOnSevere] as bool);
+      hostName: argResults[_hostname] as String,
+      serveTargets: serveTargets,
+      assumeTty: argResults[_assumeTty] as bool,
+      deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
+      failOnSevere: argResults[_failOnSevere] as bool,
+      enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      outputDir: argResults[_output] as String,
+      verbose: argResults[_verbose] as bool,
+    );
   }
 }
 
@@ -109,12 +144,15 @@ abstract class _BaseCommand extends Command {
       (runner as BuildCommandRunner).builderApplications;
 
   _BaseCommand() {
+    _addBaseFlags();
+  }
+
+  void _addBaseFlags() {
     argParser
       ..addFlag(_assumeTty,
           help: 'Enables colors and interactive input when the script does not'
               ' appear to be running directly in a terminal, for instance when it'
               ' is a subprocess',
-          defaultsTo: null,
           negatable: true)
       ..addFlag(_deleteFilesByDefault,
           help:
@@ -126,10 +164,23 @@ abstract class _BaseCommand extends Command {
               'and tests, but not otherwise.',
           negatable: false,
           defaultsTo: false)
+      ..addFlag(_lowResourcesMode,
+          help: 'Reduce the amount of memory consumed by the build process. '
+              'This will slow down builds but allow them to progress in '
+              'resource constrained environments.',
+          negatable: false,
+          defaultsTo: false)
       ..addFlag(_failOnSevere,
           help: 'Whether to consider the build a failure on an error logged.',
           negatable: true,
-          defaultsTo: false);
+          defaultsTo: false)
+      ..addOption(_output,
+          help: 'A directory to write the result of a build to.', abbr: 'o')
+      ..addFlag('verbose',
+          abbr: 'v',
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables verbose logging.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -154,7 +205,10 @@ class _BuildCommand extends _BaseCommand {
     var options = _readOptions();
     await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
-        assumeTty: options.assumeTty);
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        assumeTty: options.assumeTty,
+        outputDir: options.outputDir,
+        verbose: options.verbose);
   }
 }
 
@@ -174,7 +228,10 @@ class _WatchCommand extends _BaseCommand {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
-        assumeTty: options.assumeTty);
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        assumeTty: options.assumeTty,
+        outputDir: options.outputDir,
+        verbose: options.verbose);
     await handler.currentBuild;
     await handler.buildResults.drain();
   }
@@ -204,7 +261,10 @@ class _ServeCommand extends _WatchCommand {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
-        assumeTty: options.assumeTty);
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        assumeTty: options.assumeTty,
+        outputDir: options.outputDir,
+        verbose: options.verbose);
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
@@ -213,5 +273,68 @@ class _ServeCommand extends _WatchCommand {
     }
     await handler.buildResults.drain();
     await Future.wait(servers.map((server) => server.close()));
+  }
+}
+
+/// A [Command] that does a single build and then runs tests using the compiled
+/// assets.
+class _TestCommand extends _BaseCommand {
+  @override
+  final argParser = new ArgParser(allowTrailingOptions: false);
+
+  @override
+  String get name => 'test';
+
+  @override
+  String get description =>
+      'Performs a single build on the specified targets and then runs tests '
+      'using the compiled assets.';
+
+  @override
+  Future<Null> run() async {
+    var options = _readOptions();
+    // We always need an output dir when running tests, so we create a tmp dir
+    // if the user didn't specify one.
+    var outputDir = options.outputDir ??
+        Directory.systemTemp
+            .createTempSync('build_runner_test')
+            .absolute
+            .uri
+            .toFilePath();
+    await build(builderApplications,
+        deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        assumeTty: options.assumeTty,
+        outputDir: outputDir,
+        verbose: options.verbose);
+
+    // Run the tests!
+    await _runTests(outputDir);
+
+    // Clean up the output dir if one wasn't explicitly asked for.
+    if (options.outputDir == null) {
+      await new Directory(outputDir).delete(recursive: true);
+    }
+
+    await ProcessManager.terminateStdIn();
+  }
+
+  /// Runs tests using [precompiledPath] as the precompiled test directory.
+  Future<Null> _runTests(String precompiledPath) async {
+    stdout.writeln('Running tests...\n');
+    var extraTestArgs = argResults.rest;
+    var testProcess = await new ProcessManager().spawn(
+        _pubBinary,
+        [
+          'run',
+          'test',
+          '--precompiled',
+          precompiledPath,
+        ]..addAll(extraTestArgs));
+    var testExitCode = await testProcess.exitCode;
+    if (testExitCode != 0) {
+      // No need to log - should see failed tests in the console.
+      exitCode = testExitCode;
+    }
   }
 }
