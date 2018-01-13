@@ -6,8 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_barback/build_barback.dart' show BarbackResolvers;
 import 'package:build_config/build_config.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -120,7 +120,7 @@ class BuildImpl {
   final OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
-  final _resolvers = const BarbackResolvers();
+  final _resolvers = new AnalyzerResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final String _outputDir;
