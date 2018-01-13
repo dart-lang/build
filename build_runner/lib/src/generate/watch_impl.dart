@@ -252,6 +252,7 @@ class WatchImpl implements BuildState {
           _buildDefinition.reader,
           _buildDefinition.assetGraph,
           buildActions.length,
+          true,
           packageGraph.root.name,
           null));
       _assetGraph = _buildDefinition.assetGraph;

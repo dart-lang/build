@@ -22,31 +22,6 @@ export 'test_phases.dart';
 
 Digest computeDigest(String contents) => md5.convert(UTF8.encode(contents));
 
-class ExistsBuilder extends Builder {
-  final AssetId idToCheck;
-  final Future waitFor;
-  final String inputExtension;
-
-  final _hasRanCompleter = new Completer<Null>();
-  Future get hasRan => _hasRanCompleter.future;
-
-  ExistsBuilder(this.idToCheck, {this.waitFor, this.inputExtension: ''});
-
-  @override
-  Map<String, List<String>> get buildExtensions => {
-        inputExtension: ['$inputExtension.exists']
-      };
-
-  @override
-  Future<Null> build(BuildStep buildStep) async {
-    await waitFor; // await works on null too!
-    var exists = await buildStep.canRead(idToCheck);
-    await buildStep.writeAsString(
-        buildStep.inputId.addExtension('.exists'), '$exists');
-    _hasRanCompleter.complete(null);
-  }
-}
-
 class PlaceholderBuilder extends Builder {
   final String inputExtension;
   final Map<String, String> outputExtensionsToContent;

@@ -34,6 +34,8 @@ abstract class Md5DigestReader implements DigestAssetReader {
   }
 }
 
+final _futureFalse = new Future<bool>.value(false);
+
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
 ///
@@ -54,8 +56,14 @@ class SingleStepReader implements DigestAssetReader {
   final String _primaryPackage;
   final RunPhaseForInput _runPhaseForInput;
 
+  /// Whether the action using this reader writes to the generated directory.
+  ///
+  /// Actions which do not hide their outptus may not read assets produced by
+  /// actions which do hide their outputs.
+  final bool _outputsHidden;
+
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage, this._runPhaseForInput);
+      this._outputsHidden, this._primaryPackage, this._runPhaseForInput);
 
   Set<AssetId> get assetsRead => _assetsRead;
 
@@ -65,29 +73,40 @@ class SingleStepReader implements DigestAssetReader {
   /// builder may behave differently on the next build.
   Iterable<Glob> get globsRan => _globsRan;
 
-  bool _isReadable(AssetId id) {
+  /// Checks whether [id] can be read by this step - attempting to build the
+  /// asset if necessary.
+  Future<bool> _isReadable(AssetId id) {
     _assetsRead.add(id);
     var node = _assetGraph.get(id);
     if (node == null) {
       _assetGraph.add(new SyntheticSourceAssetNode(id));
-      return false;
+      return _futureFalse;
     }
+    return _isReadableNode(node);
+  }
+
+  /// Checks whether [node] can be read by this step - attempting to build the
+  /// asset if necessary.
+  Future<bool> _isReadableNode(AssetNode node) async {
     if (node.isGenerated) {
-      return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+      final generatedNode = node as GeneratedAssetNode;
+      if (generatedNode.phaseNumber >= _phaseNumber) return false;
+      if (!_outputsHidden && generatedNode.isHidden) return false;
+      await _ensureAssetIsBuilt(node.id);
+      return generatedNode.wasOutput;
     }
     return node.isReadable;
   }
 
   @override
   Future<bool> canRead(AssetId id) async {
-    if (!_isReadable(id)) return new Future.value(false);
-    await _ensureAssetIsBuilt(id);
+    if (!await _isReadable(id)) return _futureFalse;
     var node = _assetGraph.get(id);
     bool result;
     if (node is GeneratedAssetNode) {
       // Short circut, we know this file exists because its readable and it was
       // output.
-      result = node.wasOutput;
+      result = true;
     } else {
       result = await _delegate.canRead(id);
     }
@@ -97,23 +116,20 @@ class SingleStepReader implements DigestAssetReader {
 
   @override
   Future<Digest> digest(AssetId id) async {
-    if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureAssetIsBuilt(id);
+    if (!await _isReadable(id)) throw new AssetNotFoundException(id);
     return _ensureDigest(id);
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureAssetIsBuilt(id);
+    if (!await _isReadable(id)) throw new AssetNotFoundException(id);
     await _ensureDigest(id);
     return _delegate.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
-    if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureAssetIsBuilt(id);
+    if (!await _isReadable(id)) throw new AssetNotFoundException(id);
     await _ensureDigest(id);
     return _delegate.readAsString(id, encoding: encoding);
   }
@@ -125,13 +141,7 @@ class SingleStepReader implements DigestAssetReader {
         .packageNodes(_primaryPackage)
         .where((n) => glob.matches(n.id.path));
     for (var node in potentialMatches) {
-      if (node is GeneratedAssetNode) {
-        if (node.phaseNumber >= _phaseNumber) continue;
-        await _ensureAssetIsBuilt(node.id);
-        if (node.wasOutput) yield node.id;
-      } else {
-        yield node.id;
-      }
+      if (await _isReadableNode(node)) yield node.id;
     }
   }
 
