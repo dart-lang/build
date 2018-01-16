@@ -16,8 +16,6 @@ typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 /// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
 abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 
-final _futureFalse = new Future<bool>.value(false);
-
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
 ///
@@ -62,7 +60,7 @@ class SingleStepReader implements AssetReader {
     var node = _assetGraph.get(id);
     if (node == null) {
       _assetGraph.add(new SyntheticSourceAssetNode(id));
-      return _futureFalse;
+      return false;
     }
     return _isReadableNode(node);
   }
@@ -81,41 +79,56 @@ class SingleStepReader implements AssetReader {
   }
 
   @override
-  Future<bool> canRead(AssetId id) async {
-    if (!await _isReadable(id)) return _futureFalse;
-    var node = _assetGraph.get(id);
-    bool result;
-    if (node is GeneratedAssetNode) {
-      // Short circut, we know this file exists because its readable and it was
-      // output.
-      result = true;
-    } else {
-      result = await _delegate.canRead(id);
-    }
-    if (result) await _ensureDigest(id);
-    return result;
+  Future<bool> canRead(AssetId id) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) return false;
+      var node = _assetGraph.get(id);
+      FutureOr<bool> _canRead() {
+        if (node is GeneratedAssetNode) {
+          // Short circut, we know this file exists because its readable and it was
+          // output.
+          return true;
+        } else {
+          return _delegate.canRead(id);
+        }
+      }
+
+      return doAfter(_canRead(), (bool canRead) {
+        if (!canRead) return false;
+        return doAfter(_ensureDigest(id), (_) => true);
+      });
+    }));
   }
 
   @override
   Future<Digest> digest(AssetId id) {
     return toFuture(doAfter(_isReadable(id), (bool isReadable) {
-      if (!isReadable) throw new AssetNotFoundException(id);
+      if (!isReadable) {
+        return new Future.error(new AssetNotFoundException(id));
+      }
       return _ensureDigest(id);
     }));
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) async {
-    if (!await _isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureDigest(id);
-    return _delegate.readAsBytes(id);
+  Future<List<int>> readAsBytes(AssetId id) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) {
+        return new Future.error(new AssetNotFoundException(id));
+      }
+      return doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
+    }));
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
-    if (!await _isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureDigest(id);
-    return _delegate.readAsString(id, encoding: encoding);
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) {
+        return new Future.error(new AssetNotFoundException(id));
+      }
+      return doAfter(_ensureDigest(id),
+          (_) => _delegate.readAsString(id, encoding: encoding));
+    }));
   }
 
   @override

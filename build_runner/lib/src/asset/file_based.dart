@@ -29,17 +29,13 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
       _descriptorPool.withResource(() => _fileFor(id, packageGraph).exists());
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) async {
-    var file = await _fileForOrThrow(id, packageGraph);
-    return _descriptorPool.withResource(file.readAsBytes);
-  }
+  Future<List<int>> readAsBytes(AssetId id) => _fileForOrThrow(id, packageGraph)
+      .then((file) => _descriptorPool.withResource(file.readAsBytes));
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) async {
-    var file = await _fileForOrThrow(id, packageGraph);
-    return _descriptorPool
-        .withResource(() => file.readAsString(encoding: encoding ?? UTF8));
-  }
+  Future<String> readAsString(AssetId id, {Encoding encoding}) =>
+      _fileForOrThrow(id, packageGraph).then((file) => _descriptorPool
+          .withResource(() => file.readAsString(encoding: encoding ?? UTF8)));
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) async* {
@@ -128,10 +124,10 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
 /// Returns a [Future<File>] for [id] given [packageGraph].
 ///
 /// Throws an `AssetNotFoundException` if it doesn't exist.
-Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) async {
+Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) {
   var file = _fileFor(id, packageGraph);
-  if (!await _descriptorPool.withResource(file.exists)) {
-    throw new AssetNotFoundException(id);
-  }
-  return file;
+  return _descriptorPool.withResource(file.exists).then((exists) {
+    if (!exists) throw new AssetNotFoundException(id);
+    return file;
+  });
 }
