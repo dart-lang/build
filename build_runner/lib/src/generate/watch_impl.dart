@@ -168,6 +168,7 @@ class WatchImpl implements BuildState {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(build != null);
+      _logger.info('\nStarting Build');
       var mergedChanges = _collectChanges(changes);
 
       _expectedDeletes.clear();
