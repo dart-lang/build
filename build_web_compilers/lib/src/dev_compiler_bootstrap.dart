@@ -22,6 +22,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep, {bool useKernel}) async {
   var module = new Module.fromJson(JSON
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
+  await buildStep.canRead(module.linkedSummaryId);
+
   // First, ensure all transitive modules are built.
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
 
