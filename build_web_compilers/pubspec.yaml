@@ -30,6 +30,7 @@ dev_dependencies:
     path: test/fixtures/b
 
 dependency_overrides:
+  analyzer: ^0.31.0-alpha.2
   build:
     path: ../build
   build_runner:
