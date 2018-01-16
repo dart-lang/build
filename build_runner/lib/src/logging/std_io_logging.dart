@@ -30,9 +30,7 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
   }
   var header = '$eraseLine$level ${record.loggerName}: $headerMessage';
   var lines = blankLineCount > 0
-      ? (<Object>[]
-        ..addAll(new Iterable.generate(blankLineCount, (_) => ''))
-        ..add(header))
+      ? (new List<Object>.generate(blankLineCount, (_) => '')..add(header))
       : <Object>[header];
 
   if (record.error != null) {
