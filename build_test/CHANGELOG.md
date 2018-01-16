@@ -1,5 +1,6 @@
 ## 0.10.0-dev
 
+- Update to package:build version `0.12.0`.
 - Removed `CopyBuilder` in favor of `TestBuilder` which takes closures to
   change behavior rather than adding configuration for every possible
   modification.
@@ -8,7 +9,6 @@
   `package:build`. For an example see `test/test_builder_test.dart`. Note that
   this is technically a **BREAKING CHANGE**, as additional inputs will be
   matched for overzealous builders (like `TestBuilder`).
-
 - Added `resolverFor` as an optional parameter to `resolveSources`. By default
   a `Resolver` is returned for the _first_ asset provided; to modify that the
   name of another asset may be provided. This is a **BREAKING CHANGE**, as

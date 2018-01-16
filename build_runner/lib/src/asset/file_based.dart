@@ -19,8 +19,7 @@ final _descriptorPool = new Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
-class FileBasedAssetReader extends Md5DigestReader
-    implements RunnerAssetReader {
+class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
   final PackageGraph packageGraph;
 
   FileBasedAssetReader(this.packageGraph);

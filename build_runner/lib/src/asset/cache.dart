@@ -6,17 +6,16 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
-/// A [DigestAssetReader] that wraps another [DigestAssetReader] and caches all
-/// results from it.
+/// An [AssetReader] that wraps another [AssetReader] and caches all results
+/// from it.
 ///
 /// Assets are cached until [invalidate] is invoked.
 ///
 /// Does not implement [findAssets].
-class CachingAssetReader implements DigestAssetReader {
+class CachingAssetReader implements AssetReader {
   /// Cached results of [readAsBytes].
   final _bytesContentCache = <AssetId, Future<List<int>>>{};
 
@@ -28,8 +27,8 @@ class CachingAssetReader implements DigestAssetReader {
   /// These are computed and stored lazily using [readAsBytes].
   final _stringContentCache = <AssetId, Map<Encoding, Future<String>>>{};
 
-  /// The [DigestAssetReader] to delegate all reads to.
-  final DigestAssetReader _delegate;
+  /// The [AssetReader] to delegate all reads to.
+  final AssetReader _delegate;
 
   CachingAssetReader(this._delegate);
 

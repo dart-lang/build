@@ -15,15 +15,8 @@ main(List<String> arguments) async {
         ], requireLibraryDirective: false),
         generateFor: const InputSet(include: const ['lib/src/modules.dart'])),
   ];
-
-  if (arguments.isEmpty) {
-    await watch(builders, deleteFilesByDefault: true);
-  } else if (arguments.length == 1 && arguments.first == '--single-build') {
-    await build(builders, deleteFilesByDefault: true);
-  } else {
-    throw new ArgumentError(
-        'Expected zero arguments or a --single-build argument');
-  }
+  var args = arguments.toList()..add('--delete-conflicting-outputs');
+  await run(args, builders);
 }
 
 const _assetIdTypeChecker = const TypeChecker.fromRuntime(AssetId);

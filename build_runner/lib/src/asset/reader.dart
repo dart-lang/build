@@ -13,26 +13,8 @@ import '../asset_graph/node.dart';
 
 typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
-abstract class DigestAssetReader implements AssetReader {
-  /// Asynchronously compute the digest for [id].
-  ///
-  /// Throws a [AssetNotFoundException] if [id] is not found.
-  Future<Digest> digest(AssetId id);
-}
-
-/// A [RunnerAssetReader] must implement both [MultiPackageAssetReader] and
-/// [DigestAssetReader].
-abstract class RunnerAssetReader
-    implements MultiPackageAssetReader, DigestAssetReader {}
-
-/// A [DigestAssetReader] that uses [md5] to compute [Digest]s.
-abstract class Md5DigestReader implements DigestAssetReader {
-  @override
-  Future<Digest> digest(AssetId id) async {
-    var bytes = await readAsBytes(id);
-    return md5.convert(bytes);
-  }
-}
+/// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
+abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 
 final _futureFalse = new Future<bool>.value(false);
 
@@ -47,10 +29,10 @@ final _futureFalse = new Future<bool>.value(false);
 ///
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
-class SingleStepReader implements DigestAssetReader {
+class SingleStepReader implements AssetReader {
   final AssetGraph _assetGraph;
   final _assetsRead = new Set<AssetId>();
-  final DigestAssetReader _delegate;
+  final AssetReader _delegate;
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
@@ -75,7 +57,7 @@ class SingleStepReader implements DigestAssetReader {
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
-  Future<bool> _isReadable(AssetId id) {
+  FutureOr<bool> _isReadable(AssetId id) {
     _assetsRead.add(id);
     var node = _assetGraph.get(id);
     if (node == null) {
@@ -87,13 +69,13 @@ class SingleStepReader implements DigestAssetReader {
 
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
-  Future<bool> _isReadableNode(AssetNode node) async {
+  FutureOr<bool> _isReadableNode(AssetNode node) {
     if (node.isGenerated) {
       final generatedNode = node as GeneratedAssetNode;
       if (generatedNode.phaseNumber >= _phaseNumber) return false;
       if (!_outputsHidden && generatedNode.isHidden) return false;
-      await _ensureAssetIsBuilt(node.id);
-      return generatedNode.wasOutput;
+      return doAfter(
+          _ensureAssetIsBuilt(node.id), (_) => generatedNode.wasOutput);
     }
     return node.isReadable;
   }
@@ -115,9 +97,11 @@ class SingleStepReader implements DigestAssetReader {
   }
 
   @override
-  Future<Digest> digest(AssetId id) async {
-    if (!await _isReadable(id)) throw new AssetNotFoundException(id);
-    return _ensureDigest(id);
+  Future<Digest> digest(AssetId id) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) throw new AssetNotFoundException(id);
+      return _ensureDigest(id);
+    }));
   }
 
   @override
@@ -145,16 +129,32 @@ class SingleStepReader implements DigestAssetReader {
     }
   }
 
-  Future<Null> _ensureAssetIsBuilt(AssetId id) async {
+  FutureOr<dynamic> _ensureAssetIsBuilt(AssetId id) {
     if (_runPhaseForInput == null) return null;
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
-      await _runPhaseForInput(node.phaseNumber, node.primaryInput);
+      return _runPhaseForInput(node.phaseNumber, node.primaryInput);
     }
+    return null;
   }
 
-  Future<Digest> _ensureDigest(AssetId id) async {
+  FutureOr<Digest> _ensureDigest(AssetId id) {
     var node = _assetGraph.get(id);
-    return node.lastKnownDigest ??= await _delegate.digest(id);
+    if (node?.lastKnownDigest != null) return node.lastKnownDigest;
+    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
   }
 }
+
+/// Invokes [callback] and returns the result as soon as possible. This will
+/// happen synchronously if [value] is available.
+FutureOr<S> doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
+  if (value is Future<T>) {
+    return value.then(callback);
+  } else {
+    return callback(value as T);
+  }
+}
+
+/// Converts [value] to a [Future] if it is not already.
+Future<T> toFuture<T>(FutureOr<T> value) =>
+    value is Future<T> ? value : new Future.value(value);

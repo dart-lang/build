@@ -57,6 +57,7 @@ class BuildOptions {
       this.outputDir,
       this.verbose}) {
     // Set up logging
+    verbose ??= false;
     logLevel ??= verbose ? Level.ALL : Level.INFO;
 
     // Invalid to have Level.OFF but want severe logs to fail the build.
@@ -79,7 +80,6 @@ class BuildOptions {
     failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
-    verbose ??= false;
 
     if (rootPackageConfig == null ||
         (rootPackageConfig.buildTargets.length == 1 &&
