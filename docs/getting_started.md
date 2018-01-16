@@ -51,5 +51,8 @@ packages that provide Transformers you are using for versions published with a
 
 Older versions of `build_runner` were designed to run with manually written
 build scripts referencing the Builders available in the local package or in
-dependencies. Check with the packages that provide Builders you are using for
-versions published with a `build.yaml` file.
+dependencies. This pattern can still be used when customization is needed
+outside of `build.yaml`, but we recommend most users use the generated build
+script with `pub run build_runner` since it will be kept up to date with changes
+in the build packages. Check with the packages that provide Builders you are
+using for versions published with a `build.yaml` file.
