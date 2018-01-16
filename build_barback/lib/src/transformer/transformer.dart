@@ -129,7 +129,7 @@ class BuilderTransformer
 }
 
 /// Very simple [AssetReader] which uses a [Transform].
-class _TransformAssetReader implements AssetReader {
+class _TransformAssetReader extends AssetReader {
   final AggregateTransform transform;
 
   _TransformAssetReader(this.transform);

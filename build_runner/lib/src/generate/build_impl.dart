@@ -58,12 +58,13 @@ Future<BuildResult> build(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
+  bool verbose,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
       overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty),
+      new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
       reader: reader,
       writer: writer,
       onLog: onLog);
@@ -75,7 +76,8 @@ Future<BuildResult> build(
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputDir: outputDir);
+      outputDir: outputDir,
+      verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
@@ -117,11 +119,12 @@ class BuildImpl {
   final List<BuildAction> _buildActions;
   final OnDelete _onDelete;
   final PackageGraph _packageGraph;
-  final DigestAssetReader _reader;
+  final AssetReader _reader;
   final _resolvers = const BarbackResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final String _outputDir;
+  final bool _verbose;
 
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
@@ -133,7 +136,8 @@ class BuildImpl {
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
         _onDelete = buildDefinition.onDelete,
-        _outputDir = options.outputDir;
+        _outputDir = options.outputDir,
+        _verbose = options.verbose;
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
@@ -203,7 +207,9 @@ class BuildImpl {
 
       done.complete(result);
     }, onError: (e, Chain chain) {
-      final trace = foldInternalFrames(chain.toTrace()).terse;
+      final trace = _verbose
+          ? chain.toTrace()
+          : foldInternalFrames(chain.toTrace()).terse;
       done.complete(new BuildResult(BuildStatus.failure, [],
           exception: e, stackTrace: trace));
     });
@@ -221,8 +227,8 @@ class BuildImpl {
       await performanceTracker.trackAction(action, () async {
         var primaryInputs =
             await _matchingPrimaryInputs(action, phase, resourceManager);
-        outputs.addAll(await _runBuilder(
-            phase, action.builder, primaryInputs, resourceManager));
+        outputs.addAll(await _runBuilder(phase, action.hideOutput,
+            action.builder, primaryInputs, resourceManager));
       });
     }
     await Future.forEach(
@@ -252,9 +258,10 @@ class BuildImpl {
       }
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
+        if (node.isHidden && !action.hideOutput) return;
         if (node.needsUpdate) {
-          await _runLazyPhaseForInput(
-              node.phaseNumber, node.primaryInput, resourceManager);
+          await _runLazyPhaseForInput(node.phaseNumber, node.isHidden,
+              node.primaryInput, resourceManager);
         }
         if (!node.wasOutput) return;
       }
@@ -268,10 +275,15 @@ class BuildImpl {
   ///
   /// Does not return outputs that didn't need to be re-ran or were declared
   /// but not output.
-  Future<Iterable<AssetId>> _runBuilder(int phaseNumber, Builder builder,
-      Iterable<AssetId> primaryInputs, ResourceManager resourceManager) async {
-    var outputLists = await Future.wait(primaryInputs.map(
-        (input) => _runForInput(phaseNumber, builder, input, resourceManager)));
+  Future<Iterable<AssetId>> _runBuilder(
+      int phaseNumber,
+      bool outputsHidden,
+      Builder builder,
+      Iterable<AssetId> primaryInputs,
+      ResourceManager resourceManager) async {
+    var outputLists = await Future.wait(primaryInputs.map((input) =>
+        _runForInput(
+            phaseNumber, outputsHidden, builder, input, resourceManager)));
     return outputLists.fold<List<AssetId>>(
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
@@ -279,8 +291,8 @@ class BuildImpl {
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
 
   /// Lazily runs [phaseNumber] with [input] and [resourceManager].
-  Future<Iterable<AssetId>> _runLazyPhaseForInput(
-      int phaseNumber, AssetId input, ResourceManager resourceManager) {
+  Future<Iterable<AssetId>> _runLazyPhaseForInput(int phaseNumber,
+      bool outputsHidden, AssetId input, ResourceManager resourceManager) {
     return _lazyPhases.putIfAbsent('$phaseNumber|$input', () async {
       // First check if `input` is generated, and whether or not it was
       // actually output. If it wasn't then we just return an empty list here.
@@ -288,20 +300,21 @@ class BuildImpl {
       if (inputNode is GeneratedAssetNode) {
         // Make sure the `inputNode` is up to date, and rebuild it if not.
         if (inputNode.needsUpdate) {
-          await _runLazyPhaseForInput(
-              inputNode.phaseNumber, inputNode.primaryInput, resourceManager);
+          await _runLazyPhaseForInput(inputNode.phaseNumber, inputNode.isHidden,
+              inputNode.primaryInput, resourceManager);
         }
         if (!inputNode.wasOutput) return <AssetId>[];
       }
 
       var action = _buildActions[phaseNumber];
 
-      return _runForInput(phaseNumber, action.builder, input, resourceManager);
+      return _runForInput(
+          phaseNumber, outputsHidden, action.builder, input, resourceManager);
     });
   }
 
-  Future<Iterable<AssetId>> _runForInput(int phaseNumber, Builder builder,
-      AssetId input, ResourceManager resourceManager) async {
+  Future<Iterable<AssetId>> _runForInput(int phaseNumber, bool outputsHidden,
+      Builder builder, AssetId input, ResourceManager resourceManager) async {
     var builderOutputs = expectedOutputs(builder, input);
 
     // Add `builderOutputs` to the primary outputs of the input.
@@ -320,8 +333,10 @@ class BuildImpl {
         _reader,
         _assetGraph,
         phaseNumber,
+        outputsHidden,
         input.package,
-        (phase, input) => _runLazyPhaseForInput(phase, input, resourceManager));
+        (phase, input) => _runLazyPhaseForInput(
+            phase, outputsHidden, input, resourceManager));
 
     if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
       return <AssetId>[];
@@ -347,7 +362,7 @@ class BuildImpl {
 
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
-      Iterable<AssetId> outputs, DigestAssetReader reader) async {
+      Iterable<AssetId> outputs, AssetReader reader) async {
     assert(
         outputs.every(_assetGraph.contains),
         'Outputs should be known statically. Missing '
@@ -399,7 +414,7 @@ class BuildImpl {
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
-      AssetId builderOptionsId, DigestAssetReader reader) async {
+      AssetId builderOptionsId, AssetReader reader) async {
     var digestSink = new AccumulatorSink<Digest>();
     var bytesSink = md5.startChunkedConversion(digestSink);
 

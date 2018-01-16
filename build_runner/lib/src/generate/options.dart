@@ -19,6 +19,8 @@ const List<String> _defaultRootPackageWhitelist = const [
   'test/**',
   'tool/**',
   'web/**',
+  'pubspec.yaml',
+  'pubspec.lock',
 ];
 
 /// Manages setting up consistent defaults for all options and build modes.
@@ -32,6 +34,7 @@ class BuildOptions {
   bool failOnSevere;
   bool enableLowResourcesMode;
   final String outputDir;
+  bool verbose;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -51,9 +54,11 @@ class BuildOptions {
       Level logLevel,
       this.skipBuildScriptCheck,
       this.enableLowResourcesMode,
-      this.outputDir}) {
+      this.outputDir,
+      this.verbose}) {
     // Set up logging
-    logLevel ??= Level.INFO;
+    verbose ??= false;
+    logLevel ??= verbose ? Level.ALL : Level.INFO;
 
     // Invalid to have Level.OFF but want severe logs to fail the build.
     if (logLevel == Level.OFF && failOnSevere == true) {

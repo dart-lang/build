@@ -87,6 +87,19 @@ void main() {
       ),
     });
   });
+
+  test('build.yaml can be empty', () {
+    var buildConfig = new BuildConfig.parse('example', ['a', 'b'], '');
+    expectBuildTargets(buildConfig.buildTargets, {
+      'example:example': new BuildTarget(
+        dependencies: ['a:a', 'b:b'].toSet(),
+        package: 'example',
+        key: 'example:example',
+        sources: new InputSet(),
+      ),
+    });
+    expectBuilderDefinitions(buildConfig.builderDefinitions, {});
+  });
 }
 
 var buildYaml = '''

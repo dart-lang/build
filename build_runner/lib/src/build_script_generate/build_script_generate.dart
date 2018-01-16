@@ -3,11 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
-import 'package:code_builder/code_builder.dart' hide File;
+import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
@@ -19,13 +18,8 @@ import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
 
-Future<Null> ensureBuildScript() async {
-  var log = new Logger('ensureBuildScript');
-  var scriptFile = new File(scriptLocation);
-  scriptFile.createSync(recursive: true);
-  await logTimedAsync(log, 'Generating build script',
-      () async => scriptFile.writeAsString(await _generateBuildScript()));
-}
+Future<String> generateBuildScript() => logTimedAsync(
+    new Logger('Entrypoint'), 'Generating build script', _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
   final builders = await _findBuilderApplications();

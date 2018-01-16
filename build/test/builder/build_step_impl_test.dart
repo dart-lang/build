@@ -83,7 +83,7 @@ void main() {
     });
 
     test('tracks outputs created by a builder', () async {
-      var builder = new CopyBuilder();
+      var builder = new TestBuilder();
       var primary = makeAssetId('a|web/primary.txt');
       var inputs = {
         primary: 'foo',

@@ -54,6 +54,7 @@ Future<ServeHandler> watch(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
+  bool verbose,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -73,7 +74,8 @@ Future<ServeHandler> watch(
       debounceDelay: debounceDelay,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputDir: outputDir);
+      outputDir: outputDir,
+      verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
@@ -129,8 +131,8 @@ class WatchImpl implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = new Set<AssetId>();
 
-  final _readerCompleter = new Completer<DigestAssetReader>();
-  Future<DigestAssetReader> get reader => _readerCompleter.future;
+  final _readerCompleter = new Completer<AssetReader>();
+  Future<AssetReader> get reader => _readerCompleter.future;
 
   WatchImpl(
       BuildEnvironment environment,
@@ -250,6 +252,7 @@ class WatchImpl implements BuildState {
           _buildDefinition.reader,
           _buildDefinition.assetGraph,
           buildActions.length,
+          true,
           packageGraph.root.name,
           null));
       _assetGraph = _buildDefinition.assetGraph;
@@ -304,7 +307,7 @@ class WatchImpl implements BuildState {
 
 Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
   var changeMap = <AssetId, ChangeType>{};
-  for (var change in changes.expand((l) => l)) {
+  for (AssetChange change in changes.expand((l) => l)) {
     var originalChangeType = changeMap[change.id];
     if (originalChangeType != null) {
       switch (originalChangeType) {

@@ -87,7 +87,7 @@ main() {
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'b.txt'), 'b');
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -121,7 +121,7 @@ main() {
 
       test('for new sources and generated nodes', () async {
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
 
         var originalAssetGraph = await AssetGraph.build(buildActions,
@@ -146,7 +146,7 @@ main() {
       test('for changed sources', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -173,7 +173,8 @@ main() {
       test('retains non-output generated nodes', () async {
         await createFile(p.join('lib', 'test.txt'), 'a');
         var buildActions = [
-          new BuildAction(new OverDeclaringCopyBuilder(), 'a', hideOutput: true)
+          new BuildAction(new TestBuilder(build: (_, __) {}), 'a',
+              hideOutput: true)
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -198,8 +199,9 @@ main() {
       test('for changed BuilderOptions', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', hideOutput: true),
-          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+          new BuildAction(new TestBuilder(), 'a', hideOutput: true),
+          new BuildAction(
+              new TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
               targetSources: const InputSet(include: const ['**/*.txt']),
               hideOutput: true),
         ];
@@ -212,7 +214,7 @@ main() {
             environment.reader);
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
-        for (var id in [generatedACopyId, generatedACloneId]) {
+        for (AssetId id in [generatedACopyId, generatedACloneId]) {
           var node = originalAssetGraph.get(id) as GeneratedAssetNode;
           node.wasOutput = true;
           node.needsUpdate = false;
@@ -223,10 +225,11 @@ main() {
 
         // Same as before, but change the `BuilderOptions` for the first action.
         var newBuildActions = [
-          new BuildAction(new CopyBuilder(), 'a',
+          new BuildAction(new TestBuilder(), 'a',
               builderOptions: new BuilderOptions({'test': 'option'}),
               hideOutput: true),
-          new BuildAction(new CopyBuilder(extension: 'clone'), 'a',
+          new BuildAction(
+              new TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
               targetSources: const InputSet(include: const ['**/*.txt']),
               hideOutput: true),
         ];
@@ -255,7 +258,8 @@ main() {
         await createFile(generatedId.path, 'a');
         var buildActions = [
           new BuildAction(
-              new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
+              new TestBuilder(
+                  buildExtensions: appendExtension('.copy', from: '.txt')),
               'a',
               hideOutput: true)
         ];
@@ -287,7 +291,7 @@ main() {
         var entryPoint =
             new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
         var buildActions = [
-          new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
         var buildDefinition = await BuildDefinition.prepareWorkspace(
             environment, options, buildActions);
@@ -304,7 +308,7 @@ main() {
       await options.logListener.cancel();
 
       var buildActions = [
-        new BuildAction(new CopyBuilder(), 'a', hideOutput: true)
+        new BuildAction(new TestBuilder(), 'a', hideOutput: true)
       ];
       var logs = <LogRecord>[];
       environment = new OverrideableEnvironment(environment, onLog: logs.add);
@@ -319,7 +323,7 @@ main() {
       await createFile(
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
-      buildActions.add(new BuildAction(new CopyBuilder(), 'a',
+      buildActions.add(new BuildAction(new TestBuilder(), 'a',
           targetSources: const InputSet(include: const ['.copy']),
           hideOutput: true));
       logs.clear();
@@ -346,7 +350,7 @@ main() {
       await options.logListener.cancel();
 
       var buildActions = [
-        new BuildAction(new CopyBuilder(), 'a',
+        new BuildAction(new TestBuilder(), 'a',
             hideOutput: true,
             builderOptions: new BuilderOptions({'foo': 'bar'}))
       ];
@@ -364,7 +368,7 @@ main() {
           assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
 
       buildActions = [
-        new BuildAction(new CopyBuilder(), 'a',
+        new BuildAction(new TestBuilder(), 'a',
             hideOutput: true,
             builderOptions: new BuilderOptions({'baz': 'zap'}))
       ];

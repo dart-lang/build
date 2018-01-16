@@ -10,7 +10,6 @@ import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner/src/asset/reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/phase.dart';
@@ -20,7 +19,7 @@ import '../common/common.dart';
 import '../common/package_graphs.dart';
 
 void main() {
-  final digestReader = new MockDigestReader();
+  final digestReader = new StubAssetReader();
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   group('AssetGraph', () {
@@ -135,7 +134,8 @@ void main() {
     group('with buildActions', () {
       final buildActions = [
         new BuildAction(
-            new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'),
+            new TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.txt')),
             'foo',
             targetSources: const InputSet(exclude: const ['excluded.txt']))
       ];
@@ -283,10 +283,26 @@ void main() {
       });
     });
 
+    test('non-hidden action following hidden action', () async {
+      final graph = await AssetGraph.build([
+        new BuildAction(
+            new TestBuilder(buildExtensions: appendExtension('.hidden')), 'foo',
+            hideOutput: true),
+        new BuildAction(
+            new TestBuilder(buildExtensions: appendExtension('.visible')),
+            'foo',
+            hideOutput: false)
+      ], [makeAssetId('foo|lib/file.txt')].toSet(), new Set<AssetId>(),
+          fooPackageGraph, digestReader);
+
+      expect(graph.outputs,
+          isNot(contains(makeAssetId('foo|lib/file.txt.hidden.visible'))));
+    });
+
     test('overlapping build actions cause an error', () async {
       expect(
           () => AssetGraph.build(
-              new List.filled(2, new BuildAction(new CopyBuilder(), 'foo')),
+              new List.filled(2, new BuildAction(new TestBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
               new Set(),
               fooPackageGraph,
@@ -294,9 +310,4 @@ void main() {
           throwsA(duplicateAssetNodeException));
     });
   });
-}
-
-class MockDigestReader extends StubAssetReader with Md5DigestReader {
-  @override
-  Future<List<int>> readAsBytes(AssetId id) async => UTF8.encode('$id');
 }

@@ -1,3 +1,11 @@
+## 0.12.0-dev
+
+### Breaking Changes
+
+- Added the `Future<Digest> digest(AssetId id)` method to the `AssetReader`
+  interface. There is a default implementation which uses `readAsBytes` and
+  `md5`.
+
 ## 0.11.2
 
 - Bug Fix: `MultiplexingBuilder` now filters inputs rather than calling _every_

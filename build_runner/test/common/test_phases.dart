@@ -85,7 +85,9 @@ Future<BuildResult> testBuilders(
   bool deleteFilesByDefault: true,
   bool enableLowResourcesMode: false,
   Map<String, BuildConfig> overrideBuildConfig,
+  bool verbose: false,
 }) async {
+  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= new InMemoryRunnerAssetWriter();
   reader ??= new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph?.root?.name);
@@ -99,8 +101,6 @@ Future<BuildResult> testBuilders(
     }
   });
 
-  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
-
   var result = await build_impl.build(
     builders,
     deleteFilesByDefault: deleteFilesByDefault,
@@ -113,6 +113,7 @@ Future<BuildResult> testBuilders(
     skipBuildScriptCheck: true,
     enableLowResourcesMode: enableLowResourcesMode,
     overrideBuildConfig: overrideBuildConfig,
+    verbose: verbose,
   );
 
   if (checkBuildStatus) {
@@ -142,7 +143,7 @@ void checkBuild(BuildResult result,
 
   final unhiddenOutputs = <String, dynamic>{};
   final unhiddenAssets = new Set<AssetId>();
-  for (final id in outputs?.keys ?? const []) {
+  for (final String id in outputs?.keys ?? const []) {
     if (id.startsWith(r'$$')) {
       final unhidden = id.substring(2);
       unhiddenAssets.add(makeAssetId(unhidden));

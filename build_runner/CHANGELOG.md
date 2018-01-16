@@ -1,6 +1,25 @@
-## 0.7.5-dev
+## 0.7.6-dev
+
+- Update to package:build version `0.12.0`.
+- Removed the `DigestAssetReader` interface, the `digest` method has now moved
+  to the core `AssetReader` interface. We are treating this as a non-breaking
+  change because there are no known users of this interface.
+
+## 0.7.5+1
+
+- Bug fix for using the `--output` flag when you have no `test` directory.
+
+## 0.7.5
 
 - Add more human friendly duration printing.
+- Added the `--output <dir>` (or `-o`) argument which will create a merged
+  output directory after each build. 
+- Added the `--verbose` (or `-v`) flag which enables verbose logging.
+  - Disables stack trace folding and terse stack traces.
+  - Disables the overwriting of previous info logs.
+  - Sets the default log level to `Level.ALL`.
+- Added `pubspec.yaml` and `pubspec.lock` to the whitelist for the root package
+  sources.
 
 ## 0.7.4
 

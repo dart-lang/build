@@ -13,26 +13,8 @@ import '../asset_graph/node.dart';
 
 typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
-abstract class DigestAssetReader implements AssetReader {
-  /// Asynchronously compute the digest for [id].
-  ///
-  /// Throws a [AssetNotFoundException] if [id] is not found.
-  Future<Digest> digest(AssetId id);
-}
-
-/// A [RunnerAssetReader] must implement both [MultiPackageAssetReader] and
-/// [DigestAssetReader].
-abstract class RunnerAssetReader
-    implements MultiPackageAssetReader, DigestAssetReader {}
-
-/// A [DigestAssetReader] that uses [md5] to compute [Digest]s.
-abstract class Md5DigestReader implements DigestAssetReader {
-  @override
-  Future<Digest> digest(AssetId id) async {
-    var bytes = await readAsBytes(id);
-    return md5.convert(bytes);
-  }
-}
+/// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
+abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
@@ -45,17 +27,23 @@ abstract class Md5DigestReader implements DigestAssetReader {
 ///
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
-class SingleStepReader implements DigestAssetReader {
+class SingleStepReader implements AssetReader {
   final AssetGraph _assetGraph;
   final _assetsRead = new Set<AssetId>();
-  final DigestAssetReader _delegate;
+  final AssetReader _delegate;
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
   final RunPhaseForInput _runPhaseForInput;
 
+  /// Whether the action using this reader writes to the generated directory.
+  ///
+  /// Actions which do not hide their outptus may not read assets produced by
+  /// actions which do hide their outputs.
+  final bool _outputsHidden;
+
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage, this._runPhaseForInput);
+      this._outputsHidden, this._primaryPackage, this._runPhaseForInput);
 
   Set<AssetId> get assetsRead => _assetsRead;
 
@@ -65,57 +53,82 @@ class SingleStepReader implements DigestAssetReader {
   /// builder may behave differently on the next build.
   Iterable<Glob> get globsRan => _globsRan;
 
-  bool _isReadable(AssetId id) {
+  /// Checks whether [id] can be read by this step - attempting to build the
+  /// asset if necessary.
+  FutureOr<bool> _isReadable(AssetId id) {
     _assetsRead.add(id);
     var node = _assetGraph.get(id);
     if (node == null) {
       _assetGraph.add(new SyntheticSourceAssetNode(id));
       return false;
     }
+    return _isReadableNode(node);
+  }
+
+  /// Checks whether [node] can be read by this step - attempting to build the
+  /// asset if necessary.
+  FutureOr<bool> _isReadableNode(AssetNode node) {
     if (node.isGenerated) {
-      return (node as GeneratedAssetNode).phaseNumber < _phaseNumber;
+      final generatedNode = node as GeneratedAssetNode;
+      if (generatedNode.phaseNumber >= _phaseNumber) return false;
+      if (!_outputsHidden && generatedNode.isHidden) return false;
+      return doAfter(
+          _ensureAssetIsBuilt(node.id), (_) => generatedNode.wasOutput);
     }
     return node.isReadable;
   }
 
   @override
-  Future<bool> canRead(AssetId id) async {
-    if (!_isReadable(id)) return new Future.value(false);
-    await _ensureAssetIsBuilt(id);
-    var node = _assetGraph.get(id);
-    bool result;
-    if (node is GeneratedAssetNode) {
-      // Short circut, we know this file exists because its readable and it was
-      // output.
-      result = node.wasOutput;
-    } else {
-      result = await _delegate.canRead(id);
-    }
-    if (result) await _ensureDigest(id);
-    return result;
+  Future<bool> canRead(AssetId id) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) return false;
+      var node = _assetGraph.get(id);
+      FutureOr<bool> _canRead() {
+        if (node is GeneratedAssetNode) {
+          // Short circut, we know this file exists because its readable and it was
+          // output.
+          return true;
+        } else {
+          return _delegate.canRead(id);
+        }
+      }
+
+      return doAfter(_canRead(), (bool canRead) {
+        if (!canRead) return false;
+        return doAfter(_ensureDigest(id), (_) => true);
+      });
+    }));
   }
 
   @override
-  Future<Digest> digest(AssetId id) async {
-    if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureAssetIsBuilt(id);
-    return _ensureDigest(id);
+  Future<Digest> digest(AssetId id) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) {
+        return new Future.error(new AssetNotFoundException(id));
+      }
+      return _ensureDigest(id);
+    }));
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) async {
-    if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureAssetIsBuilt(id);
-    await _ensureDigest(id);
-    return _delegate.readAsBytes(id);
+  Future<List<int>> readAsBytes(AssetId id) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) {
+        return new Future.error(new AssetNotFoundException(id));
+      }
+      return doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
+    }));
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
-    if (!_isReadable(id)) throw new AssetNotFoundException(id);
-    await _ensureAssetIsBuilt(id);
-    await _ensureDigest(id);
-    return _delegate.readAsString(id, encoding: encoding);
+  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+      if (!isReadable) {
+        return new Future.error(new AssetNotFoundException(id));
+      }
+      return doAfter(_ensureDigest(id),
+          (_) => _delegate.readAsString(id, encoding: encoding));
+    }));
   }
 
   @override
@@ -125,26 +138,36 @@ class SingleStepReader implements DigestAssetReader {
         .packageNodes(_primaryPackage)
         .where((n) => glob.matches(n.id.path));
     for (var node in potentialMatches) {
-      if (node is GeneratedAssetNode) {
-        if (node.phaseNumber >= _phaseNumber) continue;
-        await _ensureAssetIsBuilt(node.id);
-        if (node.wasOutput) yield node.id;
-      } else {
-        yield node.id;
-      }
+      if (await _isReadableNode(node)) yield node.id;
     }
   }
 
-  Future<Null> _ensureAssetIsBuilt(AssetId id) async {
+  FutureOr<dynamic> _ensureAssetIsBuilt(AssetId id) {
     if (_runPhaseForInput == null) return null;
     var node = _assetGraph.get(id);
     if (node is GeneratedAssetNode && node.needsUpdate) {
-      await _runPhaseForInput(node.phaseNumber, node.primaryInput);
+      return _runPhaseForInput(node.phaseNumber, node.primaryInput);
     }
+    return null;
   }
 
-  Future<Digest> _ensureDigest(AssetId id) async {
+  FutureOr<Digest> _ensureDigest(AssetId id) {
     var node = _assetGraph.get(id);
-    return node.lastKnownDigest ??= await _delegate.digest(id);
+    if (node?.lastKnownDigest != null) return node.lastKnownDigest;
+    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
   }
 }
+
+/// Invokes [callback] and returns the result as soon as possible. This will
+/// happen synchronously if [value] is available.
+FutureOr<S> doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
+  if (value is Future<T>) {
+    return value.then(callback);
+  } else {
+    return callback(value as T);
+  }
+}
+
+/// Converts [value] to a [Future] if it is not already.
+Future<T> toFuture<T>(FutureOr<T> value) =>
+    value is Future<T> ? value : new Future.value(value);

@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 import '../analyzer/resolver.dart';
@@ -108,6 +109,12 @@ class BuildStepImpl implements BuildStep {
         (String c) => _writer.writeAsString(id, c, encoding: encoding));
     _writeResults.add(Result.capture(done));
     return done;
+  }
+
+  @override
+  Future<Digest> digest(AssetId id) {
+    _checkInput(id);
+    return _reader.digest(id);
   }
 
   Future _futureOrWrite<T>(FutureOr<T> content, Future write(T content)) =>

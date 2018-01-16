@@ -4,21 +4,22 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
-import 'package:io/io.dart';
+import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 
 Future<Null> main(List<String> args) async {
-  var logListener = Logger.root.onRecord.listen(stdIOLogListener);
-
   // Use the actual command runner to parse the args and immediately print the
   // usage information if there is no command provided or the help command was
   // explicitly invoked.
-  var commandRunner = new BuildCommandRunner([]);
+  var commandRunner = new BuildCommandRunner([])
+    ..addCommand(new _GenerateBuildScript());
   var parsedArgs = commandRunner.parse(args);
   var commandName = parsedArgs.command?.name;
   if (commandName == null || commandName == 'help') {
@@ -26,26 +27,32 @@ Future<Null> main(List<String> args) async {
     return;
   }
 
-  await ensureBuildScript();
-  var dart = Platform.resolvedExecutable;
-
-  // The actual args we will pass to the generated entrypoint script.
-  final innerArgs = [scriptLocation]..addAll(args);
-
-  // For commands that support the `assume-tty` flag, we want to force the right
-  // setting unless it was explicitly provided.
-  var command = commandRunner.commands[commandName];
-  var commandParser = command.argParser;
-  if (stdioType(stdin) == StdioType.TERMINAL &&
-      commandParser.options.containsKey('assume-tty') &&
-      !args.any((a) => a.contains('assume-tty'))) {
-    // We want to insert this as the first arg after the command, trailing args
-    // might get forwarded elsewhere (such as package:test).
-    innerArgs.insert(innerArgs.indexOf(commandName) + 1, '--assume-tty');
+  StreamSubscription logListener;
+  if (commandName != _generateCommand) {
+    logListener = Logger.root.onRecord.listen(stdIOLogListener);
+  }
+  var buildScript = await generateBuildScript();
+  var scriptFile = new File(scriptLocation)..createSync(recursive: true);
+  scriptFile.writeAsStringSync(buildScript);
+  if (commandName == _generateCommand) {
+    print(p.absolute(scriptLocation));
+    return;
   }
 
-  var buildRun = await new ProcessManager().spawn(dart, innerArgs);
-  await buildRun.exitCode;
-  await ProcessManager.terminateStdIn();
-  await logListener.cancel();
+  var exitPort = new ReceivePort();
+  await Isolate.spawnUri(new Uri.file(p.absolute(scriptLocation)), args, null,
+      onExit: exitPort.sendPort);
+  await exitPort.first;
+  await logListener?.cancel();
+}
+
+const _generateCommand = 'generate-build-script';
+
+class _GenerateBuildScript extends Command {
+  @override
+  final description = 'Generate a script to run builds and print the file path '
+      'with no other logging. Useful for wrapping builds with other tools.';
+
+  @override
+  final name = _generateCommand;
 }

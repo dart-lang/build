@@ -11,12 +11,14 @@ import 'package:test/test.dart';
 import 'package:transformer_test/utils.dart';
 
 void main() {
-  var singleCopyTransformer = new BuilderTransformer(new CopyBuilder());
-  var multiCopyTransformer =
-      new BuilderTransformer(new CopyBuilder(numCopies: 2));
-  var singleAndMultiCopyTransformer = new BuilderTransformer(
-      new MultiplexingBuilder(
-          [new CopyBuilder(), new CopyBuilder(numCopies: 2)]));
+  var singleCopyTransformer = new BuilderTransformer(new TestBuilder());
+  var multiCopyTransformer = new BuilderTransformer(
+      new TestBuilder(buildExtensions: appendExtension('.copy', numCopies: 2)));
+  var singleAndMultiCopyTransformer =
+      new BuilderTransformer(new MultiplexingBuilder([
+    new TestBuilder(),
+    new TestBuilder(buildExtensions: appendExtension('.copy', numCopies: 2))
+  ]));
 
   testPhases('single builder, single output', [
     [singleCopyTransformer],
@@ -48,13 +50,13 @@ void main() {
   testPhases('multiple builders, same outputs', [
     [
       new BuilderTransformer(
-          new MultiplexingBuilder([new CopyBuilder(), new CopyBuilder()]))
+          new MultiplexingBuilder([new TestBuilder(), new TestBuilder()]))
     ],
   ], {
     'a|web/a.txt': 'hello',
   }, {}, messages: [
     _fileExistsError(
-        '${[new CopyBuilder(), new CopyBuilder()]}', ['a|web/a.txt.copy']),
+        '${[new TestBuilder(), new TestBuilder()]}', ['a|web/a.txt.copy']),
   ]);
 
   testPhases('multiple phases', [
@@ -88,7 +90,7 @@ void main() {
       {'a|web/a.txt': 'hello', 'a|web/a.txt.copy': 'hello'},
       {},
       messages: [
-        _fileExistsError('${new CopyBuilder()}', ['a|web/a.txt.copy']),
+        _fileExistsError('${new TestBuilder()}', ['a|web/a.txt.copy']),
       ],
       expectBarbackErrors: true);
 
@@ -96,7 +98,7 @@ void main() {
   testPhases(
       'builders in the same phase can\'t output the same file',
       [
-        [singleCopyTransformer, new BuilderTransformer(new CopyBuilder())]
+        [singleCopyTransformer, new BuilderTransformer(new TestBuilder())]
       ],
       {
         'a|web/a.txt': 'hello',
@@ -113,24 +115,24 @@ void main() {
       {'a|web/a.txt': 'hello'},
       {},
       messages: [
-        _fileExistsError('${new CopyBuilder()}', ['a|web/a.txt.copy']),
+        _fileExistsError('${new TestBuilder()}', ['a|web/a.txt.copy']),
       ],
       expectBarbackErrors: true);
 
   testPhases('loggers log errors', [
-    [new BuilderTransformer(new LoggingCopyBuilder())],
+    [new BuilderTransformer(new TestBuilder(extraWork: logWarningAndError))],
   ], {
     'a|web/a.txt': 'a',
     'a|web/b.txt': 'b',
   }, {}, messages: [
     allOf(startsWith('warning: Warning!'), contains('Error: SomeError'),
-        contains('LoggingCopyBuilder.build')),
+        contains('TestBuilder.build')),
     allOf(startsWith('error: Error!'), contains('Error: SomeError'),
-        contains('LoggingCopyBuilder.build')),
+        contains('TestBuilder.build')),
     allOf(startsWith('warning: Warning!'), contains('SomeError'),
-        contains('LoggingCopyBuilder.build')),
+        contains('TestBuilder.build')),
     allOf(startsWith('error: Error!'), contains('SomeError'),
-        contains('LoggingCopyBuilder.build')),
+        contains('TestBuilder.build')),
   ]);
 
   testPhases('can resolve a library', [
@@ -184,20 +186,15 @@ class ResolvingBuilder extends Builder {
       };
 }
 
-class LoggingCopyBuilder extends CopyBuilder {
-  LoggingCopyBuilder() : super();
-
-  @override
-  Future build(BuildStep buildStep) async {
-    await super.build(buildStep);
-    try {
-      throw 'SomeError';
-    } catch (e, s) {
-      log.warning('Warning!', e, s);
-      log.severe('Error!', e, s);
-    }
+/// For use with [TestBuilder].
+final BuildBehavior logWarningAndError = (_, __) {
+  try {
+    throw 'SomeError';
+  } catch (e, s) {
+    log.warning('Warning!', e, s);
+    log.severe('Error!', e, s);
   }
-}
+};
 
 String _fileExistsError(String builder, List<String> files) {
   return "error: Builder `$builder` declared outputs "

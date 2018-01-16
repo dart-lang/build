@@ -13,7 +13,6 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/reader.dart';
 import '../generate/phase.dart';
 import '../package_graph/package_graph.dart';
 import 'exceptions.dart';
@@ -43,7 +42,7 @@ class AssetGraph {
       Set<AssetId> sources,
       Set<AssetId> internalSources,
       PackageGraph packageGraph,
-      DigestAssetReader digestReader) async {
+      AssetReader digestReader) async {
     var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
@@ -135,7 +134,7 @@ class AssetGraph {
   /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
   /// `lastKnownDigest` field.
   Future<Null> _setLastKnownDigests(
-      Iterable<AssetNode> nodes, DigestAssetReader digestReader) async {
+      Iterable<AssetNode> nodes, AssetReader digestReader) async {
     await Future.wait(nodes.map((node) async {
       node.lastKnownDigest = await digestReader.digest(node.id);
     }));
@@ -199,7 +198,7 @@ class AssetGraph {
       Map<AssetId, ChangeType> updates,
       String rootPackage,
       Future delete(AssetId id),
-      DigestAssetReader digestReader) async {
+      AssetReader digestReader) async {
     var invalidatedIds = new Set<AssetId>();
 
     // Transitively invalidates all assets.
@@ -326,10 +325,13 @@ class AssetGraph {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
+        var node = get(input);
+        if (!action.hideOutput && node is GeneratedAssetNode && node.isHidden) {
+          continue;
+        }
 
         var outputs = expectedOutputs(action.builder, input);
         phaseOutputs.addAll(outputs);
-        var node = get(input);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
         allInputs.removeAll(_addGeneratedOutputs(

@@ -15,10 +15,10 @@ import 'package:glob/glob.dart';
 /// [MultiAssetReader] attempts to check every provided
 /// [MultiPackageAssetReader] to see if they are capable of reading an
 /// [AssetId], otherwise checks the next reader.
-class MultiAssetReader implements MultiPackageAssetReader {
+class MultiAssetReader extends AssetReader implements MultiPackageAssetReader {
   final List<MultiPackageAssetReader> _readers;
 
-  const MultiAssetReader(this._readers);
+  MultiAssetReader(this._readers);
 
   @override
   Future<bool> canRead(AssetId id) async {

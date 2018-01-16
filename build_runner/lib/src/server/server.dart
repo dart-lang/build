@@ -10,7 +10,6 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 
-import '../asset/reader.dart';
 import '../generate/build_result.dart';
 import '../generate/watch_impl.dart';
 
@@ -67,7 +66,7 @@ class ServeHandler implements BuildState {
 }
 
 class AssetHandler {
-  final DigestAssetReader _reader;
+  final AssetReader _reader;
   final String _rootPackage;
 
   final _typeResolver = new MimeTypeResolver();

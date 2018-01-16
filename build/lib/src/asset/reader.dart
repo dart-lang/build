@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 import 'id.dart';
@@ -32,6 +33,15 @@ abstract class AssetReader {
 
   /// Returns all readable assets matching [glob] under the current package.
   Stream<AssetId> findAssets(Glob glob);
+
+  /// Returns a [Digest] representing a hash of the contents of [id].
+  ///
+  /// This should be treated as a transparent [Digest] and the implementation
+  /// may differ based on the current build system being used.
+  Future<Digest> digest(AssetId id) async {
+    var bytes = await readAsBytes(id);
+    return md5.convert(bytes);
+  }
 }
 
 /// The same as an `AssetReader`, except that `findAssets` takes an optional

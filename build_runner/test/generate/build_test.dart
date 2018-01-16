@@ -19,7 +19,7 @@ import '../common/package_graphs.dart';
 void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyABuilderApplication = applyToRoot(
-      new CopyBuilder(inputExtension: '.txt', extension: 'txt.copy'));
+      new TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final globBuilder = new GlobbingBuilder(new Glob('**.txt'));
   final defaultBuilderOptions = const BuilderOptions(const {});
   final placeholders =
@@ -43,7 +43,8 @@ void main() {
 
       test('one phase, one builder, one-to-many outputs', () async {
         await testBuilders([
-          applyToRoot(new CopyBuilder(numCopies: 2))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', numCopies: 2)))
         ], {
           'a|web/a.txt': 'a',
           'a|lib/b.txt': 'b',
@@ -58,9 +59,17 @@ void main() {
       test('optional build actions don\'t run if their outputs aren\'t read',
           () async {
         await testBuilders([
-          apply('', [(_) => new CopyBuilder(extension: '1')], toRoot(),
+          apply(
+              '',
+              [(_) => new TestBuilder(buildExtensions: appendExtension('.1'))],
+              toRoot(),
               isOptional: true),
-          apply('a|only_on_1', [(_) => new CopyBuilder(inputExtension: '1')],
+          apply(
+              'a|only_on_1',
+              [
+                (_) => new TestBuilder(
+                    buildExtensions: appendExtension('.copy', from: '.1'))
+              ],
               toRoot(),
               isOptional: true),
         ], {
@@ -70,17 +79,27 @@ void main() {
 
       test('optional build actions do run if their outputs are read', () async {
         await testBuilders([
-          apply('', [(_) => new CopyBuilder(extension: '1')], toRoot(),
-              isOptional: true, hideOutput: false),
           apply(
               '',
-              [(_) => new CopyBuilder(inputExtension: '.1', extension: '2')],
+              [(_) => new TestBuilder(buildExtensions: appendExtension('.1'))],
               toRoot(),
               isOptional: true,
               hideOutput: false),
           apply(
               '',
-              [(_) => new CopyBuilder(inputExtension: '.2', extension: '3')],
+              [
+                (_) => new TestBuilder(
+                    buildExtensions: replaceExtension('.1', '.2'))
+              ],
+              toRoot(),
+              isOptional: true,
+              hideOutput: false),
+          apply(
+              '',
+              [
+                (_) => new TestBuilder(
+                    buildExtensions: replaceExtension('.2', '.3'))
+              ],
               toRoot(),
               hideOutput: false),
         ], {
@@ -95,10 +114,21 @@ void main() {
       test('multiple mixed build actions with custom build config', () async {
         var builders = [
           copyABuilderApplication,
-          apply('a|clone_txt', [(_) => new CopyBuilder(extension: 'clone')],
+          apply(
+              'a|clone_txt',
+              [
+                (_) =>
+                    new TestBuilder(buildExtensions: appendExtension('.clone'))
+              ],
               toRoot(),
-              isOptional: true, hideOutput: false),
-          apply('a|copy_web_clones', [(_) => new CopyBuilder(numCopies: 2)],
+              isOptional: true,
+              hideOutput: false),
+          apply(
+              'a|copy_web_clones',
+              [
+                (_) => new TestBuilder(
+                    buildExtensions: appendExtension('.copy', numCopies: 2))
+              ],
               toRoot(),
               hideOutput: false),
         ];
@@ -139,11 +169,14 @@ void main() {
       test('early step touches a not-yet-generated asset', () async {
         var copyId = new AssetId('a', 'lib/file.a.copy');
         var builders = [
-          applyToRoot(new CopyBuilder(
-              touchAsset: copyId, inputExtension: '.b', extension: 'b.copy')),
-          applyToRoot(
-              new CopyBuilder(inputExtension: '.a', extension: 'a.copy')),
-          applyToRoot(new ExistsBuilder(copyId, inputExtension: '.a')),
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.b'),
+              extraWork: (buildStep, _) => buildStep.canRead(copyId))),
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.a'))),
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.exists', from: '.a'),
+              build: writeCanRead(copyId))),
         ];
         await testBuilders(builders, {
           'a|lib/file.a': 'a',
@@ -158,22 +191,27 @@ void main() {
       test('asset is deleted mid-build, use cached canRead result', () async {
         var aTxtId = new AssetId('a', 'lib/file.a');
         var ready = new Completer();
-        var firstBuilder = new ExistsBuilder(aTxtId, inputExtension: 'a');
+        var firstBuilder = new TestBuilder(
+            buildExtensions: appendExtension('.exists', from: '.a'),
+            build: writeCanRead(aTxtId));
         var writer = new InMemoryRunnerAssetWriter();
         var reader = new InMemoryRunnerAssetReader.shareAssetCache(
             writer.assets,
             rootPackage: 'a');
         var builders = [
           applyToRoot(firstBuilder),
-          applyToRoot(new ExistsBuilder(aTxtId,
-              waitFor: ready.future, inputExtension: 'b')),
+          applyToRoot(new TestBuilder(
+            buildExtensions: appendExtension('.exists', from: '.b'),
+            build: (_, __) => ready.future,
+            extraWork: writeCanRead(aTxtId),
+          )),
         ];
 
         // After the first builder runs, delete the asset from the reader and
         // allow the 2nd builder to run.
         //
         // ignore: unawaited_futures
-        firstBuilder.hasRan.then((_) {
+        firstBuilder.buildsCompleted.first.then((_) {
           reader.assets.remove(aTxtId);
           ready.complete();
         });
@@ -202,8 +240,8 @@ void main() {
         var writer = new InMemoryRunnerAssetWriter();
         await testBuilders([
           copyABuilderApplication,
-          applyToRoot(
-              new CopyBuilder(inputExtension: '.copy', extension: 'copy.clone'))
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.clone', from: '.copy')))
         ], {
           'a|web/a.txt': 'a',
           'a|web/a.txt.copy': 'a',
@@ -247,10 +285,9 @@ void main() {
             outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         var blockingCompleter = new Completer<Null>();
-        var builder = new CopyBuilder(
-            blockUntil: blockingCompleter.future,
-            inputExtension: '.txt',
-            extension: 'txt.copy');
+        var builder = new TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            extraWork: (_, __) => blockingCompleter.future);
         var done = testBuilders([applyToRoot(builder)], {'a|web/a.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
@@ -278,7 +315,7 @@ void main() {
       });
       await testBuilders(
           [
-            apply('', [(_) => new CopyBuilder()], toPackage('b'),
+            apply('', [(_) => new TestBuilder()], toPackage('b'),
                 hideOutput: false)
           ],
           {'b|lib/b.txt': 'b'},
@@ -298,7 +335,7 @@ void main() {
       test('can output files in non-root packages', () async {
         await testBuilders(
             [
-              apply('', [(_) => new CopyBuilder()], toPackage('b'),
+              apply('', [(_) => new TestBuilder()], toPackage('b'),
                   hideOutput: true),
             ],
             {'b|lib/b.txt': 'b'},
@@ -311,10 +348,10 @@ void main() {
       test('handles mixed hidden and non-hidden outputs', () async {
         await testBuilders(
             [
-              apply('', [(_) => new CopyBuilder()], toRoot(),
-                  hideOutput: false),
-              apply('', [(_) => new CopyBuilder(extension: 'hiddencopy')],
-                  toRoot(),
+              applyToRoot(new TestBuilder()),
+              applyToRoot(
+                  new TestBuilder(
+                      buildExtensions: appendExtension('.hiddencopy')),
                   hideOutput: true),
             ],
             {'a|lib/a.txt': 'a'},
@@ -323,6 +360,42 @@ void main() {
               r'$$a|lib/a.txt.hiddencopy': 'a',
               r'$$a|lib/a.txt.copy.hiddencopy': 'a',
               r'a|lib/a.txt.copy': 'a',
+            });
+      });
+
+      test('disallows reading hidden outputs to create a non-hidden output',
+          () async {
+        await testBuilders(
+            [
+              applyToRoot(new TestBuilder(), hideOutput: true),
+              applyToRoot(new TestBuilder(
+                  buildExtensions: appendExtension('.clone'),
+                  build: writeCanRead(makeAssetId('a|lib/a.txt.copy'))))
+            ],
+            {'a|lib/a.txt': 'a'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$a|lib/a.txt.copy': 'a',
+              r'a|lib/a.txt.clone': 'false',
+            });
+      });
+
+      test(
+          'disallows reading hidden outputs in dep to create a non-hidden output',
+          () async {
+        await testBuilders(
+            [
+              apply('b|hidden', [(_) => new TestBuilder()], toPackage('b'),
+                  hideOutput: true),
+              applyToRoot(new TestBuilder(
+                  buildExtensions: appendExtension('.clone'),
+                  build: writeCanRead(makeAssetId('b|lib/b.txt.copy'))))
+            ],
+            {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$b|lib/b.txt.copy': 'b',
+              r'a|lib/a.txt.clone': 'false',
             });
       });
 
@@ -336,7 +409,7 @@ void main() {
           };
         await testBuilders(
             [
-              apply('', [(_) => new CopyBuilder()], toPackage('b'),
+              apply('', [(_) => new TestBuilder()], toPackage('b'),
                   hideOutput: true)
             ],
             {
@@ -353,7 +426,11 @@ void main() {
       var builders = [
         apply(
             '',
-            [(_) => new CopyBuilder(touchAsset: makeAssetId('b|lib/b.txt'))],
+            [
+              (_) => new TestBuilder(
+                  extraWork: (buildStep, _) =>
+                      buildStep.canRead(makeAssetId('b|lib/b.txt')))
+            ],
             toRoot(),
             hideOutput: false)
       ];
@@ -397,7 +474,7 @@ void main() {
 
     test('can glob files from packages with excludes applied', () async {
       await testBuilders(
-          [applyToRoot(new CopyBuilder())],
+          [applyToRoot(new TestBuilder())],
           {
             'a|lib/a/1.txt': '',
             'a|lib/a/2.txt': '',
@@ -423,7 +500,7 @@ void main() {
 
     test('can build on files outside the hardcoded whitelist', () async {
       await testBuilders(
-          [applyToRoot(new CopyBuilder())], {'a|test_files/a.txt': 'a'},
+          [applyToRoot(new TestBuilder())], {'a|test_files/a.txt': 'a'},
           overrideBuildConfig: parseBuildConfigs({
             'a': {
               'targets': {
@@ -441,8 +518,8 @@ void main() {
         apply(
             '',
             [
-              (_) => new CopyBuilder(
-                  copyFromAsset: makeAssetId('a|.dart_tool/any_file'))
+              (_) => new TestBuilder(
+                  build: copyFrom(makeAssetId('a|.dart_tool/any_file')))
             ],
             toRoot())
       ], {
@@ -462,7 +539,7 @@ void main() {
             throw 'Should not delete outside of package:a';
           }
         };
-      await testBuilders([applyToRoot(new CopyBuilder())],
+      await testBuilders([applyToRoot(new TestBuilder())],
           {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b', 'b|lib/b.txt.copy': 'b'},
           packageGraph: packageGraph,
           writer: writer,
@@ -474,10 +551,12 @@ void main() {
     test('Overdeclared outputs are not treated as inputs to later steps',
         () async {
       var builders = [
-        applyToRoot(new OverDeclaringCopyBuilder(
-            numCopies: 1, extension: 'unexpected')),
-        applyToRoot(new CopyBuilder(extension: 'expected')),
-        applyToRoot(new CopyBuilder()),
+        applyToRoot(new TestBuilder(
+            buildExtensions: appendExtension('.unexpected'),
+            build: (_, __) {})),
+        applyToRoot(
+            new TestBuilder(buildExtensions: appendExtension('.expected'))),
+        applyToRoot(new TestBuilder()),
       ];
       await testBuilders(builders, {
         'a|lib/a.txt': 'a',
@@ -621,8 +700,8 @@ void main() {
     test('graph/file system get cleaned up for deleted inputs', () async {
       var builders = [
         copyABuilderApplication,
-        applyToRoot(
-            new CopyBuilder(inputExtension: '.copy', extension: 'clone'))
+        applyToRoot(new TestBuilder(
+            buildExtensions: replaceExtension('.copy', '.clone')))
       ];
 
       // Initial build.
@@ -685,7 +764,7 @@ void main() {
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
       var builders = [
-        apply('', [(_) => new CopyBuilder()], toRoot(), hideOutput: true)
+        apply('', [(_) => new TestBuilder()], toRoot(), hideOutput: true)
       ];
 
       // Initial build.
@@ -709,10 +788,9 @@ void main() {
       // Initial build.
       var writer = new InMemoryRunnerAssetWriter();
       await testBuilders([
-        applyToRoot(new CopyBuilder(
-            copyFromAsset: makeAssetId('a|lib/file.b'),
-            inputExtension: '.a',
-            extension: 'a.copy')),
+        applyToRoot(new TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.a'),
+            build: copyFrom(makeAssetId('a|lib/file.b')))),
       ], {
         'a|lib/file.a': 'a',
         'a|lib/file.b': 'b',
@@ -727,10 +805,9 @@ void main() {
       writer.assets.clear();
 
       await testBuilders([
-        applyToRoot(new CopyBuilder(
-            copyFromAsset: makeAssetId('a|lib/file.c'),
-            inputExtension: '.a',
-            extension: 'a.copy')),
+        applyToRoot(new TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.a'),
+            build: copyFrom(makeAssetId('a|lib/file.c')))),
       ], {
         'a|lib/file.a': 'a',
         'a|lib/file.a.copy': 'b',
@@ -759,12 +836,11 @@ void main() {
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
       var builders = [
-        applyToRoot(new CopyBuilder(
-            copyFromAsset: new AssetId('a', 'lib/file.b'),
-            inputExtension: '.a',
-            extension: 'a.copy')),
-        applyToRoot(new CopyBuilder(
-            inputExtension: '.a.copy', extension: 'a.copy.copy')),
+        applyToRoot(new TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.a'),
+            build: copyFrom(makeAssetId('a|lib/file.b')))),
+        applyToRoot(new TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.a.copy'))),
       ];
 
       // Initial build.

@@ -84,6 +84,7 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
 
   // Add all the files to include in the unlinked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
+
   var analyzer = await buildStep.fetchResource(analyzerDriverResource);
   var response = await analyzer.doWork(request);
   if (response.exitCode == EXIT_CODE_ERROR) {
@@ -141,6 +142,16 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
 
   // Add all the files to include in the linked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
+
+  // Add the [Input]s with `Digest`s.
+  await Future.wait(allAssetIds.map((input) {
+    return buildStep.digest(input).then((digest) {
+      request.inputs.add(new Input()
+        ..digest = digest.bytes
+        ..path = scratchSpace.fileFor(input).path);
+    });
+  }));
+
   var analyzer = await buildStep.fetchResource(analyzerDriverResource);
   var response = await analyzer.doWork(request);
   var summaryFile = scratchSpace.fileFor(module.linkedSummaryId);
