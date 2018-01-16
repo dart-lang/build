@@ -1,3 +1,7 @@
+## 0.2.1+1
+
+- **Bug fix**: Empty build.yaml files no longer fail to parse.
+
 ## 0.2.1
 
 - Change the default for `BuilderDefinition.buildTo` to `BuildTo.cache`.
