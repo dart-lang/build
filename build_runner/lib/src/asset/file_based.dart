@@ -125,6 +125,9 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
 ///
 /// Throws an `AssetNotFoundException` if it doesn't exist.
 Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) {
+  if (packageGraph[id.package] == null) {
+    return new Future.error(new PackageNotFoundException(id.package));
+  }
   var file = _fileFor(id, packageGraph);
   return _descriptorPool.withResource(file.exists).then((exists) {
     if (!exists) throw new AssetNotFoundException(id);
