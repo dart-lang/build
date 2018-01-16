@@ -53,7 +53,7 @@ const _builderConfigDefaultOptions = const [
 BuildConfig parseFromYaml(
         String packageName, Iterable<String> dependencies, String configYaml) =>
     parseFromMap(packageName, dependencies,
-        loadYaml(configYaml) as Map<String, dynamic>);
+        loadYaml(configYaml) as Map<String, dynamic> ?? {});
 
 BuildConfig parseFromMap(String packageName,
     Iterable<String> packageDependencies, Map<String, dynamic> config) {
