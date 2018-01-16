@@ -75,11 +75,11 @@ class _Loader {
     _checkBuildActions();
 
     _logger.info('Initializing inputs');
+
+    var assetGraph = await _tryReadCachedAssetGraph();
     var inputSources = await _findInputSources();
     var cacheDirSources = await _findCacheDirSources();
     var internalSources = await _findInternalSources();
-
-    var assetGraph = await _tryReadCachedAssetGraph();
 
     BuildScriptUpdates buildScriptUpdates;
     if (assetGraph != null) {
@@ -94,7 +94,8 @@ class _Loader {
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
         _logger.warning('Invalidating asset graph due to build script update');
-        await _deleteGeneratedDir();
+        var deletedSourceOutputs = await _cleanupOldOutputs(assetGraph);
+        inputSources.removeAll(deletedSourceOutputs);
         assetGraph = null;
         buildScriptUpdates = null;
       }
@@ -191,10 +192,10 @@ class _Loader {
             cachedGraph.buildActionsDigest) {
           _logger.warning(
               'Throwing away cached asset graph because the build actions have '
-              'changed. This could happen as a result of adding a new '
-              'dependency, or if you are using a build script which changes '
-              'the build structure based on command line flags or other '
-              'configuration.');
+              'changed. This most commonly would happen as a result of adding a '
+              'new dependency or updating your dependencies.');
+
+          await _cleanupOldOutputs(cachedGraph);
           return null;
         }
         return cachedGraph;
@@ -202,11 +203,31 @@ class _Loader {
         // Start fresh if the cached asset_graph version doesn't match up with
         // the current version. We don't currently support old graph versions.
         _logger.warning(
-            'Throwing away cached asset graph due to version mismatch.');
+            'Throwing away cached asset graph due to version mismatch!.');
         await _deleteGeneratedDir();
         return null;
       }
     });
+  }
+
+  /// Deletes all the old outputs from [graph] that were written to the source
+  /// tree, and deletes the entire generated directory.
+  Future<Iterable<AssetId>> _cleanupOldOutputs(AssetGraph graph) async {
+    var deletedSources = <AssetId>[];
+    await logTimedAsync(_logger, 'Cleaning up outputs from previous builds.',
+        () async {
+      // Delete all the non-hidden outputs.!
+      await Future.wait(graph.outputs.map((id) {
+        var node = graph.get(id) as GeneratedAssetNode;
+        if (node.wasOutput && !node.isHidden) {
+          deletedSources.add(id);
+          return _environment.writer.delete(id);
+        }
+      }).where((v) => v is Future));
+
+      await _deleteGeneratedDir();
+    });
+    return deletedSources;
   }
 
   /// Updates [assetGraph] based on a the new view of the world.
