@@ -21,8 +21,17 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
   }
   final level = color.wrap('[${record.level}]');
   final eraseLine = ansiOutputEnabled && !verbose ? '\x1b[2K\r' : '';
-  var header = '$eraseLine$level ${record.loggerName}: ${record.message}';
-  var lines = <Object>[header];
+  var headerMessage = record.message;
+  var blankLineCount = 0;
+  if (headerMessage.startsWith('\n')) {
+    blankLineCount =
+        headerMessage.split('\n').takeWhile((line) => line.isEmpty).length;
+    headerMessage = headerMessage.substring(blankLineCount);
+  }
+  var header = '$eraseLine$level ${record.loggerName}: $headerMessage';
+  var lines = blankLineCount > 0
+      ? (new List<Object>.generate(blankLineCount, (_) => '')..add(header))
+      : <Object>[header];
 
   if (record.error != null) {
     lines.add(record.error);
