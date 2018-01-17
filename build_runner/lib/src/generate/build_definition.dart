@@ -216,7 +216,7 @@ class _Loader {
     var deletedSources = <AssetId>[];
     await logTimedAsync(_logger, 'Cleaning up outputs from previous builds.',
         () async {
-      // Delete all the non-hidden outputs.!
+      // Delete all the non-hidden outputs.
       await Future.wait(graph.outputs.map((id) {
         var node = graph.get(id) as GeneratedAssetNode;
         if (node.wasOutput && !node.isHidden) {
