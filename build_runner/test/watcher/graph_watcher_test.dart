@@ -76,7 +76,7 @@ class FakeNodeWatcher implements PackageNodeWatcher {
   FakeNodeWatcher(this._package);
 
   @override
-  Watcher get watcher => throw new UnimplementedError();
+  Watcher get watcher => new _FakeWatcher();
 
   void emitAdd(String path) {
     _events.add(
@@ -89,4 +89,18 @@ class FakeNodeWatcher implements PackageNodeWatcher {
 
   @override
   Stream<AssetChange> watch([_]) => _events.stream;
+}
+
+class _FakeWatcher implements Watcher {
+  @override
+  Stream<WatchEvent> get events => throw new UnimplementedError();
+
+  @override
+  bool get isReady => true;
+
+  @override
+  String get path => throw new UnimplementedError();
+
+  @override
+  Future get ready => new Future.value();
 }
