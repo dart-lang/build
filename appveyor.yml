@@ -11,7 +11,7 @@ install:
   - set PATH=%PATH%;C:\tools\dart-sdk\bin
   - set PATH=%PATH%;%APPDATA%\Pub\Cache\bin
   - cd e2e_example
-  - pub get && exit 0
+  - pub get --verbose && exit 0
 
 build: off
 
