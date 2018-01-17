@@ -203,7 +203,7 @@ class _Loader {
         // Start fresh if the cached asset_graph version doesn't match up with
         // the current version. We don't currently support old graph versions.
         _logger.warning(
-            'Throwing away cached asset graph due to version mismatch!.');
+            'Throwing away cached asset graph due to version mismatch.');
         await _deleteGeneratedDir();
         return null;
       }
