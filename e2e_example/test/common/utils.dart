@@ -122,8 +122,9 @@ Future<Null> stopServer({bool cleanUp}) async {
   _stdOutLines = null;
   _stdErrLines = null;
 
-  if (cleanUp && await _toolDir.exists())
+  if (cleanUp && await _toolDir.exists()) {
     await _toolDir.delete(recursive: true);
+  }
 }
 
 /// Checks whether the current git client is "clean" (no pending changes) for

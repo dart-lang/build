@@ -21,6 +21,7 @@ import '../asset_graph/node.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
+import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
@@ -191,10 +192,11 @@ class WatchImpl implements BuildState {
     final rootPackagesId = new AssetId(packageGraph.root.name, '.packages');
 
     // Start watching files immediately, before the first build is even started.
-    new PackageGraphWatcher(packageGraph,
-            logger: _logger,
-            watch: (node) =>
-                new PackageNodeWatcher(node, watch: _directoryWatcherFactory))
+    var graphWatcher = new PackageGraphWatcher(packageGraph,
+        logger: _logger,
+        watch: (node) =>
+            new PackageNodeWatcher(node, watch: _directoryWatcherFactory));
+    graphWatcher
         .watch()
         .asyncMap<AssetChange>((change) {
           // Delay any events until the first build is completed.
@@ -243,9 +245,10 @@ class WatchImpl implements BuildState {
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
+      await logTimedAsync(_logger, 'Waiting for all file watchers to be ready',
+          () => graphWatcher.ready);
       originalRootPackagesDigest =
           md5.convert(await environment.reader.readAsBytes(rootPackagesId));
-
       _buildDefinition = await BuildDefinition.prepareWorkspace(
           environment, options, buildActions,
           onDelete: _expectedDeletes.add);

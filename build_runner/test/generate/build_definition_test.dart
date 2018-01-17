@@ -26,6 +26,7 @@ import 'package:build_runner/src/util/constants.dart';
 
 import '../common/common.dart';
 import '../common/package_graphs.dart';
+import '../common/runner_asset_writer_spy.dart';
 
 main() {
   final aPackageGraph = buildPackageGraph({rootPackage('a'): []});
@@ -387,6 +388,44 @@ main() {
       var newAssetGraph = buildDefinition.assetGraph;
       expect(originalAssetGraph.buildActionsDigest,
           equals(newAssetGraph.buildActionsDigest));
+    });
+
+    test('deletes old source outputs if the build actions change', () async {
+      var buildActions = [
+        new BuildAction(new TestBuilder(), 'a', hideOutput: false)
+      ];
+      var aTxt = new AssetId('a', 'lib/a.txt');
+      await createFile(aTxt.path, 'hello');
+
+      var writerSpy = new RunnerAssetWriterSpy(environment.writer);
+      environment = new OverrideableEnvironment(environment, writer: writerSpy);
+      options = new BuildOptions(environment,
+          packageGraph: options.packageGraph,
+          skipBuildScriptCheck: true,
+          logLevel: Level.OFF);
+
+      var originalAssetGraph = await AssetGraph.build(
+          buildActions,
+          <AssetId>[aTxt].toSet(),
+          new Set(),
+          aPackageGraph,
+          environment.reader);
+
+      var aTxtCopy = new AssetId('a', 'lib/a.txt.copy');
+      // Pretend we already output this without actually running a build.
+      (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode).wasOutput = true;
+      await createFile(aTxtCopy.path, 'hello');
+
+      await createFile(
+          assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+
+      buildActions.add(new BuildAction(new TestBuilder(), 'a',
+          targetSources: const InputSet(include: const ['.copy']),
+          hideOutput: true));
+
+      await BuildDefinition.prepareWorkspace(
+          environment, options, buildActions);
+      expect(writerSpy.assetsDeleted, contains(aTxtCopy));
     });
   });
 }

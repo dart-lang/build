@@ -21,6 +21,11 @@ class PackageGraphWatcher {
   final _NodeWatcherStrategy _strategy;
   final PackageGraph _graph;
 
+  var _readyCompleter = new Completer<Null>();
+  Future<Null> get ready => _readyCompleter.future;
+
+  StreamController<AssetChange> controller;
+
   /// Creates a new watcher for a [PackageGraph].
   ///
   /// May optionally specify a [watch] strategy, otherwise will attempt a
@@ -35,7 +40,7 @@ class PackageGraphWatcher {
 
   /// Returns a stream of records for assets that changed in the package graph.
   Stream<AssetChange> watch() {
-    StreamController<AssetChange> controller;
+    if (controller != null) return controller.stream;
     List<StreamSubscription> subscriptions;
     controller = new StreamController<AssetChange>(
       sync: true,
@@ -50,6 +55,10 @@ class PackageGraphWatcher {
         for (final subscription in subscriptions) {
           subscription.cancel();
         }
+        _readyCompleter = new Completer<Null>();
+        var done = controller.close();
+        controller = null;
+        return done;
       },
     );
     return controller.stream;
@@ -57,10 +66,13 @@ class PackageGraphWatcher {
 
   List<StreamSubscription> _watch(StreamSink<AssetChange> sink) {
     final subscriptions = <StreamSubscription>[];
+    var allWatchers = <PackageNodeWatcher>[];
     _graph.allPackages.forEach((name, node) {
       final nestedPackages = _nestedPaths(node);
       _logger.fine('Setting up watcher at ${node.path}');
-      subscriptions.add(_strategy(node).watch().listen((event) {
+      var nodeWatcher = _strategy(node);
+      allWatchers.add(nodeWatcher);
+      subscriptions.add(nodeWatcher.watch().listen((event) {
         // TODO: Consider a faster filtering strategy.
         if (nestedPackages.any((path) => event.id.path.startsWith(path))) {
           return;
@@ -70,6 +82,13 @@ class PackageGraphWatcher {
         sink.add(event);
       }));
     });
+    // Asynchronously complete the `_readyCompleter` once all the watchers
+    // are done.
+    () async {
+      await Future
+          .wait(allWatchers.map((nodeWatcher) => nodeWatcher.watcher.ready));
+      _readyCompleter.complete();
+    }();
     return subscriptions;
   }
 
