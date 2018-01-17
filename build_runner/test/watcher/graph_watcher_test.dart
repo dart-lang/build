@@ -66,6 +66,38 @@ void main() {
             new AssetChange(new AssetId('b', 'lib/b.dart'), ChangeType.ADD),
           ]));
     });
+
+    test('ready waits for all node watchers to be ready', () async {
+      final graph = buildPackageGraph({
+        rootPackage('a', path: '/g/a'): ['b'],
+        package('b', path: '/g/b'): []
+      });
+      final nodes = {
+        'a': new FakeNodeWatcher(graph['a']),
+        'b': new FakeNodeWatcher(graph['b']),
+        r'$sdk': new FakeNodeWatcher(null),
+      };
+      final watcher = new PackageGraphWatcher(graph, watch: (node) {
+        return nodes[node.name];
+      });
+      // We have to listen in order for `ready` to complete.
+      // ignore: unawaited_futures
+      watcher.watch().drain();
+
+      var done = false;
+      // ignore: unawaited_futures
+      watcher.ready.then((_) => done = true);
+      await new Future.value();
+
+      for (final node in nodes.values) {
+        expect(done, isFalse);
+        node.markReady();
+        await new Future.value();
+      }
+
+      await new Future.value();
+      expect(done, isTrue);
+    });
   });
 }
 
@@ -76,7 +108,10 @@ class FakeNodeWatcher implements PackageNodeWatcher {
   FakeNodeWatcher(this._package);
 
   @override
-  Watcher get watcher => new _FakeWatcher();
+  Watcher get watcher => _watcher;
+  final _watcher = new _FakeWatcher();
+
+  void markReady() => _watcher._readyCompleter.complete();
 
   void emitAdd(String path) {
     _events.add(
@@ -96,11 +131,12 @@ class _FakeWatcher implements Watcher {
   Stream<WatchEvent> get events => throw new UnimplementedError();
 
   @override
-  bool get isReady => true;
+  bool get isReady => _readyCompleter.isCompleted;
 
   @override
   String get path => throw new UnimplementedError();
 
   @override
-  Future get ready => new Future.value();
+  Future get ready => _readyCompleter.future;
+  final _readyCompleter = new Completer();
 }
