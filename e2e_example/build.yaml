@@ -1,6 +1,0 @@
-targets:
-  e2e_example:
-    builders:
-      build_web_compilers|entrypoint:
-        options:
-          build_root_app_summary: false
