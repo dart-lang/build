@@ -31,3 +31,16 @@ Future<File> createPackagesFile(
       .join('\r\n'));
   return packagesFile;
 }
+
+/// Validates that [config] only has the top level keys [supportedOptions].
+///
+/// Throws an [ArgumentError] if not.
+void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
+    String builderKey) {
+  var unsupportedOptions =
+      config.keys.where((o) => !supportedOptions.contains(o));
+  if (unsupportedOptions.isNotEmpty) {
+    throw new ArgumentError.value(unsupportedOptions.join(', '), builderKey,
+        'only $supportedOptions are supported options, but got');
+  }
+}

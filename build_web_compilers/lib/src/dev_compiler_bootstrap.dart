@@ -16,13 +16,16 @@ import 'web_entrypoint_builder.dart';
 /// Alias `_p.url` to `p`.
 _p.Context get p => _p.url;
 
-Future<Null> bootstrapDdc(BuildStep buildStep, {bool useKernel}) async {
+Future<Null> bootstrapDdc(BuildStep buildStep,
+    {bool useKernel, bool buildRootAppSummary}) async {
+  useKernel ??= false;
+  buildRootAppSummary ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId.changeExtension(moduleExtension);
   var module = new Module.fromJson(JSON
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
-  await buildStep.canRead(module.linkedSummaryId);
+  if (buildRootAppSummary) await buildStep.canRead(module.linkedSummaryId);
 
   // First, ensure all transitive modules are built.
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
