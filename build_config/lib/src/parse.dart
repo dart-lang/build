@@ -103,7 +103,8 @@ BuildConfig parseFromMap(String packageName,
   }
 
   if (!buildTargets.containsKey(defaultTarget)) {
-    throw new ArgumentError('Must specify a target with the name $packageName');
+    throw new ArgumentError('Must specify a target with the name '
+        '$packageName or `\$default`');
   }
 
   final Map<String, Map> builderConfigs =
