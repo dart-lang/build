@@ -1,3 +1,10 @@
+# 0.2.1-dev
+
+- All dart files under `test` are now compiled by default instead of only the
+  `_browser_test.dart` files (minus vm/node test bootstrap files). This means
+  the original tests can be debugged directly (prior to package:test
+  bootstrapping).
+
 # 0.2.0
 
 ## New Features

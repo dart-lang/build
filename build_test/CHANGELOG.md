@@ -1,5 +1,8 @@
 ## 0.10.0-dev
 
+- Added automatic generation of `.debug.html` files for all tests, which can
+  be loaded in the browser to directly run tests and debug them without going
+  through the package:test runner.
 - Update to package:build version `0.12.0`.
 - Removed `CopyBuilder` in favor of `TestBuilder` which takes closures to
   change behavior rather than adding configuration for every possible
