@@ -22,7 +22,7 @@ final path = native_path.url;
 
 class AnalyzerResolver implements ReleasableResolver {
   /// Cache of all asset sources currently referenced.
-  final Map<AssetId, AssetBasedSource> _sources = {};
+  final Map<AssetId, AssetBasedSource> sources = {};
 
   final InternalAnalysisContext _context =
       AnalysisEngine.instance.createAnalysisContext();
@@ -51,7 +51,7 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
-    var source = _sources[assetId];
+    var source = sources[assetId];
     return source != null && _isLibrary(source);
   }
 
@@ -60,7 +60,7 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId) async {
-    var source = _sources[assetId];
+    var source = sources[assetId];
     if (source == null || !_isLibrary(source)) {
       throw new NonLibraryAssetException(assetId);
     }
@@ -116,10 +116,10 @@ class AnalyzerResolver implements ReleasableResolver {
       visited.add(assetId);
 
       visiting.add(buildStep.readAsString(assetId).then((contents) {
-        var source = _sources[assetId];
+        var source = sources[assetId];
         if (source == null) {
           source = new AssetBasedSource(assetId, this);
-          _sources[assetId] = source;
+          sources[assetId] = source;
         }
         source.updateDependencies(contents);
         toUpdate.add(new _PendingUpdate(source, contents));
@@ -127,10 +127,10 @@ class AnalyzerResolver implements ReleasableResolver {
             .where((id) => !visited.contains(id))
             .forEach(processAsset);
       }, onError: (e) {
-        var source = _sources[assetId];
+        var source = sources[assetId];
         if (source != null && source.exists()) {
           _context.applyChanges(new ChangeSet()..removedSource(source));
-          _sources[assetId].updateContents(null);
+          sources[assetId].updateContents(null);
         }
       }));
     }
@@ -150,7 +150,7 @@ class AnalyzerResolver implements ReleasableResolver {
       // Force resolve each entry point (the getter will ensure the library is
       // computed first).
       _entryLibraries = entryPoints.map((id) {
-        var source = _sources[id];
+        var source = sources[id];
         if (source == null) return null;
         var kind = _context.computeKindOf(source);
         if (kind != SourceKind.LIBRARY) return null;
@@ -195,8 +195,11 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      libraries.firstWhere((l) => l.name == libraryName,
-          defaultValue: () => null) as LibraryElement;
+      (await libraries.firstWhere((l) {
+        print('Name: ${l.name}');
+        return l.name == libraryName;
+      },
+          defaultValue: () => null)) as LibraryElement;
 }
 
 /// Implementation of Analyzer's Source for Barback based assets.
@@ -298,7 +301,7 @@ class AssetBasedSource extends Source {
     if (id == null) return null;
 
     // The entire AST should have been parsed and loaded at this point.
-    var source = _resolver._sources[id];
+    var source = _resolver.sources[id];
     if (source == null) {
       log.severe('Could not load asset $id');
     }
@@ -310,7 +313,7 @@ class AssetBasedSource extends Source {
     if (id == null) return uri.resolveUri(relativeUri);
 
     // The entire AST should have been parsed and loaded at this point.
-    var source = _resolver._sources[id];
+    var source = _resolver.sources[id];
     if (source == null) {
       log.severe('Could not load asset $id');
     }
@@ -337,12 +340,12 @@ class _AssetUriResolver implements UriResolver {
         return null;
       }
     }
-    var source = _resolver._sources[assetId];
+    var source = _resolver.sources[assetId];
     // Analyzer expects that sources which are referenced but do not exist yet
     // still exist, so just make an empty source.
     if (source == null) {
       source = new AssetBasedSource(assetId, _resolver);
-      _resolver._sources[assetId] = source;
+      _resolver.sources[assetId] = source;
     }
     return source;
   }
