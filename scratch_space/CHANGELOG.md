@@ -1,3 +1,7 @@
+## 0.0.1+3
+
+- Allow package:build 0.12.0
+
 ## 0.0.1+2
 
 - Allow package:build 0.11.0

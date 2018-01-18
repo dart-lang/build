@@ -1,5 +1,5 @@
 name: build_web_compilers
-version: 0.2.1-dev
+version: 0.2.1
 description: Builder implementations wrapping Dart compilers.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
@@ -31,9 +31,3 @@ dev_dependencies:
 
 dependency_overrides:
   analyzer: ^0.31.0-alpha.2
-  build:
-    path: ../build
-  build_runner:
-    path: ../build_runner
-  build_test:
-    path: ../build_test
