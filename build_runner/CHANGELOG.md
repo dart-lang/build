@@ -1,4 +1,4 @@
-## 0.7.6-dev
+## 0.7.6
 
 - Update to package:build version `0.12.0`.
 - Removed the `DigestAssetReader` interface, the `digest` method has now moved

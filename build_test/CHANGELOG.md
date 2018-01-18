@@ -1,4 +1,4 @@
-## 0.10.0-dev
+## 0.10.0
 
 - Added automatic generation of `.debug.html` files for all tests, which can
   be loaded in the browser to directly run tests and debug them without going
