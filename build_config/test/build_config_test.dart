@@ -102,7 +102,7 @@ void main() {
   });
 }
 
-var buildYaml = '''
+var buildYaml = r'''
 targets:
   a:
     builders:
@@ -118,7 +118,7 @@ targets:
     sources:
       - "lib/a.dart"
       - "lib/src/a/**"
-  example:
+  $default:
     dependencies:
       - f
       - :a

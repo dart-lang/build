@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+const _defaultTargetNamePlaceholder = r'$default';
+
 String normalizeBuilderKeyDefinition(String builderKey, String packageName) =>
     _normalizeDefinition(builderKey, packageName, '|');
 
@@ -9,7 +11,9 @@ String normalizeBuilderKeyUsage(String builderKey, String packageName) =>
     _normalizeUsage(builderKey, packageName, '|');
 
 String normalizeTargetKeyDefinition(String targetKey, String packageName) =>
-    _normalizeDefinition(targetKey, packageName, ':');
+    targetKey == _defaultTargetNamePlaceholder
+        ? '$packageName:$packageName'
+        : _normalizeDefinition(targetKey, packageName, ':');
 
 String normalizeTargetKeyUsage(String targetKey, String packageName) =>
     _normalizeUsage(targetKey, packageName, ':');
