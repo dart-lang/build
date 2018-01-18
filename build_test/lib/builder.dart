@@ -7,6 +7,9 @@ import 'package:build/build.dart';
 import 'src/debug_test_builder.dart';
 import 'src/test_bootstrap_builder.dart';
 
+export 'src/debug_test_builder.dart' show DebugTestBuilder;
+export 'src/test_bootstrap_builder.dart' show TestBootstrapBuilder;
+
 DebugTestBuilder debugTestBuilder(_) => new DebugTestBuilder();
 
 Builder testBootstrapBuilder(_) => new TestBootstrapBuilder();
