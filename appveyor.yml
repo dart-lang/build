@@ -4,8 +4,9 @@ branches:
 
 version: '1.0.{build}'
 
+# Unpin SDK after https://github.com/dart-lang/sdk/issues/31940
 install:
-  - ps: wget https://gsdview.appspot.com/dart-archive/channels/dev/raw/latest/sdk/dartsdk-windows-x64-release.zip -OutFile dart-sdk.zip
+  - ps: wget https://gsdview.appspot.com/dart-archive/channels/dev/release/2.0.0-dev.17.0/sdk/dartsdk-windows-x64-release.zip -OutFile dart-sdk.zip
   - cmd: echo "Unzipping dart-sdk..."
   - cmd: 7z x dart-sdk.zip -o"C:\tools" -y > nul
   - set PATH=%PATH%;C:\tools\dart-sdk\bin
