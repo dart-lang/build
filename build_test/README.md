@@ -38,6 +38,14 @@ This will compile all your tests to a temp directory and run them using
 `pub run test`. If you would like to see the output directory, you can use the
 `--output=<dir>` option to force the output to go to a specific place.
 
+### Forwarding additional args to `pub run test`
+
+It is very common to need to pass some arguments through to the eventual call
+to `pub run test`. To do this, add all those args after an empty `--` arg.
+
+For example, to run all chrome platform tests you would do
+`pub run build_runner test -- -p chrome`.
+
 ## Debugging web tests
 
 This package will automatically create `*.debug.html` files next to all your
