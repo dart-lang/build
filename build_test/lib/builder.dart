@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
-
 import 'src/debug_test_builder.dart';
 import 'src/test_bootstrap_builder.dart';
 
@@ -12,4 +10,4 @@ export 'src/test_bootstrap_builder.dart' show TestBootstrapBuilder;
 
 DebugTestBuilder debugTestBuilder(_) => new DebugTestBuilder();
 
-Builder testBootstrapBuilder(_) => new TestBootstrapBuilder();
+TestBootstrapBuilder testBootstrapBuilder(_) => new TestBootstrapBuilder();
