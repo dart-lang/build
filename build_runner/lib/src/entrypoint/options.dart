@@ -292,6 +292,8 @@ class _TestCommand extends _BaseCommand {
 
   @override
   Future<Null> run() async {
+    var packageGraph = new PackageGraph.forThisPackage();
+    _ensureBuildTestDependency(packageGraph);
     var options = _readOptions();
     // We always need an output dir when running tests, so we create a tmp dir
     // if the user didn't specify one.
@@ -306,7 +308,8 @@ class _TestCommand extends _BaseCommand {
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
         outputDir: outputDir,
-        verbose: options.verbose);
+        verbose: options.verbose,
+        packageGraph: packageGraph);
 
     // Run the tests!
     await _runTests(outputDir);
@@ -336,5 +339,21 @@ class _TestCommand extends _BaseCommand {
       // No need to log - should see failed tests in the console.
       exitCode = testExitCode;
     }
+  }
+}
+
+void _ensureBuildTestDependency(PackageGraph packageGraph) {
+  if (packageGraph.allPackages['build_test'] == null) {
+    throw new StateError('''
+Missing dev dependecy on package:build_test, which is required to run tests.
+
+Please update your dev_dependencies section of your pubspec.yaml:
+
+  dev_dependencies:
+    build_runner: any
+    build_test: any
+    # If you need to run web tests, you will also need this dependency.
+    build_web_compilers: any
+''');
   }
 }
