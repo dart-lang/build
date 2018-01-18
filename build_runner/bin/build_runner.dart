@@ -40,9 +40,12 @@ Future<Null> main(List<String> args) async {
   }
 
   var exitPort = new ReceivePort();
+  var errorPort = new ReceivePort();
+  var errorListener = errorPort.listen((e) => stderr.writeAll(e as List, '\n'));
   await Isolate.spawnUri(new Uri.file(p.absolute(scriptLocation)), args, null,
-      onExit: exitPort.sendPort);
+      onExit: exitPort.sendPort, onError: errorPort.sendPort);
   await exitPort.first;
+  await errorListener.cancel();
   await logListener?.cancel();
 }
 
