@@ -1,4 +1,4 @@
-## 0.7.4-dev
+## 0.7.4
 
 * Added `typeNameOf`, which is a safe way to get the name of a `DartType`,
   even when the type is a `FunctionType`, which has a `null` name in newer
@@ -7,6 +7,8 @@
 * Added `LibraryReader.pathToUrl(Uri|String)`, which computes the `import` or
   `export` path necessary to reach the provided URL from the current library.
   Also added `pathToAsset` and `pathToElement` as convenience functions.
+
+* Expanded `package:build` support to allow version `0.12.0`.
 
 ## 0.7.3
 
