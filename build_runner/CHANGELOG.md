@@ -1,3 +1,11 @@
+## 0.7.7
+
+- The top level `run` method now returns an `int` which represents an `exitCode`
+  for the command that was executed.
+  - For now we still set the exitCode manually as well but this will likely
+    change in the next breaking release. In manual scripts you should `await`
+    the call to `run` and assign that to `exitCode` to be future-proofed.
+
 ## 0.7.6
 
 - Update to package:build version `0.12.0`.

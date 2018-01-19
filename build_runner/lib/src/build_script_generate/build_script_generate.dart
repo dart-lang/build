@@ -61,14 +61,25 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
 /// A method forwarding to `run`.
 Method _main() => new Method((b) => b
   ..name = 'main'
-  ..lambda = true
+  ..modifier = MethodModifier.async
   ..requiredParameters.add(new Parameter((b) => b
     ..name = 'args'
     ..type = new TypeReference((b) => b
       ..symbol = 'List'
       ..types.add(refer('String')))))
-  ..body = refer('run', 'package:build_runner/build_runner.dart')
-      .call([refer('args'), refer('_builders')]).code);
+  ..optionalParameters.add(new Parameter((b) => b
+    ..name = 'sendPort'
+    ..type = refer('SendPort', 'dart:isolate')))
+  ..body = new Block.of([
+    refer('run', 'package:build_runner/build_runner.dart')
+        .call([refer('args'), refer('_builders')])
+        .awaited
+        .assignVar('result')
+        .statement,
+    refer('sendPort')
+        .nullSafeProperty('send')
+        .call([refer('result')]).statement,
+  ]));
 
 /// An expression calling `apply` with appropriate setup for a Builder.
 Expression _applyBuilder(BuilderDefinition definition) =>
