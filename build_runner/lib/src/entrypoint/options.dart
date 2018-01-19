@@ -327,9 +327,12 @@ class _TestCommand extends _BaseCommand {
         return 1;
       }
 
-      // **Note**: We must have the await, otherwise the finally branch runs
-      // before this future is done.
-      return await _runTests(outputDir);
+      var testExitCode = await _runTests(outputDir);
+      if (testExitCode != 0) {
+        // No need to log - should see failed tests in the console.
+        exitCode = testExitCode;
+      }
+      return testExitCode;
     } finally {
       // Clean up the output dir if one wasn't explicitly asked for.
       if (options.outputDir == null && outputDir != null) {
