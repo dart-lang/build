@@ -1,4 +1,4 @@
-## 0.7.7-dev
+## 0.7.7
 
 - The top level `run` method now returns an `int` which represents an `exitCode`
   for the command that was executed.
