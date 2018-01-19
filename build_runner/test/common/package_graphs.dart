@@ -15,8 +15,8 @@ PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
   return new PackageGraph.fromRoot(root);
 }
 
-PackageNode package(String packageName, {String path}) =>
-    new PackageNode(packageName, path);
+PackageNode package(String packageName, {String path, DependencyType type}) =>
+    new PackageNode(packageName, path, type);
 
 PackageNode rootPackage(String packageName, {String path}) =>
-    new PackageNode(packageName, path, isRoot: true);
+    new PackageNode(packageName, path, DependencyType.path, isRoot: true);
