@@ -3,6 +3,7 @@ import 'package:provides_builder/builders.dart' as _i2;
 import 'package:build_test/builder.dart' as _i3;
 import 'package:build_config/build_config.dart' as _i4;
 import 'package:build_web_compilers/builders.dart' as _i5;
+import 'dart:isolate' as _i6;
 
 final _builders = [
   _i1.apply('provides_builder|some_not_applied_builder', [_i2.notApplied],
@@ -33,4 +34,7 @@ final _builders = [
           include: const ['web/**', 'test/**_test.dart'],
           exclude: const ['test/**.node_test.dart', 'test/**.vm_test.dart']))
 ];
-main(List<String> args) => _i1.run(args, _builders);
+main(List<String> args, [_i6.SendPort sendPort]) async {
+  var result = await _i1.run(args, _builders);
+  sendPort?.send(result);
+}

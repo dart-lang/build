@@ -23,7 +23,7 @@ const _verbose = 'verbose';
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
 /// Unified command runner for all build_runner commands.
-class BuildCommandRunner extends CommandRunner {
+class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
 
   BuildCommandRunner(List<BuilderApplication> builderApplications)
@@ -139,7 +139,7 @@ class _ServeTarget {
   _ServeTarget(this.dir, this.port);
 }
 
-abstract class _BaseCommand extends Command {
+abstract class _BaseCommand extends Command<int> {
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
 
@@ -201,14 +201,19 @@ class _BuildCommand extends _BaseCommand {
       'Performs a single build on the specified targets and then exits.';
 
   @override
-  Future<Null> run() async {
+  Future<int> run() async {
     var options = _readOptions();
-    await build(builderApplications,
+    var result = await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
         verbose: options.verbose);
+    if (result.status == BuildStatus.success) {
+      return ExitCode.success.code;
+    } else {
+      return 1;
+    }
   }
 }
 
@@ -224,7 +229,7 @@ class _WatchCommand extends _BaseCommand {
       'rebuilding as appropriate.';
 
   @override
-  Future<Null> run() async {
+  Future<int> run() async {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
@@ -234,6 +239,7 @@ class _WatchCommand extends _BaseCommand {
         verbose: options.verbose);
     await handler.currentBuild;
     await handler.buildResults.drain();
+    return ExitCode.success.code;
   }
 }
 
@@ -257,7 +263,7 @@ class _ServeCommand extends _WatchCommand {
   _ServeOptions _readOptions() => new _ServeOptions.fromParsedArgs(argResults);
 
   @override
-  Future<Null> run() async {
+  Future<int> run() async {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
@@ -273,6 +279,8 @@ class _ServeCommand extends _WatchCommand {
     }
     await handler.buildResults.drain();
     await Future.wait(servers.map((server) => server.close()));
+
+    return ExitCode.success.code;
   }
 }
 
@@ -291,39 +299,49 @@ class _TestCommand extends _BaseCommand {
       'using the compiled assets.';
 
   @override
-  Future<Null> run() async {
-    var packageGraph = new PackageGraph.forThisPackage();
-    _ensureBuildTestDependency(packageGraph);
-    var options = _readOptions();
-    // We always need an output dir when running tests, so we create a tmp dir
-    // if the user didn't specify one.
-    var outputDir = options.outputDir ??
-        Directory.systemTemp
-            .createTempSync('build_runner_test')
-            .absolute
-            .uri
-            .toFilePath();
-    await build(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        assumeTty: options.assumeTty,
-        outputDir: outputDir,
-        verbose: options.verbose,
-        packageGraph: packageGraph);
+  Future<int> run() async {
+    _SharedOptions options;
+    String outputDir;
+    try {
+      var packageGraph = new PackageGraph.forThisPackage();
+      _ensureBuildTestDependency(packageGraph);
+      options = _readOptions();
+      // We always need an output dir when running tests, so we create a tmp dir
+      // if the user didn't specify one.
+      outputDir = options.outputDir ??
+          Directory.systemTemp
+              .createTempSync('build_runner_test')
+              .absolute
+              .uri
+              .toFilePath();
+      var result = await build(builderApplications,
+          deleteFilesByDefault: options.deleteFilesByDefault,
+          enableLowResourcesMode: options.enableLowResourcesMode,
+          assumeTty: options.assumeTty,
+          outputDir: outputDir,
+          verbose: options.verbose,
+          packageGraph: packageGraph);
 
-    // Run the tests!
-    await _runTests(outputDir);
+      if (result.status == BuildStatus.failure) {
+        stdout.writeln('Skipping tests due to build failure');
+        return 1;
+      }
 
-    // Clean up the output dir if one wasn't explicitly asked for.
-    if (options.outputDir == null) {
-      await new Directory(outputDir).delete(recursive: true);
+      // **Note**: We must have the await, otherwise the finally branch runs
+      // before this future is done.
+      return await _runTests(outputDir);
+    } finally {
+      // Clean up the output dir if one wasn't explicitly asked for.
+      if (options.outputDir == null && outputDir != null) {
+        await new Directory(outputDir).delete(recursive: true);
+      }
+
+      await ProcessManager.terminateStdIn();
     }
-
-    await ProcessManager.terminateStdIn();
   }
 
   /// Runs tests using [precompiledPath] as the precompiled test directory.
-  Future<Null> _runTests(String precompiledPath) async {
+  Future<int> _runTests(String precompiledPath) async {
     stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
     var testProcess = await new ProcessManager().spawn(
@@ -334,11 +352,7 @@ class _TestCommand extends _BaseCommand {
           '--precompiled',
           precompiledPath,
         ]..addAll(extraTestArgs));
-    var testExitCode = await testProcess.exitCode;
-    if (testExitCode != 0) {
-      // No need to log - should see failed tests in the console.
-      exitCode = testExitCode;
-    }
+    return testProcess.exitCode;
   }
 }
 

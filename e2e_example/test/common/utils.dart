@@ -206,6 +206,7 @@ Future<Null> expectTestsFail({bool useManualScript}) async {
   var result =
       useManualScript ? await _runManualTests() : await _runAutoTests();
   expect(result.stdout, contains('Some tests failed'));
+  expect(result.exitCode, isNot(0));
 }
 
 Future<Null> expectTestsPass(
