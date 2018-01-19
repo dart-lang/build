@@ -1,8 +1,7 @@
 language: dart
-sudo: false
-# Unpin SDK after https://github.com/dart-lang/sdk/issues/31940
+
 dart:
-  - "dev/release/2.0.0-dev.17.0"
+  - dev
   - stable
   - 1.22.1
 dart_task:
