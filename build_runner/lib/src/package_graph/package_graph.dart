@@ -10,7 +10,8 @@ import 'package:yaml/yaml.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
-final PackageNode _sdkPackageNode = new PackageNode(r'$sdk', getSdkPath());
+final PackageNode _sdkPackageNode =
+    new PackageNode(r'$sdk', getSdkPath(), DependencyType.hosted);
 
 /// A graph of the package dependencies for an application.
 class PackageGraph {
@@ -94,14 +95,18 @@ class PackageGraph {
 
     /// Create all [PackageNode]s for all deps.
     var nodes = <String, PackageNode>{};
-    PackageNode addNodeAndDeps(YamlMap yaml, {bool isRoot: false}) {
+    Map<String, dynamic> rootDeps;
+    PackageNode addNodeAndDeps(YamlMap yaml, DependencyType type,
+        {bool isRoot: false}) {
       var name = yaml['name'] as String;
       assert(!nodes.containsKey(name));
-      var node = new PackageNode(name, packageLocations[name], isRoot: isRoot);
+      var node =
+          new PackageNode(name, packageLocations[name], type, isRoot: isRoot);
       nodes[name] = node;
 
       var deps = _depsFromYaml(yaml, isRoot: isRoot);
-      for (final name in deps) {
+      if (isRoot) rootDeps = deps;
+      for (final name in deps.keys) {
         var dep = nodes[name];
         if (dep == null) {
           var uri = packageLocations[name];
@@ -109,7 +114,7 @@ class PackageGraph {
             throw 'No package found for $name.';
           }
           var pubspec = _pubspecForPath(uri);
-          dep = addNodeAndDeps(pubspec);
+          dep = addNodeAndDeps(pubspec, _dependencyType(rootDeps[name]));
         }
         node.dependencies.add(dep);
       }
@@ -117,7 +122,7 @@ class PackageGraph {
       return node;
     }
 
-    var root = addNodeAndDeps(rootYaml, isRoot: true);
+    var root = addNodeAndDeps(rootYaml, DependencyType.path, isRoot: true);
     return new PackageGraph._(root, nodes);
   }
 
@@ -143,6 +148,11 @@ class PackageNode {
   /// The name of the package as listed in `pubspec.yaml`.
   final String name;
 
+  /// The type of dependency being used to pull in this package.
+  ///
+  /// May be `null`.
+  final DependencyType dependencyType;
+
   /// All the packages that this package directly depends on.
   final List<PackageNode> dependencies = [];
 
@@ -152,13 +162,14 @@ class PackageNode {
   /// Whether this node is the [PackageGraph.root].
   final bool isRoot;
 
-  PackageNode(this.name, String path, {bool isRoot})
+  PackageNode(this.name, String path, this.dependencyType, {bool isRoot})
       : path = _toAbsolute(path),
         isRoot = isRoot ?? false;
 
   @override
   String toString() => '''
   $name:
+    type: $dependencyType
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
 
@@ -169,13 +180,38 @@ class PackageNode {
   }
 }
 
+/// The type of dependency being used. This dictates how the package should be
+/// watched for changes.
+enum DependencyType { pub, github, path, hosted }
+
+DependencyType _dependencyType(source) {
+  if (source is String || source == null) return DependencyType.pub;
+
+  assert(source is YamlMap);
+  var map = source as YamlMap;
+
+  for (var key in map.keys) {
+    switch (key as String) {
+      case 'git':
+        return DependencyType.github;
+      case 'hosted':
+        return DependencyType.hosted;
+      case 'path':
+      case 'sdk': // Until Flutter supports another type, assume same as path.
+        return DependencyType.path;
+    }
+  }
+  throw 'Unable to determine dependency type:\n$source';
+}
+
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
-Iterable<String> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
-  var deps = new Set<String>.from((yaml['dependencies'] as Map)?.keys ?? []);
+Map<String, dynamic> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
+  var deps = new Map<String, dynamic>.from(yaml['dependencies'] as Map ?? {});
   if (isRoot) {
-    deps.addAll((yaml['dev_dependencies'] as Map<String, dynamic>)?.keys ?? []);
-    deps.addAll(
-        (yaml['dependency_overrides'] as Map<String, dynamic>)?.keys ?? []);
+    deps.addAll(new Map.from(yaml['dev_dependencies'] as Map ?? {}));
+    yaml['dependency_overrides']?.forEach((dep, source) {
+      deps[dep as String] = source;
+    });
   }
   return deps;
 }
