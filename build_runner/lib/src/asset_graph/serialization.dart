@@ -12,6 +12,7 @@ const _version = 16;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
+  // Iteration order does not matter
   final _idToAssetId = new HashMap<int, AssetId>();
   final Map _serializedGraph;
 
@@ -32,10 +33,9 @@ class _AssetGraphDeserializer {
 
     // Read in the id => AssetId map from the graph first.
     var assetPaths = _serializedGraph['assetPaths'] as List;
-    var assetIdCount = assetPaths.length / 2;
-    for (var i = 0; i < assetIdCount; i++) {
-      var packageName = packageNames[assetPaths[2 * i + 1] as int];
-      _idToAssetId[i] = new AssetId(packageName, assetPaths[2 * i] as String);
+    for (var i = 0; i < assetPaths.length; i += 2) {
+      var packageName = packageNames[assetPaths[i + 1] as int];
+      _idToAssetId[i ~/ 2] = new AssetId(packageName, assetPaths[i] as String);
     }
 
     // Read in all the nodes and their outputs.
@@ -127,6 +127,7 @@ class _AssetGraphDeserializer {
 
 /// Serializes an [AssetGraph] into a [Map].
 class _AssetGraphSerializer {
+  // Iteration order does not matter
   final _assetIdToId = new HashMap<AssetId, int>();
 
   final AssetGraph _graph;
