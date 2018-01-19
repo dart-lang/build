@@ -31,5 +31,3 @@ dev_dependencies:
 
 dependency_overrides:
   analyzer: ^0.31.0-alpha.2
-  # Necessary until json_serializable and source_gen are updated
-  build: 0.12.0
