@@ -1,3 +1,7 @@
+## 0.7.7+1
+
+- Avoid watching hosted dependencies for file changes.
+
 ## 0.7.7
 
 - The top level `run` method now returns an `int` which represents an `exitCode`
