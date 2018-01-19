@@ -168,18 +168,60 @@ class LibraryReader {
   Iterable<ClassElement> get classElements =>
       element.definingCompilationUnit.types;
 
-  Iterable<Element> _getElements(CompilationUnitMember member) {
+  static Iterable<Element> _getElements(CompilationUnitMember member) {
     if (member is TopLevelVariableDeclaration) {
       return member.variables.variables
           .map(resolutionMap.elementDeclaredByVariableDeclaration);
     }
     var element = resolutionMap.elementDeclaredByDeclaration(member);
-
     if (element == null) {
-      print([member, member.runtimeType, member.element]);
-      throw new Exception('Could not find any elements for the provided unit.');
+      throw new StateError(
+          'Could not find any elements for the provided unit.');
     }
-
     return [element];
   }
+
+  /// Returns the identifier prefix of [element] if it is referenced by one.
+  ///
+  /// For example in the following file:
+  /// ```
+  /// import 'bar.dart' as bar;
+  ///
+  /// bar.Bar b;
+  /// ```
+  ///
+  /// ... we'd assume that `b`'s type has a prefix of `bar`.
+  ///
+  /// If there is no prefix, one could not be computed, `null` is returned.
+  ///
+  /// If there is an attempt to read a prefix of a file _other_ than the current
+  /// library being read this will throw [StateError], as it is not always
+  /// possible to read details of the source file from other inputs.
+  String _prefixForType(Element element) {
+    final astNode = element.computeNode();
+    if (astNode is VariableDeclaration) {
+      final parentNode = astNode.parent as VariableDeclarationList;
+      return _prefixForTypeAnnotation(parentNode.type);
+    }
+    return null;
+  }
+
+  static String _prefixForTypeAnnotation(TypeAnnotation astNode) {
+    if (astNode is NamedType) {
+      return _prefixForIdentifier(astNode.name);
+    }
+    return null;
+  }
+
+  static String _prefixForIdentifier(Identifier id) {
+    return id is PrefixedIdentifier ? id.prefix.name : null;
+  }
 }
+
+// Testing-only access to LibraryReader._prefixFor.
+//
+// This is used to iterate on the tests without launching the feature.
+// Additionally it looks ike `computeNode()` will be deprecated, so we might
+// have to rewrite the entire body of the function in the near future; at least
+// the tests can help for correctness.
+String testingPrefixForType(LibraryReader r, Element e) => r._prefixForType(e);
