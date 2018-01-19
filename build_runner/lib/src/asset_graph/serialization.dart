@@ -8,11 +8,11 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 15;
+const _version = 16;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
-  final _idToAssetId = <int, AssetId>{};
+  final _idToAssetId = new HashMap<int, AssetId>();
   final Map _serializedGraph;
 
   _AssetGraphDeserializer(List<int> bytes)
@@ -28,10 +28,14 @@ class _AssetGraphDeserializer {
     var graph = new AssetGraph._(
         _deserializeDigest(_serializedGraph['buildActionsDigest'] as String));
 
+    var packageNames = _serializedGraph['packages'] as List<String>;
+
     // Read in the id => AssetId map from the graph first.
-    for (var descriptor in _serializedGraph['serializedAssetIds']) {
-      _idToAssetId[descriptor[0] as int] =
-          new AssetId(descriptor[1] as String, descriptor[2] as String);
+    var assetPaths = _serializedGraph['assetPaths'] as List;
+    var assetIdCount = assetPaths.length / 2;
+    for (var i = 0; i < assetIdCount; i++) {
+      var packageName = packageNames[assetPaths[2 * i + 1] as int];
+      _idToAssetId[i] = new AssetId(packageName, assetPaths[2 * i] as String);
     }
 
     // Read in all the nodes and their outputs.
@@ -115,15 +119,15 @@ class _AssetGraphDeserializer {
     return node;
   }
 
-  List<AssetId> _deserializeAssetIds(List<int> serializedIds) =>
-      serializedIds.map((id) => _idToAssetId[id]).toList();
+  Iterable<AssetId> _deserializeAssetIds(List<int> serializedIds) =>
+      serializedIds.map((id) => _idToAssetId[id]);
 
   bool _deserializeBool(int value) => value == 0 ? false : true;
 }
 
 /// Serializes an [AssetGraph] into a [Map].
 class _AssetGraphSerializer {
-  final _assetIdToId = <AssetId, int>{};
+  final _assetIdToId = new HashMap<AssetId, int>();
 
   final AssetGraph _graph;
 
@@ -131,28 +135,24 @@ class _AssetGraphSerializer {
 
   /// Perform the serialization, should only be called once.
   List<int> serialize() {
-    /// Compute numeric identifiers for all asset ids.
-    var next = 0;
+    var pathId = 0;
+    // [path0, packageId0, path1, packageId1, ...]
+    var assetPaths = <dynamic>[];
+    var packages = _graph._nodesByPackage.keys.toList(growable: false);
     for (var node in _graph.allNodes) {
-      _assetIdToId[node.id] = next;
-      next++;
+      _assetIdToId[node.id] = pathId;
+      pathId++;
+      assetPaths.add(node.id.path);
+      assetPaths.add(packages.indexOf(node.id.package));
     }
 
     var result = <String, dynamic>{
       'version': _version,
-      'nodes': _graph.allNodes.map(_serializeNode).toList(),
+      'nodes': _graph.allNodes.map(_serializeNode).toList(growable: false),
       'buildActionsDigest': _serializeDigest(_graph.buildActionsDigest),
+      'packages': packages,
+      'assetPaths': assetPaths,
     };
-
-    // Store the id => AssetId mapping as a nested list so we don't have to
-    // stringify the integers and parse them back (ints aren't valid JSON
-    // keys).
-    var serializedAssetIds = <List>[];
-    _assetIdToId.forEach((k, v) {
-      serializedAssetIds.add([v, k.package, k.path]);
-    });
-    result['serializedAssetIds'] = serializedAssetIds;
-
     return UTF8.encode(JSON.encode(result));
   }
 
@@ -238,11 +238,13 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
       case _Field.Id:
         return serializer._assetIdToId[node.id];
       case _Field.Outputs:
-        return node.outputs.map((id) => serializer._assetIdToId[id]).toList();
+        return node.outputs
+            .map((id) => serializer._assetIdToId[id])
+            .toList(growable: false);
       case _Field.PrimaryOutputs:
         return node.primaryOutputs
             .map((id) => serializer._assetIdToId[id])
-            .toList();
+            .toList(growable: false);
       case _Field.Digest:
         return _serializeDigest(node.lastKnownDigest);
       default:
@@ -289,7 +291,9 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
       case _Field.PhaseNumber:
         return generatedNode.phaseNumber;
       case _Field.Globs:
-        return generatedNode.globs.map((glob) => glob.pattern).toList();
+        return generatedNode.globs
+            .map((glob) => glob.pattern)
+            .toList(growable: false);
       case _Field.NeedsUpdate:
         return _serializeBool(generatedNode.needsUpdate);
       case _Field.PreviousInputsDigest:
