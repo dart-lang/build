@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
@@ -38,7 +39,7 @@ Future main(List<String> args) async {
             include: const ['web/**', 'test/**.browser_test.dart']))
   ];
 
-  await run(args, builders);
+  exitCode = await run(args, builders);
 }
 
 class ThrowingBuilder extends Builder {
