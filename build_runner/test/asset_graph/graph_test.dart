@@ -121,6 +121,15 @@ void main() {
         var decoded = new AssetGraph.deserialize(encoded);
         expect(graph, equalsAssetGraph(decoded));
       });
+
+      test('Throws an AssetGraphVersionError if versions dont match up', () {
+        var bytes = graph.serialize();
+        var serialized = JSON.decode(UTF8.decode(bytes));
+        serialized['version'] = -1;
+        var encoded = UTF8.encode(JSON.encode(serialized));
+        expect(() => new AssetGraph.deserialize(encoded),
+            throwsA(assetGraphVersionException));
+      });
     });
 
     group('with buildActions', () {
