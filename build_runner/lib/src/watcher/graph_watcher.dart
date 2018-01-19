@@ -68,9 +68,14 @@ class PackageGraphWatcher {
     final subscriptions = <StreamSubscription>[];
     var allWatchers = <PackageNodeWatcher>[];
     _graph.allPackages.forEach((name, node) {
+      if (node.dependencyType == DependencyType.pub ||
+          node.dependencyType == DependencyType.hosted ||
+          node.dependencyType == DependencyType.github) {
+        return;
+      }
       final nestedPackages = _nestedPaths(node);
       _logger.fine('Setting up watcher at ${node.path}');
-      var nodeWatcher = _strategy(node);
+      final nodeWatcher = _strategy(node);
       allWatchers.add(nodeWatcher);
       subscriptions.add(nodeWatcher.watch().listen((event) {
         // TODO: Consider a faster filtering strategy.
