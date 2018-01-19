@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -200,9 +199,9 @@ class BuildImpl {
       // Write out the dependency graph file.
       await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
-        await _writer.writeAsString(
+        await _writer.writeAsBytes(
             new AssetId(_packageGraph.root.name, assetGraphPath),
-            JSON.encode(_assetGraph.serialize()));
+            _assetGraph.serialize());
       });
 
       done.complete(result);

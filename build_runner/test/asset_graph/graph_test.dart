@@ -117,16 +117,17 @@ void main() {
           }
         }
 
-        var encoded = JSON.encode(graph.serialize());
-        var decoded = new AssetGraph.deserialize(JSON.decode(encoded) as Map);
+        var encoded = graph.serialize();
+        var decoded = new AssetGraph.deserialize(encoded);
         expect(graph, equalsAssetGraph(decoded));
       });
 
       test('Throws an AssetGraphVersionError if versions dont match up', () {
-        var serialized = graph.serialize();
+        var bytes = graph.serialize();
+        var serialized = JSON.decode(UTF8.decode(bytes));
         serialized['version'] = -1;
-        var encoded = JSON.encode(serialized);
-        expect(() => new AssetGraph.deserialize(JSON.decode(encoded) as Map),
+        var encoded = UTF8.encode(JSON.encode(serialized));
+        expect(() => new AssetGraph.deserialize(encoded),
             throwsA(assetGraphVersionException));
       });
     });

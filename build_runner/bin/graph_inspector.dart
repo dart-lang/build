@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
@@ -43,8 +42,7 @@ Future main(List<String> args) async {
   }
   stdout.writeln('Loading asset graph at ${assetGraphFile.path}...');
 
-  assetGraph = new AssetGraph.deserialize(
-      JSON.decode(assetGraphFile.readAsStringSync()) as Map);
+  assetGraph = new AssetGraph.deserialize(assetGraphFile.readAsBytesSync());
   packageGraph = new PackageGraph.forThisPackage();
 
   var commandRunner = new CommandRunner(

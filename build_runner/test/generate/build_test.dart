@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
@@ -252,8 +251,7 @@ void main() {
 
         var graphId = makeAssetId('a|$assetGraphPath');
         expect(writer.assets, contains(graphId));
-        var cachedGraph = new AssetGraph.deserialize(
-            JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
+        var cachedGraph = new AssetGraph.deserialize(writer.assets[graphId]);
         expect(
             cachedGraph.allNodes.map((node) => node.id),
             unorderedEquals([
@@ -577,8 +575,7 @@ void main() {
 
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
-    var cachedGraph = new AssetGraph.deserialize(
-        JSON.decode(UTF8.decode(writer.assets[graphId])) as Map);
+    var cachedGraph = new AssetGraph.deserialize(writer.assets[graphId]);
 
     var expectedGraph = await AssetGraph.build([], new Set(), new Set(),
         buildPackageGraph({rootPackage('a'): []}), null);
@@ -731,9 +728,8 @@ void main() {
           writer: writer);
 
       /// Should be deleted using the writer, and removed from the new graph.
-      var serialized = JSON.decode(
-          UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')])) as Map;
-      var newGraph = new AssetGraph.deserialize(serialized);
+      var newGraph = new AssetGraph.deserialize(
+          writer.assets[makeAssetId('a|$assetGraphPath')]);
       var aNodeId = makeAssetId('a|lib/a.txt');
       var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
@@ -821,8 +817,8 @@ void main() {
       }, writer: writer);
 
       // Read cached graph and validate.
-      var graph = new AssetGraph.deserialize(JSON.decode(
-          UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')])) as Map);
+      var graph = new AssetGraph.deserialize(
+          writer.assets[makeAssetId('a|$assetGraphPath')]);
       var outputNode =
           graph.get(makeAssetId('a|lib/file.a.copy')) as GeneratedAssetNode;
       var fileANode = graph.get(makeAssetId('a|lib/file.a'));

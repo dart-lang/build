@@ -34,7 +34,7 @@ class AssetGraph {
   AssetGraph._(this.buildActionsDigest);
 
   /// Deserializes this graph.
-  factory AssetGraph.deserialize(Map serializedGraph) =>
+  factory AssetGraph.deserialize(List<int> serializedGraph) =>
       new _AssetGraphDeserializer(serializedGraph).deserialize();
 
   static Future<AssetGraph> build(
@@ -58,8 +58,7 @@ class AssetGraph {
     return graph;
   }
 
-  Map<String, dynamic> serialize() =>
-      new _AssetGraphSerializer(this).serialize();
+  List<int> serialize() => new _AssetGraphSerializer(this).serialize();
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>

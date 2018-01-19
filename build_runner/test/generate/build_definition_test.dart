@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -36,11 +35,15 @@ main() {
     BuildEnvironment environment;
     String pkgARoot;
 
-    Future<Null> createFile(String path, String contents) async {
+    Future<Null> createFile(String path, dynamic contents) async {
       var file = new File(p.join(pkgARoot, path));
       expect(await file.exists(), isFalse);
       await file.create(recursive: true);
-      await file.writeAsString(contents);
+      if (contents is String) {
+        await file.writeAsString(contents);
+      } else {
+        await file.writeAsBytes(contents as List<int>);
+      }
       addTearDown(() async => await file.exists() ? await file.delete() : null);
     }
 
@@ -103,8 +106,7 @@ main() {
         generatedANode.wasOutput = true;
         generatedANode.needsUpdate = false;
 
-        await createFile(
-            assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await deleteFile(p.join('lib', 'b.txt'));
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -128,8 +130,7 @@ main() {
         var originalAssetGraph = await AssetGraph.build(buildActions,
             <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
-        await createFile(
-            assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -157,8 +158,7 @@ main() {
             aPackageGraph,
             environment.reader);
 
-        await createFile(
-            assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
         var buildDefinition = await BuildDefinition.prepareWorkspace(
@@ -189,8 +189,7 @@ main() {
             originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode;
         generatedNode.wasOutput = false;
 
-        await createFile(
-            assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         var buildDefinition = await BuildDefinition.prepareWorkspace(
             environment, options, buildActions);
@@ -221,8 +220,7 @@ main() {
           node.needsUpdate = false;
         }
 
-        await createFile(
-            assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         // Same as before, but change the `BuilderOptions` for the first action.
         var newBuildActions = [
@@ -272,7 +270,7 @@ main() {
         expect(assetGraph.allNodes.map((node) => node.id),
             unorderedEquals(expectedIds));
 
-        await createFile(assetGraphPath, JSON.encode(assetGraph.serialize()));
+        await createFile(assetGraphPath, assetGraph.serialize());
 
         var buildDefinition = await BuildDefinition.prepareWorkspace(
             environment, options, buildActions);
@@ -321,8 +319,7 @@ main() {
       var originalAssetGraph = await AssetGraph.build(buildActions,
           <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
-      await createFile(
-          assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+      await createFile(assetGraphPath, originalAssetGraph.serialize());
 
       buildActions.add(new BuildAction(new TestBuilder(), 'a',
           targetSources: const InputSet(include: const ['.copy']),
@@ -365,8 +362,7 @@ main() {
       var originalAssetGraph = await AssetGraph.build(buildActions,
           <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
-      await createFile(
-          assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+      await createFile(assetGraphPath, originalAssetGraph.serialize());
 
       buildActions = [
         new BuildAction(new TestBuilder(), 'a',
@@ -416,8 +412,7 @@ main() {
       (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode).wasOutput = true;
       await createFile(aTxtCopy.path, 'hello');
 
-      await createFile(
-          assetGraphPath, JSON.encode(originalAssetGraph.serialize()));
+      await createFile(assetGraphPath, originalAssetGraph.serialize());
 
       buildActions.add(new BuildAction(new TestBuilder(), 'a',
           targetSources: const InputSet(include: const ['.copy']),

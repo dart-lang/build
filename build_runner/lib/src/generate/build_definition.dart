@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -186,8 +185,7 @@ class _Loader {
     return logTimedAsync(_logger, 'Reading cached asset graph', () async {
       try {
         var cachedGraph = new AssetGraph.deserialize(
-            JSON.decode(await _environment.reader.readAsString(assetGraphId))
-                as Map);
+            await _environment.reader.readAsBytes(assetGraphId));
         if (computeBuildActionsDigest(_buildActions) !=
             cachedGraph.buildActionsDigest) {
           _logger.warning(
