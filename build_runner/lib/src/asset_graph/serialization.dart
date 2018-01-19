@@ -15,7 +15,8 @@ class _AssetGraphDeserializer {
   final _idToAssetId = <int, AssetId>{};
   final Map _serializedGraph;
 
-  _AssetGraphDeserializer(this._serializedGraph);
+  _AssetGraphDeserializer(List<int> bytes)
+      : _serializedGraph = JSON.decode(UTF8.decode(bytes)) as Map;
 
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
@@ -129,7 +130,7 @@ class _AssetGraphSerializer {
   _AssetGraphSerializer(this._graph);
 
   /// Perform the serialization, should only be called once.
-  Map<String, dynamic> serialize() {
+  List<int> serialize() {
     /// Compute numeric identifiers for all asset ids.
     var next = 0;
     for (var node in _graph.allNodes) {
@@ -152,7 +153,7 @@ class _AssetGraphSerializer {
     });
     result['serializedAssetIds'] = serializedAssetIds;
 
-    return result;
+    return UTF8.encode(JSON.encode(result));
   }
 
   List _serializeNode(AssetNode node) {

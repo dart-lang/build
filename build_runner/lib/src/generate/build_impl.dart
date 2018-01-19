@@ -200,9 +200,9 @@ class BuildImpl {
       // Write out the dependency graph file.
       await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
-        await _writer.writeAsString(
+        await _writer.writeAsBytes(
             new AssetId(_packageGraph.root.name, assetGraphPath),
-            JSON.encode(_assetGraph.serialize()));
+            _assetGraph.serialize());
       });
 
       done.complete(result);
