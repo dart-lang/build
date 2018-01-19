@@ -354,7 +354,7 @@ class _Loader {
   List<String> _packageIncludes(PackageNode package) => package.isRoot
       ? _options.rootPackageFilesWhitelist
       : package.name == r'$sdk'
-          ? const ['lib/dev_compiler/**.js']
+          ? const ['lib/dev_compiler/**.js', 'lib/_internal/**.sum']
           : const ['lib/**'];
 
   Stream<AssetId> _listGeneratedAssetIds() async* {
