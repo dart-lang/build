@@ -42,8 +42,7 @@ Future main(List<String> args) async {
   }
   stdout.writeln('Loading asset graph at ${assetGraphFile.path}...');
 
-  assetGraph = new AssetGraph.deserialize(
-      assetGraphFile.readAsBytesSync());
+  assetGraph = new AssetGraph.deserialize(assetGraphFile.readAsBytesSync());
   packageGraph = new PackageGraph.forThisPackage();
 
   var commandRunner = new CommandRunner(

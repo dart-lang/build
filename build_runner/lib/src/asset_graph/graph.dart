@@ -58,8 +58,7 @@ class AssetGraph {
     return graph;
   }
 
-  List<int> serialize() =>
-      new _AssetGraphSerializer(this).serialize();
+  List<int> serialize() => new _AssetGraphSerializer(this).serialize();
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
