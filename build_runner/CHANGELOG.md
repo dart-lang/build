@@ -1,4 +1,4 @@
-## 0.7.8
+## 0.7.7+1
 
 - Avoid watching hosted dependencies for file changes.
 
