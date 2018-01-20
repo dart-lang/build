@@ -21,7 +21,6 @@ Future<Null> main(List<String> args) async {
     ..addCommand(new _GenerateBuildScript());
   var parsedArgs = commandRunner.parse(args);
   var commandName = parsedArgs.command?.name;
-  String configKey;
   if (commandName == null || commandName == 'help') {
     commandRunner.printUsage();
     return;
@@ -30,9 +29,8 @@ Future<Null> main(List<String> args) async {
   StreamSubscription logListener;
   if (commandName != _generateCommand) {
     logListener = Logger.root.onRecord.listen(stdIOLogListener);
-  } else {
-    configKey = parsedArgs.command['config'] as String;
   }
+  var configKey = parsedArgs.command['config'] as String;
   var buildScript = await generateBuildScript(configKey);
   var scriptFile = new File(scriptLocation)..createSync(recursive: true);
   scriptFile.writeAsStringSync(buildScript);
