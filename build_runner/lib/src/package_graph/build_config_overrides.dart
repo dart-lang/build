@@ -12,18 +12,25 @@ import 'package:path/path.dart' as p;
 import 'package_graph.dart';
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
-    PackageGraph packageGraph) async {
+    PackageGraph packageGraph, String configKey) async {
   final configs = <String, BuildConfig>{};
   final configFiles = new Glob('*.build.yaml').list();
   await for (final file in configFiles) {
     if (file is File) {
       final packageName = p.basename(file.path).split('.').first;
       final packageNode = packageGraph.allPackages[packageName];
-      final yaml = await file.readAsString();
+      final yaml = file.readAsStringSync();
       final config = new BuildConfig.parse(
           packageName, packageNode.dependencies.map((n) => n.name), yaml);
       configs[packageName] = config;
     }
+  }
+  if (configKey != null) {
+    final file = new File('build.$configKey.yaml');
+    final yaml = file.readAsStringSync();
+    final config = new BuildConfig.parse(packageGraph.root.name,
+        packageGraph.root.dependencies.map((n) => n.name), yaml);
+    configs[packageGraph.root.name] = config;
   }
   return configs;
 }

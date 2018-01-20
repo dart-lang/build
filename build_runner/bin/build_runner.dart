@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -22,6 +21,7 @@ Future<Null> main(List<String> args) async {
     ..addCommand(new _GenerateBuildScript());
   var parsedArgs = commandRunner.parse(args);
   var commandName = parsedArgs.command?.name;
+  String configKey;
   if (commandName == null || commandName == 'help') {
     commandRunner.printUsage();
     return;
@@ -30,8 +30,10 @@ Future<Null> main(List<String> args) async {
   StreamSubscription logListener;
   if (commandName != _generateCommand) {
     logListener = Logger.root.onRecord.listen(stdIOLogListener);
+  } else {
+    configKey = parsedArgs.command['config'] as String;
   }
-  var buildScript = await generateBuildScript();
+  var buildScript = await generateBuildScript(configKey);
   var scriptFile = new File(scriptLocation)..createSync(recursive: true);
   scriptFile.writeAsStringSync(buildScript);
   if (commandName == _generateCommand) {
@@ -61,7 +63,7 @@ Future<Null> main(List<String> args) async {
 
 const _generateCommand = 'generate-build-script';
 
-class _GenerateBuildScript extends Command<int> {
+class _GenerateBuildScript extends BuildRunnerCommand {
   @override
   final description = 'Generate a script to run builds and print the file path '
       'with no other logging. Useful for wrapping builds with other tools.';

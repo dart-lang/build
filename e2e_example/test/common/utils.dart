@@ -177,23 +177,28 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
 /// Runs tests using the manual build script.
-Future<ProcessResult> _runManualTests({bool usePrecompiled}) {
+Future<ProcessResult> _runManualTests(
+    {bool usePrecompiled, List<String> args}) {
   return _runTests('dart', [p.join('tool', 'build.dart')],
-      usePrecompiled: usePrecompiled);
+      usePrecompiled: usePrecompiled, buildArgs: args);
 }
 
 /// Runs tests using the auto build script.
-Future<ProcessResult> _runAutoTests({bool usePrecompiled}) {
+Future<ProcessResult> _runAutoTests({bool usePrecompiled, List<String> args}) {
   return _runTests(_pubBinary, ['run', 'build_runner'],
-      usePrecompiled: usePrecompiled);
+      usePrecompiled: usePrecompiled, buildArgs: args);
 }
 
 Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
-    {bool usePrecompiled}) async {
+    {bool usePrecompiled, List<String> buildArgs}) async {
   usePrecompiled ??= true;
   var testArgs = ['-p', 'chrome'];
   if (usePrecompiled) {
-    var args = scriptArgs.toList()..addAll(['test', '--'])..addAll(testArgs);
+    var args = scriptArgs.toList()
+      ..add('test')
+      ..addAll(buildArgs ?? [])
+      ..add('--')
+      ..addAll(testArgs);
     return Process.run(executable, args);
   } else {
     var args = ['run', 'test', '--pub-serve', '8081']..addAll(testArgs);
@@ -210,11 +215,14 @@ Future<Null> expectTestsFail({bool useManualScript}) async {
 }
 
 Future<Null> expectTestsPass(
-    {int expectedNumRan, bool usePrecompiled, bool useManualScript}) async {
+    {int expectedNumRan,
+    bool usePrecompiled,
+    bool useManualScript,
+    List<String> args}) async {
   useManualScript ??= true;
   var result = useManualScript
-      ? await _runManualTests(usePrecompiled: usePrecompiled)
-      : await _runAutoTests(usePrecompiled: usePrecompiled);
+      ? await _runManualTests(usePrecompiled: usePrecompiled, args: args)
+      : await _runAutoTests(usePrecompiled: usePrecompiled, args: args);
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {
     expect(result.stdout, contains('+$expectedNumRan'));

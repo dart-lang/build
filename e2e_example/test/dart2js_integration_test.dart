@@ -11,21 +11,11 @@ import 'package:test/test.dart';
 import 'common/utils.dart';
 
 void main() {
-  var dart2JsBuildFile = new File('build.yaml.dart2js');
-  var actualBuildFile = new File('build.yaml');
-
-  setUpAll(() async {
-    expect(await dart2JsBuildFile.exists(), isTrue);
-    expect(await actualBuildFile.exists(), isFalse);
-    await actualBuildFile.writeAsString(await dart2JsBuildFile.readAsString());
-  });
-
-  tearDownAll(() async {
-    await actualBuildFile.delete();
-  });
-
   test('Can run tests using dart2js', () async {
-    await expectTestsPass(usePrecompiled: true, useManualScript: false);
+    await expectTestsPass(
+        usePrecompiled: true,
+        useManualScript: false,
+        args: ['--config=dart2js']);
     var jsFile =
         new File('.dart_tool/build/generated/e2e_example/web/main.dart.js');
     expect(await jsFile.exists(), isTrue);
