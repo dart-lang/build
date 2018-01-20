@@ -13,7 +13,6 @@ If you have issues using `build_runner`, see the
 ## Using `build_runner` as a development server
 
 1. Edit your package's **pubspec.yaml** file,
-   removing all transformers and
    adding dev dependencies on **build_runner** and **build_web_compilers**:
 
    ```yaml
@@ -57,6 +56,7 @@ In addition to **serve** you can use:
   filed-based development server.
 
 - **test:** Creates an output directory and runs `pub run test` within it.
+  This command requires a dev dependency on `build_test`.
 
 ## Switching to dart2js
 
@@ -71,10 +71,6 @@ targets:
         options:
           compiler: dart2js
 ```
-
-<!--PENDING: Why does this show a `builders` line? Is that necessary for
-dart2js?-->
-
 
 ## Compatibility with other packages
 
@@ -92,15 +88,13 @@ build scripts referencing the Builders available in the local package or in
 dependencies. This pattern can still be used when customization is needed
 outside of `build.yaml`, but we recommend using the generated build script
 with `pub run build_runner`, because it will be kept up to date with changes
-in the build packages. If your pubspec lists builders, switch to a version of
+in the build packages. If your pubspec lists transformers, switch to a version of
 the builder-containing package that has a `build.yaml` file.
 
 
 ## Troubleshooting
 
 <!-- summarize here. -->
-
-<!-- add something about symptoms if you don't remove transformers -->
 
 ### build_runner has no versions that match...
 
