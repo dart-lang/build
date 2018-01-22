@@ -224,7 +224,6 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
       var createdUnit = await gen.generate(libraryReader, buildStep);
 
       if (createdUnit != null && createdUnit.isNotEmpty) {
-        log.finest(() => 'Generated $createdUnit for ${buildStep.inputId}');
         yield new GeneratedOutput(gen, createdUnit);
       }
     } catch (e, stack) {

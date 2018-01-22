@@ -1,3 +1,10 @@
+## 0.7.4+1
+
+* Removed a `log.finest` with the output source of each generator. This allows
+  a verbose option (`-v`) for tools like bazel or build_runner to be much more
+  readable and debuggable. Files are emitted to disk for inspection in any
+  case.
+
 ## 0.7.4
 
 * Added `typeNameOf`, which is a safe way to get the name of a `DartType`,
