@@ -56,6 +56,7 @@ Future<ServeHandler> watch(
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
   bool verbose,
+  Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -80,7 +81,8 @@ Future<ServeHandler> watch(
   var terminator = new Terminator(terminateEventStream);
 
   overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final buildActions = await createBuildActions(targetGraph, builders);
+  final buildActions =
+      await createBuildActions(targetGraph, builders, builderConfigOverrides);
 
   var watch =
       runWatch(environment, options, buildActions, terminator.shouldTerminate);

@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -13,6 +14,7 @@ import 'package:shelf/shelf_io.dart';
 import 'package:build_runner/build_runner.dart';
 
 const _assumeTty = 'assume-tty';
+const _define = 'define';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
 const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
@@ -59,6 +61,13 @@ class _SharedOptions {
 
   final bool verbose;
 
+  // Global config overrides by builder.
+  //
+  // Keys are the builder keys, such as my_package|my_builder, and values
+  // represent config objects. All keys in the config will override the parsed
+  // config for that key.
+  final Map<String, Map<String, dynamic>> builderConfigOverrides;
+
   _SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
@@ -66,6 +75,7 @@ class _SharedOptions {
     @required this.enableLowResourcesMode,
     @required this.outputDir,
     @required this.verbose,
+    @required this.builderConfigOverrides,
   });
 
   factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
@@ -76,6 +86,7 @@ class _SharedOptions {
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
+      builderConfigOverrides: _parseBuilderConfigOverrides(argResults[_define]),
     );
   }
 }
@@ -94,6 +105,7 @@ class _ServeOptions extends _SharedOptions {
     @required bool enableLowResourcesMode,
     @required String outputDir,
     @required bool verbose,
+    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
   })
       : super._(
           assumeTty: assumeTty,
@@ -102,6 +114,7 @@ class _ServeOptions extends _SharedOptions {
           enableLowResourcesMode: enableLowResourcesMode,
           outputDir: outputDir,
           verbose: verbose,
+          builderConfigOverrides: builderConfigOverrides,
         );
 
   factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
@@ -127,6 +140,7 @@ class _ServeOptions extends _SharedOptions {
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
+      builderConfigOverrides: _parseBuilderConfigOverrides(argResults[_define]),
     );
   }
 }
@@ -208,7 +222,8 @@ class _BuildCommand extends _BaseCommand {
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
     } else {
@@ -236,7 +251,8 @@ class _WatchCommand extends _BaseCommand {
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     await handler.currentBuild;
     await handler.buildResults.drain();
     return ExitCode.success.code;
@@ -270,7 +286,8 @@ class _ServeCommand extends _WatchCommand {
         enableLowResourcesMode: options.enableLowResourcesMode,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
@@ -320,7 +337,8 @@ class _TestCommand extends _BaseCommand {
           assumeTty: options.assumeTty,
           outputDir: outputDir,
           verbose: options.verbose,
-          packageGraph: packageGraph);
+          packageGraph: packageGraph,
+          builderConfigOverrides: options.builderConfigOverrides);
 
       if (result.status == BuildStatus.failure) {
         stdout.writeln('Skipping tests due to build failure');
@@ -373,4 +391,38 @@ Please update your dev_dependencies section of your pubspec.yaml:
     build_web_compilers: any
 ''');
   }
+}
+
+Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
+    dynamic parsedArg) {
+  final builderConfigOverrides = <String, Map<String, dynamic>>{};
+  if (parsedArg == null) return builderConfigOverrides;
+  var allArgs = parsedArg is List<String> ? parsedArg : [parsedArg as String];
+  for (final define in allArgs) {
+    final parts = define.split('=');
+    const expectedFormat = '--define "<builder_key>=<option>=<value>"';
+    if (parts.length < 3) {
+      throw new ArgumentError.value(
+          define,
+          _define,
+          'Expected at least 2 `=` signs, should be of the format like '
+          '$expectedFormat');
+    } else if (parts.length > 3) {
+      var rest = parts.sublist(2);
+      parts.removeRange(2, parts.length);
+      parts.add(rest.join('='));
+    }
+    final builderKey = parts[0];
+    final option = parts[1];
+    final value = JSON.decode(parts[2]);
+    final config =
+        builderConfigOverrides.putIfAbsent(parts[0], () => <String, dynamic>{});
+    if (config.containsKey(option)) {
+      throw new ArgumentError(
+          'Got duplicate overrides for the same builder option: '
+          '$builderKey=$option. Only one is allowed.');
+    }
+    config[option] = value;
+  }
+  return builderConfigOverrides;
 }

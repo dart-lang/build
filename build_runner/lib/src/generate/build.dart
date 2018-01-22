@@ -59,7 +59,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
         String outputDir,
-        bool verbose}) =>
+        bool verbose,
+        Map<String, Map<String, dynamic>> builderConfigOverrides}) =>
     build_impl.build(builders,
         assumeTty: assumeTty,
         deleteFilesByDefault: deleteFilesByDefault,
@@ -72,7 +73,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         terminateEventStream: terminateEventStream,
         enableLowResourcesMode: enableLowResourcesMode,
         outputDir: outputDir,
-        verbose: verbose);
+        verbose: verbose,
+        builderConfigOverrides: builderConfigOverrides);
 
 /// Same as [build], except it watches the file system and re-runs builds
 /// automatically.
@@ -111,7 +113,8 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
         String outputDir,
-        bool verbose}) =>
+        bool verbose,
+        Map<String, Map<String, dynamic>> builderConfigOverrides}) =>
     watch_impl.watch(builders,
         assumeTty: assumeTty,
         deleteFilesByDefault: deleteFilesByDefault,
@@ -126,4 +129,5 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         terminateEventStream: terminateEventStream,
         enableLowResourcesMode: enableLowResourcesMode,
         outputDir: outputDir,
-        verbose: verbose);
+        verbose: verbose,
+        builderConfigOverrides: builderConfigOverrides);
