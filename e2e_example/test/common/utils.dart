@@ -78,7 +78,7 @@ Future<ProcessResult> _runBuild(String command, List<String> args,
   return await Process.run(command, args);
 }
 
-Future<Null> _startServer(String command, List<String> args,
+Future<Null> _startServer(String command, List<String> buildArgs,
     {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) async {
   ensureCleanBuild ??= false;
   verbose ??= false;
@@ -89,7 +89,7 @@ Future<Null> _startServer(String command, List<String> args,
     await _toolDir.delete(recursive: true);
   }
 
-  _process = await Process.start(command, args);
+  _process = await Process.start(command, buildArgs);
   _stdOutLines = _process.stdout
       .transform(UTF8.decoder)
       .transform(const LineSplitter())
@@ -178,9 +178,9 @@ Future<String> nextStdOutLine(String message) =>
 
 /// Runs tests using the manual build script.
 Future<ProcessResult> _runManualTests(
-    {bool usePrecompiled, List<String> args}) {
+    {bool usePrecompiled, List<String> buildArgs}) {
   return _runTests('dart', [p.join('tool', 'build.dart')],
-      usePrecompiled: usePrecompiled, buildArgs: args);
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs);
 }
 
 /// Runs tests using the auto build script.
@@ -221,7 +221,7 @@ Future<Null> expectTestsPass(
     List<String> args}) async {
   useManualScript ??= true;
   var result = useManualScript
-      ? await _runManualTests(usePrecompiled: usePrecompiled, args: args)
+      ? await _runManualTests(usePrecompiled: usePrecompiled, buildArgs: args)
       : await _runAutoTests(usePrecompiled: usePrecompiled, args: args);
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {

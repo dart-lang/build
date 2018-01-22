@@ -18,7 +18,7 @@ import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
 
-Future<String> generateBuildScript(String configKey) => logTimedAsync(
+Future<String> generateBuildScript([String configKey]) => logTimedAsync(
     new Logger('Entrypoint'),
     'Generating build script',
     () => _generateBuildScript(configKey));
