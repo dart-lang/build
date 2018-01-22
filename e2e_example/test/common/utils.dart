@@ -184,9 +184,10 @@ Future<ProcessResult> _runManualTests(
 }
 
 /// Runs tests using the auto build script.
-Future<ProcessResult> _runAutoTests({bool usePrecompiled, List<String> args}) {
+Future<ProcessResult> _runAutoTests(
+    {bool usePrecompiled, List<String> buildArgs}) {
   return _runTests(_pubBinary, ['run', 'build_runner'],
-      usePrecompiled: usePrecompiled, buildArgs: args);
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs);
 }
 
 Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
@@ -222,7 +223,7 @@ Future<Null> expectTestsPass(
   useManualScript ??= true;
   var result = useManualScript
       ? await _runManualTests(usePrecompiled: usePrecompiled, buildArgs: args)
-      : await _runAutoTests(usePrecompiled: usePrecompiled, args: args);
+      : await _runAutoTests(usePrecompiled: usePrecompiled, buildArgs: args);
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {
     expect(result.stdout, contains('+$expectedNumRan'));
