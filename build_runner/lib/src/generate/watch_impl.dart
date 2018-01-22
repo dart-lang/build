@@ -43,6 +43,7 @@ Future<ServeHandler> watch(
   bool deleteFilesByDefault,
   bool failOnSevere,
   bool assumeTty,
+  String configKey,
   PackageGraph packageGraph,
   RunnerAssetReader reader,
   RunnerAssetWriter writer,
@@ -58,6 +59,8 @@ Future<ServeHandler> watch(
   bool verbose,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
+  overrideBuildConfig ??=
+      await findBuildConfigOverrides(packageGraph, configKey);
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
       overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
@@ -79,7 +82,6 @@ Future<ServeHandler> watch(
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
-  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
   final buildActions = await createBuildActions(targetGraph, builders);
 
   var watch =

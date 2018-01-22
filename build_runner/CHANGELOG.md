@@ -1,3 +1,7 @@
+## 0.7.8
+
+- Add `--config` option to use a different `build.yaml` at build time.
+
 ## 0.7.7+1
 
 - Avoid watching hosted dependencies for file changes.
