@@ -9,7 +9,6 @@ the Dart SDK.
 If you have issues using `build_runner`, see the
 [Troubleshooting section](#troubleshooting), below.
 
-
 ## Using `build_runner` as a development server
 
 1. Edit your package's **pubspec.yaml** file,
@@ -65,7 +64,7 @@ create a `build.yaml` file with a `target` that matches the name of your package
 
 ```yaml
 targets:
-  my_package_name:
+  $default:
     builders:
       dart_web_compilers|entrypoint:
         options:
