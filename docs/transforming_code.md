@@ -75,6 +75,43 @@ main() {
 }
 ```
 
+### Top-level or static members
+
+Classes are a little easier (and cleaner), because we can use `factory` functions.
+
+For top-level (or `static` class members), it's a bit more work, but the same idea holds.
+
+Previously if you wrote something like:
+
+```dart
+@ReplaceWith('config.APP_VERSION')
+String appVersion;
+```
+
+... and expected it to be transformed into ...
+
+```dart
+String get appVersion => 'v1.0.0';
+```
+
+You'll need to do a little more work. Again, this time, we will use `part` files:
+
+```dart
+// this file = version.dart
+part 'version.g.dart';
+
+String get appVersion => _$ReplaceWith$appVersion;
+```
+
+And generate the following:
+
+```dart
+// this file = version.g.dart
+part of 'version.dart';
+
+const _$ReplaceWith$appVersion = 'v1.0.0';
+```
+
 ## FAQ
 
 ### But, why?
