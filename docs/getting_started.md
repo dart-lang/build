@@ -67,7 +67,7 @@ create a `build.yaml` file with a `target` that matches the name of your package
 targets:
   my_package_name:
     builders:
-      dart_web_compilers|entrypoint:
+      build_web_compilers|entrypoint:
         options:
           compiler: dart2js
 ```
