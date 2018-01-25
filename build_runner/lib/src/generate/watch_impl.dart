@@ -284,7 +284,6 @@ class WatchImpl implements BuildState {
     if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
     var node = _assetGraph.get(change.id);
     if (node != null) {
-      node.lastKnownDigest = null;
       if (!node.isInteresting) return false;
       if (_isEditOnGeneratedFile(node, change.type)) return false;
     } else {
