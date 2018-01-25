@@ -206,7 +206,9 @@ abstract class BuildRunnerCommand extends Command<int> {
           abbr: 'v',
           defaultsTo: false,
           negatable: false,
-          help: 'Enables verbose logging.');
+          help: 'Enables verbose logging.')
+      ..addOption(_define,
+          help: 'Sets the global `options` config for a builder by key.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -430,7 +432,14 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     }
     final builderKey = parts[0];
     final option = parts[1];
-    final value = JSON.decode(parts[2]);
+    dynamic value;
+    // Attempt to parse the value as JSON, and if that fails then treat it as
+    // a normal string.
+    try {
+      value = JSON.decode(parts[2]);
+    } on FormatException catch (_) {
+      value = parts[2];
+    }
     final config =
         builderConfigOverrides.putIfAbsent(parts[0], () => <String, dynamic>{});
     if (config.containsKey(option)) {
