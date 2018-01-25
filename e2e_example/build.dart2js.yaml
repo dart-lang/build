@@ -1,5 +1,5 @@
 targets:
-  e2e_example:
+  $default:
     builders:
       build_web_compilers|entrypoint:
         options:

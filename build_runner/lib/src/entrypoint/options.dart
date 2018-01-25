@@ -20,6 +20,7 @@ const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
 const _output = 'output';
+const _config = 'config';
 const _verbose = 'verbose';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
@@ -55,6 +56,9 @@ class _SharedOptions {
 
   final bool enableLowResourcesMode;
 
+  /// Read `build.$configKey.yaml` instead of `build.yaml`.
+  final String configKey;
+
   /// Path to the merged output directory, or null if no directory should be
   /// created.
   final String outputDir;
@@ -73,6 +77,7 @@ class _SharedOptions {
     @required this.deleteFilesByDefault,
     @required this.failOnSevere,
     @required this.enableLowResourcesMode,
+    @required this.configKey,
     @required this.outputDir,
     @required this.verbose,
     @required this.builderConfigOverrides,
@@ -84,6 +89,7 @@ class _SharedOptions {
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides: _parseBuilderConfigOverrides(argResults[_define]),
@@ -103,6 +109,7 @@ class _ServeOptions extends _SharedOptions {
     @required bool deleteFilesByDefault,
     @required bool failOnSevere,
     @required bool enableLowResourcesMode,
+    @required String configKey,
     @required String outputDir,
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
@@ -112,6 +119,7 @@ class _ServeOptions extends _SharedOptions {
           deleteFilesByDefault: deleteFilesByDefault,
           failOnSevere: failOnSevere,
           enableLowResourcesMode: enableLowResourcesMode,
+          configKey: configKey,
           outputDir: outputDir,
           verbose: verbose,
           builderConfigOverrides: builderConfigOverrides,
@@ -138,6 +146,7 @@ class _ServeOptions extends _SharedOptions {
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides: _parseBuilderConfigOverrides(argResults[_define]),
@@ -153,11 +162,11 @@ class _ServeTarget {
   _ServeTarget(this.dir, this.port);
 }
 
-abstract class _BaseCommand extends Command<int> {
+abstract class BuildRunnerCommand extends Command<int> {
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
 
-  _BaseCommand() {
+  BuildRunnerCommand() {
     _addBaseFlags();
   }
 
@@ -184,6 +193,9 @@ abstract class _BaseCommand extends Command<int> {
               'resource constrained environments.',
           negatable: false,
           defaultsTo: false)
+      ..addOption(_config,
+          help: 'Read `build.<name>.yaml` instead of the default `build.yaml`',
+          abbr: 'c')
       ..addFlag(_failOnSevere,
           help: 'Whether to consider the build a failure on an error logged.',
           negatable: true,
@@ -206,7 +218,7 @@ abstract class _BaseCommand extends Command<int> {
 }
 
 /// A [Command] that does a single build and then exits.
-class _BuildCommand extends _BaseCommand {
+class _BuildCommand extends BuildRunnerCommand {
   @override
   String get name => 'build';
 
@@ -220,6 +232,7 @@ class _BuildCommand extends _BaseCommand {
     var result = await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
+        configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
         verbose: options.verbose,
@@ -234,7 +247,7 @@ class _BuildCommand extends _BaseCommand {
 
 /// A [Command] that watches the file system for updates and rebuilds as
 /// appropriate.
-class _WatchCommand extends _BaseCommand {
+class _WatchCommand extends BuildRunnerCommand {
   @override
   String get name => 'watch';
 
@@ -249,6 +262,7 @@ class _WatchCommand extends _BaseCommand {
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
+        configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
         verbose: options.verbose,
@@ -284,6 +298,7 @@ class _ServeCommand extends _WatchCommand {
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
+        configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
         verbose: options.verbose,
@@ -303,7 +318,7 @@ class _ServeCommand extends _WatchCommand {
 
 /// A [Command] that does a single build and then runs tests using the compiled
 /// assets.
-class _TestCommand extends _BaseCommand {
+class _TestCommand extends BuildRunnerCommand {
   @override
   final argParser = new ArgParser(allowTrailingOptions: false);
 
@@ -334,6 +349,7 @@ class _TestCommand extends _BaseCommand {
       var result = await build(builderApplications,
           deleteFilesByDefault: options.deleteFilesByDefault,
           enableLowResourcesMode: options.enableLowResourcesMode,
+          configKey: options.configKey,
           assumeTty: options.assumeTty,
           outputDir: outputDir,
           verbose: options.verbose,

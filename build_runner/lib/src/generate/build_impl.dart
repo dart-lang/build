@@ -47,6 +47,7 @@ Future<BuildResult> build(
   bool deleteFilesByDefault,
   bool failOnSevere,
   bool assumeTty,
+  String configKey,
   PackageGraph packageGraph,
   RunnerAssetReader reader,
   RunnerAssetWriter writer,
@@ -61,6 +62,8 @@ Future<BuildResult> build(
   Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
   packageGraph ??= new PackageGraph.forThisPackage();
+  overrideBuildConfig ??=
+      await findBuildConfigOverrides(packageGraph, configKey);
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
       overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
@@ -80,7 +83,6 @@ Future<BuildResult> build(
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
-  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
   final buildActions =
       await createBuildActions(targetGraph, builders, builderConfigOverrides);
 
