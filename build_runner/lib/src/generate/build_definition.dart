@@ -362,6 +362,7 @@ class _Loader {
     await for (var id in _environment.reader.findAssets(glob)) {
       var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
       var firstSlash = packagePath.indexOf('/');
+      if (firstSlash == -1) continue;
       var package = packagePath.substring(0, firstSlash);
       var path = packagePath.substring(firstSlash + 1);
       yield new AssetId(package, path);

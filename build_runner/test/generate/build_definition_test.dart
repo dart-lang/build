@@ -30,7 +30,7 @@ import '../common/runner_asset_writer_spy.dart';
 main() {
   final aPackageGraph = buildPackageGraph({rootPackage('a'): []});
 
-  group('BuildDefinition.load', () {
+  group('BuildDefinition.prepareWorkspace', () {
     BuildOptions options;
     BuildEnvironment environment;
     String pkgARoot;
@@ -421,6 +421,15 @@ main() {
       await BuildDefinition.prepareWorkspace(
           environment, options, buildActions);
       expect(writerSpy.assetsDeleted, contains(aTxtCopy));
+    });
+
+    group('regression tests', () {
+      test('load can skip files under the generated dir', () async {
+        await createFile(
+            p.join('.dart_tool', 'build', 'generated', '.foo'), 'a');
+        expect(BuildDefinition.prepareWorkspace(environment, options, []),
+            completes);
+      });
     });
   });
 }
