@@ -241,7 +241,10 @@ class AssetGraph {
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(
-        newAndModifiedNodes.where((node) => node.isValidInput), digestReader);
+        newAndModifiedNodes.where((node) =>
+            node.isValidInput &&
+            (node.outputs.isNotEmpty || node.lastKnownDigest != null)),
+        digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,
     // based on the removed `SourceAssetNode`s by following the
