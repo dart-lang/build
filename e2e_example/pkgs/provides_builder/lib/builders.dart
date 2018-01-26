@@ -11,14 +11,15 @@ class _SomeBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    '': const ['.copy']
+    '.dart': const ['.something.dart']
   };
 
   @override
   Future build(BuildStep buildStep) async {
     if (!await buildStep.canRead(buildStep.inputId)) return;
 
-    await buildStep.writeAsBytes(buildStep.inputId.addExtension('.copy'),
+    await buildStep.writeAsBytes(
+        buildStep.inputId.changeExtension('.something.dart'),
         buildStep.readAsBytes(buildStep.inputId));
   }
 }
