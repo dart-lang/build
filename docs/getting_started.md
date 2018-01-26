@@ -41,12 +41,18 @@ While the `serve` command runs, every change you save triggers a rebuild.
 The first build is the slowest. After that, assets are cached on disk and
 incremental builds are faster.
 
+## Building output served by another server
+
+Build with `--output <directory name>` to write files into a merged output
+directory with file paths that match internally referenced URIs. This can be
+used with the `build`, `watch`, and `serve` commands.
+
 ## Using other build_runner commands
 
 In addition to **serve** you can use:
 
-- **build:** Runs a single build and exits. This is most useful if your build also
-  generates output to your source directory. With `--output <dirname>` this
+- **build:** Runs a single build and exits. This is most useful if your build
+  also generates output to your source directory. With `--output <dirname>` this
   also creates a merged output directory with all sources and generated assets.
 
 - **watch:** Like `build` but reruns after file changes. With
