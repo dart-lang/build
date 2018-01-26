@@ -150,8 +150,10 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
             final builderConfig = targetConfig(node);
             final generateFor = builderConfig?.generateFor ??
                 builderApplication.defaultGenerateFor;
-            final options = builderConfig?.options ?? new BuilderOptions({});
-            options.config.addAll(builderConfigOverrides);
+            var options = builderConfig?.options ?? new BuilderOptions({});
+            options = new BuilderOptions(
+                new Map<String, dynamic>.from(options.config)
+                  ..addAll(builderConfigOverrides));
             return new BuildAction(b(options), node.package.name,
                 builderOptions: options,
                 targetSources: node.target.sources,

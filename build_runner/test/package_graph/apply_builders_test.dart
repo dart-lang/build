@@ -24,11 +24,12 @@ void main() {
             toAllPackages())
       ];
       var actions = await createBuildActions(targetGraph, builderApplications, {
-        'b|cool_builder': {'option_a': 'a'},
+        'b|cool_builder': {'option_a': 'a', 'option_c': 'c'},
       });
       for (var action in actions) {
         expect((action.builder as CoolBuilder).optionA, equals('a'));
         expect((action.builder as CoolBuilder).optionB, equals('defaultB'));
+        expect((action.builder as CoolBuilder).optionC, equals('c'));
       }
     });
   });
@@ -37,10 +38,12 @@ void main() {
 class CoolBuilder extends Builder {
   final String optionA;
   final String optionB;
+  final String optionC;
 
   CoolBuilder(BuilderOptions options)
       : optionA = options.config['option_a'] as String ?? 'defaultA',
-        optionB = options.config['option_b'] as String ?? 'defaultB';
+        optionB = options.config['option_b'] as String ?? 'defaultB',
+        optionC = options.config['option_c'] as String ?? 'defaultC';
 
   @override
   final buildExtensions = {

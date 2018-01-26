@@ -208,6 +208,7 @@ abstract class BuildRunnerCommand extends Command<int> {
           negatable: false,
           help: 'Enables verbose logging.')
       ..addOption(_define,
+      allowMultiple: true,
           help: 'Sets the global `options` config for a builder by key.');
   }
 
@@ -441,7 +442,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
       value = parts[2];
     }
     final config =
-        builderConfigOverrides.putIfAbsent(parts[0], () => <String, dynamic>{});
+        builderConfigOverrides.putIfAbsent(builderKey, () => <String, dynamic>{});
     if (config.containsKey(option)) {
       throw new ArgumentError(
           'Got duplicate overrides for the same builder option: '
