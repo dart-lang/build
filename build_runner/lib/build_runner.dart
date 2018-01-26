@@ -4,6 +4,8 @@
 export 'src/asset/file_based.dart';
 export 'src/asset/reader.dart' show RunnerAssetReader;
 export 'src/asset/writer.dart';
+export 'src/build_script_generate/build_script_generate.dart'
+    show generateBuildScript, scriptLocation;
 export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
