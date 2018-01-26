@@ -106,6 +106,36 @@ void main() {
       var cachedResponse = await cachedRequest.close();
       expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
     });
+
+    group('regression tests', () {
+      test('can get changes to files not read during build', () async {
+        var httpClient = new HttpClient();
+        var firstRequest =
+            await httpClient.get('localhost', 8080, 'index.html');
+        var firstResponse = await firstRequest.close();
+        expect(firstResponse.statusCode, HttpStatus.OK);
+        var etag = firstResponse.headers[HttpHeaders.ETAG];
+        expect(etag, isNotNull);
+
+        var cachedRequest =
+            await httpClient.get('localhost', 8080, 'index.html')
+              ..headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+        var cachedResponse = await cachedRequest.close();
+        expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+
+        var nextBuild = nextSuccessfulBuild;
+        await replaceAllInFile(
+            'web/index.html', 'e2e_example', 'modified example');
+        await nextBuild;
+        var changedRequest =
+            await httpClient.get('localhost', 8080, 'index.html')
+              ..headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+        var changedResponse = await changedRequest.close();
+        expect(changedResponse.statusCode, HttpStatus.OK);
+        var newEtag = changedResponse.headers[HttpHeaders.ETAG];
+        expect(newEtag, isNot(etag));
+      });
+    });
   });
 }
 
