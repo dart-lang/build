@@ -150,7 +150,8 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
             final builderConfig = targetConfig(node);
             final generateFor = builderConfig?.generateFor ??
                 builderApplication.defaultGenerateFor;
-            var options = builderConfig?.options ?? new BuilderOptions({});
+            var options =
+                builderConfig?.options ?? const BuilderOptions(const {});
             options = new BuilderOptions(
                 new Map<String, dynamic>.from(options.config)
                   ..addAll(builderConfigOverrides));
