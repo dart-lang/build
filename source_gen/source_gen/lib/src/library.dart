@@ -133,7 +133,7 @@ class LibraryReader {
           // a valid import URL in Dart source code.
           return new Uri(path: to.pathSegments.last);
         }
-        final relative = Uri.parse(p.relative(
+        final relative = p.toUri(p.relative(
           to.toString(),
           from: from.toString(),
         ));

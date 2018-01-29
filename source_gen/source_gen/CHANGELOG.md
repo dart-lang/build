@@ -1,3 +1,7 @@
+## 0.7.4+2
+
+* Fix file URIs on windows.
+
 ## 0.7.4+1
 
 * Removed a `log.finest` with the output source of each generator. This allows
