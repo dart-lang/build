@@ -61,6 +61,7 @@ Future<BuildResult> build(
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
+  builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
