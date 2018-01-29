@@ -9,6 +9,13 @@ import 'package:build/build.dart';
 class _SomeBuilder implements Builder {
   const _SomeBuilder();
 
+  factory _SomeBuilder.fromOptions(BuilderOptions options) {
+    if (options.config['throw_in_constructor'] == true) {
+      throw new StateError('Throwing on purpose cause you asked for it!');
+    }
+    return const _SomeBuilder();
+  }
+
   @override
   final buildExtensions = const {
     '.dart': const ['.something.dart']
@@ -24,5 +31,6 @@ class _SomeBuilder implements Builder {
   }
 }
 
-Builder someBuilder(_) => const _SomeBuilder();
+Builder someBuilder(BuilderOptions options) =>
+    new _SomeBuilder.fromOptions(options);
 Builder notApplied(_) => null;

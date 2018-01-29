@@ -27,6 +27,12 @@ Future<ProcessResult> runManualBuild(
     _runBuild('dart', [scriptPath, 'build'],
         ensureCleanBuild: ensureCleanBuild);
 
+/// Runs a single build using `pub run build_runner build`, and returns the
+/// [ProcessResult].
+Future<ProcessResult> runAutoBuild({List<String> trailingArgs = const []}) =>
+    _runBuild(
+        _pubBinary, ['run', 'build_runner', 'build']..addAll(trailingArgs));
+
 /// Runs the build script in this package, and waits for the first build to
 /// complete.
 ///

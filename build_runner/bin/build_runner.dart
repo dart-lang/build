@@ -49,14 +49,21 @@ Future<Null> main(List<String> args) async {
   await Isolate.spawnUri(
       new Uri.file(p.absolute(scriptLocation)), args, messagePort.sendPort,
       onExit: exitPort.sendPort, onError: errorPort.sendPort);
-  try {
-    exitCode = await messagePort.first as int;
-  } on StateError catch (_) {
-    if (exitCode == 0) exitCode = 1;
-  }
+  StreamSubscription exitCodeListener;
+  exitCodeListener = messagePort.listen((isolateExitCode) {
+    if (isolateExitCode is! int) {
+      throw new StateError(
+          'Bad response from isolate, expected an exit code but got '
+          '$isolateExitCode');
+    }
+    exitCode = isolateExitCode as int;
+    exitCodeListener.cancel();
+    exitCodeListener = null;
+  });
   await exitPort.first;
   await errorListener.cancel();
   await logListener?.cancel();
+  await exitCodeListener?.cancel();
 }
 
 const _generateCommand = 'generate-build-script';
