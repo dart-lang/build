@@ -329,6 +329,7 @@ class AssetGraph {
         if (!action.hideOutput && node is GeneratedAssetNode && node.isHidden) {
           continue;
         }
+        assert(node != null, 'The node from `$input` does not exist.');
 
         var outputs = expectedOutputs(action.builder, input);
         phaseOutputs.addAll(outputs);
