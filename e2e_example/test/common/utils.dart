@@ -183,14 +183,14 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
 
 /// Runs tests using the manual build script.
-Future<ProcessResult> _runManualTests(
+Future<ProcessResult> runManualTests(
     {bool usePrecompiled, List<String> buildArgs}) {
   return _runTests('dart', [p.join('tool', 'build.dart')],
       usePrecompiled: usePrecompiled, buildArgs: buildArgs);
 }
 
 /// Runs tests using the auto build script.
-Future<ProcessResult> _runAutoTests(
+Future<ProcessResult> runAutoTests(
     {bool usePrecompiled, List<String> buildArgs}) {
   return _runTests(_pubBinary, ['run', 'build_runner'],
       usePrecompiled: usePrecompiled, buildArgs: buildArgs);
@@ -215,8 +215,7 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
 
 Future<Null> expectTestsFail({bool useManualScript}) async {
   useManualScript ??= true;
-  var result =
-      useManualScript ? await _runManualTests() : await _runAutoTests();
+  var result = useManualScript ? await runManualTests() : await runAutoTests();
   expect(result.stdout, contains('Some tests failed'));
   expect(result.exitCode, isNot(0));
 }
@@ -228,8 +227,8 @@ Future<Null> expectTestsPass(
     List<String> args}) async {
   useManualScript ??= true;
   var result = useManualScript
-      ? await _runManualTests(usePrecompiled: usePrecompiled, buildArgs: args)
-      : await _runAutoTests(usePrecompiled: usePrecompiled, buildArgs: args);
+      ? await runManualTests(usePrecompiled: usePrecompiled, buildArgs: args)
+      : await runAutoTests(usePrecompiled: usePrecompiled, buildArgs: args);
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {
     expect(result.stdout, contains('+$expectedNumRan'));
