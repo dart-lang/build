@@ -119,7 +119,7 @@ Future<T> resolveSources<T>(
   String resolverFor,
   String rootPackage,
   Future<Null> tearDown,
-  Resolvers resolvers,
+  Resolvers resolvers: const BarbackResolvers(),
 }) {
   if (inputs == null || inputs.isEmpty) {
     throw new ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
@@ -141,7 +141,7 @@ Future<T> resolveAsset<T>(
   FutureOr<T> action(Resolver resolver), {
   PackageResolver resolver,
   Future<Null> tearDown,
-  Resolvers resolvers,
+  Resolvers resolvers: const BarbackResolvers(),
 }) {
   return _resolveAssets(
     {
