@@ -22,6 +22,12 @@ part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph {
+  /// All the [AssetId]s that failed the last time they were ran.
+  ///
+  /// See [markFailed] and [markSucceeded] for more info.
+  final Set<AssetId> _failedAssets;
+  Iterable<AssetId> get failedAssets => _failedAssets;
+
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final _nodesByPackage = <String, Map<String, AssetNode>>{};
 
@@ -31,7 +37,8 @@ class AssetGraph {
   /// the new [BuildAction]s and throw away the graph if it doesn't.
   final Digest buildActionsDigest;
 
-  AssetGraph._(this.buildActionsDigest);
+  AssetGraph._(this.buildActionsDigest, {Set<AssetId> failedAssets})
+      : _failedAssets = failedAssets ?? new Set<AssetId>();
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
@@ -69,6 +76,16 @@ class AssetGraph {
     var pkg = _nodesByPackage[id?.package];
     if (pkg == null) return null;
     return pkg[id.path];
+  }
+
+  /// Marks [id] as having failed, by adding it to [failedAssets].
+  void markFailed(AssetId id) {
+    _failedAssets.add(id);
+  }
+
+  /// Marks [id] as having succeeded, removing it from [failedAssets].
+  void markSucceeded(AssetId id) {
+    _failedAssets.remove(id);
   }
 
   /// Adds [node] to the graph if it doesn't exist.
