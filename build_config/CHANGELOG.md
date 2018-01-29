@@ -1,9 +1,7 @@
 ## 0.2.3-dev
 
 - Expose key normalization methods publically, these include:
-  - normalizeBuilderKeyDefinition
   - normalizeBuilderKeyUsage
-  - normalizeTargetKeyDefinition
   - normalizeTargetKeyUsage
 
 ## 0.2.2+1
