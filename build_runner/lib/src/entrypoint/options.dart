@@ -2,10 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:build_config/build_config.dart';
 import 'package:io/io.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf_io.dart';
@@ -13,6 +15,7 @@ import 'package:shelf/shelf_io.dart';
 import 'package:build_runner/build_runner.dart';
 
 const _assumeTty = 'assume-tty';
+const _define = 'define';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
 const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
@@ -26,6 +29,8 @@ final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
+
+  final packageGraph = new PackageGraph.forThisPackage();
 
   BuildCommandRunner(List<BuilderApplication> builderApplications)
       : this.builderApplications = new List.unmodifiable(builderApplications),
@@ -63,6 +68,13 @@ class _SharedOptions {
 
   final bool verbose;
 
+  // Global config overrides by builder.
+  //
+  // Keys are the builder keys, such as my_package|my_builder, and values
+  // represent config objects. All keys in the config will override the parsed
+  // config for that key.
+  final Map<String, Map<String, dynamic>> builderConfigOverrides;
+
   _SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
@@ -71,9 +83,11 @@ class _SharedOptions {
     @required this.configKey,
     @required this.outputDir,
     @required this.verbose,
+    @required this.builderConfigOverrides,
   });
 
-  factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
+  factory _SharedOptions.fromParsedArgs(
+      ArgResults argResults, String rootPackage) {
     return new _SharedOptions._(
       assumeTty: argResults[_assumeTty] as bool,
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
@@ -82,6 +96,8 @@ class _SharedOptions {
       configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
+      builderConfigOverrides:
+          _parseBuilderConfigOverrides(argResults[_define], rootPackage),
     );
   }
 }
@@ -101,6 +117,7 @@ class _ServeOptions extends _SharedOptions {
     @required String configKey,
     @required String outputDir,
     @required bool verbose,
+    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
   })
       : super._(
           assumeTty: assumeTty,
@@ -110,9 +127,11 @@ class _ServeOptions extends _SharedOptions {
           configKey: configKey,
           outputDir: outputDir,
           verbose: verbose,
+          builderConfigOverrides: builderConfigOverrides,
         );
 
-  factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
+  factory _ServeOptions.fromParsedArgs(
+      ArgResults argResults, String rootPackage) {
     var serveTargets = <_ServeTarget>[];
     for (var arg in argResults.rest) {
       var parts = arg.split(':');
@@ -136,6 +155,8 @@ class _ServeOptions extends _SharedOptions {
       configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
+      builderConfigOverrides:
+          _parseBuilderConfigOverrides(argResults[_define], rootPackage),
     );
   }
 }
@@ -151,6 +172,8 @@ class _ServeTarget {
 abstract class BuildRunnerCommand extends Command<int> {
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
+
+  PackageGraph get packageGraph => (runner as BuildCommandRunner).packageGraph;
 
   BuildRunnerCommand() {
     _addBaseFlags();
@@ -192,7 +215,10 @@ abstract class BuildRunnerCommand extends Command<int> {
           abbr: 'v',
           defaultsTo: false,
           negatable: false,
-          help: 'Enables verbose logging.');
+          help: 'Enables verbose logging.')
+      ..addOption(_define,
+          allowMultiple: true,
+          help: 'Sets the global `options` config for a builder by key.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -200,7 +226,7 @@ abstract class BuildRunnerCommand extends Command<int> {
   /// You may override this to return more specific options if desired, but they
   /// must extend [_SharedOptions].
   _SharedOptions _readOptions() =>
-      new _SharedOptions.fromParsedArgs(argResults);
+      new _SharedOptions.fromParsedArgs(argResults, packageGraph.root.name);
 }
 
 /// A [Command] that does a single build and then exits.
@@ -222,7 +248,9 @@ class _BuildCommand extends BuildRunnerCommand {
         configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        packageGraph: packageGraph,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
     } else {
@@ -252,7 +280,9 @@ class _WatchCommand extends BuildRunnerCommand {
         configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        packageGraph: packageGraph,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     await handler.currentBuild;
     await handler.buildResults.drain();
     return ExitCode.success.code;
@@ -276,7 +306,8 @@ class _ServeCommand extends _WatchCommand {
       'builds based on file system updates.';
 
   @override
-  _ServeOptions _readOptions() => new _ServeOptions.fromParsedArgs(argResults);
+  _ServeOptions _readOptions() =>
+      new _ServeOptions.fromParsedArgs(argResults, packageGraph.root.name);
 
   @override
   Future<int> run() async {
@@ -288,7 +319,9 @@ class _ServeCommand extends _WatchCommand {
         configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        packageGraph: packageGraph,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
@@ -321,7 +354,6 @@ class _TestCommand extends BuildRunnerCommand {
     _SharedOptions options;
     String outputDir;
     try {
-      var packageGraph = new PackageGraph.forThisPackage();
       _ensureBuildTestDependency(packageGraph);
       options = _readOptions();
       // We always need an output dir when running tests, so we create a tmp dir
@@ -339,8 +371,9 @@ class _TestCommand extends BuildRunnerCommand {
           configKey: options.configKey,
           assumeTty: options.assumeTty,
           outputDir: outputDir,
+          packageGraph: packageGraph,
           verbose: options.verbose,
-          packageGraph: packageGraph);
+          builderConfigOverrides: options.builderConfigOverrides);
 
       if (result.status == BuildStatus.failure) {
         stdout.writeln('Skipping tests due to build failure');
@@ -393,4 +426,45 @@ Please update your dev_dependencies section of your pubspec.yaml:
     build_web_compilers: any
 ''');
   }
+}
+
+Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
+    dynamic parsedArg, String rootPackage) {
+  final builderConfigOverrides = <String, Map<String, dynamic>>{};
+  if (parsedArg == null) return builderConfigOverrides;
+  var allArgs = parsedArg is List<String> ? parsedArg : [parsedArg as String];
+  for (final define in allArgs) {
+    final parts = define.split('=');
+    const expectedFormat = '--define "<builder_key>=<option>=<value>"';
+    if (parts.length < 3) {
+      throw new ArgumentError.value(
+          define,
+          _define,
+          'Expected at least 2 `=` signs, should be of the format like '
+          '$expectedFormat');
+    } else if (parts.length > 3) {
+      var rest = parts.sublist(2);
+      parts.removeRange(2, parts.length);
+      parts.add(rest.join('='));
+    }
+    final builderKey = normalizeBuilderKeyUsage(parts[0], rootPackage);
+    final option = parts[1];
+    dynamic value;
+    // Attempt to parse the value as JSON, and if that fails then treat it as
+    // a normal string.
+    try {
+      value = JSON.decode(parts[2]);
+    } on FormatException catch (_) {
+      value = parts[2];
+    }
+    final config = builderConfigOverrides.putIfAbsent(
+        builderKey, () => <String, dynamic>{});
+    if (config.containsKey(option)) {
+      throw new ArgumentError(
+          'Got duplicate overrides for the same builder option: '
+          '$builderKey=$option. Only one is allowed.');
+    }
+    config[option] = value;
+  }
+  return builderConfigOverrides;
 }

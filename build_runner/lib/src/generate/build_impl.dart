@@ -59,7 +59,9 @@ Future<BuildResult> build(
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
   bool verbose,
+  Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
+  builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
@@ -82,7 +84,8 @@ Future<BuildResult> build(
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildActions = await createBuildActions(targetGraph, builders);
+  final buildActions =
+      await createBuildActions(targetGraph, builders, builderConfigOverrides);
 
   var result = await singleBuild(environment, options, buildActions);
 

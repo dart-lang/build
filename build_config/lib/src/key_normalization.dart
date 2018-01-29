@@ -4,17 +4,46 @@
 
 const _defaultTargetNamePlaceholder = r'$default';
 
+/// Returns the normalized [builderKey] definition when used from [packageName].
+///
+/// Example normalizations:
+///
+///   - "some_builder" => "$packageName|some_builder"
+///   - "|some_builder" => "$packageName|some_builder"
+///   - "some_package|some_builder" => "some_package|some_builder"
 String normalizeBuilderKeyDefinition(String builderKey, String packageName) =>
     _normalizeDefinition(builderKey, packageName, '|');
 
+/// Returns the normalized [builderKey] usage when used from [packageName].
+///
+/// Example normalizations:
+///
+///   - "some_package" => "some_package|some_package"
+///   - "|some_builder" => "$packageName|some_builder"
+///   - "some_package|some_builder" => "some_package|some_builder"
 String normalizeBuilderKeyUsage(String builderKey, String packageName) =>
     _normalizeUsage(builderKey, packageName, '|');
 
+/// Returns the normalized [targetKey] definition when used from [packageName].
+///
+/// Example normalizations:
+///
+///   - "$default" => "$packageName:$packageName"
+///   - "some_target" => "$packageName:some_target"
+///   - ":some_target" => "$packageName:some_target"
+///   - "some_package:some_target" => "some_package|some_target"
 String normalizeTargetKeyDefinition(String targetKey, String packageName) =>
     targetKey == _defaultTargetNamePlaceholder
         ? '$packageName:$packageName'
         : _normalizeDefinition(targetKey, packageName, ':');
 
+/// Returns the normalized [targetKey] usage when used from [packageName].
+///
+/// Example normalizations:
+///
+///   - "some_package" => "some_package:some_package"
+///   - ":some_target" => "$packageName:some_target"
+///   - "some_package:some_target" => "some_package:some_target"
 String normalizeTargetKeyUsage(String targetKey, String packageName) =>
     _normalizeUsage(targetKey, packageName, ':');
 
