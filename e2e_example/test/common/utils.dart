@@ -199,7 +199,7 @@ Future<ProcessResult> runAutoTests(
 Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
     {bool usePrecompiled, List<String> buildArgs}) async {
   usePrecompiled ??= true;
-  var testArgs = ['-p', 'chrome'];
+  var testArgs = ['-p', 'firefox'];
   if (usePrecompiled) {
     var args = scriptArgs.toList()
       ..add('test')
