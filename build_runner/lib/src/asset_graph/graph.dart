@@ -22,11 +22,12 @@ part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph {
-  /// All the [AssetId]s that failed the last time they were ran.
+  /// A map of phase number to primary inputs that failed during that phase.
   ///
-  /// See [markFailed] and [markSucceeded] for more info.
-  final Set<AssetId> _failedAssets;
-  Iterable<AssetId> get failedAssets => _failedAssets;
+  /// See [markActionFailed] and [markActionSucceeded] for more info.
+  final Map<int, Set<AssetId>> _failedActions;
+  UnmodifiableMapView<int, Iterable<AssetId>> get failedActions =>
+      new UnmodifiableMapView(_failedActions);
 
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final _nodesByPackage = <String, Map<String, AssetNode>>{};
@@ -37,8 +38,8 @@ class AssetGraph {
   /// the new [BuildAction]s and throw away the graph if it doesn't.
   final Digest buildActionsDigest;
 
-  AssetGraph._(this.buildActionsDigest, {Set<AssetId> failedAssets})
-      : _failedAssets = failedAssets ?? new Set<AssetId>();
+  AssetGraph._(this.buildActionsDigest, {Map<int, Set<AssetId>> failedActions})
+      : _failedActions = failedActions ?? new Map<int, Set<AssetId>>();
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
@@ -78,14 +79,17 @@ class AssetGraph {
     return pkg[id.path];
   }
 
-  /// Marks [id] as having failed, by adding it to [failedAssets].
-  void markFailed(AssetId id) {
-    _failedAssets.add(id);
+  /// Marks an action in [phaseNumber] with [primaryInputId] as having failed.
+  void markActionFailed(int phaseNumber, AssetId primaryInputId) {
+    _failedActions
+        .putIfAbsent(phaseNumber, () => new Set<AssetId>())
+        .add(primaryInputId);
   }
 
-  /// Marks [id] as having succeeded, removing it from [failedAssets].
-  void markSucceeded(AssetId id) {
-    _failedAssets.remove(id);
+  /// Marks an action in [phaseNumber] with [primaryInputId] as having
+  /// succeeded.
+  void markActionSucceeded(int phaseNumber, AssetId primaryInputId) {
+    _failedActions[phaseNumber]?.remove(primaryInputId);
   }
 
   /// Adds [node] to the graph if it doesn't exist.
