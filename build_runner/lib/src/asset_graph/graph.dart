@@ -315,7 +315,7 @@ class AssetGraph {
     if (placeholders != null) allInputs.addAll(placeholders);
 
     for (var phase = 0; phase < buildActions.length; phase++) {
-      var phaseOutputs = <AssetId>[];
+      var phaseOutputs = new Set<AssetId>();
       var action = buildActions[phase];
       var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
       var builderOptionsNode =
@@ -335,9 +335,13 @@ class AssetGraph {
         phaseOutputs.addAll(outputs);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
-        allInputs.removeAll(_addGeneratedOutputs(
-            outputs, phase, builderOptionsNode,
-            primaryInput: input, isHidden: action.hideOutput));
+        var deleted = _addGeneratedOutputs(outputs, phase, builderOptionsNode,
+            primaryInput: input, isHidden: action.hideOutput);
+        allInputs.removeAll(deleted);
+        // We may delete source nodes that were producing outputs previously.
+        // Detect this by checking for deleted nodes that no longer exist in the
+        // graph at all, and remove them from `phaseOutputs`.
+        phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
       }
       allInputs.addAll(phaseOutputs);
     }
