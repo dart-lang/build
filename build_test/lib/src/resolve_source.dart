@@ -215,18 +215,13 @@ class _ResolveSourceBuilder<T> implements Builder {
 
   final onDone = new Completer<T>();
 
-  var hasStartedAction = false;
-
   _ResolveSourceBuilder(this._action, this._resolverFor, this._tearDown);
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    if (hasStartedAction) return;
-    hasStartedAction = true;
+    if (_resolverFor != buildStep.inputId) return;
     var result = await _action(buildStep.resolver);
-    if (_resolverFor == buildStep.inputId) {
-      onDone.complete(result);
-    }
+    onDone.complete(result);
     await _tearDown;
   }
 
