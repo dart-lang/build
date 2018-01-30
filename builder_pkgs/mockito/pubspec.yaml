@@ -6,7 +6,7 @@ authors:
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/dart-lang/mockito
 environment:
-  sdk: '>=1.21.0 <2.0.0'
+  sdk: '>=2.0.0-dev.16.0 <2.0.0'
 dependencies:
   collection: '^1.1.0'
   matcher: '^0.12.0'
