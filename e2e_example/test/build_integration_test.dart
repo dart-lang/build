@@ -21,11 +21,13 @@ void main() {
     test('causes builds to return a non-zero exit code on errors', () async {
       var result = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
+      expect(result.stderr, contains('Build: Failed'));
     });
 
     test('causes tests to return a non-zero exit code on errors', () async {
       var result = await runAutoTests(buildArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
+      expect(result.stderr, contains('Build: Failed'));
       expect(result.stdout, contains('Skipping tests due to build failure'));
     });
   });
