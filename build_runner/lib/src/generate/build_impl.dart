@@ -22,6 +22,7 @@ import '../asset_graph/node.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
+import '../logging/error_recording_logger.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
@@ -101,17 +102,6 @@ Future<BuildResult> singleBuild(BuildEnvironment environment,
   var result = (await BuildImpl.create(buildDefinition, options, buildActions))
       .firstBuild;
   await buildDefinition.resourceManager.beforeExit();
-  if (result.status == BuildStatus.success &&
-      options.failOnSevere &&
-      options.severeLogHandled) {
-    options.severeLogHandled = false;
-    return new BuildResult(
-      BuildStatus.failure,
-      result.outputs,
-      exception: 'A severe log was handled. See log for details',
-      performance: result.performance,
-    );
-  }
   return result;
 }
 
@@ -121,6 +111,8 @@ class BuildImpl {
 
   final AssetGraph _assetGraph;
   final List<BuildAction> _buildActions;
+  final bool _failOnSevere;
+  bool _severLogHandled = false;
   final OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
@@ -141,7 +133,8 @@ class BuildImpl {
         _resourceManager = buildDefinition.resourceManager,
         _onDelete = buildDefinition.onDelete,
         _outputDir = options.outputDir,
-        _verbose = options.verbose;
+        _verbose = options.verbose,
+        _failOnSevere = options.failOnSevere;
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
@@ -154,11 +147,22 @@ class BuildImpl {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
+    _severLogHandled = false;
     _lazyPhases.clear();
     if (updates.isNotEmpty) {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
+    if (_failOnSevere &&
+        _severLogHandled &&
+        result.status == BuildStatus.success) {
+      result = new BuildResult(
+        BuildStatus.failure,
+        result.outputs,
+        exception: 'A severe log was handled. See log for details',
+        performance: result.performance,
+      );
+    }
     await _resourceManager.disposeAll();
     if (_outputDir != null) {
       await createMergedOutputDir(
@@ -353,9 +357,12 @@ class BuildImpl {
     wrappedReader.assetsRead.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
-    var logger = new Logger('$builder on $input');
+    var logger = new ErrorRecordingLogger(new Logger('$builder on $input'));
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
         logger: logger, resourceManager: resourceManager);
+    if (logger.errorWasSeen) {
+      _severLogHandled = true;
+    }
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.

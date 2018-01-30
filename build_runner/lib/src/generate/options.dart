@@ -42,9 +42,6 @@ class BuildOptions {
   // For testing only, skips the build script updates check.
   bool skipBuildScriptCheck;
 
-  // For internal use only, flipped when a severe log occurred.
-  bool severeLogHandled = false;
-
   BuildOptions(BuildEnvironment environment,
       {@required this.packageGraph,
       BuildConfig rootPackageConfig,
@@ -67,12 +64,7 @@ class BuildOptions {
 
     Logger.root.level = logLevel;
 
-    logListener = Logger.root.onRecord.listen((r) {
-      if (r.level == Level.SEVERE) {
-        severeLogHandled = true;
-      }
-      environment.onLog(r);
-    });
+    logListener = Logger.root.onRecord.listen(environment.onLog);
 
     /// Set up other defaults.
     debounceDelay ??= const Duration(milliseconds: 250);
