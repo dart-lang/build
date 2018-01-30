@@ -1,3 +1,9 @@
+## 0.10.1-dev
+
+- Allow overriding the `Resolvers` used for `resolve*` utilities.
+- Bug Fix: Don't call the `action` multiple times when there are multiple
+  sources passed to `resolve*`.
+
 ## 0.10.0
 
 - Added automatic generation of `.debug.html` files for all tests, which can
