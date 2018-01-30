@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -186,8 +185,7 @@ class _Loader {
     return logTimedAsync(_logger, 'Reading cached asset graph', () async {
       try {
         var cachedGraph = new AssetGraph.deserialize(
-            JSON.decode(await _environment.reader.readAsString(assetGraphId))
-                as Map);
+            await _environment.reader.readAsBytes(assetGraphId));
         if (computeBuildActionsDigest(_buildActions) !=
             cachedGraph.buildActionsDigest) {
           _logger.warning(
@@ -356,7 +354,7 @@ class _Loader {
   List<String> _packageIncludes(PackageNode package) => package.isRoot
       ? _options.rootPackageFilesWhitelist
       : package.name == r'$sdk'
-          ? const ['lib/dev_compiler/**.js']
+          ? const ['lib/dev_compiler/**.js', 'lib/_internal/**.sum']
           : const ['lib/**'];
 
   Stream<AssetId> _listGeneratedAssetIds() async* {
@@ -364,6 +362,7 @@ class _Loader {
     await for (var id in _environment.reader.findAssets(glob)) {
       var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
       var firstSlash = packagePath.indexOf('/');
+      if (firstSlash == -1) continue;
       var package = packagePath.substring(0, firstSlash);
       var path = packagePath.substring(firstSlash + 1);
       yield new AssetId(package, path);

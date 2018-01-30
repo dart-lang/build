@@ -34,7 +34,7 @@ class AssetGraph {
   AssetGraph._(this.buildActionsDigest);
 
   /// Deserializes this graph.
-  factory AssetGraph.deserialize(Map serializedGraph) =>
+  factory AssetGraph.deserialize(List<int> serializedGraph) =>
       new _AssetGraphDeserializer(serializedGraph).deserialize();
 
   static Future<AssetGraph> build(
@@ -58,8 +58,7 @@ class AssetGraph {
     return graph;
   }
 
-  Map<String, dynamic> serialize() =>
-      new _AssetGraphSerializer(this).serialize();
+  List<int> serialize() => new _AssetGraphSerializer(this).serialize();
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -242,8 +241,9 @@ class AssetGraph {
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(
-        newAndModifiedNodes
-            .where((node) => node.isValidInput && node.outputs.isNotEmpty),
+        newAndModifiedNodes.where((node) =>
+            node.isValidInput &&
+            (node.outputs.isNotEmpty || node.lastKnownDigest != null)),
         digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,
@@ -315,7 +315,7 @@ class AssetGraph {
     if (placeholders != null) allInputs.addAll(placeholders);
 
     for (var phase = 0; phase < buildActions.length; phase++) {
-      var phaseOutputs = <AssetId>[];
+      var phaseOutputs = new Set<AssetId>();
       var action = buildActions[phase];
       var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
       var builderOptionsNode =
@@ -329,14 +329,19 @@ class AssetGraph {
         if (!action.hideOutput && node is GeneratedAssetNode && node.isHidden) {
           continue;
         }
+        assert(node != null, 'The node from `$input` does not exist.');
 
         var outputs = expectedOutputs(action.builder, input);
         phaseOutputs.addAll(outputs);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
-        allInputs.removeAll(_addGeneratedOutputs(
-            outputs, phase, builderOptionsNode,
-            primaryInput: input, isHidden: action.hideOutput));
+        var deleted = _addGeneratedOutputs(outputs, phase, builderOptionsNode,
+            primaryInput: input, isHidden: action.hideOutput);
+        allInputs.removeAll(deleted);
+        // We may delete source nodes that were producing outputs previously.
+        // Detect this by checking for deleted nodes that no longer exist in the
+        // graph at all, and remove them from `phaseOutputs`.
+        phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
       }
       allInputs.addAll(phaseOutputs);
     }

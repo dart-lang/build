@@ -2,10 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:build_config/build_config.dart';
 import 'package:io/io.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf_io.dart';
@@ -13,18 +15,22 @@ import 'package:shelf/shelf_io.dart';
 import 'package:build_runner/build_runner.dart';
 
 const _assumeTty = 'assume-tty';
+const _define = 'define';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
 const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
 const _output = 'output';
+const _config = 'config';
 const _verbose = 'verbose';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
 /// Unified command runner for all build_runner commands.
-class BuildCommandRunner extends CommandRunner {
+class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
+
+  final packageGraph = new PackageGraph.forThisPackage();
 
   BuildCommandRunner(List<BuilderApplication> builderApplications)
       : this.builderApplications = new List.unmodifiable(builderApplications),
@@ -53,29 +59,45 @@ class _SharedOptions {
 
   final bool enableLowResourcesMode;
 
+  /// Read `build.$configKey.yaml` instead of `build.yaml`.
+  final String configKey;
+
   /// Path to the merged output directory, or null if no directory should be
   /// created.
   final String outputDir;
 
   final bool verbose;
 
+  // Global config overrides by builder.
+  //
+  // Keys are the builder keys, such as my_package|my_builder, and values
+  // represent config objects. All keys in the config will override the parsed
+  // config for that key.
+  final Map<String, Map<String, dynamic>> builderConfigOverrides;
+
   _SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
     @required this.failOnSevere,
     @required this.enableLowResourcesMode,
+    @required this.configKey,
     @required this.outputDir,
     @required this.verbose,
+    @required this.builderConfigOverrides,
   });
 
-  factory _SharedOptions.fromParsedArgs(ArgResults argResults) {
+  factory _SharedOptions.fromParsedArgs(
+      ArgResults argResults, String rootPackage) {
     return new _SharedOptions._(
       assumeTty: argResults[_assumeTty] as bool,
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
+      builderConfigOverrides:
+          _parseBuilderConfigOverrides(argResults[_define], rootPackage),
     );
   }
 }
@@ -92,19 +114,24 @@ class _ServeOptions extends _SharedOptions {
     @required bool deleteFilesByDefault,
     @required bool failOnSevere,
     @required bool enableLowResourcesMode,
+    @required String configKey,
     @required String outputDir,
     @required bool verbose,
+    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
   })
       : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
           failOnSevere: failOnSevere,
           enableLowResourcesMode: enableLowResourcesMode,
+          configKey: configKey,
           outputDir: outputDir,
           verbose: verbose,
+          builderConfigOverrides: builderConfigOverrides,
         );
 
-  factory _ServeOptions.fromParsedArgs(ArgResults argResults) {
+  factory _ServeOptions.fromParsedArgs(
+      ArgResults argResults, String rootPackage) {
     var serveTargets = <_ServeTarget>[];
     for (var arg in argResults.rest) {
       var parts = arg.split(':');
@@ -125,8 +152,11 @@ class _ServeOptions extends _SharedOptions {
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
+      configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
       verbose: argResults[_verbose] as bool,
+      builderConfigOverrides:
+          _parseBuilderConfigOverrides(argResults[_define], rootPackage),
     );
   }
 }
@@ -139,11 +169,13 @@ class _ServeTarget {
   _ServeTarget(this.dir, this.port);
 }
 
-abstract class _BaseCommand extends Command {
+abstract class BuildRunnerCommand extends Command<int> {
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
 
-  _BaseCommand() {
+  PackageGraph get packageGraph => (runner as BuildCommandRunner).packageGraph;
+
+  BuildRunnerCommand() {
     _addBaseFlags();
   }
 
@@ -170,6 +202,9 @@ abstract class _BaseCommand extends Command {
               'resource constrained environments.',
           negatable: false,
           defaultsTo: false)
+      ..addOption(_config,
+          help: 'Read `build.<name>.yaml` instead of the default `build.yaml`',
+          abbr: 'c')
       ..addFlag(_failOnSevere,
           help: 'Whether to consider the build a failure on an error logged.',
           negatable: true,
@@ -180,7 +215,10 @@ abstract class _BaseCommand extends Command {
           abbr: 'v',
           defaultsTo: false,
           negatable: false,
-          help: 'Enables verbose logging.');
+          help: 'Enables verbose logging.')
+      ..addOption(_define,
+          allowMultiple: true,
+          help: 'Sets the global `options` config for a builder by key.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -188,11 +226,11 @@ abstract class _BaseCommand extends Command {
   /// You may override this to return more specific options if desired, but they
   /// must extend [_SharedOptions].
   _SharedOptions _readOptions() =>
-      new _SharedOptions.fromParsedArgs(argResults);
+      new _SharedOptions.fromParsedArgs(argResults, packageGraph.root.name);
 }
 
 /// A [Command] that does a single build and then exits.
-class _BuildCommand extends _BaseCommand {
+class _BuildCommand extends BuildRunnerCommand {
   @override
   String get name => 'build';
 
@@ -201,20 +239,29 @@ class _BuildCommand extends _BaseCommand {
       'Performs a single build on the specified targets and then exits.';
 
   @override
-  Future<Null> run() async {
+  Future<int> run() async {
     var options = _readOptions();
-    await build(builderApplications,
+    var result = await build(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
+        failOnSevere: options.failOnSevere,
+        configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        packageGraph: packageGraph,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
+    if (result.status == BuildStatus.success) {
+      return ExitCode.success.code;
+    } else {
+      return 1;
+    }
   }
 }
 
 /// A [Command] that watches the file system for updates and rebuilds as
 /// appropriate.
-class _WatchCommand extends _BaseCommand {
+class _WatchCommand extends BuildRunnerCommand {
   @override
   String get name => 'watch';
 
@@ -224,16 +271,21 @@ class _WatchCommand extends _BaseCommand {
       'rebuilding as appropriate.';
 
   @override
-  Future<Null> run() async {
+  Future<int> run() async {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
+        failOnSevere: options.failOnSevere,
+        configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        packageGraph: packageGraph,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     await handler.currentBuild;
     await handler.buildResults.drain();
+    return ExitCode.success.code;
   }
 }
 
@@ -254,17 +306,22 @@ class _ServeCommand extends _WatchCommand {
       'builds based on file system updates.';
 
   @override
-  _ServeOptions _readOptions() => new _ServeOptions.fromParsedArgs(argResults);
+  _ServeOptions _readOptions() =>
+      new _ServeOptions.fromParsedArgs(argResults, packageGraph.root.name);
 
   @override
-  Future<Null> run() async {
+  Future<int> run() async {
     var options = _readOptions();
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
+        failOnSevere: options.failOnSevere,
+        configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
-        verbose: options.verbose);
+        packageGraph: packageGraph,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides);
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
@@ -273,12 +330,14 @@ class _ServeCommand extends _WatchCommand {
     }
     await handler.buildResults.drain();
     await Future.wait(servers.map((server) => server.close()));
+
+    return ExitCode.success.code;
   }
 }
 
 /// A [Command] that does a single build and then runs tests using the compiled
 /// assets.
-class _TestCommand extends _BaseCommand {
+class _TestCommand extends BuildRunnerCommand {
   @override
   final argParser = new ArgParser(allowTrailingOptions: false);
 
@@ -291,50 +350,120 @@ class _TestCommand extends _BaseCommand {
       'using the compiled assets.';
 
   @override
-  Future<Null> run() async {
-    var options = _readOptions();
-    // We always need an output dir when running tests, so we create a tmp dir
-    // if the user didn't specify one.
-    var outputDir = options.outputDir ??
-        Directory.systemTemp
-            .createTempSync('build_runner_test')
-            .absolute
-            .uri
-            .toFilePath();
-    await build(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        assumeTty: options.assumeTty,
-        outputDir: outputDir,
-        verbose: options.verbose);
+  Future<int> run() async {
+    _SharedOptions options;
+    String outputDir;
+    try {
+      _ensureBuildTestDependency(packageGraph);
+      options = _readOptions();
+      // We always need an output dir when running tests, so we create a tmp dir
+      // if the user didn't specify one.
+      outputDir = options.outputDir ??
+          Directory.systemTemp
+              .createTempSync('build_runner_test')
+              .absolute
+              .uri
+              .toFilePath();
+      var result = await build(builderApplications,
+          deleteFilesByDefault: options.deleteFilesByDefault,
+          enableLowResourcesMode: options.enableLowResourcesMode,
+          failOnSevere: options.failOnSevere,
+          configKey: options.configKey,
+          assumeTty: options.assumeTty,
+          outputDir: outputDir,
+          packageGraph: packageGraph,
+          verbose: options.verbose,
+          builderConfigOverrides: options.builderConfigOverrides);
 
-    // Run the tests!
-    await _runTests(outputDir);
+      if (result.status == BuildStatus.failure) {
+        stdout.writeln('Skipping tests due to build failure');
+        return 1;
+      }
 
-    // Clean up the output dir if one wasn't explicitly asked for.
-    if (options.outputDir == null) {
-      await new Directory(outputDir).delete(recursive: true);
+      var testExitCode = await _runTests(outputDir);
+      if (testExitCode != 0) {
+        // No need to log - should see failed tests in the console.
+        exitCode = testExitCode;
+      }
+      return testExitCode;
+    } finally {
+      // Clean up the output dir if one wasn't explicitly asked for.
+      if (options.outputDir == null && outputDir != null) {
+        await new Directory(outputDir).delete(recursive: true);
+      }
     }
-
-    await ProcessManager.terminateStdIn();
   }
 
   /// Runs tests using [precompiledPath] as the precompiled test directory.
-  Future<Null> _runTests(String precompiledPath) async {
+  Future<int> _runTests(String precompiledPath) async {
     stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
-    var testProcess = await new ProcessManager().spawn(
+    var testProcess = await Process.start(
         _pubBinary,
         [
           'run',
           'test',
           '--precompiled',
           precompiledPath,
-        ]..addAll(extraTestArgs));
-    var testExitCode = await testProcess.exitCode;
-    if (testExitCode != 0) {
-      // No need to log - should see failed tests in the console.
-      exitCode = testExitCode;
-    }
+        ]..addAll(extraTestArgs),
+        mode: ProcessStartMode.INHERIT_STDIO);
+    return testProcess.exitCode;
   }
+}
+
+void _ensureBuildTestDependency(PackageGraph packageGraph) {
+  if (packageGraph.allPackages['build_test'] == null) {
+    throw new StateError('''
+Missing dev dependecy on package:build_test, which is required to run tests.
+
+Please update your dev_dependencies section of your pubspec.yaml:
+
+  dev_dependencies:
+    build_runner: any
+    build_test: any
+    # If you need to run web tests, you will also need this dependency.
+    build_web_compilers: any
+''');
+  }
+}
+
+Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
+    dynamic parsedArg, String rootPackage) {
+  final builderConfigOverrides = <String, Map<String, dynamic>>{};
+  if (parsedArg == null) return builderConfigOverrides;
+  var allArgs = parsedArg is List<String> ? parsedArg : [parsedArg as String];
+  for (final define in allArgs) {
+    final parts = define.split('=');
+    const expectedFormat = '--define "<builder_key>=<option>=<value>"';
+    if (parts.length < 3) {
+      throw new ArgumentError.value(
+          define,
+          _define,
+          'Expected at least 2 `=` signs, should be of the format like '
+          '$expectedFormat');
+    } else if (parts.length > 3) {
+      var rest = parts.sublist(2);
+      parts.removeRange(2, parts.length);
+      parts.add(rest.join('='));
+    }
+    final builderKey = normalizeBuilderKeyUsage(parts[0], rootPackage);
+    final option = parts[1];
+    dynamic value;
+    // Attempt to parse the value as JSON, and if that fails then treat it as
+    // a normal string.
+    try {
+      value = JSON.decode(parts[2]);
+    } on FormatException catch (_) {
+      value = parts[2];
+    }
+    final config = builderConfigOverrides.putIfAbsent(
+        builderKey, () => <String, dynamic>{});
+    if (config.containsKey(option)) {
+      throw new ArgumentError(
+          'Got duplicate overrides for the same builder option: '
+          '$builderKey=$option. Only one is allowed.');
+    }
+    config[option] = value;
+  }
+  return builderConfigOverrides;
 }

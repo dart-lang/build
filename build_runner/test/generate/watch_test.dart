@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
@@ -242,10 +241,8 @@ a:file://fake/pkg/path
             outputs: {'a|web/b.txt.copy': 'b2', 'a|web/c.txt.copy': 'c'},
             writer: writer);
 
-        var serialized = JSON.decode(
-                UTF8.decode(writer.assets[makeAssetId('a|$assetGraphPath')]))
-            as Map;
-        var cachedGraph = new AssetGraph.deserialize(serialized);
+        var cachedGraph = new AssetGraph.deserialize(
+            writer.assets[makeAssetId('a|$assetGraphPath')]);
 
         var expectedGraph = await AssetGraph.build([], new Set(), new Set(),
             buildPackageGraph({rootPackage('a'): []}), null);

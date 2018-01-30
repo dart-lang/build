@@ -11,7 +11,10 @@ for that target. Targets can be referred to in
 `'$definingPackageName:$targetname'`. When the target name matches the package
 name it can also be referred to as just the package name. One target in every
 package _must_ use the package name so that consumers will use it by default.
-Each target may also contain the following keys.
+In the `build.yaml` file this target can be defined with the key `$default` or
+with the name of the package.
+
+Each target may also contain the following keys:
 
 - **sources**: List of Strings or Map, Optional. The set of files within the
   package which make up this target. Files are specified using glob syntax. If a

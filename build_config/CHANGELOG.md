@@ -1,6 +1,18 @@
-## 0.2.1+1
+## 0.2.3-dev
+
+- Expose key normalization methods publically, these include:
+  - normalizeBuilderKeyUsage
+  - normalizeTargetKeyUsage
+
+## 0.2.2+1
+
+- Expand support for `package:build` to include version `0.12.0`.
+
+## 0.2.2
 
 - **Bug fix**: Empty build.yaml files no longer fail to parse.
+- Allow `$default` as a target name to get he package name automatically filled
+  in.
 
 ## 0.2.1
 

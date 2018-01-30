@@ -31,9 +31,39 @@ dev_dependencies:
   build_test:
 ```
 
-## Usage
+## Running tests
+
+To run tests, you should go through the `pub run build_runner test` command.
+This will compile all your tests to a temp directory and run them using
+`pub run test`. If you would like to see the output directory, you can use the
+`--output=<dir>` option to force the output to go to a specific place.
+
+### Forwarding additional args to `pub run test`
+
+It is very common to need to pass some arguments through to the eventual call
+to `pub run test`. To do this, add all those args after an empty `--` arg.
+
+For example, to run all chrome platform tests you would do
+`pub run build_runner test -- -p chrome`.
+
+## Debugging web tests
+
+This package will automatically create `*.debug.html` files next to all your
+`*_test.dart` files, which can be loaded in a browser from the normal
+development server (`pub run build_runner serve`).
+
+## Writing tests for your custom Builder
+
+In addition to assiting in running normal tests, this package provides some
+utilities for testing your custom `Builder` classes.
 
 _See the `test` folder in the `build` package for more examples_.
+
+### Run a `Builder` within a test environment
+
+Using [`testBuilder`][api:testBuilder], you can run a functional test of a
+`Builder`, including feeding specific assets, and more. It automatically
+creates an in-memory representation of various utility classes.
 
 ### Resolve source code for testing
 
@@ -53,12 +83,6 @@ test('should resolve a simple dart file', () async {
   expect(libExample.getType('Foo'), isNotNull);
 });
 ```
-
-### Run a `Builder` within a test environment
-
-Using [`testBuilder`][api:testBuilder], you can run a functional test of a
-`Builder`, including feeding specific assets, and more. It automatically
-creates an in-memory representation of various utility classes.
 
 ### Various test implementations of classes
 

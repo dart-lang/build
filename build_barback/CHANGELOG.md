@@ -1,3 +1,7 @@
+## 0.5.0+2
+
+- Update to `package:build` version `^0.12.0`.
+
 ## 0.5.0+1
 
 - Stop casting `BuildStep` to `BuildStepImpl` and remove `src` import from

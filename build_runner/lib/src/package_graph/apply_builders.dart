@@ -105,26 +105,33 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-Future<List<BuildAction>> createBuildActions(TargetGraph targetGraph,
-    Iterable<BuilderApplication> builderApplications) async {
+Future<List<BuildAction>> createBuildActions(
+    TargetGraph targetGraph,
+    Iterable<BuilderApplication> builderApplications,
+    Map<String, Map<String, dynamic>> builderConfigOverrides) async {
   var cycles = stronglyConnectedComponents<String, TargetNode>(
       targetGraph.allModules.values,
       (node) => node.target.key,
       (node) =>
           node.target.dependencies?.map((key) => targetGraph.allModules[key]));
   return cycles
-      .expand(
-          (cycle) => _createBuildActionsWithinCycle(cycle, builderApplications))
+      .expand((cycle) => _createBuildActionsWithinCycle(
+          cycle, builderApplications, builderConfigOverrides))
       .toList();
 }
 
-Iterable<BuildAction> _createBuildActionsWithinCycle(Iterable<TargetNode> cycle,
-        Iterable<BuilderApplication> builderApplications) =>
+Iterable<BuildAction> _createBuildActionsWithinCycle(
+        Iterable<TargetNode> cycle,
+        Iterable<BuilderApplication> builderApplications,
+        Map<String, Map<String, dynamic>> builderConfigOverrides) =>
     builderApplications.expand((builderApplication) =>
-        _createBuildActionsForBuilderInCycle(cycle, builderApplication));
+        _createBuildActionsForBuilderInCycle(cycle, builderApplication,
+            builderConfigOverrides[builderApplication.builderKey] ?? const {}));
 
 Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
-    Iterable<TargetNode> cycle, BuilderApplication builderApplication) {
+    Iterable<TargetNode> cycle,
+    BuilderApplication builderApplication,
+    Map<String, dynamic> builderConfigOverrides) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   bool shouldRun(TargetNode node) {
@@ -143,8 +150,11 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
             final builderConfig = targetConfig(node);
             final generateFor = builderConfig?.generateFor ??
                 builderApplication.defaultGenerateFor;
-            final options =
+            var options =
                 builderConfig?.options ?? const BuilderOptions(const {});
+            options = new BuilderOptions(
+                new Map<String, dynamic>.from(options.config)
+                  ..addAll(builderConfigOverrides));
             return new BuildAction(b(options), node.package.name,
                 builderOptions: options,
                 targetSources: node.target.sources,

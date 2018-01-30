@@ -1,4 +1,20 @@
-## 0.7.6-dev
+## 0.7.8
+
+- Add `--config` option to use a different `build.yaml` at build time.
+
+## 0.7.7+1
+
+- Avoid watching hosted dependencies for file changes.
+
+## 0.7.7
+
+- The top level `run` method now returns an `int` which represents an `exitCode`
+  for the command that was executed.
+  - For now we still set the exitCode manually as well but this will likely
+    change in the next breaking release. In manual scripts you should `await`
+    the call to `run` and assign that to `exitCode` to be future-proofed.
+
+## 0.7.6
 
 - Update to package:build version `0.12.0`.
 - Removed the `DigestAssetReader` interface, the `digest` method has now moved

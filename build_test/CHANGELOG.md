@@ -1,5 +1,14 @@
-## 0.10.0-dev
+## 0.10.1-dev
 
+- Allow overriding the `Resolvers` used for `resolve*` utilities.
+- Bug Fix: Don't call the `action` multiple times when there are multiple
+  sources passed to `resolve*`.
+
+## 0.10.0
+
+- Added automatic generation of `.debug.html` files for all tests, which can
+  be loaded in the browser to directly run tests and debug them without going
+  through the package:test runner.
 - Update to package:build version `0.12.0`.
 - Removed `CopyBuilder` in favor of `TestBuilder` which takes closures to
   change behavior rather than adding configuration for every possible

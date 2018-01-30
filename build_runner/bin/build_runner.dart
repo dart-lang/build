@@ -41,17 +41,34 @@ Future<Null> main(List<String> args) async {
 
   var exitPort = new ReceivePort();
   var errorPort = new ReceivePort();
-  var errorListener = errorPort.listen((e) => stderr.writeAll(e as List, '\n'));
-  await Isolate.spawnUri(new Uri.file(p.absolute(scriptLocation)), args, null,
+  var messagePort = new ReceivePort();
+  var errorListener = errorPort.listen((e) {
+    stderr.writeAll(e as List, '\n');
+    if (exitCode == 0) exitCode = 1;
+  });
+  await Isolate.spawnUri(
+      new Uri.file(p.absolute(scriptLocation)), args, messagePort.sendPort,
       onExit: exitPort.sendPort, onError: errorPort.sendPort);
+  StreamSubscription exitCodeListener;
+  exitCodeListener = messagePort.listen((isolateExitCode) {
+    if (isolateExitCode is! int) {
+      throw new StateError(
+          'Bad response from isolate, expected an exit code but got '
+          '$isolateExitCode');
+    }
+    exitCode = isolateExitCode as int;
+    exitCodeListener.cancel();
+    exitCodeListener = null;
+  });
   await exitPort.first;
   await errorListener.cancel();
   await logListener?.cancel();
+  await exitCodeListener?.cancel();
 }
 
 const _generateCommand = 'generate-build-script';
 
-class _GenerateBuildScript extends Command {
+class _GenerateBuildScript extends Command<int> {
   @override
   final description = 'Generate a script to run builds and print the file path '
       'with no other logging. Useful for wrapping builds with other tools.';

@@ -7,14 +7,6 @@ import 'package:build_runner/src/generate/phase.dart';
 
 import 'phase.dart';
 
-class ConcurrentBuildException implements Exception {
-  const ConcurrentBuildException();
-
-  @override
-  String toString() =>
-      'ConcurrentBuildException: Only one build may be running at a time.';
-}
-
 abstract class FatalBuildException implements Exception {
   const FatalBuildException();
 }

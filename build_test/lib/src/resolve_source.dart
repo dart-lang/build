@@ -27,6 +27,7 @@ Future<T> resolveSource<T>(
   AssetId inputId,
   PackageResolver resolver,
   Future<Null> tearDown,
+  Resolvers resolvers: const BarbackResolvers(),
 }) {
   inputId ??= new AssetId('_resolve_source', 'lib/_resolve_source.dart');
   return _resolveAssets(
@@ -38,6 +39,7 @@ Future<T> resolveSource<T>(
     resolver: resolver,
     resolverFor: inputId,
     tearDown: tearDown,
+    resolvers: resolvers,
   );
 }
 
@@ -117,6 +119,7 @@ Future<T> resolveSources<T>(
   String resolverFor,
   String rootPackage,
   Future<Null> tearDown,
+  Resolvers resolvers: const BarbackResolvers(),
 }) {
   if (inputs == null || inputs.isEmpty) {
     throw new ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
@@ -128,6 +131,7 @@ Future<T> resolveSources<T>(
     resolver: resolver,
     resolverFor: new AssetId.parse(resolverFor ?? inputs.keys.first),
     tearDown: tearDown,
+    resolvers: resolvers,
   );
 }
 
@@ -137,6 +141,7 @@ Future<T> resolveAsset<T>(
   FutureOr<T> action(Resolver resolver), {
   PackageResolver resolver,
   Future<Null> tearDown,
+  Resolvers resolvers: const BarbackResolvers(),
 }) {
   return _resolveAssets(
     {
@@ -147,6 +152,7 @@ Future<T> resolveAsset<T>(
     resolver: resolver,
     resolverFor: inputId,
     tearDown: tearDown,
+    resolvers: resolvers,
   );
 }
 
@@ -162,6 +168,7 @@ Future<T> _resolveAssets<T>(
   PackageResolver resolver,
   AssetId resolverFor,
   Future<Null> tearDown,
+  Resolvers resolvers,
 }) async {
   final syncResolver = await (resolver ?? PackageResolver.current).asSync;
   final assetReader = new PackageAssetReader(syncResolver, rootPackage);
@@ -190,7 +197,7 @@ Future<T> _resolveAssets<T>(
     inputAssets.keys,
     new MultiAssetReader([inMemory, assetReader]),
     new InMemoryAssetWriter(),
-    const BarbackResolvers(),
+    resolvers,
   );
   return resolveBuilder.onDone.future;
 }
@@ -212,11 +219,9 @@ class _ResolveSourceBuilder<T> implements Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    if (onDone.isCompleted) return;
+    if (_resolverFor != buildStep.inputId) return;
     var result = await _action(buildStep.resolver);
-    if (_resolverFor == buildStep.inputId) {
-      onDone.complete(result);
-    }
+    onDone.complete(result);
     await _tearDown;
   }
 

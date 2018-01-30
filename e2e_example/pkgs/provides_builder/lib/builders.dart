@@ -9,19 +9,28 @@ import 'package:build/build.dart';
 class _SomeBuilder implements Builder {
   const _SomeBuilder();
 
+  factory _SomeBuilder.fromOptions(BuilderOptions options) {
+    if (options.config['throw_in_constructor'] == true) {
+      throw new StateError('Throwing on purpose cause you asked for it!');
+    }
+    return const _SomeBuilder();
+  }
+
   @override
   final buildExtensions = const {
-    '': const ['.copy']
+    '.dart': const ['.something.dart']
   };
 
   @override
   Future build(BuildStep buildStep) async {
     if (!await buildStep.canRead(buildStep.inputId)) return;
 
-    await buildStep.writeAsBytes(buildStep.inputId.addExtension('.copy'),
+    await buildStep.writeAsBytes(
+        buildStep.inputId.changeExtension('.something.dart'),
         buildStep.readAsBytes(buildStep.inputId));
   }
 }
 
-Builder someBuilder(_) => const _SomeBuilder();
+Builder someBuilder(BuilderOptions options) =>
+    new _SomeBuilder.fromOptions(options);
 Builder notApplied(_) => null;

@@ -1,0 +1,6 @@
+targets:
+  $default:
+    builders:
+      provides_builder|some_builder:
+        options:
+          throw_in_constructor: true

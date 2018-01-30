@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -48,6 +47,7 @@ Future<BuildResult> build(
   bool deleteFilesByDefault,
   bool failOnSevere,
   bool assumeTty,
+  String configKey,
   PackageGraph packageGraph,
   RunnerAssetReader reader,
   RunnerAssetWriter writer,
@@ -59,8 +59,12 @@ Future<BuildResult> build(
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
   bool verbose,
+  Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
+  builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
+  overrideBuildConfig ??=
+      await findBuildConfigOverrides(packageGraph, configKey);
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
       overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
@@ -80,8 +84,8 @@ Future<BuildResult> build(
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
-  overrideBuildConfig ??= await findBuildConfigOverrides(options.packageGraph);
-  final buildActions = await createBuildActions(targetGraph, builders);
+  final buildActions =
+      await createBuildActions(targetGraph, builders, builderConfigOverrides);
 
   var result = await singleBuild(environment, options, buildActions);
 
@@ -200,9 +204,9 @@ class BuildImpl {
       // Write out the dependency graph file.
       await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
-        await _writer.writeAsString(
+        await _writer.writeAsBytes(
             new AssetId(_packageGraph.root.name, assetGraphPath),
-            JSON.encode(_assetGraph.serialize()));
+            _assetGraph.serialize());
       });
 
       done.complete(result);

@@ -31,4 +31,6 @@ builders:
     build_to: cache
     auto_apply: root_package
     defaults:
-      generate_for: ["web/**", "test/**.browser_test.dart"]
+      generate_for:
+        include: ["web/**", "test/**_test.dart"]
+        exclude: ["test/**.node_test.dart", "test/**.vm_test.dart"]

@@ -85,6 +85,7 @@ Future<BuildResult> testBuilders(
   bool deleteFilesByDefault: true,
   bool enableLowResourcesMode: false,
   Map<String, BuildConfig> overrideBuildConfig,
+  Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose: false,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
@@ -114,6 +115,7 @@ Future<BuildResult> testBuilders(
     enableLowResourcesMode: enableLowResourcesMode,
     overrideBuildConfig: overrideBuildConfig,
     verbose: verbose,
+    builderConfigOverrides: builderConfigOverrides,
   );
 
   if (checkBuildStatus) {

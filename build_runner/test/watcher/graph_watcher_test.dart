@@ -67,6 +67,32 @@ void main() {
           ]));
     });
 
+    test('should avoid watchers on pub dependencies', () {
+      final graph = buildPackageGraph({
+        rootPackage('a', path: '/g/a'): ['b'],
+        package('b', path: '/g/a/b/', type: DependencyType.pub): []
+      });
+      final nodes = {
+        'a': new FakeNodeWatcher(graph['a']),
+        r'$sdk': new FakeNodeWatcher(null),
+      };
+      noBWatcher(PackageNode node) {
+        if (node.name == 'b') throw 'No watcher for B!';
+        return nodes[node.name];
+      }
+
+      final watcher = new PackageGraphWatcher(graph, watch: noBWatcher);
+
+      // ignore: unawaited_futures
+      watcher.watch().drain();
+
+      for (final node in nodes.values) {
+        node.markReady();
+      }
+
+      expect(watcher.ready, completes);
+    });
+
     test('ready waits for all node watchers to be ready', () async {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],

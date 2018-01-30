@@ -117,16 +117,17 @@ void main() {
           }
         }
 
-        var encoded = JSON.encode(graph.serialize());
-        var decoded = new AssetGraph.deserialize(JSON.decode(encoded) as Map);
+        var encoded = graph.serialize();
+        var decoded = new AssetGraph.deserialize(encoded);
         expect(graph, equalsAssetGraph(decoded));
       });
 
       test('Throws an AssetGraphVersionError if versions dont match up', () {
-        var serialized = graph.serialize();
+        var bytes = graph.serialize();
+        var serialized = JSON.decode(UTF8.decode(bytes));
         serialized['version'] = -1;
-        var encoded = JSON.encode(serialized);
-        expect(() => new AssetGraph.deserialize(JSON.decode(encoded) as Map),
+        var encoded = UTF8.encode(JSON.encode(serialized));
+        expect(() => new AssetGraph.deserialize(encoded),
             throwsA(assetGraphVersionException));
       });
     });
@@ -308,6 +309,61 @@ void main() {
               fooPackageGraph,
               digestReader),
           throwsA(duplicateAssetNodeException));
+    });
+
+    group('regression tests', () {
+      test('build can chains of pre-existing to-source outputs', () async {
+        final graph = await AssetGraph.build(
+            [
+              new BuildAction(
+                  new TestBuilder(
+                      buildExtensions: replaceExtension('.txt', '.a.txt')),
+                  'foo',
+                  hideOutput: false),
+              new BuildAction(
+                  new TestBuilder(
+                      buildExtensions: replaceExtension('.txt', '.b.txt')),
+                  'foo',
+                  hideOutput: false),
+              new BuildAction(
+                  new TestBuilder(
+                      buildExtensions:
+                          replaceExtension('.a.b.txt', '.a.b.c.txt')),
+                  'foo',
+                  hideOutput: false),
+            ],
+            [
+              makeAssetId('foo|lib/1.txt'),
+              makeAssetId('foo|lib/2.txt'),
+              // All the following are actually old outputs.
+              makeAssetId('foo|lib/1.a.txt'),
+              makeAssetId('foo|lib/1.a.b.txt'),
+              makeAssetId('foo|lib/2.a.txt'),
+              makeAssetId('foo|lib/2.a.b.txt'),
+              makeAssetId('foo|lib/2.a.b.c.txt'),
+            ].toSet(),
+            new Set<AssetId>(),
+            fooPackageGraph,
+            digestReader);
+        expect(
+            graph.outputs,
+            unorderedEquals([
+              makeAssetId('foo|lib/1.a.txt'),
+              makeAssetId('foo|lib/1.b.txt'),
+              makeAssetId('foo|lib/1.a.b.txt'),
+              makeAssetId('foo|lib/1.a.b.c.txt'),
+              makeAssetId('foo|lib/2.a.txt'),
+              makeAssetId('foo|lib/2.b.txt'),
+              makeAssetId('foo|lib/2.a.b.txt'),
+              makeAssetId('foo|lib/2.a.b.c.txt'),
+            ]));
+        expect(
+            graph.sources,
+            unorderedEquals([
+              makeAssetId('foo|lib/1.txt'),
+              makeAssetId('foo|lib/2.txt'),
+            ]));
+      });
     });
   });
 }
