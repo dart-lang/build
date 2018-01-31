@@ -1,3 +1,28 @@
+## 0.7.9-dev
+
+### New Features
+
+- Added command line args to override config for builders globally. The format
+  is `--define "<builder_key>=<option>=<value>"`. As an example, enabling the
+  dart2js compiler for the `build_web_compilers|entrypoint` builder would look
+  like this: `--define "build_web_compilers|entrypoint=compiler=dart2js"`.
+
+### Bug Fixes
+
+- Fixed an issue with mixed mode builds, see
+  https://github.com/dart-lang/build/issues/924.
+- Fixed some issues with exit codes and --fail-on-severe, although there are
+  still some outstanding problems. See
+  https://github.com/dart-lang/build/issues/910 for status updates.
+- Fixed an issue where the process would hang on exceptions, see
+  https://github.com/dart-lang/build/issues/883.
+- Fixed an issue with etags not getting updated for source files that weren't
+  inputs to any build actions, https://github.com/dart-lang/build/issues/894.
+- Fixed an issue with hidden .DS_Store files on mac in the generated directory,
+  https://github.com/dart-lang/build/issues/902.
+- Fixed test output so it will use the compact reporter,
+  https://github.com/dart-lang/build/issues/821.
+
 ## 0.7.8
 
 - Add `--config` option to use a different `build.yaml` at build time.

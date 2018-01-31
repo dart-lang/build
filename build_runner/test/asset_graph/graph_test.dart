@@ -310,5 +310,60 @@ void main() {
               digestReader),
           throwsA(duplicateAssetNodeException));
     });
+
+    group('regression tests', () {
+      test('build can chains of pre-existing to-source outputs', () async {
+        final graph = await AssetGraph.build(
+            [
+              new BuildAction(
+                  new TestBuilder(
+                      buildExtensions: replaceExtension('.txt', '.a.txt')),
+                  'foo',
+                  hideOutput: false),
+              new BuildAction(
+                  new TestBuilder(
+                      buildExtensions: replaceExtension('.txt', '.b.txt')),
+                  'foo',
+                  hideOutput: false),
+              new BuildAction(
+                  new TestBuilder(
+                      buildExtensions:
+                          replaceExtension('.a.b.txt', '.a.b.c.txt')),
+                  'foo',
+                  hideOutput: false),
+            ],
+            [
+              makeAssetId('foo|lib/1.txt'),
+              makeAssetId('foo|lib/2.txt'),
+              // All the following are actually old outputs.
+              makeAssetId('foo|lib/1.a.txt'),
+              makeAssetId('foo|lib/1.a.b.txt'),
+              makeAssetId('foo|lib/2.a.txt'),
+              makeAssetId('foo|lib/2.a.b.txt'),
+              makeAssetId('foo|lib/2.a.b.c.txt'),
+            ].toSet(),
+            new Set<AssetId>(),
+            fooPackageGraph,
+            digestReader);
+        expect(
+            graph.outputs,
+            unorderedEquals([
+              makeAssetId('foo|lib/1.a.txt'),
+              makeAssetId('foo|lib/1.b.txt'),
+              makeAssetId('foo|lib/1.a.b.txt'),
+              makeAssetId('foo|lib/1.a.b.c.txt'),
+              makeAssetId('foo|lib/2.a.txt'),
+              makeAssetId('foo|lib/2.b.txt'),
+              makeAssetId('foo|lib/2.a.b.txt'),
+              makeAssetId('foo|lib/2.a.b.c.txt'),
+            ]));
+        expect(
+            graph.sources,
+            unorderedEquals([
+              makeAssetId('foo|lib/1.txt'),
+              makeAssetId('foo|lib/2.txt'),
+            ]));
+      });
+    });
   });
 }

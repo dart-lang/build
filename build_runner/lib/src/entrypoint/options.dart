@@ -391,8 +391,6 @@ class _TestCommand extends BuildRunnerCommand {
       if (options.outputDir == null && outputDir != null) {
         await new Directory(outputDir).delete(recursive: true);
       }
-
-      await ProcessManager.terminateStdIn();
     }
   }
 
@@ -400,14 +398,15 @@ class _TestCommand extends BuildRunnerCommand {
   Future<int> _runTests(String precompiledPath) async {
     stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
-    var testProcess = await new ProcessManager().spawn(
+    var testProcess = await Process.start(
         _pubBinary,
         [
           'run',
           'test',
           '--precompiled',
           precompiledPath,
-        ]..addAll(extraTestArgs));
+        ]..addAll(extraTestArgs),
+        mode: ProcessStartMode.INHERIT_STDIO);
     return testProcess.exitCode;
   }
 }
