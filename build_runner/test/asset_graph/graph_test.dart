@@ -85,12 +85,16 @@ void main() {
         for (int n = 0; n < 5; n++) {
           var node = makeAssetNode();
           graph.add(node);
+          var phaseNum = n;
+          if (phaseNum % 2 == 0) {
+            graph.markActionFailed(phaseNum, node.id);
+          }
           for (int g = 0; g < 5 - n; g++) {
             var builderOptionsNode = new BuilderOptionsAssetNode(
                 makeAssetId(), md5.convert(UTF8.encode('test')));
 
             var generatedNode = new GeneratedAssetNode(makeAssetId(),
-                phaseNumber: 0,
+                phaseNumber: phaseNum,
                 primaryInput: node.id,
                 needsUpdate: g % 2 == 1,
                 wasOutput: g % 2 == 0,
@@ -119,6 +123,7 @@ void main() {
 
         var encoded = graph.serialize();
         var decoded = new AssetGraph.deserialize(encoded);
+        expect(decoded.failedActions, isNotEmpty);
         expect(graph, equalsAssetGraph(decoded));
       });
 
@@ -129,6 +134,23 @@ void main() {
         var encoded = UTF8.encode(JSON.encode(serialized));
         expect(() => new AssetGraph.deserialize(encoded),
             throwsA(assetGraphVersionException));
+      });
+
+      test('failedActions/markActionFailed/markActionSucceeded', () {
+        expect(graph.failedActions, isEmpty);
+        var aTxt = makeAssetId('a|lib/a.txt');
+        graph.markActionFailed(1, aTxt);
+        expect(graph.failedActions[1], equals([aTxt]));
+        var bTxt = makeAssetId('a|lib/b.txt');
+        graph.markActionFailed(1, bTxt);
+        expect(graph.failedActions[1], unorderedEquals([aTxt, bTxt]));
+        graph.markActionSucceeded(1, aTxt);
+        expect(graph.failedActions[1], equals([bTxt]));
+        graph.markActionFailed(2, bTxt);
+        expect(graph.failedActions[2], equals([bTxt]));
+        graph.markActionSucceeded(1, bTxt);
+        graph.markActionSucceeded(2, bTxt);
+        expect(graph.failedActions, isEmpty);
       });
     });
 

@@ -22,6 +22,13 @@ part 'serialization.dart';
 
 /// All the [AssetId]s involved in a build, and all of their outputs.
 class AssetGraph {
+  /// A map of phase number to primary inputs that failed during that phase.
+  ///
+  /// See [markActionFailed] and [markActionSucceeded] for more info.
+  final Map<int, Set<AssetId>> _failedActions;
+  UnmodifiableMapView<int, Iterable<AssetId>> get failedActions =>
+      new UnmodifiableMapView(_failedActions);
+
   /// All the [AssetNode]s in the graph, indexed by package and then path.
   final _nodesByPackage = <String, Map<String, AssetNode>>{};
 
@@ -31,7 +38,8 @@ class AssetGraph {
   /// the new [BuildAction]s and throw away the graph if it doesn't.
   final Digest buildActionsDigest;
 
-  AssetGraph._(this.buildActionsDigest);
+  AssetGraph._(this.buildActionsDigest, {Map<int, Set<AssetId>> failedActions})
+      : _failedActions = failedActions ?? new Map<int, Set<AssetId>>();
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
@@ -69,6 +77,24 @@ class AssetGraph {
     var pkg = _nodesByPackage[id?.package];
     if (pkg == null) return null;
     return pkg[id.path];
+  }
+
+  /// Marks an action in [phaseNumber] with [primaryInputId] as having failed.
+  void markActionFailed(int phaseNumber, AssetId primaryInputId) {
+    _failedActions
+        .putIfAbsent(phaseNumber, () => new Set<AssetId>())
+        .add(primaryInputId);
+  }
+
+  /// Marks an action in [phaseNumber] with [primaryInputId] as having
+  /// succeeded.
+  void markActionSucceeded(int phaseNumber, AssetId primaryInputId) {
+    var phaseSet = _failedActions[phaseNumber];
+    if (phaseSet == null) return;
+    phaseSet.remove(primaryInputId);
+    if (phaseSet.isEmpty) {
+      _failedActions.remove(phaseNumber);
+    }
   }
 
   /// Adds [node] to the graph if it doesn't exist.
