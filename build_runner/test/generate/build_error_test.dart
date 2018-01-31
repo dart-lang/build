@@ -62,16 +62,86 @@ void main() {
       },
     );
   });
+
+  test('should fail if a severe was logged on a previous build', () async {
+    var packageGraph = buildPackageGraph({rootPackage('a'): []});
+    var writer = new InMemoryRunnerAssetWriter();
+    var reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+        rootPackage: packageGraph.root.name);
+    var builder = new _LoggingBuilder(Level.SEVERE);
+    var builders = [applyToRoot(builder)];
+    await testBuilders(
+        builders,
+        {
+          'a|lib/a.dart': '',
+        },
+        packageGraph: packageGraph,
+        failOnSevere: true,
+        checkBuildStatus: true,
+        status: BuildStatus.failure,
+        outputs: {
+          'a|lib/a.dart.empty': '',
+        },
+        reader: reader,
+        writer: writer);
+    await testBuilders(builders, {},
+        packageGraph: packageGraph,
+        failOnSevere: true,
+        checkBuildStatus: true,
+        status: BuildStatus.failure,
+        outputs: {},
+        reader: reader,
+        writer: writer);
+  });
+
+  test('should succeed if a severe log is fixed on a subsequent build',
+      () async {
+    var packageGraph = buildPackageGraph({rootPackage('a'): []});
+    var writer = new InMemoryRunnerAssetWriter();
+    var reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+        rootPackage: packageGraph.root.name);
+    var builder = new _LoggingBuilder(Level.SEVERE);
+    var builders = [applyToRoot(builder)];
+    await testBuilders(
+        builders,
+        {
+          'a|lib/a.dart': '',
+        },
+        packageGraph: packageGraph,
+        failOnSevere: true,
+        checkBuildStatus: true,
+        status: BuildStatus.failure,
+        outputs: {
+          'a|lib/a.dart.empty': '',
+        },
+        reader: reader,
+        writer: writer);
+    builder.level = Level.WARNING;
+    await testBuilders(
+        builders,
+        {
+          'a|lib/a.dart': 'changed',
+        },
+        packageGraph: packageGraph,
+        failOnSevere: true,
+        checkBuildStatus: true,
+        status: BuildStatus.success,
+        outputs: {
+          'a|lib/a.dart.empty': '',
+        },
+        reader: reader,
+        writer: writer);
+  });
 }
 
 class _LoggingBuilder implements Builder {
-  final Level _level;
+  Level level;
 
-  const _LoggingBuilder(this._level);
+  _LoggingBuilder(this.level);
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    log.log(_level, buildStep.inputId.toString());
+    log.log(level, buildStep.inputId.toString());
     await buildStep.writeAsString(buildStep.inputId.addExtension('.empty'), '');
   }
 
