@@ -22,10 +22,24 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
   origin ??= object.type.element.library;
   var url = Uri.parse(urlOfElement(object.type.element));
   final clazz = object?.type?.element as ClassElement;
-  for (final e in clazz.fields.where(
-    (f) => f.isPublic && f.isConst && f.computeConstantValue() == object,
-  )) {
-    return new Revivable._(source: url, accessor: e.name);
+  // Enums are not included in .definingCompilationUnit.types.
+  if (clazz.isEnum) {
+    for (final e in clazz.fields.where(
+        (f) => f.isPublic && f.isConst && f.computeConstantValue() == object)) {
+      return new Revivable._(
+        source: url.removeFragment(),
+        accessor: '${clazz.name}.${e.name}',
+      );
+    }
+  }
+  for (final e in origin.definingCompilationUnit.types
+      .expand((t) => t.fields)
+      .where((f) =>
+          f.isPublic && f.isConst && f.computeConstantValue() == object)) {
+    return new Revivable._(
+      source: url.removeFragment(),
+      accessor: '${clazz.name}.${e.name}',
+    );
   }
   final i = (object as DartObjectImpl).getInvocation();
   if (i != null &&

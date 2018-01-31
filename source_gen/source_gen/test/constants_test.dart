@@ -194,6 +194,7 @@ void main() {
         @MapLike()
         @VisibleClass.secret()
         @fieldOnly
+        @ClassWithStaticField.staticField
         class Example {}
         
         class Int64Like {
@@ -230,8 +231,13 @@ void main() {
         class _FieldOnlyVisible {
           const _FieldOnlyVisible();
         }
-        
+
         const fieldOnly = const _FieldOnlyVisible();
+
+        class ClassWithStaticField {
+          static const staticField = const ClassWithStaticField._();
+          const ClassWithStaticField._();
+        }
       ''', (resolver) => resolver.findLibraryByName('test_lib'));
       constants = library
           .getType('Example')
@@ -242,8 +248,8 @@ void main() {
 
     test('should decode Int64Like.ZERO', () {
       final int64Like0 = constants[0].revive();
-      expect(int64Like0.source.toString(), endsWith('#Int64Like'));
-      expect(int64Like0.accessor, 'ZERO');
+      expect(int64Like0.source.fragment, isEmpty);
+      expect(int64Like0.accessor, 'Int64Like.ZERO');
     });
 
     test('should decode Duration', () {
@@ -260,8 +266,8 @@ void main() {
 
     test('should decode enums', () {
       final enumField1 = constants[2].revive();
-      expect(enumField1.source.toString(), endsWith('#Enum'));
-      expect(enumField1.accessor, 'field1');
+      expect(enumField1.source.fragment, isEmpty);
+      expect(enumField1.accessor, 'Enum.field1');
     });
 
     test('should decode forwarding factories', () {
@@ -280,6 +286,12 @@ void main() {
       final fieldOnly = constants[5].revive();
       expect(fieldOnly.source.fragment, isEmpty);
       expect(fieldOnly.accessor, 'fieldOnly');
+    });
+
+    test('should decode static fields', () {
+      final fieldOnly = constants[6].revive();
+      expect(fieldOnly.source.fragment, isEmpty);
+      expect(fieldOnly.accessor, 'ClassWithStaticField.staticField');
     });
   });
 }

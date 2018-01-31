@@ -1,5 +1,11 @@
 ## 0.7.4+2
 
+* **BUG FIX**: `ConstantReader.revive()` now properly returns no URL fragment
+  when the constant expression is resolved from a top-level or static-field.
+  The documentation had said otherwise, and it was impossible to tell the
+  difference between a constructor and a field. _Now_, fields are always in
+  the form of accessor = `{clazz}.{field}` or `{topLevelField}`.
+
 * Fix file URIs on windows.
 
 ## 0.7.4+1
