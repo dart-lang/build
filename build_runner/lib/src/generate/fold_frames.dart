@@ -8,6 +8,7 @@ const _foldFramesFor = const [
   '_bazel_codegen',
   'build',
   'build_barback',
+  'build_resolvers',
   'build_runner',
   'build_test',
 ];
