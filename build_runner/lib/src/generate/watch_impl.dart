@@ -227,17 +227,6 @@ class WatchImpl implements BuildState {
         .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
         .listen((BuildResult result) {
           if (controller.isClosed) return;
-          if (result.status != BuildStatus.failure &&
-              options.failOnSevere &&
-              options.severeLogHandled) {
-            options.severeLogHandled = false;
-            result = new BuildResult(
-              BuildStatus.failure,
-              result.outputs,
-              exception: 'A severe log was handled. See log for details',
-              performance: result.performance,
-            );
-          }
           controller.add(result);
         })
         .onDone(() async {
