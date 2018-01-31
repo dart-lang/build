@@ -47,7 +47,7 @@ void main() {
     );
   });
 
-  test('should fail if a servere logged and failOnSevere is set', () async {
+  test('should fail if a severe logged and failOnSevere is set', () async {
     await testBuilders(
       [applyToRoot(new _LoggingBuilder(Level.SEVERE))],
       {

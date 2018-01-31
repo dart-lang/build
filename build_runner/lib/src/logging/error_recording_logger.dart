@@ -57,7 +57,7 @@ class ErrorRecordingLogger implements Logger {
   @override
   void log(Level logLevel, message,
       [Object error, StackTrace stackTrace, Zone zone]) {
-    if (logLevel > Level.SEVERE) {
+    if (logLevel >= Level.SEVERE) {
       _errorWasSeen = true;
     }
     _delegate.log(logLevel, message, error, stackTrace, zone);
