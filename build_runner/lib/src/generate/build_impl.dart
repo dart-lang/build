@@ -154,11 +154,13 @@ class BuildImpl {
     if (_failOnSevere &&
         _assetGraph.failedActions.isNotEmpty &&
         result.status == BuildStatus.success) {
+      int numFailing = _assetGraph.failedActions.values
+          .fold(0, (total, ids) => total + ids.length);
       result = new BuildResult(
         BuildStatus.failure,
         result.outputs,
-        exception:
-            'Some actions failed or were previously failing and not fixed.',
+        exception: 'There were $numFailing actions with SEVERE logs and '
+            '--fail-on-severe was passed.',
         performance: result.performance,
       );
     }

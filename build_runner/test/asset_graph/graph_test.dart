@@ -148,6 +148,9 @@ void main() {
         expect(graph.failedActions[1], equals([bTxt]));
         graph.markActionFailed(2, bTxt);
         expect(graph.failedActions[2], equals([bTxt]));
+        graph.markActionSucceeded(1, bTxt);
+        graph.markActionSucceeded(2, bTxt);
+        expect(graph.failedActions, isEmpty);
       });
     });
 

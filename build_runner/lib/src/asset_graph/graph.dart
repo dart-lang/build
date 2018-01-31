@@ -89,7 +89,12 @@ class AssetGraph {
   /// Marks an action in [phaseNumber] with [primaryInputId] as having
   /// succeeded.
   void markActionSucceeded(int phaseNumber, AssetId primaryInputId) {
-    _failedActions[phaseNumber]?.remove(primaryInputId);
+    var phaseSet = _failedActions[phaseNumber];
+    if (phaseSet == null) return;
+    phaseSet.remove(primaryInputId);
+    if (phaseSet.isEmpty) {
+      _failedActions.remove(phaseNumber);
+    }
   }
 
   /// Adds [node] to the graph if it doesn't exist.
