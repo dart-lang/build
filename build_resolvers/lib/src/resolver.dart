@@ -195,10 +195,7 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      (await libraries.firstWhere((l) {
-        print('Name: ${l.name}');
-        return l.name == libraryName;
-      },
+      (await libraries.firstWhere((l) => l.name == libraryName,
           defaultValue: () => null)) as LibraryElement;
 }
 

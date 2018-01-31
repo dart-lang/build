@@ -72,31 +72,31 @@ void main() {
       }, resolvers: new AnalyzerResolvers());
     });
 
-    //test('should list all libraries', () {
-    //  return resolveSources({
-    //    'a|web/main.dart': '''
-    //          library a.main;
-    //          import 'package:a/a.dart';
-    //          import 'package:a/b.dart';
-    //          export 'package:a/d.dart';
-    //          ''',
-    //    'a|lib/a.dart': 'library a.a;\n import "package:a/c.dart";',
-    //    'a|lib/b.dart': 'library a.b;\n import "c.dart";',
-    //    'a|lib/c.dart': 'library a.c;',
-    //    'a|lib/d.dart': 'library a.d;'
-    //  }, (resolver) async {
-    //    var libs = await resolver.libraries.where((l) => !l.isInSdk).toList();
-    //    expect(
-    //        libs.map((l) => l.name),
-    //        unorderedEquals([
-    //          'a.main',
-    //          'a.a',
-    //          'a.b',
-    //          'a.c',
-    //          'a.d',
-    //        ]));
-    //  }, resolvers: new AnalyzerResolvers());
-    //});
+    test('should list all libraries', () {
+      return resolveSources({
+        'a|web/main.dart': '''
+              library a.main;
+              import 'package:a/a.dart';
+              import 'package:a/b.dart';
+              export 'package:a/d.dart';
+              ''',
+        'a|lib/a.dart': 'library a.a;\n import "package:a/c.dart";',
+        'a|lib/b.dart': 'library a.b;\n import "c.dart";',
+        'a|lib/c.dart': 'library a.c;',
+        'a|lib/d.dart': 'library a.d;'
+      }, (resolver) async {
+        var libs = await resolver.libraries.where((l) => !l.isInSdk).toList();
+        expect(
+            libs.map((l) => l.name),
+            unorderedEquals([
+              'a.main',
+              'a.a',
+              'a.b',
+              'a.c',
+              'a.d',
+            ]));
+      }, resolvers: new AnalyzerResolvers());
+    });
 
     test('should resolve types and library uris', () {
       return resolveSources({
