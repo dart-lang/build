@@ -6,6 +6,8 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 
+/// A delegating [Logger] that records if any logs of level >= [Level.SEVERE]
+/// were seen.
 class ErrorRecordingLogger implements Logger {
   final Logger _delegate;
 

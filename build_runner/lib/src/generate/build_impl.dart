@@ -112,7 +112,7 @@ class BuildImpl {
   final AssetGraph _assetGraph;
   final List<BuildAction> _buildActions;
   final bool _failOnSevere;
-  bool _severLogHandled = false;
+  bool _severeLogHandled = false;
   final OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
@@ -147,14 +147,14 @@ class BuildImpl {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
-    _severLogHandled = false;
+    _severeLogHandled = false;
     _lazyPhases.clear();
     if (updates.isNotEmpty) {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
     if (_failOnSevere &&
-        _severLogHandled &&
+        _severeLogHandled &&
         result.status == BuildStatus.success) {
       result = new BuildResult(
         BuildStatus.failure,
@@ -361,7 +361,7 @@ class BuildImpl {
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
         logger: logger, resourceManager: resourceManager);
     if (logger.errorWasSeen) {
-      _severLogHandled = true;
+      _severeLogHandled = true;
     }
 
     // Reset the state for all the `builderOutputs` nodes based on what was
