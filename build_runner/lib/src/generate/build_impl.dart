@@ -112,7 +112,6 @@ class BuildImpl {
   final AssetGraph _assetGraph;
   final List<BuildAction> _buildActions;
   final bool _failOnSevere;
-  bool _severeLogHandled = false;
   final OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
@@ -147,19 +146,19 @@ class BuildImpl {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
-    _severeLogHandled = false;
     _lazyPhases.clear();
     if (updates.isNotEmpty) {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
     if (_failOnSevere &&
-        _severeLogHandled &&
+        _assetGraph.failedActions.isNotEmpty &&
         result.status == BuildStatus.success) {
       result = new BuildResult(
         BuildStatus.failure,
         result.outputs,
-        exception: 'A severe log was handled. See log for details',
+        exception:
+            'Some actions failed or were previously failing and not fixed.',
         performance: result.performance,
       );
     }
@@ -361,7 +360,9 @@ class BuildImpl {
     await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
         logger: logger, resourceManager: resourceManager);
     if (logger.errorWasSeen) {
-      _severeLogHandled = true;
+      _assetGraph.markActionFailed(phaseNumber, input);
+    } else {
+      _assetGraph.markActionSucceeded(phaseNumber, input);
     }
 
     // Reset the state for all the `builderOutputs` nodes based on what was
