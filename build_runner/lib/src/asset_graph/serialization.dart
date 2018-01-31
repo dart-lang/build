@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 16;
+const _version = 17;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -57,6 +57,14 @@ class _AssetGraphDeserializer {
         generatedNode.inputs.add(node.id);
       }
     }
+
+    // Read all the currently failing actions.
+    _serializedGraph['failedActions']
+        .forEach((int phase, List<int> serializedIds) {
+      graph._failedActions[phase] = serializedIds
+          .map((serializedId) => _idToAssetId[serializedId])
+          .toSet();
+    });
 
     return graph;
   }
@@ -153,6 +161,7 @@ class _AssetGraphSerializer {
       'buildActionsDigest': _serializeDigest(_graph.buildActionsDigest),
       'packages': packages,
       'assetPaths': assetPaths,
+      'failedActions': _serializeFailedActions(_graph.failedActions),
     };
     return UTF8.encode(JSON.encode(result));
   }
@@ -163,6 +172,15 @@ class _AssetGraphSerializer {
     } else {
       return new _WrappedAssetNode(node, this);
     }
+  }
+
+  Map<int, Iterable<int>> _serializeFailedActions(
+      Map<int, Iterable<AssetId>> failedActions) {
+    var serialized = <int, Iterable<int>>{};
+    failedActions.forEach((phaseNum, assetIds) {
+      serialized[phaseNum] = assetIds.map((id) => _assetIdToId[id]).toList();
+    });
+    return serialized;
   }
 }
 
