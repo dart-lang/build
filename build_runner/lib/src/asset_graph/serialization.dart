@@ -59,12 +59,14 @@ class _AssetGraphDeserializer {
     }
 
     // Read all the currently failing actions.
-    _serializedGraph['failedActions']
-        .forEach((int phase, List<int> serializedIds) {
+    var serializedFailedActions = _serializedGraph['failedActions'] as List;
+    for (int i = 0; i < serializedFailedActions.length; i += 2) {
+      var phase = serializedFailedActions[i] as int;
+      var serializedIds = serializedFailedActions[i + 1] as List<int>;
       graph._failedActions[phase] = serializedIds
           .map((serializedId) => _idToAssetId[serializedId])
           .toSet();
-    });
+    }
 
     return graph;
   }
@@ -174,11 +176,12 @@ class _AssetGraphSerializer {
     }
   }
 
-  Map<int, Iterable<int>> _serializeFailedActions(
-      Map<int, Iterable<AssetId>> failedActions) {
-    var serialized = <int, Iterable<int>>{};
+  List _serializeFailedActions(Map<int, Iterable<AssetId>> failedActions) {
+    var serialized = <dynamic>[];
     failedActions.forEach((phaseNum, assetIds) {
-      serialized[phaseNum] = assetIds.map((id) => _assetIdToId[id]).toList();
+      serialized
+        ..add(phaseNum)
+        ..add(assetIds.map((id) => _assetIdToId[id]).toList(growable: false));
     });
     return serialized;
   }
