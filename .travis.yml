@@ -8,110 +8,41 @@ dist: trusty
 
 dart:
   - dev
-  - stable
 
 jobs:
   include:
     - stage: analyze_and_format
-      script: ./tool/travis.sh build dartanalyzer dartfmt
-      dart: dev
-      env: PACKAGE="build"
-    - stage: analyze_and_format
-      script: ./tool/travis.sh build_barback dartanalyzer dartfmt
-      dart: dev
-      env: PACKAGE="build_barback"
-    - stage: analyze_and_format
-      script: ./tool/travis.sh build_config dartanalyzer dartfmt
-      env: PACKAGE="build_config"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh build_resolvers dartanalyzer dartfmt
-      env: PACKAGE="build_resolvers"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh build_runner dartanalyzer dartfmt
-      env: PACKAGE="build_runner"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh build_test dartanalyzer dartfmt
-      env: PACKAGE="build_test"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh build_web_compilers dartanalyzer dartfmt
-      env: PACKAGE="build_web_compilers"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh e2e_example dartanalyzer
-      env: PACKAGE="e2e_example"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh scratch_space dartanalyzer dartfmt
-      env: PACKAGE="scratch_space"
-      dart: dev
+      script: ./tool/travis.sh dartanalyzer dartfmt
+      env:
+        - PKG="build"
+        - PKG="build_barback"
+        - PKG="build_config"
+        - PKG="build_resolvers"
+        - PKG="build_runner"
+        - PKG="build_test"
+        - PKG="build_web_compilers"
+        - PKG="e2e_example"
+        - PKG="scratch_space"
     - stage: unit_test
-      script: ./tool/travis.sh build test_0
-      env: PACKAGE="build"
-      dart: dev
+      script: ./tool/travis.sh test_0
+      env:
+        - PKG="build"
+        - PKG="build_barback"
+        - PKG="build_config"
+        - PKG="build_resolvers"
+        - PKG="build_runner"
+        - PKG="build_test"
+        - PKG="build_web_compilers"
+        - PKG="scratch_space"
+        - PKG="scratch_space"
     - stage: unit_test
-      script: ./tool/travis.sh build test_0
-      env: PACKAGE="build"
-      dart: stable
-    - stage: unit_test
-      script: ./tool/travis.sh build_barback test_0
-      env: PACKAGE="build_barback"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh build_barback test_0
-      env: PACKAGE="build_barback"
-      dart: stable
-    - stage: unit_test
-      script: ./tool/travis.sh build_config test_0
-      env: PACKAGE="build_config"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh build_config test_0
-      env: PACKAGE="build_config"
-      dart: stable
-    - stage: unit_test
-      script: ./tool/travis.sh build_resolvers test_0
-      env: PACKAGE="build_resolvers"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh build_resolvers test_0
-      env: PACKAGE="build_resolvers"
-      dart: stable
-    - stage: unit_test
-      script: ./tool/travis.sh build_runner test_0
-      env: PACKAGE="build_runner"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh build_test test_0
-      env: PACKAGE="build_test"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh build_test test_0
-      env: PACKAGE="build_test"
-      dart: stable
-    - stage: unit_test
-      script: ./tool/travis.sh build_web_compilers test_1
-      env: PACKAGE="build_web_compilers"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh build_web_compilers test_1
-      env: PACKAGE="build_web_compilers"
-      dart: stable
-    - stage: unit_test
-      script: ./tool/travis.sh scratch_space test_0
-      env: PACKAGE="scratch_space"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh scratch_space test_0
-      env: PACKAGE="scratch_space"
-      dart: stable
+      script: ./tool/travis.sh test_1
+      env:
+        - PKG="build_web_compilers"
     - stage: e2e_test
-      script: ./tool/travis.sh e2e_example test_0
-      env: PACKAGE="e2e_example"
-      dart: dev
+      script: ./tool/travis.sh test_0
+      env:
+        - PKG="e2e_example"
 
 stages:
   - analyze_and_format
