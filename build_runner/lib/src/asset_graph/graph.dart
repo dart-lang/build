@@ -193,6 +193,7 @@ class AssetGraph {
       }
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
+      markActionSucceeded(node.phaseNumber, node.primaryInput);
     }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;

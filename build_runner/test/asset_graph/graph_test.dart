@@ -137,8 +137,8 @@ void main() {
       });
 
       group('failedActions/markActionFailed/markActionSucceeded', () {
-        var aTxt = makeAssetId('a|lib/a.txt');
-        var bTxt = makeAssetId('a|lib/b.txt');
+        var aTxt = makeAssetId('foo|lib/a.txt');
+        var bTxt = makeAssetId('foo|lib/b.txt');
 
         test('basic functionality', () {
           expect(graph.failedActions, isEmpty);
@@ -155,9 +155,20 @@ void main() {
           expect(graph.failedActions, isEmpty);
         });
 
-        test('deleted nodes remove their failures', () {
-          graph.add(new SourceAssetNode(aTxt));
+        test('deleted nodes remove their failures', () async {
+          graph = await AssetGraph.build([
+            new BuildAction(
+                new TestBuilder(
+                    buildExtensions: appendExtension('.copy', from: '.txt')),
+                'foo'),
+            new BuildAction(
+                new TestBuilder(
+                    buildExtensions: appendExtension('.clone', from: '.txt')),
+                'foo'),
+          ], [aTxt, bTxt].toSet(), new Set(), fooPackageGraph, digestReader);
           graph.markActionFailed(0, aTxt);
+          graph.markActionFailed(1, aTxt);
+          expect(graph.failedActions, isNotEmpty);
           graph.remove(aTxt);
           expect(graph.failedActions, isEmpty);
         });
