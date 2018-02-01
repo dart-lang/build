@@ -10,68 +10,55 @@ dart:
   - dev
   - stable
 
-env:
-  - PKG=build TASK=dartanalyzer
-  - PKG=build TASK=dartfmt
-  - PKG=build TASK=test_0
-  - PKG=build_barback TASK=dartanalyzer
-  - PKG=build_barback TASK=dartfmt
-  - PKG=build_barback TASK=test_0
-  - PKG=build_config TASK=dartanalyzer
-  - PKG=build_config TASK=dartfmt
-  - PKG=build_config TASK=test_0
-  - PKG=build_resolvers TASK=dartanalyzer
-  - PKG=build_resolvers TASK=dartfmt
-  - PKG=build_resolvers TASK=test_0
-  - PKG=build_runner TASK=dartanalyzer
-  - PKG=build_runner TASK=dartfmt
-  - PKG=build_runner TASK=test_0
-  - PKG=build_test TASK=dartanalyzer
-  - PKG=build_test TASK=dartfmt
-  - PKG=build_test TASK=test_0
-  - PKG=build_web_compilers TASK=dartanalyzer
-  - PKG=build_web_compilers TASK=dartfmt
-  - PKG=build_web_compilers TASK=test_1
-  - PKG=e2e_example TASK=dartanalyzer
-  - PKG=e2e_example TASK=test_0
-  - PKG=scratch_space TASK=dartanalyzer
-  - PKG=scratch_space TASK=dartfmt
-  - PKG=scratch_space TASK=test_0
-
-matrix:
-  exclude:
-    - dart: stable
-      env: PKG=build TASK=dartfmt
-    - dart: stable
-      env: PKG=build_barback TASK=dartfmt
-    - dart: stable
-      env: PKG=build_config TASK=dartfmt
-    - dart: stable
-      env: PKG=build_resolvers TASK=dartanalyzer
-    - dart: stable
-      env: PKG=build_resolvers TASK=dartfmt
-    - dart: stable
-      env: PKG=build_runner TASK=dartanalyzer
-    - dart: stable
-      env: PKG=build_runner TASK=dartfmt
-    - dart: stable
-      env: PKG=build_runner TASK=test_0
-    - dart: stable
-      env: PKG=build_test TASK=dartfmt
-    - dart: stable
-      env: PKG=build_web_compilers TASK=dartanalyzer
-    - dart: stable
-      env: PKG=build_web_compilers TASK=dartfmt
-    - dart: stable
-      env: PKG=build_web_compilers TASK=test_1
-    - dart: stable
-      env: PKG=e2e_example TASK=dartanalyzer
-    - dart: stable
-      env: PKG=e2e_example TASK=test_0
-    - dart: stable
-      env: PKG=scratch_space TASK=dartfmt
-
-script: ./tool/travis.sh
+jobs:
+  include:
+    - stage: smoke_tests
+      script: ./tool/travis.sh build dartanalyzer dartfmt
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh build_barback dartanalyzer dartfmt
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh build_config dartanalyzer dartfmt
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh build_resolvers dartanalyzer dartfmt
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh build_runner dartanalyzer dartfmt
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh build_test dartanalyzer dartfmt
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh build_web_compilers dartanalyzer dartfmt
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh e2e_example dartanalyzer
+      dart: dev
+    - stage: smoke_tests
+      script: ./tool/travis.sh scratch_space dartanalyzer dartfmt
+      dart: dev
+    - stage: unit_tests
+      script: ./tool/travis.sh build test_0
+    - stage: unit_tests
+      script: ./tool/travis.sh build_barback test_0
+    - stage: unit_tests
+      script: ./tool/travis.sh build_config test_0
+    - stage: unit_tests
+      script: ./tool/travis.sh build_resolvers test_0
+    - stage: unit_tests
+      script: ./tool/travis.sh build_runner test_0
+      dart: dev
+    - stage: unit_tests
+      script: ./tool/travis.sh build_test test_0
+    - stage: unit_tests
+      script: ./tool/travis.sh build_web_compilers test_1
+    - stage: unit_tests
+      script: ./tool/travis.sh scratch_space test_0
+    - stage: e2e_tests
+      script: ./tool/travis.sh e2e_example test_0
+      dart: dev
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
