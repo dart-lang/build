@@ -47,4 +47,4 @@ while (( "$#" )); do
   shift
 done
 
-exit EXIT_CODE
+exit $EXIT_CODE
