@@ -9,40 +9,30 @@ dist: trusty
 dart:
   - dev
 
+env:
+  - PKG="build"
+  - PKG="build_barback"
+  - PKG="build_config"
+  - PKG="build_resolvers"
+  - PKG="build_runner"
+  - PKG="build_test"
+  - PKG="build_web_compilers"
+  - PKG="e2e_example"
+  - PKG="scratch_space"
+
 jobs:
   include:
     - stage: analyze_and_format
       script: ./tool/travis.sh dartanalyzer dartfmt
-      env:
-        - PKG="build"
-        - PKG="build_barback"
-        - PKG="build_config"
-        - PKG="build_resolvers"
-        - PKG="build_runner"
-        - PKG="build_test"
-        - PKG="build_web_compilers"
-        - PKG="e2e_example"
-        - PKG="scratch_space"
     - stage: unit_test
       script: ./tool/travis.sh test_0
-      env:
-        - PKG="build"
-        - PKG="build_barback"
-        - PKG="build_config"
-        - PKG="build_resolvers"
-        - PKG="build_runner"
-        - PKG="build_test"
-        - PKG="build_web_compilers"
-        - PKG="scratch_space"
-        - PKG="scratch_space"
+      if: NOT (env(PKG) in ("e2e_example", "build_web_compilers"))
     - stage: unit_test
       script: ./tool/travis.sh test_1
-      env:
-        - PKG="build_web_compilers"
+      if: env(PKG) = "build_web_compilers"
     - stage: e2e_test
       script: ./tool/travis.sh test_0
-      env:
-        - PKG="e2e_example"
+      if: env(PKG) = "e2e_example"
 
 stages:
   - analyze_and_format
