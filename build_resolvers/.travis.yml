@@ -13,3 +13,6 @@ matrix:
     - dart: stable
       dart_task:
         dartfmt: sdk
+    - dart: stable
+      dart_task:
+        dartanalyzer: --fatal-infos --fatal-warnings .
