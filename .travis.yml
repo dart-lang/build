@@ -9,9 +9,10 @@ dist: trusty
 jobs:
   include:
     - &analyze_and_format
-      stage: analyze/format
+      stage: analyze_and_format
       dart: dev
       script: ./tool/travis.sh dartanalyzer dartfmt
+      if: env(PKG) IS present
     - <<: *analyze_and_format
       env: PKG="build"
     - <<: *analyze_and_format
@@ -35,6 +36,7 @@ jobs:
       stage: unit_test
       script: ./tool/travis.sh test_0
       dart: dev
+      if: env(PKG) IS present
     - <<: *unit_test
       env: PKG="build"
     - <<: *unit_test
@@ -70,10 +72,13 @@ jobs:
     - <<: *unit_test
       env: PKG="scratch_space"
       dart: stable
-    - stage: e2e_test
+    - &e2e_test
+      stage: e2e_test
       script: ./tool/travis.sh test_0
-      env: PKG="e2e_example"
       dart: dev
+      if: env(PKG) IS present
+    - <<: *e2e_test
+      env: PKG="e2e_example"
 
 stages:
   - analyze_and_format
