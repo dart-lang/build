@@ -1,8 +1,8 @@
-## 0.2.3-dev
+## 0.2.3
 
-- Expose key normalization methods publically, these include:
-  - normalizeBuilderKeyUsage
-  - normalizeTargetKeyUsage
+- Expose key normalization methods publicly, these include:
+  - `normalizeBuilderKeyUsage`
+  - `normalizeTargetKeyUsage`
 
 ## 0.2.2+1
 
