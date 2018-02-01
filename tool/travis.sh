@@ -10,8 +10,8 @@ if [ -z "$PKG" ]; then
 fi
 
 if [ "$#" == "0" ]; then
-	echo -e "\033[31mExpected at least one task!\033[0m"
-	exit 1
+  echo -e "\033[31mExpected at least one task!\033[0m"
+  exit 1
 fi
 
 pushd $PKG
