@@ -136,21 +136,42 @@ void main() {
             throwsA(assetGraphVersionException));
       });
 
-      test('failedActions/markActionFailed/markActionSucceeded', () {
-        expect(graph.failedActions, isEmpty);
-        var aTxt = makeAssetId('a|lib/a.txt');
-        graph.markActionFailed(1, aTxt);
-        expect(graph.failedActions[1], equals([aTxt]));
-        var bTxt = makeAssetId('a|lib/b.txt');
-        graph.markActionFailed(1, bTxt);
-        expect(graph.failedActions[1], unorderedEquals([aTxt, bTxt]));
-        graph.markActionSucceeded(1, aTxt);
-        expect(graph.failedActions[1], equals([bTxt]));
-        graph.markActionFailed(2, bTxt);
-        expect(graph.failedActions[2], equals([bTxt]));
-        graph.markActionSucceeded(1, bTxt);
-        graph.markActionSucceeded(2, bTxt);
-        expect(graph.failedActions, isEmpty);
+      group('failedActions/markActionFailed/markActionSucceeded', () {
+        var aTxt = makeAssetId('foo|lib/a.txt');
+        var bTxt = makeAssetId('foo|lib/b.txt');
+
+        test('basic functionality', () {
+          expect(graph.failedActions, isEmpty);
+          graph.markActionFailed(1, aTxt);
+          expect(graph.failedActions[1], equals([aTxt]));
+          graph.markActionFailed(1, bTxt);
+          expect(graph.failedActions[1], unorderedEquals([aTxt, bTxt]));
+          graph.markActionSucceeded(1, aTxt);
+          expect(graph.failedActions[1], equals([bTxt]));
+          graph.markActionFailed(2, bTxt);
+          expect(graph.failedActions[2], equals([bTxt]));
+          graph.markActionSucceeded(1, bTxt);
+          graph.markActionSucceeded(2, bTxt);
+          expect(graph.failedActions, isEmpty);
+        });
+
+        test('deleted nodes remove their failures', () async {
+          graph = await AssetGraph.build([
+            new BuildAction(
+                new TestBuilder(
+                    buildExtensions: appendExtension('.copy', from: '.txt')),
+                'foo'),
+            new BuildAction(
+                new TestBuilder(
+                    buildExtensions: appendExtension('.clone', from: '.txt')),
+                'foo'),
+          ], [aTxt, bTxt].toSet(), new Set(), fooPackageGraph, digestReader);
+          graph.markActionFailed(0, aTxt);
+          graph.markActionFailed(1, aTxt);
+          expect(graph.failedActions, isNotEmpty);
+          graph.remove(aTxt);
+          expect(graph.failedActions, isEmpty);
+        });
       });
     });
 
