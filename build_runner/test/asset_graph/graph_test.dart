@@ -136,21 +136,31 @@ void main() {
             throwsA(assetGraphVersionException));
       });
 
-      test('failedActions/markActionFailed/markActionSucceeded', () {
-        expect(graph.failedActions, isEmpty);
+      group('failedActions/markActionFailed/markActionSucceeded', () {
         var aTxt = makeAssetId('a|lib/a.txt');
-        graph.markActionFailed(1, aTxt);
-        expect(graph.failedActions[1], equals([aTxt]));
         var bTxt = makeAssetId('a|lib/b.txt');
-        graph.markActionFailed(1, bTxt);
-        expect(graph.failedActions[1], unorderedEquals([aTxt, bTxt]));
-        graph.markActionSucceeded(1, aTxt);
-        expect(graph.failedActions[1], equals([bTxt]));
-        graph.markActionFailed(2, bTxt);
-        expect(graph.failedActions[2], equals([bTxt]));
-        graph.markActionSucceeded(1, bTxt);
-        graph.markActionSucceeded(2, bTxt);
-        expect(graph.failedActions, isEmpty);
+
+        test('basic functionality', () {
+          expect(graph.failedActions, isEmpty);
+          graph.markActionFailed(1, aTxt);
+          expect(graph.failedActions[1], equals([aTxt]));
+          graph.markActionFailed(1, bTxt);
+          expect(graph.failedActions[1], unorderedEquals([aTxt, bTxt]));
+          graph.markActionSucceeded(1, aTxt);
+          expect(graph.failedActions[1], equals([bTxt]));
+          graph.markActionFailed(2, bTxt);
+          expect(graph.failedActions[2], equals([bTxt]));
+          graph.markActionSucceeded(1, bTxt);
+          graph.markActionSucceeded(2, bTxt);
+          expect(graph.failedActions, isEmpty);
+        });
+
+        test('deleted nodes remove their failures', () {
+          graph.add(new SourceAssetNode(aTxt));
+          graph.markActionFailed(0, aTxt);
+          graph.remove(aTxt);
+          expect(graph.failedActions, isEmpty);
+        });
       });
     });
 
