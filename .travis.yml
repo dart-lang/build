@@ -8,66 +8,66 @@ dist: trusty
 
 jobs:
   include:
-    - &analyze-and-format
+    - &analyze_and_format
       stage: analyze/format
       dart: dev
       script: ./tool/travis.sh dartanalyzer dartfmt
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="build"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="build_barback"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="build_config"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="build_resolvers"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="build_runner"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="build_test"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="build_web_compilers"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       script: ./tool/travis.sh dartanalyzer
       env: PKG="e2e_example"
-    - <<: *analyze-and-format
+    - <<: *analyze_and_format
       env: PKG="scratch_space"
-    - &unit-test
-      stage: unit test
+    - &unit_test
+      stage: unit_test
       script: ./tool/travis.sh test_0
       dart: dev
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build"
       dart: stable
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_barback"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_barback"
       dart: stable
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_config"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_config"
       dart: stable
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_resolvers"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_resolvers"
       dart: stable
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_runner"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_test"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="build_test"
       dart: stable
-    - <<: *unit-test
+    - <<: *unit_test
       script: ./tool/travis.sh test_1
       env: PKG="build_web_compilers"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="scratch_space"
-    - <<: *unit-test
+    - <<: *unit_test
       env: PKG="scratch_space"
       dart: stable
     - stage: e2e_test
