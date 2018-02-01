@@ -391,18 +391,16 @@ class FutureGroup<E> {
   final Completer<List<E>> _completer = new Completer<List<E>>();
   final List<E> results = [];
 
-  /** Gets the task that failed, if any. */
+  /// The task that failed, if any.
   Future get failedTask => _failedTask;
 
-  /**
-   * Wait for [task] to complete.
-   *
-   * If this group has already been marked as completed, a [StateError] will be
-   * thrown.
-   *
-   * If this group has a [failedTask], new tasks will be ignored, because the
-   * error has already been signaled.
-   */
+  /// Wait for [task] to complete.
+  ///
+  /// If this group has already been marked as completed, a [StateError] will
+  /// be thrown.
+  ///
+  /// If this group has a [failedTask], new tasks will be ignored, because the
+  /// error has already been signaled.
   void add(Future<E> task) {
     if (_failedTask != null) return;
     if (_pending == _FINISHED) throw new StateError("Future already completed");
@@ -425,13 +423,11 @@ class FutureGroup<E> {
     });
   }
 
-  /**
-   * A Future that completes with a List of the values from all the added
-   * tasks, when they have all completed.
-   *
-   * If any task fails, this Future will receive the error. Only the first
-   * error will be sent to the Future.
-   */
+  /// A Future that completes with a List of the values from all the added
+  /// tasks, when they have all completed.
+  ///
+  /// If any task fails, this Future will receive the error. Only the first
+  /// error will be sent to the Future.
   Future<List<E>> get future => _completer.future;
 }
 
