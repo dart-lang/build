@@ -12,52 +12,94 @@ dart:
 
 jobs:
   include:
-    - stage: smoke_tests
+    - stage: test
+      # Hack to skip this default stage.
+      if: branch = doesnt_exist
+    - stage: analyze_and_format
       script: ./tool/travis.sh build dartanalyzer dartfmt
       dart: dev
-    - stage: smoke_tests
+      env: NAME="build"
+    - stage: analyze_and_format
       script: ./tool/travis.sh build_barback dartanalyzer dartfmt
       dart: dev
-    - stage: smoke_tests
+      env: NAME="build_barback"
+    - stage: analyze_and_format
       script: ./tool/travis.sh build_config dartanalyzer dartfmt
+      env: NAME="build_config"
       dart: dev
-    - stage: smoke_tests
+    - stage: analyze_and_format
       script: ./tool/travis.sh build_resolvers dartanalyzer dartfmt
+      env: NAME="build_resolvers"
       dart: dev
-    - stage: smoke_tests
+    - stage: analyze_and_format
       script: ./tool/travis.sh build_runner dartanalyzer dartfmt
+      env: NAME="build_runner"
       dart: dev
-    - stage: smoke_tests
+    - stage: analyze_and_format
       script: ./tool/travis.sh build_test dartanalyzer dartfmt
+      env: NAME="build_test"
       dart: dev
-    - stage: smoke_tests
+    - stage: analyze_and_format
       script: ./tool/travis.sh build_web_compilers dartanalyzer dartfmt
+      env: NAME="build_web_compilers"
       dart: dev
-    - stage: smoke_tests
+    - stage: analyze_and_format
       script: ./tool/travis.sh e2e_example dartanalyzer
+      env: NAME="e2e_example"
       dart: dev
-    - stage: smoke_tests
+    - stage: analyze_and_format
       script: ./tool/travis.sh scratch_space dartanalyzer dartfmt
+      env: NAME="scratch_space"
       dart: dev
     - stage: unit_tests
       script: ./tool/travis.sh build test_0
+      env: NAME="build"
+      dart:
+        - dev
+        - stable
     - stage: unit_tests
       script: ./tool/travis.sh build_barback test_0
+      env: NAME="build_barback"
+      dart:
+        - dev
+        - stable
     - stage: unit_tests
       script: ./tool/travis.sh build_config test_0
+      env: NAME="build_config"
+      dart:
+        - dev
+        - stable
     - stage: unit_tests
       script: ./tool/travis.sh build_resolvers test_0
+      env: NAME="build_resolvers"
+      dart:
+        - dev
+        - stable
     - stage: unit_tests
       script: ./tool/travis.sh build_runner test_0
+      env: NAME="build_runner"
       dart: dev
     - stage: unit_tests
       script: ./tool/travis.sh build_test test_0
+      env: NAME="build_test"
+      dart:
+        - dev
+        - stable
     - stage: unit_tests
       script: ./tool/travis.sh build_web_compilers test_1
+      env: NAME="build_web_compilers"
+      dart:
+        - dev
+        - stable
     - stage: unit_tests
       script: ./tool/travis.sh scratch_space test_0
+      env: NAME="scratch_space"
+      dart:
+        - dev
+        - stable
     - stage: e2e_tests
       script: ./tool/travis.sh e2e_example test_0
+      env: NAME="e2e_example"
       dart: dev
 
 # Only building master means that we don't run two builds for each pull request.
