@@ -8,7 +8,7 @@ dist: trusty
 
 jobs:
   include:
-    - &analyze-and-format:
+    - &analyze-and-format
       stage: analyze/format
       dart: dev
       script: ./tool/travis.sh dartanalyzer dartfmt
@@ -31,7 +31,7 @@ jobs:
       env: PKG="e2e_example"
     - <<: *analyze-and-format
       env: PKG="scratch_space"
-    - &unit-test:
+    - &unit-test
       stage: unit test
       script: ./tool/travis.sh test_0
       dart: dev
