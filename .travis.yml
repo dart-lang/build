@@ -48,63 +48,63 @@ jobs:
       script: ./tool/travis.sh scratch_space dartanalyzer dartfmt
       env: PACKAGE="scratch_space"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build test_0
       env: PACKAGE="build"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build test_0
       env: PACKAGE="build"
       dart: stable
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_barback test_0
       env: PACKAGE="build_barback"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_barback test_0
       env: PACKAGE="build_barback"
       dart: stable
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_config test_0
       env: PACKAGE="build_config"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_config test_0
       env: PACKAGE="build_config"
       dart: stable
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_resolvers test_0
       env: PACKAGE="build_resolvers"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_resolvers test_0
       env: PACKAGE="build_resolvers"
       dart: stable
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_runner test_0
       env: PACKAGE="build_runner"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_test test_0
       env: PACKAGE="build_test"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_test test_0
       env: PACKAGE="build_test"
       dart: stable
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_web_compilers test_1
       env: PACKAGE="build_web_compilers"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh build_web_compilers test_1
       env: PACKAGE="build_web_compilers"
       dart: stable
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh scratch_space test_0
       env: PACKAGE="scratch_space"
       dart: dev
-    - stage: test
+    - stage: unit_test
       script: ./tool/travis.sh scratch_space test_0
       env: PACKAGE="scratch_space"
       dart: stable
@@ -115,8 +115,11 @@ jobs:
 
 stages:
   - analyze_and_format
-  - test
+  - unit_test
   - e2e_test
+  # Hack to remove the default stage
+  - name: test
+    if: branch = fake_branch
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
