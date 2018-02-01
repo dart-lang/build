@@ -68,16 +68,14 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   Future<ReleasableResolver> _resolve(BuildStep buildStep,
-      [List<AssetId> entryPoints, bool resolveAllLibraries]) {
+      [List<AssetId> entryPoints]) {
     // Can only have one resolve in progress at a time, so chain the current
     // resolution to be after the last one.
     var phaseComplete = new Completer();
     var future = _lastPhaseComplete.whenComplete(() {
       _currentPhaseComplete = phaseComplete;
       return _performResolve(
-          buildStep,
-          entryPoints == null ? [buildStep.inputId] : entryPoints,
-          resolveAllLibraries);
+          buildStep, entryPoints == null ? [buildStep.inputId] : entryPoints);
     }).then((_) => this);
     // Advance the lastPhaseComplete to be done when this phase is all done.
     _lastPhaseComplete = phaseComplete.future;
@@ -98,9 +96,7 @@ class AnalyzerResolver implements ReleasableResolver {
     _currentBuildStep = null;
   }
 
-  Future _performResolve(BuildStep buildStep, List<AssetId> entryPoints,
-      bool resolveAllLibraries) {
-    resolveAllLibraries ??= true;
+  Future _performResolve(BuildStep buildStep, List<AssetId> entryPoints) {
     if (_currentBuildStep != null) {
       throw new StateError('Cannot be accessed by concurrent transforms');
     }
@@ -156,22 +152,6 @@ class AnalyzerResolver implements ReleasableResolver {
         if (kind != SourceKind.LIBRARY) return null;
         return _context.computeLibraryElement(source);
       }).toList();
-
-      if (resolveAllLibraries) {
-        // Force resolve all other available libraries. As of analyzer > 0.27.1
-        // this is necessary to get resolved constants.
-        var newLibraries = new Set<LibraryElement>();
-        await for (var library in libraries) {
-          if (library.source.uri.scheme == 'dart' ||
-              _entryLibraries.contains(library)) {
-            newLibraries.add(library);
-          } else {
-            newLibraries.add(_context
-                .computeLibraryElement(library.definingCompilationUnit.source));
-          }
-        }
-        _libraries = newLibraries;
-      }
     });
   }
 
@@ -468,7 +448,7 @@ class AnalyzerResolvers implements Resolvers {
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) =>
-      _resolver._resolve(buildStep, [buildStep.inputId], false);
+      _resolver._resolve(buildStep, [buildStep.inputId]);
 }
 
 bool _analysisEngineInitialized = false;
