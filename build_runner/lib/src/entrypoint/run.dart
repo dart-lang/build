@@ -10,7 +10,7 @@ import 'options.dart';
 
 /// A common entrypoint to parse command line arguments and build or serve with
 /// [builders].
-Future<int> run(List<String> args, List<BuilderApplication> builders) {
+Future<int> run(List<String> args, List<BuilderApplication> builders) async {
   var runner = new BuildCommandRunner(builders);
-  return runner.run(args);
+  return (await runner.run(args)) ?? 0;
 }
