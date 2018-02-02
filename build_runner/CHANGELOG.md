@@ -35,6 +35,11 @@
   periods of time, leading to various errors.
 - Fixed an issue on windows where incremental builds didn't work.
 
+## 0.6.0+2
+
+- Add a build_runner binary that warns that build_runner doesn't support
+  automatic build scripts prior to 0.7.x.
+
 ## 0.6.0+1
 
 ### Internal Improvements
