@@ -1,3 +1,8 @@
+## 0.6.1+1
+
+- Add a build_runner binary that warns that build_runner doesn't support
+  automatic build scripts prior to 0.7.x.
+
 ## 0.6.1
 
 ### New Features
