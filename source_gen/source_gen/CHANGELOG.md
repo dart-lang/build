@@ -1,3 +1,7 @@
+## 0.7.4+3
+
+* Support the latest `analyzer` package.
+
 ## 0.7.4+2
 
 * **BUG FIX**: `ConstantReader.revive()` now properly returns no URL fragment
