@@ -29,7 +29,7 @@ void main() {
             '--define',
             'build_web_compilers|entrypoint=compiler=dart2js',
             '--define',
-            'build_web_compilers|entrypoint=dart2js_args=["--checked"]',
+            'build_web_compilers|entrypoint=dart2js_args=["--checked","--trust-primitives"]',
           ]);
       await expectWasCompiledWithDart2Js();
     }, onPlatform: {'windows': const Skip('flaky on windows')});

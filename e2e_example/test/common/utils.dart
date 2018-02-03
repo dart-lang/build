@@ -33,6 +33,10 @@ Future<ProcessResult> runAutoBuild({List<String> trailingArgs = const []}) =>
     _runBuild(
         _pubBinary, ['run', 'build_runner', 'build']..addAll(trailingArgs));
 
+/// Runs `pub run build_runner <args>`, and returns the [ProcessResult].
+Future<ProcessResult> runAutoCommand(List<String> args) =>
+    _runBuild(_pubBinary, ['run', 'build_runner']..addAll(args));
+
 /// Runs the build script in this package, and waits for the first build to
 /// complete.
 ///

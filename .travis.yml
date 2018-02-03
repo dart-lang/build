@@ -6,72 +6,87 @@ language: dart
 sudo: required
 dist: trusty
 
-dart:
-  - dev
-  - stable
+jobs:
+  include:
+    - &analyze_and_format
+      stage: analyze_and_format
+      dart: dev
+      script: ./tool/travis.sh dartanalyzer dartfmt
+      if: env(PKG) IS present
+    - <<: *analyze_and_format
+      env: PKG="build"
+    - <<: *analyze_and_format
+      env: PKG="build_barback"
+    - <<: *analyze_and_format
+      env: PKG="build_config"
+    - <<: *analyze_and_format
+      env: PKG="build_resolvers"
+    - <<: *analyze_and_format
+      env: PKG="build_runner"
+    - <<: *analyze_and_format
+      env: PKG="build_test"
+    - <<: *analyze_and_format
+      env: PKG="build_web_compilers"
+    - <<: *analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="e2e_example"
+    - <<: *analyze_and_format
+      env: PKG="scratch_space"
+    - &unit_test
+      stage: unit_test
+      script: ./tool/travis.sh test_0
+      dart: dev
+      if: env(PKG) IS present
+    - <<: *unit_test
+      env: PKG="build"
+    - <<: *unit_test
+      env: PKG="build"
+      dart: stable
+    - <<: *unit_test
+      env: PKG="build_barback"
+    - <<: *unit_test
+      env: PKG="build_barback"
+      dart: stable
+    - <<: *unit_test
+      env: PKG="build_config"
+    - <<: *unit_test
+      env: PKG="build_config"
+      dart: stable
+    - <<: *unit_test
+      env: PKG="build_resolvers"
+    - <<: *unit_test
+      env: PKG="build_resolvers"
+      dart: stable
+    - <<: *unit_test
+      env: PKG="build_runner"
+    - <<: *unit_test
+      env: PKG="build_test"
+    - <<: *unit_test
+      env: PKG="build_test"
+      dart: stable
+    - <<: *unit_test
+      script: ./tool/travis.sh test_1
+      env: PKG="build_web_compilers"
+    - <<: *unit_test
+      env: PKG="scratch_space"
+    - <<: *unit_test
+      env: PKG="scratch_space"
+      dart: stable
+    - &e2e_test
+      stage: e2e_test
+      script: ./tool/travis.sh test_0
+      dart: dev
+      if: env(PKG) IS present
+    - <<: *e2e_test
+      env: PKG="e2e_example"
 
-env:
-  - PKG=build TASK=dartanalyzer
-  - PKG=build TASK=dartfmt
-  - PKG=build TASK=test_0
-  - PKG=build_barback TASK=dartanalyzer
-  - PKG=build_barback TASK=dartfmt
-  - PKG=build_barback TASK=test_0
-  - PKG=build_config TASK=dartanalyzer
-  - PKG=build_config TASK=dartfmt
-  - PKG=build_config TASK=test_0
-  - PKG=build_resolvers TASK=dartanalyzer
-  - PKG=build_resolvers TASK=dartfmt
-  - PKG=build_resolvers TASK=test_0
-  - PKG=build_runner TASK=dartanalyzer
-  - PKG=build_runner TASK=dartfmt
-  - PKG=build_runner TASK=test_0
-  - PKG=build_test TASK=dartanalyzer
-  - PKG=build_test TASK=dartfmt
-  - PKG=build_test TASK=test_0
-  - PKG=build_web_compilers TASK=dartanalyzer
-  - PKG=build_web_compilers TASK=dartfmt
-  - PKG=build_web_compilers TASK=test_1
-  - PKG=e2e_example TASK=dartanalyzer
-  - PKG=e2e_example TASK=test_0
-  - PKG=scratch_space TASK=dartanalyzer
-  - PKG=scratch_space TASK=dartfmt
-  - PKG=scratch_space TASK=test_0
-
-matrix:
-  exclude:
-    - dart: stable
-      env: PKG=build TASK=dartfmt
-    - dart: stable
-      env: PKG=build_barback TASK=dartfmt
-    - dart: stable
-      env: PKG=build_config TASK=dartfmt
-    - dart: stable
-      env: PKG=build_resolvers TASK=dartanalyzer
-    - dart: stable
-      env: PKG=build_resolvers TASK=dartfmt
-    - dart: stable
-      env: PKG=build_runner TASK=dartanalyzer
-    - dart: stable
-      env: PKG=build_runner TASK=dartfmt
-    - dart: stable
-      env: PKG=build_runner TASK=test_0
-    - dart: stable
-      env: PKG=build_test TASK=dartfmt
-    - dart: stable
-      env: PKG=build_web_compilers TASK=dartanalyzer
-    - dart: stable
-      env: PKG=build_web_compilers TASK=dartfmt
-    - dart: stable
-      env: PKG=build_web_compilers TASK=test_1
-    - dart: stable
-      env: PKG=e2e_example TASK=dartanalyzer
-    - dart: stable
-      env: PKG=e2e_example TASK=test_0
-    - dart: stable
-      env: PKG=scratch_space TASK=dartfmt
-
-script: ./tool/travis.sh
+stages:
+  - analyze_and_format
+  - unit_test
+  - e2e_test
+  # Hack to remove the default stage
+  - name: test
+    if: branch = fake_branch
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
