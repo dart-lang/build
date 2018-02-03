@@ -6,7 +6,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_web_compilers/src/modules.dart';
+import 'package:build_modules/src/modules.dart';
 
 void main() {
   LibraryElement libCycle;

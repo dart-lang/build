@@ -5,7 +5,7 @@
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_modules/build_modules.dart';
 
 import 'matchers.dart';
 import 'util.dart';
@@ -15,7 +15,7 @@ main() {
 
   setUp(() async {
     assets = {
-      'build_web_compilers|lib/src/analysis_options.default.yaml': '',
+      'build_modules|lib/src/analysis_options.default.yaml': '',
       'b|lib/b.dart': '''final world = 'world';''',
       'a|lib/a.dart': '''
         import 'package:b/b.dart';

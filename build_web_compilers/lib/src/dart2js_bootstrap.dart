@@ -6,12 +6,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 
-import 'module_builder.dart';
-import 'modules.dart';
-import 'scratch_space.dart';
 import 'web_entrypoint_builder.dart';
-import 'workers.dart';
 
 Future<Null> bootstrapDart2Js(
     BuildStep buildStep, List<String> dart2JsArgs) async {

@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_modules/build_modules.dart';
 
 Builder moduleBuilder(_) => const ModuleBuilder();
 Builder unlinkedSummaryBuilder(_) => const UnlinkedSummaryBuilder();

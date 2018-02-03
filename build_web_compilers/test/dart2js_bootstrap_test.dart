@@ -6,6 +6,7 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 

@@ -8,7 +8,8 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
-import 'package:build_modules/build_modules.dart';
+
+import 'kernel_builder.dart';
 
 final defaultAnalysisOptionsId =
     new AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
