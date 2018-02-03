@@ -9,9 +9,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/dart/sdk/sdk.dart';
-import 'package:analyzer/src/generated/engine.dart' show AnalysisOptions;
 import 'package:analyzer/src/generated/engine.dart';
-import 'package:analyzer/src/generated/source.dart' show DartUriResolver;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
 import 'package:cli_util/cli_util.dart' as cli_util;
@@ -40,11 +38,8 @@ class AnalyzerResolver implements ReleasableResolver {
   /// Completer for wrapping up the current phase.
   Completer _currentPhaseComplete;
 
-  AnalyzerResolver(DartUriResolver dartUriResolver, {AnalysisOptions options}) {
-    options ??= new AnalysisOptionsImpl()
-      ..preserveComments = false
-      ..analyzeFunctionBodies = true;
-    _context.analysisOptions = options;
+  AnalyzerResolver(DartUriResolver dartUriResolver) {
+    _context.analysisOptions = new AnalysisOptionsImpl()..strongMode = true;
     _context.sourceFactory =
         new SourceFactory([dartUriResolver, new _AssetUriResolver(this)]);
   }
@@ -442,8 +437,7 @@ class AnalyzerResolvers implements Resolvers {
     var sdk = new FolderBasedDartSdk(
         resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()));
     var uriResolver = new DartUriResolver(sdk);
-    return new AnalyzerResolvers._(new AnalyzerResolver(uriResolver,
-        options: new AnalysisOptionsImpl()..strongMode = true));
+    return new AnalyzerResolvers._(new AnalyzerResolver(uriResolver));
   }
 
   @override
