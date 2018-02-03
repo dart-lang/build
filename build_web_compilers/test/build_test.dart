@@ -63,5 +63,8 @@ String _runProc(String proc, List<String> args) {
         proc, args, result.stderr as String, result.exitCode);
   }
 
+  print('stderr:');
+  print(result.stderr);
+
   return (result.stdout as String).trim();
 }
