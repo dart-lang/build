@@ -1,3 +1,7 @@
+## 0.12.0+1
+
+- Support the latest `analyzer` package.
+
 ## 0.12.0
 
 ### Breaking Changes
@@ -26,7 +30,7 @@
 ## 0.10.2+1
 
 - Fix an issue where multiple `ResourceManager`s would share `Resource`
-  instances if running at the same time. 
+  instances if running at the same time.
 
 ## 0.10.2
 

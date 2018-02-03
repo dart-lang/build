@@ -1,3 +1,7 @@
+## 0.5.0+3
+
+- Support the latest `analyzer` package.
+
 ## 0.5.0+2
 
 - Update to `package:build` version `^0.12.0`.
