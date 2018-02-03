@@ -33,8 +33,10 @@ void main() {
 
     // 2 - run build - should be no output, since nothing should change
     var result = _runProc('dart', ['--checked', 'tool/build.dart', 'build']);
-    expect(result,
-        contains(new RegExp(r'Build: Succeeded after \S+ with \d+ outputs')));
+    expect(
+        result,
+        contains(
+            new RegExp(r'Build: Succeeded after \S+( \S+)? with \d+ outputs')));
 
     // 3 - get a list of modified `.g.dart` files - should still be empty
     expect(_changedGeneratedFiles(), isEmpty);
