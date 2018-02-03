@@ -114,7 +114,7 @@ class AnalyzerResolver implements ReleasableResolver {
       visiting.add(buildStep.readAsString(assetId).then((contents) {
         var source = sources[assetId];
         if (source == null) {
-          source = new AssetBasedSource(assetId, this);
+          source = new AssetBasedSource(assetId);
           sources[assetId] = source;
         }
         source.updateDependencies(contents);
@@ -184,9 +184,6 @@ class AssetBasedSource extends Source {
   /// Asset ID where this source can be found.
   final AssetId assetId;
 
-  /// The resolver this is being used in.
-  final AnalyzerResolver _resolver;
-
   /// Cache of dependent asset IDs, to avoid re-parsing the AST.
   Iterable<AssetId> _dependentAssets;
 
@@ -196,7 +193,7 @@ class AssetBasedSource extends Source {
   /// The file contents.
   String _contents;
 
-  AssetBasedSource(this.assetId, this._resolver);
+  AssetBasedSource(this.assetId);
 
   /// Update the dependencies of this source. This parses [contents] but avoids
   /// any analyzer resolution.
@@ -272,30 +269,6 @@ class AssetBasedSource extends Source {
 
   @override
   bool get isInSystemLibrary => false;
-
-  Source resolveRelative(Uri relativeUri) {
-    var id = _resolve(assetId, relativeUri.toString());
-    if (id == null) return null;
-
-    // The entire AST should have been parsed and loaded at this point.
-    var source = _resolver.sources[id];
-    if (source == null) {
-      log.severe('Could not load asset $id');
-    }
-    return source;
-  }
-
-  Uri resolveRelativeUri(Uri relativeUri) {
-    var id = _resolve(assetId, relativeUri.toString());
-    if (id == null) return uri.resolveUri(relativeUri);
-
-    // The entire AST should have been parsed and loaded at this point.
-    var source = _resolver.sources[id];
-    if (source == null) {
-      log.severe('Could not load asset $id');
-    }
-    return source.uri;
-  }
 }
 
 /// Implementation of Analyzer's UriResolver for Barback based assets.
@@ -321,7 +294,7 @@ class _AssetUriResolver implements UriResolver {
     // Analyzer expects that sources which are referenced but do not exist yet
     // still exist, so just make an empty source.
     if (source == null) {
-      source = new AssetBasedSource(assetId, _resolver);
+      source = new AssetBasedSource(assetId);
       _resolver.sources[assetId] = source;
     }
     return source;
