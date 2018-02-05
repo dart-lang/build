@@ -1,3 +1,10 @@
+# 0.3.0
+
+## Breaking changes
+
+- Split `ModuleBuilder`, `UnlinkedSummaryBuilder` and `LinkedSummaryBuilder`
+  into a separate `build_modules` package.
+
 # 0.2.1
 
 - All dart files under `test` are now compiled by default instead of only the
