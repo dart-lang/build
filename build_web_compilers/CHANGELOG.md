@@ -1,3 +1,7 @@
+# 0.2.1+1
+
+- Support the latest `analyzer` package.
+
 # 0.2.1
 
 - All dart files under `test` are now compiled by default instead of only the
