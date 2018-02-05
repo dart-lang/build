@@ -3,15 +3,9 @@ builders:
     target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - moduleBuilder
-      - unlinkedSummaryBuilder
-      - linkedSummaryBuilder
       - devCompilerBuilder
     build_extensions:
       .dart:
-        - .module
-        - .linked.sum
-        - .unlinked.sum
         - .ddc.js.errors
         - .ddc.js
         - .ddc.js.map

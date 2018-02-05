@@ -1,0 +1,16 @@
+builders:
+  modules:
+    target: "build_modules"
+    import: "package:build_modules/builders.dart"
+    builder_factories:
+      - moduleBuilder
+      - unlinkedSummaryBuilder
+      - linkedSummaryBuilder
+    build_extensions:
+      .dart:
+        - .module
+        - .linked.sum
+        - .unlinked.sum
+    is_optional: True
+    auto_apply: all_packages
+    required_inputs: [".dart"]
