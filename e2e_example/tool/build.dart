@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';

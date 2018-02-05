@@ -1,1 +1,4 @@
 name: provides_builder
+dependencies:
+  build:
+    path: ../../../build
