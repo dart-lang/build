@@ -18,10 +18,17 @@ Future main(List<String> args) async {
             const InputSet(include: const ['test/**_test.dart']),
         hideOutput: true),
     apply(
-        'build_compilers|ddc',
+        'build_modules|modules',
         [
           (_) => new ModuleBuilder(),
           (_) => new KernelSummaryBuilder(),
+        ],
+        toAllPackages(),
+        isOptional: true,
+        hideOutput: true),
+    apply(
+        'build_web_compilers|ddc',
+        [
           (_) => new DevCompilerBuilder(useKernel: true),
         ],
         toAllPackages(),

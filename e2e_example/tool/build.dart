@@ -23,16 +23,18 @@ Future main(List<String> args) async {
         defaultGenerateFor:
             const InputSet(include: const ['test/**_test.dart'])),
     apply(
-        'build_web_compilers|ddc',
+        'build_modules|modules',
         [
           (_) => new ModuleBuilder(),
           (_) => new UnlinkedSummaryBuilder(),
           (_) => new LinkedSummaryBuilder(),
-          (_) => new DevCompilerBuilder()
         ],
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
+    apply('build_web_compilers|ddc', [(_) => new DevCompilerBuilder()],
+        toAllPackages(),
+        isOptional: true, hideOutput: true),
     apply('build_web_compilers|entrypoint',
         [(_) => new WebEntrypointBuilder(WebCompiler.DartDevc)], toRoot(),
         hideOutput: true,
