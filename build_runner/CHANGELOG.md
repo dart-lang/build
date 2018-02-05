@@ -1,3 +1,7 @@
+## 0.7.9+1
+
+- Support the latest `analyzer` package.
+
 ## 0.7.9
 
 ### New Features
