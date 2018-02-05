@@ -4,12 +4,10 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:meta/meta.dart';
 
 /// Throws a [FormatException] if [root] does not have a given field [name].
 ///
 /// Super types [ClassElement.supertype] are also checked before throwing.
-@visibleForTesting
 void assertHasField(ClassElement root, String name) {
   var element = root;
   while (element != null) {
@@ -28,13 +26,11 @@ void assertHasField(ClassElement root, String name) {
 }
 
 /// Returns whether or not [object] is or represents a `null` value.
-@visibleForTesting
 bool isNullLike(DartObject object) => object?.isNull != false;
 
 /// Similar to [DartObject.getField], but traverses super classes.
 ///
 /// Returns `null` if ultimately [field] is never found.
-@visibleForTesting
 DartObject getFieldRecursive(DartObject object, String field) {
   if (isNullLike(object)) {
     return null;
