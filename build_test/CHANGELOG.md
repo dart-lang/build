@@ -1,4 +1,4 @@
-## 0.10.1-dev
+## 0.10.1
 
 - Allow overriding the `Resolvers` used for `resolve*` utilities.
 - Bug Fix: Don't call the `action` multiple times when there are multiple
