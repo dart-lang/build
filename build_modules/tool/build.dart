@@ -1,3 +1,9 @@
+// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'dart:io';
+
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -16,7 +22,8 @@ main(List<String> arguments) async {
         generateFor: const InputSet(include: const ['lib/src/modules.dart'])),
   ];
   var args = arguments.toList()..add('--delete-conflicting-outputs');
-  await run(args, builders);
+  var result = await run(args, builders);
+  if (result != null && result != 0) exit(result);
 }
 
 const _assetIdTypeChecker = const TypeChecker.fromRuntime(AssetId);
