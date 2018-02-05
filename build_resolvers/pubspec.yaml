@@ -1,5 +1,5 @@
 name: build_resolvers
-version: 0.1.1-dev
+version: 0.1.1
 description: Resolve Dart code in a Builder
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build
@@ -16,11 +16,3 @@ dependencies:
 dev_dependencies:
   test: ^0.12.0
   build_test: ^0.10.1
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_barback:
-    path: ../build_barback
-  build_test:
-    path: ../build_test
