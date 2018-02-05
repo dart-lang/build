@@ -62,9 +62,8 @@ String _runProc(String proc, List<String> args) {
     throw new ProcessException(
         proc, args, result.stderr as String, result.exitCode);
   }
-
-  print('stderr:');
-  print(result.stderr);
+  var stderr = result.stderr as String;
+  if (stderr.isNotEmpty) print('stderr: $stderr');
 
   return (result.stdout as String).trim();
 }
