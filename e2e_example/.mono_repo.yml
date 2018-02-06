@@ -1,0 +1,10 @@
+dart:
+  - dev
+
+stages:
+  - analyze_and_format:
+    - dartanalyzer: --fatal-infos --fatal-warnings .
+  - unit_test:
+    - command: pub run build_runner test -- -p chrome
+  - e2e_test:
+    - test

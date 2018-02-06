@@ -8,93 +8,191 @@ dist: trusty
 
 jobs:
   include:
-    - &analyze_and_format
-      stage: analyze_and_format
-      dart: dev
-      script: ./tool/travis.sh dartanalyzer dartfmt
-      if: env(PKG) IS present
-    - <<: *analyze_and_format
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
       env: PKG="build"
-    - <<: *analyze_and_format
-      env: PKG="build_barback"
-    - <<: *analyze_and_format
-      env: PKG="build_config"
-    - <<: *analyze_and_format
-      env: PKG="build_resolvers"
-    - <<: *analyze_and_format
-      env: PKG="build_runner"
-    - <<: *analyze_and_format
-      env: PKG="build_test"
-    - <<: *analyze_and_format
-      env: PKG="build_web_compilers"
-    - <<: *analyze_and_format
+      dart: dev
+    - stage: analyze_and_format
       script: ./tool/travis.sh dartanalyzer
-      env: PKG="e2e_example"
-    - <<: *analyze_and_format
-      env: PKG="scratch_space"
-    - &unit_test
-      stage: unit_test
-      script: ./tool/travis.sh test_0
+      env: PKG="build"
       dart: dev
-      if: env(PKG) IS present
-    - <<: *unit_test
-      env: PKG="build"
-    - <<: *unit_test
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
       env: PKG="build"
       dart: stable
-    - <<: *unit_test
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build"
+      dart: stable
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
       env: PKG="build_barback"
-    - <<: *unit_test
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_barback"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
       env: PKG="build_barback"
       dart: stable
-    - <<: *unit_test
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_barback"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_barback"
+      dart: stable
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
       env: PKG="build_config"
-    - <<: *unit_test
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_config"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
       env: PKG="build_config"
       dart: stable
-    - <<: *unit_test
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_config"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_config"
+      dart: stable
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
+      env: PKG="build_modules"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_modules"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_modules"
+      dart: stable
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_modules"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_modules"
+      dart: stable
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
       env: PKG="build_resolvers"
-    - <<: *unit_test
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_resolvers"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_resolvers"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
       env: PKG="build_resolvers"
       dart: stable
-    - <<: *unit_test
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
       env: PKG="build_runner"
-    - <<: *unit_test
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_runner"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_runner"
+      dart: stable
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_runner"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_runner"
+      dart: stable
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
       env: PKG="build_test"
-    - <<: *unit_test
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_test"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
       env: PKG="build_test"
       dart: stable
-    - <<: *unit_test
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_test"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="build_test"
+      dart: stable
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
+      env: PKG="build_web_compilers"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="build_web_compilers"
+      dart: dev
+    - stage: unit_test
       script: ./tool/travis.sh test_1
       env: PKG="build_web_compilers"
-    - <<: *unit_test
-      env: PKG="scratch_space"
-    - <<: *unit_test
-      env: PKG="scratch_space"
-      dart: stable
-    - &e2e_test
-      stage: e2e_test
-      script: ./tool/travis.sh test_0
       dart: dev
-      if: env(PKG) IS present
-    - <<: *e2e_test
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
       env: PKG="e2e_example"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh command
+      env: PKG="e2e_example"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_0
+      env: PKG="e2e_example"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt
+      env: PKG="scratch_space"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="scratch_space"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="scratch_space"
+      dart: dev
 
 stages:
   - analyze_and_format
   - unit_test
   - e2e_test
-  # Hack to remove the default stage
-  - name: test
-    if: branch = fake_branch
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
   only: [master]
 
 cache:
- directories:
-   - $HOME/.pub-cache
+  directories:
+    - $HOME/.pub-cache
 
 # Handcoded, need to update mono_repo to be able to include this. Based on
 # https://github.com/travis-ci/travis-ci/issues/6683#issuecomment-251938932.
