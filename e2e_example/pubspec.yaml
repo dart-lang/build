@@ -20,6 +20,8 @@ dependency_overrides:
     path: ../build_web_compilers
   build_config:
     path: ../build_config
+  build_resolvers:
+    path: ../build_resolvers
   build_runner:
     path: ../build_runner
   build_test:
