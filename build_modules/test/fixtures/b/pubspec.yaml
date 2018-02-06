@@ -1,0 +1,5 @@
+name: b
+
+dependencies:
+  a:
+    path: ../a

@@ -12,7 +12,7 @@ import 'package:scratch_space/scratch_space.dart';
 
 import 'workers.dart';
 
-final _logger = new Logger('BuildCompilers');
+final _logger = new Logger('BuildModules');
 
 /// A shared [ScratchSpace] for ddc and analyzer workers that persists
 /// throughout builds.

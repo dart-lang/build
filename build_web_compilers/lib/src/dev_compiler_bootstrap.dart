@@ -7,10 +7,9 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
+import 'package:build_modules/build_modules.dart';
 
 import 'dev_compiler_builder.dart';
-import 'module_builder.dart';
-import 'modules.dart';
 import 'web_entrypoint_builder.dart';
 
 /// Alias `_p.url` to `p`.
@@ -29,8 +28,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
 
   // First, ensure all transitive modules are built.
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
-
-  var appModuleName = _ddcModuleName(module.jsId);
+  var jsId = module.jsId(jsModuleExtension);
+  var appModuleName = _ddcModuleName(jsId);
 
   // The name of the entrypoint dart library within the entrypoint JS module.
   //
@@ -44,18 +43,18 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   // internally, but instead specify our own.
   var appModuleScope = () {
     if (useKernel) {
-      var basename = p.basename(module.jsId.path);
+      var basename = p.basename(jsId.path);
       return basename.substring(0, basename.length - jsModuleExtension.length);
     } else {
-      return p.split(_ddcModuleName(module.jsId)).skip(1).join('__');
+      return p.split(_ddcModuleName(jsId)).skip(1).join('__');
     }
   }();
   appModuleScope = appModuleScope.replaceAll('.', '\$46');
 
   // Map from module name to module path for custom modules.
   var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
-  var transitiveJsModules = [module.jsId]
-    ..addAll(transitiveDeps.map((dep) => dep.jsId));
+  List<AssetId> transitiveJsModules = [jsId]
+    ..addAll(transitiveDeps.map((dep) => dep.jsId(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
@@ -93,8 +92,10 @@ Future<List<Module>> _ensureTransitiveModules(
     Module module, AssetReader reader) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(reader);
-  var jsModules = transitiveDeps.map((module) => module.jsId).toList()
-    ..add(module.jsId);
+  List<AssetId> jsModules = transitiveDeps
+      .map((module) => module.jsId(jsModuleExtension))
+      .toList()
+        ..add(module.jsId(jsModuleExtension));
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
     if (await reader.canRead(jsId)) return;

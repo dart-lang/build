@@ -9,7 +9,6 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import 'dev_compiler_builder.dart';
 import 'kernel_builder.dart';
 import 'module_builder.dart';
 import 'summary_builder.dart';
@@ -24,10 +23,11 @@ part 'modules.g.dart';
 @JsonSerializable()
 class Module extends Object with _$ModuleSerializerMixin {
   /// The JS file for this module.
-  AssetId get jsId => primarySource.changeExtension(jsModuleExtension);
+  AssetId jsId(String jsModuleExtension) =>
+      primarySource.changeExtension(jsModuleExtension);
 
   // The sourcemap for the JS file for this module.
-  AssetId get jsSourceMapId =>
+  AssetId jsSourceMapId(String jsSourceMapExtension) =>
       primarySource.changeExtension(jsSourceMapExtension);
 
   // The kernel summary for this module.

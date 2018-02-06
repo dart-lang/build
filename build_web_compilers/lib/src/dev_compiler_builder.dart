@@ -9,14 +9,13 @@ import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
+import 'package:build_modules/build_modules.dart';
+import 'package:cli_util/cli_util.dart' as cli_util;
 
 import 'common.dart';
 import 'errors.dart';
-import 'module_builder.dart';
-import 'modules.dart';
-import 'scratch_space.dart';
-import 'summary_builder.dart';
-import 'workers.dart';
+
+final sdkDir = cli_util.getSdkPath();
 
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
@@ -67,7 +66,8 @@ Future createDevCompilerModule(
     ..addAll(module.sources)
     ..addAll(transitiveSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
-  var jsOutputFile = scratchSpace.fileFor(module.jsId);
+  var jsId = module.jsId(jsModuleExtension);
+  var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary =
       p.url.join(sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
   var request = new WorkRequest();
@@ -82,7 +82,7 @@ Future createDevCompilerModule(
   if (!useKernel) {
     // Add the default analysis_options.
     await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-    var libraryRoot = '/${p.split(p.dirname(module.jsId.path)).first}';
+    var libraryRoot = '/${p.split(p.dirname(jsId.path)).first}';
     request.arguments.addAll([
       '--module-root=.',
       '--library-root=$libraryRoot',
@@ -166,12 +166,13 @@ Future createDevCompilerModule(
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
     var message =
         response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-    throw new DartDevcCompilationException(module.jsId, '$message}');
+    throw new DartDevcCompilationException(jsId, '$message}');
   } else {
     // Copy the output back using the buildStep.
-    await scratchSpace.copyOutput(module.jsId, buildStep);
+    await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
-      await scratchSpace.copyOutput(module.jsSourceMapId, buildStep);
+      await scratchSpace.copyOutput(
+          module.jsSourceMapId(jsSourceMapExtension), buildStep);
     }
   }
 }

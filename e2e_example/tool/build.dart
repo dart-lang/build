@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
@@ -22,16 +23,18 @@ Future main(List<String> args) async {
         defaultGenerateFor:
             const InputSet(include: const ['test/**_test.dart'])),
     apply(
-        'build_web_compilers|ddc',
+        'build_modules|modules',
         [
           (_) => new ModuleBuilder(),
           (_) => new UnlinkedSummaryBuilder(),
           (_) => new LinkedSummaryBuilder(),
-          (_) => new DevCompilerBuilder()
         ],
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
+    apply('build_web_compilers|ddc', [(_) => new DevCompilerBuilder()],
+        toAllPackages(),
+        isOptional: true, hideOutput: true),
     apply('build_web_compilers|entrypoint',
         [(_) => new WebEntrypointBuilder(WebCompiler.DartDevc)], toRoot(),
         hideOutput: true,
