@@ -32,6 +32,8 @@ jobs:
       env: PKG="e2e_example"
     - <<: *analyze_and_format
       env: PKG="scratch_space"
+    - <<: *analyze_and_format
+      env: PKG="build_modules"
     - &unit_test
       stage: unit_test
       script: ./tool/travis.sh test_0
@@ -71,6 +73,11 @@ jobs:
       env: PKG="scratch_space"
     - <<: *unit_test
       env: PKG="scratch_space"
+      dart: stable
+    - <<: *unit_test
+      env: PKG="build_modules"
+    - <<: *unit_test
+      env: PKG="build_modules"
       dart: stable
     - &e2e_test
       stage: e2e_test
