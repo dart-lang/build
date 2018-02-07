@@ -23,7 +23,8 @@ or vice-versa.
 
 ## [build_runner](https://github.com/dart-lang/build/blob/master/build_runner/README.md)
 
-Provides `build` and `watch` utilities to enact builds.
+Provides utilities to enact builds and a way to automatically run builds based
+on configuration.
 
 This package should generally be a dev_dependency as it is used to run
 standalone builds. The only exception would be wrapping the `build` and `watch`
@@ -46,6 +47,22 @@ package you should add it as a dev_dependency.
 If you are using the automated build scripts, your project will automatically
 start being compiled with dartdevc, and you can start developing with chrome
 without any configuration.
+
+## [build_resolvers](https://github.com/dart-lang/build/blob/master/build_resolers/README.md)
+
+An implementation of the `Resolver` interface to use the analyzer during build
+steps.
+
+## [build_modules](https://github.com/dart-lang/build/blob/master/build_modules/README.md)
+
+Support for discovering the sub-modules within packages and creating summaries
+of those modules. Used by `build_web_compilers` but should not be used directly
+by most users.
+
+## [build_config](https://github.com/dart-lang/build/blob/master/build_config/README.md)
+
+Support for parsing `build.yaml` files. Used by `build_runner`.
+
 
 ## Examples
 
