@@ -149,7 +149,19 @@ jobs:
       env: PKG="e2e_example"
       dart: dev
     - stage: e2e_test
-      script: ./tool/travis.sh test_0
+      script: ./tool/travis.sh test_2
+      env: PKG="e2e_example"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_3
+      env: PKG="e2e_example"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_4
+      env: PKG="e2e_example"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_5
       env: PKG="e2e_example"
       dart: dev
     - stage: analyze_and_format
