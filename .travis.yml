@@ -2,6 +2,7 @@
 language: dart
 
 # Hand-edited
+sudo: required
 addons:
   chrome: stable
 
