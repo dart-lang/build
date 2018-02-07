@@ -9,8 +9,5 @@ stages:
         - dartanalyzer: --fatal-infos --fatal-warnings .
       dart:
         - dev
-    - dartanalyzer: --fatal-infos --fatal-warnings .
-      dart:
-        - stable
   - unit_test:
     - test
