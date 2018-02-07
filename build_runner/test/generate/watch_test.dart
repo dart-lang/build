@@ -47,7 +47,7 @@ a:file://fake/pkg/path
     });
 
     group('simple', () {
-      test('rebuilds on file updates', () async {
+      test('rebuilds once on file updates', () async {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|web/a.txt': 'a'}, writer);
         var results = new StreamQueue(buildState.buildResults);
@@ -56,11 +56,15 @@ a:file://fake/pkg/path
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
+
+        // Wait longer than the
+        await new Future.delayed(_debounceDelay);
+
+        await terminateWatch();
+        expect(await results.hasNext, isFalse);
       });
 
       test('rebuilds on file updates outside hardcoded whitelist', () async {
@@ -82,8 +86,6 @@ a:file://fake/pkg/path
             outputs: {'a|test_files/a.txt.copy': 'a'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|test_files/a.txt'), 'b');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'test_files', 'a.txt')));
 
         result = await results.next;
         checkBuild(result,
@@ -99,8 +101,6 @@ a:file://fake/pkg/path
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/b.txt'), 'b');
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
         result = await results.next;
         checkBuild(result, outputs: {'a|web/b.txt.copy': 'b'}, writer: writer);
@@ -128,8 +128,6 @@ a:file://fake/pkg/path
             outputs: {'a|test_files/a.txt.copy': 'a'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|test_files/b.txt'), 'b');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.ADD, path.absolute('a', 'test_files', 'b.txt')));
 
         result = await results.next;
         checkBuild(result,
@@ -224,12 +222,8 @@ a:file://fake/pkg/path
             writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/c.txt'), 'c');
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'c.txt')));
 
         await writer.writeAsString(makeAssetId('a|web/b.txt'), 'b2');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'b.txt')));
 
         // Don't call writer.delete, that has side effects.
         writer.assets.remove(makeAssetId('a|web/a.txt'));
@@ -304,10 +298,9 @@ a:file://fake/pkg/path
 
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         await writer.writeAsString(makeAssetId('b|web/b.txt'), 'c');
+        // Have to manually notify here since the path isn't standard.
         FakeWatcher.notifyWatchers(new WatchEvent(
             ChangeType.MODIFY, path.absolute('a', 'b', 'web', 'a.txt')));
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await results.next;
         // Ignores the modification under the `b` package, even though it
@@ -353,8 +346,6 @@ a:file://fake/pkg/path
 # Fake packages file
 a:file://different/fake/pkg/path
 ''');
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.MODIFY, path.absolute('a', '.packages')));
 
         expect(await results.hasNext, isFalse);
         expect(logs.length, 1);
@@ -383,8 +374,6 @@ a:file://different/fake/pkg/path
             writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
         result = await results.next;
         checkBuild(result,
@@ -409,8 +398,6 @@ a:file://different/fake/pkg/path
             writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/b.txt'), 'b');
-        FakeWatcher.notifyWatchers(
-            new WatchEvent(ChangeType.ADD, path.absolute('a', 'web', 'b.txt')));
 
         result = await results.next;
         checkBuild(result,
@@ -516,8 +503,6 @@ a:file://different/fake/pkg/path
         checkBuild(result, outputs: {'a|web/file.a.copy': 'b'}, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/file.b'), 'c');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'file.b')));
 
         result = await results.next;
         checkBuild(result, outputs: {'a|web/file.a.copy': 'c'}, writer: writer);
@@ -544,8 +529,6 @@ a:file://different/fake/pkg/path
             writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/file.b'), 'c');
-        FakeWatcher.notifyWatchers(new WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'web', 'file.b')));
 
         result = await results.next;
         checkBuild(result,
@@ -589,10 +572,11 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
 }
 
 /// Tells the program to stop watching files and terminate.
-Future terminateWatch() {
-  assert(_terminateWatchController != null);
+Future terminateWatch() async {
+  if (_terminateWatchController == null) return;
 
   /// Can add any type of event.
   _terminateWatchController.add(null);
-  return _terminateWatchController.close();
+  await _terminateWatchController.close();
+  _terminateWatchController = null;
 }
