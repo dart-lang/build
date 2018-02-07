@@ -8,7 +8,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
@@ -43,8 +42,6 @@ a:file://fake/pkg/path
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
-      FakeWatcher.notifyWatchers(new WatchEvent(
-          ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
 
       result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
@@ -87,8 +84,6 @@ a:file://fake/pkg/path
       /// Make an edit to force another build, and we should block again.
       nextBuildBlocker = buildBlocker2.future;
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
-      FakeWatcher.notifyWatchers(new WatchEvent(
-          ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
       // Give the build enough time to get started.
       await wait(500);
       var done = new Completer();

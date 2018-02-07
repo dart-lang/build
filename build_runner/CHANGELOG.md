@@ -1,3 +1,8 @@
+## 0.7.9+2
+
+- Fixed a bug with build to source and watch mode that would result in an
+  infinite build loop, [#962](https://github.com/dart-lang/build/issues/962).
+
 ## 0.7.9+1
 
 - Support the latest `analyzer` package.
