@@ -8,7 +8,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
