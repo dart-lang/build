@@ -9,11 +9,7 @@ addons:
 jobs:
   include:
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build"
       dart: dev
     - stage: analyze_and_format
@@ -29,11 +25,7 @@ jobs:
       env: PKG="build"
       dart: stable
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build_barback"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_barback"
       dart: dev
     - stage: analyze_and_format
@@ -49,11 +41,7 @@ jobs:
       env: PKG="build_barback"
       dart: stable
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build_config"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
@@ -69,11 +57,7 @@ jobs:
       env: PKG="build_config"
       dart: stable
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build_modules"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_modules"
       dart: dev
     - stage: unit_test
@@ -81,11 +65,7 @@ jobs:
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build_resolvers"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_resolvers"
       dart: dev
     - stage: unit_test
@@ -97,11 +77,7 @@ jobs:
       env: PKG="build_resolvers"
       dart: stable
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build_runner"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_runner"
       dart: dev
     - stage: unit_test
@@ -109,11 +85,7 @@ jobs:
       env: PKG="build_runner"
       dart: dev
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build_test"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_test"
       dart: dev
     - stage: analyze_and_format
@@ -129,11 +101,7 @@ jobs:
       env: PKG="build_test"
       dart: stable
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="build_web_compilers"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_web_compilers"
       dart: dev
     - stage: unit_test
@@ -165,11 +133,7 @@ jobs:
       env: PKG="e2e_example"
       dart: dev
     - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt
-      env: PKG="scratch_space"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="scratch_space"
       dart: dev
     - stage: unit_test
