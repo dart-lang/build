@@ -76,18 +76,10 @@ jobs:
       script: ./tool/travis.sh dartanalyzer
       env: PKG="build_modules"
       dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
-      env: PKG="build_modules"
-      dart: stable
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_modules"
       dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh test_0
-      env: PKG="build_modules"
-      dart: stable
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt
       env: PKG="build_resolvers"
@@ -112,18 +104,10 @@ jobs:
       script: ./tool/travis.sh dartanalyzer
       env: PKG="build_runner"
       dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
-      env: PKG="build_runner"
-      dart: stable
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_runner"
       dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh test_0
-      env: PKG="build_runner"
-      dart: stable
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt
       env: PKG="build_test"
