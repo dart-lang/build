@@ -420,7 +420,7 @@ class BuildImpl {
   Future<Null> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
     await Future.wait(outputs.map((output) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
-      if (node.wasOutput) return _writer.delete(output);
+      if (node.wasOutput) return _delete(output);
       return new Future.value(null);
     }));
   }

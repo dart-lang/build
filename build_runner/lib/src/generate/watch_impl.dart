@@ -277,7 +277,7 @@ class WatchImpl implements BuildState {
     var node = _assetGraph.get(change.id);
     if (node != null) {
       if (!node.isInteresting) return false;
-      if (_isEditOnGeneratedFile(node, change.type)) return false;
+      if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     } else {
       if (change.type == ChangeType.REMOVE) return false;
       if (!_isWhitelistedPath(change.id)) return false;
@@ -288,7 +288,7 @@ class WatchImpl implements BuildState {
 
   bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 
-  bool _isEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
+  bool _isAddOrEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
       node.isGenerated && changeType != ChangeType.REMOVE;
 
   bool _isExpectedDelete(AssetChange change) =>
