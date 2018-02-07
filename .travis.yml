@@ -76,9 +76,6 @@ jobs:
       dart: stable
     - <<: *unit_test
       env: PKG="build_modules"
-    - <<: *unit_test
-      env: PKG="build_modules"
-      dart: stable
     - &e2e_test
       stage: e2e_test
       script: ./tool/travis.sh test_0
