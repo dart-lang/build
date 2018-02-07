@@ -60,7 +60,7 @@ a:file://fake/pkg/path
         result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
-        // Wait longer than the
+        // Wait for the `_debounceDelay` before terminating.
         await new Future.delayed(_debounceDelay);
 
         await terminateWatch();
