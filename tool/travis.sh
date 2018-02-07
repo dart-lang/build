@@ -11,10 +11,10 @@ if [ "$#" == "0" ]; then
   exit 1
 fi
 
-EXIT_CODE=0
-
 pushd $PKG
-pub upgrade || EXIT_CODE=$?
+pub upgrade || exit $?
+
+EXIT_CODE=0
 
 while (( "$#" )); do
   TASK=$1
