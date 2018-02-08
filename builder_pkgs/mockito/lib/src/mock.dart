@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Warning: Do not import dart:mirrors in this library, as it's exported via
-// lib/mockito.dart, which is used for Dart AOT projects such as Flutter.
-
 import 'dart:async';
 
 import 'package:meta/meta.dart';

@@ -3,6 +3,7 @@
 * `thenReturn` now throws an `ArgumentError` if either a `Future` or `Stream`
   is provided. `thenReturn` calls with futures and streams should be changed to
   `thenAnswer`. See the README for more information.
+* Completely remove the mirrors implementation of Mockito (`mirrors.dart`).
 
 ## 2.2.0
 
