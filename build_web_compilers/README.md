@@ -47,7 +47,7 @@ file, which should look roughly like the following:
 
 ```yaml
 targets:
-  $default
+  $default:
     builders:
       build_web_compilers|entrypoint:
         # These are globs for the entrypoints you want to compile.
