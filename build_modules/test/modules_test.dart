@@ -70,7 +70,8 @@ void main() {
     test('Includes libraries that have names starting with "dart."', () {
       // https://github.com/dart-lang/sdk/issues/31045
       // `library.isInSdk` is broken - we shouldn't use it
-      var dependencies = new Module.forLibrary(libDepOnNonSdk).directDependencies;
+      var dependencies =
+          new Module.forLibrary(libDepOnNonSdk).directDependencies;
       expect(dependencies, unorderedEquals([assetNonSdk]));
     });
   });
