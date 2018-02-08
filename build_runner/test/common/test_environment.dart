@@ -18,7 +18,7 @@ import 'common.dart';
 /// Defaults to using an [InMemoryRunnerAssetReader] and
 /// [InMemoryRunnerAssetWriter].
 ///
-/// To handle prompts you must first set `nextPromtResponse`. Alternatively
+/// To handle prompts you must first set `nextPromptResponse`. Alternatively
 /// you can set `throwOnPrompt` to `true` to emulate a
 /// [NonInteractiveBuildException].
 class TestBuildEnvironment implements BuildEnvironment {
