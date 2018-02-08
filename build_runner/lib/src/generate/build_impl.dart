@@ -120,6 +120,7 @@ class BuildImpl {
   final RunnerAssetWriter _writer;
   final String _outputDir;
   final bool _verbose;
+  final BuildEnvironment _environment;
 
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
@@ -133,7 +134,8 @@ class BuildImpl {
         _onDelete = buildDefinition.onDelete,
         _outputDir = options.outputDir,
         _verbose = options.verbose,
-        _failOnSevere = options.failOnSevere;
+        _failOnSevere = options.failOnSevere,
+        _environment = buildDefinition.environment;
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
@@ -164,7 +166,7 @@ class BuildImpl {
     }
     if (_outputDir != null && result.status == BuildStatus.success) {
       if (!await createMergedOutputDir(
-          _outputDir, _assetGraph, _packageGraph, _reader)) {
+          _outputDir, _assetGraph, _packageGraph, _reader, _environment)) {
         result = _convertToFailure(
             result, 'Failed to create merged output directory.');
       }

@@ -13,6 +13,7 @@ import 'package:path/path.dart' as p;
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../environment/build_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 
@@ -23,31 +24,65 @@ const _manifestSeparator = '\n';
 /// Creates a merged output directory for a build at [outputPath].
 ///
 /// Returns whether it succeeded or not.
-Future<bool> createMergedOutputDir(String outputPath, AssetGraph assetGraph,
-    PackageGraph packageGraph, AssetReader reader) async {
+Future<bool> createMergedOutputDir(
+    String outputPath,
+    AssetGraph assetGraph,
+    PackageGraph packageGraph,
+    AssetReader reader,
+    BuildEnvironment buildEnvironment) async {
   var outputDir = new Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
     var manifestFile = new File(p.join(outputPath, _manifestName));
-    if (!await manifestFile.exists()) {
-      _logger.severe(
-          'Found existing output directory `$outputPath` but no manifest file, '
-          'skipping creation of output directory. If you would like to output '
-          'to this directory please delete it first, and then re-run.');
-      return false;
-    }
-
-    var previousOutputs = logTimedSync(
-        _logger,
-        'Reading manifest at ${manifestFile.path}',
-        () => manifestFile.readAsStringSync().split(_manifestSeparator));
-
-    logTimedSync(_logger, 'Deleting previous outputs in `$outputPath`', () {
-      for (var path in previousOutputs) {
-        var file = new File(p.join(outputPath, path));
-        if (file.existsSync()) file.deleteSync();
+    if (!manifestFile.existsSync()) {
+      if (outputDir.listSync(recursive: false).isNotEmpty) {
+        var choices = [
+          'Skip creating the output directory',
+          'Delete the existing directory entirely',
+          'Leave the directory in place and write over any existing files',
+        ];
+        int choice;
+        try {
+          choice = await buildEnvironment.prompt(
+              'Found existing output directory `$outputPath` but no manifest '
+              'file. Please choose one of the following options:',
+              choices);
+        } on NonInteractiveBuildException catch (_) {
+          choice = 0;
+        }
+        switch (choice) {
+          case 0:
+            _logger.warning('Skipped creation of the merged output directory.');
+            return false;
+          case 1:
+            try {
+              outputDir.deleteSync(recursive: true);
+            } catch (e) {
+              _logger.severe(
+                  'Failed to delete output dir at `$outputPath` with error:\n\n'
+                  '$e');
+              return false;
+            }
+            outputDirExists = false;
+            break;
+          case 2:
+            // Just do nothing here, we overwrite files by default.
+            break;
+        }
       }
-    });
+    } else {
+      var previousOutputs = logTimedSync(
+          _logger,
+          'Reading manifest at ${manifestFile.path}',
+          () => manifestFile.readAsStringSync().split(_manifestSeparator));
+
+      logTimedSync(_logger, 'Deleting previous outputs in `$outputPath`', () {
+        for (var path in previousOutputs) {
+          var file = new File(p.join(outputPath, path));
+          if (file.existsSync()) file.deleteSync();
+        }
+      });
+    }
   }
 
   var outputAssets = new Set<AssetId>();
