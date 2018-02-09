@@ -2,9 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@experimental
+library build_runner.src.generate.performance_tracker;
+
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:meta/meta.dart';
 
 import 'package:build_runner/src/util/clock.dart';
 import 'phase.dart';

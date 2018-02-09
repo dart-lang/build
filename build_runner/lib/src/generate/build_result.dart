@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:meta/meta.dart';
 
 import 'performance_tracker.dart';
 
@@ -23,6 +24,7 @@ class BuildResult {
   final List<AssetId> outputs;
 
   /// The [BuildPerformance] broken out by build action, may be `null`.
+  @experimental
   final BuildPerformance performance;
 
   BuildResult(this.status, List<AssetId> outputs,

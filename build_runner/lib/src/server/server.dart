@@ -161,13 +161,13 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
       String phaseName;
       switch (phase.phase) {
         case BuilderActionPhase.Setup:
-          phaseName = "setup";
+          phaseName = 'setup';
           break;
         case BuilderActionPhase.Build:
-          phaseName = "build";
+          phaseName = 'build';
           break;
         case BuilderActionPhase.Finalize:
-          phaseName = "finalize";
+          phaseName = 'finalize';
           break;
       }
 
@@ -208,10 +208,6 @@ $rows
 
         var options = {
           colors: ['#cbb69d', '#603913', '#c69c6e']
-          // timeline: {
-          //   // colorByRowLabel: true
-          //   singleColor: '#8d8'
-          // }
         };
         chart.draw(dataTable, options);
       }
