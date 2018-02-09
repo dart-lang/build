@@ -1,3 +1,12 @@
+## 2.2.2
+
+* Remove last violation of `USES_DYNAMIC_AS_BOTTOM` error. This should make
+  Mockito compatible with Dart 2 semantics.
+
+## 2.2.1
+
+* Internal fixes only (stop using comment-based generic method syntax).
+
 ## 2.2.0
 
 * Add new feature to wait for an interaction: `untilCalled`. See the README for
