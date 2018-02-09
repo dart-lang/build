@@ -42,4 +42,15 @@ main() {
     await testBuilder(new WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
         outputs: expectedOutputs);
   });
+
+  test('works with --no-sourcemap', () async {
+    var expectedOutputs = {
+      'a|web/index.dart.js': anything,
+    };
+    await testBuilder(
+        new WebEntrypointBuilder(WebCompiler.Dart2Js,
+            dart2JsArgs: ['--no-source-maps']),
+        assets,
+        outputs: expectedOutputs);
+  });
 }
