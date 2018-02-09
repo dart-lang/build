@@ -1,3 +1,10 @@
+## 0.7.10
+
+- Added some basic performance visualizations. When running `serve` you can
+  now navigate to `/$perf` and get a timeline of actions. If you are
+  experiencing slow builds (especially incremental ones), you can save the
+  html of that page and attach it to bug reports!
+
 ## 0.7.9+2
 
 - Fixed a bug with build to source and watch mode that would result in an
