@@ -48,7 +48,7 @@ main() {
         }
 
         tracker.stop();
-        expect(tracker.actions.map((a) => a.action), orderedEquals(actions));
+        expect(tracker.phases.map((a) => a.action), orderedEquals(actions));
 
         var times = tracker.actions.map((t) => t.stopTime).toList();
         expect(times.toSet(), hasLength(times), reason: 'Expected unique time');
