@@ -122,6 +122,8 @@ class BuildImpl {
   final bool _verbose;
   final BuildEnvironment _environment;
 
+  BuildPerformanceTracker _performanceTracker;
+
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
       : _packageGraph = buildDefinition.packageGraph,
@@ -147,6 +149,7 @@ class BuildImpl {
   }
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
+    _performanceTracker = new BuildPerformanceTracker();
     var watch = new Stopwatch()..start();
     _lazyPhases.clear();
     if (updates.isNotEmpty) {
@@ -154,6 +157,7 @@ class BuildImpl {
     }
     var result = await _safeBuild(_resourceManager);
     await _resourceManager.disposeAll();
+    _performanceTracker = null;
     if (_failOnSevere &&
         _assetGraph.failedActions.isNotEmpty &&
         result.status == BuildStatus.success) {
@@ -238,12 +242,12 @@ class BuildImpl {
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
   Future<BuildResult> _runPhases(ResourceManager resourceManager) async {
-    var performanceTracker = new BuildPerformanceTracker()..start();
+    _performanceTracker.start();
     final outputs = <AssetId>[];
     for (var phase = 0; phase < _buildActions.length; phase++) {
       var action = _buildActions[phase];
       if (action.isOptional) continue;
-      await performanceTracker.trackAction(action, () async {
+      await _performanceTracker.trackBuildPhase(action, () async {
         var primaryInputs =
             await _matchingPrimaryInputs(action, phase, resourceManager);
         outputs.addAll(await _runBuilder(phase, action.hideOutput,
@@ -255,7 +259,7 @@ class BuildImpl {
         (Future<Iterable<AssetId>> lazyOuts) async =>
             outputs.addAll(await lazyOuts));
     return new BuildResult(BuildStatus.success, outputs,
-        performance: performanceTracker..stop());
+        performance: _performanceTracker..stop());
   }
 
   /// Gets a list of all inputs matching the [action], as well as
@@ -334,6 +338,8 @@ class BuildImpl {
 
   Future<Iterable<AssetId>> _runForInput(int phaseNumber, bool outputsHidden,
       Builder builder, AssetId input, ResourceManager resourceManager) async {
+    var tracker = _performanceTracker.startBuilderAction(input, builder);
+
     var builderOutputs = expectedOutputs(builder, input);
 
     // Add `builderOutputs` to the primary outputs of the input.
@@ -357,7 +363,10 @@ class BuildImpl {
         (phase, input) => _runLazyPhaseForInput(
             phase, outputsHidden, input, resourceManager));
 
-    if (!await _buildShouldRun(builderOutputs, wrappedReader)) {
+    if (!await tracker.track(
+        () => _buildShouldRun(builderOutputs, wrappedReader),
+        BuilderActionPhase.Setup)) {
+      tracker.stop();
       return <AssetId>[];
     }
 
@@ -369,8 +378,11 @@ class BuildImpl {
 
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new ErrorRecordingLogger(new Logger('$builder on $input'));
-    await runBuilder(builder, [input], wrappedReader, wrappedWriter, _resolvers,
-        logger: logger, resourceManager: resourceManager);
+    await tracker.track(
+        () => runBuilder(
+            builder, [input], wrappedReader, wrappedWriter, _resolvers,
+            logger: logger, resourceManager: resourceManager),
+        BuilderActionPhase.Build);
     if (logger.errorWasSeen) {
       _assetGraph.markActionFailed(phaseNumber, input);
     } else {
@@ -379,8 +391,11 @@ class BuildImpl {
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
-    await _setOutputsState(builderOutputs, wrappedReader, wrappedWriter);
+    await tracker.track(
+        () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter),
+        BuilderActionPhase.Finalize);
 
+    tracker.stop();
     return wrappedWriter.assetsWritten;
   }
 
