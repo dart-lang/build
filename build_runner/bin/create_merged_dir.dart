@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:build_runner/src/asset/build_cache.dart';
 import 'package:build_runner/src/asset/file_based.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_runner/src/environment/io_environment.dart';
 import 'package:build_runner/src/generate/create_merged_dir.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/util/constants.dart';
@@ -58,8 +59,8 @@ Future main(List<String> args) async {
   var reader = new BuildCacheReader(new FileBasedAssetReader(packageGraph),
       assetGraph, packageGraph.root.name);
 
-  await createMergedOutputDir(
-      parsedArgs['output-dir'] as String, assetGraph, packageGraph, reader);
+  await createMergedOutputDir(parsedArgs['output-dir'] as String, assetGraph,
+      packageGraph, reader, new IOEnvironment(packageGraph, false));
 }
 
 final argParser = new ArgParser()

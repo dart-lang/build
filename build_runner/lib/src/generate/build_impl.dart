@@ -120,6 +120,7 @@ class BuildImpl {
   final RunnerAssetWriter _writer;
   final String _outputDir;
   final bool _verbose;
+  final BuildEnvironment _environment;
 
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
@@ -133,7 +134,8 @@ class BuildImpl {
         _onDelete = buildDefinition.onDelete,
         _outputDir = options.outputDir,
         _verbose = options.verbose,
-        _failOnSevere = options.failOnSevere;
+        _failOnSevere = options.failOnSevere,
+        _environment = buildDefinition.environment;
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
@@ -151,23 +153,23 @@ class BuildImpl {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
+    await _resourceManager.disposeAll();
     if (_failOnSevere &&
         _assetGraph.failedActions.isNotEmpty &&
         result.status == BuildStatus.success) {
       int numFailing = _assetGraph.failedActions.values
           .fold(0, (total, ids) => total + ids.length);
-      result = new BuildResult(
-        BuildStatus.failure,
-        result.outputs,
-        exception: 'There were $numFailing actions with SEVERE logs and '
-            '--fail-on-severe was passed.',
-        performance: result.performance,
-      );
+      result = _convertToFailure(
+          result,
+          'There were $numFailing actions with SEVERE logs and '
+          '--fail-on-severe was passed.');
     }
-    await _resourceManager.disposeAll();
-    if (_outputDir != null) {
-      await createMergedOutputDir(
-          _outputDir, _assetGraph, _packageGraph, _reader);
+    if (_outputDir != null && result.status == BuildStatus.success) {
+      if (!await createMergedOutputDir(
+          _outputDir, _assetGraph, _packageGraph, _reader, _environment)) {
+        result = _convertToFailure(
+            result, 'Failed to create merged output directory.');
+      }
     }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
@@ -182,6 +184,14 @@ class BuildImpl {
     }
     return result;
   }
+
+  BuildResult _convertToFailure(BuildResult previous, String errorMessge) =>
+      new BuildResult(
+        BuildStatus.failure,
+        previous.outputs,
+        exception: errorMessge,
+        performance: previous.performance,
+      );
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {

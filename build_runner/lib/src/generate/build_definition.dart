@@ -44,6 +44,8 @@ class BuildDefinition {
 
   final OnDelete onDelete;
 
+  final BuildEnvironment environment;
+
   BuildDefinition._(
       this.assetGraph,
       this.reader,
@@ -53,7 +55,8 @@ class BuildDefinition {
       this.resourceManager,
       this.buildScriptUpdates,
       this.enableLowResourcesMode,
-      this.onDelete);
+      this.onDelete,
+      this.environment);
 
   static Future<BuildDefinition> prepareWorkspace(BuildEnvironment environment,
           BuildOptions options, List<BuildAction> buildActions,
@@ -137,7 +140,8 @@ class _Loader {
         new ResourceManager(),
         buildScriptUpdates,
         _options.enableLowResourcesMode,
-        _onDelete);
+        _onDelete,
+        _environment);
   }
 
   /// Checks that the [_buildActions] are valid based on whether they are
