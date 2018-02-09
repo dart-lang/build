@@ -356,6 +356,7 @@ class BuildImpl {
     if (!await tracker.track(
         () => _buildShouldRun(builderOutputs, wrappedReader),
         BuilderActionPhase.Setup)) {
+      tracker.stop();
       return <AssetId>[];
     }
 

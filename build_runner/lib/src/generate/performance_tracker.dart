@@ -35,6 +35,7 @@ abstract class BuildPhasePerformance implements Timings {
 abstract class BuilderActionPerformance implements Timings {
   Builder get builder;
   AssetId get primaryInput;
+  Iterable<BuilderActionPhasePerformance> get phases;
 }
 
 /// The [Timings] of a particular [BuilderActionPhase].
@@ -127,13 +128,14 @@ class BuilderActionTracker extends TimeTracker
   @override
   final AssetId primaryInput;
 
-  final buildPhases = <BuilderActionPhaseTracker>[];
+  @override
+  final List<BuilderActionPhaseTracker> phases = <BuilderActionPhaseTracker>[];
 
   BuilderActionTracker(this.primaryInput, this.builder);
 
   FutureOr<T> track<T>(FutureOr<T> runPhase(), BuilderActionPhase phase) {
     var tracker = new BuilderActionPhaseTracker(phase);
-    buildPhases.add(tracker);
+    phases.add(tracker);
     tracker.start();
     var result = runPhase();
     if (result is Future<T>) {
