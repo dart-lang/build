@@ -14,12 +14,15 @@ void main() {
   LibraryElement libNoCycle;
   LibraryElement libCycleWithB;
   LibraryElement libCycleWithA;
+  LibraryElement libDepOnNonSdk;
   final assetCycle = makeAssetId('a|lib/a_cycle.dart');
   final assetSecondaryInCycle = makeAssetId('a|lib/a_secondary_in_cycle.dart');
   final assetPartInCycle = makeAssetId('a|lib/a_part_in_cycle.dart');
   final assetNoCycle = makeAssetId('a|lib/a_no_cycle.dart');
   final assetCycleWithB = makeAssetId('a|lib/a_cycle_with_b.dart');
   final assetCycleWithA = makeAssetId('b|lib/b_cycle_with_a.dart');
+  final assetDepOnNonSdk = makeAssetId('a|lib/a_dep_on_non_sdk.dart');
+  final assetNonSdk = makeAssetId('a|lib/a_non_sdk.dart');
 
   setUpAll(() async {
     await resolveAsset(assetCycle, (resolver) async {
@@ -32,6 +35,9 @@ void main() {
     await resolveAsset(assetCycleWithB, (resolver) async {
       libCycleWithB = await resolver.libraryFor(assetCycleWithB);
       libCycleWithA = await resolver.libraryFor(assetCycleWithA);
+    });
+    await resolveAsset(assetDepOnNonSdk, (resolver) async {
+      libDepOnNonSdk = await resolver.libraryFor(assetDepOnNonSdk);
     });
   });
 
@@ -59,6 +65,14 @@ void main() {
     test('Chooses primary from cycle for dependency', () {
       var dependencies = new Module.forLibrary(libCycle).directDependencies;
       expect(dependencies, unorderedEquals([assetCycleWithB]));
+    });
+
+    test('Includes libraries that have names starting with "dart."', () {
+      // https://github.com/dart-lang/sdk/issues/31045
+      // `library.isInSdk` is broken - we shouldn't use it
+      var dependencies =
+          new Module.forLibrary(libDepOnNonSdk).directDependencies;
+      expect(dependencies, unorderedEquals([assetNonSdk]));
     });
   });
 
