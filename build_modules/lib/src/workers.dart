@@ -211,8 +211,8 @@ class Dart2JsBatchWorker {
     assert(!_queueIsActive);
     _queueIsActive = true;
     () async {
-      var worker = await _worker;
       while (_workQueue.isNotEmpty) {
+        var worker = await _worker;
         var next = _workQueue.removeFirst();
         var output = new StringBuffer();
         var sawError = false;
@@ -247,6 +247,9 @@ class Dart2JsBatchWorker {
 
   Future<Null> terminateWorkers() async {
     var worker = await _worker;
+    __worker = null;
+    __workerStdoutLines = null;
+    __workerStderrLines = null;
     worker.kill();
     await worker.exitCode;
   }
