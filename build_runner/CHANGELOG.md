@@ -1,9 +1,18 @@
 ## 0.7.10
 
-- Added some basic performance visualizations. When running `serve` you can
-  now navigate to `/$perf` and get a timeline of actions. If you are
+### New Features
+
+- Added a basic performance visualization. When running with `serve` you can
+  now navigate to `/$perf` and get a timeline of all actions. If you are
   experiencing slow builds (especially incremental ones), you can save the
   html of that page and attach it to bug reports!
+
+### Bug Fixes
+
+- When using `--output` we will only clean up files we know we previously output
+  to the specified directory. This should allow running long lived processes
+  such as servers in that directory (as long as they don't hold open file
+  handles). 
 
 ## 0.7.9+2
 
