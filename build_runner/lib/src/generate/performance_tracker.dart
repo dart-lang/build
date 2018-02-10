@@ -42,11 +42,12 @@ abstract class BuilderActionPerformance implements Timings {
   Iterable<BuilderActionPhasePerformance> get phases;
 }
 
-/// The [Timings] of a particular [BuilderActionPhase].
+/// The [Timings] of a particular task within a builder action.
 ///
 /// This is some slice of overall [BuilderActionPerformance].
 abstract class BuilderActionPhasePerformance implements Timings {
-  BuilderActionPhase get phase;
+  // TODO give a different name
+  String get phase;
 }
 
 /// Internal class that tracks the [Timings] of an entire build.
@@ -113,17 +114,6 @@ class BuildPhaseTracker extends TimeTracker implements BuildPhasePerformance {
   }
 }
 
-/// The phases for running a [Builder] with a single primary input.
-enum BuilderActionPhase {
-  // Checking if the builder should run, possibly involves building other
-  // things lazily.
-  Setup,
-  // Actually running the builder, may involve building secondary inputs lazily.
-  Build,
-  // The finalizing step, updating the state of the asset graph etc.
-  Finalize,
-}
-
 /// Tracks the [Timings] of an indiviual [Builder] on a given primary input.
 class BuilderActionTracker extends TimeTracker
     implements BuilderActionPerformance {
@@ -137,7 +127,7 @@ class BuilderActionTracker extends TimeTracker
 
   BuilderActionTracker(this.primaryInput, this.builder);
 
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), BuilderActionPhase phase) {
+  FutureOr<T> track<T>(FutureOr<T> runPhase(), String phase) {
     var tracker = new BuilderActionPhaseTracker(phase);
     phases.add(tracker);
     tracker.start();
@@ -154,13 +144,13 @@ class BuilderActionTracker extends TimeTracker
   }
 }
 
-/// Tracks the [Timings] of an indivual [BuilderActionPhase].
+/// Tracks the [Timings] of an indivual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
 class BuilderActionPhaseTracker extends TimeTracker
     implements BuilderActionPhasePerformance {
   @override
-  final BuilderActionPhase phase;
+  final String phase;
 
   BuilderActionPhaseTracker(this.phase);
 }
