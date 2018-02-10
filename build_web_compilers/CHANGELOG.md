@@ -1,3 +1,7 @@
+# 0.3.0+1
+
+- Fixed an issue with `dart2js` and the `--no-source-maps` flag.
+
 # 0.3.0
 
 ## Breaking changes
