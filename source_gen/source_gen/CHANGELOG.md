@@ -1,3 +1,10 @@
+## 0.7.5
+
+* The `PartBuilder` constructor parameter `requireLibraryDirective` now defaults
+  to `false`. It will be removed in `0.8.0`.
+
+* Require at least Dart `2.0.0-dev.19.0`.
+
 ## 0.7.4+3
 
 * Support the latest `analyzer` package.

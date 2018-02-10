@@ -17,7 +17,11 @@ class CommentGenerator extends Generator {
   Future<String> generate(LibraryReader library, _) async {
     var output = new StringBuffer();
     if (forLibrary) {
-      output.writeln('// Code for "${library.element}"');
+      var name = library.element.name;
+      if (name.isEmpty) {
+        name = library.element.source.uri.pathSegments.last;
+      }
+      output.writeln('// Code for "$name"');
     }
     if (forClasses) {
       for (var classElement

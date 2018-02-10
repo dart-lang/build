@@ -2,18 +2,12 @@ language: dart
 
 dart:
   - dev
-  - stable
-  - 1.22.1
+  # Flutter Alpha @ v0.0.23
+  - 2.0.0-dev.19.0
 dart_task:
   - test
   - dartfmt
   - dartanalyzer
-matrix:
-  exclude:
-    - dart: 1.22.1
-      dart_task: dartfmt
-    - dart: 1.22.1
-      dart_task: dartanalyzer
 
 # Only building master means that we don't run two builds for each pull request.
 branches:

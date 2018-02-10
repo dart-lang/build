@@ -71,9 +71,21 @@ void main() {
         returnsNormally);
   });
 
-  test('Throws an exception when no library identifier is found', () async {
+  test('Allow no "library"  by default', () async {
     var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
     var builder = new PartBuilder([const CommentGenerator()]);
+
+    await testBuilder(builder, sources,
+        outputs: {'$pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
+  });
+
+  test(
+      'Throws when no library identifier and requireLibraryDirective is `true`',
+      () async {
+    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
+    var builder = new PartBuilder([const CommentGenerator()],
+        // ignore: deprecated_member_use
+        requireLibraryDirective: true);
     expect(
         testBuilder(builder, sources,
             outputs: {'$pkgName|lib/test_lib.g.dart': ''}),
@@ -86,10 +98,9 @@ void main() {
     await testBuilder(builder, sources, outputs: {});
   });
 
-  test('Allow no "library" when requireLibraryDirective=false', () async {
+  test('Use new part syntax when no library directive exists', () async {
     var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
-    var builder = new PartBuilder([const CommentGenerator()],
-        requireLibraryDirective: false);
+    var builder = new PartBuilder([const CommentGenerator()]);
     await testBuilder(builder, sources,
         outputs: {'$pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
   });
