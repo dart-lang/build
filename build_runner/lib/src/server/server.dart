@@ -225,8 +225,8 @@ $rows
 <html>
   <body>
     <p>
-      Performance information not available, are you using
-      `--low-resources-mode`?
+      Performance information not available, you must pass the
+      `--track-performance` command line arg to enable performance tracking.
     </p>
   <body>
 </html>

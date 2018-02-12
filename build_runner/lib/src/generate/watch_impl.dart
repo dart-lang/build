@@ -56,6 +56,7 @@ Future<ServeHandler> watch(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
+  bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
@@ -81,6 +82,7 @@ Future<ServeHandler> watch(
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
       outputDir: outputDir,
+      trackPerformance: trackPerformance,
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 

@@ -59,6 +59,7 @@ Future<BuildResult> build(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
+  bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
@@ -82,6 +83,7 @@ Future<BuildResult> build(
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
       outputDir: outputDir,
+      trackPerformance: trackPerformance,
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
@@ -139,7 +141,7 @@ class BuildImpl {
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment,
-        _trackPerformance = !options.enableLowResourcesMode;
+        _trackPerformance = options.trackPerformance;
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,

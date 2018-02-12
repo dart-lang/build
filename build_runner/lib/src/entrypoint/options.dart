@@ -23,6 +23,7 @@ const _hostname = 'hostname';
 const _output = 'output';
 const _config = 'config';
 const _verbose = 'verbose';
+const _trackPerformance = 'track-performance';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
@@ -66,6 +67,9 @@ class _SharedOptions {
   /// created.
   final String outputDir;
 
+  /// Enables performance tracking and the `/$perf` page.
+  final bool trackPerformance;
+
   final bool verbose;
 
   // Global config overrides by builder.
@@ -82,6 +86,7 @@ class _SharedOptions {
     @required this.enableLowResourcesMode,
     @required this.configKey,
     @required this.outputDir,
+    @required this.trackPerformance,
     @required this.verbose,
     @required this.builderConfigOverrides,
   });
@@ -95,6 +100,7 @@ class _SharedOptions {
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
+      trackPerformance: argResults[_trackPerformance] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
@@ -116,6 +122,7 @@ class _ServeOptions extends _SharedOptions {
     @required bool enableLowResourcesMode,
     @required String configKey,
     @required String outputDir,
+    @required bool trackPerformance,
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
   })
@@ -126,6 +133,7 @@ class _ServeOptions extends _SharedOptions {
           enableLowResourcesMode: enableLowResourcesMode,
           configKey: configKey,
           outputDir: outputDir,
+          trackPerformance: trackPerformance,
           verbose: verbose,
           builderConfigOverrides: builderConfigOverrides,
         );
@@ -154,6 +162,7 @@ class _ServeOptions extends _SharedOptions {
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       configKey: argResults[_config] as String,
       outputDir: argResults[_output] as String,
+      trackPerformance: argResults[_trackPerformance] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
@@ -207,6 +216,10 @@ abstract class BuildRunnerCommand extends Command<int> {
           abbr: 'c')
       ..addFlag(_failOnSevere,
           help: 'Whether to consider the build a failure on an error logged.',
+          negatable: true,
+          defaultsTo: false)
+      ..addFlag(_trackPerformance,
+          help: r'Enables performance tracking and the /$perf page.',
           negatable: true,
           defaultsTo: false)
       ..addOption(_output,
