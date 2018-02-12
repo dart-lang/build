@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:analyzer/analyzer.dart' show parseDirectives;
 import 'package:analyzer/dart/ast/ast.dart';
@@ -18,25 +19,58 @@ import 'package:path/path.dart' as native_path;
 // We should always be using url paths here since it's always Dart/pub code.
 final path = native_path.url;
 
+/// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
+/// down from entrypoints.
+class PerActionResolver implements ReleasableResolver {
+  final ReleasableResolver _delegate;
+  final Iterable<AssetId> _entryPoints;
+
+  PerActionResolver(this._delegate, this._entryPoints);
+
+  @override
+  Stream<LibraryElement> get libraries async* {
+    final seen = new Set<LibraryElement>();
+    final toVisit = new Queue<LibraryElement>();
+    for (final entryPoint in _entryPoints) {
+      if (!await _delegate.isLibrary(entryPoint)) continue;
+      final library = await _delegate.libraryFor(entryPoint);
+      toVisit.add(library);
+      seen.add(library);
+    }
+    while (toVisit.isNotEmpty) {
+      final current = toVisit.removeFirst();
+      yield current;
+      final toCrawl = current.importedLibraries
+          .followedBy(current.exportedLibraries)
+          .where((l) => !seen.contains(l))
+          .toSet();
+      toVisit.addAll(toCrawl);
+      seen.addAll(toCrawl);
+    }
+  }
+
+  @override
+  Future<LibraryElement> findLibraryByName(String libraryName) async =>
+      await libraries.firstWhere((l) => l.name == libraryName,
+          defaultValue: () => null);
+
+  @override
+  Future<bool> isLibrary(AssetId assetId) => _delegate.isLibrary(assetId);
+
+  @override
+  Future<LibraryElement> libraryFor(AssetId assetId) =>
+      _delegate.libraryFor(assetId);
+
+  @override
+  void release() => _delegate.release();
+}
+
 class AnalyzerResolver implements ReleasableResolver {
   /// Cache of all asset sources currently referenced.
   final Map<AssetId, AssetBasedSource> sources = {};
 
   final InternalAnalysisContext _context =
       AnalysisEngine.instance.createAnalysisContext();
-
-  /// Transform for which this is currently updating, or null when not updating.
-  BuildStep _currentBuildStep;
-
-  /// The currently resolved entry libraries, or null if nothing is resolved.
-  List<LibraryElement> _entryLibraries;
-  Set<LibraryElement> _libraries;
-
-  /// Future indicating when this resolver is done in the current phase.
-  Future _lastPhaseComplete = new Future.value();
-
-  /// Completer for wrapping up the current phase.
-  Completer _currentPhaseComplete;
 
   AnalyzerResolver(DartUriResolver dartUriResolver) {
     _context.analysisOptions = new AnalysisOptionsImpl()..strongMode = true;
@@ -62,41 +96,12 @@ class AnalyzerResolver implements ReleasableResolver {
     return _context.computeLibraryElement(source);
   }
 
-  Future<ReleasableResolver> _resolve(BuildStep buildStep,
-      [List<AssetId> entryPoints]) {
-    // Can only have one resolve in progress at a time, so chain the current
-    // resolution to be after the last one.
-    var phaseComplete = new Completer();
-    var future = _lastPhaseComplete.whenComplete(() {
-      _currentPhaseComplete = phaseComplete;
-      return _performResolve(
-          buildStep, entryPoints == null ? [buildStep.inputId] : entryPoints);
-    }).then((_) => this);
-    // Advance the lastPhaseComplete to be done when this phase is all done.
-    _lastPhaseComplete = phaseComplete.future;
-    return future;
-  }
-
   @override
-  void release() {
-    if (_currentPhaseComplete == null) {
-      throw new StateError('Releasing without current lock.');
-    }
-    _currentPhaseComplete.complete(null);
-    _currentPhaseComplete = null;
+  // Do nothing
+  void release() {}
 
-    // Clear out libraries since they should not be referenced after release.
-    _entryLibraries = null;
-    _libraries = null;
-    _currentBuildStep = null;
-  }
-
-  Future _performResolve(BuildStep buildStep, List<AssetId> entryPoints) {
-    if (_currentBuildStep != null) {
-      throw new StateError('Cannot be accessed by concurrent transforms');
-    }
-    _currentBuildStep = buildStep;
-
+  Future<ReleasableResolver> _performResolve(
+      BuildStep buildStep, List<AssetId> entryPoints) {
     // Basic approach is to start at the first file, update it's contents
     // and see if it changed, then walk all files accessed by it.
     var visited = new Set<AssetId>();
@@ -138,40 +143,18 @@ class AnalyzerResolver implements ReleasableResolver {
 
       // Update the analyzer context with the latest sources
       _context.applyChanges(changeSet);
-      // Force resolve each entry point (the getter will ensure the library is
-      // computed first).
-      _entryLibraries = entryPoints.map((id) {
-        var source = sources[id];
-        if (source == null) return null;
-        var kind = _context.computeKindOf(source);
-        if (kind != SourceKind.LIBRARY) return null;
-        return _context.computeLibraryElement(source);
-      }).toList();
-    });
+    }).then((_) => this);
   }
 
   @override
   Stream<LibraryElement> get libraries {
-    if (_libraries == null) {
-      // Note: we don't use `lib.visibleLibraries` because that excludes the
-      // exports seen in the entry libraries.
-      _libraries = new Set<LibraryElement>();
-      _entryLibraries.forEach(_collectLibraries);
-    }
-    return new Stream.fromIterable(_libraries);
-  }
-
-  void _collectLibraries(LibraryElement lib) {
-    if (lib == null || _libraries.contains(lib)) return;
-    _libraries.add(lib);
-    lib.importedLibraries.forEach(_collectLibraries);
-    lib.exportedLibraries.forEach(_collectLibraries);
+    throw new UnimplementedError();
   }
 
   @override
-  Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      await libraries.firstWhere((l) => l.name == libraryName,
-          defaultValue: () => null);
+  Future<LibraryElement> findLibraryByName(String libraryName) {
+    throw new UnimplementedError();
+  }
 }
 
 /// Implementation of Analyzer's Source for Barback based assets.
@@ -415,7 +398,8 @@ class AnalyzerResolvers implements Resolvers {
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) =>
-      _resolver._resolve(buildStep, [buildStep.inputId]);
+      _resolver._performResolve(buildStep, [buildStep.inputId]).then(
+          (r) => new PerActionResolver(r, [buildStep.inputId]));
 }
 
 bool _analysisEngineInitialized = false;
