@@ -1,3 +1,8 @@
+## 0.7.10+1
+
+- Fix bug where relative imports in a dependencies build.yaml would break
+  all downstream users, https://github.com/dart-lang/build/issues/995.
+
 ## 0.7.10
 
 ### New Features

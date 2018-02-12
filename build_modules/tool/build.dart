@@ -18,7 +18,7 @@ main(List<String> arguments) async {
         new PartBuilder([
           new JsonSerializableGenerator.withDefaultHelpers(
               [const _AssetIdTypeHelper()])
-        ], requireLibraryDirective: false),
+        ]),
         generateFor: const InputSet(include: const ['lib/src/modules.dart'])),
   ];
   var args = arguments.toList()..add('--delete-conflicting-outputs');

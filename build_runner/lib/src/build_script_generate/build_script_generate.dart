@@ -54,7 +54,13 @@ Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
 
   final builderDefinitions =
       (await Future.wait(orderedPackages.map(_packageBuildConfig)))
-          .expand((c) => c.builderDefinitions.values);
+          .expand((c) => c.builderDefinitions.values)
+          .where((definition) {
+    // Filter out builderDefinitions with relative imports that aren't
+    // from the root package, because they will never work.
+    if (definition.import.startsWith('package:')) return true;
+    return definition.package == packageGraph.root.name;
+  });
 
   final orderedBuilders = findBuilderOrder(builderDefinitions);
   builderApplications.addAll(orderedBuilders.map(_applyBuilder));
