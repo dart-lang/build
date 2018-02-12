@@ -74,7 +74,7 @@ class BuildOptions {
     failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
-    trackPerformance ??= true;
+    trackPerformance ??= false;
 
     if (rootPackageConfig == null ||
         (rootPackageConfig.buildTargets.length == 1 &&

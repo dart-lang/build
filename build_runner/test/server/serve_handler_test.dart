@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/generate/build_result.dart';
+import 'package:build_runner/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
 import 'package:build_runner/src/server/server.dart';
 
@@ -74,6 +75,37 @@ void main() {
         await response.readAsString(),
         allOf(contains('Really&nbsp;bad&nbsp;error&nbsp;omg!'),
             contains('My&nbsp;cool&nbsp;stack&nbsp;trace!')));
+  });
+
+  group(r'/$perf', () {
+    test('serves some sort of page if enabled', () async {
+      var tracker = new BuildPerformanceTracker();
+      var actionTracker = tracker.startBuilderAction(
+          makeAssetId('a|web/a.txt'), new TestBuilder());
+      actionTracker.track(() {}, 'SomeLabel');
+      watchImpl.addFutureResult(new Future.value(
+          new BuildResult(BuildStatus.success, [], performance: tracker)));
+      await new Future.value();
+      var response = await serveHandler.handlerFor('web')(
+          new Request('GET', Uri.parse(r'http://server.com/$perf')));
+
+      expect(response.statusCode, HttpStatus.OK);
+      expect(
+          await response.readAsString(), contains('TestBuilder:a|web/a.txt'));
+      expect(await response.readAsString(), contains('SomeLabel'));
+    });
+
+    test('serves an error page if not enabled', () async {
+      watchImpl.addFutureResult(new Future.value(new BuildResult(
+          BuildStatus.success, [],
+          performance: new BuildPerformanceTracker.noOp())));
+      await new Future.value();
+      var response = await serveHandler.handlerFor('web')(
+          new Request('GET', Uri.parse(r'http://server.com/$perf')));
+
+      expect(response.statusCode, HttpStatus.OK);
+      expect(await response.readAsString(), contains('--track-performance'));
+    });
   });
 }
 

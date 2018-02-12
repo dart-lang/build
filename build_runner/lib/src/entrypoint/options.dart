@@ -295,6 +295,7 @@ class _WatchCommand extends BuildRunnerCommand {
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
         packageGraph: packageGraph,
+        trackPerformance: options.trackPerformance,
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides);
     await handler.currentBuild;
@@ -334,6 +335,7 @@ class _ServeCommand extends _WatchCommand {
         assumeTty: options.assumeTty,
         outputDir: options.outputDir,
         packageGraph: packageGraph,
+        trackPerformance: options.trackPerformance,
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides);
     var servers = await Future.wait(options.serveTargets.map((target) =>
@@ -386,6 +388,7 @@ class _TestCommand extends BuildRunnerCommand {
           assumeTty: options.assumeTty,
           outputDir: outputDir,
           packageGraph: packageGraph,
+          trackPerformance: options.trackPerformance,
           verbose: options.verbose,
           builderConfigOverrides: options.builderConfigOverrides);
 
