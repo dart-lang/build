@@ -70,7 +70,8 @@ abstract class BuildPerformanceTracker
 }
 
 /// Internal class that tracks the [Timings] of an entire build.
-class _BuildPerformanceTrackerImpl extends TimeTracker
+class _BuildPerformanceTrackerImpl extends Object
+    with _TimeTrackerImpl
     implements BuildPerformanceTracker {
   @override
   Iterable<BuildPhaseTracker> get phases => _phases;
@@ -107,7 +108,8 @@ class _BuildPerformanceTrackerImpl extends TimeTracker
   }
 }
 
-class _NoOpBuildPerformanceTracker extends TimeTracker
+class _NoOpBuildPerformanceTracker extends Object
+    with _NoOpTimeTracker
     implements BuildPerformanceTracker {
   static final _NoOpBuildPerformanceTracker sharedInstance =
       new _NoOpBuildPerformanceTracker();
@@ -136,7 +138,9 @@ class _NoOpBuildPerformanceTracker extends TimeTracker
 /// Use [track] to start actually tracking an operation.
 ///
 /// This is only meaningful for non-lazy phases.
-class BuildPhaseTracker extends TimeTracker implements BuildPhasePerformance {
+class BuildPhaseTracker extends Object
+    with _TimeTrackerImpl
+    implements BuildPhasePerformance {
   @override
   final BuildAction action;
 
@@ -155,7 +159,8 @@ class BuildPhaseTracker extends TimeTracker implements BuildPhasePerformance {
   }
 }
 
-/// Tracks the [Timings] of an indiviual [Builder] on a given primary input.
+/// Interface for tracking the [Timings] of an indiviual [Builder] on a given
+/// primary input.
 abstract class BuilderActionTracker
     implements TimeTracker, BuilderActionPerformance {
   /// Tracks the time of [runPhase] and associates it with [label].
@@ -170,8 +175,11 @@ abstract class BuilderActionTracker
       _NoOpBuilderActionTracker._sharedInstance;
 }
 
-/// Actual instance of [BuilderActionTracker] which records timings.
-class _BuilderActionTrackerImpl extends TimeTracker
+/// Real implementation of [BuilderActionTracker] which records timings.
+///
+/// Use the [BuilderActionTracker] factory to get an instance.
+class _BuilderActionTrackerImpl extends Object
+    with _TimeTrackerImpl
     implements BuilderActionTracker {
   @override
   final Builder builder;
@@ -206,7 +214,8 @@ class _BuilderActionTrackerImpl extends TimeTracker
 /// the wrapped function.
 ///
 /// Use the [BuilderActionTracker.noOp] factory to get an instance.
-class _NoOpBuilderActionTracker extends TimeTracker
+class _NoOpBuilderActionTracker extends Object
+    with _NoOpTimeTracker
     implements BuilderActionTracker {
   static final _NoOpBuilderActionTracker _sharedInstance =
       new _NoOpBuilderActionTracker();
@@ -231,7 +240,8 @@ class _NoOpBuilderActionTracker extends TimeTracker
 /// Tracks the [Timings] of an indivual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
-class BuilderActionPhaseTracker extends TimeTracker
+class BuilderActionPhaseTracker extends Object
+    with _TimeTrackerImpl
     implements BuilderActionPhasePerformance {
   @override
   final String label;
@@ -239,8 +249,20 @@ class BuilderActionPhaseTracker extends TimeTracker
   BuilderActionPhaseTracker(this.label);
 }
 
-/// Internal base class for tracking the [Timings] of an arbitrary operation.
-class TimeTracker implements Timings {
+/// Interface for tracking the [Timings] of an operation using the [start] and
+/// [stop] methods.
+abstract class TimeTracker implements Timings {
+  factory TimeTracker() => new _TimeTrackerImpl();
+  factory TimeTracker.noOp() => _NoOpTimeTracker.sharedInstance;
+
+  void start();
+  void stop();
+}
+
+/// Implementation of a real [TimeTracker].
+///
+/// Use [TimeTracker] factory to get an instance.
+class _TimeTrackerImpl implements TimeTracker {
   /// When this operation started, call [start] to set this.
   @override
   DateTime get startTime => _startTime;
@@ -262,14 +284,36 @@ class TimeTracker implements Timings {
   }
 
   /// Start tracking this operation, must only be called once, before [stop].
+  @override
   void start() {
     assert(_startTime == null && _stopTime == null);
     _startTime = now();
   }
 
   /// Stop tracking this operation, must only be called once, after [start].
+  @override
   void stop() {
     assert(_startTime != null && _stopTime == null);
     _stopTime = now();
   }
+}
+
+/// No-op implementation of [TimeTracker] that does nothing.
+///
+/// Use [TimeTracker.noOp] factory to get an instance.
+class _NoOpTimeTracker implements TimeTracker {
+  static final sharedInstance = new _NoOpTimeTracker();
+
+  @override
+  Duration get duration => throw new UnimplementedError();
+  @override
+  DateTime get startTime => throw new UnimplementedError();
+  @override
+  DateTime get stopTime => throw new UnimplementedError();
+
+  @override
+  void start() {}
+
+  @override
+  void stop() {}
 }

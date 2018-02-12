@@ -79,10 +79,12 @@ void main() {
 
   group(r'/$perf', () {
     test('serves some sort of page if enabled', () async {
-      var tracker = new BuildPerformanceTracker();
+      var tracker = new BuildPerformanceTracker()..start();
       var actionTracker = tracker.startBuilderAction(
           makeAssetId('a|web/a.txt'), new TestBuilder());
       actionTracker.track(() {}, 'SomeLabel');
+      tracker.stop();
+      actionTracker.stop();
       watchImpl.addFutureResult(new Future.value(
           new BuildResult(BuildStatus.success, [], performance: tracker)));
       await new Future.value();
@@ -90,9 +92,8 @@ void main() {
           new Request('GET', Uri.parse(r'http://server.com/$perf')));
 
       expect(response.statusCode, HttpStatus.OK);
-      expect(
-          await response.readAsString(), contains('TestBuilder:a|web/a.txt'));
-      expect(await response.readAsString(), contains('SomeLabel'));
+      expect(await response.readAsString(),
+          allOf(contains('TestBuilder:a|web/a.txt'), contains('SomeLabel')));
     });
 
     test('serves an error page if not enabled', () async {
