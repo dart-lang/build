@@ -122,6 +122,7 @@ class BuildImpl {
   final bool _verbose;
   final BuildEnvironment _environment;
 
+  final bool _trackPerformance;
   BuildPerformanceTracker _performanceTracker;
 
   BuildImpl._(
@@ -137,7 +138,8 @@ class BuildImpl {
         _outputDir = options.outputDir,
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
-        _environment = buildDefinition.environment;
+        _environment = buildDefinition.environment,
+        _trackPerformance = !options.enableLowResourcesMode;
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
@@ -149,7 +151,9 @@ class BuildImpl {
   }
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
-    _performanceTracker = new BuildPerformanceTracker();
+    _performanceTracker = _trackPerformance
+        ? new BuildPerformanceTracker()
+        : new BuildPerformanceTracker.noOp();
     var watch = new Stopwatch()..start();
     _lazyPhases.clear();
     if (updates.isNotEmpty) {

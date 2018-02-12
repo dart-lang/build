@@ -144,49 +144,50 @@ class AssetHandler {
 }
 
 String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
-  var rows = new StringBuffer();
-  for (var action in performance.actions) {
-    if (hideSkipped &&
-        !action.phases
-            .any((phase) => phase.phase == BuilderActionPhase.Build)) {
-      continue;
-    }
-    var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
-    for (var phase in action.phases) {
-      var start = phase.startTime.millisecondsSinceEpoch -
-          performance.startTime.millisecondsSinceEpoch;
-      var end = phase.stopTime.millisecondsSinceEpoch -
-          performance.startTime.millisecondsSinceEpoch;
-
-      String phaseName;
-      switch (phase.phase) {
-        case BuilderActionPhase.Setup:
-          phaseName = 'setup';
-          break;
-        case BuilderActionPhase.Build:
-          phaseName = 'build';
-          break;
-        case BuilderActionPhase.Finalize:
-          phaseName = 'finalize';
-          break;
+  try {
+    var rows = new StringBuffer();
+    for (var action in performance.actions) {
+      if (hideSkipped &&
+          !action.phases
+              .any((phase) => phase.phase == BuilderActionPhase.Build)) {
+        continue;
       }
+      var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
+      for (var phase in action.phases) {
+        var start = phase.startTime.millisecondsSinceEpoch -
+            performance.startTime.millisecondsSinceEpoch;
+        var end = phase.stopTime.millisecondsSinceEpoch -
+            performance.startTime.millisecondsSinceEpoch;
 
-      rows.writeln('          ["$actionKey", "$phaseName", $start, $end],');
+        String phaseName;
+        switch (phase.phase) {
+          case BuilderActionPhase.Setup:
+            phaseName = 'setup';
+            break;
+          case BuilderActionPhase.Build:
+            phaseName = 'build';
+            break;
+          case BuilderActionPhase.Finalize:
+            phaseName = 'finalize';
+            break;
+        }
+
+        rows.writeln('          ["$actionKey", "$phaseName", $start, $end],');
+      }
     }
-  }
-  if (performance.duration < new Duration(seconds: 1)) {
-    rows.writeln('          ['
-        '"https://github.com/google/google-visualization-issues/issues/2269", '
-        '"", 0, 1000]');
-  }
+    if (performance.duration < new Duration(seconds: 1)) {
+      rows.writeln('          ['
+          '"https://github.com/google/google-visualization-issues/issues/2269", '
+          '"", 0, 1000]');
+    }
 
-  var showSkippedHref = hideSkipped
-      ? '/$_performancePath'
-      : '/$_performancePath?hideSkipped=true';
-  var showSkippedText =
-      hideSkipped ? "Show Skipped Actions" : "Hide Skipped Actions";
-  var showSkippedLink = '<a href="$showSkippedHref">$showSkippedText</a>';
-  return '''
+    var showSkippedHref = hideSkipped
+        ? '/$_performancePath'
+        : '/$_performancePath?hideSkipped=true';
+    var showSkippedText =
+        hideSkipped ? "Show Skipped Actions" : "Hide Skipped Actions";
+    var showSkippedLink = '<a href="$showSkippedHref">$showSkippedText</a>';
+    return '''
 <html>
   <head>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -219,4 +220,16 @@ $rows
   </body>
 </html>
 ''';
+  } on UnimplementedError catch (_) {
+    return '''
+<html>
+  <body>
+    <p>
+      Performance information not available, are you using
+      `--low-resources-mode`?
+    </p>
+  <body>
+</html>
+''';
+  }
 }
