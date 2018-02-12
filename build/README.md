@@ -19,7 +19,7 @@ and allows reading/writing files and resolving Dart source code.
 An interface into the dart [analyzer][pub:analyzer] to allow resolution of code
 that needs static analysis and/or code generation.
 
-## Differences between the `build` package and `barback`.
+## Differences between the `build` package and `pub` + `barback`.
 
 You might be asking, why use this package instead of a `barback` `Transformer`?
 There are a few key differences that make this package better for most use
