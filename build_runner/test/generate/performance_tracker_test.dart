@@ -77,13 +77,13 @@ main() {
           var actionTracker = tracker.startBuilderAction(input, builder);
           await actionTracker.track(() async {
             time = time.add(const Duration(seconds: 1));
-          }, BuilderActionPhase.Setup);
+          }, 'Setup');
           await actionTracker.track(() async {
             time = time.add(const Duration(seconds: 1));
-          }, BuilderActionPhase.Build);
+          }, 'Build');
           await actionTracker.track(() async {
             time = time.add(const Duration(seconds: 1));
-          }, BuilderActionPhase.Finalize);
+          }, 'Finalize');
           actionTracker.stop();
         }
         tracker.stop();
@@ -97,7 +97,6 @@ main() {
           var allPhases = action.phases.toList();
           for (int p = 0; p < 3; p++) {
             var phase = allPhases[p];
-            expect(phase.phase, BuilderActionPhase.values[p]);
             expect(phase.duration, new Duration(seconds: 1));
             expect(
                 phase.startTime,
