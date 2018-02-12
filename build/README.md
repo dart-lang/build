@@ -19,18 +19,19 @@ and allows reading/writing files and resolving Dart source code.
 An interface into the dart [analyzer][pub:analyzer] to allow resolution of code
 that needs static analysis and/or code generation.
 
-## Differences between the `build` package and `pub`.
+## Differences between the `build` package and `pub` + `barback`.
 
-You might be asking, why use this package instead of a pub `Transformer`? There
-are a few key differences that make this package better for most use cases.
+You might be asking, why use this package instead of a `barback` `Transformer`?
+There are a few key differences that make this package better for most use
+cases.
 
 Also see https://github.com/dart-lang/build/wiki/Writing-a-Builder.
 
 ### Outputs
 
-Pub will only ever output files into your `build` directory, and pub serve only
-ever outputs them into an in-memory file system. With the `build` package, you
-can output files anywhere in the current package.
+`pub build` will only ever output files into your `build` directory, and
+`pub serve` only ever outputs them into an in-memory file system. With the
+`build` package, you can output files anywhere in the current package.
 
 This enables you to generate dart files which are imported by your project,
 without getting any warnings about missing files from the analyzer. At the same
@@ -42,8 +43,9 @@ breakpoints inside those files.
 You can't overwrite any pre-existing files using `build`, you can only generate
 new ones.
 
-In pub a transformer could overwrite a file any number of times, and this can
-lead to confusion and difficulty when debugging, especially with source maps.
+In `barback` a transformer can overwrite a file any number of times, and this
+can lead to confusion and difficulty when debugging, especially with source
+maps.
 
 ### Incremental builds
 
@@ -52,11 +54,11 @@ will be built for corresponding input file extensions. This allows fine grained
 and incremental builds. See the `build_runner` package for an approach to
 incremental builds.
 
-With `pub`, some transformations on your package dependencies may be cached, but
-any transformations on your current package are always redone each time you call
-`pub build` or `pub serve`. In serve mode it will do incremental builds once the
-first build has run, but if you restart it then you have to start over from
-scratch.
+With `barback`, some transformations on your package dependencies may be cached,
+but any transformations on your current package are always redone each time you
+call `pub build` or `pub serve`. In serve mode it will do incremental builds
+once the first build has run, but if you restart it then you have to start over
+from scratch.
 
 ### Execution modes and reflection
 
@@ -74,7 +76,7 @@ and easier on users who have fewer modes to support.
 
 ## Implementing your own Builders
 
-If you have written a pub `Transformer` in the past, then the
+If you have written a `barback` `Transformer` in the past, then the
 [`Builder`][dartdoc:Builder] API should be familiar to you. The main difference
 is that `Builders` must always configure outputs based on input extensions.
 
