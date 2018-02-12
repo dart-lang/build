@@ -46,7 +46,7 @@ abstract class BuilderActionPerformance implements Timings {
 ///
 /// This is some slice of overall [BuilderActionPerformance].
 abstract class BuilderActionPhasePerformance implements Timings {
-  String get name;
+  String get label;
 }
 
 /// Internal class that tracks the [Timings] of an entire build.
@@ -126,8 +126,8 @@ class BuilderActionTracker extends TimeTracker
 
   BuilderActionTracker(this.primaryInput, this.builder);
 
-  FutureOr<T> track<T>(FutureOr<T> action(), String name) {
-    var tracker = new BuilderActionPhaseTracker(name);
+  FutureOr<T> track<T>(FutureOr<T> action(), String label) {
+    var tracker = new BuilderActionPhaseTracker(label);
     phases.add(tracker);
     tracker.start();
     var result = action();
@@ -149,9 +149,9 @@ class BuilderActionTracker extends TimeTracker
 class BuilderActionPhaseTracker extends TimeTracker
     implements BuilderActionPhasePerformance {
   @override
-  final String name;
+  final String label;
 
-  BuilderActionPhaseTracker(this.name);
+  BuilderActionPhaseTracker(this.label);
 }
 
 /// Internal base class for tracking the [Timings] of an arbitrary operation.
