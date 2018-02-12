@@ -181,10 +181,10 @@ Future<Null> get nextFailedBuild async {
 }
 
 Future<String> nextStdErrLine(String message) =>
-    _stdErrLines.firstWhere((line) => line.contains(message)) as Future<String>;
+    _stdErrLines.firstWhere((line) => line.contains(message));
 
 Future<String> nextStdOutLine(String message) =>
-    _stdOutLines.firstWhere((line) => line.contains(message)) as Future<String>;
+    _stdOutLines.firstWhere((line) => line.contains(message));
 
 /// Runs tests using the manual build script.
 Future<ProcessResult> runManualTests(
