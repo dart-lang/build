@@ -146,7 +146,7 @@ class AssetHandler {
 String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
   var rows = new StringBuffer();
   for (var action in performance.actions) {
-    if (hideSkipped && !action.phases.any((phase) => phase.phase == 'Build')) {
+    if (hideSkipped && !action.phases.any((phase) => phase.name == 'Build')) {
       continue;
     }
     var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
@@ -156,7 +156,7 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
       var end = phase.stopTime.millisecondsSinceEpoch -
           performance.startTime.millisecondsSinceEpoch;
 
-      rows.writeln('          ["$actionKey", "${phase.phase}", $start, $end],');
+      rows.writeln('          ["$actionKey", "${phase.name}", $start, $end],');
     }
   }
   if (performance.duration < new Duration(seconds: 1)) {
