@@ -49,6 +49,7 @@ abstract class BuilderActionPhasePerformance implements Timings {
   String get label;
 }
 
+/// Interface for tracking the overall performance of a build.
 abstract class BuildPerformanceTracker
     implements TimeTracker, BuildPerformance {
   /// Tracks [runPhase] which performs [action] on all inputs in a phase, and
@@ -69,7 +70,9 @@ abstract class BuildPerformanceTracker
       _NoOpBuildPerformanceTracker.sharedInstance;
 }
 
-/// Internal class that tracks the [Timings] of an entire build.
+/// Real implementation of [BuildPerformanceTracker].
+///
+/// Use [BuildPerformanceTracker] factory to get an instance.
 class _BuildPerformanceTrackerImpl extends Object
     with _TimeTrackerImpl
     implements BuildPerformanceTracker {
@@ -108,6 +111,12 @@ class _BuildPerformanceTrackerImpl extends Object
   }
 }
 
+/// No-op implementation of [BuildPerformanceTracker].
+///
+/// Read-only fields will throw, and tracking methods just directly invoke their
+/// closures without tracking anything.
+///
+/// Use [BuildPerformanceTracker.noOp] to get an instance.
 class _NoOpBuildPerformanceTracker extends Object
     with _NoOpTimeTracker
     implements BuildPerformanceTracker {
