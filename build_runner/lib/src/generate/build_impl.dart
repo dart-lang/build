@@ -29,6 +29,7 @@ import '../package_graph/apply_builders.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
+import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
@@ -370,8 +371,7 @@ class BuildImpl {
             phase, outputsHidden, input, resourceManager));
 
     if (!await tracker.track(
-        () => _buildShouldRun(builderOutputs, wrappedReader),
-        BuilderActionPhase.Setup)) {
+        () => _buildShouldRun(builderOutputs, wrappedReader), 'Setup')) {
       tracker.stop();
       return <AssetId>[];
     }
@@ -385,10 +385,10 @@ class BuildImpl {
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new ErrorRecordingLogger(new Logger('$builder on $input'));
     await tracker.track(
-        () => runBuilder(
-            builder, [input], wrappedReader, wrappedWriter, _resolvers,
+        () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
+            new PerformanceTrackingResolvers(_resolvers, tracker),
             logger: logger, resourceManager: resourceManager),
-        BuilderActionPhase.Build);
+        'Build');
     if (logger.errorWasSeen) {
       _assetGraph.markActionFailed(phaseNumber, input);
     } else {
@@ -399,7 +399,7 @@ class BuildImpl {
     // read and written.
     await tracker.track(
         () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter),
-        BuilderActionPhase.Finalize);
+        'Finalize');
 
     tracker.stop();
     return wrappedWriter.assetsWritten;

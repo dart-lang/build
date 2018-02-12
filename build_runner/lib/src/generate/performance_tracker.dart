@@ -42,11 +42,11 @@ abstract class BuilderActionPerformance implements Timings {
   Iterable<BuilderActionPhasePerformance> get phases;
 }
 
-/// The [Timings] of a particular [BuilderActionPhase].
+/// The [Timings] of a particular task within a builder action.
 ///
 /// This is some slice of overall [BuilderActionPerformance].
 abstract class BuilderActionPhasePerformance implements Timings {
-  BuilderActionPhase get phase;
+  String get label;
 }
 
 abstract class BuildPerformanceTracker
@@ -155,22 +155,11 @@ class BuildPhaseTracker extends TimeTracker implements BuildPhasePerformance {
   }
 }
 
-/// The phases for running a [Builder] with a single primary input.
-enum BuilderActionPhase {
-  // Checking if the builder should run, possibly involves building other
-  // things lazily.
-  Setup,
-  // Actually running the builder, may involve building secondary inputs lazily.
-  Build,
-  // The finalizing step, updating the state of the asset graph etc.
-  Finalize,
-}
-
 /// Tracks the [Timings] of an indiviual [Builder] on a given primary input.
 abstract class BuilderActionTracker
     implements TimeTracker, BuilderActionPerformance {
-  /// Tracks the time of [runPhase] and associates it with [phase].
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), BuilderActionPhase phase);
+  /// Tracks the time of [runPhase] and associates it with [label].
+  FutureOr<T> track<T>(FutureOr<T> runPhase(), String label);
 
   factory BuilderActionTracker(AssetId primaryInput, Builder builder) =>
       new _BuilderActionTrackerImpl(primaryInput, builder);
@@ -195,11 +184,11 @@ class _BuilderActionTrackerImpl extends TimeTracker
   _BuilderActionTrackerImpl(this.primaryInput, this.builder);
 
   @override
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), BuilderActionPhase phase) {
-    var tracker = new BuilderActionPhaseTracker(phase);
+  FutureOr<T> track<T>(FutureOr<T> action(), String label) {
+    var tracker = new BuilderActionPhaseTracker(label);
     phases.add(tracker);
     tracker.start();
-    var result = runPhase();
+    var result = action();
     if (result is Future<T>) {
       return result.then((actualResult) {
         tracker.stop();
@@ -236,19 +225,18 @@ class _NoOpBuilderActionTracker extends TimeTracker
   AssetId get primaryInput => throw new UnimplementedError();
 
   @override
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), BuilderActionPhase phase) =>
-      runPhase();
+  FutureOr<T> track<T>(FutureOr<T> runPhase(), String label) => runPhase();
 }
 
-/// Tracks the [Timings] of an indivual [BuilderActionPhase].
+/// Tracks the [Timings] of an indivual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
 class BuilderActionPhaseTracker extends TimeTracker
     implements BuilderActionPhasePerformance {
   @override
-  final BuilderActionPhase phase;
+  final String label;
 
-  BuilderActionPhaseTracker(this.phase);
+  BuilderActionPhaseTracker(this.label);
 }
 
 /// Internal base class for tracking the [Timings] of an arbitrary operation.
