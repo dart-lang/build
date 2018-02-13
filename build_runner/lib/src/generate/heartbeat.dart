@@ -22,7 +22,11 @@ class HeartbeatLogger {
   /// The amount of time between heartbeats.
   final Duration waitDuration;
 
-  HeartbeatLogger({Duration waitDuration})
+  /// Will be invoked with each original log message and the returned value will
+  /// be logged instead.
+  final String Function(String original) transformLog;
+
+  HeartbeatLogger({Duration waitDuration, this.transformLog})
       : this.waitDuration = waitDuration ?? const Duration(seconds: 5);
 
   /// Starts this heartbeat logger, must not already be started.
@@ -70,7 +74,11 @@ class HeartbeatLogger {
     if (_intervalWatch.elapsed < waitDuration) return;
 
     var formattedTime = humanReadable(_totalWatch.elapsed);
-    _logger.info('... still running ($formattedTime so far)');
+    var message = '$formattedTime elapsed';
+    if (transformLog != null) {
+      message = transformLog(message);
+    }
+    _logger.info(message);
     _resetHeartbeat();
   }
 }

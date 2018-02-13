@@ -169,6 +169,9 @@ class _SingleBuild {
   final bool _verbose;
   final RunnerAssetWriter _writer;
 
+  int numActionsCompleted = 0;
+  int numActionsStarted = 0;
+
   _SingleBuild(BuildImpl buildImpl)
       : _assetGraph = buildImpl._assetGraph,
         _buildActions = buildImpl._buildActions,
@@ -243,7 +246,11 @@ class _SingleBuild {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
-    var heartbeat = new HeartbeatLogger()..start();
+
+    var heartbeat = new HeartbeatLogger(
+        transformLog: (original) => '$original, ${_buildProgress()}',
+        waitDuration: new Duration(seconds: 1))
+      ..start();
     done.future.then((_) {
       heartbeat.stop();
     });
@@ -270,6 +277,10 @@ class _SingleBuild {
     });
     return done.future;
   }
+
+  /// Returns a message describing the progress of the current build.
+  String _buildProgress() =>
+      '$numActionsCompleted/$numActionsStarted actions completed.';
 
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
@@ -407,11 +418,13 @@ class _SingleBuild {
 
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new ErrorRecordingLogger(new Logger('$builder on $input'));
+    numActionsStarted++;
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
             new PerformanceTrackingResolvers(_resolvers, tracker),
             logger: logger, resourceManager: resourceManager),
         'Build');
+    numActionsCompleted++;
     if (logger.errorWasSeen) {
       _assetGraph.markActionFailed(phaseNumber, input);
     } else {
