@@ -123,8 +123,6 @@ class BuildImpl {
   final bool _verbose;
   final BuildEnvironment _environment;
 
-  BuildPerformanceTracker _performanceTracker;
-
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
       : _packageGraph = buildDefinition.packageGraph,
@@ -140,6 +138,9 @@ class BuildImpl {
         _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment;
 
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
+      new _SingleBuild(this).run(updates);
+
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
       {void onDelete(AssetId id)}) async {
@@ -148,17 +149,47 @@ class BuildImpl {
     build._firstBuild = await build.run({});
     return build;
   }
+}
+
+/// Performs a single build and manages state that only lives for a single
+/// build.
+class _SingleBuild {
+  final AssetGraph _assetGraph;
+  final List<BuildAction> _buildActions;
+  final BuildEnvironment _environment;
+  final bool _failOnSevere;
+  final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
+  final OnDelete _onDelete;
+  final String _outputDir;
+  final PackageGraph _packageGraph;
+  final _performanceTracker = new BuildPerformanceTracker();
+  final AssetReader _reader;
+  final Resolvers _resolvers;
+  final ResourceManager _resourceManager;
+  final bool _verbose;
+  final RunnerAssetWriter _writer;
+
+  _SingleBuild(BuildImpl buildImpl)
+      : _assetGraph = buildImpl._assetGraph,
+        _buildActions = buildImpl._buildActions,
+        _environment = buildImpl._environment,
+        _failOnSevere = buildImpl._failOnSevere,
+        _onDelete = buildImpl._onDelete,
+        _outputDir = buildImpl._outputDir,
+        _packageGraph = buildImpl._packageGraph,
+        _reader = buildImpl._reader,
+        _resolvers = buildImpl._resolvers,
+        _resourceManager = buildImpl._resourceManager,
+        _verbose = buildImpl._verbose,
+        _writer = buildImpl._writer;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
-    _performanceTracker = new BuildPerformanceTracker();
     var watch = new Stopwatch()..start();
-    _lazyPhases.clear();
     if (updates.isNotEmpty) {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
     await _resourceManager.disposeAll();
-    _performanceTracker = null;
     if (_failOnSevere &&
         _assetGraph.failedActions.isNotEmpty &&
         result.status == BuildStatus.success) {
@@ -311,8 +342,6 @@ class BuildImpl {
     return outputLists.fold<List<AssetId>>(
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
-
-  final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
 
   /// Lazily runs [phaseNumber] with [input] and [resourceManager].
   Future<Iterable<AssetId>> _runLazyPhaseForInput(int phaseNumber,
