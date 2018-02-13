@@ -4,6 +4,7 @@
   `--track-performance` flag to enable it.
 - The heartbeat logger will now log the current number of completed versus
   scheduled actions, and it will log once a second instead of every 5 seconds.
+- Builds will now be invalidated when the dart SDK is updated.
 
 ## 0.7.10+1
 
