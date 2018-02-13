@@ -37,7 +37,10 @@ Future<Null> bootstrapDart2Js(
     await scratchSpace.copyOutput(jsOutputId, buildStep);
     var jsSourceMapId =
         dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
-    await scratchSpace.copyOutput(jsSourceMapId, buildStep);
+    var jsSourceMapFile = scratchSpace.fileFor(jsSourceMapId);
+    if (await jsSourceMapFile.exists()) {
+      await scratchSpace.copyOutput(jsSourceMapId, buildStep);
+    }
   } else {
     log.severe(result.output);
   }
