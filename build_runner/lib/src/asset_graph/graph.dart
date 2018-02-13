@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:convert/convert.dart';
@@ -38,7 +39,11 @@ class AssetGraph {
   /// the new [BuildAction]s and throw away the graph if it doesn't.
   final Digest buildActionsDigest;
 
-  AssetGraph._(this.buildActionsDigest, {Map<int, Set<AssetId>> failedActions})
+  /// The [Platform.version] this graph was created with.
+  final String dartVersion;
+
+  AssetGraph._(this.buildActionsDigest, this.dartVersion,
+      {Map<int, Set<AssetId>> failedActions})
       : _failedActions = failedActions ?? new Map<int, Set<AssetId>>();
 
   /// Deserializes this graph.
@@ -51,7 +56,8 @@ class AssetGraph {
       Set<AssetId> internalSources,
       PackageGraph packageGraph,
       AssetReader digestReader) async {
-    var graph = new AssetGraph._(computeBuildActionsDigest(buildActions));
+    var graph = new AssetGraph._(
+        computeBuildActionsDigest(buildActions), Platform.version);
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
     graph._addBuilderOptionsNodes(buildActions);
