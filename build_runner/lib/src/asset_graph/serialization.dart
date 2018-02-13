@@ -27,7 +27,8 @@ class _AssetGraphDeserializer {
     }
 
     var graph = new AssetGraph._(
-        _deserializeDigest(_serializedGraph['buildActionsDigest'] as String));
+        _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
+        _serializedGraph['dart_version'] as String);
 
     var packageNames = _serializedGraph['packages'] as List<String>;
 
@@ -159,6 +160,7 @@ class _AssetGraphSerializer {
 
     var result = <String, dynamic>{
       'version': _version,
+      'dart_version': _graph.dartVersion,
       'nodes': _graph.allNodes.map(_serializeNode).toList(growable: false),
       'buildActionsDigest': _serializeDigest(_graph.buildActionsDigest),
       'packages': packages,

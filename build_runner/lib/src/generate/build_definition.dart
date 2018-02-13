@@ -196,7 +196,12 @@ class _Loader {
               'Throwing away cached asset graph because the build actions have '
               'changed. This most commonly would happen as a result of adding a '
               'new dependency or updating your dependencies.');
-
+          await _cleanupOldOutputs(cachedGraph);
+          return null;
+        }
+        if (cachedGraph.dartVersion != Platform.version) {
+          _logger.warning(
+              'Throwing away cached asset graph due to Dart SDK update.');
           await _cleanupOldOutputs(cachedGraph);
           return null;
         }

@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -339,6 +340,43 @@ main() {
       var newAssetGraph = buildDefinition.assetGraph;
       expect(originalAssetGraph.buildActionsDigest,
           isNot(newAssetGraph.buildActionsDigest));
+    });
+    test('invalidates the graph if the dart sdk version changes', () async {
+      // Gets rid of console spam during tests, we are setting up a new options
+      // object.
+      await options.logListener.cancel();
+
+      var buildActions = [
+        new BuildAction(new TestBuilder(), 'a', hideOutput: true)
+      ];
+      var logs = <LogRecord>[];
+      environment = new OverrideableEnvironment(environment, onLog: logs.add);
+      options = new BuildOptions(environment,
+          packageGraph: options.packageGraph,
+          logLevel: Level.WARNING,
+          skipBuildScriptCheck: true);
+
+      var originalAssetGraph = await AssetGraph.build(buildActions,
+          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
+
+      var bytes = originalAssetGraph.serialize();
+      var serialized = JSON.decode(UTF8.decode(bytes));
+      serialized['dart_version'] = 'some_fake_version';
+      var encoded = UTF8.encode(JSON.encode(serialized));
+      await createFile(assetGraphPath, encoded);
+
+      logs.clear();
+
+      await BuildDefinition.prepareWorkspace(
+          environment, options, buildActions);
+      expect(
+          logs.any(
+            (log) =>
+                log.level == Level.WARNING &&
+                log.message.contains(
+                    'Throwing away cached asset graph due to Dart SDK update.'),
+          ),
+          isTrue);
     });
 
     test('does not invalidate the graph if the BuilderOptions change',
