@@ -31,9 +31,10 @@ class BuildOptions {
   List<String> rootPackageFilesWhitelist;
 
   bool deleteFilesByDefault;
-  bool failOnSevere;
   bool enableLowResourcesMode;
+  bool failOnSevere;
   final String outputDir;
+  bool trackPerformance;
   bool verbose;
 
   // Watch mode options.
@@ -52,6 +53,7 @@ class BuildOptions {
       this.skipBuildScriptCheck,
       this.enableLowResourcesMode,
       this.outputDir,
+      this.trackPerformance,
       this.verbose}) {
     // Set up logging
     verbose ??= false;
@@ -72,6 +74,7 @@ class BuildOptions {
     failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
+    trackPerformance ??= false;
 
     if (rootPackageConfig == null ||
         (rootPackageConfig.buildTargets.length == 1 &&
