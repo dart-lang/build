@@ -144,64 +144,79 @@ class AssetHandler {
 }
 
 String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
-  var rows = new StringBuffer();
-  for (var action in performance.actions) {
-    if (hideSkipped && !action.phases.any((phase) => phase.label == 'Build')) {
-      continue;
-    }
-    var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
-    for (var phase in action.phases) {
-      var start = phase.startTime.millisecondsSinceEpoch -
-          performance.startTime.millisecondsSinceEpoch;
-      var end = phase.stopTime.millisecondsSinceEpoch -
-          performance.startTime.millisecondsSinceEpoch;
-
-      rows.writeln('          ["$actionKey", "${phase.label}", $start, $end],');
-    }
-  }
-  if (performance.duration < new Duration(seconds: 1)) {
-    rows.writeln('          ['
-        '"https://github.com/google/google-visualization-issues/issues/2269", '
-        '"", 0, 1000]');
-  }
-
-  var showSkippedHref = hideSkipped
-      ? '/$_performancePath'
-      : '/$_performancePath?hideSkipped=true';
-  var showSkippedText =
-      hideSkipped ? "Show Skipped Actions" : "Hide Skipped Actions";
-  var showSkippedLink = '<a href="$showSkippedHref">$showSkippedText</a>';
-  return '''
-<html>
-  <head>
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-      google.charts.load('current', {'packages':['timeline']});
-      google.charts.setOnLoadCallback(drawChart);
-      function drawChart() {
-        var container = document.getElementById('timeline');
-        var chart = new google.visualization.Timeline(container);
-        var dataTable = new google.visualization.DataTable();
-
-        dataTable.addColumn({ type: 'string', id: 'ActionKey' });
-        dataTable.addColumn({ type: 'string', id: 'Phase' });
-        dataTable.addColumn({ type: 'number', id: 'Start' });
-        dataTable.addColumn({ type: 'number', id: 'End' });
-        dataTable.addRows([
-$rows
-        ]);
-
-        var options = {
-          colors: ['#cbb69d', '#603913', '#c69c6e']
-        };
-        chart.draw(dataTable, options);
+  try {
+    var rows = new StringBuffer();
+    for (var action in performance.actions) {
+      if (hideSkipped &&
+          !action.phases.any((phase) => phase.label == 'Build')) {
+        continue;
       }
-    </script>
-  </head>
+      var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
+      for (var phase in action.phases) {
+        var start = phase.startTime.millisecondsSinceEpoch -
+            performance.startTime.millisecondsSinceEpoch;
+        var end = phase.stopTime.millisecondsSinceEpoch -
+            performance.startTime.millisecondsSinceEpoch;
+
+        rows.writeln(
+            '          ["$actionKey", "${phase.label}", $start, $end],');
+      }
+    }
+    if (performance.duration < new Duration(seconds: 1)) {
+      rows.writeln('          ['
+          '"https://github.com/google/google-visualization-issues/issues/2269", '
+          '"", 0, 1000]');
+    }
+
+    var showSkippedHref = hideSkipped
+        ? '/$_performancePath'
+        : '/$_performancePath?hideSkipped=true';
+    var showSkippedText =
+        hideSkipped ? "Show Skipped Actions" : "Hide Skipped Actions";
+    var showSkippedLink = '<a href="$showSkippedHref">$showSkippedText</a>';
+    return '''
+  <html>
+    <head>
+      <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+      <script type="text/javascript">
+        google.charts.load('current', {'packages':['timeline']});
+        google.charts.setOnLoadCallback(drawChart);
+        function drawChart() {
+          var container = document.getElementById('timeline');
+          var chart = new google.visualization.Timeline(container);
+          var dataTable = new google.visualization.DataTable();
+
+          dataTable.addColumn({ type: 'string', id: 'ActionKey' });
+          dataTable.addColumn({ type: 'string', id: 'Phase' });
+          dataTable.addColumn({ type: 'number', id: 'Start' });
+          dataTable.addColumn({ type: 'number', id: 'End' });
+          dataTable.addRows([
+  $rows
+          ]);
+
+          var options = {
+            colors: ['#cbb69d', '#603913', '#c69c6e']
+          };
+          chart.draw(dataTable, options);
+        }
+      </script>
+    </head>
+    <body>
+      <p>$showSkippedLink</p>
+      <div id="timeline" style="height: 100%"></div>
+    </body>
+  </html>
+  ''';
+  } on UnimplementedError catch (_) {
+    return '''
+<html>
   <body>
-    <p>$showSkippedLink</p>
-    <div id="timeline" style="height: 100%"></div>
-  </body>
+    <p>
+      Performance information not available, you must pass the
+      `--track-performance` command line arg to enable performance tracking.
+    </p>
+  <body>
 </html>
 ''';
+  }
 }

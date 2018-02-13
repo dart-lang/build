@@ -60,6 +60,7 @@ Future<BuildResult> build(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   String outputDir,
+  bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
 }) async {
@@ -83,6 +84,7 @@ Future<BuildResult> build(
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
       outputDir: outputDir,
+      trackPerformance: trackPerformance,
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
@@ -120,6 +122,7 @@ class BuildImpl {
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final String _outputDir;
+  final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
 
@@ -136,7 +139,8 @@ class BuildImpl {
         _outputDir = options.outputDir,
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
-        _environment = buildDefinition.environment;
+        _environment = buildDefinition.environment,
+        _trackPerformance = options.trackPerformance;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates);
@@ -162,7 +166,7 @@ class _SingleBuild {
   final OnDelete _onDelete;
   final String _outputDir;
   final PackageGraph _packageGraph;
-  final _performanceTracker = new BuildPerformanceTracker();
+  final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
@@ -180,6 +184,9 @@ class _SingleBuild {
         _onDelete = buildImpl._onDelete,
         _outputDir = buildImpl._outputDir,
         _packageGraph = buildImpl._packageGraph,
+        _performanceTracker = buildImpl._trackPerformance
+            ? new BuildPerformanceTracker()
+            : new BuildPerformanceTracker.noOp(),
         _reader = buildImpl._reader,
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
