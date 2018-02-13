@@ -122,11 +122,9 @@ class BuildImpl {
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final String _outputDir;
+  final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
-
-  final bool _trackPerformance;
-  BuildPerformanceTracker _performanceTracker;
 
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
@@ -144,6 +142,9 @@ class BuildImpl {
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance;
 
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
+      new _SingleBuild(this).run(updates);
+
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
       {void onDelete(AssetId id)}) async {
@@ -152,19 +153,53 @@ class BuildImpl {
     build._firstBuild = await build.run({});
     return build;
   }
+}
+
+/// Performs a single build and manages state that only lives for a single
+/// build.
+class _SingleBuild {
+  final AssetGraph _assetGraph;
+  final List<BuildAction> _buildActions;
+  final BuildEnvironment _environment;
+  final bool _failOnSevere;
+  final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
+  final OnDelete _onDelete;
+  final String _outputDir;
+  final PackageGraph _packageGraph;
+  final BuildPerformanceTracker _performanceTracker;
+  final AssetReader _reader;
+  final Resolvers _resolvers;
+  final ResourceManager _resourceManager;
+  final bool _verbose;
+  final RunnerAssetWriter _writer;
+
+  int numActionsCompleted = 0;
+  int numActionsStarted = 0;
+
+  _SingleBuild(BuildImpl buildImpl)
+      : _assetGraph = buildImpl._assetGraph,
+        _buildActions = buildImpl._buildActions,
+        _environment = buildImpl._environment,
+        _failOnSevere = buildImpl._failOnSevere,
+        _onDelete = buildImpl._onDelete,
+        _outputDir = buildImpl._outputDir,
+        _packageGraph = buildImpl._packageGraph,
+        _performanceTracker = buildImpl._trackPerformance
+            ? new BuildPerformanceTracker()
+            : new BuildPerformanceTracker.noOp(),
+        _reader = buildImpl._reader,
+        _resolvers = buildImpl._resolvers,
+        _resourceManager = buildImpl._resourceManager,
+        _verbose = buildImpl._verbose,
+        _writer = buildImpl._writer;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
-    _performanceTracker = _trackPerformance
-        ? new BuildPerformanceTracker()
-        : new BuildPerformanceTracker.noOp();
     var watch = new Stopwatch()..start();
-    _lazyPhases.clear();
     if (updates.isNotEmpty) {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild(_resourceManager);
     await _resourceManager.disposeAll();
-    _performanceTracker = null;
     if (_failOnSevere &&
         _assetGraph.failedActions.isNotEmpty &&
         result.status == BuildStatus.success) {
@@ -218,7 +253,11 @@ class BuildImpl {
   /// capturing.
   Future<BuildResult> _safeBuild(ResourceManager resourceManager) {
     var done = new Completer<BuildResult>();
-    var heartbeat = new HeartbeatLogger()..start();
+
+    var heartbeat = new HeartbeatLogger(
+        transformLog: (original) => '$original, ${_buildProgress()}',
+        waitDuration: new Duration(seconds: 1))
+      ..start();
     done.future.then((_) {
       heartbeat.stop();
     });
@@ -245,6 +284,10 @@ class BuildImpl {
     });
     return done.future;
   }
+
+  /// Returns a message describing the progress of the current build.
+  String _buildProgress() =>
+      '$numActionsCompleted/$numActionsStarted actions completed.';
 
   /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
   /// which completes once all [BuildAction]s are done.
@@ -318,8 +361,6 @@ class BuildImpl {
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
 
-  final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
-
   /// Lazily runs [phaseNumber] with [input] and [resourceManager].
   Future<Iterable<AssetId>> _runLazyPhaseForInput(int phaseNumber,
       bool outputsHidden, AssetId input, ResourceManager resourceManager) {
@@ -384,11 +425,13 @@ class BuildImpl {
 
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new ErrorRecordingLogger(new Logger('$builder on $input'));
+    numActionsStarted++;
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
             new PerformanceTrackingResolvers(_resolvers, tracker),
             logger: logger, resourceManager: resourceManager),
         'Build');
+    numActionsCompleted++;
     if (logger.errorWasSeen) {
       _assetGraph.markActionFailed(phaseNumber, input);
     } else {
