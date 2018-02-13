@@ -1,3 +1,10 @@
+## 0.7.11-dev
+
+- Performance tracking is now disabled by default, and you must pass the
+  `--track-performance` flag to enable it.
+- The heartbeat logger will now log the current number of completed versus
+  scheduled actions, and it will log once a second instead of every 5 seconds.
+
 ## 0.7.10+1
 
 - Fix bug where relative imports in a dependencies build.yaml would break
@@ -17,7 +24,7 @@
 - When using `--output` we will only clean up files we know we previously output
   to the specified directory. This should allow running long lived processes
   such as servers in that directory (as long as they don't hold open file
-  handles). 
+  handles).
 
 ## 0.7.9+2
 
@@ -84,7 +91,7 @@
 
 - Add more human friendly duration printing.
 - Added the `--output <dir>` (or `-o`) argument which will create a merged
-  output directory after each build. 
+  output directory after each build.
 - Added the `--verbose` (or `-v`) flag which enables verbose logging.
   - Disables stack trace folding and terse stack traces.
   - Disables the overwriting of previous info logs.
@@ -108,7 +115,7 @@
 - Added the flag `--fail-on-severe`, which defaults to `false`. In a future
   version this will default to `true`, which means that logging a message via
   `log.severe` will fail the build instead of just printing to the terminal.
-  This would match the current behavior in `bazel_codegen`. 
+  This would match the current behavior in `bazel_codegen`.
 - Added the `test` command to the `build_runner` binary.
 
 ## 0.7.1+1
