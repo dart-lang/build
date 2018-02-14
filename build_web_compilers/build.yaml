@@ -12,12 +12,12 @@ builders:
     is_optional: True
     auto_apply: all_packages
     required_inputs:
-      - ".dart"
+      - .dart
   entrypoint:
     target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - "webEntrypointBuilder"
+      - webEntrypointBuilder
     build_extensions:
       .dart:
         - .dart.bootstrap.js
