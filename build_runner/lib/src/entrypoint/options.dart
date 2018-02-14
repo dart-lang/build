@@ -27,6 +27,8 @@ const _trackPerformance = 'track-performance';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
+final _defaultWebDirs = const ['web', 'test', 'example', 'benchmark'];
+
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
@@ -141,17 +143,19 @@ class _ServeOptions extends _SharedOptions {
   factory _ServeOptions.fromParsedArgs(
       ArgResults argResults, String rootPackage) {
     var serveTargets = <_ServeTarget>[];
+    int nextDefaultPort = 8080;
     for (var arg in argResults.rest) {
       var parts = arg.split(':');
       var path = parts.first;
-      var port = parts.length == 2 ? int.parse(parts[1]) : 8080;
+      var port = parts.length == 2 ? int.parse(parts[1]) : nextDefaultPort++;
       serveTargets.add(new _ServeTarget(path, port));
     }
     if (serveTargets.isEmpty) {
-      serveTargets.addAll([
-        new _ServeTarget('web', 8080),
-        new _ServeTarget('test', 8081),
-      ]);
+      for (var dir in _defaultWebDirs) {
+        if (new Directory(dir).existsSync()) {
+          serveTargets.add(new _ServeTarget(dir, nextDefaultPort++));
+        }
+      }
     }
     return new _ServeOptions._(
       hostName: argResults[_hostname] as String,
