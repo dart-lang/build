@@ -11,20 +11,31 @@ builders:
         - .ddc.js.map
     is_optional: True
     auto_apply: all_packages
-    required_inputs: [".dart"]
+    required_inputs:
+      - ".dart"
   entrypoint:
     target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
-    builder_factories: ["webEntrypointBuilder"]
+    builder_factories:
+      - "webEntrypointBuilder"
     build_extensions:
       .dart:
         - .dart.bootstrap.js
         - .dart.js
         - .dart.js.map
-    required_inputs:  [".dart", ".ddc.js", ".module"]
+    required_inputs:
+      - .dart
+      - .ddc.js
+      - .module
     build_to: cache
     auto_apply: root_package
     defaults:
       generate_for:
-        include: ["web/**", "test/**_test.dart"]
-        exclude: ["test/**.node_test.dart", "test/**.vm_test.dart"]
+        include:
+          - web/**
+          - test/**_test.dart
+          - example/**
+          - benchmark/**
+        exclude:
+          - test/**.node_test.dart
+          - test/**.vm_test.dart
