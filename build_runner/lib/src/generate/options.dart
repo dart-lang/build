@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
@@ -26,16 +27,16 @@ const List<String> _defaultRootPackageWhitelist = const [
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
   // Build mode options.
-  StreamSubscription logListener;
-  PackageGraph packageGraph;
-  List<String> rootPackageFilesWhitelist;
+  final StreamSubscription logListener;
+  final PackageGraph packageGraph;
+  final List<String> rootPackageFilesWhitelist;
 
-  bool deleteFilesByDefault;
-  bool enableLowResourcesMode;
-  bool failOnSevere;
+  final bool deleteFilesByDefault;
+  final bool enableLowResourcesMode;
+  final bool failOnSevere;
   final String outputDir;
-  bool trackPerformance;
-  bool verbose;
+  final bool trackPerformance;
+  final bool verbose;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -43,18 +44,33 @@ class BuildOptions {
   // For testing only, skips the build script updates check.
   bool skipBuildScriptCheck;
 
-  BuildOptions(BuildEnvironment environment,
-      {@required this.packageGraph,
-      BuildConfig rootPackageConfig,
-      this.debounceDelay,
-      this.deleteFilesByDefault,
-      this.failOnSevere,
+  BuildOptions._(
+      {@required this.debounceDelay,
+      @required this.deleteFilesByDefault,
+      @required this.enableLowResourcesMode,
+      @required this.failOnSevere,
+      @required this.logListener,
+      @required this.outputDir,
+      @required this.packageGraph,
+      @required List<String> rootPackageFilesWhitelist,
+      @required this.skipBuildScriptCheck,
+      @required this.trackPerformance,
+      @required this.verbose})
+      : this.rootPackageFilesWhitelist =
+            new UnmodifiableListView(rootPackageFilesWhitelist);
+
+  factory BuildOptions(BuildEnvironment environment,
+      {Duration debounceDelay,
+      bool deleteFilesByDefault,
+      bool enableLowResourcesMode,
+      bool failOnSevere,
       Level logLevel,
-      this.skipBuildScriptCheck,
-      this.enableLowResourcesMode,
-      this.outputDir,
-      this.trackPerformance,
-      this.verbose}) {
+      String outputDir,
+      @required PackageGraph packageGraph,
+      BuildConfig rootPackageConfig,
+      bool skipBuildScriptCheck,
+      bool trackPerformance,
+      bool verbose}) {
     // Set up logging
     verbose ??= false;
     logLevel ??= verbose ? Level.ALL : Level.INFO;
@@ -66,7 +82,7 @@ class BuildOptions {
 
     Logger.root.level = logLevel;
 
-    logListener = Logger.root.onRecord.listen(environment.onLog);
+    var logListener = Logger.root.onRecord.listen(environment.onLog);
 
     /// Set up other defaults.
     debounceDelay ??= const Duration(milliseconds: 250);
@@ -76,6 +92,7 @@ class BuildOptions {
     enableLowResourcesMode ??= false;
     trackPerformance ??= false;
 
+    List<String> rootPackageFilesWhitelist;
     if (rootPackageConfig == null ||
         (rootPackageConfig.buildTargets.length == 1 &&
             rootPackageConfig.buildTargets.values.single.sources.include ==
@@ -86,5 +103,17 @@ class BuildOptions {
           .expand((target) => target.sources.include)
           .toList();
     }
+    return new BuildOptions._(
+        debounceDelay: debounceDelay,
+        deleteFilesByDefault: deleteFilesByDefault,
+        enableLowResourcesMode: enableLowResourcesMode,
+        failOnSevere: failOnSevere,
+        logListener: logListener,
+        outputDir: outputDir,
+        packageGraph: packageGraph,
+        rootPackageFilesWhitelist: rootPackageFilesWhitelist,
+        skipBuildScriptCheck: skipBuildScriptCheck,
+        trackPerformance: trackPerformance,
+        verbose: verbose);
   }
 }
