@@ -16,11 +16,16 @@ String _pubBinary = p.join(getSdkPath(), 'bin', 'pub');
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
 Future<ProcessResult> pubGet(String package) async {
-  var pubGetresult = await Process.run(_pubBinary, ['get', '--offline'],
-      workingDirectory: p.join(d.sandbox, package));
+  var pubGetresult = await runPub(package, 'get', args: ['--offline']);
   expect(pubGetresult.exitCode, 0, reason: pubGetresult.stderr as String);
   return pubGetresult;
 }
+
+/// Runs the `pub` [command] on [package] with [args].
+Future<ProcessResult> runPub(String package, String command,
+        {Iterable<String> args}) =>
+    Process.run(_pubBinary, [command]..addAll(args ?? []),
+        workingDirectory: p.join(d.sandbox, package));
 
 /// Runs the `dart` script [script] in [package] with [args].
 ///

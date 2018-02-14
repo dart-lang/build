@@ -294,5 +294,25 @@ main() async {
           allOf(contains('Found 1 outputs already on disk'),
               contains('a|web/a.txt.copy.copy')));
     });
+
+    test('Missing build_test dependency reports the right error', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_runner',
+        ]),
+        d.dir('web', [
+          d.file('a.txt', 'a'),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+      var result = await runPub('a', 'run', args: ['build_runner', 'test']);
+
+      expect(result.exitCode, isNot(0),
+          reason: 'build should fail due to missing build_test dependency');
+      expect(result.stdout,
+          contains('Missing dev dependecy on package:build_test'));
+    });
   });
 }

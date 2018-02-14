@@ -407,9 +407,12 @@ class _TestCommand extends BuildRunnerCommand {
         exitCode = testExitCode;
       }
       return testExitCode;
+    } on BuildTestDependencyError catch (e) {
+      stdout.writeln(e);
+      return ExitCode.config.code;
     } finally {
       // Clean up the output dir if one wasn't explicitly asked for.
-      if (options.outputDir == null && outputDir != null) {
+      if (options?.outputDir == null && outputDir != null) {
         await new Directory(outputDir).delete(recursive: true);
       }
     }
@@ -434,17 +437,7 @@ class _TestCommand extends BuildRunnerCommand {
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
   if (packageGraph.allPackages['build_test'] == null) {
-    throw new StateError('''
-Missing dev dependecy on package:build_test, which is required to run tests.
-
-Please update your dev_dependencies section of your pubspec.yaml:
-
-  dev_dependencies:
-    build_runner: any
-    build_test: any
-    # If you need to run web tests, you will also need this dependency.
-    build_web_compilers: any
-''');
+    throw new BuildTestDependencyError();
   }
 }
 
@@ -487,4 +480,18 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     config[option] = value;
   }
   return builderConfigOverrides;
+}
+
+class BuildTestDependencyError extends StateError {
+  BuildTestDependencyError() : super('''
+Missing dev dependecy on package:build_test, which is required to run tests.
+
+Please update your dev_dependencies section of your pubspec.yaml:
+
+  dev_dependencies:
+    build_runner: any
+    build_test: any
+    # If you need to run web tests, you will also need this dependency.
+    build_web_compilers: any
+''');
 }

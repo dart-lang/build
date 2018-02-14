@@ -5,6 +5,8 @@
 - The heartbeat logger will now log the current number of completed versus
   scheduled actions, and it will log once a second instead of every 5 seconds.
 - Builds will now be invalidated when the dart SDK is updated.
+- Fixed the error message when missing a build_test dependency but trying to run
+  the `test` command.
 
 ## 0.7.10+1
 
