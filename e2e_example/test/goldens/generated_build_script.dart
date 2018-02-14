@@ -29,9 +29,15 @@ final _builders = [
   _i1.apply('build_web_compilers|entrypoint', [_i6.webEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,
-      defaultGenerateFor: const _i4.InputSet(
-          include: const ['web/**', 'test/**_test.dart'],
-          exclude: const ['test/**.node_test.dart', 'test/**.vm_test.dart']))
+      defaultGenerateFor: const _i4.InputSet(include: const [
+        'web/**',
+        'test/**_test.dart',
+        'example/**',
+        'benchmark/**'
+      ], exclude: const [
+        'test/**.node_test.dart',
+        'test/**.vm_test.dart'
+      ]))
 ];
 main(List<String> args, [_i7.SendPort sendPort]) async {
   var result = await _i1.run(args, _builders);
