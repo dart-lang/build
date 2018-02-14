@@ -141,16 +141,17 @@ class _ServeOptions extends _SharedOptions {
   factory _ServeOptions.fromParsedArgs(
       ArgResults argResults, String rootPackage) {
     var serveTargets = <_ServeTarget>[];
+    int nextDefaultPort = 8080;
     for (var arg in argResults.rest) {
       var parts = arg.split(':');
       var path = parts.first;
-      var port = parts.length == 2 ? int.parse(parts[1]) : 8080;
+      var port = parts.length == 2 ? int.parse(parts[1]) : nextDefaultPort++;
       serveTargets.add(new _ServeTarget(path, port));
     }
     if (serveTargets.isEmpty) {
       serveTargets.addAll([
-        new _ServeTarget('web', 8080),
-        new _ServeTarget('test', 8081),
+        new _ServeTarget('web', nextDefaultPort++),
+        new _ServeTarget('test', nextDefaultPort++),
       ]);
     }
     return new _ServeOptions._(
