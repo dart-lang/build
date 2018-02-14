@@ -313,6 +313,9 @@ class _ServeCommand extends _WatchCommand {
   }
 
   @override
+  String get invocation => '${super.invocation} [directory[:port]] ...';
+
+  @override
   String get name => 'serve';
 
   @override
