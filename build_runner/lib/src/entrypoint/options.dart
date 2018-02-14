@@ -27,6 +27,8 @@ const _trackPerformance = 'track-performance';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
+final _defaultWebDirs = const ['web', 'test', 'example', 'benchmark'];
+
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
@@ -149,10 +151,11 @@ class _ServeOptions extends _SharedOptions {
       serveTargets.add(new _ServeTarget(path, port));
     }
     if (serveTargets.isEmpty) {
-      serveTargets.addAll([
-        new _ServeTarget('web', nextDefaultPort++),
-        new _ServeTarget('test', nextDefaultPort++),
-      ]);
+      for (var dir in _defaultWebDirs) {
+        if (new Directory(dir).existsSync()) {
+          serveTargets.add(new _ServeTarget(dir, nextDefaultPort++));
+        }
+      }
     }
     return new _ServeOptions._(
       hostName: argResults[_hostname] as String,
