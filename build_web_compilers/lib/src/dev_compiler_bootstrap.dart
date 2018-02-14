@@ -199,6 +199,11 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
     customModulePaths[moduleName] = modulePath;
   }
   var src = _currentDirectory + modulePath + '.js';
+  // dartdevc only strips the final extension when adding modules to source
+  // maps, so we need to do the same.
+  if (moduleName != 'dart_sdk') {
+    moduleName += '${p.withoutExtension(jsModuleExtension)}';
+  }
   if (window.\$dartLoader.moduleIdToUrl.has(moduleName)) {
     continue;
   }
