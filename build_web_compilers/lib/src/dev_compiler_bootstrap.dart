@@ -183,6 +183,7 @@ var _currentDirectory = (function () {
 /// Sets up `window.$dartLoader` based on [modulePaths].
 String _dartLoaderSetup(Map<String, String> modulePaths) => '''
 $_currentDirectoryScript
+$_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
@@ -198,7 +199,7 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   if (modulePath != moduleName) {
     customModulePaths[moduleName] = modulePath;
   }
-  var src = _currentDirectory + modulePath + '.js';
+  var src = window.location.origin + '/' + modulePath + '.js';
   // dartdevc only strips the final extension when adding modules to source
   // maps, so we need to do the same.
   if (moduleName != 'dart_sdk') {
