@@ -215,6 +215,17 @@ void main() {
     expect(
         logs.map((l) => l.message), contains(contains('$pkgName|lib/a.dart')));
   });
+
+  test('Should have a readable toString() message for builders', () {
+    final builder = new LibraryBuilder(new _NoOpGenerator());
+    expect(builder.toString(), 'Generating .g.dart: NOOP');
+
+    final builders = new PartBuilder([
+      new _NoOpGenerator(),
+      new _NoOpGenerator(),
+    ]);
+    expect(builders.toString(), 'Generating .g.dart: NOOP, NOOP');
+  });
 }
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
@@ -241,12 +252,17 @@ Map<String, String> _createPackageStub(String pkgName,
 /// Doesn't generate output for any element
 class _NoOpGenerator extends Generator {
   const _NoOpGenerator();
+
   @override
   Future<String> generate(LibraryReader library, _) => null;
+
+  @override
+  String toString() => 'NOOP';
 }
 
 class _BadOutputGenerator extends Generator {
   const _BadOutputGenerator();
+
   @override
   Future<String> generate(LibraryReader library, _) async => 'not valid code!';
 }

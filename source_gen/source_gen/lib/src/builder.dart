@@ -154,6 +154,11 @@ class _Builder extends Builder {
     // ignore: unawaited_futures
     buildStep.writeAsString(outputId, genPartContent);
   }
+
+  @override
+  String toString() {
+    return 'Generating $_generatedExtension: ${_generators.join(', ')}';
+  }
 }
 
 /// A [Builder] which generates `part of` files.

@@ -1,3 +1,10 @@
+## 0.7.5+1
+
+* `LibraryBuilder` and `PartBuilder` now have a more readable `toString()`,
+  which is useful when emitting a warning or error in a build system. For
+  example you may see `Generating .g.dart: MyBuilder` instead of
+  `Instance of LibraryBuilder` in your build logs.
+
 ## 0.7.5
 
 * The `PartBuilder` constructor parameter `requireLibraryDirective` now defaults
