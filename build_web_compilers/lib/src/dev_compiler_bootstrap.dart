@@ -81,10 +81,6 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   await buildStep.writeAsString(
       dartEntrypointId.changeExtension(jsEntrypointExtension),
       entrypointJsContent);
-  await buildStep.writeAsString(
-      dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension),
-      '{"version":3,"sourceRoot":"","sources":[],"names":[],"mappings":"",'
-      '"file":""}');
 }
 
 /// Ensures that all transitive js modules for [module] are available and built.
