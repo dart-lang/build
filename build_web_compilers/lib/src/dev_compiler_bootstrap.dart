@@ -218,12 +218,14 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
 ///
 /// Posts a message to the window when done.
 final _initializeTools = '''
+$_baseUrlScript
   dart_sdk._debugger.registerDevtoolsFormatter();
   if (window.\$dartStackTraceUtility && !window.\$dartStackTraceUtility.ready) {
     window.\$dartStackTraceUtility.ready = true;
     let dart = dart_sdk.dart;
     window.\$dartStackTraceUtility.setSourceMapProvider(
       function(url) {
+        url = url.replace(baseUrl, '/');
         var module = window.\$dartLoader.urlToModuleId.get(url);
         if (!module) return null;
         return dart.getSourceMap(module);
