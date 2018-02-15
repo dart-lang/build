@@ -178,7 +178,7 @@ var _currentDirectory = (function () {
 
 /// Sets up `window.$dartLoader` based on [modulePaths].
 String _dartLoaderSetup(Map<String, String> modulePaths) => '''
-$_currentDirectoryScript
+$_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
@@ -188,7 +188,7 @@ if(!window.\$dartLoader) {
    };
 }
 let customModulePaths = {};
-window.\$dartLoader.rootDirectories.push(_currentDirectory);
+window.\$dartLoader.rootDirectories.push(window.location.origin + baseUrl);
 for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   let modulePath = modulePaths[moduleName];
   if (modulePath != moduleName) {
