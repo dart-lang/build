@@ -11,6 +11,7 @@ import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
@@ -73,6 +74,7 @@ Future<ServeHandler> watch(
       directoryWatcherFactory: directoryWatcherFactory,
       onLog: onLog);
   var options = new BuildOptions(environment,
+      configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
@@ -119,6 +121,7 @@ typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
   BuildDefinition _buildDefinition;
+  final String _configKey; // may be null
   final Iterable<Glob> _rootPackageFilesWhitelist;
 
   /// Delay to wait for more file watcher events.
@@ -148,7 +151,8 @@ class WatchImpl implements BuildState {
       List<BuildAction> buildActions,
       Future until,
       this._rootPackageFilesWhitelist)
-      : _directoryWatcherFactory = environment.directoryWatcherFactory,
+      : _configKey = options.configKey,
+        _directoryWatcherFactory = environment.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
     buildResults =
@@ -212,16 +216,26 @@ class WatchImpl implements BuildState {
         })
         .asyncMap<AssetChange>((change) {
           // Kill future builds if the root packages file changes.
+          var id = change.id;
           assert(originalRootPackagesDigest != null);
-          if (change.id != rootPackagesId) return change;
-          return environment.reader.readAsBytes(rootPackagesId).then((bytes) {
-            if (md5.convert(bytes) != originalRootPackagesDigest) {
-              _terminateCompleter.complete();
-              _logger.severe('Terminating builds due to package graph update, '
-                  'please restart the build.');
-            }
-            return change;
-          });
+          if (id == rootPackagesId) {
+            return environment.reader.readAsBytes(rootPackagesId).then((bytes) {
+              if (md5.convert(bytes) != originalRootPackagesDigest) {
+                _terminateCompleter.complete();
+                _logger
+                    .severe('Terminating builds due to package graph update, '
+                        'please restart the build.');
+              }
+              return change;
+            });
+          } else if (p
+              .basename(id.path)
+              .contains(new RegExp('^build(\.$_configKey)?\.yaml\$'))) {
+            _terminateCompleter.complete();
+            _logger.severe(
+                'Terminating builds due to ${id.package}:${id.path} update.');
+          }
+          return change;
         })
         .where(_shouldProcess)
         .transform(debounceBuffer(_debounceDelay))
