@@ -31,6 +31,7 @@ class BuildOptions {
   final PackageGraph packageGraph;
   final List<String> rootPackageFilesWhitelist;
 
+  final String configKey; // May be null.
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
   final bool failOnSevere;
@@ -45,7 +46,8 @@ class BuildOptions {
   bool skipBuildScriptCheck;
 
   BuildOptions._(
-      {@required this.debounceDelay,
+      {@required this.configKey,
+      @required this.debounceDelay,
       @required this.deleteFilesByDefault,
       @required this.enableLowResourcesMode,
       @required this.failOnSevere,
@@ -60,7 +62,8 @@ class BuildOptions {
             new UnmodifiableListView(rootPackageFilesWhitelist);
 
   factory BuildOptions(BuildEnvironment environment,
-      {Duration debounceDelay,
+      {String configKey,
+      Duration debounceDelay,
       bool deleteFilesByDefault,
       bool enableLowResourcesMode,
       bool failOnSevere,
@@ -104,6 +107,7 @@ class BuildOptions {
           .toList();
     }
     return new BuildOptions._(
+        configKey: configKey,
         debounceDelay: debounceDelay,
         deleteFilesByDefault: deleteFilesByDefault,
         enableLowResourcesMode: enableLowResourcesMode,

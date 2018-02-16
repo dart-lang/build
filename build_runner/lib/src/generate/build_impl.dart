@@ -76,6 +76,7 @@ Future<BuildResult> build(
       writer: writer,
       onLog: onLog);
   var options = new BuildOptions(environment,
+      configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,

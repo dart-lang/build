@@ -2,10 +2,6 @@ targets:
   $default:
     builders:
       build_web_compilers|entrypoint:
-        options:
-          compiler: dart2js
-          dart2js_args:
-          - --checked
         generate_for:
           - web/main.dart
           - web/sub/main.dart
