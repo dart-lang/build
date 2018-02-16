@@ -21,4 +21,8 @@ void main() {
   test('hello world', () {
     expect(document.body.text, contains(message));
   });
+
+  test('failing test', () {
+    expect(true, isFalse);
+  }, skip: 'Expected failure');
 }
