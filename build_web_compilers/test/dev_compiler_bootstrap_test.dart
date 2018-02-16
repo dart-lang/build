@@ -41,7 +41,6 @@ main() {
     // things actually work.
     var expectedOutputs = {
       'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
-      'a|web/index.dart.js.map': anything,
       'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
         // Maps non-lib modules to remove the top level dir.
         contains('"web/index": "index.ddc"'),

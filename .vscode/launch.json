@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Dart command line",
+            "type": "dart-cli",
+            "request": "launch",
+            "program": "${workspaceRoot}/bin/main.dart"
+        },
+        {
+            "name": "E2E example build",
+            "type": "dart-cli",
+            "request": "launch",
+            "program": "${workspaceRoot}/e2e_example/.dart_tool/build/entrypoint/build.dart",
+            "cwd": "${workspaceRoot}/e2e_example",
+            "args": [
+                "build"
+            ]
+        }
+    ]
+}
