@@ -188,22 +188,25 @@ Future<String> nextStdOutLine(String message) =>
 
 /// Runs tests using the manual build script.
 Future<ProcessResult> runManualTests(
-    {bool usePrecompiled, List<String> buildArgs}) {
+    {bool usePrecompiled, List<String> buildArgs, List<String> testArgs}) {
   return _runTests('dart', [p.join('tool', 'build.dart')],
-      usePrecompiled: usePrecompiled, buildArgs: buildArgs);
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
 }
 
 /// Runs tests using the auto build script.
 Future<ProcessResult> runAutoTests(
-    {bool usePrecompiled, List<String> buildArgs}) {
+    {bool usePrecompiled, List<String> buildArgs, List<String> testArgs}) {
   return _runTests(_pubBinary, ['run', 'build_runner'],
-      usePrecompiled: usePrecompiled, buildArgs: buildArgs);
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
 }
 
 Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
-    {bool usePrecompiled, List<String> buildArgs}) async {
+    {bool usePrecompiled,
+    List<String> buildArgs,
+    List<String> testArgs}) async {
   usePrecompiled ??= true;
-  var testArgs = ['-p', 'chrome'];
+  testArgs ??= [];
+  testArgs.addAll(['-p', 'chrome']);
   if (usePrecompiled) {
     var args = scriptArgs.toList()
       ..add('test')
