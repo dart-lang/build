@@ -11,7 +11,6 @@ import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
