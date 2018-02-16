@@ -7,6 +7,7 @@
 - Builds will now be invalidated when the dart SDK is updated.
 - Fixed the error message when missing a build_test dependency but trying to run
   the `test` command.
+- The build script will now exit on changes to `build.yaml` files.
 
 ## 0.7.10+1
 
