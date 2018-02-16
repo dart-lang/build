@@ -258,22 +258,6 @@ when(cat.eatFood(any)).thenReturn(false);
 expect(cat.eatFood("Fish"), false);
 ```
 
-## Spy
-
-```dart
-// Spy creation:
-var cat = spy(new MockCat(), new Cat());
-
-// Stubbing - before execution:
-when(cat.sound()).thenReturn("Purr");
-
-// Using mocked interaction:
-expect(cat.sound(), "Purr");
-
-// Using a real object:
-expect(cat.lives, 9);
-```
-
 ## Debugging
 
 ```dart
