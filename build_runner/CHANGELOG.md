@@ -1,4 +1,4 @@
-## 0.7.11-dev
+## 0.7.11
 
 - Performance tracking is now disabled by default, and you must pass the
   `--track-performance` flag to enable it.
