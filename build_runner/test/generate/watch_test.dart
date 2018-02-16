@@ -392,6 +392,15 @@ a:file://different/fake/pkg/path
             expect(logs.first.message,
                 contains('Terminating builds due to b:build.yaml update'));
           });
+
+          test('<package>.build.yaml', () async {
+            await writer.writeAsString(
+                new AssetId('a', 'b.build.yaml'), '# New b.build.yaml file');
+            expect(await results.hasNext, isFalse);
+            expect(logs.length, 1);
+            expect(logs.first.message,
+                contains('Terminating builds due to a:b.build.yaml update'));
+          });
         });
 
         group('is edited', () {
@@ -451,6 +460,16 @@ a:file://different/fake/pkg/path
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
+          });
+
+          test('build.<config>.yaml in dependencies are ignored', () async {
+            await writer.writeAsString(
+                new AssetId('b', 'build.cool.yaml'), '# New build.yaml file');
+
+            await new Future.delayed(_debounceDelay);
+            expect(logs, isEmpty);
+
+            await terminateWatch();
           });
 
           test('build.<config>.yaml is edited', () async {

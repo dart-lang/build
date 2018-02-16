@@ -215,10 +215,10 @@ class WatchImpl implements BuildState {
           return firstBuildCompleter.future.then((_) => change);
         })
         .asyncMap<AssetChange>((change) {
-          // Kill future builds if the root packages file changes.
           var id = change.id;
           assert(originalRootPackagesDigest != null);
           if (id == rootPackagesId) {
+            // Kill future builds if the root packages file changes.
             return environment.reader.readAsBytes(rootPackagesId).then((bytes) {
               if (md5.convert(bytes) != originalRootPackagesDigest) {
                 _terminateCompleter.complete();
@@ -228,9 +228,10 @@ class WatchImpl implements BuildState {
               }
               return change;
             });
-          } else if (p
-              .basename(id.path)
-              .contains(new RegExp('^build(\.$_configKey)?\.yaml\$'))) {
+          } else if (_isBuildYaml(id) ||
+              _isConfiguredBuildYaml(id) ||
+              _isPackageBuildYamlOverride(id)) {
+            // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
             _logger.severe(
                 'Terminating builds due to ${id.package}:${id.path} update.');
@@ -285,6 +286,15 @@ class WatchImpl implements BuildState {
 
   _BuildAction _recordCurrentBuild(_BuildAction build) => (changes) =>
       currentBuild = build(changes)..then((_) => currentBuild = null);
+
+  bool _isBuildYaml(AssetId id) => id.path == 'build.yaml';
+  bool _isConfiguredBuildYaml(AssetId id) =>
+      id.package == packageGraph.root.name &&
+      id.path == 'build.$_configKey.yaml';
+  bool _isPackageBuildYamlOverride(AssetId id) =>
+      id.package == packageGraph.root.name &&
+      id.path.contains(_packageBuildYamlRegexp);
+  final _packageBuildYamlRegexp = new RegExp(r'^[a-z0-9_]+\.build\.yaml$');
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
