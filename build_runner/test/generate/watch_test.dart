@@ -354,6 +354,116 @@ a:file://different/fake/pkg/path
             contains('Terminating builds due to package graph update, '
                 'please restart the build.'));
       });
+
+      group('build.yaml', () {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: path.absolute('a')): ['b'],
+          package('b', path: path.absolute('b')): []
+        });
+        List<LogRecord> logs;
+        StreamQueue<BuildResult> results;
+
+        group('is added', () {
+          setUp(() async {
+            logs = <LogRecord>[];
+            var buildState = await startWatch([], {}, writer,
+                logLevel: Level.SEVERE,
+                onLog: logs.add,
+                packageGraph: packageGraph);
+            results = new StreamQueue(buildState.buildResults);
+            await results.next;
+          });
+
+          test('to the root package', () async {
+            await writer.writeAsString(
+                new AssetId('a', 'build.yaml'), '# New build.yaml file');
+            expect(await results.hasNext, isFalse);
+            expect(logs.length, 1);
+            expect(logs.first.message,
+                contains('Terminating builds due to a:build.yaml update'));
+          });
+
+          test('to a dependency', () async {
+            await writer.writeAsString(
+                new AssetId('b', 'build.yaml'), '# New build.yaml file');
+
+            expect(await results.hasNext, isFalse);
+            expect(logs.length, 1);
+            expect(logs.first.message,
+                contains('Terminating builds due to b:build.yaml update'));
+          });
+        });
+
+        group('is edited', () {
+          setUp(() async {
+            logs = <LogRecord>[];
+            var buildState = await startWatch(
+                [], {'a|build.yaml': '', 'b|build.yaml': ''}, writer,
+                logLevel: Level.SEVERE,
+                onLog: logs.add,
+                packageGraph: packageGraph);
+            results = new StreamQueue(buildState.buildResults);
+            await results.next;
+          });
+
+          test('in the root package', () async {
+            await writer.writeAsString(
+                new AssetId('a', 'build.yaml'), '# Edited build.yaml file');
+
+            expect(await results.hasNext, isFalse);
+            expect(logs.length, 1);
+            expect(logs.first.message,
+                contains('Terminating builds due to a:build.yaml update'));
+          });
+
+          test('in a dependency', () async {
+            await writer.writeAsString(
+                new AssetId('b', 'build.yaml'), '# Edited build.yaml file');
+
+            expect(await results.hasNext, isFalse);
+            expect(logs.length, 1);
+            expect(logs.first.message,
+                contains('Terminating builds due to b:build.yaml update'));
+          });
+        });
+
+        group('with --config', () {
+          setUp(() async {
+            logs = <LogRecord>[];
+            var buildState = await startWatch(
+                [], {'a|build.yaml': '', 'a|build.cool.yaml': ''}, writer,
+                configKey: 'cool',
+                logLevel: Level.SEVERE,
+                onLog: logs.add,
+                overrideBuildConfig: {
+                  'a': new BuildConfig.useDefault('a', ['b'])
+                },
+                packageGraph: packageGraph);
+            results = new StreamQueue(buildState.buildResults);
+            await results.next;
+          });
+
+          test('original is edited', () async {
+            await writer.writeAsString(
+                new AssetId('a', 'build.yaml'), '# Edited build.yaml file');
+
+            expect(await results.hasNext, isFalse);
+            expect(logs.length, 1);
+            expect(logs.first.message,
+                contains('Terminating builds due to a:build.yaml update'));
+          });
+
+          test('build.<config>.yaml is edited', () async {
+            await writer.writeAsString(new AssetId('a', 'build.cool.yaml'),
+                '# Edited build.cool.yaml file');
+
+            expect(await results.hasNext, isFalse);
+            expect(logs.length, 1);
+            expect(logs.first.message,
+                contains('Terminating builds due to a:build.cool.yaml update'));
+          });
+        });
+      });
     });
 
     group('multiple phases', () {
@@ -547,7 +657,8 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
     {PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
     onLog(LogRecord record),
-    Level logLevel: Level.OFF}) {
+    Level logLevel: Level.OFF,
+    String configKey}) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });
@@ -558,6 +669,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
   final watcherFactory = (String path) => new FakeWatcher(path);
 
   return watch_impl.watch(builders,
+      configKey: configKey,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
