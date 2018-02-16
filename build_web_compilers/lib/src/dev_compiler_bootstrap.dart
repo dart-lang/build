@@ -81,10 +81,6 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   await buildStep.writeAsString(
       dartEntrypointId.changeExtension(jsEntrypointExtension),
       entrypointJsContent);
-  await buildStep.writeAsString(
-      dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension),
-      '{"version":3,"sourceRoot":"","sources":[],"names":[],"mappings":"",'
-      '"file":""}');
 }
 
 /// Ensures that all transitive js modules for [module] are available and built.
@@ -182,7 +178,7 @@ var _currentDirectory = (function () {
 
 /// Sets up `window.$dartLoader` based on [modulePaths].
 String _dartLoaderSetup(Map<String, String> modulePaths) => '''
-$_currentDirectoryScript
+$_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
@@ -192,13 +188,18 @@ if(!window.\$dartLoader) {
    };
 }
 let customModulePaths = {};
-window.\$dartLoader.rootDirectories.push(_currentDirectory);
+window.\$dartLoader.rootDirectories.push(window.location.origin + baseUrl);
 for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   let modulePath = modulePaths[moduleName];
   if (modulePath != moduleName) {
     customModulePaths[moduleName] = modulePath;
   }
-  var src = _currentDirectory + modulePath + '.js';
+  var src = window.location.origin + '/' + modulePath + '.js';
+  // dartdevc only strips the final extension when adding modules to source
+  // maps, so we need to do the same.
+  if (moduleName != 'dart_sdk') {
+    moduleName += '${p.withoutExtension(jsModuleExtension)}';
+  }
   if (window.\$dartLoader.moduleIdToUrl.has(moduleName)) {
     continue;
   }
@@ -212,12 +213,14 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
 ///
 /// Posts a message to the window when done.
 final _initializeTools = '''
+$_baseUrlScript
   dart_sdk._debugger.registerDevtoolsFormatter();
   if (window.\$dartStackTraceUtility && !window.\$dartStackTraceUtility.ready) {
     window.\$dartStackTraceUtility.ready = true;
     let dart = dart_sdk.dart;
     window.\$dartStackTraceUtility.setSourceMapProvider(
       function(url) {
+        url = url.replace(baseUrl, '/');
         var module = window.\$dartLoader.urlToModuleId.get(url);
         if (!module) return null;
         return dart.getSourceMap(module);
