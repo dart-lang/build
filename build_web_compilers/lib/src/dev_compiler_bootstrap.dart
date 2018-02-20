@@ -95,6 +95,7 @@ Future<List<Module>> _ensureTransitiveModules(
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
     if (await reader.canRead(jsId)) return;
+    await reader.canRead(jsId.addExtension('.errors'));
     log.warning(
         'Unable to read $jsId, check your console for compilation errors.');
   }));
@@ -249,10 +250,16 @@ final _requireJsConfig = '''
     if (e.originalError && e.originalError.srcElement) {
       var xhr = new XMLHttpRequest();
       xhr.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          console.error(this.responseText);
+        if (this.readyState == 4) {
+          var message;
+          if (this.status == 200) {
+            message = this.responseText;
+          } else {
+            message = "Unknown error loading " + e.originalError.srcElement.src;
+          }
+          console.error(message);
           var errorEvent = new CustomEvent(
-            'dartLoadException', { detail: this.responseText });
+            'dartLoadException', { detail: message });
           window.dispatchEvent(errorEvent);
         }
       };

@@ -46,6 +46,9 @@ Future<bool> createMergedOutputDir(
   Future<Null> _ensureInputs(GeneratedAssetNode node) async {
     for (var inputId in node.inputs) {
       final inputNode = assetGraph.get(inputId);
+      if (_shouldSkipNode(inputNode, buildActions, skipOptional: false)) {
+        continue;
+      }
       if (inputNode is GeneratedAssetNode &&
           buildActions[inputNode.phaseNumber].isOptional &&
           !originalOutputAssets.contains(inputId)) {
@@ -115,7 +118,7 @@ bool _shouldSkipNode(AssetNode node, List<BuildAction> buildActions,
   if (!node.isReadable) return true;
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
-    if (!node.wasOutput) return true;
+    if (!node.wasOutput || node.needsUpdate) return true;
     if (skipOptional && buildActions[node.phaseNumber].isOptional) return true;
   }
   if (node.id.path == '.packages') return true;
