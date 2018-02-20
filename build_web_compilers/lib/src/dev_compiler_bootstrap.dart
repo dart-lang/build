@@ -95,9 +95,11 @@ Future<List<Module>> _ensureTransitiveModules(
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
     if (await reader.canRead(jsId)) return;
-    await reader.canRead(jsId.addExtension('.errors'));
-    log.warning(
-        'Unable to read $jsId, check your console for compilation errors.');
+    var errorsId = jsId.addExtension('.errors');
+    await reader.canRead(errorsId);
+    log.warning('Unable to read $jsId, check your console or the '
+        '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
+        'log file.');
   }));
   return transitiveDeps;
 }
