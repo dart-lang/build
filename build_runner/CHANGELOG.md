@@ -1,3 +1,9 @@
+## 0.7.11+1
+
+- Switch to use a `PollingDirectoryWatcher` on windows, which should fix file
+  watching with the `--output` option. Follow along at
+  https://github.com/dart-lang/watcher/issues/52 for more details.
+
 ## 0.7.11
 
 - Performance tracking is now disabled by default, and you must pass the
