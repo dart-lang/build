@@ -4,6 +4,8 @@
   build. Previously when switching js compilers you could end up with ddc
   modules in your dart2js output, even though they weren't required. See
   https://github.com/dart-lang/build/issues/1033.
+- The experimental `create_merged_dir` binary is now removed, it can't be easily
+  supported any more and has been replaced by the `--output` option.
 
 ## 0.7.11+1
 
