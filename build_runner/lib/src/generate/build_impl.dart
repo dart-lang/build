@@ -212,8 +212,8 @@ class _SingleBuild {
           '--fail-on-severe was passed.');
     }
     if (_outputDir != null && result.status == BuildStatus.success) {
-      if (!await createMergedOutputDir(
-          _outputDir, _assetGraph, _packageGraph, _reader, _environment)) {
+      if (!await createMergedOutputDir(_outputDir, _assetGraph, _packageGraph,
+          _reader, _environment, _buildActions)) {
         result = _convertToFailure(
             result, 'Failed to create merged output directory.');
       }
