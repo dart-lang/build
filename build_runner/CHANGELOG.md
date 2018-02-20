@@ -1,3 +1,10 @@
+## 0.7.11+2
+
+- The `--output` option now only outputs files that were required for the latest
+  build. Previously when switching js compilers you could end up with ddc
+  modules in your dart2js output, even though they weren't required. See
+  https://github.com/dart-lang/build/issues/1033.
+
 ## 0.7.11+1
 
 - Switch to use a `PollingDirectoryWatcher` on windows, which should fix file
