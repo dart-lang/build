@@ -96,7 +96,8 @@ void main() {
             var generatedNode = new GeneratedAssetNode(makeAssetId(),
                 phaseNumber: phaseNum,
                 primaryInput: node.id,
-                needsUpdate: g % 2 == 1,
+                state: GeneratedNodeState
+                    .values[g % GeneratedNodeState.values.length],
                 wasOutput: g % 2 == 0,
                 builderOptionsId: builderOptionsNode.id,
                 isHidden: g % 3 == 0);
@@ -269,7 +270,7 @@ void main() {
           expect(deletes, equals([]));
           var outputNode = graph.get(primaryOutputId) as GeneratedAssetNode;
           // But we should mark it as needing an update
-          expect(outputNode.needsUpdate, isTrue);
+          expect(outputNode.state, GeneratedNodeState.mayNeedUpdate);
         });
 
         test('add new primary input which replaces a synthetic node', () async {

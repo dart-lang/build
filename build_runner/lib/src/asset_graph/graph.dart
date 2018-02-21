@@ -234,13 +234,14 @@ class AssetGraph {
     var invalidatedIds = new Set<AssetId>();
 
     // Transitively invalidates all assets.
-    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType) {
+    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType,
+        {bool forceUpdate: false}) {
       var node = this.get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
       if (node is GeneratedAssetNode) {
-        node.needsUpdate = true;
+        node.state = GeneratedNodeState.mayNeedUpdate;
       }
 
       // Update all outputs of this asset as well.
@@ -317,6 +318,11 @@ class AssetGraph {
             .any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
           invalidateNodeAndDeps(node.id, null);
+          // Override to the `definitelyNeedsUpdate` state for glob changes.
+          //
+          // The regular input hash checks won't pick up glob changes.
+          (node as GeneratedAssetNode).state =
+              GeneratedNodeState.definitelyNeedsUpdate;
         }
       }
     }
@@ -407,7 +413,7 @@ class AssetGraph {
       var newNode = new GeneratedAssetNode(output,
           phaseNumber: phaseNumber,
           primaryInput: primaryInput,
-          needsUpdate: true,
+          state: GeneratedNodeState.definitelyNeedsUpdate,
           wasOutput: false,
           builderOptionsId: builderOptionsNode.id,
           isHidden: isHidden);

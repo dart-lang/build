@@ -94,6 +94,17 @@ class SourceAssetNode extends AssetNode {
   String toString() => 'SourceAssetNode: $id';
 }
 
+/// States for generated asset nodes.
+enum GeneratedNodeState {
+  // This node does not need an update, and no checks need to be performed.
+  upToDate,
+  // This node may need an update, the inputs hash should be checked for
+  // changes.
+  mayNeedUpdate,
+  // This node definitely needs an update, the inputs hash check can be skipped.
+  definitelyNeedsUpdate,
+}
+
 /// A generated node in the asset graph.
 class GeneratedAssetNode extends AssetNode {
   @override
@@ -105,8 +116,8 @@ class GeneratedAssetNode extends AssetNode {
   /// The primary input which generated this node.
   final AssetId primaryInput;
 
-  /// Whether or not this asset needs to be updated.
-  bool needsUpdate;
+  /// The current [GeneratedNodeState] for this node.
+  GeneratedNodeState state;
 
   /// Whether the asset was actually output.
   bool wasOutput;
@@ -143,7 +154,7 @@ class GeneratedAssetNode extends AssetNode {
     Iterable<AssetId> inputs,
     this.previousInputsDigest,
     @required this.isHidden,
-    @required this.needsUpdate,
+    @required this.state,
     @required this.phaseNumber,
     @required this.wasOutput,
     @required this.primaryInput,

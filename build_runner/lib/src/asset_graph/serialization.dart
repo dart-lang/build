@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 17;
+const _version = 18;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -94,8 +94,8 @@ class _AssetGraphDeserializer {
           phaseNumber: serializedNode[_Field.PhaseNumber.index] as int,
           primaryInput:
               _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
-          needsUpdate:
-              _deserializeBool(serializedNode[_Field.NeedsUpdate.index] as int),
+          state: GeneratedNodeState
+              .values[serializedNode[_Field.State.index] as int],
           wasOutput:
               _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
           builderOptionsId:
@@ -215,7 +215,7 @@ enum _Field {
   WasOutput,
   PhaseNumber,
   Globs,
-  NeedsUpdate,
+  State,
   PreviousInputsDigest,
   BuilderOptions,
   IsHidden,
@@ -318,8 +318,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
         return generatedNode.globs
             .map((glob) => glob.pattern)
             .toList(growable: false);
-      case _Field.NeedsUpdate:
-        return _serializeBool(generatedNode.needsUpdate);
+      case _Field.State:
+        return generatedNode.state.index;
       case _Field.PreviousInputsDigest:
         return _serializeDigest(generatedNode.previousInputsDigest);
       case _Field.BuilderOptions:
