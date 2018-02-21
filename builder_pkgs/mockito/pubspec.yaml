@@ -1,5 +1,5 @@
 name: mockito
-version: 3.0.0-alpha
+version: 3.0.0-dev
 authors:
   - Dmitriy Fibulwinter <fibulwinter@gmail.com>
   - Dart Team <misc@dartlang.org>

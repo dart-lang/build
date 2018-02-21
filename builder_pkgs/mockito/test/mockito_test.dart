@@ -260,8 +260,8 @@ void main() {
     });
 
     test("should return mock to make simple oneline mocks", () {
-      RealClass mockWithSetup =
-          when(new MockedClass().methodWithoutArgs()).thenReturn("oneline");
+      RealClass mockWithSetup = new MockedClass();
+      when(mockWithSetup.methodWithoutArgs()).thenReturn("oneline");
       expect(mockWithSetup.methodWithoutArgs(), equals("oneline"));
     });
 

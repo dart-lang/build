@@ -4,6 +4,9 @@
   is provided. `thenReturn` calls with futures and streams should be changed to
   `thenAnswer`. See the README for more information.
 * Completely remove the mirrors implementation of Mockito (`mirrors.dart`).
+* `thenReturn` and `thenAnswer` now support generics and infer the correct
+  types from the `when` call.
+
 
 ## 2.2.0
 

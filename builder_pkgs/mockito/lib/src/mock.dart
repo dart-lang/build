@@ -296,8 +296,8 @@ void clearInteractions(var mock) {
   mock._realCalls.clear();
 }
 
-class PostExpectation {
-  thenReturn(expected) {
+class PostExpectation<T> {
+  T thenReturn(T expected) {
     if (expected is Future) {
       throw new ArgumentError(
           '`thenReturn` should not be used to return a Future. '
@@ -317,7 +317,7 @@ class PostExpectation {
     });
   }
 
-  thenAnswer(Answering answer) {
+  T thenAnswer(Answering<T> answer) {
     return _completeWhen(answer);
   }
 
@@ -602,7 +602,7 @@ class VerificationResult {
   }
 }
 
-typedef dynamic Answering(Invocation realInvocation);
+typedef T Answering<T>(Invocation realInvocation);
 
 typedef Verification = VerificationResult Function<T>(T matchingInvocations);
 
@@ -717,7 +717,7 @@ void verifyZeroInteractions(var mock) {
   }
 }
 
-typedef Expectation = PostExpectation Function<T>(T x);
+typedef Expectation = PostExpectation<T> Function<T>(T x);
 
 /// Create a stub method response.
 ///
@@ -743,7 +743,7 @@ Expectation get when {
   _whenInProgress = true;
   return <T>(T _) {
     _whenInProgress = false;
-    return new PostExpectation();
+    return new PostExpectation<T>();
   };
 }
 
