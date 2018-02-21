@@ -113,9 +113,7 @@ void main() {
 
 class MockWatchImpl implements WatchImpl {
   @override
-  AssetGraph get assetGraph => throw new UnimplementedError();
-  @override
-  set assetGraph(_) => throw new UnimplementedError();
+  final AssetGraph assetGraph = null;
 
   Future<BuildResult> _currentBuild;
   @override

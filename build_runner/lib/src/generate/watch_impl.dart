@@ -118,7 +118,9 @@ WatchImpl runWatch(BuildEnvironment environment, BuildOptions options,
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
 class WatchImpl implements BuildState {
-  AssetGraph assetGraph;
+  AssetGraph _assetGraph;
+  AssetGraph get assetGraph => _assetGraph;
+
   BuildDefinition _buildDefinition;
   final String _configKey; // may be null
   final Iterable<Glob> _rootPackageFilesWhitelist;
@@ -269,7 +271,7 @@ class WatchImpl implements BuildState {
           true,
           packageGraph.root.name,
           null));
-      assetGraph = _buildDefinition.assetGraph;
+      _assetGraph = _buildDefinition.assetGraph;
       build = await BuildImpl.create(_buildDefinition, options, buildActions,
           onDelete: _expectedDeletes.add);
 
