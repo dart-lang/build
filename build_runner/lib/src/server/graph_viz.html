@@ -14,10 +14,20 @@
 
         .row {
             flex: 1 auto;
+            display: flex;
+            flex-direction: row;
         }
 
-        #graph {
+        .column {
+            flex: 1 auto;
+        }
+
+        .expand {
             flex: 1 100%;
+        }
+
+        #details {
+            flex: 1 20%;
         }
 
         td {
@@ -40,7 +50,29 @@
                 <input type="submit" value="submit" />
             </form>
         </div>
-        <div class="row" id="graph"></div>
+        <div class="row expand">
+            <div id="graph" class="column expand"></div>
+            <div id="details" class="column">
+            </div>
+            <br />
+            <span id="wasOutput">
+        </div>
+        <br />
+        <span id="phaseNumber"></span>
+        <br />
+
+        <!-- 'isGenerated': node is GeneratedAssetNode,
+              'globs': node is GeneratedAssetNode
+                  ? node.globs.map((g) => g.pattern)
+                  : null,
+              'hidden': node is GeneratedAssetNode ? node.isHidden : null,
+              'needsUpdate':
+                  node is GeneratedAssetNode ? node.needsUpdate : null,
+              'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
+              'phaseNumber':
+                  node is GeneratedAssetNode ? node.phaseNumber : null, -->
+    </div>
+    </div>
     </div>
     <script src="/packages/build_runner/src/server/graph_viz.js"></script>
     <script src="/packages/build_runner/src/server/graph_viz_main.dart.js"></script>

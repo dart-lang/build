@@ -2261,7 +2261,7 @@
         case "error":
           throw H.wrapException(t1.$index(msg, "msg"));
       }
-    }, null, null, 4, 0, null, 22, 6],
+    }, null, null, 4, 0, null, 20, 6],
     IsolateNatives__log: function(msg) {
       var trace, t1, t2, exception;
       if (init.globalState.isWorker === true) {
@@ -2318,7 +2318,7 @@
         _Manager__serializePrintMessage: [function(object) {
           var t1 = P.LinkedHashMap__makeLiteral(["command", "print", "msg", object]);
           return new H._Serializer(true, P._LinkedIdentityHashMap__LinkedIdentityHashMap$es6(null, P.int)).serialize$1(t1);
-        }, null, null, 2, 0, null, 11]
+        }, null, null, 2, 0, null, 12]
       }
     },
     _IsolateContext: {
@@ -2880,7 +2880,7 @@
         if (!(x instanceof P.Object))
           this.unsupported$1(x);
         return ["dart", init.classIdExtractor(x), this.serializeArrayInPlace$1(init.classFieldsExtractor(x))];
-      }, "call$1", "get$serialize", 2, 0, 0, 13],
+      }, "call$1", "get$serialize", 2, 0, 0, 14],
       unsupported$2: function(x, message) {
         throw H.wrapException(new P.UnsupportedError((message == null ? "Can't transmit:" : message) + " " + H.S(x)));
       },
@@ -3037,7 +3037,7 @@
           default:
             throw H.wrapException("couldn't deserialize: " + H.S(x));
         }
-      }, "call$1", "get$deserialize", 2, 0, 0, 13],
+      }, "call$1", "get$deserialize", 2, 0, 0, 14],
       deserializeArrayInPlace$1: function(x) {
         var t1, i, t2;
         t1 = J.getInterceptor$asx(x);
@@ -3622,7 +3622,7 @@
           return H._callInIsolate(isolate, new H.invokeClosure_closure3(closure, arg1, arg2, arg3, arg4));
       }
       throw H.wrapException(P.Exception_Exception("Unsupported number of arguments for wrapped closure"));
-    }, null, null, 14, 0, null, 19, 20, 24, 25, 26, 32, 17],
+    }, null, null, 14, 0, null, 34, 18, 17, 24, 25, 31, 22],
     convertDartClosureToJS: function(closure, arity) {
       var $function;
       if (closure == null)
@@ -4543,7 +4543,7 @@
       "^": "Closure:0;$this",
       call$1: [function(key) {
         return this.$this._fetch$1(key);
-      }, null, null, 2, 0, null, 18, "call"]
+      }, null, null, 2, 0, null, 23, "call"]
     },
     _ConstantMapKeyIterable: {
       "^": "Iterable;_map,$ti",
@@ -5220,7 +5220,7 @@
       }
     },
     JSSyntaxRegExp: {
-      "^": "Object;pattern,_nativeRegExp<,_nativeGlobalRegExp,_nativeAnchoredRegExp",
+      "^": "Object;pattern>,_nativeRegExp<,_nativeGlobalRegExp,_nativeAnchoredRegExp",
       toString$0: function(_) {
         return "RegExp/" + this.pattern + "/";
       },
@@ -5299,7 +5299,7 @@
       }
     },
     _MatchImplementation: {
-      "^": "Object;pattern,_match",
+      "^": "Object;pattern>,_match",
       get$start: function(_) {
         return this._match.index;
       },
@@ -5355,7 +5355,7 @@
       }
     },
     StringMatch: {
-      "^": "Object;start>,input,pattern",
+      "^": "Object;start>,input,pattern>",
       get$end: function() {
         return J.$add$ansx(this.start, this.pattern.length);
       },
@@ -5833,7 +5833,7 @@
       return new P._StreamIterator(null, stream, false, [$T]);
     },
     _nullDataHandler: [function(value) {
-    }, "call$1", "async___nullDataHandler$closure", 2, 0, 29, 12],
+    }, "call$1", "async___nullDataHandler$closure", 2, 0, 29, 13],
     _nullErrorHandler: [function(error, stackTrace) {
       var t1 = $.Zone__current;
       t1.toString;
@@ -5994,7 +5994,7 @@
       "^": "Closure:0;bodyFunction",
       call$1: [function(result) {
         return this.bodyFunction.call$2(0, result);
-      }, null, null, 2, 0, null, 14, "call"]
+      }, null, null, 2, 0, null, 15, "call"]
     },
     _awaitOnObject_closure0: {
       "^": "Closure:5;bodyFunction",
@@ -6006,7 +6006,7 @@
       "^": "Closure:27;$protected",
       call$2: [function(errorCode, result) {
         this.$protected(errorCode, result);
-      }, null, null, 4, 0, null, 21, 14, "call"]
+      }, null, null, 4, 0, null, 19, 15, "call"]
     },
     Completer: {
       "^": "Object;$ti"
@@ -6418,7 +6418,7 @@
         var t1 = this.target;
         t1._clearPendingComplete$0();
         t1._complete$1(value);
-      }, null, null, 2, 0, null, 12, "call"]
+      }, null, null, 2, 0, null, 13, "call"]
     },
     _Future__chainForeignFuture_closure0: {
       "^": "Closure:10;target",
@@ -6605,7 +6605,7 @@
         t1 = this._box_0;
         t2 = this.future;
         P._runUserCode(new P.Stream_contains__closure(this.needle, element), new P.Stream_contains__closure0(t1, t2), P._cancelAndErrorClosure(t1.subscription, t2));
-      }, null, null, 2, 0, null, 23, "call"],
+      }, null, null, 2, 0, null, 21, "call"],
       $signature: function() {
         return H.computeSignature(function(T) {
           return {func: 1, args: [T]};
@@ -7303,7 +7303,7 @@
       "^": "Closure:0;$this,f",
       call$1: [function(arg) {
         return this.$this.runUnaryGuarded$2(this.f, arg);
-      }, null, null, 2, 0, null, 15, "call"]
+      }, null, null, 2, 0, null, 16, "call"]
     }
   }], ["dart.collection", "dart:collection",, P, {
     "^": "",
@@ -10091,7 +10091,7 @@
     }, "call$2", "core__identical$closure", 4, 0, 34, 4, 9],
     identityHashCode: [function(object) {
       return H.objectHashCode(object);
-    }, "call$1", "core__identityHashCode$closure", 2, 0, 35, 11],
+    }, "call$1", "core__identityHashCode$closure", 2, 0, 35, 12],
     List_List$filled: function($length, fill, growable, $E) {
       var result, t1, i;
       result = J.JSArray_JSArray$fixed($length, $E);
@@ -10331,7 +10331,7 @@
     },
     Uri_decodeComponent: [function(encodedComponent) {
       return P._Uri__uriDecode(encodedComponent, 0, J.get$length$asx(encodedComponent), C.Utf8Codec_false, false);
-    }, "call$1", "core_Uri_decodeComponent$closure", 2, 0, 8, 27],
+    }, "call$1", "core_Uri_decodeComponent$closure", 2, 0, 8, 26],
     Uri__parseIPv4Address: function(host, start, end) {
       var error, t1, result, i, partStart, partIndex, char, part, partIndex0;
       error = new P.Uri__parseIPv4Address_error(host);
@@ -13119,7 +13119,7 @@
       "%": "HTMLImageElement"
     },
     InputElement: {
-      "^": "HtmlElement;max=,min=,value=",
+      "^": "HtmlElement;max=,min=,pattern=,value=",
       "%": "HTMLInputElement"
     },
     KeyboardEvent: {
@@ -13499,7 +13499,7 @@
       dartArgs = P.List_List$from(J.map$1$ax($arguments, P.js___convertToDart$closure()), true, null);
       t1 = H.Primitives_applyFunctionWithPositionalArguments(callback, dartArgs);
       return P._convertToJS(t1);
-    }, null, null, 8, 0, null, 28, 29, 44, 31],
+    }, null, null, 8, 0, null, 27, 28, 45, 30],
     _defineProperty: function(o, $name, value) {
       var exception;
       try {
@@ -14121,7 +14121,7 @@
         return H.computeSignature(function(E) {
           return {func: 1, ret: P.bool, args: [E, E]};
         }, this.$receiver, "DefaultEquality");
-      }, 33, 34],
+      }, 44, 33],
       hash$1: [function(_, e) {
         return J.get$hashCode$(e);
       }, "call$1", "get$hash", 2, 0, function() {
@@ -14333,7 +14333,7 @@
   }], ["", "package:glob/glob.dart",, D, {
     "^": "",
     Glob: {
-      "^": "Object;pattern,context,recursive,_ast,_listTree,_contextIsAbsoluteCache,_patternCanMatchAbsoluteCache,_patternCanMatchRelativeCache",
+      "^": "Object;pattern>,context,recursive,_ast,_listTree,_contextIsAbsoluteCache,_patternCanMatchAbsoluteCache,_patternCanMatchRelativeCache",
       matchAsPrefix$2: function(_, path, start) {
         var t1, t2;
         if (!J.$eq$(start, 0))
@@ -14504,7 +14504,7 @@
       "^": "Closure:0;",
       call$1: [function(node) {
         return node._toRegExp$0();
-      }, null, null, 2, 0, null, 16, "call"]
+      }, null, null, 2, 0, null, 11, "call"]
     },
     StarNode: {
       "^": "AstNode;_regExp,caseSensitive",
@@ -14996,7 +14996,7 @@
       }
     },
     GlobMatch: {
-      "^": "Object;input,pattern,start>",
+      "^": "Object;input,pattern>,start>",
       get$end: function() {
         return J.get$length$asx(this.input);
       },
@@ -15318,7 +15318,7 @@
       "^": "Closure:0;",
       call$1: [function(arg) {
         return arg == null ? "null" : '"' + H.S(arg) + '"';
-      }, null, null, 2, 0, null, 15, "call"]
+      }, null, null, 2, 0, null, 16, "call"]
     }
   }], ["", "package:path/src/internal_style.dart",, B, {
     "^": "",
@@ -16593,9 +16593,27 @@
     main_closure0: {
       "^": "Closure:0;",
       call$1: [function(node) {
-        var t1 = J.getInterceptor$x(node);
-        return P.LinkedHashMap__makeLiteral(["id", J.toString$0$(t1.get$id(node)), "label", J.toString$0$(t1.get$id(node))]);
-      }, null, null, 2, 0, null, 16, "call"]
+        var t1, t2, t3, t4, t5, t6, t7;
+        t1 = J.getInterceptor$x(node);
+        t2 = J.toString$0$(t1.get$id(node));
+        t3 = J.toString$0$(t1.get$id(node));
+        t1 = !!t1.$isGeneratedAssetNode;
+        if (t1) {
+          t4 = node.globs;
+          t4 = new H.EfficientLengthMappedIterable(t4, new F.main__closure0(), [H.getRuntimeTypeArgument(t4, "SetMixin", 0), null]);
+        } else
+          t4 = null;
+        t5 = t1 ? node.isHidden : null;
+        t6 = t1 ? node.needsUpdate : null;
+        t7 = t1 ? node.wasOutput : null;
+        return P.LinkedHashMap__makeLiteral(["id", t2, "label", t3, "info", P.LinkedHashMap__makeLiteral(["isGenerated", t1, "globs", t4, "hidden", t5, "needsUpdate", t6, "wasOutput", t7, "phaseNumber", t1 ? node.phaseNumber : null])]);
+      }, null, null, 2, 0, null, 11, "call"]
+    },
+    main__closure0: {
+      "^": "Closure:0;",
+      call$1: [function(g) {
+        return J.get$pattern$x(g);
+      }, null, null, 2, 0, null, 32, "call"]
     },
     main_closure1: {
       "^": "Closure:0;_box_0",
@@ -16609,7 +16627,7 @@
       "^": "Closure:0;_box_0,node",
       call$1: [function(out) {
         return P.LinkedHashMap__makeLiteral(["from", J.toString$0$(J.get$id$x(this.node)), "to", J.toString$0$(out), "id", "e" + this._box_0.edgeNum++]);
-      }, null, null, 2, 0, null, 30, "call"]
+      }, null, null, 2, 0, null, 29, "call"]
     }
   }, 1], ["", "../asset_graph/node.dart",, B, {
     "^": "",
@@ -16808,6 +16826,9 @@
   };
   J.get$path$x = function(receiver) {
     return J.getInterceptor$x(receiver).get$path(receiver);
+  };
+  J.get$pattern$x = function(receiver) {
+    return J.getInterceptor$x(receiver).get$pattern(receiver);
   };
   J.get$responseText$x = function(receiver) {
     return J.getInterceptor$x(receiver).get$responseText(receiver);
@@ -17301,7 +17322,7 @@
   }, "Style_platform"]);
   Isolate = Isolate.$finishIsolateConstructor(Isolate);
   $ = new Isolate();
-  init.metadata = [null, "_", "error", "stackTrace", "a", "o", "e", "each", "invocation", "b", "data", "object", "value", "x", "result", "arg", "node", "arg4", "key", "closure", "isolate", "errorCode", "sender", "element", "numberOfArguments", "arg1", "arg2", "encodedComponent", "callback", "captureThis", "out", "arguments", "arg3", "e1", "e2", "option", "message", "match", "position", "length", "n", "serializedId", "pattern", "id", "self"];
+  init.metadata = [null, "_", "error", "stackTrace", "a", "o", "e", "each", "invocation", "b", "data", "node", "object", "value", "x", "result", "arg", "numberOfArguments", "isolate", "errorCode", "sender", "element", "arg4", "key", "arg1", "arg2", "encodedComponent", "callback", "captureThis", "out", "arguments", "arg3", "g", "e2", "closure", "option", "message", "match", "position", "length", "n", "serializedId", "pattern", "id", "e1", "self"];
   init.types = [{func: 1, args: [,]}, {func: 1}, {func: 1, v: true}, {func: 1, v: true, args: [{func: 1, v: true}]}, {func: 1, v: true, args: [P.Object], opt: [P.StackTrace]}, {func: 1, args: [, P.StackTrace]}, {func: 1, ret: P.String, args: [P.int]}, {func: 1, v: true, args: [P.Uint8List, P.String, P.int]}, {func: 1, ret: P.String, args: [P.String]}, {func: 1, v: true, args: [, P.StackTrace]}, {func: 1, args: [,], opt: [,]}, {func: 1, args: [P.bool]}, {func: 1, args: [P.String]}, {func: 1, args: [,,]}, {func: 1, ret: P.int, args: [[P.List, P.int], P.int]}, {func: 1, v: true, args: [P.int, P.int]}, {func: 1, args: [P.Symbol0,,]}, {func: 1, args: [{func: 1, v: true}]}, {func: 1, v: true, args: [P.String, P.int]}, {func: 1, v: true, args: [P.String], opt: [,]}, {func: 1, ret: P.int, args: [P.int, P.int]}, {func: 1, ret: P.Uint8List, args: [,,]}, {func: 1, args: [P.String,,]}, {func: 1, args: [W.HttpRequest]}, {func: 1, ret: P.Object, args: [,]}, {func: 1, args: [U.AstNode]}, {func: 1, v: true, args: [P.String], named: {length: P.int, match: P.Match, position: P.int}}, {func: 1, args: [P.int,,]}, {func: 1, args: [, P.String]}, {func: 1, v: true, args: [P.Object]}, {func: 1, ret: P.bool, args: [,,]}, {func: 1, ret: P.int, args: [,]}, {func: 1, ret: P.int, args: [,,]}, {func: 1, ret: P.int, args: [P.Comparable, P.Comparable]}, {func: 1, ret: P.bool, args: [P.Object, P.Object]}, {func: 1, ret: P.int, args: [P.Object]}, {func: 1, ret: P.bool, args: [P.Object]}];
   function convertToFastObject(properties) {
     function MyClass() {

@@ -13,7 +13,22 @@ main() async {
         if (node is GeneratedAssetNode && !node.wasOutput) return false;
         return true;
       })
-      .map((node) => {'id': node.id.toString(), 'label': node.id.toString()})
+      .map((node) => {
+            'id': node.id.toString(),
+            'label': node.id.toString(),
+            'info': {
+              'isGenerated': node is GeneratedAssetNode,
+              'globs': node is GeneratedAssetNode
+                  ? node.globs.map((g) => g.pattern)
+                  : null,
+              'hidden': node is GeneratedAssetNode ? node.isHidden : null,
+              'needsUpdate':
+                  node is GeneratedAssetNode ? node.needsUpdate : null,
+              'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
+              'phaseNumber':
+                  node is GeneratedAssetNode ? node.phaseNumber : null,
+            }
+          })
       .toList();
   int edgeNum = 0;
   var edges = graph.allNodes.expand((node) {
