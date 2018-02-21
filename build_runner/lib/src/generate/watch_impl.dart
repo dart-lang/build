@@ -299,9 +299,9 @@ class WatchImpl implements BuildState {
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
-    assert(assetGraph != null);
-    if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
-    var node = assetGraph.get(change.id);
+    assert(_assetGraph != null);
+    if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
+    var node = _assetGraph.get(change.id);
     if (node != null) {
       if (!node.isInteresting) return false;
       if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
