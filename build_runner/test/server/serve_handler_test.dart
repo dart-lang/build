@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
@@ -111,6 +112,11 @@ void main() {
 }
 
 class MockWatchImpl implements WatchImpl {
+  @override
+  AssetGraph get assetGraph => throw new UnimplementedError();
+  @override
+  set assetGraph(_) => throw new UnimplementedError();
+
   Future<BuildResult> _currentBuild;
   @override
   Future<BuildResult> get currentBuild => _currentBuild;

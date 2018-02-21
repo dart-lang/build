@@ -118,7 +118,7 @@ WatchImpl runWatch(BuildEnvironment environment, BuildOptions options,
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
 class WatchImpl implements BuildState {
-  AssetGraph _assetGraph;
+  AssetGraph assetGraph;
   BuildDefinition _buildDefinition;
   final String _configKey; // may be null
   final Iterable<Glob> _rootPackageFilesWhitelist;
@@ -269,7 +269,7 @@ class WatchImpl implements BuildState {
           true,
           packageGraph.root.name,
           null));
-      _assetGraph = _buildDefinition.assetGraph;
+      assetGraph = _buildDefinition.assetGraph;
       build = await BuildImpl.create(_buildDefinition, options, buildActions,
           onDelete: _expectedDeletes.add);
 
@@ -297,9 +297,9 @@ class WatchImpl implements BuildState {
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
-    assert(_assetGraph != null);
-    if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
-    var node = _assetGraph.get(change.id);
+    assert(assetGraph != null);
+    if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
+    var node = assetGraph.get(change.id);
     if (node != null) {
       if (!node.isInteresting) return false;
       if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
