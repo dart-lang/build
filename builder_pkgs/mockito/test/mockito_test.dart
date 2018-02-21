@@ -936,6 +936,11 @@ void main() {
       verify(mock.methodWithoutArgs());
       verifyNoMoreInteractions(mock);
     });
+
+    test("throws if given a real object", () {
+      expect(
+          () => verifyNoMoreInteractions(new RealClass()), throwsArgumentError);
+    });
   });
 
   group("verifyInOrder()", () {

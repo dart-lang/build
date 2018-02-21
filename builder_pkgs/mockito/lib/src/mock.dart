@@ -703,17 +703,28 @@ _InOrderVerification get verifyInOrder {
   };
 }
 
+void _throwMockArgumentError(method) =>
+    throw new ArgumentError('$method must only be given a Mock object');
+
 void verifyNoMoreInteractions(var mock) {
-  var unverified = mock._realCalls.where((inv) => !inv.verified).toList();
-  if (unverified.isNotEmpty) {
-    fail("No more calls expected, but following found: " + unverified.join());
+  if (mock is Mock) {
+    var unverified = mock._realCalls.where((inv) => !inv.verified).toList();
+    if (unverified.isNotEmpty) {
+      fail("No more calls expected, but following found: " + unverified.join());
+    }
+  } else {
+    _throwMockArgumentError('verifyNoMoreInteractions');
   }
 }
 
 void verifyZeroInteractions(var mock) {
-  if (mock._realCalls.isNotEmpty) {
-    fail("No interaction expected, but following found: " +
-        mock._realCalls.join());
+  if (mock is Mock) {
+    if (mock._realCalls.isNotEmpty) {
+      fail("No interaction expected, but following found: " +
+          mock._realCalls.join());
+    }
+  } else {
+    _throwMockArgumentError('verifyZeroInteractions');
   }
 }
 
