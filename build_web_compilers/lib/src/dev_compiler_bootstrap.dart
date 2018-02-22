@@ -16,9 +16,10 @@ import 'web_entrypoint_builder.dart';
 _p.Context get p => _p.url;
 
 Future<Null> bootstrapDdc(BuildStep buildStep,
-    {bool useKernel, bool buildRootAppSummary}) async {
+    {bool useKernel, bool buildRootAppSummary, bool ignoreCastFailures}) async {
   useKernel ??= false;
   buildRootAppSummary ??= false;
+  ignoreCastFailures ??= true;
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId.changeExtension(moduleExtension);
   var module = new Module.fromJson(JSON
@@ -69,7 +70,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
 
-  bootstrapContent.write(_appBootstrap(appModuleName, appModuleScope));
+  bootstrapContent
+      .write(_appBootstrap(appModuleName, appModuleScope, ignoreCastFailures));
 
   var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
@@ -114,8 +116,11 @@ String _ddcModuleName(AssetId jsId) {
 /// `[moduleScope].main()` function on it.
 ///
 /// Also performs other necessary initialization.
-String _appBootstrap(String moduleName, String moduleScope) => '''
+String _appBootstrap(
+        String moduleName, String moduleScope, bool ignoreCastFailures) =>
+    '''
 require(["$moduleName", "dart_sdk"], function(app, dart_sdk) {
+  dart_sdk.dart.ignoreWhitelistedErrors($ignoreCastFailures);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
 $_initializeTools
   app.$moduleScope.main();
