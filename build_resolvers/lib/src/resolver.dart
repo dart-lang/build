@@ -39,6 +39,9 @@ class PerActionResolver implements ReleasableResolver {
     }
     while (toVisit.isNotEmpty) {
       final current = toVisit.removeFirst();
+      // TODO - avoid crawling or returning libraries which are not visible via
+      // `BuildStep.canRead`. They'd still be reachable by crawling the element
+      // model manually.
       yield current;
       final toCrawl = current.importedLibraries
           .followedBy(current.exportedLibraries)
@@ -164,11 +167,15 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Stream<LibraryElement> get libraries {
+    // We don't know what libraries to expose without leaking libraries written
+    // by later phases.
     throw new UnimplementedError();
   }
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) {
+    // We don't know what libraries to expose without leaking libraries written
+    // by later phases.
     throw new UnimplementedError();
   }
 }
