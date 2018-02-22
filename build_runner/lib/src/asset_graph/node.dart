@@ -116,7 +116,6 @@ class GeneratedAssetNode extends AssetNode {
   /// The primary input which generated this node.
   final AssetId primaryInput;
 
-  /// The current [GeneratedNodeState] for this node.
   GeneratedNodeState state;
 
   /// Whether the asset was actually output.
