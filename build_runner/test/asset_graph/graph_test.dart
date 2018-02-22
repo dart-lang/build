@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -96,7 +97,8 @@ void main() {
             var generatedNode = new GeneratedAssetNode(makeAssetId(),
                 phaseNumber: phaseNum,
                 primaryInput: node.id,
-                needsUpdate: g % 2 == 1,
+                state: GeneratedNodeState
+                    .values[g % GeneratedNodeState.values.length],
                 wasOutput: g % 2 == 0,
                 builderOptionsId: builderOptionsNode.id,
                 isHidden: g % 3 == 0);
@@ -269,7 +271,7 @@ void main() {
           expect(deletes, equals([]));
           var outputNode = graph.get(primaryOutputId) as GeneratedAssetNode;
           // But we should mark it as needing an update
-          expect(outputNode.needsUpdate, isTrue);
+          expect(outputNode.state, GeneratedNodeState.mayNeedUpdate);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
@@ -323,6 +325,29 @@ void main() {
           expect(graph.contains(primaryOutputId), isFalse);
           expect(
               graph.get(secondaryId).outputs, isNot(contains(primaryOutputId)));
+        });
+
+        test(
+            'a new or deleted asset matching a glob definitely invalidates '
+            'a node', () async {
+          var primaryOutputNode =
+              graph.get(primaryOutputId) as GeneratedAssetNode;
+          primaryOutputNode.globs.add(new Glob('lib/*.cool'));
+          primaryOutputNode.state = GeneratedNodeState.upToDate;
+
+          var coolAssetId = new AssetId('foo', 'lib/really.cool');
+          var changes = {coolAssetId: ChangeType.ADD};
+          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+              (_) => new Future.value(null), digestReader);
+          expect(primaryOutputNode.state,
+              GeneratedNodeState.definitelyNeedsUpdate);
+
+          primaryOutputNode.state = GeneratedNodeState.upToDate;
+          changes = {coolAssetId: ChangeType.REMOVE};
+          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+              (_) => new Future.value(null), digestReader);
+          expect(primaryOutputNode.state,
+              GeneratedNodeState.definitelyNeedsUpdate);
         });
       });
     });
