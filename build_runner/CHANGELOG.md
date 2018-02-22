@@ -1,3 +1,7 @@
+## 0.7.12-prerelease
+
+- Build actions using `findAssets` will be more smartly invalidated.
+
 ## 0.7.11+1
 
 - Switch to use a `PollingDirectoryWatcher` on windows, which should fix file

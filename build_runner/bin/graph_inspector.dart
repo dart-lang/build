@@ -103,7 +103,7 @@ class InspectNodeCommand extends Command {
         ..writeln('  type: ${node.runtimeType}');
 
       if (node is GeneratedAssetNode) {
-        description.writeln('  needsUpdate: ${node.needsUpdate}');
+        description.writeln('  state: ${node.state}');
         description.writeln('  wasOutput: ${node.wasOutput}');
       }
 
