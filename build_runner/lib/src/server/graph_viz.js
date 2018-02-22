@@ -35,7 +35,7 @@ window.$build.focusNode = function (scope) {
                 '<strong>ID:</strong> ' + primaryNode.id + '<br />' +
                 '<strong>Generated:</strong>' + info.isGenerated + '<br />' +
                 '<strong>Hidden:</strong>' + info.hidden + '<br />' +
-                '<strong>Up to date:</strong>' + !info.needsUpdate + '<br />' +
+                '<strong>State:</strong>' + info.state + '<br />' +
                 '<strong>Was Output:</strong>' + info.wasOutput + '<br />' +
                 '<strong>Phase:</strong>' + info.phaseNumber + '<br />' +
                 '<strong>Globs:</strong>' + info.globs + '<br />';

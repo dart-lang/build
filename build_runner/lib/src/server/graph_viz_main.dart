@@ -26,8 +26,8 @@ main() async {
                   ? node.globs.map((g) => g.pattern)
                   : null,
               'hidden': node is GeneratedAssetNode ? node.isHidden : null,
-              'needsUpdate':
-                  node is GeneratedAssetNode ? node.needsUpdate : null,
+              'state':
+                  node is GeneratedAssetNode ? node.state.toString() : null,
               'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
               'phaseNumber':
                   node is GeneratedAssetNode ? node.phaseNumber : null,
