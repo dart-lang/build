@@ -72,6 +72,14 @@ class AnalyzerResolver implements ReleasableResolver {
   final InternalAnalysisContext _context =
       AnalysisEngine.instance.createAnalysisContext();
 
+  /// The assets which are known to be readable at some point during the build
+  /// before [reset] is called.
+  ///
+  /// When actions can run out of order an asset can move from being readable
+  /// (in the later phase) to being unreadable (in the earlier phase which ran
+  /// later). If this happens we don't want to hide the asset from the analyzer.
+  final _seenAssets = new Set<AssetId>();
+
   AnalyzerResolver(DartUriResolver dartUriResolver) {
     _context.analysisOptions = new AnalysisOptionsImpl()..strongMode = true;
     _context.sourceFactory =
@@ -100,6 +108,12 @@ class AnalyzerResolver implements ReleasableResolver {
   // Do nothing
   void release() {}
 
+  /// Reset the tracked assets that will not be cleared despite being unreadable
+  /// at any given time.
+  void reset() {
+    _seenAssets.clear();
+  }
+
   Future<ReleasableResolver> _performResolve(
       BuildStep buildStep, List<AssetId> entryPoints) {
     // Basic approach is to start at the first file, update it's contents
@@ -124,7 +138,9 @@ class AnalyzerResolver implements ReleasableResolver {
             .forEach(processAsset);
       }, onError: (e) {
         var source = sources[assetId];
-        if (source != null && source.exists()) {
+        if (source != null &&
+            source.exists() &&
+            !_seenAssets.contains(assetId)) {
           _context.applyChanges(new ChangeSet()..removedSource(source));
           sources[assetId].updateContents(null);
         }
@@ -400,6 +416,9 @@ class AnalyzerResolvers implements Resolvers {
   Future<ReleasableResolver> get(BuildStep buildStep) =>
       _resolver._performResolve(buildStep, [buildStep.inputId]).then(
           (r) => new PerActionResolver(r, [buildStep.inputId]));
+
+  /// Must be called between each build.
+  void reset() => _resolver.reset();
 }
 
 bool _analysisEngineInitialized = false;
