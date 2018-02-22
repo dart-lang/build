@@ -145,7 +145,8 @@ class SingleStepReader implements AssetReader {
   FutureOr<dynamic> _ensureAssetIsBuilt(AssetId id) {
     if (_runPhaseForInput == null) return null;
     var node = _assetGraph.get(id);
-    if (node is GeneratedAssetNode && node.needsUpdate) {
+    if (node is GeneratedAssetNode &&
+        node.state != GeneratedNodeState.upToDate) {
       return _runPhaseForInput(node.phaseNumber, node.primaryInput);
     }
     return null;
