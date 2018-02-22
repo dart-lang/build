@@ -70,10 +70,10 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-          if (node.needsUpdate != expectedNode.needsUpdate) {
+          if (node.state != expectedNode.state) {
             matchState['needsUpdate of ${node.id}'] = [
-              node.needsUpdate,
-              expectedNode.needsUpdate
+              node.state,
+              expectedNode.state
             ];
             matches = false;
           }

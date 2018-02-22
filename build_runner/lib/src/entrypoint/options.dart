@@ -233,8 +233,7 @@ abstract class BuildRunnerCommand extends Command<int> {
           defaultsTo: false,
           negatable: false,
           help: 'Enables verbose logging.')
-      ..addOption(_define,
-          allowMultiple: true,
+      ..addMultiOption(_define,
           splitCommas: false,
           help: 'Sets the global `options` config for a builder by key.');
   }
