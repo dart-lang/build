@@ -119,6 +119,8 @@ typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
 class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
+  AssetGraph get assetGraph => _assetGraph;
+
   BuildDefinition _buildDefinition;
   final String _configKey; // may be null
   final Iterable<Glob> _rootPackageFilesWhitelist;

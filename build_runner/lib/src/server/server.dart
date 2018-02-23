@@ -10,24 +10,31 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 
+import '../asset_graph/graph.dart';
 import '../generate/build_result.dart';
 import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
 
 const _performancePath = r'$perf';
+const _assetGraphVisualizationPath = r'$graph';
+const _assetGraphPath = r'$graph/assets.json';
 
 Future<ServeHandler> createServeHandler(WatchImpl watch) async {
   var rootPackage = watch.packageGraph.root.name;
-  var assetHandler = new AssetHandler(await watch.reader, rootPackage);
-  return new ServeHandler._(watch, assetHandler);
+  var reader = await watch.reader;
+  var assetHandler = new AssetHandler(reader, rootPackage);
+  return new ServeHandler._(watch, assetHandler, watch.assetGraph, reader);
 }
 
 class ServeHandler implements BuildState {
   final BuildState _state;
   final AssetHandler _assetHandler;
   BuildResult _lastBuildResult;
+  final AssetGraph _assetGraph;
+  final AssetReader _reader;
 
-  ServeHandler._(this._state, this._assetHandler) {
+  ServeHandler._(
+      this._state, this._assetHandler, this._assetGraph, this._reader) {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
     });
@@ -45,6 +52,8 @@ class ServeHandler implements BuildState {
     }
     var cascade = new Cascade()
         .add(_blockOnCurrentBuild)
+        .add(_assetGraphVisualizationHandler)
+        .add(_assetGraphHandler)
         .add(_performanceHandler)
         .add((Request request) => _handle(request, rootDir));
     return cascade.handler;
@@ -53,6 +62,24 @@ class ServeHandler implements BuildState {
   FutureOr<Response> _blockOnCurrentBuild(_) async {
     await currentBuild;
     return new Response.notFound('');
+  }
+
+  FutureOr<Response> _assetGraphVisualizationHandler(Request request) async {
+    if (request.url.path != _assetGraphVisualizationPath) {
+      return new Response.notFound('');
+    }
+
+    return new Response.ok(
+        await _reader.readAsString(
+            new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
+        headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+  }
+
+  FutureOr<Response> _assetGraphHandler(Request request) async {
+    if (request.url.path != _assetGraphPath) return new Response.notFound('');
+    var jsonContent = UTF8.decode(_assetGraph.serialize());
+    return new Response.ok(jsonContent,
+        headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
   }
 
   FutureOr<Response> _performanceHandler(Request request) async {
@@ -164,8 +191,8 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
     }
     if (performance.duration < new Duration(seconds: 1)) {
       rows.writeln('          ['
-          '"https://github.com/google/google-visualization-issues/issues/2269", '
-          '"", 0, 1000]');
+          '"https://github.com/google/google-visualization-issues/issues/2269"'
+          ', "", 0, 1000]');
     }
 
     var showSkippedHref = hideSkipped

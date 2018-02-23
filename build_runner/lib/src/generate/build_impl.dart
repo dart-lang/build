@@ -11,7 +11,6 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
@@ -35,7 +34,6 @@ import 'build_definition.dart';
 import 'build_result.dart';
 import 'create_merged_dir.dart';
 import 'exceptions.dart';
-import 'fold_frames.dart';
 import 'heartbeat.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
@@ -262,7 +260,7 @@ class _SingleBuild {
     done.future.then((_) {
       heartbeat.stop();
     });
-    Chain.capture(() async {
+    runZoned(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
           _logger, 'Running build', () => _runPhases(resourceManager));
@@ -275,13 +273,12 @@ class _SingleBuild {
             _assetGraph.serialize());
       });
 
-      done.complete(result);
-    }, onError: (e, Chain chain) {
-      final trace = _verbose
-          ? chain.toTrace()
-          : foldInternalFrames(chain.toTrace()).terse;
-      done.complete(new BuildResult(BuildStatus.failure, [],
-          exception: e, stackTrace: trace));
+      if (!done.isCompleted) done.complete(result);
+    }, onError: (e, StackTrace st) {
+      if (!done.isCompleted) {
+        done.complete(new BuildResult(BuildStatus.failure, [],
+            exception: e, stackTrace: st));
+      }
     });
     return done.future;
   }
