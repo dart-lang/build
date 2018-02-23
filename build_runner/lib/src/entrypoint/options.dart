@@ -9,6 +9,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
 import 'package:io/io.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf_io.dart';
 
@@ -347,8 +348,17 @@ class _ServeCommand extends _WatchCommand {
     var servers = await Future.wait(options.serveTargets.map((target) =>
         serve(handler.handlerFor(target.dir), options.hostName, target.port)));
     await handler.currentBuild;
-    for (var target in options.serveTargets) {
-      stdout.writeln('Serving `${target.dir}` on port ${target.port}');
+    // Warn if in serve mode with no servers.
+    if (options.serveTargets.isEmpty) {
+      var logger = new Logger('Serve');
+      logger.warning(
+          'Found no known web directories to serve, but running in `serve` '
+          'mode. You may expliclity provide a directory to serve with trailing '
+          'args in <dir>[:<port>] format.');
+    } else {
+      for (var target in options.serveTargets) {
+        stdout.writeln('Serving `${target.dir}` on port ${target.port}');
+      }
     }
     await handler.buildResults.drain();
     await Future.wait(servers.map((server) => server.close()));
