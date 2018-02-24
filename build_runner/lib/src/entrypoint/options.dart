@@ -127,8 +127,7 @@ class _ServeOptions extends _SharedOptions {
     @required bool trackPerformance,
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
-  })
-      : super._(
+  }) : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
           failOnSevere: failOnSevere,

@@ -34,8 +34,7 @@ class PackageGraphWatcher {
     this._graph, {
     Logger logger,
     PackageNodeWatcher watch(PackageNode node),
-  })
-      : _logger = logger ?? new Logger('build_runner'),
+  })  : _logger = logger ?? new Logger('build_runner'),
         _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that changed in the package graph.
