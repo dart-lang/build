@@ -129,6 +129,7 @@ class AnalyzerResolver implements ReleasableResolver {
       visited.add(assetId);
 
       visiting.add(buildStep.readAsString(assetId).then((contents) {
+        _seenAssets.add(assetId);
         var source = sources[assetId];
         if (source == null) {
           source = new AssetBasedSource(assetId);
