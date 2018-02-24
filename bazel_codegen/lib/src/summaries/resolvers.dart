@@ -103,6 +103,5 @@ class AnalysisResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> findLibraryByName(String name) => libraries
-      .firstWhere((library) => library.name == name, defaultValue: () => null)
-      .then((v) => v as LibraryElement);
+      .firstWhere((library) => library.name == name, defaultValue: () => null);
 }
