@@ -9,6 +9,17 @@ the Dart SDK.
 If you have issues using `build_runner`, see the
 [Troubleshooting section](#troubleshooting), below.
 
+* [Using `build_runner` as a development server](#using-build_runner-as-a-development-server)
+* [Creating an output directory](#creating-an-output-directory)
+* [Using other `build_runner` commands](#using-other-build_runner-commands)
+* [Switching to Dart2JS](#switching-to-dart2js)
+* [Compatibility with other packages](#compatibility-with-other-packages)
+  * [Upgrading from transformers](#upgrading-from-transformers)
+  * [Upgrading from manual `build.dart` files](#upgrading-from-manual-builddart-files)
+* [Troubleshooting](#troubleshooting)
+  * [`build_runner` has no versions that match...](#build_runner-has-no-versions-that-match)
+  * [Too many open files](#too-many-open-files)
+
 ## Using `build_runner` as a development server
 
 1. Edit your package's **pubspec.yaml** file,
@@ -48,7 +59,7 @@ directory with file paths that match internally referenced URIs. This can be
 used with the `build`, `watch`, and `serve` commands. This directory can also
 used with a different server if the `serve` command is insufficient.
 
-## Using other build_runner commands
+## Using other `build_runner` commands
 
 In addition to **serve** you can use:
 
@@ -76,6 +87,19 @@ targets:
       build_web_compilers|entrypoint:
         options:
           compiler: dart2js
+```
+
+You can also define this option on the command-line:
+
+```bash
+$ pub run build_runner build --define "build_web_compilers|entrypoint=compiler=dart2js
+```
+
+... or create another file, say, `build.release.yaml`, with the configuration
+above, and use it instead of your normal configuration with `--config`:
+
+```bash
+$ pub run build_runner build --config release
 ```
 
 ## Compatibility with other packages

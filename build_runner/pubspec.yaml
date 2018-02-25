@@ -2,7 +2,7 @@ name: build_runner
 version: 0.7.12-prerelease
 description: Tools to write binaries that run builders.
 author: Dart Team <misc@dartlang.org>
-homepage: https://github.com/dart-lang/build
+homepage: https://github.com/dart-lang/build/tree/master/build_runner
 
 environment:
   sdk: '>=2.0.0-dev.20 <2.0.0'
