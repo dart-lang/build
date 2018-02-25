@@ -71,7 +71,8 @@ class WebEntrypointBuilder implements Builder {
             'Only `dartdevc` and `dart2js` are supported.');
     }
 
-    var dart2JsArgs = options.config[_dart2jsArgs] ?? <String>[];
+    var dart2JsArgs =
+        options.config[_dart2jsArgs] ?? const <String>['--minify'];
     if (dart2JsArgs is! List<String>) {
       throw new ArgumentError.value(dart2JsArgs, _dart2jsArgs,
           'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
