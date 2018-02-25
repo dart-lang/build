@@ -169,9 +169,8 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      await libraries.firstWhere((l) => l.name == libraryName,
-          defaultValue: () => null);
+  Future<LibraryElement> findLibraryByName(String libraryName) => libraries
+      .firstWhere((l) => l.name == libraryName, defaultValue: () => null);
 }
 
 /// Implementation of Analyzer's Source for Barback based assets.
