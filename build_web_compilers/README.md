@@ -20,6 +20,11 @@
   </a>
 </p>
 
+* [Installation](#installation)
+* [Usage](#usage)
+* [Configuration](#configuration)
+* [Manual Usage](#manual-usage)
+
 ## Installation
 
 This package is intended to be used as a [development dependency][] for users
