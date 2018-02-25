@@ -2,7 +2,7 @@ name: build_modules
 version: 0.1.1-dev
 description: Builders for Dart modules
 author: Dart Team <misc@dartlang.org>
-homepage: https://github.com/dart-lang/build
+homepage: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
   sdk: '>=1.22.1 <2.0.0'
