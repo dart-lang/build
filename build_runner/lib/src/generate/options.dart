@@ -103,7 +103,7 @@ class BuildOptions {
       rootPackageFilesWhitelist = _defaultRootPackageWhitelist;
     } else {
       rootPackageFilesWhitelist = rootPackageConfig.buildTargets.values
-          .expand((target) => target.sources.include)
+          .expand((target) => target.sources?.include ?? const <String>[])
           .toList();
     }
     return new BuildOptions._(

@@ -469,6 +469,25 @@ main() {
         expect(BuildDefinition.prepareWorkspace(environment, options, []),
             completes);
       });
+
+      // https://github.com/dart-lang/build/issues/1042
+      test('a missing sources/include does not cause an error', () async {
+        options = new BuildOptions(environment,
+            packageGraph: options.packageGraph,
+            rootPackageConfig: new BuildConfig.fromMap('example', [], {
+              'targets': {
+                'another': {},
+                '\$default': {
+                  'sources': {
+                    'exclude': [
+                      'lib/src/**',
+                    ]
+                  }
+                }
+              }
+            }));
+        expect(options.rootPackageFilesWhitelist, isEmpty);
+      });
     });
   });
 }
