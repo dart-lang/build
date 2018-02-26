@@ -16,6 +16,7 @@ If you have issues using `build_runner`, see the
 * [Compatibility with other packages](#compatibility-with-other-packages)
   * [Upgrading from transformers](#upgrading-from-transformers)
   * [Upgrading from manual `build.dart` files](#upgrading-from-manual-builddart-files)
+  * [Replacing `dart_to_js_script_rewriter`](#replacing-dart_to_js_script_rewriter)
 * [Troubleshooting](#troubleshooting)
   * [`build_runner` has no versions that match...](#build_runner-has-no-versions-that-match)
   * [Too many open files](#too-many-open-files)
@@ -120,6 +121,15 @@ outside of `build.yaml`, but we recommend using the generated build script
 with `pub run build_runner`, because it will be kept up to date with changes
 in the build packages. If your pubspec lists transformers, switch to a version of
 the builder-containing package that has a `build.yaml` file.
+
+## Replacing `dart_to_js_script_rewriter`
+
+When the development process included `dartium` HTML files typically referenced
+`main.dart` and used a transformer to rewrite to `main.dart.js` for deployment.
+The new development process uses DDC and so always compiles to javascript. Any
+script tags should be manually rewritten to always reference `*.dart.js` with a
+`type` of `text/javascript` rather than `application/dart`.
+`dart_to_js_script_rewriter` and `browser` dependencies can be dropped.
 
 
 ## Troubleshooting
