@@ -1,3 +1,32 @@
+- Dart2JS now has minification (`--minify`) enabled by default, similar to how
+  it worked in `pub build`. If you are adding custom `dart2js` options, make
+  sure you still keep the `--minify` flag. Here is an example:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        generate_for:
+        - web/**.dart
+        options:
+          compiler: dart2js
+          dart2js_args:
+          - --fast-startup
+          - --minify
+          - --trust-type-annotations
+          - --trust-primitives
+```
+
+# 0.3.1
+
+- Cast failures will now be ignored in dartdevc by default (these were enabled
+  in the latest sdk), and added an `ignore_cast_failures` option to the
+  `build_web_compilers|entrypoint` builder which you can set to `true` to enable
+  them.
+  - At some point in the future it is expected that the default for this will
+    flip.
+
 # 0.3.0+1
 
 - Fixed an issue with `dart2js` and the `--no-source-maps` flag.

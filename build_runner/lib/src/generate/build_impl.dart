@@ -11,7 +11,6 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:stack_trace/stack_trace.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
@@ -35,7 +34,6 @@ import 'build_definition.dart';
 import 'build_result.dart';
 import 'create_merged_dir.dart';
 import 'exceptions.dart';
-import 'fold_frames.dart';
 import 'heartbeat.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
@@ -262,7 +260,7 @@ class _SingleBuild {
     done.future.then((_) {
       heartbeat.stop();
     });
-    Chain.capture(() async {
+    runZoned(() async {
       // Run a fresh build.
       var result = await logTimedAsync(
           _logger, 'Running build', () => _runPhases(resourceManager));
@@ -275,13 +273,12 @@ class _SingleBuild {
             _assetGraph.serialize());
       });
 
-      done.complete(result);
-    }, onError: (e, Chain chain) {
-      final trace = _verbose
-          ? chain.toTrace()
-          : foldInternalFrames(chain.toTrace()).terse;
-      done.complete(new BuildResult(BuildStatus.failure, [],
-          exception: e, stackTrace: trace));
+      if (!done.isCompleted) done.complete(result);
+    }, onError: (e, StackTrace st) {
+      if (!done.isCompleted) {
+        done.complete(new BuildResult(BuildStatus.failure, [],
+            exception: e, stackTrace: st));
+      }
     });
     return done.future;
   }
@@ -333,7 +330,7 @@ class _SingleBuild {
       if (node is GeneratedAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
         if (node.isHidden && !action.hideOutput) return;
-        if (node.needsUpdate) {
+        if (node.state != GeneratedNodeState.upToDate) {
           await _runLazyPhaseForInput(node.phaseNumber, node.isHidden,
               node.primaryInput, resourceManager);
         }
@@ -371,7 +368,7 @@ class _SingleBuild {
       var inputNode = _assetGraph.get(input);
       if (inputNode is GeneratedAssetNode) {
         // Make sure the `inputNode` is up to date, and rebuild it if not.
-        if (inputNode.needsUpdate) {
+        if (inputNode.state != GeneratedNodeState.upToDate) {
           await _runLazyPhaseForInput(inputNode.phaseNumber, inputNode.isHidden,
               inputNode.primaryInput, resourceManager);
         }
@@ -469,10 +466,12 @@ class _SingleBuild {
 
     // We only check the first output, because all outputs share the same inputs
     // and invalidation state.
-    if (!node.needsUpdate) return false;
+    if (node.state == GeneratedNodeState.upToDate) return false;
+    // Early bail out condition, this is a forced update.
+    if (node.state == GeneratedNodeState.definitelyNeedsUpdate) return true;
     // TODO: Don't assume the worst for globs
     // https://github.com/dart-lang/build/issues/624
-    if (node.previousInputsDigest == null || node.globs.isNotEmpty) {
+    if (node.previousInputsDigest == null) {
       return true;
     }
     var digest = await _computeCombinedDigest(
@@ -480,9 +479,10 @@ class _SingleBuild {
     if (digest != node.previousInputsDigest) {
       return true;
     } else {
-      // Make sure to update the `needsUpdate` field for all outputs.
+      // Make sure to update the `state` field for all outputs.
       for (var id in outputs) {
-        (_assetGraph.get(id) as GeneratedAssetNode).needsUpdate = false;
+        (_assetGraph.get(id) as GeneratedAssetNode).state =
+            GeneratedNodeState.upToDate;
       }
       return false;
     }
@@ -558,7 +558,7 @@ class _SingleBuild {
       _removeOldInputs(node, reader.assetsRead);
       _addNewInputs(node, reader.assetsRead);
       node
-        ..needsUpdate = false
+        ..state = GeneratedNodeState.upToDate
         ..wasOutput = wasOutput
         ..lastKnownDigest = digest
         ..globs = globsRan

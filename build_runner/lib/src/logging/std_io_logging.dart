@@ -7,7 +7,6 @@ import 'dart:io';
 
 import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
-import 'package:stack_trace/stack_trace.dart';
 
 void stdIOLogListener(LogRecord record, {bool verbose}) {
   verbose ??= false;
@@ -38,11 +37,7 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
   }
 
   if (record.stackTrace != null) {
-    if (record.stackTrace is Trace) {
-      lines.add((record.stackTrace as Trace).terse);
-    } else {
-      lines.add(record.stackTrace);
-    }
+    lines.add(record.stackTrace);
   }
 
   var message = new StringBuffer(lines.join('\n'));

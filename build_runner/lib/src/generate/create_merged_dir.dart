@@ -118,7 +118,9 @@ bool _shouldSkipNode(AssetNode node, List<BuildAction> buildActions,
   if (!node.isReadable) return true;
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
-    if (!node.wasOutput || node.needsUpdate) return true;
+    if (!node.wasOutput || node.state != GeneratedNodeState.upToDate) {
+      return true;
+    }
     if (skipOptional && buildActions[node.phaseNumber].isOptional) return true;
   }
   if (node.id.path == '.packages') return true;

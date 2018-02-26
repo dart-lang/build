@@ -1,5 +1,7 @@
-## 0.7.11+2
+## 0.7.12-prerelease
 
+- Build actions using `findAssets` will be more smartly invalidated.
+- Added a warning if using `serve` mode but no directories were found to serve.
 - The `--output` option now only outputs files that were required for the latest
   build. Previously when switching js compilers you could end up with ddc
   modules in your dart2js output, even though they weren't required. See

@@ -51,7 +51,7 @@ main() {
           new Set<AssetId>(), packageGraph, assetReader);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
-        node.needsUpdate = false;
+        node.state = GeneratedNodeState.upToDate;
         node.wasOutput = true;
         assetReader.cacheStringAsset(id, sources[node.primaryInput]);
       }

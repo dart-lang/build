@@ -105,7 +105,7 @@ main() {
         var generatedANode =
             originalAssetGraph.get(generatedAId) as GeneratedAssetNode;
         generatedANode.wasOutput = true;
-        generatedANode.needsUpdate = false;
+        generatedANode.state = GeneratedNodeState.upToDate;
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -116,7 +116,7 @@ main() {
 
         generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.needsUpdate, isTrue);
+        expect(generatedANode.state, GeneratedNodeState.mayNeedUpdate);
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/b.txt')), isFalse);
         expect(
@@ -143,7 +143,8 @@ main() {
         var generatedANode = newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
             as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.needsUpdate, isTrue);
+        // New nodes definitely need an update.
+        expect(generatedANode.state, GeneratedNodeState.definitelyNeedsUpdate);
       });
 
       test('for changed sources', () async {
@@ -169,7 +170,7 @@ main() {
         var generatedANode = newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
             as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.needsUpdate, isTrue);
+        expect(generatedANode.state, GeneratedNodeState.mayNeedUpdate);
       });
 
       test('retains non-output generated nodes', () async {
@@ -218,7 +219,7 @@ main() {
         for (AssetId id in [generatedACopyId, generatedACloneId]) {
           var node = originalAssetGraph.get(id) as GeneratedAssetNode;
           node.wasOutput = true;
-          node.needsUpdate = false;
+          node.state = GeneratedNodeState.upToDate;
         }
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -241,13 +242,13 @@ main() {
         var generatedACopyNode =
             newAssetGraph.get(generatedACopyId) as GeneratedAssetNode;
         expect(generatedACopyNode, isNotNull);
-        expect(generatedACopyNode.needsUpdate, isTrue);
+        expect(generatedACopyNode.state, GeneratedNodeState.mayNeedUpdate);
 
         // But the *.clone node should remain the same since its options didn't.
         var generatedACloneNode =
             newAssetGraph.get(generatedACloneId) as GeneratedAssetNode;
         expect(generatedACloneNode, isNotNull);
-        expect(generatedACloneNode.needsUpdate, isTrue);
+        expect(generatedACloneNode.state, GeneratedNodeState.mayNeedUpdate);
       });
     });
 
@@ -467,6 +468,25 @@ main() {
             p.join('.dart_tool', 'build', 'generated', '.foo'), 'a');
         expect(BuildDefinition.prepareWorkspace(environment, options, []),
             completes);
+      });
+
+      // https://github.com/dart-lang/build/issues/1042
+      test('a missing sources/include does not cause an error', () async {
+        options = new BuildOptions(environment,
+            packageGraph: options.packageGraph,
+            rootPackageConfig: new BuildConfig.fromMap('example', [], {
+              'targets': {
+                'another': {},
+                '\$default': {
+                  'sources': {
+                    'exclude': [
+                      'lib/src/**',
+                    ]
+                  }
+                }
+              }
+            }));
+        expect(options.rootPackageFilesWhitelist, isEmpty);
       });
     });
   });
