@@ -334,9 +334,22 @@ class AssetGraph {
 
     // Remove all deleted source assets from the graph, which also recursively
     // removes all their primary outputs.
-    removeIds
+    var allRemoved = removeIds
         .where((id) => get(id) is SourceAssetNode)
-        .forEach(_removeRecursive);
+        .expand(_removeRecursive)
+        .toList();
+    for (var removed in allRemoved) {
+      var node = get(removed);
+      if (node is GeneratedAssetNode &&
+          !buildActions[node.phaseNumber].isOptional) {
+        for (var input in node.inputs) {
+          var inputNode = get(input);
+          if (inputNode is GeneratedAssetNode) {
+            inputNode.numRequiredOutputs--;
+          }
+        }
+      }
+    }
 
     return invalidatedIds;
   }

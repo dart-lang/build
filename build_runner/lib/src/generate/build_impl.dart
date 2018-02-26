@@ -210,8 +210,8 @@ class _SingleBuild {
           '--fail-on-severe was passed.');
     }
     if (_outputDir != null && result.status == BuildStatus.success) {
-      if (!await createMergedOutputDir(
-          _outputDir, _assetGraph, _packageGraph, _reader, _environment)) {
+      if (!await createMergedOutputDir(_outputDir, _assetGraph, _packageGraph,
+          _reader, _environment, _buildActions)) {
         result = _convertToFailure(
             result, 'Failed to create merged output directory.');
       }
@@ -299,7 +299,7 @@ class _SingleBuild {
         var primaryInputs =
             await _matchingPrimaryInputs(action, phase, resourceManager);
         outputs.addAll(await _runBuilder(phase, action.hideOutput,
-            action.builder, primaryInputs, resourceManager));
+            action.builder, primaryInputs, resourceManager, action));
       });
     }
     await Future.forEach(
@@ -351,10 +351,11 @@ class _SingleBuild {
       bool outputsHidden,
       Builder builder,
       Iterable<AssetId> primaryInputs,
-      ResourceManager resourceManager) async {
+      ResourceManager resourceManager,
+      BuildAction action) async {
     var outputLists = await Future.wait(primaryInputs.map((input) =>
-        _runForInput(
-            phaseNumber, outputsHidden, builder, input, resourceManager)));
+        _runForInput(phaseNumber, outputsHidden, builder, input,
+            resourceManager, action)));
     return outputLists.fold<List<AssetId>>(
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
@@ -377,13 +378,18 @@ class _SingleBuild {
 
       var action = _buildActions[phaseNumber];
 
-      return _runForInput(
-          phaseNumber, outputsHidden, action.builder, input, resourceManager);
+      return _runForInput(phaseNumber, outputsHidden, action.builder, input,
+          resourceManager, action);
     });
   }
 
-  Future<Iterable<AssetId>> _runForInput(int phaseNumber, bool outputsHidden,
-      Builder builder, AssetId input, ResourceManager resourceManager) async {
+  Future<Iterable<AssetId>> _runForInput(
+      int phaseNumber,
+      bool outputsHidden,
+      Builder builder,
+      AssetId input,
+      ResourceManager resourceManager,
+      BuildAction action) async {
     var tracker = _performanceTracker.startBuilderAction(input, builder);
 
     var builderOutputs = expectedOutputs(builder, input);
@@ -415,6 +421,7 @@ class _SingleBuild {
       return <AssetId>[];
     }
 
+    _resetNumRequiredActions(action, builderOutputs);
     await _cleanUpStaleOutputs(builderOutputs);
 
     // We may have read some inputs in the call to `_buildShouldRun`, we want
@@ -439,7 +446,8 @@ class _SingleBuild {
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
     await tracker.track(
-        () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter),
+        () => _setOutputsState(
+            builderOutputs, wrappedReader, wrappedWriter, action, input),
         'Finalize');
 
     tracker.stop();
@@ -485,6 +493,24 @@ class _SingleBuild {
             GeneratedNodeState.upToDate;
       }
       return false;
+    }
+  }
+
+  /// Decrement `numRequiredActions` for all inputs of [outputs], if [action] is
+  /// a required action.
+  ///
+  /// This will get incremented later on in [_setOutputsState] for all new
+  /// inputs.
+  void _resetNumRequiredActions(BuildAction action, Iterable<AssetId> outputs) {
+    if (!action.isOptional) {
+      /// All outputs of an action share the same inputs.
+      var node = _assetGraph.get(outputs.first) as GeneratedAssetNode;
+      for (var input in node.inputs) {
+        var node = _assetGraph.get(input);
+        if (node is GeneratedAssetNode) {
+          node.numRequiredOutputs -= outputs.length;
+        }
+      }
     }
   }
 
@@ -535,11 +561,26 @@ class _SingleBuild {
   /// - Adding `declaredOutputs` as outputs to all `reader.assetsRead`.
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
-  Future<Null> _setOutputsState(Iterable<AssetId> declaredOutputs,
-      SingleStepReader reader, AssetWriterSpy writer) async {
+  Future<Null> _setOutputsState(
+      Iterable<AssetId> declaredOutputs,
+      SingleStepReader reader,
+      AssetWriterSpy writer,
+      BuildAction action,
+      AssetId primaryInput) async {
     // All inputs are the same, so we only compute this once, but lazily.
     Digest inputsDigest;
     Set<Glob> globsRan = reader.globsRan.toSet();
+
+    var allInputs = reader.assetsRead.toSet();
+    if (primaryInput != null) allInputs.add(primaryInput);
+    if (!action.isOptional) {
+      for (var input in allInputs) {
+        var node = _assetGraph.get(input);
+        if (node is GeneratedAssetNode) {
+          node.numRequiredOutputs += declaredOutputs.length;
+        }
+      }
+    }
 
     for (var output in declaredOutputs) {
       var wasOutput = writer.assetsWritten.contains(output);
@@ -547,8 +588,6 @@ class _SingleBuild {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
 
       inputsDigest ??= await () {
-        var allInputs = reader.assetsRead.toSet();
-        if (node.primaryInput != null) allInputs.add(node.primaryInput);
         return _computeCombinedDigest(allInputs, node.builderOptionsId, reader);
       }();
 
