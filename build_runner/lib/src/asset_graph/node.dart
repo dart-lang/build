@@ -146,11 +146,15 @@ class GeneratedAssetNode extends AssetNode {
   /// Whether the asset should be placed in the build cache.
   final bool isHidden;
 
+  /// The number of required outputs which have this asset as an input.
+  int numRequiredOutputs;
+
   GeneratedAssetNode(
     AssetId id, {
     Digest lastKnownDigest,
     Set<Glob> globs,
     Iterable<AssetId> inputs,
+    int numRequiredOutputs,
     this.previousInputsDigest,
     @required this.isHidden,
     @required this.state,
@@ -163,6 +167,7 @@ class GeneratedAssetNode extends AssetNode {
         this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
             : new SplayTreeSet<AssetId>(),
+        this.numRequiredOutputs = numRequiredOutputs ?? 0,
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override

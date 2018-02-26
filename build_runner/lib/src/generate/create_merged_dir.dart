@@ -112,7 +112,11 @@ Future<bool> createMergedOutputDir(
 bool _shouldSkipNode(AssetNode node) {
   if (!node.isReadable) return true;
   if (node is InternalAssetNode) return true;
-  if (node is GeneratedAssetNode && !node.wasOutput) return true;
+  if (node is GeneratedAssetNode) {
+    if (!node.wasOutput || node.numRequiredOutputs == 0) {
+      return true;
+    }
+  }
   if (node.id.path == '.packages') return true;
   return false;
 }

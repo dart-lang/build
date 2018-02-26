@@ -32,7 +32,7 @@ class SingleStepReader implements AssetReader {
   final _assetsRead = new Set<AssetId>();
   final AssetReader _delegate;
   final _globsRan = new Set<Glob>();
-  final int _phaseNumber;
+  final int phaseNumber;
   final String _primaryPackage;
   final RunPhaseForInput _runPhaseForInput;
 
@@ -42,7 +42,7 @@ class SingleStepReader implements AssetReader {
   /// actions which do hide their outputs.
   final bool _outputsHidden;
 
-  SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
+  SingleStepReader(this._delegate, this._assetGraph, this.phaseNumber,
       this._outputsHidden, this._primaryPackage, this._runPhaseForInput);
 
   Set<AssetId> get assetsRead => _assetsRead;
@@ -70,7 +70,7 @@ class SingleStepReader implements AssetReader {
   FutureOr<bool> _isReadableNode(AssetNode node) {
     if (node.isGenerated) {
       final generatedNode = node as GeneratedAssetNode;
-      if (generatedNode.phaseNumber >= _phaseNumber) return false;
+      if (generatedNode.phaseNumber >= phaseNumber) return false;
       if (!_outputsHidden && generatedNode.isHidden) return false;
       return doAfter(
           _ensureAssetIsBuilt(node.id), (_) => generatedNode.wasOutput);
