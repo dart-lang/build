@@ -127,7 +127,8 @@ the builder-containing package that has a `build.yaml` file.
 When the development process included `dartium` HTML files typically referenced
 `main.dart` and used a transformer to rewrite to `main.dart.js` for deployment.
 The new development process uses DDC and so always compiles to javascript. Any
-script tags should be manually rewritten to always reference `*.dart.js` and
+script tags should be manually rewritten to always reference `*.dart.js` with a
+`type` of `text/javascript` rather than `application/dart`.
 `dart_to_js_script_rewriter` and `browser` dependencies can be dropped.
 
 
