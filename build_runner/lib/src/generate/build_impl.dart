@@ -210,8 +210,8 @@ class _SingleBuild {
           '--fail-on-severe was passed.');
     }
     if (_outputDir != null && result.status == BuildStatus.success) {
-      if (!await createMergedOutputDir(
-          _outputDir, _assetGraph, _packageGraph, _reader, _environment)) {
+      if (!await createMergedOutputDir(_outputDir, _assetGraph, _packageGraph,
+          _reader, _environment, _buildActions)) {
         result = _convertToFailure(
             result, 'Failed to create merged output directory.');
       }
@@ -496,7 +496,7 @@ class _SingleBuild {
     }
   }
 
-  /// Decrement `numRequiredActions` for all inputs of [output], if [action] is
+  /// Decrement `numRequiredActions` for all inputs of [outputs], if [action] is
   /// a required action.
   ///
   /// This will get incremented later on in [_setOutputsState] for all new

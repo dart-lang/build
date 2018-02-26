@@ -16,6 +16,7 @@ import '../asset_graph/node.dart';
 import '../environment/build_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
+import 'phase.dart';
 
 final _logger = new Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
@@ -29,7 +30,8 @@ Future<bool> createMergedOutputDir(
     AssetGraph assetGraph,
     PackageGraph packageGraph,
     AssetReader reader,
-    BuildEnvironment environment) async {
+    BuildEnvironment environment,
+    List<BuildAction> actions) async {
   var outputDir = new Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
@@ -46,7 +48,7 @@ Future<bool> createMergedOutputDir(
     var rootDirs = new Set<String>();
 
     for (var node in assetGraph.packageNodes(packageGraph.root.name)) {
-      if (_shouldSkipNode(node)) continue;
+      if (_shouldSkipNode(node, actions)) continue;
       var parts = p.url.split(node.id.path);
       if (parts.length == 1) continue;
       var dir = parts.first;
@@ -55,7 +57,7 @@ Future<bool> createMergedOutputDir(
     }
 
     for (var node in assetGraph.allNodes) {
-      if (_shouldSkipNode(node)) continue;
+      if (_shouldSkipNode(node, actions)) continue;
       String assetPath;
       if (node.id.path.startsWith('lib')) {
         assetPath = p.url.join(
@@ -109,11 +111,12 @@ Future<bool> createMergedOutputDir(
   return true;
 }
 
-bool _shouldSkipNode(AssetNode node) {
+bool _shouldSkipNode(AssetNode node, List<BuildAction> actions) {
   if (!node.isReadable) return true;
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
-    if (!node.wasOutput || node.numRequiredOutputs == 0) {
+    if (!node.wasOutput) return true;
+    if (actions[node.phaseNumber].isOptional && node.numRequiredOutputs < 1) {
       return true;
     }
   }
