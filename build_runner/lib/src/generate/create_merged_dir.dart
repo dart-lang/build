@@ -43,8 +43,22 @@ Future<bool> createMergedOutputDir(
   var originalOutputAssets = new Set<AssetId>();
 
   // Ensures all the inputs of `node` are output if they weren't already.
+  //
+  // This also ensures any other outputs of the same action are included.
   Future<Null> _ensureInputs(GeneratedAssetNode node) async {
+    // Collect all the outputs that were generated in the same build action
+    // as any of the inputs.
+    final inputsAndSameActionOutputs = new Set<AssetId>();
     for (var inputId in node.inputs) {
+      final inputNode = assetGraph.get(inputId);
+      if (inputNode is GeneratedAssetNode) {
+        final action = buildActions[inputNode.phaseNumber];
+        inputsAndSameActionOutputs
+            .addAll(expectedOutputs(action.builder, inputNode.primaryInput));
+      }
+    }
+
+    for (var inputId in inputsAndSameActionOutputs) {
       final inputNode = assetGraph.get(inputId);
       if (_shouldSkipNode(inputNode, buildActions, skipOptional: false)) {
         continue;
