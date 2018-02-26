@@ -264,7 +264,14 @@ main(List<String> args) async {
         'root|optional',
         [
           (_) => new TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.txt'))
+              buildExtensions: {'.txt': ['.txt.copy', '.txt.extra']},
+              build: (buildStep, _) async {
+                await buildStep.writeAsString(
+                    buildStep.inputId.addExtension('.copy'),
+                    await buildStep.readAsString(buildStep.inputId));
+                await buildStep.writeAsString(
+                    buildStep.inputId.addExtension('.extra'), 'extra');
+              })
         ],
         toRoot(),
         isOptional: true),
@@ -298,6 +305,9 @@ main(List<String> args) async {
               expectCopyInOutput
                   ? d.file('a.txt.copy', 'a')
                   : d.nothing('a.txt.copy'),
+              expectCopyInOutput
+                  ? d.file('a.txt.extra', 'extra')
+                  : d.nothing('a.txt.extra'),
             ]),
           ]),
         ]).validate();
@@ -308,7 +318,9 @@ main(List<String> args) async {
         if (touchCopy) {
           buildArgs.add('--define=root|required=touch_copies=true');
         }
-        await runDart('a', 'tool/build.dart', args: buildArgs);
+        var result = await runDart('a', 'tool/build.dart', args: buildArgs);
+        expect(result.exitCode, 0,
+            reason: '${result.stdout}\n${result.stderr}');
       }
 
       test('only copies assets that were actually required', () async {
