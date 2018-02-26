@@ -1,3 +1,23 @@
+- Dart2JS now has minification (`--minify`) enabled by default, similar to how
+  it worked in `pub build`. If you are adding custom `dart2js` options, make
+  sure you still keep the `--minify` flag. Here is an example:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        generate_for:
+        - web/**.dart
+        options:
+          compiler: dart2js
+          dart2js_args:
+          - --fast-startup
+          - --minify
+          - --trust-type-annotations
+          - --trust-primitives
+```
+
 # 0.3.1
 
 - Cast failures will now be ignored in dartdevc by default (these were enabled
