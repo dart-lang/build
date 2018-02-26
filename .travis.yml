@@ -72,10 +72,6 @@ jobs:
       script: ./tool/travis.sh test_0
       env: PKG="build_resolvers"
       dart: 2.0.0-dev.28.0
-    - stage: unit_test
-      script: ./tool/travis.sh test_0
-      env: PKG="build_resolvers"
-      dart: stable
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_runner"

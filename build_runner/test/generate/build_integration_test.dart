@@ -26,6 +26,7 @@ main(List<String> args) async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_resolvers',
             'build_runner',
             'build_test',
             'glob'
@@ -84,6 +85,7 @@ main(List<String> args) async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_resolvers',
             'build_runner',
             'build_test',
             'glob'
@@ -187,6 +189,7 @@ main() async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_resolvers',
             'build_runner',
             'build_test',
             'glob'
@@ -259,6 +262,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_resolvers',
           'build_runner',
           'build_test',
           'glob'
@@ -299,6 +303,7 @@ main() async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
+          'build_resolvers',
           'build_runner',
         ]),
         d.dir('web', [
