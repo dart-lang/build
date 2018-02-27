@@ -158,8 +158,7 @@ class GeneratedAssetNode extends AssetNode {
     @required this.wasOutput,
     @required this.primaryInput,
     @required this.builderOptionsId,
-  })
-      : this.globs = globs ?? new Set<Glob>(),
+  })  : this.globs = globs ?? new Set<Glob>(),
         this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
             : new SplayTreeSet<AssetId>(),

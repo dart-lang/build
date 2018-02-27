@@ -93,8 +93,7 @@ class TestBuilder implements Builder {
     Map<String, List<String>> buildExtensions,
     BuildBehavior build,
     BuildBehavior extraWork,
-  })
-      : buildExtensions = buildExtensions ?? appendExtension('.copy'),
+  })  : buildExtensions = buildExtensions ?? appendExtension('.copy'),
         _build = build ?? _defaultBehavior,
         _extraWork = extraWork;
 
