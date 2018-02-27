@@ -271,21 +271,15 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
 
     return new Future.sync(() => innerHandler(request)).then((response) {
       var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
-
       var msg = _getMessage(startTime, response.statusCode,
           request.requestedUri, request.method, watch.elapsed);
-
       logFn(msg);
-
       return response;
     }, onError: (error, stackTrace) {
       if (error is shelf.HijackException) throw error;
-
       var msg = _getMessage(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);
-
       _logger.severe('$msg\r\n$error\r\n$stackTrace', true);
-
       throw error;
     });
   };
