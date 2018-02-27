@@ -142,7 +142,7 @@ class BuildImpl {
         _trackPerformance = options.trackPerformance;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
-      new _SingleBuild(this).run(updates);
+      new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,

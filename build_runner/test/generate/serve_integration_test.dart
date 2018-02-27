@@ -17,7 +17,8 @@ main() {
 
     setUp(() async {
       await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: ['build_runner']),
+        await pubspec('a',
+            currentIsolateDependencies: ['build_resolvers', 'build_runner']),
         d.dir('lib', [
           d.file('example.dart', "String hello = 'hello'"),
         ]),
