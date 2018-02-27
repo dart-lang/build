@@ -19,6 +19,8 @@ dependencies:
   scratch_space: ^0.0.1
 
 dependency_overrides:
+  build_resolvers:
+    path: ../build_resolvers
   build_runner:
     path: ../build_runner
 

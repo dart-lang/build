@@ -51,6 +51,7 @@ main() {
           new Set<AssetId>(), packageGraph, assetReader);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
+        node.state = GeneratedNodeState.upToDate;
         node.wasOutput = true;
         assetReader.cacheStringAsset(id, sources[node.primaryInput]);
       }
@@ -63,7 +64,7 @@ main() {
 
     test('creates a valid merged output directory', () async {
       var success = await createMergedOutputDir(
-          tmpDir.path, graph, packageGraph, assetReader, environment);
+          tmpDir.path, graph, packageGraph, assetReader, environment, actions);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -75,7 +76,7 @@ main() {
       node.wasOutput = false;
 
       var success = await createMergedOutputDir(
-          tmpDir.path, graph, packageGraph, assetReader, environment);
+          tmpDir.path, graph, packageGraph, assetReader, environment, actions);
       expect(success, isTrue);
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
@@ -92,15 +93,15 @@ main() {
       test('fails in non-interactive mode', () async {
         environment =
             new TestBuildEnvironment(reader: assetReader, throwOnPrompt: true);
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment);
+        var success = await createMergedOutputDir(tmpDir.path, graph,
+            packageGraph, assetReader, environment, actions);
         expect(success, isFalse);
       });
 
       test('can skip creating the directory', () async {
         environment.nextPromptResponse = 0;
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment);
+        var success = await createMergedOutputDir(tmpDir.path, graph,
+            packageGraph, assetReader, environment, actions);
         expect(success, isFalse,
             reason: 'Skipping creation of the directory should be considered a '
                 'failure.');
@@ -114,8 +115,8 @@ main() {
 
       test('can delete the entire existing directory', () async {
         environment.nextPromptResponse = 1;
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment);
+        var success = await createMergedOutputDir(tmpDir.path, graph,
+            packageGraph, assetReader, environment, actions);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isFalse);
@@ -124,8 +125,8 @@ main() {
 
       test('can merge into the existing directory', () async {
         environment.nextPromptResponse = 2;
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment);
+        var success = await createMergedOutputDir(tmpDir.path, graph,
+            packageGraph, assetReader, environment, actions);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isTrue,
