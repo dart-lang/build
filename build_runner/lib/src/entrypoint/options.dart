@@ -18,6 +18,7 @@ import 'package:build_runner/build_runner.dart';
 const _assumeTty = 'assume-tty';
 const _define = 'define';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
+const _logRequests = 'log-requests';
 const _lowResourcesMode = 'low-resources-mode';
 const _failOnSevere = 'fail-on-severe';
 const _hostname = 'hostname';
@@ -114,10 +115,12 @@ class _SharedOptions {
 /// Options specific to the [_ServeCommand].
 class _ServeOptions extends _SharedOptions {
   final String hostName;
+  final bool logRequests;
   final List<_ServeTarget> serveTargets;
 
   _ServeOptions._({
     @required this.hostName,
+    @required this.logRequests,
     @required this.serveTargets,
     @required bool assumeTty,
     @required bool deleteFilesByDefault,
@@ -160,6 +163,7 @@ class _ServeOptions extends _SharedOptions {
     }
     return new _ServeOptions._(
       hostName: argResults[_hostname] as String,
+      logRequests: argResults[_logRequests] as bool,
       serveTargets: serveTargets,
       assumeTty: argResults[_assumeTty] as bool,
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
@@ -313,7 +317,11 @@ class _ServeCommand extends _WatchCommand {
   _ServeCommand() {
     argParser
       ..addOption(_hostname,
-          help: 'Specify the hostname to serve on', defaultsTo: 'localhost');
+          help: 'Specify the hostname to serve on', defaultsTo: 'localhost')
+      ..addFlag(_logRequests,
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables logging for each request to the server.');
   }
 
   @override
@@ -345,8 +353,10 @@ class _ServeCommand extends _WatchCommand {
         trackPerformance: options.trackPerformance,
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides);
-    var servers = await Future.wait(options.serveTargets.map((target) =>
-        serve(handler.handlerFor(target.dir), options.hostName, target.port)));
+    var servers = await Future.wait(options.serveTargets.map((target) => serve(
+        handler.handlerFor(target.dir, logRequests: options.logRequests),
+        options.hostName,
+        target.port)));
     await handler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
