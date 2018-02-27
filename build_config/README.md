@@ -85,6 +85,11 @@ the following keys:
   type. For instance a compiler must run after any Builder which can produce
   `.dart` outputs or those libraries can't be compiled. This option should be
   rare. Defaults to an empty list.
+- **runs_before**: Optional, list of Builder keys. If a Builder is producing
+  outputs which are intended to be inputs to other Builders they may be
+  specified here. This guarantees that the specified Builders will be ordered
+  later than this one. This will not cause Builders to be applied if they would
+  not otherwise run, it only affects ordering.
 - **is_optional**: Optional, boolean. Specifies whether a Builder can be run
   lazily, such that it won't execute until one of it's outputs is requested by a
   later Builder. This option should be rare. Defaults to `False`.
