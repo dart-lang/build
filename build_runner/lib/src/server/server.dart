@@ -15,6 +15,7 @@ import '../asset_graph/graph.dart';
 import '../generate/build_result.dart';
 import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
+import '../logging/human_readable_duration.dart';
 
 const _performancePath = r'$perf';
 const _assetGraphVisualizationPath = r'$graph';
@@ -61,11 +62,9 @@ class ServeHandler implements BuildState {
         .add(_performanceHandler)
         .add((shelf.Request request) => _handle(request, rootDir));
     var handler = logRequests
-        ? const shelf.Pipeline().addMiddleware(
-            shelf.logRequests(logger: (String message, bool isError) {
-            message = '$message\r\n';
-            isError ? _logger.warning(message) : _logger.info(message);
-          })).addHandler(cascade.handler)
+        ? const shelf.Pipeline()
+            .addMiddleware(_logRequests)
+            .addHandler(cascade.handler)
         : cascade.handler;
     return handler;
   }
@@ -262,4 +261,44 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
 </html>
 ''';
   }
+}
+
+/// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
+shelf.Handler _logRequests(shelf.Handler innerHandler) {
+  return (shelf.Request request) {
+    var startTime = new DateTime.now();
+    var watch = new Stopwatch()..start();
+
+    return new Future.sync(() => innerHandler(request)).then((response) {
+      var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
+
+      var msg = _getMessage(startTime, response.statusCode,
+          request.requestedUri, request.method, watch.elapsed);
+
+      logFn(msg);
+
+      return response;
+    }, onError: (error, stackTrace) {
+      if (error is shelf.HijackException) throw error;
+
+      var msg = _getMessage(
+          startTime, 500, request.requestedUri, request.method, watch.elapsed);
+
+      _logger.severe('$msg\r\n$error\r\n$stackTrace', true);
+
+      throw error;
+    });
+  };
+}
+
+String _getMessage(DateTime requestTime, int statusCode, Uri requestedUri,
+    String method, Duration elapsedTime) {
+  return '${requestTime.toIso8601String()} '
+      '${humanReadable(elapsedTime)} '
+      '$method [$statusCode] '
+      '${requestedUri.path}${_formatQuery(requestedUri.query)}\r\n';
+}
+
+String _formatQuery(String query) {
+  return query == '' ? '' : '?$query';
 }

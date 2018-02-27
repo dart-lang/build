@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -76,6 +77,32 @@ void main() {
         await response.readAsString(),
         allOf(contains('Really&nbsp;bad&nbsp;error&nbsp;omg!'),
             contains('My&nbsp;cool&nbsp;stack&nbsp;trace!')));
+  });
+
+  test('logs requests if you ask it to', () async {
+    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    expect(
+        Logger.root.onRecord,
+        emitsThrough(predicate<LogRecord>((record) =>
+            record.message.contains('index.html') &&
+            record.level == Level.INFO)));
+    await serveHandler.handlerFor('web', logRequests: true)(
+        new Request('GET', Uri.parse('http://server.com/index.html')));
+
+    var fakeException = 'Really bad error omg!';
+    var fakeStackTrace = 'My cool stack trace!';
+    watchImpl.addFutureResult(new Future.value(new BuildResult(
+        BuildStatus.failure, [],
+        exception: fakeException,
+        stackTrace: new StackTrace.fromString(fakeStackTrace))));
+
+    expect(
+        Logger.root.onRecord,
+        emitsThrough(predicate<LogRecord>((record) =>
+            record.message.contains('index.html') &&
+            record.level == Level.WARNING)));
+    await serveHandler.handlerFor('web', logRequests: true)(
+        new Request('GET', Uri.parse('http://server.com/index.html')));
   });
 
   group(r'/$perf', () {
