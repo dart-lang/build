@@ -6,18 +6,22 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
-import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf.dart' as shelf;
 
 import '../asset_graph/graph.dart';
 import '../generate/build_result.dart';
 import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
+import '../logging/human_readable_duration.dart';
 
 const _performancePath = r'$perf';
 const _assetGraphVisualizationPath = r'$graph';
 const _assetGraphPath = r'$graph/assets.json';
+
+final _logger = new Logger('Serve');
 
 Future<ServeHandler> createServeHandler(WatchImpl watch) async {
   var rootPackage = watch.packageGraph.root.name;
@@ -45,57 +49,68 @@ class ServeHandler implements BuildState {
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
-  Handler handlerFor(String rootDir) {
+  shelf.Handler handlerFor(String rootDir, {bool logRequests}) {
+    logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
       throw new ArgumentError.value(
           rootDir, 'rootDir', 'Only top level directories are supported');
     }
-    var cascade = new Cascade()
+    var cascade = new shelf.Cascade()
         .add(_blockOnCurrentBuild)
         .add(_assetGraphVisualizationHandler)
         .add(_assetGraphHandler)
         .add(_performanceHandler)
-        .add((Request request) => _handle(request, rootDir));
-    return cascade.handler;
+        .add((shelf.Request request) => _handle(request, rootDir));
+    var handler = logRequests
+        ? const shelf.Pipeline()
+            .addMiddleware(_logRequests)
+            .addHandler(cascade.handler)
+        : cascade.handler;
+    return handler;
   }
 
-  FutureOr<Response> _blockOnCurrentBuild(_) async {
+  FutureOr<shelf.Response> _blockOnCurrentBuild(_) async {
     await currentBuild;
-    return new Response.notFound('');
+    return new shelf.Response.notFound('');
   }
 
-  FutureOr<Response> _assetGraphVisualizationHandler(Request request) async {
+  FutureOr<shelf.Response> _assetGraphVisualizationHandler(
+      shelf.Request request) async {
     if (request.url.path != _assetGraphVisualizationPath) {
-      return new Response.notFound('');
+      return new shelf.Response.notFound('');
     }
 
-    return new Response.ok(
+    return new shelf.Response.ok(
         await _reader.readAsString(
             new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
         headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
   }
 
-  FutureOr<Response> _assetGraphHandler(Request request) async {
-    if (request.url.path != _assetGraphPath) return new Response.notFound('');
+  FutureOr<shelf.Response> _assetGraphHandler(shelf.Request request) async {
+    if (request.url.path != _assetGraphPath)
+      return new shelf.Response.notFound('');
     var jsonContent = UTF8.decode(_assetGraph.serialize());
-    return new Response.ok(jsonContent,
+    return new shelf.Response.ok(jsonContent,
         headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
   }
 
-  FutureOr<Response> _performanceHandler(Request request) async {
-    if (request.url.path != _performancePath) return new Response.notFound('');
+  FutureOr<shelf.Response> _performanceHandler(shelf.Request request) async {
+    if (request.url.path != _performancePath) {
+      return new shelf.Response.notFound('');
+    }
     bool hideSkipped = false;
     if (request.url.queryParameters['hideSkipped']?.toLowerCase() == 'true') {
       hideSkipped = true;
     }
-    return new Response.ok(
+    return new shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
         headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
   }
 
-  FutureOr<Response> _handle(Request request, String rootDir) async {
+  FutureOr<shelf.Response> _handle(
+      shelf.Request request, String rootDir) async {
     if (_lastBuildResult.status == BuildStatus.failure) {
-      return new Response(HttpStatus.INTERNAL_SERVER_ERROR,
+      return new shelf.Response(HttpStatus.INTERNAL_SERVER_ERROR,
           body: _htmlErrorPage(_lastBuildResult),
           headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
     }
@@ -122,7 +137,7 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<Response> handle(Request request, String rootDir) {
+  Future<shelf.Response> handle(shelf.Request request, String rootDir) {
     var pathSegments = <String>[rootDir];
     pathSegments.addAll(request.url.pathSegments);
 
@@ -132,7 +147,7 @@ class AssetHandler {
     return _handle(request.headers, pathSegments);
   }
 
-  Future<Response> _handle(
+  Future<shelf.Response> _handle(
       Map<String, String> requestHeaders, List<String> pathSegments) async {
     var packagesIndex = pathSegments.indexOf('packages');
     var assetId = packagesIndex >= 0
@@ -141,10 +156,10 @@ class AssetHandler {
         : new AssetId(_rootPackage, p.joinAll(pathSegments));
     try {
       if (!await _reader.canRead(assetId)) {
-        return new Response.notFound('Not Found');
+        return new shelf.Response.notFound('Not Found');
       }
     } on ArgumentError catch (_) {
-      return new Response.notFound('Not Found');
+      return new shelf.Response.notFound('Not Found');
     }
 
     var etag = BASE64.encode((await _reader.digest(assetId)).bytes);
@@ -161,12 +176,12 @@ class AssetHandler {
     if (requestHeaders[HttpHeaders.IF_NONE_MATCH] == etag) {
       // This behavior is still useful for cases where a file is hit
       // without a cache-busting query string.
-      return new Response.notModified(headers: headers);
+      return new shelf.Response.notModified(headers: headers);
     }
 
     var bytes = await _reader.readAsBytes(assetId);
     headers[HttpHeaders.CONTENT_LENGTH] = '${bytes.length}';
-    return new Response.ok(bytes, headers: headers);
+    return new shelf.Response.ok(bytes, headers: headers);
   }
 }
 
@@ -246,4 +261,38 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
 </html>
 ''';
   }
+}
+
+/// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
+shelf.Handler _logRequests(shelf.Handler innerHandler) {
+  return (shelf.Request request) {
+    var startTime = new DateTime.now();
+    var watch = new Stopwatch()..start();
+
+    return new Future.sync(() => innerHandler(request)).then((response) {
+      var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
+      var msg = _getMessage(startTime, response.statusCode,
+          request.requestedUri, request.method, watch.elapsed);
+      logFn(msg);
+      return response;
+    }, onError: (error, stackTrace) {
+      if (error is shelf.HijackException) throw error;
+      var msg = _getMessage(
+          startTime, 500, request.requestedUri, request.method, watch.elapsed);
+      _logger.severe('$msg\r\n$error\r\n$stackTrace', true);
+      throw error;
+    });
+  };
+}
+
+String _getMessage(DateTime requestTime, int statusCode, Uri requestedUri,
+    String method, Duration elapsedTime) {
+  return '${requestTime.toIso8601String()} '
+      '${humanReadable(elapsedTime)} '
+      '$method [$statusCode] '
+      '${requestedUri.path}${_formatQuery(requestedUri.query)}\r\n';
+}
+
+String _formatQuery(String query) {
+  return query == '' ? '' : '?$query';
 }

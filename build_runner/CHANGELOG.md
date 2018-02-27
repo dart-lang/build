@@ -1,5 +1,7 @@
 ## 0.7.12-prerelease
 
+- Added the `--log-requests` flag to the `serve` command, which will log all
+  requests to the server.
 - Build actions using `findAssets` will be more smartly invalidated.
 - Added a warning if using `serve` mode but no directories were found to serve.
 - The `--output` option now only outputs files that were required for the latest
