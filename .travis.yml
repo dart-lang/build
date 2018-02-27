@@ -11,7 +11,7 @@ jobs:
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartanalyzer
       env: PKG="build"
@@ -19,7 +19,7 @@ jobs:
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build"
@@ -27,7 +27,7 @@ jobs:
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_barback"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartanalyzer
       env: PKG="build_barback"
@@ -35,7 +35,7 @@ jobs:
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_barback"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_barback"
@@ -43,7 +43,7 @@ jobs:
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_config"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartanalyzer
       env: PKG="build_config"
@@ -51,7 +51,7 @@ jobs:
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_config"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_config"
@@ -59,31 +59,31 @@ jobs:
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_modules"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_modules"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_resolvers"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_resolvers"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_runner"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_runner"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_test"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartanalyzer
       env: PKG="build_test"
@@ -91,7 +91,7 @@ jobs:
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_test"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_test"
@@ -99,43 +99,43 @@ jobs:
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_web_compilers"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_1
       env: PKG="build_web_compilers"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartanalyzer
       env: PKG="e2e_example"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh command
       env: PKG="e2e_example"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: e2e_test
       script: ./tool/travis.sh test_2
       env: PKG="e2e_example"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: e2e_test
       script: ./tool/travis.sh test_3
       env: PKG="e2e_example"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: e2e_test
       script: ./tool/travis.sh test_4
       env: PKG="e2e_example"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: e2e_test
       script: ./tool/travis.sh test_5
       env: PKG="e2e_example"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="scratch_space"
-      dart: 2.0.0-dev.28.0
+      dart: dev
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="scratch_space"
-      dart: 2.0.0-dev.28.0
+      dart: dev
 
 stages:
   - analyze_and_format
@@ -149,3 +149,9 @@ branches:
 cache:
   directories:
     - $HOME/.pub-cache
+
+# Necessary for non-headless Chrome and Firefox to run
+before_install:
+ - export DISPLAY=:99.0
+ - sh -e /etc/init.d/xvfb start
+ - "t=0; until (xdpyinfo -display :99 &> /dev/null || test $t -gt 10); do sleep 1; let t=$t+1; done"
