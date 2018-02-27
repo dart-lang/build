@@ -27,10 +27,10 @@ If you have issues using `build_runner`, see the
    adding dev dependencies on **build_runner** and **build_web_compilers**:
 
    ```yaml
-   ...  
+   ...
    environment:
      sdk: '>=2.0.0-dev <2.0.0'
-   ...  
+   ...
    dev_dependencies:
      build_runner: ^0.7.0
      build_web_compilers: ^0.2.0
@@ -43,7 +43,7 @@ If you have issues using `build_runner`, see the
    ```
 
 3. Start the server:
-  
+
    ```sh
    pub run build_runner serve
    ```
