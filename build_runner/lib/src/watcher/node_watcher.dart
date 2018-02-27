@@ -30,8 +30,7 @@ class PackageNodeWatcher {
   PackageNodeWatcher(
     this._node, {
     Watcher watch(String path),
-  })
-      : _strategy = watch ?? _default;
+  }) : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that change recursively.
   ///
