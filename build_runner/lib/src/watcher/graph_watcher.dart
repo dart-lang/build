@@ -67,8 +67,7 @@ class PackageGraphWatcher {
     final subscriptions = <StreamSubscription>[];
     var allWatchers = <PackageNodeWatcher>[];
     _graph.allPackages.forEach((name, node) {
-      if (node.dependencyType == DependencyType.pub ||
-          node.dependencyType == DependencyType.hosted ||
+      if (node.dependencyType == DependencyType.hosted ||
           node.dependencyType == DependencyType.github) {
         return;
       }

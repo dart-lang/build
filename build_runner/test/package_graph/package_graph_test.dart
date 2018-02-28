@@ -47,7 +47,7 @@ void main() {
       });
 
       test('dependency', () {
-        expectPkg(graph['a'], 'a', '$basicPkgPath/pkg/a', DependencyType.pub,
+        expectPkg(graph['a'], 'a', '$basicPkgPath/pkg/a', DependencyType.hosted,
             [graph['b'], graph['c']]);
       });
     });
@@ -77,10 +77,10 @@ void main() {
 
         // Package `c` does not appear because this is not the root package.
         expectPkg(graph['a'], 'a', '$withDevDepsPkgPath/pkg/a',
-            DependencyType.pub, []);
+            DependencyType.hosted, []);
 
         expectPkg(graph['b'], 'b', '$withDevDepsPkgPath/pkg/b',
-            DependencyType.pub, []);
+            DependencyType.hosted, []);
 
         expect(graph['c'], isNull);
       });
@@ -94,17 +94,19 @@ void main() {
       });
 
       test('allPackages resolved correctly with all packages', () {
-        expect(graph.allPackages.keys, [
-          'flutter_gallery',
-          'intl',
-          'string_scanner',
-          'flutter',
-          'collection',
-          'flutter_gallery_assets',
-          'flutter_test',
-          'flutter_driver',
-          r'$sdk',
-        ]);
+        expect(
+            graph.allPackages.keys,
+            unorderedEquals([
+              'flutter_gallery',
+              'intl',
+              'string_scanner',
+              'flutter',
+              'collection',
+              'flutter_gallery_assets',
+              'flutter_test',
+              'flutter_driver',
+              r'$sdk',
+            ]));
       });
     });
 
