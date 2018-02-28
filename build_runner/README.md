@@ -25,9 +25,11 @@ Dart code, outside of tools like `pub`. Unlike `pub serve/build`, files are
 always generated directly on disk, and rebuilds are _incremental_ - inspired by
 tools such as [Bazel][].
 
-> **NOTE**: Are you are user of this package? You may be interested in
+> **NOTE**: Are you a user of this package? You may be interested in
 > simplified user-facing documentation, such as our
-> [getting started guide](docs/getting_started.md).
+> [getting started guide](getting-started-link).
+
+[getting-started-link]: https://goo.gl/b9o2j6
 
 * [Installation](#installation)
 * [Usage](#usage)

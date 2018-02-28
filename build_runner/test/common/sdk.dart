@@ -27,6 +27,12 @@ Future<ProcessResult> runPub(String package, String command,
     Process.run(_pubBinary, [command]..addAll(args ?? []),
         workingDirectory: p.join(d.sandbox, package));
 
+/// Starts the `pub` [command] on [package] with [args].
+Future<Process> startPub(String package, String command,
+        {Iterable<String> args}) =>
+    Process.start(_pubBinary, [command]..addAll(args ?? []),
+        workingDirectory: p.join(d.sandbox, package));
+
 /// Runs the `dart` script [script] in [package] with [args].
 ///
 /// The [script] should be a relative path under [package].

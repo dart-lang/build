@@ -142,7 +142,7 @@ class BuildImpl {
         _trackPerformance = options.trackPerformance;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
-      new _SingleBuild(this).run(updates);
+      new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
       BuildOptions options, List<BuildAction> buildActions,
@@ -210,8 +210,8 @@ class _SingleBuild {
           '--fail-on-severe was passed.');
     }
     if (_outputDir != null && result.status == BuildStatus.success) {
-      if (!await createMergedOutputDir(
-          _outputDir, _assetGraph, _packageGraph, _reader, _environment)) {
+      if (!await createMergedOutputDir(_outputDir, _assetGraph, _packageGraph,
+          _reader, _environment, _buildActions)) {
         result = _convertToFailure(
             result, 'Failed to create merged output directory.');
       }

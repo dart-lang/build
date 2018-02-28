@@ -80,10 +80,6 @@ jobs:
       script: ./tool/travis.sh test_0
       env: PKG="build_resolvers"
       dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh test_0
-      env: PKG="build_resolvers"
-      dart: stable
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_runner"
@@ -161,3 +157,9 @@ branches:
 cache:
   directories:
     - $HOME/.pub-cache
+
+# Necessary for non-headless Chrome and Firefox to run
+before_install:
+ - export DISPLAY=:99.0
+ - sh -e /etc/init.d/xvfb start
+ - "t=0; until (xdpyinfo -display :99 &> /dev/null || test $t -gt 10); do sleep 1; let t=$t+1; done"

@@ -1,3 +1,8 @@
+# 0.2.0-dev
+
+- Removed locking between uses of the Resolver and added a mandatory `reset`
+  call to indicate that a complete build is finished.
+
 # 0.1.1
 
 - Support the latest `analyzer` package.

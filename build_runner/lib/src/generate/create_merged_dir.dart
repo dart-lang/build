@@ -16,6 +16,7 @@ import '../asset_graph/node.dart';
 import '../environment/build_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
+import 'phase.dart';
 
 final _logger = new Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
@@ -29,7 +30,8 @@ Future<bool> createMergedOutputDir(
     AssetGraph assetGraph,
     PackageGraph packageGraph,
     AssetReader reader,
-    BuildEnvironment environment) async {
+    BuildEnvironment environment,
+    List<BuildAction> buildActions) async {
   var outputDir = new Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
@@ -38,6 +40,40 @@ Future<bool> createMergedOutputDir(
   }
 
   var outputAssets = new Set<AssetId>();
+  var originalOutputAssets = new Set<AssetId>();
+
+  // Ensures all the inputs of `node` are output if they weren't already.
+  //
+  // This also ensures any other outputs of the same action are included.
+  Future<Null> _ensureInputs(GeneratedAssetNode node) async {
+    // Collect all the outputs that were generated in the same build action
+    // as any of the inputs.
+    final inputsAndSameActionOutputs = new Set<AssetId>();
+    for (var inputId in node.inputs) {
+      final inputNode = assetGraph.get(inputId);
+      if (inputNode is GeneratedAssetNode) {
+        final action = buildActions[inputNode.phaseNumber];
+        inputsAndSameActionOutputs
+            .addAll(expectedOutputs(action.builder, inputNode.primaryInput));
+      }
+    }
+
+    for (var inputId in inputsAndSameActionOutputs) {
+      final inputNode = assetGraph.get(inputId);
+      if (_shouldSkipNode(inputNode, buildActions, skipOptional: false)) {
+        continue;
+      }
+      if (inputNode is GeneratedAssetNode &&
+          buildActions[inputNode.phaseNumber].isOptional &&
+          !originalOutputAssets.contains(inputId)) {
+        originalOutputAssets.add(inputId);
+        outputAssets
+            .add(await _writeAsset(inputId, outputDir, packageGraph, reader));
+        await _ensureInputs(inputNode);
+      }
+    }
+  }
+
   await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
       () async {
     if (!outputDirExists) {
@@ -46,7 +82,7 @@ Future<bool> createMergedOutputDir(
     var rootDirs = new Set<String>();
 
     for (var node in assetGraph.packageNodes(packageGraph.root.name)) {
-      if (_shouldSkipNode(node)) continue;
+      if (_shouldSkipNode(node, buildActions, skipOptional: false)) continue;
       var parts = p.url.split(node.id.path);
       if (parts.length == 1) continue;
       var dir = parts.first;
@@ -55,30 +91,12 @@ Future<bool> createMergedOutputDir(
     }
 
     for (var node in assetGraph.allNodes) {
-      if (_shouldSkipNode(node)) continue;
-      String assetPath;
-      if (node.id.path.startsWith('lib')) {
-        assetPath = p.url.join(
-            'packages', node.id.package, node.id.path.substring('lib/'.length));
-      } else {
-        assetPath = node.id.path;
-      }
-
-      var outputId = new AssetId(packageGraph.root.name, assetPath);
-      try {
-        _writeAsBytes(outputDir, outputId, await reader.readAsBytes(node.id));
-        outputAssets.add(outputId);
-      } on AssetNotFoundException catch (e, __) {
-        if (p.basename(node.id.path).startsWith('.')) {
-          _logger.fine('Skipping missing hidden file ${node.id.path}');
-        } else {
-          _logger.severe(
-              'Missing asset ${e.assetId}, it may have been deleted during the '
-              'build. Please try rebuilding and if you continue to see the '
-              'error then file a bug at '
-              'https://github.com/dart-lang/build/issues/new.');
-          rethrow;
-        }
+      if (_shouldSkipNode(node, buildActions)) continue;
+      originalOutputAssets.add(node.id);
+      outputAssets
+          .add(await _writeAsset(node.id, outputDir, packageGraph, reader));
+      if (node is GeneratedAssetNode) {
+        await _ensureInputs(node);
       }
     }
 
@@ -109,12 +127,46 @@ Future<bool> createMergedOutputDir(
   return true;
 }
 
-bool _shouldSkipNode(AssetNode node) {
+bool _shouldSkipNode(AssetNode node, List<BuildAction> buildActions,
+    {bool skipOptional: true}) {
   if (!node.isReadable) return true;
   if (node is InternalAssetNode) return true;
-  if (node is GeneratedAssetNode && !node.wasOutput) return true;
+  if (node is GeneratedAssetNode) {
+    if (!node.wasOutput || node.state != GeneratedNodeState.upToDate) {
+      return true;
+    }
+    if (skipOptional && buildActions[node.phaseNumber].isOptional) return true;
+  }
   if (node.id.path == '.packages') return true;
   return false;
+}
+
+Future<AssetId> _writeAsset(AssetId id, Directory outputDir,
+    PackageGraph packageGraph, AssetReader reader) async {
+  String assetPath;
+  if (id.path.startsWith('lib')) {
+    assetPath =
+        p.url.join('packages', id.package, id.path.substring('lib/'.length));
+  } else {
+    assetPath = id.path;
+  }
+
+  var outputId = new AssetId(packageGraph.root.name, assetPath);
+  try {
+    _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+  } on AssetNotFoundException catch (e, __) {
+    if (p.basename(id.path).startsWith('.')) {
+      _logger.fine('Skipping missing hidden file ${id.path}');
+    } else {
+      _logger.severe(
+          'Missing asset ${e.assetId}, it may have been deleted during the '
+          'build. Please try rebuilding and if you continue to see the '
+          'error then file a bug at '
+          'https://github.com/dart-lang/build/issues/new.');
+      rethrow;
+    }
+  }
+  return outputId;
 }
 
 void _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) {

@@ -1,8 +1,11 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
+import 'dart:async';
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -26,6 +29,7 @@ main(List<String> args) async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_resolvers',
             'build_runner',
             'build_test',
             'glob'
@@ -84,6 +88,7 @@ main(List<String> args) async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_resolvers',
             'build_runner',
             'build_test',
             'glob'
@@ -187,6 +192,7 @@ main() async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_resolvers',
             'build_runner',
             'build_test',
             'glob'
@@ -249,6 +255,108 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         ]).validate();
       });
     });
+
+    group('--output with optional outputs', () {
+      String buildContent = '''
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+
+main(List<String> args) async {
+  var buildApplications = [
+    apply(
+        'root|optional',
+        [
+          (_) => new TestBuilder(
+              buildExtensions: {'.txt': ['.txt.copy', '.txt.extra']},
+              build: (buildStep, _) async {
+                await buildStep.writeAsString(
+                    buildStep.inputId.addExtension('.copy'),
+                    await buildStep.readAsString(buildStep.inputId));
+                await buildStep.writeAsString(
+                    buildStep.inputId.addExtension('.extra'), 'extra');
+              })
+        ],
+        toRoot(),
+        isOptional: true),
+    apply(
+        'root|required',
+        [
+          (options) => new TestBuilder(
+              buildExtensions: appendExtension('.other', from: '.txt'),
+              extraWork: (buildStep, _) async {
+                if (options.config['touch_copies'] == true) {
+                  await buildStep
+                      .readAsString(buildStep.inputId.addExtension('.copy'));
+                }
+              })
+        ],
+        toRoot(),
+        isOptional: false),
+  ];;
+  await run(args, buildApplications);
+}
+''';
+
+      /// Expects the build output based on [expectCopyInOutput].
+      Future<Null> expectBuildOutput(
+          {@required bool expectCopyInOutput}) async {
+        await d.dir('a', [
+          d.dir('build', [
+            d.dir('web', [
+              d.file('a.txt', 'a'),
+              d.file('a.txt.other', 'a'),
+              expectCopyInOutput
+                  ? d.file('a.txt.copy', 'a')
+                  : d.nothing('a.txt.copy'),
+              expectCopyInOutput
+                  ? d.file('a.txt.extra', 'extra')
+                  : d.nothing('a.txt.extra'),
+            ]),
+          ]),
+        ]).validate();
+      }
+
+      Future<Null> runBuild({@required bool touchCopy}) async {
+        var buildArgs = ['build', '-o', 'build'];
+        if (touchCopy) {
+          buildArgs.add('--define=root|required=touch_copies=true');
+        }
+        var result = await runDart('a', 'tool/build.dart', args: buildArgs);
+        expect(result.exitCode, 0,
+            reason: '${result.stdout}\n${result.stderr}');
+      }
+
+      test('only copies assets that were actually required', () async {
+        await d.dir('a', [
+          await pubspec('a', currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_resolvers',
+            'build_runner',
+            'build_test',
+          ]),
+          d.dir('tool', [d.file('build.dart', buildContent)]),
+          d.dir('web', [
+            d.file('a.txt', 'a'),
+          ]),
+        ]).create();
+
+        await pubGet('a');
+
+        // Run a basic build with no explicit config.
+        await runBuild(touchCopy: false);
+        await expectBuildOutput(expectCopyInOutput: false);
+
+        // Run another build but add the option to touch the .copy files.
+        await runBuild(touchCopy: true);
+        await expectBuildOutput(expectCopyInOutput: true);
+
+        // Run again with no explicit config, should not copy over the .copy
+        // file even though it does exist now.
+        await runBuild(touchCopy: false);
+        await expectBuildOutput(expectCopyInOutput: false);
+      });
+    });
   });
 
   group('regression tests', () {
@@ -259,6 +367,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_resolvers',
           'build_runner',
           'build_test',
           'glob'
@@ -299,6 +408,7 @@ main() async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
+          'build_resolvers',
           'build_runner',
         ]),
         d.dir('web', [

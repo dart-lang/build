@@ -32,6 +32,7 @@ main() {
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_resolvers',
           'build_runner',
           'build_test',
           'glob'
