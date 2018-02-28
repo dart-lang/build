@@ -37,7 +37,7 @@ main() {
       await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
     });
 
-    test("can compile ddc modules under lib and web", () async {
+    test('can compile ddc modules under lib and web', () async {
       var expectedOutputs = {
         'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
         'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
@@ -66,7 +66,7 @@ main() {
         await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
       });
 
-      test("reports useful messages", () async {
+      test('reports useful messages', () async {
         var expectedOutputs = {
           'a|web/index$jsModuleErrorsExtension': decodedMatches(
               allOf(contains('String'), contains('assigned'), contains('int'))),
@@ -95,7 +95,7 @@ main() {
         await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
       });
 
-      test("reports useful messages", () async {
+      test('reports useful messages', () async {
         var expectedOutputs = {
           'a|web/index$jsModuleErrorsExtension': decodedMatches(
               contains('Unable to find modules for some sources')),

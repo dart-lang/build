@@ -35,7 +35,7 @@ main() {
       await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
     });
 
-    test("can output unlinked analyzer summaries for modules under lib and web",
+    test('can output unlinked analyzer summaries for modules under lib and web',
         () async {
       var expectedOutputs = <String, Matcher>{
         'b|lib/b.unlinked.sum': new HasUnlinkedUris(['package:b/b.dart']),
@@ -47,7 +47,7 @@ main() {
           outputs: expectedOutputs);
     });
 
-    test("can output linked analyzer summaries for modules under lib and web",
+    test('can output linked analyzer summaries for modules under lib and web',
         () async {
       // Build the unlinked summaries first.
       await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
