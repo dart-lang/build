@@ -22,9 +22,12 @@ void main() {
 
   group('$isInvocation', () {
     test('positional arguments', () {
-      var call1 = stub.say('Hello');
-      var call2 = stub.say('Hello');
-      var call3 = stub.say('Guten Tag');
+      stub.say('Hello');
+      var call1 = Stub.lastInvocation;
+      stub.say('Hello');
+      var call2 = Stub.lastInvocation;
+      stub.say('Guten Tag');
+      var call3 = Stub.lastInvocation;
       shouldPass(call1, isInvocation(call2));
       shouldFail(
         call1,
@@ -36,9 +39,12 @@ void main() {
     });
 
     test('named arguments', () {
-      var call1 = stub.eat('Chicken', alsoDrink: true);
-      var call2 = stub.eat('Chicken', alsoDrink: true);
-      var call3 = stub.eat('Chicken', alsoDrink: false);
+      stub.eat('Chicken', alsoDrink: true);
+      var call1 = Stub.lastInvocation;
+      stub.eat('Chicken', alsoDrink: true);
+      var call2 = Stub.lastInvocation;
+      stub.eat('Chicken', alsoDrink: false);
+      var call3 = Stub.lastInvocation;
       shouldPass(call1, isInvocation(call2));
       shouldFail(
         call1,
@@ -50,9 +56,12 @@ void main() {
     });
 
     test('optional arguments', () {
-      var call1 = stub.lie(true);
-      var call2 = stub.lie(true);
-      var call3 = stub.lie(false);
+      stub.lie(true);
+      var call1 = Stub.lastInvocation;
+      stub.lie(true);
+      var call2 = Stub.lastInvocation;
+      stub.lie(false);
+      var call3 = Stub.lastInvocation;
       shouldPass(call1, isInvocation(call2));
       shouldFail(
         call1,
@@ -64,11 +73,13 @@ void main() {
     });
 
     test('getter', () {
-      var call1 = stub.value;
-      var call2 = stub.value;
+      stub.value;
+      var call1 = Stub.lastInvocation;
+      stub.value;
+      var call2 = Stub.lastInvocation;
       stub.value = true;
       var call3 = Stub.lastInvocation;
-      shouldPass(call1, isInvocation(call2 as Invocation));
+      shouldPass(call1, isInvocation(call2));
       shouldFail(
         call1,
         isInvocation(call3),
@@ -98,7 +109,8 @@ void main() {
 
   group('$invokes', () {
     test('positional arguments', () {
-      var call = stub.say('Hello');
+      stub.say('Hello');
+      var call = Stub.lastInvocation;
       shouldPass(call, invokes(#say, positionalArguments: ['Hello']));
       shouldPass(call, invokes(#say, positionalArguments: [anything]));
       shouldFail(
@@ -111,7 +123,8 @@ void main() {
     });
 
     test('named arguments', () {
-      var call = stub.fly(miles: 10);
+      stub.fly(miles: 10);
+      var call = Stub.lastInvocation;
       shouldPass(call, invokes(#fly, namedArguments: {#miles: 10}));
       shouldPass(call, invokes(#fly, namedArguments: {#miles: greaterThan(5)}));
       shouldFail(
@@ -143,7 +156,9 @@ class Stub implements Interface {
   const Stub();
 
   @override
-  noSuchMethod(Invocation invocation) => lastInvocation = invocation;
+  noSuchMethod(Invocation invocation) {
+    lastInvocation = invocation;
+  }
 }
 
 // Copied from package:test, which doesn't expose it to users.

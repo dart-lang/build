@@ -297,7 +297,7 @@ void clearInteractions(var mock) {
 }
 
 class PostExpectation<T> {
-  T thenReturn(T expected) {
+  void thenReturn(T expected) {
     if (expected is Future) {
       throw new ArgumentError(
           '`thenReturn` should not be used to return a Future. '
@@ -311,22 +311,20 @@ class PostExpectation<T> {
     return _completeWhen((_) => expected);
   }
 
-  thenThrow(throwable) {
+  void thenThrow(throwable) {
     return _completeWhen((_) {
       throw throwable;
     });
   }
 
-  T thenAnswer(Answering<T> answer) {
+  void thenAnswer(Answering<T> answer) {
     return _completeWhen(answer);
   }
 
-  _completeWhen(Answering answer) {
+  void _completeWhen(Answering answer) {
     _whenCall._setExpected(answer);
-    var mock = _whenCall.mock;
     _whenCall = null;
     _whenInProgress = false;
-    return mock;
   }
 }
 
@@ -563,18 +561,18 @@ class ArgMatcher {
 }
 
 /// An argument matcher that matches any argument passed in "this" position.
-get any => new ArgMatcher(anything, false);
+/*ArgMatcher*/ get any => new ArgMatcher(anything, false);
 
 /// An argument matcher that matches any argument passed in "this" position, and
 /// captures the argument for later access with `captured`.
-get captureAny => new ArgMatcher(anything, true);
+/*ArgMatcher*/ get captureAny => new ArgMatcher(anything, true);
 
 /// An argument matcher that matches an argument that matches [matcher].
-argThat(Matcher matcher) => new ArgMatcher(matcher, false);
+/*ArgMatcher*/ argThat(Matcher matcher) => new ArgMatcher(matcher, false);
 
 /// An argument matcher that matches an argument that matches [matcher], and
 /// captures the argument for later access with `captured`.
-captureThat(Matcher matcher) => new ArgMatcher(matcher, true);
+/*ArgMatcher*/ captureThat(Matcher matcher) => new ArgMatcher(matcher, true);
 
 /// A Strong-mode safe argument matcher that wraps other argument matchers.
 /// See the README for a full explanation.
