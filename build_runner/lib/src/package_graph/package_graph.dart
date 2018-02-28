@@ -181,7 +181,6 @@ Map<String, String> _parsePackageLocations(String rootPackagePath) {
   return packageLocations;
 }
 
-
 /// The type of dependency being used. This dictates how the package should be
 /// watched for changes.
 enum DependencyType { github, path, hosted }
