@@ -23,6 +23,8 @@ dependency_overrides:
     path: ../build_resolvers
   build_runner:
     path: ../build_runner
+  build_config:
+    path: ../build_config
 
 dev_dependencies:
   build_runner: ^0.7.0

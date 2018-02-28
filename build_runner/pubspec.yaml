@@ -12,7 +12,7 @@ dependencies:
   args: ">=1.4.0 <2.0.0"
   async: ">=1.13.3 <3.0.0"
   build: ^0.12.0
-  build_config: ^0.2.3
+  build_config: ^0.2.4
   build_resolvers: ^0.2.0
   cli_util: ^0.1.2
   code_builder: ">2.3.0 <4.0.0"
@@ -42,3 +42,5 @@ dev_dependencies:
 dependency_overrides:
   build_resolvers:
     path: ../build_resolvers
+  build_config:
+    path: ../build_config
