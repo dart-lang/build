@@ -5,20 +5,28 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:glob/glob.dart';
 
-/// A builder that runs at the end of the build.
+/// A [PostProcessBuilder] runs in a special phase at the end of the build.
+///
+/// They are different from a normal [Builder] in several ways:
+///
+/// - They don't have to declare output extensions, and can output any file as
+///   long as it doesn't conflict with an existing one.
+/// - They can only read their primary input id.
+/// - They will not cause optional actions to run - they will only run on assets
+///   that were built as a part of the normal build.
+/// - They all run in a single phase, and thus can not see the outputs of any
+///   other [PostProcessBuilder]s.
+/// - Because they run in a separate phase, after other builders, none of thier
+///   outputs can be consumed by [Builder]s.
+///
+/// Because of these restrictions, these builders should never be used to output
+/// Dart files, or any other file which would should be processed by normal
+/// [Builder]s.
 abstract class PostProcessBuilder {
-  Map<String, List<Glob>> buildExtensions;
+  /// The extensions this builder expects for its inputs.
+  Iterable<String> get inputExtensions;
 
-  FutureOr<Null> build(PostProcessBuildStep buildStep);
-}
-
-abstract class PostProcessBuildStep implements AssetWriter {
-  AssetId get input;
-
-  Future<String> readInputAsString();
-  Future<List<int>> readInputAsBytes();
-
-  void deleteInput();
+  /// Generates the outputs for a given [BuildStep].
+  FutureOr<Null> build(BuildStep buildStep);
 }

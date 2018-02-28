@@ -146,8 +146,12 @@ class GeneratedAssetNode extends AssetNode {
   /// Whether the asset should be placed in the build cache.
   final bool isHidden;
 
+  /// If this output was created as a part of a `PostProcessBuilder`.
+  final bool isPostProcessAsset;
+
   GeneratedAssetNode(
     AssetId id, {
+    bool isPostProcessAsset,
     Digest lastKnownDigest,
     Set<Glob> globs,
     Iterable<AssetId> inputs,
@@ -163,6 +167,7 @@ class GeneratedAssetNode extends AssetNode {
         this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
             : new SplayTreeSet<AssetId>(),
+        this.isPostProcessAsset = isPostProcessAsset ?? false,
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override

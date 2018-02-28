@@ -150,6 +150,16 @@ builders:
     target: example
 ''';
 
+var buildYamlPostProcess = '''
+builders:
+  a:
+    builder_factories: ["createBuilder"]
+    import: package:example/builder.dart
+    input_extensions: [".dart", ".heart"]
+    is_post_process: true
+    target: example
+''';
+
 void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
     Map<String, BuilderDefinition> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
