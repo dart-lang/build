@@ -63,5 +63,34 @@ void main() {
       final orderedKeys = orderedBuilders.map((b) => b.key);
       expect(orderedKeys, ['a|runs_first', 'a|runs_second']);
     });
+
+    test('disallows cycles', () async {
+      final buildConfigs = parseBuildConfigs({
+        'a': {
+          'builders': {
+            'builder_a': {
+              'builder_factories': [],
+              'build_extensions': {},
+              'target': '',
+              'import': '',
+              'required_inputs': ['.output_b'],
+              'runs_before': ['|builder_b'],
+            },
+            'builder_b': {
+              'builder_factories': [],
+              'build_extensions': {
+                '.anything': ['.output_b']
+              },
+              'target': '',
+              'import': '',
+            },
+          }
+        }
+      });
+      expect(
+          () => findBuilderOrder(
+              buildConfigs.values.expand((v) => v.builderDefinitions.values)),
+          throwsA(anything));
+    });
   });
 }
