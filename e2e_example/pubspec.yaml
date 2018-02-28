@@ -16,16 +16,18 @@ dependency_overrides:
     path: ../build
   build_barback:
     path: ../build_barback
-  build_web_compilers:
-    path: ../build_web_compilers
   build_config:
     path: ../build_config
+  build_modules:
+    path: ../build_modules
   build_resolvers:
     path: ../build_resolvers
   build_runner:
     path: ../build_runner
   build_test:
     path: ../build_test
+  build_web_compilers:
+    path: ../build_web_compilers
   scratch_space:
     path: ../scratch_space
 

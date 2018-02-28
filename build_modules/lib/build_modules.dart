@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+export 'src/errors.dart' show MissingModulesException;
 export 'src/kernel_builder.dart'
     show KernelSummaryBuilder, kernelSummaryExtension, multiRootScheme;
 export 'src/module_builder.dart' show ModuleBuilder, moduleExtension;

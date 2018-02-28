@@ -42,13 +42,20 @@ class DevCompilerBuilder implements Builder {
     var module = new Module.fromJson(
         JSON.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
+
+    Future<Null> handleError(e) async {
+      await buildStep.writeAsString(
+          buildStep.inputId.changeExtension(jsModuleErrorsExtension), '$e');
+      log.severe('$e');
+    }
+
     try {
       await createDevCompilerModule(module, buildStep, useKernel,
           debugMode: !useKernel);
     } on DartDevcCompilationException catch (e) {
-      await buildStep.writeAsString(
-          buildStep.inputId.changeExtension(jsModuleErrorsExtension), '$e');
-      log.severe('', e);
+      await handleError(e);
+    } on MissingModulesException catch (e) {
+      await handleError(e);
     }
   }
 }

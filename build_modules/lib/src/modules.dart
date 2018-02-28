@@ -9,6 +9,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import 'errors.dart';
 import 'kernel_builder.dart';
 import 'module_builder.dart';
 import 'summary_builder.dart';
@@ -114,16 +115,20 @@ class Module extends Object with _$ModuleSerializerMixin {
 
   /// Computes the [primarySource]s of all [Module]s that are transitively
   /// depended on by this module.
+  ///
+  /// Throws a [MissingModulesException] if there are any missing modules. This
+  /// typically means that somebody is trying to import a non-existing file.
   Future<List<Module>> computeTransitiveDependencies(AssetReader reader) async {
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = directDependencies.toSet();
+    var missingModuleSources = new Set<AssetId>();
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
       if (transitiveDeps.containsKey(next)) continue;
       var nextModuleId = next.changeExtension(moduleExtension);
       if (!await reader.canRead(nextModuleId)) {
-        log.warning('Missing module $nextModuleId');
+        missingModuleSources.add(next);
         continue;
       }
       var module = new Module.fromJson(
@@ -131,6 +136,10 @@ class Module extends Object with _$ModuleSerializerMixin {
               as Map<String, dynamic>);
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
+    }
+    if (missingModuleSources.isNotEmpty) {
+      throw await MissingModulesException.create(this, missingModuleSources,
+          transitiveDeps.values.toList()..add(this), reader);
     }
     return transitiveDeps.values.toList();
   }
