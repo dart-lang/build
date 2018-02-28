@@ -79,17 +79,8 @@ the following keys:
   - `"all_packages"`: Apply this Builder to all packages in the transitive
     dependency graph.
   - `"root_package"`; Apply this Builder only to the top-level package.
-- **required_inputs**: Optional, list of extensions. If a Builder must see every
-  input with one or more file extensions they can be specified here and it will
-  be guaranteed to run after any Builder which might produce an output of that
-  type. For instance a compiler must run after any Builder which can produce
-  `.dart` outputs or those libraries can't be compiled. This option should be
-  rare. Defaults to an empty list.
-- **runs_before**: Optional, list of Builder keys. If a Builder is producing
-  outputs which are intended to be inputs to other Builders they may be
-  specified here. This guarantees that the specified Builders will be ordered
-  later than this one. This will not cause Builders to be applied if they would
-  not otherwise run, it only affects ordering.
+- **required_inputs**: Optional, see [adjusting builder ordering][]
+- **runs_before**: Optional, see [adjusting builder ordering][]
 - **is_optional**: Optional, boolean. Specifies whether a Builder can be run
   lazily, such that it won't execute until one of it's outputs is requested by a
   later Builder. This option should be rare. Defaults to `False`.
@@ -129,6 +120,28 @@ builders:
     build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
 ```
+
+[adjusting builder ordering][#adjusting_builder_odering]
+
+### Adjusting Builder Ordering
+
+Both `required_inputs` and `runs_before` can be used to tweak the order that
+Builders run in on a given target. These work by indicating a given builder is a
+_dependency_ of another. The resulting dependency graph must not have cycles and
+these options should be used rarely.
+
+- **required_inputs**: Optional, list of extensions, defaults to empty list. If
+  a Builder must see every input with one or more file extensions they can be
+  specified here and it will be guaranteed to run after any Builder which might
+  produce an output of that type. For instance a compiler must run after any
+  Builder which can produce `.dart` outputs or those libraries can't be
+  compiled. A Builder may not specify that it requires an output that it also
+  produces since this would be a self-cycle.
+- **runs_before**: Optional, list of Builder keys. If a Builder is producing
+  outputs which are intended to be inputs to other Builders they may be
+  specified here. This guarantees that the specified Builders will be ordered
+  later than this one. This will not cause Builders to be applied if they would
+  not otherwise run, it only affects ordering.
 
 # Publishing `build.yaml` files
 
