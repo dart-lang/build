@@ -58,7 +58,7 @@ class MissingModulesException implements Exception {
       List<Module> transitiveModules,
       AssetReader reader) async {
     var buffer = new StringBuffer(
-        ' \n\nUnable to find modules for some sources, check the following '
+        ' Unable to find modules for some sources, check the following '
         'imports:\n\n');
 
     var checkedSourceDependencies = <AssetId, Set<AssetId>>{};

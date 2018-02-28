@@ -27,7 +27,9 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
         headerMessage.split('\n').takeWhile((line) => line.isEmpty).length;
     headerMessage = headerMessage.substring(blankLineCount);
   }
-  var header = '$eraseLine$level ${record.loggerName}: $headerMessage';
+  var optionalNewline = record.level >= Level.WARNING ? '\n' : '';
+  var header = '$eraseLine$level ${record.loggerName}: $optionalNewline'
+      '$headerMessage';
   var lines = blankLineCount > 0
       ? (new List<Object>.generate(blankLineCount, (_) => '')..add(header))
       : <Object>[header];
