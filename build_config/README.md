@@ -121,7 +121,7 @@ builders:
     auto_apply: dependents
 ```
 
-[adjusting builder ordering]: #adjusting-builder-odering
+[adjusting builder ordering]: #adjusting-builder-ordering
 
 ### Adjusting Builder Ordering
 
