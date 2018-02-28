@@ -32,6 +32,40 @@ void main() {
         expect((action.builder as CoolBuilder).optionC, equals('c'));
       }
     });
+
+    test('honors package filter', () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): [],
+      });
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var builderApplications = [
+        apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+            toDependentsOf('b')),
+      ];
+      var actions =
+          await createBuildActions(targetGraph, builderApplications, {});
+      expect(actions, hasLength(1));
+      expect(actions.first.package, 'a');
+    });
+
+    test('honors appliesBuilders', () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): [],
+      });
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var builderApplications = [
+        apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+            toDependentsOf('b'),
+            appliesBuilders: ['b|not_by_default']),
+        apply('b|not_by_default', [(_) => null], toNoneByDefault()),
+      ];
+      var actions =
+          await createBuildActions(targetGraph, builderApplications, {});
+      expect(actions, hasLength(2));
+      expect(actions.map((a) => a.package), ['a', 'a']);
+    });
   });
 }
 
