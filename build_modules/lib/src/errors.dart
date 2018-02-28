@@ -91,9 +91,11 @@ Future<String> _missingImportMessage(
   var parsed = parseDirectives(contents, suppressErrors: true);
   var import =
       parsed.directives.whereType<UriBasedDirective>().firstWhere((directive) {
-    var id = new AssetId.resolve(directive.uri.stringValue, from: sourceId);
+    var uriString = directive.uri.stringValue;
+    if (uriString.startsWith('dart:')) return false;
+    var id = new AssetId.resolve(uriString, from: sourceId);
     return id == missingId;
-  });
+  }, orElse: () => null);
   var lineInfo = parsed.lineInfo.getLocation(import.offset);
   return '`$import` from $sourceId at $lineInfo';
 }
