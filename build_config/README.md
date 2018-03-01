@@ -29,7 +29,6 @@ Each target may also contain the following keys:
   target. By default this is all of the package names this package depends on
   (from the `pubspec.yaml`).
 - **builders**: Map, Optional. See "configuring builders" below.
-- **post_process_builders**: Map, Optional. See "configuring builders" below.
 
 ## Configuring `Builder`s applied to your package
 Each target can specify a `builders` key which configures the builders which are
