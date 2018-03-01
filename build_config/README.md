@@ -4,6 +4,7 @@ Customizing the build behavior of a package is done  by creating a `build.yaml`
 file, which describes your configuration.
 
 ## Dividing a package into Build targets
+
 When a `Builder` should be applied to a subset of files in a package the package
 can be broken up into multiple 'targets'. Targets are configured in the
 `targets` section of the `build.yaml`. The key for each target makes up the name
@@ -28,6 +29,7 @@ Each target may also contain the following keys:
   target. By default this is all of the package names this package depends on
   (from the `pubspec.yaml`).
 - **builders**: Map, Optional. See "configuring builders" below.
+- **post_process_builders**: Map, Optional. See "configuring builders" below.
 
 ## Configuring `Builder`s applied to your package
 Each target can specify a `builders` key which configures the builders which are
@@ -119,6 +121,57 @@ builders:
     builder_factories: ["myBuilder"]
     build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
+```
+
+## Defining `PostProcessBuilder`s
+
+`PostProcessBuilder`s are configured similarly to normal `Builder`s, but they
+have some different/missing options.
+
+These builders can not be auto-applied on their own, and must always build to
+cache because their outputs are not declared ahead of time. To apply them a
+user will need to explicitly enable them on a target, or a `Builder` definition
+can add them to `apply_builders`.
+
+Exposed `PostProcessBuilder`s are configured in the `post_process_builders`
+section of the  `build.yaml`. This is a map of builder names to configuration.
+Each post process builder config may contain the following keys:
+
+- **target**: The name of the target which defines contains the `Builder` class
+  definition.
+- **import**: Required. The import uri that should be used to import the library
+  containing the `Builder` class. This should always be a `package:` uri.
+- **builder_factories**: A `List<String>` which contains the names of the
+  top-level methods in the imported library which are a function fitting the
+  typedef `Builder factoryName(List<String> args)`.
+- **input_extensions**: Required. A list of input extensions that will be
+  processed. This must match the merged `inputExtensions` lists from each
+  `Builder` in `builder_factories`.
+- **defaults**: Optional: Default values to apply when a user does not specify
+  the corresponding key in their `builders` section. May contain the following
+  keys:
+  - **generate_for**: A list of globs that this Builder should run on as a
+    subset of the corresponding target, or a map with `include` and `exclude`
+    lists of globs.
+
+Example config with a normal `builder` which auto-applies a
+`post_process_builder`:
+
+```yaml
+builders:
+  # The regular builder config, creates `.tar.gz` files.
+  regular_builder:
+    import: "package:my_package/builder.dart"
+    builder_factories: ["myBuilder"]
+    build_extensions: {".dart": [".tar.gz"]}
+    auto_apply: dependents
+    apply_builders: ["|archive_extract_builder"]
+post_process_builders:
+  # The post process builder config, extracts `.tar.gz` files.
+  extract_archive_builder:
+    import: "package:my_package/extract_archive_builder.dart"
+    builder_factories: ["myExtractArchiveBuilder"]
+    input_extensions: [".tar.gz"]
 ```
 
 [adjusting builder ordering]: #adjusting-builder-ordering
