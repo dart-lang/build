@@ -61,8 +61,6 @@ void main() {
         buildConfig.postProcessBuilderDefinitions, {
       'example|p': new PostProcessBuilderDefinition(
         builderFactories: ['createPostProcessBuilder'],
-        autoApply: AutoApply.dependents,
-        buildTo: BuildTo.cache,
         import: 'package:example/p.dart',
         inputExtensions: ['.tar.gz', '.zip'],
         package: 'example',
@@ -170,7 +168,6 @@ post_process_builders:
     import: package:example/p.dart
     input_extensions: [".tar.gz", ".zip"]
     target: ":example"
-    auto_apply: dependents
     defaults:
       generate_for: ["web/**"]
 ''';
@@ -251,8 +248,6 @@ class _PostProcessBuilderDefinitionMatcher extends Matcher {
           .matches(item.defaults?.generateFor?.include, _) &&
       equals(_expected.defaults?.generateFor?.exclude)
           .matches(item.defaults?.generateFor?.exclude, _) &&
-      item.autoApply == _expected.autoApply &&
-      item.buildTo == _expected.buildTo &&
       item.import == _expected.import &&
       item.key == _expected.key &&
       item.package == _expected.package &&

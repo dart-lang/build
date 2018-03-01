@@ -220,12 +220,6 @@ class PostProcessBuilderDefinition {
   /// The name of the dart_library target that contains `import`.
   final String target;
 
-  /// Which packages should have this builder applied automatically.
-  final AutoApply autoApply;
-
-  /// Where the outputs of this builder should be written.
-  final BuildTo buildTo;
-
   final TargetBuilderConfigDefaults defaults;
 
   PostProcessBuilderDefinition({
@@ -235,19 +229,15 @@ class PostProcessBuilderDefinition {
     @required this.inputExtensions,
     @required this.import,
     @required this.target,
-    this.autoApply,
-    this.buildTo,
     this.defaults,
   });
 
   @override
   String toString() => {
         'target': target,
-        'autoApply': autoApply,
         'import': import,
         'builderFactories': builderFactories,
         'inputExtensions': inputExtensions,
-        'buildTo': buildTo,
         'defaults': defaults,
       }.toString();
 }

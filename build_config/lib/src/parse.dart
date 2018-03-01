@@ -192,10 +192,6 @@ BuildConfig parseFromMap(String packageName,
         _readListOfStringsOrThrow(builderConfig, _inputExtensions);
     final target = normalizeTargetKeyUsage(
         _readStringOrThrow(builderConfig, _target), packageName);
-    final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
-        defaultValue: AutoApply.none);
-    final buildTo = _readBuildToOrThrow(builderConfig, _buildTo,
-        defaultValue: BuildTo.cache);
     final defaultOptions = _readMapOrThrow(
         builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
         defaultValue: {});
@@ -211,8 +207,6 @@ BuildConfig parseFromMap(String packageName,
       inputExtensions: inputExtensions,
       package: packageName,
       target: target,
-      autoApply: autoApply,
-      buildTo: buildTo,
       defaults:
           new TargetBuilderConfigDefaults(generateFor: defaultGenerateFor),
     );
