@@ -165,6 +165,29 @@ void main() {
             });
       });
 
+      test(
+          'allows running on generated inputs that do not match target '
+          'source globx', () async {
+        var builders = [
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.1', from: '.txt'))),
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.2', from: '.1')))
+        ];
+        var buildConfigs = parseBuildConfigs({
+          'a': {
+            'targets': {
+              r'$default': {
+                'sources': ['lib/*.txt']
+              }
+            }
+          }
+        });
+        await testBuilders(builders, {'a|lib/a.txt': 'a'},
+            overrideBuildConfig: buildConfigs,
+            outputs: {'a|lib/a.txt.1': 'a', 'a|lib/a.txt.1.2': 'a'});
+      });
+
       test('early step touches a not-yet-generated asset', () async {
         var copyId = new AssetId('a', 'lib/file.a.copy');
         var builders = [
@@ -369,14 +392,14 @@ void main() {
               apply('hidden_on_b', [(_) => new TestBuilder()], toPackage('b'),
                   hideOutput: true),
               applyToRoot(new TestBuilder(
-                  buildExtensions: appendExtension('.clone'),
+                  buildExtensions: appendExtension('.check_can_read'),
                   build: writeCanRead(makeAssetId('b|lib/b.txt.copy'))))
             ],
             {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
             packageGraph: packageGraph,
             outputs: {
               r'$$b|lib/b.txt.copy': 'b',
-              r'a|lib/a.txt.clone': 'false',
+              r'a|lib/a.txt.check_can_read': 'false',
             });
       });
 
@@ -387,14 +410,15 @@ void main() {
             [
               applyToRoot(new TestBuilder(), hideOutput: true),
               applyToRoot(new TestBuilder(
-                  buildExtensions: appendExtension('.clone'),
+                  buildExtensions: appendExtension('.check_can_read'),
                   build: writeCanRead(makeAssetId('a|lib/a.txt.copy'))))
             ],
             {'a|lib/a.txt': 'a'},
             packageGraph: packageGraph,
             outputs: {
               r'$$a|lib/a.txt.copy': 'a',
-              r'a|lib/a.txt.clone': 'true',
+              r'a|lib/a.txt.copy.check_can_read': 'true',
+              r'a|lib/a.txt.check_can_read': 'true',
             });
       });
 

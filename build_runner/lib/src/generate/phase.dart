@@ -5,15 +5,17 @@
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 
 import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a [Builder] on a
 /// specific [package].
-class BuildAction implements InputMatcher {
+class BuildAction {
   final String package;
   final Builder builder;
-  final InputMatcher _inputs;
+  final InputMatcher targetSources;
+  final InputMatcher generateFor;
 
   /// Whether to run lazily when an output is read.
   ///
@@ -32,8 +34,12 @@ class BuildAction implements InputMatcher {
   /// the root.
   final bool hideOutput;
 
-  BuildAction._(this.package, this.builder, this._inputs, this.builderOptions,
-      {bool isOptional, bool hideOutput})
+  BuildAction._(
+      this.package, this.builder, this.builderOptions,
+      {@required this.targetSources,
+      @required this.generateFor,
+      bool isOptional,
+      bool hideOutput})
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
 
@@ -57,24 +63,23 @@ class BuildAction implements InputMatcher {
     bool isOptional,
     bool hideOutput,
   }) {
-    var inputs = new InputMatcher(targetSources ?? const InputSet());
-    if (generateFor != null) {
-      inputs = new InputMatcher.allOf([inputs, new InputMatcher(generateFor)]);
-    }
+    var targetSourceMatcher =
+        new InputMatcher(targetSources ?? const InputSet());
+    var generateFormatcher = new InputMatcher(generateFor ?? const InputSet());
     builderOptions ??= const BuilderOptions(const {});
-    return new BuildAction._(package, builder, inputs, builderOptions,
-        isOptional: isOptional, hideOutput: hideOutput);
+    return new BuildAction._(package, builder, builderOptions,
+        targetSources: targetSourceMatcher,
+        generateFor: generateFormatcher,
+        isOptional: isOptional,
+        hideOutput: hideOutput);
   }
-
-  @override
-  bool matches(AssetId id) => id.package == package && _inputs.matches(id);
 
   @override
   String toString() {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
     if (hideOutput) settings.add('hidden');
-    var result = '$builder on $_inputs';
+    var result = '${builder.runtimeType} on $targetSources in $package';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
   }
@@ -84,8 +89,14 @@ class BuildAction implements InputMatcher {
   /// This takes into account everything except for the [builderOptions], which
   /// are tracked separately via a `BuilderOptionsNode` which supports more fine
   /// grained invalidation.
-  int get identity => _deepEquals.hash(
-      ['${builder.runtimeType}', package, _inputs, isOptional, hideOutput]);
+  int get identity => _deepEquals.hash([
+        '${builder.runtimeType}',
+        package,
+        targetSources,
+        generateFor,
+        isOptional,
+        hideOutput
+      ]);
 }
 
 final _deepEquals = const DeepCollectionEquality();
