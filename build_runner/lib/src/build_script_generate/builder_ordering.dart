@@ -9,18 +9,10 @@ import 'package:graphs/graphs.dart';
 /// [BuilderDefinition.requiredInputs] will come after any builder which
 /// produces a desired output.
 ///
-/// Builders will be put in the following order:
-/// - Builders which write to the source tree
-/// - Builders which write to the build cache
-///
-/// Within each block any ordering constraints determined by `required_inputs`
-/// or `runs_before` are upheld.
+/// Builders will be ordered such that their `required_inputs` and `runs_before`
+/// constraints are met, but the rest of the ordering is arbitrary.
 Iterable<BuilderDefinition> findBuilderOrder(
-        Iterable<BuilderDefinition> builders) =>
-    _findOrder(builders.where((b) => b.buildTo == BuildTo.source)).followedBy(
-        _findOrder(builders.where((b) => b.buildTo == BuildTo.cache)));
-
-List<BuilderDefinition> _findOrder(Iterable<BuilderDefinition> builders) {
+    Iterable<BuilderDefinition> builders) {
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
       builders.where((child) =>
           _hasInputDependency(parent, child) || _mustRunBefore(parent, child));

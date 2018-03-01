@@ -361,8 +361,28 @@ void main() {
             });
       });
 
-      test('disallows reading hidden outputs to create a non-hidden output',
-          () async {
+      test(
+          'disallows reading hidden outputs from another package to create '
+          'a non-hidden output', () async {
+        await testBuilders(
+            [
+              apply('hidden_on_b', [(_) => new TestBuilder()], toPackage('b'),
+                  hideOutput: true),
+              applyToRoot(new TestBuilder(
+                  buildExtensions: appendExtension('.clone'),
+                  build: writeCanRead(makeAssetId('b|lib/b.txt.copy'))))
+            ],
+            {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+            packageGraph: packageGraph,
+            outputs: {
+              r'$$b|lib/b.txt.copy': 'b',
+              r'a|lib/a.txt.clone': 'false',
+            });
+      });
+
+      test(
+          'allows reading hidden outputs from same package to create '
+          'a non-hidden output', () async {
         await testBuilders(
             [
               applyToRoot(new TestBuilder(), hideOutput: true),
@@ -374,7 +394,7 @@ void main() {
             packageGraph: packageGraph,
             outputs: {
               r'$$a|lib/a.txt.copy': 'a',
-              r'a|lib/a.txt.clone': 'false',
+              r'a|lib/a.txt.clone': 'true',
             });
       });
 
