@@ -1,4 +1,4 @@
-## 0.7.12-prerelease
+## 0.7.12
 
 - Added the `--log-requests` flag to the `serve` command, which will log all
   requests to the server.
