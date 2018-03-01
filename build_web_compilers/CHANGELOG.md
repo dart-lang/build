@@ -1,3 +1,5 @@
+# 0.3.2
+
 - Dart2JS now has minification (`--minify`) enabled by default, similar to how
   it worked in `pub build`. If you are adding custom `dart2js` options, make
   sure you still keep the `--minify` flag. Here is an example:
