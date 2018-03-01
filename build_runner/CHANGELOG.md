@@ -12,7 +12,8 @@
   supported any more and has been replaced by the `--output` option.
 - Builders which write to `source` are no longer guaranteed to run before
   builders which write to `cache`.
-- Honors `runs_before` configuration from in Builder definitions.
+- Honors `runs_before` configuration from Builder definitions.
+- Honors `applies_builders` configuration from Builder definitions.
 
 ## 0.7.11+1
 

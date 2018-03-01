@@ -62,7 +62,7 @@ Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
     return definition.package == packageGraph.root.name;
   });
 
-  final orderedBuilders = findBuilderOrder(builderDefinitions);
+  final orderedBuilders = findBuilderOrder(builderDefinitions).toList();
   builderApplications.addAll(orderedBuilders.map(_applyBuilder));
   return builderApplications;
 }
@@ -91,16 +91,8 @@ Method _main() => new Method((b) => b
   ]));
 
 /// An expression calling `apply` with appropriate setup for a Builder.
-Expression _applyBuilder(BuilderDefinition definition) =>
-    _applyBuilderWithFilter(definition, _findToExpression(definition));
-
-Expression _applyBuilderWithFilter(
-    BuilderDefinition definition, Expression toExpression,
-    {List<String> inputs}) {
+Expression _applyBuilder(BuilderDefinition definition) {
   final namedArgs = <String, Expression>{};
-  if (inputs != null) {
-    namedArgs['inputs'] = literalList(inputs);
-  }
   if (definition.isOptional) {
     namedArgs['isOptional'] = literalTrue;
   }
@@ -123,12 +115,15 @@ Expression _applyBuilderWithFilter(
         refer('InputSet', 'package:build_config/build_config.dart')
             .constInstance([], inputSetArgs);
   }
+  if (definition.appliesBuilders.isNotEmpty) {
+    namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
+  }
   return refer('apply', 'package:build_runner/build_runner.dart').call([
     literalString(definition.key),
     literalList(definition.builderFactories
         .map((f) => refer(f, definition.import))
         .toList()),
-    toExpression,
+    _findToExpression(definition),
   ], namedArgs);
 }
 
