@@ -1,3 +1,8 @@
+# 0.2.0-dev
+
+- `computeTransitiveDependencies` now throws a `MissingModulesException` instead
+  of logging a warning if it discovers a missing module.
+
 # 0.1.0+2
 
 - Fix a bug with the dart2js workers where the worker could hang if you try to

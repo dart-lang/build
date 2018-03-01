@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 
 import 'common.dart';
 import 'dart2js_bootstrap.dart';
@@ -99,10 +100,14 @@ class WebEntrypointBuilder implements Builder {
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
     if (webCompiler == WebCompiler.DartDevc) {
-      await bootstrapDdc(buildStep,
-          useKernel: useKernel,
-          buildRootAppSummary: buildRootAppSummary,
-          ignoreCastFailures: ignoreCastFailures);
+      try {
+        await bootstrapDdc(buildStep,
+            useKernel: useKernel,
+            buildRootAppSummary: buildRootAppSummary,
+            ignoreCastFailures: ignoreCastFailures);
+      } on MissingModulesException catch (e) {
+        log.severe('$e');
+      }
     } else if (webCompiler == WebCompiler.Dart2Js) {
       await bootstrapDart2Js(buildStep, dart2JsArgs);
     }

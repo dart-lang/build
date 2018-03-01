@@ -8,13 +8,13 @@ import 'package:logging/logging.dart';
 
 /// A delegating [Logger] that records if any logs of level >= [Level.SEVERE]
 /// were seen.
-class ErrorRecordingLogger implements Logger {
+class BuildForInputLogger implements Logger {
   final Logger _delegate;
 
   bool _errorWasSeen = false;
   bool get errorWasSeen => _errorWasSeen;
 
-  ErrorRecordingLogger(this._delegate);
+  BuildForInputLogger(this._delegate);
 
   @override
   Level get level => _delegate.level;
@@ -59,6 +59,15 @@ class ErrorRecordingLogger implements Logger {
       [Object error, StackTrace stackTrace, Zone zone]) {
     if (logLevel >= Level.SEVERE) {
       _errorWasSeen = true;
+    }
+    if (logLevel >= Level.WARNING) {
+      if (_delegate.isLoggable(logLevel)) {
+        var original = message;
+        if (message is Function) message = () => '\n${original()}';
+        if (message is String) {
+          message = '\n$message';
+        }
+      }
     }
     _delegate.log(logLevel, message, error, stackTrace, zone);
   }
