@@ -12,7 +12,7 @@ dependencies:
   bazel_worker: ^0.1.4
   build: ^0.12.0
   build_config: ^0.2.1
-  build_modules: ^0.1.0
+  build_modules: ^0.2.0
   cli_util: ^0.1.2
   logging: ^0.11.2
   path: ^1.4.2
@@ -26,3 +26,7 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  build_modules:
+    path: ../build_modules
