@@ -21,7 +21,7 @@ import '../asset_graph/node.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
-import '../logging/error_recording_logger.dart';
+import '../logging/build_for_input_logger.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
@@ -422,7 +422,7 @@ class _SingleBuild {
     wrappedReader.assetsRead.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
-    var logger = new ErrorRecordingLogger(new Logger('$builder on $input'));
+    var logger = new BuildForInputLogger(new Logger('$builder on $input'));
     numActionsStarted++;
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,

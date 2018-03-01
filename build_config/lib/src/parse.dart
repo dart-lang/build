@@ -33,6 +33,7 @@ const _builderDefinitionOptions = const [
   _target,
   _autoApply,
   _requiredInputs,
+  _runsBefore,
   _isOptional,
   _buildTo,
   _defaults,
@@ -44,6 +45,7 @@ const _inputExtensions = 'input_extensions';
 const _target = 'target';
 const _autoApply = 'auto_apply';
 const _requiredInputs = 'required_inputs';
+const _runsBefore = 'runs_before';
 const _isOptional = 'is_optional';
 const _buildTo = 'build_to';
 const _defaults = 'defaults';
@@ -133,6 +135,10 @@ BuildConfig parseFromMap(String packageName,
     final requiredInputs = _readListOfStringsOrThrow(
         builderConfig, _requiredInputs,
         defaultValue: const []);
+    final runsBefore = _readListOfStringsOrThrow(builderConfig, _runsBefore,
+            defaultValue: const [])
+        .map((key) => normalizeBuilderKeyUsage(key, packageName))
+        .toSet();
     final isOptional =
         _readBoolOrThrow(builderConfig, _isOptional, defaultValue: false);
 
@@ -156,6 +162,7 @@ BuildConfig parseFromMap(String packageName,
       target: target,
       autoApply: autoApply,
       requiredInputs: requiredInputs,
+      runsBefore: runsBefore,
       isOptional: isOptional,
       buildTo: buildTo,
       defaults:

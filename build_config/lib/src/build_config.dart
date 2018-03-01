@@ -155,6 +155,10 @@ class BuilderDefinition {
   /// after this builder.
   final List<String> requiredInputs;
 
+  /// A list of Builder keys in `$package|$builder` format which should only be
+  /// run after this Builder.
+  final Set<String> runsBefore;
+
   /// Whether this Builder should be deferred until it's output is requested.
   ///
   /// Optional builders are lazy and will not run unless some later builder
@@ -183,6 +187,7 @@ class BuilderDefinition {
     this.buildExtensions,
     this.inputExtensions,
     this.requiredInputs,
+    this.runsBefore,
     this.isOptional,
     this.buildTo,
     this.defaults,
@@ -204,6 +209,7 @@ class BuilderDefinition {
         'buildExtensions': buildExtensions,
         'inputExtensions': inputExtensions,
         'requiredInputs': requiredInputs,
+        'runsBefore': runsBefore,
         'isOptional': isOptional,
         'buildTo': buildTo,
         'defaults': defaults,

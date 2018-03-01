@@ -34,8 +34,7 @@ class PackageGraphWatcher {
     this._graph, {
     Logger logger,
     PackageNodeWatcher watch(PackageNode node),
-  })
-      : _logger = logger ?? new Logger('build_runner'),
+  })  : _logger = logger ?? new Logger('build_runner'),
         _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that changed in the package graph.
@@ -68,8 +67,7 @@ class PackageGraphWatcher {
     final subscriptions = <StreamSubscription>[];
     var allWatchers = <PackageNodeWatcher>[];
     _graph.allPackages.forEach((name, node) {
-      if (node.dependencyType == DependencyType.pub ||
-          node.dependencyType == DependencyType.hosted ||
+      if (node.dependencyType == DependencyType.hosted ||
           node.dependencyType == DependencyType.github) {
         return;
       }

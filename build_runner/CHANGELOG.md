@@ -1,5 +1,7 @@
 ## 0.7.12-prerelease
 
+- Added the `--log-requests` flag to the `serve` command, which will log all
+  requests to the server.
 - Build actions using `findAssets` will be more smartly invalidated.
 - Added a warning if using `serve` mode but no directories were found to serve.
 - The `--output` option now only outputs files that were required for the latest
@@ -8,6 +10,7 @@
   https://github.com/dart-lang/build/issues/1033.
 - The experimental `create_merged_dir` binary is now removed, it can't be easily
   supported any more and has been replaced by the `--output` option.
+- Honors `runs_before` configuration from in Builder definitions.
 
 ## 0.7.11+1
 

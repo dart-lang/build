@@ -66,6 +66,7 @@ main() {
         [
           await pubspec('a'),
           d.file('.packages', '\na:./lib/'),
+          d.file('pubspec.lock', 'packages: {}'),
           d.dir('.dart_tool', [
             d.dir('build', [
               d.dir('entrypoint', [d.file('build.dart', '// builds!')])

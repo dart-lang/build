@@ -70,7 +70,7 @@ void main() {
     test('should avoid watchers on pub dependencies', () {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b/', type: DependencyType.pub): []
+        package('b', path: '/g/a/b/', type: DependencyType.hosted): []
       });
       final nodes = {
         'a': new FakeNodeWatcher(graph['a']),

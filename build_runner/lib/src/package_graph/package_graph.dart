@@ -55,80 +55,46 @@ class PackageGraph {
   /// at [packagePath] (no trailing slash).
   factory PackageGraph.forPath(String packagePath) {
     /// Read in the pubspec file and parse it as yaml.
-    var pubspec = new File(p.join(packagePath, 'pubspec.yaml'));
+    final pubspec = new File(p.join(packagePath, 'pubspec.yaml'));
     if (!pubspec.existsSync()) {
       throw 'Unable to generate package graph, no `pubspec.yaml` found. '
           'This program must be ran from the root directory of your package.';
     }
-    var rootYaml = loadYaml(pubspec.readAsStringSync()) as YamlMap;
+    final rootPubspec = _pubspecForPath(packagePath);
+    final rootPackageName = rootPubspec['name'] as String;
 
-    /// Read in the `.packages` file to get the locations of all packages.
-    var packagesFile = new File(p.join(packagePath, '.packages'));
-    if (!packagesFile.existsSync()) {
-      throw 'Unable to generate package graph, no `.packages` found. '
-          'This program must be ran from the root directory of your package.';
-    }
-    var packageLocations = <String, String>{};
-    for (final line in packagesFile.readAsLinesSync().skip(1)) {
-      var firstColon = line.indexOf(':');
-      var name = line.substring(0, firstColon);
-      assert(line.endsWith('lib/'));
-      // Start after package_name:, and strip out trailing `lib` dir.
-      var uriString = line.substring(firstColon + 1, line.length - 4);
-      // Strip the trailing slash, if present.
-      if (uriString.endsWith('/')) {
-        uriString = uriString.substring(0, uriString.length - 1);
-      }
-      Uri uri;
-      try {
-        uri = Uri.parse(uriString);
-      } on FormatException catch (_) {
-        /// Some types of deps don't have a scheme, and just point to a relative
-        /// path.
-        uri = new Uri.file(uriString);
-      }
-      if (!uri.isAbsolute) {
-        uri = new Uri.file(p.join(packagePath, uri.path));
-      }
-      packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
+    final packageLocations = _parsePackageLocations(packagePath);
+    packageLocations.remove(rootPackageName);
+
+    final dependencyTypes = _parseDependencyTypes(packagePath);
+
+    final nodes = <String, PackageNode>{};
+    final rootNode = new PackageNode(
+        rootPackageName, packagePath, DependencyType.path,
+        isRoot: true);
+    nodes[rootPackageName] = rootNode;
+    for (final packageName in packageLocations.keys) {
+      if (packageName == rootPackageName) continue;
+      nodes[packageName] = new PackageNode(packageName,
+          packageLocations[packageName], dependencyTypes[packageName],
+          isRoot: false);
     }
 
-    /// Create all [PackageNode]s for all deps.
-    var nodes = <String, PackageNode>{};
-    Map<String, dynamic> rootDeps;
-    PackageNode addNodeAndDeps(YamlMap yaml, DependencyType type,
-        {bool isRoot: false}) {
-      var name = yaml['name'] as String;
-      assert(!nodes.containsKey(name));
-      var node =
-          new PackageNode(name, packageLocations[name], type, isRoot: isRoot);
-      nodes[name] = node;
+    rootNode.dependencies.addAll(
+        _depsFromYaml(rootPubspec, isRoot: true).keys.map((n) => nodes[n]));
 
-      var deps = _depsFromYaml(yaml, isRoot: isRoot);
-      if (isRoot) rootDeps = deps;
-      for (final name in deps.keys) {
-        var dep = nodes[name];
-        if (dep == null) {
-          var uri = packageLocations[name];
-          if (uri == null) {
-            throw 'No package found for $name.';
-          }
-          var pubspec = _pubspecForPath(uri);
-          dep = addNodeAndDeps(pubspec, _dependencyType(rootDeps[name]));
-        }
-        node.dependencies.add(dep);
-      }
-
-      return node;
+    final packageDependencies = _parsePackageDependencies(packageLocations);
+    for (final packageName in packageDependencies.keys) {
+      nodes[packageName]
+          .dependencies
+          .addAll(packageDependencies[packageName].map((n) => nodes[n]));
     }
-
-    var root = addNodeAndDeps(rootYaml, DependencyType.path, isRoot: true);
-    return new PackageGraph._(root, nodes);
+    return new PackageGraph._(rootNode, nodes);
   }
 
   /// Creates a [PackageGraph] for the package in which you are currently
   /// running.
-  factory PackageGraph.forThisPackage() => new PackageGraph.forPath('.');
+  factory PackageGraph.forThisPackage() => new PackageGraph.forPath('./');
 
   /// Shorthand to get a package by name.
   PackageNode operator [](String packageName) => allPackages[packageName];
@@ -180,28 +146,87 @@ class PackageNode {
   }
 }
 
+/// Parse the `.packages` file and return a Map from package name to the file
+/// location for that package.
+Map<String, String> _parsePackageLocations(String rootPackagePath) {
+  var packagesFile = new File(p.join(rootPackagePath, '.packages'));
+  if (!packagesFile.existsSync()) {
+    throw 'Unable to generate package graph, no `.packages` found. '
+        'This program must be ran from the root directory of your package.';
+  }
+  var packageLocations = <String, String>{};
+  for (final line in packagesFile.readAsLinesSync().skip(1)) {
+    var firstColon = line.indexOf(':');
+    var name = line.substring(0, firstColon);
+    assert(line.endsWith('lib/'));
+    // Start after package_name:, and strip out trailing `lib` dir.
+    var uriString = line.substring(firstColon + 1, line.length - 4);
+    // Strip the trailing slash, if present.
+    if (uriString.endsWith('/')) {
+      uriString = uriString.substring(0, uriString.length - 1);
+    }
+    Uri uri;
+    try {
+      uri = Uri.parse(uriString);
+    } on FormatException catch (_) {
+      /// Some types of deps don't have a scheme, and just point to a relative
+      /// path.
+      uri = new Uri.file(uriString);
+    }
+    if (!uri.isAbsolute) {
+      uri = new Uri.file(p.join(rootPackagePath, uri.path));
+    }
+    packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
+  }
+  return packageLocations;
+}
+
 /// The type of dependency being used. This dictates how the package should be
 /// watched for changes.
-enum DependencyType { pub, github, path, hosted }
+enum DependencyType { github, path, hosted }
 
-DependencyType _dependencyType(source) {
-  if (source is String || source == null) return DependencyType.pub;
+/// Parse the `pubspec.lock` file and return a Map from package name to the type
+/// of dependency.
+Map<String, DependencyType> _parseDependencyTypes(String rootPackagePath) {
+  final pubspecLock = new File(p.join(rootPackagePath, 'pubspec.lock'));
+  if (!pubspecLock.existsSync()) {
+    throw 'Unable to generate package graph, no `pubspec.lock` found. '
+        'This program must be ran from the root directory of your package.';
+  }
+  final dependencyTypes = <String, DependencyType>{};
+  final dependencies = loadYaml(pubspecLock.readAsStringSync()) as YamlMap;
+  for (final packageName in dependencies['packages'].keys) {
+    final source = dependencies['packages'][packageName]['source'];
+    dependencyTypes[packageName as String] =
+        _dependencyTypeFromSource(source as String);
+  }
+  return dependencyTypes;
+}
 
-  assert(source is YamlMap);
-  var map = source as YamlMap;
-
-  for (var key in map.keys) {
-    switch (key as String) {
-      case 'git':
-        return DependencyType.github;
-      case 'hosted':
-        return DependencyType.hosted;
-      case 'path':
-      case 'sdk': // Until Flutter supports another type, assume same as path.
-        return DependencyType.path;
-    }
+DependencyType _dependencyTypeFromSource(String source) {
+  switch (source) {
+    case 'git':
+      return DependencyType.github;
+    case 'hosted':
+      return DependencyType.hosted;
+    case 'path':
+    case 'sdk': // Until Flutter supports another type, assum same as path.
+      return DependencyType.path;
   }
   throw 'Unable to determine dependency type:\n$source';
+}
+
+/// Read the pubspec for each package in [packageLocations] and finds it's
+/// dependencies.
+Map<String, List<String>> _parsePackageDependencies(
+    Map<String, String> packageLocations) {
+  final dependencies = <String, List<String>>{};
+  for (final packageName in packageLocations.keys) {
+    final pubspec = _pubspecForPath(packageLocations[packageName]);
+    final packageDeps = _depsFromYaml(pubspec);
+    dependencies[packageName] = packageDeps.keys.toList();
+  }
+  return dependencies;
 }
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.

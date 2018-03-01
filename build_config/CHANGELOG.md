@@ -1,3 +1,7 @@
+## 0.2.4
+
+- Add support for `runs_before` in `BuilderDefinition`.
+
 ## 0.2.3
 
 - Expose key normalization methods publicly, these include:

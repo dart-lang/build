@@ -66,15 +66,15 @@ void main() {
     test('ddc errors can be fixed', () async {
       var path = p.join('test', 'common', 'message.dart');
       var error = nextStdErrLine('Error compiling dartdevc module:'
-          'e2e_example|test/hello_world_test.ddc.js');
+          'e2e_example|test/common/message.ddc.js');
       var nextBuild = nextSuccessfulBuild;
-      await deleteFile(path);
+      await replaceAllInFile(path, "'Hello World!'", '1');
       await error;
       await nextBuild;
       await expectTestsFail();
 
       nextBuild = nextSuccessfulBuild;
-      await createFile(path, "String get message => 'Hello World!';");
+      await replaceAllInFile(path, '1', "'Hello World!'");
       await nextBuild;
       await expectTestsPass();
     });

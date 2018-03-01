@@ -27,8 +27,7 @@ class OverrideableEnvironment implements BuildEnvironment {
     RunnerAssetWriter writer,
     DirectoryWatcherFactory directoryWatcherFactory,
     void Function(LogRecord) onLog,
-  })
-      : _reader = reader,
+  })  : _reader = reader,
         _writer = writer,
         _directoryWatcherFactory = directoryWatcherFactory,
         _onLog = onLog;
