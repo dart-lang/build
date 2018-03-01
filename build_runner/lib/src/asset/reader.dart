@@ -38,8 +38,8 @@ class SingleStepReader implements AssetReader {
 
   /// Whether the action using this reader writes to the generated directory.
   ///
-  /// Actions which do not hide their outptus may not read assets produced by
-  /// actions which do hide their outputs.
+  /// Actions which do not hide their outptus may not read assets produced in
+  /// other packages by actions which do hide their outputs.
   final bool _outputsHidden;
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
@@ -71,7 +71,9 @@ class SingleStepReader implements AssetReader {
     if (node.isGenerated) {
       final generatedNode = node as GeneratedAssetNode;
       if (generatedNode.phaseNumber >= _phaseNumber) return false;
-      if (!_outputsHidden && generatedNode.isHidden) return false;
+      if (!_outputsHidden &&
+          generatedNode.isHidden &&
+          node.id.package != _primaryPackage) return false;
       return doAfter(
           _ensureAssetIsBuilt(node.id), (_) => generatedNode.wasOutput);
     }
