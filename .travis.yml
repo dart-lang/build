@@ -10,6 +10,14 @@ jobs:
   include:
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="bazel_codegen"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_0
+      env: PKG="bazel_codegen"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build"
       dart: dev
     - stage: analyze_and_format
