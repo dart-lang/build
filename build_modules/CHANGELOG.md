@@ -1,4 +1,4 @@
-# 0.2.0-dev
+# 0.2.0
 
 - `computeTransitiveDependencies` now throws a `MissingModulesException` instead
   of logging a warning if it discovers a missing module.
