@@ -66,27 +66,20 @@ BuilderApplication applyToRoot(Builder builder,
 /// automatically be applied to any target which runs this Builder, whether
 /// because it matches [filter] or because it was enabled manually.
 BuilderApplication apply(String builderKey,
-    List<BuilderFactory> builderFactories, PackageFilter filter,
-    {bool isOptional,
-    bool hideOutput,
-    InputSet defaultGenerateFor,
-    Iterable<String> appliesBuilders}) {
-  if (appliesBuilders != null &&
-      appliesBuilders.isEmpty &&
-      builderKey.isEmpty) {
-    throw new ArgumentError('May not use `appliesBuilders` without specifying '
-        'a unique `builderKey`');
-  }
-  return new BuilderApplication._(
-    builderKey,
-    builderFactories,
-    filter,
-    isOptional: isOptional,
-    hideOutput: hideOutput,
-    defaultGenerateFor: defaultGenerateFor,
-    appliesBuilders: appliesBuilders,
-  );
-}
+        List<BuilderFactory> builderFactories, PackageFilter filter,
+        {bool isOptional,
+        bool hideOutput,
+        InputSet defaultGenerateFor,
+        Iterable<String> appliesBuilders}) =>
+    new BuilderApplication._(
+      builderKey,
+      builderFactories,
+      filter,
+      isOptional: isOptional,
+      hideOutput: hideOutput,
+      defaultGenerateFor: defaultGenerateFor,
+      appliesBuilders: appliesBuilders,
+    );
 
 /// A description of which packages need a given [Builder] applied.
 class BuilderApplication {
@@ -201,9 +194,8 @@ bool _shouldApply(BuilderApplication builderApplication, TargetNode node,
     return builderConfig.isEnabled;
   }
   return builderApplication.filter(node.package) ||
-      (applyWith.containsKey(builderApplication.builderKey) &&
-          applyWith[builderApplication.builderKey].any(
-              (anchorBuilder) => _shouldApply(anchorBuilder, node, applyWith)));
+      (applyWith[builderApplication.builderKey] ?? const [])
+          .any((anchorBuilder) => _shouldApply(anchorBuilder, node, applyWith));
 }
 
 /// Inverts the dependency map from 'applies builders' to 'applied with
