@@ -153,9 +153,13 @@ class BuilderDefinition {
   /// after this builder.
   final List<String> requiredInputs;
 
-  /// A list of Builder keys in `$package|$builder` format which should only be
-  /// run after this Builder.
+  /// Builder keys in `$package|$builder` format which should only be run after
+  /// this Builder.
   final Set<String> runsBefore;
+
+  /// Builder keys in `$package|$builder` format which should be run on any
+  /// target which also runs this Builder.
+  final Set<String> appliesBuilders;
 
   /// Whether this Builder should be deferred until it's output is requested.
   ///
@@ -179,6 +183,7 @@ class BuilderDefinition {
     this.autoApply,
     this.requiredInputs,
     this.runsBefore,
+    this.appliesBuilders,
     this.isOptional,
     this.buildTo,
     this.defaults,

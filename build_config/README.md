@@ -83,6 +83,8 @@ the following keys:
   - `"root_package"`; Apply this Builder only to the top-level package.
 - **required_inputs**: Optional, see [adjusting builder ordering][]
 - **runs_before**: Optional, see [adjusting builder ordering][]
+- **applies_builders**: Optional, list of Builder keys. Specifies that other
+  builders should be run on any target which will run this Builder.
 - **is_optional**: Optional, boolean. Specifies whether a Builder can be run
   lazily, such that it won't execute until one of it's outputs is requested by a
   later Builder. This option should be rare. Defaults to `False`.

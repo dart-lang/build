@@ -53,6 +53,7 @@ void main() {
         target: 'example:example',
         requiredInputs: ['.dart'],
         runsBefore: ['foo_builder|foo_builder'].toSet(),
+        appliesBuilders: ['foo_builder|foo_builder'].toSet(),
         defaults: new TargetBuilderConfigDefaults(
             generateFor: new InputSet(include: ['lib/**'])),
       ),
@@ -101,6 +102,7 @@ void main() {
         target: 'example:example',
         requiredInputs: const [],
         runsBefore: new Set<String>(),
+        appliesBuilders: new Set<String>(),
       ),
     });
   });
@@ -159,6 +161,7 @@ builders:
     auto_apply: dependents
     required_inputs: [".dart"]
     runs_before: ["foo_builder"]
+    applies_builders: ["foo_builder"]
     is_optional: True
     defaults:
       generate_for: ["lib/**"]
@@ -218,6 +221,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
       equals(_expected.runsBefore).matches(item.runsBefore, _) &&
+      equals(_expected.appliesBuilders).matches(item.appliesBuilders, _) &&
       equals(_expected.defaults?.generateFor?.include)
           .matches(item.defaults?.generateFor?.include, _) &&
       equals(_expected.defaults?.generateFor?.exclude)
