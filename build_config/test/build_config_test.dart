@@ -185,12 +185,11 @@ builders:
 ''';
 
 var buildYamlPostProcess = '''
-builders:
+post_process_builders:
   a:
     builder_factories: ["createBuilder"]
     import: package:example/builder.dart
     input_extensions: [".dart", ".heart"]
-    is_post_process: true
     target: example
 ''';
 

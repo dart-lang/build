@@ -139,14 +139,7 @@ class BuilderDefinition {
 
   /// A map from input extension to the output extensions created for matching
   /// inputs.
-  ///
-  /// Only allowed if [isPostProcess] is false.
   final Map<String, List<String>> buildExtensions;
-
-  /// A list of input extensions for this builder.
-  ///
-  /// Only allowed if [isPostProcess] is true.
-  final Iterable<String> inputExtensions;
 
   /// The name of the dart_library target that contains `import`.
   final String target;
@@ -180,35 +173,21 @@ class BuilderDefinition {
 
   final TargetBuilderConfigDefaults defaults;
 
-  /// Whether this is a PostProcessBuilder and not a normal Builder.
-  ///
-  /// If this is `true`, then [inputExtensions] must exist, and otherwise
-  /// [buildExtensions] must exist.
-  final bool isPostProcess;
-
   BuilderDefinition({
     @required this.package,
     @required this.key,
     @required this.builderFactories,
+    @required this.buildExtensions,
     @required this.import,
     @required this.target,
     this.autoApply,
-    this.buildExtensions,
-    this.inputExtensions,
     this.requiredInputs,
     this.runsBefore,
     this.appliesBuilders,
     this.isOptional,
     this.buildTo,
     this.defaults,
-    this.isPostProcess,
-  }) {
-    if (isPostProcess) {
-      assert(buildExtensions == null && inputExtensions != null);
-    } else {
-      assert(buildExtensions != null && inputExtensions == null);
-    }
-  }
+  });
 
   @override
   String toString() => {
@@ -217,13 +196,64 @@ class BuilderDefinition {
         'import': import,
         'builderFactories': builderFactories,
         'buildExtensions': buildExtensions,
-        'inputExtensions': inputExtensions,
         'requiredInputs': requiredInputs,
         'runsBefore': runsBefore,
         'isOptional': isOptional,
         'buildTo': buildTo,
         'defaults': defaults,
-        'isPostProcess': isPostProcess,
+      }.toString();
+}
+
+/// The definition of a `PostProcessBuilder` in the `post_process_builders`
+/// section of a `build.yaml`.
+class PostProcessBuilderDefinition {
+  /// The package which provides this Builder.
+  final String package;
+
+  /// A unique key for this Builder in `'$package|$builder'` format.
+  final String key;
+
+  /// The names of the top-level methods in [import] from args -> Builder.
+  final List<String> builderFactories;
+
+  /// The import to be used to load `clazz`.
+  final String import;
+
+  /// A list of input extensions for this builder.
+  final Iterable<String> inputExtensions;
+
+  /// The name of the dart_library target that contains `import`.
+  final String target;
+
+  /// Which packages should have this builder applied automatically.
+  final AutoApply autoApply;
+
+  /// Where the outputs of this builder should be written.
+  final BuildTo buildTo;
+
+  final TargetBuilderConfigDefaults defaults;
+
+  PostProcessBuilderDefinition({
+    @required this.package,
+    @required this.key,
+    @required this.builderFactories,
+    @required this.inputExtensions,
+    @required this.import,
+    @required this.target,
+    this.autoApply,
+    this.buildTo,
+    this.defaults,
+  });
+
+  @override
+  String toString() => {
+        'target': target,
+        'autoApply': autoApply,
+        'import': import,
+        'builderFactories': builderFactories,
+        'inputExtensions': inputExtensions,
+        'buildTo': buildTo,
+        'defaults': defaults,
       }.toString();
 }
 

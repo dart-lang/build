@@ -62,7 +62,6 @@ const _appliesBuilders = 'applies_builders';
 const _isOptional = 'is_optional';
 const _buildTo = 'build_to';
 const _defaults = 'defaults';
-const _isPostProcess = 'is_post_process';
 const _builderConfigDefaultOptions = const [
   _generateFor,
 ];
@@ -136,13 +135,7 @@ BuildConfig parseFromMap(String packageName,
     final builderFactories =
         _readListOfStringsOrThrow(builderConfig, _builderFactories);
     final import = _readStringOrThrow(builderConfig, _import);
-    final isPostProcess = _readBoolOrThrow(builderConfig, _isPostProcess,
-        allowNull: true, defaultValue: false);
-    final buildExtensions =
-        _readBuildExtensions(builderConfig, allowNull: isPostProcess);
-    final inputExtensions = _readListOfStringsOrThrow(
-        builderConfig, _inputExtensions,
-        allowNull: !isPostProcess);
+    final buildExtensions = _readBuildExtensions(builderConfig);
     final target = normalizeTargetKeyUsage(
         _readStringOrThrow(builderConfig, _target), packageName);
     final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
@@ -177,7 +170,6 @@ BuildConfig parseFromMap(String packageName,
       builderFactories: builderFactories,
       import: import,
       buildExtensions: buildExtensions,
-      inputExtensions: inputExtensions,
       package: packageName,
       target: target,
       autoApply: autoApply,
@@ -235,11 +227,9 @@ BuildConfig parseFromMap(String packageName,
       postProcessBuilderDefinitions: postProcessBuilderDefinitions);
 }
 
-Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options,
-    {bool allowNull: false}) {
+Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options) {
   dynamic value = options[_buildExtensions];
   if (value == null) {
-    if (allowNull) return null;
     throw new ArgumentError('Missing configuratino for build_extensions');
   }
   if (value is! Map<String, List<String>>) {
