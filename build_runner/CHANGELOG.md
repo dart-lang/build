@@ -10,6 +10,8 @@
   https://github.com/dart-lang/build/issues/1033.
 - The experimental `create_merged_dir` binary is now removed, it can't be easily
   supported any more and has been replaced by the `--output` option.
+- Builders which write to `source` are no longer guaranteed to run before
+  builders which write to `cache`.
 - Honors `runs_before` configuration from in Builder definitions.
 
 ## 0.7.11+1
