@@ -68,7 +68,7 @@ the following keys:
   containing the `Builder` class. This should always be a `package:` uri.
 - **builder_factories**: A `List<String>` which contains the names of the
   top-level methods in the imported library which are a function fitting the
-  typedef `Builder factoryName(List<String> args)`.
+  typedef `Builder factoryName(BuilderOptions options)`.
 - **build_extensions**: Required. A map from input extension to the list of
   output extensions that may be created for that input. This must match the
   merged `buildExtensions` maps from each `Builder` in `builder_factories`.
@@ -142,12 +142,12 @@ Each post process builder config may contain the following keys:
   definition.
 - **import**: Required. The import uri that should be used to import the library
   containing the `Builder` class. This should always be a `package:` uri.
-- **builder_factories**: A `List<String>` which contains the names of the
-  top-level methods in the imported library which are a function fitting the
-  typedef `Builder factoryName(List<String> args)`.
+- **builder_factory**: A `String` which contains the name of the top-level
+  method in the imported library which is a function fitting the
+  typedef `PostProcessBuilderBuilder factoryName(BuilderOptions options)`.
 - **input_extensions**: Required. A list of input extensions that will be
-  processed. This must match the merged `inputExtensions` lists from each
-  `Builder` in `builder_factories`.
+  processed. This must match the `inputExtensions` from the `PostProcessBuilder`
+  returned by the `builder_factory`.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:
@@ -171,7 +171,7 @@ post_process_builders:
   # The post process builder config, extracts `.tar.gz` files.
   extract_archive_builder:
     import: "package:my_package/extract_archive_builder.dart"
-    builder_factories: ["myExtractArchiveBuilder"]
+    builder_factory: "myExtractArchiveBuilder"
     input_extensions: [".tar.gz"]
 ```
 
