@@ -136,6 +136,10 @@ jobs:
       script: ./tool/travis.sh test_5
       env: PKG="e2e_example"
       dart: dev
+    - stage: e2e_test_cron
+      script: ./tool/travis.sh test_0
+      env: PKG="e2e_example"
+      dart: be/raw/latest
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="scratch_space"
@@ -149,6 +153,8 @@ stages:
   - analyze_and_format
   - unit_test
   - e2e_test
+  - name: e2e_test_cron
+    if: type IN (api, cron)
 
 # Only building master means that we don't run two builds for each pull request.
 branches:

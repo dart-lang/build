@@ -11,3 +11,7 @@ stages:
     - test: --total-shards 4 --shard-index 1
     - test: --total-shards 4 --shard-index 2
     - test: --total-shards 4 --shard-index 3
+  - e2e_test_cron:
+    - test:
+      dart:
+        - be/raw/latest
