@@ -1,3 +1,8 @@
+## 0.7.13-prerelease
+
+- Fix a bug where a chain of `Builder`s would fail to run on some outputs from
+  previous steps when the generated asset did not match the target's `sources`.
+
 ## 0.7.12
 
 - Added the `--log-requests` flag to the `serve` command, which will log all
