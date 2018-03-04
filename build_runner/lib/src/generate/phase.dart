@@ -34,8 +34,7 @@ class BuildAction {
   /// the root.
   final bool hideOutput;
 
-  BuildAction._(
-      this.package, this.builder, this.builderOptions,
+  BuildAction._(this.package, this.builder, this.builderOptions,
       {@required this.targetSources,
       @required this.generateFor,
       bool isOptional,
