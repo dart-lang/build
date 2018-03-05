@@ -219,8 +219,7 @@ class AssetGraph {
 
   /// All the generated outputs for a particular phase.
   Iterable<GeneratedAssetNode> outputsForPhase(String package, int phase) =>
-      _nodesByPackage[package]
-          .values
+      packageNodes(package)
           .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
           .cast<GeneratedAssetNode>();
 
