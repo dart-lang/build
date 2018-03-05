@@ -12,13 +12,7 @@ abstract class InputMatcher {
   /// Whether [input] is included in this set of assets.
   bool matches(AssetId input);
 
-  // Remove after https://github.com/dart-lang/linter/issues/863 fixed.
-  // ignore: avoid_unused_constructor_parameters
   factory InputMatcher(InputSet inputSet) = _GlobInputMatcher;
-
-  /// Returns a matcher on the intersection of all [matchers].
-  factory InputMatcher.allOf(Iterable<InputMatcher> matchers) =>
-      new _MultiMatcher(matchers.toList());
 }
 
 class _GlobInputMatcher implements InputMatcher {
@@ -73,27 +67,6 @@ class _GlobInputMatcher implements InputMatcher {
   @override
   int get hashCode =>
       _deepEquals.hash([_patterns(include), _patterns(exclude)]);
-}
-
-class _MultiMatcher implements InputMatcher {
-  final List<InputMatcher> delegates;
-
-  _MultiMatcher(this.delegates);
-
-  @override
-  matches(AssetId input) => delegates.every((d) => d.matches(input));
-
-  @override
-  String toString() => 'All of $delegates';
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is _MultiMatcher &&
-          _deepEquals.equals(delegates, other.delegates));
-
-  @override
-  int get hashCode => _deepEquals.hash(delegates);
 }
 
 final _deepEquals = const DeepCollectionEquality();

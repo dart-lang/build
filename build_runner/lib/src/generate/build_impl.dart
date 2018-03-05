@@ -297,7 +297,7 @@ class _SingleBuild {
       if (action.isOptional) continue;
       await _performanceTracker.trackBuildPhase(action, () async {
         var primaryInputs =
-            await _matchingPrimaryInputs(action, phase, resourceManager);
+            await _matchingPrimaryInputs(phase, resourceManager);
         outputs.addAll(await _runBuilder(phase, action.hideOutput,
             action.builder, primaryInputs, resourceManager));
       });
@@ -310,33 +310,25 @@ class _SingleBuild {
         performance: _performanceTracker..stop());
   }
 
-  /// Gets a list of all inputs matching the [action], as well as
+  /// Gets a list of all inputs matching the [phaseNumber], as well as
   /// its [Builder]s primary inputs.
   ///
   /// Lazily builds any optional build actions that might potentially produce
-  /// a primary input to [action].
-  Future<Set<AssetId>> _matchingPrimaryInputs(BuildAction action,
+  /// a primary input to this phase.
+  Future<Set<AssetId>> _matchingPrimaryInputs(
       int phaseNumber, ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
-    var builder = action.builder;
     await Future
-        .wait(_assetGraph.packageNodes(action.package).map((node) async {
-      if (!node.isValidInput) return;
-      if (!action.matches(node.id)) return;
-      if (!builder.buildExtensions.keys
-          .any((inputExtension) => node.id.path.endsWith(inputExtension))) {
-        return;
-      }
-      if (node is GeneratedAssetNode) {
-        if (node.phaseNumber >= phaseNumber) return;
-        if (node.isHidden && !action.hideOutput) return;
-        if (node.state != GeneratedNodeState.upToDate) {
-          await _runLazyPhaseForInput(node.phaseNumber, node.isHidden,
-              node.primaryInput, resourceManager);
+        .wait(_assetGraph.outputsForPhase(phaseNumber).map((node) async {
+      var input = _assetGraph.get(node.primaryInput);
+      if (input is GeneratedAssetNode) {
+        if (input.state != GeneratedNodeState.upToDate) {
+          await _runLazyPhaseForInput(input.phaseNumber, input.isHidden,
+              input.primaryInput, resourceManager);
         }
-        if (!node.wasOutput) return;
+        if (!input.wasOutput) return;
       }
-      ids.add(node.id);
+      ids.add(input.id);
     }));
     return ids;
   }
