@@ -42,7 +42,6 @@ const _builderDefinitionOptions = const [
 
 const _postProcessBuilderConfigOptions = const [
   _builderFactory,
-  _buildTo,
   _defaults,
   _inputExtensions,
   _import,
