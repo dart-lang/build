@@ -41,8 +41,7 @@ const _builderDefinitionOptions = const [
 ];
 
 const _postProcessBuilderConfigOptions = const [
-  _autoApply,
-  _builderFactories,
+  _builderFactory,
   _buildTo,
   _defaults,
   _inputExtensions,
@@ -51,6 +50,7 @@ const _postProcessBuilderConfigOptions = const [
 ];
 
 const _builderFactories = 'builder_factories';
+const _builderFactory = 'builder_factory';
 const _import = 'import';
 const _buildExtensions = 'build_extensions';
 const _inputExtensions = 'input_extensions';
@@ -193,8 +193,7 @@ BuildConfig parseFromMap(String packageName,
         'post process builder `$builderName`',
         defaultValue: <String, dynamic>{});
 
-    final builderFactories =
-        _readListOfStringsOrThrow(builderConfig, _builderFactories);
+    final builderFactory = _readStringOrThrow(builderConfig, _builderFactory);
     final import = _readStringOrThrow(builderConfig, _import);
     final inputExtensions =
         _readListOfStringsOrThrow(builderConfig, _inputExtensions);
@@ -210,7 +209,7 @@ BuildConfig parseFromMap(String packageName,
     postProcessBuilderDefinitions[builderKey] =
         new PostProcessBuilderDefinition(
       key: builderKey,
-      builderFactories: builderFactories,
+      builderFactory: builderFactory,
       import: import,
       inputExtensions: inputExtensions,
       package: packageName,

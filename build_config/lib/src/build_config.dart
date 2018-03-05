@@ -213,8 +213,9 @@ class PostProcessBuilderDefinition {
   /// A unique key for this Builder in `'$package|$builder'` format.
   final String key;
 
-  /// The names of the top-level methods in [import] from args -> Builder.
-  final List<String> builderFactories;
+  /// The name of the top-level method in [import] from
+  /// BuilderOptions -> Builder.
+  final String builderFactory;
 
   /// The import to be used to load `clazz`.
   final String import;
@@ -230,7 +231,7 @@ class PostProcessBuilderDefinition {
   PostProcessBuilderDefinition({
     @required this.package,
     @required this.key,
-    @required this.builderFactories,
+    @required this.builderFactory,
     @required this.inputExtensions,
     @required this.import,
     @required this.target,
@@ -241,50 +242,7 @@ class PostProcessBuilderDefinition {
   String toString() => {
         'target': target,
         'import': import,
-        'builderFactories': builderFactories,
-        'inputExtensions': inputExtensions,
-        'defaults': defaults,
-      }.toString();
-}
-
-/// The definition of a `PostProcessBuilder` in the `post_process_builders`
-/// section of a `build.yaml`.
-class PostProcessBuilderDefinition {
-  /// The package which provides this Builder.
-  final String package;
-
-  /// A unique key for this Builder in `'$package|$builder'` format.
-  final String key;
-
-  /// The names of the top-level methods in [import] from args -> Builder.
-  final List<String> builderFactories;
-
-  /// The import to be used to load `clazz`.
-  final String import;
-
-  /// A list of input extensions for this builder.
-  final Iterable<String> inputExtensions;
-
-  /// The name of the dart_library target that contains `import`.
-  final String target;
-
-  final TargetBuilderConfigDefaults defaults;
-
-  PostProcessBuilderDefinition({
-    @required this.package,
-    @required this.key,
-    @required this.builderFactories,
-    @required this.inputExtensions,
-    @required this.import,
-    @required this.target,
-    this.defaults,
-  });
-
-  @override
-  String toString() => {
-        'target': target,
-        'import': import,
-        'builderFactories': builderFactories,
+        'builderFactory': builderFactory,
         'inputExtensions': inputExtensions,
         'defaults': defaults,
       }.toString();
