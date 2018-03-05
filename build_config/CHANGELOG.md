@@ -1,3 +1,8 @@
+## 0.2.5-pre
+
+- Added `post_process_builders` section to `build.yaml`. See README.md for more
+  information.
+
 ## 0.2.4
 
 - Add support for `runs_before` in `BuilderDefinition`.

@@ -7,6 +7,7 @@ export 'src/build_config.dart'
         AutoApply,
         BuildConfig,
         BuilderDefinition,
+        PostProcessBuilderDefinition,
         BuildTarget,
         BuildTo,
         InputSet,

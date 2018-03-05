@@ -39,9 +39,21 @@ const _builderDefinitionOptions = const [
   _buildTo,
   _defaults,
 ];
+
+const _postProcessBuilderConfigOptions = const [
+  _autoApply,
+  _builderFactories,
+  _buildTo,
+  _defaults,
+  _inputExtensions,
+  _import,
+  _target,
+];
+
 const _builderFactories = 'builder_factories';
 const _import = 'import';
 const _buildExtensions = 'build_extensions';
+const _inputExtensions = 'input_extensions';
 const _target = 'target';
 const _autoApply = 'auto_apply';
 const _requiredInputs = 'required_inputs';
@@ -66,6 +78,8 @@ BuildConfig parseFromMap(String packageName,
 
   final buildTargets = <String, BuildTarget>{};
   final builderDefinitions = <String, BuilderDefinition>{};
+  final postProcessBuilderDefinitions =
+      <String, PostProcessBuilderDefinition>{};
 
   final Map<String, Map> targetConfigs =
       config['targets'] as Map<String, Map> ?? {};
@@ -168,10 +182,49 @@ BuildConfig parseFromMap(String packageName,
           new TargetBuilderConfigDefaults(generateFor: defaultGenerateFor),
     );
   }
+
+  final Map<String, Map> postProcessBuilderConfigs =
+      config['post_process_builders'] as Map<String, Map> ?? {};
+  for (var builderName in postProcessBuilderConfigs.keys) {
+    final builderConfig = _readMapOrThrow(
+        postProcessBuilderConfigs,
+        builderName,
+        _postProcessBuilderConfigOptions,
+        'post process builder `$builderName`',
+        defaultValue: <String, dynamic>{});
+
+    final builderFactories =
+        _readListOfStringsOrThrow(builderConfig, _builderFactories);
+    final import = _readStringOrThrow(builderConfig, _import);
+    final inputExtensions =
+        _readListOfStringsOrThrow(builderConfig, _inputExtensions);
+    final target = normalizeTargetKeyUsage(
+        _readStringOrThrow(builderConfig, _target), packageName);
+    final defaultOptions = _readMapOrThrow(
+        builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
+        defaultValue: {});
+    final defaultGenerateFor =
+        _readInputSetOrThrow(defaultOptions, _generateFor, allowNull: true);
+
+    final builderKey = normalizeBuilderKeyDefinition(builderName, packageName);
+    postProcessBuilderDefinitions[builderKey] =
+        new PostProcessBuilderDefinition(
+      key: builderKey,
+      builderFactories: builderFactories,
+      import: import,
+      inputExtensions: inputExtensions,
+      package: packageName,
+      target: target,
+      defaults:
+          new TargetBuilderConfigDefaults(generateFor: defaultGenerateFor),
+    );
+  }
+
   return new BuildConfig(
       packageName: packageName,
       buildTargets: buildTargets,
-      builderDefinitions: builderDefinitions);
+      builderDefinitions: builderDefinitions,
+      postProcessBuilderDefinitions: postProcessBuilderDefinitions);
 }
 
 Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options) {
