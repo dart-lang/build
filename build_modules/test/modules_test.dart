@@ -119,14 +119,12 @@ void main() {
     Module rootModule;
     Module immediateDep;
     Module transitiveDep;
-    Module cycleModule;
     InMemoryAssetReader reader;
 
     setUp(() {
       rootModule = new Module.forLibrary(libAImportsBNoCycle);
       immediateDep = new Module.forLibrary(libBImportsANoCycle);
       transitiveDep = new Module.forLibrary(libNoCycle);
-      cycleModule = new Module.forLibrary(libCycle);
       reader = new InMemoryAssetReader();
       reader.cacheStringAsset(
           assetAImportsBNoCycle,
