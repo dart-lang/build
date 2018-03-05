@@ -93,6 +93,8 @@ class BuilderApplication {
   final Iterable<String> appliesBuilders;
 
   /// A uniqe key for this builder.
+  ///
+  /// Ignored when null or empty.
   final String builderKey;
 
   final bool isOptional;
@@ -179,6 +181,7 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
             builderOptions: options,
             targetSources: node.target.sources,
             generateFor: generateFor,
+            builderKey: builderApplication.builderKey,
             isOptional: builderApplication.isOptional,
             hideOutput: builderApplication.hideOutput);
       }));

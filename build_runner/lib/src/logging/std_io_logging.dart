@@ -27,7 +27,7 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
         headerMessage.split('\n').takeWhile((line) => line.isEmpty).length;
     headerMessage = headerMessage.substring(blankLineCount);
   }
-  var header = '$eraseLine$level ${record.loggerName}: $headerMessage';
+  var header = '$eraseLine$level ${_loggerName(record, verbose)}$headerMessage';
   var lines = blankLineCount > 0
       ? (new List<Object>.generate(blankLineCount, (_) => '')..add(header))
       : <Object>[header];
@@ -36,7 +36,7 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
     lines.add(record.error);
   }
 
-  if (record.stackTrace != null) {
+  if (record.stackTrace != null && verbose) {
     lines.add(record.stackTrace);
   }
 
@@ -56,4 +56,17 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
   } else {
     stdout.write(message);
   }
+}
+
+/// Filter out the Logger names known to come from `build_runner`.
+String _loggerName(LogRecord record, bool verbose) {
+  var knownNames = const [
+    'Entrypoint',
+    'Build',
+    'BuildDefinition',
+    'Heartbeat'
+  ];
+  return verbose || !knownNames.contains(record.loggerName)
+      ? '${record.loggerName}:\n'
+      : '';
 }

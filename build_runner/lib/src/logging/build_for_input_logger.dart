@@ -60,15 +60,6 @@ class BuildForInputLogger implements Logger {
     if (logLevel >= Level.SEVERE) {
       _errorWasSeen = true;
     }
-    if (logLevel >= Level.WARNING) {
-      if (_delegate.isLoggable(logLevel)) {
-        var original = message;
-        if (message is Function) message = () => '\n${original()}';
-        if (message is String) {
-          message = '\n$message';
-        }
-      }
-    }
     _delegate.log(logLevel, message, error, stackTrace, zone);
   }
 
