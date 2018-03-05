@@ -5,7 +5,6 @@ environment:
   sdk: '>=1.24.0 <2.0.0'
 
 dev_dependencies:
-  browser: any
   path: ^1.4.2
   test: ^0.12.0
   provides_builder:
