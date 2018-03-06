@@ -6,6 +6,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+// TODO: Export in new release of build_config.
+import 'package:build_config/src/key_normalization.dart';
 import 'package:graphs/graphs.dart';
 
 import '../generate/phase.dart';
@@ -132,15 +134,38 @@ Future<List<BuildAction>> createBuildActions(
     Iterable<BuilderApplication> builderApplications,
     Map<String, Map<String, dynamic>> builderConfigOverrides) async {
   final cycles = stronglyConnectedComponents<String, TargetNode>(
-      targetGraph.allModules.values,
-      (node) => node.target.key,
-      (node) =>
-          node.target.dependencies?.map((key) => targetGraph.allModules[key]));
+    targetGraph.allModules.values,
+    (node) => node == null
+        ? throw new ArgumentError(
+            'Got unexpected "$node" node from targetGraph.allModules: '
+            '${targetGraph.allModules.values.map((t) => t.target)}')
+        : node.target.key,
+    (node) => _childrenForNode(node, targetGraph),
+  );
   final applyWith = _applyWith(builderApplications);
   return cycles
       .expand((cycle) => _createBuildActionsWithinCycle(
           cycle, builderApplications, builderConfigOverrides, applyWith))
       .toList();
+}
+
+Iterable<TargetNode> _childrenForNode(TargetNode node, TargetGraph graph) {
+  final dependencies = node.target.dependencies;
+  if (dependencies == null || dependencies.isEmpty) {
+    return const [];
+  }
+  return dependencies.map((key) {
+    print('Looking up $key');
+    key = normalizeTargetKeyDefinition(key, graph.rootPackageConfig.packageName);
+    print('key = $key');
+    final results = graph.allModules[key];
+    if (results == null) {
+      throw new StateError(
+        'Could not find dependency $key in ${graph.allModules.keys}',
+      );
+    }
+    return results;
+  });
 }
 
 Iterable<BuildAction> _createBuildActionsWithinCycle(
