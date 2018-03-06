@@ -106,12 +106,12 @@ enum GeneratedNodeState {
 }
 
 /// A generated node in the asset graph.
+///
+/// Most generated nodes should actually be [BuilderGeneratedAssetNode]s which
+/// have a phase and list of globs that were ran.
 class GeneratedAssetNode extends AssetNode {
   @override
   bool get isGenerated => true;
-
-  /// The phase which generated this asset.
-  final int phaseNumber;
 
   /// The primary input which generated this node.
   final AssetId primaryInput;
@@ -120,11 +120,6 @@ class GeneratedAssetNode extends AssetNode {
 
   /// Whether the asset was actually output.
   bool wasOutput;
-
-  /// All the [Glob]s that were ran to create this asset.
-  ///
-  /// Any new or deleted files matching this glob should invalidate this node.
-  Set<Glob> globs;
 
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
@@ -149,18 +144,15 @@ class GeneratedAssetNode extends AssetNode {
   GeneratedAssetNode(
     AssetId id, {
     Digest lastKnownDigest,
-    Set<Glob> globs,
     Iterable<AssetId> inputs,
     this.previousInputsDigest,
     @required this.isHidden,
     @required this.state,
-    @required this.phaseNumber,
     @required this.wasOutput,
     @required this.primaryInput,
     @required this.builderOptionsId,
   })
-      : this.globs = globs ?? new Set<Glob>(),
-        this.inputs = inputs != null
+      : this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
             : new SplayTreeSet<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);
@@ -168,6 +160,40 @@ class GeneratedAssetNode extends AssetNode {
   @override
   String toString() =>
       'GeneratedAssetNode: $id generated from input $primaryInput.';
+}
+
+class BuilderGeneratedAssetNode extends GeneratedAssetNode {
+  /// All the [Glob]s that were ran to create this asset.
+  ///
+  /// Any new or deleted files matching this glob should invalidate this node.
+  Set<Glob> globs;
+
+  /// The phase which generated this asset.
+  final int phaseNumber;
+
+  BuilderGeneratedAssetNode(
+    AssetId id, {
+    Set<Glob> globs,
+    @required this.phaseNumber,
+    Digest lastKnownDigest,
+    Iterable<AssetId> inputs,
+    Digest previousInputsDigest,
+    @required bool isHidden,
+    @required GeneratedNodeState state,
+    @required bool wasOutput,
+    @required AssetId primaryInput,
+    @required AssetId builderOptionsId,
+  })
+      : this.globs = globs ?? new Set<Glob>(),
+        super(id,
+            lastKnownDigest: lastKnownDigest,
+            inputs: inputs,
+            previousInputsDigest: previousInputsDigest,
+            isHidden: isHidden,
+            state: state,
+            wasOutput: wasOutput,
+            primaryInput: primaryInput,
+            builderOptionsId: builderOptionsId);
 }
 
 /// A node which is not a generated or source asset.
