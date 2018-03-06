@@ -312,9 +312,9 @@ class AssetGraph {
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
-      var samePackageOutputNodes =
-          packageNodes(id.package).whereType<GeneratedForPhaseAssetNode>();
-      for (var node in samePackageOutputNodes) {
+      var samePackageOutputNodes = packageNodes(id.package)
+          .where((node) => node is GeneratedForPhaseAssetNode);
+      for (GeneratedForPhaseAssetNode node in samePackageOutputNodes) {
         if (node.globs.any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
           invalidateNodeAndDeps(node.id, null);

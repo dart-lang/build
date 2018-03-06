@@ -270,6 +270,8 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
       case _Field.NodeType:
         if (node is SourceAssetNode) {
           return _NodeType.Source.index;
+        } else if (node is GeneratedForPhaseAssetNode) {
+          return _NodeType.GeneratedForPhase.index;
         } else if (node is GeneratedAssetNode) {
           return _NodeType.Generated.index;
         } else if (node is SyntheticSourceAssetNode) {
