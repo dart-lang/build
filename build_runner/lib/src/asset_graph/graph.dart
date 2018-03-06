@@ -218,10 +218,10 @@ class AssetGraph {
       allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
   /// All the generated outputs for a particular phase.
-  // TODO consider storing this directly
-  Iterable<GeneratedAssetNode> outputsForPhase(int phase) => allNodes
-      .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
-      .cast<GeneratedAssetNode>();
+  Iterable<GeneratedAssetNode> outputsForPhase(String package, int phase) =>
+      packageNodes(package)
+          .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
+          .cast<GeneratedAssetNode>();
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
