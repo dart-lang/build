@@ -257,7 +257,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
     });
 
     group('--output with optional outputs', () {
-      String buildContent = '''
+      final buildContent = '''
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
@@ -359,7 +359,7 @@ main(List<String> args) async {
     });
 
     group('--define overrides build.yaml', () {
-      String buildContent = '''
+      final buildContent = '''
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
