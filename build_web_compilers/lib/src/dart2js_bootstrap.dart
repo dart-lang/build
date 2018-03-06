@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:scratch_space/scratch_space.dart';
 
 import 'web_entrypoint_builder.dart';
 
@@ -37,11 +38,18 @@ Future<Null> bootstrapDart2Js(
     await scratchSpace.copyOutput(jsOutputId, buildStep);
     var jsSourceMapId =
         dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
-    var jsSourceMapFile = scratchSpace.fileFor(jsSourceMapId);
-    if (await jsSourceMapFile.exists()) {
-      await scratchSpace.copyOutput(jsSourceMapId, buildStep);
-    }
+    await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
+    var dumpInfoId = dartEntrypointId.changeExtension(dumpInfoExtension);
+    await _copyIfExists(dumpInfoId, scratchSpace, buildStep);
   } else {
     log.severe(result.output);
+  }
+}
+
+Future<Null> _copyIfExists(
+    AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
+  var file = scratchSpace.fileFor(id);
+  if (await file.exists()) {
+    await scratchSpace.copyOutput(id, writer);
   }
 }
