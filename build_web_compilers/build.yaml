@@ -22,6 +22,7 @@ builders:
       .dart:
         - .dart.bootstrap.js
         - .dart.js
+        - .dart.js.info.json
         - .dart.js.map
     required_inputs:
       - .dart
