@@ -58,7 +58,8 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
   }
 }
 
-/// Filter out the Logger names known to come from `build_runner`.
+/// Filter out the Logger names known to come from `build_runner` and splits the
+/// header for levels >= WARNING.
 String _loggerName(LogRecord record, bool verbose) {
   var knownNames = const [
     'Entrypoint',
@@ -66,7 +67,8 @@ String _loggerName(LogRecord record, bool verbose) {
     'BuildDefinition',
     'Heartbeat'
   ];
+  var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
   return verbose || !knownNames.contains(record.loggerName)
-      ? '${record.loggerName}:\n'
+      ? '${record.loggerName}:$maybeSplit'
       : '';
 }
