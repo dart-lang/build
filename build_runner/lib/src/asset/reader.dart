@@ -68,14 +68,14 @@ class SingleStepReader implements AssetReader {
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<bool> _isReadableNode(AssetNode node) {
-    if (node.isGenerated) {
-      final generatedNode = node as GeneratedAssetNode;
-      if (generatedNode.phaseNumber >= _phaseNumber) return false;
+    if (node is GeneratedForPhaseAssetNode) {
+      if (node.phaseNumber >= _phaseNumber) return false;
       if (!_outputsHidden &&
-          generatedNode.isHidden &&
+          node.isHidden &&
           node.id.package != _primaryPackage) return false;
-      return doAfter(
-          _ensureAssetIsBuilt(node.id), (_) => generatedNode.wasOutput);
+      return doAfter(_ensureAssetIsBuilt(node.id), (_) => node.wasOutput);
+    } else if (node is GeneratedAssetNode) {
+      return false;
     }
     return node.isReadable;
   }
@@ -147,7 +147,7 @@ class SingleStepReader implements AssetReader {
   FutureOr<dynamic> _ensureAssetIsBuilt(AssetId id) {
     if (_runPhaseForInput == null) return null;
     var node = _assetGraph.get(id);
-    if (node is GeneratedAssetNode &&
+    if (node is GeneratedForPhaseAssetNode &&
         node.state != GeneratedNodeState.upToDate) {
       return _runPhaseForInput(node.phaseNumber, node.primaryInput);
     }

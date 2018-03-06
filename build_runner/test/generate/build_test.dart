@@ -605,7 +605,8 @@ void main() {
         builderOptionsId, computeBuilderOptionsDigest(defaultBuilderOptions));
     expectedGraph.add(builderOptionsNode);
 
-    var aCopyNode = new GeneratedAssetNode(makeAssetId('a|web/a.txt.copy'),
+    var aCopyNode = new GeneratedForPhaseAssetNode(
+        makeAssetId('a|web/a.txt.copy'),
         phaseNumber: null,
         primaryInput: makeAssetId('a|web/a.txt'),
         state: GeneratedNodeState.upToDate,
@@ -619,7 +620,8 @@ void main() {
     expectedGraph
         .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
 
-    var bCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/b.txt.copy'),
+    var bCopyNode = new GeneratedForPhaseAssetNode(
+        makeAssetId('a|lib/b.txt.copy'),
         phaseNumber: null,
         primaryInput: makeAssetId('a|lib/b.txt'),
         state: GeneratedNodeState.upToDate,

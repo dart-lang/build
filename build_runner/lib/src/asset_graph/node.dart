@@ -162,7 +162,7 @@ class GeneratedAssetNode extends AssetNode {
       'GeneratedAssetNode: $id generated from input $primaryInput.';
 }
 
-class BuilderGeneratedAssetNode extends GeneratedAssetNode {
+class GeneratedForPhaseAssetNode extends GeneratedAssetNode {
   /// All the [Glob]s that were ran to create this asset.
   ///
   /// Any new or deleted files matching this glob should invalidate this node.
@@ -171,7 +171,7 @@ class BuilderGeneratedAssetNode extends GeneratedAssetNode {
   /// The phase which generated this asset.
   final int phaseNumber;
 
-  BuilderGeneratedAssetNode(
+  GeneratedForPhaseAssetNode(
     AssetId id, {
     Set<Glob> globs,
     @required this.phaseNumber,

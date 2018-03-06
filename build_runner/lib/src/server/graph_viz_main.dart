@@ -22,7 +22,7 @@ main() async {
             'label': node.id.toString(),
             'info': {
               'isGenerated': node is GeneratedAssetNode,
-              'globs': node is GeneratedAssetNode
+              'globs': node is GeneratedForPhaseAssetNode
                   ? node.globs.map((g) => g.pattern)
                   : null,
               'hidden': node is GeneratedAssetNode ? node.isHidden : null,
@@ -30,7 +30,7 @@ main() async {
                   node is GeneratedAssetNode ? node.state.toString() : null,
               'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
               'phaseNumber':
-                  node is GeneratedAssetNode ? node.phaseNumber : null,
+                  node is GeneratedForPhaseAssetNode ? node.phaseNumber : null,
             }
           })
       .toList();

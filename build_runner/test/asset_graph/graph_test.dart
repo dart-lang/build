@@ -94,7 +94,7 @@ void main() {
             var builderOptionsNode = new BuilderOptionsAssetNode(
                 makeAssetId(), md5.convert(UTF8.encode('test')));
 
-            var generatedNode = new GeneratedAssetNode(makeAssetId(),
+            var generatedNode = new GeneratedForPhaseAssetNode(makeAssetId(),
                 phaseNumber: phaseNum,
                 primaryInput: node.id,
                 state: GeneratedNodeState
@@ -331,7 +331,7 @@ void main() {
             'a new or deleted asset matching a glob definitely invalidates '
             'a node', () async {
           var primaryOutputNode =
-              graph.get(primaryOutputId) as GeneratedAssetNode;
+              graph.get(primaryOutputId) as GeneratedForPhaseAssetNode;
           primaryOutputNode.globs.add(new Glob('lib/*.cool'));
           primaryOutputNode.state = GeneratedNodeState.upToDate;
 

@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 18;
+const _version = 19;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -91,6 +91,26 @@ class _AssetGraphDeserializer {
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
         node = new GeneratedAssetNode(
           id,
+          primaryInput:
+              _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
+          state: GeneratedNodeState
+              .values[serializedNode[_Field.State.index] as int],
+          wasOutput:
+              _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
+          builderOptionsId:
+              _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
+          lastKnownDigest: digest,
+          previousInputsDigest: _deserializeDigest(
+              serializedNode[_Field.PreviousInputsDigest.index] as String),
+          isHidden:
+              _deserializeBool(serializedNode[_Field.IsHidden.index] as int),
+        );
+        break;
+      case _NodeType.GeneratedForPhase:
+        assert(serializedNode.length ==
+            _WrappedGeneratedForPhaseAssetNode._length);
+        node = new GeneratedForPhaseAssetNode(
+          id,
           phaseNumber: serializedNode[_Field.PhaseNumber.index] as int,
           primaryInput:
               _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
@@ -171,7 +191,9 @@ class _AssetGraphSerializer {
   }
 
   List _serializeNode(AssetNode node) {
-    if (node is GeneratedAssetNode) {
+    if (node is GeneratedForPhaseAssetNode) {
+      return new _WrappedGeneratedForPhaseAssetNode(node, this);
+    } else if (node is GeneratedAssetNode) {
       return new _WrappedGeneratedAssetNode(node, this);
     } else {
       return new _WrappedAssetNode(node, this);
@@ -194,6 +216,7 @@ enum _NodeType {
   Source,
   SyntheticSource,
   Generated,
+  GeneratedForPhase,
   Internal,
   BuilderOptions,
   Placeholder
@@ -213,12 +236,14 @@ enum _Field {
   // Fields below here are for generated nodes only.
   PrimaryInput,
   WasOutput,
-  PhaseNumber,
-  Globs,
   State,
   PreviousInputsDigest,
   BuilderOptions,
   IsHidden,
+
+  // Fields specific to GeneratedForPhaseAssetNodes.
+  Globs,
+  PhaseNumber,
 }
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
@@ -292,7 +317,7 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   /// Indexes below this number are forwarded to `super[index]`.
   static final int _serializedOffset = _WrappedAssetNode._length;
 
-  static final int _length = _Field.values.length;
+  static final int _length = _Field.IsHidden.index + 1;
 
   @override
   int get length => _length;
@@ -312,12 +337,6 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
             : null;
       case _Field.WasOutput:
         return _serializeBool(generatedNode.wasOutput);
-      case _Field.PhaseNumber:
-        return generatedNode.phaseNumber;
-      case _Field.Globs:
-        return generatedNode.globs
-            .map((glob) => glob.pattern)
-            .toList(growable: false);
       case _Field.State:
         return generatedNode.state.index;
       case _Field.PreviousInputsDigest:
@@ -326,6 +345,44 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
         return serializer._assetIdToId[generatedNode.builderOptionsId];
       case _Field.IsHidden:
         return _serializeBool(generatedNode.isHidden);
+      default:
+        throw new RangeError.index(index, this);
+    }
+  }
+}
+
+/// Wraps a [GeneratedAssetNode] in a class that implements [List] instead of
+/// creating a new list for each one.
+class _WrappedGeneratedForPhaseAssetNode extends _WrappedGeneratedAssetNode {
+  @override
+  final GeneratedForPhaseAssetNode generatedNode;
+
+  /// Offset in the serialized format for additional fields in this class but
+  /// not in [_WrappedAssetNode].
+  ///
+  /// Indexes below this number are forwarded to `super[index]`.
+  static final int _serializedOffset = _WrappedGeneratedAssetNode._length;
+
+  static final int _length = _Field.PhaseNumber.index + 1;
+
+  @override
+  int get length => _length;
+
+  _WrappedGeneratedForPhaseAssetNode(
+      this.generatedNode, _AssetGraphSerializer serializer)
+      : super(generatedNode, serializer);
+
+  @override
+  Object operator [](int index) {
+    if (index < _serializedOffset) return super[index];
+    var fieldId = _Field.values[index];
+    switch (fieldId) {
+      case _Field.PhaseNumber:
+        return generatedNode.phaseNumber;
+      case _Field.Globs:
+        return generatedNode.globs
+            .map((glob) => glob.pattern)
+            .toList(growable: false);
       default:
         throw new RangeError.index(index, this);
     }

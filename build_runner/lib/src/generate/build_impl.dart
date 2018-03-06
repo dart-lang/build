@@ -327,7 +327,7 @@ class _SingleBuild {
           .any((inputExtension) => node.id.path.endsWith(inputExtension))) {
         return;
       }
-      if (node is GeneratedAssetNode) {
+      if (node is GeneratedForPhaseAssetNode) {
         if (node.phaseNumber >= phaseNumber) return;
         if (node.isHidden && !action.hideOutput) return;
         if (node.state != GeneratedNodeState.upToDate) {
@@ -335,6 +335,8 @@ class _SingleBuild {
               node.primaryInput, resourceManager);
         }
         if (!node.wasOutput) return;
+      } else if (node is GeneratedAssetNode) {
+        return;
       }
       ids.add(node.id);
     }));
@@ -366,7 +368,7 @@ class _SingleBuild {
       // First check if `input` is generated, and whether or not it was
       // actually output. If it wasn't then we just return an empty list here.
       var inputNode = _assetGraph.get(input);
-      if (inputNode is GeneratedAssetNode) {
+      if (inputNode is GeneratedForPhaseAssetNode) {
         // Make sure the `inputNode` is up to date, and rebuild it if not.
         if (inputNode.state != GeneratedNodeState.upToDate) {
           await _runLazyPhaseForInput(inputNode.phaseNumber, inputNode.isHidden,
@@ -561,8 +563,10 @@ class _SingleBuild {
         ..state = GeneratedNodeState.upToDate
         ..wasOutput = wasOutput
         ..lastKnownDigest = digest
-        ..globs = globsRan
         ..previousInputsDigest = inputsDigest;
+      if (node is GeneratedForPhaseAssetNode) {
+        node.globs = globsRan;
+      }
     }
   }
 
