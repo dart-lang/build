@@ -19,7 +19,8 @@ void main() {
           'example|h': new TargetBuilderConfig(
               isEnabled: true, options: new BuilderOptions({'foo': 'bar'})),
         },
-        dependencies: [r'$default:$default', 'b:b', 'c:d'].toSet(),
+        // Expecting $default => example:example
+        dependencies: ['example:example', 'b:b', 'c:d'].toSet(),
         package: 'example',
         key: 'example:a',
         sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
