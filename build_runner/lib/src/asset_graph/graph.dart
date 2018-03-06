@@ -385,18 +385,20 @@ class AssetGraph {
         var node = get(input);
         assert(node != null, 'The node from `$input` does not exist.');
 
-        var outputs = expectedOutputs(action.builder, input);
-        phaseOutputs.addAll(outputs);
-        node.primaryOutputs.addAll(outputs);
-        node.outputs.addAll(outputs);
-        var deleted = _addGeneratedPhaseOutputs(
-            outputs, phase, builderOptionsNode,
-            primaryInput: input, isHidden: action.hideOutput);
-        allInputs.removeAll(deleted);
-        // We may delete source nodes that were producing outputs previously.
-        // Detect this by checking for deleted nodes that no longer exist in the
-        // graph at all, and remove them from `phaseOutputs`.
-        phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
+        if (action is BuilderBuildAction) {
+          var outputs = expectedOutputs(action.builder, input);
+          phaseOutputs.addAll(outputs);
+          node.primaryOutputs.addAll(outputs);
+          node.outputs.addAll(outputs);
+          var deleted = _addGeneratedPhaseOutputs(
+              outputs, phase, builderOptionsNode,
+              primaryInput: input, isHidden: action.hideOutput);
+          allInputs.removeAll(deleted);
+          // We may delete source nodes that were producing outputs previously.
+          // Detect this by checking for deleted nodes that no longer exist in the
+          // graph at all, and remove them from `phaseOutputs`.
+          phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
+        }
       }
       allInputs.addAll(phaseOutputs);
     }

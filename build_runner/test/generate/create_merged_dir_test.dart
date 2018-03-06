@@ -22,11 +22,11 @@ main() {
   group('createMergedDir', () {
     AssetGraph graph;
     final actions = [
-      new BuildAction(
+      new BuilderBuildAction(
           new TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt')),
           'a'),
-      new BuildAction(
+      new BuilderBuildAction(
           new TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt')),
           'b')

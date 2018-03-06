@@ -18,6 +18,7 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../builder/post_process_builder.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
@@ -298,8 +299,13 @@ class _SingleBuild {
       await _performanceTracker.trackBuildPhase(action, () async {
         var primaryInputs =
             await _matchingPrimaryInputs(phase, resourceManager);
-        outputs.addAll(await _runBuilder(phase, action.hideOutput,
-            action.builder, primaryInputs, resourceManager));
+        if (action is BuilderBuildAction) {
+          outputs.addAll(await _runBuilder(phase, action.hideOutput,
+              action.builder, primaryInputs, resourceManager));
+        } else if (action is PostProcessBuildAction) {
+          outputs.addAll(await _runPostProcessAction(
+              action, primaryInputs, resourceManager));
+        }
       });
     }
     await Future.forEach(
@@ -351,6 +357,11 @@ class _SingleBuild {
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
 
+  Future<Iterable<AssetId>> _runPostProcessAction(PostProcessBuildAction action,
+      Iterable<AssetId> primaryInputs, ResourceManager resourceManager) async {
+    throw new UnimplementedError('Unimplemented!!!');
+  }
+
   /// Lazily runs [phaseNumber] with [input] and [resourceManager].
   Future<Iterable<AssetId>> _runLazyPhaseForInput(int phaseNumber,
       bool outputsHidden, AssetId input, ResourceManager resourceManager) {
@@ -367,7 +378,7 @@ class _SingleBuild {
         if (!inputNode.wasOutput) return <AssetId>[];
       }
 
-      var action = _buildActions[phaseNumber];
+      var action = _buildActions[phaseNumber] as BuilderBuildAction;
 
       return _runForInput(
           phaseNumber, outputsHidden, action.builder, input, resourceManager);
