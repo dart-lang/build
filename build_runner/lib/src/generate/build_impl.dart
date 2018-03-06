@@ -321,11 +321,7 @@ class _SingleBuild {
     await Future
         .wait(_assetGraph.outputsForPhase(phaseNumber).map((node) async {
       var input = _assetGraph.get(node.primaryInput);
-<<<<<<< HEAD
       if (input is GeneratedForPhaseAssetNode) {
-=======
-      if (input is GeneratedAssetNode) {
->>>>>>> dart2js-deferred-loading
         if (input.state != GeneratedNodeState.upToDate) {
           await _runLazyPhaseForInput(input.phaseNumber, input.isHidden,
               input.primaryInput, resourceManager);
