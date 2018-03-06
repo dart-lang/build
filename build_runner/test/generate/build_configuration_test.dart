@@ -13,6 +13,10 @@ import '../common/common.dart';
 
 void main() {
   test('uses builder options', () async {
+    Builder copyBuilder(BuilderOptions options) => new TestBuilder(
+        buildExtensions: replaceExtension(
+            options.config['inputExtension'] as String, '.copy'));
+
     final buildConfigs = parseBuildConfigs({
       'a': {
         'targets': {
@@ -27,48 +31,9 @@ void main() {
       }
     });
     await testBuilders(
-      [
-        apply(
-          'a|optioned_builder',
-          [_copyBuilder],
-          toRoot(),
-          hideOutput: false,
-        ),
-      ],
-      {
-        'a|lib/file.nomatch': 'a',
-        'a|lib/file.matches': 'b',
-      },
-      overrideBuildConfig: buildConfigs,
-      outputs: {
-        'a|lib/file.copy': 'b',
-      },
-    );
-  });
-
-  group('supports the magic "\$default" package', () {
-    test('as a target name', () async {
-      final buildConfigs = parseBuildConfigs({
-        'a': {
-          'targets': {
-            '\$default': {
-              'builders': {
-                'a|optioned_builder': {
-                  'options': {'inputExtension': '.matches'}
-                }
-              }
-            }
-          },
-        },
-      });
-      await testBuilders(
         [
-          apply(
-            'a|optioned_builder',
-            [_copyBuilder],
-            toRoot(),
-            hideOutput: false,
-          ),
+          apply('a|optioned_builder', [copyBuilder], toRoot(),
+              hideOutput: false),
         ],
         {
           'a|lib/file.nomatch': 'a',
@@ -77,52 +42,6 @@ void main() {
         overrideBuildConfig: buildConfigs,
         outputs: {
           'a|lib/file.copy': 'b',
-        },
-      );
-    });
-
-    test('as a dependency name', () async {
-      final buildConfigs = parseBuildConfigs({
-        'a': {
-          'targets': {
-            '\$default': {
-              'sources': [
-                '- lib/**',
-              ],
-            },
-            'web': {
-              'sources': [
-                '- web/**',
-              ],
-              'dependencies': [
-                '\$default',
-              ],
-            },
-          },
-        },
-      });
-      await testBuilders(
-        [
-          apply(
-            'a|optioned_builder',
-            [_copyBuilder],
-            toRoot(),
-            hideOutput: false,
-          ),
-        ],
-        {
-          'a|lib/file.nomatch': 'a',
-          'a|lib/file.matches': 'b',
-        },
-        overrideBuildConfig: buildConfigs,
-        outputs: {
-          'a|lib/file.copy': 'b',
-        },
-      );
-    });
+        });
   });
 }
-
-Builder _copyBuilder(BuilderOptions options) => new TestBuilder(
-    buildExtensions:
-        replaceExtension(options.config['inputExtension'] as String, '.copy'));
