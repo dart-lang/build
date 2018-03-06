@@ -60,10 +60,8 @@ main(List<String> args) async {
         var result = await runDart('a', 'tool/build.dart',
             args: ['build', '--delete-conflicting-outputs']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(
-            result.stdout,
-            contains('BuildDefinition: Invalidating asset graph due to '
-                'build script update'));
+        expect(result.stdout,
+            contains('Invalidating asset graph due to build script update'));
         await d.dir('a', [
           d.dir('web', [d.file('a.txt.copy', 'a')])
         ]).validate();

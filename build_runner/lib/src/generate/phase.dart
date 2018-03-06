@@ -122,7 +122,6 @@ String _simpleBuilderKey(String builderKey) {
   if (!builderKey.contains('|')) return builderKey;
   var parts = builderKey.split('|');
   if (parts[0] == parts[1]) return parts[0];
-  print('Not changing $builderKey because $parts');
   return builderKey;
 }
 
