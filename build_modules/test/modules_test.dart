@@ -128,11 +128,17 @@ void main() {
       reader = new InMemoryAssetReader();
       reader.cacheStringAsset(
           assetAImportsBNoCycle,
-          new File('test/fixtures/a/lib/a_imports_b_no_cycle.dart')
+          new File('test/fixtures/a/${assetAImportsBNoCycle.path}')
               .readAsStringSync());
       reader.cacheStringAsset(
           assetBImportsANoCycle,
-          new File('test/fixtures/b/lib/b_imports_a_no_cycle.dart')
+          new File('test/fixtures/b/${assetBImportsANoCycle.path}')
+              .readAsStringSync());
+      reader.cacheStringAsset(assetCycle,
+          new File('test/fixtures/a/${assetCycle.path}').readAsStringSync());
+      reader.cacheStringAsset(
+          assetSecondaryInCycle,
+          new File('test/fixtures/a/${assetSecondaryInCycle.path}')
               .readAsStringSync());
     });
 
@@ -152,8 +158,7 @@ void main() {
     });
 
     test('missing modules report nice errors', () {
-      reader.cacheStringAsset(
-          assetBImportsANoCycle.changeExtension(moduleExtension),
+      reader.cacheStringAsset(assetCycle.changeExtension(moduleExtension),
           JSON.encode(immediateDep.toJson()));
       expect(
           () => rootModule.computeTransitiveDependencies(reader),
@@ -163,7 +168,7 @@ void main() {
                 return error.message.contains('''
 Unable to find modules for some sources, check the following imports:
 
-`import 'package:a/a_no_cycle.dart';` from b|lib/b_imports_a_no_cycle.dart at 2:1
+`import 'package:b/b_imports_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 2:1
 ''');
               },
             ),

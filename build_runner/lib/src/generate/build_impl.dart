@@ -296,8 +296,8 @@ class _SingleBuild {
       var action = _buildActions[phase];
       if (action.isOptional) continue;
       await _performanceTracker.trackBuildPhase(action, () async {
-        var primaryInputs =
-            await _matchingPrimaryInputs(phase, resourceManager);
+        var primaryInputs = await _matchingPrimaryInputs(
+            action.package, phase, resourceManager);
         outputs.addAll(
             await _runBuilder(phase, action, primaryInputs, resourceManager));
       });
@@ -316,10 +316,10 @@ class _SingleBuild {
   /// Lazily builds any optional build actions that might potentially produce
   /// a primary input to this phase.
   Future<Set<AssetId>> _matchingPrimaryInputs(
-      int phaseNumber, ResourceManager resourceManager) async {
+      String package, int phaseNumber, ResourceManager resourceManager) async {
     var ids = new Set<AssetId>();
-    await Future
-        .wait(_assetGraph.outputsForPhase(phaseNumber).map((node) async {
+    await Future.wait(
+        _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
       var input = _assetGraph.get(node.primaryInput);
       if (input is GeneratedAssetNode) {
         if (input.state != GeneratedNodeState.upToDate) {

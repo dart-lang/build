@@ -1,3 +1,8 @@
+# 0.2.0+1
+
+- Fix null pointer error in `MissingModulesException`,
+  https://github.com/dart-lang/build/issues/1092.
+
 # 0.2.0
 
 - `computeTransitiveDependencies` now throws a `MissingModulesException` instead

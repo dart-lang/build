@@ -96,6 +96,7 @@ Future<String> _missingImportMessage(
     var id = new AssetId.resolve(uriString, from: sourceId);
     return id == missingId;
   }, orElse: () => null);
+  if (import == null) return null;
   var lineInfo = parsed.lineInfo.getLocation(import.offset);
   return '`$import` from $sourceId at $lineInfo';
 }
