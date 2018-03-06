@@ -1,3 +1,8 @@
+# 0.3.3
+
+- Added support for `--dump-info` and the `dart2js` compiler. If you pass that
+  argument with `dart2js_args` the `.info.json` file will be copied the output.
+
 # 0.3.2
 
 - Dart2JS now has minification (`--minify`) enabled by default, similar to how

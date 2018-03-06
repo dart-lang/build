@@ -219,6 +219,12 @@ class AssetGraph {
   Iterable<AssetId> get outputs =>
       allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
+  /// All the generated outputs for a particular phase.
+  // TODO consider storing this directly
+  Iterable<GeneratedForPhaseAssetNode> outputsForPhase(int phase) => allNodes
+      .where((n) => n is GeneratedForPhaseAssetNode && n.phaseNumber == phase)
+      .cast<GeneratedForPhaseAssetNode>();
+
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
       allNodes.where((n) => n is SourceAssetNode).map((n) => n.id);
@@ -340,6 +346,18 @@ class AssetGraph {
     return invalidatedIds;
   }
 
+  /// Crawl up primary inputs to see if the original Source file matches the
+  /// glob on [action].
+  bool _actionMatches(BuildAction action, AssetId input) {
+    if (input.package != action.package) return false;
+    if (!action.generateFor.matches(input)) return false;
+    var inputNode = get(input);
+    while (inputNode is GeneratedAssetNode) {
+      inputNode = get((inputNode as GeneratedAssetNode).primaryInput);
+    }
+    return action.targetSources.matches(inputNode.id);
+  }
+
   /// Returns a set containing [newSources] plus any new generated sources
   /// based on [buildActions], and updates this graph to contain all the
   /// new outputs.
@@ -358,15 +376,13 @@ class AssetGraph {
       var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
-      var inputs = allInputs.where(action.matches).toList();
+      var inputs =
+          allInputs.where((input) => _actionMatches(action, input)).toList();
       for (var input in inputs) {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.
         if (!allInputs.contains(input)) continue;
         var node = get(input);
-        if (!action.hideOutput && node is GeneratedAssetNode && node.isHidden) {
-          continue;
-        }
         assert(node != null, 'The node from `$input` does not exist.');
 
         var outputs = expectedOutputs(action.builder, input);

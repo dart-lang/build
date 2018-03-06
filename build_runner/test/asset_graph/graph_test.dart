@@ -352,22 +352,6 @@ void main() {
       });
     });
 
-    test('non-hidden action following hidden action', () async {
-      final graph = await AssetGraph.build([
-        new BuildAction(
-            new TestBuilder(buildExtensions: appendExtension('.hidden')), 'foo',
-            hideOutput: true),
-        new BuildAction(
-            new TestBuilder(buildExtensions: appendExtension('.visible')),
-            'foo',
-            hideOutput: false)
-      ], [makeAssetId('foo|lib/file.txt')].toSet(), new Set<AssetId>(),
-          fooPackageGraph, digestReader);
-
-      expect(graph.outputs,
-          isNot(contains(makeAssetId('foo|lib/file.txt.hidden.visible'))));
-    });
-
     test('overlapping build actions cause an error', () async {
       expect(
           () => AssetGraph.build(
@@ -430,6 +414,29 @@ void main() {
             unorderedEquals([
               makeAssetId('foo|lib/1.txt'),
               makeAssetId('foo|lib/2.txt'),
+            ]));
+      });
+
+      test(
+          'allows running on generated inputs that do not match target '
+          'source globs', () async {
+        final graph = await AssetGraph.build([
+          new BuildAction(
+              new TestBuilder(
+                  buildExtensions: appendExtension('.1', from: '.txt')),
+              'foo'),
+          new BuildAction(
+              new TestBuilder(
+                  buildExtensions: appendExtension('.2', from: '.1')),
+              'foo',
+              targetSources: new InputSet(include: ['lib/*.txt'])),
+        ], [makeAssetId('foo|lib/1.txt')].toSet(), new Set<AssetId>(),
+            fooPackageGraph, digestReader);
+        expect(
+            graph.outputs,
+            unorderedEquals([
+              makeAssetId('foo|lib/1.txt.1'),
+              makeAssetId('foo|lib/1.txt.1.2')
             ]));
       });
     });
