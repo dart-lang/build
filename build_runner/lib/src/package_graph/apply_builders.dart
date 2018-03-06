@@ -22,18 +22,18 @@ PackageFilter toNoneByDefault() => (_) => false;
 
 /// Run a builder on all packages with an immediate dependency on [packageName].
 PackageFilter toDependentsOf(String packageName) =>
-        (p) => p.dependencies.any((d) => d.name == packageName);
+    (p) => p.dependencies.any((d) => d.name == packageName);
 
 /// Run a builder on a single package.
 PackageFilter toPackage(String package) => (p) => p.name == package;
 
 /// Run a builder on a collection of packages.
 PackageFilter toPackages(Set<String> packages) =>
-        (p) => packages.contains(p.name);
+    (p) => packages.contains(p.name);
 
 /// Run a builders if the package matches any of [filters]
 PackageFilter toAll(Iterable<PackageFilter> filters) =>
-        (p) => filters.any((f) => f(p));
+    (p) => filters.any((f) => f(p));
 
 PackageFilter toRoot() => (p) => p.isRoot;
 
@@ -42,9 +42,9 @@ PackageFilter toRoot() => (p) => p.isRoot;
 /// Creates a `BuilderApplication` which corresponds to an empty builder key so
 /// that no other `build.yaml` based configuration will apply.
 BuilderApplication applyToRoot(Builder builder,
-    {bool isOptional: false,
-      bool hideOutput: false,
-      InputSet generateFor}) =>
+        {bool isOptional: false,
+        bool hideOutput: false,
+        InputSet generateFor}) =>
     new BuilderApplication._('', [(_) => builder], toRoot(),
         isOptional: isOptional,
         hideOutput: hideOutput,
@@ -66,11 +66,11 @@ BuilderApplication applyToRoot(Builder builder,
 /// automatically be applied to any target which runs this Builder, whether
 /// because it matches [filter] or because it was enabled manually.
 BuilderApplication apply(String builderKey,
-    List<BuilderFactory> builderFactories, PackageFilter filter,
-    {bool isOptional,
-      bool hideOutput,
-      InputSet defaultGenerateFor,
-      Iterable<String> appliesBuilders}) =>
+        List<BuilderFactory> builderFactories, PackageFilter filter,
+        {bool isOptional,
+        bool hideOutput,
+        InputSet defaultGenerateFor,
+        Iterable<String> appliesBuilders}) =>
     new BuilderApplication._(
       builderKey,
       builderFactories,
@@ -105,14 +105,14 @@ class BuilderApplication {
   final InputSet defaultGenerateFor;
 
   const BuilderApplication._(
-      this.builderKey,
-      this.builderFactories,
-      this.filter, {
-        this.isOptional,
-        bool hideOutput,
-        this.defaultGenerateFor,
-        Iterable<String> appliesBuilders,
-      })  : appliesBuilders = appliesBuilders ?? const [],
+    this.builderKey,
+    this.builderFactories,
+    this.filter, {
+    this.isOptional,
+    bool hideOutput,
+    this.defaultGenerateFor,
+    Iterable<String> appliesBuilders,
+  })  : appliesBuilders = appliesBuilders ?? const [],
         hideOutput = hideOutput ?? true;
 }
 
@@ -133,22 +133,22 @@ Future<List<BuildAction>> createBuildActions(
     Map<String, Map<String, dynamic>> builderConfigOverrides) async {
   final cycles = stronglyConnectedComponents<String, TargetNode>(
       targetGraph.allModules.values,
-          (node) => node.target.key,
-          (node) =>
+      (node) => node.target.key,
+      (node) =>
           node.target.dependencies?.map((key) => targetGraph.allModules[key]));
   final applyWith = _applyWith(builderApplications);
   return cycles
       .expand((cycle) => _createBuildActionsWithinCycle(
-      cycle, builderApplications, builderConfigOverrides, applyWith))
+          cycle, builderApplications, builderConfigOverrides, applyWith))
       .toList();
 }
 
 Iterable<BuildAction> _createBuildActionsWithinCycle(
-    Iterable<TargetNode> cycle,
-    Iterable<BuilderApplication> builderApplications,
-    Map<String, Map<String, dynamic>> builderConfigOverrides,
-    Map<String, List<BuilderApplication>> applyWith,
-    ) =>
+  Iterable<TargetNode> cycle,
+  Iterable<BuilderApplication> builderApplications,
+  Map<String, Map<String, dynamic>> builderConfigOverrides,
+  Map<String, List<BuilderApplication>> applyWith,
+) =>
     builderApplications.expand((builderApplication) =>
         _createBuildActionsForBuilderInCycle(
             cycle,
@@ -157,31 +157,31 @@ Iterable<BuildAction> _createBuildActionsWithinCycle(
             applyWith));
 
 Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
-    Iterable<TargetNode> cycle,
-    BuilderApplication builderApplication,
-    Map<String, dynamic> builderConfigOverrides,
-    Map<String, List<BuilderApplication>> applyWith,
-    ) {
+  Iterable<TargetNode> cycle,
+  BuilderApplication builderApplication,
+  Map<String, dynamic> builderConfigOverrides,
+  Map<String, List<BuilderApplication>> applyWith,
+) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   return builderApplication.builderFactories.expand((b) => cycle
-      .where((targetNode) =>
-      _shouldApply(builderApplication, targetNode, applyWith))
-      .map((node) {
-    final builderConfig = targetConfig(node);
-    final generateFor =
-        builderConfig?.generateFor ?? builderApplication.defaultGenerateFor;
-    var options = builderConfig?.options ?? const BuilderOptions(const {});
-    options = new BuilderOptions(
-        new Map<String, dynamic>.from(options.config)
-          ..addAll(builderConfigOverrides));
-    return new BuildAction(b(options), node.package.name,
-        builderOptions: options,
-        targetSources: node.target.sources,
-        generateFor: generateFor,
-        isOptional: builderApplication.isOptional,
-        hideOutput: builderApplication.hideOutput);
-  }));
+          .where((targetNode) =>
+              _shouldApply(builderApplication, targetNode, applyWith))
+          .map((node) {
+        final builderConfig = targetConfig(node);
+        final generateFor =
+            builderConfig?.generateFor ?? builderApplication.defaultGenerateFor;
+        var options = builderConfig?.options ?? const BuilderOptions(const {});
+        options = new BuilderOptions(
+            new Map<String, dynamic>.from(options.config)
+              ..addAll(builderConfigOverrides));
+        return new BuildAction(b(options), node.package.name,
+            builderOptions: options,
+            targetSources: node.target.sources,
+            generateFor: generateFor,
+            isOptional: builderApplication.isOptional,
+            hideOutput: builderApplication.hideOutput);
+      }));
 }
 
 bool _shouldApply(BuilderApplication builderApplication, TargetNode node,

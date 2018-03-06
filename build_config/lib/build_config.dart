@@ -13,7 +13,4 @@ export 'src/build_config.dart'
         TargetBuilderConfig,
         TargetBuilderConfigDefaults;
 export 'src/key_normalization.dart'
-    show
-        normalizeBuilderKeyUsage,
-        normalizeTargetKeyUsage,
-        normalizeTargetKeyDefinition;
+    show normalizeBuilderKeyUsage, normalizeTargetKeyUsage;
