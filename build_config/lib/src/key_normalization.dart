@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 const _defaultTargetNamePlaceholder = r'$default';
+const _defaultTargetNamePlaceholderKey =
+    '$_defaultTargetNamePlaceholder:$_defaultTargetNamePlaceholder';
 
 /// Returns the normalized [builderKey] definition when used from [packageName].
 ///
@@ -29,11 +31,13 @@ String normalizeBuilderKeyUsage(String builderKey, String packageName) =>
 /// Example normalizations:
 ///
 ///   - "$default" => "$packageName:$packageName"
+///   - "$default:$default": => "$packageName:$packageName"
 ///   - "some_target" => "$packageName:some_target"
 ///   - ":some_target" => "$packageName:some_target"
 ///   - "some_package:some_target" => "some_package|some_target"
 String normalizeTargetKeyDefinition(String targetKey, String packageName) =>
-    targetKey == _defaultTargetNamePlaceholder
+    targetKey == _defaultTargetNamePlaceholder ||
+            targetKey == _defaultTargetNamePlaceholderKey
         ? '$packageName:$packageName'
         : _normalizeDefinition(targetKey, packageName, ':');
 
