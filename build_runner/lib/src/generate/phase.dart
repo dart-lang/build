@@ -10,13 +10,9 @@ import 'package:meta/meta.dart';
 import '../builder/post_process_builder.dart';
 import 'input_matcher.dart';
 
-/// A "phase" in the build graph, which represents running a some builders on a
-/// [package].
+/// A "phase" in the build graph, which represents running a one or more
+/// builders on a set of sources.
 abstract class BuildAction {
-  String get package;
-  InputMatcher get targetSources;
-  InputMatcher get generateFor;
-
   /// Whether to run lazily when an output is read.
   ///
   /// An optional build action will only run if one of its outputs is read by
@@ -26,18 +22,16 @@ abstract class BuildAction {
   /// never run.
   bool get isOptional;
 
-  BuilderOptions get builderOptions;
-
   /// Whether generated assets should be placed in the build cache.
   ///
-  /// When this is `false` the Builder may not run on any [package] other than
+  /// When this is `false` the Builder may not run on any package other than
   /// the root.
   bool get hideOutput;
 
   /// The identity of this action in terms of a build graph. If the identity of
   /// any action changes the build will be invalidated.
   ///
-  /// This should take into account everything except for the [builderOptions],
+  /// This should take into account everything except for the builderOptions,
   /// which are tracked separately via a `BuilderOptionsNode` which supports
   /// more fine grained invalidation.
   int get identity;
@@ -47,16 +41,13 @@ abstract class BuildAction {
 class BuilderBuildAction extends BuildAction {
   final Builder builder;
 
-  @override
-  final String package;
-  @override
-  final InputMatcher targetSources;
-  @override
+  final BuilderOptions builderOptions;
   final InputMatcher generateFor;
+  final String package;
+  final InputMatcher targetSources;
+
   @override
   final bool isOptional;
-  @override
-  final BuilderOptions builderOptions;
   @override
   final bool hideOutput;
 
@@ -120,64 +111,57 @@ class BuilderBuildAction extends BuildAction {
       ]);
 }
 
-/// A [BuildAction] that can run multiple [PostProcessBuilder]s to generate
-/// files.
+/// A [BuildAction] that can run multiple [PostProcessBuilderAction]s to
+/// generate files.
 ///
 /// There should only be one of these per build, and it should be the final
 /// phase.
 class PostProcessBuildAction extends BuildAction {
-  final List<PostProcessBuilder> builders;
+  final List<PostProcessBuilderAction> builderActions;
+
   @override
   bool get hideOutput => true;
   @override
   bool get isOptional => false;
 
-  @override
-  final BuilderOptions builderOptions;
-  @override
-  final InputMatcher generateFor;
-  @override
-  final String package;
-  @override
-  final InputMatcher targetSources;
-
-  PostProcessBuildAction._(this.package, this.builders, this.builderOptions,
-      {@required this.targetSources, @required this.generateFor});
-
-  factory PostProcessBuildAction(
-    List<PostProcessBuilder> builders,
-    String package, {
-    InputSet targetSources,
-    InputSet generateFor,
-    BuilderOptions builderOptions,
-  }) {
-    var targetSourceMatcher =
-        new InputMatcher(targetSources ?? const InputSet());
-    var generateForMatcher = new InputMatcher(generateFor ?? const InputSet());
-    builderOptions ??= const BuilderOptions(const {});
-    return new PostProcessBuildAction._(package, builders, builderOptions,
-        targetSources: targetSourceMatcher, generateFor: generateForMatcher);
-  }
+  PostProcessBuildAction(this.builderActions);
 
   @override
-  String toString() {
-    final settings = <String>[];
-    var result = '${builders.map((b) => b.runtimeType).join(', ')} '
-        'on $targetSources in $package';
-    if (settings.isNotEmpty) result += ' $settings';
-    return result;
-  }
+  String toString() =>
+      '${builderActions.map((a) => a.builder.runtimeType).join(', ')}';
 
   @override
   int get identity =>
-      _deepEquals.hash(builders.map<dynamic>((b) => '${b.runtimeType}').toList()
+      _deepEquals.hash(builderActions.map<dynamic>((b) => b.identity).toList()
         ..addAll([
-          package,
-          targetSources,
-          generateFor,
           isOptional,
           hideOutput,
         ]));
+}
+
+/// Part of a larger [PostProcessBuildAction], applies a single
+/// [PostProcessBuilder] to a single [package] with some additional options.
+class PostProcessBuilderAction {
+  final PostProcessBuilder builder;
+  final BuilderOptions builderOptions;
+  final InputMatcher generateFor;
+  final String package;
+  final InputMatcher targetSources;
+
+  PostProcessBuilderAction(this.builder, this.package,
+      {@required BuilderOptions builderOptions,
+      @required InputSet targetSources,
+      @required InputSet generateFor})
+      : builderOptions = builderOptions ?? const BuilderOptions(const {}),
+        targetSources = new InputMatcher(targetSources ?? const InputSet()),
+        generateFor = new InputMatcher(generateFor ?? const InputSet());
+
+  int get identity => _deepEquals.hash([
+        builder.runtimeType.toString(),
+        generateFor,
+        package,
+        targetSources,
+      ]);
 }
 
 final _deepEquals = const DeepCollectionEquality();

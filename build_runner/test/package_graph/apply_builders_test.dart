@@ -47,7 +47,7 @@ void main() {
       var actions =
           await createBuildActions(targetGraph, builderApplications, {});
       expect(actions, hasLength(1));
-      expect(actions.first.package, 'a');
+      expect((actions.first as BuilderBuildAction).package, 'a');
     });
 
     test('honors appliesBuilders', () async {
@@ -65,7 +65,7 @@ void main() {
       var actions =
           await createBuildActions(targetGraph, builderApplications, {});
       expect(actions, hasLength(2));
-      expect(actions.map((a) => a.package), ['a', 'a']);
+      expect(actions.map((a) => (a as BuilderBuildAction).package), ['a', 'a']);
     });
   });
 }

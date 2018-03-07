@@ -149,9 +149,12 @@ class _Loader {
   void _checkBuildActions() {
     final root = _options.packageGraph.root.name;
     for (final action in _buildActions) {
-      if (!action.hideOutput &&
-          action.package != _options.packageGraph.root.name) {
-        throw new InvalidBuildActionException.nonRootPackage(action, root);
+      if (!action.hideOutput) {
+        // Only `BuilderBuildAction`s can be not hidden.
+        if (action is BuilderBuildAction &&
+            action.package != _options.packageGraph.root.name) {
+          throw new InvalidBuildActionException.nonRootPackage(action, root);
+        }
       }
     }
   }
@@ -331,16 +334,29 @@ class _Loader {
   Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
       AssetGraph assetGraph, List<BuildAction> buildActions) {
     var result = <AssetId, ChangeType>{};
-    for (var phase = 0; phase < buildActions.length; phase++) {
-      var action = buildActions[phase];
-      var builderOptionsId = builderOptionsIdForPhase(action.package, phase);
+
+    void updateBuilderOptionsNode(
+        AssetId builderOptionsId, BuilderOptions options) {
       var builderOptionsNode =
           assetGraph.get(builderOptionsId) as BuilderOptionsAssetNode;
       var oldDigest = builderOptionsNode.lastKnownDigest;
-      builderOptionsNode.lastKnownDigest =
-          computeBuilderOptionsDigest(action.builderOptions);
+      builderOptionsNode.lastKnownDigest = computeBuilderOptionsDigest(options);
       if (builderOptionsNode.lastKnownDigest != oldDigest) {
         result[builderOptionsId] = ChangeType.MODIFY;
+      }
+    }
+
+    for (var phase = 0; phase < buildActions.length; phase++) {
+      var action = buildActions[phase];
+      if (action is BuilderBuildAction) {
+        updateBuilderOptionsNode(
+            builderOptionsIdForAction(action, phase), action.builderOptions);
+      } else if (action is PostProcessBuildAction) {
+        for (var builderAction in action.builderActions) {
+          updateBuilderOptionsNode(
+              builderOptionsIdForPostProcessAction(builderAction, phase),
+              builderAction.builderOptions);
+        }
       }
     }
     return result;

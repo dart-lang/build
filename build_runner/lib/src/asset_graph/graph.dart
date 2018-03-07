@@ -156,9 +156,19 @@ class AssetGraph {
   void _addBuilderOptionsNodes(List<BuildAction> buildActions) {
     for (var phase = 0; phase < buildActions.length; phase++) {
       var action = buildActions[phase];
-      add(new BuilderOptionsAssetNode(
-          builderOptionsIdForPhase(action.package, phase),
-          computeBuilderOptionsDigest(action.builderOptions)));
+      if (action is BuilderBuildAction) {
+        add(new BuilderOptionsAssetNode(
+            builderOptionsIdForAction(action, phase),
+            computeBuilderOptionsDigest(action.builderOptions)));
+      } else if (action is PostProcessBuildAction) {
+        for (var builderAction in action.builderActions) {
+          add(new BuilderOptionsAssetNode(
+              builderOptionsIdForPostProcessAction(builderAction, phase),
+              computeBuilderOptionsDigest(builderAction.builderOptions)));
+        }
+      } else {
+        throw new StateError('Invalid action type $action');
+      }
     }
   }
 
@@ -346,7 +356,7 @@ class AssetGraph {
 
   /// Crawl up primary inputs to see if the original Source file matches the
   /// glob on [action].
-  bool _actionMatches(BuildAction action, AssetId input) {
+  bool _actionMatches(BuilderBuildAction action, AssetId input) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
     var inputNode = get(input);
@@ -372,12 +382,14 @@ class AssetGraph {
       var phaseOutputs = new Set<AssetId>();
       var action = buildActions[phase];
       if (action is! BuilderBuildAction) continue;
+      var builderAction = action as BuilderBuildAction;
 
-      var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
+      var buildOptionsNodeId = builderOptionsIdForAction(builderAction, phase);
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
-      var inputs =
-          allInputs.where((input) => _actionMatches(action, input)).toList();
+      var inputs = allInputs
+          .where((input) => _actionMatches(builderAction, input))
+          .toList();
       for (var input in inputs) {
         // We might have deleted some inputs during this loop, if they turned
         // out to be generated assets.
@@ -385,8 +397,7 @@ class AssetGraph {
         var node = get(input);
         assert(node != null, 'The node from `$input` does not exist.');
 
-        var outputs =
-            expectedOutputs((action as BuilderBuildAction).builder, input);
+        var outputs = expectedOutputs(builderAction.builder, input);
         phaseOutputs.addAll(outputs);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
@@ -461,8 +472,13 @@ Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>
     md5.convert(UTF8.encode(JSON.encode(options.config)));
 
-AssetId builderOptionsIdForPhase(String package, int phase) =>
-    new AssetId(package, 'Phase$phase.builderOptions');
+AssetId builderOptionsIdForAction(BuilderBuildAction action, int phase) =>
+    new AssetId(action.package, 'Phase$phase.builderOptions');
+
+AssetId builderOptionsIdForPostProcessAction(
+        PostProcessBuilderAction action, int phase) =>
+    new AssetId(action.package,
+        'Phase$phase.${action.builder.runtimeType}.builderOptions');
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
     new Set<AssetId>.from(packageGraph.allPackages.keys.expand((package) => [

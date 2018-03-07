@@ -157,6 +157,8 @@ class BuilderApplication {
         builderKey, actionFactories, filter, hideOutput, appliesBuilders);
   }
 
+  /// Note that these builder applications each create their own phase, but they
+  /// will all eventually be merged into a single phase.
   factory BuilderApplication.forPostProcessBuilder(
     String builderKey,
     List<PostProcessBuilderFactory> builderFactories,
@@ -168,10 +170,13 @@ class BuilderApplication {
         InputSet targetSources, InputSet generateFor) {
       generateFor ??= defaultGenerateFor;
       var builders = builderFactories.map((f) => f(options)).toList();
-      return new PostProcessBuildAction(builders, package,
-          targetSources: targetSources,
-          generateFor: generateFor,
-          builderOptions: options);
+      var builderActions = builders
+          .map((builder) => new PostProcessBuilderAction(builder, package,
+              builderOptions: options,
+              generateFor: generateFor,
+              targetSources: targetSources))
+          .toList();
+      return new PostProcessBuildAction(builderActions);
     };
     return new BuilderApplication._(
         builderKey, [actionFactory], filter, true, appliesBuilders);
@@ -199,10 +204,25 @@ Future<List<BuildAction>> createBuildActions(
       (node) =>
           node.target.dependencies?.map((key) => targetGraph.allModules[key]));
   final applyWith = _applyWith(builderApplications);
-  return cycles
-      .expand((cycle) => _createBuildActionsWithinCycle(
-          cycle, builderApplications, builderConfigOverrides, applyWith))
+  var expandedActions = cycles.expand((cycle) => _createBuildActionsWithinCycle(
+      cycle, builderApplications, builderConfigOverrides, applyWith));
+
+  var combinedActions = <BuildAction>[]..addAll(expandedActions
+      .where((action) => action is BuilderBuildAction)
+      .cast<BuilderBuildAction>());
+  var postBuilderActions = expandedActions
+      .where((action) => action is PostProcessBuildAction)
+      .cast<PostProcessBuildAction>()
       .toList();
+  if (postBuilderActions.isNotEmpty) {
+    combinedActions.add(postBuilderActions.fold<PostProcessBuildAction>(
+        new PostProcessBuildAction([]), (previous, next) {
+      previous.builderActions.addAll(next.builderActions);
+      return previous;
+    }));
+  }
+
+  return combinedActions;
 }
 
 Iterable<BuildAction> _createBuildActionsWithinCycle(
