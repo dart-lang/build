@@ -93,7 +93,7 @@ main() {
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'b.txt'), 'b');
         var buildActions = [
-          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
+          new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -126,7 +126,7 @@ main() {
 
       test('for new sources and generated nodes', () async {
         var buildActions = [
-          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
+          new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
 
         var originalAssetGraph = await AssetGraph.build(buildActions,
@@ -151,7 +151,7 @@ main() {
       test('for changed sources', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildActions = [
-          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
+          new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -177,7 +177,7 @@ main() {
       test('retains non-output generated nodes', () async {
         await createFile(p.join('lib', 'test.txt'), 'a');
         var buildActions = [
-          new BuildAction(new TestBuilder(build: (_, __) {}), 'a',
+          new BuilderBuildAction(new TestBuilder(build: (_, __) {}), 'a',
               hideOutput: true)
         ];
 
@@ -202,8 +202,8 @@ main() {
       test('for changed BuilderOptions', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildActions = [
-          new BuildAction(new TestBuilder(), 'a', hideOutput: true),
-          new BuildAction(
+          new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: true),
+          new BuilderBuildAction(
               new TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
               targetSources: const InputSet(include: const ['**/*.txt']),
               hideOutput: true),
@@ -227,10 +227,10 @@ main() {
 
         // Same as before, but change the `BuilderOptions` for the first action.
         var newBuildActions = [
-          new BuildAction(new TestBuilder(), 'a',
+          new BuilderBuildAction(new TestBuilder(), 'a',
               builderOptions: new BuilderOptions({'test': 'option'}),
               hideOutput: true),
-          new BuildAction(
+          new BuilderBuildAction(
               new TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
               targetSources: const InputSet(include: const ['**/*.txt']),
               hideOutput: true),
@@ -259,7 +259,7 @@ main() {
             'a', p.url.join(generatedOutputDirectory, 'a', 'lib', 'test.txt'));
         await createFile(generatedId.path, 'a');
         var buildActions = [
-          new BuildAction(
+          new BuilderBuildAction(
               new TestBuilder(
                   buildExtensions: appendExtension('.copy', from: '.txt')),
               'a',
@@ -293,7 +293,7 @@ main() {
         var entryPoint =
             new AssetId('a', p.url.join(entryPointDir, 'build.dart'));
         var buildActions = [
-          new BuildAction(new TestBuilder(), 'a', hideOutput: true)
+          new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: true)
         ];
         var buildDefinition = await BuildDefinition.prepareWorkspace(
             environment, options, buildActions);
@@ -310,7 +310,7 @@ main() {
       await options.logListener.cancel();
 
       var buildActions = [
-        new BuildAction(new TestBuilder(), 'a', hideOutput: true)
+        new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: true)
       ];
       var logs = <LogRecord>[];
       environment = new OverrideableEnvironment(environment, onLog: logs.add);
@@ -324,7 +324,7 @@ main() {
 
       await createFile(assetGraphPath, originalAssetGraph.serialize());
 
-      buildActions.add(new BuildAction(new TestBuilder(), 'a',
+      buildActions.add(new BuilderBuildAction(new TestBuilder(), 'a',
           targetSources: const InputSet(include: const ['.copy']),
           hideOutput: true));
       logs.clear();
@@ -349,7 +349,7 @@ main() {
       await options.logListener.cancel();
 
       var buildActions = [
-        new BuildAction(new TestBuilder(), 'a', hideOutput: true)
+        new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: true)
       ];
       var logs = <LogRecord>[];
       environment = new OverrideableEnvironment(environment, onLog: logs.add);
@@ -388,7 +388,7 @@ main() {
       await options.logListener.cancel();
 
       var buildActions = [
-        new BuildAction(new TestBuilder(), 'a',
+        new BuilderBuildAction(new TestBuilder(), 'a',
             hideOutput: true,
             builderOptions: new BuilderOptions({'foo': 'bar'}))
       ];
@@ -405,7 +405,7 @@ main() {
       await createFile(assetGraphPath, originalAssetGraph.serialize());
 
       buildActions = [
-        new BuildAction(new TestBuilder(), 'a',
+        new BuilderBuildAction(new TestBuilder(), 'a',
             hideOutput: true,
             builderOptions: new BuilderOptions({'baz': 'zap'}))
       ];
@@ -428,7 +428,7 @@ main() {
 
     test('deletes old source outputs if the build actions change', () async {
       var buildActions = [
-        new BuildAction(new TestBuilder(), 'a', hideOutput: false)
+        new BuilderBuildAction(new TestBuilder(), 'a', hideOutput: false)
       ];
       var aTxt = new AssetId('a', 'lib/a.txt');
       await createFile(aTxt.path, 'hello');
@@ -454,7 +454,7 @@ main() {
 
       await createFile(assetGraphPath, originalAssetGraph.serialize());
 
-      buildActions.add(new BuildAction(new TestBuilder(), 'a',
+      buildActions.add(new BuilderBuildAction(new TestBuilder(), 'a',
           targetSources: const InputSet(include: const ['.copy']),
           hideOutput: true));
 

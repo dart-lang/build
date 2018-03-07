@@ -13,9 +13,6 @@ import 'input_matcher.dart';
 /// A "phase" in the build graph, which represents running a some builders on a
 /// [package].
 abstract class BuildAction {
-  /// Either a [Builder] or a [PostProcessBuilder].
-  dynamic get builder;
-
   String get package;
   InputMatcher get targetSources;
   InputMatcher get generateFor;
@@ -37,35 +34,17 @@ abstract class BuildAction {
   /// the root.
   bool get hideOutput;
 
-  @override
-  String toString() {
-    final settings = <String>[];
-    if (isOptional) settings.add('optional');
-    if (hideOutput) settings.add('hidden');
-    var result = '${builder.runtimeType} on $targetSources in $package';
-    if (settings.isNotEmpty) result += ' $settings';
-    return result;
-  }
-
   /// The identity of this action in terms of a build graph. If the identity of
   /// any action changes the build will be invalidated.
   ///
-  /// This takes into account everything except for the [builderOptions], which
-  /// are tracked separately via a `BuilderOptionsNode` which supports more fine
-  /// grained invalidation.
-  int get identity => _deepEquals.hash([
-        '${builder.runtimeType}',
-        package,
-        targetSources,
-        generateFor,
-        isOptional,
-        hideOutput
-      ]);
+  /// This should take into account everything except for the [builderOptions],
+  /// which are tracked separately via a `BuilderOptionsNode` which supports
+  /// more fine grained invalidation.
+  int get identity;
 }
 
-/// A [BuildAction] that uses a [Builder] to generate files.
+/// A [BuildAction] that uses a single [Builder] to generate files.
 class BuilderBuildAction extends BuildAction {
-  @override
   final Builder builder;
 
   @override
@@ -119,12 +98,35 @@ class BuilderBuildAction extends BuildAction {
         isOptional: isOptional,
         hideOutput: hideOutput);
   }
+
+  @override
+  String toString() {
+    final settings = <String>[];
+    if (isOptional) settings.add('optional');
+    if (hideOutput) settings.add('hidden');
+    var result = '${builder.runtimeType} on $targetSources in $package';
+    if (settings.isNotEmpty) result += ' $settings';
+    return result;
+  }
+
+  @override
+  int get identity => _deepEquals.hash([
+        '${builder.runtimeType}',
+        package,
+        targetSources,
+        generateFor,
+        isOptional,
+        hideOutput
+      ]);
 }
 
-/// A [BuildAction] that uses a [PostProcessBuilder] to generate files.
+/// A [BuildAction] that can run multiple [PostProcessBuilder]s to generate
+/// files.
+///
+/// There should only be one of these per build, and it should be the final
+/// phase.
 class PostProcessBuildAction extends BuildAction {
-  @override
-  final PostProcessBuilder builder;
+  final List<PostProcessBuilder> builders;
   @override
   bool get hideOutput => true;
   @override
@@ -139,22 +141,11 @@ class PostProcessBuildAction extends BuildAction {
   @override
   final InputMatcher targetSources;
 
-  PostProcessBuildAction._(this.package, this.builder, this.builderOptions,
+  PostProcessBuildAction._(this.package, this.builders, this.builderOptions,
       {@required this.targetSources, @required this.generateFor});
 
-  /// Creates an [BuildAction] for a normal [Builder].
-  ///
-  /// The build target is defined by [package] as well as [targetSources]. By
-  /// default all sources in the target are used as primary inputs to the
-  /// builder, but it can be further filtered with [generateFor].
-  ///
-  /// [isOptional] specifies that a Builder may not be run unless some other
-  /// Builder in a later phase attempts to read one of the potential outputs.
-  ///
-  /// [hideOutput] specifies that the generated asses should be placed in the
-  /// build cache rather than the source tree.
   factory PostProcessBuildAction(
-    PostProcessBuilder builder,
+    List<PostProcessBuilder> builders,
     String package, {
     InputSet targetSources,
     InputSet generateFor,
@@ -164,31 +155,29 @@ class PostProcessBuildAction extends BuildAction {
         new InputMatcher(targetSources ?? const InputSet());
     var generateFormatcher = new InputMatcher(generateFor ?? const InputSet());
     builderOptions ??= const BuilderOptions(const {});
-    return new PostProcessBuildAction._(package, builder, builderOptions,
+    return new PostProcessBuildAction._(package, builders, builderOptions,
         targetSources: targetSourceMatcher, generateFor: generateFormatcher);
   }
 
   @override
   String toString() {
     final settings = <String>[];
-    if (isOptional) settings.add('optional');
-    if (hideOutput) settings.add('hidden');
-    var result = '${builder.runtimeType} on $targetSources in $package';
+    var result = '${builders.map((b) => b.runtimeType).join(', ')} '
+        'on $targetSources in $package';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
   }
 
-  /// This takes into account everything except for the [builderOptions], which
-  /// are tracked separately via a `BuilderOptionsNode` which supports more fine
-  /// grained invalidation.
-  int get identity => _deepEquals.hash([
-        '${builder.runtimeType}',
-        package,
-        targetSources,
-        generateFor,
-        isOptional,
-        hideOutput
-      ]);
+  @override
+  int get identity =>
+      _deepEquals.hash(builders.map<dynamic>((b) => '${b.runtimeType}').toList()
+        ..addAll([
+          package,
+          targetSources,
+          generateFor,
+          isOptional,
+          hideOutput,
+        ]));
 }
 
 final _deepEquals = const DeepCollectionEquality();

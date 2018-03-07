@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:test/test.dart';
 
+import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/target_graph.dart';
 
@@ -26,7 +27,7 @@ void main() {
       var actions = await createBuildActions(targetGraph, builderApplications, {
         'b|cool_builder': {'option_a': 'a', 'option_c': 'c'},
       });
-      for (var action in actions) {
+      for (BuilderBuildAction action in actions) {
         expect((action.builder as CoolBuilder).optionA, equals('a'));
         expect((action.builder as CoolBuilder).optionB, equals('defaultB'));
         expect((action.builder as CoolBuilder).optionC, equals('c'));

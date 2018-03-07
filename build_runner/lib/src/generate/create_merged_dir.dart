@@ -52,7 +52,8 @@ Future<bool> createMergedOutputDir(
     for (var inputId in node.inputs) {
       final inputNode = assetGraph.get(inputId);
       if (inputNode is GeneratedForPhaseAssetNode) {
-        final action = buildActions[inputNode.phaseNumber];
+        final action =
+            buildActions[inputNode.phaseNumber] as BuilderBuildAction;
         inputsAndSameActionOutputs
             .addAll(expectedOutputs(action.builder, inputNode.primaryInput));
       }

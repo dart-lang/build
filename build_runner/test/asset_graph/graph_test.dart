@@ -159,11 +159,11 @@ void main() {
 
         test('deleted nodes remove their failures', () async {
           graph = await AssetGraph.build([
-            new BuildAction(
+            new BuilderBuildAction(
                 new TestBuilder(
                     buildExtensions: appendExtension('.copy', from: '.txt')),
                 'foo'),
-            new BuildAction(
+            new BuilderBuildAction(
                 new TestBuilder(
                     buildExtensions: appendExtension('.clone', from: '.txt')),
                 'foo'),
@@ -179,7 +179,7 @@ void main() {
 
     group('with buildActions', () {
       final buildActions = [
-        new BuildAction(
+        new BuilderBuildAction(
             new TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt')),
             'foo',
@@ -355,7 +355,8 @@ void main() {
     test('overlapping build actions cause an error', () async {
       expect(
           () => AssetGraph.build(
-              new List.filled(2, new BuildAction(new TestBuilder(), 'foo')),
+              new List.filled(
+                  2, new BuilderBuildAction(new TestBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
               new Set(),
               fooPackageGraph,
@@ -367,17 +368,17 @@ void main() {
       test('build can chains of pre-existing to-source outputs', () async {
         final graph = await AssetGraph.build(
             [
-              new BuildAction(
+              new BuilderBuildAction(
                   new TestBuilder(
                       buildExtensions: replaceExtension('.txt', '.a.txt')),
                   'foo',
                   hideOutput: false),
-              new BuildAction(
+              new BuilderBuildAction(
                   new TestBuilder(
                       buildExtensions: replaceExtension('.txt', '.b.txt')),
                   'foo',
                   hideOutput: false),
-              new BuildAction(
+              new BuilderBuildAction(
                   new TestBuilder(
                       buildExtensions:
                           replaceExtension('.a.b.txt', '.a.b.c.txt')),
@@ -421,11 +422,11 @@ void main() {
           'allows running on generated inputs that do not match target '
           'source globs', () async {
         final graph = await AssetGraph.build([
-          new BuildAction(
+          new BuilderBuildAction(
               new TestBuilder(
                   buildExtensions: appendExtension('.1', from: '.txt')),
               'foo'),
-          new BuildAction(
+          new BuilderBuildAction(
               new TestBuilder(
                   buildExtensions: appendExtension('.2', from: '.1')),
               'foo',

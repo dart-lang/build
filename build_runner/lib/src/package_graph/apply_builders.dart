@@ -175,7 +175,7 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
         options = new BuilderOptions(
             new Map<String, dynamic>.from(options.config)
               ..addAll(builderConfigOverrides));
-        return new BuildAction(b(options), node.package.name,
+        return new BuilderBuildAction(b(options), node.package.name,
             builderOptions: options,
             targetSources: node.target.sources,
             generateFor: generateFor,

@@ -39,7 +39,8 @@ main() {
       await scopeClock(fakeClock, () async {
         var packages = ['a', 'b', 'c'];
         var builder = new TestBuilder();
-        var actions = packages.map((p) => new BuildAction(builder, p)).toList();
+        var actions =
+            packages.map((p) => new BuilderBuildAction(builder, p)).toList();
 
         for (var action in actions) {
           var package = action.package;
