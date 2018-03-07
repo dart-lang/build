@@ -178,7 +178,7 @@ post_process_builders:
 var buildYamlNoTargets = '''
 builders:
   a:
-    builder_factory: "createBuilder"
+    builder_factories: ["createBuilder"]
     import: package:example/builder.dart
     build_extensions: {".dart": [".g.dart", ".json"]}
     target: example
