@@ -1,3 +1,16 @@
+## 0.2.5-dev
+
+- Adds support for `$default` as a _dependency_, i.e.:
+
+```yaml
+targets:
+  $default:
+    ...
+  foo:
+    dependencies:
+      - $default
+```
+
 ## 0.2.4
 
 - Add support for `runs_before` in `BuilderDefinition`.
