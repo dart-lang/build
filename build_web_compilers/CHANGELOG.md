@@ -1,4 +1,4 @@
-# 0.3.4
+# 0.3.4-dev
 
 - Added support for bootstrapping code in web workers with `dartdevc`.
 
