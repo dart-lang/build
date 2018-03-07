@@ -1,3 +1,7 @@
+# 0.3.4
+
+- Added support for bootstrapping code in web workers with `dartdevc`.
+
 # 0.3.3
 
 - Added support for `--dump-info` and the `dart2js` compiler. If you pass that
