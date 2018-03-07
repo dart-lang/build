@@ -167,7 +167,7 @@ builders:
       generate_for: ["lib/**"]
 post_process_builders:
   p:
-    builder_factory: "createPostProcessBuilder"s
+    builder_factory: "createPostProcessBuilder"
     import: package:example/p.dart
     input_extensions: [".tar.gz", ".zip"]
     target: ":example"

@@ -136,9 +136,7 @@ bool _shouldSkipNode(AssetNode node, List<BuildAction> buildActions,
     if (!node.wasOutput || node.state != GeneratedNodeState.upToDate) {
       return true;
     }
-    if (skipOptional) {
-      if (buildActions[node.phaseNumber].isOptional) return true;
-    }
+    if (skipOptional && buildActions[node.phaseNumber].isOptional) return true;
   }
   if (node.id.path == '.packages') return true;
   return false;

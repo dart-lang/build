@@ -199,8 +199,7 @@ class AssetGraph {
       }
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
-      var phaseNumber = node is GeneratedAssetNode ? node.phaseNumber : -1;
-      markActionSucceeded(phaseNumber, node.primaryInput);
+      markActionSucceeded(node.phaseNumber, node.primaryInput);
     }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;
@@ -372,6 +371,8 @@ class AssetGraph {
     for (var phase = 0; phase < buildActions.length; phase++) {
       var phaseOutputs = new Set<AssetId>();
       var action = buildActions[phase];
+      if (action is! BuilderBuildAction) continue;
+
       var buildOptionsNodeId = builderOptionsIdForPhase(action.package, phase);
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
@@ -384,20 +385,18 @@ class AssetGraph {
         var node = get(input);
         assert(node != null, 'The node from `$input` does not exist.');
 
-        if (action is BuilderBuildAction) {
-          var outputs = expectedOutputs(action.builder, input);
-          phaseOutputs.addAll(outputs);
-          node.primaryOutputs.addAll(outputs);
-          node.outputs.addAll(outputs);
-          var deleted = _addGeneratedPhaseOutputs(
-              outputs, phase, builderOptionsNode,
-              primaryInput: input, isHidden: action.hideOutput);
-          allInputs.removeAll(deleted);
-          // We may delete source nodes that were producing outputs previously.
-          // Detect this by checking for deleted nodes that no longer exist in the
-          // graph at all, and remove them from `phaseOutputs`.
-          phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
-        }
+        var outputs =
+            expectedOutputs((action as BuilderBuildAction).builder, input);
+        phaseOutputs.addAll(outputs);
+        node.primaryOutputs.addAll(outputs);
+        node.outputs.addAll(outputs);
+        var deleted = _addGeneratedOutputs(outputs, phase, builderOptionsNode,
+            primaryInput: input, isHidden: action.hideOutput);
+        allInputs.removeAll(deleted);
+        // We may delete source nodes that were producing outputs previously.
+        // Detect this by checking for deleted nodes that no longer exist in the
+        // graph at all, and remove them from `phaseOutputs`.
+        phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
       }
       allInputs.addAll(phaseOutputs);
     }
@@ -411,8 +410,8 @@ class AssetGraph {
   /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
   /// from the graph as well. The return value is the set of assets that were
   /// removed from the graph.
-  Set<AssetId> _addGeneratedPhaseOutputs(Iterable<AssetId> outputs,
-      int phaseNumber, BuilderOptionsAssetNode builderOptionsNode,
+  Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+      BuilderOptionsAssetNode builderOptionsNode,
       {AssetId primaryInput, @required bool isHidden}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {

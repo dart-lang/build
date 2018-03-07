@@ -563,8 +563,8 @@ class _SingleBuild {
         ..state = GeneratedNodeState.upToDate
         ..wasOutput = wasOutput
         ..lastKnownDigest = digest
-        ..previousInputsDigest = inputsDigest
-        ..globs = globsRan;
+        ..globs = globsRan
+        ..previousInputsDigest = inputsDigest;
     }
   }
 

@@ -6,13 +6,13 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
-/// A [PostProcessBuilder] runs in a special phase at the end of the build.
+/// A builder which runes in a special phase at the end of the build.
 ///
 /// They are different from a normal [Builder] in several ways:
 ///
 /// - They don't have to declare output extensions, and can output any file as
 ///   long as it doesn't conflict with an existing one.
-/// - They can only read their primary input id.
+/// - They can only read their primary input.
 /// - They will not cause optional actions to run - they will only run on assets
 ///   that were built as a part of the normal build.
 /// - They all run in a single phase, and thus can not see the outputs of any
