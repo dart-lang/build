@@ -199,8 +199,7 @@ class AssetGraph {
       }
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
-      var phaseNumber =
-          node is GeneratedForPhaseAssetNode ? node.phaseNumber : -1;
+      var phaseNumber = node is GeneratedAssetNode ? node.phaseNumber : -1;
       markActionSucceeded(phaseNumber, node.primaryInput);
     }
     _nodesByPackage[id.package].remove(id.path);
@@ -221,9 +220,9 @@ class AssetGraph {
 
   /// All the generated outputs for a particular phase.
   // TODO consider storing this directly
-  Iterable<GeneratedForPhaseAssetNode> outputsForPhase(int phase) => allNodes
-      .where((n) => n is GeneratedForPhaseAssetNode && n.phaseNumber == phase)
-      .cast<GeneratedForPhaseAssetNode>();
+  Iterable<GeneratedAssetNode> outputsForPhase(int phase) => allNodes
+      .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
+      .cast<GeneratedAssetNode>();
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -318,9 +317,9 @@ class AssetGraph {
 
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
-      var samePackageOutputNodes = packageNodes(id.package)
-          .where((node) => node is GeneratedForPhaseAssetNode);
-      for (GeneratedForPhaseAssetNode node in samePackageOutputNodes) {
+      var samePackageOutputNodes =
+          packageNodes(id.package).where((node) => node is GeneratedAssetNode);
+      for (GeneratedAssetNode node in samePackageOutputNodes) {
         if (node.globs.any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
           invalidateNodeAndDeps(node.id, null);
@@ -426,7 +425,7 @@ class AssetGraph {
         _removeRecursive(output, removedIds: removed);
       }
 
-      var newNode = new GeneratedForPhaseAssetNode(output,
+      var newNode = new GeneratedAssetNode(output,
           phaseNumber: phaseNumber,
           primaryInput: primaryInput,
           state: GeneratedNodeState.definitelyNeedsUpdate,

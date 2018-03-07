@@ -51,7 +51,7 @@ Future<bool> createMergedOutputDir(
     final inputsAndSameActionOutputs = new Set<AssetId>();
     for (var inputId in node.inputs) {
       final inputNode = assetGraph.get(inputId);
-      if (inputNode is GeneratedForPhaseAssetNode) {
+      if (inputNode is GeneratedAssetNode) {
         final action = buildActions[inputNode.phaseNumber];
         inputsAndSameActionOutputs
             .addAll(expectedOutputs(action.builder, inputNode.primaryInput));
@@ -63,7 +63,7 @@ Future<bool> createMergedOutputDir(
       if (_shouldSkipNode(inputNode, buildActions, skipOptional: false)) {
         continue;
       }
-      if (inputNode is GeneratedForPhaseAssetNode &&
+      if (inputNode is GeneratedAssetNode &&
           buildActions[inputNode.phaseNumber].isOptional &&
           !originalOutputAssets.contains(inputId)) {
         originalOutputAssets.add(inputId);
@@ -135,7 +135,7 @@ bool _shouldSkipNode(AssetNode node, List<BuildAction> buildActions,
     if (!node.wasOutput || node.state != GeneratedNodeState.upToDate) {
       return true;
     }
-    if (skipOptional && node is GeneratedForPhaseAssetNode) {
+    if (skipOptional) {
       if (buildActions[node.phaseNumber].isOptional) return true;
     }
   }
