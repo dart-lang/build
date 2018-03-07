@@ -326,7 +326,7 @@ class _SingleBuild {
     await Future
         .wait(_assetGraph.outputsForPhase(phaseNumber).map((node) async {
       var input = _assetGraph.get(node.primaryInput);
-      if (input is GeneratedForPhaseAssetNode) {
+      if (input is GeneratedAssetNode) {
         if (input.state != GeneratedNodeState.upToDate) {
           await _runLazyPhaseForInput(input.phaseNumber, input.isHidden,
               input.primaryInput, resourceManager);
@@ -368,7 +368,7 @@ class _SingleBuild {
       // First check if `input` is generated, and whether or not it was
       // actually output. If it wasn't then we just return an empty list here.
       var inputNode = _assetGraph.get(input);
-      if (inputNode is GeneratedForPhaseAssetNode) {
+      if (inputNode is GeneratedAssetNode) {
         // Make sure the `inputNode` is up to date, and rebuild it if not.
         if (inputNode.state != GeneratedNodeState.upToDate) {
           await _runLazyPhaseForInput(inputNode.phaseNumber, inputNode.isHidden,
@@ -563,10 +563,8 @@ class _SingleBuild {
         ..state = GeneratedNodeState.upToDate
         ..wasOutput = wasOutput
         ..lastKnownDigest = digest
-        ..previousInputsDigest = inputsDigest;
-      if (node is GeneratedForPhaseAssetNode) {
-        node.globs = globsRan;
-      }
+        ..previousInputsDigest = inputsDigest
+        ..globs = globsRan;
     }
   }
 
