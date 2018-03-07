@@ -90,11 +90,11 @@ class BuilderBuildAction extends BuildAction {
   }) {
     var targetSourceMatcher =
         new InputMatcher(targetSources ?? const InputSet());
-    var generateFormatcher = new InputMatcher(generateFor ?? const InputSet());
+    var generateForMatcher = new InputMatcher(generateFor ?? const InputSet());
     builderOptions ??= const BuilderOptions(const {});
     return new BuilderBuildAction._(package, builder, builderOptions,
         targetSources: targetSourceMatcher,
-        generateFor: generateFormatcher,
+        generateFor: generateForMatcher,
         isOptional: isOptional,
         hideOutput: hideOutput);
   }
@@ -153,10 +153,10 @@ class PostProcessBuildAction extends BuildAction {
   }) {
     var targetSourceMatcher =
         new InputMatcher(targetSources ?? const InputSet());
-    var generateFormatcher = new InputMatcher(generateFor ?? const InputSet());
+    var generateForMatcher = new InputMatcher(generateFor ?? const InputSet());
     builderOptions ??= const BuilderOptions(const {});
     return new PostProcessBuildAction._(package, builders, builderOptions,
-        targetSources: targetSourceMatcher, generateFor: generateFormatcher);
+        targetSources: targetSourceMatcher, generateFor: generateForMatcher);
   }
 
   @override

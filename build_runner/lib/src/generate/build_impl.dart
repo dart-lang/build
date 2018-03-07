@@ -296,14 +296,16 @@ class _SingleBuild {
       var action = _buildActions[phase];
       if (action.isOptional) continue;
       await _performanceTracker.trackBuildPhase(action, () async {
-        var primaryInputs =
-            await _matchingPrimaryInputs(phase, resourceManager);
         if (action is BuilderBuildAction) {
+          var primaryInputs =
+              await _matchingPrimaryInputs(phase, resourceManager);
           outputs.addAll(await _runBuilder(phase, action.hideOutput,
               action.builder, primaryInputs, resourceManager));
         } else if (action is PostProcessBuildAction) {
-          outputs.addAll(await _runPostProcessAction(
-              action, primaryInputs, resourceManager));
+          outputs.addAll(
+              await _runPostProcessAction(phase, action, resourceManager));
+        } else {
+          throw new StateError('Unrecognized BuildAction type $action');
         }
       });
     }
@@ -356,8 +358,8 @@ class _SingleBuild {
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
 
-  Future<Iterable<AssetId>> _runPostProcessAction(PostProcessBuildAction action,
-      Iterable<AssetId> primaryInputs, ResourceManager resourceManager) async {
+  Future<Iterable<AssetId>> _runPostProcessAction(int phase,
+      PostProcessBuildAction action, ResourceManager resourceManager) async {
     throw new UnimplementedError('Unimplemented!!!');
   }
 
@@ -377,6 +379,7 @@ class _SingleBuild {
         if (!inputNode.wasOutput) return <AssetId>[];
       }
 
+      // We can never lazily build `PostProcessBuildAction`s.
       var action = _buildActions[phaseNumber] as BuilderBuildAction;
 
       return _runForInput(
