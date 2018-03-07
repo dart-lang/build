@@ -199,8 +199,7 @@ class AssetGraph {
       }
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
-      var phaseNumber = node is GeneratedAssetNode ? node.phaseNumber : -1;
-      markActionSucceeded(phaseNumber, node.primaryInput);
+      markActionSucceeded(node.phaseNumber, node.primaryInput);
     }
     _nodesByPackage[id.package].remove(id.path);
     return removedIds;
@@ -388,8 +387,7 @@ class AssetGraph {
         phaseOutputs.addAll(outputs);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
-        var deleted = _addGeneratedPhaseOutputs(
-            outputs, phase, builderOptionsNode,
+        var deleted = _addGeneratedOutputs(outputs, phase, builderOptionsNode,
             primaryInput: input, isHidden: action.hideOutput);
         allInputs.removeAll(deleted);
         // We may delete source nodes that were producing outputs previously.
@@ -409,8 +407,8 @@ class AssetGraph {
   /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
   /// from the graph as well. The return value is the set of assets that were
   /// removed from the graph.
-  Set<AssetId> _addGeneratedPhaseOutputs(Iterable<AssetId> outputs,
-      int phaseNumber, BuilderOptionsAssetNode builderOptionsNode,
+  Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+      BuilderOptionsAssetNode builderOptionsNode,
       {AssetId primaryInput, @required bool isHidden}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
