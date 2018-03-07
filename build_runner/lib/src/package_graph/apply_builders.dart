@@ -132,15 +132,32 @@ Future<List<BuildAction>> createBuildActions(
     Iterable<BuilderApplication> builderApplications,
     Map<String, Map<String, dynamic>> builderConfigOverrides) async {
   final cycles = stronglyConnectedComponents<String, TargetNode>(
-      targetGraph.allModules.values,
-      (node) => node.target.key,
-      (node) =>
-          node.target.dependencies?.map((key) => targetGraph.allModules[key]));
+    targetGraph.allModules.values,
+    (node) => node.target.key,
+    (node) => _childrenForNode(node, targetGraph),
+  );
   final applyWith = _applyWith(builderApplications);
   return cycles
       .expand((cycle) => _createBuildActionsWithinCycle(
           cycle, builderApplications, builderConfigOverrides, applyWith))
       .toList();
+}
+
+Iterable<TargetNode> _childrenForNode(TargetNode node, TargetGraph graph) {
+  final dependencies = node.target.dependencies;
+  if (dependencies == null || dependencies.isEmpty) {
+    return const [];
+  }
+  return dependencies.map((key) {
+    key = normalizeTargetKeyUsage(key, graph.rootPackageConfig.packageName);
+    final results = graph.allModules[key];
+    if (results == null) {
+      throw new StateError(
+        'Could not find dependency $key in ${graph.allModules.keys}',
+      );
+    }
+    return results;
+  });
 }
 
 Iterable<BuildAction> _createBuildActionsWithinCycle(
