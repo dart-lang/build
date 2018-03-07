@@ -125,7 +125,8 @@ abstract class TypeChecker {
 
   /// Returns `true` if the type of [element] can be assigned to this type.
   bool isAssignableFrom(Element element) =>
-      isExactly(element) || _getAllSupertypes(element).any(isExactlyType);
+      isExactly(element) ||
+      (element is ClassElement && element.allSupertypes.any(isExactlyType));
 
   /// Returns `true` if [staticType] can be assigned to this type.
   bool isAssignableFromType(DartType staticType) =>
@@ -162,29 +163,6 @@ abstract class TypeChecker {
   /// This only takes into account the *extends* hierarchy. If you wish
   /// to check mixins and interfaces, use [isAssignableFromType].
   bool isSuperTypeOf(DartType staticType) => isSuperOf(staticType.element);
-}
-
-// TODO(kevmoo) Remove when bug with `ClassElement.allSupertypes` is fixed
-// https://github.com/dart-lang/sdk/issues/29767
-Iterable<InterfaceType> _getAllSupertypes(Element element) sync* {
-  if (element is ClassElement) {
-    var processed = new Set<InterfaceType>();
-    var toExplore = new List<InterfaceType>.from(element.allSupertypes);
-
-    while (toExplore.isNotEmpty) {
-      var item = toExplore.removeLast();
-
-      if (processed.add(item)) {
-        yield item;
-
-        // Now drill into nested superTypes - but make sure not to duplicate
-        // any of them.
-        toExplore.addAll(item.element.allSupertypes.where((e) {
-          return !toExplore.contains(e) && !processed.contains(e);
-        }));
-      }
-    }
-  }
 }
 
 // Checks a static type against another static type;
