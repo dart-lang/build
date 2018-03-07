@@ -162,8 +162,9 @@ String _entryPointJs(String bootstrapModuleName) => '''
     });
     // TODO: update bootstrap code to take argument - dart-lang/build#1115
     window = self;
-    require( [mainUri + '.js']);
-  }})();
+    require([mainUri + '.js']);
+  }
+})();
 ''';
 
 /// JavaScript snippet to determine the directory a script was run from.
