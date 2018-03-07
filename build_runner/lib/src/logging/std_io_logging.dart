@@ -62,10 +62,15 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
 /// header for levels >= WARNING.
 String _loggerName(LogRecord record, bool verbose) {
   var knownNames = const [
-    'Entrypoint',
     'Build',
     'BuildDefinition',
-    'Heartbeat'
+    'BuildScriptUpdates',
+    'CreateOutputDir',
+    'Entrypoint',
+    'Heartbeat',
+    'Serve',
+    'Watch',
+    'build_runner',
   ];
   var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
   return verbose || !knownNames.contains(record.loggerName)
