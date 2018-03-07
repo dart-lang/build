@@ -16,6 +16,7 @@ class BuildAction {
   final Builder builder;
   final InputMatcher targetSources;
   final InputMatcher generateFor;
+  final String builderLabel;
 
   /// Whether to run lazily when an output is read.
   ///
@@ -37,6 +38,7 @@ class BuildAction {
   BuildAction._(this.package, this.builder, this.builderOptions,
       {@required this.targetSources,
       @required this.generateFor,
+      @required this.builderLabel,
       bool isOptional,
       bool hideOutput})
       : this.isOptional = isOptional ?? false,
@@ -56,6 +58,7 @@ class BuildAction {
   factory BuildAction(
     Builder builder,
     String package, {
+    String builderKey,
     InputSet targetSources,
     InputSet generateFor,
     BuilderOptions builderOptions,
@@ -66,11 +69,18 @@ class BuildAction {
         new InputMatcher(targetSources ?? const InputSet());
     var generateFormatcher = new InputMatcher(generateFor ?? const InputSet());
     builderOptions ??= const BuilderOptions(const {});
-    return new BuildAction._(package, builder, builderOptions,
-        targetSources: targetSourceMatcher,
-        generateFor: generateFormatcher,
-        isOptional: isOptional,
-        hideOutput: hideOutput);
+    return new BuildAction._(
+      package,
+      builder,
+      builderOptions,
+      targetSources: targetSourceMatcher,
+      generateFor: generateFormatcher,
+      builderLabel: builderKey == null || builderKey.isEmpty
+          ? _builderLabel(builder)
+          : _simpleBuilderKey(builderKey),
+      isOptional: isOptional,
+      hideOutput: hideOutput,
+    );
   }
 
   @override
@@ -96,6 +106,23 @@ class BuildAction {
         isOptional,
         hideOutput
       ]);
+}
+
+/// If we have no key find a human friendly name for the Builder.
+String _builderLabel(Builder builder) {
+  var label = '$builder';
+  if (label.startsWith('Instance of \'')) {
+    label = label.substring(13, label.length - 1);
+  }
+  return label;
+}
+
+/// Change "angular|angular" to "angular".
+String _simpleBuilderKey(String builderKey) {
+  if (!builderKey.contains('|')) return builderKey;
+  var parts = builderKey.split('|');
+  if (parts[0] == parts[1]) return parts[0];
+  return builderKey;
 }
 
 final _deepEquals = const DeepCollectionEquality();
