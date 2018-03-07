@@ -207,9 +207,8 @@ Future<List<BuildAction>> createBuildActions(
   var expandedActions = cycles.expand((cycle) => _createBuildActionsWithinCycle(
       cycle, builderApplications, builderConfigOverrides, applyWith));
 
-  var combinedActions = <BuildAction>[]..addAll(expandedActions
-      .where((action) => action is BuilderBuildAction)
-      .cast<BuilderBuildAction>());
+  var combinedActions = <BuildAction>[]
+    ..addAll(expandedActions.where((action) => action is BuilderBuildAction));
   var postBuilderActions = expandedActions
       .where((action) => action is PostProcessBuildAction)
       .cast<PostProcessBuildAction>()
