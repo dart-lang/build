@@ -1,3 +1,9 @@
+## 0.7.6
+
+* `TypeChecker` now throws an `UnresolvedAnnotationException` with a more
+  detailed exception body (and properties useful for further debugging) instead
+  of `Could not resolve @null`.
+
 ## 0.7.5+1
 
 * `LibraryBuilder` and `PartBuilder` now have a more readable `toString()`,

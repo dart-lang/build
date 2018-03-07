@@ -195,8 +195,16 @@ void main() {
     final classX = library.getType('X');
     final $deprecated = const TypeChecker.fromRuntime(Deprecated);
 
-    expect(() => $deprecated.annotationsOf(classX), throwsStateError,
-        reason: 'deprecated was spelled wrong; no annotation can be resolved');
+    expect(
+      () => $deprecated.annotationsOf(classX),
+      throwsA(allOf(
+          const isInstanceOf<UnresolvedAnnotationException>(),
+          predicate((e) => e
+              .toString()
+              .contains('Could not resolve annotation for class X')),
+          predicate((e) => e.toString().contains('@depracated')))),
+      reason: 'deprecated was spelled wrong; no annotation can be resolved',
+    );
   });
 
   test('should check multiple checkers', () {
@@ -313,10 +321,14 @@ void main() {
     });
 
     test('should throw by default', () {
-      expect(() => $A.firstAnnotationOf($ExampleOfA), throwsStateError);
-      expect(() => $A.annotationsOf($ExampleOfA), throwsStateError);
-      expect(() => $A.firstAnnotationOfExact($ExampleOfA), throwsStateError);
-      expect(() => $A.annotationsOfExact($ExampleOfA), throwsStateError);
+      expect(() => $A.firstAnnotationOf($ExampleOfA),
+          throwsUnresolvedAnnotationException);
+      expect(() => $A.annotationsOf($ExampleOfA),
+          throwsUnresolvedAnnotationException);
+      expect(() => $A.firstAnnotationOfExact($ExampleOfA),
+          throwsUnresolvedAnnotationException);
+      expect(() => $A.annotationsOfExact($ExampleOfA),
+          throwsUnresolvedAnnotationException);
     });
 
     test('should not throw if `throwOnUnresolved` == false', () {
@@ -342,3 +354,6 @@ void main() {
     });
   });
 }
+
+final throwsUnresolvedAnnotationException =
+    throwsA(const isInstanceOf<UnresolvedAnnotationException>());

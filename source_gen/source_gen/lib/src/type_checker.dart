@@ -2,11 +2,15 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:mirrors';
+import 'dart:mirrors' hide SourceLocation;
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+// TODO(https://github.com/dart-lang/sdk/issues/32454):
+// ignore: implementation_imports
+import 'package:analyzer/src/dart/element/element.dart';
+import 'package:source_span/source_span.dart';
 
 import 'utils.dart';
 
@@ -74,7 +78,8 @@ abstract class TypeChecker {
 
   /// Returns the first constant annotating [element] that is exactly this type.
   ///
-  /// Throws on unresolved annotations unless [throwOnUnresolved] is `false`.
+  /// Throws [UnresolvedAnnotationException] on unresolved annotations unless
+  /// [throwOnUnresolved] is explicitly set to `false` (default is `true`).
   DartObject firstAnnotationOfExact(Element element, {bool throwOnUnresolved}) {
     if (element.metadata.isEmpty) {
       return null;
@@ -86,42 +91,70 @@ abstract class TypeChecker {
 
   /// Returns if a constant annotating [element] is exactly this type.
   ///
-  /// Throws on unresolved annotations unless [throwOnUnresolved] is `false`.
+  /// Throws [UnresolvedAnnotationException] on unresolved annotations unless
+  /// [throwOnUnresolved] is explicitly set to `false` (default is `true`).
   bool hasAnnotationOfExact(Element element, {bool throwOnUnresolved}) =>
       firstAnnotationOfExact(element, throwOnUnresolved: throwOnUnresolved) !=
       null;
 
-  DartObject _computeConstantValue(ElementAnnotation annotation,
-      {bool throwOnUnresolved}) {
+  DartObject _computeConstantValue(
+    Element element,
+    int annotationIndex, {
+    bool throwOnUnresolved,
+  }) {
     throwOnUnresolved ??= true;
+    final annotation = element.metadata[annotationIndex];
     final result = annotation.computeConstantValue();
     if (result == null && throwOnUnresolved) {
-      throw new StateError(
-          'Could not resolve $annotation. An import or dependency may be '
-          'missing or invalid.');
+      throw new UnresolvedAnnotationException._from(element, annotationIndex);
     }
     return result;
   }
 
   /// Returns annotating constants on [element] assignable to this type.
   ///
-  /// Throws on unresolved annotations unless [throwOnUnresolved] is `false`.
-  Iterable<DartObject> annotationsOf(Element element,
-          {bool throwOnUnresolved}) =>
-      element.metadata
-          .map((annotation) => _computeConstantValue(annotation,
-              throwOnUnresolved: throwOnUnresolved))
-          .where((a) => a?.type != null && isAssignableFromType(a.type));
+  /// Throws [UnresolvedAnnotationException] on unresolved annotations unless
+  /// [throwOnUnresolved] is explicitly set to `false` (default is `true`).
+  Iterable<DartObject> annotationsOf(
+    Element element, {
+    bool throwOnUnresolved,
+  }) =>
+      _annotationsWhere(
+        element,
+        isAssignableFromType,
+        throwOnUnresolved: throwOnUnresolved,
+      );
+
+  Iterable<DartObject> _annotationsWhere(
+    Element element,
+    bool Function(DartType) predicate, {
+    bool throwOnUnresolved,
+  }) sync* {
+    for (var i = 0; i < element.metadata.length; i++) {
+      final value = _computeConstantValue(
+        element,
+        i,
+        throwOnUnresolved: throwOnUnresolved,
+      );
+      if (value?.type != null && predicate(value.type)) {
+        yield value;
+      }
+    }
+  }
 
   /// Returns annotating constants on [element] of exactly this type.
   ///
-  /// Throws on unresolved annotations unless [throwOnUnresolved] is `false`.
-  Iterable<DartObject> annotationsOfExact(Element element,
-          {bool throwOnUnresolved}) =>
-      element.metadata
-          .map((annotation) => _computeConstantValue(annotation,
-              throwOnUnresolved: throwOnUnresolved))
-          .where((a) => a?.type != null && isExactlyType(a.type));
+  /// Throws [UnresolvedAnnotationException] on unresolved annotations unless
+  /// [throwOnUnresolved] is explicitly set to `false` (default is `true`).
+  Iterable<DartObject> annotationsOfExact(
+    Element element, {
+    bool throwOnUnresolved,
+  }) =>
+      _annotationsWhere(
+        element,
+        isExactlyType,
+        throwOnUnresolved: throwOnUnresolved,
+      );
 
   /// Returns `true` if the type of [element] can be assigned to this type.
   bool isAssignableFrom(Element element) =>
@@ -241,4 +274,53 @@ class _AnyChecker extends TypeChecker {
 
   @override
   bool isExactly(Element element) => _checkers.any((c) => c.isExactly(element));
+}
+
+/// Exception thrown when [TypeChecker] fails to resolve a metadata annotation.
+///
+/// Methods such as [TypeChecker.firstAnnotationOf] may throw this exception
+/// when one or more annotations are not resolvable. This is usually a sign that
+/// something was misspelled, an import is missing, or a dependency was not
+/// defined (for build systems such as Bazel).
+class UnresolvedAnnotationException implements Exception {
+  /// Element that was annotated with something we could not resolve.
+  final Element annotatedElement;
+
+  /// Source span of the annotation that was not resolved.
+  final SourceSpan annotationSource;
+
+  // TODO: Remove internal API once ElementAnnotation has source information.
+  // https://github.com/dart-lang/sdk/issues/32454
+  static SourceSpan _getSourceSpanFrom(ElementAnnotation annotation) {
+    final internals = annotation as ElementAnnotationImpl;
+    final astNode = internals.annotationAst;
+    final contents = annotation.source.contents.data;
+    final start = astNode.offset;
+    final end = start + astNode.length;
+    return new SourceSpan(
+      new SourceLocation(start, sourceUrl: annotation.source.uri),
+      new SourceLocation(end, sourceUrl: annotation.source.uri),
+      contents.substring(start, end),
+    );
+  }
+
+  /// Creates an exception from an annotation ([annotationIndex]) that was not
+  /// resolvable while traversing [Element.metadata] on [annotatedElement].
+  factory UnresolvedAnnotationException._from(
+    Element annotatedElement,
+    int annotationIndex,
+  ) {
+    final annotation = annotatedElement.metadata[annotationIndex];
+    final sourceSpan = _getSourceSpanFrom(annotation);
+    return new UnresolvedAnnotationException._(annotatedElement, sourceSpan);
+  }
+
+  const UnresolvedAnnotationException._(
+    this.annotatedElement,
+    this.annotationSource,
+  );
+
+  @override
+  String toString() => annotationSource
+      .message('Could not resolve annotation for $annotatedElement');
 }

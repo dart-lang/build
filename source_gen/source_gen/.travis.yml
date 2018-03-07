@@ -2,8 +2,7 @@ language: dart
 
 dart:
   - dev
-  # Flutter Alpha @ v0.0.23
-  - 2.0.0-dev.19.0
+
 dart_task:
   - test
   - dartfmt
