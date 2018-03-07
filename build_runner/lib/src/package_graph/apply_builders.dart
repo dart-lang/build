@@ -8,9 +8,15 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 
+import '../builder/post_process_builder.dart';
 import '../generate/phase.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
+
+typedef BuildAction BuildActionFactory(String package, BuilderOptions options,
+    InputSet targetSources, InputSet generateFor);
+
+typedef PostProcessBuilder PostProcessBuilderFactory(BuilderOptions options);
 
 typedef bool PackageFilter(PackageNode node);
 
@@ -45,7 +51,7 @@ BuilderApplication applyToRoot(Builder builder,
         {bool isOptional: false,
         bool hideOutput: false,
         InputSet generateFor}) =>
-    new BuilderApplication._('', [(_) => builder], toRoot(),
+    new BuilderApplication.forBuilder('', [(_) => builder], toRoot(),
         isOptional: isOptional,
         hideOutput: hideOutput,
         defaultGenerateFor: generateFor);
@@ -71,7 +77,7 @@ BuilderApplication apply(String builderKey,
         bool hideOutput,
         InputSet defaultGenerateFor,
         Iterable<String> appliesBuilders}) =>
-    new BuilderApplication._(
+    new BuilderApplication.forBuilder(
       builderKey,
       builderFactories,
       filter,
@@ -81,9 +87,27 @@ BuilderApplication apply(String builderKey,
       appliesBuilders: appliesBuilders,
     );
 
-/// A description of which packages need a given [Builder] applied.
+/// Same as [apply] except it takes [PostProcessBuilderFactory]s and does not
+/// provide options for `isOptional` or `hideOutput` because they aren't
+/// configurable for these types of builders. They are never optional and always
+/// hidden.
+BuilderApplication applyPostProcess(String builderKey,
+        List<PostProcessBuilderFactory> builderFactories, PackageFilter filter,
+        {InputSet defaultGenerateFor, Iterable<String> appliesBuilders}) =>
+    new BuilderApplication.forPostProcessBuilder(
+      builderKey,
+      builderFactories,
+      filter,
+      defaultGenerateFor: defaultGenerateFor,
+      appliesBuilders: appliesBuilders,
+    );
+
+/// A description of which packages need a given [Builder] or
+/// [PostProcessBuilder] applied.
 class BuilderApplication {
-  final List<BuilderFactory> builderFactories;
+  /// Factories that create [BuildAction]s for all [Builder]s or
+  /// [PostProcessBuilder]s that should be applied.
+  final List<BuildActionFactory> buildActionFactories;
 
   /// Determines whether a given package needs builder applied.
   final PackageFilter filter;
@@ -95,25 +119,62 @@ class BuilderApplication {
   /// A uniqe key for this builder.
   final String builderKey;
 
-  final bool isOptional;
-
   /// Whether genereated assets should be placed in the build cache.
   final bool hideOutput;
 
-  /// The default filter for primary inputs if the [TargetBuilderConfig] does
-  /// not specify one.
-  final InputSet defaultGenerateFor;
-
   const BuilderApplication._(
     this.builderKey,
-    this.builderFactories,
-    this.filter, {
-    this.isOptional,
-    bool hideOutput,
-    this.defaultGenerateFor,
+    this.buildActionFactories,
+    this.filter,
+    this.hideOutput,
     Iterable<String> appliesBuilders,
-  })  : appliesBuilders = appliesBuilders ?? const [],
-        hideOutput = hideOutput ?? true;
+  ) : appliesBuilders = appliesBuilders ?? const [];
+
+  factory BuilderApplication.forBuilder(
+    String builderKey,
+    List<BuilderFactory> builderFactories,
+    PackageFilter filter, {
+    bool isOptional,
+    bool hideOutput,
+    InputSet defaultGenerateFor,
+    Iterable<String> appliesBuilders,
+  }) {
+    var actionFactories = builderFactories.map((builderFactory) {
+      return (String package, BuilderOptions options, InputSet targetSources,
+          InputSet generateFor) {
+        generateFor ??= defaultGenerateFor;
+        var builder = builderFactory(options);
+        return new BuilderBuildAction(builder, package,
+            targetSources: targetSources,
+            generateFor: generateFor,
+            builderOptions: options,
+            hideOutput: hideOutput,
+            isOptional: isOptional);
+      };
+    }).toList();
+    return new BuilderApplication._(
+        builderKey, actionFactories, filter, hideOutput, appliesBuilders);
+  }
+
+  factory BuilderApplication.forPostProcessBuilder(
+    String builderKey,
+    List<PostProcessBuilderFactory> builderFactories,
+    PackageFilter filter, {
+    InputSet defaultGenerateFor,
+    Iterable<String> appliesBuilders,
+  }) {
+    var actionFactory = (String package, BuilderOptions options,
+        InputSet targetSources, InputSet generateFor) {
+      generateFor ??= defaultGenerateFor;
+      var builders = builderFactories.map((f) => f(options)).toList();
+      return new PostProcessBuildAction(builders, package,
+          targetSources: targetSources,
+          generateFor: generateFor,
+          builderOptions: options);
+    };
+    return new BuilderApplication._(
+        builderKey, [actionFactory], filter, true, appliesBuilders);
+  }
 }
 
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
@@ -164,23 +225,17 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
 ) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
-  return builderApplication.builderFactories.expand((b) => cycle
+  return builderApplication.buildActionFactories.expand((createAction) => cycle
           .where((targetNode) =>
               _shouldApply(builderApplication, targetNode, applyWith))
           .map((node) {
         final builderConfig = targetConfig(node);
-        final generateFor =
-            builderConfig?.generateFor ?? builderApplication.defaultGenerateFor;
         var options = builderConfig?.options ?? const BuilderOptions(const {});
         options = new BuilderOptions(
             new Map<String, dynamic>.from(options.config)
               ..addAll(builderConfigOverrides));
-        return new BuilderBuildAction(b(options), node.package.name,
-            builderOptions: options,
-            targetSources: node.target.sources,
-            generateFor: generateFor,
-            isOptional: builderApplication.isOptional,
-            hideOutput: builderApplication.hideOutput);
+        return createAction(node.package.name, options, node.target.sources,
+            builderConfig?.generateFor);
       }));
 }
 
