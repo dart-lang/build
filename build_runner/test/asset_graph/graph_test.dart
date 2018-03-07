@@ -159,11 +159,11 @@ void main() {
 
         test('deleted nodes remove their failures', () async {
           graph = await AssetGraph.build([
-            new BuilderBuildAction(
+            new InBuildPhase(
                 new TestBuilder(
                     buildExtensions: appendExtension('.copy', from: '.txt')),
                 'foo'),
-            new BuilderBuildAction(
+            new InBuildPhase(
                 new TestBuilder(
                     buildExtensions: appendExtension('.clone', from: '.txt')),
                 'foo'),
@@ -177,9 +177,9 @@ void main() {
       });
     });
 
-    group('with buildActions', () {
-      final buildActions = [
-        new BuilderBuildAction(
+    group('with buildPhases', () {
+      final buildPhases = [
+        new InBuildPhase(
             new TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt')),
             'foo',
@@ -197,7 +197,7 @@ void main() {
 
       setUp(() async {
         graph = await AssetGraph.build(
-            buildActions,
+            buildPhases,
             new Set.from([primaryInputId, excludedInputId]),
             [internalId].toSet(),
             fooPackageGraph,
@@ -244,7 +244,7 @@ void main() {
         test('add new primary input', () async {
           var changes = {new AssetId('foo', 'new.txt'): ChangeType.ADD};
           await graph.updateAndInvalidate(
-              buildActions, changes, 'foo', null, digestReader);
+              buildPhases, changes, 'foo', null, digestReader);
           expect(graph.contains(new AssetId('foo', 'new.txt.copy')), isTrue);
         });
 
@@ -252,7 +252,7 @@ void main() {
           var changes = {primaryInputId: ChangeType.REMOVE};
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
-          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isFalse);
           expect(graph.contains(primaryOutputId), isFalse);
@@ -263,7 +263,7 @@ void main() {
           var changes = {primaryInputId: ChangeType.MODIFY};
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
-          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
@@ -281,7 +281,7 @@ void main() {
 
           var changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(
-              buildActions, changes, 'foo', null, digestReader);
+              buildPhases, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId),
@@ -297,7 +297,7 @@ void main() {
 
           var changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(
-              buildActions, changes, 'foo', null, digestReader);
+              buildPhases, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(graph.get(syntheticOutputId),
@@ -318,7 +318,7 @@ void main() {
           expect(graph.get(secondaryId), secondaryNode);
 
           var changes = {primaryInputId: ChangeType.REMOVE};
-          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (_) => new Future.value(null), digestReader);
 
           expect(graph.contains(primaryInputId), isFalse);
@@ -337,14 +337,14 @@ void main() {
 
           var coolAssetId = new AssetId('foo', 'lib/really.cool');
           var changes = {coolAssetId: ChangeType.ADD};
-          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (_) => new Future.value(null), digestReader);
           expect(primaryOutputNode.state,
               GeneratedNodeState.definitelyNeedsUpdate);
 
           primaryOutputNode.state = GeneratedNodeState.upToDate;
           changes = {coolAssetId: ChangeType.REMOVE};
-          await graph.updateAndInvalidate(buildActions, changes, 'foo',
+          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (_) => new Future.value(null), digestReader);
           expect(primaryOutputNode.state,
               GeneratedNodeState.definitelyNeedsUpdate);
@@ -352,11 +352,10 @@ void main() {
       });
     });
 
-    test('overlapping build actions cause an error', () async {
+    test('overlapping build phases cause an error', () async {
       expect(
           () => AssetGraph.build(
-              new List.filled(
-                  2, new BuilderBuildAction(new TestBuilder(), 'foo')),
+              new List.filled(2, new InBuildPhase(new TestBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
               new Set(),
               fooPackageGraph,
@@ -368,17 +367,17 @@ void main() {
       test('build can chains of pre-existing to-source outputs', () async {
         final graph = await AssetGraph.build(
             [
-              new BuilderBuildAction(
+              new InBuildPhase(
                   new TestBuilder(
                       buildExtensions: replaceExtension('.txt', '.a.txt')),
                   'foo',
                   hideOutput: false),
-              new BuilderBuildAction(
+              new InBuildPhase(
                   new TestBuilder(
                       buildExtensions: replaceExtension('.txt', '.b.txt')),
                   'foo',
                   hideOutput: false),
-              new BuilderBuildAction(
+              new InBuildPhase(
                   new TestBuilder(
                       buildExtensions:
                           replaceExtension('.a.b.txt', '.a.b.c.txt')),
@@ -422,11 +421,11 @@ void main() {
           'allows running on generated inputs that do not match target '
           'source globs', () async {
         final graph = await AssetGraph.build([
-          new BuilderBuildAction(
+          new InBuildPhase(
               new TestBuilder(
                   buildExtensions: appendExtension('.1', from: '.txt')),
               'foo'),
-          new BuilderBuildAction(
+          new InBuildPhase(
               new TestBuilder(
                   buildExtensions: appendExtension('.2', from: '.1')),
               'foo',

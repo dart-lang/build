@@ -13,7 +13,7 @@ import 'package:build_runner/src/package_graph/target_graph.dart';
 import '../common/package_graphs.dart';
 
 void main() {
-  group('apply_builders.createBuildActions', () {
+  group('apply_builders.createBuildPhases', () {
     test('builderConfigOverrides overrides builder config globally', () async {
       var packageGraph = buildPackageGraph({
         rootPackage('a'): ['b'],
@@ -24,13 +24,13 @@ void main() {
         apply('b|cool_builder', [(options) => new CoolBuilder(options)],
             toAllPackages())
       ];
-      var actions = await createBuildActions(targetGraph, builderApplications, {
+      var phases = await createBuildPhases(targetGraph, builderApplications, {
         'b|cool_builder': {'option_a': 'a', 'option_c': 'c'},
       });
-      for (BuilderBuildAction action in actions) {
-        expect((action.builder as CoolBuilder).optionA, equals('a'));
-        expect((action.builder as CoolBuilder).optionB, equals('defaultB'));
-        expect((action.builder as CoolBuilder).optionC, equals('c'));
+      for (InBuildPhase phase in phases) {
+        expect((phase.builder as CoolBuilder).optionA, equals('a'));
+        expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
+        expect((phase.builder as CoolBuilder).optionC, equals('c'));
       }
     });
 
@@ -44,10 +44,10 @@ void main() {
         apply('b|cool_builder', [(options) => new CoolBuilder(options)],
             toDependentsOf('b')),
       ];
-      var actions =
-          await createBuildActions(targetGraph, builderApplications, {});
-      expect(actions, hasLength(1));
-      expect((actions.first as BuilderBuildAction).package, 'a');
+      var phases =
+          await createBuildPhases(targetGraph, builderApplications, {});
+      expect(phases, hasLength(1));
+      expect((phases.first as InBuildPhase).package, 'a');
     });
 
     test('honors appliesBuilders', () async {
@@ -62,10 +62,10 @@ void main() {
             appliesBuilders: ['b|not_by_default']),
         apply('b|not_by_default', [(_) => null], toNoneByDefault()),
       ];
-      var actions =
-          await createBuildActions(targetGraph, builderApplications, {});
-      expect(actions, hasLength(2));
-      expect(actions.map((a) => (a as BuilderBuildAction).package), ['a', 'a']);
+      var phases =
+          await createBuildPhases(targetGraph, builderApplications, {});
+      expect(phases, hasLength(2));
+      expect(phases.map((a) => (a as InBuildPhase).package), ['a', 'a']);
     });
   });
 }

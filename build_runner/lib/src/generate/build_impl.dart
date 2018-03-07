@@ -87,10 +87,10 @@ Future<BuildResult> build(
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildActions =
-      await createBuildActions(targetGraph, builders, builderConfigOverrides);
+  final buildPhases =
+      await createBuildPhases(targetGraph, builders, builderConfigOverrides);
 
-  var result = await singleBuild(environment, options, buildActions);
+  var result = await singleBuild(environment, options, buildPhases);
 
   await terminator.cancel();
   await options.logListener.cancel();
@@ -98,10 +98,10 @@ Future<BuildResult> build(
 }
 
 Future<BuildResult> singleBuild(BuildEnvironment environment,
-    BuildOptions options, List<BuildAction> buildActions) async {
-  var buildDefinition = await BuildDefinition.prepareWorkspace(
-      environment, options, buildActions);
-  var result = (await BuildImpl.create(buildDefinition, options, buildActions))
+    BuildOptions options, List<BuildPhase> buildPhases) async {
+  var buildDefinition =
+      await BuildDefinition.prepareWorkspace(environment, options, buildPhases);
+  var result = (await BuildImpl.create(buildDefinition, options, buildPhases))
       .firstBuild;
   await buildDefinition.resourceManager.beforeExit();
   return result;
@@ -112,7 +112,7 @@ class BuildImpl {
   BuildResult get firstBuild => _firstBuild;
 
   final AssetGraph _assetGraph;
-  final List<BuildAction> _buildActions;
+  final List<BuildPhase> _buildPhases;
   final bool _failOnSevere;
   final OnDelete _onDelete;
   final PackageGraph _packageGraph;
@@ -126,7 +126,7 @@ class BuildImpl {
   final BuildEnvironment _environment;
 
   BuildImpl._(
-      BuildDefinition buildDefinition, BuildOptions options, this._buildActions)
+      BuildDefinition buildDefinition, BuildOptions options, this._buildPhases)
       : _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
@@ -145,9 +145,9 @@ class BuildImpl {
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
-      BuildOptions options, List<BuildAction> buildActions,
+      BuildOptions options, List<BuildPhase> buildPhases,
       {void onDelete(AssetId id)}) async {
-    var build = new BuildImpl._(buildDefinition, options, buildActions);
+    var build = new BuildImpl._(buildDefinition, options, buildPhases);
 
     build._firstBuild = await build.run({});
     return build;
@@ -158,7 +158,7 @@ class BuildImpl {
 /// build.
 class _SingleBuild {
   final AssetGraph _assetGraph;
-  final List<BuildAction> _buildActions;
+  final List<BuildPhase> _buildPhases;
   final BuildEnvironment _environment;
   final bool _failOnSevere;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
@@ -177,7 +177,7 @@ class _SingleBuild {
 
   _SingleBuild(BuildImpl buildImpl)
       : _assetGraph = buildImpl._assetGraph,
-        _buildActions = buildImpl._buildActions,
+        _buildPhases = buildImpl._buildPhases,
         _environment = buildImpl._environment,
         _failOnSevere = buildImpl._failOnSevere,
         _onDelete = buildImpl._onDelete,
@@ -211,7 +211,7 @@ class _SingleBuild {
     }
     if (_outputDir != null && result.status == BuildStatus.success) {
       if (!await createMergedOutputDir(_outputDir, _assetGraph, _packageGraph,
-          _reader, _environment, _buildActions)) {
+          _reader, _environment, _buildPhases)) {
         result = _convertToFailure(
             result, 'Failed to create merged output directory.');
       }
@@ -241,7 +241,7 @@ class _SingleBuild {
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
       var invalidated = await _assetGraph.updateAndInvalidate(
-          _buildActions, updates, _packageGraph.root.name, _delete, _reader);
+          _buildPhases, updates, _packageGraph.root.name, _delete, _reader);
       if (_reader is CachingAssetReader) {
         (_reader as CachingAssetReader).invalidate(invalidated);
       }
@@ -287,21 +287,21 @@ class _SingleBuild {
   String _buildProgress() =>
       '$numActionsCompleted/$numActionsStarted actions completed.';
 
-  /// Runs the actions in [_buildActions] and returns a [Future<BuildResult>]
-  /// which completes once all [BuildAction]s are done.
+  /// Runs the actions in [_buildPhases] and returns a [Future<BuildResult>]
+  /// which completes once all [BuildPhase]s are done.
   Future<BuildResult> _runPhases(ResourceManager resourceManager) async {
     _performanceTracker.start();
     final outputs = <AssetId>[];
-    for (var phase = 0; phase < _buildActions.length; phase++) {
-      var action = _buildActions[phase];
+    for (var phase = 0; phase < _buildPhases.length; phase++) {
+      var action = _buildPhases[phase];
       if (action.isOptional) continue;
       await _performanceTracker.trackBuildPhase(action, () async {
-        if (action is BuilderBuildAction) {
+        if (action is InBuildPhase) {
           var primaryInputs =
               await _matchingPrimaryInputs(phase, resourceManager);
           outputs.addAll(await _runBuilder(phase, action.hideOutput,
               action.builder, primaryInputs, resourceManager));
-        } else if (action is PostProcessBuildAction) {
+        } else if (action is PostBuildPhase) {
           outputs.addAll(
               await _runPostProcessAction(phase, action, resourceManager));
         } else {
@@ -358,8 +358,8 @@ class _SingleBuild {
         <AssetId>[], (combined, next) => combined..addAll(next));
   }
 
-  Future<Iterable<AssetId>> _runPostProcessAction(int phase,
-      PostProcessBuildAction action, ResourceManager resourceManager) async {
+  Future<Iterable<AssetId>> _runPostProcessAction(
+      int phase, PostBuildPhase action, ResourceManager resourceManager) async {
     throw new UnimplementedError('Unimplemented!!!');
   }
 
@@ -380,7 +380,7 @@ class _SingleBuild {
       }
 
       // We can never lazily build `PostProcessBuildAction`s.
-      var action = _buildActions[phaseNumber] as BuilderBuildAction;
+      var action = _buildPhases[phaseNumber] as InBuildPhase;
 
       return _runForInput(
           phaseNumber, outputsHidden, action.builder, input, resourceManager);

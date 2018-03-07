@@ -162,7 +162,7 @@ class _AssetGraphSerializer {
       'version': _version,
       'dart_version': _graph.dartVersion,
       'nodes': _graph.allNodes.map(_serializeNode).toList(growable: false),
-      'buildActionsDigest': _serializeDigest(_graph.buildActionsDigest),
+      'buildActionsDigest': _serializeDigest(_graph.buildPhasesDigest),
       'packages': packages,
       'assetPaths': assetPaths,
       'failedActions': _serializeFailedActions(_graph.failedActions),

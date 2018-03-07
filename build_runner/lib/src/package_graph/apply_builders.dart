@@ -13,7 +13,7 @@ import '../generate/phase.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 
-typedef BuildAction BuildActionFactory(String package, BuilderOptions options,
+typedef BuildPhase BuildPhaseFactory(String package, BuilderOptions options,
     InputSet targetSources, InputSet generateFor);
 
 typedef PostProcessBuilder PostProcessBuilderFactory(BuilderOptions options);
@@ -104,9 +104,9 @@ BuilderApplication applyPostProcess(
 /// A description of which packages need a given [Builder] or
 /// [PostProcessBuilder] applied.
 class BuilderApplication {
-  /// Factories that create [BuildAction]s for all [Builder]s or
+  /// Factories that create [BuildPhase]s for all [Builder]s or
   /// [PostProcessBuilder]s that should be applied.
-  final List<BuildActionFactory> buildActionFactories;
+  final List<BuildPhaseFactory> buildPhaseFactories;
 
   /// Determines whether a given package needs builder applied.
   final PackageFilter filter;
@@ -123,7 +123,7 @@ class BuilderApplication {
 
   const BuilderApplication._(
     this.builderKey,
-    this.buildActionFactories,
+    this.buildPhaseFactories,
     this.filter,
     this.hideOutput,
     Iterable<String> appliesBuilders,
@@ -139,12 +139,12 @@ class BuilderApplication {
     Iterable<String> appliesBuilders,
   }) {
     hideOutput ??= true;
-    var actionFactories = builderFactories.map((builderFactory) {
+    var phaseFactories = builderFactories.map((builderFactory) {
       return (String package, BuilderOptions options, InputSet targetSources,
           InputSet generateFor) {
         generateFor ??= defaultGenerateFor;
         var builder = builderFactory(options);
-        return new BuilderBuildAction(builder, package,
+        return new InBuildPhase(builder, package,
             targetSources: targetSources,
             generateFor: generateFor,
             builderOptions: options,
@@ -153,7 +153,7 @@ class BuilderApplication {
       };
     }).toList();
     return new BuilderApplication._(
-        builderKey, actionFactories, filter, hideOutput, appliesBuilders);
+        builderKey, phaseFactories, filter, hideOutput, appliesBuilders);
   }
 
   /// Note that these builder applications each create their own phase, but they
@@ -163,22 +163,22 @@ class BuilderApplication {
     PostProcessBuilderFactory builderFactory, {
     InputSet defaultGenerateFor,
   }) {
-    var actionFactory = (String package, BuilderOptions options,
+    var phaseFactory = (String package, BuilderOptions options,
         InputSet targetSources, InputSet generateFor) {
       generateFor ??= defaultGenerateFor;
       var builder = builderFactory(options);
-      var builderAction = new PostProcessBuilderAction(builder, package,
+      var builderAction = new PostBuildAction(builder, package,
           builderOptions: options,
           generateFor: generateFor,
           targetSources: targetSources);
-      return new PostProcessBuildAction([builderAction]);
+      return new PostBuildPhase([builderAction]);
     };
     return new BuilderApplication._(
-        builderKey, [actionFactory], toNoneByDefault(), true, []);
+        builderKey, [phaseFactory], toNoneByDefault(), true, []);
   }
 }
 
-/// Creates a [BuildAction] to apply each builder in [builderApplications] to
+/// Creates a [BuildPhase] to apply each builder in [builderApplications] to
 /// each target in [targetGraph] such that all builders are run for dependencies
 /// before moving on to later packages.
 ///
@@ -189,7 +189,7 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-Future<List<BuildAction>> createBuildActions(
+Future<List<BuildPhase>> createBuildPhases(
     TargetGraph targetGraph,
     Iterable<BuilderApplication> builderApplications,
     Map<String, Map<String, dynamic>> builderConfigOverrides) async {
@@ -199,40 +199,40 @@ Future<List<BuildAction>> createBuildActions(
       (node) =>
           node.target.dependencies?.map((key) => targetGraph.allModules[key]));
   final applyWith = _applyWith(builderApplications);
-  var expandedActions = cycles.expand((cycle) => _createBuildActionsWithinCycle(
+  var expandedPhases = cycles.expand((cycle) => _createBuildPhasesWithinCycle(
       cycle, builderApplications, builderConfigOverrides, applyWith));
 
-  var combinedActions = <BuildAction>[]
-    ..addAll(expandedActions.where((action) => action is BuilderBuildAction));
-  var postBuilderActions = expandedActions
-      .where((action) => action is PostProcessBuildAction)
-      .cast<PostProcessBuildAction>()
+  var combinedPhases = <BuildPhase>[]
+    ..addAll(expandedPhases.where((phase) => phase is InBuildPhase));
+  var postBuilderPhases = expandedPhases
+      .where((phase) => phase is PostBuildPhase)
+      .cast<PostBuildPhase>()
       .toList();
-  if (postBuilderActions.isNotEmpty) {
-    combinedActions.add(postBuilderActions.fold<PostProcessBuildAction>(
-        new PostProcessBuildAction([]), (previous, next) {
+  if (postBuilderPhases.isNotEmpty) {
+    combinedPhases.add(postBuilderPhases
+        .fold<PostBuildPhase>(new PostBuildPhase([]), (previous, next) {
       previous.builderActions.addAll(next.builderActions);
       return previous;
     }));
   }
 
-  return combinedActions;
+  return combinedPhases;
 }
 
-Iterable<BuildAction> _createBuildActionsWithinCycle(
+Iterable<BuildPhase> _createBuildPhasesWithinCycle(
   Iterable<TargetNode> cycle,
   Iterable<BuilderApplication> builderApplications,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   Map<String, List<BuilderApplication>> applyWith,
 ) =>
     builderApplications.expand((builderApplication) =>
-        _createBuildActionsForBuilderInCycle(
+        _createBuildPhasesForBuilderInCycle(
             cycle,
             builderApplication,
             builderConfigOverrides[builderApplication.builderKey] ?? const {},
             applyWith));
 
-Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
+Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
   Iterable<TargetNode> cycle,
   BuilderApplication builderApplication,
   Map<String, dynamic> builderConfigOverrides,
@@ -240,7 +240,7 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
 ) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
-  return builderApplication.buildActionFactories.expand((createAction) => cycle
+  return builderApplication.buildPhaseFactories.expand((createPhase) => cycle
           .where((targetNode) =>
               _shouldApply(builderApplication, targetNode, applyWith))
           .map((node) {
@@ -249,7 +249,7 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
         options = new BuilderOptions(
             new Map<String, dynamic>.from(options.config)
               ..addAll(builderConfigOverrides));
-        return createAction(node.package.name, options, node.target.sources,
+        return createPhase(node.package.name, options, node.target.sources,
             builderConfig?.generateFor);
       }));
 }

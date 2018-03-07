@@ -12,7 +12,7 @@ import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a one or more
 /// builders on a set of sources.
-abstract class BuildAction {
+abstract class BuildPhase {
   /// Whether to run lazily when an output is read.
   ///
   /// An optional build action will only run if one of its outputs is read by
@@ -37,8 +37,8 @@ abstract class BuildAction {
   int get identity;
 }
 
-/// A [BuildAction] that uses a single [Builder] to generate files.
-class BuilderBuildAction extends BuildAction {
+/// A [BuildPhase] that uses a single [Builder] to generate files.
+class InBuildPhase extends BuildPhase {
   final Builder builder;
 
   final BuilderOptions builderOptions;
@@ -51,7 +51,7 @@ class BuilderBuildAction extends BuildAction {
   @override
   final bool hideOutput;
 
-  BuilderBuildAction._(this.package, this.builder, this.builderOptions,
+  InBuildPhase._(this.package, this.builder, this.builderOptions,
       {@required this.targetSources,
       @required this.generateFor,
       bool isOptional,
@@ -59,7 +59,7 @@ class BuilderBuildAction extends BuildAction {
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
 
-  /// Creates an [BuildAction] for a normal [Builder].
+  /// Creates an [BuildPhase] for a normal [Builder].
   ///
   /// The build target is defined by [package] as well as [targetSources]. By
   /// default all sources in the target are used as primary inputs to the
@@ -70,7 +70,7 @@ class BuilderBuildAction extends BuildAction {
   ///
   /// [hideOutput] specifies that the generated asses should be placed in the
   /// build cache rather than the source tree.
-  factory BuilderBuildAction(
+  factory InBuildPhase(
     Builder builder,
     String package, {
     InputSet targetSources,
@@ -83,7 +83,7 @@ class BuilderBuildAction extends BuildAction {
         new InputMatcher(targetSources ?? const InputSet());
     var generateForMatcher = new InputMatcher(generateFor ?? const InputSet());
     builderOptions ??= const BuilderOptions(const {});
-    return new BuilderBuildAction._(package, builder, builderOptions,
+    return new InBuildPhase._(package, builder, builderOptions,
         targetSources: targetSourceMatcher,
         generateFor: generateForMatcher,
         isOptional: isOptional,
@@ -111,20 +111,20 @@ class BuilderBuildAction extends BuildAction {
       ]);
 }
 
-/// A [BuildAction] that can run multiple [PostProcessBuilderAction]s to
+/// A [BuildPhase] that can run multiple [PostBuildAction]s to
 /// generate files.
 ///
 /// There should only be one of these per build, and it should be the final
 /// phase.
-class PostProcessBuildAction extends BuildAction {
-  final List<PostProcessBuilderAction> builderActions;
+class PostBuildPhase extends BuildPhase {
+  final List<PostBuildAction> builderActions;
 
   @override
   bool get hideOutput => true;
   @override
   bool get isOptional => false;
 
-  PostProcessBuildAction(this.builderActions);
+  PostBuildPhase(this.builderActions);
 
   @override
   String toString() =>
@@ -139,16 +139,16 @@ class PostProcessBuildAction extends BuildAction {
         ]));
 }
 
-/// Part of a larger [PostProcessBuildAction], applies a single
+/// Part of a larger [PostBuildPhase], applies a single
 /// [PostProcessBuilder] to a single [package] with some additional options.
-class PostProcessBuilderAction {
+class PostBuildAction {
   final PostProcessBuilder builder;
   final BuilderOptions builderOptions;
   final InputMatcher generateFor;
   final String package;
   final InputMatcher targetSources;
 
-  PostProcessBuilderAction(this.builder, this.package,
+  PostBuildAction(this.builder, this.package,
       {@required BuilderOptions builderOptions,
       @required InputSet targetSources,
       @required InputSet generateFor})
