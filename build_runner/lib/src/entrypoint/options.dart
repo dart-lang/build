@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -352,10 +353,8 @@ class _ServeCommand extends _WatchCommand {
         trackPerformance: options.trackPerformance,
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides);
-    var servers = await Future.wait(options.serveTargets.map((target) => serve(
-        handler.handlerFor(target.dir, logRequests: options.logRequests),
-        options.hostName,
-        target.port)));
+    var servers = await Future.wait(options.serveTargets
+        .map((target) => _startServer(options, target, handler)));
     await handler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
@@ -373,6 +372,26 @@ class _ServeCommand extends _WatchCommand {
     await Future.wait(servers.map((server) => server.close()));
 
     return ExitCode.success.code;
+  }
+}
+
+Future<HttpServer> _startServer(
+    _ServeOptions options, _ServeTarget target, ServeHandler handler) async {
+  var server = await _bindServer(options, target);
+  serveRequests(
+      server, handler.handlerFor(target.dir, logRequests: options.logRequests));
+  return server;
+}
+
+Future<HttpServer> _bindServer(_ServeOptions options, _ServeTarget target) {
+  switch (options.hostName) {
+    case 'any':
+      // Listens on both IPv6 and IPv4
+      return HttpServer.bind(InternetAddress.ANY_IP_V6, target.port);
+    case 'localhost':
+      return HttpMultiServer.loopback(target.port);
+    default:
+      return HttpServer.bind(options.hostName, target.port);
   }
 }
 
