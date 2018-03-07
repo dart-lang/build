@@ -317,18 +317,15 @@ class AssetGraph {
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
       var samePackageOutputNodes =
-          packageNodes(id.package).where((n) => n is GeneratedAssetNode);
-      for (var node in samePackageOutputNodes) {
-        if ((node as GeneratedAssetNode)
-            .globs
-            .any((glob) => glob.matches(id.path))) {
+          packageNodes(id.package).where((node) => node is GeneratedAssetNode);
+      for (GeneratedAssetNode node in samePackageOutputNodes) {
+        if (node.globs.any((glob) => glob.matches(id.path))) {
           // The change type is irrelevant here.
           invalidateNodeAndDeps(node.id, null);
           // Override to the `definitelyNeedsUpdate` state for glob changes.
           //
           // The regular input hash checks won't pick up glob changes.
-          (node as GeneratedAssetNode).state =
-              GeneratedNodeState.definitelyNeedsUpdate;
+          node.state = GeneratedNodeState.definitelyNeedsUpdate;
         }
       }
     }

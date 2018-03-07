@@ -61,7 +61,7 @@ void main() {
     expectPostProcessBuilderDefinitions(
         buildConfig.postProcessBuilderDefinitions, {
       'example|p': new PostProcessBuilderDefinition(
-        builderFactories: ['createPostProcessBuilder'],
+        builderFactory: 'createPostProcessBuilder',
         import: 'package:example/p.dart',
         inputExtensions: ['.tar.gz', '.zip'],
         package: 'example',
@@ -167,7 +167,7 @@ builders:
       generate_for: ["lib/**"]
 post_process_builders:
   p:
-    builder_factories: ["createPostProcessBuilder"]
+    builder_factory: "createPostProcessBuilder"
     import: package:example/p.dart
     input_extensions: [".tar.gz", ".zip"]
     target: ":example"
@@ -237,7 +237,7 @@ class _PostProcessBuilderDefinitionMatcher extends Matcher {
   @override
   bool matches(item, _) =>
       item is PostProcessBuilderDefinition &&
-      equals(_expected.builderFactories).matches(item.builderFactories, _) &&
+      equals(_expected.builderFactory).matches(item.builderFactory, _) &&
       equals(_expected.inputExtensions).matches(item.inputExtensions, _) &&
       equals(_expected.defaults?.generateFor?.include)
           .matches(item.defaults?.generateFor?.include, _) &&
