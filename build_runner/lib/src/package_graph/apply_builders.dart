@@ -139,6 +139,7 @@ class BuilderApplication {
     InputSet defaultGenerateFor,
     Iterable<String> appliesBuilders,
   }) {
+    hideOutput ??= true;
     var actionFactories = builderFactories.map((builderFactory) {
       return (String package, BuilderOptions options, InputSet targetSources,
           InputSet generateFor) {
