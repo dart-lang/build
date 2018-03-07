@@ -87,19 +87,18 @@ BuilderApplication apply(String builderKey,
       appliesBuilders: appliesBuilders,
     );
 
-/// Same as [apply] except it takes [PostProcessBuilderFactory]s and does not
-/// provide options for `isOptional` or `hideOutput` because they aren't
-/// configurable for these types of builders. They are never optional and always
-/// hidden.
-BuilderApplication applyPostProcess(String builderKey,
-        List<PostProcessBuilderFactory> builderFactories, PackageFilter filter,
-        {InputSet defaultGenerateFor, Iterable<String> appliesBuilders}) =>
+/// Same as [apply] except it takes [PostProcessBuilderFactory]s.
+///
+/// Does not provide options for `isOptional` or `hideOutput` because they
+/// aren't configurable for these types of builders. They are never optional and
+/// always hidden.
+BuilderApplication applyPostProcess(
+        String builderKey, PostProcessBuilderFactory builderFactory,
+        {InputSet defaultGenerateFor}) =>
     new BuilderApplication.forPostProcessBuilder(
       builderKey,
-      builderFactories,
-      filter,
+      builderFactory,
       defaultGenerateFor: defaultGenerateFor,
-      appliesBuilders: appliesBuilders,
     );
 
 /// A description of which packages need a given [Builder] or
@@ -161,25 +160,21 @@ class BuilderApplication {
   /// will all eventually be merged into a single phase.
   factory BuilderApplication.forPostProcessBuilder(
     String builderKey,
-    List<PostProcessBuilderFactory> builderFactories,
-    PackageFilter filter, {
+    PostProcessBuilderFactory builderFactory, {
     InputSet defaultGenerateFor,
-    Iterable<String> appliesBuilders,
   }) {
     var actionFactory = (String package, BuilderOptions options,
         InputSet targetSources, InputSet generateFor) {
       generateFor ??= defaultGenerateFor;
-      var builders = builderFactories.map((f) => f(options)).toList();
-      var builderActions = builders
-          .map((builder) => new PostProcessBuilderAction(builder, package,
-              builderOptions: options,
-              generateFor: generateFor,
-              targetSources: targetSources))
-          .toList();
-      return new PostProcessBuildAction(builderActions);
+      var builder = builderFactory(options);
+      var builderAction = new PostProcessBuilderAction(builder, package,
+          builderOptions: options,
+          generateFor: generateFor,
+          targetSources: targetSources);
+      return new PostProcessBuildAction([builderAction]);
     };
     return new BuilderApplication._(
-        builderKey, [actionFactory], filter, true, appliesBuilders);
+        builderKey, [actionFactory], toNoneByDefault(), true, []);
   }
 }
 
