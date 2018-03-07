@@ -28,6 +28,7 @@ import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
+import '../validation/config_validation.dart';
 import 'build_definition.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
@@ -89,6 +90,9 @@ Future<ServeHandler> watch(
 
   final buildActions =
       await createBuildActions(targetGraph, builders, builderConfigOverrides);
+
+  validateBuilderConfig(
+      builders, targetGraph.rootPackageConfig, builderConfigOverrides, _logger);
 
   var watch =
       runWatch(environment, options, buildActions, terminator.shouldTerminate);
