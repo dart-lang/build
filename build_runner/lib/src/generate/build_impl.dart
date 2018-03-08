@@ -30,7 +30,6 @@ import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/constants.dart';
-import '../validation/config_validation.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
 import 'create_merged_dir.dart';
@@ -90,9 +89,6 @@ Future<BuildResult> build(
 
   final buildActions =
       await createBuildActions(targetGraph, builders, builderConfigOverrides);
-
-  validateBuilderConfig(
-      builders, targetGraph.rootPackageConfig, builderConfigOverrides, _logger);
 
   var result = await singleBuild(environment, options, buildActions);
 

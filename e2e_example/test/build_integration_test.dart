@@ -31,21 +31,4 @@ void main() {
       expect(result.stdout, contains('Skipping tests due to build failure'));
     });
   });
-
-  group('config validation', () {
-    setUp(() async {
-      ensureCleanGitClient();
-    });
-
-    test('warns when using an invalid override', () async {
-      var result =
-          await runAutoBuild(trailingArgs: ['--define="bad|key=foo=bar"']);
-      expect(result.stdout, contains('not a known Builder'));
-    });
-
-    test('warns when target uses invalid key', () async {
-      var result = await runAutoBuild(trailingArgs: ['--config=bad_key']);
-      expect(result.stdout, contains('not a known Builder'));
-    });
-  });
 }

@@ -379,7 +379,7 @@ main(List<String> args) async {
         toRoot(),
         hideOutput: false,
         isOptional: false),
-  ];;
+  ];
   await run(args, buildApplications);
 }
 ''';
@@ -394,13 +394,14 @@ main(List<String> args) async {
         ]).validate();
       }
 
-      Future<Null> runBuild({List<String> extraArgs}) async {
+      Future<String> runBuild({List<String> extraArgs}) async {
         extraArgs ??= [];
         var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
         var result = await runDart('a', 'tool/build.dart', args: buildArgs);
         expect(result.exitCode, 0,
             reason: '${result.stdout}\n${result.stderr}');
         print('${result.stdout}\n${result.stderr}');
+        return '${result.stdout}';
       }
 
       test('--define overrides build.yaml', () async {
@@ -438,6 +439,84 @@ targets:
         await runBuild(extraArgs: ['--define=root|copy=copy_from=a|web/c.txt']);
         await expectBuildOutput('c');
       });
+    });
+  });
+
+  group('config validation', () {
+    final buildContent = '''
+import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+
+main(List<String> args) async {
+  var buildApplications = [
+    apply('root|copy', [(_) => new TestBuilder()], toRoot(),
+        hideOutput: false, isOptional: false),
+  ];
+  await run(args, buildApplications);
+}
+''';
+
+    Future<Null> runBuild({List<String> extraArgs}) async {
+      extraArgs ??= [];
+      var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
+      var result = await runDart('a', 'tool/build.dart', args: buildArgs);
+      expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
+      print('${result.stdout}\n${result.stderr}');
+    }
+
+    test('warns on invalid builder key --define', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_config',
+          'build_resolvers',
+          'build_runner',
+          'build_test',
+        ]),
+          d.file('build.yaml', r'''
+targets:
+  $default:
+    builders:
+      bad|builder:
+'''),
+        d.dir('tool', [d.file('build.dart', buildContent)]),
+        d.dir('web', [
+          d.file('a.txt', 'a'),
+          d.file('b.txt', 'b'),
+          d.file('c.txt', 'c'),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+
+      var result = await runBuild(extraArgs: ['--define=bad|key=foo=bar']);
+
+      expect(result, contains('not a known Builder'));
+    });
+
+    test('warns on invalid builder key --define', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_config',
+          'build_resolvers',
+          'build_runner',
+          'build_test',
+        ]),
+        d.dir('tool', [d.file('build.dart', buildContent)]),
+        d.dir('web', [
+          d.file('a.txt', 'a'),
+          d.file('b.txt', 'b'),
+          d.file('c.txt', 'c'),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+
+      var result = await runBuild(extraArgs: ['--define=bad|key=foo=bar']);
+
+      expect(result, contains('not a known Builder'));
     });
   });
 

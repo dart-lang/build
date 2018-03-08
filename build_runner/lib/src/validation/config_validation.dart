@@ -16,7 +16,7 @@ void validateBuilderConfig(
   final builderKeys = builders.map((b) => b.builderKey).toSet();
   for (final key in builderConfigOverrides.keys) {
     if (!builderKeys.contains(key)) {
-      logger.warning('Overriding configuration for  `$key` but this is not a '
+      logger.warning('Overriding configuration for `$key` but this is not a '
           'known Builder');
     }
   }
