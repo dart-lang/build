@@ -1,3 +1,8 @@
+## 0.10.1+1
+
+- Replace `BarbackResolvers` with `AnalyzerResolvers` from `build_resolvers` by
+  default.
+
 ## 0.10.1
 
 - Allow overriding the `Resolvers` used for `resolve*` utilities.

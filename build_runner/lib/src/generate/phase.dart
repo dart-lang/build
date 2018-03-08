@@ -41,6 +41,7 @@ abstract class BuildPhase {
 class InBuildPhase extends BuildPhase {
   final Builder builder;
 
+  final String builderLabel;
   final BuilderOptions builderOptions;
   final InputMatcher generateFor;
   final String package;
@@ -54,6 +55,7 @@ class InBuildPhase extends BuildPhase {
   InBuildPhase._(this.package, this.builder, this.builderOptions,
       {@required this.targetSources,
       @required this.generateFor,
+      @required this.builderLabel,
       bool isOptional,
       bool hideOutput})
       : this.isOptional = isOptional ?? false,
@@ -73,6 +75,7 @@ class InBuildPhase extends BuildPhase {
   factory InBuildPhase(
     Builder builder,
     String package, {
+    String builderKey,
     InputSet targetSources,
     InputSet generateFor,
     BuilderOptions builderOptions,
@@ -86,6 +89,9 @@ class InBuildPhase extends BuildPhase {
     return new InBuildPhase._(package, builder, builderOptions,
         targetSources: targetSourceMatcher,
         generateFor: generateForMatcher,
+        builderLabel: builderKey == null || builderKey.isEmpty
+            ? _builderLabel(builder)
+            : _simpleBuilderKey(builderKey),
         isOptional: isOptional,
         hideOutput: hideOutput);
   }
@@ -143,16 +149,21 @@ class PostBuildPhase extends BuildPhase {
 /// [PostProcessBuilder] to a single [package] with some additional options.
 class PostBuildAction {
   final PostProcessBuilder builder;
+  final String builderLabel;
   final BuilderOptions builderOptions;
   final InputMatcher generateFor;
   final String package;
   final InputMatcher targetSources;
 
   PostBuildAction(this.builder, this.package,
-      {@required BuilderOptions builderOptions,
+      {String builderKey,
+      @required BuilderOptions builderOptions,
       @required InputSet targetSources,
       @required InputSet generateFor})
-      : builderOptions = builderOptions ?? const BuilderOptions(const {}),
+      : builderLabel = builderKey == null || builderKey.isEmpty
+            ? _builderLabel(builder)
+            : _simpleBuilderKey(builderKey),
+        builderOptions = builderOptions ?? const BuilderOptions(const {}),
         targetSources = new InputMatcher(targetSources ?? const InputSet()),
         generateFor = new InputMatcher(generateFor ?? const InputSet());
 
@@ -162,6 +173,23 @@ class PostBuildAction {
         package,
         targetSources,
       ]);
+}
+
+/// If we have no key find a human friendly name for the Builder.
+String _builderLabel(Object builder) {
+  var label = '$builder';
+  if (label.startsWith('Instance of \'')) {
+    label = label.substring(13, label.length - 1);
+  }
+  return label;
+}
+
+/// Change "angular|angular" to "angular".
+String _simpleBuilderKey(String builderKey) {
+  if (!builderKey.contains('|')) return builderKey;
+  var parts = builderKey.split('|');
+  if (parts[0] == parts[1]) return parts[0];
+  return builderKey;
 }
 
 final _deepEquals = const DeepCollectionEquality();

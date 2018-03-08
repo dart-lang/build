@@ -1,3 +1,4 @@
+
 ## 0.8.0-prerelease
 
 ### New Features
@@ -13,10 +14,15 @@
   `BuilderApplication.forBuilder` and
   `BuilderApplication.forPostProcessBuilder`.
 
-### Bug Fixes
+## 0.7.13
 
 - Fix a bug where a chain of `Builder`s would fail to run on some outputs from
   previous steps when the generated asset did not match the target's `sources`.
+- Added support for serving on IPv4 loopback when the server hostname is
+  'localhost' (the default).
+- Added support for serving on any connection (both IPv4 and IPv6) when the
+  hostname is 'any'.
+- Improved stdout output.
 
 ## 0.7.12
 

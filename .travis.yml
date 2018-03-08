@@ -106,18 +106,10 @@ jobs:
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_test"
       dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
-      env: PKG="build_test"
-      dart: stable
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_test"
       dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh test_0
-      env: PKG="build_test"
-      dart: stable
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_web_compilers"

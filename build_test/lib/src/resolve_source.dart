@@ -5,7 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_barback/build_barback.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_resolver/package_resolver.dart';
 
 import 'in_memory_reader.dart';
@@ -27,7 +27,7 @@ Future<T> resolveSource<T>(
   AssetId inputId,
   PackageResolver resolver,
   Future<Null> tearDown,
-  Resolvers resolvers: const BarbackResolvers(),
+  Resolvers resolvers,
 }) {
   inputId ??= new AssetId('_resolve_source', 'lib/_resolve_source.dart');
   return _resolveAssets(
@@ -119,7 +119,7 @@ Future<T> resolveSources<T>(
   String resolverFor,
   String rootPackage,
   Future<Null> tearDown,
-  Resolvers resolvers: const BarbackResolvers(),
+  Resolvers resolvers,
 }) {
   if (inputs == null || inputs.isEmpty) {
     throw new ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
@@ -141,7 +141,7 @@ Future<T> resolveAsset<T>(
   FutureOr<T> action(Resolver resolver), {
   PackageResolver resolver,
   Future<Null> tearDown,
-  Resolvers resolvers: const BarbackResolvers(),
+  Resolvers resolvers,
 }) {
   return _resolveAssets(
     {
@@ -197,7 +197,7 @@ Future<T> _resolveAssets<T>(
     inputAssets.keys,
     new MultiAssetReader([inMemory, assetReader]),
     new InMemoryAssetWriter(),
-    resolvers,
+    resolvers ?? new AnalyzerResolvers(),
   );
   return resolveBuilder.onDone.future;
 }
