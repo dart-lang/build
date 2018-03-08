@@ -14,6 +14,7 @@ export 'src/package_graph/apply_builders.dart'
     show
         BuilderApplication,
         apply,
+        applyPostProcess,
         applyToRoot,
         toAll,
         toAllPackages,
