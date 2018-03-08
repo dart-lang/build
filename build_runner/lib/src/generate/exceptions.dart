@@ -24,12 +24,12 @@ class UnexpectedExistingOutputsException extends FatalBuildException {
       '${conflictingOutputs.join('\n')}\n';
 }
 
-class InvalidBuildActionException extends FatalBuildException {
+class InvalidBuildPhaseException extends FatalBuildException {
   final String _reason;
 
-  InvalidBuildActionException.nonRootPackage(BuildAction action, String root)
-      : _reason = 'A build action ($action) is attempting to operate on '
-            'package "${action.package}", but the build script is '
+  InvalidBuildPhaseException.nonRootPackage(InBuildPhase phase, String root)
+      : _reason = 'A build phase ($phase) is attempting to operate on '
+            'package "${phase.package}", but the build script is '
             'located in package "$root". It\'s not valid to attempt to '
             'generate files for another package unless the BuilderApplication'
             'specified "hideOutput".'
@@ -40,5 +40,5 @@ class InvalidBuildActionException extends FatalBuildException {
             '  new BuilderApplication(..., hideOutput: true)\n'
             '... instead?';
   @override
-  String toString() => 'InvalidBuildActionException: $_reason';
+  String toString() => 'InvalidBuildPhaseException: $_reason';
 }

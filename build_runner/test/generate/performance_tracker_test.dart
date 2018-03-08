@@ -39,18 +39,18 @@ main() {
       await scopeClock(fakeClock, () async {
         var packages = ['a', 'b', 'c'];
         var builder = new TestBuilder();
-        var actions = packages.map((p) => new BuildAction(builder, p)).toList();
+        var phases = packages.map((p) => new InBuildPhase(builder, p)).toList();
 
-        for (var action in actions) {
-          var package = action.package;
-          await tracker.trackBuildPhase(action, () async {
+        for (var phase in phases) {
+          var package = phase.package;
+          await tracker.trackBuildPhase(phase, () async {
             time = time.add(const Duration(seconds: 5));
             return [new AssetId(package, 'lib/$package.txt')];
           });
         }
 
         tracker.stop();
-        expect(tracker.phases.map((a) => a.action), orderedEquals(actions));
+        expect(tracker.phases.map((p) => p.action), orderedEquals(phases));
 
         var times = tracker.phases.map((t) => t.stopTime).toList();
         var expectedTimes = [5000, 10000, 15000].map((millis) =>

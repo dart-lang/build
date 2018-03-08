@@ -8,9 +8,15 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 
+import '../builder/post_process_builder.dart';
 import '../generate/phase.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
+
+typedef BuildPhase BuildPhaseFactory(String package, BuilderOptions options,
+    InputSet targetSources, InputSet generateFor);
+
+typedef PostProcessBuilder PostProcessBuilderFactory(BuilderOptions options);
 
 typedef bool PackageFilter(PackageNode node);
 
@@ -45,7 +51,7 @@ BuilderApplication applyToRoot(Builder builder,
         {bool isOptional: false,
         bool hideOutput: false,
         InputSet generateFor}) =>
-    new BuilderApplication._('', [(_) => builder], toRoot(),
+    new BuilderApplication.forBuilder('', [(_) => builder], toRoot(),
         isOptional: isOptional,
         hideOutput: hideOutput,
         defaultGenerateFor: generateFor);
@@ -71,7 +77,7 @@ BuilderApplication apply(String builderKey,
         bool hideOutput,
         InputSet defaultGenerateFor,
         Iterable<String> appliesBuilders}) =>
-    new BuilderApplication._(
+    new BuilderApplication.forBuilder(
       builderKey,
       builderFactories,
       filter,
@@ -81,9 +87,26 @@ BuilderApplication apply(String builderKey,
       appliesBuilders: appliesBuilders,
     );
 
-/// A description of which packages need a given [Builder] applied.
+/// Same as [apply] except it takes [PostProcessBuilderFactory]s.
+///
+/// Does not provide options for `isOptional` or `hideOutput` because they
+/// aren't configurable for these types of builders. They are never optional and
+/// always hidden.
+BuilderApplication applyPostProcess(
+        String builderKey, PostProcessBuilderFactory builderFactory,
+        {InputSet defaultGenerateFor}) =>
+    new BuilderApplication.forPostProcessBuilder(
+      builderKey,
+      builderFactory,
+      defaultGenerateFor: defaultGenerateFor,
+    );
+
+/// A description of which packages need a given [Builder] or
+/// [PostProcessBuilder] applied.
 class BuilderApplication {
-  final List<BuilderFactory> builderFactories;
+  /// Factories that create [BuildPhase]s for all [Builder]s or
+  /// [PostProcessBuilder]s that should be applied.
+  final List<BuildPhaseFactory> buildPhaseFactories;
 
   /// Determines whether a given package needs builder applied.
   final PackageFilter filter;
@@ -95,28 +118,67 @@ class BuilderApplication {
   /// A uniqe key for this builder.
   final String builderKey;
 
-  final bool isOptional;
-
   /// Whether genereated assets should be placed in the build cache.
   final bool hideOutput;
 
-  /// The default filter for primary inputs if the [TargetBuilderConfig] does
-  /// not specify one.
-  final InputSet defaultGenerateFor;
-
   const BuilderApplication._(
     this.builderKey,
-    this.builderFactories,
-    this.filter, {
-    this.isOptional,
-    bool hideOutput,
-    this.defaultGenerateFor,
+    this.buildPhaseFactories,
+    this.filter,
+    this.hideOutput,
     Iterable<String> appliesBuilders,
-  })  : appliesBuilders = appliesBuilders ?? const [],
-        hideOutput = hideOutput ?? true;
+  ) : appliesBuilders = appliesBuilders ?? const [];
+
+  factory BuilderApplication.forBuilder(
+    String builderKey,
+    List<BuilderFactory> builderFactories,
+    PackageFilter filter, {
+    bool isOptional,
+    bool hideOutput,
+    InputSet defaultGenerateFor,
+    Iterable<String> appliesBuilders,
+  }) {
+    hideOutput ??= true;
+    var phaseFactories = builderFactories.map((builderFactory) {
+      return (String package, BuilderOptions options, InputSet targetSources,
+          InputSet generateFor) {
+        generateFor ??= defaultGenerateFor;
+        var builder = builderFactory(options);
+        return new InBuildPhase(builder, package,
+            targetSources: targetSources,
+            generateFor: generateFor,
+            builderOptions: options,
+            hideOutput: hideOutput,
+            isOptional: isOptional);
+      };
+    }).toList();
+    return new BuilderApplication._(
+        builderKey, phaseFactories, filter, hideOutput, appliesBuilders);
+  }
+
+  /// Note that these builder applications each create their own phase, but they
+  /// will all eventually be merged into a single phase.
+  factory BuilderApplication.forPostProcessBuilder(
+    String builderKey,
+    PostProcessBuilderFactory builderFactory, {
+    InputSet defaultGenerateFor,
+  }) {
+    var phaseFactory = (String package, BuilderOptions options,
+        InputSet targetSources, InputSet generateFor) {
+      generateFor ??= defaultGenerateFor;
+      var builder = builderFactory(options);
+      var builderAction = new PostBuildAction(builder, package,
+          builderOptions: options,
+          generateFor: generateFor,
+          targetSources: targetSources);
+      return new PostBuildPhase([builderAction]);
+    };
+    return new BuilderApplication._(
+        builderKey, [phaseFactory], toNoneByDefault(), true, []);
+  }
 }
 
-/// Creates a [BuildAction] to apply each builder in [builderApplications] to
+/// Creates a [BuildPhase] to apply each builder in [builderApplications] to
 /// each target in [targetGraph] such that all builders are run for dependencies
 /// before moving on to later packages.
 ///
@@ -127,7 +189,7 @@ class BuilderApplication {
 /// Builders may be filtered, for instance to run only on package which have a
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
-Future<List<BuildAction>> createBuildActions(
+Future<List<BuildPhase>> createBuildPhases(
     TargetGraph targetGraph,
     Iterable<BuilderApplication> builderApplications,
     Map<String, Map<String, dynamic>> builderConfigOverrides) async {
@@ -137,26 +199,40 @@ Future<List<BuildAction>> createBuildActions(
       (node) =>
           node.target.dependencies?.map((key) => targetGraph.allModules[key]));
   final applyWith = _applyWith(builderApplications);
-  return cycles
-      .expand((cycle) => _createBuildActionsWithinCycle(
-          cycle, builderApplications, builderConfigOverrides, applyWith))
+  var expandedPhases = cycles.expand((cycle) => _createBuildPhasesWithinCycle(
+      cycle, builderApplications, builderConfigOverrides, applyWith));
+
+  var combinedPhases = <BuildPhase>[]
+    ..addAll(expandedPhases.where((phase) => phase is InBuildPhase));
+  var postBuilderPhases = expandedPhases
+      .where((phase) => phase is PostBuildPhase)
+      .cast<PostBuildPhase>()
       .toList();
+  if (postBuilderPhases.isNotEmpty) {
+    combinedPhases.add(postBuilderPhases
+        .fold<PostBuildPhase>(new PostBuildPhase([]), (previous, next) {
+      previous.builderActions.addAll(next.builderActions);
+      return previous;
+    }));
+  }
+
+  return combinedPhases;
 }
 
-Iterable<BuildAction> _createBuildActionsWithinCycle(
+Iterable<BuildPhase> _createBuildPhasesWithinCycle(
   Iterable<TargetNode> cycle,
   Iterable<BuilderApplication> builderApplications,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   Map<String, List<BuilderApplication>> applyWith,
 ) =>
     builderApplications.expand((builderApplication) =>
-        _createBuildActionsForBuilderInCycle(
+        _createBuildPhasesForBuilderInCycle(
             cycle,
             builderApplication,
             builderConfigOverrides[builderApplication.builderKey] ?? const {},
             applyWith));
 
-Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
+Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
   Iterable<TargetNode> cycle,
   BuilderApplication builderApplication,
   Map<String, dynamic> builderConfigOverrides,
@@ -164,23 +240,17 @@ Iterable<BuildAction> _createBuildActionsForBuilderInCycle(
 ) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
-  return builderApplication.builderFactories.expand((b) => cycle
+  return builderApplication.buildPhaseFactories.expand((createPhase) => cycle
           .where((targetNode) =>
               _shouldApply(builderApplication, targetNode, applyWith))
           .map((node) {
         final builderConfig = targetConfig(node);
-        final generateFor =
-            builderConfig?.generateFor ?? builderApplication.defaultGenerateFor;
         var options = builderConfig?.options ?? const BuilderOptions(const {});
         options = new BuilderOptions(
             new Map<String, dynamic>.from(options.config)
               ..addAll(builderConfigOverrides));
-        return new BuildAction(b(options), node.package.name,
-            builderOptions: options,
-            targetSources: node.target.sources,
-            generateFor: generateFor,
-            isOptional: builderApplication.isOptional,
-            hideOutput: builderApplication.hideOutput);
+        return createPhase(node.package.name, options, node.target.sources,
+            builderConfig?.generateFor);
       }));
 }
 

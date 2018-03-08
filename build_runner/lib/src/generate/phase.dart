@@ -7,16 +7,12 @@ import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+import '../builder/post_process_builder.dart';
 import 'input_matcher.dart';
 
-/// A "phase" in the build graph, which represents running a [Builder] on a
-/// specific [package].
-class BuildAction {
-  final String package;
-  final Builder builder;
-  final InputMatcher targetSources;
-  final InputMatcher generateFor;
-
+/// A "phase" in the build graph, which represents running a one or more
+/// builders on a set of sources.
+abstract class BuildPhase {
   /// Whether to run lazily when an output is read.
   ///
   /// An optional build action will only run if one of its outputs is read by
@@ -24,17 +20,38 @@ class BuildAction {
   ///
   /// If no build actions read the output of an optional action, then it will
   /// never run.
-  final bool isOptional;
-
-  final BuilderOptions builderOptions;
+  bool get isOptional;
 
   /// Whether generated assets should be placed in the build cache.
   ///
-  /// When this is `false` the Builder may not run on any [package] other than
+  /// When this is `false` the Builder may not run on any package other than
   /// the root.
+  bool get hideOutput;
+
+  /// The identity of this action in terms of a build graph. If the identity of
+  /// any action changes the build will be invalidated.
+  ///
+  /// This should take into account everything except for the builderOptions,
+  /// which are tracked separately via a `BuilderOptionsNode` which supports
+  /// more fine grained invalidation.
+  int get identity;
+}
+
+/// A [BuildPhase] that uses a single [Builder] to generate files.
+class InBuildPhase extends BuildPhase {
+  final Builder builder;
+
+  final BuilderOptions builderOptions;
+  final InputMatcher generateFor;
+  final String package;
+  final InputMatcher targetSources;
+
+  @override
+  final bool isOptional;
+  @override
   final bool hideOutput;
 
-  BuildAction._(this.package, this.builder, this.builderOptions,
+  InBuildPhase._(this.package, this.builder, this.builderOptions,
       {@required this.targetSources,
       @required this.generateFor,
       bool isOptional,
@@ -42,7 +59,7 @@ class BuildAction {
       : this.isOptional = isOptional ?? false,
         this.hideOutput = hideOutput ?? false;
 
-  /// Creates an [BuildAction] for a normal [Builder].
+  /// Creates an [BuildPhase] for a normal [Builder].
   ///
   /// The build target is defined by [package] as well as [targetSources]. By
   /// default all sources in the target are used as primary inputs to the
@@ -53,7 +70,7 @@ class BuildAction {
   ///
   /// [hideOutput] specifies that the generated asses should be placed in the
   /// build cache rather than the source tree.
-  factory BuildAction(
+  factory InBuildPhase(
     Builder builder,
     String package, {
     InputSet targetSources,
@@ -64,11 +81,11 @@ class BuildAction {
   }) {
     var targetSourceMatcher =
         new InputMatcher(targetSources ?? const InputSet());
-    var generateFormatcher = new InputMatcher(generateFor ?? const InputSet());
+    var generateForMatcher = new InputMatcher(generateFor ?? const InputSet());
     builderOptions ??= const BuilderOptions(const {});
-    return new BuildAction._(package, builder, builderOptions,
+    return new InBuildPhase._(package, builder, builderOptions,
         targetSources: targetSourceMatcher,
-        generateFor: generateFormatcher,
+        generateFor: generateForMatcher,
         isOptional: isOptional,
         hideOutput: hideOutput);
   }
@@ -83,11 +100,7 @@ class BuildAction {
     return result;
   }
 
-  /// The identity of this action in terms of a build graph.
-  ///
-  /// This takes into account everything except for the [builderOptions], which
-  /// are tracked separately via a `BuilderOptionsNode` which supports more fine
-  /// grained invalidation.
+  @override
   int get identity => _deepEquals.hash([
         '${builder.runtimeType}',
         package,
@@ -95,6 +108,59 @@ class BuildAction {
         generateFor,
         isOptional,
         hideOutput
+      ]);
+}
+
+/// A [BuildPhase] that can run multiple [PostBuildAction]s to
+/// generate files.
+///
+/// There should only be one of these per build, and it should be the final
+/// phase.
+class PostBuildPhase extends BuildPhase {
+  final List<PostBuildAction> builderActions;
+
+  @override
+  bool get hideOutput => true;
+  @override
+  bool get isOptional => false;
+
+  PostBuildPhase(this.builderActions);
+
+  @override
+  String toString() =>
+      '${builderActions.map((a) => a.builder.runtimeType).join(', ')}';
+
+  @override
+  int get identity =>
+      _deepEquals.hash(builderActions.map<dynamic>((b) => b.identity).toList()
+        ..addAll([
+          isOptional,
+          hideOutput,
+        ]));
+}
+
+/// Part of a larger [PostBuildPhase], applies a single
+/// [PostProcessBuilder] to a single [package] with some additional options.
+class PostBuildAction {
+  final PostProcessBuilder builder;
+  final BuilderOptions builderOptions;
+  final InputMatcher generateFor;
+  final String package;
+  final InputMatcher targetSources;
+
+  PostBuildAction(this.builder, this.package,
+      {@required BuilderOptions builderOptions,
+      @required InputSet targetSources,
+      @required InputSet generateFor})
+      : builderOptions = builderOptions ?? const BuilderOptions(const {}),
+        targetSources = new InputMatcher(targetSources ?? const InputSet()),
+        generateFor = new InputMatcher(generateFor ?? const InputSet());
+
+  int get identity => _deepEquals.hash([
+        builder.runtimeType.toString(),
+        generateFor,
+        package,
+        targetSources,
       ]);
 }
 

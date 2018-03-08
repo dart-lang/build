@@ -1,4 +1,19 @@
-## 0.7.13-prerelease
+## 0.8.0-prerelease
+
+### New Features
+
+- Added `applyPostProccess` method which takes `PostProcessBuilderFactory`s
+  instead of `BuilderFactory`s.
+
+### Breaking Changes
+
+- `BuilderApplication` now has a `builderActionFactories` getter instead of a
+  `builderFactories` getter.
+- The default constructor for `BuilderApplication` has been replaced with
+  `BuilderApplication.forBuilder` and
+  `BuilderApplication.forPostProcessBuilder`.
+
+### Bug Fixes
 
 - Fix a bug where a chain of `Builder`s would fail to run on some outputs from
   previous steps when the generated asset did not match the target's `sources`.
