@@ -2,6 +2,11 @@
 
 - Warn when using `--define` or `build.yaml` configuration for invalid builders.
 
+## 0.7.13+1
+
+- Fix a concurrent modification error when using `listAssets` when an asset
+  could be written.
+
 ## 0.7.13
 
 - Fix a bug where a chain of `Builder`s would fail to run on some outputs from

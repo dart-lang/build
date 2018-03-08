@@ -138,7 +138,8 @@ class SingleStepReader implements AssetReader {
     _globsRan.add(glob);
     var potentialMatches = _assetGraph
         .packageNodes(_primaryPackage)
-        .where((n) => glob.matches(n.id.path));
+        .where((n) => glob.matches(n.id.path))
+        .toList();
     for (var node in potentialMatches) {
       if (await _isReadableNode(node)) yield node.id;
     }
