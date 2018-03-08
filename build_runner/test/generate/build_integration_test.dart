@@ -474,7 +474,7 @@ main(List<String> args) async {
           'build_runner',
           'build_test',
         ]),
-          d.file('build.yaml', r'''
+        d.file('build.yaml', r'''
 targets:
   $default:
     builders:
