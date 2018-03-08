@@ -9,7 +9,7 @@ builder_, or a builder with many inputs and one (or less) outputs.
 
 > **WARNING**: This pattern could have negative effects on your development
 > cycle and incremental build, as it invalidates frequently (if _any_ of the
-> input files change).
+> read files change).
 
 ## Defining your `Builder`
 
@@ -62,8 +62,8 @@ class ListAllFilesBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions {
     return const {
-      // Using r'...' is a "raw" string, so we don't interpret $lib as a field.
-      // An alternative is escaping manually, or '\$lib'.
+      // Using r'...' is a "raw" string, so we don't interpret $lib$ as a field.
+      // An alternative is escaping manually, or '\$lib\$'.
       r'$lib$': const ['all_files.txt'],
     };
   }
@@ -107,8 +107,6 @@ class ListAllFilesBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions {
     return const {
-      // Using r'...' is a "raw" string, so we don't interpret $lib as a field.
-      // An alternative is escaping manually, or '\$lib'.
       r'$lib$': const ['all_files.txt'],
     };
   }

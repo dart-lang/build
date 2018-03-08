@@ -16,19 +16,13 @@ const _outputExtension = '_test.debug.html';
 /// Returns the (optional) user-provided HTML file to use as an input.
 ///
 /// For example, for `test/foo_test.dart`, we look for `test/foo_test.html`.
-AssetId _customHtmlId(AssetId dartTest) {
-  return dartTest.changeExtension('.html');
-}
+AssetId _customHtmlId(AssetId test) => test.changeExtension('.html');
 
 /// Returns the builder-generated HTML file for browsers to navigate to.
-AssetId _debugHtmlId(AssetId dartTest) {
-  return dartTest.changeExtension('.debug.html');
-}
+AssetId _debugHtmlId(AssetId test) => test.changeExtension('.debug.html');
 
 /// Returns the JS script path for the browser for [dartTest].
-String _jsScriptPath(AssetId dartTest) {
-  return '${p.basename(dartTest.path)}.js';
-}
+String _jsScriptPath(AssetId dartTest) => '${p.basename(dartTest.path)}.js';
 
 /// Generates a `*.debug.html` for every file in `test/**/*_test.dart`.
 ///
@@ -54,7 +48,7 @@ class DebugTestBuilder implements Builder {
     return buildStep.writeAsString(_debugHtmlId(dartTest), debugHtml);
   }
 
-  /// Returns the HTML body of [customHtml] modified to work with this package.
+  /// Returns the content of [customHtml] modified to work with this package.
   static String _replaceCustomHtml(String customHtml, String jsScriptPath) {
     final document = parse(customHtml);
 
@@ -80,11 +74,9 @@ class DebugTestBuilder implements Builder {
   const DebugTestBuilder();
 
   @override
-  Map<String, List<String>> get buildExtensions {
-    return const {
-      _inputExtension: const [_outputExtension],
-    };
-  }
+  final buildExtensions = const {
+    _inputExtension: const [_outputExtension],
+  };
 
   @override
   Future<void> build(BuildStep buildStep) {
@@ -116,11 +108,9 @@ class DebugIndexBuilder implements Builder {
   const DebugIndexBuilder();
 
   @override
-  Map<String, List<String>> get buildExtensions {
-    return const {
-      r'$test$': const ['index.html'],
-    };
-  }
+  final buildExtensions = const {
+    r'$test$': const ['index.html'],
+  };
 
   @override
   Future<void> build(BuildStep buildStep) async {
