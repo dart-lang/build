@@ -39,7 +39,7 @@ void main() {
 
     test('warns when using an invalid override', () async {
       var result =
-          await runAutoBuild(trailingArgs: ['--define=badkey=foo=bar']);
+          await runAutoBuild(trailingArgs: ['--define="bad|key=foo=bar"']);
       expect(result.stdout, contains('not a known Builder'));
     });
 
