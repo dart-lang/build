@@ -20,7 +20,7 @@ export 'matchers.dart';
 export 'sdk.dart';
 export 'test_phases.dart';
 
-Digest computeDigest(String contents) => md5.convert(UTF8.encode(contents));
+Digest computeDigest(String contents) => md5.convert(utf8.encode(contents));
 
 class PlaceholderBuilder extends Builder {
   final String inputExtension;

@@ -218,9 +218,9 @@ Future<List<AssetId>> _createMissingTestHtmlFiles(
 <!DOCTYPE html>
 <html>
 <head>
-  <title>${HTML_ESCAPE.convert(htmlPath)} Test</title>
+  <title>${htmlEscape.convert(htmlPath)} Test</title>
   <link rel="x-dart-test"
-        href="${HTML_ESCAPE.convert(originalDartPath)}">
+        href="${htmlEscape.convert(originalDartPath)}">
   <script src="packages/test/dart.js"></script>
 </head>
 </html>''');

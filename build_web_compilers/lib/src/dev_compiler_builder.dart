@@ -40,7 +40,7 @@ class DevCompilerBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     var module = new Module.fromJson(
-        JSON.decode(await buildStep.readAsString(buildStep.inputId))
+        json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
 
     Future<Null> handleError(e) async {

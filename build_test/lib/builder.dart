@@ -8,6 +8,6 @@ import 'src/test_bootstrap_builder.dart';
 export 'src/debug_test_builder.dart' show DebugTestBuilder;
 export 'src/test_bootstrap_builder.dart' show TestBootstrapBuilder;
 
-DebugTestBuilder debugTestBuilder(_) => new DebugTestBuilder();
-
+DebugTestBuilder debugTestBuilder(_) => const DebugTestBuilder();
+DebugIndexBuilder debugIndexBuilder(_) => const DebugIndexBuilder();
 TestBootstrapBuilder testBootstrapBuilder(_) => new TestBootstrapBuilder();

@@ -77,7 +77,7 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) {
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
@@ -103,7 +103,7 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Future writeAsString(AssetId id, FutureOr<String> content,
-      {Encoding encoding: UTF8}) {
+      {Encoding encoding: utf8}) {
     _checkOutput(id);
     var done = _futureOrWrite(content,
         (String c) => _writer.writeAsString(id, c, encoding: encoding));

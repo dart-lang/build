@@ -89,7 +89,7 @@ class ServeHandler implements BuildState {
   FutureOr<shelf.Response> _assetGraphHandler(shelf.Request request) async {
     if (request.url.path != _assetGraphPath)
       return new shelf.Response.notFound('');
-    var jsonContent = UTF8.decode(_assetGraph.serialize());
+    var jsonContent = utf8.decode(_assetGraph.serialize());
     return new shelf.Response.ok(jsonContent,
         headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
   }
@@ -162,7 +162,7 @@ class AssetHandler {
       return new shelf.Response.notFound('Not Found');
     }
 
-    var etag = BASE64.encode((await _reader.digest(assetId)).bytes);
+    var etag = base64.encode((await _reader.digest(assetId)).bytes);
     var headers = {
       HttpHeaders.CONTENT_TYPE: _typeResolver.lookup(assetId.path),
       HttpHeaders.ETAG: etag,

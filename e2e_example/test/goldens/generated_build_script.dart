@@ -13,8 +13,10 @@ final _builders = [
   _i1.apply('provides_builder|some_builder', [_i2.someBuilder],
       _i1.toDependentsOf('provides_builder'),
       hideOutput: true),
-  _i1.apply('build_test|test_bootstrap',
-      [_i3.debugTestBuilder, _i3.testBootstrapBuilder], _i1.toRoot(),
+  _i1.apply(
+      'build_test|test_bootstrap',
+      [_i3.debugIndexBuilder, _i3.debugTestBuilder, _i3.testBootstrapBuilder],
+      _i1.toRoot(),
       hideOutput: true,
       defaultGenerateFor: const _i4.InputSet(include: const ['test/**'])),
   _i1.apply(

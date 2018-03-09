@@ -111,7 +111,7 @@ void main() {
         // to 0, using the scratchSpace.
         var reader = new RecursiveScratchSpaceAssetReader(scratchSpace);
         var first = new AssetId('a', 'lib/100');
-        expect(await reader.readAsBytes(first), UTF8.encode('0'));
+        expect(await reader.readAsBytes(first), utf8.encode('0'));
       });
     });
   });
@@ -151,7 +151,7 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
       await scratchSpace.ensureAssets([readFrom], this);
       return scratchSpace.fileFor(readFrom).readAsBytes();
     } else {
-      return UTF8.encode('0');
+      return utf8.encode('0');
     }
   }
 

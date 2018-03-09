@@ -92,7 +92,7 @@ void main() {
           }
           for (int g = 0; g < 5 - n; g++) {
             var builderOptionsNode = new BuilderOptionsAssetNode(
-                makeAssetId(), md5.convert(UTF8.encode('test')));
+                makeAssetId(), md5.convert(utf8.encode('test')));
 
             var generatedNode = new GeneratedAssetNode(makeAssetId(),
                 phaseNumber: phaseNum,
@@ -114,7 +114,7 @@ void main() {
               // Fake a digest using the id, we just care that this gets
               // serialized/deserialized properly.
               generatedNode.previousInputsDigest =
-                  md5.convert(UTF8.encode(generatedNode.id.toString()));
+                  md5.convert(utf8.encode(generatedNode.id.toString()));
             }
 
             graph.add(syntheticNode);
@@ -131,9 +131,9 @@ void main() {
 
       test('Throws an AssetGraphVersionError if versions dont match up', () {
         var bytes = graph.serialize();
-        var serialized = JSON.decode(UTF8.decode(bytes));
+        var serialized = json.decode(utf8.decode(bytes));
         serialized['version'] = -1;
-        var encoded = UTF8.encode(JSON.encode(serialized));
+        var encoded = utf8.encode(json.encode(serialized));
         expect(() => new AssetGraph.deserialize(encoded),
             throwsA(assetGraphVersionException));
       });
