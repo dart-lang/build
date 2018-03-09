@@ -506,7 +506,7 @@ main() async {
       expect(result.exitCode, isNot(0),
           reason: 'build should fail due to missing build_test dependency');
       expect(result.stdout,
-          contains('Missing dev dependecy on package:build_test'));
+          contains('Missing dev dependency on package:build_test'));
     });
 
     test('Missing build_web_compilers dependency warns the user', () async {
