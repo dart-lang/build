@@ -9,6 +9,8 @@ import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
+import '../generate/phase.dart';
+
 /// A node in the asset graph which may be an input to other assets.
 abstract class AssetNode {
   final AssetId id;
@@ -213,4 +215,30 @@ class PlaceHolderAssetNode extends AssetNode with SyntheticAssetNode {
 
   @override
   String toString() => 'PlaceHolderAssetNode: $id';
+}
+
+/// A [SyntheticAssetNode] which is created for each [primaryInput] to a
+/// [PostBuildAction].
+///
+/// The [outputs] of this node are the individual outputs created for the
+/// [primaryInput] during the [PostBuildAction] at index [actionNumber].
+class PostProcessAnchorNode extends AssetNode with SyntheticAssetNode {
+  final AssetId primaryInput;
+
+  final int actionNumber;
+
+  final AssetId builderOptionsId;
+
+  PostProcessAnchorNode._(
+      AssetId id, this.primaryInput, this.actionNumber, this.builderOptionsId)
+      : super._forMixins(id);
+
+  factory PostProcessAnchorNode.forInputAndAction(
+      AssetId primaryInput, int actionNumber, AssetId builderOptionsId) {
+    return new PostProcessAnchorNode._(
+        primaryInput.addExtension('.\$post_anchor.$actionNumber'),
+        primaryInput,
+        actionNumber,
+        builderOptionsId);
+  }
 }

@@ -350,12 +350,14 @@ class _Loader {
       var action = buildPhases[phase];
       if (action is InBuildPhase) {
         updateBuilderOptionsNode(
-            builderOptionsIdForPhase(action, phase), action.builderOptions);
+            builderOptionsIdForAction(action, phase), action.builderOptions);
       } else if (action is PostBuildPhase) {
+        int actionNum = 0;
         for (var builderAction in action.builderActions) {
           updateBuilderOptionsNode(
-              builderOptionsIdForPostBuildAction(builderAction, phase),
+              builderOptionsIdForAction(builderAction, actionNum),
               builderAction.builderOptions);
+          actionNum++;
         }
       }
     }
