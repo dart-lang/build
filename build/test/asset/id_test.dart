@@ -6,7 +6,6 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 
-// Forked from `barback/test/asset_id_test.dart`.
 void main() {
   group("constructor", () {
     test("normalizes the path", () {
@@ -97,6 +96,23 @@ void main() {
       var id = new AssetId.resolve("../src/some/path.dart",
           from: new AssetId("app", "folder/folder.dart"));
       expect(id, new AssetId("app", "src/some/path.dart"));
+    });
+  });
+
+  group('to URI', () {
+    test('uses `package:` URIs inside lib/', () {
+      expect(new AssetId('foo', 'lib/bar.dart').uri,
+          Uri.parse('package:foo/bar.dart'));
+    });
+
+    test('uses `asset:` URIs outside lib/', () async {
+      expect(new AssetId('foo', 'web/main.dart').uri,
+          Uri.parse('asset:foo/web/main.dart'));
+    });
+
+    test('handles characters that are valid in a file path', () {
+      expect(new AssetId('foo', 'lib/#bar.dart').uri,
+          Uri.parse('package:foo/%23bar.dart'));
     });
   });
 
