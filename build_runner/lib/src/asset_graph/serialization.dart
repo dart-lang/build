@@ -207,13 +207,10 @@ enum _NodeType {
 
 /// Field indexes for all nodes.
 enum _AssetField {
-  // First, the generic fields for all asset nodes.
   NodeType,
   Id,
   Outputs,
   PrimaryOutputs,
-  // **Note**: You must update `_WrappedAssetNode._length` if another generic
-  // field is added below `Digest`.
   Digest,
 }
 
