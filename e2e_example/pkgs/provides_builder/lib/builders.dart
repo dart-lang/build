@@ -42,9 +42,8 @@ class _SomePostProcessBuilder extends PostProcessBuilder {
       : defaultContent = options.config['default_content'] as String;
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
-    var content =
-        defaultContent ?? await buildStep.readAsString(buildStep.inputId);
+  Future<Null> build(PostProcessBuildStep buildStep) async {
+    var content = defaultContent ?? await buildStep.readInputAsString();
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension('.txt.post'), content);
   }
