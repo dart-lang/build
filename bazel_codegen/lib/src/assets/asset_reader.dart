@@ -49,7 +49,7 @@ class BazelAssetReader extends AssetReader {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) async {
     final filePath = _filePathForId(id);
     _fileReadCount++;
     return (await _fileSystem.find(filePath)).readAsString(encoding: encoding);

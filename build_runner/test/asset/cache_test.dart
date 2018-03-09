@@ -13,7 +13,7 @@ void main() {
   var fooTxt = new AssetId('a', 'foo.txt');
   var missingTxt = new AssetId('a', 'missing.txt');
   var fooContent = 'bar';
-  var fooUTF8Bytes = decodedMatches('bar');
+  var fooutf8Bytes = decodedMatches('bar');
   var assets = <AssetId, dynamic>{
     fooTxt: 'bar',
   };
@@ -52,24 +52,24 @@ void main() {
 
   group('readAsBytes', () {
     test('should read from the delegate', () async {
-      expect(await reader.readAsBytes(fooTxt), fooUTF8Bytes);
+      expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       expect(delegate.assetsRead, [fooTxt]);
     });
 
     test('should not re-read from the delegate', () async {
-      expect(await reader.readAsBytes(fooTxt), fooUTF8Bytes);
+      expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       delegate.assetsRead.clear();
-      expect(await reader.readAsBytes(fooTxt), fooUTF8Bytes);
+      expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       expect(delegate.assetsRead, []);
     });
 
     test('can be invalidated with invalidate', () async {
-      expect(await reader.readAsBytes(fooTxt), fooUTF8Bytes);
+      expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       delegate.assetsRead.clear();
       expect(delegate.assetsRead, []);
 
       reader.invalidate([fooTxt]);
-      expect(await reader.readAsBytes(fooTxt), fooUTF8Bytes);
+      expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       expect(delegate.assetsRead, [fooTxt]);
     });
 
@@ -78,7 +78,7 @@ void main() {
       expect(delegate.assetsRead, [fooTxt]);
       delegate.assetsRead.clear();
 
-      expect(await reader.readAsBytes(fooTxt), fooUTF8Bytes);
+      expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       expect(delegate.assetsRead, []);
     });
   });
@@ -107,7 +107,7 @@ void main() {
     });
 
     test('uses cached bytes if available', () async {
-      expect(await reader.readAsBytes(fooTxt), fooUTF8Bytes);
+      expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       expect(delegate.assetsRead, [fooTxt]);
       delegate.assetsRead.clear();
 
