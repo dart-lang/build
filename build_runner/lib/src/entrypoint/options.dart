@@ -521,7 +521,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     // Attempt to parse the value as JSON, and if that fails then treat it as
     // a normal string.
     try {
-      value = JSON.decode(parts[2]);
+      value = json.decode(parts[2]);
     } on FormatException catch (_) {
       value = parts[2];
     }

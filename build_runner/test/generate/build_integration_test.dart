@@ -527,7 +527,7 @@ main() async {
       addTearDown(result.kill);
       var error = 'Missing dev dependency on package:build_web_compilers';
 
-      await for (final log in result.stdout.transform(UTF8.decoder)) {
+      await for (final log in result.stdout.transform(utf8.decoder)) {
         if (log.contains(error)) {
           return;
         }

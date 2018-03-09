@@ -22,11 +22,11 @@ abstract class AssetReader {
 
   /// Returns a [Future] that completes with the contents of a text asset.
   ///
-  /// When decoding as text uses [encoding], or [UTF8] is not specified.
+  /// When decoding as text uses [encoding], or [utf8] is not specified.
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws a `AssetNotFoundException` if `id.path` is not found.
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8});
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8});
 
   /// Indicates whether asset at [id] is readable.
   Future<bool> canRead(AssetId id);

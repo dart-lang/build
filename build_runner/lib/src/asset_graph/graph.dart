@@ -459,7 +459,7 @@ Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
 }
 
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>
-    md5.convert(UTF8.encode(JSON.encode(options.config)));
+    md5.convert(utf8.encode(json.encode(options.config)));
 
 AssetId builderOptionsIdForPhase(String package, int phase) =>
     new AssetId(package, 'Phase$phase.builderOptions');

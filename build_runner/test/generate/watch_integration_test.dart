@@ -49,12 +49,12 @@ main() {
       process = await startDart('a', 'tool/build.dart');
 
       stdOutLines = process.stdout
-          .transform(UTF8.decoder)
+          .transform(utf8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
 
       stdErrLines = process.stderr
-          .transform(UTF8.decoder)
+          .transform(utf8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
 

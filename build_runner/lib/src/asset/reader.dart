@@ -123,7 +123,7 @@ class SingleStepReader implements AssetReader {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) {
     return toFuture(doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return new Future.error(new AssetNotFoundException(id));

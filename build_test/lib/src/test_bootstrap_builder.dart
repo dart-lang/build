@@ -55,7 +55,7 @@ class _WrappedBuildStep implements BuildStep {
   /// Forwards everything except html file writes.
   @override
   Future writeAsString(AssetId id, FutureOr<String> contents,
-      {Encoding encoding: UTF8}) {
+      {Encoding encoding: utf8}) {
     if (id.path.endsWith('html')) return new Future.value(null);
     return _delegate.writeAsString(id, contents, encoding: encoding);
   }
@@ -67,7 +67,7 @@ class _WrappedBuildStep implements BuildStep {
   readAsBytes(_) => _delegate.readAsBytes(_);
 
   @override
-  readAsString(_, {Encoding encoding: UTF8}) =>
+  readAsString(_, {Encoding encoding: utf8}) =>
       _delegate.readAsString(_, encoding: encoding);
 
   @override

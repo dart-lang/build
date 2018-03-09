@@ -49,7 +49,7 @@ class CachingAssetReader implements AssetReader {
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding}) {
-    encoding ??= UTF8;
+    encoding ??= utf8;
     return _stringContentCache
         .putIfAbsent(id, () => {})
         .putIfAbsent(encoding, () => readAsBytes(id).then(encoding.decode));
