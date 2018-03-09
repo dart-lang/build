@@ -128,6 +128,18 @@ class _AssetGraphDeserializer {
         assert(serializedNode.length == _WrappedAssetNode._length);
         node = new PlaceHolderAssetNode(id);
         break;
+      case _NodeType.PostProcessAnchor:
+        assert(serializedNode.length == _WrappedPostProcessAnchorNode._length);
+        var offset = _AssetField.values.length;
+        node = new PostProcessAnchorNode(
+            id,
+            _idToAssetId[
+                serializedNode[_PostAnchorField.PrimaryInput.index + offset]
+                    as int],
+            serializedNode[_PostAnchorField.ActionNumber.index + offset] as int,
+            _idToAssetId[
+                serializedNode[_PostAnchorField.BuilderOptions.index + offset]
+                    as int]);
     }
     node.outputs.addAll(_deserializeAssetIds(
         serializedNode[_AssetField.Outputs.index] as List<int>));
@@ -206,7 +218,7 @@ enum _NodeType {
   PostProcessAnchor,
 }
 
-/// Field indexes for all nodes.
+/// Field indexes for all [AssetNode]s
 enum _AssetField {
   NodeType,
   Id,
@@ -215,7 +227,7 @@ enum _AssetField {
   Digest,
 }
 
-/// Field indexes for generated assets
+/// Field indexes for [GeneratedAssetNode]s
 enum _GeneratedField {
   PrimaryInput,
   WasOutput,
@@ -225,6 +237,13 @@ enum _GeneratedField {
   PreviousInputsDigest,
   BuilderOptions,
   IsHidden,
+}
+
+/// Field indexes for [PostProcessAnchorNode]s.
+enum _PostAnchorField {
+  PrimaryInput,
+  ActionNumber,
+  BuilderOptions,
 }
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
@@ -334,6 +353,45 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
         return serializer._assetIdToId[generatedNode.builderOptionsId];
       case _GeneratedField.IsHidden:
         return _serializeBool(generatedNode.isHidden);
+      default:
+        throw new RangeError.index(index, this);
+    }
+  }
+}
+
+/// Wraps a [PostProcessAnchorNode] in a class that implements [List] instead of
+/// creating a new list for each one.
+class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
+  final PostProcessAnchorNode generatedNode;
+
+  /// Offset in the serialized format for additional fields in this class but
+  /// not in [_WrappedAssetNode].
+  ///
+  /// Indexes below this number are forwarded to `super[index]`.
+  static final int _serializedOffset = _AssetField.values.length;
+
+  static final int _length = _serializedOffset + _PostAnchorField.values.length;
+
+  @override
+  int get length => _length;
+
+  _WrappedPostProcessAnchorNode(
+      this.generatedNode, _AssetGraphSerializer serializer)
+      : super(generatedNode, serializer);
+
+  @override
+  Object operator [](int index) {
+    if (index < _serializedOffset) return super[index];
+    var fieldId = _PostAnchorField.values[index - _serializedOffset];
+    switch (fieldId) {
+      case _PostAnchorField.PrimaryInput:
+        return generatedNode.primaryInput != null
+            ? serializer._assetIdToId[generatedNode.primaryInput]
+            : null;
+      case _PostAnchorField.ActionNumber:
+        return generatedNode.actionNumber;
+      case _PostAnchorField.BuilderOptions:
+        return serializer._assetIdToId[generatedNode.builderOptionsId];
       default:
         throw new RangeError.index(index, this);
     }
