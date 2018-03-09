@@ -42,18 +42,10 @@ jobs:
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_barback"
       dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartanalyzer
-      env: PKG="build_barback"
-      dart: stable
     - stage: unit_test
       script: ./tool/travis.sh test_0
       env: PKG="build_barback"
       dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh test_0
-      env: PKG="build_barback"
-      dart: stable
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_config"
