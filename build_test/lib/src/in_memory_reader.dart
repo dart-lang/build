@@ -42,7 +42,7 @@ class InMemoryAssetReader extends AssetReader
       if (stringOrBytes is List<int>) {
         output[id] = stringOrBytes;
       } else if (stringOrBytes is String) {
-        output[id] = UTF8.encode(stringOrBytes);
+        output[id] = utf8.encode(stringOrBytes);
       } else {
         throw new UnsupportedError('Invalid asset contents: $stringOrBytes.');
       }
@@ -64,10 +64,10 @@ class InMemoryAssetReader extends AssetReader
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async {
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) async {
     if (!await canRead(id)) throw new AssetNotFoundException(id);
     assetsRead.add(id);
-    return UTF8.decode(assets[id]);
+    return utf8.decode(assets[id]);
   }
 
   @override
@@ -87,7 +87,7 @@ class InMemoryAssetReader extends AssetReader
   }
 
   void cacheStringAsset(AssetId id, String contents, {Encoding encoding}) {
-    encoding ??= UTF8;
+    encoding ??= utf8;
     assets[id] = encoding.encode(contents);
   }
 }

@@ -32,7 +32,7 @@ class BuildCacheReader implements AssetReader {
       _delegate.readAsBytes(cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) =>
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) =>
       _delegate.readAsString(cacheLocation(id, _assetGraph, _rootPackage),
           encoding: encoding);
 
@@ -52,7 +52,7 @@ class BuildCacheWriter implements RunnerAssetWriter {
   Future writeAsBytes(AssetId id, List<int> content) => _delegate.writeAsBytes(
       cacheLocation(id, _assetGraph, _rootPackage), content);
   @override
-  Future writeAsString(AssetId id, String content, {Encoding encoding: UTF8}) =>
+  Future writeAsString(AssetId id, String content, {Encoding encoding: utf8}) =>
       _delegate.writeAsString(
           cacheLocation(id, _assetGraph, _rootPackage), content,
           encoding: encoding);

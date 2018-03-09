@@ -31,7 +31,7 @@ class UnlinkedSummaryBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     var module = new Module.fromJson(
-        JSON.decode(await buildStep.readAsString(buildStep.inputId))
+        json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
       await createUnlinkedSummary(module, buildStep);
@@ -53,7 +53,7 @@ class LinkedSummaryBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     var module = new Module.fromJson(
-        JSON.decode(await buildStep.readAsString(buildStep.inputId))
+        json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
       await createLinkedSummary(module, buildStep);

@@ -502,7 +502,7 @@ Digest computeBuildPhasesDigest(Iterable<BuildPhase> buildPhases) {
 }
 
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>
-    md5.convert(UTF8.encode(JSON.encode(options.config)));
+    md5.convert(utf8.encode(json.encode(options.config)));
 
 AssetId builderOptionsIdForAction(BuildAction action, int actionNum) {
   if (action is InBuildPhase) {

@@ -17,7 +17,7 @@ class _AssetGraphDeserializer {
   final Map _serializedGraph;
 
   _AssetGraphDeserializer(List<int> bytes)
-      : _serializedGraph = JSON.decode(UTF8.decode(bytes)) as Map;
+      : _serializedGraph = json.decode(utf8.decode(bytes)) as Map;
 
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
@@ -74,9 +74,10 @@ class _AssetGraphDeserializer {
 
   AssetNode _deserializeAssetNode(List serializedNode) {
     AssetNode node;
-    var typeId = _NodeType.values[serializedNode[_Field.NodeType.index] as int];
-    var id = _idToAssetId[serializedNode[_Field.Id.index] as int];
-    var serializedDigest = serializedNode[_Field.Digest.index] as String;
+    var typeId =
+        _NodeType.values[serializedNode[_AssetField.NodeType.index] as int];
+    var id = _idToAssetId[serializedNode[_AssetField.Id.index] as int];
+    var serializedDigest = serializedNode[_AssetField.Digest.index] as String;
     var digest = _deserializeDigest(serializedDigest);
     switch (typeId) {
       case _NodeType.Source:
@@ -89,25 +90,30 @@ class _AssetGraphDeserializer {
         break;
       case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
+        var offset = _AssetField.values.length;
         node = new GeneratedAssetNode(
           id,
-          phaseNumber: serializedNode[_Field.PhaseNumber.index] as int,
-          primaryInput:
-              _idToAssetId[serializedNode[_Field.PrimaryInput.index] as int],
-          state: GeneratedNodeState
-              .values[serializedNode[_Field.State.index] as int],
-          wasOutput:
-              _deserializeBool(serializedNode[_Field.WasOutput.index] as int),
-          builderOptionsId:
-              _idToAssetId[serializedNode[_Field.BuilderOptions.index] as int],
-          globs: (serializedNode[_Field.Globs.index] as Iterable<String>)
+          phaseNumber:
+              serializedNode[_GeneratedField.PhaseNumber.index + offset] as int,
+          primaryInput: _idToAssetId[
+              serializedNode[_GeneratedField.PrimaryInput.index + offset]
+                  as int],
+          state: GeneratedNodeState.values[
+              serializedNode[_GeneratedField.State.index + offset] as int],
+          wasOutput: _deserializeBool(
+              serializedNode[_GeneratedField.WasOutput.index + offset] as int),
+          builderOptionsId: _idToAssetId[
+              serializedNode[_GeneratedField.BuilderOptions.index + offset]
+                  as int],
+          globs: (serializedNode[_GeneratedField.Globs.index + offset]
+                  as Iterable<String>)
               .map((pattern) => new Glob(pattern))
               .toSet(),
           lastKnownDigest: digest,
-          previousInputsDigest: _deserializeDigest(
-              serializedNode[_Field.PreviousInputsDigest.index] as String),
-          isHidden:
-              _deserializeBool(serializedNode[_Field.IsHidden.index] as int),
+          previousInputsDigest: _deserializeDigest(serializedNode[
+              _GeneratedField.PreviousInputsDigest.index + offset] as String),
+          isHidden: _deserializeBool(
+              serializedNode[_GeneratedField.IsHidden.index + offset] as int),
         );
         break;
       case _NodeType.Internal:
@@ -124,9 +130,9 @@ class _AssetGraphDeserializer {
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(
-        serializedNode[_Field.Outputs.index] as List<int>));
+        serializedNode[_AssetField.Outputs.index] as List<int>));
     node.primaryOutputs.addAll(_deserializeAssetIds(
-        serializedNode[_Field.PrimaryOutputs.index] as List<int>));
+        serializedNode[_AssetField.PrimaryOutputs.index] as List<int>));
     return node;
   }
 
@@ -167,7 +173,7 @@ class _AssetGraphSerializer {
       'assetPaths': assetPaths,
       'failedActions': _serializeFailedActions(_graph.failedActions),
     };
-    return UTF8.encode(JSON.encode(result));
+    return utf8.encode(json.encode(result));
   }
 
   List _serializeNode(AssetNode node) {
@@ -200,18 +206,17 @@ enum _NodeType {
   PostProcessAnchor,
 }
 
-/// Field indexes for serialized nodes.
-enum _Field {
-  // First, the generic fields for all asset nodes.
+/// Field indexes for all nodes.
+enum _AssetField {
   NodeType,
   Id,
   Outputs,
   PrimaryOutputs,
-  // **Note**: You must update `_WrappedAssetNode._length` if another generic
-  // field is added below `Digest`.
   Digest,
+}
 
-  // Fields below here are for generated nodes only.
+/// Field indexes for generated assets
+enum _GeneratedField {
   PrimaryInput,
   WasOutput,
   PhaseNumber,
@@ -230,7 +235,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
 
   _WrappedAssetNode(this.node, this.serializer);
 
-  static final int _length = _Field.Digest.index + 1;
+  static final int _length = _AssetField.values.length;
 
   @override
   int get length => _length;
@@ -241,9 +246,9 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
 
   @override
   Object operator [](int index) {
-    var fieldId = _Field.values[index];
+    var fieldId = _AssetField.values[index];
     switch (fieldId) {
-      case _Field.NodeType:
+      case _AssetField.NodeType:
         if (node is SourceAssetNode) {
           return _NodeType.Source.index;
         } else if (node is GeneratedAssetNode) {
@@ -262,17 +267,17 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
           throw new StateError('Unrecognized node type');
         }
         break;
-      case _Field.Id:
+      case _AssetField.Id:
         return serializer._assetIdToId[node.id];
-      case _Field.Outputs:
+      case _AssetField.Outputs:
         return node.outputs
             .map((id) => serializer._assetIdToId[id])
             .toList(growable: false);
-      case _Field.PrimaryOutputs:
+      case _AssetField.PrimaryOutputs:
         return node.primaryOutputs
             .map((id) => serializer._assetIdToId[id])
             .toList(growable: false);
-      case _Field.Digest:
+      case _AssetField.Digest:
         return _serializeDigest(node.lastKnownDigest);
       default:
         throw new RangeError.index(index, this);
@@ -293,9 +298,9 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   /// not in [_WrappedAssetNode].
   ///
   /// Indexes below this number are forwarded to `super[index]`.
-  static final int _serializedOffset = _WrappedAssetNode._length;
+  static final int _serializedOffset = _AssetField.values.length;
 
-  static final int _length = _Field.values.length;
+  static final int _length = _serializedOffset + _GeneratedField.values.length;
 
   @override
   int get length => _length;
@@ -307,27 +312,27 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   @override
   Object operator [](int index) {
     if (index < _serializedOffset) return super[index];
-    var fieldId = _Field.values[index];
+    var fieldId = _GeneratedField.values[index - _serializedOffset];
     switch (fieldId) {
-      case _Field.PrimaryInput:
+      case _GeneratedField.PrimaryInput:
         return generatedNode.primaryInput != null
             ? serializer._assetIdToId[generatedNode.primaryInput]
             : null;
-      case _Field.WasOutput:
+      case _GeneratedField.WasOutput:
         return _serializeBool(generatedNode.wasOutput);
-      case _Field.PhaseNumber:
+      case _GeneratedField.PhaseNumber:
         return generatedNode.phaseNumber;
-      case _Field.Globs:
+      case _GeneratedField.Globs:
         return generatedNode.globs
             .map((glob) => glob.pattern)
             .toList(growable: false);
-      case _Field.State:
+      case _GeneratedField.State:
         return generatedNode.state.index;
-      case _Field.PreviousInputsDigest:
+      case _GeneratedField.PreviousInputsDigest:
         return _serializeDigest(generatedNode.previousInputsDigest);
-      case _Field.BuilderOptions:
+      case _GeneratedField.BuilderOptions:
         return serializer._assetIdToId[generatedNode.builderOptionsId];
-      case _Field.IsHidden:
+      case _GeneratedField.IsHidden:
         return _serializeBool(generatedNode.isHidden);
       default:
         throw new RangeError.index(index, this);
@@ -337,9 +342,9 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
 
 Digest _deserializeDigest(String serializedDigest) => serializedDigest == null
     ? null
-    : new Digest(BASE64.decode(serializedDigest));
+    : new Digest(base64.decode(serializedDigest));
 
 String _serializeDigest(Digest digest) =>
-    digest == null ? null : BASE64.encode(digest.bytes);
+    digest == null ? null : base64.encode(digest.bytes);
 
 int _serializeBool(bool value) => value ? 1 : 0;

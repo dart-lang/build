@@ -150,9 +150,9 @@ void main() {
     test('finds transitive deps', () async {
       reader.cacheStringAsset(
           assetBImportsANoCycle.changeExtension(moduleExtension),
-          JSON.encode(immediateDep.toJson()));
+          json.encode(immediateDep.toJson()));
       reader.cacheStringAsset(assetNoCycle.changeExtension(moduleExtension),
-          JSON.encode(transitiveDep.toJson()));
+          json.encode(transitiveDep.toJson()));
 
       var transitiveDeps =
           await rootModule.computeTransitiveDependencies(reader);
@@ -164,7 +164,7 @@ void main() {
 
     test('missing modules report nice errors', () {
       reader.cacheStringAsset(assetCycle.changeExtension(moduleExtension),
-          JSON.encode(immediateDep.toJson()));
+          json.encode(immediateDep.toJson()));
       expect(
           () => rootModule.computeTransitiveDependencies(reader),
           allOf(throwsA(new isInstanceOf<MissingModulesException>()), throwsA(

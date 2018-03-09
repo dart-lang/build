@@ -174,7 +174,7 @@ class Dart2JsBatchWorker {
   Stream<String> get _workerStderrLines {
     assert(__worker != null);
     return __workerStderrLines ??= __worker.stderr
-        .transform(UTF8.decoder)
+        .transform(utf8.decoder)
         .transform(const LineSplitter())
         .asBroadcastStream();
   }
@@ -183,7 +183,7 @@ class Dart2JsBatchWorker {
   Stream<String> get _workerStdoutLines {
     assert(__worker != null);
     return __workerStdoutLines ??= __worker.stdout
-        .transform(UTF8.decoder)
+        .transform(utf8.decoder)
         .transform(const LineSplitter())
         .asBroadcastStream();
   }

@@ -35,7 +35,7 @@ class MultiAssetReader extends AssetReader implements MultiPackageAssetReader {
       (await _readerWith(id)).readAsBytes(id);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) async =>
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) async =>
       (await _readerWith(id)).readAsString(id, encoding: encoding);
 
   /// Returns all readable assets matching [glob] under [package].
