@@ -196,7 +196,8 @@ enum _NodeType {
   Generated,
   Internal,
   BuilderOptions,
-  Placeholder
+  Placeholder,
+  PostProcessAnchor,
 }
 
 /// Field indexes for serialized nodes.
@@ -255,6 +256,8 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
           return _NodeType.BuilderOptions.index;
         } else if (node is PlaceHolderAssetNode) {
           return _NodeType.Placeholder.index;
+        } else if (node is PostProcessAnchorNode) {
+          return _NodeType.PostProcessAnchor.index;
         } else {
           throw new StateError('Unrecognized node type');
         }

@@ -229,13 +229,13 @@ class PostProcessAnchorNode extends AssetNode with SyntheticAssetNode {
 
   final AssetId builderOptionsId;
 
-  PostProcessAnchorNode._(
+  PostProcessAnchorNode(
       AssetId id, this.primaryInput, this.actionNumber, this.builderOptionsId)
       : super._forMixins(id);
 
   factory PostProcessAnchorNode.forInputAndAction(
       AssetId primaryInput, int actionNumber, AssetId builderOptionsId) {
-    return new PostProcessAnchorNode._(
+    return new PostProcessAnchorNode(
         primaryInput.addExtension('.\$post_anchor.$actionNumber'),
         primaryInput,
         actionNumber,
