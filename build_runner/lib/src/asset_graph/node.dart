@@ -223,20 +223,20 @@ class PlaceHolderAssetNode extends AssetNode with SyntheticAssetNode {
 /// The [outputs] of this node are the individual outputs created for the
 /// [primaryInput] during the [PostBuildAction] at index [actionNumber].
 class PostProcessAnchorNode extends AssetNode with SyntheticAssetNode {
-  final AssetId primaryInput;
-
   final int actionNumber;
-
   final AssetId builderOptionsId;
+  final AssetId primaryInput;
+  Digest previousPrimaryInputDigest;
 
   PostProcessAnchorNode(
-      AssetId id, this.primaryInput, this.actionNumber, this.builderOptionsId)
+      AssetId id, this.primaryInput, this.actionNumber, this.builderOptionsId,
+      {this.previousPrimaryInputDigest})
       : super._forMixins(id);
 
   factory PostProcessAnchorNode.forInputAndAction(
       AssetId primaryInput, int actionNumber, AssetId builderOptionsId) {
     return new PostProcessAnchorNode(
-        primaryInput.addExtension('.\$post_anchor.$actionNumber'),
+        primaryInput.addExtension('.post_anchor.$actionNumber'),
         primaryInput,
         actionNumber,
         builderOptionsId);

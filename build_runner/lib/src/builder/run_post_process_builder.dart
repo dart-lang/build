@@ -9,6 +9,7 @@ import 'package:build/src/builder/logging.dart';
 import 'package:logging/logging.dart';
 
 import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
 import 'post_process_build_step.dart';
 import 'post_process_builder.dart';
 
@@ -19,10 +20,12 @@ Future<Null> runPostProcessBuilder(
     AssetReader reader,
     AssetWriter writer,
     Logger logger,
-    AssetGraph assetGraph) async {
+    AssetGraph assetGraph,
+    PostProcessAnchorNode anchorNode,
+    int phaseNum) async {
   await scopeLogAsync(() async {
-    var buildStep =
-        new PostProcessBuildStep(inputId, reader, writer, assetGraph);
+    var buildStep = new PostProcessBuildStep(
+        inputId, reader, writer, assetGraph, anchorNode, phaseNum);
     try {
       await builder.build(buildStep);
     } finally {

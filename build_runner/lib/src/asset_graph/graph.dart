@@ -361,6 +361,17 @@ class AssetGraph {
   bool _actionMatches(BuildAction action, AssetId input) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
+    Iterable<String> inputExtensions;
+    if (action is InBuildPhase) {
+      inputExtensions = action.builder.buildExtensions.keys;
+    } else if (action is PostBuildAction) {
+      inputExtensions = action.builder.inputExtensions;
+    } else {
+      throw new StateError('Unrecognized action type $action');
+    }
+    if (!inputExtensions.any(input.path.endsWith)) {
+      return false;
+    }
     var inputNode = get(input);
     while (inputNode is GeneratedAssetNode) {
       inputNode = get((inputNode as GeneratedAssetNode).primaryInput);
@@ -441,6 +452,7 @@ class AssetGraph {
         var anchor = new PostProcessAnchorNode.forInputAndAction(
             input, actionNum, buildOptionsNodeId);
         add(anchor);
+        print(anchor);
       }
       actionNum++;
     }

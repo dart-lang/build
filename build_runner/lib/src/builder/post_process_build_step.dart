@@ -10,22 +10,24 @@ import 'package:build/build.dart';
 import 'package:crypto/src/digest.dart';
 
 import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
 
 /// A simplified [BuildStep] which can only read its primary input, and can't
 /// get a [Resolver] or any [Resource]s, at least for now.
 class PostProcessBuildStep {
-  final AssetReader _reader;
-  final AssetWriter _writer;
-
   final AssetId inputId;
 
+  final PostProcessAnchorNode _anchorNode;
   final AssetGraph _assetGraph;
+  final int _phaseNum;
+  final AssetReader _reader;
+  final AssetWriter _writer;
 
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result>>[];
 
-  PostProcessBuildStep(
-      this.inputId, this._reader, this._writer, this._assetGraph);
+  PostProcessBuildStep(this.inputId, this._reader, this._writer,
+      this._assetGraph, this._anchorNode, this._phaseNum);
 
   Future<Digest> digest(AssetId id) => inputId == id
       ? _reader.digest(id)
@@ -38,6 +40,7 @@ class PostProcessBuildStep {
 
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _checkOutput(id);
+    _addNode(id);
     var done =
         _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
     _writeResults.add(Result.capture(done));
@@ -47,6 +50,7 @@ class PostProcessBuildStep {
   Future writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding: utf8}) {
     _checkOutput(id);
+    _addNode(id);
     var done = _futureOrWrite(content,
         (String c) => _writer.writeAsString(id, c, encoding: encoding));
     _writeResults.add(Result.capture(done));
@@ -60,6 +64,18 @@ class PostProcessBuildStep {
   /// [Resolver] for this build step - if any - has been released.
   Future complete() async {
     await Future.wait(_writeResults.map(Result.release));
+  }
+
+  void _addNode(AssetId id) {
+    var node = new GeneratedAssetNode(id,
+        primaryInput: inputId,
+        builderOptionsId: _anchorNode.builderOptionsId,
+        isHidden: true,
+        phaseNumber: _phaseNum,
+        wasOutput: true,
+        state: GeneratedNodeState.upToDate);
+    _assetGraph.add(node);
+    _anchorNode.outputs.add(id);
   }
 
   /// Checks if [id] is a valid output id.

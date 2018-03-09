@@ -139,7 +139,10 @@ class _AssetGraphDeserializer {
             serializedNode[_PostAnchorField.ActionNumber.index + offset] as int,
             _idToAssetId[
                 serializedNode[_PostAnchorField.BuilderOptions.index + offset]
-                    as int]);
+                    as int],
+            previousPrimaryInputDigest: _deserializeDigest(serializedNode[
+                    _PostAnchorField.PreviousPrimaryInputDigest.index + offset]
+                as String));
     }
     node.outputs.addAll(_deserializeAssetIds(
         serializedNode[_AssetField.Outputs.index] as List<int>));
@@ -191,6 +194,8 @@ class _AssetGraphSerializer {
   List _serializeNode(AssetNode node) {
     if (node is GeneratedAssetNode) {
       return new _WrappedGeneratedAssetNode(node, this);
+    } else if (node is PostProcessAnchorNode) {
+      return new _WrappedPostProcessAnchorNode(node, this);
     } else {
       return new _WrappedAssetNode(node, this);
     }
@@ -241,9 +246,10 @@ enum _GeneratedField {
 
 /// Field indexes for [PostProcessAnchorNode]s.
 enum _PostAnchorField {
-  PrimaryInput,
   ActionNumber,
   BuilderOptions,
+  PreviousPrimaryInputDigest,
+  PrimaryInput,
 }
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
@@ -384,14 +390,16 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
     if (index < _serializedOffset) return super[index];
     var fieldId = _PostAnchorField.values[index - _serializedOffset];
     switch (fieldId) {
-      case _PostAnchorField.PrimaryInput:
-        return generatedNode.primaryInput != null
-            ? serializer._assetIdToId[generatedNode.primaryInput]
-            : null;
       case _PostAnchorField.ActionNumber:
         return generatedNode.actionNumber;
       case _PostAnchorField.BuilderOptions:
         return serializer._assetIdToId[generatedNode.builderOptionsId];
+      case _PostAnchorField.PreviousPrimaryInputDigest:
+        return _serializeDigest(generatedNode.previousPrimaryInputDigest);
+      case _PostAnchorField.PrimaryInput:
+        return generatedNode.primaryInput != null
+            ? serializer._assetIdToId[generatedNode.primaryInput]
+            : null;
       default:
         throw new RangeError.index(index, this);
     }

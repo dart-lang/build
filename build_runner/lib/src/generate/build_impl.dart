@@ -446,11 +446,18 @@ class _SingleBuild {
 
   Future<Iterable<AssetId>> _runPostProcessAction(
       int phaseNum, int actionNum, PostBuildAction action) async {
-    var anchorNodes = _assetGraph
-        .packageNodes(action.package)
-        .where((node) =>
-            node is PostProcessAnchorNode && node.actionNumber == actionNum)
-        .cast<PostProcessAnchorNode>();
+    var anchorNodes = _assetGraph.packageNodes(action.package).where((node) {
+      if (node is PostProcessAnchorNode && node.actionNumber == actionNum) {
+        var inputNode = _assetGraph.get(node.primaryInput);
+        if (inputNode is SourceAssetNode) {
+          return true;
+        } else if (inputNode is GeneratedAssetNode) {
+          return inputNode.wasOutput &&
+              inputNode.state == GeneratedNodeState.upToDate;
+        }
+      }
+      return false;
+    }).cast<PostProcessAnchorNode>();
     var outputLists = await Future.wait(anchorNodes.map((anchorNode) =>
         _runPostProcessBuilderForAnchor(
             phaseNum, actionNum, action.builder, anchorNode)));
@@ -471,7 +478,7 @@ class _SingleBuild {
     var wrappedReader = new SingleStepReader(
         _reader, _assetGraph, phaseNum, true, input.package, null);
 
-    if (!await _buildShouldRun(anchorNode.outputs, wrappedReader)) {
+    if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
     }
     // We may have read some inputs in the call to `_buildShouldRun`, we want
@@ -482,15 +489,15 @@ class _SingleBuild {
     await _cleanUpStaleOutputs(anchorNode.outputs);
 
     // Remove old nodes from the graph and clear `outputs`.
-    anchorNode.outputs.forEach(_assetGraph.remove);
+    anchorNode.outputs.toList().forEach(_assetGraph.remove);
     anchorNode.outputs.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new BuildForInputLogger(new Logger('$builder on $input'));
 
     numActionsStarted++;
-    await runPostProcessBuilder(
-        builder, input, wrappedReader, wrappedWriter, logger, _assetGraph);
+    await runPostProcessBuilder(builder, input, wrappedReader, wrappedWriter,
+        logger, _assetGraph, anchorNode, phaseNum);
     numActionsCompleted++;
 
     if (logger.errorWasSeen) {
@@ -500,19 +507,6 @@ class _SingleBuild {
     }
 
     var assetsWritten = wrappedWriter.assetsWritten.toSet();
-
-    // Add all the new nodes to the graph and `anchorNodes.outputs`.
-    for (var id in assetsWritten) {
-      var node = new GeneratedAssetNode(id,
-          primaryInput: input,
-          builderOptionsId: anchorNode.builderOptionsId,
-          isHidden: true,
-          phaseNumber: phaseNum,
-          wasOutput: true,
-          state: GeneratedNodeState.upToDate);
-      _assetGraph.add(node);
-    }
-    anchorNode.outputs.addAll(assetsWritten);
 
     // Reset the state for all the output nodes based on what was read and
     // written.
@@ -561,6 +555,32 @@ class _SingleBuild {
       }
       return false;
     }
+  }
+
+  /// Checks if a post process build should run by checking the primary input
+  /// and builder options of the [anchorNode].
+  Future<bool> _postProcessBuildShouldRun(
+      PostProcessAnchorNode anchorNode, AssetReader wrappedReader) async {
+    if (anchorNode.previousPrimaryInputDigest == null) {
+      return true;
+    }
+
+    Future<bool> wasUpdated(AssetId id) async {
+      var input = _assetGraph.get(id);
+      var inputDigest =
+          input.lastKnownDigest ?? await wrappedReader.digest(input.id);
+      if (inputDigest != input.lastKnownDigest) {
+        return true;
+      }
+      return false;
+    }
+
+    if (await wasUpdated(anchorNode.primaryInput) ||
+        await wasUpdated(anchorNode.builderOptionsId)) {
+      return true;
+    }
+
+    return false;
   }
 
   /// Deletes any of [outputs] which previously were output.
