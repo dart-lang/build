@@ -7,8 +7,10 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
+import 'package:logging/logging.dart';
 
 import '../generate/phase.dart';
+import '../validation/config_validation.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 
@@ -118,6 +120,8 @@ class BuilderApplication {
         hideOutput = hideOutput ?? true;
 }
 
+final _logger = new Logger('ApplyBuilders');
+
 /// Creates a [BuildAction] to apply each builder in [builderApplications] to
 /// each target in [targetGraph] such that all builders are run for dependencies
 /// before moving on to later packages.
@@ -133,6 +137,8 @@ Future<List<BuildAction>> createBuildActions(
     TargetGraph targetGraph,
     Iterable<BuilderApplication> builderApplications,
     Map<String, Map<String, dynamic>> builderConfigOverrides) async {
+  validateBuilderConfig(builderApplications, targetGraph.rootPackageConfig,
+      builderConfigOverrides, _logger);
   final cycles = stronglyConnectedComponents<String, TargetNode>(
       targetGraph.allModules.values,
       (node) => node.target.key,
