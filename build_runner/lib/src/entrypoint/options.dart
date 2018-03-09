@@ -493,8 +493,6 @@ void _ensureBuildWebCompilersDependency(PackageGraph packageGraph, Logger log) {
       build_runner: any
       build_test: any
       build_web_compilers: any''');
-  } else {
-    log.warning('YAY!');
   }
 }
 

@@ -524,16 +524,15 @@ main() async {
 
       await pubGet('a');
       var result = await startPub('a', 'run', args: ['build_runner', 'serve']);
+      addTearDown(result.kill);
       var error = 'Missing dev dependency on package:build_web_compilers';
 
       await for (final log in result.stdout.transform(UTF8.decoder)) {
         if (log.contains(error)) {
-          result.kill();
           return;
         }
       }
 
-      result.kill();
       fail('No warning issued when running the "serve" command');
     });
   });
