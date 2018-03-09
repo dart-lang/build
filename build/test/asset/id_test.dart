@@ -116,7 +116,6 @@ void main() {
     });
   });
 
-
   test("equals another ID with the same package and path", () {
     expect(new AssetId.parse("foo|asset.txt"),
         equals(new AssetId.parse("foo|asset.txt")));
