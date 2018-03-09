@@ -9,6 +9,7 @@ import 'dart:isolate';
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:stack_trace/stack_trace.dart';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
@@ -43,7 +44,13 @@ Future<Null> main(List<String> args) async {
   var errorPort = new ReceivePort();
   var messagePort = new ReceivePort();
   var errorListener = errorPort.listen((e) {
-    stderr.writeAll(e as List, '\n');
+    stderr.writeln('You have hit a bug in build_runner');
+    stderr.writeln('Please file an issue with reproduction steps at '
+        'https://github.com/dart-lang/build/issues');
+    final error = e[0];
+    final trace = e[1] as String;
+    stderr.writeln(error);
+    stderr.writeln(new Trace.parse(trace).terse);
     if (exitCode == 0) exitCode = 1;
   });
   await Isolate.spawnUri(
