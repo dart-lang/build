@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
@@ -506,6 +507,34 @@ main() async {
           reason: 'build should fail due to missing build_test dependency');
       expect(result.stdout,
           contains('Missing dev dependecy on package:build_test'));
+    });
+
+    test('Missing build_web_compilers dependency warns the user', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_config',
+          'build_resolvers',
+          'build_runner',
+        ]),
+        d.dir('web', [
+          d.file('a.dart', 'void main() {}'),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+      var result = await startPub('a', 'run', args: ['build_runner', 'serve']);
+      var error = 'Missing dev dependency on package:build_web_compilers';
+
+      await for (final log in result.stdout.transform(UTF8.decoder)) {
+        if (log.contains(error)) {
+          result.kill();
+          return;
+        }
+      }
+
+      result.kill();
+      fail('No warning issued when running the "serve" command');
     });
   });
 }

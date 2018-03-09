@@ -342,6 +342,7 @@ class _ServeCommand extends _WatchCommand {
   @override
   Future<int> run() async {
     var options = _readOptions();
+    var logger = new Logger('Serve');
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
@@ -353,12 +354,12 @@ class _ServeCommand extends _WatchCommand {
         trackPerformance: options.trackPerformance,
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides);
+    _ensureBuildWebCompilersDependency(packageGraph, logger);
     var servers = await Future.wait(options.serveTargets
         .map((target) => _startServer(options, target, handler)));
     await handler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
-      var logger = new Logger('Serve');
       logger.warning(
           'Found no known web directories to serve, but running in `serve` '
           'mode. You may expliclity provide a directory to serve with trailing '
@@ -476,8 +477,24 @@ class _TestCommand extends BuildRunnerCommand {
 }
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
-  if (packageGraph.allPackages['build_test'] == null) {
+  if (!packageGraph.allPackages.containsKey('build_test')) {
     throw new BuildTestDependencyError();
+  }
+}
+
+void _ensureBuildWebCompilersDependency(PackageGraph packageGraph, Logger log) {
+  if (!packageGraph.allPackages.containsKey('build_web_compilers')) {
+    log.warning('''
+    Missing dev dependency on package:build_web_compilers, which is required to serve Dart compiled to JavaScript.
+
+    Please update your dev_dependencies section of your pubspec.yaml:
+
+    dev_dependencies:
+      build_runner: any
+      build_test: any
+      build_web_compilers: any''');
+  } else {
+    log.warning('YAY!');
   }
 }
 
@@ -524,7 +541,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
 
 class BuildTestDependencyError extends StateError {
   BuildTestDependencyError() : super('''
-Missing dev dependecy on package:build_test, which is required to run tests.
+Missing dev dependency on package:build_test, which is required to run tests.
 
 Please update your dev_dependencies section of your pubspec.yaml:
 
