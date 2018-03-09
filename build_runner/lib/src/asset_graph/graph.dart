@@ -158,13 +158,15 @@ class AssetGraph {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
         add(new BuilderOptionsAssetNode(
-            builderOptionsIdForPhase(phase, phaseNum),
+            builderOptionsIdForAction(phase, phaseNum),
             computeBuilderOptionsDigest(phase.builderOptions)));
       } else if (phase is PostBuildPhase) {
+        int actionNum = 0;
         for (var builderAction in phase.builderActions) {
           add(new BuilderOptionsAssetNode(
-              builderOptionsIdForPostBuildAction(builderAction, phaseNum),
+              builderOptionsIdForAction(builderAction, actionNum),
               computeBuilderOptionsDigest(builderAction.builderOptions)));
+          actionNum++;
         }
       } else {
         throw new StateError('Invalid action type $phase');
@@ -228,10 +230,10 @@ class AssetGraph {
       allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
   /// All the generated outputs for a particular phase.
-  // TODO consider storing this directly
-  Iterable<GeneratedAssetNode> outputsForPhase(int phase) => allNodes
-      .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
-      .cast<GeneratedAssetNode>();
+  Iterable<GeneratedAssetNode> outputsForPhase(String package, int phase) =>
+      packageNodes(package)
+          .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
+          .cast<GeneratedAssetNode>();
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -356,7 +358,7 @@ class AssetGraph {
 
   /// Crawl up primary inputs to see if the original Source file matches the
   /// glob on [action].
-  bool _actionMatches(InBuildPhase action, AssetId input) {
+  bool _actionMatches(BuildAction action, AssetId input) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
     var inputNode = get(input);
@@ -379,41 +381,69 @@ class AssetGraph {
     if (placeholders != null) allInputs.addAll(placeholders);
 
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
-      var phaseOutputs = new Set<AssetId>();
       var phase = buildPhases[phaseNum];
-      if (phase is! InBuildPhase) continue;
-      var builderAction = phase as InBuildPhase;
-
-      var buildOptionsNodeId =
-          builderOptionsIdForPhase(builderAction, phaseNum);
-      var builderOptionsNode =
-          get(buildOptionsNodeId) as BuilderOptionsAssetNode;
-      var inputs = allInputs
-          .where((input) => _actionMatches(builderAction, input))
-          .toList();
-      for (var input in inputs) {
-        // We might have deleted some inputs during this loop, if they turned
-        // out to be generated assets.
-        if (!allInputs.contains(input)) continue;
-        var node = get(input);
-        assert(node != null, 'The node from `$input` does not exist.');
-
-        var outputs = expectedOutputs(builderAction.builder, input);
-        phaseOutputs.addAll(outputs);
-        node.primaryOutputs.addAll(outputs);
-        node.outputs.addAll(outputs);
-        var deleted = _addGeneratedOutputs(
-            outputs, phaseNum, builderOptionsNode,
-            primaryInput: input, isHidden: phase.hideOutput);
-        allInputs.removeAll(deleted);
-        // We may delete source nodes that were producing outputs previously.
-        // Detect this by checking for deleted nodes that no longer exist in the
-        // graph at all, and remove them from `phaseOutputs`.
-        phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
+      if (phase is InBuildPhase) {
+        allInputs.addAll(_addInBuildPhaseOutputs(phase, phaseNum, allInputs));
+      } else if (phase is PostBuildPhase) {
+        _addPostBuildPhaseAnchors(phase, allInputs);
+      } else {
+        throw new StateError('Unrecognized phase type $phase');
       }
-      allInputs.addAll(phaseOutputs);
     }
     return allInputs;
+  }
+
+  /// Adds all [GeneratedAssetNode]s for [phase] given [allInputs].
+  ///
+  /// May remove some items from [allInputs], if they are deemed to actually be
+  /// outputs of this phase an not original sources.
+  ///
+  /// Returns all newly created asset ids.
+  Set<AssetId> _addInBuildPhaseOutputs(
+      InBuildPhase phase, int phaseNum, Set<AssetId> allInputs) {
+    var phaseOutputs = new Set<AssetId>();
+    var buildOptionsNodeId = builderOptionsIdForAction(phase, phaseNum);
+    var builderOptionsNode = get(buildOptionsNodeId) as BuilderOptionsAssetNode;
+    var inputs =
+        allInputs.where((input) => _actionMatches(phase, input)).toList();
+    for (var input in inputs) {
+      // We might have deleted some inputs during this loop, if they turned
+      // out to be generated assets.
+      if (!allInputs.contains(input)) continue;
+      var node = get(input);
+      assert(node != null, 'The node from `$input` does not exist.');
+
+      var outputs = expectedOutputs(phase.builder, input);
+      phaseOutputs.addAll(outputs);
+      node.primaryOutputs.addAll(outputs);
+      node.outputs.addAll(outputs);
+      var deleted = _addGeneratedOutputs(outputs, phaseNum, builderOptionsNode,
+          primaryInput: input, isHidden: phase.hideOutput);
+      allInputs.removeAll(deleted);
+      // We may delete source nodes that were producing outputs previously.
+      // Detect this by checking for deleted nodes that no longer exist in the
+      // graph at all, and remove them from `phaseOutputs`.
+      phaseOutputs.removeAll(deleted.where((id) => !contains(id)));
+    }
+    return phaseOutputs;
+  }
+
+  /// Adds all [PostProcessAnchorNode]s for [phase] given [allInputs];
+  ///
+  /// Does not return anything because [PostProcessAnchorNode]s are synthetic
+  /// and should not be treated as inputs.
+  void _addPostBuildPhaseAnchors(PostBuildPhase phase, Set<AssetId> allInputs) {
+    int actionNum = 0;
+    for (var action in phase.builderActions) {
+      var inputs = allInputs.where((input) => _actionMatches(action, input));
+      for (var input in inputs) {
+        var buildOptionsNodeId = builderOptionsIdForAction(action, actionNum);
+        var anchor = new PostProcessAnchorNode.forInputAndAction(
+            input, actionNum, buildOptionsNodeId);
+        add(anchor);
+      }
+      actionNum++;
+    }
   }
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
@@ -472,15 +502,17 @@ Digest computeBuildPhasesDigest(Iterable<BuildPhase> buildPhases) {
 }
 
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>
-    md5.convert(UTF8.encode(JSON.encode(options.config)));
+    md5.convert(utf8.encode(json.encode(options.config)));
 
-AssetId builderOptionsIdForPhase(InBuildPhase phase, int phaseNum) =>
-    new AssetId(phase.package, 'Phase$phaseNum.builderOptions');
-
-AssetId builderOptionsIdForPostBuildAction(
-        PostBuildAction action, int phaseNum) =>
-    new AssetId(action.package,
-        'Phase$phaseNum.${action.builder.runtimeType}.builderOptions');
+AssetId builderOptionsIdForAction(BuildAction action, int actionNum) {
+  if (action is InBuildPhase) {
+    return new AssetId(action.package, 'Phase$actionNum.builderOptions');
+  } else if (action is PostBuildAction) {
+    return new AssetId(action.package, 'PostPhase$actionNum.builderOptions');
+  } else {
+    throw new StateError('Unsupported action type $action');
+  }
+}
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
     new Set<AssetId>.from(packageGraph.allPackages.keys.expand((package) => [

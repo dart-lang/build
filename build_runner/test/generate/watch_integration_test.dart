@@ -49,12 +49,12 @@ main() {
       process = await startDart('a', 'tool/build.dart');
 
       stdOutLines = process.stdout
-          .transform(UTF8.decoder)
+          .transform(utf8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
 
       stdErrLines = process.stderr
-          .transform(UTF8.decoder)
+          .transform(utf8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
 
@@ -71,8 +71,7 @@ main() {
           d.dir('tool', [d.file('build.dart', '$originalBuildContent\n')])
         ]).create();
 
-        await nextStdErrLine(
-            'Watch: Terminating builds due to build script update');
+        await nextStdErrLine('Terminating builds due to build script update');
         expect(await process.exitCode, equals(0));
       });
     });
@@ -80,7 +79,7 @@ main() {
 }
 
 Future get nextSuccessfulBuild =>
-    stdOutLines.firstWhere((line) => line.contains('Build: Succeeded after'));
+    stdOutLines.firstWhere((line) => line.contains('Succeeded after'));
 
 Future nextStdErrLine(String message) =>
     stdErrLines.firstWhere((line) => line.contains(message));

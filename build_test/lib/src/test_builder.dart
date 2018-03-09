@@ -4,10 +4,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:test/test.dart';
 import 'package:build/build.dart';
-import 'package:build_barback/build_barback.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:logging/logging.dart';
+import 'package:test/test.dart';
 
 import 'assets.dart';
 import 'in_memory_reader.dart';
@@ -52,7 +52,7 @@ void checkOutputs(
       var actual = writer.assets[mapAssetIds(assetId)];
       Object expected;
       if (contentsMatcher is String) {
-        expected = UTF8.decode(actual);
+        expected = utf8.decode(actual);
       } else if (contentsMatcher is List<int>) {
         expected = actual;
       } else if (contentsMatcher is Matcher) {
@@ -134,7 +134,7 @@ Future testBuilder(
   var logger = new Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
   await runBuilder(
-      builder, inputIds, reader, writerSpy, const BarbackResolvers(),
+      builder, inputIds, reader, writerSpy, new AnalyzerResolvers(),
       logger: logger);
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;

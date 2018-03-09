@@ -1,3 +1,15 @@
+## 0.10.2-dev
+
+- Added a `DebugIndexBuilder`, which by default generates a `test/index.html`
+  with links to debug tests in your `test/**_test.dart` folder, linking to the
+  generated `*_test.debug.html` files. **NOTE**: This only works for web-based
+  tests.
+
+## 0.10.1+1
+
+- Replace `BarbackResolvers` with `AnalyzerResolvers` from `build_resolvers` by
+  default.
+
 ## 0.10.1
 
 - Allow overriding the `Resolvers` used for `resolve*` utilities.

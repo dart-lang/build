@@ -21,7 +21,8 @@ void main() {
           'example|p': new TargetBuilderConfig(
               isEnabled: true, options: new BuilderOptions({'baz': 'zap'})),
         },
-        dependencies: ['b:b', 'c:d'].toSet(),
+        // Expecting $default => example:example
+        dependencies: ['example:example', 'b:b', 'c:d'].toSet(),
         package: 'example',
         key: 'example:a',
         sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
@@ -137,6 +138,7 @@ targets:
         generate_for:
           - lib/a.dart
     dependencies:
+      - $default
       - b
       - c:d
     sources:

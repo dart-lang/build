@@ -7,16 +7,28 @@
 
 ### Breaking Changes
 
+- Split `BuildAction` into `BuilderBuildAction` and `PostProcessBuildAction`.
+  The base class no longer has a `builder` field.
 - `BuilderApplication` now has a `builderActionFactories` getter instead of a
   `builderFactories` getter.
 - The default constructor for `BuilderApplication` has been replaced with
   `BuilderApplication.forBuilder` and
   `BuilderApplication.forPostProcessBuilder`.
 
-### Bug Fixes
+## 0.7.13+1
+
+- Fix a concurrent modification error when using `listAssets` when an asset
+  could be written.
+
+## 0.7.13
 
 - Fix a bug where a chain of `Builder`s would fail to run on some outputs from
   previous steps when the generated asset did not match the target's `sources`.
+- Added support for serving on IPv4 loopback when the server hostname is
+  'localhost' (the default).
+- Added support for serving on any connection (both IPv4 and IPv6) when the
+  hostname is 'any'.
+- Improved stdout output.
 
 ## 0.7.12
 

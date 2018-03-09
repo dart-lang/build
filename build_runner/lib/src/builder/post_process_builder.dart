@@ -6,6 +6,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
+import 'post_process_build_step.dart';
+
 /// A builder which runes in a special phase at the end of the build.
 ///
 /// They are different from a normal [Builder] in several ways:
@@ -28,5 +30,5 @@ abstract class PostProcessBuilder {
   Iterable<String> get inputExtensions;
 
   /// Generates the outputs for a given [BuildStep].
-  FutureOr<Null> build(BuildStep buildStep);
+  FutureOr<Null> build(PostProcessBuildStep buildStep);
 }

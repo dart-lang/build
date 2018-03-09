@@ -22,7 +22,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   ignoreCastFailures ??= true;
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId.changeExtension(moduleExtension);
-  var module = new Module.fromJson(JSON
+  var module = new Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
   if (buildRootAppSummary) await buildStep.canRead(module.linkedSummaryId);
@@ -137,19 +137,33 @@ String _entryPointJs(String bootstrapModuleName) => '''
 (function() {
   $_currentDirectoryScript
   $_baseUrlScript
-  var el;
-  el = document.createElement("script");
-  el.defer = true;
-  el.async = false;
-  el.src =
-    baseUrl + "packages/\$sdk/dev_compiler/web/dart_stack_trace_mapper.js";
-  document.head.appendChild(el);
-  el = document.createElement("script");
-  el.defer = true;
-  el.async = false;
-  el.src = baseUrl + "packages/\$sdk/dev_compiler/amd/require.js";
-  el.setAttribute("data-main", _currentDirectory + "$bootstrapModuleName");
-  document.head.appendChild(el);
+
+  var mapperUri = baseUrl + "packages/\$sdk/dev_compiler/web/dart_stack_trace_mapper.js";
+  var requireUri = baseUrl + "packages/\$sdk/dev_compiler/amd/require.js";
+  var mainUri = _currentDirectory + "$bootstrapModuleName";
+
+  if (typeof document != 'undefined') {
+    var el = document.createElement("script");
+    el.defer = true;
+    el.async = false;
+    el.src = mapperUri;
+    document.head.appendChild(el);
+
+    el = document.createElement("script");
+    el.defer = true;
+    el.async = false;
+    el.src = requireUri;
+    el.setAttribute("data-main", mainUri);
+    document.head.appendChild(el);
+  } else {
+    importScripts(mapperUri, requireUri);
+    require.config({
+      baseUrl: baseUrl,
+    });
+    // TODO: update bootstrap code to take argument - dart-lang/build#1115
+    window = self;
+    require([mainUri + '.js']);
+  }
 })();
 ''';
 
@@ -234,7 +248,9 @@ $_baseUrlScript
         return dart.getSourceMap(module);
       });
   }
-  window.postMessage({ type: "DDC_STATE_CHANGE", state: "start" }, "*");
+  if (window.postMessage) {
+    window.postMessage({ type: "DDC_STATE_CHANGE", state: "start" }, "*");
+  }
 ''';
 
 /// Require JS config for ddc.

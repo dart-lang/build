@@ -20,7 +20,7 @@ AssetId makeAssetId([String assetIdString]) {
 void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetWriter writer) {
   assets.forEach((id, value) {
     if (value is String) {
-      writer.assets[id] = UTF8.encode(value);
+      writer.assets[id] = utf8.encode(value);
     } else if (value is List<int>) {
       writer.assets[id] = value;
     } else {

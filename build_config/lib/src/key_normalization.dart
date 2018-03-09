@@ -41,11 +41,22 @@ String normalizeTargetKeyDefinition(String targetKey, String packageName) =>
 ///
 /// Example normalizations:
 ///
+///   - "$default" => "$packageName:$packageName"
+///   - ":$default" => "$packageName:$packageName"
+///   - "$default:$default" => "$packageName:$packageName"
 ///   - "some_package" => "some_package:some_package"
 ///   - ":some_target" => "$packageName:some_target"
 ///   - "some_package:some_target" => "some_package:some_target"
-String normalizeTargetKeyUsage(String targetKey, String packageName) =>
-    _normalizeUsage(targetKey, packageName, ':');
+String normalizeTargetKeyUsage(String targetKey, String packageName) {
+  switch (targetKey) {
+    case _defaultTargetNamePlaceholder:
+    case ':$_defaultTargetNamePlaceholder':
+    case '$_defaultTargetNamePlaceholder:$_defaultTargetNamePlaceholder':
+      return '$packageName:$packageName';
+    default:
+      return _normalizeUsage(targetKey, packageName, ':');
+  }
+}
 
 /// Gives a full unique key for [name] used from [packageName].
 ///

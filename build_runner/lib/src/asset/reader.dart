@@ -121,7 +121,7 @@ class SingleStepReader implements AssetReader {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: UTF8}) {
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) {
     return toFuture(doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return new Future.error(new AssetNotFoundException(id));
@@ -136,7 +136,8 @@ class SingleStepReader implements AssetReader {
     _globsRan.add(glob);
     var potentialMatches = _assetGraph
         .packageNodes(_primaryPackage)
-        .where((n) => glob.matches(n.id.path));
+        .where((n) => glob.matches(n.id.path))
+        .toList();
     for (var node in potentialMatches) {
       if (await _isReadableNode(node)) yield node.id;
     }

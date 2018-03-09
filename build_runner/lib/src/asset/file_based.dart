@@ -35,7 +35,7 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding}) =>
       _fileForOrThrow(id, packageGraph).then((file) => _descriptorPool
-          .withResource(() => file.readAsString(encoding: encoding ?? UTF8)));
+          .withResource(() => file.readAsString(encoding: encoding ?? utf8)));
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) async* {
@@ -88,7 +88,7 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
 
   @override
   Future writeAsString(AssetId id, String contents,
-      {Encoding encoding: UTF8}) async {
+      {Encoding encoding: utf8}) async {
     var file = _fileFor(id, packageGraph);
     await _descriptorPool.withResource(() async {
       await file.create(recursive: true);

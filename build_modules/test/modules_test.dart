@@ -31,6 +31,7 @@ void main() {
   final assetDepOnNonSdk = makeAssetId('a|lib/a_dep_on_non_sdk.dart');
   final assetNonSdk = makeAssetId('a|lib/a_non_sdk.dart');
   final assetAImportsBNoCycle = makeAssetId('a|lib/a_imports_b_no_cycle.dart');
+  final assetAPartLibraryName = makeAssetId('a|lib/a_part_library_name.dart');
   final assetBImportsANoCycle = makeAssetId('b|lib/b_imports_a_no_cycle.dart');
 
   setUpAll(() async {
@@ -131,6 +132,10 @@ void main() {
           new File('test/fixtures/a/${assetAImportsBNoCycle.path}')
               .readAsStringSync());
       reader.cacheStringAsset(
+          assetAPartLibraryName,
+          new File('test/fixtures/a/${assetAPartLibraryName.path}')
+              .readAsStringSync());
+      reader.cacheStringAsset(
           assetBImportsANoCycle,
           new File('test/fixtures/b/${assetBImportsANoCycle.path}')
               .readAsStringSync());
@@ -145,9 +150,9 @@ void main() {
     test('finds transitive deps', () async {
       reader.cacheStringAsset(
           assetBImportsANoCycle.changeExtension(moduleExtension),
-          JSON.encode(immediateDep.toJson()));
+          json.encode(immediateDep.toJson()));
       reader.cacheStringAsset(assetNoCycle.changeExtension(moduleExtension),
-          JSON.encode(transitiveDep.toJson()));
+          json.encode(transitiveDep.toJson()));
 
       var transitiveDeps =
           await rootModule.computeTransitiveDependencies(reader);
@@ -159,7 +164,7 @@ void main() {
 
     test('missing modules report nice errors', () {
       reader.cacheStringAsset(assetCycle.changeExtension(moduleExtension),
-          JSON.encode(immediateDep.toJson()));
+          json.encode(immediateDep.toJson()));
       expect(
           () => rootModule.computeTransitiveDependencies(reader),
           allOf(throwsA(new isInstanceOf<MissingModulesException>()), throwsA(
@@ -168,7 +173,7 @@ void main() {
                 return error.message.contains('''
 Unable to find modules for some sources, check the following imports:
 
-`import 'package:b/b_imports_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 2:1
+`import 'package:b/b_imports_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 4:1
 ''');
               },
             ),

@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -341,6 +342,7 @@ class _ServeCommand extends _WatchCommand {
   @override
   Future<int> run() async {
     var options = _readOptions();
+    var logger = new Logger('Serve');
     var handler = await watch(builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
@@ -352,14 +354,12 @@ class _ServeCommand extends _WatchCommand {
         trackPerformance: options.trackPerformance,
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides);
-    var servers = await Future.wait(options.serveTargets.map((target) => serve(
-        handler.handlerFor(target.dir, logRequests: options.logRequests),
-        options.hostName,
-        target.port)));
+    _ensureBuildWebCompilersDependency(packageGraph, logger);
+    var servers = await Future.wait(options.serveTargets
+        .map((target) => _startServer(options, target, handler)));
     await handler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
-      var logger = new Logger('Serve');
       logger.warning(
           'Found no known web directories to serve, but running in `serve` '
           'mode. You may expliclity provide a directory to serve with trailing '
@@ -373,6 +373,26 @@ class _ServeCommand extends _WatchCommand {
     await Future.wait(servers.map((server) => server.close()));
 
     return ExitCode.success.code;
+  }
+}
+
+Future<HttpServer> _startServer(
+    _ServeOptions options, _ServeTarget target, ServeHandler handler) async {
+  var server = await _bindServer(options, target);
+  serveRequests(
+      server, handler.handlerFor(target.dir, logRequests: options.logRequests));
+  return server;
+}
+
+Future<HttpServer> _bindServer(_ServeOptions options, _ServeTarget target) {
+  switch (options.hostName) {
+    case 'any':
+      // Listens on both IPv6 and IPv4
+      return HttpServer.bind(InternetAddress.ANY_IP_V6, target.port);
+    case 'localhost':
+      return HttpMultiServer.loopback(target.port);
+    default:
+      return HttpServer.bind(options.hostName, target.port);
   }
 }
 
@@ -457,8 +477,22 @@ class _TestCommand extends BuildRunnerCommand {
 }
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
-  if (packageGraph.allPackages['build_test'] == null) {
+  if (!packageGraph.allPackages.containsKey('build_test')) {
     throw new BuildTestDependencyError();
+  }
+}
+
+void _ensureBuildWebCompilersDependency(PackageGraph packageGraph, Logger log) {
+  if (!packageGraph.allPackages.containsKey('build_web_compilers')) {
+    log.warning('''
+    Missing dev dependency on package:build_web_compilers, which is required to serve Dart compiled to JavaScript.
+
+    Please update your dev_dependencies section of your pubspec.yaml:
+
+    dev_dependencies:
+      build_runner: any
+      build_test: any
+      build_web_compilers: any''');
   }
 }
 
@@ -487,7 +521,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     // Attempt to parse the value as JSON, and if that fails then treat it as
     // a normal string.
     try {
-      value = JSON.decode(parts[2]);
+      value = json.decode(parts[2]);
     } on FormatException catch (_) {
       value = parts[2];
     }
@@ -505,7 +539,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
 
 class BuildTestDependencyError extends StateError {
   BuildTestDependencyError() : super('''
-Missing dev dependecy on package:build_test, which is required to run tests.
+Missing dev dependency on package:build_test, which is required to run tests.
 
 Please update your dev_dependencies section of your pubspec.yaml:
 

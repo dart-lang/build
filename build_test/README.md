@@ -15,8 +15,8 @@
   <a href="https://www.dartdocs.org/documentation/build_test/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
-  <a href="https://gitter.im/dart-lang/source_gen">
-    <img src="https://badges.gitter.im/dart-lang/source_gen.svg" alt="Join the chat on Gitter" />
+  <a href="https://gitter.im/dart-lang/build">
+    <img src="https://badges.gitter.im/dart-lang/build.svg" alt="Join the chat on Gitter" />
   </a>
 </p>
 
@@ -51,6 +51,9 @@ For example, to run all chrome platform tests you would do
 This package will automatically create `*.debug.html` files next to all your
 `*_test.dart` files, which can be loaded in a browser from the normal
 development server (`pub run build_runner serve`).
+
+You may also view an index of links to every `*.debug.html` file by navigating
+to `http://localhost:8081` (or wherever your `test` folder is being served).
 
 ## Writing tests for your custom Builder
 

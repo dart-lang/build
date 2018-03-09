@@ -116,6 +116,8 @@ class BuilderApplication {
   final Iterable<String> appliesBuilders;
 
   /// A uniqe key for this builder.
+  ///
+  /// Ignored when null or empty.
   final String builderKey;
 
   /// Whether genereated assets should be placed in the build cache.
@@ -145,6 +147,7 @@ class BuilderApplication {
         generateFor ??= defaultGenerateFor;
         var builder = builderFactory(options);
         return new InBuildPhase(builder, package,
+            builderKey: builderKey,
             targetSources: targetSources,
             generateFor: generateFor,
             builderOptions: options,
