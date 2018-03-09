@@ -457,12 +457,13 @@ main(List<String> args) async {
 }
 ''';
 
-    Future<Null> runBuild({List<String> extraArgs}) async {
+    Future<String> runBuild({List<String> extraArgs}) async {
       extraArgs ??= [];
       var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
       var result = await runDart('a', 'tool/build.dart', args: buildArgs);
       expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
       print('${result.stdout}\n${result.stderr}');
+      return '${result.stdout}';
     }
 
     test('warns on invalid builder key --define', () async {
