@@ -156,7 +156,7 @@ Uri _constructUri(AssetId id) {
   final originalSegments = p.split(id.path);
   final isLib = originalSegments.first == 'lib';
   final scheme = isLib ? 'package' : 'asset';
-  final pathSegmens = isLib ? originalSegments.skip(1) : originalSegments;
+  final pathSegments = isLib ? originalSegments.skip(1) : originalSegments;
   return new Uri(
-      scheme: scheme, pathSegments: [id.package]..addAll(pathSegmens));
+      scheme: scheme, pathSegments: [id.package]..addAll(pathSegments));
 }
