@@ -36,13 +36,13 @@ class AssetGraph {
   /// A [Digest] of the build actions this graph was originally created with.
   ///
   /// When an [AssetGraph] is deserialized we check whether or not it matches
-  /// the new [BuildAction]s and throw away the graph if it doesn't.
-  final Digest buildActionsDigest;
+  /// the new [BuildPhase]s and throw away the graph if it doesn't.
+  final Digest buildPhasesDigest;
 
   /// The [Platform.version] this graph was created with.
   final String dartVersion;
 
-  AssetGraph._(this.buildActionsDigest, this.dartVersion,
+  AssetGraph._(this.buildPhasesDigest, this.dartVersion,
       {Map<int, Set<AssetId>> failedActions})
       : _failedActions = failedActions ?? new Map<int, Set<AssetId>>();
 
@@ -51,17 +51,17 @@ class AssetGraph {
       new _AssetGraphDeserializer(serializedGraph).deserialize();
 
   static Future<AssetGraph> build(
-      List<BuildAction> buildActions,
+      List<BuildPhase> buildPhases,
       Set<AssetId> sources,
       Set<AssetId> internalSources,
       PackageGraph packageGraph,
       AssetReader digestReader) async {
     var graph = new AssetGraph._(
-        computeBuildActionsDigest(buildActions), Platform.version);
+        computeBuildPhasesDigest(buildPhases), Platform.version);
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
-    graph._addBuilderOptionsNodes(buildActions);
-    graph._addOutputsForSources(buildActions, sources, packageGraph.root.name,
+    graph._addBuilderOptionsNodes(buildPhases);
+    graph._addOutputsForSources(buildPhases, sources, packageGraph.root.name,
         placeholders: placeholders);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
@@ -152,22 +152,22 @@ class AssetGraph {
     }).toList();
   }
 
-  /// Adds [BuilderOptionsAssetNode]s for all [buildActions] to this graph.
-  void _addBuilderOptionsNodes(List<BuildAction> buildActions) {
-    for (var phase = 0; phase < buildActions.length; phase++) {
-      var action = buildActions[phase];
-      if (action is BuilderBuildAction) {
+  /// Adds [BuilderOptionsAssetNode]s for all [buildPhases] to this graph.
+  void _addBuilderOptionsNodes(List<BuildPhase> buildPhases) {
+    for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
+      var phase = buildPhases[phaseNum];
+      if (phase is InBuildPhase) {
         add(new BuilderOptionsAssetNode(
-            builderOptionsIdForAction(action, phase),
-            computeBuilderOptionsDigest(action.builderOptions)));
-      } else if (action is PostProcessBuildAction) {
-        for (var builderAction in action.builderActions) {
+            builderOptionsIdForPhase(phase, phaseNum),
+            computeBuilderOptionsDigest(phase.builderOptions)));
+      } else if (phase is PostBuildPhase) {
+        for (var builderAction in phase.builderActions) {
           add(new BuilderOptionsAssetNode(
-              builderOptionsIdForPostProcessAction(builderAction, phase),
+              builderOptionsIdForPostBuildAction(builderAction, phaseNum),
               computeBuilderOptionsDigest(builderAction.builderOptions)));
         }
       } else {
-        throw new StateError('Invalid action type $action');
+        throw new StateError('Invalid action type $phase');
       }
     }
   }
@@ -228,10 +228,10 @@ class AssetGraph {
       allNodes.where((n) => n.isGenerated).map((n) => n.id);
 
   /// All the generated outputs for a particular phase.
-  // TODO consider storing this directly
-  Iterable<GeneratedAssetNode> outputsForPhase(int phase) => allNodes
-      .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
-      .cast<GeneratedAssetNode>();
+  Iterable<GeneratedAssetNode> outputsForPhase(String package, int phase) =>
+      packageNodes(package)
+          .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
+          .cast<GeneratedAssetNode>();
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -242,7 +242,7 @@ class AssetGraph {
   ///
   /// Returns the list of [AssetId]s that were invalidated.
   Future<Set<AssetId>> updateAndInvalidate(
-      List<BuildAction> buildActions,
+      List<BuildPhase> buildPhases,
       Map<AssetId, ChangeType> updates,
       String rootPackage,
       Future delete(AssetId id),
@@ -321,7 +321,7 @@ class AssetGraph {
     }
 
     var allNewAndDeletedIds =
-        _addOutputsForSources(buildActions, newIds, rootPackage)
+        _addOutputsForSources(buildPhases, newIds, rootPackage)
           ..addAll(transitiveRemovedIds);
 
     // For all new or deleted assets, check if they match any globs.
@@ -356,7 +356,7 @@ class AssetGraph {
 
   /// Crawl up primary inputs to see if the original Source file matches the
   /// glob on [action].
-  bool _actionMatches(BuilderBuildAction action, AssetId input) {
+  bool _actionMatches(InBuildPhase action, AssetId input) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
     var inputNode = get(input);
@@ -367,24 +367,25 @@ class AssetGraph {
   }
 
   /// Returns a set containing [newSources] plus any new generated sources
-  /// based on [buildActions], and updates this graph to contain all the
+  /// based on [buildPhases], and updates this graph to contain all the
   /// new outputs.
   ///
   /// If [placeholders] is supplied they will be added to [newSources] to create
   /// the full input set.
-  Set<AssetId> _addOutputsForSources(List<BuildAction> buildActions,
-      Set<AssetId> newSources, String rootPackage,
+  Set<AssetId> _addOutputsForSources(
+      List<BuildPhase> buildPhases, Set<AssetId> newSources, String rootPackage,
       {Set<AssetId> placeholders}) {
     var allInputs = new Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
 
-    for (var phase = 0; phase < buildActions.length; phase++) {
+    for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
       var phaseOutputs = new Set<AssetId>();
-      var action = buildActions[phase];
-      if (action is! BuilderBuildAction) continue;
-      var builderAction = action as BuilderBuildAction;
+      var phase = buildPhases[phaseNum];
+      if (phase is! InBuildPhase) continue;
+      var builderAction = phase as InBuildPhase;
 
-      var buildOptionsNodeId = builderOptionsIdForAction(builderAction, phase);
+      var buildOptionsNodeId =
+          builderOptionsIdForPhase(builderAction, phaseNum);
       var builderOptionsNode =
           get(buildOptionsNodeId) as BuilderOptionsAssetNode;
       var inputs = allInputs
@@ -401,8 +402,9 @@ class AssetGraph {
         phaseOutputs.addAll(outputs);
         node.primaryOutputs.addAll(outputs);
         node.outputs.addAll(outputs);
-        var deleted = _addGeneratedOutputs(outputs, phase, builderOptionsNode,
-            primaryInput: input, isHidden: action.hideOutput);
+        var deleted = _addGeneratedOutputs(
+            outputs, phaseNum, builderOptionsNode,
+            primaryInput: input, isHidden: phase.hideOutput);
         allInputs.removeAll(deleted);
         // We may delete source nodes that were producing outputs previously.
         // Detect this by checking for deleted nodes that no longer exist in the
@@ -458,12 +460,12 @@ class AssetGraph {
   Set<AssetId> remove(AssetId id) => _removeRecursive(id);
 }
 
-/// Computes a [Digest] for [buildActions] which can be used to compare one set
-/// of [BuildAction]s against another.
-Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
+/// Computes a [Digest] for [buildPhases] which can be used to compare one set
+/// of [BuildPhase]s against another.
+Digest computeBuildPhasesDigest(Iterable<BuildPhase> buildPhases) {
   var digestSink = new AccumulatorSink<Digest>();
   var bytesSink = md5.startChunkedConversion(digestSink);
-  bytesSink.add(buildActions.map((a) => a.identity).toList());
+  bytesSink.add(buildPhases.map((phase) => phase.identity).toList());
   bytesSink.close();
   assert(digestSink.events.length == 1);
   return digestSink.events.first;
@@ -472,13 +474,13 @@ Digest computeBuildActionsDigest(Iterable<BuildAction> buildActions) {
 Digest computeBuilderOptionsDigest(BuilderOptions options) =>
     md5.convert(UTF8.encode(JSON.encode(options.config)));
 
-AssetId builderOptionsIdForAction(BuilderBuildAction action, int phase) =>
-    new AssetId(action.package, 'Phase$phase.builderOptions');
+AssetId builderOptionsIdForPhase(InBuildPhase phase, int phaseNum) =>
+    new AssetId(phase.package, 'Phase$phaseNum.builderOptions');
 
-AssetId builderOptionsIdForPostProcessAction(
-        PostProcessBuilderAction action, int phase) =>
+AssetId builderOptionsIdForPostBuildAction(
+        PostBuildAction action, int phaseNum) =>
     new AssetId(action.package,
-        'Phase$phase.${action.builder.runtimeType}.builderOptions');
+        'Phase$phaseNum.${action.builder.runtimeType}.builderOptions');
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
     new Set<AssetId>.from(packageGraph.allPackages.keys.expand((package) => [

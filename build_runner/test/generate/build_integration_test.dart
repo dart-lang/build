@@ -60,10 +60,8 @@ main(List<String> args) async {
         var result = await runDart('a', 'tool/build.dart',
             args: ['build', '--delete-conflicting-outputs']);
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(
-            result.stdout,
-            contains('BuildDefinition: Invalidating asset graph due to '
-                'build script update'));
+        expect(result.stdout,
+            contains('Invalidating asset graph due to build script update'));
         await d.dir('a', [
           d.dir('web', [d.file('a.txt.copy', 'a')])
         ]).validate();
@@ -257,7 +255,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
     });
 
     group('--output with optional outputs', () {
-      String buildContent = '''
+      final buildContent = '''
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
@@ -355,6 +353,90 @@ main(List<String> args) async {
         // file even though it does exist now.
         await runBuild(touchCopy: false);
         await expectBuildOutput(expectCopyInOutput: false);
+      });
+    });
+
+    group('--define overrides build.yaml', () {
+      final buildContent = '''
+import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+
+main(List<String> args) async {
+  var buildApplications = [
+    apply(
+        'root|copy',
+        [
+          (options) {
+            var copyFromId = options.config['copy_from'];
+            var build = copyFromId != null ?
+                copyFrom(new AssetId.parse(copyFromId)) : null;
+            return new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.txt'),
+              build: build);
+          }
+        ],
+        toRoot(),
+        hideOutput: false,
+        isOptional: false),
+  ];;
+  await run(args, buildApplications);
+}
+''';
+
+      /// Expects the build output based on [expectedContent].
+      Future<Null> expectBuildOutput(String expectedContent) async {
+        await d.dir('a', [
+          d.dir('web', [
+            d.file('a.txt', 'a'),
+            d.file('a.txt.copy', expectedContent),
+          ]),
+        ]).validate();
+      }
+
+      Future<Null> runBuild({List<String> extraArgs}) async {
+        extraArgs ??= [];
+        var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
+        var result = await runDart('a', 'tool/build.dart', args: buildArgs);
+        expect(result.exitCode, 0,
+            reason: '${result.stdout}\n${result.stderr}');
+        print('${result.stdout}\n${result.stderr}');
+      }
+
+      test('--define overrides build.yaml', () async {
+        await d.dir('a', [
+          await pubspec('a', currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_resolvers',
+            'build_runner',
+            'build_test',
+          ]),
+          d.file('build.yaml', r'''
+targets:
+  $default:
+    builders:
+      root|copy:
+        options:
+          copy_from: a|web/b.txt
+'''),
+          d.dir('tool', [d.file('build.dart', buildContent)]),
+          d.dir('web', [
+            d.file('a.txt', 'a'),
+            d.file('b.txt', 'b'),
+            d.file('c.txt', 'c'),
+          ]),
+        ]).create();
+
+        await pubGet('a');
+
+        // Run a basic build with no --define config.
+        await runBuild();
+        await expectBuildOutput('b');
+
+        // Run another build but add the --define.
+        await runBuild(extraArgs: ['--define=root|copy=copy_from=a|web/c.txt']);
+        await expectBuildOutput('c');
       });
     });
   });

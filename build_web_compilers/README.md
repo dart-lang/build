@@ -15,8 +15,8 @@
   <a href="https://www.dartdocs.org/documentation/build_web_compilers/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
-  <a href="https://gitter.im/dart-lang/source_gen">
-    <img src="https://badges.gitter.im/dart-lang/source_gen.svg" alt="Join the chat on Gitter" />
+  <a href="https://gitter.im/dart-lang/build">
+    <img src="https://badges.gitter.im/dart-lang/build.svg" alt="Join the chat on Gitter" />
   </a>
 </p>
 

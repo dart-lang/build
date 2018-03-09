@@ -219,8 +219,8 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
     return '''
   <html>
     <head>
-      <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-      <script type="text/javascript">
+      <script src="https://www.gstatic.com/charts/loader.js"></script>
+      <script>
         google.charts.load('current', {'packages':['timeline']});
         google.charts.setOnLoadCallback(drawChart);
         function drawChart() {

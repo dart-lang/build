@@ -1,7 +1,17 @@
 ## 0.2.5-pre
 
 - Added `post_process_builders` section to `build.yaml`. See README.md for more
-  information.
+  information.-dev
+- Adds support for `$default` as a _dependency_, i.e.:
+
+```yaml
+targets:
+  $default:
+    ...
+  foo:
+    dependencies:
+      - $default
+```
 
 ## 0.2.4
 
