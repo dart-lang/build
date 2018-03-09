@@ -362,9 +362,9 @@ main() {
           <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
       var bytes = originalAssetGraph.serialize();
-      var serialized = JSON.decode(UTF8.decode(bytes));
+      var serialized = json.decode(utf8.decode(bytes));
       serialized['dart_version'] = 'some_fake_version';
-      var encoded = UTF8.encode(JSON.encode(serialized));
+      var encoded = utf8.encode(json.encode(serialized));
       await createFile(assetGraphPath, encoded);
 
       logs.clear();

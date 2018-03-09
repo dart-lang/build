@@ -34,7 +34,7 @@ class _DecodedMatcher extends CustomMatcher {
 
   _DecodedMatcher(matcher, {Encoding encoding})
       : this._encoding = encoding ?? UTF8,
-        super('Utf8 decoded bytes', 'UTF8.decode', matcher);
+        super('Utf8 decoded bytes', 'utf8.decode', matcher);
 
   @override
   featureValueOf(bytes) => _encoding.decode(bytes as List<int>);

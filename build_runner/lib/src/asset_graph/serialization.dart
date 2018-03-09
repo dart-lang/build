@@ -17,7 +17,7 @@ class _AssetGraphDeserializer {
   final Map _serializedGraph;
 
   _AssetGraphDeserializer(List<int> bytes)
-      : _serializedGraph = JSON.decode(UTF8.decode(bytes)) as Map;
+      : _serializedGraph = json.decode(utf8.decode(bytes)) as Map;
 
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
@@ -173,7 +173,7 @@ class _AssetGraphSerializer {
       'assetPaths': assetPaths,
       'failedActions': _serializeFailedActions(_graph.failedActions),
     };
-    return UTF8.encode(JSON.encode(result));
+    return utf8.encode(json.encode(result));
   }
 
   List _serializeNode(AssetNode node) {
@@ -339,9 +339,9 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
 
 Digest _deserializeDigest(String serializedDigest) => serializedDigest == null
     ? null
-    : new Digest(BASE64.decode(serializedDigest));
+    : new Digest(base64.decode(serializedDigest));
 
 String _serializeDigest(Digest digest) =>
-    digest == null ? null : BASE64.encode(digest.bytes);
+    digest == null ? null : base64.encode(digest.bytes);
 
 int _serializeBool(bool value) => value ? 1 : 0;

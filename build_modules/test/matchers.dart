@@ -45,11 +45,11 @@ class EncodedModuleMatcher extends Matcher {
   @override
   bool matches(actual, description) {
     if (actual is List<int>) {
-      actual = UTF8.decode(actual as List<int>);
+      actual = utf8.decode(actual as List<int>);
     }
     if (actual is! String) return false;
-    var json = JSON.decode(actual as String) as Map<String, dynamic>;
-    var module = new Module.fromJson(json);
+    var jSon = json.decode(actual as String) as Map<String, dynamic>;
+    var module = new Module.fromJson(jSon);
 
     return module.primarySource == expected.primarySource &&
         unorderedEquals(expected.sources)
@@ -60,5 +60,5 @@ class EncodedModuleMatcher extends Matcher {
 
   @override
   Description describe(Description description) =>
-      description.add(JSON.encode(expected.toJson()).toString());
+      description.add(json.encode(expected.toJson()).toString());
 }

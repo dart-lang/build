@@ -11,7 +11,7 @@ import '../asset_graph/node.dart';
 
 main() async {
   var json = await HttpRequest.getString(r'/$graph/assets.json');
-  var graph = new AssetGraph.deserialize(UTF8.encode(json));
+  var graph = new AssetGraph.deserialize(utf8.encode(json));
   var nodes = graph.allNodes
       .where((node) {
         if (node is GeneratedAssetNode && !node.wasOutput) return false;

@@ -36,7 +36,7 @@ BuilderOptions optionsFromArgs(List<String> args) {
 
 dynamic _decode(String value) {
   try {
-    return JSON.decode(value);
+    return json.decode(value);
   } on FormatException {
     return value;
   }
