@@ -98,10 +98,7 @@ class AssetId implements Comparable<AssetId> {
   /// A `package:` URI suitable for use directly with other systems if this
   /// asset is under it's package's `lib/` directory, else an `asset:` URI
   /// suitable for use within build tools.
-  Uri get uri => _uri ??= path.startsWith('lib/')
-      ? new Uri(
-          scheme: 'package', path: '$package/${path.replaceFirst('lib/','')}')
-      : new Uri(scheme: 'asset', path: '$package/$path');
+  Uri get uri => _uri ??= _constructUri(this);
   Uri _uri;
 
   /// Deserializes an [AssetId] from [data], which must be the result of
@@ -153,4 +150,13 @@ String _normalizePath(String path) {
 
   // Collapse "." and "..".
   return p.posix.normalize(path);
+}
+
+Uri _constructUri(AssetId id) {
+  final originalSegments = p.split(id.path);
+  final isLib = originalSegments.first == 'lib';
+  final scheme = isLib ? 'package' : 'asset';
+  final pathSegmens = isLib ? originalSegments.skip(1) : originalSegments;
+  return new Uri(
+      scheme: scheme, pathSegments: [id.package]..addAll(pathSegmens));
 }
