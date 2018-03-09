@@ -44,9 +44,9 @@ Future<Null> main(List<String> args) async {
   var errorPort = new ReceivePort();
   var messagePort = new ReceivePort();
   var errorListener = errorPort.listen((e) {
-    stderr.writeln('You have hit a bug in build_runner');
+    stderr.writeln('\n\nYou have hit a bug in build_runner');
     stderr.writeln('Please file an issue with reproduction steps at '
-        'https://github.com/dart-lang/build/issues');
+        'https://github.com/dart-lang/build/issues\n\n');
     final error = e[0];
     final trace = e[1] as String;
     stderr.writeln(error);
