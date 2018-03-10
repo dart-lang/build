@@ -194,7 +194,7 @@ class AssetGraph {
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
-    for (var output in node.primaryOutputs) {
+    for (var output in node.primaryOutputs.toList()) {
       _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
