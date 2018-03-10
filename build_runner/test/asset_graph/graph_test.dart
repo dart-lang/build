@@ -90,6 +90,11 @@ void main() {
           if (phaseNum % 2 == 0) {
             graph.markActionFailed(phaseNum, node.id);
           }
+          var builderOptionsNode =
+              new BuilderOptionsAssetNode(makeAssetId(), new Digest([n]));
+          graph.add(builderOptionsNode);
+          graph.add(new PostProcessAnchorNode.forInputAndAction(
+              node.id, n, builderOptionsNode.id));
           for (int g = 0; g < 5 - n; g++) {
             var builderOptionsNode = new BuilderOptionsAssetNode(
                 makeAssetId(), md5.convert(utf8.encode('test')));
@@ -178,12 +183,20 @@ void main() {
     });
 
     group('with buildPhases', () {
+      var targetSources = const InputSet(exclude: const ['excluded.txt']);
       final buildPhases = [
         new InBuildPhase(
             new TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt')),
             'foo',
-            targetSources: const InputSet(exclude: const ['excluded.txt']))
+            targetSources: targetSources),
+        new PostBuildPhase([
+          new PostBuildAction(
+              new CopyingPostProcessBuilder(outputExtension: '.post'), 'foo',
+              targetSources: targetSources,
+              builderOptions: const BuilderOptions(const {}),
+              generateFor: const InputSet())
+        ])
       ];
       final primaryInputId = makeAssetId('foo|file.txt');
       final excludedInputId = makeAssetId('foo|excluded.txt');
@@ -193,7 +206,10 @@ void main() {
       final internalId =
           makeAssetId('foo|.dart_tool/build/entrypoint/serve.dart');
       final builderOptionsId = makeAssetId('foo|Phase0.builderOptions');
+      final postBuilderOptionsId = makeAssetId('foo|PostPhase0.builderOptions');
       final placeholders = placeholderIdsFor(fooPackageGraph);
+      final expectedAnchorNode = new PostProcessAnchorNode.forInputAndAction(
+          primaryInputId, 0, postBuilderOptionsId);
 
       setUp(() async {
         graph = await AssetGraph.build(
@@ -214,6 +230,8 @@ void main() {
               primaryOutputId,
               internalId,
               builderOptionsId,
+              expectedAnchorNode.id,
+              postBuilderOptionsId,
             ]..addAll(placeholders)));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
@@ -238,6 +256,14 @@ void main() {
         var builderOptionsNode =
             graph.get(builderOptionsId) as BuilderOptionsAssetNode;
         expect(builderOptionsNode.outputs, unorderedEquals([primaryOutputId]));
+
+        var postBuilderOptionsNode =
+            graph.get(postBuilderOptionsId) as BuilderOptionsAssetNode;
+        expect(postBuilderOptionsNode, isNotNull);
+        expect(postBuilderOptionsNode.outputs, isEmpty);
+        var anchorNode =
+            graph.get(expectedAnchorNode.id) as PostProcessAnchorNode;
+        expect(anchorNode, isNotNull);
       });
 
       group('updateAndInvalidate', () {
@@ -246,6 +272,9 @@ void main() {
           await graph.updateAndInvalidate(
               buildPhases, changes, 'foo', null, digestReader);
           expect(graph.contains(new AssetId('foo', 'new.txt.copy')), isTrue);
+          var newAnchor = new PostProcessAnchorNode.forInputAndAction(
+              primaryInputId, 0, null);
+          expect(graph.contains(newAnchor.id), isTrue);
         });
 
         test('delete old primary input', () async {
@@ -257,6 +286,7 @@ void main() {
           expect(graph.contains(primaryInputId), isFalse);
           expect(graph.contains(primaryOutputId), isFalse);
           expect(deletes, equals([primaryOutputId]));
+          expect(graph.contains(expectedAnchorNode.id), isFalse);
         });
 
         test('modify primary input', () async {
@@ -284,9 +314,16 @@ void main() {
               buildPhases, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticId), isTrue);
-          expect(graph.get(syntheticId),
-              isNot(new isInstanceOf<SyntheticSourceAssetNode>()));
+          expect(graph.get(syntheticId), new isInstanceOf<SourceAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
+          expect(graph.get(syntheticOutputId),
+              new isInstanceOf<GeneratedAssetNode>());
+
+          var newAnchor =
+              new PostProcessAnchorNode.forInputAndAction(syntheticId, 0, null);
+          expect(graph.contains(newAnchor.id), isTrue);
+          expect(graph.get(newAnchor.id),
+              new isInstanceOf<PostProcessAnchorNode>());
         });
 
         test('add new generated asset which replaces a synthetic node',

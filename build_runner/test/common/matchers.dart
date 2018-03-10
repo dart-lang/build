@@ -105,6 +105,43 @@ class _AssetGraphMatcher extends Matcher {
           ];
           matches = false;
         }
+      } else if (node is PostProcessAnchorNode) {
+        if (expectedNode is PostProcessAnchorNode) {
+          if (node.actionNumber != expectedNode.actionNumber) {
+            matchState['actionNumber of ${node.id}'] = [
+              node.actionNumber,
+              expectedNode.actionNumber
+            ];
+            matches = false;
+          }
+          if (node.builderOptionsId != expectedNode.builderOptionsId) {
+            matchState['builderOptionsId of ${node.id}'] = [
+              node.builderOptionsId,
+              expectedNode.builderOptionsId
+            ];
+            matches = false;
+          }
+          if (node.previousInputsDigest != expectedNode.previousInputsDigest) {
+            matchState['previousInputsDigest of ${node.id}'] = [
+              node.previousInputsDigest,
+              expectedNode.previousInputsDigest
+            ];
+            matches = false;
+          }
+          if (node.primaryInput != expectedNode.primaryInput) {
+            matchState['primaryInput of ${node.id}'] = [
+              node.primaryInput,
+              expectedNode.primaryInput
+            ];
+            matches = false;
+          }
+        } else {
+          matchState['Type of ${node.id}'] = [
+            node.runtimeType,
+            expectedNode.runtimeType
+          ];
+          matches = false;
+        }
       }
     }
     return matches;

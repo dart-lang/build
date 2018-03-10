@@ -368,7 +368,7 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
 /// Wraps a [PostProcessAnchorNode] in a class that implements [List] instead of
 /// creating a new list for each one.
 class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
-  final PostProcessAnchorNode generatedNode;
+  final PostProcessAnchorNode wrappedNode;
 
   /// Offset in the serialized format for additional fields in this class but
   /// not in [_WrappedAssetNode].
@@ -382,8 +382,8 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
   int get length => _length;
 
   _WrappedPostProcessAnchorNode(
-      this.generatedNode, _AssetGraphSerializer serializer)
-      : super(generatedNode, serializer);
+      this.wrappedNode, _AssetGraphSerializer serializer)
+      : super(wrappedNode, serializer);
 
   @override
   Object operator [](int index) {
@@ -391,14 +391,14 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
     var fieldId = _PostAnchorField.values[index - _serializedOffset];
     switch (fieldId) {
       case _PostAnchorField.ActionNumber:
-        return generatedNode.actionNumber;
+        return wrappedNode.actionNumber;
       case _PostAnchorField.BuilderOptions:
-        return serializer._assetIdToId[generatedNode.builderOptionsId];
+        return serializer._assetIdToId[wrappedNode.builderOptionsId];
       case _PostAnchorField.PreviousInputsDigest:
-        return _serializeDigest(generatedNode.previousInputsDigest);
+        return _serializeDigest(wrappedNode.previousInputsDigest);
       case _PostAnchorField.PrimaryInput:
-        return generatedNode.primaryInput != null
-            ? serializer._assetIdToId[generatedNode.primaryInput]
+        return wrappedNode.primaryInput != null
+            ? serializer._assetIdToId[wrappedNode.primaryInput]
             : null;
       default:
         throw new RangeError.index(index, this);

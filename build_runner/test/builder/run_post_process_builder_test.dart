@@ -1,8 +1,6 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
-import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -12,11 +10,9 @@ import 'package:test/test.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/builder/run_post_process_builder.dart';
-import 'package:build_runner/src/builder/post_process_builder.dart';
-import 'package:build_runner/src/builder/post_process_build_step.dart';
 import 'package:build_runner/src/generate/phase.dart';
 
-import '../common/package_graphs.dart';
+import '../common/common.dart';
 
 main() {
   group('runPostProcessBuilder', () {
@@ -65,15 +61,4 @@ main() {
           throwsA(new isInstanceOf<InvalidOutputException>()));
     });
   });
-}
-
-class CopyingPostProcessBuilder implements PostProcessBuilder {
-  @override
-  final inputExtensions = ['.txt'];
-
-  @override
-  Future<Null> build(PostProcessBuildStep buildStep) async {
-    await buildStep.writeAsString(buildStep.inputId.addExtension('.copy'),
-        await buildStep.readInputAsString());
-  }
 }
