@@ -557,26 +557,14 @@ class _SingleBuild {
     }
   }
 
-  /// Checks if a post process build should run by checking the primary input
-  /// and builder options of the [anchorNode].
+  /// Checks if a post process build should run based on [anchorNode].
   Future<bool> _postProcessBuildShouldRun(
-      PostProcessAnchorNode anchorNode, AssetReader wrappedReader) async {
-    if (anchorNode.previousPrimaryInputDigest == null) {
-      return true;
-    }
+      PostProcessAnchorNode anchorNode, AssetReader reader) async {
+    var inputsDigest = await _computeCombinedDigest(
+        [anchorNode.primaryInput], anchorNode.builderOptionsId, reader);
 
-    Future<bool> wasUpdated(AssetId id) async {
-      var input = _assetGraph.get(id);
-      var inputDigest =
-          input.lastKnownDigest ?? await wrappedReader.digest(input.id);
-      if (inputDigest != input.lastKnownDigest) {
-        return true;
-      }
-      return false;
-    }
-
-    if (await wasUpdated(anchorNode.primaryInput) ||
-        await wasUpdated(anchorNode.builderOptionsId)) {
+    if (inputsDigest != anchorNode.previousInputsDigest) {
+      anchorNode.previousInputsDigest = inputsDigest;
       return true;
     }
 

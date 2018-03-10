@@ -140,8 +140,8 @@ class _AssetGraphDeserializer {
             _idToAssetId[
                 serializedNode[_PostAnchorField.BuilderOptions.index + offset]
                     as int],
-            previousPrimaryInputDigest: _deserializeDigest(serializedNode[
-                    _PostAnchorField.PreviousPrimaryInputDigest.index + offset]
+            previousInputsDigest: _deserializeDigest(serializedNode[
+                    _PostAnchorField.PreviousInputsDigest.index + offset]
                 as String));
     }
     node.outputs.addAll(_deserializeAssetIds(
@@ -248,7 +248,7 @@ enum _GeneratedField {
 enum _PostAnchorField {
   ActionNumber,
   BuilderOptions,
-  PreviousPrimaryInputDigest,
+  PreviousInputsDigest,
   PrimaryInput,
 }
 
@@ -394,8 +394,8 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
         return generatedNode.actionNumber;
       case _PostAnchorField.BuilderOptions:
         return serializer._assetIdToId[generatedNode.builderOptionsId];
-      case _PostAnchorField.PreviousPrimaryInputDigest:
-        return _serializeDigest(generatedNode.previousPrimaryInputDigest);
+      case _PostAnchorField.PreviousInputsDigest:
+        return _serializeDigest(generatedNode.previousInputsDigest);
       case _PostAnchorField.PrimaryInput:
         return generatedNode.primaryInput != null
             ? serializer._assetIdToId[generatedNode.primaryInput]
