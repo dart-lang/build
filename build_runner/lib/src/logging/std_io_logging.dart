@@ -67,6 +67,7 @@ String _loggerName(LogRecord record, bool verbose) {
     'BuildScriptUpdates',
     'CreateOutputDir',
     'Entrypoint',
+    'ApplyBuilders',
     'Heartbeat',
     'Serve',
     'Watch',

@@ -1,3 +1,8 @@
+## 0.12.0+2
+
+- **Bug Fix** Correctly handle encoding `AssetId`s as `URI`s when they contain
+  characters which are not valid for a path segment.
+
 ## 0.12.0+1
 
 - Support the latest `analyzer` package.
