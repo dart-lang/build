@@ -12,13 +12,15 @@ final Matcher assetGraphVersionException =
 final Matcher duplicateAssetNodeException =
     new isInstanceOf<DuplicateAssetNodeException>();
 
-Matcher equalsAssetGraph(AssetGraph expected) =>
-    new _AssetGraphMatcher(expected);
+Matcher equalsAssetGraph(AssetGraph expected,
+        {bool checkPreviousInputsDigest}) =>
+    new _AssetGraphMatcher(expected, checkPreviousInputsDigest ?? true);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
+  final bool checkPreviousInputsDigest;
 
-  const _AssetGraphMatcher(this._expected);
+  const _AssetGraphMatcher(this._expected, this.checkPreviousInputsDigest);
 
   @override
   bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
@@ -92,11 +94,13 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-          if (node.previousInputsDigest != expectedNode.previousInputsDigest) {
+          if (checkPreviousInputsDigest &&
+              node.previousInputsDigest != expectedNode.previousInputsDigest) {
             matchState['previousInputDigest of ${node.id}'] = [
               node.previousInputsDigest,
               expectedNode.previousInputsDigest
             ];
+            matches = false;
           }
         } else {
           matchState['Type of ${node.id}'] = [
@@ -121,7 +125,8 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-          if (node.previousInputsDigest != expectedNode.previousInputsDigest) {
+          if (checkPreviousInputsDigest &&
+              node.previousInputsDigest != expectedNode.previousInputsDigest) {
             matchState['previousInputsDigest of ${node.id}'] = [
               node.previousInputsDigest,
               expectedNode.previousInputsDigest

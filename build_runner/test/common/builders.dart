@@ -17,7 +17,8 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
 
   @override
   Future<Null> build(PostProcessBuildStep buildStep) async {
-    await buildStep.writeAsString(buildStep.inputId.addExtension('.copy'),
+    await buildStep.writeAsString(
+        buildStep.inputId.addExtension(outputExtension),
         await buildStep.readInputAsString());
   }
 }

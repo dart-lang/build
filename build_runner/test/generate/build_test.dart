@@ -17,8 +17,16 @@ import '../common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
-  final copyABuilderApplication = applyToRoot(
-      new TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
+  final testBuilder =
+      new TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt'));
+  final copyABuilderApplication = applyToRoot(testBuilder);
+  final requiresPostProcessBuilderApplication = apply(
+      'test_builder', [(_) => testBuilder], toRoot(),
+      appliesBuilders: ['a|post_copy_builder'], hideOutput: false);
+  final postCopyABuilderApplication = applyPostProcess(
+      'a|post_copy_builder',
+      (options) => new CopyingPostProcessBuilder(
+          outputExtension: options.config['extension'] as String ?? '.post'));
   final globBuilder = new GlobbingBuilder(new Glob('**.txt'));
   final defaultBuilderOptions = const BuilderOptions(const {});
   final placeholders =
@@ -30,6 +38,21 @@ void main() {
         await testBuilders(
             [copyABuilderApplication], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
             outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
+      });
+
+      test('with a PostProcessBuilder', () async {
+        await testBuilders([
+          requiresPostProcessBuilderApplication,
+          postCopyABuilderApplication,
+        ], {
+          'a|web/a.txt': 'a',
+          'a|lib/b.txt': 'b',
+        }, outputs: {
+          'a|web/a.txt.copy': 'a',
+          'a|lib/b.txt.copy': 'b',
+          r'$$a|web/a.txt.post': 'a',
+          r'$$a|lib/b.txt.post': 'b',
+        });
       });
 
       test('with placeholder as input', () async {
@@ -121,7 +144,8 @@ void main() {
               ],
               toRoot(),
               isOptional: true,
-              hideOutput: false),
+              hideOutput: false,
+              appliesBuilders: ['a|post_copy_builder']),
           apply(
               'a|copy_web_clones',
               [
@@ -130,6 +154,7 @@ void main() {
               ],
               toRoot(),
               hideOutput: false),
+          postCopyABuilderApplication,
         ];
         var buildConfigs = parseBuildConfigs({
           'a': {
@@ -142,6 +167,10 @@ void main() {
                   },
                   'a|copy_web_clones': {
                     'generate_for': ['web/*.txt.clone']
+                  },
+                  'a|post_copy_builder': {
+                    'options': {'extension': '.custom.post'},
+                    'generate_for': ['web/*.txt']
                   }
                 }
               }
@@ -162,6 +191,7 @@ void main() {
               // No b.txt.clone since nothing else read it and its optional.
               'a|web/a.txt.clone.copy.0': 'a',
               'a|web/a.txt.clone.copy.1': 'a',
+              r'$$a|web/a.txt.custom.post': 'a',
             });
       });
 
@@ -250,12 +280,6 @@ void main() {
             },
             reader: reader,
             writer: writer);
-      });
-
-      test('one phase, one builder, one-to-one outputs', () async {
-        await testBuilders(
-            [copyABuilderApplication], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
-            outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'});
       });
 
       test('pre-existing outputs', () async {
@@ -357,12 +381,14 @@ void main() {
         await testBuilders(
             [
               apply('', [(_) => new TestBuilder()], toPackage('b'),
-                  hideOutput: true),
+                  hideOutput: true, appliesBuilders: ['a|post_copy_builder']),
+              postCopyABuilderApplication,
             ],
             {'b|lib/b.txt': 'b'},
             packageGraph: packageGraph,
             outputs: {
               r'$$b|lib/b.txt.copy': 'b',
+              r'$$b|lib/b.txt.post': 'b',
             });
       });
 
@@ -612,10 +638,18 @@ void main() {
 
   test('tracks dependency graph in a asset_graph.json file', () async {
     final writer = new InMemoryRunnerAssetWriter();
-    await testBuilders(
-        [copyABuilderApplication], {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
-        outputs: {'a|web/a.txt.copy': 'a', 'a|lib/b.txt.copy': 'b'},
-        writer: writer);
+    await testBuilders([
+      requiresPostProcessBuilderApplication,
+      postCopyABuilderApplication,
+    ], {
+      'a|web/a.txt': 'a',
+      'a|lib/b.txt': 'b'
+    }, outputs: {
+      'a|web/a.txt.copy': 'a',
+      'a|lib/b.txt.copy': 'b',
+      r'$$a|web/a.txt.post': 'a',
+      r'$$a|lib/b.txt.post': 'b',
+    }, writer: writer);
 
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
@@ -624,13 +658,20 @@ void main() {
     var expectedGraph = await AssetGraph.build([], new Set(), new Set(),
         buildPackageGraph({rootPackage('a'): []}), null);
 
+    // Source nodes
+    var aSourceNode = makeAssetNode('a|web/a.txt', [], computeDigest('a'));
+    var bSourceNode = makeAssetNode('a|lib/b.txt', [], computeDigest('b'));
+    expectedGraph.add(aSourceNode);
+    expectedGraph.add(bSourceNode);
+
+    // Regular generated asset nodes and supporting nodes.
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
     var builderOptionsNode = new BuilderOptionsAssetNode(
         builderOptionsId, computeBuilderOptionsDigest(defaultBuilderOptions));
     expectedGraph.add(builderOptionsNode);
 
     var aCopyNode = new GeneratedAssetNode(makeAssetId('a|web/a.txt.copy'),
-        phaseNumber: null,
+        phaseNumber: 0,
         primaryInput: makeAssetId('a|web/a.txt'),
         state: GeneratedNodeState.upToDate,
         wasOutput: true,
@@ -640,11 +681,11 @@ void main() {
         isHidden: false);
     builderOptionsNode.outputs.add(aCopyNode.id);
     expectedGraph.add(aCopyNode);
-    expectedGraph
-        .add(makeAssetNode('a|web/a.txt', [aCopyNode.id], computeDigest('a')));
+    aSourceNode.outputs.add(aCopyNode.id);
+    aSourceNode.primaryOutputs.add(aCopyNode.id);
 
     var bCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/b.txt.copy'),
-        phaseNumber: null,
+        phaseNumber: 0,
         primaryInput: makeAssetId('a|lib/b.txt'),
         state: GeneratedNodeState.upToDate,
         wasOutput: true,
@@ -654,10 +695,59 @@ void main() {
         isHidden: false);
     builderOptionsNode.outputs.add(bCopyNode.id);
     expectedGraph.add(bCopyNode);
-    expectedGraph
-        .add(makeAssetNode('a|lib/b.txt', [bCopyNode.id], computeDigest('b')));
+    bSourceNode.outputs.add(bCopyNode.id);
+    bSourceNode.primaryOutputs.add(bCopyNode.id);
 
-    expect(cachedGraph, equalsAssetGraph(expectedGraph));
+    // Post build generates asset nodes and supporting nodes
+    var postBuilderOptionsId = makeAssetId('a|PostPhase0.builderOptions');
+    var postBuilderOptionsNode = new BuilderOptionsAssetNode(
+        postBuilderOptionsId,
+        computeBuilderOptionsDigest(defaultBuilderOptions));
+    expectedGraph.add(postBuilderOptionsNode);
+
+    var aAnchorNode = new PostProcessAnchorNode.forInputAndAction(
+        aSourceNode.id, 0, postBuilderOptionsId);
+    var bAnchorNode = new PostProcessAnchorNode.forInputAndAction(
+        bSourceNode.id, 0, postBuilderOptionsId);
+    expectedGraph.add(aAnchorNode);
+    expectedGraph.add(bAnchorNode);
+
+    var aPostCopyNode = new GeneratedAssetNode(makeAssetId('a|web/a.txt.post'),
+        phaseNumber: 1,
+        primaryInput: makeAssetId('a|web/a.txt'),
+        state: GeneratedNodeState.upToDate,
+        wasOutput: true,
+        builderOptionsId: postBuilderOptionsId,
+        lastKnownDigest: computeDigest('a'),
+        inputs: [makeAssetId('a|web/a.txt'), aAnchorNode.id],
+        isHidden: true);
+    // Note we don't expect this node to get added to the builder options node
+    // outputs.
+    expectedGraph.add(aPostCopyNode);
+    aSourceNode.outputs.add(aPostCopyNode.id);
+    aAnchorNode.outputs.add(aPostCopyNode.id);
+    aSourceNode.primaryOutputs.add(aPostCopyNode.id);
+
+    var bPostCopyNode = new GeneratedAssetNode(makeAssetId('a|lib/b.txt.post'),
+        phaseNumber: 1,
+        primaryInput: makeAssetId('a|lib/b.txt'),
+        state: GeneratedNodeState.upToDate,
+        wasOutput: true,
+        builderOptionsId: postBuilderOptionsId,
+        lastKnownDigest: computeDigest('b'),
+        inputs: [makeAssetId('a|lib/b.txt'), bAnchorNode.id],
+        isHidden: true);
+    // Note we don't expect this node to get added to the builder options node
+    // outputs.
+    expectedGraph.add(bPostCopyNode);
+    bSourceNode.outputs.add(bPostCopyNode.id);
+    bAnchorNode.outputs.add(bPostCopyNode.id);
+    bSourceNode.primaryOutputs.add(bPostCopyNode.id);
+
+    // TODO: We dont have a shared way of computing the combined input hashes
+    // today, but eventually we should test those here too.
+    expect(cachedGraph,
+        equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false));
   });
 
   test('outputs from previous full builds shouldn\'t be inputs to later ones',

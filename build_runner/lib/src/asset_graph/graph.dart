@@ -207,7 +207,10 @@ class AssetGraph {
       for (var input in node.inputs) {
         var inputNode = get(input);
         // We may have already removed this node entirely.
-        if (inputNode != null) inputNode.outputs.remove(id);
+        if (inputNode != null) {
+          inputNode.outputs.remove(id);
+          inputNode.primaryOutputs.remove(id);
+        }
       }
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
