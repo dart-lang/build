@@ -56,6 +56,14 @@ class _AssetGraphMatcher extends Matcher {
         ];
         matches = false;
       }
+      if (!unorderedEquals(node.anchorOutputs)
+          .matches(expectedNode.anchorOutputs, null)) {
+        matchState['Anchor outputs of ${node.id}'] = [
+          node.anchorOutputs,
+          expectedNode.anchorOutputs
+        ];
+        matches = false;
+      }
       if (node.lastKnownDigest != expectedNode.lastKnownDigest) {
         matchState['Digest of ${node.id}'] = [
           node.lastKnownDigest,

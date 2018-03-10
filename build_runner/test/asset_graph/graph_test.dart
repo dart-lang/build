@@ -93,8 +93,10 @@ void main() {
           var builderOptionsNode =
               new BuilderOptionsAssetNode(makeAssetId(), new Digest([n]));
           graph.add(builderOptionsNode);
-          graph.add(new PostProcessAnchorNode.forInputAndAction(
-              node.id, n, builderOptionsNode.id));
+          var anchorNode = new PostProcessAnchorNode.forInputAndAction(
+              node.id, n, builderOptionsNode.id);
+          graph.add(anchorNode);
+          node.anchorOutputs.add(anchorNode.id);
           for (int g = 0; g < 5 - n; g++) {
             var builderOptionsNode = new BuilderOptionsAssetNode(
                 makeAssetId(), md5.convert(utf8.encode('test')));

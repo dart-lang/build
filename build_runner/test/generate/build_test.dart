@@ -725,6 +725,7 @@ void main() {
     // outputs.
     expectedGraph.add(aPostCopyNode);
     aSourceNode.outputs.add(aPostCopyNode.id);
+    aSourceNode.anchorOutputs.add(aAnchorNode.id);
     aAnchorNode.outputs.add(aPostCopyNode.id);
     aSourceNode.primaryOutputs.add(aPostCopyNode.id);
 
@@ -741,6 +742,7 @@ void main() {
     // outputs.
     expectedGraph.add(bPostCopyNode);
     bSourceNode.outputs.add(bPostCopyNode.id);
+    bSourceNode.anchorOutputs.add(bAnchorNode.id);
     bAnchorNode.outputs.add(bPostCopyNode.id);
     bSourceNode.primaryOutputs.add(bPostCopyNode.id);
 
