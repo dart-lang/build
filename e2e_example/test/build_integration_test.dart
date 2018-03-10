@@ -40,6 +40,8 @@ void main() {
       var generated =
           await readGeneratedFileAsString('e2e_example/lib/hello.txt.post');
       expect(generated, equals(content));
+    }, onPlatform: {
+      'windows': const Skip('https://github.com/dart-lang/build/issues/1127')
     });
 
     test('rebuilds if the input file changes and not otherwise', () async {
