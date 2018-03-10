@@ -52,18 +52,28 @@ Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
         package.name, package.dependencies.map((n) => n.name), package.path);
   }
 
-  final builderDefinitions =
-      (await Future.wait(orderedPackages.map(_packageBuildConfig)))
-          .expand((c) => c.builderDefinitions.values)
-          .where((definition) {
+  bool _isValidDefinition(dynamic definition) {
     // Filter out builderDefinitions with relative imports that aren't
     // from the root package, because they will never work.
-    if (definition.import.startsWith('package:')) return true;
+    if (definition.import.startsWith('package:') as bool) return true;
     return definition.package == packageGraph.root.name;
-  });
+  }
+
+  final orderedConfigs =
+      await Future.wait(orderedPackages.map(_packageBuildConfig));
+  final builderDefinitions = orderedConfigs
+      .expand((c) => c.builderDefinitions.values)
+      .where(_isValidDefinition);
 
   final orderedBuilders = findBuilderOrder(builderDefinitions).toList();
   builderApplications.addAll(orderedBuilders.map(_applyBuilder));
+
+  final postProcessBuilderDefinitions = orderedConfigs
+      .expand((c) => c.postProcessBuilderDefinitions.values)
+      .where(_isValidDefinition);
+  builderApplications
+      .addAll(postProcessBuilderDefinitions.map(_applyPostProcessBuilder));
+
   return builderApplications;
 }
 
@@ -124,6 +134,31 @@ Expression _applyBuilder(BuilderDefinition definition) {
         .map((f) => refer(f, definition.import))
         .toList()),
     _findToExpression(definition),
+  ], namedArgs);
+}
+
+/// An expression calling `applyPostProcess` with appropriate setup for a
+/// PostProcessBuilder.
+Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
+  final namedArgs = <String, Expression>{};
+  if (definition.defaults?.generateFor != null) {
+    final inputSetArgs = <String, Expression>{};
+    if (definition.defaults.generateFor.include != null) {
+      inputSetArgs['include'] =
+          literalConstList(definition.defaults.generateFor.include);
+    }
+    if (definition.defaults.generateFor.exclude != null) {
+      inputSetArgs['exclude'] =
+          literalConstList(definition.defaults.generateFor.exclude);
+    }
+    namedArgs['defaultGenerateFor'] =
+        refer('InputSet', 'package:build_config/build_config.dart')
+            .constInstance([], inputSetArgs);
+  }
+  return refer('applyPostProcess', 'package:build_runner/build_runner.dart')
+      .call([
+    literalString(definition.key),
+    refer(definition.builderFactory, definition.import),
   ], namedArgs);
 }
 

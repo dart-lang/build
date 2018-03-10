@@ -12,7 +12,8 @@ final _builders = [
       hideOutput: true),
   _i1.apply('provides_builder|some_builder', [_i2.someBuilder],
       _i1.toDependentsOf('provides_builder'),
-      hideOutput: true),
+      hideOutput: true,
+      appliesBuilders: ['provides_builder|some_post_process_builder']),
   _i1.apply(
       'build_test|test_bootstrap',
       [_i3.debugIndexBuilder, _i3.debugTestBuilder, _i3.testBootstrapBuilder],
@@ -39,7 +40,9 @@ final _builders = [
       ], exclude: const [
         'test/**.node_test.dart',
         'test/**.vm_test.dart'
-      ]))
+      ])),
+  _i1.applyPostProcess(
+      'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder)
 ];
 main(List<String> args, [_i7.SendPort sendPort]) async {
   var result = await _i1.run(args, _builders);

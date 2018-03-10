@@ -79,6 +79,9 @@ class BuildConfig {
   /// All the `builders` defined in a `build.yaml` file.
   final Map<String, BuilderDefinition> builderDefinitions;
 
+  /// All the `post_process_builders` defined in a `build.yaml` file.
+  final Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions;
+
   /// All the `targets` defined in a `build.yaml` file.
   final Map<String, BuildTarget> buildTargets;
 
@@ -116,9 +119,11 @@ class BuildConfig {
     @required this.packageName,
     @required this.buildTargets,
     this.builderDefinitions: const {},
+    this.postProcessBuilderDefinitions: const {},
   });
 }
 
+/// Definition of a builder parsed from the `builders` section of `build.yaml`.
 class BuilderDefinition {
   /// The package which provides this Builder.
   final String package;
@@ -195,6 +200,50 @@ class BuilderDefinition {
         'runsBefore': runsBefore,
         'isOptional': isOptional,
         'buildTo': buildTo,
+        'defaults': defaults,
+      }.toString();
+}
+
+/// The definition of a `PostProcessBuilder` in the `post_process_builders`
+/// section of a `build.yaml`.
+class PostProcessBuilderDefinition {
+  /// The package which provides this Builder.
+  final String package;
+
+  /// A unique key for this Builder in `'$package|$builder'` format.
+  final String key;
+
+  /// The name of the top-level method in [import] from
+  /// BuilderOptions -> Builder.
+  final String builderFactory;
+
+  /// The import to be used to load `clazz`.
+  final String import;
+
+  /// A list of input extensions for this builder.
+  final Iterable<String> inputExtensions;
+
+  /// The name of the dart_library target that contains `import`.
+  final String target;
+
+  final TargetBuilderConfigDefaults defaults;
+
+  PostProcessBuilderDefinition({
+    @required this.package,
+    @required this.key,
+    @required this.builderFactory,
+    @required this.inputExtensions,
+    @required this.import,
+    @required this.target,
+    this.defaults,
+  });
+
+  @override
+  String toString() => {
+        'target': target,
+        'import': import,
+        'builderFactory': builderFactory,
+        'inputExtensions': inputExtensions,
         'defaults': defaults,
       }.toString();
 }

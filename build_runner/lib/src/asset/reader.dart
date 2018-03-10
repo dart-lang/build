@@ -68,14 +68,12 @@ class SingleStepReader implements AssetReader {
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<bool> _isReadableNode(AssetNode node) {
-    if (node.isGenerated) {
-      final generatedNode = node as GeneratedAssetNode;
-      if (generatedNode.phaseNumber >= _phaseNumber) return false;
+    if (node is GeneratedAssetNode) {
+      if (node.phaseNumber >= _phaseNumber) return false;
       if (!_outputsHidden &&
-          generatedNode.isHidden &&
+          node.isHidden &&
           node.id.package != _primaryPackage) return false;
-      return doAfter(
-          _ensureAssetIsBuilt(node.id), (_) => generatedNode.wasOutput);
+      return doAfter(_ensureAssetIsBuilt(node.id), (_) => node.wasOutput);
     }
     return node.isReadable;
   }

@@ -18,6 +18,8 @@ void main() {
               generateFor: new InputSet(include: ['lib/a.dart'])),
           'example|h': new TargetBuilderConfig(
               isEnabled: true, options: new BuilderOptions({'foo': 'bar'})),
+          'example|p': new TargetBuilderConfig(
+              isEnabled: true, options: new BuilderOptions({'baz': 'zap'})),
         },
         // Expecting $default => example:example
         dependencies: ['example:example', 'b:b', 'c:d'].toSet(),
@@ -55,6 +57,19 @@ void main() {
         appliesBuilders: ['foo_builder|foo_builder'].toSet(),
         defaults: new TargetBuilderConfigDefaults(
             generateFor: new InputSet(include: ['lib/**'])),
+      ),
+    });
+    expectPostProcessBuilderDefinitions(
+        buildConfig.postProcessBuilderDefinitions, {
+      'example|p': new PostProcessBuilderDefinition(
+        builderFactory: 'createPostProcessBuilder',
+        import: 'package:example/p.dart',
+        inputExtensions: ['.tar.gz', '.zip'],
+        package: 'example',
+        key: 'example|p',
+        target: 'example:example',
+        defaults: new TargetBuilderConfigDefaults(
+            generateFor: new InputSet(include: ['web/**'])),
       ),
     });
   });
@@ -104,6 +119,8 @@ void main() {
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {});
+    expectPostProcessBuilderDefinitions(
+        buildConfig.postProcessBuilderDefinitions, {});
   });
 }
 
@@ -114,6 +131,9 @@ targets:
       "|h":
         options:
           foo: bar
+      "|p":
+        options:
+          baz: zap
       b|b:
         generate_for:
           - lib/a.dart
@@ -147,6 +167,14 @@ builders:
     is_optional: True
     defaults:
       generate_for: ["lib/**"]
+post_process_builders:
+  p:
+    builder_factory: "createPostProcessBuilder"
+    import: package:example/p.dart
+    input_extensions: [".tar.gz", ".zip"]
+    target: ":example"
+    defaults:
+      generate_for: ["web/**"]
 ''';
 
 var buildYamlNoTargets = '''
@@ -163,6 +191,15 @@ void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
     expect(actual[p], new _BuilderDefinitionMatcher(expected[p]));
+  }
+}
+
+void expectPostProcessBuilderDefinitions(
+    Map<String, PostProcessBuilderDefinition> actual,
+    Map<String, PostProcessBuilderDefinition> expected) {
+  expect(actual.keys, unorderedEquals(expected.keys));
+  for (var p in actual.keys) {
+    expect(actual[p], new _PostProcessBuilderDefinitionMatcher(expected[p]));
   }
 }
 
@@ -185,6 +222,29 @@ class _BuilderDefinitionMatcher extends Matcher {
       item.autoApply == _expected.autoApply &&
       item.isOptional == _expected.isOptional &&
       item.buildTo == _expected.buildTo &&
+      item.import == _expected.import &&
+      item.key == _expected.key &&
+      item.package == _expected.package &&
+      item.target == _expected.target;
+
+  @override
+  Description describe(Description description) =>
+      description.addDescriptionOf(_expected);
+}
+
+class _PostProcessBuilderDefinitionMatcher extends Matcher {
+  final PostProcessBuilderDefinition _expected;
+  _PostProcessBuilderDefinitionMatcher(this._expected);
+
+  @override
+  bool matches(item, _) =>
+      item is PostProcessBuilderDefinition &&
+      equals(_expected.builderFactory).matches(item.builderFactory, _) &&
+      equals(_expected.inputExtensions).matches(item.inputExtensions, _) &&
+      equals(_expected.defaults?.generateFor?.include)
+          .matches(item.defaults?.generateFor?.include, _) &&
+      equals(_expected.defaults?.generateFor?.exclude)
+          .matches(item.defaults?.generateFor?.exclude, _) &&
       item.import == _expected.import &&
       item.key == _expected.key &&
       item.package == _expected.package &&

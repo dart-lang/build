@@ -257,6 +257,7 @@ Future<Null> deleteFile(String path) async {
 
 Future<String> readGeneratedFileAsString(String path) async {
   var file = new File(p.join(_generatedDir.path, path));
+  expect(await file.exists(), isTrue);
   return file.readAsString();
 }
 

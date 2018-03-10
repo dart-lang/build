@@ -4,6 +4,8 @@
 export 'src/asset/file_based.dart';
 export 'src/asset/reader.dart' show RunnerAssetReader;
 export 'src/asset/writer.dart';
+export 'src/builder/post_process_build_step.dart' show PostProcessBuildStep;
+export 'src/builder/post_process_builder.dart' show PostProcessBuilder;
 export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
@@ -13,6 +15,7 @@ export 'src/package_graph/apply_builders.dart'
     show
         BuilderApplication,
         apply,
+        applyPostProcess,
         applyToRoot,
         toAll,
         toAllPackages,

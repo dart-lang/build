@@ -59,22 +59,22 @@ class BuildDefinition {
       this.environment);
 
   static Future<BuildDefinition> prepareWorkspace(BuildEnvironment environment,
-          BuildOptions options, List<BuildAction> buildActions,
+          BuildOptions options, List<BuildPhase> buildPhases,
           {void onDelete(AssetId id)}) =>
-      new _Loader(environment, options, buildActions, onDelete)
+      new _Loader(environment, options, buildPhases, onDelete)
           .prepareWorkspace();
 }
 
 class _Loader {
-  final List<BuildAction> _buildActions;
+  final List<BuildPhase> _buildPhases;
   final BuildOptions _options;
   final BuildEnvironment _environment;
   final OnDelete _onDelete;
 
-  _Loader(this._environment, this._options, this._buildActions, this._onDelete);
+  _Loader(this._environment, this._options, this._buildPhases, this._onDelete);
 
   Future<BuildDefinition> prepareWorkspace() async {
-    _checkBuildActions();
+    _checkBuildPhases();
 
     _logger.info('Initializing inputs');
 
@@ -88,7 +88,7 @@ class _Loader {
       var updates = await logTimedAsync(
           _logger,
           'Checking for updates since last build',
-          () => _updateAssetGraph(assetGraph, _buildActions, inputSources,
+          () => _updateAssetGraph(assetGraph, _buildPhases, inputSources,
               cacheDirSources, internalSources));
 
       buildScriptUpdates = await BuildScriptUpdates.create(
@@ -107,7 +107,7 @@ class _Loader {
       Set<AssetId> conflictingOutputs;
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
-        assetGraph = await AssetGraph.build(_buildActions, inputSources,
+        assetGraph = await AssetGraph.build(_buildPhases, inputSources,
             internalSources, _options.packageGraph, _environment.reader);
         buildScriptUpdates = await BuildScriptUpdates.create(
             _environment.reader, _options.packageGraph, assetGraph);
@@ -144,14 +144,17 @@ class _Loader {
         _environment);
   }
 
-  /// Checks that the [_buildActions] are valid based on whether they are
+  /// Checks that the [_buildPhases] are valid based on whether they are
   /// written to the build cache.
-  void _checkBuildActions() {
+  void _checkBuildPhases() {
     final root = _options.packageGraph.root.name;
-    for (final action in _buildActions) {
-      if (!action.hideOutput &&
-          action.package != _options.packageGraph.root.name) {
-        throw new InvalidBuildActionException.nonRootPackage(action, root);
+    for (final action in _buildPhases) {
+      if (!action.hideOutput) {
+        // Only `BuilderBuildAction`s can be not hidden.
+        if (action is InBuildPhase &&
+            action.package != _options.packageGraph.root.name) {
+          throw new InvalidBuildPhaseException.nonRootPackage(action, root);
+        }
       }
     }
   }
@@ -190,10 +193,10 @@ class _Loader {
       try {
         var cachedGraph = new AssetGraph.deserialize(
             await _environment.reader.readAsBytes(assetGraphId));
-        if (computeBuildActionsDigest(_buildActions) !=
-            cachedGraph.buildActionsDigest) {
+        if (computeBuildPhasesDigest(_buildPhases) !=
+            cachedGraph.buildPhasesDigest) {
           _logger.warning(
-              'Throwing away cached asset graph because the build actions have '
+              'Throwing away cached asset graph because the build phases have '
               'changed. This most commonly would happen as a result of adding a '
               'new dependency or updating your dependencies.');
           await _cleanupOldOutputs(cachedGraph);
@@ -243,15 +246,15 @@ class _Loader {
   /// changes.
   Future<Map<AssetId, ChangeType>> _updateAssetGraph(
       AssetGraph assetGraph,
-      List<BuildAction> buildActions,
+      List<BuildPhase> buildPhases,
       Set<AssetId> inputSources,
       Set<AssetId> cacheDirSources,
       Set<AssetId> internalSources) async {
     var updates = await _findSourceUpdates(
         assetGraph, inputSources, cacheDirSources, internalSources);
-    updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildActions));
+    updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
     await assetGraph.updateAndInvalidate(
-        _buildActions,
+        _buildPhases,
         updates,
         _options.packageGraph.root.name,
         (id) => _delete(id, _wrapWriter(_environment.writer, assetGraph)),
@@ -327,20 +330,35 @@ class _Loader {
   }
 
   /// Checks for any updates to the [BuilderOptionsAssetNode]s for
-  /// [buildActions] compared to the last known state.
+  /// [buildPhases] compared to the last known state.
   Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
-      AssetGraph assetGraph, List<BuildAction> buildActions) {
+      AssetGraph assetGraph, List<BuildPhase> buildPhases) {
     var result = <AssetId, ChangeType>{};
-    for (var phase = 0; phase < buildActions.length; phase++) {
-      var action = buildActions[phase];
-      var builderOptionsId = builderOptionsIdForPhase(action.package, phase);
+
+    void updateBuilderOptionsNode(
+        AssetId builderOptionsId, BuilderOptions options) {
       var builderOptionsNode =
           assetGraph.get(builderOptionsId) as BuilderOptionsAssetNode;
       var oldDigest = builderOptionsNode.lastKnownDigest;
-      builderOptionsNode.lastKnownDigest =
-          computeBuilderOptionsDigest(action.builderOptions);
+      builderOptionsNode.lastKnownDigest = computeBuilderOptionsDigest(options);
       if (builderOptionsNode.lastKnownDigest != oldDigest) {
         result[builderOptionsId] = ChangeType.MODIFY;
+      }
+    }
+
+    for (var phase = 0; phase < buildPhases.length; phase++) {
+      var action = buildPhases[phase];
+      if (action is InBuildPhase) {
+        updateBuilderOptionsNode(
+            builderOptionsIdForAction(action, phase), action.builderOptions);
+      } else if (action is PostBuildPhase) {
+        int actionNum = 0;
+        for (var builderAction in action.builderActions) {
+          updateBuilderOptionsNode(
+              builderOptionsIdForAction(builderAction, actionNum),
+              builderAction.builderOptions);
+          actionNum++;
+        }
       }
     }
     return result;

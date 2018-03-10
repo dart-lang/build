@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_runner/build_runner.dart';
 
 class _SomeBuilder implements Builder {
   const _SomeBuilder();
@@ -31,6 +32,25 @@ class _SomeBuilder implements Builder {
   }
 }
 
+class _SomePostProcessBuilder extends PostProcessBuilder {
+  @override
+  final inputExtensions = const ['.txt'];
+
+  final String defaultContent;
+
+  _SomePostProcessBuilder.fromOptions(BuilderOptions options)
+      : defaultContent = options.config['default_content'] as String;
+
+  @override
+  Future<Null> build(PostProcessBuildStep buildStep) async {
+    var content = defaultContent ?? await buildStep.readInputAsString();
+    await buildStep.writeAsString(
+        buildStep.inputId.changeExtension('.txt.post'), content);
+  }
+}
+
 Builder someBuilder(BuilderOptions options) =>
     new _SomeBuilder.fromOptions(options);
 Builder notApplied(_) => null;
+PostProcessBuilder somePostProcessBuilder(BuilderOptions options) =>
+    new _SomePostProcessBuilder.fromOptions(options);

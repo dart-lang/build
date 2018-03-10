@@ -11,11 +11,7 @@ import 'common/utils.dart';
 
 void main() {
   setUpAll(() async {
-    await startAutoServer(ensureCleanBuild: true, verbose: true);
-  });
-
-  tearDownAll(() async {
-    await stopServer(cleanUp: true);
+    await runAutoCommand(['generate-build-script']);
   });
 
   test('Generates a build script matching the golden', () {
