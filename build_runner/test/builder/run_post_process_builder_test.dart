@@ -56,6 +56,14 @@ main() {
       expect(writer.assets, contains(aTxtCopy));
       expect(writer.assets[aTxtCopy], decodedMatches('a'));
     });
+
+    test('throws if you try to output a pre-existing asset', () async {
+      assetGraph.add(new SourceAssetNode(aTxtCopy));
+      expect(
+          () => runPostProcessBuilder(
+              builder, aTxt, reader, writer, logger, assetGraph, anchorNode, 0),
+          throwsA(new isInstanceOf<InvalidOutputException>()));
+    });
   });
 }
 
