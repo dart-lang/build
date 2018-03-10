@@ -286,8 +286,7 @@ void main() {
           expect(graph.contains(primaryInputId), isFalse);
           expect(graph.contains(primaryOutputId), isFalse);
           expect(deletes, equals([primaryOutputId]));
-          expect(graph.contains(expectedAnchorNode.id), isFalse,
-              skip: 'https://github.com/dart-lang/build/issues/1144');
+          expect(graph.contains(expectedAnchorNode.id), isFalse);
         });
 
         test('modify primary input', () async {

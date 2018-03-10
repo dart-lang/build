@@ -57,6 +57,10 @@ class _AssetGraphDeserializer {
         assert(generatedNode != null, 'Asset Graph is missing $output');
         generatedNode.inputs.add(node.id);
       }
+
+      if (node is PostProcessAnchorNode) {
+        graph.get(node.primaryInput).anchorOutputs.add(node.id);
+      }
     }
 
     // Read all the currently failing actions.

@@ -194,6 +194,9 @@ class AssetGraph {
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
+    for (var anchor in node.anchorOutputs.toList()) {
+      _removeRecursive(anchor, removedIds: removedIds);
+    }
     for (var output in node.primaryOutputs.toList()) {
       _removeRecursive(output, removedIds: removedIds);
     }
@@ -455,6 +458,7 @@ class AssetGraph {
         var anchor = new PostProcessAnchorNode.forInputAndAction(
             input, actionNum, buildOptionsNodeId);
         add(anchor);
+        get(input).anchorOutputs.add(anchor.id);
       }
       actionNum++;
     }
