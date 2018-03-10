@@ -22,7 +22,7 @@ abstract class AssetWriter {
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws an `InvalidOutputException` if the output was not valid.
-  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8});
+  Future writeAsString(AssetId id, String contents, {Encoding encoding: utf8});
 }
 
 /// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
@@ -41,7 +41,7 @@ class AssetWriterSpy implements AssetWriter {
   }
 
   @override
-  Future writeAsString(AssetId id, String contents, {Encoding encoding: UTF8}) {
+  Future writeAsString(AssetId id, String contents, {Encoding encoding: utf8}) {
     _assetsWritten.add(id);
     return _delegate.writeAsString(id, contents, encoding: encoding);
   }

@@ -52,7 +52,7 @@ void checkOutputs(
       var actual = writer.assets[mapAssetIds(assetId)];
       Object expected;
       if (contentsMatcher is String) {
-        expected = UTF8.decode(actual);
+        expected = utf8.decode(actual);
       } else if (contentsMatcher is List<int>) {
         expected = actual;
       } else if (contentsMatcher is Matcher) {

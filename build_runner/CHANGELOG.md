@@ -1,18 +1,35 @@
-
 ## 0.8.0-prerelease
 
 ### New Features
 
+- Added the new `PostProcessBuilder` class. These are not supported in bazel,
+  and are different than a normal `Builder` in some fundamental ways:
+  - They don't have to declare output extensions, and can output any file as
+    long as it doesn't conflict with an existing one. This is only checked at
+    build time.
+  - They can only read their primary input.
+  - They will not cause optional actions to run - they will only run on assets
+    that were built as a part of the normal build.
+  - They can not be optional themselves, and can only output to cache.
+  - Because they all run in a single phase, after other builders, none of their
+    outputs can be used as inputs to any actions.
 - Added `applyPostProccess` method which takes `PostProcessBuilderFactory`s
   instead of `BuilderFactory`s.
 
 ### Breaking Changes
 
+- Split `BuildAction` into `BuilderBuildAction` and `PostProcessBuildAction`.
+  The base class no longer has a `builder` field.
 - `BuilderApplication` now has a `builderActionFactories` getter instead of a
   `builderFactories` getter.
 - The default constructor for `BuilderApplication` has been replaced with
   `BuilderApplication.forBuilder` and
   `BuilderApplication.forPostProcessBuilder`.
+
+## 0.7.13+1
+
+- Fix a concurrent modification error when using `listAssets` when an asset
+  could be written.
 
 ## 0.7.13
 

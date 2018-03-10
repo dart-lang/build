@@ -33,6 +33,6 @@ class ModuleBuilder implements Builder {
 
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(moduleExtension),
-        JSON.encode(module.toJson()));
+        json.encode(module.toJson()));
   }
 }

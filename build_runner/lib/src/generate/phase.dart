@@ -37,14 +37,31 @@ abstract class BuildPhase {
   int get identity;
 }
 
-/// A [BuildPhase] that uses a single [Builder] to generate files.
-class InBuildPhase extends BuildPhase {
-  final Builder builder;
+/// An "action" in the build graph which represents running a single builder
+/// on a set of sources.
+abstract class BuildAction {
+  /// Either a [Builder] or a [PostProcessBuilder].
+  dynamic get builder;
+  String get builderLabel;
+  BuilderOptions get builderOptions;
+  InputMatcher get generateFor;
+  String get package;
+  InputMatcher get targetSources;
+}
 
+/// A [BuildPhase] that uses a single [Builder] to generate files.
+class InBuildPhase extends BuildPhase implements BuildAction {
+  @override
+  final Builder builder;
+  @override
   final String builderLabel;
+  @override
   final BuilderOptions builderOptions;
+  @override
   final InputMatcher generateFor;
+  @override
   final String package;
+  @override
   final InputMatcher targetSources;
 
   @override
@@ -147,12 +164,18 @@ class PostBuildPhase extends BuildPhase {
 
 /// Part of a larger [PostBuildPhase], applies a single
 /// [PostProcessBuilder] to a single [package] with some additional options.
-class PostBuildAction {
+class PostBuildAction implements BuildAction {
+  @override
   final PostProcessBuilder builder;
+  @override
   final String builderLabel;
+  @override
   final BuilderOptions builderOptions;
+  @override
   final InputMatcher generateFor;
+  @override
   final String package;
+  @override
   final InputMatcher targetSources;
 
   PostBuildAction(this.builder, this.package,

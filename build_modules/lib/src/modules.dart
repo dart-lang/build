@@ -132,7 +132,7 @@ class Module extends Object with _$ModuleSerializerMixin {
         continue;
       }
       var module = new Module.fromJson(
-          JSON.decode(await reader.readAsString(nextModuleId))
+          json.decode(await reader.readAsString(nextModuleId))
               as Map<String, dynamic>);
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);

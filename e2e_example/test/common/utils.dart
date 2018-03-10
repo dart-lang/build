@@ -101,12 +101,12 @@ Future<Null> _startServer(String command, List<String> buildArgs,
 
   _process = await Process.start(command, buildArgs);
   _stdOutLines = _process.stdout
-      .transform(UTF8.decoder)
+      .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
 
   _stdErrLines = _process.stderr
-      .transform(UTF8.decoder)
+      .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
 
@@ -172,8 +172,7 @@ Future<Null> _resetGitClient() async {
 }
 
 Future<Null> get nextSuccessfulBuild async {
-  await _stdOutLines
-      .firstWhere((line) => line.contains('Succeeded after'));
+  await _stdOutLines.firstWhere((line) => line.contains('Succeeded after'));
 }
 
 Future<Null> get nextFailedBuild async {
@@ -258,6 +257,7 @@ Future<Null> deleteFile(String path) async {
 
 Future<String> readGeneratedFileAsString(String path) async {
   var file = new File(p.join(_generatedDir.path, path));
+  expect(await file.exists(), isTrue);
   return file.readAsString();
 }
 
