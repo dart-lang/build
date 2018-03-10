@@ -148,7 +148,7 @@ stages:
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
-  only: [master, dart2js-deferred-loading]
+  only: [master]
 
 cache:
   directories:
