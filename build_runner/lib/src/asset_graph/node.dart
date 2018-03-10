@@ -23,6 +23,10 @@ abstract class AssetNode {
   /// which reads this asset.
   final Set<AssetId> outputs = new Set<AssetId>();
 
+  /// The [AssetId]s of all [PostProcessAnchorNode] assets for which this node
+  /// is the primary input.
+  final Set<AssetId> anchorOutputs = new Set<AssetId>();
+
   /// The [Digest] for this node in its last known state.
   ///
   /// May be `null` if this asset has no outputs, or if it doesn't actually
