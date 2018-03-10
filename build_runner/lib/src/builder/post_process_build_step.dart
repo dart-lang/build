@@ -60,8 +60,7 @@ class PostProcessBuildStep {
   /// Waits for work to finish and cleans up resources.
   ///
   /// This method should be called after a build has completed. After the
-  /// returned [Future] completes then all outputs have been written and the
-  /// [Resolver] for this build step - if any - has been released.
+  /// returned [Future] completes then all outputs have been written.
   Future complete() async {
     await Future.wait(_writeResults.map(Result.release));
   }

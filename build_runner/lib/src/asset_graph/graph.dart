@@ -452,7 +452,6 @@ class AssetGraph {
         var anchor = new PostProcessAnchorNode.forInputAndAction(
             input, actionNum, buildOptionsNodeId);
         add(anchor);
-        print(anchor);
       }
       actionNum++;
     }

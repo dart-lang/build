@@ -18,8 +18,6 @@
 
 ### Breaking Changes
 
-- Split `BuildAction` into `BuilderBuildAction` and `PostProcessBuildAction`.
-  The base class no longer has a `builder` field.
 - `BuilderApplication` now has a `builderActionFactories` getter instead of a
   `builderFactories` getter.
 - The default constructor for `BuilderApplication` has been replaced with
