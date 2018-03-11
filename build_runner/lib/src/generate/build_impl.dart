@@ -510,6 +510,7 @@ class _SingleBuild {
 
     // Reset the state for all the output nodes based on what was read and
     // written.
+    inputNode.primaryOutputs.addAll(assetsWritten);
     await _setOutputsState(assetsWritten, wrappedReader, wrappedWriter);
 
     return assetsWritten;

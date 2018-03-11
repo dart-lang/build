@@ -12,13 +12,15 @@ final Matcher assetGraphVersionException =
 final Matcher duplicateAssetNodeException =
     new isInstanceOf<DuplicateAssetNodeException>();
 
-Matcher equalsAssetGraph(AssetGraph expected) =>
-    new _AssetGraphMatcher(expected);
+Matcher equalsAssetGraph(AssetGraph expected,
+        {bool checkPreviousInputsDigest}) =>
+    new _AssetGraphMatcher(expected, checkPreviousInputsDigest ?? true);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
+  final bool checkPreviousInputsDigest;
 
-  const _AssetGraphMatcher(this._expected);
+  const _AssetGraphMatcher(this._expected, this.checkPreviousInputsDigest);
 
   @override
   bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
@@ -51,6 +53,14 @@ class _AssetGraphMatcher extends Matcher {
         matchState['Primary outputs of ${node.id}'] = [
           node.primaryOutputs,
           expectedNode.primaryOutputs
+        ];
+        matches = false;
+      }
+      if (!unorderedEquals(node.anchorOutputs)
+          .matches(expectedNode.anchorOutputs, null)) {
+        matchState['Anchor outputs of ${node.id}'] = [
+          node.anchorOutputs,
+          expectedNode.anchorOutputs
         ];
         matches = false;
       }
@@ -92,11 +102,51 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-          if (node.previousInputsDigest != expectedNode.previousInputsDigest) {
+          if (checkPreviousInputsDigest &&
+              node.previousInputsDigest != expectedNode.previousInputsDigest) {
             matchState['previousInputDigest of ${node.id}'] = [
               node.previousInputsDigest,
               expectedNode.previousInputsDigest
             ];
+            matches = false;
+          }
+        } else {
+          matchState['Type of ${node.id}'] = [
+            node.runtimeType,
+            expectedNode.runtimeType
+          ];
+          matches = false;
+        }
+      } else if (node is PostProcessAnchorNode) {
+        if (expectedNode is PostProcessAnchorNode) {
+          if (node.actionNumber != expectedNode.actionNumber) {
+            matchState['actionNumber of ${node.id}'] = [
+              node.actionNumber,
+              expectedNode.actionNumber
+            ];
+            matches = false;
+          }
+          if (node.builderOptionsId != expectedNode.builderOptionsId) {
+            matchState['builderOptionsId of ${node.id}'] = [
+              node.builderOptionsId,
+              expectedNode.builderOptionsId
+            ];
+            matches = false;
+          }
+          if (checkPreviousInputsDigest &&
+              node.previousInputsDigest != expectedNode.previousInputsDigest) {
+            matchState['previousInputsDigest of ${node.id}'] = [
+              node.previousInputsDigest,
+              expectedNode.previousInputsDigest
+            ];
+            matches = false;
+          }
+          if (node.primaryInput != expectedNode.primaryInput) {
+            matchState['primaryInput of ${node.id}'] = [
+              node.primaryInput,
+              expectedNode.primaryInput
+            ];
+            matches = false;
           }
         } else {
           matchState['Type of ${node.id}'] = [

@@ -194,7 +194,10 @@ class AssetGraph {
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
-    for (var output in node.primaryOutputs) {
+    for (var anchor in node.anchorOutputs.toList()) {
+      _removeRecursive(anchor, removedIds: removedIds);
+    }
+    for (var output in node.primaryOutputs.toList()) {
       _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
@@ -207,7 +210,10 @@ class AssetGraph {
       for (var input in node.inputs) {
         var inputNode = get(input);
         // We may have already removed this node entirely.
-        if (inputNode != null) inputNode.outputs.remove(id);
+        if (inputNode != null) {
+          inputNode.outputs.remove(id);
+          inputNode.primaryOutputs.remove(id);
+        }
       }
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
@@ -452,6 +458,7 @@ class AssetGraph {
         var anchor = new PostProcessAnchorNode.forInputAndAction(
             input, actionNum, buildOptionsNodeId);
         add(anchor);
+        get(input).anchorOutputs.add(anchor.id);
       }
       actionNum++;
     }
