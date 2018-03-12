@@ -40,9 +40,12 @@ final _builders = [
       ], exclude: const [
         'test/**.node_test.dart',
         'test/**.vm_test.dart'
-      ])),
+      ]),
+      appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.applyPostProcess(
-      'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder)
+      'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder),
+  _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
+      _i6.dart2JsArchiveExtractor)
 ];
 main(List<String> args, [_i7.SendPort sendPort]) async {
   var result = await _i1.run(args, _builders);
