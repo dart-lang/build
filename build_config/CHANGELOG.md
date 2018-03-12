@@ -1,4 +1,4 @@
-## 0.2.5-pre
+## 0.2.5
 
 - Added `post_process_builders` section to `build.yaml`. See README.md for more
   information.-dev
