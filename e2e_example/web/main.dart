@@ -4,8 +4,9 @@
 
 import 'package:e2e_example/app.dart';
 
-import 'sub/message.dart';
+import 'sub/message.dart' deferred as message;
 
-void main() {
-  startApp(text: message);
+main() async {
+  await message.loadLibrary();
+  startApp(text: message.message);
 }

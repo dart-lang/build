@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
+import 'package:scratch_space/scratch_space.dart';
 
 import 'web_entrypoint_builder.dart';
 
@@ -43,6 +44,11 @@ Future<Null> bootstrapDart2Js(
     var fileGlob = new Glob('$dartFile.js*');
     var archive = new Archive();
     await for (var jsFile in fileGlob.list(root: rootDir)) {
+      if (jsFile.path.endsWith(jsEntrypointExtension) ||
+          jsFile.path.endsWith(jsEntrypointSourceMapExtension)) {
+        // These are explicitly output, and are not part of the archive.
+        continue;
+      }
       if (jsFile is File) {
         var fileName = p.relative(jsFile.path, from: rootDir);
         var fileStats = await jsFile.stat();
@@ -52,24 +58,27 @@ Future<Null> bootstrapDart2Js(
           ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
       }
     }
-    var archiveId =
-        dartEntrypointId.changeExtension(jsEntrypointArchiveExtension);
-    await buildStep.writeAsBytes(archiveId, new TarEncoder().encode(archive));
-    // await scratchSpace.copyOutput(jsOutputId, buildStep);
-    // var jsSourceMapId =
-    //     dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
-    // await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
-    // var dumpInfoId = dartEntrypointId.changeExtension(dumpInfoExtension);
-    // await _copyIfExists(dumpInfoId, scratchSpace, buildStep);
+    if (archive.isNotEmpty) {
+      var archiveId =
+          dartEntrypointId.changeExtension(jsEntrypointArchiveExtension);
+      await buildStep.writeAsBytes(archiveId, new TarEncoder().encode(archive));
+    }
+
+    // Explicitly write out the original js file and sourcemap - we can't output
+    // these as part of the archive because they already have asset nodes.
+    await scratchSpace.copyOutput(jsOutputId, buildStep);
+    var jsSourceMapId =
+        dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
+    await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
   } else {
     log.severe(result.output);
   }
 }
 
-// Future<Null> _copyIfExists(
-//     AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
-//   var file = scratchSpace.fileFor(id);
-//   if (await file.exists()) {
-//     await scratchSpace.copyOutput(id, writer);
-//   }
-// }
+Future<Null> _copyIfExists(
+    AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
+  var file = scratchSpace.fileFor(id);
+  if (await file.exists()) {
+    await scratchSpace.copyOutput(id, writer);
+  }
+}
