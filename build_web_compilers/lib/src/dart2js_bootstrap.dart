@@ -4,10 +4,13 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:scratch_space/scratch_space.dart';
+import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 
 import 'web_entrypoint_builder.dart';
 
@@ -35,21 +38,38 @@ Future<Null> bootstrapDart2Js(
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
   if (result.succeeded && await jsOutputFile.exists()) {
     log.info(result.output);
-    await scratchSpace.copyOutput(jsOutputId, buildStep);
-    var jsSourceMapId =
-        dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
-    await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
-    var dumpInfoId = dartEntrypointId.changeExtension(dumpInfoExtension);
-    await _copyIfExists(dumpInfoId, scratchSpace, buildStep);
+    var rootDir = p.dirname(jsOutputFile.path);
+    var dartFile = p.basename(dartEntrypointId.path);
+    var fileGlob = new Glob('$dartFile.js*');
+    var archive = new Archive();
+    await for (var jsFile in fileGlob.list(root: rootDir)) {
+      if (jsFile is File) {
+        var fileName = p.relative(jsFile.path, from: rootDir);
+        var fileStats = await jsFile.stat();
+        archive.addFile(new ArchiveFile(
+            fileName, fileStats.size, await jsFile.readAsBytes())
+          ..mode = fileStats.mode
+          ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
+      }
+    }
+    var archiveId =
+        dartEntrypointId.changeExtension(jsEntrypointArchiveExtension);
+    await buildStep.writeAsBytes(archiveId, new TarEncoder().encode(archive));
+    // await scratchSpace.copyOutput(jsOutputId, buildStep);
+    // var jsSourceMapId =
+    //     dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
+    // await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
+    // var dumpInfoId = dartEntrypointId.changeExtension(dumpInfoExtension);
+    // await _copyIfExists(dumpInfoId, scratchSpace, buildStep);
   } else {
     log.severe(result.output);
   }
 }
 
-Future<Null> _copyIfExists(
-    AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
-  var file = scratchSpace.fileFor(id);
-  if (await file.exists()) {
-    await scratchSpace.copyOutput(id, writer);
-  }
-}
+// Future<Null> _copyIfExists(
+//     AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
+//   var file = scratchSpace.fileFor(id);
+//   if (await file.exists()) {
+//     await scratchSpace.copyOutput(id, writer);
+//   }
+// }

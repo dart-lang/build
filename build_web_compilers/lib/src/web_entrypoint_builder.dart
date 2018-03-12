@@ -13,9 +13,9 @@ import 'dart2js_bootstrap.dart';
 import 'dev_compiler_bootstrap.dart';
 
 const ddcBootstrapExtension = '.dart.bootstrap.js';
-const dumpInfoExtension = '.dart.js.info.json';
 const jsEntrypointExtension = '.dart.js';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
+const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
 
 /// Which compiler to use when compiling web entrypoints.
 enum WebCompiler {
@@ -90,9 +90,9 @@ class WebEntrypointBuilder implements Builder {
   final buildExtensions = const {
     '.dart': const [
       ddcBootstrapExtension,
-      dumpInfoExtension,
       jsEntrypointExtension,
-      jsEntrypointSourceMapExtension
+      jsEntrypointSourceMapExtension,
+      jsEntrypointArchiveExtension,
     ],
   };
 

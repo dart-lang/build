@@ -24,6 +24,7 @@ builders:
         - .dart.js
         - .dart.js.info.json
         - .dart.js.map
+        - .dart.js.tar.gz
     required_inputs:
       - .dart
       - .ddc.js
