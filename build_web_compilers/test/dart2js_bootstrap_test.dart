@@ -38,6 +38,7 @@ main() {
     var expectedOutputs = {
       'a|web/index.dart.js': decodedMatches(contains('world')),
       'a|web/index.dart.js.map': anything,
+      'a|web/index.dart.js.tar.gz': anything,
     };
     await testBuilder(new WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
         outputs: expectedOutputs);
@@ -46,6 +47,7 @@ main() {
   test('works with --no-sourcemap', () async {
     var expectedOutputs = {
       'a|web/index.dart.js': anything,
+      'a|web/index.dart.js.tar.gz': anything,
     };
     await testBuilder(
         new WebEntrypointBuilder(WebCompiler.Dart2Js,
