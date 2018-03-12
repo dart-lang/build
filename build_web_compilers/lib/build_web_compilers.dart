@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+export 'src/archive_extractor.dart' show Dart2JsArchiveExtractor;
 export 'src/dev_compiler_builder.dart'
     show
         DevCompilerBuilder,
