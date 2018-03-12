@@ -53,14 +53,14 @@ void main() {
       var nextBuild = nextSuccessfulBuild;
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
       await nextBuild;
-      await expectTestsPass(expectedNumRan: 4);
+      await expectTestsPass(expectedNumRan: 5);
     });
 
     test('delete test', () async {
       var nextBuild = nextSuccessfulBuild;
       await deleteFile(p.join('test', 'subdir', 'subdir_test.dart'));
       await nextBuild;
-      await expectTestsPass(expectedNumRan: 2);
+      await expectTestsPass(expectedNumRan: 3);
     });
 
     test('ddc errors can be fixed', () async {
