@@ -1,4 +1,4 @@
-# 0.3.4-dev
+# 0.3.4
 
 - Added support for dart2js deferred loading.
 - Added support for bootstrapping code in web workers with `dartdevc`.
