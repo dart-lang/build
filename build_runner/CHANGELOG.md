@@ -1,3 +1,7 @@
+## 0.8.1
+
+- Improved the layout of `/$perf`, especially after browser window resize.
+
 ## 0.8.0
 
 ### New Features
