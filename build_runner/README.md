@@ -27,7 +27,7 @@ tools such as [Bazel][].
 
 > **NOTE**: Are you a user of this package? You may be interested in
 > simplified user-facing documentation, such as our
-> [getting started guide](getting-started-link).
+> [getting started guide][getting-started-link].
 
 [getting-started-link]: https://goo.gl/b9o2j6
 
