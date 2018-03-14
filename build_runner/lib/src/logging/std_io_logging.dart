@@ -10,15 +10,7 @@ import 'package:logging/logging.dart';
 
 void stdIOLogListener(LogRecord record, {bool verbose}) {
   verbose ??= false;
-  AnsiCode color;
-  if (record.level < Level.WARNING) {
-    color = cyan;
-  } else if (record.level < Level.SEVERE) {
-    color = yellow;
-  } else {
-    color = red;
-  }
-  final level = color.wrap('[${record.level}]');
+  final level = _levelLabel(record.level);
   final eraseLine = ansiOutputEnabled && !verbose ? '\x1b[2K\r' : '';
   var headerMessage = record.message;
   var blankLineCount = 0;
@@ -56,6 +48,24 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
   } else {
     stdout.write(message);
   }
+}
+
+String _levelLabel(Level level) => _levelColor(level).wrap(_levelName(level));
+
+/// Reduce possible levels to the groups we care about and make sure names are 6
+/// characters.
+String _levelName(Level level) {
+  if (level < Level.CONFIG) return '[ FINE ]';
+  if (level < Level.WARNING) return '[ INFO ]';
+  if (level < Level.SEVERE) return '[ WARN ]';
+  return '[SEVERE]';
+}
+
+AnsiCode _levelColor(Level level) {
+  if (level < Level.CONFIG) return lightBlue;
+  if (level < Level.WARNING) return cyan;
+  if (level < Level.SEVERE) return yellow;
+  return red;
 }
 
 /// Filter out the Logger names known to come from `build_runner` and splits the
