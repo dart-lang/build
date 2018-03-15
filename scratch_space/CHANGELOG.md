@@ -1,3 +1,7 @@
+## 0.0.2
+
+- Allow creating files at the root of the scratch space.
+
 ## 0.0.1+3
 
 - Allow package:build 0.12.0
