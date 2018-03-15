@@ -1,3 +1,8 @@
+# 0.3.4+1
+
+- Use `--use-old-frontend` with `dart2js` as a stopgap until we can add support
+  for `.packages` files.
+
 # 0.3.4
 
 - Added support for dart2js deferred loading.
