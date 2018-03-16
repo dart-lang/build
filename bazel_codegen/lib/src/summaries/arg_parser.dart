@@ -9,8 +9,7 @@ const _packagePathParam = 'package-path';
 const _sdkSummaryParam = 'dart-sdk-summary';
 
 final _argParser = new ArgParser()
-  ..addOption(_summariesParam,
-      allowMultiple: true,
+  ..addMultiOption(_summariesParam,
       help: 'List of paths to the files containing analyzer summaries for '
           'transitive dependencies.')
   ..addOption(_srcsParam,
