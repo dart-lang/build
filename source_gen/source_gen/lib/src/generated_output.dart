@@ -18,9 +18,8 @@ class GeneratedOutput {
       : error = null,
         stackTrace = null;
 
-  GeneratedOutput.fromError(this.generator, Object error, [this.stackTrace])
-      : this.output = _outputFromError(error),
-        this.error = error;
+  GeneratedOutput.fromError(this.generator, this.error, [this.stackTrace])
+      : this.output = _outputFromError(error);
 }
 
 String _outputFromError(Object error) {

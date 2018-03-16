@@ -23,7 +23,7 @@ abstract class Generator {
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) => null;
 
   @override
-  String toString() => this.runtimeType.toString();
+  String toString() => runtimeType.toString();
 }
 
 /// May be thrown by generators during [Generator.generate].

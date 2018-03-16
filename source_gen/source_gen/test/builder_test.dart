@@ -49,7 +49,7 @@ void main() {
         generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
         outputs: {
           '$pkgName|lib/test_lib.g.dart':
-              decodedMatches(startsWith(_customHeader + '\n\n// ***'))
+              decodedMatches(startsWith('$_customHeader\n\n// ***'))
         });
   });
 
@@ -94,7 +94,7 @@ void main() {
 
   test('Does not fail when there is no output', () async {
     var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
-    var builder = new PartBuilder([new CommentGenerator(forClasses: false)]);
+    var builder = new PartBuilder([const CommentGenerator(forClasses: false)]);
     await testBuilder(builder, sources, outputs: {});
   });
 
@@ -151,7 +151,7 @@ void main() {
 
   test('defaults to formatting generated code with the DartFormatter',
       () async {
-    await testBuilder(new PartBuilder([new UnformattedCodeGenerator()]),
+    await testBuilder(new PartBuilder([const UnformattedCodeGenerator()]),
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
@@ -162,19 +162,19 @@ void main() {
 
   test('PartBuilder uses a custom header when provided', () async {
     await testBuilder(
-        new PartBuilder([new UnformattedCodeGenerator()],
+        new PartBuilder([const UnformattedCodeGenerator()],
             header: _customHeader),
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
           '$pkgName|lib/a.g.dart':
-              decodedMatches(startsWith(_customHeader + '\npart of')),
+              decodedMatches(startsWith('$_customHeader\npart of')),
         });
   });
 
   test('PartBuilder includes no header when `header` is empty', () async {
     await testBuilder(
-        new PartBuilder([new UnformattedCodeGenerator()], header: ''),
+        new PartBuilder([const UnformattedCodeGenerator()], header: ''),
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
         outputs: {
@@ -184,7 +184,7 @@ void main() {
 
   test('can skip formatting with a trivial lambda', () async {
     await testBuilder(
-        new PartBuilder([new UnformattedCodeGenerator()],
+        new PartBuilder([const UnformattedCodeGenerator()],
             formatOutput: (s) => s),
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
@@ -197,7 +197,7 @@ void main() {
   test('can pass a custom formatter with formatOutput', () async {
     var customOutput = 'final String hello = "hello";';
     await testBuilder(
-        new PartBuilder([new UnformattedCodeGenerator()],
+        new PartBuilder([const UnformattedCodeGenerator()],
             formatOutput: (_) => customOutput),
         {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
         generateFor: new Set.from(['$pkgName|lib/a.dart']),
@@ -217,12 +217,12 @@ void main() {
   });
 
   test('Should have a readable toString() message for builders', () {
-    final builder = new LibraryBuilder(new _NoOpGenerator());
+    final builder = new LibraryBuilder(const _NoOpGenerator());
     expect(builder.toString(), 'Generating .g.dart: NOOP');
 
     final builders = new PartBuilder([
-      new _NoOpGenerator(),
-      new _NoOpGenerator(),
+      const _NoOpGenerator(),
+      const _NoOpGenerator(),
     ]);
     expect(builders.toString(), 'Generating .g.dart: NOOP, NOOP');
   });

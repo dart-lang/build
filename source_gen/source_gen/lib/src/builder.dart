@@ -64,7 +64,7 @@ class _Builder extends Builder {
       throw new ArgumentError.value(_generatedExtension, 'generatedExtension',
           'Extension must be in the format of .*');
     }
-    if (this._isStandalone && this._generators.length > 1) {
+    if (_isStandalone && _generators.length > 1) {
       throw new ArgumentError(
           'A standalone file can only be generated from a single Generator.');
     }
@@ -125,14 +125,13 @@ class _Builder extends Builder {
       contentBuffer.writeln();
     }
 
-    for (GeneratedOutput output in generatedOutputs) {
-      contentBuffer.writeln('');
-      contentBuffer.writeln(_headerLine);
-      contentBuffer.writeln('// Generator: ${output.generator}');
-      contentBuffer.writeln(_headerLine);
-      contentBuffer.writeln('');
-
-      contentBuffer.writeln(output.output);
+    for (var output in generatedOutputs) {
+      contentBuffer..writeln('')
+      ..writeln(_headerLine)
+      ..writeln('// Generator: ${output.generator}')
+      ..writeln(_headerLine)
+      ..writeln('')
+      ..writeln(output.output);
     }
 
     var genPartContent = contentBuffer.toString();

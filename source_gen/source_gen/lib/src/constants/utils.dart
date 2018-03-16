@@ -17,8 +17,8 @@ void assertHasField(ClassElement root, String name) {
     }
     element = element.supertype?.element;
   }
-  final allFields = root.fields.toSet();
-  allFields.addAll(root.allSupertypes.expand((t) => t.element.fields));
+  final allFields = root.fields.toSet()
+    ..addAll(root.allSupertypes.expand((t) => t.element.fields));
   throw new FormatException(
     'Class ${root.name} does not have field "$name".',
     'Fields: \n  - ${allFields.map((e) => e.name).join('\n  - ')}',
