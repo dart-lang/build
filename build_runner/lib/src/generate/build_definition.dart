@@ -352,7 +352,7 @@ class _Loader {
         updateBuilderOptionsNode(
             builderOptionsIdForAction(action, phase), action.builderOptions);
       } else if (action is PostBuildPhase) {
-        int actionNum = 0;
+        var actionNum = 0;
         for (var builderAction in action.builderActions) {
           updateBuilderOptionsNode(
               builderOptionsIdForAction(builderAction, actionNum),

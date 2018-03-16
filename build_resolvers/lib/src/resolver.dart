@@ -252,7 +252,7 @@ class AssetBasedSource extends Source {
 
   @override
   String get encoding =>
-      "${uriKind.encoding}${assetId.package}/${assetId.path}";
+      '${uriKind.encoding}${assetId.package}/${assetId.path}';
 
   @override
   String get fullName => assetId.toString();
@@ -358,7 +358,7 @@ class FutureGroup<E> {
   /// error has already been signaled.
   void add(Future<E> task) {
     if (_failedTask != null) return;
-    if (_pending == _FINISHED) throw new StateError("Future already completed");
+    if (_pending == _FINISHED) throw new StateError('Future already completed');
 
     _pending++;
     var i = results.length;

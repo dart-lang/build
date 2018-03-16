@@ -54,7 +54,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
 
   // Map from module name to module path for custom modules.
   var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
-  List<AssetId> transitiveJsModules = [jsId]
+  var transitiveJsModules = [jsId]
     ..addAll(transitiveDeps.map((dep) => dep.jsId(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
     // Strip out the top level dir from the path for any module, and set it to
@@ -90,7 +90,7 @@ Future<List<Module>> _ensureTransitiveModules(
     Module module, AssetReader reader) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(reader);
-  List<AssetId> jsModules = transitiveDeps
+  var jsModules = transitiveDeps
       .map((module) => module.jsId(jsModuleExtension))
       .toList()
         ..add(module.jsId(jsModuleExtension));

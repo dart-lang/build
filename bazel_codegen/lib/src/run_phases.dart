@@ -37,7 +37,7 @@ Future generateSingleBuild(List<BuilderFactory> builders, List<String> args,
   try {
     logger = await _runBuilders(builders, buildArgs, defaultContent, timings);
   } catch (e, s) {
-    stderr.writeln("Dart Codegen failed with:\n$e\n$s");
+    stderr.writeln('Dart Codegen failed with:\n$e\n$s');
     exitCode = EXIT_CODE_ERROR;
   }
 
@@ -88,8 +88,7 @@ class _CodegenWorker extends AsyncWorkerLoop {
       logHandle = await _runBuilders(
           builders, buildArgs, defaultContent, timings,
           isWorker: true, validInputs: new Set()..addAll(bazelRelativeInputs));
-      var logger = logHandle.logger;
-      logger.info(
+      logHandle.logger.info(
           'Completed in worker mode, this worker has ran $numRuns builds');
       await logHandle.close();
       var message = _loggerMessage(logHandle, buildArgs.logPath);
@@ -102,7 +101,7 @@ class _CodegenWorker extends AsyncWorkerLoop {
       await logHandle?.close();
       return new WorkResponse()
         ..exitCode = EXIT_CODE_ERROR
-        ..output = "Dart Codegen worker failed with:\n$e\n$s";
+        ..output = 'Dart Codegen worker failed with:\n$e\n$s';
     }
   }
 }

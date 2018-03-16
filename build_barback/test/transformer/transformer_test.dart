@@ -197,7 +197,7 @@ final BuildBehavior logWarningAndError = (_, __) {
 };
 
 String _fileExistsError(String builder, List<String> files) {
-  return "error: Builder `$builder` declared outputs "
-      "`$files` but those files already exist. This build step has been "
-      "skipped.";
+  return 'error: Builder `$builder` declared outputs '
+      '`$files` but those files already exist. This build step has been '
+      'skipped.';
 }

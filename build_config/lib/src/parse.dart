@@ -80,8 +80,7 @@ BuildConfig parseFromMap(String packageName,
   final postProcessBuilderDefinitions =
       <String, PostProcessBuilderDefinition>{};
 
-  final Map<String, Map> targetConfigs =
-      config['targets'] as Map<String, Map> ?? {};
+  final targetConfigs = config['targets'] as Map<String, Map> ?? {};
   for (var targetName in targetConfigs.keys) {
     var targetConfig = _readMapOrThrow(
         targetConfigs, targetName, _targetOptions, 'target `$targetName`');
@@ -124,8 +123,7 @@ BuildConfig parseFromMap(String packageName,
         '$packageName or `\$default`');
   }
 
-  final Map<String, Map> builderConfigs =
-      config['builders'] as Map<String, Map> ?? {};
+  final builderConfigs = config['builders'] as Map<String, Map> ?? {};
   for (var builderName in builderConfigs.keys) {
     final builderConfig = _readMapOrThrow(builderConfigs, builderName,
         _builderDefinitionOptions, 'builder `$builderName`',
@@ -182,7 +180,7 @@ BuildConfig parseFromMap(String packageName,
     );
   }
 
-  final Map<String, Map> postProcessBuilderConfigs =
+  final postProcessBuilderConfigs =
       config['post_process_builders'] as Map<String, Map> ?? {};
   for (var builderName in postProcessBuilderConfigs.keys) {
     final builderConfig = _readMapOrThrow(
@@ -226,7 +224,7 @@ BuildConfig parseFromMap(String packageName,
 }
 
 Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options) {
-  dynamic value = options[_buildExtensions];
+  var value = options[_buildExtensions];
   if (value == null) {
     throw new ArgumentError('Missing configuratino for build_extensions');
   }

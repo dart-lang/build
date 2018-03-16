@@ -51,7 +51,7 @@ class IOEnvironment implements BuildEnvironment {
     if (!_isInteractive) throw new NonInteractiveBuildException();
     while (true) {
       stdout.writeln('\n$message');
-      for (int i = 0, l = choices.length; i < l; i++) {
+      for (var i = 0, l = choices.length; i < l; i++) {
         stdout.writeln('${i + 1} - ${choices[i]}');
       }
       final input = stdin.readLineSync();

@@ -98,7 +98,7 @@ class ServeHandler implements BuildState {
     if (request.url.path != _performancePath) {
       return new shelf.Response.notFound('');
     }
-    bool hideSkipped = false;
+    var hideSkipped = false;
     if (request.url.queryParameters['hideSkipped']?.toLowerCase() == 'true') {
       hideSkipped = true;
     }
@@ -214,7 +214,7 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
         ? '/$_performancePath'
         : '/$_performancePath?hideSkipped=true';
     var showSkippedText =
-        hideSkipped ? "Show Skipped Actions" : "Hide Skipped Actions";
+        hideSkipped ? 'Show Skipped Actions' : 'Hide Skipped Actions';
     var showSkippedLink = '<a href="$showSkippedHref">$showSkippedText</a>';
     return '''
   <html>
