@@ -79,19 +79,6 @@ void main() {
         outputs: {'$pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
   });
 
-  test(
-      'Throws when no library identifier and requireLibraryDirective is `true`',
-      () async {
-    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
-    var builder = new PartBuilder([const CommentGenerator()],
-        // ignore: deprecated_member_use
-        requireLibraryDirective: true);
-    expect(
-        testBuilder(builder, sources,
-            outputs: {'$pkgName|lib/test_lib.g.dart': ''}),
-        throwsA(const isInstanceOf<InvalidGenerationSourceError>()));
-  });
-
   test('Does not fail when there is no output', () async {
     var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
     var builder = new PartBuilder([const CommentGenerator(forClasses: false)]);

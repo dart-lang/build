@@ -1,3 +1,8 @@
+## 0.8.0
+
+* **BREAKING** removed the deprecated `requireLibraryDirective` parameter in
+  `PartBuilder`.
+
 ## 0.7.6
 
 * `TypeChecker` now throws an `UnresolvedAnnotationException` with a more

@@ -29,24 +29,17 @@ class _Builder extends Builder {
   /// Whether to emit a standalone (non-`part`) file in this builder.
   final bool _isStandalone;
 
-  final bool _requireLibraryDirective;
-
   final String _header;
 
   @override
   final Map<String, List<String>> buildExtensions;
 
   /// Wrap [_generators] to form a [Builder]-compatible API.
-  _Builder(
-      this._generators,
+  _Builder(this._generators,
       {String formatOutput(String code),
       String generatedExtension: '.g.dart',
       List<String> additionalOutputExtensions: const [],
       bool isStandalone: false,
-      @Deprecated(
-          'Library directives are no longer required for part generation. '
-          'This option will be removed in v0.8.0.')
-          bool requireLibraryDirective: false,
       String header})
       : _generatedExtension = generatedExtension,
         buildExtensions = {
@@ -54,8 +47,6 @@ class _Builder extends Builder {
         },
         _isStandalone = isStandalone,
         formatOutput = formatOutput ?? _formatter.format,
-        // ignore: deprecated_member_use
-        _requireLibraryDirective = requireLibraryDirective,
         _header = header ?? defaultFileHeader {
     if (_generatedExtension == null) {
       throw new ArgumentError.notNull('generatedExtension');
@@ -106,7 +97,6 @@ class _Builder extends Builder {
       var name = nameOfPartial(
         library,
         asset,
-        allowUnnamedPartials: !_requireLibraryDirective,
       );
       if (name == null) {
         var suggest = suggestLibraryName(asset);
@@ -126,12 +116,13 @@ class _Builder extends Builder {
     }
 
     for (var output in generatedOutputs) {
-      contentBuffer..writeln('')
-      ..writeln(_headerLine)
-      ..writeln('// Generator: ${output.generator}')
-      ..writeln(_headerLine)
-      ..writeln('')
-      ..writeln(output.output);
+      contentBuffer
+        ..writeln('')
+        ..writeln(_headerLine)
+        ..writeln('// Generator: ${output.generator}')
+        ..writeln(_headerLine)
+        ..writeln('')
+        ..writeln(output.output);
     }
 
     var genPartContent = contentBuffer.toString();
@@ -175,32 +166,15 @@ class PartBuilder extends _Builder {
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
-  ///
-  /// May set [requireLibraryDirective] to `true` in order to opt-out of the
-  /// Dart `2.0.0-dev` feature of `part of` being usable without an explicit
-  /// `library` directive. Developers should restrict their `pubspec`
-  /// accordingly:
-  /// ```yaml
-  /// sdk: '>=2.0.0-dev <2.0.0'
-  /// ```
-  ///
-  /// This option will be removed in version 0.8.0 of `source_gen`.
-  PartBuilder(
-      List<Generator> generators,
+  PartBuilder(List<Generator> generators,
       {String formatOutput(String code),
       String generatedExtension: '.g.dart',
       List<String> additionalOutputExtensions: const [],
-      @Deprecated(
-          'Library directives are no longer required for part generation. '
-          'This option will be removed in v0.8.0.')
-          bool requireLibraryDirective: false,
       String header})
       : super(generators,
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
             additionalOutputExtensions: additionalOutputExtensions,
-            // ignore: deprecated_member_use
-            requireLibraryDirective: requireLibraryDirective,
             header: header);
 }
 

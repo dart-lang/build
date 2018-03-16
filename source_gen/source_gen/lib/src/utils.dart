@@ -63,23 +63,13 @@ String typeNameOf(DartType type) {
 /// Returns a name suitable for `part of "..."` when pointing to [element].
 ///
 /// Returns `null` if [element] is missing identifier.
-///
-/// Starting in `1.25.0`, setting [allowUnnamedPartials] will fallback
-/// (actually, preferred) to `'part of "package:foo/path.dart'`, and null will
-/// never be returned.
-String nameOfPartial(
-  LibraryElement element,
-  AssetId source, {
-  bool allowUnnamedPartials: false,
-}) {
+String nameOfPartial(LibraryElement element, AssetId source) {
   if (element.name != null && element.name.isNotEmpty) {
     return element.name;
   }
-  if (allowUnnamedPartials) {
-    var sourceUrl = p.basename(source.uri.toString());
-    return '\'$sourceUrl\'';
-  }
-  return null;
+
+  var sourceUrl = p.basename(source.uri.toString());
+  return '\'$sourceUrl\'';
 }
 
 /// Returns a suggested library identifier based on [source] path and package.
