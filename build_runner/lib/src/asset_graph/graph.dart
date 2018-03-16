@@ -44,7 +44,7 @@ class AssetGraph {
 
   AssetGraph._(this.buildPhasesDigest, this.dartVersion,
       {Map<int, Set<AssetId>> failedActions})
-      : _failedActions = failedActions ?? new Map<int, Set<AssetId>>();
+      : _failedActions = failedActions ?? <int, Set<AssetId>>{};
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
@@ -161,7 +161,7 @@ class AssetGraph {
             builderOptionsIdForAction(phase, phaseNum),
             computeBuilderOptionsDigest(phase.builderOptions)));
       } else if (phase is PostBuildPhase) {
-        int actionNum = 0;
+        var actionNum = 0;
         for (var builderAction in phase.builderActions) {
           add(new BuilderOptionsAssetNode(
               builderOptionsIdForAction(builderAction, actionNum),
@@ -260,7 +260,7 @@ class AssetGraph {
     // Transitively invalidates all assets.
     void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType,
         {bool forceUpdate: false}) {
-      var node = this.get(id);
+      var node = get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
@@ -294,7 +294,7 @@ class AssetGraph {
       }
     });
 
-    var newAndModifiedNodes = modifyIds.map(this.get).toList()
+    var newAndModifiedNodes = modifyIds.map(get).toList()
       ..addAll(_addSources(newIds));
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
@@ -450,7 +450,7 @@ class AssetGraph {
   /// Does not return anything because [PostProcessAnchorNode]s are synthetic
   /// and should not be treated as inputs.
   void _addPostBuildPhaseAnchors(PostBuildPhase phase, Set<AssetId> allInputs) {
-    int actionNum = 0;
+    var actionNum = 0;
     for (var action in phase.builderActions) {
       var inputs = allInputs.where((input) => _actionMatches(action, input));
       for (var input in inputs) {

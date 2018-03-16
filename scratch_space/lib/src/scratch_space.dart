@@ -29,9 +29,8 @@ class ScratchSpace {
   // Assets which have a file created but are still being written to.
   final _pendingWrites = <AssetId, Future<Null>>{};
 
-  ScratchSpace._(Directory tempDir)
-      : packagesDir = new Directory(p.join(tempDir.path, 'packages')),
-        this.tempDir = tempDir;
+  ScratchSpace._(this.tempDir)
+      : packagesDir = new Directory(p.join(tempDir.path, 'packages'));
 
   factory ScratchSpace() {
     var tempDir = new Directory(Directory.systemTemp

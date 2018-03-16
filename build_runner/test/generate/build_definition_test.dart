@@ -217,7 +217,7 @@ main() {
             environment.reader);
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
-        for (AssetId id in [generatedACopyId, generatedACloneId]) {
+        for (var id in [generatedACopyId, generatedACloneId]) {
           var node = originalAssetGraph.get(id) as GeneratedAssetNode;
           node.wasOutput = true;
           node.state = GeneratedNodeState.upToDate;

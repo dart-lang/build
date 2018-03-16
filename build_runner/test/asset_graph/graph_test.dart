@@ -52,7 +52,7 @@ void main() {
 
       test('add, contains, get, allNodes', () {
         var expectedNodes = [];
-        for (int i = 0; i < 5; i++) {
+        for (var i = 0; i < 5; i++) {
           expectedNodes.add(testAddNode());
         }
         expectedNodes.addAll(
@@ -62,7 +62,7 @@ void main() {
 
       test('remove', () {
         var nodes = <AssetNode>[];
-        for (int i = 0; i < 5; i++) {
+        for (var i = 0; i < 5; i++) {
           nodes.add(testAddNode());
         }
         graph.remove(nodes[1].id);
@@ -83,7 +83,7 @@ void main() {
       });
 
       test('serialize/deserialize', () {
-        for (int n = 0; n < 5; n++) {
+        for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
           graph.add(node);
           var phaseNum = n;
@@ -97,7 +97,7 @@ void main() {
               node.id, n, builderOptionsNode.id);
           graph.add(anchorNode);
           node.anchorOutputs.add(anchorNode.id);
-          for (int g = 0; g < 5 - n; g++) {
+          for (var g = 0; g < 5 - n; g++) {
             var builderOptionsNode = new BuilderOptionsAssetNode(
                 makeAssetId(), md5.convert(utf8.encode('test')));
 

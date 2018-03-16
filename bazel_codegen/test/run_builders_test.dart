@@ -56,8 +56,9 @@ void main() {
           buildExtensions: appendExtension('.copy', from: '.foo'));
       final builderBar = new TestBuilder(
           buildExtensions: appendExtension('.copy', from: '.bar'));
-      reader.cacheStringAsset(new AssetId('a', 'lib/a1.foo'), 'foo content');
-      reader.cacheStringAsset(new AssetId('a', 'lib/a2.bar'), 'bar content');
+      reader
+        ..cacheStringAsset(new AssetId('a', 'lib/a1.foo'), 'foo content')
+        ..cacheStringAsset(new AssetId('a', 'lib/a2.bar'), 'bar content');
       await runBuilders(
         [(_) => builderFoo, (_) => builderBar],
         'a',

@@ -46,7 +46,7 @@ Future main(List<String> args) async {
   packageGraph = new PackageGraph.forThisPackage();
 
   var commandRunner = new CommandRunner(
-      "", "A tool for inspecting the AssetGraph for your build")
+      '', 'A tool for inspecting the AssetGraph for your build')
     ..addCommand(new InspectNodeCommand())
     ..addCommand(new GraphCommand());
 

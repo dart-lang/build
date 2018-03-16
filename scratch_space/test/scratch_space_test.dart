@@ -19,11 +19,11 @@ void main() {
     ScratchSpace scratchSpace;
     InMemoryAssetReader assetReader;
 
-    Map<AssetId, List<int>> allAssets = [
+    var allAssets = [
       'dep|lib/dep.dart',
       'myapp|lib/myapp.dart',
       'myapp|web/main.dart',
-    ].fold({}, (assets, serializedId) {
+    ].fold<Map<AssetId, List<int>>>({}, (assets, serializedId) {
       assets[new AssetId.parse(serializedId)] = serializedId.codeUnits;
       return assets;
     });

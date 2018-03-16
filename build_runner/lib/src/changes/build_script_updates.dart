@@ -21,7 +21,7 @@ class BuildScriptUpdates {
 
   static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
       PackageGraph packageGraph, AssetGraph graph) async {
-    bool supportsIncrementalRebuilds = true;
+    var supportsIncrementalRebuilds = true;
     var rootPackage = packageGraph.root.name;
     Set<AssetId> allSources;
     var logger = new Logger('BuildScriptUpdates');

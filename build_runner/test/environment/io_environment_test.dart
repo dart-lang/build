@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import "package:async/async.dart";
+import 'package:async/async.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

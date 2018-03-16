@@ -332,7 +332,7 @@ class WatchImpl implements BuildState {
 
 Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
   var changeMap = <AssetId, ChangeType>{};
-  for (AssetChange change in changes.expand((l) => l)) {
+  for (var change in changes.expand((l) => l)) {
     var originalChangeType = changeMap[change.id];
     if (originalChangeType != null) {
       switch (originalChangeType) {

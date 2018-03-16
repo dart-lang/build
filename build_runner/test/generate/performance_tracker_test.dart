@@ -15,7 +15,7 @@ main() {
   group('PerformanceTracker', () {
     DateTime time;
     final startTime = new DateTime(2017);
-    final Clock fakeClock = () => time;
+    DateTime fakeClock() => time;
 
     BuildPerformanceTracker tracker;
 
@@ -89,13 +89,13 @@ main() {
         tracker.stop();
 
         var allActions = tracker.actions.toList();
-        for (int i = 0; i < inputs.length; i++) {
+        for (var i = 0; i < inputs.length; i++) {
           var action = allActions[i];
           expect(action.startTime, startTime.add(new Duration(seconds: i * 3)));
           expect(action.stopTime,
               startTime.add(new Duration(seconds: (i + 1) * 3)));
           var allPhases = action.phases.toList();
-          for (int p = 0; p < 3; p++) {
+          for (var p = 0; p < 3; p++) {
             var phase = allPhases[p];
             expect(phase.duration, new Duration(seconds: 1));
             expect(

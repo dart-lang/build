@@ -34,7 +34,7 @@ main() async {
             }
           })
       .toList();
-  int edgeNum = 0;
+  var edgeNum = 0;
   var edges = graph.allNodes.expand((node) {
     if (node is GeneratedAssetNode && !node.wasOutput) return [];
     return node.outputs.map((out) {
