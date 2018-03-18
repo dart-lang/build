@@ -19,13 +19,11 @@ const _summariesParam = 'use-summaries';
 
 // All arguments other than `--help` and `--use-summaries` are required.
 final _argParser = new ArgParser()
-  ..addOption(_rootDirParam,
-      allowMultiple: true,
+  ..addMultiOption(_rootDirParam,
       help: 'One or more workspace directories to check when reading files.')
   ..addFlag(_helpParam,
       abbr: 'h', negatable: false, help: 'Prints this message and exits')
-  ..addOption(_buildExtensions,
-      allowMultiple: true,
+  ..addMultiOption(_buildExtensions,
       help: 'The file extensions to process. For each input extension add an '
           'argument in the format "input:output1;output2"')
   ..addOption(_logLevelParam,

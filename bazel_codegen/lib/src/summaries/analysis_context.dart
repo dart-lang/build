@@ -28,8 +28,8 @@ AnalysisContext summaryAnalysisContext(
   var sdk = new SummaryBasedDartSdk(options.sdkSummary, true);
   var sdkResolver = new DartUriResolver(sdk);
 
-  var summaryData = new SummaryDataStore(options.summaryPaths);
-  summaryData.addBundle(null, sdk.bundle);
+  var summaryData = new SummaryDataStore(options.summaryPaths)
+    ..addBundle(null, sdk.bundle);
   var summaryResolver =
       new InSummaryUriResolver(PhysicalResourceProvider.INSTANCE, summaryData);
 
@@ -39,8 +39,8 @@ AnalysisContext summaryAnalysisContext(
     ..add(summaryResolver);
   var sourceFactory = new SourceFactory(resolvers);
 
-  var context = AnalysisEngine.instance.createAnalysisContext();
-  context.sourceFactory = sourceFactory;
+  var context = AnalysisEngine.instance.createAnalysisContext()
+    ..sourceFactory = sourceFactory;
   (context as AnalysisContextImpl).resultProvider =
       new InputPackagesResultProvider(
           context as InternalAnalysisContext, summaryData);

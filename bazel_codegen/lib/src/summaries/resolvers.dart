@@ -79,19 +79,19 @@ class AnalysisResolver implements ReleasableResolver {
   Future<LibraryElement> libraryFor(AssetId assetId) async {
     var uri = assetUri(assetId);
     var source = _analysisContext.sourceFactory.forUri2(uri);
-    if (source == null) throw 'missing source for $uri';
+    if (source == null) throw new ArgumentError('missing source for $uri');
     var kind = _analysisContext.computeKindOf(source);
     if (kind != SourceKind.LIBRARY) return null;
     var library = _analysisContext.computeLibraryElement(source);
-    if (library == null) throw 'Could not resolve $assetId';
+    if (library == null) throw new ArgumentError('Could not resolve $assetId');
     return library;
   }
 
   @override
   Stream<LibraryElement> get libraries async* {
     var allLibraries = new Set<LibraryElement>();
-    var uncheckedLibraries = new Queue<LibraryElement>();
-    uncheckedLibraries.addAll(await Future.wait(_assetIds.map(libraryFor)));
+    var uncheckedLibraries = new Queue<LibraryElement>()
+      ..addAll(await Future.wait(_assetIds.map(libraryFor)));
     while (uncheckedLibraries.isNotEmpty) {
       var library = uncheckedLibraries.removeFirst();
       allLibraries.add(library);

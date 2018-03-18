@@ -16,7 +16,7 @@ import '../common/common.dart';
 main() {
   group('build integration tests', () {
     group('build script', () {
-      String originalBuildContent = '''
+      var originalBuildContent = '''
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 

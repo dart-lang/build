@@ -66,7 +66,7 @@ void main() {
     });
 
     test('fetchResource can fetch resources', () async {
-      int expected = 1;
+      var expected = 1;
       var intResource = new Resource(() => expected);
       var actual = await buildStep.fetchResource(intResource);
       expect(actual, expected);

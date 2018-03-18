@@ -32,7 +32,7 @@ main() {
     });
 
     test('calls dispose callback with last instance', () async {
-      bool disposed = false;
+      var disposed = false;
       var last = 0;
       var intResource = new Resource(() => last, dispose: (int instance) {
         expect(instance, last);

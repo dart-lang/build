@@ -44,8 +44,8 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
     if (packageNode == null) {
       throw new ArgumentError(
           "Could not find package '$package' which was listed as "
-          "an input. Please ensure you have that package in your deps, or "
-          "remove it from your input sets.");
+          'an input. Please ensure you have that package in your deps, or '
+          'remove it from your input sets.');
     }
     var packagePath = packageNode.path;
     try {

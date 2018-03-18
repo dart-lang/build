@@ -142,7 +142,7 @@ Future createDevCompilerModule(
       ..addAll(transitiveSummaryDeps);
     packagesFile = await createPackagesFile(allDeps, scratchSpace);
     request.arguments.addAll([
-      "--packages",
+      '--packages',
       packagesFile.absolute.uri.toString(),
     ]);
   }

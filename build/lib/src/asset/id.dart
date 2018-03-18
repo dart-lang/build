@@ -78,7 +78,7 @@ class AssetId implements Comparable<AssetId> {
   /// forward slashes (regardless of host OS) and "." and ".." will be removed
   /// where possible.
   factory AssetId.parse(String description) {
-    var parts = description.split("|");
+    var parts = description.split('|');
     if (parts.length != 2) {
       throw new FormatException('Could not parse "$description".');
     }
@@ -125,7 +125,7 @@ class AssetId implements Comparable<AssetId> {
   /// Returns a new [AssetId] with the same [package] as this one and with the
   /// [path] extended to include [extension].
   AssetId addExtension(String extension) =>
-      new AssetId(package, "$path$extension");
+      new AssetId(package, '$path$extension');
 
   /// Returns a new [AssetId] with the same [package] and [path] as this one
   /// but with file extension [newExtension].
@@ -133,7 +133,7 @@ class AssetId implements Comparable<AssetId> {
       new AssetId(package, p.withoutExtension(path) + newExtension);
 
   @override
-  String toString() => "$package|$path";
+  String toString() => '$package|$path';
 
   /// Serializes this [AssetId] to an object that can be sent across isolates
   /// and passed to [AssetId.deserialize].
@@ -146,7 +146,7 @@ String _normalizePath(String path) {
   }
 
   // Normalize path separators so that they are always "/" in the AssetID.
-  path = path.replaceAll(r"\", "/");
+  path = path.replaceAll(r'\', '/');
 
   // Collapse "." and "..".
   return p.posix.normalize(path);

@@ -9,7 +9,6 @@ import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
@@ -204,7 +203,7 @@ class _SingleBuild {
     if (_failOnSevere &&
         _assetGraph.failedActions.isNotEmpty &&
         result.status == BuildStatus.success) {
-      int numFailing = _assetGraph.failedActions.values
+      var numFailing = _assetGraph.failedActions.values
           .fold(0, (total, ids) => total + ids.length);
       result = _convertToFailure(
           result,
@@ -388,7 +387,7 @@ class _SingleBuild {
         'Inputs should be known in the static graph. Missing $input');
     assert(
         inputNode.primaryOutputs.containsAll(builderOutputs),
-        'input $input with builder $builder missing primary outputs: \n' +
+        'input $input with builder $builder missing primary outputs: \n'
             'Got ${inputNode.primaryOutputs.join(', ')} which was missing:\n' +
             builderOutputs
                 .where((id) => !inputNode.primaryOutputs.contains(id))
@@ -437,7 +436,7 @@ class _SingleBuild {
 
   Future<Iterable<AssetId>> _runPostProcessPhase(
       int phaseNum, PostBuildPhase phase) async {
-    int actionNum = 0;
+    var actionNum = 0;
     var outputLists = await Future.wait(phase.builderActions
         .map((action) => _runPostProcessAction(phaseNum, actionNum++, action)));
     return outputLists.fold<List<AssetId>>(
@@ -623,7 +622,7 @@ class _SingleBuild {
       SingleStepReader reader, AssetWriterSpy writer) async {
     // All inputs are the same, so we only compute this once, but lazily.
     Digest inputsDigest;
-    Set<Glob> globsRan = reader.globsRan.toSet();
+    var globsRan = reader.globsRan.toSet();
 
     for (var output in outputs) {
       var wasOutput = writer.assetsWritten.contains(output);
