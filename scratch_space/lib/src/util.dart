@@ -6,18 +6,12 @@ import 'package:path/path.dart' as p;
 
 /// Returns the top level directory in [uri].
 ///
-/// Throws an [ArgumentError] if [uri] is just a filename with no directory.
+/// Throws an [ArgumentError] if [uri] reaches above the top level directory.
 String topLevelDir(String uri) {
   var parts = p.url.split(p.url.normalize(uri));
-  String error;
-  if (parts.length == 1) {
-    error = 'The uri `$uri` does not contain a directory.';
-  } else if (parts.first == '..') {
-    error = 'The uri `$uri` reaches outside the root directory.';
+  if (parts.first == '..') {
+    throw new ArgumentError('Cannot compute top level dir for path `$uri` '
+        'which reaches outside the root directory.');
   }
-  if (error != null) {
-    throw new ArgumentError(
-        'Cannot compute top level dir for path `$uri`. $error');
-  }
-  return parts.first;
+  return parts.length == 1 ? null : parts.first;
 }

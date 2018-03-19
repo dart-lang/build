@@ -123,12 +123,11 @@ void main() {
         equals('package:a/src/a.dart'));
     expect(
         canonicalUriFor(new AssetId('a', 'web/a.dart')), equals('web/a.dart'));
+    expect(canonicalUriFor(new AssetId('a', 'a.dart')), equals('a.dart'));
 
-    expect(
-        () => canonicalUriFor(new AssetId('a', 'a.dart')), throwsArgumentError);
-    expect(() => canonicalUriFor(new AssetId('a', 'lib/../a.dart')),
+    expect(() => canonicalUriFor(new AssetId('a', 'lib/../../a.dart')),
         throwsArgumentError);
-    expect(() => canonicalUriFor(new AssetId('a', 'web/../a.dart')),
+    expect(() => canonicalUriFor(new AssetId('a', 'web/../../a.dart')),
         throwsArgumentError);
   });
 }
