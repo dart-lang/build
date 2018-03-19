@@ -7,6 +7,8 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:args/command_runner.dart';
+import 'package:io/ansi.dart';
+import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
@@ -23,6 +25,16 @@ Future<Null> main(List<String> args) async {
     ..addCommand(new _GenerateBuildScript());
   var parsedArgs = commandRunner.parse(args);
   var commandName = parsedArgs.command?.name;
+
+  if (parsedArgs.rest.isNotEmpty) {
+    print(
+        yellow.wrap('Could not find a command named "${parsedArgs.rest[0]}".'));
+    print('');
+    print(commandRunner.usageWithoutDescription);
+    exitCode = ExitCode.usage.code;
+    return;
+  }
+
   if (commandName == null || commandName == 'help') {
     commandRunner.printUsage();
     return;

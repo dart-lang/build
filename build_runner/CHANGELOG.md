@@ -1,6 +1,8 @@
 ## 0.8.1
 
 - Improved the layout of `/$perf`, especially after browser window resize.
+- `pub run build_runner` exits with a error when invoked with an unsupported
+  command.
 
 ## 0.8.0
 
