@@ -93,7 +93,7 @@ targets:
 You can also define this option on the command-line:
 
 ```bash
-$ pub run build_runner build --define "build_web_compilers|entrypoint=compiler=dart2js
+$ pub run build_runner build --define "build_web_compilers|entrypoint=compiler=dart2js"
 ```
 
 ... or create another file, say, `build.release.yaml`, with the configuration
