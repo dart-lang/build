@@ -4,7 +4,9 @@
 - `pub run build_runner` exits with a error when invoked with an unsupported
   command.
 - Bug Fix: Update outputs in merged directory for sources which are not used
-  during the build.
+  during the build. For example if `web/index.html` is not read to produce any
+  generated outputs changes to this file will now get picked up during `pub run
+  build_runner watch --output build`.
 
 ## 0.8.0
 
