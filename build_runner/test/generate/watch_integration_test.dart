@@ -20,8 +20,10 @@ import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
 main() async {
-  await watch(
-    [applyToRoot(new TestBuilder())], deleteFilesByDefault: true);
+  await watch([
+    applyToRoot(new TestBuilder(
+        buildExtensions: appendExtension('.copy', from: '.txt')))
+  ], deleteFilesByDefault: true, outputDir: 'output_dir');
 }
 ''';
 
@@ -38,9 +40,7 @@ main() {
           'glob'
         ]),
         d.dir('tool', [d.file('build.dart', originalBuildContent)]),
-        d.dir('web', [
-          d.file('a.txt', 'a'),
-        ]),
+        d.dir('web', [d.file('a.txt', 'a'), d.file('a.no_output', 'a')]),
       ]).create();
 
       await pubGet('a');
@@ -73,6 +73,30 @@ main() {
 
         await nextStdErrLine('Terminating builds due to build script update');
         expect(await process.exitCode, equals(0));
+      });
+    });
+
+    group('outputDir', () {
+      test('updates on changed source file', () async {
+        await d.dir('a', [
+          d.dir('output_dir', [
+            d.dir('web', [d.file('a.no_output', 'a')])
+          ])
+        ]).validate();
+
+        await d.dir('a', [
+          d.dir('web', [d.file('a.no_output', 'changed')])
+        ]).create();
+        await nextSuccessfulBuild;
+
+        await d.dir('a', [
+          d.dir('output_dir', [
+            d.dir('web', [d.file('a.no_output', 'changed')])
+          ])
+        ]).validate();
+
+        process.kill();
+        await process.exitCode;
       });
     });
   });

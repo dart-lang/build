@@ -94,6 +94,7 @@ Future<bool> createMergedOutputDir(
     for (var node in assetGraph.allNodes) {
       if (_shouldSkipNode(node, buildPhases)) continue;
       originalOutputAssets.add(node.id);
+      node.lastKnownDigest ??= await reader.digest(node.id);
       outputAssets
           .add(await _writeAsset(node.id, outputDir, packageGraph, reader));
       if (node is GeneratedAssetNode) {
