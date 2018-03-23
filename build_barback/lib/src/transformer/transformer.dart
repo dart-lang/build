@@ -4,7 +4,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+// ignore: deprecated_member_use
 import 'package:barback/barback.dart' as barback show AssetId;
+// ignore: deprecated_member_use
 import 'package:barback/barback.dart' hide Asset, AssetId;
 import 'package:build/build.dart' as build;
 import 'package:build/build.dart' hide AssetId;

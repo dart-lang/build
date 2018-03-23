@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+// ignore: deprecated_member_use
 import 'package:barback/barback.dart' as barback;
 
 import '../util/barback.dart';
