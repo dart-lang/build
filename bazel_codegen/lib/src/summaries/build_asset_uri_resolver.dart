@@ -80,8 +80,8 @@ class AssetSource implements Source {
   }
 
   @override
-  bool operator ==(Object object) =>
-      object is AssetSource && object._assetId == _assetId;
+  bool operator ==(Object other) =>
+      other is AssetSource && other._assetId == _assetId;
 
   @override
   bool exists() => true;

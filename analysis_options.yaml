@@ -15,8 +15,10 @@ linter:
     - avoid_function_literals_in_foreach_calls
     - avoid_init_to_null
     - avoid_null_checks_in_equality_operators
+    - avoid_renaming_method_parameters
     - avoid_return_types_on_setters
     - avoid_returning_null
+    - avoid_types_as_parameter_names
     - avoid_unused_constructor_parameters
     - await_only_futures
     - camel_case_types
