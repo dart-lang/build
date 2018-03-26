@@ -1,4 +1,8 @@
-## 3.0.0
+## 3.0.0-alpha+2
+
+* Support stubbing of void methods in Dart 2.
+
+## 3.0.0-alpha
 
 * `thenReturn` now throws an `ArgumentError` if either a `Future` or `Stream`
   is provided. `thenReturn` calls with futures and streams should be changed to
