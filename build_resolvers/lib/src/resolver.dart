@@ -240,8 +240,8 @@ class AssetBasedSource extends Source {
   bool exists() => _contents != null;
 
   @override
-  bool operator ==(Object other) =>
-      other is AssetBasedSource && assetId == other.assetId;
+  bool operator ==(Object object) =>
+      object is AssetBasedSource && assetId == object.assetId;
 
   @override
   int get hashCode => assetId.hashCode;

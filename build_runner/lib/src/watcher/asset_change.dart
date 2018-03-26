@@ -43,7 +43,8 @@ class AssetChange {
   int get hashCode => id.hashCode ^ type.hashCode;
 
   @override
-  bool operator ==(o) => o is AssetChange && o.id == id && o.type == type;
+  bool operator ==(Object other) =>
+      other is AssetChange && other.id == id && other.type == type;
 
   @override
   String toString() => 'AssetChange {asset: $id, type: $type}';
