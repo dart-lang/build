@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 18;
+const _version = 19;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -63,16 +63,6 @@ class _AssetGraphDeserializer {
       }
     }
 
-    // Read all the currently failing actions.
-    var serializedFailedActions = _serializedGraph['failedActions'] as List;
-    for (var i = 0; i < serializedFailedActions.length; i += 2) {
-      var phase = serializedFailedActions[i] as int;
-      var serializedIds = serializedFailedActions[i + 1] as List<int>;
-      graph._failedActions[phase] = serializedIds
-          .map((serializedId) => _idToAssetId[serializedId])
-          .toSet();
-    }
-
     return graph;
   }
 
@@ -106,6 +96,8 @@ class _AssetGraphDeserializer {
               serializedNode[_GeneratedField.State.index + offset] as int],
           wasOutput: _deserializeBool(
               serializedNode[_GeneratedField.WasOutput.index + offset] as int),
+          isFailure: _deserializeBool(
+              serializedNode[_GeneratedField.IsFailure.index + offset] as int),
           builderOptionsId: _idToAssetId[
               serializedNode[_GeneratedField.BuilderOptions.index + offset]
                   as int],
@@ -190,7 +182,6 @@ class _AssetGraphSerializer {
       'buildActionsDigest': _serializeDigest(_graph.buildPhasesDigest),
       'packages': packages,
       'assetPaths': assetPaths,
-      'failedActions': _serializeFailedActions(_graph.failedActions),
     };
     return utf8.encode(json.encode(result));
   }
@@ -203,16 +194,6 @@ class _AssetGraphSerializer {
     } else {
       return new _WrappedAssetNode(node, this);
     }
-  }
-
-  List _serializeFailedActions(Map<int, Iterable<AssetId>> failedActions) {
-    var serialized = <dynamic>[];
-    failedActions.forEach((phaseNum, assetIds) {
-      serialized
-        ..add(phaseNum)
-        ..add(assetIds.map((id) => _assetIdToId[id]).toList(growable: false));
-    });
-    return serialized;
   }
 }
 
@@ -240,6 +221,7 @@ enum _AssetField {
 enum _GeneratedField {
   PrimaryInput,
   WasOutput,
+  IsFailure,
   PhaseNumber,
   Globs,
   State,
@@ -349,6 +331,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
             : null;
       case _GeneratedField.WasOutput:
         return _serializeBool(generatedNode.wasOutput);
+      case _GeneratedField.IsFailure:
+        return _serializeBool(generatedNode.isFailure);
       case _GeneratedField.PhaseNumber:
         return generatedNode.phaseNumber;
       case _GeneratedField.Globs:

@@ -94,6 +94,13 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
+          if (node.isFailure != expectedNode.isFailure) {
+            matchState['isFailure of ${node.id}'] = [
+              node.isFailure,
+              expectedNode.isFailure
+            ];
+            matches = false;
+          }
           if (!unorderedEquals(node.inputs)
               .matches(expectedNode.inputs, null)) {
             matchState['Inputs of ${node.id}'] = [

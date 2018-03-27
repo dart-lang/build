@@ -106,6 +106,7 @@ main() {
         var generatedANode =
             originalAssetGraph.get(generatedAId) as GeneratedAssetNode;
         generatedANode.wasOutput = true;
+        generatedANode.isFailure = false;
         generatedANode.state = GeneratedNodeState.upToDate;
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -191,6 +192,7 @@ main() {
         var generatedNode =
             originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode;
         generatedNode.wasOutput = false;
+        generatedNode.isFailure = false;
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -220,6 +222,7 @@ main() {
         for (var id in [generatedACopyId, generatedACloneId]) {
           var node = originalAssetGraph.get(id) as GeneratedAssetNode;
           node.wasOutput = true;
+          node.isFailure = false;
           node.state = GeneratedNodeState.upToDate;
         }
 

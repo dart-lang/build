@@ -145,6 +145,9 @@ class GeneratedAssetNode extends AssetNode {
   /// the previous run, indicating that the previous output is still valid.
   Digest previousInputsDigest;
 
+  /// Whether the action which did or would produce this node failed.
+  bool isFailure;
+
   /// The [AssetId] of the node representing the [BuilderOptions] used to create
   /// this node.
   final AssetId builderOptionsId;
@@ -162,6 +165,7 @@ class GeneratedAssetNode extends AssetNode {
     @required this.state,
     @required this.phaseNumber,
     @required this.wasOutput,
+    @required this.isFailure,
     @required this.primaryInput,
     @required this.builderOptionsId,
   })  : this.globs = globs ?? new Set<Glob>(),

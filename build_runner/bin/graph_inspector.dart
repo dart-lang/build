@@ -106,6 +106,7 @@ class InspectNodeCommand extends Command {
         description.writeln('  state: ${node.state}');
         description.writeln('  wasOutput: ${node.wasOutput}');
         description.writeln('  phase: ${node.phaseNumber}');
+        description.writeln('  isFailure: ${node.isFailure}');
       }
 
       _printAsset(AssetId asset) =>

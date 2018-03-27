@@ -134,7 +134,9 @@ bool _shouldSkipNode(AssetNode node, List<BuildPhase> buildPhases,
   if (!node.isReadable) return true;
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
-    if (!node.wasOutput || node.state != GeneratedNodeState.upToDate) {
+    if (!node.wasOutput ||
+        node.isFailure ||
+        node.state != GeneratedNodeState.upToDate) {
       return true;
     }
     if (skipOptional && buildPhases[node.phaseNumber].isOptional) return true;

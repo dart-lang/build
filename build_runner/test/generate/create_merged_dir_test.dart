@@ -53,6 +53,7 @@ main() {
         var node = graph.get(id) as GeneratedAssetNode;
         node.state = GeneratedNodeState.upToDate;
         node.wasOutput = true;
+        node.isFailure = false;
         assetReader.cacheStringAsset(id, sources[node.primaryInput]);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -74,6 +75,7 @@ main() {
       var node =
           graph.get(new AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
       node.wasOutput = false;
+      node.isFailure = false;
 
       var success = await createMergedOutputDir(
           tmpDir.path, graph, packageGraph, assetReader, environment, phases);
