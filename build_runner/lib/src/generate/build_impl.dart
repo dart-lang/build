@@ -200,16 +200,6 @@ class _SingleBuild {
     }
     var result = await _safeBuild();
     await _resourceManager.disposeAll();
-    if (_failOnSevere &&
-        _assetGraph.failedActions.isNotEmpty &&
-        result.status == BuildStatus.success) {
-      var numFailing = _assetGraph.failedActions.values
-          .fold(0, (total, ids) => total + ids.length);
-      result = _convertToFailure(
-          result,
-          'There were $numFailing actions with SEVERE logs and '
-          '--fail-on-severe was passed.');
-    }
     if (_outputDir != null && result.status == BuildStatus.success) {
       if (!await createMergedOutputDir(_outputDir, _assetGraph, _packageGraph,
           _reader, _environment, _buildPhases)) {
@@ -311,7 +301,10 @@ class _SingleBuild {
         _lazyPhases.values,
         (Future<Iterable<AssetId>> lazyOuts) async =>
             outputs.addAll(await lazyOuts));
-    return new BuildResult(BuildStatus.success, outputs,
+    final status = _assetGraph.failedActions.isEmpty
+        ? BuildStatus.success
+        : BuildStatus.failure;
+    return new BuildResult(status, outputs,
         performance: _performanceTracker..stop());
   }
 
@@ -412,13 +405,15 @@ class _SingleBuild {
     var logger = new BuildForInputLogger(
         new Logger(_actionLoggerName(phase, input, _packageGraph.root.name)));
     numActionsStarted++;
+    var errorThrown = false;
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
-            new PerformanceTrackingResolvers(_resolvers, tracker),
-            logger: logger, resourceManager: _resourceManager),
+                new PerformanceTrackingResolvers(_resolvers, tracker),
+                logger: logger, resourceManager: _resourceManager)
+            .catchError((_) => errorThrown = true),
         'Build');
     numActionsCompleted++;
-    if (logger.errorWasSeen) {
+    if ((logger.errorWasSeen && _failOnSevere) || errorThrown) {
       _assetGraph.markActionFailed(phaseNumber, input);
     } else {
       _assetGraph.markActionSucceeded(phaseNumber, input);
@@ -495,11 +490,13 @@ class _SingleBuild {
     var logger = new BuildForInputLogger(new Logger('$builder on $input'));
 
     numActionsStarted++;
+    var errorThrown = false;
     await runPostProcessBuilder(builder, input, wrappedReader, wrappedWriter,
-        logger, _assetGraph, anchorNode, phaseNum);
+            logger, _assetGraph, anchorNode, phaseNum)
+        .catchError((_) => errorThrown = true);
     numActionsCompleted++;
 
-    if (logger.errorWasSeen) {
+    if ((logger.errorWasSeen && _failOnSevere) || errorThrown) {
       _assetGraph.markActionFailed(phaseNum, input);
     } else {
       _assetGraph.markActionSucceeded(phaseNum, input);
