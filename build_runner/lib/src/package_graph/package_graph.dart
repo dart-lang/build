@@ -142,7 +142,7 @@ class PackageNode {
   /// Converts [path] to an absolute path, returns `null` if given `null`.
   static String _toAbsolute(String path) {
     if (path == null) return null;
-    return p.isAbsolute(path) ? path : p.absolute(path);
+    return p.normalize(p.isAbsolute(path) ? path : p.absolute(path));
   }
 }
 
