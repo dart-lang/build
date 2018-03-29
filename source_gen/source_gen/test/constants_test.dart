@@ -195,6 +195,8 @@ void main() {
         @VisibleClass.secret()
         @fieldOnly
         @ClassWithStaticField.staticField
+        @Wrapper(someFunction)
+        @Wrapper(Wrapper.someFunction)
         class Example {}
         
         class Int64Like {
@@ -238,6 +240,14 @@ void main() {
           static const staticField = const ClassWithStaticField._();
           const ClassWithStaticField._();
         }
+
+        class Wrapper {
+          static void someFunction(int x, String y) {}
+          final Function f;
+          const Wrapper(this.f);
+        }
+
+        void someFunction(int x, String y) {}
       ''', (resolver) => resolver.findLibraryByName('test_lib'));
       constants = library
           .getType('Example')
@@ -292,6 +302,18 @@ void main() {
       final fieldOnly = constants[6].revive();
       expect(fieldOnly.source.fragment, isEmpty);
       expect(fieldOnly.accessor, 'ClassWithStaticField.staticField');
+    });
+
+    test('should decode top-level functions', () {
+      final fieldOnly = constants[7].read('f').revive();
+      expect(fieldOnly.source.fragment, isEmpty);
+      expect(fieldOnly.accessor, 'someFunction');
+    });
+
+    test('should decode static-class functions', () {
+      final fieldOnly = constants[8].read('f').revive();
+      expect(fieldOnly.source.fragment, isEmpty);
+      expect(fieldOnly.accessor, 'Wrapper.someFunction');
     });
   });
 }

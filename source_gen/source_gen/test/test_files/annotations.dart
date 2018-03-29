@@ -68,6 +68,6 @@ const objectAnnotation = const {
   'null': null,
   'String': 'a string',
   'core type': bool,
-  'imported sdk type': collection.Maps,
+  'imported sdk type': collection.Queue,
   'non-core type': OtherPublicAnnotationClass
 };

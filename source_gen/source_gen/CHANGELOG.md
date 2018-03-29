@@ -3,6 +3,10 @@
 * **BREAKING** removed the deprecated `requireLibraryDirective` parameter in
   `PartBuilder`.
 
+* `Revivable` no longer throws a type error when attempting to revive a
+  reference to a top-level function or static-class method. Now is returns a
+  reference to that function or method, as expected. 
+
 ## 0.7.6
 
 * `TypeChecker` now throws an `UnresolvedAnnotationException` with a more

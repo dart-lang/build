@@ -20,8 +20,21 @@ import '../utils.dart';
 /// build tool(s) using this library to surface error messages to the user.
 Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
   origin ??= object.type.element.library;
-  var url = Uri.parse(urlOfElement(object.type.element));
-  final clazz = object?.type?.element as ClassElement;
+  final element = object.type.element;
+  var url = Uri.parse(urlOfElement(element));
+  if (element is FunctionElement) {
+    return new Revivable._(
+      source: url.removeFragment(),
+      accessor: element.name,
+    );
+  }
+  if (element is MethodElement && element.isStatic) {
+    return new Revivable._(
+      source: url.removeFragment(),
+      accessor: '${element.enclosingElement.name}.${element.name}',
+    );
+  }
+  final clazz = element as ClassElement;
   // Enums are not included in .definingCompilationUnit.types.
   if (clazz.isEnum) {
     for (final e in clazz.fields.where(
