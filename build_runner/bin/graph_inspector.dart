@@ -105,6 +105,7 @@ class InspectNodeCommand extends Command {
       if (node is GeneratedAssetNode) {
         description.writeln('  state: ${node.state}');
         description.writeln('  wasOutput: ${node.wasOutput}');
+        description.writeln('  phase: ${node.phaseNumber}');
       }
 
       _printAsset(AssetId asset) =>
