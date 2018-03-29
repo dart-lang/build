@@ -7,6 +7,9 @@
   during the build. For example if `web/index.html` is not read to produce any
   generated outputs changes to this file will now get picked up during `pub run
   build_runner watch --output build`.
+- Don't allow a thrown exception from a Builder to take down the entire build
+  process - instead record it as a failed action. The overall build will still
+  be marked as a failure, but it won't crash the process.
 
 ## 0.8.0
 
