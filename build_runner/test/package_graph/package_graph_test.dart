@@ -17,7 +17,7 @@ void main() {
       });
 
       test('root', () {
-        expectPkg(graph.root, 'build_runner', './', DependencyType.path);
+        expectPkg(graph.root, 'build_runner', '', DependencyType.path);
       });
     });
 
