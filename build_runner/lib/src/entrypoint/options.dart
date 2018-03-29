@@ -374,7 +374,8 @@ class _ServeCommand extends _WatchCommand {
           'args in <dir>[:<port>] format.');
     } else {
       for (var target in options.serveTargets) {
-        stdout.writeln('Serving `${target.dir}` on port ${target.port}');
+        stdout.writeln(
+            'Serving `${target.dir}` on http://${options.hostName}:${target.port}');
       }
     }
     await handler.buildResults.drain();
