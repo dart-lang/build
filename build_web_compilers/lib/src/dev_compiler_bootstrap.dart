@@ -19,7 +19,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
     {bool useKernel, bool buildRootAppSummary, bool ignoreCastFailures}) async {
   useKernel ??= false;
   buildRootAppSummary ??= false;
-  ignoreCastFailures ??= true;
+  ignoreCastFailures ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId.changeExtension(moduleExtension);
   var module = new Module.fromJson(json
