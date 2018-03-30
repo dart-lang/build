@@ -1,3 +1,8 @@
+# 0.3.5
+
+- Don't ignore cast failures by default. We expect most code to be clean with
+  cast failures, and the option can be manually enabled with config.
+
 # 0.3.4+2
 
 - Create `.packages` file and use the new frontend with `dart2js`.
