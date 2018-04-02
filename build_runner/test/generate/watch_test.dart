@@ -490,6 +490,43 @@ a:file://different/fake/pkg/path
       });
     });
 
+    group('file updates to same contents', () {
+      test('keeps error state', () async {
+        var runCount = 0;
+        var buildState = await startWatch([
+          applyToRoot(new TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.txt'),
+              build: (buildStep, _) {
+                runCount++;
+                buildStep.writeAsString(buildStep.inputId.addExtension('.copy'),
+                    buildStep.readAsString(buildStep.inputId));
+                throw 'Fail';
+              }))
+        ], {
+          'a|web/a.txt': 'a'
+        }, writer);
+        var results = new StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        expect(runCount, 1);
+        checkBuild(result, status: BuildStatus.failure);
+
+        await writer.writeAsString(makeAssetId('a|web/a.txt'), 'a');
+
+        result = await results.next;
+        expect(runCount, 1,
+            reason:
+                'Should not have reran since input digest should be identical');
+        checkBuild(result, status: BuildStatus.failure);
+
+        // Wait for the `_debounceDelay` before terminating.
+        await new Future.delayed(_debounceDelay);
+
+        await terminateWatch();
+        expect(await results.hasNext, isFalse);
+      });
+    });
+
     group('multiple phases', () {
       test('edits propagate through all phases', () async {
         var buildActions = [

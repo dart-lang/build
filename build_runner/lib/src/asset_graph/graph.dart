@@ -243,7 +243,6 @@ class AssetGraph {
 
       if (node is GeneratedAssetNode) {
         node.state = GeneratedNodeState.mayNeedUpdate;
-        node.isFailure = false;
       }
 
       // Update all outputs of this asset as well.
@@ -322,7 +321,6 @@ class AssetGraph {
           //
           // The regular input hash checks won't pick up glob changes.
           node.state = GeneratedNodeState.definitelyNeedsUpdate;
-          node.isFailure = false;
         }
       }
     }
