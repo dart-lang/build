@@ -1,3 +1,8 @@
+## 0.8.2
+
+- Bug Fix: Correctly include the default whitelist when multiple targets
+  without include are provided.
+
 ## 0.8.1
 
 - Improved the layout of `/$perf`, especially after browser window resize.
