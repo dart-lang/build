@@ -6,49 +6,39 @@ import 'dart:convert';
 import 'dart:html';
 import 'dart:js';
 
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
+final _graphReference = context[r'$build'];
+final _details = document.getElementById('details');
 
 main() async {
-  var json = await HttpRequest.getString(r'/$graph/assets.json');
-  var graph = new AssetGraph.deserialize(utf8.encode(json));
-  var nodes = graph.allNodes
-      .where((node) {
-        if (node is GeneratedAssetNode && !node.wasOutput) return false;
-        return true;
-      })
-      .map((node) => {
-            'id': node.id.toString(),
-            'label': node.id.toString(),
-            'info': {
-              'isGenerated': node is GeneratedAssetNode,
-              'globs': node is GeneratedAssetNode
-                  ? node.globs.map((g) => g.pattern)
-                  : null,
-              'hidden': node is GeneratedAssetNode ? node.isHidden : null,
-              'state':
-                  node is GeneratedAssetNode ? node.state.toString() : null,
-              'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
-              'isFailure': node is GeneratedAssetNode ? node.isFailure : null,
-              'phaseNumber':
-                  node is GeneratedAssetNode ? node.phaseNumber : null,
-            }
-          })
-      .toList();
-  var edgeNum = 0;
-  var edges = graph.allNodes.expand((node) {
-    if (node is GeneratedAssetNode && !node.wasOutput) return [];
-    return node.outputs.map((out) {
-      return {
-        'from': node.id.toString(),
-        'to': out.toString(),
-        'id': 'e${edgeNum++}',
-      };
-    });
-  }).toList();
-  var data = {
-    'nodes': nodes,
-    'edges': edges,
-  };
-  context[r'$build'].callMethod('initializeGraph', [new JsObject.jsify(data)]);
+  var searchBox = document.getElementById('searchbox') as InputElement;
+  var searchForm = document.getElementById('searchform');
+  searchForm.onSubmit.listen((e) async {
+    e.preventDefault();
+    var query = searchBox.value;
+    _focus(query);
+    return null;
+  });
+  _graphReference.callMethod('initializeGraph', [_focus]);
+}
+
+void _focus(String query) async {
+  var parts = query.split('|');
+  var package = parts[0];
+  var path = parts[1];
+  var requestPath = path.startsWith('lib/')
+      ? 'packages/$package/${path.substring(4)}'
+      : '${path.split('/').skip(1).join('/')}';
+  var nodeInfo =
+      json.decode(await HttpRequest.getString('/\$graph/$requestPath'));
+  var graphData = {'edges': nodeInfo['edges'], 'nodes': nodeInfo['nodes']};
+  _graphReference.callMethod('setData', [new JsObject.jsify(graphData)]);
+  var primaryNode = nodeInfo['primary'];
+  _details.innerHtml = '<strong>ID:</strong> ${primaryNode['id']} <br />'
+      '<strong>Generated:</strong> ${primaryNode['isGenerated']} <br />'
+      '<strong>Hidden:</strong> ${primaryNode['hidden']} <br />'
+      '<strong>State:</strong> ${primaryNode['state']} <br />'
+      '<strong>Was Output:</strong> ${primaryNode['wasOutput']} <br />'
+      '<strong>Failed:</strong> ${primaryNode['isFailure']} <br />'
+      '<strong>Phase:</strong> ${primaryNode['phaseNumber']} <br />'
+      '<strong>Globs:</strong> ${primaryNode['globs']} <br />';
 }
