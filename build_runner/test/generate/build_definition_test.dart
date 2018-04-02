@@ -485,7 +485,26 @@ main() {
                 }
               }
             }));
-        expect(options.rootPackageFilesWhitelist, isEmpty);
+        expect(options.rootPackageFilesWhitelist, isNotEmpty);
+      });
+
+      test('a missing sources/include results in the default whitelist',
+          () async {
+        options = new BuildOptions(environment,
+            packageGraph: options.packageGraph,
+            rootPackageConfig: new BuildConfig.fromMap('example', [], {
+              'targets': {
+                'another': {},
+                '\$default': {
+                  'sources': {
+                    'exclude': [
+                      'lib/src/**',
+                    ]
+                  }
+                }
+              }
+            }));
+        expect(options.rootPackageFilesWhitelist, defaultRootPackageWhitelist);
       });
     });
   });

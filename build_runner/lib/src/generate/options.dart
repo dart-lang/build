@@ -12,7 +12,9 @@ import 'package:meta/meta.dart';
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
 
-const List<String> _defaultRootPackageWhitelist = const [
+/// The default list of files to include when an explicit include is not
+/// provided.
+const List<String> defaultRootPackageWhitelist = const [
   'benchmark/**',
   'bin/**',
   'example/**',
@@ -96,16 +98,19 @@ class BuildOptions {
     trackPerformance ??= false;
 
     List<String> rootPackageFilesWhitelist;
-    if (rootPackageConfig == null ||
-        (rootPackageConfig.buildTargets.length == 1 &&
-            rootPackageConfig.buildTargets.values.single.sources.include ==
-                null)) {
-      rootPackageFilesWhitelist = _defaultRootPackageWhitelist;
+    var mergedWhitelist = new Set<String>();
+    if (rootPackageConfig == null) {
+      mergedWhitelist.addAll(defaultRootPackageWhitelist);
     } else {
-      rootPackageFilesWhitelist = rootPackageConfig.buildTargets.values
-          .expand((target) => target.sources?.include ?? const <String>[])
-          .toList();
+      for (var target in rootPackageConfig.buildTargets.values) {
+        if (target.sources.include == null) {
+          mergedWhitelist.addAll(defaultRootPackageWhitelist);
+        } else {
+          mergedWhitelist.addAll(target.sources.include);
+        }
+      }
     }
+    rootPackageFilesWhitelist = mergedWhitelist.toList();
     return new BuildOptions._(
         configKey: configKey,
         debounceDelay: debounceDelay,
