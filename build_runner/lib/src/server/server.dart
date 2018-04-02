@@ -11,6 +11,8 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
 import '../generate/build_result.dart';
 import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
@@ -25,7 +27,7 @@ final _logger = new Logger('Serve');
 Future<ServeHandler> createServeHandler(WatchImpl watch) async {
   var rootPackage = watch.packageGraph.root.name;
   var reader = await watch.reader;
-  var assetHandler = new AssetHandler(reader, rootPackage);
+  var assetHandler = new AssetHandler(reader, rootPackage, watch.assetGraph);
   var assetGraphHandler =
       new AssetGraphHandler(reader, rootPackage, watch.assetGraph);
   return new ServeHandler._(
@@ -68,7 +70,7 @@ class ServeHandler implements BuildState {
       if (request.url.path.startsWith(r'$graph')) {
         return _assetGraphHandler.handle(request, rootDir);
       }
-      return _handle(request, rootDir);
+      return _assetHandler.handle(request, rootDir);
     });
     var handler = logRequests
         ? const shelf.Pipeline()
@@ -92,36 +94,16 @@ class ServeHandler implements BuildState {
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
         headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
   }
-
-  FutureOr<shelf.Response> _handle(
-      shelf.Request request, String rootDir) async {
-    if (_lastBuildResult.status == BuildStatus.failure) {
-      return new shelf.Response(HttpStatus.INTERNAL_SERVER_ERROR,
-          body: _htmlErrorPage(_lastBuildResult),
-          headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
-    }
-    return _assetHandler.handle(request, rootDir);
-  }
-
-  static String _htmlErrorPage(BuildResult result) => '<h1>Build failed!</h1>'
-      '<p><strong>Error:</strong></p>'
-      '<p><strong style="color: red">'
-      '${_htmlify(result.exception)}'
-      '</strong></p>'
-      '<p><strong>Stack Trace:</strong></p>'
-      '<p>${_htmlify(result.stackTrace)}</p>';
-
-  static String _htmlify(content) =>
-      content.toString().replaceAll('\n', '<br/>').replaceAll(' ', '&nbsp;');
 }
 
 class AssetHandler {
   final AssetReader _reader;
   final String _rootPackage;
+  final AssetGraph _assetGraph;
 
   final _typeResolver = new MimeTypeResolver();
 
-  AssetHandler(this._reader, this._rootPackage);
+  AssetHandler(this._reader, this._rootPackage, this._assetGraph);
 
   Future<shelf.Response> handle(shelf.Request request, String rootDir) {
     var pathSegments =
@@ -136,6 +118,11 @@ class AssetHandler {
       Map<String, String> requestHeaders, AssetId assetId) async {
     try {
       if (!await _reader.canRead(assetId)) {
+        var node = _assetGraph.get(assetId);
+        if (node is GeneratedAssetNode && node.isFailure) {
+          return new shelf.Response.internalServerError(
+              body: 'Build failed for $assetId');
+        }
         return new shelf.Response.notFound('Not Found');
       }
     } on ArgumentError catch (_) {
