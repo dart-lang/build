@@ -97,7 +97,6 @@ class BuildOptions {
     enableLowResourcesMode ??= false;
     trackPerformance ??= false;
 
-    List<String> rootPackageFilesWhitelist;
     var mergedWhitelist = new Set<String>();
     if (rootPackageConfig == null) {
       mergedWhitelist.addAll(defaultRootPackageWhitelist);
@@ -110,7 +109,6 @@ class BuildOptions {
         }
       }
     }
-    rootPackageFilesWhitelist = mergedWhitelist.toList();
     return new BuildOptions._(
         configKey: configKey,
         debounceDelay: debounceDelay,
@@ -120,7 +118,7 @@ class BuildOptions {
         logListener: logListener,
         outputDir: outputDir,
         packageGraph: packageGraph,
-        rootPackageFilesWhitelist: rootPackageFilesWhitelist,
+        rootPackageFilesWhitelist: mergedWhitelist.toList(),
         skipBuildScriptCheck: skipBuildScriptCheck,
         trackPerformance: trackPerformance,
         verbose: verbose);
