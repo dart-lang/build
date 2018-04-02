@@ -29,6 +29,7 @@ main() async {
               'state':
                   node is GeneratedAssetNode ? node.state.toString() : null,
               'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
+              'isFailure': node is GeneratedAssetNode ? node.isFailure : null,
               'phaseNumber':
                   node is GeneratedAssetNode ? node.phaseNumber : null,
             }

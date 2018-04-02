@@ -73,7 +73,8 @@ class SingleStepReader implements AssetReader {
       if (!_outputsHidden &&
           node.isHidden &&
           node.id.package != _primaryPackage) return false;
-      return doAfter(_ensureAssetIsBuilt(node.id), (_) => node.wasOutput);
+      return doAfter(_ensureAssetIsBuilt(node.id),
+          (_) => node.wasOutput && !node.isFailure);
     }
     return node.isReadable;
   }

@@ -87,9 +87,6 @@ void main() {
           var node = makeAssetNode();
           graph.add(node);
           var phaseNum = n;
-          if (phaseNum % 2 == 0) {
-            graph.markActionFailed(phaseNum, node.id);
-          }
           var builderOptionsNode =
               new BuilderOptionsAssetNode(makeAssetId(), new Digest([n]));
           graph.add(builderOptionsNode);
@@ -107,6 +104,7 @@ void main() {
                 state: GeneratedNodeState
                     .values[g % GeneratedNodeState.values.length],
                 wasOutput: g % 2 == 0,
+                isFailure: phaseNum % 2 == 0,
                 builderOptionsId: builderOptionsNode.id,
                 isHidden: g % 3 == 0);
             node.outputs.add(generatedNode.id);
@@ -132,7 +130,7 @@ void main() {
 
         var encoded = graph.serialize();
         var decoded = new AssetGraph.deserialize(encoded);
-        expect(decoded.failedActions, isNotEmpty);
+        expect(decoded.failedOutputs, isNotEmpty);
         expect(graph, equalsAssetGraph(decoded));
       });
 
@@ -143,44 +141,6 @@ void main() {
         var encoded = utf8.encode(json.encode(serialized));
         expect(() => new AssetGraph.deserialize(encoded),
             throwsA(assetGraphVersionException));
-      });
-
-      group('failedActions/markActionFailed/markActionSucceeded', () {
-        var aTxt = makeAssetId('foo|lib/a.txt');
-        var bTxt = makeAssetId('foo|lib/b.txt');
-
-        test('basic functionality', () {
-          expect(graph.failedActions, isEmpty);
-          graph.markActionFailed(1, aTxt);
-          expect(graph.failedActions[1], equals([aTxt]));
-          graph.markActionFailed(1, bTxt);
-          expect(graph.failedActions[1], unorderedEquals([aTxt, bTxt]));
-          graph.markActionSucceeded(1, aTxt);
-          expect(graph.failedActions[1], equals([bTxt]));
-          graph.markActionFailed(2, bTxt);
-          expect(graph.failedActions[2], equals([bTxt]));
-          graph.markActionSucceeded(1, bTxt);
-          graph.markActionSucceeded(2, bTxt);
-          expect(graph.failedActions, isEmpty);
-        });
-
-        test('deleted nodes remove their failures', () async {
-          graph = await AssetGraph.build([
-            new InBuildPhase(
-                new TestBuilder(
-                    buildExtensions: appendExtension('.copy', from: '.txt')),
-                'foo'),
-            new InBuildPhase(
-                new TestBuilder(
-                    buildExtensions: appendExtension('.clone', from: '.txt')),
-                'foo'),
-          ], [aTxt, bTxt].toSet(), new Set(), fooPackageGraph, digestReader);
-          graph.markActionFailed(0, aTxt);
-          graph.markActionFailed(1, aTxt);
-          expect(graph.failedActions, isNotEmpty);
-          graph.remove(aTxt);
-          expect(graph.failedActions, isEmpty);
-        });
       });
     });
 

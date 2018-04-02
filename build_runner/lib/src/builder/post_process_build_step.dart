@@ -72,6 +72,7 @@ class PostProcessBuildStep {
         isHidden: true,
         phaseNumber: _phaseNum,
         wasOutput: true,
+        isFailure: false,
         state: GeneratedNodeState.upToDate);
     _assetGraph.add(node);
     _anchorNode.outputs.add(id);
