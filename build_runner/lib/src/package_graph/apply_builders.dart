@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build/src/builder/logging.dart';
 import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
@@ -147,7 +148,8 @@ class BuilderApplication {
       return (String package, BuilderOptions options, InputSet targetSources,
           InputSet generateFor) {
         generateFor ??= defaultGenerateFor;
-        var builder = builderFactory(options);
+        var builder =
+            scopeLogSync(() => builderFactory(options), new Logger(builderKey));
         return new InBuildPhase(builder, package,
             builderKey: builderKey,
             targetSources: targetSources,
@@ -288,4 +290,20 @@ Map<String, List<BuilderApplication>> _applyWith(
     }
   }
   return applyWith;
+}
+
+/// Runs [fn] in an error handling [Zone].
+///
+/// Any calls to [print] will be logged with `log.info`, and any errors will be
+/// logged with `log.severe`.
+T scopeLogSync<T>(T fn(), Logger log) {
+  return runZoned(fn,
+      zoneSpecification:
+          new ZoneSpecification(print: (self, parent, zone, message) {
+        log.info(message);
+      }),
+      zoneValues: {logKey: log},
+      onError: (Object e, StackTrace s) {
+        log.severe('', e);
+      });
 }

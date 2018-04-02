@@ -33,6 +33,26 @@ void main() {
       placeholderIdsFor(buildPackageGraph({rootPackage('a'): []}));
 
   group('build', () {
+    test('can log within a buildFactory', () async {
+      await testBuilders(
+        [
+          apply(
+              '',
+              [
+                (_) {
+                  log.info('I can log!');
+                  return new TestBuilder(
+                      buildExtensions: appendExtension('.1'));
+                }
+              ],
+              toRoot(),
+              isOptional: true,
+              hideOutput: false),
+        ],
+        {'a|web/a.txt': 'a'},
+      );
+    });
+
     group('with root package inputs', () {
       test('one phase, one builder, one-to-one outputs', () async {
         await testBuilders(
