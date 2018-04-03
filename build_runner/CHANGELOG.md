@@ -1,5 +1,6 @@
 ## 0.8.2
 
+- Allow deleting files in the post process build step.
 - Bug Fix: Correctly include the default whitelist when multiple targets
   without include are provided.
 - Allow logging from within a build factory.

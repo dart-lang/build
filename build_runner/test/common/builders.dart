@@ -22,3 +22,15 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
         await buildStep.readInputAsString());
   }
 }
+
+class DeletePostProcessBuilder implements PostProcessBuilder {
+  @override
+  final inputExtensions = ['.txt'];
+
+  DeletePostProcessBuilder();
+
+  @override
+  Future<Null> build(PostProcessBuildStep buildStep) async {
+    buildStep.delete(buildStep.inputId);
+  }
+}
