@@ -32,7 +32,7 @@ void main() {
     delegate.cacheStringAsset(node.id, content);
   }
 
-  test('can not  read deleted nodes', () async {
+  test('can not read deleted nodes', () async {
     _addAsset('a|web/index.html', 'content', deleted: true);
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/index.html')), 'web');
