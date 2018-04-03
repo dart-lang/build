@@ -401,7 +401,7 @@ main(List<String> args) async {
         var result = await runDart('a', 'tool/build.dart', args: buildArgs);
         expect(result.exitCode, 0,
             reason: '${result.stdout}\n${result.stderr}');
-        print('${result.stdout}\n${result.stderr}');
+        printOnFailure('${result.stdout}\n${result.stderr}');
         return '${result.stdout}';
       }
 
@@ -463,7 +463,7 @@ main(List<String> args) async {
       var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
       var result = await runDart('a', 'tool/build.dart', args: buildArgs);
       expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
-      print('${result.stdout}\n${result.stderr}');
+      printOnFailure('${result.stdout}\n${result.stderr}');
       return '${result.stdout}';
     }
 
