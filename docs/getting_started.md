@@ -136,6 +136,11 @@ script tags should be manually rewritten to always reference `*.dart.js` with a
 
 <!-- summarize here. -->
 
+### Diagnosing build times
+
+See
+<https://github.com/dart-lang/build/blob/master/docs/measuring_performance.md>.
+
 ### build_runner has no versions that match...
 
 1. Make sure you're using a 2.x SDK.
