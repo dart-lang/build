@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
@@ -264,13 +265,16 @@ class WatchImpl implements BuildState {
       _buildDefinition = await BuildDefinition.prepareWorkspace(
           environment, options, buildPhases,
           onDelete: _expectedDeletes.add);
-      _readerCompleter.complete(new SingleStepReader(
+      var singleStepReader = new SingleStepReader(
           _buildDefinition.reader,
           _buildDefinition.assetGraph,
           buildPhases.length,
           true,
           packageGraph.root.name,
-          null));
+          null);
+      var finalizedReader =
+          new FinalizedReader(singleStepReader, _buildDefinition.assetGraph);
+      _readerCompleter.complete(finalizedReader);
       _assetGraph = _buildDefinition.assetGraph;
       build = await BuildImpl.create(_buildDefinition, options, buildPhases,
           onDelete: _expectedDeletes.add);
