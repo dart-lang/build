@@ -149,7 +149,6 @@ void main() {
 
   test('should throw an exception if a read is attempted on a failed file',
       () async {
-    var exceptionCaught = false;
     await testBuilders(
       [
         applyToRoot(new TestBuilder(
@@ -161,18 +160,15 @@ void main() {
             })),
         applyToRoot(new TestBuilder(
             buildExtensions: replaceExtension('.txt', '.success'),
-            build: (buildStep, __) async {
+            build: expectAsync2((buildStep, __) async {
               // Attempts to read the file that came from a failing build step and
               // hides exception
               var failedFile = buildStep.inputId.changeExtension('.failed');
-              try {
-                await buildStep.readAsString(failedFile);
-              } catch (e) {
-                exceptionCaught = true;
-              }
+              await expectLater(
+                  buildStep.readAsString(failedFile), throwsA(anything));
               await buildStep.writeAsString(
                   buildStep.inputId.changeExtension('.success'), 'success');
-            }))
+            })))
       ],
       {
         'a|lib/a.txt': '',
@@ -181,8 +177,6 @@ void main() {
       failOnSevere: true,
       status: BuildStatus.failure,
     );
-
-    expect(exceptionCaught, true);
   });
 }
 
