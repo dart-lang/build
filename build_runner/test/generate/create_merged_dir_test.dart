@@ -71,6 +71,19 @@ main() {
       _expectAllFiles(tmpDir);
     });
 
+    test('doesnt write deleted files', () async {
+      var node =
+          graph.get(new AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
+      node.isDeleted = true;
+
+      var success = await createMergedOutputDir(
+          tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+      expect(success, isTrue);
+
+      var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
+      expect(file.existsSync(), isFalse);
+    });
+
     test('doesnt write files that werent output', () async {
       var node =
           graph.get(new AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
