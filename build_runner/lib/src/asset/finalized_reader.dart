@@ -5,6 +5,7 @@ import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
+/// An [AssetReader] which ignores deleted files.
 class FinalizedReader implements AssetReader {
   final AssetReader _delegate;
   final AssetGraph _assetGraph;
