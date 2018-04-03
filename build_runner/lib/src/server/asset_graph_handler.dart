@@ -33,7 +33,11 @@ class AssetGraphHandler {
   /// - `$graph/<path_under_rootDir>`
   ///
   /// There may be some ambiguity between paths which are under the top-level of
-  /// the root package, and those which are under the rootDir.
+  /// the root package, and those which are under the rootDir. Preference is
+  /// given to the asset (if it exists) which is not under the implicit
+  /// `rootDir`. For instance if the request is `$graph/web/main.dart` this will
+  /// prefer to serve `<package>|web/main.dart`, but if it does not exist will
+  /// fall back to `<package>|web/web/main.dart`.
   FutureOr<shelf.Response> handle(shelf.Request request, String rootDir) async {
     if (request.url.path == r'$graph') {
       return new shelf.Response.ok(
@@ -47,12 +51,12 @@ class AssetGraphHandler {
           headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
     }
     var assetId = pathToAssetId(
-        _rootPackage, rootDir, request.url.pathSegments.skip(1).toList());
+        _rootPackage,
+        request.url.pathSegments.skip(1).first,
+        request.url.pathSegments.skip(2).toList());
     if (!_assetGraph.contains(assetId)) {
       assetId = pathToAssetId(
-          _rootPackage,
-          request.url.pathSegments.skip(1).first,
-          request.url.pathSegments.skip(2).toList());
+          _rootPackage, rootDir, request.url.pathSegments.skip(1).toList());
     }
     if (!_assetGraph.contains(assetId)) {
       return new shelf.Response.notFound('$assetId not present in build graph');
