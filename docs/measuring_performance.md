@@ -4,7 +4,7 @@ You can enable performance tracking by passing the `--track-performance` flag.
 To view the result you must be in `serve` mode and navigate to `/$perf`. On that
 page you will see a timeline something like this:
 
-![example build](https://photos.app.goo.gl/lk1mHMS64ep0TGTY2)
+![example build](/docs/images/example_build.png)
 
 If you are experiencing slow incremental builds you can save that webpage,
 archive the result (zip/tar preferred), and attach it to a github issue for us
