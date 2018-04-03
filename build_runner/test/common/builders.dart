@@ -31,6 +31,6 @@ class DeletePostProcessBuilder implements PostProcessBuilder {
 
   @override
   Future<Null> build(PostProcessBuildStep buildStep) async {
-    buildStep.delete(buildStep.inputId);
+    buildStep.deletePrimaryInput();
   }
 }

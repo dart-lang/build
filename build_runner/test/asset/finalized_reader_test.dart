@@ -1,51 +1,14 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:build/build.dart';
 import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:crypto/src/digest.dart';
-import 'package:glob/glob.dart';
+import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/build_runner.dart';
-
 import '../common/common.dart';
-
-final PackageGraph packageGraph =
-    new PackageGraph.forPath('test/fixtures/basic_pkg');
-final String newLine = Platform.isWindows ? '\r\n' : '\n';
-
-class MockReader implements AssetReader {
-  @override
-  Future<bool> canRead(AssetId id) async => true;
-
-  @override
-  Future<Digest> digest(AssetId id) {
-    throw 'Not implemented.';
-  }
-
-  @override
-  Stream<AssetId> findAssets(Glob glob) {
-    throw 'Not implemented.';
-  }
-
-  @override
-  Future<List<int>> readAsBytes(AssetId id) {
-    throw 'Not implemented.';
-  }
-
-  @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) {
-    throw 'Not implemented.';
-  }
-}
 
 void main() {
   group('FinalizedReader', () {
@@ -64,7 +27,10 @@ void main() {
       graph.add(notDeleted);
       graph.add(deleted);
 
-      reader = new FinalizedReader(new MockReader(), graph);
+      var delegate = new InMemoryAssetReader();
+      delegate.assets.addAll({notDeleted.id: [], deleted.id: []});
+
+      reader = new FinalizedReader(delegate, graph);
     });
 
     test('can not read deleted files', () async {

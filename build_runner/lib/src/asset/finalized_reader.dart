@@ -17,8 +17,8 @@ class FinalizedReader implements AssetReader {
 
   @override
   Future<bool> canRead(AssetId id) async {
+    if (_assetGraph.get(id)?.isDeleted ?? true) return false;
     if (!await _delegate.canRead(id)) return false;
-    if (_assetGraph.get(id).isDeleted) return false;
     return true;
   }
 
@@ -29,8 +29,12 @@ class FinalizedReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) =>
-      _delegate.readAsString(id, encoding: encoding);
+  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) async {
+    if (_assetGraph.get(id)?.isDeleted ?? true) {
+      throw new AssetNotFoundException(id);
+    }
+    return _delegate.readAsString(id, encoding: encoding);
+  }
 
   @override
   Stream<AssetId> findAssets(Glob glob) => _delegate.findAssets(glob);

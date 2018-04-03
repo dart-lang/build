@@ -58,8 +58,8 @@ class PostProcessBuildStep {
   }
 
   /// Marks an asset for deletion in the post process step.
-  void delete(AssetId id) {
-    var node = _assetGraph.get(id);
+  void deletePrimaryInput() {
+    var node = _assetGraph.get(inputId);
     node.isDeleted = true;
   }
 
