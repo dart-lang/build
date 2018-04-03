@@ -53,6 +53,26 @@ void main() {
       );
     });
 
+    test('throws an error if the builderFactory fails', () async {
+      expect(
+          () async => await testBuilders(
+                [
+                  apply(
+                      '',
+                      [
+                        (_) {
+                          throw 'some error';
+                        }
+                      ],
+                      toRoot(),
+                      isOptional: true,
+                      hideOutput: false),
+                ],
+                {'a|web/a.txt': 'a'},
+              ),
+          throwsA('builderFactory did not return a builder.'));
+    });
+
     group('with root package inputs', () {
       test('one phase, one builder, one-to-one outputs', () async {
         await testBuilders(

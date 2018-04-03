@@ -150,6 +150,7 @@ class BuilderApplication {
         generateFor ??= defaultGenerateFor;
         var builder =
             scopeLogSync(() => builderFactory(options), new Logger(builderKey));
+        if (builder == null) throw 'builderFactory did not return a builder.';
         return new InBuildPhase(builder, package,
             builderKey: builderKey,
             targetSources: targetSources,
