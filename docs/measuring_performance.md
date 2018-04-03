@@ -24,6 +24,8 @@ The time for each action is split into at 3 primary pieces:
 
 - Setup: Primarily this is time spent checking content hashes of inputs to see
   if the action needs to be reran.
+  - **Note**: This may also involve lazily building assets that were optional,
+    so seeing a long time here is not unexpected.
 - Build: Time actually spent inside the `build` method of the `Builder`.
 - Finalize: Time spent updating the asset graph for all outputs, and some other
   cleanup.
