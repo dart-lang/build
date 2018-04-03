@@ -10,6 +10,7 @@ import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/target_graph.dart';
 
+import '../common/common.dart';
 import '../common/package_graphs.dart';
 
 void main() {
@@ -60,7 +61,8 @@ void main() {
         apply('b|cool_builder', [(options) => new CoolBuilder(options)],
             toDependentsOf('b'),
             appliesBuilders: ['b|not_by_default']),
-        apply('b|not_by_default', [(_) => null], toNoneByDefault()),
+        apply(
+            'b|not_by_default', [(_) => new TestBuilder()], toNoneByDefault()),
       ];
       var phases =
           await createBuildPhases(targetGraph, builderApplications, {});
