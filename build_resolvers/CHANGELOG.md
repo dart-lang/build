@@ -1,3 +1,7 @@
+# 0.2.0+1
+
+- Switch to `firstWhere(orElse)` for compatibility with the SDK dev.45
+
 # 0.2.0
 
 - Removed locking between uses of the Resolver and added a mandatory `reset`
