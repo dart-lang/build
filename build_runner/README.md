@@ -12,7 +12,7 @@
   <a href="https://pub.dartlang.org/packages/build_runner">
     <img src="https://img.shields.io/pub/v/build_runner.svg" alt="Pub Package Version" />
   </a>
-  <a href="https://www.dartdocs.org/documentation/build_runner/latest">
+  <a href="https://pub.dartlang.org/documentation/build_runner/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
   <a href="https://gitter.im/dart-lang/build">

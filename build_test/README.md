@@ -6,13 +6,13 @@
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
   </a>
-  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_test">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_test.svg" alt="Issues related to build_test" />
+  <a href="https://github.com/dart-lang/build/labels/package%3A%20build_test">
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_test.svg" alt="Issues related to build_test" />
   </a>
   <a href="https://pub.dartlang.org/packages/build_test">
     <img src="https://img.shields.io/pub/v/build_test.svg" alt="Pub Package Version" />
   </a>
-  <a href="https://www.dartdocs.org/documentation/build_test/latest">
+  <a href="https://pub.dartlang.org/documentation/build_test/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
   <a href="https://gitter.im/dart-lang/build">
