@@ -18,7 +18,8 @@ main() {
   group('runPostProcessBuilder', () {
     InMemoryAssetReader reader;
     InMemoryAssetWriter writer;
-    final builder = new CopyingPostProcessBuilder();
+    final copyBuilder = new CopyingPostProcessBuilder();
+    final deleteBuilder = new DeletePostProcessBuilder();
     final aTxt = makeAssetId('a|lib/a.txt');
     final aTxtCopy = makeAssetId('a|lib/a.txt.copy');
     final logger = new Logger('test');
@@ -27,8 +28,10 @@ main() {
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
     final buildPhases = [
       new PostBuildPhase([
-        new PostBuildAction(builder, 'a',
-            builderOptions: null, generateFor: null, targetSources: null)
+        new PostBuildAction(copyBuilder, 'a',
+            builderOptions: null, generateFor: null, targetSources: null),
+        new PostBuildAction(deleteBuilder, 'b',
+            builderOptions: null, targetSources: null, generateFor: null)
       ])
     ];
     PostProcessAnchorNode anchorNode;
@@ -46,9 +49,18 @@ main() {
           as PostProcessAnchorNode;
     });
 
+    test('can delete assets', () async {
+      await runPostProcessBuilder(
+          copyBuilder, aTxt, reader, writer, logger, assetGraph, anchorNode, 0);
+      await runPostProcessBuilder(deleteBuilder, aTxt, reader, writer, logger,
+          assetGraph, anchorNode, 0);
+      expect(assetGraph.get(aTxt).isDeleted, isTrue);
+      expect(assetGraph.get(aTxtCopy).isDeleted, isFalse);
+    });
+
     test('can create assets and read the primary asset', () async {
       await runPostProcessBuilder(
-          builder, aTxt, reader, writer, logger, assetGraph, anchorNode, 0);
+          copyBuilder, aTxt, reader, writer, logger, assetGraph, anchorNode, 0);
       expect(writer.assets, contains(aTxtCopy));
       expect(writer.assets[aTxtCopy], decodedMatches('a'));
     });
@@ -56,8 +68,8 @@ main() {
     test('throws if you try to output a pre-existing asset', () async {
       assetGraph.add(new SourceAssetNode(aTxtCopy));
       expect(
-          () => runPostProcessBuilder(
-              builder, aTxt, reader, writer, logger, assetGraph, anchorNode, 0),
+          () => runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
+              assetGraph, anchorNode, 0),
           throwsA(new isInstanceOf<InvalidOutputException>()));
     });
   });
