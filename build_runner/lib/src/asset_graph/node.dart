@@ -42,6 +42,11 @@ abstract class AssetNode {
   /// at this moment in time.
   bool get isReadable => true;
 
+  /// Whether the node is deleted.
+  ///
+  /// Deleted nodes are ignored in the final merge step and watch handlers.
+  bool isDeleted = false;
+
   /// Whether or not this node can be used as a primary input.
   ///
   /// Some nodes are valid primary inputs but are not readable (see

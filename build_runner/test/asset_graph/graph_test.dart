@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -110,6 +111,7 @@ void main() {
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
             builderOptionsNode.outputs.add(generatedNode.id);
+            node.isDeleted = g % 2 == 0;
 
             var syntheticNode = new SyntheticSourceAssetNode(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);

@@ -30,6 +30,13 @@ class _AssetGraphMatcher extends Matcher {
     if (graph.allNodes.length != _expected.allNodes.length) matches = false;
     for (var node in graph.allNodes) {
       var expectedNode = _expected.get(node.id);
+      if (node.isDeleted != expectedNode.isDeleted) {
+        matchState['IsDeleted of ${node.id}'] = [
+          node.isDeleted,
+          expectedNode.isDeleted
+        ];
+        matches = false;
+      }
       if (node.runtimeType != expectedNode.runtimeType) {
         matchState['RuntimeType'] = [
           node.runtimeType,

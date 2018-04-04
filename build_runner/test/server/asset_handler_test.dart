@@ -7,34 +7,51 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/server/server.dart';
+import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/server/server.dart';
 
 import '../common/common.dart';
 
 void main() {
   AssetHandler handler;
-  InMemoryRunnerAssetReader reader;
-  AssetGraph assetGraph;
+  FinalizedReader reader;
+  InMemoryRunnerAssetReader delegate;
+  AssetGraph graph;
 
   setUp(() async {
-    reader = new InMemoryRunnerAssetReader();
-    final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    assetGraph =
-        await AssetGraph.build([], new Set(), new Set(), packageGraph, reader);
-    handler = new AssetHandler(reader, 'a', assetGraph);
+    graph = await AssetGraph.build([], new Set(), new Set(),
+        buildPackageGraph({rootPackage('foo'): []}), null);
+    delegate = new InMemoryRunnerAssetReader();
+    reader = new FinalizedReader(delegate, graph);
+    handler = new AssetHandler(reader, 'a', graph);
+  });
+
+  void _addAsset(String id, String content, {bool deleted: false}) {
+    var node = makeAssetNode(id, [], computeDigest('a'));
+    node.isDeleted = deleted;
+    graph.add(node);
+    delegate.cacheStringAsset(node.id, content);
+  }
+
+  test('can not read deleted nodes', () async {
+    _addAsset('a|web/index.html', 'content', deleted: true);
+    var response = await handler.handle(
+        new Request('GET', Uri.parse('http://server.com/index.html')), 'web');
+    expect(response.statusCode, 404);
+    expect(await response.readAsString(), 'Not Found');
   });
 
   test('can read from the root package', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addAsset('a|web/index.html', 'content');
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/index.html')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('can read from dependencies', () async {
-    reader.cacheStringAsset(makeAssetId('b|lib/b.dart'), 'content');
+    _addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
         'web');
@@ -42,7 +59,7 @@ void main() {
   });
 
   test('can read from dependencies nested under top-level dir', () async {
-    reader.cacheStringAsset(makeAssetId('b|lib/b.dart'), 'content');
+    _addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
         'web');
@@ -50,28 +67,28 @@ void main() {
   });
 
   test('defaults to index.html if path is empty', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addAsset('a|web/index.html', 'content');
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('defaults to index.html if URI ends with slash', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/sub/index.html'), 'content');
+    _addAsset('a|web/sub/index.html', 'content');
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/sub/')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('does not default to index.html if URI does not end in slash', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/sub/index.html'), 'content');
+    _addAsset('a|web/sub/index.html', 'content');
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/sub')), 'web');
     expect(response.statusCode, 404);
   });
 
   test('Fails request for failed outputs', () async {
-    assetGraph.add(new GeneratedAssetNode(
+    graph.add(new GeneratedAssetNode(
       makeAssetId('a|web/main.ddc.js'),
       builderOptionsId: null,
       phaseNumber: null,

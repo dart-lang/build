@@ -132,6 +132,7 @@ Future<bool> createMergedOutputDir(
 bool _shouldSkipNode(AssetNode node, List<BuildPhase> buildPhases,
     {bool skipOptional: true}) {
   if (!node.isReadable) return true;
+  if (node.isDeleted) return true;
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
     if (!node.wasOutput ||
