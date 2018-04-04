@@ -6,8 +6,8 @@
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
   </a>
-  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_modules">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_modules.svg" alt="Issues related to build_modules" />
+  <a href="https://github.com/dart-lang/build/labels/package%3A%20build_modules">
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_modules.svg" alt="Issues related to build_modules" />
   </a>
   <a href="https://pub.dartlang.org/packages/build_modules">
     <img src="https://img.shields.io/pub/v/build_modules.svg" alt="Pub Package Version" />

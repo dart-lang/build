@@ -6,8 +6,8 @@
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
   </a>
-  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_web_compilers">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_web_compilers.svg" alt="Issues related to build_web_compilers" />
+  <a href="https://github.com/dart-lang/build/labels/package%3A%20build_web_compilers">
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_web_compilers.svg" alt="Issues related to build_web_compilers" />
   </a>
   <a href="https://pub.dartlang.org/packages/build_web_compilers">
     <img src="https://img.shields.io/pub/v/build_web_compilers.svg" alt="Pub Package Version" />
