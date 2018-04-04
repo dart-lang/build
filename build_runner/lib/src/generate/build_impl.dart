@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
@@ -59,7 +60,7 @@ Future<BuildResult> build(
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
-  String outputDir,
+  Map<String, String> outputMap,
   bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
@@ -84,7 +85,7 @@ Future<BuildResult> build(
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputDir: outputDir,
+      outputMap: outputMap,
       trackPerformance: trackPerformance,
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
@@ -122,7 +123,7 @@ class BuildImpl {
   final _resolvers = new AnalyzerResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
-  final String _outputDir;
+  final Map<String, String> _outputMap;
   final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
@@ -137,7 +138,7 @@ class BuildImpl {
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
         _onDelete = buildDefinition.onDelete,
-        _outputDir = options.outputDir,
+        _outputMap = options.outputMap,
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment,
@@ -165,7 +166,7 @@ class _SingleBuild {
   final bool _failOnSevere;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final OnDelete _onDelete;
-  final String _outputDir;
+  final Map<String, String> _outputMap;
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
@@ -183,7 +184,7 @@ class _SingleBuild {
         _environment = buildImpl._environment,
         _failOnSevere = buildImpl._failOnSevere,
         _onDelete = buildImpl._onDelete,
-        _outputDir = buildImpl._outputDir,
+        _outputMap = buildImpl._outputMap,
         _packageGraph = buildImpl._packageGraph,
         _performanceTracker = buildImpl._trackPerformance
             ? new BuildPerformanceTracker()
@@ -201,11 +202,11 @@ class _SingleBuild {
     }
     var result = await _safeBuild();
     await _resourceManager.disposeAll();
-    if (_outputDir != null && result.status == BuildStatus.success) {
-      if (!await createMergedOutputDir(_outputDir, _assetGraph, _packageGraph,
-          _reader, _environment, _buildPhases)) {
+    if (_outputMap != null && result.status == BuildStatus.success) {
+      if (!await createMergedOutputDirectories(_outputMap, _assetGraph,
+          _packageGraph, _reader, _environment, _buildPhases)) {
         result = _convertToFailure(
-            result, 'Failed to create merged output directory.');
+            result, 'Failed to create merged output directories.');
       }
     }
     if (result.status == BuildStatus.success) {

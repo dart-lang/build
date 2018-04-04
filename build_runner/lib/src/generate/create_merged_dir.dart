@@ -22,11 +22,28 @@ final _logger = new Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
 const _manifestSeparator = '\n';
 
-/// Creates a merged output directory for a build at [outputPath].
+/// Creates merged output directories for each value in [outputMap].
 ///
 /// Returns whether it succeeded or not.
-Future<bool> createMergedOutputDir(
+Future<bool> createMergedOutputDirectories(
+    Map<String, String> outputMap,
+    AssetGraph assetGraph,
+    PackageGraph packageGraph,
+    AssetReader reader,
+    BuildEnvironment environment,
+    List<BuildPhase> buildPhases) async {
+  for (var output in outputMap.keys) {
+    if (!await _createMergedOutputDir(output, outputMap[output], assetGraph,
+        packageGraph, reader, environment, buildPhases)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+Future<bool> _createMergedOutputDir(
     String outputPath,
+    String root,
     AssetGraph assetGraph,
     PackageGraph packageGraph,
     AssetReader reader,
@@ -61,7 +78,7 @@ Future<bool> createMergedOutputDir(
 
     for (var inputId in inputsAndSameActionOutputs) {
       final inputNode = assetGraph.get(inputId);
-      if (_shouldSkipNode(inputNode, buildPhases, skipOptional: false)) {
+      if (_shouldSkipNode(inputNode, buildPhases, root, skipOptional: false)) {
         continue;
       }
       if (inputNode is GeneratedAssetNode &&
@@ -83,7 +100,9 @@ Future<bool> createMergedOutputDir(
     var rootDirs = new Set<String>();
 
     for (var node in assetGraph.packageNodes(packageGraph.root.name)) {
-      if (_shouldSkipNode(node, buildPhases, skipOptional: false)) continue;
+      if (_shouldSkipNode(node, buildPhases, root, skipOptional: false)) {
+        continue;
+      }
       var parts = p.url.split(node.id.path);
       if (parts.length == 1) continue;
       var dir = parts.first;
@@ -92,7 +111,7 @@ Future<bool> createMergedOutputDir(
     }
 
     for (var node in assetGraph.allNodes) {
-      if (_shouldSkipNode(node, buildPhases)) continue;
+      if (_shouldSkipNode(node, buildPhases, root)) continue;
       originalOutputAssets.add(node.id);
       node.lastKnownDigest ??= await reader.digest(node.id);
       outputAssets
@@ -109,8 +128,7 @@ Future<bool> createMergedOutputDir(
         .map((p) => '$p:packages/$p/')
         .join('\r\n');
     for (var dir in rootDirs) {
-      var packagesAsset =
-          new AssetId(packageGraph.root.name, p.url.join(dir, '.packages'));
+      var packagesAsset = new AssetId(root, p.url.join(dir, '.packages'));
       _writeAsString(outputDir, packagesAsset, packagesFileContent);
       outputAssets.add(packagesAsset);
       var link = new Link(p.join(outputDir.path, dir, 'packages'));
@@ -129,10 +147,11 @@ Future<bool> createMergedOutputDir(
   return true;
 }
 
-bool _shouldSkipNode(AssetNode node, List<BuildPhase> buildPhases,
+bool _shouldSkipNode(AssetNode node, List<BuildPhase> buildPhases, String root,
     {bool skipOptional: true}) {
   if (!node.isReadable) return true;
   if (node.isDeleted) return true;
+  if (root != null && !p.isWithin(root, node.id.path)) return true;
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
     if (!node.wasOutput ||

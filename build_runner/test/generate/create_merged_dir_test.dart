@@ -35,12 +35,14 @@ main() {
       makeAssetId('a|lib/a.txt'): 'a',
       makeAssetId('a|web/b.txt'): 'b',
       makeAssetId('b|lib/c.txt'): 'c',
+      makeAssetId('a|lib/foo/d.txt'): 'd',
     };
     final packageGraph = buildPackageGraph({
       rootPackage('a'): ['b'],
       package('b'): []
     });
     Directory tmpDir;
+    Directory anotherTmpDir;
     TestBuildEnvironment environment;
     InMemoryRunnerAssetReader assetReader;
 
@@ -57,6 +59,7 @@ main() {
         assetReader.cacheStringAsset(id, sources[node.primaryInput]);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
+      anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');
     });
 
     tearDown(() async {
@@ -64,8 +67,8 @@ main() {
     });
 
     test('creates a valid merged output directory', () async {
-      var success = await createMergedOutputDir(
-          tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+      var success = await createMergedOutputDirectories({tmpDir.path: null},
+          graph, packageGraph, assetReader, environment, phases);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -76,12 +79,52 @@ main() {
           graph.get(new AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
       node.isDeleted = true;
 
-      var success = await createMergedOutputDir(
-          tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+      var success = await createMergedOutputDirectories({tmpDir.path: null},
+          graph, packageGraph, assetReader, environment, phases);
       expect(success, isTrue);
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
       expect(file.existsSync(), isFalse);
+    });
+
+    test('can create multiple merged directories', () async {
+      var success = await createMergedOutputDirectories(
+          {tmpDir.path: null, anotherTmpDir.path: null},
+          graph,
+          packageGraph,
+          assetReader,
+          environment,
+          phases);
+      expect(success, isTrue);
+
+      _expectAllFiles(tmpDir);
+      _expectAllFiles(anotherTmpDir);
+    });
+
+    test('only outputs files contained in the provided root', () async {
+      var success = await createMergedOutputDirectories(
+          {tmpDir.path: 'web', anotherTmpDir.path: 'lib/foo'},
+          graph,
+          packageGraph,
+          assetReader,
+          environment,
+          phases);
+      expect(success, isTrue);
+
+      var webFiles = <String, dynamic>{
+        'web/b.txt': 'b',
+        'web/b.txt.copy': 'b',
+        'web/.packages':
+            'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+      };
+
+      var fooFiles = <String, dynamic>{
+        'packages/a/foo/d.txt': 'd',
+        'packages/a/foo/d.txt.copy': 'd',
+      };
+
+      _expectFiles(webFiles, tmpDir);
+      _expectFiles(fooFiles, anotherTmpDir);
     });
 
     test('doesnt write files that werent output', () async {
@@ -90,8 +133,8 @@ main() {
       node.wasOutput = false;
       node.isFailure = false;
 
-      var success = await createMergedOutputDir(
-          tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+      var success = await createMergedOutputDirectories({tmpDir.path: null},
+          graph, packageGraph, assetReader, environment, phases);
       expect(success, isTrue);
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
@@ -108,15 +151,15 @@ main() {
       test('fails in non-interactive mode', () async {
         environment =
             new TestBuildEnvironment(reader: assetReader, throwOnPrompt: true);
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            graph, packageGraph, assetReader, environment, phases);
         expect(success, isFalse);
       });
 
       test('can skip creating the directory', () async {
         environment.nextPromptResponse = 0;
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            graph, packageGraph, assetReader, environment, phases);
         expect(success, isFalse,
             reason: 'Skipping creation of the directory should be considered a '
                 'failure.');
@@ -130,8 +173,8 @@ main() {
 
       test('can delete the entire existing directory', () async {
         environment.nextPromptResponse = 1;
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            graph, packageGraph, assetReader, environment, phases);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isFalse);
@@ -140,8 +183,8 @@ main() {
 
       test('can merge into the existing directory', () async {
         environment.nextPromptResponse = 2;
-        var success = await createMergedOutputDir(
-            tmpDir.path, graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            graph, packageGraph, assetReader, environment, phases);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isTrue,
@@ -152,19 +195,7 @@ main() {
   });
 }
 
-void _expectAllFiles(Directory dir) {
-  var expectedFiles = <String, dynamic>{
-    'packages/a/a.txt': 'a',
-    'packages/a/a.txt.copy': 'a',
-    'packages/b/c.txt': 'c',
-    'packages/b/c.txt.copy': 'c',
-    'web/b.txt': 'b',
-    'web/b.txt.copy': 'b',
-    'web/.packages': '''
-a:packages/a/\r
-b:packages/b/\r
-\$sdk:packages/\$sdk/''',
-  };
+void _expectFiles(Map<String, dynamic> expectedFiles, Directory dir) {
   expectedFiles['.build.manifest'] =
       allOf(expectedFiles.keys.map(contains).toList());
   expectedFiles.forEach((path, content) {
@@ -173,4 +204,19 @@ b:packages/b/\r
     expect(file.readAsStringSync(), content,
         reason: 'Incorrect content for file at $path');
   });
+}
+
+void _expectAllFiles(Directory dir) {
+  var expectedFiles = <String, dynamic>{
+    'packages/a/foo/d.txt': 'd',
+    'packages/a/foo/d.txt.copy': 'd',
+    'packages/a/a.txt': 'a',
+    'packages/a/a.txt.copy': 'a',
+    'packages/b/c.txt': 'c',
+    'packages/b/c.txt.copy': 'c',
+    'web/b.txt': 'b',
+    'web/b.txt.copy': 'b',
+    'web/.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+  };
+  _expectFiles(expectedFiles, dir);
 }
