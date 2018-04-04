@@ -11,8 +11,7 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
+import '../asset/finalized_reader.dart';
 import '../generate/build_result.dart';
 import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
@@ -27,7 +26,7 @@ final _logger = new Logger('Serve');
 Future<ServeHandler> createServeHandler(WatchImpl watch) async {
   var rootPackage = watch.packageGraph.root.name;
   var reader = await watch.reader;
-  var assetHandler = new AssetHandler(reader, rootPackage, watch.assetGraph);
+  var assetHandler = new AssetHandler(reader, rootPackage);
   var assetGraphHandler =
       new AssetGraphHandler(reader, rootPackage, watch.assetGraph);
   return new ServeHandler._(
@@ -97,13 +96,12 @@ class ServeHandler implements BuildState {
 }
 
 class AssetHandler {
-  final AssetReader _reader;
+  final FinalizedReader _reader;
   final String _rootPackage;
-  final AssetGraph _assetGraph;
 
   final _typeResolver = new MimeTypeResolver();
 
-  AssetHandler(this._reader, this._rootPackage, this._assetGraph);
+  AssetHandler(this._reader, this._rootPackage);
 
   Future<shelf.Response> handle(shelf.Request request, String rootDir) {
     var pathSegments =
@@ -117,13 +115,17 @@ class AssetHandler {
   Future<shelf.Response> _handle(
       Map<String, String> requestHeaders, AssetId assetId) async {
     try {
-      if (!await _reader.canRead(assetId)) {
-        var node = _assetGraph.get(assetId);
-        if (node is GeneratedAssetNode && node.isFailure) {
-          return new shelf.Response.internalServerError(
-              body: 'Build failed for $assetId');
+      var reason = await _reader.canReadReason(assetId);
+      if (reason != null) {
+        switch (reason) {
+          case UnreadableAssetReason.failed:
+            return new shelf.Response.internalServerError(
+                body: 'Build failed for $assetId');
+          case UnreadableAssetReason.notOutput:
+            return new shelf.Response.notFound('$assetId was not output');
+          default:
+            return new shelf.Response.notFound('Not Found');
         }
-        return new shelf.Response.notFound('Not Found');
       }
     } on ArgumentError catch (_) {
       return new shelf.Response.notFound('Not Found');

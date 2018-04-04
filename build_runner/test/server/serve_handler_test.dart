@@ -9,8 +9,8 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/build_result.dart';
@@ -32,21 +32,29 @@ void main() {
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
     assetGraph =
         await AssetGraph.build([], new Set(), new Set(), packageGraph, reader);
-    watchImpl = new MockWatchImpl(reader, packageGraph, assetGraph);
+    watchImpl = new MockWatchImpl(
+        new FinalizedReader(reader, assetGraph), packageGraph);
     serveHandler = await createServeHandler(watchImpl);
     watchImpl.addFutureResult(
         new Future.value(new BuildResult(BuildStatus.success, [])));
   });
 
+  void _addSource(String id, String content, {bool deleted: false}) {
+    var node = makeAssetNode(id, [], computeDigest('a'));
+    node.isDeleted = deleted;
+    assetGraph.add(node);
+    reader.cacheStringAsset(node.id, content);
+  }
+
   test('can get handlers for a subdirectory', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addSource('a|web/index.html', 'content');
     var response = await serveHandler.handlerFor('web')(
         new Request('GET', Uri.parse('http://server.com/index.html')));
     expect(await response.readAsString(), 'content');
   });
 
   test('caching with etags works', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addSource('a|web/index.html', 'content');
     var handler = serveHandler.handlerFor('web');
     var requestUri = Uri.parse('http://server.com/index.html');
     var firstResponse = await handler(new Request('GET', requestUri));
@@ -67,7 +75,7 @@ void main() {
 
   group('build failures', () {
     setUp(() async {
-      reader.cacheStringAsset(makeAssetId('a|web/index.html'), '');
+      _addSource('a|web/index.html', '');
       var fakeException = 'Really bad error omg!';
       var fakeStackTrace = 'My cool stack trace!';
       assetGraph.add(new GeneratedAssetNode(
@@ -112,7 +120,7 @@ void main() {
   });
 
   test('logs requests if you ask it to', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addSource('a|web/index.html', 'content');
     expect(
         Logger.root.onRecord,
         emitsThrough(predicate<LogRecord>((record) =>
@@ -157,7 +165,7 @@ void main() {
 
 class MockWatchImpl implements WatchImpl {
   @override
-  final AssetGraph assetGraph;
+  final AssetGraph assetGraph = null;
 
   Future<BuildResult> _currentBuild;
   @override
@@ -178,13 +186,13 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final Future<AssetReader> reader;
+  final Future<FinalizedReader> reader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(AssetReader reader, this.packageGraph, this.assetGraph)
+  MockWatchImpl(FinalizedReader reader, this.packageGraph)
       : this.reader = new Future.value(reader) {
     _futureBuildResultsController.stream.listen((futureBuildResult) {
       if (_currentBuild != null) {
