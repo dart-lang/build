@@ -121,11 +121,7 @@ main() {
       }, graph, packageGraph, assetReader, environment, phases);
       expect(success, isTrue);
 
-      for (var resource in tmpDir.listSync(recursive: true).toList()) {
-        if (resource.path.endsWith('web')) {
-          throw 'Found $resource in output directory.';
-        }
-      }
+      expect(new Directory(p.join(tmpDir.path, 'web')).existsSync(), isFalse);
     });
 
     test('outputs the packages when input root is provided', () async {
