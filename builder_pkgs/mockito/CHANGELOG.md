@@ -1,11 +1,18 @@
-## 3.0.0
+## 3.0.0-alpha+3
+
+* `thenReturn` and `thenAnswer` now support generics and infer the correct
+  types from the `when` call.
+* Completely remove the mirrors implementation of Mockito (`mirrors.dart`).
+
+## 3.0.0-alpha+2
+
+* Support stubbing of void methods in Dart 2.
+
+## 3.0.0-alpha
 
 * `thenReturn` now throws an `ArgumentError` if either a `Future` or `Stream`
   is provided. `thenReturn` calls with futures and streams should be changed to
   `thenAnswer`. See the README for more information.
-* `thenReturn` and `thenAnswer` now support generics and infer the correct
-  types from the `when` call.
-* Completely remove the mirrors implementation of Mockito (`mirrors.dart`).
 
 ## 2.2.0
 
