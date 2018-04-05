@@ -115,13 +115,13 @@ class AssetHandler {
   Future<shelf.Response> _handle(
       Map<String, String> requestHeaders, AssetId assetId) async {
     try {
-      var reason = await _reader.canReadReason(assetId);
-      if (reason != null) {
+      if (!await _reader.canRead(assetId)) {
+        var reason = await _reader.unreadableReason(assetId);
         switch (reason) {
-          case UnreadableAssetReason.failed:
+          case UnreadableReason.failed:
             return new shelf.Response.internalServerError(
                 body: 'Build failed for $assetId');
-          case UnreadableAssetReason.notOutput:
+          case UnreadableReason.notOutput:
             return new shelf.Response.notFound('$assetId was not output');
           default:
             return new shelf.Response.notFound('Not Found');

@@ -22,17 +22,17 @@ class FinalizedReader implements AssetReader {
   );
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
-  Future<UnreadableAssetReason> canReadReason(AssetId id) async {
-    if (!_assetGraph.contains(id)) return UnreadableAssetReason.notFound;
+  Future<UnreadableReason> unreadableReason(AssetId id) async {
+    if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
     var node = _assetGraph.get(id);
-    if (node.isDeleted) return UnreadableAssetReason.deleted;
-    if (!node.isReadable) return UnreadableAssetReason.assetType;
+    if (node.isDeleted) return UnreadableReason.deleted;
+    if (!node.isReadable) return UnreadableReason.assetType;
     if (node is GeneratedAssetNode) {
-      if (node.isFailure) return UnreadableAssetReason.failed;
-      if (!node.wasOutput) return UnreadableAssetReason.notOutput;
+      if (node.isFailure) return UnreadableReason.failed;
+      if (!node.wasOutput) return UnreadableReason.notOutput;
     }
     if (await _delegate.canRead(id)) return null;
-    return UnreadableAssetReason.unknown;
+    return UnreadableReason.unknown;
   }
 
   @override
@@ -60,7 +60,7 @@ class FinalizedReader implements AssetReader {
   Stream<AssetId> findAssets(Glob glob) => _delegate.findAssets(glob);
 }
 
-enum UnreadableAssetReason {
+enum UnreadableReason {
   notFound,
   notOutput,
   assetType,
