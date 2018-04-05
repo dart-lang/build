@@ -3,7 +3,8 @@
 There are a few key differences that make the build system better for most use
 cases.
 
-Also see https://github.com/dart-lang/build/wiki/Writing-a-Builder.
+Also see
+https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md
 
 ### Outputs
 
