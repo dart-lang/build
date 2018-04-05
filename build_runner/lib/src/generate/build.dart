@@ -43,7 +43,7 @@ import 'watch_impl.dart' as watch_impl;
 /// Multiple termination events will cause a normal shutdown.
 ///
 /// If [outputMap] is supplied then after each build a merged output directory
-/// will be created for each value in the map which contains all original 
+/// will be created for each value in the map which contains all original
 /// sources and built sources contained in the provided path.
 ///
 /// If [verbose] is `true` then verbose logging will be enabled. This changes
@@ -104,7 +104,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// typically cause a shutdown).
 ///
 /// If [outputMap] is supplied then after each build a merged output directory
-/// will be created for each value in the map which contains all original 
+/// will be created for each value in the map which contains all original
 /// sources and built sources contained in the provided path.
 Future<ServeHandler> watch(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
