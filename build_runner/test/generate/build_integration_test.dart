@@ -84,7 +84,7 @@ main(List<String> args) async {
           () async {
         // Run a build and validate the full rebuild output.
         var result = await runDart('a', 'tool/build.dart',
-            args: ['build', '--output', 'build:web']);
+            args: ['build', '--output', 'web:build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
           d.dir('build', [

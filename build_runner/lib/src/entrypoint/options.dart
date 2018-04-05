@@ -61,7 +61,7 @@ class BuildCommandRunner extends CommandRunner<int> {
 /// for merging.
 ///
 /// Each output option is split on `:` where the first value is the
-/// output directory and the second value is the root input directory.
+/// root input directory and the second value output directory.
 /// If no delimeter is provided the root input directory will be null.
 Map<String, String> _parseOuputMap(ArgResults argResults) {
   var outputs = argResults[_output] as List<String>;
@@ -69,8 +69,15 @@ Map<String, String> _parseOuputMap(ArgResults argResults) {
   var result = <String, String>{};
   for (var option in argResults[_output] as List<String>) {
     var split = option.split(':');
-    var output = split.first;
-    result[output] = split.length == 2 ? split.last : null;
+    if (split.length == 1) {
+      var output = split.first;
+      result[output] = null;
+    } else if (split.length == 2) {
+      var output = split.last;
+      result[output] = split.first;
+    } else {
+      throw 'Invalid option for output: $option';
+    }
   }
   return result;
 }
