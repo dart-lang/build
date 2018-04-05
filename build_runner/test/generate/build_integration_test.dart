@@ -80,16 +80,14 @@ main(List<String> args) async {
         ]).validate();
       });
 
-      test('--output creates a merged directory under the provided root',
+      test('--output creates a merged directory from the provided root',
           () async {
         // Run a build and validate the full rebuild output.
         var result = await runDart('a', 'tool/build.dart',
             args: ['build', '--output', 'web:build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
-          d.dir('build', [
-            d.dir('web', [d.file('a.txt.copy', 'a')])
-          ])
+          d.dir('build', [d.file('a.txt.copy', 'a')])
         ]).validate();
       });
 

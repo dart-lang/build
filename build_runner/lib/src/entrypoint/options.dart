@@ -74,6 +74,10 @@ Map<String, String> _parseOuputMap(ArgResults argResults) {
       result[output] = null;
     } else if (split.length == 2) {
       var output = split.last;
+      var root = split.first;
+      if (root.contains('/')) {
+        throw 'Input root can not be nested: $option';
+      }
       result[output] = split.first;
     } else {
       throw 'Invalid option for output: $option';

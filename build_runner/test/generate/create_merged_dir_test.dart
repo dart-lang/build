@@ -35,7 +35,7 @@ main() {
       makeAssetId('a|lib/a.txt'): 'a',
       makeAssetId('a|web/b.txt'): 'b',
       makeAssetId('b|lib/c.txt'): 'c',
-      makeAssetId('a|lib/foo/d.txt'): 'd',
+      makeAssetId('a|foo/d.txt'): 'd',
     };
     final packageGraph = buildPackageGraph({
       rootPackage('a'): ['b'],
@@ -101,9 +101,36 @@ main() {
       _expectAllFiles(anotherTmpDir);
     });
 
-    test('only outputs files contained in the provided root', () async {
+    test('removes the provided root from the output path', () async {
+      var success = await createMergedOutputDirectories({
+        tmpDir.path: 'web',
+      }, graph, packageGraph, assetReader, environment, phases);
+      expect(success, isTrue);
+
+      var webFiles = <String, dynamic>{
+        'b.txt': 'b',
+        'b.txt.copy': 'b',
+      };
+
+      _expectFiles(webFiles, tmpDir);
+    });
+
+    test('does not output the input directory', () async {
+      var success = await createMergedOutputDirectories({
+        tmpDir.path: 'web',
+      }, graph, packageGraph, assetReader, environment, phases);
+      expect(success, isTrue);
+
+      for (var resource in tmpDir.listSync(recursive: true).toList()) {
+        if (resource.path.endsWith('web')) {
+          throw 'Found $resource in output directory.';
+        }
+      }
+    });
+
+    test('outputs the packages when input root is provided', () async {
       var success = await createMergedOutputDirectories(
-          {tmpDir.path: 'web', anotherTmpDir.path: 'lib/foo'},
+          {tmpDir.path: 'web', anotherTmpDir.path: 'foo'},
           graph,
           packageGraph,
           assetReader,
@@ -112,19 +139,44 @@ main() {
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
-        'web/b.txt': 'b',
-        'web/b.txt.copy': 'b',
-        'web/.packages':
-            'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
-      };
-
-      var fooFiles = <String, dynamic>{
-        'packages/a/foo/d.txt': 'd',
-        'packages/a/foo/d.txt.copy': 'd',
+        'packages/a/a.txt': 'a',
+        'packages/a/a.txt.copy': 'a',
+        'packages/b/c.txt': 'c',
+        'packages/b/c.txt.copy': 'c',
+        '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
       };
 
       _expectFiles(webFiles, tmpDir);
+    });
+
+    test('only outputs files contained in the provided root', () async {
+      var success = await createMergedOutputDirectories(
+          {tmpDir.path: 'web', anotherTmpDir.path: 'foo'},
+          graph,
+          packageGraph,
+          assetReader,
+          environment,
+          phases);
+      expect(success, isTrue);
+
+      var webFiles = <String, dynamic>{
+        'b.txt': 'b',
+        'b.txt.copy': 'b',
+      };
+
+      var webNoFiles = new Set<String>()..addAll(['d.txt', 'd.txt.copy']);
+
+      var fooFiles = <String, dynamic>{
+        'd.txt': 'd',
+        'd.txt.copy': 'd',
+      };
+
+      var fooNoFiles = new Set<String>()..addAll(['b.txt', 'b.txt.copy']);
+
+      _expectFiles(webFiles, tmpDir);
+      _expectNoFiles(webNoFiles, tmpDir);
       _expectFiles(fooFiles, anotherTmpDir);
+      _expectNoFiles(fooNoFiles, anotherTmpDir);
     });
 
     test('doesnt write files that werent output', () async {
@@ -206,10 +258,17 @@ void _expectFiles(Map<String, dynamic> expectedFiles, Directory dir) {
   });
 }
 
+void _expectNoFiles(Set<String> expectedFiles, Directory dir) {
+  for (var path in expectedFiles) {
+    var file = new File(p.join(dir.path, path));
+    expect(!file.existsSync(), isTrue, reason: 'File found at $path.');
+  }
+}
+
 void _expectAllFiles(Directory dir) {
   var expectedFiles = <String, dynamic>{
-    'packages/a/foo/d.txt': 'd',
-    'packages/a/foo/d.txt.copy': 'd',
+    'foo/d.txt': 'd',
+    'foo/d.txt.copy': 'd',
     'packages/a/a.txt': 'a',
     'packages/a/a.txt.copy': 'a',
     'packages/b/c.txt': 'c',
