@@ -11,6 +11,7 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 
+import '../asset/finalized_reader.dart';
 import '../generate/build_result.dart';
 import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
@@ -68,7 +69,7 @@ class ServeHandler implements BuildState {
       if (request.url.path.startsWith(r'$graph')) {
         return _assetGraphHandler.handle(request, rootDir);
       }
-      return _handle(request, rootDir);
+      return _assetHandler.handle(request, rootDir);
     });
     var handler = logRequests
         ? const shelf.Pipeline()
@@ -92,31 +93,10 @@ class ServeHandler implements BuildState {
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
         headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
   }
-
-  FutureOr<shelf.Response> _handle(
-      shelf.Request request, String rootDir) async {
-    if (_lastBuildResult.status == BuildStatus.failure) {
-      return new shelf.Response(HttpStatus.INTERNAL_SERVER_ERROR,
-          body: _htmlErrorPage(_lastBuildResult),
-          headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
-    }
-    return _assetHandler.handle(request, rootDir);
-  }
-
-  static String _htmlErrorPage(BuildResult result) => '<h1>Build failed!</h1>'
-      '<p><strong>Error:</strong></p>'
-      '<p><strong style="color: red">'
-      '${_htmlify(result.exception)}'
-      '</strong></p>'
-      '<p><strong>Stack Trace:</strong></p>'
-      '<p>${_htmlify(result.stackTrace)}</p>';
-
-  static String _htmlify(content) =>
-      content.toString().replaceAll('\n', '<br/>').replaceAll(' ', '&nbsp;');
 }
 
 class AssetHandler {
-  final AssetReader _reader;
+  final FinalizedReader _reader;
   final String _rootPackage;
 
   final _typeResolver = new MimeTypeResolver();
@@ -136,7 +116,16 @@ class AssetHandler {
       Map<String, String> requestHeaders, AssetId assetId) async {
     try {
       if (!await _reader.canRead(assetId)) {
-        return new shelf.Response.notFound('Not Found');
+        var reason = await _reader.unreadableReason(assetId);
+        switch (reason) {
+          case UnreadableReason.failed:
+            return new shelf.Response.internalServerError(
+                body: 'Build failed for $assetId');
+          case UnreadableReason.notOutput:
+            return new shelf.Response.notFound('$assetId was not output');
+          default:
+            return new shelf.Response.notFound('Not Found');
+        }
       }
     } on ArgumentError catch (_) {
       return new shelf.Response.notFound('Not Found');

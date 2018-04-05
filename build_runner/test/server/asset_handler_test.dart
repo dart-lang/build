@@ -2,11 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner/src/asset/finalized_reader.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
+import 'dart:io';
+
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
+import 'package:build_runner/src/asset/finalized_reader.dart';
+import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/server/server.dart';
 
 import '../common/common.dart';
@@ -82,5 +85,21 @@ void main() {
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/sub')), 'web');
     expect(response.statusCode, 404);
+  });
+
+  test('Fails request for failed outputs', () async {
+    graph.add(new GeneratedAssetNode(
+      makeAssetId('a|web/main.ddc.js'),
+      builderOptionsId: null,
+      phaseNumber: null,
+      state: GeneratedNodeState.upToDate,
+      isHidden: false,
+      wasOutput: true,
+      isFailure: true,
+      primaryInput: null,
+    ));
+    var response = await handler.handle(
+        new Request('GET', Uri.parse('http://server.com/main.ddc.js')), 'web');
+    expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
   });
 }

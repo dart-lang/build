@@ -9,9 +9,10 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
@@ -24,25 +25,36 @@ void main() {
   ServeHandler serveHandler;
   InMemoryRunnerAssetReader reader;
   MockWatchImpl watchImpl;
+  AssetGraph assetGraph;
 
   setUp(() async {
     reader = new InMemoryRunnerAssetReader();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    watchImpl = new MockWatchImpl(reader, packageGraph);
+    assetGraph =
+        await AssetGraph.build([], new Set(), new Set(), packageGraph, reader);
+    watchImpl = new MockWatchImpl(
+        new FinalizedReader(reader, assetGraph), packageGraph);
     serveHandler = await createServeHandler(watchImpl);
     watchImpl.addFutureResult(
         new Future.value(new BuildResult(BuildStatus.success, [])));
   });
 
+  void _addSource(String id, String content, {bool deleted: false}) {
+    var node = makeAssetNode(id, [], computeDigest('a'));
+    node.isDeleted = deleted;
+    assetGraph.add(node);
+    reader.cacheStringAsset(node.id, content);
+  }
+
   test('can get handlers for a subdirectory', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addSource('a|web/index.html', 'content');
     var response = await serveHandler.handlerFor('web')(
         new Request('GET', Uri.parse('http://server.com/index.html')));
     expect(await response.readAsString(), 'content');
   });
 
   test('caching with etags works', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addSource('a|web/index.html', 'content');
     var handler = serveHandler.handlerFor('web');
     var requestUri = Uri.parse('http://server.com/index.html');
     var firstResponse = await handler(new Request('GET', requestUri));
@@ -61,46 +73,59 @@ void main() {
     expect(() => serveHandler.handlerFor('web/sub'), throwsArgumentError);
   });
 
-  test('serves an error page if there were build errors', () async {
-    var fakeException = 'Really bad error omg!';
-    var fakeStackTrace = 'My cool stack trace!';
-    watchImpl.addFutureResult(new Future.value(new BuildResult(
-        BuildStatus.failure, [],
-        exception: fakeException,
-        stackTrace: new StackTrace.fromString(fakeStackTrace))));
-    await new Future.value();
-    var response = await serveHandler.handlerFor('web')(
-        new Request('GET', Uri.parse('http://server.com/index.html')));
+  group('build failures', () {
+    setUp(() async {
+      _addSource('a|web/index.html', '');
+      var fakeException = 'Really bad error omg!';
+      var fakeStackTrace = 'My cool stack trace!';
+      assetGraph.add(new GeneratedAssetNode(
+        makeAssetId('a|web/main.ddc.js'),
+        builderOptionsId: null,
+        phaseNumber: null,
+        state: GeneratedNodeState.upToDate,
+        isHidden: false,
+        wasOutput: true,
+        isFailure: true,
+        primaryInput: null,
+      ));
+      watchImpl.addFutureResult(new Future.value(new BuildResult(
+          BuildStatus.failure, [],
+          exception: fakeException,
+          stackTrace: new StackTrace.fromString(fakeStackTrace))));
+    });
 
-    expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
-    expect(
-        await response.readAsString(),
-        allOf(contains('Really&nbsp;bad&nbsp;error&nbsp;omg!'),
-            contains('My&nbsp;cool&nbsp;stack&nbsp;trace!')));
+    test('serves successful assets', () async {
+      var response = await serveHandler.handlerFor('web')(
+          new Request('GET', Uri.parse('http://server.com/index.html')));
+
+      expect(response.statusCode, HttpStatus.OK);
+    });
+
+    test('rejects requests for failed assets', () async {
+      var response = await serveHandler.handlerFor('web')(
+          new Request('GET', Uri.parse('http://server.com/main.ddc.js')));
+
+      expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    test('logs rejected requests', () async {
+      expect(
+          Logger.root.onRecord,
+          emitsThrough(predicate<LogRecord>((record) =>
+              record.message.contains('main.ddc.js') &&
+              record.level == Level.WARNING)));
+      await serveHandler.handlerFor('web', logRequests: true)(
+          new Request('GET', Uri.parse('http://server.com/main.ddc.js')));
+    });
   });
 
   test('logs requests if you ask it to', () async {
-    reader.cacheStringAsset(makeAssetId('a|web/index.html'), 'content');
+    _addSource('a|web/index.html', 'content');
     expect(
         Logger.root.onRecord,
         emitsThrough(predicate<LogRecord>((record) =>
             record.message.contains('index.html') &&
             record.level == Level.INFO)));
-    await serveHandler.handlerFor('web', logRequests: true)(
-        new Request('GET', Uri.parse('http://server.com/index.html')));
-
-    var fakeException = 'Really bad error omg!';
-    var fakeStackTrace = 'My cool stack trace!';
-    watchImpl.addFutureResult(new Future.value(new BuildResult(
-        BuildStatus.failure, [],
-        exception: fakeException,
-        stackTrace: new StackTrace.fromString(fakeStackTrace))));
-
-    expect(
-        Logger.root.onRecord,
-        emitsThrough(predicate<LogRecord>((record) =>
-            record.message.contains('index.html') &&
-            record.level == Level.WARNING)));
     await serveHandler.handlerFor('web', logRequests: true)(
         new Request('GET', Uri.parse('http://server.com/index.html')));
   });
@@ -161,13 +186,13 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final Future<AssetReader> reader;
+  final Future<FinalizedReader> reader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(AssetReader reader, this.packageGraph)
+  MockWatchImpl(FinalizedReader reader, this.packageGraph)
       : this.reader = new Future.value(reader) {
     _futureBuildResultsController.stream.listen((futureBuildResult) {
       if (_currentBuild != null) {

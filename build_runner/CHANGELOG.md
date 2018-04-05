@@ -4,6 +4,7 @@
 - Bug Fix: Correctly include the default whitelist when multiple targets
   without include are provided.
 - Allow logging from within a build factory.
+- Allow serving assets from successful build steps if the overall build fails.
 
 ## 0.8.1
 

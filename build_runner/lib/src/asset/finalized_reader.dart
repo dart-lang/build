@@ -4,8 +4,10 @@
 
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
+import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
@@ -18,6 +20,20 @@ class FinalizedReader implements AssetReader {
     this._delegate,
     this._assetGraph,
   );
+
+  /// Returns a reason why [id] is not readable, or null if it is readable.
+  Future<UnreadableReason> unreadableReason(AssetId id) async {
+    if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
+    var node = _assetGraph.get(id);
+    if (node.isDeleted) return UnreadableReason.deleted;
+    if (!node.isReadable) return UnreadableReason.assetType;
+    if (node is GeneratedAssetNode) {
+      if (node.isFailure) return UnreadableReason.failed;
+      if (!node.wasOutput) return UnreadableReason.notOutput;
+    }
+    if (await _delegate.canRead(id)) return null;
+    return UnreadableReason.unknown;
+  }
 
   @override
   Future<bool> canRead(AssetId id) async {
@@ -42,4 +58,13 @@ class FinalizedReader implements AssetReader {
 
   @override
   Stream<AssetId> findAssets(Glob glob) => _delegate.findAssets(glob);
+}
+
+enum UnreadableReason {
+  notFound,
+  notOutput,
+  assetType,
+  deleted,
+  failed,
+  unknown,
 }
