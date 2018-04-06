@@ -50,26 +50,14 @@ PackageFilter toRoot() => (p) => p.isRoot;
 ///
 /// Creates a `BuilderApplication` which corresponds to an empty builder key so
 /// that no other `build.yaml` based configuration will apply.
-BuilderApplication applyToRoot(
-  Builder builder, {
-  bool isOptional: false,
-  bool hideOutput: false,
-  InputSet generateFor,
-  BuilderOptions defaultOptions,
-  BuilderOptions defaultDevOptions,
-  BuilderOptions defaultReleaseOptions,
-}) =>
-    new BuilderApplication.forBuilder(
-      '',
-      [(_) => builder],
-      toRoot(),
-      isOptional: isOptional,
-      hideOutput: hideOutput,
-      defaultGenerateFor: generateFor,
-      defaultOptions: defaultOptions,
-      defaultDevOptions: defaultDevOptions,
-      defaultReleaseOptions: defaultReleaseOptions,
-    );
+BuilderApplication applyToRoot(Builder builder,
+        {bool isOptional: false,
+        bool hideOutput: false,
+        InputSet generateFor}) =>
+    new BuilderApplication.forBuilder('', [(_) => builder], toRoot(),
+        isOptional: isOptional,
+        hideOutput: hideOutput,
+        defaultGenerateFor: generateFor);
 
 /// Apply each builder from [builderFactories] to the packages matching
 /// [filter].
