@@ -90,7 +90,7 @@ Future<ServeHandler> watch(
   var terminator = new Terminator(terminateEventStream);
 
   final buildPhases = await createBuildPhases(
-      targetGraph, builders, builderConfigOverrides, isReleaseBuild);
+      targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
   var watch =
       runWatch(environment, options, buildPhases, terminator.shouldTerminate);

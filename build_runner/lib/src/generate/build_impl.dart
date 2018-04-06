@@ -91,7 +91,7 @@ Future<BuildResult> build(
   var terminator = new Terminator(terminateEventStream);
 
   final buildPhases = await createBuildPhases(
-      targetGraph, builders, builderConfigOverrides, isReleaseBuild);
+      targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
   var result = await singleBuild(environment, options, buildPhases);
 
