@@ -31,9 +31,9 @@ class CopyBuilder implements Builder {
   /// Configure output extensions. All possible inputs match the empty input
   /// extension. For each input 1 output is created with `extension` appended to
   /// the path.
-  Map<String, List<String>> get buildExtensions => {
-        '.txt': ['.txt.copy']
-      };
+  final buildExtensions = const {
+    '.txt': ['.txt.copy']
+  };
 }
 
 class CssBuilder implements Builder {
@@ -47,9 +47,9 @@ class CssBuilder implements Builder {
   /// Configure output extensions. All possible inputs match the empty input
   /// extension. For each input 1 output is created with `extension` appended to
   /// the path.
-  Map<String, List<String>> get buildExtensions => {
-        r'$web$': ['generated.css']
-      };
+  final buildExtensions = const {
+    r'$web$': ['generated.css']
+  };
 }
 
 String _cssContent(AssetId inputId) => '''
@@ -89,9 +89,9 @@ class ResolvingBuilder implements Builder {
   /// Configure output extensions. All possible inputs match the empty input
   /// extension. For each input 1 output is created with `extension` appended to
   /// the path.
-  Map<String, List<String>> get buildExtensions => {
-        '.dart': ['.dart.info.json']
-      };
+  final buildExtensions = const {
+    '.dart': ['.dart.info.json']
+  };
 }
 
 String _prettyToJson(Object object) =>
