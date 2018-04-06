@@ -52,27 +52,27 @@ with the same name, but an additional extension:
 class CopyBuilder implements Builder {
   final String extension;
 
-  CopyBuilder(this.extension)
+  CopyBuilder(this.extension);
 
   Future build(BuildStep buildStep) async {
     /// Each [buildStep] has a single input.
-    var input = buildStep.inputId;
+    var inputId = buildStep.inputId;
 
     /// Create a new target [AssetId] based on the old one.
     var copy = inputId.addExtension(extension);
-    var contents = await buildStep.readAsString(input);
+    var contents = await buildStep.readAsString(inputId);
 
     /// Write out the new asset.
     ///
     /// There is no need to `await` here, the system handles waiting on these
     /// files as necessary before advancing to the next phase.
-    buildStep.writeAsString(copy, contents);
+    await buildStep.writeAsString(copy, contents);
   }
 
   /// Configure output extensions. All possible inputs match the empty input
   /// extension. For each input 1 output is created with `extension` appended to
   /// the path.
-  Map<String, List<String>> get buildExtensions =>  {'': [extension]};
+  Map<String, List<String>> get buildExtensions => {'': [extension]};
 }
 ```
 
