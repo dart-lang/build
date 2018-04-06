@@ -2,7 +2,6 @@
 builders:
 
   copyBuilder:
-    target: ":example"
     import: "package:example/builder.dart"
     builder_factories: ["copyBuilder"]
     build_extensions: {".txt": [".txt.copy"]}
@@ -10,7 +9,6 @@ builders:
     auto_apply: root_package
 
   resolvingBuilder:
-    target: ":example"
     import: "package:example/builder.dart"
     builder_factories: ["resolvingBuilder"]
     build_extensions: {".dart": [".dart.info.json"]}
@@ -23,7 +21,6 @@ builders:
         - web/**
 
   cssBuilder:
-    target: ":example"
     import: "package:example/builder.dart"
     builder_factories: ["cssBuilder"]
     build_extensions: {"$web$": ["generated.css"]}
