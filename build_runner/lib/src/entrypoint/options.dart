@@ -315,15 +315,16 @@ class _BuildCommand extends BuildRunnerCommand {
   @override
   Future<int> run() async {
     var options = _readOptions();
-    var result = await build(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        failOnSevere: options.failOnSevere,
-        configKey: options.configKey,
-        assumeTty: options.assumeTty,
-        outputMap: options.outputMap,
-        packageGraph: packageGraph,
-        verbose: options.verbose,
+    var result = await build(
+      builderApplications,
+      deleteFilesByDefault: options.deleteFilesByDefault,
+      enableLowResourcesMode: options.enableLowResourcesMode,
+      failOnSevere: options.failOnSevere,
+      configKey: options.configKey,
+      assumeTty: options.assumeTty,
+      outputMap: options.outputMap,
+      packageGraph: packageGraph,
+      verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
     );
@@ -349,16 +350,17 @@ class _WatchCommand extends BuildRunnerCommand {
   @override
   Future<int> run() async {
     var options = _readOptions();
-    var handler = await watch(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        failOnSevere: options.failOnSevere,
-        configKey: options.configKey,
-        assumeTty: options.assumeTty,
-        outputMap: options.outputMap,
-        packageGraph: packageGraph,
-        trackPerformance: options.trackPerformance,
-        verbose: options.verbose,
+    var handler = await watch(
+      builderApplications,
+      deleteFilesByDefault: options.deleteFilesByDefault,
+      enableLowResourcesMode: options.enableLowResourcesMode,
+      failOnSevere: options.failOnSevere,
+      configKey: options.configKey,
+      assumeTty: options.assumeTty,
+      outputMap: options.outputMap,
+      packageGraph: packageGraph,
+      trackPerformance: options.trackPerformance,
+      verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
     );
@@ -399,16 +401,17 @@ class _ServeCommand extends _WatchCommand {
   Future<int> run() async {
     var options = _readOptions();
     var logger = new Logger('Serve');
-    var handler = await watch(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        failOnSevere: options.failOnSevere,
-        configKey: options.configKey,
-        assumeTty: options.assumeTty,
-        outputMap: options.outputMap,
-        packageGraph: packageGraph,
-        trackPerformance: options.trackPerformance,
-        verbose: options.verbose,
+    var handler = await watch(
+      builderApplications,
+      deleteFilesByDefault: options.deleteFilesByDefault,
+      enableLowResourcesMode: options.enableLowResourcesMode,
+      failOnSevere: options.failOnSevere,
+      configKey: options.configKey,
+      assumeTty: options.assumeTty,
+      outputMap: options.outputMap,
+      packageGraph: packageGraph,
+      trackPerformance: options.trackPerformance,
+      verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
     );
@@ -483,16 +486,17 @@ class _TestCommand extends BuildRunnerCommand {
       options = _readOptions();
       var outputMap = options.outputMap ?? {};
       outputMap.addAll({tempPath: null});
-      var result = await build(builderApplications,
-          deleteFilesByDefault: options.deleteFilesByDefault,
-          enableLowResourcesMode: options.enableLowResourcesMode,
-          failOnSevere: options.failOnSevere,
-          configKey: options.configKey,
-          assumeTty: options.assumeTty,
-          outputMap: outputMap,
-          packageGraph: packageGraph,
-          trackPerformance: options.trackPerformance,
-          verbose: options.verbose,
+      var result = await build(
+        builderApplications,
+        deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        failOnSevere: options.failOnSevere,
+        configKey: options.configKey,
+        assumeTty: options.assumeTty,
+        outputMap: outputMap,
+        packageGraph: packageGraph,
+        trackPerformance: options.trackPerformance,
+        verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides,
         isReleaseBuild: options.isReleaseBuild,
       );
