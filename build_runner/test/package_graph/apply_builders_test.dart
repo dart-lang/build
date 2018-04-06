@@ -25,9 +25,13 @@ void main() {
         apply('b|cool_builder', [(options) => new CoolBuilder(options)],
             toAllPackages())
       ];
-      var phases = await createBuildPhases(targetGraph, builderApplications, {
-        'b|cool_builder': {'option_a': 'a', 'option_c': 'c'},
-      });
+      var phases = await createBuildPhases(
+          targetGraph,
+          builderApplications,
+          {
+            'b|cool_builder': {'option_a': 'a', 'option_c': 'c'},
+          },
+          false);
       for (InBuildPhase phase in phases) {
         expect((phase.builder as CoolBuilder).optionA, equals('a'));
         expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
@@ -46,7 +50,7 @@ void main() {
             toDependentsOf('b')),
       ];
       var phases =
-          await createBuildPhases(targetGraph, builderApplications, {});
+          await createBuildPhases(targetGraph, builderApplications, {}, false);
       expect(phases, hasLength(1));
       expect((phases.first as InBuildPhase).package, 'a');
     });
@@ -65,7 +69,7 @@ void main() {
             'b|not_by_default', [(_) => new TestBuilder()], toNoneByDefault()),
       ];
       var phases =
-          await createBuildPhases(targetGraph, builderApplications, {});
+          await createBuildPhases(targetGraph, builderApplications, {}, false);
       expect(phases, hasLength(2));
       expect(phases.map((a) => (a as InBuildPhase).package), ['a', 'a']);
     });
