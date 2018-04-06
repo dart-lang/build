@@ -100,9 +100,7 @@ main(List<String> args) async {
         await d.dir('a', [
           d.dir('build', [
             d.dir('web', [d.file('a.txt.copy', 'a')])
-          ])
-        ]).validate();
-        await d.dir('a', [
+          ]),
           d.dir('foo', [
             d.dir('web', [d.file('a.txt.copy', 'a')])
           ])

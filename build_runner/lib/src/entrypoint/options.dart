@@ -63,7 +63,7 @@ class BuildCommandRunner extends CommandRunner<int> {
 /// Each output option is split on `:` where the first value is the
 /// root input directory and the second value output directory.
 /// If no delimeter is provided the root input directory will be null.
-Map<String, String> _parseOuputMap(ArgResults argResults) {
+Map<String, String> _parseOutputMap(ArgResults argResults) {
   var outputs = argResults[_output] as List<String>;
   if (outputs == null) return null;
   var result = <String, String>{};
@@ -143,7 +143,7 @@ class _SharedOptions {
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       configKey: argResults[_config] as String,
-      outputMap: _parseOuputMap(argResults),
+      outputMap: _parseOutputMap(argResults),
       trackPerformance: argResults[_trackPerformance] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
@@ -209,7 +209,7 @@ class _ServeOptions extends _SharedOptions {
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       configKey: argResults[_config] as String,
-      outputMap: _parseOuputMap(argResults),
+      outputMap: _parseOutputMap(argResults),
       trackPerformance: argResults[_trackPerformance] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
