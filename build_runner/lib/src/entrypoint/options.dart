@@ -288,7 +288,7 @@ abstract class BuildRunnerCommand extends Command<int> {
       ..addFlag(_release,
           abbr: 'r',
           defaultsTo: false,
-          negatable: false,
+          negatable: true,
           help: 'Build with release mode defaults for builders.')
       ..addMultiOption(_define,
           splitCommas: false,
