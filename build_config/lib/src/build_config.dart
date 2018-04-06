@@ -344,17 +344,19 @@ class TargetBuilderConfig {
   TargetBuilderConfig({
     this.isEnabled,
     this.generateFor,
-    this.options: const BuilderOptions(const {}),
-    this.devOptions: const BuilderOptions(const {}),
-    this.releaseOptions: const BuilderOptions(const {}),
-  });
+    BuilderOptions options,
+    BuilderOptions devOptions,
+    BuilderOptions releaseOptions,
+  })  : options = options ?? const BuilderOptions(const {}),
+        devOptions = devOptions ?? const BuilderOptions(const {}),
+        releaseOptions = releaseOptions ?? const BuilderOptions(const {});
 
   @override
   String toString() => {
         'isEnabled': isEnabled,
         'generateFor': generateFor,
         'options': options.config,
-        'devOptions': options.config,
-        'releaseOptions': options.config,
+        'devOptions': devOptions.config,
+        'releaseOptions': releaseOptions.config,
       }.toString();
 }
