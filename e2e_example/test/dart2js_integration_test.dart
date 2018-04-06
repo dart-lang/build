@@ -47,6 +47,17 @@ void main() {
       await expectWasCompiledWithDart2Js(minified: true);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
+    test('via --release mode', () async {
+      await expectTestsPass(
+          usePrecompiled: true,
+          useManualScript: false,
+          args: [
+            '--release',
+            '--output=$_outputDir',
+          ]);
+      await expectWasCompiledWithDart2Js(minified: true);
+    });
+
     test('--define overrides --config', () async {
       await expectTestsPass(
           usePrecompiled: true,

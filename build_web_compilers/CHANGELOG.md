@@ -1,3 +1,7 @@
+# 0.3.6
+
+- Add support for compiling with `dart2js` by default in release mode.
+
 # 0.3.5
 
 - Don't ignore cast failures by default. We expect most code to be clean with
