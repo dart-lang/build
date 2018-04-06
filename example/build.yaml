@@ -1,0 +1,14 @@
+# Read about `build.yaml` at https://pub.dartlang.org/packages/build_config
+targets:
+  $default:
+    builders:
+      "|example":
+
+builders:
+  example:
+    target: ":example"
+    import: "package:example/builder.dart"
+    builder_factories: ["copyBuilder"]
+    build_extensions: {".txt": [".txt.copy"]}
+    auto_apply: dependents
+    build_to: source

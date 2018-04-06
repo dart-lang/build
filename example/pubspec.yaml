@@ -1,0 +1,20 @@
+name: example
+
+environment:
+  sdk: '>=2.0.0-dev <2.0.0'
+
+dependencies:
+  build:
+
+dev_dependencies:
+  build_runner:
+
+dependency_overrides:
+  build:
+    path: ../build
+  build_config:
+    path: ../build_config
+  build_resolvers:
+    path: ../build_resolvers
+  build_runner:
+    path: ../build_runner
