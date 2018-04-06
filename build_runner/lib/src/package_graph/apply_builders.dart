@@ -163,10 +163,10 @@ class BuilderApplication {
         var modeOverrides =
             isReleaseBuild ? defaultReleaseOptions : defaultDevOptions;
         if (modeOverrides != null) {
-          optionsWithDefaults = optionsWithDefaults.merge(modeOverrides);
+          optionsWithDefaults = optionsWithDefaults.overrideWith(modeOverrides);
         }
         if (options != null) {
-          optionsWithDefaults = optionsWithDefaults.merge(options);
+          optionsWithDefaults = optionsWithDefaults.overrideWith(options);
         }
 
         var builder = scopeLogSync(
@@ -204,10 +204,10 @@ class BuilderApplication {
       var modeOverrides =
           isReleaseBuild ? defaultReleaseOptions : defaultDevOptions;
       if (modeOverrides != null) {
-        optionsWithDefaults = optionsWithDefaults.merge(modeOverrides);
+        optionsWithDefaults = optionsWithDefaults.overrideWith(modeOverrides);
       }
       if (options != null) {
-        optionsWithDefaults = optionsWithDefaults.merge(options);
+        optionsWithDefaults = optionsWithDefaults.overrideWith(options);
       }
       var builder = builderFactory(options);
       var builderAction = new PostBuildAction(builder, package,
@@ -303,7 +303,7 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
             ? builderConfig?.releaseOptions
             : builderConfig?.devOptions;
         if (modeOptions != null) {
-          options.merge(modeOptions);
+          options.overrideWith(modeOptions);
         }
         options = new BuilderOptions(
             new Map<String, dynamic>.from(options.config)
