@@ -18,6 +18,8 @@ import 'pubspec.dart';
 /// Takes a list of strings in glob format for [include] and [exclude]. Matches
 /// the `glob()` function in skylark.
 class InputSet {
+  static const anything = const InputSet();
+
   /// The globs to include in the set.
   ///
   /// May be null or empty which means every possible path (like `'**'`).
@@ -96,7 +98,7 @@ class BuildConfig {
             .toSet(),
         package: packageName,
         key: defaultTarget,
-        sources: const InputSet(),
+        sources: InputSet.anything,
       )
     };
     return new BuildConfig(
@@ -186,8 +188,8 @@ class BuilderDefinition {
     this.appliesBuilders,
     this.isOptional,
     this.buildTo,
-    this.defaults,
-  });
+    TargetBuilderConfigDefaults defaults,
+  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
   @override
   String toString() => {
@@ -235,8 +237,8 @@ class PostProcessBuilderDefinition {
     @required this.inputExtensions,
     @required this.import,
     @required this.target,
-    this.defaults,
-  });
+    TargetBuilderConfigDefaults defaults,
+  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
   @override
   String toString() => {
@@ -252,8 +254,19 @@ class PostProcessBuilderDefinition {
 /// corresponding key for [TargetBuilderConfig].
 class TargetBuilderConfigDefaults {
   final InputSet generateFor;
+  final BuilderOptions options;
+  final BuilderOptions devOptions;
+  final BuilderOptions releaseOptions;
 
-  TargetBuilderConfigDefaults({this.generateFor});
+  const TargetBuilderConfigDefaults({
+    InputSet generateFor,
+    BuilderOptions options,
+    BuilderOptions devOptions,
+    BuilderOptions releaseOptions,
+  })  : generateFor = generateFor ?? InputSet.anything,
+        options = options ?? BuilderOptions.empty,
+        devOptions = devOptions ?? BuilderOptions.empty,
+        releaseOptions = releaseOptions ?? BuilderOptions.empty;
 }
 
 enum AutoApply { none, dependents, allPackages, rootPackage }
@@ -287,7 +300,7 @@ class BuildTarget {
   BuildTarget({
     @required this.package,
     @required this.key,
-    this.sources: const InputSet(),
+    this.sources: InputSet.anything,
     this.dependencies,
     this.builders: const {},
   });
@@ -326,18 +339,33 @@ class TargetBuilderConfig {
   /// builder.
   ///
   /// The `options` key in the configuration.
+  ///
+  /// Individual keys may be overridden by either [devOptions] or
+  /// [releaseOptions].
   final BuilderOptions options;
+
+  /// Overrides for [options] in dev mode.
+  final BuilderOptions devOptions;
+
+  /// Overrides for [options] in release mode.
+  final BuilderOptions releaseOptions;
 
   TargetBuilderConfig({
     this.isEnabled,
     this.generateFor,
-    this.options: const BuilderOptions(const {}),
-  });
+    BuilderOptions options,
+    BuilderOptions devOptions,
+    BuilderOptions releaseOptions,
+  })  : options = options ?? BuilderOptions.empty,
+        devOptions = devOptions ?? BuilderOptions.empty,
+        releaseOptions = releaseOptions ?? BuilderOptions.empty;
 
   @override
   String toString() => {
         'isEnabled': isEnabled,
         'generateFor': generateFor,
-        'options': options.config
+        'options': options.config,
+        'devOptions': devOptions.config,
+        'releaseOptions': releaseOptions.config,
       }.toString();
 }

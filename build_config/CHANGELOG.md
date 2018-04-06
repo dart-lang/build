@@ -1,3 +1,14 @@
+## 0.2.6
+
+- Support options based on mode, add `devOptions` and `releaseOptions` on
+  `TargetBuilderConfig`.
+- Support applying default options based on builder definitions, add `option`,
+  `devOptions`, and `releaseOptions` to `TargetBuilderConfigDefaults`.
+- Ensure that `defaults` and `generateFor` fields are never null.
+- Add `InputSet.anything` to name the input sets that don't filter out any
+  assets.
+
+
 ## 0.2.5
 
 - Added `post_process_builders` section to `build.yaml`. See README.md for more
