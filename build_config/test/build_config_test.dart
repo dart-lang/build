@@ -43,6 +43,12 @@ void main() {
         isOptional: true,
         buildTo: BuildTo.cache,
         import: 'package:example/e.dart',
+        buildExtensions: {
+          '.dart': [
+            '.g.dart',
+            '.json',
+          ]
+        },
         package: 'example',
         key: 'example|h',
         requiredInputs: ['.dart'],
@@ -89,6 +95,12 @@ void main() {
         isOptional: false,
         buildTo: BuildTo.cache,
         import: 'package:example/builder.dart',
+        buildExtensions: {
+          '.dart': [
+            '.g.dart',
+            '.json',
+          ]
+        },
         package: 'example',
         key: 'example|a',
         requiredInputs: const [],
@@ -148,6 +160,7 @@ builders:
   h:
     builder_factories: ["createBuilder"]
     import: package:example/e.dart
+    build_extensions: {".dart": [".g.dart", ".json"]}
     auto_apply: dependents
     required_inputs: [".dart"]
     runs_before: ["foo_builder"]
@@ -176,6 +189,7 @@ builders:
   a:
     builder_factories: ["createBuilder"]
     import: package:example/builder.dart
+    build_extensions: {".dart": [".g.dart", ".json"]}
 ''';
 
 void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
@@ -203,6 +217,7 @@ class _BuilderDefinitionMatcher extends Matcher {
   bool matches(item, _) =>
       item is BuilderDefinition &&
       equals(_expected.builderFactories).matches(item.builderFactories, _) &&
+      equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
       equals(_expected.runsBefore).matches(item.runsBefore, _) &&
       equals(_expected.appliesBuilders).matches(item.appliesBuilders, _) &&
