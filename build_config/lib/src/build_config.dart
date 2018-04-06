@@ -141,9 +141,6 @@ class BuilderDefinition {
 
   /// A map from input extension to the output extensions created for matching
   /// inputs.
-  ///
-  /// May be null or unreliable and should not be used.
-  @deprecated
   final Map<String, List<String>> buildExtensions;
 
   /// The name of the dart_library target that contains `import`.
@@ -185,8 +182,8 @@ class BuilderDefinition {
     @required this.package,
     @required this.key,
     @required this.builderFactories,
+    @required this.buildExtensions,
     @required this.import,
-    this.buildExtensions,
     this.target,
     this.autoApply,
     this.requiredInputs,
@@ -202,6 +199,7 @@ class BuilderDefinition {
         'autoApply': autoApply,
         'import': import,
         'builderFactories': builderFactories,
+        'buildExtensions': buildExtensions,
         'requiredInputs': requiredInputs,
         'runsBefore': runsBefore,
         'isOptional': isOptional,

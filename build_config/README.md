@@ -67,6 +67,9 @@ the following keys:
 - **builder_factories**: A `List<String>` which contains the names of the
   top-level methods in the imported library which are a function fitting the
   typedef `Builder factoryName(BuilderOptions options)`.
+- **build_extensions**: Required. A map from input extension to the list of
+  output extensions that may be created for that input. This must match the
+  merged `buildExtensions` maps from each `Builder` in `builder_factories`.
 - **auto_apply**: Optional. The packages which should have this builder
   automatically to applied. Defaults to `'none'` The possibilities are:
   - `"none"`: Never apply this Builder unless it is manually configured
@@ -104,6 +107,7 @@ builders:
   my_builder:
     import: "package:my_package/builder.dart"
     builder_factories: ["myBuilder"]
+    build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
 ```
 
@@ -145,6 +149,7 @@ builders:
   regular_builder:
     import: "package:my_package/builder.dart"
     builder_factories: ["myBuilder"]
+    build_extensions: {".dart": [".tar.gz"]}
     auto_apply: dependents
     apply_builders: ["|archive_extract_builder"]
 post_process_builders:
