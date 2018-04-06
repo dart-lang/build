@@ -49,7 +49,10 @@ void main() {
         runsBefore: ['foo_builder|foo_builder'].toSet(),
         appliesBuilders: ['foo_builder|foo_builder'].toSet(),
         defaults: new TargetBuilderConfigDefaults(
-            generateFor: new InputSet(include: ['lib/**'])),
+          generateFor: const InputSet(include: const ['lib/**']),
+          options: const BuilderOptions(const {'foo': 'bar'}),
+          releaseOptions: const BuilderOptions(const {'baz': 'bop'}),
+        ),
       ),
     });
     expectPostProcessBuilderDefinitions(
@@ -60,7 +63,10 @@ void main() {
         package: 'example',
         key: 'example|p',
         defaults: new TargetBuilderConfigDefaults(
-            generateFor: new InputSet(include: ['web/**'])),
+          generateFor: const InputSet(include: const ['web/**']),
+          options: const BuilderOptions(const {'foo': 'bar'}),
+          releaseOptions: const BuilderOptions(const {'baz': 'bop'}),
+        ),
       ),
     });
   });
@@ -149,12 +155,20 @@ builders:
     is_optional: True
     defaults:
       generate_for: ["lib/**"]
+      options:
+        foo: bar
+      release_options:
+        baz: bop
 post_process_builders:
   p:
     builder_factory: "createPostProcessBuilder"
     import: package:example/p.dart
     defaults:
       generate_for: ["web/**"]
+      options:
+        foo: bar
+      release_options:
+        baz: bop
 ''';
 
 var buildYamlNoTargets = '''
@@ -192,10 +206,8 @@ class _BuilderDefinitionMatcher extends Matcher {
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
       equals(_expected.runsBefore).matches(item.runsBefore, _) &&
       equals(_expected.appliesBuilders).matches(item.appliesBuilders, _) &&
-      equals(_expected.defaults?.generateFor?.include)
-          .matches(item.defaults?.generateFor?.include, _) &&
-      equals(_expected.defaults?.generateFor?.exclude)
-          .matches(item.defaults?.generateFor?.exclude, _) &&
+      new _TargetBuilderConfigDefaultsMatcher(_expected.defaults)
+          .matches(item.defaults, _) &&
       item.autoApply == _expected.autoApply &&
       item.isOptional == _expected.isOptional &&
       item.buildTo == _expected.buildTo &&
@@ -216,13 +228,32 @@ class _PostProcessBuilderDefinitionMatcher extends Matcher {
   bool matches(item, _) =>
       item is PostProcessBuilderDefinition &&
       equals(_expected.builderFactory).matches(item.builderFactory, _) &&
-      equals(_expected.defaults?.generateFor?.include)
-          .matches(item.defaults?.generateFor?.include, _) &&
-      equals(_expected.defaults?.generateFor?.exclude)
-          .matches(item.defaults?.generateFor?.exclude, _) &&
+      new _TargetBuilderConfigDefaultsMatcher(_expected.defaults)
+          .matches(item.defaults, _) &&
       item.import == _expected.import &&
       item.key == _expected.key &&
       item.package == _expected.package;
+
+  @override
+  Description describe(Description description) =>
+      description.addDescriptionOf(_expected);
+}
+
+class _TargetBuilderConfigDefaultsMatcher extends Matcher {
+  final TargetBuilderConfigDefaults _expected;
+  _TargetBuilderConfigDefaultsMatcher(this._expected);
+
+  @override
+  bool matches(item, _) =>
+      item is TargetBuilderConfigDefaults &&
+      equals(_expected.generateFor.include)
+          .matches(item.generateFor.include, _) &&
+      equals(_expected.generateFor.exclude)
+          .matches(item.generateFor.exclude, _) &&
+      equals(_expected.options.config).matches(item.options.config, _) &&
+      equals(_expected.devOptions.config).matches(item.devOptions.config, _) &&
+      equals(_expected.releaseOptions.config)
+          .matches(item.releaseOptions.config, _);
 
   @override
   Description describe(Description description) =>
@@ -289,7 +320,10 @@ class _BuilderConfigMatcher extends Matcher {
           .matches(item.generateFor?.include, _) &&
       equals(_expected.generateFor?.exclude)
           .matches(item.generateFor?.exclude, _) &&
-      equals(_expected.options.config).matches(item.options.config, _);
+      equals(_expected.options.config).matches(item.options.config, _) &&
+      equals(_expected.devOptions.config).matches(item.devOptions.config, _) &&
+      equals(_expected.releaseOptions.config)
+          .matches(item.releaseOptions.config, _);
 
   @override
   Description describe(Description description) =>
