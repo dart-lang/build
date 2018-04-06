@@ -36,6 +36,31 @@ class CopyBuilder implements Builder {
       };
 }
 
+class CssBuilder implements Builder {
+  Future build(BuildStep buildStep) async {
+    // ignore: unawaited_futures
+    buildStep.writeAsString(
+        new AssetId(buildStep.inputId.package, 'web/generated.css'),
+        _cssContent(buildStep.inputId));
+  }
+
+  /// Configure output extensions. All possible inputs match the empty input
+  /// extension. For each input 1 output is created with `extension` appended to
+  /// the path.
+  Map<String, List<String>> get buildExtensions => {
+        r'$web$': ['generated.css']
+      };
+}
+
+String _cssContent(AssetId inputId) => '''
+/*
+Generated at: ${new DateTime.now()}
+     AssetId: $inputId
+*/
+pre {
+  font-size: 200%;
+}''';
+
 class ResolvingBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     // Get the [LibraryElement] for the primary input.

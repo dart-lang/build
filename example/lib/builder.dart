@@ -9,3 +9,5 @@ import 'example.dart';
 Builder copyBuilder(BuilderOptions options) => new CopyBuilder();
 
 Builder resolvingBuilder(BuilderOptions options) => new ResolvingBuilder();
+
+Builder cssBuilder(BuilderOptions options) => new CssBuilder();
