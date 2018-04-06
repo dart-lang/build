@@ -18,6 +18,8 @@ import 'pubspec.dart';
 /// Takes a list of strings in glob format for [include] and [exclude]. Matches
 /// the `glob()` function in skylark.
 class InputSet {
+  static const anything = const InputSet();
+
   /// The globs to include in the set.
   ///
   /// May be null or empty which means every possible path (like `'**'`).
@@ -96,7 +98,7 @@ class BuildConfig {
             .toSet(),
         package: packageName,
         key: defaultTarget,
-        sources: const InputSet(),
+        sources: InputSet.anything,
       )
     };
     return new BuildConfig(
@@ -192,8 +194,8 @@ class BuilderDefinition {
     this.appliesBuilders,
     this.isOptional,
     this.buildTo,
-    this.defaults,
-  });
+    TargetBuilderConfigDefaults defaults,
+  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
   @override
   String toString() => {
@@ -245,8 +247,8 @@ class PostProcessBuilderDefinition {
     @required this.import,
     this.inputExtensions,
     this.target,
-    this.defaults,
-  });
+    TargetBuilderConfigDefaults defaults,
+  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
   @override
   String toString() => {
@@ -264,8 +266,15 @@ class TargetBuilderConfigDefaults {
   final BuilderOptions devOptions;
   final BuilderOptions releaseOptions;
 
-  TargetBuilderConfigDefaults(
-      {this.generateFor, this.options, this.devOptions, this.releaseOptions});
+  const TargetBuilderConfigDefaults({
+    InputSet generateFor,
+    BuilderOptions options,
+    BuilderOptions devOptions,
+    BuilderOptions releaseOptions,
+  })  : generateFor = generateFor ?? InputSet.anything,
+        options = options ?? BuilderOptions.empty,
+        devOptions = devOptions ?? BuilderOptions.empty,
+        releaseOptions = releaseOptions ?? BuilderOptions.empty;
 }
 
 enum AutoApply { none, dependents, allPackages, rootPackage }
@@ -299,7 +308,7 @@ class BuildTarget {
   BuildTarget({
     @required this.package,
     @required this.key,
-    this.sources: const InputSet(),
+    this.sources: InputSet.anything,
     this.dependencies,
     this.builders: const {},
   });
@@ -355,9 +364,9 @@ class TargetBuilderConfig {
     BuilderOptions options,
     BuilderOptions devOptions,
     BuilderOptions releaseOptions,
-  })  : options = options ?? const BuilderOptions(const {}),
-        devOptions = devOptions ?? const BuilderOptions(const {}),
-        releaseOptions = releaseOptions ?? const BuilderOptions(const {});
+  })  : options = options ?? BuilderOptions.empty,
+        devOptions = devOptions ?? BuilderOptions.empty,
+        releaseOptions = releaseOptions ?? BuilderOptions.empty;
 
   @override
   String toString() => {
