@@ -43,15 +43,8 @@ void main() {
         isOptional: true,
         buildTo: BuildTo.cache,
         import: 'package:example/e.dart',
-        buildExtensions: {
-          '.dart': [
-            '.g.dart',
-            '.json',
-          ]
-        },
         package: 'example',
         key: 'example|h',
-        target: 'example:example',
         requiredInputs: ['.dart'],
         runsBefore: ['foo_builder|foo_builder'].toSet(),
         appliesBuilders: ['foo_builder|foo_builder'].toSet(),
@@ -67,10 +60,8 @@ void main() {
       'example|p': new PostProcessBuilderDefinition(
         builderFactory: 'createPostProcessBuilder',
         import: 'package:example/p.dart',
-        inputExtensions: ['.tar.gz', '.zip'],
         package: 'example',
         key: 'example|p',
-        target: 'example:example',
         defaults: new TargetBuilderConfigDefaults(
           generateFor: const InputSet(include: const ['web/**']),
           options: const BuilderOptions(const {'foo': 'bar'}),
@@ -98,15 +89,8 @@ void main() {
         isOptional: false,
         buildTo: BuildTo.cache,
         import: 'package:example/builder.dart',
-        buildExtensions: {
-          '.dart': [
-            '.g.dart',
-            '.json',
-          ]
-        },
         package: 'example',
         key: 'example|a',
-        target: 'example:example',
         requiredInputs: const [],
         runsBefore: new Set<String>(),
         appliesBuilders: new Set<String>(),
@@ -164,8 +148,6 @@ builders:
   h:
     builder_factories: ["createBuilder"]
     import: package:example/e.dart
-    build_extensions: {".dart": [".g.dart", ".json"]}
-    target: ":example"
     auto_apply: dependents
     required_inputs: [".dart"]
     runs_before: ["foo_builder"]
@@ -181,8 +163,6 @@ post_process_builders:
   p:
     builder_factory: "createPostProcessBuilder"
     import: package:example/p.dart
-    input_extensions: [".tar.gz", ".zip"]
-    target: ":example"
     defaults:
       generate_for: ["web/**"]
       options:
@@ -196,8 +176,6 @@ builders:
   a:
     builder_factories: ["createBuilder"]
     import: package:example/builder.dart
-    build_extensions: {".dart": [".g.dart", ".json"]}
-    target: example
 ''';
 
 void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
@@ -225,7 +203,6 @@ class _BuilderDefinitionMatcher extends Matcher {
   bool matches(item, _) =>
       item is BuilderDefinition &&
       equals(_expected.builderFactories).matches(item.builderFactories, _) &&
-      equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
       equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
       equals(_expected.runsBefore).matches(item.runsBefore, _) &&
       equals(_expected.appliesBuilders).matches(item.appliesBuilders, _) &&
@@ -236,8 +213,7 @@ class _BuilderDefinitionMatcher extends Matcher {
       item.buildTo == _expected.buildTo &&
       item.import == _expected.import &&
       item.key == _expected.key &&
-      item.package == _expected.package &&
-      item.target == _expected.target;
+      item.package == _expected.package;
 
   @override
   Description describe(Description description) =>
@@ -252,13 +228,11 @@ class _PostProcessBuilderDefinitionMatcher extends Matcher {
   bool matches(item, _) =>
       item is PostProcessBuilderDefinition &&
       equals(_expected.builderFactory).matches(item.builderFactory, _) &&
-      equals(_expected.inputExtensions).matches(item.inputExtensions, _) &&
       new _TargetBuilderConfigDefaultsMatcher(_expected.defaults)
           .matches(item.defaults, _) &&
       item.import == _expected.import &&
       item.key == _expected.key &&
-      item.package == _expected.package &&
-      item.target == _expected.target;
+      item.package == _expected.package;
 
   @override
   Description describe(Description description) =>

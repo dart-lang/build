@@ -1,5 +1,7 @@
 ## 0.2.6
 
+- The `target` and `build_extensions` keys for builder definitions are now
+  optional and should be omitted in most cases since they are currently unused.
 - Support options based on mode, add `devOptions` and `releaseOptions` on
   `TargetBuilderConfig`.
 - Support applying default options based on builder definitions, add `option`,
@@ -7,7 +9,6 @@
 - Ensure that `defaults` and `generateFor` fields are never null.
 - Add `InputSet.anything` to name the input sets that don't filter out any
   assets.
-
 
 ## 0.2.5
 

@@ -141,9 +141,15 @@ class BuilderDefinition {
 
   /// A map from input extension to the output extensions created for matching
   /// inputs.
+  ///
+  /// May be null or unreliable and should not be used.
+  @deprecated
   final Map<String, List<String>> buildExtensions;
 
   /// The name of the dart_library target that contains `import`.
+  ///
+  /// May be null or unreliable and should not be used.
+  @deprecated
   final String target;
 
   /// Which packages should have this builder applied automatically.
@@ -179,9 +185,9 @@ class BuilderDefinition {
     @required this.package,
     @required this.key,
     @required this.builderFactories,
-    @required this.buildExtensions,
     @required this.import,
-    @required this.target,
+    this.buildExtensions,
+    this.target,
     this.autoApply,
     this.requiredInputs,
     this.runsBefore,
@@ -193,11 +199,9 @@ class BuilderDefinition {
 
   @override
   String toString() => {
-        'target': target,
         'autoApply': autoApply,
         'import': import,
         'builderFactories': builderFactories,
-        'buildExtensions': buildExtensions,
         'requiredInputs': requiredInputs,
         'runsBefore': runsBefore,
         'isOptional': isOptional,
@@ -223,9 +227,15 @@ class PostProcessBuilderDefinition {
   final String import;
 
   /// A list of input extensions for this builder.
+  ///
+  /// May be null or unreliable and should not be used.
+  @deprecated
   final Iterable<String> inputExtensions;
 
   /// The name of the dart_library target that contains `import`.
+  ///
+  /// May be null or unreliable and should not be used.
+  @deprecated
   final String target;
 
   final TargetBuilderConfigDefaults defaults;
@@ -234,18 +244,16 @@ class PostProcessBuilderDefinition {
     @required this.package,
     @required this.key,
     @required this.builderFactory,
-    @required this.inputExtensions,
     @required this.import,
-    @required this.target,
+    this.inputExtensions,
+    this.target,
     TargetBuilderConfigDefaults defaults,
   }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
   @override
   String toString() => {
-        'target': target,
         'import': import,
         'builderFactory': builderFactory,
-        'inputExtensions': inputExtensions,
         'defaults': defaults,
       }.toString();
 }
