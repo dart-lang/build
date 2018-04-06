@@ -1,3 +1,8 @@
+## 0.2.6
+
+- The `target` and `build_extensions` keys for builder definitions are now
+  optional and should be omitted in most cases since they are currently unused.
+
 ## 0.2.5
 
 - Added `post_process_builders` section to `build.yaml`. See README.md for more
