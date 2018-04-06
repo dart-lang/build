@@ -21,10 +21,14 @@ const _builderConfigOptions = const [
   _generateFor,
   _enabled,
   _options,
+  _releaseOptions,
+  _devOptions,
 ];
 const _generateFor = 'generate_for';
 const _enabled = 'enabled';
 const _options = 'options';
+const _releaseOptions = 'release_options';
+const _devOptions = 'dev_options';
 
 const _builderDefinitionOptions = const [
   _builderFactories,
@@ -63,6 +67,9 @@ const _buildTo = 'build_to';
 const _defaults = 'defaults';
 const _builderConfigDefaultOptions = const [
   _generateFor,
+  _options,
+  _releaseOptions,
+  _devOptions,
 ];
 
 BuildConfig parseFromYaml(
@@ -118,11 +125,6 @@ BuildConfig parseFromMap(String packageName,
     );
   }
 
-  if (!buildTargets.containsKey(defaultTarget)) {
-    throw new ArgumentError('Must specify a target with the name '
-        '$packageName or `\$default`');
-  }
-
   final builderConfigs = config['builders'] as Map<String, Map> ?? {};
   for (var builderName in builderConfigs.keys) {
     final builderConfig = _readMapOrThrow(builderConfigs, builderName,
@@ -133,8 +135,7 @@ BuildConfig parseFromMap(String packageName,
         _readListOfStringsOrThrow(builderConfig, _builderFactories);
     final import = _readStringOrThrow(builderConfig, _import);
     final buildExtensions = _readBuildExtensions(builderConfig);
-    final target = normalizeTargetKeyUsage(
-        _readStringOrThrow(builderConfig, _target), packageName);
+    final target = _readStringOrThrow(builderConfig, _target, allowNull: true);
     final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
         defaultValue: AutoApply.none);
     final requiredInputs = _readListOfStringsOrThrow(
@@ -155,13 +156,20 @@ BuildConfig parseFromMap(String packageName,
     final buildTo = _readBuildToOrThrow(builderConfig, _buildTo,
         defaultValue: BuildTo.cache);
 
-    final defaultOptions = _readMapOrThrow(
+    final defaults = _readMapOrThrow(
         builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
         defaultValue: {});
     final defaultGenerateFor =
-        _readInputSetOrThrow(defaultOptions, _generateFor, allowNull: true);
+        _readInputSetOrThrow(defaults, _generateFor, allowNull: true);
 
     final builderKey = normalizeBuilderKeyDefinition(builderName, packageName);
+
+    final defaultOptions = _readBuilderOptions(defaults, builderKey, _options);
+    final defaultDevOptions =
+        _readBuilderOptions(defaults, builderKey, _devOptions);
+    final defaultReleaseOptions =
+        _readBuilderOptions(defaults, builderKey, _releaseOptions);
+
     builderDefinitions[builderKey] = new BuilderDefinition(
       key: builderKey,
       builderFactories: builderFactories,
@@ -175,8 +183,12 @@ BuildConfig parseFromMap(String packageName,
       appliesBuilders: appliesBuilders,
       isOptional: isOptional,
       buildTo: buildTo,
-      defaults:
-          new TargetBuilderConfigDefaults(generateFor: defaultGenerateFor),
+      defaults: new TargetBuilderConfigDefaults(
+        generateFor: defaultGenerateFor,
+        options: defaultOptions,
+        devOptions: defaultDevOptions,
+        releaseOptions: defaultReleaseOptions,
+      ),
     );
   }
 
@@ -192,17 +204,24 @@ BuildConfig parseFromMap(String packageName,
 
     final builderFactory = _readStringOrThrow(builderConfig, _builderFactory);
     final import = _readStringOrThrow(builderConfig, _import);
-    final inputExtensions =
-        _readListOfStringsOrThrow(builderConfig, _inputExtensions);
-    final target = normalizeTargetKeyUsage(
-        _readStringOrThrow(builderConfig, _target), packageName);
-    final defaultOptions = _readMapOrThrow(
+    final inputExtensions = _readListOfStringsOrThrow(
+        builderConfig, _inputExtensions,
+        allowNull: true);
+    final target = _readStringOrThrow(builderConfig, _target, allowNull: true);
+    final defaults = _readMapOrThrow(
         builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
         defaultValue: {});
     final defaultGenerateFor =
-        _readInputSetOrThrow(defaultOptions, _generateFor, allowNull: true);
+        _readInputSetOrThrow(defaults, _generateFor, allowNull: true);
 
     final builderKey = normalizeBuilderKeyDefinition(builderName, packageName);
+
+    final defaultOptions = _readBuilderOptions(defaults, builderKey, _options);
+    final defaultDevOptions =
+        _readBuilderOptions(defaults, builderKey, _devOptions);
+    final defaultReleaseOptions =
+        _readBuilderOptions(defaults, builderKey, _releaseOptions);
+
     postProcessBuilderDefinitions[builderKey] =
         new PostProcessBuilderDefinition(
       key: builderKey,
@@ -211,8 +230,12 @@ BuildConfig parseFromMap(String packageName,
       inputExtensions: inputExtensions,
       package: packageName,
       target: target,
-      defaults:
-          new TargetBuilderConfigDefaults(generateFor: defaultGenerateFor),
+      defaults: new TargetBuilderConfigDefaults(
+        generateFor: defaultGenerateFor,
+        options: defaultOptions,
+        devOptions: defaultDevOptions,
+        releaseOptions: defaultReleaseOptions,
+      ),
     );
   }
 
@@ -226,7 +249,7 @@ BuildConfig parseFromMap(String packageName,
 Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options) {
   var value = options[_buildExtensions];
   if (value == null) {
-    throw new ArgumentError('Missing configuratino for build_extensions');
+    return null;
   }
   if (value is! Map<String, List<String>>) {
     throw new ArgumentError('Invalid value for build_extensions, '
@@ -330,20 +353,14 @@ Map<String, TargetBuilderConfig> _readBuildersOrThrow(
     final generateFor =
         _readInputSetOrThrow(builderConfig, _generateFor, allowNull: true);
 
-    var parsedOptions = const BuilderOptions(const {});
-    if (builderConfig.containsKey(_options)) {
-      final options = builderConfig[_options];
-      if (options is! Map) {
-        throw new ArgumentError('Invalid builder options for `$builderKey`, '
-            'got `$options` but expected a Map');
-      }
-      parsedOptions = new BuilderOptions(options as Map<String, dynamic>);
-    }
     parsedConfigs[normalizeBuilderKeyUsage(builderKey, packageName)] =
         new TargetBuilderConfig(
       isEnabled: isEnabled,
       generateFor: generateFor,
-      options: parsedOptions,
+      options: _readBuilderOptions(builderConfig, builderKey, _options),
+      devOptions: _readBuilderOptions(builderConfig, builderKey, _devOptions),
+      releaseOptions:
+          _readBuilderOptions(builderConfig, builderKey, _releaseOptions),
     );
   }
   return parsedConfigs;
@@ -399,4 +416,17 @@ InputSet _readInputSetOrThrow(Map<String, dynamic> options, String option,
   }
   throw new ArgumentError('Got `$value` for `$option` '
       'but expected a List<String> or a Map');
+}
+
+BuilderOptions _readBuilderOptions(
+    Map<String, dynamic> builderConfig, String builderKey, String modeKey) {
+  if (builderConfig.containsKey(modeKey)) {
+    final options = builderConfig[modeKey];
+    if (options is! Map) {
+      throw new ArgumentError('Invalid builder options for `$builderKey`, '
+          'got `$options` but expected a Map');
+    }
+    return new BuilderOptions(options as Map<String, dynamic>);
+  }
+  return null;
 }

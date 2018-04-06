@@ -17,7 +17,7 @@ import 'package_graph.dart';
 import 'target_graph.dart';
 
 typedef BuildPhase BuildPhaseFactory(String package, BuilderOptions options,
-    InputSet targetSources, InputSet generateFor);
+    InputSet targetSources, InputSet generateFor, bool isReleaseBuild);
 
 typedef PostProcessBuilder PostProcessBuilderFactory(BuilderOptions options);
 
@@ -79,6 +79,9 @@ BuilderApplication apply(String builderKey,
         {bool isOptional,
         bool hideOutput,
         InputSet defaultGenerateFor,
+        BuilderOptions defaultOptions,
+        BuilderOptions defaultDevOptions,
+        BuilderOptions defaultReleaseOptions,
         Iterable<String> appliesBuilders}) =>
     new BuilderApplication.forBuilder(
       builderKey,
@@ -87,6 +90,9 @@ BuilderApplication apply(String builderKey,
       isOptional: isOptional,
       hideOutput: hideOutput,
       defaultGenerateFor: defaultGenerateFor,
+      defaultOptions: defaultOptions,
+      defaultDevOptions: defaultDevOptions,
+      defaultReleaseOptions: defaultReleaseOptions,
       appliesBuilders: appliesBuilders,
     );
 
@@ -141,21 +147,36 @@ class BuilderApplication {
     bool isOptional,
     bool hideOutput,
     InputSet defaultGenerateFor,
+    BuilderOptions defaultOptions,
+    BuilderOptions defaultDevOptions,
+    BuilderOptions defaultReleaseOptions,
     Iterable<String> appliesBuilders,
   }) {
     hideOutput ??= true;
     var phaseFactories = builderFactories.map((builderFactory) {
       return (String package, BuilderOptions options, InputSet targetSources,
-          InputSet generateFor) {
+          InputSet generateFor, bool isReleaseBuild) {
         generateFor ??= defaultGenerateFor;
-        var builder =
-            scopeLogSync(() => builderFactory(options), new Logger(builderKey));
+
+        var optionsWithDefaults =
+            defaultOptions ?? const BuilderOptions(const {});
+        var modeOverrides =
+            isReleaseBuild ? defaultReleaseOptions : defaultDevOptions;
+        if (modeOverrides != null) {
+          optionsWithDefaults = optionsWithDefaults.overrideWith(modeOverrides);
+        }
+        if (options != null) {
+          optionsWithDefaults = optionsWithDefaults.overrideWith(options);
+        }
+
+        var builder = scopeLogSync(
+            () => builderFactory(optionsWithDefaults), new Logger(builderKey));
         if (builder == null) throw 'builderFactory did not return a builder.';
         return new InBuildPhase(builder, package,
             builderKey: builderKey,
             targetSources: targetSources,
             generateFor: generateFor,
-            builderOptions: options,
+            builderOptions: optionsWithDefaults,
             hideOutput: hideOutput,
             isOptional: isOptional);
       };
@@ -170,10 +191,24 @@ class BuilderApplication {
     String builderKey,
     PostProcessBuilderFactory builderFactory, {
     InputSet defaultGenerateFor,
+    BuilderOptions defaultOptions,
+    BuilderOptions defaultDevOptions,
+    BuilderOptions defaultReleaseOptions,
   }) {
     var phaseFactory = (String package, BuilderOptions options,
-        InputSet targetSources, InputSet generateFor) {
+        InputSet targetSources, InputSet generateFor, bool isReleaseBuild) {
       generateFor ??= defaultGenerateFor;
+
+      var optionsWithDefaults =
+          defaultOptions ?? const BuilderOptions(const {});
+      var modeOverrides =
+          isReleaseBuild ? defaultReleaseOptions : defaultDevOptions;
+      if (modeOverrides != null) {
+        optionsWithDefaults = optionsWithDefaults.overrideWith(modeOverrides);
+      }
+      if (options != null) {
+        optionsWithDefaults = optionsWithDefaults.overrideWith(options);
+      }
       var builder = builderFactory(options);
       var builderAction = new PostBuildAction(builder, package,
           builderOptions: options,
@@ -202,7 +237,8 @@ final _logger = new Logger('ApplyBuilders');
 Future<List<BuildPhase>> createBuildPhases(
     TargetGraph targetGraph,
     Iterable<BuilderApplication> builderApplications,
-    Map<String, Map<String, dynamic>> builderConfigOverrides) async {
+    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    bool isReleaseMode) async {
   validateBuilderConfig(builderApplications, targetGraph.rootPackageConfig,
       builderConfigOverrides, _logger);
   final cycles = stronglyConnectedComponents<String, TargetNode>(
@@ -212,7 +248,11 @@ Future<List<BuildPhase>> createBuildPhases(
           node.target.dependencies?.map((key) => targetGraph.allModules[key]));
   final applyWith = _applyWith(builderApplications);
   var expandedPhases = cycles.expand((cycle) => _createBuildPhasesWithinCycle(
-      cycle, builderApplications, builderConfigOverrides, applyWith));
+      cycle,
+      builderApplications,
+      builderConfigOverrides,
+      applyWith,
+      isReleaseMode));
 
   var combinedPhases = <BuildPhase>[]
     ..addAll(expandedPhases.where((phase) => phase is InBuildPhase));
@@ -232,24 +272,25 @@ Future<List<BuildPhase>> createBuildPhases(
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
-  Iterable<TargetNode> cycle,
-  Iterable<BuilderApplication> builderApplications,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
-  Map<String, List<BuilderApplication>> applyWith,
-) =>
+        Iterable<TargetNode> cycle,
+        Iterable<BuilderApplication> builderApplications,
+        Map<String, Map<String, dynamic>> builderConfigOverrides,
+        Map<String, List<BuilderApplication>> applyWith,
+        bool isReleaseMode) =>
     builderApplications.expand((builderApplication) =>
         _createBuildPhasesForBuilderInCycle(
             cycle,
             builderApplication,
             builderConfigOverrides[builderApplication.builderKey] ?? const {},
-            applyWith));
+            applyWith,
+            isReleaseMode));
 
 Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
-  Iterable<TargetNode> cycle,
-  BuilderApplication builderApplication,
-  Map<String, dynamic> builderConfigOverrides,
-  Map<String, List<BuilderApplication>> applyWith,
-) {
+    Iterable<TargetNode> cycle,
+    BuilderApplication builderApplication,
+    Map<String, dynamic> builderConfigOverrides,
+    Map<String, List<BuilderApplication>> applyWith,
+    bool isReleaseMode) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   return builderApplication.buildPhaseFactories.expand((createPhase) => cycle
@@ -258,11 +299,17 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
           .map((node) {
         final builderConfig = targetConfig(node);
         var options = builderConfig?.options ?? const BuilderOptions(const {});
+        var modeOptions = isReleaseMode
+            ? builderConfig?.releaseOptions
+            : builderConfig?.devOptions;
+        if (modeOptions != null) {
+          options.overrideWith(modeOptions);
+        }
         options = new BuilderOptions(
             new Map<String, dynamic>.from(options.config)
               ..addAll(builderConfigOverrides));
         return createPhase(node.package.name, options, node.target.sources,
-            builderConfig?.generateFor);
+            builderConfig?.generateFor, isReleaseMode);
       }));
 }
 

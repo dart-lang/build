@@ -62,16 +62,11 @@ Exposed `Builder`s are configured in the `builders` section of the `build.yaml`.
 This is a map of builder names to configuration. Each builder config may contain
 the following keys:
 
-- **target**: The name of the target which defines contains the `Builder` class
-  definition.
 - **import**: Required. The import uri that should be used to import the library
   containing the `Builder` class. This should always be a `package:` uri.
 - **builder_factories**: A `List<String>` which contains the names of the
   top-level methods in the imported library which are a function fitting the
   typedef `Builder factoryName(BuilderOptions options)`.
-- **build_extensions**: Required. A map from input extension to the list of
-  output extensions that may be created for that input. This must match the
-  merged `buildExtensions` maps from each `Builder` in `builder_factories`.
 - **auto_apply**: Optional. The packages which should have this builder
   automatically to applied. Defaults to `'none'` The possibilities are:
   - `"none"`: Never apply this Builder unless it is manually configured
@@ -105,22 +100,10 @@ the following keys:
 Example `builders` config:
 
 ```yaml
-targets:
-  # The target containing the builder sources.
-  _my_builder: # By convention, this is private
-    sources:
-      - "lib/src/builder/**/*.dart"
-      - "lib/builder.dart"
-    dependencies:
-      - "build"
-      - "source_gen"
 builders:
-  # The actual builder config.
   my_builder:
-    target: ":_my_builder"
     import: "package:my_package/builder.dart"
     builder_factories: ["myBuilder"]
-    build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
 ```
 
@@ -138,8 +121,6 @@ Exposed `PostProcessBuilder`s are configured in the `post_process_builders`
 section of the  `build.yaml`. This is a map of builder names to configuration.
 Each post process builder config may contain the following keys:
 
-- **target**: The name of the target which defines contains the `Builder` class
-  definition.
 - **import**: Required. The import uri that should be used to import the library
   containing the `Builder` class. This should always be a `package:` uri.
 - **builder_factory**: A `String` which contains the name of the top-level
@@ -164,7 +145,6 @@ builders:
   regular_builder:
     import: "package:my_package/builder.dart"
     builder_factories: ["myBuilder"]
-    build_extensions: {".dart": [".tar.gz"]}
     auto_apply: dependents
     apply_builders: ["|archive_extract_builder"]
 post_process_builders:

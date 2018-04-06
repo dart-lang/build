@@ -60,6 +60,7 @@ Future<ServeHandler> watch(
   bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
+  bool isReleaseBuild,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -88,8 +89,8 @@ Future<ServeHandler> watch(
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildPhases =
-      await createBuildPhases(targetGraph, builders, builderConfigOverrides);
+  final buildPhases = await createBuildPhases(
+      targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
   var watch =
       runWatch(environment, options, buildPhases, terminator.shouldTerminate);
