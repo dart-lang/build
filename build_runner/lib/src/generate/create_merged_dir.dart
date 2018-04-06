@@ -22,11 +22,28 @@ final _logger = new Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
 const _manifestSeparator = '\n';
 
-/// Creates a merged output directory for a build at [outputPath].
+/// Creates merged output directories for each value in [outputMap].
 ///
 /// Returns whether it succeeded or not.
-Future<bool> createMergedOutputDir(
+Future<bool> createMergedOutputDirectories(
+    Map<String, String> outputMap,
+    AssetGraph assetGraph,
+    PackageGraph packageGraph,
+    AssetReader reader,
+    BuildEnvironment environment,
+    List<BuildPhase> buildPhases) async {
+  for (var output in outputMap.keys) {
+    if (!await _createMergedOutputDir(output, outputMap[output], assetGraph,
+        packageGraph, reader, environment, buildPhases)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+Future<bool> _createMergedOutputDir(
     String outputPath,
+    String root,
     AssetGraph assetGraph,
     PackageGraph packageGraph,
     AssetReader reader,
@@ -61,15 +78,15 @@ Future<bool> createMergedOutputDir(
 
     for (var inputId in inputsAndSameActionOutputs) {
       final inputNode = assetGraph.get(inputId);
-      if (_shouldSkipNode(inputNode, buildPhases, skipOptional: false)) {
+      if (_shouldSkipNode(inputNode, buildPhases, root, skipOptional: false)) {
         continue;
       }
       if (inputNode is GeneratedAssetNode &&
           buildPhases[inputNode.phaseNumber].isOptional &&
           !originalOutputAssets.contains(inputId)) {
         originalOutputAssets.add(inputId);
-        outputAssets
-            .add(await _writeAsset(inputId, outputDir, packageGraph, reader));
+        outputAssets.add(
+            await _writeAsset(inputId, outputDir, root, packageGraph, reader));
         await _ensureInputs(inputNode);
       }
     }
@@ -80,23 +97,13 @@ Future<bool> createMergedOutputDir(
     if (!outputDirExists) {
       await outputDir.create(recursive: true);
     }
-    var rootDirs = new Set<String>();
-
-    for (var node in assetGraph.packageNodes(packageGraph.root.name)) {
-      if (_shouldSkipNode(node, buildPhases, skipOptional: false)) continue;
-      var parts = p.url.split(node.id.path);
-      if (parts.length == 1) continue;
-      var dir = parts.first;
-      if (dir == outputPath || dir == 'lib') continue;
-      rootDirs.add(parts.first);
-    }
 
     for (var node in assetGraph.allNodes) {
-      if (_shouldSkipNode(node, buildPhases)) continue;
+      if (_shouldSkipNode(node, buildPhases, root)) continue;
       originalOutputAssets.add(node.id);
       node.lastKnownDigest ??= await reader.digest(node.id);
-      outputAssets
-          .add(await _writeAsset(node.id, outputDir, packageGraph, reader));
+      outputAssets.add(
+          await _writeAsset(node.id, outputDir, root, packageGraph, reader));
       if (node is GeneratedAssetNode) {
         await _ensureInputs(node);
       }
@@ -108,14 +115,22 @@ Future<bool> createMergedOutputDir(
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
         .join('\r\n');
-    for (var dir in rootDirs) {
-      var packagesAsset =
-          new AssetId(packageGraph.root.name, p.url.join(dir, '.packages'));
+
+    if (root != null) {
+      var packagesAsset = new AssetId(packageGraph.root.name, '.packages');
       _writeAsString(outputDir, packagesAsset, packagesFileContent);
       outputAssets.add(packagesAsset);
-      var link = new Link(p.join(outputDir.path, dir, 'packages'));
-      if (!link.existsSync()) {
-        link.createSync(p.join('..', 'packages'), recursive: true);
+    } else {
+      for (var dir
+          in _findRootDirs(outputPath, assetGraph, packageGraph, buildPhases)) {
+        var packagesAsset =
+            new AssetId(packageGraph.root.name, p.url.join(dir, '.packages'));
+        _writeAsString(outputDir, packagesAsset, packagesFileContent);
+        outputAssets.add(packagesAsset);
+        var link = new Link(p.join(outputDir.path, dir, 'packages'));
+        if (!link.existsSync()) {
+          link.createSync(p.join('..', 'packages'), recursive: true);
+        }
       }
     }
   });
@@ -129,10 +144,31 @@ Future<bool> createMergedOutputDir(
   return true;
 }
 
-bool _shouldSkipNode(AssetNode node, List<BuildPhase> buildPhases,
+Set<String> _findRootDirs(String outputPath, AssetGraph assetGraph,
+    PackageGraph packageGraph, List<BuildPhase> buildPhases) {
+  var rootDirs = new Set<String>();
+  for (var node in assetGraph.packageNodes(packageGraph.root.name)) {
+    if (_shouldSkipNode(node, buildPhases, null, skipOptional: false)) {
+      continue;
+    }
+    var parts = p.url.split(node.id.path);
+    if (parts.length == 1) continue;
+    var dir = parts.first;
+    if (dir == outputPath || dir == 'lib') continue;
+    rootDirs.add(parts.first);
+  }
+  return rootDirs;
+}
+
+bool _shouldSkipNode(AssetNode node, List<BuildPhase> buildPhases, String root,
     {bool skipOptional: true}) {
   if (!node.isReadable) return true;
   if (node.isDeleted) return true;
+  if (root != null &&
+      !(node.id.path.startsWith('lib/')) &&
+      !p.isWithin(root, node.id.path)) {
+    return true;
+  }
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
     if (!node.wasOutput ||
@@ -146,14 +182,18 @@ bool _shouldSkipNode(AssetNode node, List<BuildPhase> buildPhases,
   return false;
 }
 
-Future<AssetId> _writeAsset(AssetId id, Directory outputDir,
+Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
     PackageGraph packageGraph, AssetReader reader) async {
   String assetPath;
-  if (id.path.startsWith('lib')) {
+  if (id.path.startsWith('lib/')) {
     assetPath =
         p.url.join('packages', id.package, id.path.substring('lib/'.length));
   } else {
     assetPath = id.path;
+    assert(id.package == packageGraph.root.name);
+    if (root != null && p.isWithin(root, id.path)) {
+      assetPath = p.relative(id.path, from: root);
+    }
   }
 
   var outputId = new AssetId(packageGraph.root.name, assetPath);
