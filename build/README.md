@@ -66,7 +66,7 @@ class CopyBuilder implements Builder {
     ///
     /// There is no need to `await` here, the system handles waiting on these
     /// files as necessary before advancing to the next phase.
-    await buildStep.writeAsString(copy, contents);
+    buildStep.writeAsString(copy, contents);
   }
 
   /// Configure output extensions. All possible inputs match the empty input
