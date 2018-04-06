@@ -4,7 +4,10 @@
 
 import 'dart:async';
 
+import 'package:args/command_runner.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:io/ansi.dart' as ansi;
+import 'package:io/io.dart' show ExitCode;
 
 import 'options.dart';
 
@@ -15,5 +18,13 @@ import 'options.dart';
 /// implies success.
 Future<int> run(List<String> args, List<BuilderApplication> builders) async {
   var runner = new BuildCommandRunner(builders);
-  return (await runner.run(args)) ?? 0;
+  try {
+    var result = await runner.run(args);
+    return result ?? 0;
+  } on UsageException catch (e) {
+    print(ansi.red.wrap(e.message));
+    print('');
+    print(e.usage);
+    return ExitCode.usage.code;
+  }
 }
