@@ -129,15 +129,15 @@ Expression _applyBuilder(BuilderDefinition definition) {
   }
   if (!identical(definition.defaults?.options, BuilderOptions.empty)) {
     namedArgs['defaultOptions'] =
-        _serializedOptions(definition.defaults.options);
+        _constructBuilderOptions(definition.defaults.options);
   }
   if (!identical(definition.defaults?.devOptions, BuilderOptions.empty)) {
     namedArgs['defaultDevOptions'] =
-        _serializedOptions(definition.defaults.devOptions);
+        _constructBuilderOptions(definition.defaults.devOptions);
   }
   if (!identical(definition.defaults?.releaseOptions, BuilderOptions.empty)) {
     namedArgs['defaultReleaseOptions'] =
-        _serializedOptions(definition.defaults.releaseOptions);
+        _constructBuilderOptions(definition.defaults.releaseOptions);
   }
   if (definition.appliesBuilders.isNotEmpty) {
     namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
@@ -193,8 +193,8 @@ Expression _findToExpression(BuilderDefinition definition) {
   throw new ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }
 
-/// An expression deserializing a JSON string for [options].
-Expression _serializedOptions(BuilderOptions options) =>
+/// An expression creating a [BuilderOptions] from a json string.
+Expression _constructBuilderOptions(BuilderOptions options) =>
     refer('BuilderOptions', 'package:build/build.dart').newInstance([
       refer('json', 'dart:convert')
           .property('decode')
