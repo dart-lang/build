@@ -92,17 +92,17 @@ analysis context, which greatly speeds up the overall system when multiple
 Here is an example of a `Builder` which uses the `resolve` method:
 
 ```dart
-class ResolvingCopyBuilder {
+class ResolvingCopyBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     // Get the [LibraryElement] for the primary input.
     var entryLib = buildStep.inputLibrary;
     // Resolves all libraries reachable from the primary input.
-    var resolver = await buildStep.resolver;
+    var resolver = buildStep.resolver;
     // Get a [LibraryElement] for another asset.
-    var otherLib = resolver.getLibrary(new AssetId.resolve('some_import.dart'),
-        from: buildStep.inputId);
+    var libFromAsset = resolver.libraryFor(
+        new AssetId.resolve('some_import.dart', from: buildStep.inputId));
     // Or get a [LibraryElement] by name.
-    var otherLib = resolver.getLibraryByName('my.library');
+    var libByName = resolver.findLibraryByName('my.library');
   }
 
   /// Configure outputs as well....
