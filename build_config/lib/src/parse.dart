@@ -249,7 +249,7 @@ BuildConfig parseFromMap(String packageName,
 Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options) {
   var value = options[_buildExtensions];
   if (value == null) {
-    throw new ArgumentError('Missing configuratino for build_extensions');
+    throw new ArgumentError('Missing configuration for build_extensions');
   }
   if (value is! Map<String, List<String>>) {
     throw new ArgumentError('Invalid value for build_extensions, '
