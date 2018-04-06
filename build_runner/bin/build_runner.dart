@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
@@ -23,7 +24,18 @@ Future<Null> main(List<String> args) async {
   // explicitly invoked.
   var commandRunner = new BuildCommandRunner([])
     ..addCommand(new _GenerateBuildScript());
-  var parsedArgs = commandRunner.parse(args);
+
+  ArgResults parsedArgs;
+  try {
+    parsedArgs = commandRunner.parse(args);
+  } on UsageException catch (e) {
+    print(red.wrap(e.message));
+    print('');
+    print(e.usage);
+    exitCode = ExitCode.usage.code;
+    return;
+  }
+
   var commandName = parsedArgs.command?.name;
 
   if (parsedArgs.rest.isNotEmpty) {
