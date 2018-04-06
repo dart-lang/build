@@ -25,6 +25,9 @@ abstract class Builder {
 }
 
 class BuilderOptions {
+  /// A configuration with no options set.
+  static const empty = const BuilderOptions(const {});
+
   /// The configuration to apply to a given usage of a [Builder].
   ///
   /// A `Map` parsed from json or yaml. The value types will be `String`, `num`,
@@ -32,6 +35,17 @@ class BuilderOptions {
   final Map<String, dynamic> config;
 
   const BuilderOptions(this.config);
+
+  /// Returns a new set of options with keys from [other] overriding options in
+  /// this instance.
+  ///
+  /// Values are overridden at a per-key granularity. There is no value level
+  /// merging. [other] may be null or empty, in which case this instance is
+  /// returned directly.
+  BuilderOptions overrideWith(BuilderOptions other) =>
+      other == null || other.config.isEmpty
+          ? this
+          : new BuilderOptions({}..addAll(config)..addAll(other.config));
 }
 
 /// Creates a [Builder] honoring the configuation in [options].

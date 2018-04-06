@@ -1,3 +1,7 @@
+## 0.12.1
+
+- Add `BuilderOptions.empty` and `BuilderOptions.overrideWith`.
+
 ## 0.12.0+2
 
 - **Bug Fix** Correctly handle encoding `AssetId`s as `URI`s when they contain
