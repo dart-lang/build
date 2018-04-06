@@ -23,7 +23,7 @@ main() async {
   await watch([
     applyToRoot(new TestBuilder(
         buildExtensions: appendExtension('.copy', from: '.txt')))
-  ], deleteFilesByDefault: true, outputDir: 'output_dir');
+  ], deleteFilesByDefault: true, outputMap: {'output_dir' : null});
 }
 ''';
 

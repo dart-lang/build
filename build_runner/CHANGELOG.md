@@ -1,5 +1,9 @@
 ## 0.8.2
 
+- Allow passing multiple `--output` options. Each option will be split on
+  `:`. The first value will be the root input directory, the second value will
+  be the output directory. If no delimeter is provided, all resources
+  will be copied to the output directory.
 - Allow deleting files in the post process build step.
 - Bug Fix: Correctly include the default whitelist when multiple targets
   without include are provided.

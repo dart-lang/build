@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:io';
 
@@ -41,8 +42,9 @@ import 'watch_impl.dart' as watch_impl;
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
 ///
-/// If [outputDir] is supplied then after each build a merged output directory
-/// will be created containing all original sources and built sources.
+/// If [outputMap] is supplied then after each build a merged output directory
+/// will be created for each value in the map which contains all original
+/// sources and built sources contained in the provided path.
 ///
 /// If [verbose] is `true` then verbose logging will be enabled. This changes
 /// the default [logLevel] to [Level.ALL] and removes stack frame folding, among
@@ -59,7 +61,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         onLog(LogRecord record),
         Stream terminateEventStream,
         bool enableLowResourcesMode,
-        String outputDir,
+        Map<String, String> outputMap,
         bool trackPerformance,
         bool verbose,
         Map<String, Map<String, dynamic>> builderConfigOverrides}) =>
@@ -75,7 +77,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         onLog: onLog,
         terminateEventStream: terminateEventStream,
         enableLowResourcesMode: enableLowResourcesMode,
-        outputDir: outputDir,
+        outputMap: outputMap,
         trackPerformance: trackPerformance,
         verbose: verbose,
         builderConfigOverrides: builderConfigOverrides);
@@ -101,8 +103,9 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// will complete normally. Subsequent events are not handled (and will
 /// typically cause a shutdown).
 ///
-/// If [outputDir] is supplied then after each build a merged output directory
-/// will be created containing all original sources and built sources.
+/// If [outputMap] is supplied then after each build a merged output directory
+/// will be created for each value in the map which contains all original
+/// sources and built sources contained in the provided path.
 Future<ServeHandler> watch(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
         bool failOnSevere,
@@ -117,7 +120,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         DirectoryWatcherFactory directoryWatcherFactory,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
-        String outputDir,
+        Map<String, String> outputMap,
         bool trackPerformance,
         bool verbose,
         Map<String, Map<String, dynamic>> builderConfigOverrides}) =>
@@ -135,7 +138,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         directoryWatcherFactory: directoryWatcherFactory,
         terminateEventStream: terminateEventStream,
         enableLowResourcesMode: enableLowResourcesMode,
-        outputDir: outputDir,
+        outputMap: outputMap,
         trackPerformance: trackPerformance,
         verbose: verbose,
         builderConfigOverrides: builderConfigOverrides);
