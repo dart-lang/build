@@ -1,31 +1,26 @@
 # Read about `build.yaml` at https://pub.dartlang.org/packages/build_config
-targets:
-  $default:
-    builders:
-      "|copyBuilder":
-        generate_for:
-          include:
-          - web/**
-      "|resolvingBuilder":
-        generate_for:
-          include:
-          - web/**
-
 builders:
+
   copyBuilder:
     target: ":example"
     import: "package:example/builder.dart"
     builder_factories: ["copyBuilder"]
     build_extensions: {".txt": [".txt.copy"]}
-    auto_apply: dependents
     build_to: source
+    auto_apply: root_package
+
   resolvingBuilder:
     target: ":example"
     import: "package:example/builder.dart"
     builder_factories: ["resolvingBuilder"]
     build_extensions: {".dart": [".dart.info.json"]}
-    auto_apply: dependents
     build_to: source
+    auto_apply: root_package
+    defaults:
+      generate_for:
+        # Only apply to .dart files in the web directory
+        include:
+        - web/**
 
   cssBuilder:
     target: ":example"
