@@ -95,14 +95,14 @@ Here is an example of a `Builder` which uses the `resolve` method:
 class ResolvingCopyBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     // Get the [LibraryElement] for the primary input.
-    var entryLib = buildStep.inputLibrary;
+    var entryLib = await buildStep.inputLibrary;
     // Resolves all libraries reachable from the primary input.
     var resolver = buildStep.resolver;
     // Get a [LibraryElement] for another asset.
-    var libFromAsset = resolver.libraryFor(
+    var libFromAsset = await resolver.libraryFor(
         new AssetId.resolve('some_import.dart', from: buildStep.inputId));
     // Or get a [LibraryElement] by name.
-    var libByName = resolver.findLibraryByName('my.library');
+    var libByName = await resolver.findLibraryByName('my.library');
   }
 
   /// Configure outputs as well....
