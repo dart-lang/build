@@ -26,6 +26,7 @@ const _hostname = 'hostname';
 const _output = 'output';
 const _config = 'config';
 const _verbose = 'verbose';
+const _release = 'release';
 const _trackPerformance = 'track-performance';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
@@ -92,6 +93,8 @@ class _SharedOptions {
   // config for that key.
   final Map<String, Map<String, dynamic>> builderConfigOverrides;
 
+  final bool isReleaseBuild;
+
   _SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
@@ -102,6 +105,7 @@ class _SharedOptions {
     @required this.trackPerformance,
     @required this.verbose,
     @required this.builderConfigOverrides,
+    @required this.isReleaseBuild,
   });
 
   factory _SharedOptions.fromParsedArgs(
@@ -117,6 +121,7 @@ class _SharedOptions {
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
+      isReleaseBuild: argResults[_release] as bool,
     );
   }
 }
@@ -140,6 +145,7 @@ class _ServeOptions extends _SharedOptions {
     @required bool trackPerformance,
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
+    @required bool isReleaseBuild,
   }) : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -150,6 +156,7 @@ class _ServeOptions extends _SharedOptions {
           trackPerformance: trackPerformance,
           verbose: verbose,
           builderConfigOverrides: builderConfigOverrides,
+          isReleaseBuild: isReleaseBuild,
         );
 
   factory _ServeOptions.fromParsedArgs(
@@ -183,6 +190,7 @@ class _ServeOptions extends _SharedOptions {
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
+      isReleaseBuild: argResults[_release] as bool,
     );
   }
 }
@@ -241,11 +249,16 @@ abstract class BuildRunnerCommand extends Command<int> {
           defaultsTo: false)
       ..addOption(_output,
           help: 'A directory to write the result of a build to.', abbr: 'o')
-      ..addFlag('verbose',
+      ..addFlag(_verbose,
           abbr: 'v',
           defaultsTo: false,
           negatable: false,
           help: 'Enables verbose logging.')
+      ..addFlag(_release,
+          abbr: 'r',
+          defaultsTo: false,
+          negatable: false,
+          help: 'Build with release mode defaults for builders.')
       ..addMultiOption(_define,
           splitCommas: false,
           help: 'Sets the global `options` config for a builder by key.');
@@ -271,16 +284,19 @@ class _BuildCommand extends BuildRunnerCommand {
   @override
   Future<int> run() async {
     var options = _readOptions();
-    var result = await build(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        failOnSevere: options.failOnSevere,
-        configKey: options.configKey,
-        assumeTty: options.assumeTty,
-        outputDir: options.outputDir,
-        packageGraph: packageGraph,
-        verbose: options.verbose,
-        builderConfigOverrides: options.builderConfigOverrides);
+    var result = await build(
+      builderApplications,
+      deleteFilesByDefault: options.deleteFilesByDefault,
+      enableLowResourcesMode: options.enableLowResourcesMode,
+      failOnSevere: options.failOnSevere,
+      configKey: options.configKey,
+      assumeTty: options.assumeTty,
+      outputDir: options.outputDir,
+      packageGraph: packageGraph,
+      verbose: options.verbose,
+      builderConfigOverrides: options.builderConfigOverrides,
+      isReleaseBuild: options.isReleaseBuild,
+    );
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
     } else {
@@ -303,17 +319,20 @@ class _WatchCommand extends BuildRunnerCommand {
   @override
   Future<int> run() async {
     var options = _readOptions();
-    var handler = await watch(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        failOnSevere: options.failOnSevere,
-        configKey: options.configKey,
-        assumeTty: options.assumeTty,
-        outputDir: options.outputDir,
-        packageGraph: packageGraph,
-        trackPerformance: options.trackPerformance,
-        verbose: options.verbose,
-        builderConfigOverrides: options.builderConfigOverrides);
+    var handler = await watch(
+      builderApplications,
+      deleteFilesByDefault: options.deleteFilesByDefault,
+      enableLowResourcesMode: options.enableLowResourcesMode,
+      failOnSevere: options.failOnSevere,
+      configKey: options.configKey,
+      assumeTty: options.assumeTty,
+      outputDir: options.outputDir,
+      packageGraph: packageGraph,
+      trackPerformance: options.trackPerformance,
+      verbose: options.verbose,
+      builderConfigOverrides: options.builderConfigOverrides,
+      isReleaseBuild: options.isReleaseBuild,
+    );
     await handler.currentBuild;
     await handler.buildResults.drain();
     return ExitCode.success.code;
@@ -351,17 +370,20 @@ class _ServeCommand extends _WatchCommand {
   Future<int> run() async {
     var options = _readOptions();
     var logger = new Logger('Serve');
-    var handler = await watch(builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        failOnSevere: options.failOnSevere,
-        configKey: options.configKey,
-        assumeTty: options.assumeTty,
-        outputDir: options.outputDir,
-        packageGraph: packageGraph,
-        trackPerformance: options.trackPerformance,
-        verbose: options.verbose,
-        builderConfigOverrides: options.builderConfigOverrides);
+    var handler = await watch(
+      builderApplications,
+      deleteFilesByDefault: options.deleteFilesByDefault,
+      enableLowResourcesMode: options.enableLowResourcesMode,
+      failOnSevere: options.failOnSevere,
+      configKey: options.configKey,
+      assumeTty: options.assumeTty,
+      outputDir: options.outputDir,
+      packageGraph: packageGraph,
+      trackPerformance: options.trackPerformance,
+      verbose: options.verbose,
+      builderConfigOverrides: options.builderConfigOverrides,
+      isReleaseBuild: options.isReleaseBuild,
+    );
     _ensureBuildWebCompilersDependency(packageGraph, logger);
     var servers = await Future.wait(options.serveTargets
         .map((target) => _startServer(options, target, handler)));
@@ -434,17 +456,20 @@ class _TestCommand extends BuildRunnerCommand {
               .absolute
               .uri
               .toFilePath();
-      var result = await build(builderApplications,
-          deleteFilesByDefault: options.deleteFilesByDefault,
-          enableLowResourcesMode: options.enableLowResourcesMode,
-          failOnSevere: options.failOnSevere,
-          configKey: options.configKey,
-          assumeTty: options.assumeTty,
-          outputDir: outputDir,
-          packageGraph: packageGraph,
-          trackPerformance: options.trackPerformance,
-          verbose: options.verbose,
-          builderConfigOverrides: options.builderConfigOverrides);
+      var result = await build(
+        builderApplications,
+        deleteFilesByDefault: options.deleteFilesByDefault,
+        enableLowResourcesMode: options.enableLowResourcesMode,
+        failOnSevere: options.failOnSevere,
+        configKey: options.configKey,
+        assumeTty: options.assumeTty,
+        outputDir: outputDir,
+        packageGraph: packageGraph,
+        trackPerformance: options.trackPerformance,
+        verbose: options.verbose,
+        builderConfigOverrides: options.builderConfigOverrides,
+        isReleaseBuild: options.isReleaseBuild,
+      );
 
       if (result.status == BuildStatus.failure) {
         stdout.writeln('Skipping tests due to build failure');

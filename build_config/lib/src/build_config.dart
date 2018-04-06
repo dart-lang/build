@@ -252,8 +252,12 @@ class PostProcessBuilderDefinition {
 /// corresponding key for [TargetBuilderConfig].
 class TargetBuilderConfigDefaults {
   final InputSet generateFor;
+  final BuilderOptions options;
+  final BuilderOptions devOptions;
+  final BuilderOptions releaseOptions;
 
-  TargetBuilderConfigDefaults({this.generateFor});
+  TargetBuilderConfigDefaults(
+      {this.generateFor, this.options, this.devOptions, this.releaseOptions});
 }
 
 enum AutoApply { none, dependents, allPackages, rootPackage }
@@ -326,18 +330,31 @@ class TargetBuilderConfig {
   /// builder.
   ///
   /// The `options` key in the configuration.
+  ///
+  /// Individual keys may be overridden by either [devOptions] or
+  /// [releaseOptions].
   final BuilderOptions options;
+
+  /// Overrides for [options] in dev mode.
+  final BuilderOptions devOptions;
+
+  /// Overrides for [options] in release mode.
+  final BuilderOptions releaseOptions;
 
   TargetBuilderConfig({
     this.isEnabled,
     this.generateFor,
     this.options: const BuilderOptions(const {}),
+    this.devOptions: const BuilderOptions(const {}),
+    this.releaseOptions: const BuilderOptions(const {}),
   });
 
   @override
   String toString() => {
         'isEnabled': isEnabled,
         'generateFor': generateFor,
-        'options': options.config
+        'options': options.config,
+        'devOptions': options.config,
+        'releaseOptions': options.config,
       }.toString();
 }

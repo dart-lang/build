@@ -3,7 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:code_builder/code_builder.dart';
@@ -125,6 +127,18 @@ Expression _applyBuilder(BuilderDefinition definition) {
         refer('InputSet', 'package:build_config/build_config.dart')
             .constInstance([], inputSetArgs);
   }
+  if (definition.defaults?.options != null) {
+    namedArgs['defaultOptions'] =
+        _serializedOptions(definition.defaults.options);
+  }
+  if (definition.defaults?.devOptions != null) {
+    namedArgs['defaultDevOptions'] =
+        _serializedOptions(definition.defaults.devOptions);
+  }
+  if (definition.defaults?.releaseOptions != null) {
+    namedArgs['defaultReleaseOptions'] =
+        _serializedOptions(definition.defaults.releaseOptions);
+  }
   if (definition.appliesBuilders.isNotEmpty) {
     namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
   }
@@ -178,3 +192,11 @@ Expression _findToExpression(BuilderDefinition definition) {
   }
   throw new ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }
+
+/// An expression deserializing a JSON string for [options].
+Expression _serializedOptions(BuilderOptions options) =>
+    refer('BuilderOptions', 'package:build/build.dart').newInstance([
+      refer('json', 'dart:convert')
+          .property('decode')
+          .call([literalString(json.encode(options.config))])
+    ]);

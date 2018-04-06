@@ -32,6 +32,11 @@ class BuilderOptions {
   final Map<String, dynamic> config;
 
   const BuilderOptions(this.config);
+
+  /// Returns a new set of options with keys from [other] overriding options in
+  /// this instance.
+  BuilderOptions merge(BuilderOptions other) =>
+      new BuilderOptions({}..addAll(config)..addAll(other.config));
 }
 
 /// Creates a [Builder] honoring the configuation in [options].
