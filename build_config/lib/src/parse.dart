@@ -118,11 +118,6 @@ BuildConfig parseFromMap(String packageName,
     );
   }
 
-  if (!buildTargets.containsKey(defaultTarget)) {
-    throw new ArgumentError('Must specify a target with the name '
-        '$packageName or `\$default`');
-  }
-
   final builderConfigs = config['builders'] as Map<String, Map> ?? {};
   for (var builderName in builderConfigs.keys) {
     final builderConfig = _readMapOrThrow(builderConfigs, builderName,
@@ -133,8 +128,7 @@ BuildConfig parseFromMap(String packageName,
         _readListOfStringsOrThrow(builderConfig, _builderFactories);
     final import = _readStringOrThrow(builderConfig, _import);
     final buildExtensions = _readBuildExtensions(builderConfig);
-    final target = normalizeTargetKeyUsage(
-        _readStringOrThrow(builderConfig, _target), packageName);
+    final target = _readStringOrThrow(builderConfig, _target, allowNull: true);
     final autoApply = _readAutoApplyOrThrow(builderConfig, _autoApply,
         defaultValue: AutoApply.none);
     final requiredInputs = _readListOfStringsOrThrow(
@@ -192,10 +186,10 @@ BuildConfig parseFromMap(String packageName,
 
     final builderFactory = _readStringOrThrow(builderConfig, _builderFactory);
     final import = _readStringOrThrow(builderConfig, _import);
-    final inputExtensions =
-        _readListOfStringsOrThrow(builderConfig, _inputExtensions);
-    final target = normalizeTargetKeyUsage(
-        _readStringOrThrow(builderConfig, _target), packageName);
+    final inputExtensions = _readListOfStringsOrThrow(
+        builderConfig, _inputExtensions,
+        allowNull: true);
+    final target = _readStringOrThrow(builderConfig, _target, allowNull: true);
     final defaultOptions = _readMapOrThrow(
         builderConfig, _defaults, _builderConfigDefaultOptions, 'defaults',
         defaultValue: {});
@@ -226,7 +220,7 @@ BuildConfig parseFromMap(String packageName,
 Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options) {
   var value = options[_buildExtensions];
   if (value == null) {
-    throw new ArgumentError('Missing configuratino for build_extensions');
+    return null;
   }
   if (value is! Map<String, List<String>>) {
     throw new ArgumentError('Invalid value for build_extensions, '
