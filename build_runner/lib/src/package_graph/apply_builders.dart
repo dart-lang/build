@@ -235,11 +235,10 @@ final _logger = new Logger('ApplyBuilders');
 /// dependency on some other package by choosing the appropriate
 /// [BuilderApplication].
 Future<List<BuildPhase>> createBuildPhases(
-  TargetGraph targetGraph,
-  Iterable<BuilderApplication> builderApplications,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
-  bool isReleaseMode,
-) async {
+    TargetGraph targetGraph,
+    Iterable<BuilderApplication> builderApplications,
+    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    bool isReleaseMode) async {
   validateBuilderConfig(builderApplications, targetGraph.rootPackageConfig,
       builderConfigOverrides, _logger);
   final cycles = stronglyConnectedComponents<String, TargetNode>(
@@ -273,12 +272,11 @@ Future<List<BuildPhase>> createBuildPhases(
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
-  Iterable<TargetNode> cycle,
-  Iterable<BuilderApplication> builderApplications,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
-  Map<String, List<BuilderApplication>> applyWith,
-  bool isReleaseMode,
-) =>
+        Iterable<TargetNode> cycle,
+        Iterable<BuilderApplication> builderApplications,
+        Map<String, Map<String, dynamic>> builderConfigOverrides,
+        Map<String, List<BuilderApplication>> applyWith,
+        bool isReleaseMode) =>
     builderApplications.expand((builderApplication) =>
         _createBuildPhasesForBuilderInCycle(
             cycle,
@@ -288,12 +286,11 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
             isReleaseMode));
 
 Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
-  Iterable<TargetNode> cycle,
-  BuilderApplication builderApplication,
-  Map<String, dynamic> builderConfigOverrides,
-  Map<String, List<BuilderApplication>> applyWith,
-  bool isReleaseMode,
-) {
+    Iterable<TargetNode> cycle,
+    BuilderApplication builderApplication,
+    Map<String, dynamic> builderConfigOverrides,
+    Map<String, List<BuilderApplication>> applyWith,
+    bool isReleaseMode) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   return builderApplication.buildPhaseFactories.expand((createPhase) => cycle
