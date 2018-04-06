@@ -18,12 +18,14 @@ class CopyBuilder implements Builder {
     /// Create a new target [AssetId] based on the old one.
     var contents = await buildStep.readAsString(inputId);
 
+    var copy = inputId.addExtension('.copy');
+
     /// Write out the new asset.
     ///
     /// There is no need to `await` here, the system handles waiting on these
     /// files as necessary before advancing to the next phase.
-    var copy = inputId.addExtension('.copy');
-    await buildStep.writeAsString(copy, '// Copied from $inputId\n$contents');
+    // ignore: unawaited_futures
+    buildStep.writeAsString(copy, '// Copied from $inputId\n$contents');
   }
 
   /// Configure output extensions. All possible inputs match the empty input
@@ -43,12 +45,14 @@ class ResolvingBuilder implements Builder {
     var resolver = buildStep.resolver;
     var visibleLibraries = await resolver.libraries.length;
 
+    var info = buildStep.inputId.addExtension('.info.json');
+
     /// Write out the new asset.
     ///
     /// There is no need to `await` here, the system handles waiting on these
     /// files as necessary before advancing to the next phase.
-    var info = buildStep.inputId.addExtension('.info.json');
-    await buildStep.writeAsString(
+    // ignore: unawaited_futures
+    buildStep.writeAsString(
         info,
         _prettyToJson({
           'name': entryLib.name,
