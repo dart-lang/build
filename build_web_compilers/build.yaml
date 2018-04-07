@@ -1,6 +1,5 @@
 builders:
   ddc:
-    target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
       - devCompilerBuilder
@@ -14,7 +13,6 @@ builders:
     required_inputs:
       - .dart
   entrypoint:
-    target: "build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
       - webEntrypointBuilder
@@ -40,12 +38,14 @@ builders:
         exclude:
           - test/**.node_test.dart
           - test/**.vm_test.dart
+      options:
+        dart2js_args:
+          - --minify
+      release_options:
+        compiler: dart2js
     applies_builders:
       - build_web_compilers|dart2js_archive_extractor
 post_process_builders:
   dart2js_archive_extractor:
-    target: ":build_web_compilers"
     import: "package:build_web_compilers/builders.dart"
     builder_factory: dart2JsArchiveExtractor
-    input_extensions:
-      - .dart.js.tar.gz
