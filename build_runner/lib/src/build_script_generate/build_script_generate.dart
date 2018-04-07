@@ -3,7 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:code_builder/code_builder.dart';
@@ -111,7 +113,7 @@ Expression _applyBuilder(BuilderDefinition definition) {
   } else {
     namedArgs['hideOutput'] = literalFalse;
   }
-  if (definition.defaults?.generateFor != null) {
+  if (!identical(definition.defaults?.generateFor, InputSet.anything)) {
     final inputSetArgs = <String, Expression>{};
     if (definition.defaults.generateFor.include != null) {
       inputSetArgs['include'] =
@@ -124,6 +126,18 @@ Expression _applyBuilder(BuilderDefinition definition) {
     namedArgs['defaultGenerateFor'] =
         refer('InputSet', 'package:build_config/build_config.dart')
             .constInstance([], inputSetArgs);
+  }
+  if (!identical(definition.defaults?.options, BuilderOptions.empty)) {
+    namedArgs['defaultOptions'] =
+        _constructBuilderOptions(definition.defaults.options);
+  }
+  if (!identical(definition.defaults?.devOptions, BuilderOptions.empty)) {
+    namedArgs['defaultDevOptions'] =
+        _constructBuilderOptions(definition.defaults.devOptions);
+  }
+  if (!identical(definition.defaults?.releaseOptions, BuilderOptions.empty)) {
+    namedArgs['defaultReleaseOptions'] =
+        _constructBuilderOptions(definition.defaults.releaseOptions);
   }
   if (definition.appliesBuilders.isNotEmpty) {
     namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
@@ -178,3 +192,11 @@ Expression _findToExpression(BuilderDefinition definition) {
   }
   throw new ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }
+
+/// An expression creating a [BuilderOptions] from a json string.
+Expression _constructBuilderOptions(BuilderOptions options) =>
+    refer('BuilderOptions', 'package:build/build.dart').newInstance([
+      refer('json', 'dart:convert')
+          .property('decode')
+          .call([literalString(json.encode(options.config))])
+    ]);

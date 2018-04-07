@@ -64,6 +64,7 @@ Future<BuildResult> build(
   bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
+  bool isReleaseBuild,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -90,8 +91,8 @@ Future<BuildResult> build(
       verbose: verbose);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildPhases =
-      await createBuildPhases(targetGraph, builders, builderConfigOverrides);
+  final buildPhases = await createBuildPhases(
+      targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
   var result = await singleBuild(environment, options, buildPhases);
 

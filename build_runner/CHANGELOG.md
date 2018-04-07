@@ -9,6 +9,9 @@
   without include are provided.
 - Allow logging from within a build factory.
 - Allow serving assets from successful build steps if the overall build fails.
+- Add a `--release` flag to choose the options from `release_options` in
+  `build.yaml`. This should replace the need to use `--config` pointing to a
+  release version of `build.yaml`.
 
 ## 0.8.1
 
