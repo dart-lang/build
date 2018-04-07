@@ -279,7 +279,10 @@ abstract class BuildRunnerCommand extends Command<int> {
           negatable: true,
           defaultsTo: false)
       ..addMultiOption(_output,
-          help: 'A directory to write the result of a build to.', abbr: 'o')
+          help: 'A directory to write the result of a build to. Or a mapping '
+              'from a top-level directory in the package to the directory to '
+              'write a filtered build output to. For example "web:deploy".',
+          abbr: 'o')
       ..addFlag(_verbose,
           abbr: 'v',
           defaultsTo: false,
