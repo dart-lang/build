@@ -94,10 +94,7 @@ class _Builder extends Builder {
 
     if (!_isStandalone) {
       var asset = buildStep.inputId;
-      var name = nameOfPartial(
-        library,
-        asset,
-      );
+      var name = nameOfPartial(library, asset);
       if (name == null) {
         var suggest = suggestLibraryName(asset);
         throw new InvalidGenerationSourceError(
