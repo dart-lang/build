@@ -20,46 +20,46 @@ void main() {
   });
 
   test('Bad generated source', () async {
-    var srcs = _createPackageStub(pkgName);
+    var srcs = _createPackageStub();
     var builder = new PartBuilder([const _BadOutputGenerator()]);
 
     await testBuilder(builder, srcs,
-        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        generateFor: new Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
-          '$pkgName|lib/test_lib.g.dart':
+          '$_pkgName|lib/test_lib.g.dart':
               decodedMatches(contains('not valid code!')),
         });
   });
 
   test('Generate standalone output file', () async {
-    var srcs = _createPackageStub(pkgName);
+    var srcs = _createPackageStub();
     var builder = new LibraryBuilder(const CommentGenerator());
     await testBuilder(builder, srcs,
-        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        generateFor: new Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
-          '$pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,
+          '$_pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,
         });
   });
 
   test('Generate standalone output file with custom header', () async {
-    var srcs = _createPackageStub(pkgName);
+    var srcs = _createPackageStub();
     var builder =
         new LibraryBuilder(const CommentGenerator(), header: _customHeader);
     await testBuilder(builder, srcs,
-        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        generateFor: new Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
-          '$pkgName|lib/test_lib.g.dart':
+          '$_pkgName|lib/test_lib.g.dart':
               decodedMatches(startsWith('$_customHeader\n\n// ***'))
         });
   });
 
   test('LibraryBuilder omits header if provided an empty String', () async {
-    var srcs = _createPackageStub(pkgName);
+    var srcs = _createPackageStub();
     var builder = new LibraryBuilder(const CommentGenerator(), header: '');
     await testBuilder(builder, srcs,
-        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        generateFor: new Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
-          '$pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***'))
+          '$_pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***'))
         });
   });
 
@@ -72,24 +72,24 @@ void main() {
   });
 
   test('Allow no "library"  by default', () async {
-    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
+    var sources = _createPackageStub(testLibContent: 'class A {}');
     var builder = new PartBuilder([const CommentGenerator()]);
 
     await testBuilder(builder, sources,
-        outputs: {'$pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
+        outputs: {'$_pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
   });
 
   test('Does not fail when there is no output', () async {
-    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
+    var sources = _createPackageStub(testLibContent: 'class A {}');
     var builder = new PartBuilder([const CommentGenerator(forClasses: false)]);
     await testBuilder(builder, sources, outputs: {});
   });
 
   test('Use new part syntax when no library directive exists', () async {
-    var sources = _createPackageStub(pkgName, testLibContent: 'class A {}');
+    var sources = _createPackageStub(testLibContent: 'class A {}');
     var builder = new PartBuilder([const CommentGenerator()]);
     await testBuilder(builder, sources,
-        outputs: {'$pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
+        outputs: {'$_pkgName|lib/test_lib.g.dart': _testGenNoLibrary});
   });
 
   test(
@@ -105,25 +105,23 @@ void main() {
           _testGenPartContentForClassesAndLibrary));
 
   test('No-op generator produces no generated parts', () async {
-    var srcs = _createPackageStub(pkgName);
+    var srcs = _createPackageStub();
     var builder = new PartBuilder([const _NoOpGenerator()]);
     await testBuilder(builder, srcs, outputs: {});
   });
 
   test('handle generator errors well', () async {
-    var srcs =
-        _createPackageStub(pkgName, testLibContent: _testLibContentWithError);
+    var srcs = _createPackageStub(testLibContent: _testLibContentWithError);
     var builder = new PartBuilder([const CommentGenerator()]);
     await testBuilder(builder, srcs,
-        generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+        generateFor: new Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
-          '$pkgName|lib/test_lib.g.dart': _testGenPartContentError,
+          '$_pkgName|lib/test_lib.g.dart': _testGenPartContentError,
         });
   });
 
   test('warns when a non-standalone builder does not see "part"', () async {
-    var srcs =
-        _createPackageStub(pkgName, testLibContent: _testLibContentNoPart);
+    var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
     var builder = new PartBuilder([const CommentGenerator()]);
     var logs = <String>[];
     await testBuilder(
@@ -139,10 +137,10 @@ void main() {
   test('defaults to formatting generated code with the DartFormatter',
       () async {
     await testBuilder(new PartBuilder([const UnformattedCodeGenerator()]),
-        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
-        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart':
+          '$_pkgName|lib/a.g.dart':
               decodedMatches(contains(UnformattedCodeGenerator.formattedCode)),
         });
   });
@@ -151,10 +149,10 @@ void main() {
     await testBuilder(
         new PartBuilder([const UnformattedCodeGenerator()],
             header: _customHeader),
-        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
-        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart':
+          '$_pkgName|lib/a.g.dart':
               decodedMatches(startsWith('$_customHeader\npart of')),
         });
   });
@@ -162,10 +160,10 @@ void main() {
   test('PartBuilder includes no header when `header` is empty', () async {
     await testBuilder(
         new PartBuilder([const UnformattedCodeGenerator()], header: ''),
-        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
-        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart': decodedMatches(startsWith('part of')),
+          '$_pkgName|lib/a.g.dart': decodedMatches(startsWith('part of')),
         });
   });
 
@@ -173,10 +171,10 @@ void main() {
     await testBuilder(
         new PartBuilder([const UnformattedCodeGenerator()],
             formatOutput: (s) => s),
-        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
-        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart': decodedMatches(
+          '$_pkgName|lib/a.g.dart': decodedMatches(
               contains(UnformattedCodeGenerator.unformattedCode)),
         });
   });
@@ -186,21 +184,21 @@ void main() {
     await testBuilder(
         new PartBuilder([const UnformattedCodeGenerator()],
             formatOutput: (_) => customOutput),
-        {'$pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
-        generateFor: new Set.from(['$pkgName|lib/a.dart']),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        generateFor: new Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
-          '$pkgName|lib/a.g.dart': decodedMatches(contains(customOutput)),
+          '$_pkgName|lib/a.g.dart': decodedMatches(contains(customOutput)),
         });
   });
 
   test('Error logs contain original input ids', () async {
     var logs = <LogRecord>[];
     await testBuilder(new LibraryBuilder(new _ThrowingGenerator()),
-        {'$pkgName|lib/a.dart': 'void hello() {}'},
+        {'$_pkgName|lib/a.dart': 'void hello() {}'},
         onLog: logs.add);
     await new Future(() {});
     expect(
-        logs.map((l) => l.message), contains(contains('$pkgName|lib/a.dart')));
+        logs.map((l) => l.message), contains(contains('$_pkgName|lib/a.dart')));
   });
 
   test('Should have a readable toString() message for builders', () {
@@ -216,23 +214,22 @@ void main() {
 }
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
-  var srcs = _createPackageStub(pkgName);
+  var srcs = _createPackageStub();
   var builder = new PartBuilder([gen]);
 
   await testBuilder(builder, srcs,
-      generateFor: new Set.from(['$pkgName|lib/test_lib.dart']),
+      generateFor: new Set.from(['$_pkgName|lib/test_lib.dart']),
       outputs: {
-        '$pkgName|lib/test_lib.g.dart': decodedMatches(expectedContent),
+        '$_pkgName|lib/test_lib.g.dart': decodedMatches(expectedContent),
       },
       onLog: (log) => fail('Unexpected log message: ${log.message}'));
 }
 
-/// Creates a package using [pkgName].
-Map<String, String> _createPackageStub(String pkgName,
+Map<String, String> _createPackageStub(
     {String testLibContent, String testLibPartContent}) {
   return {
-    '$pkgName|lib/test_lib.dart': testLibContent ?? _testLibContent,
-    '$pkgName|lib/test_lib.g.dart': testLibPartContent ?? _testLibPartContent,
+    '$_pkgName|lib/test_lib.dart': testLibContent ?? _testLibContent,
+    '$_pkgName|lib/test_lib.g.dart': testLibPartContent ?? _testLibPartContent,
   };
 }
 
@@ -261,7 +258,7 @@ class _ThrowingGenerator extends Generator {
 
 final _customHeader = '// Copyright 1979';
 
-const pkgName = 'pkg';
+const _pkgName = 'pkg';
 
 const _testLibContent = r'''
 library test_lib;
