@@ -184,6 +184,7 @@ class LibraryBuilder extends _Builder {
   /// outputs through the [BuildStep] they should be indicated in
   /// [additionalOutputExtensions].
   ///
+  /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
   ///
