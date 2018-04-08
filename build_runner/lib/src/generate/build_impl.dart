@@ -221,6 +221,7 @@ class _SingleBuild {
       _logger.severe('Failed after ${humanReadable(watch.elapsed)}',
           result.exception, result.stackTrace);
     }
+    print('-----------------------------------------------------------------');
     return result;
   }
 
