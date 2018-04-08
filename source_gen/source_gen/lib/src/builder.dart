@@ -184,12 +184,12 @@ class LibraryBuilder extends _Builder {
   /// outputs through the [BuildStep] they should be indicated in
   /// [additionalOutputExtensions].
   ///
+  /// [formatOutput] is called to format the generated code. Defaults to
+  /// [DartFormatter.format].
+  ///
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
-  ///
-  /// [formatOutput] is called to format the generated code. Defaults to
-  /// [DartFormatter.format].
   LibraryBuilder(Generator generator,
       {String formatOutput(String code),
       String generatedExtension: '.g.dart',
