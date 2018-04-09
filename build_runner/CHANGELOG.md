@@ -1,3 +1,6 @@
+## 0.8.2+1
+- Bug Fix: Correctly parse Window's paths with new `--output` semantics.
+
 ## 0.8.2
 
 - Allow passing multiple `--output` options. Each option will be split on
