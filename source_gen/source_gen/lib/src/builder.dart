@@ -13,12 +13,10 @@ import 'generator.dart';
 import 'library.dart';
 import 'utils.dart';
 
-typedef String _OutputFormatter(String code);
-
 /// A [Builder] wrapping on one or more [Generator]s.
 class _Builder extends Builder {
   /// Function that determines how the generated code is formatted.
-  final _OutputFormatter formatOutput;
+  final String Function(String) formatOutput;
 
   /// The generators run for each targeted library.
   final List<Generator> _generators;
