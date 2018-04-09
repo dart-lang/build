@@ -81,8 +81,9 @@ In addition to **serve** you can use:
 
 ## Switching to dart2js
 
-By default `build_web_compilers` uses dartdevc. To switch to dart2js,
-create a `build.yaml` file with a `target` that matches the name of your packages.
+By default `build_web_compilers` uses dartdevc. To switch to dart2js, pass
+`--release` to `pub run build_runner build` (or `serve`). Pass args to dart2js
+by creating a `build.yaml` file.
 
 ```yaml
 targets:
@@ -90,20 +91,9 @@ targets:
     builders:
       build_web_compilers|entrypoint:
         options:
-          compiler: dart2js
-```
-
-You can also define this option on the command-line:
-
-```bash
-$ pub run build_runner build --define "build_web_compilers|entrypoint=compiler=dart2js"
-```
-
-... or create another file, say, `build.release.yaml`, with the configuration
-above, and use it instead of your normal configuration with `--config`:
-
-```bash
-$ pub run build_runner build --config release
+          dart2js_args:
+          - --minify
+          - --fast-startup
 ```
 
 ## Compatibility with other packages
