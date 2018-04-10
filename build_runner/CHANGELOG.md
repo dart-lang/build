@@ -1,3 +1,7 @@
+## 0.8.2+2
+- The `.packages` file is now always created in the root of the output directory
+  instead of under each top level directory.
+
 ## 0.8.2+1
 - Bug Fix: Correctly parse Window's paths with new `--output` semantics.
 
