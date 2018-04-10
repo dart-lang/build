@@ -312,7 +312,7 @@ var baseUrl = (function() {
     pathParts.shift();
   }
   var baseUrl;
-  if (pathParts.length > 1 && pathParts[1] == "test") {
+  if (pathParts.length > 1 || pathParts[1] == "test") {
     return "/" + pathParts.slice(0, 2).join("/") + "/";
   }
   return "/";
