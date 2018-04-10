@@ -108,6 +108,7 @@ Future<bool> _createMergedOutputDir(
         await _ensureInputs(node);
       }
     }
+
     outputAssets.addAll(
         await _createMissingTestHtmlFiles(outputPath, packageGraph.root.name));
 
