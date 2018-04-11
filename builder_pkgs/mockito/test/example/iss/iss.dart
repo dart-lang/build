@@ -42,7 +42,7 @@ class IssLocator {
     // Returns the point on the earth directly under the space station
     // at this moment.
     Response rs = await client.get('http://api.open-notify.org/iss-now.json');
-    Map data = JSON.decode(rs.body);
+    Map data = jsonDecode(rs.body);
     double latitude = double.parse(data['iss_position']['latitude']);
     double longitude = double.parse(data['iss_position']['longitude']);
     _position = new Point<double>(latitude, longitude);
