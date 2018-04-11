@@ -271,7 +271,7 @@ void _expectAllFiles(Directory dir) {
     'packages/b/c.txt.copy': 'c',
     'web/b.txt': 'b',
     'web/b.txt.copy': 'b',
-    'web/.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+    '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
   };
   _expectFiles(expectedFiles, dir);
 }

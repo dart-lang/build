@@ -110,18 +110,13 @@ Future<bool> _createMergedOutputDir(
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
         .join('\r\n');
+    var packagesAsset = new AssetId(packageGraph.root.name, '.packages');
+    _writeAsString(outputDir, packagesAsset, packagesFileContent);
+    outputAssets.add(packagesAsset);
 
-    if (root != null) {
-      var packagesAsset = new AssetId(packageGraph.root.name, '.packages');
-      _writeAsString(outputDir, packagesAsset, packagesFileContent);
-      outputAssets.add(packagesAsset);
-    } else {
+    if (root == null) {
       for (var dir
           in _findRootDirs(outputPath, assetGraph, packageGraph, buildPhases)) {
-        var packagesAsset =
-            new AssetId(packageGraph.root.name, p.url.join(dir, '.packages'));
-        _writeAsString(outputDir, packagesAsset, packagesFileContent);
-        outputAssets.add(packagesAsset);
         var link = new Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
           link.createSync(p.join('..', 'packages'), recursive: true);
