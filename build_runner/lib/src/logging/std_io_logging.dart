@@ -39,7 +39,7 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
 
   if (record.stackTrace != null && verbose) {
     var trace = new Trace.from(record.stackTrace).foldFrames((f) {
-      return f.package == 'build_runner';
+      return f.package == 'build_runner' || f.package == 'build';
     }, terse: true);
 
     lines.add(trace);
