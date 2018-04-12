@@ -222,6 +222,7 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
 Future<Null> expectTestsFail({bool useManualScript}) async {
   useManualScript ??= true;
   var result = useManualScript ? await runManualTests() : await runAutoTests();
+  printOnFailure('${result.stderr}');
   expect(result.stdout, contains('Some tests failed'));
   expect(result.exitCode, isNot(0));
 }
@@ -235,6 +236,7 @@ Future<Null> expectTestsPass(
   var result = useManualScript
       ? await runManualTests(usePrecompiled: usePrecompiled, buildArgs: args)
       : await runAutoTests(usePrecompiled: usePrecompiled, buildArgs: args);
+  printOnFailure('${result.stderr}');
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {
     expect(result.stdout, contains('+$expectedNumRan'));
