@@ -118,11 +118,3 @@ class PackageAssetReader extends AssetReader
     return file.readAsString(encoding: encoding);
   }
 }
-
-/// Returns all assets that match [glob] in [package] with a [path].
-Stream<AssetId> _globAssets(String package, String path, Glob glob) {
-  return glob.list(root: path).where((entity) => entity is File).map((file) {
-    var relative = p.relative(file.path, from: path);
-    return new AssetId(package, relative);
-  });
-}
