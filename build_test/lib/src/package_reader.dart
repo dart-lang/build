@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
+import 'package:stream_transform/stream_transform.dart';
 
 /// Resolves using a [SyncPackageResolver] before reading from the file system.
 ///
@@ -87,8 +88,31 @@ class PackageAssetReader extends AssetReader
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) {
-    throw new UnsupportedError(
-        'Unable to list assets with a PackageAssetReader');
+    package ??= _rootPackage;
+    if (package == null) {
+      throw new UnsupportedError(
+          'Root package must be provided to use `findAssets` without an '
+          'explicit `package`.');
+    }
+    var packageLibDir = _packageResolver.packageConfigMap[package];
+    if (packageLibDir == null) {
+      throw new UnsupportedError('Unable to find package $package');
+    }
+
+    var packageFiles = new Directory(packageLibDir.path)
+        .list(recursive: true)
+        .where((e) => e is File)
+        .map(
+            (f) => p.join('lib', p.relative(f.path, from: packageLibDir.path)));
+    if (package == _rootPackage) {
+      // TODO this assumes the cwd is the root package
+      packageFiles = packageFiles.transform(merge(Directory.current
+          .list(recursive: true)
+          .where((e) => e is File)
+          .map((f) => p.relative(f.path, from: Directory.current.path))
+          .where((p) => !p.startsWith('packages/'))));
+    }
+    return packageFiles.where(glob.matches).map((p) => new AssetId(package, p));
   }
 
   @override

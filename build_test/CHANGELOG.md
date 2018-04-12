@@ -1,3 +1,7 @@
+## 0.10.2+1
+
+- Add back an implementation of `findAssets` in `PackageAssetReader`.
+
 ## 0.10.2
 
 - Added a `DebugIndexBuilder`, which by default generates a `test/index.html`
