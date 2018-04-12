@@ -74,26 +74,21 @@ class PackageAssetReader extends AssetReader
   }
 
   File _resolve(AssetId id) {
-    final packagePath = _packageResolver.packagePath(id.package);
-    if (packagePath == null) {
-      return null;
+    final uri = id.uri;
+    if (uri.isScheme('package')) {
+      return new File(_packageResolver.resolveUri(id.uri).path);
     }
-    return new File(p.canonicalize(p.join(packagePath, id.path)));
+    if (id.package == _rootPackage) {
+      // TODO this assumes the cwd is the root package
+      return new File(p.canonicalize(p.join(p.current, id.path)));
+    }
+    throw new UnsupportedError('Unabled to resolve $id');
   }
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) {
-    package ??= _rootPackage;
-    if (package == null) {
-      throw new UnsupportedError(
-          'Root package must be provided to use `findAssets` without an '
-          'explicit `package`.');
-    }
-    var packagePath = _packageResolver.packagePath(package);
-    if (packagePath == null) {
-      throw new StateError('Could not resolve "$package".');
-    }
-    return _globAssets(package, packagePath, glob);
+    throw new UnsupportedError(
+        'Unable to list assets with a PackageAssetReader');
   }
 
   @override
@@ -122,12 +117,4 @@ class PackageAssetReader extends AssetReader
     }
     return file.readAsString(encoding: encoding);
   }
-}
-
-/// Returns all assets that match [glob] in [package] with a [path].
-Stream<AssetId> _globAssets(String package, String path, Glob glob) {
-  return glob.list(root: path).where((entity) => entity is File).map((file) {
-    var relative = p.relative(file.path, from: path);
-    return new AssetId(package, relative);
-  });
 }
