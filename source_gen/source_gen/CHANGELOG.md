@@ -1,5 +1,8 @@
 ## 0.8.1
 
+* Cleanup logging output that duplicates headers provided by 
+  `package:build_runner`.
+
 * `InvalidGenerationSourceError` added an optional `element`
   parameter to support more helpful error messages.
 

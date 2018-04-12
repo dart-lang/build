@@ -6,7 +6,6 @@
 import 'dart:async';
 
 import 'package:build_test/build_test.dart';
-import 'package:logging/logging.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
@@ -191,16 +190,6 @@ void main() {
         });
   });
 
-  test('Error logs contain original input ids', () async {
-    var logs = <LogRecord>[];
-    await testBuilder(new LibraryBuilder(new _ThrowingGenerator()),
-        {'$_pkgName|lib/a.dart': 'void hello() {}'},
-        onLog: logs.add);
-    await new Future(() {});
-    expect(
-        logs.map((l) => l.message), contains(contains('$_pkgName|lib/a.dart')));
-  });
-
   test('Should have a readable toString() message for builders', () {
     final builder = new LibraryBuilder(const _NoOpGenerator());
     expect(builder.toString(), 'Generating .g.dart: NOOP');
@@ -249,11 +238,6 @@ class _BadOutputGenerator extends Generator {
 
   @override
   Future<String> generate(LibraryReader library, _) async => 'not valid code!';
-}
-
-class _ThrowingGenerator extends Generator {
-  @override
-  Future<String> generate(_, __) async => throw new UnimplementedError();
 }
 
 final _customHeader = '// Copyright 1979';
