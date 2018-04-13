@@ -8,6 +8,7 @@ import 'dart:collection';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
@@ -38,8 +39,8 @@ void main() {
     ''', (resolver) async {
       core = await resolver.findLibraryByName('dart.core');
       collection = await resolver.findLibraryByName('dart.collection');
-      sourceGen =
-          new LibraryReader(await resolver.findLibraryByName('source_gen'));
+      sourceGen = new LibraryReader(await resolver.libraryFor(
+          new AssetId.resolve('asset:source_gen/lib/source_gen.dart')));
     });
 
     var staticIterable = core.getType('Iterable').type;
