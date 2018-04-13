@@ -1,3 +1,7 @@
+## 0.10.2+2
+
+- Avoid looking for files from `Uri.path` paths.
+
 ## 0.10.2+1
 
 - Add back an implementation of `findAssets` in `PackageAssetReader`.
