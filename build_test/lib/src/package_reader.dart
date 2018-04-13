@@ -77,7 +77,7 @@ class PackageAssetReader extends AssetReader
   File _resolve(AssetId id) {
     final uri = id.uri;
     if (uri.isScheme('package')) {
-      return new File(_packageResolver.resolveUri(id.uri).path);
+      return new File.fromUri(_packageResolver.resolveUri(id.uri));
     }
     if (id.package == _rootPackage) {
       // TODO this assumes the cwd is the root package
@@ -99,11 +99,11 @@ class PackageAssetReader extends AssetReader
       throw new UnsupportedError('Unable to find package $package');
     }
 
-    var packageFiles = new Directory(packageLibDir.path)
+    var packageFiles = new Directory.fromUri(packageLibDir)
         .list(recursive: true)
         .where((e) => e is File)
-        .map(
-            (f) => p.join('lib', p.relative(f.path, from: packageLibDir.path)));
+        .map((f) =>
+            p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))));
     if (package == _rootPackage) {
       // TODO this assumes the cwd is the root package
       packageFiles = packageFiles.transform(merge(Directory.current
