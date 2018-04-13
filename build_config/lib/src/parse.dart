@@ -74,7 +74,7 @@ const _builderConfigDefaultOptions = const [
 
 dynamic _convertYaml(dynamic node) {
   if (node is! YamlNode) {
-      return node;
+    return node;
   } else if (node is YamlMap) {
     return _convertYamlMap(node);
   } else if (node is YamlList) {
@@ -82,7 +82,7 @@ dynamic _convertYaml(dynamic node) {
   } else if (node is YamlScalar) {
     return node.value;
   } else {
-      throw new UnsupportedError('Unrecognized YamlNode: $node');
+    throw new UnsupportedError('Unrecognized YamlNode: $node');
   }
 }
 
@@ -98,20 +98,20 @@ List<dynamic> _convertYamlList(YamlList node) {
 Map<String, dynamic> _convertYamlMap(YamlMap node) {
   var map = <String, dynamic>{};
   node.forEach((key, value) {
-      if (key is YamlNode) {
-        key = key.value;
-      }
-      if (key is String) {
-        return map[key] = _convertYaml(value);
-      } else {
-        throw new UnsupportedError('only string keys are supported');
-      }  
+    if (key is YamlNode) {
+      key = key.value;
+    }
+    if (key is String) {
+      return map[key] = _convertYaml(value);
+    } else {
+      throw new UnsupportedError('only string keys are supported');
+    }
   });
   return map;
 }
 
 BuildConfig parseFromYaml(
-        String packageName, Iterable<String> dependencies, String configYaml) {
+    String packageName, Iterable<String> dependencies, String configYaml) {
   final parsed = loadYaml(configYaml) as YamlMap;
   final map = parsed == null ? <String, dynamic>{} : _convertYamlMap(parsed);
   return parseFromMap(packageName, dependencies, map);
