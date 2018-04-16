@@ -1,5 +1,3 @@
-*Why was support for `barback` and `Transformer` removed in Dart 2?*
-
 There are a few key differences that make the build system better for most use
 cases.
 
