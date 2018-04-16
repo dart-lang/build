@@ -16,7 +16,7 @@ void main() {
   group('Manual build script changes', () {
     setUp(() async {
       ensureCleanGitClient();
-      await startManualServer(ensureCleanBuild: true, verbose: true);
+      await startManualServer(ensureCleanBuild: true);
       addTearDown(() => stopServer(cleanUp: true));
     });
 
@@ -55,7 +55,7 @@ void main() {
         () => nextStdOutLine(
             'Throwing away cached asset graph due to version mismatch.'),
         () => nextStdOutLine('Building new asset graph'),
-      ], verbose: true);
+      ]);
 
       expect(await new File(extraFilePath).exists(), isFalse,
           reason: 'The cache dir should get deleted when the asset graph '
@@ -66,7 +66,7 @@ void main() {
   group('Generated build script changes', () {
     setUp(() async {
       ensureCleanGitClient();
-      await startAutoServer(ensureCleanBuild: true, verbose: true);
+      await startAutoServer(ensureCleanBuild: true);
       addTearDown(() => stopServer(cleanUp: true));
     });
 
@@ -92,7 +92,7 @@ Future<Null> testEditWhileServing(bool manualScript) async {
   await startManualServer(extraExpects: [
     () => nextStdOutLine('Invalidating asset graph due to build script update'),
     () => nextStdOutLine('Building new asset graph'),
-  ], scriptPath: filePath, verbose: true);
+  ], scriptPath: filePath);
 }
 
 Future<Null> testEditBetweenBuilds(bool manualScript) async {
@@ -104,5 +104,5 @@ Future<Null> testEditBetweenBuilds(bool manualScript) async {
   await startManualServer(extraExpects: [
     () => nextStdOutLine('Invalidating asset graph due to build script update'),
     () => nextStdOutLine('Building new asset graph'),
-  ], scriptPath: filePath, verbose: true);
+  ], scriptPath: filePath);
 }
