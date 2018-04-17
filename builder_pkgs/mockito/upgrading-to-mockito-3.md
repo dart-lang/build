@@ -45,12 +45,13 @@ Mockito 3 API calls:
 
 | Version |                                                                   |
 | --- | --------------------------------------------------------------------- |
-|     | Using argument matchers as positional arguments                       |
+|     | **Using argument matchers as positional arguments**                   |
 | 2.x | `when(obj.fn(typed(any)))...`                                         |
 | 3.0 | `when(obj.fn(any))...`                                                |
 | 2.x | `when(obj.fn(typed(argThat(equals(7)))))...`                          |
 | 3.0 | `when(obj.fn(argThat(equals(7))))...`                                 |
-|     | Using argument matchers as named arguments                            |
+|     |                                                                       |
+|     | **Using argument matchers as named arguments**                        |
 | 2.x | `when(obj.fn(foo: typed(any, named: 'foo')))...`                      |
 | 3.0 | `when(obj.fn(foo: anyNamed('foo')))...`                               |
 | 2.x | `when(obj.fn(foo: typed(argThat(equals(7)), named: 'foo')))...`       |
@@ -60,16 +61,16 @@ Mockito 3 API calls:
 | 2.x | `when(obj.fn(foo: typed(captureAny, named: 'foo')))...`               |
 | 3.0 | `when(obj.fn(foo: captureAnyNamed('foo')))...`                        |
 | 2.x | `when(obj.fn(foo: typed(captureThat(equals(7)), named: 'foo')))...`   |
-| 3.0 | `when(obj.fn(foo: captureThatNamed(equals(7), 'foo')))...`            |
+| 3.0 | `when(obj.fn(foo: captureThat(equals(7), named: 'foo')))...`          |
 
-## Mockito 2.3 - a backward-and-forward-compatible API
+## Mockito 3.0.0-beta - a backward-and-forward-compatible API
 
 If you have a large codebase, it may be difficult to upgrade _all_ of your tests
 to the Mockito 3 API all at once. To provide an incremental upgrade path, upgrade to
-Mockito 2.3.
+Mockito 3.0.0-beta.
 
-Mockito 2.3 is a very tiny release on top of the Mockito 2.x API. In fact,
-here's the diff:
+Mockito 3.0.0-beta is a very tiny release on top of Mockito 3.0.0-alpha+3,
+which provides the Mockito 2.x API. In fact, here's the diff:
 
 ```dart
 -argThat(Matcher matcher) => new ArgMatcher(matcher, false);
@@ -95,7 +96,7 @@ then Mockito is still passing an ArgumentMatcher as each argument to
 However, this version lets you incrementally upgrade your tests to the
 Mockito 3 API.  Here's the workflow:
 
-1. **Upgrade to `mockito: '^2.3.0'` in your project's dependencies**, in
+1. **Upgrade to `mockito: '^3.0.0-beta'` in your project's dependencies**, in
    `pubspec.yaml`. This should not cause any tests to break. Commit this change.
 
 2. **Change your usage of Mockito from the old API to the new API**, in as many
