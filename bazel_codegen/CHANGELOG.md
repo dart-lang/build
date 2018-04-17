@@ -1,3 +1,7 @@
+# 0.3.1+2
+
+- Added support for running in Dart 2 mode via `--preview-dart-2`.
+
 # 0.3.1+1
 
 - Expand constraint on `package:build` to allow version `0.12.x`
