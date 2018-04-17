@@ -20,8 +20,10 @@ export 'src/mock.dart'
         // -- setting behaviour
         when,
         any,
+        anyNamed,
         argThat,
         captureAny,
+        captureAnyNamed,
         captureThat,
         typed,
         Answering,

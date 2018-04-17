@@ -107,7 +107,7 @@ String noMatchingCallsFooter = "(If you called `verify(...).called(0);`, "
     "please instead use `verifyNever(...);`.)";
 
 void main() {
-  RealClass mock;
+  MockedClass mock;
 
   setUp(() {
     mock = new MockedClass();
@@ -186,16 +186,15 @@ void main() {
     });
 
     test("should mock method with multiple named args and matchers", () {
-      when(mock.methodWithTwoNamedArgs(typed(any), y: typed(any, named: 'y')))
+      when(mock.methodWithTwoNamedArgs(any, y: anyNamed('y')))
           .thenReturn("x y");
-      when(mock.methodWithTwoNamedArgs(typed(any), z: typed(any, named: 'z')))
+      when(mock.methodWithTwoNamedArgs(any, z: anyNamed('z')))
           .thenReturn("x z");
       expect(mock.methodWithTwoNamedArgs(42), isNull);
       expect(mock.methodWithTwoNamedArgs(42, y: 18), equals("x y"));
       expect(mock.methodWithTwoNamedArgs(42, z: 17), equals("x z"));
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
-      when(mock.methodWithTwoNamedArgs(typed(any),
-              y: typed(any, named: 'y'), z: typed(any, named: 'z')))
+      when(mock.methodWithTwoNamedArgs(any, y: anyNamed('y'), z: anyNamed('z')))
           .thenReturn("x y z");
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), equals("x y z"));
     });
@@ -222,11 +221,6 @@ void main() {
     test("should have hashCode when it is not mocked", () {
       expect(mock.hashCode, isNotNull);
     });
-
-//    test("should n't mock toString", (){
-//      when(mock.toString()).thenReturn("meow");
-//      expect(mock.toString(), equals("meow"));
-//    });
 
     test("should have default toString when it is not mocked", () {
       expect(mock.toString(), equals("MockedClass"));
@@ -283,6 +277,7 @@ void main() {
       expect(mock.methodWithNormalArgs(43), equals("43"));
     });
 
+    // Error path tests.
     test("should throw if `when` is called while stubbing", () {
       expect(() {
         var responseHelper = () {
@@ -292,6 +287,16 @@ void main() {
         };
         when(mock.innerObj).thenReturn(responseHelper());
       }, throwsStateError);
+    });
+
+    test("should throw if `null` is passed alongside matchers", () {
+      expect(() {
+        when(mock.methodWithPositionalArgs(argThat(equals(42)), null))
+            .thenReturn("99");
+      }, throwsArgumentError);
+
+      // but doesn't ruin later calls.
+      when(mock.methodWithNormalArgs(43)).thenReturn("43");
     });
 
     test("thenReturn throws if provided Future", () {
@@ -322,99 +327,25 @@ void main() {
       expect(await mock.methodReturningStream().toList(), ["stub"]);
     });
 
-    // [typed] API
-    test("should mock method with typed arg matchers", () {
-      when(mock.typeParameterizedFn(typed(any), typed(any)))
-          .thenReturn("A lot!");
-      expect(mock.typeParameterizedFn([42], [43]), equals("A lot!"));
-      expect(mock.typeParameterizedFn([43], [44]), equals("A lot!"));
+    test("should throw if `null` is passed as a named arg", () {
+      expect(() {
+        when(mock.methodWithNamedArgs(argThat(equals(42)), y: null))
+            .thenReturn("99");
+      }, throwsArgumentError);
     });
 
-    test("should mock method with an optional typed arg matcher", () {
-      when(mock.typeParameterizedFn(typed(any), typed(any), typed(any)))
-          .thenReturn("A lot!");
-      expect(mock.typeParameterizedFn([42], [43], [44]), equals("A lot!"));
+    test("should throw if named matcher is passed as a positional arg", () {
+      expect(() {
+        when(mock.methodWithNamedArgs(argThat(equals(42), named: "y")))
+            .thenReturn("99");
+      }, throwsArgumentError);
     });
 
-    test(
-        "should mock method with an optional typed arg matcher and an optional real arg",
-        () {
-      when(mock.typeParameterizedFn(typed(any), typed(any), [44], typed(any)))
-          .thenReturn("A lot!");
-      expect(
-          mock.typeParameterizedFn([42], [43], [44], [45]), equals("A lot!"));
-    });
-
-    test("should mock method with only some typed arg matchers", () {
-      when(mock.typeParameterizedFn(typed(any), [43], typed(any)))
-          .thenReturn("A lot!");
-      expect(mock.typeParameterizedFn([42], [43], [44]), equals("A lot!"));
-      when(mock.typeParameterizedFn(typed(any), [43])).thenReturn("A bunch!");
-      expect(mock.typeParameterizedFn([42], [43]), equals("A bunch!"));
-    });
-
-    test("should throw when [typed] used alongside [null].", () {
-      expect(() => when(mock.typeParameterizedFn(typed(any), null, typed(any))),
-          throwsArgumentError);
-      expect(() => when(mock.typeParameterizedFn(typed(any), typed(any), null)),
-          throwsArgumentError);
-    });
-
-    test("should mock method when [typed] used alongside matched [null].", () {
-      when(mock.typeParameterizedFn(
-              typed(any), typed(argThat(equals(null))), typed(any)))
-          .thenReturn("A lot!");
-      expect(mock.typeParameterizedFn([42], null, [44]), equals("A lot!"));
-    });
-
-    test("should mock method with named, typed arg matcher", () {
-      when(mock.typeParameterizedNamedFn(typed(any), [43],
-              y: typed(any, named: "y")))
-          .thenReturn("A lot!");
-      expect(
-          mock.typeParameterizedNamedFn([42], [43], y: [44]), equals("A lot!"));
-    });
-
-    test("should mock method with named, typed arg matcher and an arg matcher",
-        () {
-      when(mock.typeParameterizedNamedFn(typed(any), [43],
-              y: typed(any, named: "y"),
-              z: typed(argThat(contains(45)), named: 'z')))
-          .thenReturn("A lot!");
-      expect(mock.typeParameterizedNamedFn([42], [43], y: [44], z: [45]),
-          equals("A lot!"));
-    });
-
-    test("should mock method with named, typed arg matcher and a regular arg",
-        () {
-      when(mock.typeParameterizedNamedFn(typed(any), [43],
-          y: typed(any, named: "y"), z: [45])).thenReturn("A lot!");
-      expect(mock.typeParameterizedNamedFn([42], [43], y: [44], z: [45]),
-          equals("A lot!"));
-    });
-
-    test("should throw when [typed] used as a named arg, without `named:`", () {
-      expect(
-          () => when(
-              mock.typeParameterizedNamedFn(typed(any), [43], y: typed(any))),
-          throwsArgumentError);
-    });
-
-    test("should throw when [typed] used as a positional arg, with `named:`",
-        () {
-      expect(
-          () => when(mock.typeParameterizedNamedFn(
-              typed(any), typed(any, named: "y"))),
-          throwsArgumentError);
-    });
-
-    test(
-        "should throw when [typed] used as a named arg, with the wrong `named:`",
-        () {
-      expect(
-          () => when(mock.typeParameterizedNamedFn(typed(any), [43],
-              y: typed(any, named: "z"))),
-          throwsArgumentError);
+    test("should throw if named matcher is passed as the wrong name", () {
+      expect(() {
+        when(mock.methodWithNamedArgs(argThat(equals(42)), y: anyNamed("z")))
+            .thenReturn("99");
+      }, throwsArgumentError);
     });
   });
 
@@ -459,21 +390,19 @@ void main() {
       test("waits for method with named args", () async {
         mock.methodWithNamedArgs(1, y: 2);
 
-        await untilCalled(
-            mock.methodWithNamedArgs(typed(any), y: typed(any, named: 'y')));
+        await untilCalled(mock.methodWithNamedArgs(any, y: anyNamed('y')));
 
-        verify(mock.methodWithNamedArgs(typed(any), y: typed(any, named: 'y')))
-            .called(1);
+        verify(mock.methodWithNamedArgs(any, y: anyNamed('y'))).called(1);
       });
 
       test("waits for method with two named args", () async {
         mock.methodWithTwoNamedArgs(1, y: 2, z: 3);
 
-        await untilCalled(mock.methodWithTwoNamedArgs(typed(any),
-            y: typed(any, named: 'y'), z: typed(any, named: 'z')));
+        await untilCalled(mock.methodWithTwoNamedArgs(any,
+            y: anyNamed('y'), z: anyNamed('z')));
 
-        verify(mock.methodWithTwoNamedArgs(typed(any),
-                y: typed(any, named: 'y'), z: typed(any, named: 'z')))
+        verify(mock.methodWithTwoNamedArgs(any,
+                y: anyNamed('y'), z: anyNamed('z')))
             .called(1);
       });
 
@@ -499,11 +428,11 @@ void main() {
       test("waits for function with named parameters", () async {
         mock.typeParameterizedNamedFn([1, 2], [3, 4], y: [5, 6], z: [7, 8]);
 
-        await untilCalled(mock.typeParameterizedNamedFn(typed(any), typed(any),
-            y: typed(any, named: 'y'), z: typed(any, named: 'z')));
+        await untilCalled(mock.typeParameterizedNamedFn(any, any,
+            y: anyNamed('y'), z: anyNamed('z')));
 
-        verify(mock.typeParameterizedNamedFn(typed(any), typed(any),
-                y: typed(any, named: 'y'), z: typed(any, named: 'z')))
+        verify(mock.typeParameterizedNamedFn(any, any,
+                y: anyNamed('y'), z: anyNamed('z')))
             .called(1);
       });
 
@@ -568,26 +497,23 @@ void main() {
 
       test("waits for method with named args", () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(
-            mock.methodWithNamedArgs(typed(any), y: typed(any, named: 'y')));
+        verifyNever(mock.methodWithNamedArgs(any, y: anyNamed('y')));
 
-        await untilCalled(
-            mock.methodWithNamedArgs(typed(any), y: typed(any, named: 'y')));
+        await untilCalled(mock.methodWithNamedArgs(any, y: anyNamed('y')));
 
-        verify(mock.methodWithNamedArgs(typed(any), y: typed(any, named: 'y')))
-            .called(1);
+        verify(mock.methodWithNamedArgs(any, y: anyNamed('y'))).called(1);
       });
 
       test("waits for method with two named args", () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(mock.methodWithTwoNamedArgs(typed(any),
-            y: typed(any, named: 'y'), z: typed(any, named: 'z')));
+        verifyNever(mock.methodWithTwoNamedArgs(any,
+            y: anyNamed('y'), z: anyNamed('z')));
 
-        await untilCalled(mock.methodWithTwoNamedArgs(typed(any),
-            y: typed(any, named: 'y'), z: typed(any, named: 'z')));
+        await untilCalled(mock.methodWithTwoNamedArgs(any,
+            y: anyNamed('y'), z: anyNamed('z')));
 
-        verify(mock.methodWithTwoNamedArgs(typed(any),
-                y: typed(any, named: 'y'), z: typed(any, named: 'z')))
+        verify(mock.methodWithTwoNamedArgs(any,
+                y: anyNamed('y'), z: anyNamed('z')))
             .called(1);
       });
 
@@ -615,14 +541,14 @@ void main() {
 
       test("waits for function with named parameters", () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(mock.typeParameterizedNamedFn(typed(any), typed(any),
-            y: typed(any, named: 'y'), z: typed(any, named: 'z')));
+        verifyNever(mock.typeParameterizedNamedFn(any, any,
+            y: anyNamed('y'), z: anyNamed('z')));
 
-        await untilCalled(mock.typeParameterizedNamedFn(typed(any), typed(any),
-            y: typed(any, named: 'y'), z: typed(any, named: 'z')));
+        await untilCalled(mock.typeParameterizedNamedFn(any, any,
+            y: anyNamed('y'), z: anyNamed('z')));
 
-        verify(mock.typeParameterizedNamedFn(typed(any), typed(any),
-                y: typed(any, named: 'y'), z: typed(any, named: 'z')))
+        verify(mock.typeParameterizedNamedFn(any, any,
+                y: anyNamed('y'), z: anyNamed('z')))
             .called(1);
       });
 
@@ -778,22 +704,6 @@ void main() {
         verify(mock.setter = "B");
       });
       verify(mock.setter = "A");
-    });
-
-    test("should verify method with typed arg matchers", () {
-      mock.typeParameterizedFn([42], [43]);
-      verify(mock.typeParameterizedFn(typed(any), typed(any)));
-    });
-
-    test("should verify method with argument capturer", () {
-      mock.typeParameterizedFn([50], [17]);
-      mock.typeParameterizedFn([100], [17]);
-      expect(
-          verify(mock.typeParameterizedFn(typed(captureAny), [17])).captured,
-          equals([
-            [50],
-            [100]
-          ]));
     });
   });
 
@@ -1066,16 +976,16 @@ void main() {
 
   group("throwOnMissingStub", () {
     test("should throw when a mock was called without a matching stub", () {
-      throwOnMissingStub(mock as Mock);
+      throwOnMissingStub(mock);
       when(mock.methodWithNormalArgs(42)).thenReturn("Ultimate Answer");
       expect(
-        () => (mock as MockedClass).methodWithoutArgs(),
+        () => (mock).methodWithoutArgs(),
         throwsNoSuchMethodError,
       );
     });
 
     test("should not throw when a mock was called with a matching stub", () {
-      throwOnMissingStub(mock as Mock);
+      throwOnMissingStub(mock);
       when(mock.methodWithoutArgs()).thenReturn("A");
       expect(() => mock.methodWithoutArgs(), returnsNormally);
     });

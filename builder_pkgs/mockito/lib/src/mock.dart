@@ -27,8 +27,8 @@ _UntilCall _untilCall;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
 final _TimeStampProvider _timer = new _TimeStampProvider();
 final List _capturedArgs = [];
-final List<ArgMatcher> _typedArgs = <ArgMatcher>[];
-final Map<String, ArgMatcher> _typedNamedArgs = <String, ArgMatcher>{};
+final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
+final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 
 // Hidden from the public API, used by spy.dart.
 void setDefaultResponse(Mock mock, CallPair defaultResponse()) {
@@ -63,7 +63,7 @@ void throwOnMissingStub(Mock mock) {
 ///       var cat = new MockCat();
 ///
 ///       // When 'getSound' is called, return 'Woof'
-///       when(cat.getSound(typed(any))).thenReturn('Woof');
+///       when(cat.getSound(any)).thenReturn('Woof');
 ///
 ///       // Try making a Cat sound...
 ///       print(cat.getSound('foo')); // Prints 'Woof'
@@ -99,7 +99,7 @@ class Mock {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
     // See "Emulating Functions and Interactions" on dartlang.org: goo.gl/r3IQUH
-    invocation = _useTypedInvocationIfSet(invocation);
+    invocation = _useMatchedInvocationIfSet(invocation);
     if (_whenInProgress) {
       _whenCall = new _WhenCall(this, invocation);
       return null;
@@ -137,19 +137,19 @@ class Mock {
 
 typedef CallPair _ReturnsCannedResponse();
 
-// When using the typed() matcher, we transform our invocation to have knowledge
-// of which arguments are wrapped with typed() and which ones are not. Otherwise
-// we just use the existing invocation object.
-Invocation _useTypedInvocationIfSet(Invocation invocation) {
-  if (_typedArgs.isNotEmpty || _typedNamedArgs.isNotEmpty) {
-    invocation = new _InvocationForTypedArguments(invocation);
+// When using an [ArgMatcher], we transform our invocation to have knowledge of
+// which arguments are wrapped, and which ones are not. Otherwise we just use
+// the existing invocation object.
+Invocation _useMatchedInvocationIfSet(Invocation invocation) {
+  if (_storedArgs.isNotEmpty || _storedNamedArgs.isNotEmpty) {
+    invocation = new _InvocationForMatchedArguments(invocation);
   }
   return invocation;
 }
 
-/// An Invocation implementation that takes arguments from [_typedArgs] and
-/// [_typedNamedArgs].
-class _InvocationForTypedArguments extends Invocation {
+/// An Invocation implementation that takes arguments from [_storedArgs] and
+/// [_storedNamedArgs].
+class _InvocationForMatchedArguments extends Invocation {
   @override
   final Symbol memberName;
   @override
@@ -163,10 +163,10 @@ class _InvocationForTypedArguments extends Invocation {
   @override
   final bool isSetter;
 
-  factory _InvocationForTypedArguments(Invocation invocation) {
-    if (_typedArgs.isEmpty && _typedNamedArgs.isEmpty) {
+  factory _InvocationForMatchedArguments(Invocation invocation) {
+    if (_storedArgs.isEmpty && _storedNamedArgs.isEmpty) {
       throw new StateError(
-          "_InvocationForTypedArguments called when no typed calls have been saved.");
+          "_InvocationForMatchedArguments called when no ArgMatchers have been saved.");
     }
 
     // Handle named arguments first, so that we can provide useful errors for
@@ -176,10 +176,10 @@ class _InvocationForTypedArguments extends Invocation {
     var namedArguments = _reconstituteNamedArgs(invocation);
     var positionalArguments = _reconstitutePositionalArgs(invocation);
 
-    _typedArgs.clear();
-    _typedNamedArgs.clear();
+    _storedArgs.clear();
+    _storedNamedArgs.clear();
 
-    return new _InvocationForTypedArguments._(
+    return new _InvocationForMatchedArguments._(
         invocation.memberName,
         positionalArguments,
         namedArguments,
@@ -188,53 +188,66 @@ class _InvocationForTypedArguments extends Invocation {
         invocation.isSetter);
   }
 
-  // Reconstitutes the named arguments in an invocation from [_typedNamedArgs].
+  // Reconstitutes the named arguments in an invocation from
+  // [_storedNamedArgs].
   //
-  // The namedArguments in [invocation] which are null should be represented
-  // by a stored value in [_typedNamedArgs]. The null presumably came from
-  // [typed].
+  // The `namedArguments` in [invocation] which are null should be represented
+  // by a stored value in [_storedNamedArgs].
   static Map<Symbol, dynamic> _reconstituteNamedArgs(Invocation invocation) {
     var namedArguments = <Symbol, dynamic>{};
-    var _typedNamedArgSymbols =
-        _typedNamedArgs.keys.map((name) => new Symbol(name));
+    var _storedNamedArgSymbols =
+        _storedNamedArgs.keys.map((name) => new Symbol(name));
 
     // Iterate through [invocation]'s named args, validate them, and add them
     // to the return map.
     invocation.namedArguments.forEach((name, arg) {
       if (arg == null) {
-        if (!_typedNamedArgSymbols.contains(name)) {
-          // Incorrect usage of [typed], something like:
-          // `when(obj.fn(a: typed(any)))`.
+        if (!_storedNamedArgSymbols.contains(name)) {
+          // Incorrect usage of an ArgMatcher, something like:
+          // `when(obj.fn(a: any))`.
+
+          // Clear things out for the next call.
+          _storedArgs.clear();
+          _storedNamedArgs.clear();
           throw new ArgumentError(
-              'A typed argument was passed in as a named argument named "$name", '
-              'but did not pass a value for `named`. Each typed argument that is '
-              'passed as a named argument needs to specify the `named` argument. '
-              'For example: `when(obj.fn(x: typed(any, named: "x")))`.');
+              'An ArgumentMatcher (or a null value) was passed in as a named '
+              'argument named "$name", but was not passed a value for `named`. '
+              'Each ArgumentMatcher that is passed as a named argument needs '
+              'to specify the `named` argument, and each null value must be '
+              'wrapped in an ArgMatcher. For example: '
+              '`when(obj.fn(x: anyNamed("x")))` or '
+              '`when(obj.fn(x: argThat(isNull, named: "x")))`.');
         }
       } else {
-        // Add each real named argument that was _not_ passed with [typed].
+        // Add each real named argument (not wrapped in an ArgMatcher).
         namedArguments[name] = arg;
       }
     });
 
-    // Iterate through the stored named args (stored with [typed]), validate
-    // them, and add them to the return map.
-    _typedNamedArgs.forEach((name, arg) {
+    // Iterate through the stored named args, validate them, and add them to
+    // the return map.
+    _storedNamedArgs.forEach((name, arg) {
       Symbol nameSymbol = new Symbol(name);
       if (!invocation.namedArguments.containsKey(nameSymbol)) {
+        // Clear things out for the next call.
+        _storedArgs.clear();
+        _storedNamedArgs.clear();
         throw new ArgumentError(
-            'A typed argument was declared as named $name, but was not passed '
-            'as an argument named $name.\n\n'
-            'BAD:  when(obj.fn(typed(any, named: "a")))\n'
-            'GOOD: when(obj.fn(a: typed(any, named: "a")))');
+            'An ArgumentMatcher was declared as named $name, but was not '
+            'passed as an argument named $name.\n\n'
+            'BAD:  when(obj.fn(anyNamed: "a")))\n'
+            'GOOD: when(obj.fn(a: anyNamed: "a")))');
       }
       if (invocation.namedArguments[nameSymbol] != null) {
+        // Clear things out for the next call.
+        _storedArgs.clear();
+        _storedNamedArgs.clear();
         throw new ArgumentError(
-            'A typed argument was declared as named $name, but a different '
+            'An ArgumentMatcher was declared as named $name, but a different '
             'value (${invocation.namedArguments[nameSymbol]}) was passed as '
             '$name.\n\n'
-            'BAD:  when(obj.fn(b: typed(any, name: "a")))\n'
-            'GOOD: when(obj.fn(b: typed(any, name: "b")))');
+            'BAD:  when(obj.fn(b: anyNamed("a")))\n'
+            'GOOD: when(obj.fn(b: anyNamed("b")))');
       }
       namedArguments[nameSymbol] = arg;
     });
@@ -246,30 +259,34 @@ class _InvocationForTypedArguments extends Invocation {
     var positionalArguments = <dynamic>[];
     var nullPositionalArguments =
         invocation.positionalArguments.where((arg) => arg == null);
-    if (_typedArgs.length != nullPositionalArguments.length) {
+    if (_storedArgs.length != nullPositionalArguments.length) {
+      // Clear things out for the next call.
+      _storedArgs.clear();
+      _storedNamedArgs.clear();
       throw new ArgumentError(
-          'null arguments are not allowed alongside typed(); use '
-          '"typed(eq(null))"');
+          'null arguments are not allowed alongside ArgMatchers; use '
+          '"argThat(isNull)"');
     }
-    int typedIndex = 0;
+    int storedIndex = 0;
     int positionalIndex = 0;
-    while (typedIndex < _typedArgs.length &&
+    while (storedIndex < _storedArgs.length &&
         positionalIndex < invocation.positionalArguments.length) {
-      var arg = _typedArgs[typedIndex];
+      var arg = _storedArgs[storedIndex];
       if (invocation.positionalArguments[positionalIndex] == null) {
-        // [typed] was used; add the [_ArgMatcher] given to [typed].
+        // Add the [ArgMatcher] given to the argument matching helper.
         positionalArguments.add(arg);
-        typedIndex++;
+        storedIndex++;
         positionalIndex++;
       } else {
-        // [typed] was not used; add the [_ArgMatcher] from [invocation].
+        // An argument matching helper was not used; add the [ArgMatcher] from
+        // [invocation].
         positionalArguments
             .add(invocation.positionalArguments[positionalIndex]);
         positionalIndex++;
       }
     }
     while (positionalIndex < invocation.positionalArguments.length) {
-      // Some trailing non-[typed] arguments.
+      // Some trailing non-ArgMatcher arguments.
       positionalArguments.add(invocation.positionalArguments[positionalIndex]);
       positionalIndex++;
     }
@@ -277,11 +294,11 @@ class _InvocationForTypedArguments extends Invocation {
     return positionalArguments;
   }
 
-  _InvocationForTypedArguments._(this.memberName, this.positionalArguments,
+  _InvocationForMatchedArguments._(this.memberName, this.positionalArguments,
       this.namedArguments, this.isGetter, this.isMethod, this.isSetter);
 }
 
-named(var mock, {String name, int hashCode}) => mock
+T named<T extends Mock>(T mock, {String name, int hashCode}) => mock
   .._givenName = name
   .._givenHashCode = hashCode;
 
@@ -561,26 +578,35 @@ class ArgMatcher {
 }
 
 /// An argument matcher that matches any argument passed in "this" position.
-/*ArgMatcher*/ get any => new ArgMatcher(anything, false);
+Null get any => _registerMatcher(anything, false);
+
+Null anyNamed(String named) => _registerMatcher(anything, false, named: named);
 
 /// An argument matcher that matches any argument passed in "this" position, and
 /// captures the argument for later access with `captured`.
-/*ArgMatcher*/ get captureAny => new ArgMatcher(anything, true);
+Null get captureAny => _registerMatcher(anything, true);
+
+Null captureAnyNamed(String named) =>
+    _registerMatcher(anything, true, named: named);
 
 /// An argument matcher that matches an argument that matches [matcher].
-/*ArgMatcher*/ argThat(Matcher matcher) => new ArgMatcher(matcher, false);
+Null argThat(Matcher matcher, {String named}) =>
+    _registerMatcher(matcher, false, named: named);
 
 /// An argument matcher that matches an argument that matches [matcher], and
 /// captures the argument for later access with `captured`.
-/*ArgMatcher*/ captureThat(Matcher matcher) => new ArgMatcher(matcher, true);
+Null captureThat(Matcher matcher, {String named}) =>
+    _registerMatcher(matcher, true, named: named);
 
-/// A Strong-mode safe argument matcher that wraps other argument matchers.
-/// See the README for a full explanation.
-T typed<T>(ArgMatcher matcher, {String named}) {
+@Deprecated('ArgMatchers no longer need to be wrapped in Mockito 3.0')
+Null typed<T>(ArgMatcher matcher, {String named}) => null;
+
+Null _registerMatcher(Matcher matcher, bool capture, {String named}) {
+  var argMatcher = new ArgMatcher(matcher, capture);
   if (named == null) {
-    _typedArgs.add(matcher);
+    _storedArgs.add(argMatcher);
   } else {
-    _typedNamedArgs[named] = matcher;
+    _storedNamedArgs[named] = argMatcher;
   }
   return null;
 }
@@ -806,6 +832,6 @@ void resetMockitoState() {
   _untilCall = null;
   _verifyCalls.clear();
   _capturedArgs.clear();
-  _typedArgs.clear();
-  _typedNamedArgs.clear();
+  _storedArgs.clear();
+  _storedNamedArgs.clear();
 }

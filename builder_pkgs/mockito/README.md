@@ -132,11 +132,16 @@ when(mock.methodThatReturnsAFuture()).thenAnswer((_) => future);
 
 ## Argument matchers
 
+Mockito provides the concept of the "argument matcher" (using the class
+ArgMatcher) to capture arguments and to track how named arguments are passed.
+In most cases, both plain arguments and argument matchers can be passed into
+mock methods:
+
 ```dart
-// You can use arguments itself:
+// You can use plain arguments themselves:
 when(cat.eatFood("fish")).thenReturn(true);
 
-// ... or collections:
+// ... including collections:
 when(cat.walk(["roof","tree"])).thenReturn(2);
 
 // ... or matchers:
@@ -164,6 +169,38 @@ If an argument other than an ArgMatcher (like `any`, `anyNamed()`, `argThat`,
 used for argument matching. If you need more strict matching consider use
 `argThat(identical(arg))`.
 
+However, note that `null` cannot be used as an argument adjacent to ArgMatcher
+arguments, nor as an un-wrapped value passed as a named argument. For example:
+
+```dart
+verify(cat.hunt("back yard", null)); // OK: no ArgMatchers.
+verify(cat.hunt(argThat(contains("yard")), null)); // BAD: adjacent null.
+verify(cat.hunt(argThat(contains("yard")), argThat(isNull))); // OK: wrapped in ArgMatcher.
+verify(cat.eatFood("Milk", hungry: null)); // BAD: null as named argument.
+verify(cat.eatFood("Milk", hungry: argThat(isNull))); // BAD: null as named argument.
+```
+
+## Named arguments
+
+Mockito currently has an awkward nuisance to it's syntax: named arguments and
+argument matchers require more specification than you might think: you must
+declare the name of the argument in the argument matcher. This is because we
+can't rely on the position of a named argument, and the language doesn't
+provide a mechanism to answer "Is this element being used as a named element?"
+
+```dart
+// GOOD: argument matchers include their names.
+when(cat.eatFood(any, hungry: anyNamed('hungry'))).thenReturn(0);
+when(cat.eatFood(any, hungry: argThat(isNotNull, named: 'hungry'))).thenReturn(0);
+when(cat.eatFood(any, hungry: captureAnyNamed('hungry'))).thenReturn(0);
+when(cat.eatFood(any, hungry: captureArgThat(isNotNull, named: 'hungry'))).thenReturn(0);
+
+// BAD: argument matchers do not include their names.
+when(cat.eatFood(any, hungry: any)).thenReturn(0);
+when(cat.eatFood(any, hungry: argThat(isNotNull))).thenReturn(0);
+when(cat.eatFood(any, hungry: captureAny)).thenReturn(0);
+when(cat.eatFood(any, hungry: captureArgThat(isNotNull))).thenReturn(0);
+```
 
 ## Verifying exact number of invocations / at least x / never
 
@@ -268,92 +305,11 @@ logInvocations([catOne, catTwo]);
 throwOnMissingStub(cat);
 ```
 
-## Strong mode compliance
-
-Unfortunately, the use of the arg matchers in mock method calls (like `cat.eatFood(any)`)
-violates the [Strong mode] type system. Specifically, if the method signature of a mocked
-method has a parameter with a parameterized type (like `List<int>`), then passing `any` or
-`argThat` will result in a Strong mode warning:
-
-> [warning] Unsound implicit cast from dynamic to List&lt;int>
-
-In order to write Strong mode-compliant tests with Mockito, you might need to use `typed`,
-annotating it with a type parameter comment. Let's use a slightly different `Cat` class to
-show some examples:
-
-```dart
-class Cat {
-  bool eatFood(List<String> foods, [List<String> mixins]) => true;
-  int walk(List<String> places, {Map<String, String> gaits}) => 0;
-}
-
-class MockCat extends Mock implements Cat {}
-
-var cat = new MockCat();
-```
-
-OK, what if we try to stub using `any`:
-
-```dart
-when(cat.eatFood(any)).thenReturn(true);
-```
-
-Let's analyze this code:
-
-```
-$ dartanalyzer --strong test/cat_test.dart
-Analyzing [lib/cat_test.dart]...
-[warning] Unsound implicit cast from dynamic to List<String> (test/cat_test.dart, line 12, col 20)
-1 warning found.
-```
-
-This code is not Strong mode-compliant. Let's change it to use `typed`:
-
-```dart
-when(cat.eatFood(typed(any)))
-```
-
-```
-$ dartanalyzer --strong test/cat_test.dart
-Analyzing [lib/cat_test.dart]...
-No issues found
-```
-
-Great! A little ugly, but it works. Here are some more examples:
-
-```dart
-when(cat.eatFood(typed(any), typed(any))).thenReturn(true);
-when(cat.eatFood(typed(argThat(contains("fish"))))).thenReturn(true);
-```
-
-Named args require one more component: `typed` needs to know what named argument it is
-being passed into:
-
-```dart
-when(cat.walk(typed(any), gaits: typed(any, named: 'gaits')))
-    .thenReturn(true);
-```
-
-Note the `named` argument. Mockito should fail gracefully if you forget to name a `typed`
-call passed in as a named argument, or name the argument incorrectly.
-
-One more note about the `typed` API: you cannot mix `typed` arguments with `null`
-arguments:
-
-```dart
-when(cat.eatFood(null, typed(any))).thenReturn(true); // Throws!
-when(cat.eatFood(
-    argThat(equals(null)),
-    typed(any))).thenReturn(true); // Works.
-```
-
-[Strong mode]: https://github.com/dart-lang/dev_compiler/blob/master/STRONG_MODE.md
-
 ## How it works
 
-The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to catch
-all method invocations, and returns the value that you have configured beforehand with
-`when()` calls.
+The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to
+catch all method invocations, and returns the value that you have configured
+beforehand with `when()` calls.
 
 The implementation of `when()` is a bit more tricky. Take this example:
 
@@ -367,14 +323,27 @@ when(cat.sound()).thenReturn("Purr");
 
 Since `cat.sound()` returns `null`, how can the `when()` call configure it?
 
-It works, because `when` is not a function, but a top level getter that _returns_ a function.
-Before returning the function, it sets a flag (`_whenInProgress`), so that all `Mock` objects
-know to return a "matcher" (internally `_WhenCall`) instead of the expected value. As soon as
-the function has been invoked `_whenInProgress` is set back to `false` and Mock objects behave
-as normal.
+It works, because `when` is not a function, but a top level getter that
+_returns_ a function.  Before returning the function, it sets a flag
+(`_whenInProgress`), so that all `Mock` objects know to return a "matcher"
+(internally `_WhenCall`) instead of the expected value. As soon as the function
+has been invoked `_whenInProgress` is set back to `false` and Mock objects
+behave as normal.
 
-> **Be careful** never to write `when;` (without the function call) anywhere. This would set
-> `_whenInProgress` to `true`, and the next mock invocation will return an unexpected value.
+Argument matchers work by storing the wrapped arguments, one after another,
+until the `when` (or `verify`) call gathers everything that has been stored,
+and creates an InvocationMatcher with the arguments. This is a simple process
+for positional arguments: the order in which the arguments has been stored
+should be preserved for matching an invocation. Named arguments are trickier:
+their evaluation order is not specified, so if Mockito blindly stored them in
+the order of their evaluation, it wouldn't be able to match up each argument
+matcher with the correct name. This is why each named argument matcher must
+repeat it's own name. `foo: anyNamed('foo')` tells Mockito to store an argument
+matcher for an invocation under the name 'foo'.
+
+> **Be careful** never to write `when;` (without the function call) anywhere.
+> This would set `_whenInProgress` to `true`, and the next mock invocation will
+> return an unexpected value.
 
 The same goes for "chaining" mock objects in a test call. This will fail:
 
@@ -393,12 +362,12 @@ verify(mockUtils.stringUtils.uppercase()).called(1);
 verify(mockStringUtils.uppercase()).called(1);
 ```
 
-This fails, because `verify` sets an internal flag, so mock objects don't return their mocked
-values anymore but their matchers. So `mockUtils.stringUtils` will *not* return the mocked
-`stringUtils` object you put inside.
+This fails, because `verify` sets an internal flag, so mock objects don't
+return their mocked values anymore but their matchers. So
+`mockUtils.stringUtils` will *not* return the mocked `stringUtils` object you
+put inside.
 
-
-You can look at the `when` and `Mock.noSuchMethod` implementations to see how it's done.
-It's very straightforward.
+You can look at the `when` and `Mock.noSuchMethod` implementations to see how
+it's done.  It's very straightforward.
 
 **NOTE:** This is not an official Google product
