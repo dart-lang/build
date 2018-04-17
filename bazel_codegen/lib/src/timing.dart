@@ -40,7 +40,7 @@ class CodegenTiming {
     watch.start();
     final retVal = operation();
     if (retVal is Future<T>) {
-      return retVal.then((T operationValue) {
+      return retVal.then((operationValue) {
         assert(isRunning);
         watch.stop();
         return operationValue;
