@@ -1080,4 +1080,21 @@ void main() {
       expect(() => mock.methodWithoutArgs(), returnsNormally);
     });
   });
+
+  group('the intermediate API', () {
+    test("should mock method with multiple named args and matchers", () {
+      when(mock.methodWithTwoNamedArgs(typed(any), y: anyNamed('y')))
+          .thenReturn("x y");
+      when(mock.methodWithTwoNamedArgs(typed(any), z: anyNamed('z')))
+          .thenReturn("x z");
+      expect(mock.methodWithTwoNamedArgs(42), isNull);
+      expect(mock.methodWithTwoNamedArgs(42, y: 18), equals("x y"));
+      expect(mock.methodWithTwoNamedArgs(42, z: 17), equals("x z"));
+      expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
+      when(mock.methodWithTwoNamedArgs(typed(any),
+              y: anyNamed('y'), z: anyNamed('z')))
+          .thenReturn("x y z");
+      expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), equals("x y z"));
+    });
+  });
 }
