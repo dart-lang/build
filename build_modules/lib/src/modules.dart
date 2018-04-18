@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
@@ -119,29 +120,26 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// Throws a [MissingModulesException] if there are any missing modules. This
   /// typically means that somebody is trying to import a non-existing file.
   Future<List<Module>> computeTransitiveDependencies(AssetReader reader) async {
-    var transitiveDeps = <AssetId, Module>{};
-    var modulesToCrawl = directDependencies.toSet();
     var missingModuleSources = new Set<AssetId>();
-    while (modulesToCrawl.isNotEmpty) {
-      var next = modulesToCrawl.last;
-      modulesToCrawl.remove(next);
-      if (transitiveDeps.containsKey(next)) continue;
-      var nextModuleId = next.changeExtension(moduleExtension);
-      if (!await reader.canRead(nextModuleId)) {
-        missingModuleSources.add(next);
-        continue;
+    Future<Module> read(AssetId dependency) async {
+      if (dependency == primarySource) return this;
+      var moduleId = dependency.changeExtension(moduleExtension);
+      if (!await reader.canRead(moduleId)) {
+        missingModuleSources.add(dependency);
+        return null;
       }
-      var module = new Module.fromJson(
-          json.decode(await reader.readAsString(nextModuleId))
-              as Map<String, dynamic>);
-      transitiveDeps[next] = module;
-      modulesToCrawl.addAll(module.directDependencies);
+      return new Module.fromJson(json
+          .decode(await reader.readAsString(moduleId)) as Map<String, dynamic>);
     }
+
+    var transitiveDeps = await crawlAsync<AssetId, Module>(
+        [primarySource], read, (_, m) => m.directDependencies).toList();
+
     if (missingModuleSources.isNotEmpty) {
-      throw await MissingModulesException.create(this, missingModuleSources,
-          transitiveDeps.values.toList()..add(this), reader);
+      throw await MissingModulesException.create(
+          this, missingModuleSources, transitiveDeps, reader);
     }
-    return transitiveDeps.values.toList();
+    return transitiveDeps.skip(1).toList();
   }
 }
 
