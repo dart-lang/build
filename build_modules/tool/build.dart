@@ -22,8 +22,7 @@ main(List<String> arguments) async {
         generateFor: const InputSet(include: const ['lib/src/modules.dart'])),
   ];
   var args = arguments.toList()..add('--delete-conflicting-outputs');
-  var result = await run(args, builders);
-  if (result != null && result != 0) exit(result);
+  exitCode = await run(args, builders);
 }
 
 const _assetIdTypeChecker = const TypeChecker.fromRuntime(AssetId);
@@ -32,23 +31,23 @@ class _AssetIdTypeHelper extends TypeHelper {
   const _AssetIdTypeHelper();
 
   @override
-  String deserialize(DartType targetType, String expression, bool nullable,
+  String deserialize(DartType targetType, String expression,
       DeserializeContext deserializeNested) {
     if (!_isSupported(targetType)) return null;
     // TODO: Use `commonNullPrefix` if exposed from json_serializable, see
     // https://github.com/dart-lang/json_serializable/issues/53
     var unsafeExpression =
         'new ${targetType.name}.deserialize($expression as List)';
-    return nullable
+    return deserializeNested.nullable
         ? '$expression == null ? null : $unsafeExpression'
         : unsafeExpression;
   }
 
   @override
-  String serialize(DartType targetType, String expression, bool nullable,
+  String serialize(DartType targetType, String expression,
       SerializeContext serializeNested) {
     if (!_isSupported(targetType)) return null;
-    return '$expression${nullable ? '?' : ''}.serialize()';
+    return '$expression${serializeNested.nullable ? '?' : ''}.serialize()';
   }
 
   bool _isSupported(DartType targetType) =>
