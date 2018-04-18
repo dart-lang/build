@@ -1,6 +1,15 @@
 builders:
+  meta_module:
+    import: "package:build_modules/builders.dart"
+    builder_factories:
+      - metaModuleBuilder
+    build_extensions:
+      $lib$:
+        - .meta_module
+    is_optional: True
+    auto_apply: all_packages
+    required_inputs: [".dart"]
   modules:
-    target: "build_modules"
     import: "package:build_modules/builders.dart"
     builder_factories:
       - moduleBuilder
@@ -13,4 +22,7 @@ builders:
         - .unlinked.sum
     is_optional: True
     auto_apply: all_packages
-    required_inputs: [".dart"]
+    defaults:
+      options:
+        strategy: 'coarse'
+    required_inputs: [".dart", ".meta_module"]

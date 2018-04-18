@@ -21,7 +21,7 @@ main() {
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
     var moduleB = new Module(assetB, [assetB, assetC], <AssetId>[]);
     var moduleD = new Module(assetD, [assetD, assetE], <AssetId>[]);
-    await testBuilder(new ModuleBuilder(), {
+    await testBuilder(new ModuleBuilder(false), {
       'a|lib/a.dart': '',
       'a|lib/b.dart': 'part "c.dart";',
       'a|lib/c.dart': 'part of "b.dart";',
