@@ -568,11 +568,13 @@ class ArgMatcher {
 /*ArgMatcher*/ get captureAny => new ArgMatcher(anything, true);
 
 /// An argument matcher that matches an argument that matches [matcher].
-/*ArgMatcher*/ argThat(Matcher matcher) => new ArgMatcher(matcher, false);
+/*ArgMatcher*/ argThat(Matcher matcher, {String named}) =>
+    new ArgMatcher(matcher, false);
 
 /// An argument matcher that matches an argument that matches [matcher], and
 /// captures the argument for later access with `captured`.
-/*ArgMatcher*/ captureThat(Matcher matcher) => new ArgMatcher(matcher, true);
+/*ArgMatcher*/ captureThat(Matcher matcher, {String named}) =>
+    new ArgMatcher(matcher, true);
 
 /// A Strong-mode safe argument matcher that wraps other argument matchers.
 /// See the README for a full explanation.
@@ -584,6 +586,39 @@ T typed<T>(ArgMatcher matcher, {String named}) {
   }
   return null;
 }
+
+/// A forward-compatible argument matcher that matches any argument passed into
+/// the [named] named parameter.
+///
+/// This API will continue to be available in Mockito 3, using the Mockito 3
+/// mechanics. It is offered here so that users may migrate code like
+/// `when(obj.fn(foo: any))` to the Mockito 3 API,
+/// `when(obj.fn(foo: anyNamed('foo')))`, before actually bumping their
+/// dependency on Mockito.
+anyNamed(String named) => typed(any, named: named);
+
+/// A forward-compatible argument matcher that matches any argument passed into
+/// the [named] named parameter, and captures the argument for later access with
+/// `captured`.
+///
+/// This API will continue to be available in Mockito 3, using the Mockito 3.0
+/// mechanics. It is offered here so that users may migrate code like
+/// `when(obj.fn(foo: captureAny))` to the Mockito 3 API,
+/// `when(obj.fn(foo: captureAnyNamed('foo')))`, before actually bumping their
+/// dependency on Mockito.
+captureAnyNamed(String named) => typed(captureAny, named: named);
+
+/// A forward-compatible argument matcher that matches an argument that matches
+/// [matcher], either as a positional argument or as a named argument, named
+/// [named].
+typedArgThat(Matcher matcher, {String named}) =>
+    typed(argThat(matcher), named: named);
+
+/// A forward-compatible argument matcher that matches an argument that matches
+/// [matcher], either as a positional argument or as a named argument, named
+/// [named], and captures the argument for later access with `captured`.
+typedCaptureThat(Matcher matcher, {String named}) =>
+    typed(captureThat(matcher), named: named);
 
 class VerificationResult {
   List captured = [];

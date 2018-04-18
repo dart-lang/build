@@ -1,3 +1,10 @@
+## 3.0.0-alpha+4
+
+* Introduce a backward-and-forward compatible API to help users migrate to
+  Mockito 3. See more details in the [upgrading-to-mockito-3] doc.
+
+[upgrading-to-mockito-3]: https://github.com/dart-lang/mockito/blob/master/upgrading-to-mockito-3.md
+
 ## 3.0.0-alpha+3
 
 * `thenReturn` and `thenAnswer` now support generics and infer the correct
