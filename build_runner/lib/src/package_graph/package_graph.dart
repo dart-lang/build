@@ -80,8 +80,8 @@ class PackageGraph {
           isRoot: false);
     }
 
-    rootNode.dependencies.addAll(
-        _depsFromYaml(rootPubspec, isRoot: true).keys.map((n) => nodes[n]));
+    rootNode.dependencies
+        .addAll(_depsFromYaml(rootPubspec, isRoot: true).map((n) => nodes[n]));
 
     final packageDependencies = _parsePackageDependencies(packageLocations);
     for (final packageName in packageDependencies.keys) {
@@ -218,28 +218,29 @@ DependencyType _dependencyTypeFromSource(String source) {
 
 /// Read the pubspec for each package in [packageLocations] and finds it's
 /// dependencies.
-Map<String, List<String>> _parsePackageDependencies(
+Map<String, Set<String>> _parsePackageDependencies(
     Map<String, String> packageLocations) {
-  final dependencies = <String, List<String>>{};
+  final dependencies = <String, Set<String>>{};
   for (final packageName in packageLocations.keys) {
     final pubspec = _pubspecForPath(packageLocations[packageName]);
-    final packageDeps = _depsFromYaml(pubspec);
-    dependencies[packageName] = packageDeps.keys.toList();
+    dependencies[packageName] = _depsFromYaml(pubspec);
   }
   return dependencies;
 }
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
-Map<String, dynamic> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
-  var deps = new Map<String, dynamic>.from(yaml['dependencies'] as Map ?? {});
+Set<String> _depsFromYaml(YamlMap yaml, {bool isRoot: false}) {
+  var deps = new Set<String>()
+    ..addAll(_stringKeys(yaml['dependencies'] as Map));
   if (isRoot) {
-    deps.addAll(new Map.from(yaml['dev_dependencies'] as Map ?? {}));
-    yaml['dependency_overrides']?.forEach((dep, source) {
-      deps[dep as String] = source;
-    });
+    deps.addAll(_stringKeys(yaml['dev_dependencies'] as Map));
+    deps.addAll(_stringKeys(yaml['dependency_overrides'] as Map));
   }
   return deps;
 }
+
+Iterable<String> _stringKeys(Map m) =>
+    m == null ? const [] : m.keys.cast<String>();
 
 /// Should point to the top level directory for the package.
 YamlMap _pubspecForPath(String absolutePath) {
