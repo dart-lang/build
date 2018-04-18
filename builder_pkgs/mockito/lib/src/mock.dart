@@ -608,6 +608,18 @@ anyNamed(String named) => typed(any, named: named);
 /// dependency on Mockito.
 captureAnyNamed(String named) => typed(captureAny, named: named);
 
+/// A forward-compatible argument matcher that matches an argument that matches
+/// [matcher], either as a positional argument or as a named argument, named
+/// [named].
+typedArgThat(Matcher matcher, {String named}) =>
+    typed(argThat(matcher), named: named);
+
+/// A forward-compatible argument matcher that matches an argument that matches
+/// [matcher], either as a positional argument or as a named argument, named
+/// [named], and captures the argument for later access with `captured`.
+typedCaptureThat(Matcher matcher, {String named}) =>
+    typed(captureThat(matcher), named: named);
+
 class VerificationResult {
   List captured = [];
   int callCount;

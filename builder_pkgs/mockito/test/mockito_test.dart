@@ -1081,7 +1081,7 @@ void main() {
     });
   });
 
-  group('the intermediate API', () {
+  group("the intermediate API", () {
     test("should mock method with multiple named args and matchers", () {
       when(mock.methodWithTwoNamedArgs(typed(any), y: anyNamed('y')))
           .thenReturn("x y");
@@ -1095,6 +1095,38 @@ void main() {
               y: anyNamed('y'), z: anyNamed('z')))
           .thenReturn("x y z");
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), equals("x y z"));
+    });
+
+    test("should capture multiple named args", () {
+      mock.methodWithTwoNamedArgs(42, y: 18);
+      mock.methodWithTwoNamedArgs(42, z: 17);
+      var verifiedY = verify(
+          mock.methodWithTwoNamedArgs(typed(any), y: captureAnyNamed('y')));
+      expect(verifiedY.captured.single, equals(18));
+      var verifiedZ = verify(
+          mock.methodWithTwoNamedArgs(typed(any), z: captureAnyNamed('z')));
+      expect(verifiedZ.captured.single, equals(17));
+    });
+
+    test("should mock method with named, typed arg matcher and an arg matcher",
+        () {
+      when(mock.typeParameterizedNamedFn(typed(any), [43],
+              y: typed(any, named: "y"),
+              z: typedArgThat(contains(45), named: 'z')))
+          .thenReturn("A lot!");
+      expect(mock.typeParameterizedNamedFn([42], [43], y: [44], z: [45]),
+          equals("A lot!"));
+    });
+
+    test("should capture multiple named args", () {
+      mock.methodWithTwoNamedArgs(42, y: 18);
+      mock.methodWithTwoNamedArgs(42, z: 17);
+      var verifiedY = verify(mock.methodWithTwoNamedArgs(typed(any),
+          y: typedCaptureThat(lessThan(75), named: 'y')));
+      expect(verifiedY.captured.single, equals(18));
+      var verifiedZ = verify(mock.methodWithTwoNamedArgs(typed(any),
+          z: typedCaptureThat(lessThan(75), named: 'z')));
+      expect(verifiedZ.captured.single, equals(17));
     });
   });
 }

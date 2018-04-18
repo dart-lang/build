@@ -1,4 +1,4 @@
-## 3.0.0-beta+1.0
+## 3.0.0-alpha+4
 
 * Introduce a backward-and-forward compatible API to help users migrate to
   Mockito 3. See more details in the [upgrading-to-mockito-3] doc.

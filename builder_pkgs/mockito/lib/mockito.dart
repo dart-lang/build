@@ -31,6 +31,8 @@ export 'src/mock.dart'
         // -- Mockito 3.0 compatibility
         anyNamed,
         captureAnyNamed,
+        typedArgThat,
+        typedCaptureThat,
 
         // -- verification
         verify,
