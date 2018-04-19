@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
@@ -113,41 +114,39 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
 
-  /// Returns all [Module]s in the transitive dependencies of this module in a
-  /// post-order traversal.
+  /// Returns all [Module]s in the transitive dependencies of this module in
+  /// reverse dependency order.
   ///
   /// Throws a [MissingModulesException] if there are any missing modules. This
   /// typically means that somebody is trying to import a non-existing file.
   Future<List<Module>> computeTransitiveDependencies(AssetReader reader) async {
-    var modulesByPrimarySource = <AssetId, Module>{};
-    var postOrderModules = <Module>[];
-    var crawlStack = <AssetId>[]..addAll(directDependencies);
+    var transitiveDeps = <AssetId, Module>{};
+    var modulesToCrawl = directDependencies.toSet();
     var missingModuleSources = new Set<AssetId>();
-    while (crawlStack.isNotEmpty) {
-      var next = crawlStack.last;
-      if (modulesByPrimarySource.containsKey(next)) {
-        postOrderModules.add(modulesByPrimarySource[next]);
-        crawlStack.removeLast();
-        continue;
-      }
+    while (modulesToCrawl.isNotEmpty) {
+      var next = modulesToCrawl.last;
+      modulesToCrawl.remove(next);
+      if (transitiveDeps.containsKey(next)) continue;
       var nextModuleId = next.changeExtension(moduleExtension);
       if (!await reader.canRead(nextModuleId)) {
         missingModuleSources.add(next);
-        crawlStack.removeLast();
         continue;
       }
       var module = new Module.fromJson(
           json.decode(await reader.readAsString(nextModuleId))
               as Map<String, dynamic>);
-      modulesByPrimarySource[next] = module;
-      crawlStack.addAll(module.directDependencies
-          .where((s) => !modulesByPrimarySource.containsKey(s)));
+      transitiveDeps[next] = module;
+      modulesToCrawl.addAll(module.directDependencies);
     }
     if (missingModuleSources.isNotEmpty) {
       throw await MissingModulesException.create(this, missingModuleSources,
-          modulesByPrimarySource.values.toList()..add(this), reader);
+          transitiveDeps.values.toList()..add(this), reader);
     }
-    return postOrderModules;
+    var orderedModules = stronglyConnectedComponents<AssetId, Module>(
+        transitiveDeps.values,
+        (m) => m.primarySource,
+        (m) => m.directDependencies.map((s) => transitiveDeps[s]));
+    return orderedModules.map((c) => c.single).toList();
   }
 }
 
