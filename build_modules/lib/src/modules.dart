@@ -140,7 +140,8 @@ class Module extends Object with _$ModuleSerializerMixin {
           json.decode(await reader.readAsString(nextModuleId))
               as Map<String, dynamic>);
       modulesByPrimarySource[next] = module;
-      crawlStack.addAll(module.directDependencies);
+      crawlStack.addAll(module.directDependencies
+          .where((s) => !modulesByPrimarySource.containsKey(s)));
     }
     if (missingModuleSources.isNotEmpty) {
       throw await MissingModulesException.create(this, missingModuleSources,

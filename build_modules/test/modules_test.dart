@@ -22,6 +22,7 @@ void main() {
   LibraryElement libDepOnNonSdk;
   LibraryElement libAImportsBNoCycle;
   LibraryElement libBImportsANoCycle;
+  LibraryElement libBSecondImportsANoCycle;
   final assetCycle = makeAssetId('a|lib/a_cycle.dart');
   final assetSecondaryInCycle = makeAssetId('a|lib/a_secondary_in_cycle.dart');
   final assetPartInCycle = makeAssetId('a|lib/a_part_in_cycle.dart');
@@ -33,6 +34,8 @@ void main() {
   final assetAImportsBNoCycle = makeAssetId('a|lib/a_imports_b_no_cycle.dart');
   final assetAPartLibraryName = makeAssetId('a|lib/a_part_library_name.dart');
   final assetBImportsANoCycle = makeAssetId('b|lib/b_imports_a_no_cycle.dart');
+  final assetBSecondImportsANoCycle =
+      makeAssetId('b|lib/b_second_import_to_a_no_cycle.dart');
 
   setUpAll(() async {
     await resolveAsset(assetCycle, (resolver) async {
@@ -54,6 +57,10 @@ void main() {
     });
     await resolveAsset(assetBImportsANoCycle, (resolver) async {
       libBImportsANoCycle = await resolver.libraryFor(assetBImportsANoCycle);
+    });
+    await resolveAsset(assetBSecondImportsANoCycle, (resolver) async {
+      libBSecondImportsANoCycle =
+          await resolver.libraryFor(assetBSecondImportsANoCycle);
     });
   });
 
@@ -119,12 +126,14 @@ void main() {
   group('computeTransitiveDeps', () {
     Module rootModule;
     Module immediateDep;
+    Module immediateDep2;
     Module transitiveDep;
     InMemoryAssetReader reader;
 
     setUp(() {
       rootModule = new Module.forLibrary(libAImportsBNoCycle);
       immediateDep = new Module.forLibrary(libBImportsANoCycle);
+      immediateDep2 = new Module.forLibrary(libBSecondImportsANoCycle);
       transitiveDep = new Module.forLibrary(libNoCycle);
       reader = new InMemoryAssetReader();
       reader.cacheStringAsset(
@@ -139,6 +148,10 @@ void main() {
           assetBImportsANoCycle,
           new File('test/fixtures/b/${assetBImportsANoCycle.path}')
               .readAsStringSync());
+      reader.cacheStringAsset(
+          assetBSecondImportsANoCycle,
+          new File('test/fixtures/b/${assetBSecondImportsANoCycle.path}')
+              .readAsStringSync());
       reader.cacheStringAsset(assetCycle,
           new File('test/fixtures/a/${assetCycle.path}').readAsStringSync());
       reader.cacheStringAsset(
@@ -151,15 +164,27 @@ void main() {
       reader.cacheStringAsset(
           assetBImportsANoCycle.changeExtension(moduleExtension),
           json.encode(immediateDep.toJson()));
+      reader.cacheStringAsset(
+          assetBSecondImportsANoCycle.changeExtension(moduleExtension),
+          json.encode(immediateDep2.toJson()));
       reader.cacheStringAsset(assetNoCycle.changeExtension(moduleExtension),
           json.encode(transitiveDep.toJson()));
 
       var transitiveDeps =
-          await rootModule.computeTransitiveDependencies(reader);
+          (await rootModule.computeTransitiveDependencies(reader))
+              .map((m) => m.primarySource)
+              .toList();
       expect(
-          transitiveDeps.map((m) => m.primarySource),
-          unorderedEquals(
-              [immediateDep.primarySource, transitiveDep.primarySource]));
+          transitiveDeps,
+          unorderedEquals([
+            immediateDep.primarySource,
+            immediateDep2.primarySource,
+            transitiveDep.primarySource
+          ]));
+      expect(transitiveDeps.indexOf(transitiveDep.primarySource),
+          lessThan(transitiveDeps.indexOf(immediateDep.primarySource)));
+      expect(transitiveDeps.indexOf(transitiveDep.primarySource),
+          lessThan(transitiveDeps.indexOf(immediateDep2.primarySource)));
     });
 
     test('missing modules report nice errors', () {
@@ -173,6 +198,7 @@ void main() {
                 return error.message.contains('''
 Unable to find modules for some sources, check the following imports:
 
+`import 'package:b/b_second_import_to_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 5:1
 `import 'package:b/b_imports_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 4:1
 ''');
               },
