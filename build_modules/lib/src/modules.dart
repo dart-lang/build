@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
@@ -141,7 +142,11 @@ class Module extends Object with _$ModuleSerializerMixin {
       throw await MissingModulesException.create(this, missingModuleSources,
           transitiveDeps.values.toList()..add(this), reader);
     }
-    return transitiveDeps.values.toList();
+    var orderedModules = stronglyConnectedComponents<AssetId, Module>(
+        transitiveDeps.values,
+        (m) => m.primarySource,
+        (m) => m.directDependencies.map((s) => transitiveDeps[s]));
+    return orderedModules.map((c) => c.single).toList();
   }
 }
 

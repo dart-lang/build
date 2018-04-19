@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:pool/pool.dart';
 import 'package:scratch_space/scratch_space.dart';
 
 import 'common.dart';
@@ -98,6 +99,8 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
   await scratchSpace.copyOutput(module.unlinkedSummaryId, buildStep);
 }
 
+final _lazyBuildPool = new Pool(16);
+
 /// Creates a linked summary for [module].
 Future createLinkedSummary(Module module, BuildStep buildStep,
     {bool isRoot = false}) async {
@@ -108,7 +111,8 @@ Future createLinkedSummary(Module module, BuildStep buildStep,
   // Provide linked summaries where possible (if created in a previous phase),
   // otherwise provide unlinked summaries.
   await Future.wait(transitiveDeps.map((module) async {
-    if (await buildStep.canRead(module.linkedSummaryId)) {
+    if (await _lazyBuildPool
+        .withResource(() => buildStep.canRead(module.linkedSummaryId))) {
       transitiveLinkedSummaryDeps.add(module.linkedSummaryId);
     } else {
       transitiveUnlinkedSummaryDeps.add(module.unlinkedSummaryId);
