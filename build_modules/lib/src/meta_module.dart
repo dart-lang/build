@@ -425,8 +425,8 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
     }
     var modules = <Module>[];
     for (var key in assetsByTopLevel.keys) {
-      modules.addAll(await _computeModules(
-          reader, assetsByTopLevel[key], key == 'lib'));
+      modules.addAll(
+          await _computeModules(reader, assetsByTopLevel[key], key == 'lib'));
     }
     return new MetaModule(modules);
   }
