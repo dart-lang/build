@@ -340,7 +340,7 @@ bool _isEntrypoint(CompilationUnit dart) {
 }
 
 Future<List<Module>> _computeModules(
-    BuildStep buildStep, List<AssetId> assets, bool public) async {
+    AssetReader reader, List<AssetId> assets, bool public) async {
   var dir = _topLevelDir(assets.first.path);
   if (!assets.every((src) => _topLevelDir(src.path) == dir)) {
     throw new ArgumentError(
@@ -355,7 +355,7 @@ Future<List<Module>> _computeModules(
   var idsToRemove = <AssetId>[];
   var parsedAssetsById = <AssetId, CompilationUnit>{};
   for (var asset in assets) {
-    var content = await buildStep.readAsString(asset);
+    var content = await reader.readAsString(asset);
     // Skip errors here, dartdevc gives nicer messages.
     var parsed = parseCompilationUnit(content,
         name: asset.path, parseFunctionBodies: false, suppressErrors: true);
@@ -414,7 +414,7 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
       _$MetaModuleFromJson(json);
 
   static Future<MetaModule> forAssets(
-      BuildStep buildStep, List<AssetId> assets) async {
+      AssetReader reader, List<AssetId> assets) async {
     var assetsByTopLevel = <String, List<AssetId>>{};
     for (var asset in assets) {
       var dir = _topLevelDir(asset.path);
@@ -426,7 +426,7 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
     var modules = <Module>[];
     for (var key in assetsByTopLevel.keys) {
       modules.addAll(await _computeModules(
-          buildStep, assetsByTopLevel[key], key == 'lib'));
+          reader, assetsByTopLevel[key], key == 'lib'));
     }
     return new MetaModule(modules);
   }
