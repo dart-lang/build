@@ -565,6 +565,13 @@ class _CleanCommand extends Command<int> {
   Future<int> run() async {
     var logSubscription = Logger.root.onRecord.listen(stdIOLogListener);
 
+    logger.warning('Deleting cache and generated source files.\n'
+        'This shouldn\'t be necessary for most applications, unless you have '
+        'made intentional edits to generated files (i.e. for testing). '
+        'Consider filing a bug at '
+        'https://github.com/dart-lang/build/issues/new if you are using this '
+        'to work around an apparent bug.');
+
     await logTimedAsync(logger, 'Cleaning up source outputs', () async {
       var assetGraphFile = new File(assetGraphPath);
       if (!assetGraphFile.existsSync()) {
