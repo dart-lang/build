@@ -17,6 +17,13 @@ import 'package:shelf/shelf_io.dart';
 
 import 'package:build_runner/build_runner.dart';
 
+import '../asset/file_based.dart';
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
+import '../logging/logging.dart';
+import '../logging/std_io_logging.dart';
+import '../util/constants.dart';
+
 const _assumeTty = 'assume-tty';
 const _define = 'define';
 const _deleteFilesByDefault = 'delete-conflicting-outputs';
@@ -47,6 +54,7 @@ class BuildCommandRunner extends CommandRunner<int> {
     addCommand(new _WatchCommand());
     addCommand(new _ServeCommand());
     addCommand(new _TestCommand());
+    addCommand(new _CleanCommand());
   }
 
   // CommandRunner._usageWithoutDescription is private – this is a reasonable
@@ -233,6 +241,8 @@ class _ServeTarget {
 }
 
 abstract class BuildRunnerCommand extends Command<int> {
+  Logger get logger => new Logger(name);
+
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
 
@@ -401,7 +411,6 @@ class _ServeCommand extends _WatchCommand {
   @override
   Future<int> run() async {
     var options = _readOptions();
-    var logger = new Logger('Serve');
     var handler = await watch(
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
@@ -536,6 +545,67 @@ class _TestCommand extends BuildRunnerCommand {
         ]..addAll(extraTestArgs),
         mode: ProcessStartMode.INHERIT_STDIO);
     return testProcess.exitCode;
+  }
+}
+
+class _CleanCommand extends Command<int> {
+  _CleanCommand();
+
+  @override
+  String get name => 'clean';
+
+  @override
+  String get description =>
+      'Cleans up output from previous builds. Does not clean up --output '
+      'directories.';
+
+  Logger get logger => new Logger(name);
+
+  @override
+  Future<int> run() async {
+    var logSubscription = Logger.root.onRecord.listen(stdIOLogListener);
+
+    logger.warning('Deleting cache and generated source files.\n'
+        'This shouldn\'t be necessary for most applications, unless you have '
+        'made intentional edits to generated files (i.e. for testing). '
+        'Consider filing a bug at '
+        'https://github.com/dart-lang/build/issues/new if you are using this '
+        'to work around an apparent (and reproducible) bug.');
+
+    await logTimedAsync(logger, 'Cleaning up source outputs', () async {
+      var assetGraphFile = new File(assetGraphPath);
+      if (!assetGraphFile.existsSync()) {
+        logger.warning(
+            'No asset graph found, skipping generated to source file cleanup');
+      } else {
+        var assetGraph =
+            new AssetGraph.deserialize(await assetGraphFile.readAsBytes());
+        var packageGraph = new PackageGraph.forThisPackage();
+        var writer = new FileBasedAssetWriter(packageGraph);
+        for (var id in assetGraph.outputs) {
+          if (id.package != packageGraph.root.name) continue;
+          var node = assetGraph.get(id) as GeneratedAssetNode;
+          if (node.wasOutput) {
+            // Note that this does a file.exists check in the root package and
+            // only tries to delete the file if it exists. This way we only
+            // actually delete to_source outputs, without reading in the build
+            // actions.
+            await writer.delete(id);
+          }
+        }
+      }
+    });
+
+    await logTimedAsync(logger, 'Cleaning up cache directory', () async {
+      var generatedDir = new Directory(cacheDir);
+      if (await generatedDir.exists()) {
+        await generatedDir.delete(recursive: true);
+      }
+    });
+
+    await logSubscription.cancel();
+
+    return 0;
   }
 }
 

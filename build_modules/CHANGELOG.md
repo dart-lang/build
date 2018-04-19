@@ -1,6 +1,6 @@
 # 0.2.1
 
-- Give a guaranteed post-order traversal for
+- Give a guaranteed reverse dependency order for
   `Module.computeTransitiveDependencies`
 
 # 0.2.0+2
