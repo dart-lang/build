@@ -570,7 +570,7 @@ class _CleanCommand extends Command<int> {
         'made intentional edits to generated files (i.e. for testing). '
         'Consider filing a bug at '
         'https://github.com/dart-lang/build/issues/new if you are using this '
-        'to work around an apparent bug.');
+        'to work around an apparent (and reproducible) bug.');
 
     await logTimedAsync(logger, 'Cleaning up source outputs', () async {
       var assetGraphFile = new File(assetGraphPath);
