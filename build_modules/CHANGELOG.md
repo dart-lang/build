@@ -1,3 +1,8 @@
+# 0.2.1
+
+- Give a guaranteed post-order traversal for
+  `Module.computeTransitiveDependencies`
+
 # 0.2.0+2
 
 - Fix use of `whereType` in `MissingModulesException`,
