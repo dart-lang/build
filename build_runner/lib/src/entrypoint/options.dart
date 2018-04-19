@@ -342,7 +342,7 @@ class _BuildCommand extends BuildRunnerCommand {
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
     } else {
-      return 1;
+      return result.failureType.value;
     }
   }
 }
@@ -513,7 +513,7 @@ class _TestCommand extends BuildRunnerCommand {
 
       if (result.status == BuildStatus.failure) {
         stdout.writeln('Skipping tests due to build failure');
-        return 1;
+        return result.failureType.value;
       }
 
       var testExitCode = await _runTests(tempPath);

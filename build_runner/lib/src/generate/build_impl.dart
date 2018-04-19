@@ -207,7 +207,8 @@ class _SingleBuild {
       if (!await createMergedOutputDirectories(_outputMap, _assetGraph,
           _packageGraph, _reader, _environment, _buildPhases)) {
         result = _convertToFailure(
-            result, 'Failed to create merged output directories.');
+            result, 'Failed to create merged output directories.',
+            failureType: FailureType.cantCreate);
       }
     }
     if (result.status == BuildStatus.success) {
@@ -224,12 +225,14 @@ class _SingleBuild {
     return result;
   }
 
-  BuildResult _convertToFailure(BuildResult previous, String errorMessge) =>
+  BuildResult _convertToFailure(BuildResult previous, String errorMessge,
+          {FailureType failureType}) =>
       new BuildResult(
         BuildStatus.failure,
         previous.outputs,
         exception: errorMessge,
         performance: previous.performance,
+        failureType: failureType,
       );
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {

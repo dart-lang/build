@@ -17,11 +17,12 @@ main() {
   group('build integration tests', () {
     group('build script', () {
       var originalBuildContent = '''
+import 'dart:io';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
-  await run(
+  exitCode = await run(
       args, [applyToRoot(new TestBuilder())]);
 }
 ''';
@@ -78,6 +79,17 @@ main(List<String> args) async {
             d.dir('web', [d.file('a.txt.copy', 'a')])
           ])
         ]).validate();
+      });
+
+      test('when --output fails a proper error code is returned', () async {
+        await d.dir('a', [
+          d.dir('build', [
+            d.file('non_empty', 'blah'),
+          ])
+        ]).create();
+        var result = await runDart('a', 'tool/build.dart',
+            args: ['build', '--output', 'build']);
+        expect(result.exitCode, 73, reason: result.stderr as String);
       });
 
       test('--output creates a merged directory from the provided root',
