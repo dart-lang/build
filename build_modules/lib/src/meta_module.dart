@@ -1,3 +1,7 @@
+// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
@@ -13,18 +17,18 @@ part 'meta_module.g.dart';
 
 /// Returns the top level directory in [uri].
 ///
-/// Throws an [ArgumentError] if [uri] is just a filename with no directory.
-String _topLevelDir(String uri) {
-  var parts = p.url.split(p.url.normalize(uri));
+/// Throws an [ArgumentError] if [path] is just a filename with no directory.
+String _topLevelDir(String path) {
+  var parts = p.url.split(p.url.normalize(path));
   String error;
   if (parts.length == 1) {
-    error = 'The uri `$uri` does not contain a directory.';
+    error = 'The path `$path` does not contain a directory.';
   } else if (parts.first == '..') {
-    error = 'The uri `$uri` reaches outside the root directory.';
+    error = 'The path `$path` reaches outside the root directory.';
   }
   if (error != null) {
     throw new ArgumentError(
-        'Cannot compute top level dir for path `$uri`. $error');
+        'Cannot compute top level dir for path `$path`. $error');
   }
   return parts.first;
 }

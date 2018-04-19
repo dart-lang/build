@@ -1,12 +1,14 @@
-// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
+import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/modules.dart';
 
 import 'matchers.dart';
@@ -38,9 +40,9 @@ main() {
       () async {
     var assetA = new AssetId('a', 'lib/a.dart');
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
+    var meta = new MetaModule([moduleA]);
     await testBuilder(new ModuleBuilder(isCourse: true), {
-      'a|lib/.meta_module':
-          '{"m":[{"p":["a","lib/a.dart"],"s":[["a","lib/a.dart"]],"d":[]}]}',
+      'a|lib/.meta_module': json.encode(meta),
       'a|lib/a.dart': '',
     }, outputs: {
       'a|lib/a.module': encodedMatchesModule(moduleA),

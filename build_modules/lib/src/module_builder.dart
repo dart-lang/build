@@ -36,8 +36,8 @@ void _cacheAssetToPrimary(
   }
 }
 
-/// Removes dependencies from the provided [Module] so that only those with
-/// corresponding module files remain.
+/// Updates dependencies from the provided [Module] so that they point to the
+/// primary resource of the dependencies corresponding [Module].
 Future<Module> _cleanModuleDeps(
     BuildStep buildStep, Module module, Map<AssetId, AssetId> assetToPrimary,
     {bool isCourseStrategy: false}) async {
@@ -87,14 +87,30 @@ Future<Null> _cacheCleanedModules(
   }
 }
 
+enum Strategy { fine, course }
+
 /// Creates `.module` files for any `.dart` file that is the primary dart
 /// source of a [Module].
 class ModuleBuilder implements Builder {
   final bool _isCoarse;
   const ModuleBuilder({bool isCourse: false}) : _isCoarse = isCourse;
 
+  static Strategy _getStrategy(BuilderOptions options) {
+    var config = (options.config['strategy'] ?? 'coarse') as String;
+    switch (config) {
+      case 'coarse':
+        return Strategy.course;
+      case 'fine':
+        return Strategy.fine;
+        break;
+      default:
+        throw 'Unexpected ModuleBuilder strategy: ${options.config['strategy']}';
+    }
+  }
+
   factory ModuleBuilder.forOptions(BuilderOptions options) {
-    return new ModuleBuilder(isCourse: options.config['strategy'] == 'coarse');
+    return new ModuleBuilder(
+        isCourse: _getStrategy(options) == Strategy.course);
   }
 
   @override

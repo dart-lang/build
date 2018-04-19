@@ -2,11 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
+import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:build_modules/src/meta_module.dart';
 
 import 'matchers.dart';
 import 'util.dart';
@@ -16,12 +19,18 @@ main() {
 
   group('basic project', () {
     setUp(() async {
+      var a = new AssetId('a', 'lib/a.dart');
+      var ameta = new MetaModule([
+        new Module(a, [a], [])
+      ]);
+      var b = new AssetId('b', 'lib/b.dart');
+      var bmeta = new MetaModule([
+        new Module(b, [b], [])
+      ]);
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
-        'a|lib/.meta_module':
-            '{"m":[{"p":["a","lib/a.dart"],"s":[["a","lib/a.dart"]],"d":[]}]}',
-        'b|lib/.meta_module':
-            '{"m":[{"p":["b","lib/b.dart"],"s":[["b","lib/b.dart"]],"d":[]}]}',
+        'a|lib/.meta_module': json.encode(ameta),
+        'b|lib/.meta_module': json.encode(bmeta),
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
         import 'package:b/b.dart';

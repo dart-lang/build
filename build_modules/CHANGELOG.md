@@ -1,4 +1,4 @@
-# 0.2.0+3
+# 0.2.1
 
 - Add new `strategy` option for `ModuleBuilder`. If `coarse` is provided a
   minimum number of modules will be created. Otherwise, a module will be
