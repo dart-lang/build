@@ -5,14 +5,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
+import 'package:scratch_space/scratch_space.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:cli_util/cli_util.dart' as cli_util;
-import 'package:path/path.dart' as p;
-import 'package:pool/pool.dart';
-import 'package:scratch_space/scratch_space.dart';
 
 import 'common.dart';
 import 'errors.dart';
@@ -62,22 +60,14 @@ class DevCompilerBuilder implements Builder {
   }
 }
 
-final _lazyBuildPool = new Pool(16);
-
 /// Compile [module] with the dev compiler.
 Future createDevCompilerModule(
     Module module, BuildStep buildStep, bool useKernel,
     {bool debugMode = true}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
-  var transitiveSummaryDeps = transitiveDeps
-      .map((module) =>
-          useKernel ? module.kernelSummaryId : module.linkedSummaryId)
-      .toList();
+  var transitiveSummaryDeps = transitiveDeps.map(
+      (module) => useKernel ? module.kernelSummaryId : module.linkedSummaryId);
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-
-  // Ensure lazy builds are complete
-  await Future.wait(transitiveSummaryDeps
-      .map((s) => _lazyBuildPool.withResource(() => buildStep.canRead(s))));
 
   var allAssetIds = new Set<AssetId>()
     ..addAll(module.sources)
