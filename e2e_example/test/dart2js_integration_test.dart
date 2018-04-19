@@ -56,7 +56,7 @@ void main() {
             '--output=$_outputDir',
           ]);
       await expectWasCompiledWithDart2Js(minified: true);
-    });
+    }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('--define overrides --config', () async {
       await expectTestsPass(

@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 void stdIOLogListener(LogRecord record, {bool verbose}) {
   verbose ??= false;
@@ -37,7 +38,11 @@ void stdIOLogListener(LogRecord record, {bool verbose}) {
   }
 
   if (record.stackTrace != null && verbose) {
-    lines.add(record.stackTrace);
+    var trace = new Trace.from(record.stackTrace).foldFrames((f) {
+      return f.package == 'build_runner' || f.package == 'build';
+    }, terse: true);
+
+    lines.add(trace);
   }
 
   var message = new StringBuffer(lines.join('\n'));
@@ -72,6 +77,7 @@ String _loggerName(LogRecord record, bool verbose) {
     'Serve',
     'Watch',
     'build_runner',
+    'clean',
   ];
   var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
   return verbose || !knownNames.contains(record.loggerName)

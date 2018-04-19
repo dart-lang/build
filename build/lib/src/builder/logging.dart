@@ -24,7 +24,7 @@ Future<T> scopeLogAsync<T>(Future<T> fn(), Logger log) {
       }),
       zoneValues: {logKey: log},
       onError: (Object e, StackTrace s) {
-        log.severe('', e);
+        log.severe('', e, s);
         if (done.isCompleted) return;
         done.completeError(e, s);
       }).then((result) {

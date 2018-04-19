@@ -78,9 +78,12 @@ class BuildArgs {
       this.srcsPath,
       this.help,
       this.logLevel,
-      {this.isWorker,
-      this.useSummaries: true,
-      this.additionalArgs});
+      {List<String> additionalArgs,
+      bool isWorker,
+      bool useSummaries})
+      : additionalArgs = additionalArgs ?? [],
+        isWorker = isWorker ?? false,
+        useSummaries = useSummaries ?? true;
 
   factory BuildArgs.parse(List<String> args, {bool isWorker}) {
     // When not running as a worker, but that mode is supported, then we get

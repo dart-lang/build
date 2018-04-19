@@ -55,7 +55,7 @@ Future<Map<String, String>> _packageMap(
           lines.map((line) => line.split(':')),
           key: (l) => (l as List<String>)[0],
           value: (l) => (l as List<String>)[1]);
-    });
+    }) as Future<Map<String, String>>;
 
 String _bazelRelativePath(String inputPath, Iterable<String> outputDirs) {
   for (var outputDir in outputDirs) {

@@ -1,3 +1,9 @@
+## 0.8.3-dev
+
+- Clean and summarize stack traces printed with `--verbose`.
+- Added a `clean` command which deletes generated to source files and the entire
+  build cache directory.
+
 ## 0.8.2+2
 - The `.packages` file is now always created in the root of the output directory
   instead of under each top level directory.

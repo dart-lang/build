@@ -1,3 +1,7 @@
+## 0.12.2
+
+- Include stack trace in log for exceptions throw by builders.
+
 ## 0.12.1
 
 - Add `BuilderOptions.empty` and `BuilderOptions.overrideWith`.
