@@ -15,7 +15,7 @@ import 'modules.dart';
 
 part 'meta_module.g.dart';
 
-/// Returns the top level directory in [uri].
+/// Returns the top level directory in [path].
 ///
 /// Throws an [ArgumentError] if [path] is just a filename with no directory.
 String _topLevelDir(String path) {
@@ -31,53 +31,6 @@ String _topLevelDir(String path) {
         'Cannot compute top level dir for path `$path`. $error');
   }
   return parts.first;
-}
-
-/// Convert [importUri] found in [source] to an [AssetId], handling both
-/// `package:` imports and relative imports.
-///
-/// Returns null for `dart:` uris since they cannot be referenced properly
-/// by an `AssetId`.
-///
-/// Throws an [ArgumentError] if an [AssetId] can otherwise not be created. This
-/// might happen if:
-///
-/// * [importUri] is absolute but has a scheme other than `dart:` or `package:`.
-/// * [importUri] is a relative path that reaches outside of the current top
-///   level directory of a package (relative import from `web` to `lib` for
-///   instance).
-AssetId _importUriToAssetId(AssetId source, String importUri) {
-  var parsedUri = Uri.parse(importUri);
-  if (parsedUri.isAbsolute) {
-    switch (parsedUri.scheme) {
-      case 'package':
-        var parts = parsedUri.pathSegments;
-        var packagePath = p.url.joinAll(['lib']..addAll(parts.skip(1)));
-        if (!p.isWithin('lib', packagePath)) {
-          throw new ArgumentError(
-              'Unable to create AssetId for import `$importUri` in `$source` '
-              'because it reaches outside the `lib` directory.');
-        }
-        return new AssetId(parts.first, packagePath);
-      case 'dart':
-        return null;
-      default:
-        throw new ArgumentError(
-            'Unable to resolve import. Only package: paths and relative '
-            'paths are supported, got `$importUri`.');
-    }
-  } else {
-    // Relative path.
-    var targetPath =
-        p.url.normalize(p.url.join(p.url.dirname(source.path), parsedUri.path));
-    var dir = _topLevelDir(source.path);
-    if (!p.isWithin(dir, targetPath)) {
-      throw new ArgumentError(
-          'Unable to create AssetId for relative import `$importUri` in '
-          '`$source`  because it reaches outside the `$dir` directory.');
-    }
-    return new AssetId(source.package, targetPath);
-  }
 }
 
 /// An [AssetId] and all of its internal/external deps based on it's
@@ -132,8 +85,9 @@ class _AssetNode {
     var parts = new Set<AssetId>();
     for (var directive in parsed.directives) {
       if (directive is! UriBasedDirective) continue;
-      var linkedId = _importUriToAssetId(
-          id, (directive as UriBasedDirective).uri.stringValue);
+      var path = (directive as UriBasedDirective).uri.stringValue;
+      if (Uri.parse(path).scheme == 'dart') continue;
+      var linkedId = new AssetId.resolve(path, from: id);
       if (linkedId == null) continue;
       if (directive is PartDirective) {
         if (!internalSrcs.contains(linkedId)) {
