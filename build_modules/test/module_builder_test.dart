@@ -12,7 +12,8 @@ import 'package:build_modules/src/modules.dart';
 import 'matchers.dart';
 
 main() {
-  test('can serialize modules and only output for primary sources', () async {
+  test('can serialize fine modules and only output for primary sources',
+      () async {
     var assetA = new AssetId('a', 'lib/a.dart');
     var assetB = new AssetId('a', 'lib/b.dart');
     var assetC = new AssetId('a', 'lib/c.dart');
@@ -21,7 +22,7 @@ main() {
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
     var moduleB = new Module(assetB, [assetB, assetC], <AssetId>[]);
     var moduleD = new Module(assetD, [assetD, assetE], <AssetId>[]);
-    await testBuilder(new ModuleBuilder(false), {
+    await testBuilder(new ModuleBuilder(), {
       'a|lib/a.dart': '',
       'a|lib/b.dart': 'part "c.dart";',
       'a|lib/c.dart': 'part of "b.dart";',
@@ -31,6 +32,18 @@ main() {
       'a|lib/a.module': encodedMatchesModule(moduleA),
       'a|lib/b.module': encodedMatchesModule(moduleB),
       'a|lib/d.module': encodedMatchesModule(moduleD),
+    });
+  });
+  test('can serialize course modules and only output for primary sources',
+      () async {
+    var assetA = new AssetId('a', 'lib/a.dart');
+    var moduleA = new Module(assetA, [assetA], <AssetId>[]);
+    await testBuilder(new ModuleBuilder(isCourse: true), {
+      'a|lib/.meta_module':
+          '{"m":[{"p":["a","lib/a.dart"],"s":[["a","lib/a.dart"]],"d":[]}]}',
+      'a|lib/a.dart': '',
+    }, outputs: {
+      'a|lib/a.module': encodedMatchesModule(moduleA),
     });
   });
 }

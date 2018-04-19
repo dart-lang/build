@@ -8,9 +8,17 @@ import 'package:analyzer/src/summary/idl.dart';
 import 'package:test/test.dart';
 
 import 'package:build_modules/src/modules.dart';
+import 'package:build_modules/src/meta_module.dart';
 
 /// Matches an encoded [Module] against an [expected] Module instance.
 encodedMatchesModule(Module expected) => new EncodedModuleMatcher(expected);
+
+/// Matches an encoded [MetaModule] against an [expected] Module instance.
+encodedMatchesMetaModule(MetaModule expected) =>
+    new EncodedMetaModuleMatcher(expected);
+
+/// Matches a [Module] against an [expected] Module instance.
+matchesModule(Module expected) => new ModuleMatcher(expected);
 
 /// A [Matcher] for an analyzer summary that matches against the linked uris.
 class HasLinkedUris extends CustomMatcher {
@@ -36,6 +44,65 @@ class HasUnlinkedUris extends CustomMatcher {
   }
 }
 
+/// A [Matcher] for an encoded [MetaModule] against an [expected] instance.
+class EncodedMetaModuleMatcher extends Matcher {
+  final MetaModule expected;
+
+  EncodedMetaModuleMatcher(this.expected);
+
+  @override
+  bool matches(actual, description) {
+    if (actual is List<int>) {
+      actual = utf8.decode(actual as List<int>);
+    }
+    if (actual is! String) return false;
+    var jSon = json.decode(actual as String) as Map<String, dynamic>;
+    var meta = new MetaModule.fromJson(jSon);
+    return unorderedMatches(expected.modules.map(matchesModule))
+        .matches(meta.modules, description);
+  }
+
+  @override
+  Description describeMismatch(
+      item, Description mismatchDescription, Map matchState, bool verbose) {
+    try {
+      if (item is List<int>) {
+        item = utf8.decode(item as List<int>);
+      }
+      if (item is! String) {
+        return mismatchDescription.add('Was neither `List<int>` or `String`.');
+      }
+      return mismatchDescription.add('Had content $item');
+    } catch (_) {
+      return mismatchDescription.add('Could not be decoded');
+    }
+  }
+
+  @override
+  Description describe(Description description) =>
+      description.add(json.encode(expected.toJson()).toString());
+}
+
+class ModuleMatcher extends Matcher {
+  final Module expected;
+
+  ModuleMatcher(this.expected);
+
+  @override
+  bool matches(actual, description) {
+    if (actual is! Module) return false;
+    return actual.primarySource == expected.primarySource &&
+        unorderedEquals(expected.sources)
+            .matches(actual.sources, description) &&
+        unorderedEquals(expected.directDependencies)
+            .matches(actual.directDependencies, description);
+  }
+
+  @override
+  Description describe(Description description) =>
+      description.add(json.encode(expected.toJson()).toString());
+}
+
 /// A [Matcher] for an encoded [Module] against an [expected] instance.
 class EncodedModuleMatcher extends Matcher {
   final Module expected;
@@ -50,12 +117,7 @@ class EncodedModuleMatcher extends Matcher {
     if (actual is! String) return false;
     var jSon = json.decode(actual as String) as Map<String, dynamic>;
     var module = new Module.fromJson(jSon);
-
-    return module.primarySource == expected.primarySource &&
-        unorderedEquals(expected.sources)
-            .matches(module.sources, description) &&
-        unorderedEquals(expected.directDependencies)
-            .matches(module.directDependencies, description);
+    return new ModuleMatcher(expected).matches(module, description);
   }
 
   @override

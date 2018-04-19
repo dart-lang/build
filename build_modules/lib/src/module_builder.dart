@@ -91,10 +91,10 @@ Future<Null> _cacheCleanedModules(
 /// source of a [Module].
 class ModuleBuilder implements Builder {
   final bool _isCoarse;
-  const ModuleBuilder(this._isCoarse);
+  const ModuleBuilder({bool isCourse: false}) : _isCoarse = isCourse;
 
   factory ModuleBuilder.forOptions(BuilderOptions options) {
-    return new ModuleBuilder(options.config['strategy'] == 'coarse');
+    return new ModuleBuilder(isCourse: options.config['strategy'] == 'coarse');
   }
 
   @override
