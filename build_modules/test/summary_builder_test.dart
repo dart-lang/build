@@ -18,6 +18,10 @@ main() {
     setUp(() async {
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
+        'a|lib/.meta_module':
+            '{"m":[{"p":["a","lib/a.dart"],"s":[["a","lib/a.dart"]],"d":[]}]}',
+        'b|lib/.meta_module':
+            '{"m":[{"p":["b","lib/b.dart"],"s":[["b","lib/b.dart"]],"d":[]}]}',
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
         import 'package:b/b.dart';
