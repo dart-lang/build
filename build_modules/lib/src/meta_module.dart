@@ -3,11 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
-import 'dart:math';
 
 import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
+import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:json_annotation/json_annotation.dart';
 
@@ -67,12 +66,6 @@ class _AssetNode {
   /// internal srcs).
   final Set<AssetId> externalDeps;
 
-  /// Order in which this node was discovered.
-  int discoveryIndex;
-
-  /// Lowest discoveryIndex for any node this is connected to.
-  int lowestLinkedDiscoveryIndex;
-
   _AssetNode(this.id, this.internalDeps, this.parts, this.externalDeps);
 
   /// Creates an [_AssetNode] for [id] given a parsed [CompilationUnit] and some
@@ -110,7 +103,7 @@ class _AssetNode {
 ///
 /// This creates more modules than we want, but we collapse them later on.
 Map<AssetId, Module> _createModulesFromComponents(
-    Iterable<Set<_AssetNode>> connectedComponents) {
+    Iterable<List<_AssetNode>> connectedComponents) {
   var modules = <AssetId, Module>{};
   for (var componentNodes in connectedComponents) {
     // Name components based on first alphabetically sorted node, preferring
@@ -136,58 +129,6 @@ Map<AssetId, Module> _createModulesFromComponents(
     modules[module.primarySource] = module;
   }
   return modules;
-}
-
-/// Computes the strongly connected components reachable from entrypoints.
-List<Set<_AssetNode>> _stronglyConnectedComponents(
-    Map<AssetId, _AssetNode> nodesById) {
-  var currentDiscoveryIndex = 0;
-  // [LinkedHashSet] maintains insertion order which is important!
-  var nodeStack = new LinkedHashSet<_AssetNode>();
-  var connectedComponents = <Set<_AssetNode>>[];
-
-  void stronglyConnect(_AssetNode node) {
-    node.discoveryIndex = currentDiscoveryIndex;
-    node.lowestLinkedDiscoveryIndex = currentDiscoveryIndex;
-    currentDiscoveryIndex++;
-    nodeStack.add(node);
-
-    for (var dep in node.internalDeps) {
-      var depNode = nodesById[dep];
-      if (depNode.discoveryIndex == null) {
-        stronglyConnect(depNode);
-        node.lowestLinkedDiscoveryIndex = min(node.lowestLinkedDiscoveryIndex,
-            depNode.lowestLinkedDiscoveryIndex);
-      } else if (nodeStack.contains(depNode)) {
-        node.lowestLinkedDiscoveryIndex = min(node.lowestLinkedDiscoveryIndex,
-            depNode.lowestLinkedDiscoveryIndex);
-      }
-    }
-
-    if (node.discoveryIndex == node.lowestLinkedDiscoveryIndex) {
-      var component = new Set<_AssetNode>();
-
-      // Pops the last node off of `nodeStack`, adds it to `component`, and
-      // returns it.
-      _AssetNode _popAndAddNode() {
-        var last = nodeStack.last;
-        nodeStack.remove(last);
-        component.add(last);
-        return last;
-      }
-
-      while (_popAndAddNode() != node) {}
-
-      connectedComponents.add(component);
-    }
-  }
-
-  for (var node in nodesById.values) {
-    if (node.discoveryIndex != null) continue;
-    stronglyConnect(node);
-  }
-
-  return connectedComponents;
 }
 
 Set<AssetId> _entryPointModules(
@@ -353,7 +294,10 @@ Future<List<Module>> _computeModules(
         asset, parsedAssetsById[asset], srcAssetIds);
     nodesById[asset] = node;
   }
-  var connectedComponents = _stronglyConnectedComponents(nodesById);
+  var connectedComponents = stronglyConnectedComponents<AssetId, _AssetNode>(
+      nodesById.values,
+      (n) => n.id,
+      (n) => n.internalDeps.map((dep) => nodesById[dep]));
   var modulesById = _createModulesFromComponents(connectedComponents);
   var modules = _mergeModules(modulesById, entryIds);
   return modules;
