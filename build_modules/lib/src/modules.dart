@@ -113,8 +113,8 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
 
-  /// Computes the [primarySource]s of all [Module]s that are transitively
-  /// depended on by this module.
+  /// Returns all [Module]s in the transitive dependencies of this module in a
+  /// post-order traversal.
   ///
   /// Throws a [MissingModulesException] if there are any missing modules. This
   /// typically means that somebody is trying to import a non-existing file.

@@ -1,3 +1,8 @@
+# 0.3.7
+
+- Reduce memory usage by requesting (and lazily building) lower level modules
+  first when building for an entrypoint.
+
 # 0.3.6
 
 - Add support for compiling with `dart2js` by default in release mode.
