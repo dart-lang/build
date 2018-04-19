@@ -3,14 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:logging/logging.dart';
 
 import 'human_readable_duration.dart';
 
-// Ensures on windows this message does not get overwritten by later logs.
-final _logSuffix = '${Platform.isWindows ? '' : '\n'}';
+// Ensures this message does not get overwritten by later logs.
+final _logSuffix = '\n';
 
 /// Logs an asynchronous [action] with [description] before and after.
 ///
