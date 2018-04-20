@@ -64,7 +64,9 @@ enum BuildStatus {
   failure,
 }
 
-/// The status of a build.
+/// The type of failure
+///
+/// Values correspond to proposed exitCode.
 class FailureType {
   static const general = const FailureType(1);
   static const cantCreate = const FailureType(73);
