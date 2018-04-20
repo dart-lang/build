@@ -62,13 +62,21 @@ Future<Module> _cleanModuleDeps(
     if (primaryDep == null) {
       // We don't know the primary source for the dep so look for it
       // using the meta module file.
-      var depMeta = new MetaModule.fromJson(json.decode(
-              await buildStep.readAsString(
-                  new AssetId(dep.package, 'lib/$metaModuleExtension')))
-          as Map<String, dynamic>);
-      _cacheAssetToPrimary(depMeta, assetToPrimary);
+      var depAsset = new AssetId(dep.package, 'lib/$metaModuleExtension');
+      if (await buildStep.canRead(depAsset)) {
+        var depMeta = new MetaModule.fromJson(
+            json.decode(await buildStep.readAsString(depAsset))
+                as Map<String, dynamic>);
+        _cacheAssetToPrimary(depMeta, assetToPrimary);
+      }
     }
-    cleanedDeps.add(assetToPrimary[dep]);
+    var depPrimary = assetToPrimary[dep];
+    if (depPrimary != null) {
+      cleanedDeps.add(depPrimary);
+    } else {
+      log.info('Unable to find module for dependency: $dep '
+          'Are you missing a dependency on package:${dep.package}?');
+    }
   }
   return new Module(module.primarySource, module.sources, cleanedDeps);
 }
