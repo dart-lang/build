@@ -14,6 +14,9 @@ class BuildResult {
   /// The status of this build.
   final BuildStatus status;
 
+  /// The type of failure.
+  final FailureType failureType;
+
   /// The error that was thrown during this build if it failed.
   final Object exception;
 
@@ -28,9 +31,14 @@ class BuildResult {
   final BuildPerformance performance;
 
   BuildResult(this.status, List<AssetId> outputs,
-      {this.exception, this.stackTrace, this.performance})
-      : outputs = new List.unmodifiable(outputs);
-
+      {this.exception,
+      this.stackTrace,
+      this.performance,
+      FailureType failureType})
+      : outputs = new List.unmodifiable(outputs),
+        this.failureType = failureType == null && status == BuildStatus.failure
+            ? FailureType.general
+            : failureType;
   @override
   String toString() {
     if (status == BuildStatus.success) {
@@ -54,6 +62,14 @@ $stackTrace
 enum BuildStatus {
   success,
   failure,
+}
+
+/// The type of failure
+class FailureType {
+  static const general = const FailureType._(1);
+  static const cantCreate = const FailureType._(73);
+  final int exitCode;
+  const FailureType._(this.exitCode);
 }
 
 abstract class BuildState {
