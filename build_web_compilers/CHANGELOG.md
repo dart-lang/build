@@ -1,3 +1,7 @@
+# 0.3.7+1
+
+- Add missing dependency on the `pool` package.
+
 # 0.3.7
 
 - Reduce memory usage by requesting (and lazily building) lower level modules
