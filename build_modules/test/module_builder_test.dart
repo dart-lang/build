@@ -36,24 +36,6 @@ main() {
       'a|lib/d.module': encodedMatchesModule(moduleD),
     });
   });
-  test('can output modules if there exists a cycle', () async {
-    var assetA = new AssetId('a', 'lib/a.dart');
-    var assetB = new AssetId('b', 'lib/b.dart');
-    var moduleA = new Module(assetA, [assetA], <AssetId>[assetB]);
-    var moduleB = new Module(assetB, [assetB], <AssetId>[assetA]);
-    var metaA = new MetaModule([moduleA]);
-    var metaB = new MetaModule([moduleB]);
-    await testBuilder(new ModuleBuilder(isCourse: true), {
-      'a|lib/.meta_module': json.encode(metaA),
-      'b|lib/.meta_module': json.encode(metaB),
-      'a|lib/a.dart': 'import "package:b/b.dart"',
-      'b|lib/b.dart': 'import "package:a/a.dart";',
-    }, outputs: {
-      'a|lib/a.module': encodedMatchesModule(moduleA),
-      'b|lib/b.module': encodedMatchesModule(moduleB),
-    });
-  });
-
   test('can serialize course modules and only output for primary sources',
       () async {
     var assetA = new AssetId('a', 'lib/a.dart');
