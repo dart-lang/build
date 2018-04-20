@@ -14,7 +14,7 @@ import 'meta_module.dart';
 const metaModuleExtension = '.meta_module';
 
 /// Creates `.meta_module` file for any Dart library.
-/// 
+///
 /// This file contains information about the full computed
 /// module structure for the package.
 class MetaModuleBuilder implements Builder {
