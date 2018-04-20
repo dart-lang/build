@@ -1,11 +1,11 @@
 name: build_modules
-version: 0.2.1
+version: 0.2.2
 description: Builders for Dart modules
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
-  sdk: '>=2.0.0-dev.9 <2.0.0'
+  sdk: '>=2.0.0-dev.48 <2.0.0'
 
 dependencies:
   analyzer: ">0.30.0 < 0.32.0"
@@ -13,16 +13,17 @@ dependencies:
   build: ^0.12.0
   build_config: ^0.2.1
   cli_util: ^0.1.2
+  graphs: ^0.1.0
   json_annotation: ^0.2.2
   logging: ^0.11.2
   path: ^1.4.2
   scratch_space: ^0.0.1
 
 dev_dependencies:
-  build_runner: ^0.8.0
+  build_runner: ^0.8.2
   build_test: ^0.10.0
-  json_serializable: ^0.4.0
-  source_gen: ^0.7.5
+  json_serializable: ^0.5.0
+  source_gen: ^0.8.0
   test: ^0.12.24
   a:
     path: test/fixtures/a

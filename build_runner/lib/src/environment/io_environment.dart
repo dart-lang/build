@@ -55,7 +55,7 @@ class IOEnvironment implements BuildEnvironment {
         stdout.writeln('${i + 1} - ${choices[i]}');
       }
       final input = stdin.readLineSync();
-      final choice = int.parse(input, onError: (_) => -1);
+      final choice = int.tryParse(input) ?? -1;
       if (choice > 0 && choice <= choices.length) return choice - 1;
       stdout.writeln('Unrecognized option $input, '
           'a number between 1 and ${choices.length} expected');

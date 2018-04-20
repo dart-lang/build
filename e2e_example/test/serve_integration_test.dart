@@ -12,7 +12,7 @@ import 'common/utils.dart';
 
 void main() {
   setUpAll(() async {
-    await startManualServer(ensureCleanBuild: true, verbose: true);
+    await startManualServer(ensureCleanBuild: true);
   });
 
   tearDownAll(() async {

@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
+import 'package:stream_transform/stream_transform.dart';
 
 /// Resolves using a [SyncPackageResolver] before reading from the file system.
 ///
@@ -74,11 +75,15 @@ class PackageAssetReader extends AssetReader
   }
 
   File _resolve(AssetId id) {
-    final packagePath = _packageResolver.packagePath(id.package);
-    if (packagePath == null) {
-      return null;
+    final uri = id.uri;
+    if (uri.isScheme('package')) {
+      return new File.fromUri(_packageResolver.resolveUri(id.uri));
     }
-    return new File(p.canonicalize(p.join(packagePath, id.path)));
+    if (id.package == _rootPackage) {
+      // TODO this assumes the cwd is the root package
+      return new File(p.canonicalize(p.join(p.current, id.path)));
+    }
+    throw new UnsupportedError('Unabled to resolve $id');
   }
 
   @override
@@ -89,11 +94,25 @@ class PackageAssetReader extends AssetReader
           'Root package must be provided to use `findAssets` without an '
           'explicit `package`.');
     }
-    var packagePath = _packageResolver.packagePath(package);
-    if (packagePath == null) {
-      throw new StateError('Could not resolve "$package".');
+    var packageLibDir = _packageResolver.packageConfigMap[package];
+    if (packageLibDir == null) {
+      throw new UnsupportedError('Unable to find package $package');
     }
-    return _globAssets(package, packagePath, glob);
+
+    var packageFiles = new Directory.fromUri(packageLibDir)
+        .list(recursive: true)
+        .where((e) => e is File)
+        .map((f) =>
+            p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))));
+    if (package == _rootPackage) {
+      // TODO this assumes the cwd is the root package
+      packageFiles = packageFiles.transform(merge(Directory.current
+          .list(recursive: true)
+          .where((e) => e is File)
+          .map((f) => p.relative(f.path, from: Directory.current.path))
+          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/')))));
+    }
+    return packageFiles.where(glob.matches).map((p) => new AssetId(package, p));
   }
 
   @override
@@ -122,12 +141,4 @@ class PackageAssetReader extends AssetReader
     }
     return file.readAsString(encoding: encoding);
   }
-}
-
-/// Returns all assets that match [glob] in [package] with a [path].
-Stream<AssetId> _globAssets(String package, String path, Glob glob) {
-  return glob.list(root: path).where((entity) => entity is File).map((file) {
-    var relative = p.relative(file.path, from: path);
-    return new AssetId(package, relative);
-  });
 }

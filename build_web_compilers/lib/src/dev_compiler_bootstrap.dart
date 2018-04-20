@@ -6,8 +6,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:build_modules/build_modules.dart';
+import 'package:path/path.dart' as _p; // ignore: library_prefixes
+import 'package:pool/pool.dart';
 
 import 'dev_compiler_builder.dart';
 import 'web_entrypoint_builder.dart';
@@ -85,6 +86,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
       entrypointJsContent);
 }
 
+final _lazyBuildPool = new Pool(16);
+
 /// Ensures that all transitive js modules for [module] are available and built.
 Future<List<Module>> _ensureTransitiveModules(
     Module module, AssetReader reader) async {
@@ -96,7 +99,7 @@ Future<List<Module>> _ensureTransitiveModules(
         ..add(module.jsId(jsModuleExtension));
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
-    if (await reader.canRead(jsId)) return;
+    if (await _lazyBuildPool.withResource(() => reader.canRead(jsId))) return;
     var errorsId = jsId.addExtension('.errors');
     await reader.canRead(errorsId);
     log.warning('Unable to read $jsId, check your console or the '

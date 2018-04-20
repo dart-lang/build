@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -47,7 +48,7 @@ void main() {
 
   test('readAsBytes', () async {
     final content = [1, 2, 3];
-    fileSystem.nextFile = new FakeFile()..content = content;
+    fileSystem.nextFile = new FakeFile()..content = utf8.decode(content);
     expect(await reader.readAsBytes(f1AssetId), equals(content));
     expect(fileSystem.calls, isNotEmpty);
     expect(fileSystem.calls.single.memberName, equals(#find));
@@ -82,14 +83,17 @@ class FakeFileSystem implements BazelFileSystem {
 }
 
 class FakeFile implements File {
-  Object content = 'Fake File Contents';
+  String content = 'Fake File Contents';
+
+  @override
+  Future<List<int>> readAsBytes({encoding}) =>
+      new Future.value(utf8.encode(content));
+
+  @override
+  Future<String> readAsString({encoding}) => new Future.value(content);
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
-    if (invocation.memberName == #readAsString ||
-        invocation.memberName == #readAsBytes) {
-      return content;
-    }
     return null;
   }
 }

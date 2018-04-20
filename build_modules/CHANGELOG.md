@@ -1,8 +1,13 @@
-# 0.2.1
+# 0.2.2
 
 - Add new `strategy` option for `ModuleBuilder`. If `coarse` is provided a
   minimum number of modules will be created. Otherwise, a module will be
   created for each strongly connected component.
+
+# 0.2.1
+
+- Give a guaranteed reverse dependency order for
+  `Module.computeTransitiveDependencies`
 
 # 0.2.0+2
 

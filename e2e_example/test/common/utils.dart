@@ -45,18 +45,12 @@ Future<ProcessResult> runAutoCommand(List<String> args) =>
 /// This expects the first build to complete successfully, but you can add extra
 /// expects that happen before that using [extraExpects]. All of these will be
 /// invoked and awaited before awaiting the next successful build.
-///
-/// For debugging purposes you can enable printing of the build script output by
-/// setting [verbose] to `true`.
 Future<Null> startManualServer(
         {bool ensureCleanBuild,
-        bool verbose,
         List<Function> extraExpects,
         String scriptPath = 'tool/build.dart'}) =>
     _startServer('dart', [scriptPath, 'serve'],
-        ensureCleanBuild: ensureCleanBuild,
-        verbose: verbose,
-        extraExpects: extraExpects);
+        ensureCleanBuild: ensureCleanBuild, extraExpects: extraExpects);
 
 /// Runs `pub run build_runner serve` in this package, and waits for the first
 /// build to complete.
@@ -66,15 +60,10 @@ Future<Null> startManualServer(
 /// This expects the first build to complete successfully, but you can add extra
 /// expects that happen before that using [extraExpects]. All of these will be
 /// invoked and awaited before awaiting the next successful build.
-///
-/// For debugging purposes you can enable printing of the build script output by
-/// setting [verbose] to `true`.
 Future<Null> startAutoServer(
-        {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) =>
+        {bool ensureCleanBuild, List<Function> extraExpects}) =>
     _startServer(_pubBinary, ['run', 'build_runner', 'serve'],
-        ensureCleanBuild: ensureCleanBuild,
-        verbose: verbose,
-        extraExpects: extraExpects);
+        ensureCleanBuild: ensureCleanBuild, extraExpects: extraExpects);
 
 Future<ProcessResult> _runBuild(String command, List<String> args,
     {bool ensureCleanBuild}) async {
@@ -89,9 +78,8 @@ Future<ProcessResult> _runBuild(String command, List<String> args,
 }
 
 Future<Null> _startServer(String command, List<String> buildArgs,
-    {bool ensureCleanBuild, bool verbose, List<Function> extraExpects}) async {
+    {bool ensureCleanBuild, List<Function> extraExpects}) async {
   ensureCleanBuild ??= false;
-  verbose ??= false;
   extraExpects ??= [];
 
   // Make sure this is a clean build
@@ -110,10 +98,8 @@ Future<Null> _startServer(String command, List<String> buildArgs,
       .transform(const LineSplitter())
       .asBroadcastStream();
 
-  if (verbose) {
-    _stdOutLines.listen((line) => print('StdOut: $line'));
-    _stdErrLines.listen((line) => print('StdErr: $line'));
-  }
+  _stdOutLines.listen((line) => printOnFailure('StdOut: $line'));
+  _stdErrLines.listen((line) => printOnFailure('StdErr: $line'));
 
   extraExpects.add(() => nextSuccessfulBuild);
   await Future.wait(extraExpects.map((cb) async => await cb()));
@@ -222,6 +208,7 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
 Future<Null> expectTestsFail({bool useManualScript}) async {
   useManualScript ??= true;
   var result = useManualScript ? await runManualTests() : await runAutoTests();
+  printOnFailure('${result.stderr}');
   expect(result.stdout, contains('Some tests failed'));
   expect(result.exitCode, isNot(0));
 }
@@ -235,6 +222,7 @@ Future<Null> expectTestsPass(
   var result = useManualScript
       ? await runManualTests(usePrecompiled: usePrecompiled, buildArgs: args)
       : await runAutoTests(usePrecompiled: usePrecompiled, buildArgs: args);
+  printOnFailure('${result.stderr}');
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {
     expect(result.stdout, contains('+$expectedNumRan'));
