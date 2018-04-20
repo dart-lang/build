@@ -1,8 +1,12 @@
-## 0.8.3-dev
+## 0.8.3
 
 - Clean and summarize stack traces printed with `--verbose`.
 - Added a `clean` command which deletes generated to source files and the entire
   build cache directory.
+- Bug Fix: Use the same order to compute the digest of input files to a build
+  step when writing it as when comparing it. Previously builds would not be
+  pruned as efficiently as they can be because the inputs erroneously looked
+  different.
 
 ## 0.8.2+2
 - The `.packages` file is now always created in the root of the output directory

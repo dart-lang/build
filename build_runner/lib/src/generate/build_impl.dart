@@ -614,20 +614,18 @@ class _SingleBuild {
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   Future<Null> _setOutputsState(Iterable<AssetId> outputs,
       SingleStepReader reader, AssetWriterSpy writer, bool isFailure) async {
-    // All inputs are the same, so we only compute this once, but lazily.
-    Digest inputsDigest;
-    var globsRan = reader.globsRan.toSet();
+    if (outputs.isEmpty) return;
+
+    final inputsDigest = await _computeCombinedDigest(
+        reader.assetsRead,
+        (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
+        reader);
+    final globsRan = reader.globsRan.toSet();
 
     for (var output in outputs) {
       var wasOutput = writer.assetsWritten.contains(output);
       var digest = wasOutput ? await _reader.digest(output) : null;
       var node = _assetGraph.get(output) as GeneratedAssetNode;
-
-      inputsDigest ??= await () {
-        var allInputs = reader.assetsRead.toSet();
-        if (node.primaryInput != null) allInputs.add(node.primaryInput);
-        return _computeCombinedDigest(allInputs, node.builderOptionsId, reader);
-      }();
 
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
       // builders we can run arbitrary code between updates otherwise, at which
