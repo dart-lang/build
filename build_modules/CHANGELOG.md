@@ -2,7 +2,8 @@
 
 - Add new `strategy` option for `ModuleBuilder`. If `coarse` is provided a
   minimum number of modules will be created. Otherwise, a module will be
-  created for each strongly connected component.
+  created for each strongly connected component. Note that `coarse` is
+  the default strategy.
 
 # 0.2.1
 
