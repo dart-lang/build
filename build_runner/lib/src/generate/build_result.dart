@@ -65,13 +65,11 @@ enum BuildStatus {
 }
 
 /// The type of failure
-///
-/// Values correspond to proposed exitCode.
 class FailureType {
-  static const general = const FailureType(1);
-  static const cantCreate = const FailureType(73);
-  final int value;
-  const FailureType(this.value);
+  static const general = const FailureType._(1);
+  static const cantCreate = const FailureType._(73);
+  final int exitCode;
+  const FailureType._(this.exitCode);
 }
 
 abstract class BuildState {
