@@ -19,7 +19,10 @@ main(List<String> arguments) async {
           new JsonSerializableGenerator.withDefaultHelpers(
               [const _AssetIdTypeHelper()])
         ]),
-        generateFor: const InputSet(include: const ['lib/src/modules.dart'])),
+        generateFor: const InputSet(include: const [
+          'lib/src/modules.dart',
+          'lib/src/meta_module.dart'
+        ])),
   ];
   var args = arguments.toList()..add('--delete-conflicting-outputs');
   exitCode = await run(args, builders);

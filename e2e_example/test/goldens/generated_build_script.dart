@@ -3,9 +3,9 @@ import 'package:provides_builder/builders.dart' as _i2;
 import 'package:build_test/builder.dart' as _i3;
 import 'package:build_config/build_config.dart' as _i4;
 import 'package:build_modules/builders.dart' as _i5;
-import 'package:build_web_compilers/builders.dart' as _i6;
-import 'package:build/build.dart' as _i7;
-import 'dart:convert' as _i8;
+import 'package:build/build.dart' as _i6;
+import 'dart:convert' as _i7;
+import 'package:build_web_compilers/builders.dart' as _i8;
 import 'dart:isolate' as _i9;
 
 final _builders = [
@@ -23,15 +23,20 @@ final _builders = [
       hideOutput: true,
       defaultGenerateFor: const _i4.InputSet(include: const ['test/**'])),
   _i1.apply(
+      'build_modules|meta_module', [_i5.metaModuleBuilder], _i1.toAllPackages(),
+      isOptional: true, hideOutput: true),
+  _i1.apply(
       'build_modules|modules',
       [_i5.moduleBuilder, _i5.unlinkedSummaryBuilder, _i5.linkedSummaryBuilder],
       _i1.toAllPackages(),
       isOptional: true,
-      hideOutput: true),
+      hideOutput: true,
+      defaultOptions:
+          new _i6.BuilderOptions(_i7.json.decode('{"strategy":"coarse"}'))),
   _i1.apply(
-      'build_web_compilers|ddc', [_i6.devCompilerBuilder], _i1.toAllPackages(),
+      'build_web_compilers|ddc', [_i8.devCompilerBuilder], _i1.toAllPackages(),
       isOptional: true, hideOutput: true),
-  _i1.apply('build_web_compilers|entrypoint', [_i6.webEntrypointBuilder],
+  _i1.apply('build_web_compilers|entrypoint', [_i8.webEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,
       defaultGenerateFor: const _i4.InputSet(include: const [
@@ -43,16 +48,16 @@ final _builders = [
         'test/**.node_test.dart',
         'test/**.vm_test.dart'
       ]),
-      defaultOptions: new _i7.BuilderOptions(
-          _i8.json.decode('{"dart2js_args":["--minify"]}')),
+      defaultOptions: new _i6.BuilderOptions(
+          _i7.json.decode('{"dart2js_args":["--minify"]}')),
       defaultReleaseOptions:
-          new _i7.BuilderOptions(_i8.json.decode('{"compiler":"dart2js"}')),
+          new _i6.BuilderOptions(_i7.json.decode('{"compiler":"dart2js"}')),
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.applyPostProcess(
       'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder,
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
-      _i6.dart2JsArchiveExtractor,
+      _i8.dart2JsArchiveExtractor,
       defaultGenerateFor: const _i4.InputSet())
 ];
 main(List<String> args, [_i9.SendPort sendPort]) async {
