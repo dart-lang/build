@@ -58,7 +58,6 @@ Future<ServeHandler> watch(
   Map<String, BuildConfig> overrideBuildConfig,
   Map<String, String> outputMap,
   bool trackPerformance,
-  bool checkBuildScriptUpdates,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
