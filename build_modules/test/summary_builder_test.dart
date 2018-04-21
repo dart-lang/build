@@ -29,8 +29,8 @@ main() {
       ]);
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
-        'a|lib/.meta_module': json.encode(ameta),
-        'b|lib/.meta_module': json.encode(bmeta),
+        'a|lib/.meta_module_clean': json.encode(ameta),
+        'b|lib/.meta_module_clean': json.encode(bmeta),
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
         import 'package:b/b.dart';

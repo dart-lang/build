@@ -42,7 +42,7 @@ main() {
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
     var meta = new MetaModule([moduleA]);
     await testBuilder(new ModuleBuilder(isCourse: true), {
-      'a|lib/.meta_module': json.encode(meta),
+      'a|lib/.meta_module_clean': json.encode(meta),
       'a|lib/a.dart': '',
     }, outputs: {
       'a|lib/a.module': encodedMatchesModule(moduleA),
