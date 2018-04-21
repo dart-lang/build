@@ -1,3 +1,7 @@
+## 0.8.4
+
+- Log the number of completed actions on successful builds.
+
 ## 0.8.3
 
 - Clean and summarize stack traces printed with `--verbose`.
