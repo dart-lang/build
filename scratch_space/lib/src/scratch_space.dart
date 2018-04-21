@@ -27,7 +27,7 @@ class ScratchSpace {
   final Directory tempDir;
 
   // Assets which have a file created but are still being written to.
-  final _pendingWrites = <AssetId, Future<Null>>{};
+  final _pendingWrites = <AssetId, Future<void>>{};
 
   ScratchSpace._(this.tempDir)
       : packagesDir = new Directory(p.join(tempDir.path, 'packages'));
@@ -93,19 +93,18 @@ class ScratchSpace {
         if (pending != null) futures.add(pending);
       } else {
         file.createSync(recursive: true);
-        var done = () async {
-          var bytes = await reader.readAsBytes(id);
-          await _descriptorPool.withResource(() async {
-            await file.writeAsBytes(bytes);
-            // ignore: unawaited_futures
-            _pendingWrites.remove(id);
-          });
-        }();
+        var done = reader
+            .readAsBytes(id)
+            .then((bytes) =>
+                _descriptorPool.withResource(() => file.writeAsBytes(bytes)))
+            .whenComplete(() {
+          _pendingWrites.remove(id);
+        });
         _pendingWrites[id] = done;
         futures.add(done);
       }
     }
-    return Future.wait(futures);
+    return Future.wait(futures, eagerError: true);
   }
 
   /// Returns the actual [File] in this environment corresponding to [id].
