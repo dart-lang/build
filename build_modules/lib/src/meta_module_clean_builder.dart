@@ -58,7 +58,11 @@ Future<Set<Module>> _transitiveModules(BuildStep buildStep, AssetId metaAsset,
   return dependentModules;
 }
 
-Module _cleanModule(
+/// Merges the modules in a strongly connected component.
+///
+/// Note this will clean the module dependencies as the merge happens.
+/// The result will be that all dependencies are primary sources.
+Module _mergeComponent(
     List<Module> connectedComponent, Map<AssetId, Module> assetToModule) {
   var sources = new Set<AssetId>();
   var deps = new Set<AssetId>();
@@ -106,7 +110,7 @@ class MetaModuleCleanBuilder implements Builder {
     var cleanModules = new SplayTreeSet<Module>(
         (a, b) => a.primarySource.compareTo(b.primarySource));
     for (var connectedComponent in connectedComponents) {
-      var cleanModule = _cleanModule(connectedComponent, assetToModule);
+      var cleanModule = _mergeComponent(connectedComponent, assetToModule);
       for (var source in cleanModule.sources) {
         if (source.package == buildStep.inputId.package) {
           cleanModules.add(cleanModule);

@@ -30,7 +30,7 @@ final _assetToPrimary = new Resource<Map<AssetId, AssetId>>(() => {},
 /// Updates dependencies from the provided [Module] so that they point to the
 /// primary resource of the dependencies corresponding [Module].
 ///
-/// Note that this will process the clean meata modules for the module
+/// Note that this will process the clean meta modules for the module
 /// dependencies if necessary.
 Future<Module> _cleanModuleDeps(
     BuildStep buildStep,
