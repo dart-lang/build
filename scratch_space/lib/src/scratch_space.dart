@@ -104,7 +104,7 @@ class ScratchSpace {
         futures.add(done);
       }
     }
-    return Future.wait(futures);
+    return Future.wait(futures, eagerError: true);
   }
 
   /// Returns the actual [File] in this environment corresponding to [id].
