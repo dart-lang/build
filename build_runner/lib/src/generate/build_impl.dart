@@ -519,6 +519,9 @@ class _SingleBuild {
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
     assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
+
+    // We only check the first output, because all outputs share the same inputs
+    // and invalidation state.
     var firstOutput = outputs.first;
     var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
     assert(
@@ -529,16 +532,13 @@ class _SingleBuild {
                 .isEmpty),
         'All outputs of a build action should share the same inputs.');
 
-    // We only check the first output, because all outputs share the same inputs
-    // and invalidation state.
+    // No need to build an up to date output
     if (node.state == GeneratedNodeState.upToDate) return false;
     // Early bail out condition, this is a forced update.
     if (node.state == GeneratedNodeState.definitelyNeedsUpdate) return true;
-    // TODO: Don't assume the worst for globs
-    // https://github.com/dart-lang/build/issues/624
-    if (node.previousInputsDigest == null) {
-      return true;
-    }
+    // This is a fresh build or the first time we've seen this output.
+    if (node.previousInputsDigest == null) return true;
+
     var digest = await _computeCombinedDigest(
         node.inputs, node.builderOptionsId, reader);
     if (digest != node.previousInputsDigest) {
