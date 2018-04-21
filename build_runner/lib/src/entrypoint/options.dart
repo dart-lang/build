@@ -232,6 +232,7 @@ class _ServeOptions extends _SharedOptions {
       configKey: argResults[_config] as String,
       outputMap: _parseOutputMap(argResults),
       trackPerformance: argResults[_trackPerformance] as bool,
+      skipBuildScriptCheck: argResults[_skipBuildScriptCheck] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
