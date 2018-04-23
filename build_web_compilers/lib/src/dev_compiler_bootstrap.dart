@@ -310,6 +310,10 @@ final _baseUrlScript = '''
 // Attempt to detect --precompiled mode for tests, and set the base url
 // appropriately, otherwise set it to "/".
 var baseUrl = (function() {
+  var baseTag = document.getElementsByTagName("base");
+  if(baseTag && baseTag[0] && baseTag[0].href){
+    return baseTag[0].href;
+  }
   var pathParts = location.pathname.split("/");
   if (pathParts[0] == "") {
     pathParts.shift();
