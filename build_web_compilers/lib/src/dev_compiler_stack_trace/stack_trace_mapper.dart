@@ -53,7 +53,7 @@ class DartStackTraceUtility {
 @JS('JSON.stringify')
 external String _stringify(dynamic json);
 
-/// Source mapping that is waits to parse source maps until they match the uri
+/// Source mapping that waits to parse source maps until they match the uri
 /// of a requested source map.
 ///
 /// This improves startup performance compared to using MappingBundle directly.
