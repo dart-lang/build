@@ -1,3 +1,8 @@
+## 0.0.2+1
+
+- Fix a bug where failing to read an asset in serve mode could get the build
+  stuck.
+
 ## 0.0.2
 
 - Allow creating files at the root of the scratch space.

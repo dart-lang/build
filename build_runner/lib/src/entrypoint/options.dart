@@ -36,6 +36,7 @@ const _config = 'config';
 const _verbose = 'verbose';
 const _release = 'release';
 const _trackPerformance = 'track-performance';
+const _skipBuildScriptCheck = 'skip-build-script-check';
 
 final _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
@@ -121,6 +122,9 @@ class _SharedOptions {
   /// Enables performance tracking and the `/$perf` page.
   final bool trackPerformance;
 
+  /// Check digest of imports to the build script to invalidate the build.
+  final bool skipBuildScriptCheck;
+
   final bool verbose;
 
   // Global config overrides by builder.
@@ -140,6 +144,7 @@ class _SharedOptions {
     @required this.configKey,
     @required this.outputMap,
     @required this.trackPerformance,
+    @required this.skipBuildScriptCheck,
     @required this.verbose,
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
@@ -155,6 +160,7 @@ class _SharedOptions {
       configKey: argResults[_config] as String,
       outputMap: _parseOutputMap(argResults),
       trackPerformance: argResults[_trackPerformance] as bool,
+      skipBuildScriptCheck: argResults[_skipBuildScriptCheck] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
@@ -180,6 +186,7 @@ class _ServeOptions extends _SharedOptions {
     @required String configKey,
     @required Map<String, String> outputMap,
     @required bool trackPerformance,
+    @required bool skipBuildScriptCheck,
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
@@ -191,6 +198,7 @@ class _ServeOptions extends _SharedOptions {
           configKey: configKey,
           outputMap: outputMap,
           trackPerformance: trackPerformance,
+          skipBuildScriptCheck: skipBuildScriptCheck,
           verbose: verbose,
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
@@ -224,6 +232,7 @@ class _ServeOptions extends _SharedOptions {
       configKey: argResults[_config] as String,
       outputMap: _parseOutputMap(argResults),
       trackPerformance: argResults[_trackPerformance] as bool,
+      skipBuildScriptCheck: argResults[_skipBuildScriptCheck] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
@@ -286,6 +295,11 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: r'Enables performance tracking and the /$perf page.',
           negatable: true,
           defaultsTo: false)
+      ..addFlag(_skipBuildScriptCheck,
+          help: r'Skip validation for the digests of files imported by the '
+              'build script.',
+          hide: true,
+          defaultsTo: false)
       ..addMultiOption(_output,
           help: 'A directory to write the result of a build to. Or a mapping '
               'from a top-level directory in the package to the directory to '
@@ -338,6 +352,8 @@ class _BuildCommand extends BuildRunnerCommand {
       verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
+      trackPerformance: options.trackPerformance,
+      skipBuildScriptCheck: options.skipBuildScriptCheck,
     );
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
@@ -371,6 +387,7 @@ class _WatchCommand extends BuildRunnerCommand {
       outputMap: options.outputMap,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
+      skipBuildScriptCheck: options.skipBuildScriptCheck,
       verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
@@ -421,6 +438,7 @@ class _ServeCommand extends _WatchCommand {
       outputMap: options.outputMap,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
+      skipBuildScriptCheck: options.skipBuildScriptCheck,
       verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
@@ -506,6 +524,7 @@ class _TestCommand extends BuildRunnerCommand {
         outputMap: outputMap,
         packageGraph: packageGraph,
         trackPerformance: options.trackPerformance,
+        skipBuildScriptCheck: options.skipBuildScriptCheck,
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides,
         isReleaseBuild: options.isReleaseBuild,

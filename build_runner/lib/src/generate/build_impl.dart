@@ -213,7 +213,7 @@ class _SingleBuild {
     }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
-          '${result.outputs.length} outputs\n');
+          '${result.outputs.length} outputs ($numActionsCompleted actions)\n');
     } else {
       if (result.exception is FatalBuildException) {
         // TODO(???) Really bad idea. Should not set exit codes in libraries!
@@ -519,6 +519,9 @@ class _SingleBuild {
         'Outputs should be known statically. Missing '
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
     assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
+
+    // We only check the first output, because all outputs share the same inputs
+    // and invalidation state.
     var firstOutput = outputs.first;
     var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
     assert(
@@ -529,16 +532,13 @@ class _SingleBuild {
                 .isEmpty),
         'All outputs of a build action should share the same inputs.');
 
-    // We only check the first output, because all outputs share the same inputs
-    // and invalidation state.
+    // No need to build an up to date output
     if (node.state == GeneratedNodeState.upToDate) return false;
     // Early bail out condition, this is a forced update.
     if (node.state == GeneratedNodeState.definitelyNeedsUpdate) return true;
-    // TODO: Don't assume the worst for globs
-    // https://github.com/dart-lang/build/issues/624
-    if (node.previousInputsDigest == null) {
-      return true;
-    }
+    // This is a fresh build or the first time we've seen this output.
+    if (node.previousInputsDigest == null) return true;
+
     var digest = await _computeCombinedDigest(
         node.inputs, node.builderOptionsId, reader);
     if (digest != node.previousInputsDigest) {
@@ -617,20 +617,18 @@ class _SingleBuild {
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   Future<Null> _setOutputsState(Iterable<AssetId> outputs,
       SingleStepReader reader, AssetWriterSpy writer, bool isFailure) async {
-    // All inputs are the same, so we only compute this once, but lazily.
-    Digest inputsDigest;
-    var globsRan = reader.globsRan.toSet();
+    if (outputs.isEmpty) return;
+
+    final inputsDigest = await _computeCombinedDigest(
+        reader.assetsRead,
+        (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
+        reader);
+    final globsRan = reader.globsRan.toSet();
 
     for (var output in outputs) {
       var wasOutput = writer.assetsWritten.contains(output);
       var digest = wasOutput ? await _reader.digest(output) : null;
       var node = _assetGraph.get(output) as GeneratedAssetNode;
-
-      inputsDigest ??= await () {
-        var allInputs = reader.assetsRead.toSet();
-        if (node.primaryInput != null) allInputs.add(node.primaryInput);
-        return _computeCombinedDigest(allInputs, node.builderOptionsId, reader);
-      }();
 
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
       // builders we can run arbitrary code between updates otherwise, at which
