@@ -1,3 +1,8 @@
+## 0.12.3
+
+- Added an `isRoot` boolean to `BuilderOptions`, which allows builders to have
+  different behavior for the root package, if desired.
+
 ## 0.12.2
 
 - Include stack trace in log for exceptions throw by builders.
