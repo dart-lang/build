@@ -22,7 +22,7 @@ void main() {
     expect(result.stdout,
         matches(new RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
     expect(result.stdout, isNot(contains('.js')));
-  }, skip: 'https://github.com/dart-lang/sdk/issues/32389');
+  });
 
   group('file edits', () {
     setUp(() async {
