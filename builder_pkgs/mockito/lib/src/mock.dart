@@ -601,6 +601,14 @@ Null captureThat(Matcher matcher, {String named}) =>
 @Deprecated('ArgMatchers no longer need to be wrapped in Mockito 3.0')
 Null typed<T>(ArgMatcher matcher, {String named}) => null;
 
+@Deprecated('Replace with `argThat`')
+Null typedArgThat(Matcher matcher, {String named}) =>
+    argThat(matcher, named: named);
+
+@Deprecated('Replace with `captureThat`')
+Null typedCaptureThat(Matcher matcher, {String named}) =>
+    captureThat(matcher, named: named);
+
 Null _registerMatcher(Matcher matcher, bool capture, {String named}) {
   var argMatcher = new ArgMatcher(matcher, capture);
   if (named == null) {

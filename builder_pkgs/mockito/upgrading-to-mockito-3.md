@@ -38,38 +38,13 @@ arguments):
 when(cat.eatFood(argThat(contains('mouse')), hungry: anyNamed('hungry')))...
 ```
 
-Here's a cheatsheet with examples of migrating different Mockito 2 API calls to
-Mockito 3 API calls:
-
-## Table
-
-| Version |                                                                   |
-| --- | --------------------------------------------------------------------- |
-|     | **Using argument matchers as positional arguments**                   |
-| 2.x | `when(obj.fn(typed(any)))...`                                         |
-| 3.0 | `when(obj.fn(any))...`                                                |
-| 2.x | `when(obj.fn(typed(argThat(equals(7)))))...`                          |
-| 3.0 | `when(obj.fn(argThat(equals(7))))...`                                 |
-|     |                                                                       |
-|     | **Using argument matchers as named arguments**                        |
-| 2.x | `when(obj.fn(foo: typed(any, named: 'foo')))...`                      |
-| 3.0 | `when(obj.fn(foo: anyNamed('foo')))...`                               |
-| 2.x | `when(obj.fn(foo: typed(argThat(equals(7)), named: 'foo')))...`       |
-| 3.0 | `when(obj.fn(foo: argThat(equals(7), named: 'foo')))...`              |
-| 2.x | `when(obj.fn(foo: typed(null, named: 'foo')))...`                     |
-| 3.0 | `when(obj.fn(foo: argThat(isNull, named: 'foo')))...`                 |
-| 2.x | `when(obj.fn(foo: typed(captureAny, named: 'foo')))...`               |
-| 3.0 | `when(obj.fn(foo: captureAnyNamed('foo')))...`                        |
-| 2.x | `when(obj.fn(foo: typed(captureThat(equals(7)), named: 'foo')))...`   |
-| 3.0 | `when(obj.fn(foo: captureThat(equals(7), named: 'foo')))...`          |
-
-## Mockito 3.0.0-beta - a backward-and-forward-compatible API
+## Mockito 3.0.0-alpha+4 - a backward-and-forward-compatible API
 
 If you have a large codebase, it may be difficult to upgrade _all_ of your tests
 to the Mockito 3 API all at once. To provide an incremental upgrade path, upgrade to
-Mockito 3.0.0-beta.
+Mockito 3.0.0-alpha+4.
 
-Mockito 3.0.0-beta is a very tiny release on top of Mockito 3.0.0-alpha+3,
+Mockito 3.0.0-alpha+4 is a very tiny release on top of Mockito 3.0.0-alpha+3,
 which provides the Mockito 2.x API. In fact, here's the diff:
 
 ```dart
@@ -84,8 +59,48 @@ which provides the Mockito 2.x API. In fact, here's the diff:
 +captureAnyNamed(String named) => typed(captureAny, named: named);
 ```
 
-Because this version uses the Mockito 2.x implementation, it is not really
-compatible with Dart 2 runtime semantics. If you write:
+## Table
+
+Here's a cheatsheet with examples of migrating different Mockito 2 API calls to
+Mockito 3.0.0-alpha+4 API calls, and Mockito 3 API calls:
+
+| Version       |                                                                     |
+| ------------- | ------------------------------------------------------------------- |
+|               | **Using argument matchers as positional arguments**                 |
+| 2.x           | `when(obj.fn(typed(any)))...`                                       |
+| 3.0.0-alpha+4 | `when(obj.fn(typed(any)))`                                          |
+| 3.0           | `when(obj.fn(any))...`                                              |
+|               |                                                                     |
+| 2.x           | `when(obj.fn(typed(argThat(equals(7)))))...`                        |
+| 3.0.0-alpha+4 | `when(obj.fn(typed(argThat(equals(7)))))...`                        |
+| 3.0           | `when(obj.fn(argThat(equals(7))))...`                               |
+|               |                                                                     |
+|               | **Using argument matchers as named arguments**                      |
+| 2.x           | `when(obj.fn(foo: typed(any, named: 'foo')))...`                    |
+| 3.0.0-alpha+4 | `when(obj.fn(foo: anyNamed('foo')))...`                             |
+| 3.0           | `when(obj.fn(foo: anyNamed('foo')))...`                             |
+|               |                                                                     |
+| 2.x           | `when(obj.fn(foo: typed(argThat(equals(7)), named: 'foo')))...`     |
+| 3.0.0-alpha+4 | `when(obj.fn(foo: typedArgThat(equals(7), named: 'foo')))...`       |
+| 3.0           | `when(obj.fn(foo: argThat(equals(7), named: 'foo')))...`            |
+|               |                                                                     |
+| 2.x           | `when(obj.fn(foo: typed(null, named: 'foo')))...`                   |
+| 3.0.0-alpha+4 | `when(obj.fn(foo: typedArgThat(isNull, named: 'foo')))...`          |
+| 3.0           | `when(obj.fn(foo: argThat(isNull, named: 'foo')))...`               |
+|               |                                                                     |
+| 2.x           | `when(obj.fn(foo: typed(captureAny, named: 'foo')))...`             |
+| 3.0.0-alpha+4 | `when(obj.fn(foo: captureAnyNamed('foo')))...`                      |
+| 3.0           | `when(obj.fn(foo: captureAnyNamed('foo')))...`                      |
+|               |                                                                     |
+| 2.x           | `when(obj.fn(foo: typed(captureThat(equals(7)), named: 'foo')))...` |
+| 3.0.0-alpha+4 | `when(obj.fn(foo: typedCaptureThat(equals(7), named: 'foo')))...`   |
+| 3.0           | `when(obj.fn(foo: captureThat(equals(7), named: 'foo')))...`        |
+
+## Upgrade process from 2.x to 3.
+
+Because Mockito 3.0.0-alpha+4, the forward-and-backward-compatible release,
+uses the Mockito 2.x implementation, it is not really compatible with Dart 2
+runtime semantics. If you write:
 
 ```dart
 when(cat.eatFood(argThat(contains('mouse')), hungry: any))...
@@ -96,16 +111,15 @@ then Mockito is still passing an ArgumentMatcher as each argument to
 However, this version lets you incrementally upgrade your tests to the
 Mockito 3 API.  Here's the workflow:
 
-1. **Upgrade to `mockito: '^3.0.0-beta'` in your project's dependencies**, in
+1. **Upgrade to `mockito: '^3.0.0-alpha+4'` in your project's dependencies**, in
    `pubspec.yaml`. This should not cause any tests to break. Commit this change.
 
 2. **Change your usage of Mockito from the old API to the new API**, in as many
    chunks as you like.
 
-   In practice, this means searching for the different code
-   patterns in the table, and replacing the old API calls with the new. You can
-   typically just use your IDE's search, or `git grep`, and search for the
-   following text:
+   In practice, this means searching for the different code patterns in the
+   table, and replacing the old API calls with the new. You can typically just
+   use your IDE's search, or `git grep`, and search for the following text:
 
    * `when(`
    * `verify(`
@@ -141,3 +155,7 @@ Mockito 3 API.  Here's the workflow:
 
 3. **Finally, upgrade to `mockito: '^3.0.0'`.** Make sure your tests all pass,
    and commit!
+
+   In Mockito 3, `typed` still exists, but is deprecated, and a no-op, so
+   remove at your leisure. Additionally, `typedArgThat` and `typedCaptureThat`
+   still exist, but only redirect to `argThat` and `captureThat`, respectively.

@@ -25,7 +25,6 @@ export 'src/mock.dart'
         captureAny,
         captureAnyNamed,
         captureThat,
-        typed,
         Answering,
         Expectation,
         PostExpectation,
@@ -38,6 +37,11 @@ export 'src/mock.dart'
         verifyZeroInteractions,
         VerificationResult,
         Verification,
+
+        // -- deprecated
+        typed,
+        typedArgThat,
+        typedCaptureThat,
 
         // -- misc
         throwOnMissingStub,
