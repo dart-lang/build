@@ -30,15 +30,21 @@ Future<Null> bootstrapDart2Js(
 
   var packageFile = await _createPackageFile(allSrcs, buildStep, scratchSpace);
 
-  var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
+  var dartPath = dartEntrypointId.path.startsWith('lib/')
+      ? 'package:${dartEntrypointId.package}/${dartEntrypointId.path.substring('lib/'.length)}'
+      : dartEntrypointId.path;
+  var jsOutputPath =
+      '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
+      '$jsEntrypointExtension';
   var args = dart2JsArgs.toList()
     ..addAll([
       '--packages=$packageFile',
-      '-o${jsOutputId.path}',
-      dartEntrypointId.path,
+      '-o$jsOutputPath',
+      dartPath,
     ]);
   var dart2js = await buildStep.fetchResource(dart2JsWorkerResource);
   var result = await dart2js.compile(args);
+  var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
   if (result.succeeded && await jsOutputFile.exists()) {
     log.info(result.output);
