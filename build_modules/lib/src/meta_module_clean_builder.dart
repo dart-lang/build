@@ -14,12 +14,19 @@ import 'meta_module_builder.dart';
 import 'modules.dart';
 
 /// The extension for serialized clean meta module assets.
+///
+/// Clean in this context means all dependencies are primary sources.
+/// Furthermore cyclic modules are merged into a single module.
 const metaModuleCleanExtension = '.meta_module.clean';
 
 /// Creates `.meta_module.clean` file for any Dart library.
 ///
 /// This file contains information about the full computed
-/// module structure for the package with cleaned dependencies.
+/// module structure for the package where each module's dependencies
+/// are only primary sources.
+///
+/// Note if the raw meta module file can't be found for any of the
+/// module's transitive dependencies there will be no output.
 class MetaModuleCleanBuilder implements Builder {
   const MetaModuleCleanBuilder();
 
