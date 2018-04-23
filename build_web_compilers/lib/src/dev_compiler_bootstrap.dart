@@ -314,7 +314,6 @@ var baseUrl = (function() {
   if(baseTag && baseTag[0] && baseTag[0].href){
     return baseTag[0].href;
   }
-
   var pathParts = location.pathname.split("/");
   if (pathParts[0] == "") {
     pathParts.shift();
