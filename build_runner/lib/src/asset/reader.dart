@@ -30,7 +30,6 @@ abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 /// tracking.
 class SingleStepReader implements AssetReader {
   final AssetGraph _assetGraph;
-  final _assetsRead = new SplayTreeSet<AssetId>();
   final AssetReader _delegate;
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
@@ -43,11 +42,11 @@ class SingleStepReader implements AssetReader {
   /// other packages by actions which do hide their outputs.
   final bool _outputsHidden;
 
+  /// The assets read during this step in sorted order.
+  final assetsRead = new SplayTreeSet<AssetId>();
+
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._outputsHidden, this._primaryPackage, this._runPhaseForInput);
-
-  /// The assets read during this step in sorted order.
-  Set<AssetId> get assetsRead => _assetsRead;
 
   /// The [Glob]s which have been searched with [findAssets].
   ///
@@ -58,7 +57,7 @@ class SingleStepReader implements AssetReader {
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<bool> _isReadable(AssetId id) {
-    _assetsRead.add(id);
+    assetsRead.add(id);
     var node = _assetGraph.get(id);
     if (node == null) {
       _assetGraph.add(new SyntheticSourceAssetNode(id));
