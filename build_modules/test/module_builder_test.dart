@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/meta_module_clean_builder.dart';
 import 'package:build_modules/src/modules.dart';
 
 import 'matchers.dart';
@@ -42,10 +43,27 @@ main() {
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
     var meta = new MetaModule([moduleA]);
     await testBuilder(new ModuleBuilder(isCourse: true), {
-      'a|lib/.meta_module_clean': json.encode(meta),
+      'a|lib/$metaModuleCleanExtension': json.encode(meta),
       'a|lib/a.dart': '',
     }, outputs: {
       'a|lib/a.module': encodedMatchesModule(moduleA),
+    });
+  });
+
+  test('defaults to the fine strategy if the clean meta module is not found',
+      () async {
+    var assetA = new AssetId('a', 'lib/a.dart');
+    var assetB = new AssetId('a', 'lib/b.dart');
+    var assetC = new AssetId('a', 'lib/c.dart');
+    var moduleA = new Module(assetA, [assetA], <AssetId>[]);
+    var moduleB = new Module(assetB, [assetB, assetC], <AssetId>[]);
+    await testBuilder(new ModuleBuilder(isCourse: true), {
+      'a|lib/a.dart': '',
+      'a|lib/b.dart': 'part "c.dart";',
+      'a|lib/c.dart': 'part of "b.dart";',
+    }, outputs: {
+      'a|lib/a.module': encodedMatchesModule(moduleA),
+      'a|lib/b.module': encodedMatchesModule(moduleB),
     });
   });
 }

@@ -119,12 +119,11 @@ class ModuleBuilder implements Builder {
     var assetToPrimary = await buildStep.fetchResource(_assetToPrimary);
     var readMetas = await buildStep.fetchResource(_readMetas);
     var primaryToClean = await buildStep.fetchResource(_primaryToClean);
-    if (_isCoarse) {
-      var asset = new AssetId(
-          buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
-      // Even though the meta file may have already been processed call canRead
-      // to ensure it is properly marked as a dependency.
-      await buildStep.canRead(asset);
+    var asset =
+        new AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
+    // If we can't read the clean meta module it is likely that this package
+    // is in a module cycle so fall back to the fine strategy.
+    if (await buildStep.canRead(asset) && _isCoarse) {
       if (!readMetas.contains(asset)) {
         await _processMeta(
             buildStep, asset, primaryToClean, assetToPrimary, readMetas);

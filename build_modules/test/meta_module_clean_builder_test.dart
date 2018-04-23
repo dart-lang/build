@@ -24,13 +24,13 @@ main() {
     var metaB = new MetaModule([moduleB]);
 
     await testBuilder(new MetaModuleCleanBuilder(), {
-      'a|lib/.meta_module': json.encode(metaA),
-      'b|lib/.meta_module': json.encode(metaB),
+      'a|lib/$metaModuleExtension': json.encode(metaA),
+      'b|lib/$metaModuleExtension': json.encode(metaB),
       'a|lib/a.dart': 'import "package:b/b.dart"',
       'b|lib/b.dart': 'import "package:a/a.dart"',
     }, outputs: {
-      'a|lib/.meta_module_clean': encodedMatchesMetaModule(metaA),
-      'b|lib/.meta_module_clean': encodedMatchesMetaModule(metaB),
+      'a|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(metaA),
+      'b|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(metaB),
     });
   });
 
@@ -47,13 +47,28 @@ main() {
     ]);
 
     await testBuilder(new MetaModuleCleanBuilder(), {
-      'a|lib/.meta_module': json.encode(metaA),
-      'b|lib/.meta_module': json.encode(metaB),
+      'a|lib/$metaModuleExtension': json.encode(metaA),
+      'b|lib/$metaModuleExtension': json.encode(metaB),
       'a|lib/a.dart': 'import "package:b/b.dart"',
       'b|lib/b.dart': 'import "package:a/a.dart"',
     }, outputs: {
-      'a|lib/.meta_module_clean': encodedMatchesMetaModule(clean),
-      'b|lib/.meta_module_clean': encodedMatchesMetaModule(clean),
+      'a|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(clean),
+      'b|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(clean),
     });
+  });
+
+  test('does not output a clean module if the dep\'s meta module is not found',
+      () async {
+    var assetA = new AssetId('a', 'lib/a.dart');
+    var assetB = new AssetId('b', 'lib/b.dart');
+    var moduleA = new Module(assetA, [assetA], [assetB]);
+
+    var metaA = new MetaModule([moduleA]);
+
+    await testBuilder(new MetaModuleCleanBuilder(), {
+      'a|lib/$metaModuleExtension': json.encode(metaA),
+      'a|lib/a.dart': 'import "package:b/b.dart"',
+      'b|lib/b.dart': 'import "package:a/a.dart"',
+    }, outputs: {});
   });
 }

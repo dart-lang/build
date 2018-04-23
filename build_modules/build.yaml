@@ -9,7 +9,8 @@ builders:
       - linkedSummaryBuilder
     build_extensions:
       $lib$:
-        - .meta_module
+        - .meta_module.raw
+        - .meta_module.clean
       .dart:
         - .module
         - .linked.sum

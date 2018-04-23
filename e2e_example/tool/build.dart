@@ -56,3 +56,4 @@ class ThrowingBuilder extends Builder {
     throw await buildStep.readAsString(buildStep.inputId);
   }
 }
+// do a build
