@@ -309,24 +309,18 @@ require.config({
 final _baseUrlScript = '''
 // Attempt to detect --precompiled mode for tests, and set the base url
 // appropriately, otherwise set it to "/".
-var baseUrl = (function() {
-  try{
-    if(typeof document != 'undefined'){
-      var baseTag = document.getElementsByTagName("base");
-      if(baseTag && baseTag[0] && baseTag[0].href){
-        return baseTag[0].href;
-      }
-    }
-  }catch(e){
+var baseUrl = (function () {
+  var href = '/';
+  if (typeof document !== 'undefined') {
+    var el = document.getElementsByTagName('base')[0];
+    if (el && el.href && el.href.startsWith('/')) href = el.href;
+  } else {
+    // Attempt to detect --precompiled mode for tests, and set the base url
+    // appropriately, otherwise set it to '/'.
+    var pathParts = location.pathname.split('/');
+    if (pathParts[0] === '') pathParts.shift();
+    if (pathParts[1] === 'test') href = '/' + pathParts.slice(0, 2).join('/') + '/';
   }
-  var pathParts = location.pathname.split("/");
-  if (pathParts[0] == "") {
-    pathParts.shift();
-  }
-  var baseUrl;
-  if (pathParts.length > 1 && pathParts[1] == "test") {
-    return "/" + pathParts.slice(0, 2).join("/") + "/";
-  }
-  return "/";
+  return href;
 }());
 ''';
