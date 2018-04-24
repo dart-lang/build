@@ -1,9 +1,21 @@
 # 0.2.2
 
-- Add new `strategy` option for `ModuleBuilder`. If `coarse` is provided a
-  minimum number of modules will be created. Otherwise, a module will be
-  created for each strongly connected component. Note that `coarse` is
-  the default strategy.
+- Add new `ModuleBuilder` strategies. By default the `coarse` strategy is used
+  for all non-root packages and will create a minimum number of modules. This
+  strategy can not be overridden. However, for the root package, the `fine`
+  strategy will be used which creates a module for each strongly
+  connected component. You can override this behavior by providing `coarse`
+  to the `strategy` option.
+
+  Example configuration:
+  ```
+  targets:
+  $default:
+    builders:
+      build_modules|modules:
+        options:
+          strategy: coarse
+  ```
 
 # 0.2.1
 

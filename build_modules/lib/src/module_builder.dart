@@ -82,30 +82,33 @@ Future<Null> _processMeta(
   }
 }
 
-enum Strategy { fine, course }
+enum Strategy { fine, coarse }
 
 /// Creates `.module` files for any `.dart` file that is the primary dart
 /// source of a [Module].
 class ModuleBuilder implements Builder {
   final bool _isCoarse;
-  const ModuleBuilder({bool isCourse: false}) : _isCoarse = isCourse;
+  const ModuleBuilder({bool isCoarse: false}) : _isCoarse = isCoarse;
 
   static Strategy _getStrategy(BuilderOptions options) {
-    var config = (options.config['strategy'] ?? 'coarse') as String;
-    switch (config) {
-      case 'coarse':
-        return Strategy.course;
-      case 'fine':
-        return Strategy.fine;
-        break;
-      default:
-        throw 'Unexpected ModuleBuilder strategy: ${options.config['strategy']}';
+    if (options.isRoot) {
+      var config = options.config['strategy'] as String ?? 'fine';
+      switch (config) {
+        case 'coarse':
+          return Strategy.coarse;
+        case 'fine':
+          return Strategy.fine;
+        default:
+          throw 'Unexpected ModuleBuilder strategy: $config';
+      }
+    } else {
+      return Strategy.coarse;
     }
   }
 
   factory ModuleBuilder.forOptions(BuilderOptions options) {
     return new ModuleBuilder(
-        isCourse: _getStrategy(options) == Strategy.course);
+        isCoarse: _getStrategy(options) == Strategy.coarse);
   }
 
   @override
