@@ -1,3 +1,8 @@
+# 0.3.7+2
+
+- The `dartdevc` compiler now respects the `<base href="/....">` tags and will
+  set them as the base url for require js.
+
 # 0.3.7+1
 
 - Add missing dependency on the `pool` package.
