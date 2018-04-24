@@ -10,38 +10,53 @@ import '../logging/human_readable_duration.dart';
 
 var _logger = new Logger('Heartbeat');
 
+/// Base class for a heartbeat implementation.
+///
+/// Once [start]ed, if [waitDuration] passes between calls to [ping], then
+/// [onTimeout] will be invoked with the duration.
 abstract class Heartbeat {
   Stopwatch _totalWatch;
   Stopwatch _intervalWatch;
   Timer _timer;
 
+  /// The interval at which to check if [waitDuration] has passed.
+  final Duration checkInterval;
+
   /// The amount of time between heartbeats.
   final Duration waitDuration;
 
-  Heartbeat({Duration waitDuration})
-      : this.waitDuration = waitDuration ?? const Duration(seconds: 5);
+  Heartbeat({Duration checkInterval, Duration waitDuration})
+      : this.checkInterval = checkInterval ?? const Duration(milliseconds: 100),
+        this.waitDuration = waitDuration ?? const Duration(seconds: 5);
 
-  /// Invoked if [waitDuration] time has elapsed since the last call to [reset].
-  void onDurationReached(Duration duration);
+  /// Invoked if [waitDuration] time has elapsed since the last call to [ping].
+  void onTimeout(Duration duration);
+
+  /// Resets the internal timers. If more than [waitDuration] elapses without
+  /// this method being called, then [onTimeout] will be invoked with the
+  /// duration since the last ping.
+  void ping() {
+    _intervalWatch.reset();
+  }
 
   /// Starts this heartbeat logger, must not already be started.
+  ///
+  /// This method can be overridden to add additional logic for handling calls
+  /// to [ping], but you must call `super.start()`.
   void start() {
     if (_totalWatch != null || _intervalWatch != null || _timer != null) {
       throw new StateError('HeartbeatLogger already started');
     }
     _totalWatch = new Stopwatch()..start();
     _intervalWatch = new Stopwatch()..start();
-    reset();
-    _timer =
-        new Timer.periodic(const Duration(milliseconds: 100), _checkDuration);
-  }
-
-  /// Resets the current [_intervalWatch].
-  void reset() {
-    _intervalWatch.reset();
+    ping();
+    _timer = new Timer.periodic(checkInterval, _checkDuration);
   }
 
   /// Stops this heartbeat logger, must already be started.
+  ///
+  /// This method can be overridden to add additional logic for cleanup
+  /// purposes, but you must call `super.stop()`.
   void stop() {
     if (_totalWatch == null || _intervalWatch == null || _timer == null) {
       throw new StateError('HeartbeatLogger was never started');
@@ -56,8 +71,8 @@ abstract class Heartbeat {
 
   void _checkDuration(_) {
     if (_intervalWatch.elapsed < waitDuration) return;
-    onDurationReached(_intervalWatch.elapsed);
-    reset();
+    onTimeout(_intervalWatch.elapsed);
+    ping();
   }
 }
 
@@ -71,14 +86,15 @@ class HeartbeatLogger extends Heartbeat {
   /// be logged instead.
   final String Function(String original) transformLog;
 
-  HeartbeatLogger({Duration waitDuration, this.transformLog})
-      : super(waitDuration: waitDuration);
+  HeartbeatLogger(
+      {Duration checkInterval, Duration waitDuration, this.transformLog})
+      : super(checkInterval: checkInterval, waitDuration: waitDuration);
 
   /// Start listening to logs.
   @override
   void start() {
     super.start();
-    _listener = Logger.root.onRecord.listen((_) => _resetHeartbeat());
+    _listener = Logger.root.onRecord.listen((_) => ping());
   }
 
   /// Stops listenting to the logger;
@@ -88,10 +104,9 @@ class HeartbeatLogger extends Heartbeat {
     _listener = null;
   }
 
-  /// Logs a heartbeat message if [_intervalWatch] has been running for
-  /// [waitDuration] or more.
+  /// Logs a heartbeat message if we reach the timeout.
   @override
-  onDurationReached(Duration elapsed) {
+  onTimeout(Duration elapsed) {
     var formattedTime = humanReadable(elapsed);
     var message = '$formattedTime elapsed';
     if (transformLog != null) {
