@@ -5,6 +5,7 @@
 @TestOn('vm')
 
 import 'package:io/io.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'common/utils.dart';
@@ -15,11 +16,47 @@ void main() {
   });
 
   test('Failing tests print mapped stack traces', () async {
-    var result = await runAutoTests(
+    var result = await runManualTests(
         testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
     expect(result.exitCode, isNot(ExitCode.success));
     expect(result.stdout,
         matches(new RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
     expect(result.stdout, isNot(contains('.js')));
-  }, skip: 'https://github.com/dart-lang/sdk/issues/32389');
+  });
+
+  group('file edits', () {
+    setUp(() async {
+      ensureCleanGitClient();
+    });
+
+    test('edit test to fail and rerun', () async {
+      await replaceAllInFile(
+          'test/common/message.dart', 'Hello World!', 'Goodbye World!');
+      await expectTestsFail();
+    });
+
+    test('edit dependency lib causing test to fail and rerun', () async {
+      await replaceAllInFile('lib/app.dart', 'Hello World!', 'Goodbye World!');
+      await expectTestsFail();
+    });
+
+    test('create new test', () async {
+      await createFile(p.join('test', 'other_test.dart'), basicTestContents);
+      await expectTestsPass(expectedNumRan: 5);
+    });
+
+    test('delete test', () async {
+      await deleteFile(p.join('test', 'subdir', 'subdir_test.dart'));
+      await expectTestsPass(expectedNumRan: 3);
+    });
+  });
 }
+
+final basicTestContents = '''
+import 'package:test/test.dart';
+
+main() {
+  test('1 == 1', () {
+    expect(1, equals(1));
+  });
+}''';

@@ -1,7 +1,8 @@
 ## 0.12.3
 
-- Add `PostProcessBuilder`. This is only supported by the `build_runner` build
-  system.
+- Added an `isRoot` boolean to `BuilderOptions`, which allows builders to have
+  different behavior for the root package, if desired.
+- Add `PostProcessBuilder`. This is only supported by `build_runner`.
 
 ## 0.12.2
 

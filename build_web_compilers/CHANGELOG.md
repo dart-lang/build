@@ -1,3 +1,7 @@
+# 0.3.7+2
+
+- Fix sdk stack trace folding in the browser console and package:test.
+
 # 0.3.7+1
 
 - Add missing dependency on the `pool` package.
