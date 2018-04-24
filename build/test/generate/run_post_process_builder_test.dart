@@ -37,17 +37,17 @@ main() {
     });
 
     test('can delete assets', () async {
-      await runPostProcessBuilder(
-          copyBuilder, aTxt, reader, writer, logger, addAsset, deleteAsset);
-      await runPostProcessBuilder(
-          deleteBuilder, aTxt, reader, writer, logger, addAsset, deleteAsset);
+      await runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
+          addAsset: addAsset, deleteAsset: deleteAsset);
+      await runPostProcessBuilder(deleteBuilder, aTxt, reader, writer, logger,
+          addAsset: addAsset, deleteAsset: deleteAsset);
       expect(deletes, contains(aTxt));
       expect(deletes, isNot(contains(aTxtCopy)));
     });
 
     test('can create assets and read the primary asset', () async {
-      await runPostProcessBuilder(
-          copyBuilder, aTxt, reader, writer, logger, addAsset, deleteAsset);
+      await runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
+          addAsset: addAsset, deleteAsset: deleteAsset);
       expect(writer.assets, contains(aTxtCopy));
       expect(writer.assets[aTxtCopy], decodedMatches('a'));
       expect(adds, contains(aTxtCopy));
@@ -56,7 +56,8 @@ main() {
     test('throws if addAsset throws', () async {
       expect(
           () => runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
-              (id) => throw new InvalidOutputException(id, ''), deleteAsset),
+              addAsset: (id) => throw new InvalidOutputException(id, ''),
+              deleteAsset: deleteAsset),
           throwsA(new isInstanceOf<InvalidOutputException>()));
     });
   });
