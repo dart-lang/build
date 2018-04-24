@@ -19,8 +19,6 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../builder/post_process_builder.dart';
-import '../builder/run_post_process_builder.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
@@ -495,9 +493,27 @@ class _SingleBuild {
 
     numActionsStarted++;
     var errorThrown = false;
-    await runPostProcessBuilder(builder, input, wrappedReader, wrappedWriter,
-            logger, _assetGraph, anchorNode, phaseNum)
-        .catchError((_) => errorThrown = true);
+    await runPostProcessBuilder(
+        builder, input, wrappedReader, wrappedWriter, logger, (assetId) {
+      if (_assetGraph.contains(assetId)) {
+        throw new InvalidOutputException(assetId, 'Asset already exists');
+      }
+      var node = new GeneratedAssetNode(assetId,
+          primaryInput: input,
+          builderOptionsId: anchorNode.builderOptionsId,
+          isHidden: true,
+          phaseNumber: phaseNum,
+          wasOutput: true,
+          isFailure: false,
+          state: GeneratedNodeState.upToDate);
+      _assetGraph.add(node);
+      anchorNode.outputs.add(assetId);
+    }, (assetId) {
+      if (!_assetGraph.contains(assetId)) {
+        throw new InvalidOutputException(assetId, 'Asset cannot be deleted');
+      }
+      _assetGraph.get(assetId).isDeleted = true;
+    }).catchError((_) => errorThrown = true);
     numActionsCompleted++;
 
     var assetsWritten = wrappedWriter.assetsWritten.toSet();

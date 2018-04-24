@@ -1,3 +1,8 @@
+## 0.12.3
+
+- Add `PostProcessBuilder`. This is only supported by the `build_runner` build
+  system.
+
 ## 0.12.2
 
 - Include stack trace in log for exceptions throw by builders.

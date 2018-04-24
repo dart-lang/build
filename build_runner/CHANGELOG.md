@@ -1,6 +1,8 @@
 ## 0.8.4
 
 - Log the number of completed actions on successful builds.
+- Deprecated `PostProcessBuilder` and `PosProcessBuildStep`. These should be
+  import from `package:build` instead.
 
 ## 0.8.3
 

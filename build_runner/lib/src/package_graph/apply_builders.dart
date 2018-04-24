@@ -10,7 +10,6 @@ import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 
-import '../builder/post_process_builder.dart';
 import '../generate/phase.dart';
 import '../validation/config_validation.dart';
 import 'package_graph.dart';
