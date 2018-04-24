@@ -18,6 +18,7 @@ main() {
     setUp(() async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
+          'build',
           'build_config',
           'build_resolvers',
           'build_runner',
