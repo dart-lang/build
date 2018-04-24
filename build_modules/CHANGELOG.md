@@ -7,6 +7,16 @@
   connected component. You can override this behavior by providing `coarse`
   to the `strategy` option.
 
+  Example configuration:
+  ```
+  targets:
+  $default:
+    builders:
+      build_modules|modules:
+        options:
+          strategy: coarse
+  ```
+
 # 0.2.1
 
 - Give a guaranteed reverse dependency order for
