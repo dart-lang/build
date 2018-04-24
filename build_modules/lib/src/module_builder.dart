@@ -91,13 +91,18 @@ class ModuleBuilder implements Builder {
   const ModuleBuilder({bool isCoarse: false}) : _isCoarse = isCoarse;
 
   static Strategy _getStrategy(BuilderOptions options) {
-    var config = options.config['strategy'] as String;
-    if (config != null && config != 'coarse' && config != 'fine') {
-      throw 'Unexpected ModuleBuilder strategy: $config';
-    } else if (!options.isRoot || (options.isRoot && config == 'coarse')) {
-      return Strategy.coarse;
+    if (options.isRoot) {
+      var config = options.config['strategy'] as String ?? 'fine';
+      switch (config) {
+        case 'coarse':
+          return Strategy.coarse;
+        case 'fine':
+          return Strategy.fine;
+        default:
+          throw 'Unexpected ModuleBuilder strategy: $config';
+      }
     } else {
-      return Strategy.fine;
+      return Strategy.coarse;
     }
   }
 
