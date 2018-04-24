@@ -494,7 +494,8 @@ class _SingleBuild {
     numActionsStarted++;
     var errorThrown = false;
     await runPostProcessBuilder(
-        builder, input, wrappedReader, wrappedWriter, logger, (assetId) {
+        builder, input, wrappedReader, wrappedWriter, logger,
+        addAsset: (assetId) {
       if (_assetGraph.contains(assetId)) {
         throw new InvalidOutputException(assetId, 'Asset already exists');
       }
@@ -508,9 +509,9 @@ class _SingleBuild {
           state: GeneratedNodeState.upToDate);
       _assetGraph.add(node);
       anchorNode.outputs.add(assetId);
-    }, (assetId) {
+    }, deleteAsset: (assetId) {
       if (!_assetGraph.contains(assetId)) {
-        throw new InvalidOutputException(assetId, 'Asset cannot be deleted');
+        throw new AssetNotFoundException(assetId);
       }
       _assetGraph.get(assetId).isDeleted = true;
     }).catchError((_) => errorThrown = true);
