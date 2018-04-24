@@ -177,6 +177,8 @@ class _SingleBuild {
   int numActionsCompleted = 0;
   int numActionsStarted = 0;
 
+  final pendingActions = new Set<Function>();
+
   _SingleBuild(BuildImpl buildImpl)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
@@ -409,7 +411,11 @@ class _SingleBuild {
     var wrappedWriter = new AssetWriterSpy(_writer);
     var logger = new BuildForInputLogger(
         new Logger(_actionLoggerName(phase, input, _packageGraph.root.name)));
+
     numActionsStarted++;
+    var description = () => '$builder on $input';
+    pendingActions.add(description);
+
     var errorThrown = false;
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
@@ -418,6 +424,7 @@ class _SingleBuild {
             .catchError((_) => errorThrown = true),
         'Build');
     numActionsCompleted++;
+    pendingActions.remove(description);
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
@@ -492,6 +499,9 @@ class _SingleBuild {
     var logger = new BuildForInputLogger(new Logger('$builder on $input'));
 
     numActionsStarted++;
+    var description = () => '$builder on $input';
+    pendingActions.add(description);
+
     var errorThrown = false;
     await runPostProcessBuilder(
         builder, input, wrappedReader, wrappedWriter, logger,
@@ -516,6 +526,7 @@ class _SingleBuild {
       _assetGraph.get(assetId).isDeleted = true;
     }).catchError((_) => errorThrown = true);
     numActionsCompleted++;
+    pendingActions.remove(description);
 
     var assetsWritten = wrappedWriter.assetsWritten.toSet();
 
