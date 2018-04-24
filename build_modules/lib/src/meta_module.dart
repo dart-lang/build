@@ -330,6 +330,8 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
       modules.addAll(
           await _computeModules(reader, assetsByTopLevel[key], key == 'lib'));
     }
+    // Deterministically output the modules.
+    modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
     return new MetaModule(modules);
   }
 }

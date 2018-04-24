@@ -19,7 +19,7 @@ main() {
     await testBuilder(new MetaModuleBuilder(), {
       'a|lib/a.dart': '',
     }, outputs: {
-      'a|lib/.meta_module': encodedMatchesMetaModule(metaA),
+      'a|lib/$metaModuleExtension': encodedMatchesMetaModule(metaA),
     });
   });
 }

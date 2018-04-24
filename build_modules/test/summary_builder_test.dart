@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/meta_module_clean_builder.dart';
 
 import 'matchers.dart';
 import 'util.dart';
@@ -29,8 +30,8 @@ main() {
       ]);
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
-        'a|lib/.meta_module': json.encode(ameta),
-        'b|lib/.meta_module': json.encode(bmeta),
+        'a|lib/$metaModuleCleanExtension': json.encode(ameta),
+        'b|lib/$metaModuleCleanExtension': json.encode(bmeta),
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
         import 'package:b/b.dart';

@@ -28,24 +28,33 @@ class BuilderOptions {
   /// A configuration with no options set.
   static const empty = const BuilderOptions(const {});
 
+  /// A configuration with [isRoot] set to `true`, and no options set.
+  static const forRoot = const BuilderOptions(const {}, isRoot: true);
+
   /// The configuration to apply to a given usage of a [Builder].
   ///
   /// A `Map` parsed from json or yaml. The value types will be `String`, `num`,
   /// `bool` or `List` or `Map` of these types.
   final Map<String, dynamic> config;
 
-  const BuilderOptions(this.config);
+  /// Whether or not this builder is running on the root package.
+  final bool isRoot;
+
+  const BuilderOptions(this.config, {bool isRoot}) : isRoot = isRoot ?? false;
 
   /// Returns a new set of options with keys from [other] overriding options in
   /// this instance.
   ///
-  /// Values are overridden at a per-key granularity. There is no value level
-  /// merging. [other] may be null or empty, in which case this instance is
+  /// Config values are overridden at a per-key granularity. There is no value
+  /// level merging. [other] may be null, in which case this instance is
   /// returned directly.
-  BuilderOptions overrideWith(BuilderOptions other) =>
-      other == null || other.config.isEmpty
-          ? this
-          : new BuilderOptions({}..addAll(config)..addAll(other.config));
+  ///
+  /// The `isRoot` value will also be overridden to value from [other].
+  BuilderOptions overrideWith(BuilderOptions other) {
+    if (other == null) return this;
+    return new BuilderOptions({}..addAll(config)..addAll(other.config),
+        isRoot: other.isRoot);
+  }
 }
 
 /// Creates a [Builder] honoring the configuation in [options].

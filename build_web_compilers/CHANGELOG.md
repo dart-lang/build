@@ -1,7 +1,11 @@
-# 0.3.7+2
+# 0.3.7+3
 
 - The `dartdevc` compiler now respects the `<base href="/....">` tags and will
   set them as the base url for require js.
+
+# 0.3.7+2
+
+- Fix sdk stack trace folding in the browser console and package:test.
 
 # 0.3.7+1
 

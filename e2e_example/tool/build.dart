@@ -36,7 +36,7 @@ Future main(List<String> args) async {
         toAllPackages(),
         isOptional: true, hideOutput: true),
     apply('build_web_compilers|entrypoint',
-        [(_) => new WebEntrypointBuilder(WebCompiler.DartDevc)], toRoot(),
+        [(options) => new WebEntrypointBuilder.fromOptions(options)], toRoot(),
         hideOutput: true,
         defaultGenerateFor: const InputSet(
             include: const ['web/**', 'test/**.browser_test.dart']))
@@ -56,3 +56,4 @@ class ThrowingBuilder extends Builder {
     throw await buildStep.readAsString(buildStep.inputId);
   }
 }
+// do a build
