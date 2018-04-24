@@ -18,8 +18,7 @@ void main() {
 
     test('overrides isRoot', () {
       var defaults = const BuilderOptions(const {}, isRoot: false);
-      var overridden =
-          defaults.overrideWith(const BuilderOptions(const {}, isRoot: true));
+      var overridden = defaults.overrideWith(BuilderOptions.forRoot);
       expect(overridden.isRoot, isTrue);
     });
 

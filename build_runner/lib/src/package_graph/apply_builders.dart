@@ -167,8 +167,8 @@ class BuilderApplication {
                 isReleaseBuild ? defaultReleaseOptions : defaultDevOptions)
             .overrideWith(options);
         if (package.isRoot) {
-          optionsWithDefaults = optionsWithDefaults
-              .overrideWith(new BuilderOptions({}, isRoot: true));
+          optionsWithDefaults =
+              optionsWithDefaults.overrideWith(BuilderOptions.forRoot);
         }
 
         var builder = scopeLogSync(
@@ -206,8 +206,8 @@ class BuilderApplication {
               isReleaseBuild ? defaultReleaseOptions : defaultDevOptions)
           .overrideWith(options);
       if (package.isRoot) {
-        optionsWithDefaults = optionsWithDefaults
-            .overrideWith(new BuilderOptions({}, isRoot: true));
+        optionsWithDefaults =
+            optionsWithDefaults.overrideWith(BuilderOptions.forRoot);
       }
 
       var builder = builderFactory(optionsWithDefaults);

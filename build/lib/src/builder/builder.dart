@@ -28,6 +28,9 @@ class BuilderOptions {
   /// A configuration with no options set.
   static const empty = const BuilderOptions(const {});
 
+  /// A configuration with [isRoot] set to `true`, and no options set.
+  static const forRoot = const BuilderOptions(const {}, isRoot: true);
+
   /// The configuration to apply to a given usage of a [Builder].
   ///
   /// A `Map` parsed from json or yaml. The value types will be `String`, `num`,
