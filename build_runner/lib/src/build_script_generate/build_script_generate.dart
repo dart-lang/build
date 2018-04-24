@@ -165,6 +165,18 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
       inputSetArgs['exclude'] =
           literalConstList(definition.defaults.generateFor.exclude);
     }
+    if (!identical(definition.defaults?.options, BuilderOptions.empty)) {
+      namedArgs['defaultOptions'] =
+          _constructBuilderOptions(definition.defaults.options);
+    }
+    if (!identical(definition.defaults?.devOptions, BuilderOptions.empty)) {
+      namedArgs['defaultDevOptions'] =
+          _constructBuilderOptions(definition.defaults.devOptions);
+    }
+    if (!identical(definition.defaults?.releaseOptions, BuilderOptions.empty)) {
+      namedArgs['defaultReleaseOptions'] =
+          _constructBuilderOptions(definition.defaults.releaseOptions);
+    }
     namedArgs['defaultGenerateFor'] =
         refer('InputSet', 'package:build_config/build_config.dart')
             .constInstance([], inputSetArgs);
