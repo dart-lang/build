@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:build/build.dart';
 
 class ModuleCleanup implements PostProcessBuilder {
-
   const ModuleCleanup();
 
   @override
