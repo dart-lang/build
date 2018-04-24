@@ -1,3 +1,7 @@
+## 0.8.5
+
+- Add log message for merged output errors.
+
 ## 0.8.4
 
 - Log the number of completed actions on successful builds.
