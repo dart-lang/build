@@ -32,7 +32,7 @@ void main() {
 
     test('changes nothing when overriding with null options', () {
       var defaults = const BuilderOptions(const {'foo': 'bar', 'baz': 'bop'});
-      var overridden = defaults.overrideWith(BuilderOptions.empty);
+      var overridden = defaults.overrideWith(null);
       expect(overridden, same(defaults));
     });
   });
