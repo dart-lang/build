@@ -1,3 +1,7 @@
+# 0.3.8
+
+- Remove `.dart` source files from the output directory in release mode.
+
 # 0.3.7+3
 
 - The `dartdevc` compiler now respects the `<base href="/....">` tags and will

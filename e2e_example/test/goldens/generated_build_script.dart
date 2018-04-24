@@ -37,7 +37,9 @@ final _builders = [
       appliesBuilders: ['build_modules|module_cleanup']),
   _i1.apply(
       'build_web_compilers|ddc', [_i6.devCompilerBuilder], _i1.toAllPackages(),
-      isOptional: true, hideOutput: true),
+      isOptional: true,
+      hideOutput: true,
+      appliesBuilders: ['build_web_compilers|dart_source_cleanup']),
   _i1.apply('build_web_compilers|entrypoint', [_i6.webEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,
@@ -59,6 +61,11 @@ final _builders = [
       'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder,
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_modules|module_cleanup', _i5.moduleCleanup,
+      defaultGenerateFor: const _i4.InputSet()),
+  _i1.applyPostProcess(
+      'build_web_compilers|dart_source_cleanup', _i6.dartSourceCleanup,
+      defaultReleaseOptions:
+          new _i7.BuilderOptions(_i8.json.decode('{"enabled":true}')),
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
       _i6.dart2JsArchiveExtractor,

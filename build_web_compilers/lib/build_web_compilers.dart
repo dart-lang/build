@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/archive_extractor.dart' show Dart2JsArchiveExtractor;
+export 'src/dart_source_cleanup.dart' show DartSourceCleanup;
 export 'src/dev_compiler_builder.dart'
     show
         DevCompilerBuilder,
