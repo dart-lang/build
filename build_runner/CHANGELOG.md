@@ -3,6 +3,8 @@
 - Log the number of completed actions on successful builds.
 - Support the new `isRoot` field for `BuilderOptions` so that builders can
   do different things for the root package.
+- Deprecated `PostProcessBuilder` and `PostProcessBuildStep`. These should be
+  imported from `package:build` instead.
 
 ## 0.8.3
 

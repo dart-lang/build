@@ -7,7 +7,6 @@ import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import '../builder/post_process_builder.dart';
 import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a one or more

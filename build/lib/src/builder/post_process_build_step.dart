@@ -9,25 +9,30 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/src/digest.dart';
 
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
+// This is not exported to hack around a package-private constructor.
+PostProcessBuildStep postProcessBuildStep(
+        AssetId inputId,
+        AssetReader reader,
+        AssetWriter writer,
+        void Function(AssetId) addAsset,
+        void Function(AssetId) deleteAsset) =>
+    new PostProcessBuildStep._(inputId, reader, writer, addAsset, deleteAsset);
 
 /// A simplified [BuildStep] which can only read its primary input, and can't
 /// get a [Resolver] or any [Resource]s, at least for now.
 class PostProcessBuildStep {
   final AssetId inputId;
 
-  final PostProcessAnchorNode _anchorNode;
-  final AssetGraph _assetGraph;
-  final int _phaseNum;
   final AssetReader _reader;
   final AssetWriter _writer;
+  final void Function(AssetId) _addAsset;
+  final void Function(AssetId) _deleteAsset;
 
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result>>[];
 
-  PostProcessBuildStep(this.inputId, this._reader, this._writer,
-      this._assetGraph, this._anchorNode, this._phaseNum);
+  PostProcessBuildStep._(this.inputId, this._reader, this._writer,
+      this._addAsset, this._deleteAsset);
 
   Future<Digest> digest(AssetId id) => inputId == id
       ? _reader.digest(id)
@@ -39,8 +44,7 @@ class PostProcessBuildStep {
       _reader.readAsString(inputId, encoding: encoding);
 
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
-    _checkOutput(id);
-    _addNode(id);
+    _addAsset(id);
     var done =
         _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
     _writeResults.add(Result.capture(done));
@@ -49,8 +53,7 @@ class PostProcessBuildStep {
 
   Future writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding: utf8}) {
-    _checkOutput(id);
-    _addNode(id);
+    _addAsset(id);
     var done = _futureOrWrite(content,
         (String c) => _writer.writeAsString(id, c, encoding: encoding));
     _writeResults.add(Result.capture(done));
@@ -59,8 +62,7 @@ class PostProcessBuildStep {
 
   /// Marks an asset for deletion in the post process step.
   void deletePrimaryInput() {
-    var node = _assetGraph.get(inputId);
-    node.isDeleted = true;
+    _deleteAsset(inputId);
   }
 
   /// Waits for work to finish and cleans up resources.
@@ -69,26 +71,6 @@ class PostProcessBuildStep {
   /// returned [Future] completes then all outputs have been written.
   Future complete() async {
     await Future.wait(_writeResults.map(Result.release));
-  }
-
-  void _addNode(AssetId id) {
-    var node = new GeneratedAssetNode(id,
-        primaryInput: inputId,
-        builderOptionsId: _anchorNode.builderOptionsId,
-        isHidden: true,
-        phaseNumber: _phaseNum,
-        wasOutput: true,
-        isFailure: false,
-        state: GeneratedNodeState.upToDate);
-    _assetGraph.add(node);
-    _anchorNode.outputs.add(id);
-  }
-
-  /// Checks if [id] is a valid output id.
-  void _checkOutput(AssetId id) {
-    if (_assetGraph.contains(id)) {
-      throw new InvalidOutputException(id, 'Asset already exists');
-    }
   }
 }
 

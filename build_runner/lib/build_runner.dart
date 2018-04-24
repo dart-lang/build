@@ -1,11 +1,12 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
+export 'package:build/build.dart' show PostProcessBuilder, PostProcessBuildStep;
+
 export 'src/asset/file_based.dart';
 export 'src/asset/reader.dart' show RunnerAssetReader;
 export 'src/asset/writer.dart';
-export 'src/builder/post_process_build_step.dart' show PostProcessBuildStep;
-export 'src/builder/post_process_builder.dart' show PostProcessBuilder;
 export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
