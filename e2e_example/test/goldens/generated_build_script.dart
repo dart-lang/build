@@ -23,11 +23,14 @@ final _builders = [
       hideOutput: true,
       defaultGenerateFor: const _i4.InputSet(include: const ['test/**'])),
   _i1.apply(
-      'build_modules|meta_module', [_i5.metaModuleBuilder], _i1.toAllPackages(),
-      isOptional: true, hideOutput: true),
-  _i1.apply(
       'build_modules|modules',
-      [_i5.moduleBuilder, _i5.unlinkedSummaryBuilder, _i5.linkedSummaryBuilder],
+      [
+        _i5.metaModuleBuilder,
+        _i5.metaModuleCleanBuilder,
+        _i5.moduleBuilder,
+        _i5.unlinkedSummaryBuilder,
+        _i5.linkedSummaryBuilder
+      ],
       _i1.toAllPackages(),
       isOptional: true,
       hideOutput: true,

@@ -11,7 +11,7 @@ import 'package:glob/glob.dart';
 import 'meta_module.dart';
 
 /// The extension for serialized meta module assets.
-const metaModuleExtension = '.meta_module';
+const metaModuleExtension = '.meta_module.raw';
 
 /// Creates `.meta_module` file for any Dart library.
 ///
