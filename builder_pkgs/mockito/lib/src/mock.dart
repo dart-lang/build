@@ -565,6 +565,9 @@ class _VerifyCall {
       inv.verified = true;
     });
   }
+
+  String toString() =>
+      'VerifyCall<mock: $mock, memberName: ${verifyInvocation.memberName}>';
 }
 
 class ArgMatcher {
@@ -681,7 +684,16 @@ Verification get verify => _makeVerify(false);
 
 Verification _makeVerify(bool never) {
   if (_verifyCalls.isNotEmpty) {
-    throw new StateError(_verifyCalls.join());
+    var message = 'Verification appears to be in progress.';
+    if (_verifyCalls.length == 1) {
+      message =
+          '$message One verify call has been stored: ${_verifyCalls.single}';
+    } else {
+      message =
+          '$message ${_verifyCalls.length} verify calls have been stored. '
+          '[${_verifyCalls.first}, ..., ${_verifyCalls.last}]';
+    }
+    throw new StateError(message);
   }
   _verificationInProgress = true;
   return <T>(T mock) {

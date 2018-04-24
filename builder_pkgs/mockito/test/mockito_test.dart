@@ -705,6 +705,29 @@ void main() {
       });
       verify(mock.setter = "A");
     });
+
+    test("should throw meaningful errors when verification is interrupted", () {
+      var badHelper = () => throw 'boo';
+      try {
+        verify(mock.methodWithNamedArgs(42, y: badHelper()));
+        fail("verify call was expected to throw!");
+      } catch (_) {}
+      // At this point, verification was interrupted, so
+      // `_verificationInProgress` is still `true`. Calling mock methods below
+      // adds items to `_verifyCalls`.
+      mock.methodWithNamedArgs(42, y: 17);
+      mock.methodWithNamedArgs(42, y: 17);
+      try {
+        verify(mock.methodWithNamedArgs(42, y: 17));
+        fail("verify call was expected to throw!");
+      } catch (e) {
+        expect(e, new isInstanceOf<StateError>());
+        expect(
+            e.message,
+            contains(
+                "Verification appears to be in progress. 2 verify calls have been stored."));
+      }
+    });
   });
 
   group("verify() qualifies", () {
