@@ -308,17 +308,24 @@ require.config({
 
 final _baseUrlScript = '''
 var baseUrl = (function () {
-  var href = '/';
+  // Attempt to detect base url using <base href> html tag
+  // base href should start with "/"
   if (typeof document !== 'undefined') {
-    var el = document.getElementsByTagName('base')[0];
-    if (el && el.href && el.href.startsWith('/')) href = el.href;
-  } else {
-    // Attempt to detect --precompiled mode for tests, and set the base url
-    // appropriately, otherwise set it to '/'.
-    var pathParts = location.pathname.split('/');
-    if (pathParts[0] === '') pathParts.shift();
-    if (pathParts[1] === 'test') href = '/' + pathParts.slice(0, 2).join('/') + '/';
+    var el = document.getElementsByTagName('base');
+    if (el && el[0] && el[0].href && el[0].href.startsWith('/')){
+    	return el[0].href;
+    }
   }
-  return href;
+  // Attempt to detect --precompiled mode for tests, and set the base url
+  // appropriately, otherwise set it to '/'.
+  var pathParts = location.pathname.split("/");
+  if (pathParts[0] == "") {
+    pathParts.shift();
+  }
+  var baseUrl;
+  if (pathParts.length > 1 || pathParts[1] == "test") {
+    return "/" + pathParts.slice(0, 2).join("/") + "/";
+  }
+  return "/";
 }());
 ''';
