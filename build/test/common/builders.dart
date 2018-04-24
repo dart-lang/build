@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
+/// A [PostProcessBuilder] which copies `.txt` files to `.txt.copy`.
 class CopyingPostProcessBuilder implements PostProcessBuilder {
   final String outputExtension;
 
@@ -22,6 +23,8 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
   }
 }
 
+/// A [PostProcessBuilder] which deletes all `.txt` files in the target it is
+/// run on.
 class DeletePostProcessBuilder implements PostProcessBuilder {
   @override
   final inputExtensions = ['.txt'];
