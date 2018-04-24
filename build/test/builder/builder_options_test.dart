@@ -13,9 +13,24 @@ void main() {
           const BuilderOptions(const {'baz': 'different', 'more': 'added'}));
       expect(overridden.config,
           {'foo': 'bar', 'baz': 'different', 'more': 'added'});
+      expect(overridden.isRoot, isFalse);
     });
 
-    test('changes nothing when overriding with empty options', () {
+    test('overrides isRoot', () {
+      var defaults = const BuilderOptions(const {}, isRoot: false);
+      var overridden =
+          defaults.overrideWith(const BuilderOptions(const {}, isRoot: true));
+      expect(overridden.isRoot, isTrue);
+    });
+
+    test('config doesnt change when overriding with empty options', () {
+      var defaults = const BuilderOptions(const {'foo': 'bar', 'baz': 'bop'});
+      var overridden = defaults.overrideWith(BuilderOptions.empty);
+      expect(overridden.config, equals(defaults.config));
+      expect(overridden.isRoot, equals(defaults.isRoot));
+    });
+
+    test('changes nothing when overriding with null options', () {
       var defaults = const BuilderOptions(const {'foo': 'bar', 'baz': 'bop'});
       var overridden = defaults.overrideWith(BuilderOptions.empty);
       expect(overridden, same(defaults));

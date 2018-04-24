@@ -43,8 +43,8 @@ class BuilderOptions {
   /// this instance.
   ///
   /// Config values are overridden at a per-key granularity. There is no value
-  /// level merging. [other] may be null or empty, in which case this instance
-  /// is returned directly.
+  /// level merging. [other] may be null, in which case this instance is
+  /// returned directly.
   ///
   /// The `isRoot` value will also be overridden to value from [other].
   BuilderOptions overrideWith(BuilderOptions other) {
