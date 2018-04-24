@@ -44,4 +44,24 @@ void main() {
           'a|lib/file.copy': 'b',
         });
   });
+
+  test('isRoot is applied correctly', () async {
+    Builder copyBuilder(BuilderOptions options) => new TestBuilder(
+        buildExtensions: replaceExtension(
+            '.txt', options.isRoot ? '.root.copy' : '.dep.copy'));
+    var packageGraph = buildPackageGraph({
+      rootPackage('a'): ['b'],
+      package('b'): [],
+    });
+    await testBuilders([
+      apply('a|optioned_builder', [copyBuilder], toAllPackages(),
+          hideOutput: true),
+    ], {
+      'a|lib/a.txt': 'a',
+      'b|lib/b.txt': 'b',
+    }, outputs: {
+      r'$$a|lib/a.root.copy': 'a',
+      r'$$b|lib/b.dep.copy': 'b',
+    }, packageGraph: packageGraph);
+  });
 }
