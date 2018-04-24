@@ -201,12 +201,13 @@ class BuilderApplication {
         InputSet targetSources, InputSet generateFor, bool isReleaseBuild) {
       generateFor ??= defaultGenerateFor;
 
-      final optionsWithDefaults = (defaultOptions ?? BuilderOptions.empty)
+      var optionsWithDefaults = (defaultOptions ?? BuilderOptions.empty)
           .overrideWith(
               isReleaseBuild ? defaultReleaseOptions : defaultDevOptions)
           .overrideWith(options);
       if (package.isRoot) {
-        optionsWithDefaults.overrideWith(new BuilderOptions({}, isRoot: true));
+        optionsWithDefaults = optionsWithDefaults
+            .overrideWith(new BuilderOptions({}, isRoot: true));
       }
 
       var builder = builderFactory(optionsWithDefaults);
