@@ -16,13 +16,13 @@ void main() {
   });
 
   test('Failing tests print mapped stack traces', () async {
-    var result = await runAutoTests(
+    var result = await runManualTests(
         testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
     expect(result.exitCode, isNot(ExitCode.success));
     expect(result.stdout,
         matches(new RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
     expect(result.stdout, isNot(contains('.js')));
-  }, skip: 'https://github.com/dart-lang/sdk/issues/32389');
+  });
 
   group('file edits', () {
     setUp(() async {
