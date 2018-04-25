@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'package:graphs/graphs.dart';
 
 import 'package:build/build.dart';
+
+import 'common.dart';
 import 'meta_module.dart';
 import 'meta_module_builder.dart';
 import 'modules.dart';
@@ -28,7 +30,13 @@ const metaModuleCleanExtension = '.meta_module.clean';
 /// Note if the raw meta module file can't be found for any of the
 /// module's transitive dependencies there will be no output.
 class MetaModuleCleanBuilder implements Builder {
-  const MetaModuleCleanBuilder();
+  final bool _isCoarse;
+  const MetaModuleCleanBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
+
+  factory MetaModuleCleanBuilder.forOptions(BuilderOptions options) {
+    return new MetaModuleCleanBuilder(
+        isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
+  }
 
   @override
   final buildExtensions = const {
@@ -37,6 +45,8 @@ class MetaModuleCleanBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
+    if (!_isCoarse) return;
+
     var assetToModule = await buildStep.fetchResource(_assetToModule);
     var assetToPrimary = await buildStep.fetchResource(_assetToPrimary);
     SplayTreeSet<Module> cleanModules;
