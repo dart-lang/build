@@ -27,7 +27,7 @@ Future main(List<String> args) async {
         [
           (_) => new MetaModuleBuilder(),
           (_) => new MetaModuleCleanBuilder(),
-          (_) => new ModuleBuilder(),
+          (options) => new ModuleBuilder.forOptions(options),
           (_) => new UnlinkedSummaryBuilder(),
           (_) => new LinkedSummaryBuilder(),
         ],
