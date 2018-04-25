@@ -20,7 +20,7 @@ const metaModuleExtension = '.meta_module.raw';
 /// module structure for the package.
 class MetaModuleBuilder implements Builder {
   final bool _isCoarse;
-  const MetaModuleBuilder({bool isCoarse: false}) : _isCoarse = isCoarse;
+  const MetaModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
 
   factory MetaModuleBuilder.forOptions(BuilderOptions options) {
     return new MetaModuleBuilder(

@@ -87,7 +87,7 @@ Future<Null> _processMeta(
 /// source of a [Module].
 class ModuleBuilder implements Builder {
   final bool _isCoarse;
-  const ModuleBuilder({bool isCoarse: false}) : _isCoarse = isCoarse;
+  const ModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
 
   factory ModuleBuilder.forOptions(BuilderOptions options) {
     return new ModuleBuilder(

@@ -31,7 +31,7 @@ const metaModuleCleanExtension = '.meta_module.clean';
 /// module's transitive dependencies there will be no output.
 class MetaModuleCleanBuilder implements Builder {
   final bool _isCoarse;
-  const MetaModuleCleanBuilder({bool isCoarse: false}) : _isCoarse = isCoarse;
+  const MetaModuleCleanBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
 
   factory MetaModuleCleanBuilder.forOptions(BuilderOptions options) {
     return new MetaModuleCleanBuilder(
