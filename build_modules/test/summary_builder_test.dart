@@ -2,14 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/meta_module_clean_builder.dart';
 
 import 'matchers.dart';
@@ -20,7 +17,6 @@ main() {
 
   group('basic project', () {
     setUp(() async {
-      var a = new AssetId('a', 'lib/a.dart');
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
         'b|lib/b.dart': '''final world = 'world';''',
