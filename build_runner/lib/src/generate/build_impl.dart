@@ -177,7 +177,7 @@ class _SingleBuild {
   int numActionsCompleted = 0;
   int numActionsStarted = 0;
 
-  final pendingActions = new Set<String>();
+  final pendingActions = new SplayTreeMap<int, Set<String>>();
 
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
@@ -200,14 +200,18 @@ class _SingleBuild {
         _writer = buildImpl._writer {
     hungActionsHeartbeat = new HungActionsHeartbeat(() {
       final message = new StringBuffer();
-      const numToLog = 5;
-      var actionsToLog =
-          _verbose ? pendingActions : pendingActions.take(numToLog);
-      for (final description in actionsToLog) {
+      const numActionsToLog = 5;
+      var descriptions = pendingActions.values.fold(
+          <String>[],
+          (combined, actions) =>
+              combined..addAll(actions)).take(numActionsToLog);
+      for (final description in descriptions) {
         message.writeln('  - $description');
       }
-      if (!_verbose && pendingActions.length > numToLog) {
-        message.writeln('  .. and ${pendingActions.length - 5} more');
+      var numAdditionalActions =
+          numActionsStarted - numActionsCompleted - numActionsToLog;
+      if (numAdditionalActions > 0) {
+        message.writeln('  .. and $numAdditionalActions more');
       }
       return '$message';
     });
@@ -434,7 +438,9 @@ class _SingleBuild {
     var logger = new BuildForInputLogger(new Logger(actionDescription));
 
     numActionsStarted++;
-    pendingActions.add(actionDescription);
+    pendingActions
+        .putIfAbsent(phaseNumber, () => new Set<String>())
+        .add(actionDescription);
 
     var errorThrown = false;
     await tracker.track(
@@ -445,7 +451,7 @@ class _SingleBuild {
         'Build');
     numActionsCompleted++;
     hungActionsHeartbeat.ping();
-    pendingActions.remove(actionDescription);
+    pendingActions[phaseNumber].remove(actionDescription);
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
@@ -521,7 +527,9 @@ class _SingleBuild {
     var logger = new BuildForInputLogger(new Logger(actionDescription));
 
     numActionsStarted++;
-    pendingActions.add(actionDescription);
+    pendingActions
+        .putIfAbsent(phaseNum, () => new Set<String>())
+        .add(actionDescription);
 
     var errorThrown = false;
     await runPostProcessBuilder(
@@ -548,7 +556,7 @@ class _SingleBuild {
     }).catchError((_) => errorThrown = true);
     numActionsCompleted++;
     hungActionsHeartbeat.ping();
-    pendingActions.remove(actionDescription);
+    pendingActions[phaseNum].remove(actionDescription);
 
     var assetsWritten = wrappedWriter.assetsWritten.toSet();
 
