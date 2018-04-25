@@ -92,6 +92,10 @@ Future<ServeHandler> watch(
   final buildPhases = await createBuildPhases(
       targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
+  if (buildPhases.isEmpty) {
+    _logger.severe('Nothing can be built, yet a build was requested.');
+  }
+
   var watch =
       runWatch(environment, options, buildPhases, terminator.shouldTerminate);
 

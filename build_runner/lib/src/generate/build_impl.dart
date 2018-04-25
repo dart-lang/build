@@ -94,7 +94,7 @@ Future<BuildResult> build(
 
   BuildResult result;
   if (buildPhases.isEmpty) {
-    _logger.severe('Nothing was built, yet a build was requested.');
+    _logger.severe('Nothing can be built, yet a build was requested.');
     result = new BuildResult(BuildStatus.failure, []);
   } else {
     result = await singleBuild(environment, options, buildPhases);
