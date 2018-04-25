@@ -15,7 +15,6 @@ var _logger = new Logger('Heartbeat');
 /// Once [start]ed, if [waitDuration] passes between calls to [ping], then
 /// [onTimeout] will be invoked with the duration.
 abstract class Heartbeat {
-  Stopwatch _totalWatch;
   Stopwatch _intervalWatch;
   Timer _timer;
 
@@ -44,10 +43,9 @@ abstract class Heartbeat {
   /// This method can be overridden to add additional logic for handling calls
   /// to [ping], but you must call `super.start()`.
   void start() {
-    if (_totalWatch != null || _intervalWatch != null || _timer != null) {
+    if (_intervalWatch != null || _timer != null) {
       throw new StateError('HeartbeatLogger already started');
     }
-    _totalWatch = new Stopwatch()..start();
     _intervalWatch = new Stopwatch()..start();
     ping();
     _timer = new Timer.periodic(checkInterval, _checkDuration);
@@ -58,11 +56,9 @@ abstract class Heartbeat {
   /// This method can be overridden to add additional logic for cleanup
   /// purposes, but you must call `super.stop()`.
   void stop() {
-    if (_totalWatch == null || _intervalWatch == null || _timer == null) {
+    if (_intervalWatch == null || _timer == null) {
       throw new StateError('HeartbeatLogger was never started');
     }
-    _totalWatch.stop();
-    _totalWatch = null;
     _intervalWatch.stop();
     _intervalWatch = null;
     _timer.cancel();
@@ -81,6 +77,7 @@ abstract class Heartbeat {
 /// originally invoked.
 class HeartbeatLogger extends Heartbeat {
   StreamSubscription<LogRecord> _listener;
+  Stopwatch _totalWatch;
 
   /// Will be invoked with each original log message and the returned value will
   /// be logged instead.
@@ -93,6 +90,7 @@ class HeartbeatLogger extends Heartbeat {
   /// Start listening to logs.
   @override
   void start() {
+    _totalWatch = new Stopwatch()..start();
     super.start();
     _listener = Logger.root.onRecord.listen((_) => ping());
   }
@@ -100,14 +98,17 @@ class HeartbeatLogger extends Heartbeat {
   /// Stops listenting to the logger;
   @override
   void stop() {
+    super.stop();
     _listener.cancel();
     _listener = null;
+    _totalWatch.stop();
+    _totalWatch = null;
   }
 
   /// Logs a heartbeat message if we reach the timeout.
   @override
-  void onTimeout(Duration elapsed) {
-    var formattedTime = humanReadable(elapsed);
+  void onTimeout(_) {
+    var formattedTime = humanReadable(_totalWatch.elapsed);
     var message = '$formattedTime elapsed';
     if (transformLog != null) {
       message = transformLog(message);
