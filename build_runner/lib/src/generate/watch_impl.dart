@@ -93,7 +93,7 @@ Future<ServeHandler> watch(
       targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
   var watch =
-      runWatch(environment, options, buildPhases, terminator.shouldTerminate);
+      _runWatch(environment, options, buildPhases, terminator.shouldTerminate);
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
@@ -112,7 +112,7 @@ Future<ServeHandler> watch(
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-WatchImpl runWatch(BuildEnvironment environment, BuildOptions options,
+WatchImpl _runWatch(BuildEnvironment environment, BuildOptions options,
         List<BuildPhase> buildPhases, Future until) =>
     new WatchImpl(environment, options, buildPhases, until,
         options.rootPackageFilesWhitelist.map((g) => new Glob(g)));
