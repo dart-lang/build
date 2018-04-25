@@ -124,6 +124,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
 
   @override
   int get identity => _deepEquals.hash([
+        builderLabel,
         builder.buildExtensions,
         package,
         targetSources,
@@ -190,6 +191,7 @@ class PostBuildAction implements BuildAction {
         generateFor = new InputMatcher(generateFor ?? const InputSet());
 
   int get identity => _deepEquals.hash([
+        builderLabel,
         builder.inputExtensions.toList(),
         generateFor,
         package,
