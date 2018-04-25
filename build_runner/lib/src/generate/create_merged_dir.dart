@@ -33,9 +33,9 @@ Future<bool> createMergedOutputDirectories(
   for (var output in outputMap.keys) {
     if (!await _createMergedOutputDir(output, outputMap[output], assetGraph,
         packageGraph, reader, environment, buildPhases)) {
-      _logger.severe('Unable to create merged directory for $output. '
+      _logger.severe('Unable to create merged directory for $output.\n'
           'Choose a different directory or delete the contents of that '
-          'directory');
+          'directory.');
       return false;
     }
   }
