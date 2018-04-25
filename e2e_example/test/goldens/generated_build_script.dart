@@ -33,7 +33,8 @@ final _builders = [
       ],
       _i1.toAllPackages(),
       isOptional: true,
-      hideOutput: true),
+      hideOutput: true,
+      appliesBuilders: ['build_modules|module_cleanup']),
   _i1.apply(
       'build_web_compilers|ddc', [_i6.devCompilerBuilder], _i1.toAllPackages(),
       isOptional: true, hideOutput: true),
@@ -56,6 +57,8 @@ final _builders = [
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.applyPostProcess(
       'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder,
+      defaultGenerateFor: const _i4.InputSet()),
+  _i1.applyPostProcess('build_modules|module_cleanup', _i5.moduleCleanup,
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
       _i6.dart2JsArchiveExtractor,

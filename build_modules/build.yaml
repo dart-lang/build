@@ -18,3 +18,8 @@ builders:
     is_optional: True
     auto_apply: all_packages
     required_inputs: [".dart"]
+    applies_builders: ["|module_cleanup"]
+post_process_builders:
+  module_cleanup:
+    import: "package:build_modules/builders.dart"
+    builder_factory: "moduleCleanup"

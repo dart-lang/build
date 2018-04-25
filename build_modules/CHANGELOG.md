@@ -1,5 +1,6 @@
 # 0.2.2
 
+- Clean up `.module` and summary files from the output and server.
 - Add new `ModuleBuilder` strategies. By default the `coarse` strategy is used
   for all non-root packages and will create a minimum number of modules. This
   strategy can not be overridden. However, for the root package, the `fine`
