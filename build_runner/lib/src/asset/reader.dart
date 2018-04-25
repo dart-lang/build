@@ -12,7 +12,7 @@ import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 
-typedef Future RunPhaseForInput(int phaseNumber, AssetId primaryInput);
+typedef Future _RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
 /// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
 abstract class RunnerAssetReader implements MultiPackageAssetReader {}
@@ -34,7 +34,7 @@ class SingleStepReader implements AssetReader {
   final _globsRan = new Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
-  final RunPhaseForInput _runPhaseForInput;
+  final _RunPhaseForInput _runPhaseForInput;
 
   /// Whether the action using this reader writes to the generated directory.
   ///
@@ -74,7 +74,7 @@ class SingleStepReader implements AssetReader {
       if (!_outputsHidden &&
           node.isHidden &&
           node.id.package != _primaryPackage) return false;
-      return doAfter(_ensureAssetIsBuilt(node.id),
+      return _doAfter(_ensureAssetIsBuilt(node.id),
           (_) => node.wasOutput && !node.isFailure);
     }
     return node.isReadable;
@@ -82,7 +82,7 @@ class SingleStepReader implements AssetReader {
 
   @override
   Future<bool> canRead(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+    return _toFuture(_doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) return false;
       var node = _assetGraph.get(id);
       FutureOr<bool> _canRead() {
@@ -95,16 +95,16 @@ class SingleStepReader implements AssetReader {
         }
       }
 
-      return doAfter(_canRead(), (bool canRead) {
+      return _doAfter(_canRead(), (bool canRead) {
         if (!canRead) return false;
-        return doAfter(_ensureDigest(id), (_) => true);
+        return _doAfter(_ensureDigest(id), (_) => true);
       });
     }));
   }
 
   @override
   Future<Digest> digest(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+    return _toFuture(_doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return new Future.error(new AssetNotFoundException(id));
       }
@@ -114,21 +114,21 @@ class SingleStepReader implements AssetReader {
 
   @override
   Future<List<int>> readAsBytes(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+    return _toFuture(_doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return new Future.error(new AssetNotFoundException(id));
       }
-      return doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
+      return _doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
     }));
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+    return _toFuture(_doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return new Future.error(new AssetNotFoundException(id));
       }
-      return doAfter(_ensureDigest(id),
+      return _doAfter(_ensureDigest(id),
           (_) => _delegate.readAsString(id, encoding: encoding));
     }));
   }
@@ -164,7 +164,7 @@ class SingleStepReader implements AssetReader {
 
 /// Invokes [callback] and returns the result as soon as possible. This will
 /// happen synchronously if [value] is available.
-FutureOr<S> doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
+FutureOr<S> _doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
   if (value is Future<T>) {
     return value.then(callback);
   } else {
@@ -173,5 +173,5 @@ FutureOr<S> doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
 }
 
 /// Converts [value] to a [Future] if it is not already.
-Future<T> toFuture<T>(FutureOr<T> value) =>
+Future<T> _toFuture<T>(FutureOr<T> value) =>
     value is Future<T> ? value : new Future.value(value);
