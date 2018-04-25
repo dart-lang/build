@@ -1,3 +1,7 @@
+## 0.8.7
+
+- Clean up some error messages.
+
 ## 0.8.6
 
 - Forward default options for `PostProcessBuilder`s in the generated build
