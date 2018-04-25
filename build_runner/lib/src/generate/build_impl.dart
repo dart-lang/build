@@ -92,7 +92,13 @@ Future<BuildResult> build(
   final buildPhases = await createBuildPhases(
       targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
-  var result = await singleBuild(environment, options, buildPhases);
+  BuildResult result;
+  if (buildPhases.isEmpty) {
+    _logger.severe('Nothing was built, yet a build was requested.');
+    result = new BuildResult(BuildStatus.failure, []);
+  } else {
+    result = await singleBuild(environment, options, buildPhases);
+  }
 
   await terminator.cancel();
   await options.logListener.cancel();
