@@ -8,14 +8,14 @@ import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset/cache.dart';
 import 'package:build_runner/src/environment/io_environment.dart';
 import 'package:glob/glob.dart';
-//import 'package:logging/logging.dart' as log show Logger;
+import 'package:logging/logging.dart' as log show Logger;
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build_resolvers/src/resolver.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 
 class ImportOptimizer{
-//  static final log.Logger _log = new log.Logger('ImportOptimizer');
+  static final log.Logger _log = new log.Logger('ImportOptimizer');
   static final _resolvers = new AnalyzerResolvers();
   static final packageGraph = new PackageGraph.forThisPackage();
   final io = new IOEnvironment(packageGraph, true);
@@ -66,19 +66,24 @@ class ImportOptimizer{
     }
   }
 
-  Future<AssetId> _getCorrectImportAssetId(AssetBasedSource source, Resolver resolver) async{
-    var assets = await io.reader.findAssets(new Glob('lib/**.dart'),package: source.assetId.package).toList();
+  Future<AssetId> _getCorrectImportAssetId(AssetBasedSource source, Resolver resolver) async {
     var result = source.assetId;
-    for(var assetId in assets){
+    var assets = await io.reader.findAssets(new Glob('lib/**.dart'), package: source.assetId.package).toList();
+    for (var assetId in assets) {
       if (!assetId.path.contains('/src/')) {
-        var lib = await resolver.libraryFor(assetId);
-        var found = lib.exportedLibraries.firstWhere((exportLib){
-          var sourceLib = exportLib.source;
-          return (sourceLib is AssetBasedSource && sourceLib.assetId == source.assetId);
-        }, orElse: ()=>null);
-        if (found != null){
-          result = (lib.source as AssetBasedSource).assetId;
-          break;
+        try {
+          var lib = await resolver.libraryFor(assetId);
+          var found = lib.exportedLibraries.firstWhere((exportLib) {
+            var sourceLib = exportLib.source;
+            return (sourceLib is AssetBasedSource && sourceLib.assetId == source.assetId);
+          }, orElse: () => null);
+          if (found != null) {
+            result = (lib.source as AssetBasedSource).assetId;
+            break;
+          }
+        }
+        catch (e, s) {
+          _log.fine('Error asset: ${assetId}', e, s);
         }
       }
     }

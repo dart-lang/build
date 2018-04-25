@@ -23,7 +23,7 @@ void initLog() {
 
 Future<Null> main(List<String> args) async {
   initLog();
-  print('Demo run: dart ./bin/import_optimizer.dart \'build_runner|lib/src/entrypoint/options.dart\' \'build_runner|lib/src/asset_graph/graph.dart\'');
+  print('Demo run: dart ./bin/import_optimizer.dart "build_runner|lib/src/entrypoint/options.dart" "build_runner|lib/src/asset_graph/graph.dart"');
   new ImportOptimizer().run(args);
 //  ArgResults parsedArgs;
 //  var commandRunner = new CommandRunner();
