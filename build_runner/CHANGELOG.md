@@ -1,3 +1,8 @@
+## 0.8.6
+
+- Forward default options for `PostProcessBuilder`s in the generated build
+  script.
+
 ## 0.8.5
 
 - Add log message for merged output errors.
