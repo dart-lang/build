@@ -15,13 +15,16 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf_io.dart';
 
-import 'package:build_runner/build_runner.dart';
-
 import '../asset/file_based.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../generate/build.dart';
+import '../generate/build_result.dart';
 import '../logging/logging.dart';
 import '../logging/std_io_logging.dart';
+import '../package_graph/apply_builders.dart';
+import '../package_graph/package_graph.dart';
+import '../server/server.dart';
 import '../util/constants.dart';
 
 const _assumeTty = 'assume-tty';
