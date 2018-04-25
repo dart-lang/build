@@ -25,6 +25,8 @@ Future main(List<String> args) async {
     apply(
         'build_modules|modules',
         [
+          (_) => new MetaModuleBuilder(),
+          (_) => new MetaModuleCleanBuilder(),
           (_) => new ModuleBuilder(),
           (_) => new UnlinkedSummaryBuilder(),
           (_) => new LinkedSummaryBuilder(),
