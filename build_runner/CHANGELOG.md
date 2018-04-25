@@ -1,7 +1,16 @@
-## 0.8.5
+## 0.8.6-dev
 
 - If a build appears to be not making progress (no actions completed for x
   amount of time), then a warning will now be logged with the pending actions.
+
+## 0.8.6
+
+- Forward default options for `PostProcessBuilder`s in the generated build
+  script.
+
+## 0.8.5
+
+- Add log message for merged output errors.
 
 ## 0.8.4
 

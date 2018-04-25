@@ -46,7 +46,17 @@ configuration may have the following keys:
   configuration above for how to configure this.
 - **options**: Map, Optional: A free-form map which will be passed to the
   `Builder` as a `BuilderOptions` when it is constructed. Usage varies depending
-  on the particular builder.
+  on the particular builder. Values in this map will override the default
+  provided by builder authors. Values may also be overridden based on the build
+  mode with `dev_options` or `release_options`.
+- **dev_options**: Map, Optional: A free-form map which will be passed to the
+  `Builder` as a `BuilderOptions` when it is constructed. Usage varies depending
+  on the particular builder. The values in this map override all other values
+  per-key when the build is done in dev mode.
+- **release_options**: Map, Optional: A free-form map which will be passed to
+  the `Builder` as a `BuilderOptions` when it is constructed. Usage varies
+  depending on the particular builder. The values in this map override all other
+  values per-key when the build is done in release mode.
 
 ## Defining `Builder`s to apply to dependents (similar to transformers)
 
@@ -99,6 +109,15 @@ the following keys:
   - **generate_for**: A list of globs that this Builder should run on as a
     subset of the corresponding target, or a map with `include` and `exclude`
     lists of globs.
+  - **options**: Arbitrary yaml map, provided as the `config` map in
+    `BuilderOptions` to the `BuilderFactory` for this builder. Individual keys
+    will be overridden by configuration provided in either `dev_options` or
+    `release_options` based on the build mode, and then overridden by any user
+    specified configuration.
+  - **dev_options**: Arbitrary yaml map. Values will replace the defaults from
+    `options` when the build is done in dev mode (the default mode).
+  - **release_options**: Arbitrary yaml map. Values will replace the defaults
+    from `options` when the build is done in release mode (with `--release`).
 
 Example `builders` config:
 
@@ -109,6 +128,9 @@ builders:
     builder_factories: ["myBuilder"]
     build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
+    defaults:
+      release_options:
+        some_key: "Some value the users will want in release mode"
 ```
 
 ## Defining `PostProcessBuilder`s

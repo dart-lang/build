@@ -106,11 +106,17 @@ BuilderApplication apply(String builderKey,
 /// always hidden.
 BuilderApplication applyPostProcess(
         String builderKey, PostProcessBuilderFactory builderFactory,
-        {InputSet defaultGenerateFor}) =>
+        {InputSet defaultGenerateFor,
+        BuilderOptions defaultOptions,
+        BuilderOptions defaultDevOptions,
+        BuilderOptions defaultReleaseOptions}) =>
     new BuilderApplication.forPostProcessBuilder(
       builderKey,
       builderFactory,
       defaultGenerateFor: defaultGenerateFor,
+      defaultOptions: defaultOptions,
+      defaultDevOptions: defaultDevOptions,
+      defaultReleaseOptions: defaultReleaseOptions,
     );
 
 /// A description of which packages need a given [Builder] or
