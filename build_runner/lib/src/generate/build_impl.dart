@@ -177,7 +177,10 @@ class _SingleBuild {
   int numActionsCompleted = 0;
   int numActionsStarted = 0;
 
-  final pendingActions = new Set<Function>();
+  final pendingActions = new Set<String>();
+
+  /// Can't be final since it needs access to [pendingActions].
+  HungActionsHeartbeat hungActionsHeartbeat;
 
   _SingleBuild(BuildImpl buildImpl)
       : _assetGraph = buildImpl._assetGraph,
@@ -194,7 +197,21 @@ class _SingleBuild {
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
-        _writer = buildImpl._writer;
+        _writer = buildImpl._writer {
+    hungActionsHeartbeat = new HungActionsHeartbeat(() {
+      final message = new StringBuffer();
+      const numToLog = 5;
+      var actionsToLog =
+          _verbose ? pendingActions : pendingActions.take(numToLog);
+      for (final description in actionsToLog) {
+        message.writeln('  - $description');
+      }
+      if (!_verbose && pendingActions.length > numToLog) {
+        message.writeln('  .. and ${pendingActions.length - 5} more');
+      }
+      return '$message';
+    });
+  }
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
@@ -254,9 +271,12 @@ class _SingleBuild {
         transformLog: (original) => '$original, ${_buildProgress()}',
         waitDuration: new Duration(seconds: 1))
       ..start();
-    done.future.then((_) {
+    hungActionsHeartbeat.start();
+    done.future.whenComplete(() {
       heartbeat.stop();
+      hungActionsHeartbeat.stop();
     });
+
     runZoned(() async {
       // Run a fresh build.
       var result = await logTimedAsync(_logger, 'Running build', _runPhases);
@@ -409,12 +429,12 @@ class _SingleBuild {
     wrappedReader.assetsRead.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
-    var logger = new BuildForInputLogger(
-        new Logger(_actionLoggerName(phase, input, _packageGraph.root.name)));
+    var actionDescription =
+        _actionLoggerName(phase, input, _packageGraph.root.name);
+    var logger = new BuildForInputLogger(new Logger(actionDescription));
 
     numActionsStarted++;
-    var description = () => '$builder on $input';
-    pendingActions.add(description);
+    pendingActions.add(actionDescription);
 
     var errorThrown = false;
     await tracker.track(
@@ -424,7 +444,8 @@ class _SingleBuild {
             .catchError((_) => errorThrown = true),
         'Build');
     numActionsCompleted++;
-    pendingActions.remove(description);
+    hungActionsHeartbeat.ping();
+    pendingActions.remove(actionDescription);
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
@@ -496,11 +517,11 @@ class _SingleBuild {
     anchorNode.outputs.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
-    var logger = new BuildForInputLogger(new Logger('$builder on $input'));
+    var actionDescription = '$builder on $input';
+    var logger = new BuildForInputLogger(new Logger(actionDescription));
 
     numActionsStarted++;
-    var description = () => '$builder on $input';
-    pendingActions.add(description);
+    pendingActions.add(actionDescription);
 
     var errorThrown = false;
     await runPostProcessBuilder(
@@ -526,7 +547,8 @@ class _SingleBuild {
       _assetGraph.get(assetId).isDeleted = true;
     }).catchError((_) => errorThrown = true);
     numActionsCompleted++;
-    pendingActions.remove(description);
+    hungActionsHeartbeat.ping();
+    pendingActions.remove(actionDescription);
 
     var assetsWritten = wrappedWriter.assetsWritten.toSet();
 

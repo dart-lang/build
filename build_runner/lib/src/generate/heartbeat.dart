@@ -117,17 +117,20 @@ class HeartbeatLogger extends Heartbeat {
 }
 
 class HungActionsHeartbeat extends Heartbeat {
-  /// An arbitraty function that will return a description pending actions.
+  /// An arbitraty function that will return a description of pending actions.
   final String Function() listActions;
 
-  HungActionsHeartbeat(
-      {Duration checkInterval, Duration waitDuration, this.listActions})
-      : super(checkInterval: checkInterval, waitDuration: waitDuration);
+  HungActionsHeartbeat(this.listActions,
+      {Duration checkInterval, Duration waitDuration})
+      : super(
+            checkInterval: checkInterval,
+            waitDuration: waitDuration ?? new Duration(seconds: 15));
 
   @override
   void onTimeout(Duration elapsed) {
     var formattedTime = humanReadable(elapsed);
-    var message = '$formattedTime elapsed, waiting on:\n${listActions()}';
+    var message = 'No actions completed for $formattedTime, '
+        'waiting on:\n${listActions()}';
     _logger.warning(message);
   }
 }
