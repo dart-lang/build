@@ -34,7 +34,7 @@ class UnlinkedSummaryBuilder implements Builder {
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
-      await createUnlinkedSummary(module, buildStep);
+      await _createUnlinkedSummary(module, buildStep);
     } on AnalyzerSummaryException catch (e) {
       log.severe('Error creating ${module.unlinkedSummaryId}:\n$e');
     }
@@ -56,7 +56,7 @@ class LinkedSummaryBuilder implements Builder {
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
-      await createLinkedSummary(module, buildStep);
+      await _createLinkedSummary(module, buildStep);
     } on AnalyzerSummaryException catch (e, s) {
       log.warning('Error creating ${module.linkedSummaryId}:\n$e\n$s');
     } on MissingModulesException catch (e) {
@@ -66,7 +66,7 @@ class LinkedSummaryBuilder implements Builder {
 }
 
 /// Creates an unlinked summary for [module].
-Future createUnlinkedSummary(Module module, BuildStep buildStep,
+Future _createUnlinkedSummary(Module module, BuildStep buildStep,
     {bool isRoot = false}) async {
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   await scratchSpace.ensureAssets(module.sources, buildStep);
@@ -99,7 +99,7 @@ Future createUnlinkedSummary(Module module, BuildStep buildStep,
 }
 
 /// Creates a linked summary for [module].
-Future createLinkedSummary(Module module, BuildStep buildStep,
+Future _createLinkedSummary(Module module, BuildStep buildStep,
     {bool isRoot = false}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveUnlinkedSummaryDeps = <AssetId>[];

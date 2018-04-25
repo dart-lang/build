@@ -97,7 +97,7 @@ Future<BuildResult> build(
     _logger.severe('Nothing can be built, yet a build was requested.');
     result = new BuildResult(BuildStatus.failure, []);
   } else {
-    result = await singleBuild(environment, options, buildPhases);
+    result = await _singleBuild(environment, options, buildPhases);
   }
 
   await terminator.cancel();
@@ -105,7 +105,7 @@ Future<BuildResult> build(
   return result;
 }
 
-Future<BuildResult> singleBuild(BuildEnvironment environment,
+Future<BuildResult> _singleBuild(BuildEnvironment environment,
     BuildOptions options, List<BuildPhase> buildPhases) async {
   var buildDefinition =
       await BuildDefinition.prepareWorkspace(environment, options, buildPhases);

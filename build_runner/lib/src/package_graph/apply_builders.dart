@@ -176,7 +176,7 @@ class BuilderApplication {
               optionsWithDefaults.overrideWith(BuilderOptions.forRoot);
         }
 
-        var builder = scopeLogSync(
+        var builder = _scopeLogSync(
             () => builderFactory(optionsWithDefaults), new Logger(builderKey));
         if (builder == null) throw 'builderFactory did not return a builder.';
         return new InBuildPhase(builder, package.name,
@@ -348,7 +348,7 @@ Map<String, List<BuilderApplication>> _applyWith(
 ///
 /// Any calls to [print] will be logged with `log.info`, and any errors will be
 /// logged with `log.severe`.
-T scopeLogSync<T>(T fn(), Logger log) {
+T _scopeLogSync<T>(T fn(), Logger log) {
   return runZoned(fn,
       zoneSpecification:
           new ZoneSpecification(print: (self, parent, zone, message) {

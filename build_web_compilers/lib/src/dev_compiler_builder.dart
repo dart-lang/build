@@ -15,7 +15,7 @@ import 'package:cli_util/cli_util.dart' as cli_util;
 import 'common.dart';
 import 'errors.dart';
 
-final sdkDir = cli_util.getSdkPath();
+final _sdkDir = cli_util.getSdkPath();
 
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
@@ -50,7 +50,7 @@ class DevCompilerBuilder implements Builder {
     }
 
     try {
-      await createDevCompilerModule(module, buildStep, useKernel,
+      await _createDevCompilerModule(module, buildStep, useKernel,
           debugMode: !useKernel);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
@@ -61,7 +61,7 @@ class DevCompilerBuilder implements Builder {
 }
 
 /// Compile [module] with the dev compiler.
-Future createDevCompilerModule(
+Future _createDevCompilerModule(
     Module module, BuildStep buildStep, bool useKernel,
     {bool debugMode = true}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
@@ -75,8 +75,8 @@ Future createDevCompilerModule(
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var jsId = module.jsId(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary =
-      p.url.join(sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
+  var sdkSummary = p.url
+      .join(_sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
   var request = new WorkRequest();
 
   request.arguments.addAll([
