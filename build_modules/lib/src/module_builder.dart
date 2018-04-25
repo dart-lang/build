@@ -109,7 +109,7 @@ class ModuleBuilder implements Builder {
         new AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
     // If we can't read the clean meta module it is likely that this package
     // is in a module cycle so fall back to the fine strategy.
-    if (await buildStep.canRead(cleanMetaAsset) && _isCoarse) {
+    if (_isCoarse && await buildStep.canRead(cleanMetaAsset)) {
       if (!readMetas.contains(cleanMetaAsset)) {
         await _processMeta(buildStep, cleanMetaAsset, primaryToClean,
             assetToPrimary, readMetas);
