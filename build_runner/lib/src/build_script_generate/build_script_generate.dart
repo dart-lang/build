@@ -33,7 +33,7 @@ Future<String> _generateBuildScript(String configKey) async {
   return new DartFormatter().format('${library.accept(emitter)}');
 }
 
-/// Finds expressions to create all the [BuilderApplication] instances that
+/// Finds expressions to create all the `BuilderApplication` instances that
 /// should be applied packages in the build.
 ///
 /// Adds `apply` expressions based on the BuildefDefinitions from any package
