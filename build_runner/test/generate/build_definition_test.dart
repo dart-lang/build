@@ -416,6 +416,7 @@ main() {
           () async {
         var buildPhases = [
           new InBuildPhase(new TestBuilder(), 'a',
+              builderKey: 'testbuilder',
               hideOutput: true,
               builderOptions: new BuilderOptions({'foo': 'bar'}))
         ];
@@ -427,6 +428,7 @@ main() {
 
         buildPhases = [
           new InBuildPhase(new DelegatingBuilder(new TestBuilder()), 'a',
+              builderKey: 'testbuilder',
               hideOutput: true,
               builderOptions: new BuilderOptions({'baz': 'zap'}))
         ];
