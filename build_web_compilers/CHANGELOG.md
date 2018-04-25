@@ -1,5 +1,9 @@
 # 0.3.7+3
 
+- Fixed a logical error in `dartdevc` compiler to detect correct base url for require js.
+  
+# 0.3.7+3
+
 - The `dartdevc` compiler now respects the `<base href="/....">` tags and will
   set them as the base url for require js.
 
