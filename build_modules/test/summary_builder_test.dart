@@ -2,14 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/meta_module_clean_builder.dart';
 
 import 'matchers.dart';
@@ -20,18 +17,8 @@ main() {
 
   group('basic project', () {
     setUp(() async {
-      var a = new AssetId('a', 'lib/a.dart');
-      var ameta = new MetaModule([
-        new Module(a, [a], [])
-      ]);
-      var b = new AssetId('b', 'lib/b.dart');
-      var bmeta = new MetaModule([
-        new Module(b, [b], [])
-      ]);
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
-        'a|lib/$metaModuleCleanExtension': json.encode(ameta),
-        'b|lib/$metaModuleCleanExtension': json.encode(bmeta),
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
         import 'package:b/b.dart';
@@ -46,6 +33,8 @@ main() {
       };
 
       // Set up all the other required inputs for this test.
+      await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
+      await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
       await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
     });
 
