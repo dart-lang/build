@@ -1,3 +1,8 @@
+## 0.12.4
+
+- Add `FileDeletingBuilder` and `PostProcessBuilder.noOp`
+- Add `PostProcesBuilderFactory` typedef.
+
 ## 0.12.3
 
 - Added an `isRoot` boolean to `BuilderOptions`, which allows builders to have

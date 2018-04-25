@@ -4,8 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
-
+import 'builder.dart';
 import 'post_process_build_step.dart';
 
 /// A builder which runes in a special phase at the end of the build.
@@ -26,9 +25,29 @@ import 'post_process_build_step.dart';
 /// Dart files, or any other file which would should be processed by normal
 /// [Builder]s.
 abstract class PostProcessBuilder {
+  /// A [PostProcessBuilder] which does nothing.
+  ///
+  /// This is useful when a [PostProcessBuilderFactory] may decide to do no work
+  /// but still needs to output a builder.
+  static const noOp = const _NoOpPostProcessBuilder();
+
   /// The extensions this builder expects for its inputs.
   Iterable<String> get inputExtensions;
 
-  /// Generates the outputs for a given [BuildStep].
+  /// Generates the outputs and deletes for [buildStep].
   FutureOr<Null> build(PostProcessBuildStep buildStep);
+}
+
+typedef PostProcessBuilderFactory = PostProcessBuilder Function(BuilderOptions);
+
+class _NoOpPostProcessBuilder implements PostProcessBuilder {
+  @override
+  final inputExtensions = const [];
+
+  const _NoOpPostProcessBuilder();
+
+  @override
+  FutureOr<Null> build(PostProcessBuildStep buildStep) {
+    return null;
+  }
 }
