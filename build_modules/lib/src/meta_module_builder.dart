@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
+import 'common.dart';
 import 'meta_module.dart';
 
 /// The extension for serialized meta module assets.
@@ -18,7 +19,13 @@ const metaModuleExtension = '.meta_module.raw';
 /// This file contains information about the full computed
 /// module structure for the package.
 class MetaModuleBuilder implements Builder {
-  const MetaModuleBuilder();
+  final bool _isCoarse;
+  const MetaModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
+
+  factory MetaModuleBuilder.forOptions(BuilderOptions options) {
+    return new MetaModuleBuilder(
+        isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
+  }
 
   @override
   final buildExtensions = const {
@@ -27,9 +34,11 @@ class MetaModuleBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
+    if (!_isCoarse) return;
+
     var assets = await buildStep.findAssets(new Glob('**.dart')).toList();
     var metaModule = await MetaModule.forAssets(buildStep, assets);
     var id = new AssetId(buildStep.inputId.package, 'lib/$metaModuleExtension');
-    return buildStep.writeAsString(id, json.encode(metaModule.toJson()));
+    await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
   }
 }
