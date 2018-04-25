@@ -1,4 +1,5 @@
 ## 0.8.7
+
 - Now fail when a build is requested which does not build anything.
 - Clean up some error messages.
 
