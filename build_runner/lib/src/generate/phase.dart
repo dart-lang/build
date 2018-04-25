@@ -117,14 +117,14 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
     if (hideOutput) settings.add('hidden');
-    var result = '${builder.runtimeType} on $targetSources in $package';
+    var result = '$builderLabel on $targetSources in $package';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
   }
 
   @override
   int get identity => _deepEquals.hash([
-        '${builder.runtimeType}',
+        builder.buildExtensions,
         package,
         targetSources,
         generateFor,
@@ -150,7 +150,7 @@ class PostBuildPhase extends BuildPhase {
 
   @override
   String toString() =>
-      '${builderActions.map((a) => a.builder.runtimeType).join(', ')}';
+      '${builderActions.map((a) => a.builderLabel).join(', ')}';
 
   @override
   int get identity =>
@@ -190,7 +190,7 @@ class PostBuildAction implements BuildAction {
         generateFor = new InputMatcher(generateFor ?? const InputSet());
 
   int get identity => _deepEquals.hash([
-        builder.runtimeType.toString(),
+        builder.inputExtensions.toList(),
         generateFor,
         package,
         targetSources,
