@@ -1,4 +1,4 @@
-# 0.3.7+3
+# 0.3.7+4
 
 - Fixed a logical error in `dartdevc` compiler to detect correct base url for require js.
   
