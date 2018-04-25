@@ -174,8 +174,8 @@ class _SingleBuild {
   final bool _verbose;
   final RunnerAssetWriter _writer;
 
-  int numActionsCompleted = 0;
-  int numActionsStarted = 0;
+  int actionsCompletedCount = 0;
+  int actionsStartedCount = 0;
 
   final pendingActions = new SplayTreeMap<int, Set<String>>();
 
@@ -200,18 +200,18 @@ class _SingleBuild {
         _writer = buildImpl._writer {
     hungActionsHeartbeat = new HungActionsHeartbeat(() {
       final message = new StringBuffer();
-      const numActionsToLog = 5;
+      const actionsToLogMax = 5;
       var descriptions = pendingActions.values.fold(
           <String>[],
           (combined, actions) =>
-              combined..addAll(actions)).take(numActionsToLog);
+              combined..addAll(actions)).take(actionsToLogMax);
       for (final description in descriptions) {
         message.writeln('  - $description');
       }
-      var numAdditionalActions =
-          numActionsStarted - numActionsCompleted - numActionsToLog;
-      if (numAdditionalActions > 0) {
-        message.writeln('  .. and $numAdditionalActions more');
+      var additionalActionsCount =
+          actionsStartedCount - actionsCompletedCount - actionsToLogMax;
+      if (additionalActionsCount > 0) {
+        message.writeln('  .. and $additionalActionsCount more');
       }
       return '$message';
     });
@@ -234,7 +234,7 @@ class _SingleBuild {
     }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
-          '${result.outputs.length} outputs ($numActionsCompleted actions)\n');
+          '${result.outputs.length} outputs ($actionsCompletedCount actions)\n');
     } else {
       if (result.exception is FatalBuildException) {
         // TODO(???) Really bad idea. Should not set exit codes in libraries!
@@ -305,7 +305,7 @@ class _SingleBuild {
 
   /// Returns a message describing the progress of the current build.
   String _buildProgress() =>
-      '$numActionsCompleted/$numActionsStarted actions completed.';
+      '$actionsCompletedCount/$actionsStartedCount actions completed.';
 
   /// Runs the actions in [_buildPhases] and returns a [Future<BuildResult>]
   /// which completes once all [BuildPhase]s are done.
@@ -437,7 +437,7 @@ class _SingleBuild {
         _actionLoggerName(phase, input, _packageGraph.root.name);
     var logger = new BuildForInputLogger(new Logger(actionDescription));
 
-    numActionsStarted++;
+    actionsStartedCount++;
     pendingActions
         .putIfAbsent(phaseNumber, () => new Set<String>())
         .add(actionDescription);
@@ -449,7 +449,7 @@ class _SingleBuild {
                 logger: logger, resourceManager: _resourceManager)
             .catchError((_) => errorThrown = true),
         'Build');
-    numActionsCompleted++;
+    actionsCompletedCount++;
     hungActionsHeartbeat.ping();
     pendingActions[phaseNumber].remove(actionDescription);
 
@@ -526,7 +526,7 @@ class _SingleBuild {
     var actionDescription = '$builder on $input';
     var logger = new BuildForInputLogger(new Logger(actionDescription));
 
-    numActionsStarted++;
+    actionsStartedCount++;
     pendingActions
         .putIfAbsent(phaseNum, () => new Set<String>())
         .add(actionDescription);
@@ -554,7 +554,7 @@ class _SingleBuild {
       }
       _assetGraph.get(assetId).isDeleted = true;
     }).catchError((_) => errorThrown = true);
-    numActionsCompleted++;
+    actionsCompletedCount++;
     hungActionsHeartbeat.ping();
     pendingActions[phaseNum].remove(actionDescription);
 

@@ -117,7 +117,7 @@ class HeartbeatLogger extends Heartbeat {
 }
 
 class HungActionsHeartbeat extends Heartbeat {
-  /// An arbitraty function that will return a description of pending actions.
+  /// Returns a description of pending actions
   final String Function() listActions;
 
   HungActionsHeartbeat(this.listActions,

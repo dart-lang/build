@@ -1,7 +1,7 @@
 ## 0.8.7
 
-- If a build appears to be not making progress (no actions completed for x
-  amount of time), then a warning will now be logged with the pending actions.
+- If a build appears to be not making progress (no actions completed for 15
+  seconds), then a warning will now be logged with the pending actions.
 
 ## 0.8.6
 
