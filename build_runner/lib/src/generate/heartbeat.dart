@@ -30,7 +30,7 @@ abstract class Heartbeat {
         this.waitDuration = waitDuration ?? const Duration(seconds: 5);
 
   /// Invoked if [waitDuration] time has elapsed since the last call to [ping].
-  void onTimeout(Duration duration);
+  void onTimeout(Duration elapsed);
 
   /// Resets the internal timers. If more than [waitDuration] elapses without
   /// this method being called, then [onTimeout] will be invoked with the
@@ -106,12 +106,28 @@ class HeartbeatLogger extends Heartbeat {
 
   /// Logs a heartbeat message if we reach the timeout.
   @override
-  onTimeout(Duration elapsed) {
+  void onTimeout(Duration elapsed) {
     var formattedTime = humanReadable(elapsed);
     var message = '$formattedTime elapsed';
     if (transformLog != null) {
       message = transformLog(message);
     }
     _logger.info(message);
+  }
+}
+
+class HungActionsHeartbeat extends Heartbeat {
+  /// An arbitraty function that will return a description pending actions.
+  final String Function() listActions;
+
+  HungActionsHeartbeat(
+      {Duration checkInterval, Duration waitDuration, this.listActions})
+      : super(checkInterval: checkInterval, waitDuration: waitDuration);
+
+  @override
+  void onTimeout(Duration elapsed) {
+    var formattedTime = humanReadable(elapsed);
+    var message = '$formattedTime elapsed, waiting on:\n${listActions()}';
+    _logger.warning(message);
   }
 }
