@@ -1,5 +1,7 @@
 ## 0.2.2+1
 
+- Fix an issue with new files causing subsequent build failures
+  [#1358](https://github.com/dart-lang/build/issues/1358).
 - Expose `MetaModuleCleanBuilder` and `metaModuleCleanExtension` publicly for
   usage in tests and manual build scripts.
 
