@@ -94,6 +94,7 @@ Future<ServeHandler> watch(
 
   if (buildPhases.isEmpty) {
     _logger.severe('Nothing can be built, yet a build was requested.');
+    return null;
   }
 
   var watch =

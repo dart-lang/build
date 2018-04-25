@@ -395,6 +395,8 @@ class _WatchCommand extends BuildRunnerCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
     );
+    if (handler == null) return ExitCode.config.code;
+
     await handler.currentBuild;
     await handler.buildResults.drain();
     return ExitCode.success.code;
@@ -446,6 +448,9 @@ class _ServeCommand extends _WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
     );
+
+    if (handler == null) return ExitCode.config.code;
+
     _ensureBuildWebCompilersDependency(packageGraph, logger);
     var servers = await Future.wait(options.serveTargets
         .map((target) => _startServer(options, target, handler)));
