@@ -1,6 +1,9 @@
 # 0.3.8
 
-- Remove `.dart` source files from the output directory in release mode.
+- Remove `.dart` sources and `.js.map` files from the output directory in
+  release mode.
+- Clean up `.tar.gz` outputs produced by `Dart2Js.`
+- Don't output extra `Dart2Js` outputs other than deferred part files.
 
 # 0.3.7+3
 
