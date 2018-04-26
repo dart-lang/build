@@ -50,7 +50,11 @@ Future _focus(String query) async {
     if (e is ProgressEvent) {
       var target = e.target;
       if (target is HttpRequest) {
-        msg = '$msg\n${target.status} ${target.statusText}';
+        msg = [
+          msg,
+          '${target.status} ${target.statusText}',
+          target.responseText
+        ].join('\n');
       }
       _error(msg);
     } else {

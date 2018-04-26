@@ -706,6 +706,19 @@
       map$1: function(receiver, f) {
         return new H.MappedListIterable(receiver, f, [H.getTypeArgumentByIndex(receiver, 0), null]);
       },
+      join$1: function(receiver, separator) {
+        var t1, list, i, t2;
+        t1 = receiver.length;
+        list = new Array(t1);
+        list.fixed$length = Array;
+        for (i = 0; i < receiver.length; ++i) {
+          t2 = H.S(receiver[i]);
+          if (i >= t1)
+            return H.ioore(list, i);
+          list[i] = t2;
+        }
+        return list.join(separator);
+      },
       skip$1: function(receiver, n) {
         return H.SubListIterable$(receiver, n, null, H.getTypeArgumentByIndex(receiver, 0));
       },
@@ -9336,7 +9349,7 @@
               if (!!J.getInterceptor(e0).$isProgressEvent) {
                 target = W._convertNativeToDart_EventTarget(J.get$_get_target$x(e0));
                 if (!!J.getInterceptor(target).$isHttpRequest)
-                  msg = H.S(msg) + "\n" + H.S(J.get$status$x(target)) + " " + H.S(J.get$statusText$x(target));
+                  msg = C.JSArray_methods.join$1([msg, H.S(J.get$status$x(target)) + " " + H.S(J.get$statusText$x(target)), J.get$responseText$x(target)], "\n");
                 F._error(msg, null, null);
               } else
                 F._error(msg, e0, stack0);
