@@ -7,6 +7,8 @@ export 'src/kernel_builder.dart'
     show KernelSummaryBuilder, kernelSummaryExtension, multiRootScheme;
 export 'src/meta_module_builder.dart'
     show MetaModuleBuilder, metaModuleExtension;
+export 'src/meta_module_clean_builder.dart'
+    show MetaModuleCleanBuilder, metaModuleCleanExtension;
 export 'src/module_builder.dart' show ModuleBuilder, moduleExtension;
 export 'src/modules.dart';
 export 'src/scratch_space.dart' show scratchSpace, scratchSpaceResource;

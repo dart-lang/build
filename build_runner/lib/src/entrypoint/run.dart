@@ -5,10 +5,10 @@
 import 'dart:async';
 
 import 'package:args/command_runner.dart';
-import 'package:build_runner/build_runner.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
+import '../package_graph/apply_builders.dart';
 import 'options.dart';
 
 /// A common entry point to parse command line arguments and build or serve with

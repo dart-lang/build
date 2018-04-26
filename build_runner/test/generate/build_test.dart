@@ -405,7 +405,9 @@ void main() {
           ],
           {'b|lib/b.txt': 'b'},
           packageGraph: packageGraph,
-          outputs: {});
+          outputs: {},
+          // Nothing to build since everything is skipped
+          status: BuildStatus.failure);
     });
 
     group('with `hideOutput: true`', () {

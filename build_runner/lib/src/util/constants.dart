@@ -12,7 +12,7 @@ final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
 
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>
-    '$cacheDir/${scriptHashFor(path)}/asset_graph.json';
+    '$cacheDir/${_scriptHashFor(path)}/asset_graph.json';
 
 /// Directory containing automatically generated build entrypoints.
 ///
@@ -26,4 +26,4 @@ const generatedOutputDirectory = '$cacheDir/generated';
 const String cacheDir = '.dart_tool/build';
 
 /// Returns a hash for a given path.
-String scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
+String _scriptHashFor(String path) => md5.convert(path.codeUnits).toString();

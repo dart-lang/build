@@ -92,14 +92,20 @@ Future<BuildResult> build(
   final buildPhases = await createBuildPhases(
       targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
 
-  var result = await singleBuild(environment, options, buildPhases);
+  BuildResult result;
+  if (buildPhases.isEmpty) {
+    _logger.severe('Nothing can be built, yet a build was requested.');
+    result = new BuildResult(BuildStatus.failure, []);
+  } else {
+    result = await _singleBuild(environment, options, buildPhases);
+  }
 
   await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
 
-Future<BuildResult> singleBuild(BuildEnvironment environment,
+Future<BuildResult> _singleBuild(BuildEnvironment environment,
     BuildOptions options, List<BuildPhase> buildPhases) async {
   var buildDefinition =
       await BuildDefinition.prepareWorkspace(environment, options, buildPhases);
@@ -174,8 +180,13 @@ class _SingleBuild {
   final bool _verbose;
   final RunnerAssetWriter _writer;
 
-  int numActionsCompleted = 0;
-  int numActionsStarted = 0;
+  int actionsCompletedCount = 0;
+  int actionsStartedCount = 0;
+
+  final pendingActions = new SplayTreeMap<int, Set<String>>();
+
+  /// Can't be final since it needs access to [pendingActions].
+  HungActionsHeartbeat hungActionsHeartbeat;
 
   _SingleBuild(BuildImpl buildImpl)
       : _assetGraph = buildImpl._assetGraph,
@@ -192,7 +203,25 @@ class _SingleBuild {
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
-        _writer = buildImpl._writer;
+        _writer = buildImpl._writer {
+    hungActionsHeartbeat = new HungActionsHeartbeat(() {
+      final message = new StringBuffer();
+      const actionsToLogMax = 5;
+      var descriptions = pendingActions.values.fold(
+          <String>[],
+          (combined, actions) =>
+              combined..addAll(actions)).take(actionsToLogMax);
+      for (final description in descriptions) {
+        message.writeln('  - $description');
+      }
+      var additionalActionsCount =
+          actionsStartedCount - actionsCompletedCount - actionsToLogMax;
+      if (additionalActionsCount > 0) {
+        message.writeln('  .. and $additionalActionsCount more');
+      }
+      return '$message';
+    });
+  }
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
@@ -211,7 +240,7 @@ class _SingleBuild {
     }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
-          '${result.outputs.length} outputs ($numActionsCompleted actions)\n');
+          '${result.outputs.length} outputs ($actionsCompletedCount actions)\n');
     } else {
       if (result.exception is FatalBuildException) {
         // TODO(???) Really bad idea. Should not set exit codes in libraries!
@@ -252,9 +281,12 @@ class _SingleBuild {
         transformLog: (original) => '$original, ${_buildProgress()}',
         waitDuration: new Duration(seconds: 1))
       ..start();
-    done.future.then((_) {
+    hungActionsHeartbeat.start();
+    done.future.whenComplete(() {
       heartbeat.stop();
+      hungActionsHeartbeat.stop();
     });
+
     runZoned(() async {
       // Run a fresh build.
       var result = await logTimedAsync(_logger, 'Running build', _runPhases);
@@ -279,7 +311,7 @@ class _SingleBuild {
 
   /// Returns a message describing the progress of the current build.
   String _buildProgress() =>
-      '$numActionsCompleted/$numActionsStarted actions completed.';
+      '$actionsCompletedCount/$actionsStartedCount actions completed.';
 
   /// Runs the actions in [_buildPhases] and returns a [Future<BuildResult>]
   /// which completes once all [BuildPhase]s are done.
@@ -407,9 +439,15 @@ class _SingleBuild {
     wrappedReader.assetsRead.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
-    var logger = new BuildForInputLogger(
-        new Logger(_actionLoggerName(phase, input, _packageGraph.root.name)));
-    numActionsStarted++;
+    var actionDescription =
+        _actionLoggerName(phase, input, _packageGraph.root.name);
+    var logger = new BuildForInputLogger(new Logger(actionDescription));
+
+    actionsStartedCount++;
+    pendingActions
+        .putIfAbsent(phaseNumber, () => new Set<String>())
+        .add(actionDescription);
+
     var errorThrown = false;
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
@@ -417,7 +455,9 @@ class _SingleBuild {
                 logger: logger, resourceManager: _resourceManager)
             .catchError((_) => errorThrown = true),
         'Build');
-    numActionsCompleted++;
+    actionsCompletedCount++;
+    hungActionsHeartbeat.ping();
+    pendingActions[phaseNumber].remove(actionDescription);
 
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
@@ -489,9 +529,14 @@ class _SingleBuild {
     anchorNode.outputs.clear();
 
     var wrappedWriter = new AssetWriterSpy(_writer);
-    var logger = new BuildForInputLogger(new Logger('$builder on $input'));
+    var actionDescription = '$builder on $input';
+    var logger = new BuildForInputLogger(new Logger(actionDescription));
 
-    numActionsStarted++;
+    actionsStartedCount++;
+    pendingActions
+        .putIfAbsent(phaseNum, () => new Set<String>())
+        .add(actionDescription);
+
     var errorThrown = false;
     await runPostProcessBuilder(
         builder, input, wrappedReader, wrappedWriter, logger,
@@ -515,7 +560,9 @@ class _SingleBuild {
       }
       _assetGraph.get(assetId).isDeleted = true;
     }).catchError((_) => errorThrown = true);
-    numActionsCompleted++;
+    actionsCompletedCount++;
+    hungActionsHeartbeat.ping();
+    pendingActions[phaseNum].remove(actionDescription);
 
     var assetsWritten = wrappedWriter.assetsWritten.toSet();
 

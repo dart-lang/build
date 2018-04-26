@@ -4,15 +4,18 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
+import 'post_process_build_step.dart';
+import 'post_process_builder.dart';
 
-class DartSourceCleanup implements PostProcessBuilder {
+/// A [PostProcessBuilder] which can be configured to consume any input
+/// extensions and always deletes it primary input.
+class FileDeletingBuilder implements PostProcessBuilder {
+  @override
+  final List<String> inputExtensions;
+
   final bool isEnabled;
 
-  const DartSourceCleanup(this.isEnabled);
-
-  DartSourceCleanup.fromOptions(BuilderOptions options)
-      : isEnabled = options.config['enabled'] as bool ?? false;
+  const FileDeletingBuilder(this.inputExtensions, {this.isEnabled: true});
 
   @override
   FutureOr<Null> build(PostProcessBuildStep buildStep) {
@@ -20,7 +23,4 @@ class DartSourceCleanup implements PostProcessBuilder {
     buildStep.deletePrimaryInput();
     return null;
   }
-
-  @override
-  final inputExtensions = const ['.dart'];
 }

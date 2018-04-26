@@ -21,19 +21,19 @@ class BuildCacheReader implements AssetReader {
 
   @override
   Future<bool> canRead(AssetId id) =>
-      _delegate.canRead(cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.canRead(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
   Future<Digest> digest(AssetId id) =>
-      _delegate.digest(cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.digest(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
   Future<List<int>> readAsBytes(AssetId id) =>
-      _delegate.readAsBytes(cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.readAsBytes(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) =>
-      _delegate.readAsString(cacheLocation(id, _assetGraph, _rootPackage),
+      _delegate.readAsString(_cacheLocation(id, _assetGraph, _rootPackage),
           encoding: encoding);
 
   @override
@@ -50,18 +50,18 @@ class BuildCacheWriter implements RunnerAssetWriter {
 
   @override
   Future writeAsBytes(AssetId id, List<int> content) => _delegate.writeAsBytes(
-      cacheLocation(id, _assetGraph, _rootPackage), content);
+      _cacheLocation(id, _assetGraph, _rootPackage), content);
   @override
   Future writeAsString(AssetId id, String content, {Encoding encoding: utf8}) =>
       _delegate.writeAsString(
-          cacheLocation(id, _assetGraph, _rootPackage), content,
+          _cacheLocation(id, _assetGraph, _rootPackage), content,
           encoding: encoding);
   @override
   Future delete(AssetId id) =>
-      _delegate.delete(cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.delete(_cacheLocation(id, _assetGraph, _rootPackage));
 }
 
-AssetId cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
+AssetId _cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
   if (id.path.startsWith(generatedOutputDirectory) ||
       id.path.startsWith(cacheDir)) {
     return id;
