@@ -6,8 +6,6 @@ import 'dart:async';
 
 import 'package:archive/archive.dart';
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart'
-    show PostProcessBuildStep, PostProcessBuilder;
 import 'package:path/path.dart' as p;
 
 import 'web_entrypoint_builder.dart';
