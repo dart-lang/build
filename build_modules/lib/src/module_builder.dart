@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 
+import 'common.dart';
 import 'meta_module.dart';
 import 'meta_module_clean_builder.dart';
 import 'modules.dart';
@@ -82,33 +83,15 @@ Future<Null> _processMeta(
   }
 }
 
-enum Strategy { fine, coarse }
-
 /// Creates `.module` files for any `.dart` file that is the primary dart
 /// source of a [Module].
 class ModuleBuilder implements Builder {
   final bool _isCoarse;
-  const ModuleBuilder({bool isCoarse: false}) : _isCoarse = isCoarse;
-
-  static Strategy _getStrategy(BuilderOptions options) {
-    if (options.isRoot) {
-      var config = options.config['strategy'] as String ?? 'fine';
-      switch (config) {
-        case 'coarse':
-          return Strategy.coarse;
-        case 'fine':
-          return Strategy.fine;
-        default:
-          throw 'Unexpected ModuleBuilder strategy: $config';
-      }
-    } else {
-      return Strategy.coarse;
-    }
-  }
+  const ModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
 
   factory ModuleBuilder.forOptions(BuilderOptions options) {
     return new ModuleBuilder(
-        isCoarse: _getStrategy(options) == Strategy.coarse);
+        isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
   }
 
   @override
@@ -122,14 +105,14 @@ class ModuleBuilder implements Builder {
     var assetToPrimary = await buildStep.fetchResource(_assetToPrimary);
     var readMetas = await buildStep.fetchResource(_readMetas);
     var primaryToClean = await buildStep.fetchResource(_primaryToClean);
-    var asset =
+    var cleanMetaAsset =
         new AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
     // If we can't read the clean meta module it is likely that this package
     // is in a module cycle so fall back to the fine strategy.
-    if (await buildStep.canRead(asset) && _isCoarse) {
-      if (!readMetas.contains(asset)) {
-        await _processMeta(
-            buildStep, asset, primaryToClean, assetToPrimary, readMetas);
+    if (_isCoarse && await buildStep.canRead(cleanMetaAsset)) {
+      if (!readMetas.contains(cleanMetaAsset)) {
+        await _processMeta(buildStep, cleanMetaAsset, primaryToClean,
+            assetToPrimary, readMetas);
       }
       outputModule = primaryToClean[buildStep.inputId];
     } else {

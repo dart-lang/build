@@ -32,6 +32,24 @@ Future<File> createPackagesFile(
   return packagesFile;
 }
 
+enum ModuleStrategy { fine, coarse }
+
+ModuleStrategy moduleStrategy(BuilderOptions options) {
+  if (options.isRoot) {
+    var config = options.config['strategy'] as String ?? 'fine';
+    switch (config) {
+      case 'coarse':
+        return ModuleStrategy.coarse;
+      case 'fine':
+        return ModuleStrategy.fine;
+      default:
+        throw 'Unexpected ModuleBuilder strategy: $config';
+    }
+  } else {
+    return ModuleStrategy.coarse;
+  }
+}
+
 /// Validates that [config] only has the top level keys [supportedOptions].
 ///
 /// Throws an [ArgumentError] if not.

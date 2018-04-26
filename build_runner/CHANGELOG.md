@@ -1,3 +1,8 @@
+## 0.8.7
+
+- Now fail when a build is requested which does not build anything.
+- Clean up some error messages.
+
 ## 0.8.6
 
 - Forward default options for `PostProcessBuilder`s in the generated build

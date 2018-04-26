@@ -14,7 +14,7 @@ import 'dev_compiler_builder.dart';
 import 'web_entrypoint_builder.dart';
 
 /// Alias `_p.url` to `p`.
-_p.Context get p => _p.url;
+_p.Context get _context => _p.url;
 
 Future<Null> bootstrapDdc(BuildStep buildStep,
     {bool useKernel, bool buildRootAppSummary, bool ignoreCastFailures}) async {
@@ -45,10 +45,10 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   // internally, but instead specify our own.
   var appModuleScope = () {
     if (useKernel) {
-      var basename = p.basename(jsId.path);
+      var basename = _context.basename(jsId.path);
       return basename.substring(0, basename.length - jsModuleExtension.length);
     } else {
-      Iterable<String> scope = p.split(_ddcModuleName(jsId));
+      Iterable<String> scope = _context.split(_ddcModuleName(jsId));
       if (scope.first == 'packages') {
         scope = scope.skip(1);
       }
@@ -66,9 +66,10 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
     // and we only allow you to serve top level directories.
     var moduleName = _ddcModuleName(jsId);
-    modulePaths[moduleName] = p.withoutExtension(jsId.path.startsWith('lib')
-        ? '$moduleName$jsModuleExtension'
-        : p.joinAll(p.split(jsId.path).skip(1)));
+    modulePaths[moduleName] = _context.withoutExtension(
+        jsId.path.startsWith('lib')
+            ? '$moduleName$jsModuleExtension'
+            : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
   var bootstrapContent = new StringBuffer('(function() {\n');
@@ -81,8 +82,9 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
-  var bootstrapModuleName = p.withoutExtension(
-      p.relative(bootstrapId.path, from: p.dirname(dartEntrypointId.path)));
+  var bootstrapModuleName = _context.withoutExtension(_context.relative(
+      bootstrapId.path,
+      from: _context.dirname(dartEntrypointId.path)));
 
   var entrypointJsContent = _entryPointJs(bootstrapModuleName);
   await buildStep.writeAsString(
@@ -228,7 +230,7 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   // dartdevc only strips the final extension when adding modules to source
   // maps, so we need to do the same.
   if (moduleName != 'dart_sdk') {
-    moduleName += '${p.withoutExtension(jsModuleExtension)}';
+    moduleName += '${_context.withoutExtension(jsModuleExtension)}';
   }
   if (window.\$dartLoader.moduleIdToUrl.has(moduleName)) {
     continue;
