@@ -22,8 +22,6 @@ typedef BuildPhase BuildPhaseFactory(
     InputSet generateFor,
     bool isReleaseBuild);
 
-typedef PostProcessBuilder PostProcessBuilderFactory(BuilderOptions options);
-
 typedef bool PackageFilter(PackageNode node);
 
 /// Run a builder on all packages in the package graph.
