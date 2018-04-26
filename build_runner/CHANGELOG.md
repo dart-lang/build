@@ -1,14 +1,11 @@
-## 0.8.7
-
-- If a build appears to be not making progress (no actions completed for 15
-  seconds), then a warning will now be logged with the pending actions.
-- Now fail when a build is requested which does not build anything.
-- Clean up some error messages.
-
 ## 0.8.6
 
 - Forward default options for `PostProcessBuilder`s in the generated build
   script.
+- If a build appears to be not making progress (no actions completed for 15
+  seconds), then a warning will now be logged with the pending actions.
+- Now fail when a build is requested which does not build anything.
+- Clean up some error messages.
 
 ## 0.8.5
 
