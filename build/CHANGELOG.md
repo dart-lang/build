@@ -1,6 +1,10 @@
+## 0.12.5
+
+- Add exclude support to `FileDeletingBuilder`.
+
 ## 0.12.4
 
-- Add `FileDeletingBuilder`
+- Add `FileDeletingBuilder`.
 - Add `PostProcesBuilderFactory` typedef.
 
 ## 0.12.3
