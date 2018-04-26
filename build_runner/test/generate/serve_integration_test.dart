@@ -22,6 +22,21 @@ main() {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_test',
+        ]),
+        d.dir('tool', [
+          d.file('build.dart', '''
+import 'package:build_runner/build_runner.dart';
+import 'package:build_test/build_test.dart';
+
+main() async {
+  await build([
+    applyToRoot(new TestBuilder()),
+    applyToRoot(new TestBuilder(
+        buildExtensions: appendExtension('.copy', from: '.txt.copy'))),
+  ]);
+}
+''')
         ]),
         d.dir('lib', [
           d.file('example.dart', "String hello = 'hello'"),

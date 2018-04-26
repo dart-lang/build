@@ -94,6 +94,8 @@ Future<ServeHandler> watch(
 
   if (buildPhases.isEmpty) {
     _logger.severe('Nothing can be built, yet a build was requested.');
+    await terminator.cancel();
+    await options.logListener.cancel();
     return null;
   }
 
