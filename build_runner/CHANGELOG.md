@@ -1,5 +1,7 @@
 ## 0.8.7
 
+- If a build appears to be not making progress (no actions completed for 15
+  seconds), then a warning will now be logged with the pending actions.
 - Now fail when a build is requested which does not build anything.
 - Clean up some error messages.
 
@@ -31,10 +33,12 @@
   different.
 
 ## 0.8.2+2
+
 - The `.packages` file is now always created in the root of the output directory
   instead of under each top level directory.
 
 ## 0.8.2+1
+
 - Bug Fix: Correctly parse Window's paths with new `--output` semantics.
 
 ## 0.8.2
