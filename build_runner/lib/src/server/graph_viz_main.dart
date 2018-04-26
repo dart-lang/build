@@ -5,28 +5,25 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
-import 'dart:js';
+import 'dart:js' as js;
 
-final _graphReference = context[r'$build'];
+final _graphReference = js.context[r'$build'];
 final _details = document.getElementById('details');
 
 main() async {
   var searchBox = document.getElementById('searchbox') as InputElement;
   var searchForm = document.getElementById('searchform');
-  searchForm.onSubmit.listen((e) async {
+  searchForm.onSubmit.listen((e) {
     e.preventDefault();
-    var query = searchBox.value;
-    await _focus(query);
+    _focus(searchBox.value);
     return null;
   });
   _graphReference.callMethod('initializeGraph', [_focus]);
 }
 
-void _error(String message, Object error, StackTrace stack) {
-  // TODO: update the user page some how?
-  window.console.error(message);
-  window.console.log(error);
-  window.console.log(stack);
+void _error(String message, [Object error, StackTrace stack]) {
+  var msg = [message, error, stack].where((e) => e != null).join('\n');
+  _details.innerHtml = '<pre>$msg</pre>';
 }
 
 Future _focus(String query) async {
@@ -39,21 +36,31 @@ Future _focus(String query) async {
         ? 'packages/$package/${path.substring(4)}'
         : '${path.split('/').skip(1).join('/')}';
   } catch (e, stack) {
-    _error('The query you provided ($query) could not be parsed.', e, stack);
+    _error('The query you provided "$query" could not be parsed.', e, stack);
     return;
   }
 
+  var url = '/\$graph/$requestPath';
   Map nodeInfo;
   try {
-    nodeInfo = json.decode(await HttpRequest.getString('/\$graph/$requestPath'))
-        as Map<String, dynamic>;
+    nodeInfo =
+        json.decode(await HttpRequest.getString(url)) as Map<String, dynamic>;
   } catch (e, stack) {
-    _error('Got an error making a request.', e, stack);
+    var msg = 'Error making a request: $url';
+    if (e is ProgressEvent) {
+      var target = e.target;
+      if (target is HttpRequest) {
+        msg = '$msg\n${target.status} ${target.statusText}';
+      }
+      _error(msg);
+    } else {
+      _error(msg, e, stack);
+    }
     return;
   }
 
   var graphData = {'edges': nodeInfo['edges'], 'nodes': nodeInfo['nodes']};
-  _graphReference.callMethod('setData', [new JsObject.jsify(graphData)]);
+  _graphReference.callMethod('setData', [new js.JsObject.jsify(graphData)]);
   var primaryNode = nodeInfo['primary'];
   _details.innerHtml = '<strong>ID:</strong> ${primaryNode['id']} <br />'
       '<strong>Generated:</strong> ${primaryNode['isGenerated']} <br />'

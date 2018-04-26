@@ -4517,7 +4517,7 @@
       return new P._StreamIterator(null, stream, false, [$T]);
     },
     _nullDataHandler: [function(value) {
-    }, "call$1", "async___nullDataHandler$closure", 4, 0, 20, 2],
+    }, "call$1", "async___nullDataHandler$closure", 4, 0, 19, 2],
     _nullErrorHandler: [function(error, stackTrace) {
       var t1 = $.Zone__current;
       t1.toString;
@@ -7389,6 +7389,23 @@
       where$1: ["super$Iterable$where", function(_, test) {
         return new H.WhereIterable(this, test, [H.getRuntimeTypeArgument(this, "Iterable", 0)]);
       }],
+      join$1: function(_, separator) {
+        var iterator, t1;
+        iterator = this.get$iterator(this);
+        if (!iterator.moveNext$0())
+          return "";
+        if (separator === "") {
+          t1 = "";
+          do
+            t1 += H.S(iterator.get$current());
+          while (iterator.moveNext$0());
+        } else {
+          t1 = H.S(iterator.get$current());
+          for (; iterator.moveNext$0();)
+            t1 = t1 + separator + H.S(iterator.get$current());
+        }
+        return t1.charCodeAt(0) == 0 ? t1 : t1;
+      },
       toList$1$growable: function(_, growable) {
         return P.List_List$from(this, true, H.getRuntimeTypeArgument(this, "Iterable", 0));
       },
@@ -7560,6 +7577,18 @@
       hash ^= hash >>> 11;
       return 536870911 & hash + ((16383 & hash) << 15);
     },
+    _convertNativeToDart_EventTarget: function(e) {
+      var $window;
+      if (e == null)
+        return;
+      if ("postMessage" in e) {
+        $window = W._DOMWindowCrossFrame__createSafe(e);
+        if (!!J.getInterceptor($window).$isEventTarget)
+          return $window;
+        return;
+      } else
+        return e;
+    },
     _wrapZone: function(callback) {
       var t1 = $.Zone__current;
       if (t1 === C.C__RootZone)
@@ -7576,6 +7605,10 @@
         return String(receiver);
       },
       "%": "HTMLAnchorElement"
+    },
+    ApplicationCacheErrorEvent: {
+      "^": "Event;status=",
+      "%": "ApplicationCacheErrorEvent"
     },
     AreaElement: {
       "^": "HtmlElement;href}",
@@ -7761,12 +7794,12 @@
       "%": "ErrorEvent"
     },
     Event: {
-      "^": "Interceptor;",
+      "^": "Interceptor;_get_target:target=",
       preventDefault$0: function(receiver) {
         return receiver.preventDefault();
       },
       $isEvent: 1,
-      "%": "AbortPaymentEvent|AnimationEvent|AnimationPlaybackEvent|ApplicationCacheErrorEvent|AudioProcessingEvent|BackgroundFetchClickEvent|BackgroundFetchEvent|BackgroundFetchFailEvent|BackgroundFetchedEvent|BeforeInstallPromptEvent|BeforeUnloadEvent|BlobEvent|CanMakePaymentEvent|ClipboardEvent|CloseEvent|CustomEvent|DeviceMotionEvent|DeviceOrientationEvent|ExtendableEvent|ExtendableMessageEvent|FetchEvent|FontFaceSetLoadEvent|ForeignFetchEvent|GamepadEvent|HashChangeEvent|IDBVersionChangeEvent|InstallEvent|MIDIConnectionEvent|MIDIMessageEvent|MediaEncryptedEvent|MediaKeyMessageEvent|MediaQueryListEvent|MediaStreamEvent|MediaStreamTrackEvent|MessageEvent|MojoInterfaceRequestEvent|MutationEvent|NotificationEvent|OfflineAudioCompletionEvent|PageTransitionEvent|PaymentRequestEvent|PaymentRequestUpdateEvent|PopStateEvent|PresentationConnectionAvailableEvent|PresentationConnectionCloseEvent|ProgressEvent|PromiseRejectionEvent|PushEvent|RTCDTMFToneChangeEvent|RTCDataChannelEvent|RTCPeerConnectionIceEvent|RTCTrackEvent|ResourceProgressEvent|SecurityPolicyViolationEvent|SpeechRecognitionEvent|SpeechSynthesisEvent|SyncEvent|TrackEvent|TransitionEvent|USBConnectionEvent|VRDeviceEvent|VRDisplayEvent|VRSessionEvent|WebGLContextEvent|WebKitTransitionEvent;Event|InputEvent"
+      "%": "AbortPaymentEvent|AnimationEvent|AnimationPlaybackEvent|AudioProcessingEvent|BackgroundFetchClickEvent|BackgroundFetchEvent|BackgroundFetchFailEvent|BackgroundFetchedEvent|BeforeInstallPromptEvent|BeforeUnloadEvent|BlobEvent|CanMakePaymentEvent|ClipboardEvent|CloseEvent|CustomEvent|DeviceMotionEvent|DeviceOrientationEvent|ExtendableEvent|ExtendableMessageEvent|FetchEvent|FontFaceSetLoadEvent|ForeignFetchEvent|GamepadEvent|HashChangeEvent|IDBVersionChangeEvent|InstallEvent|MIDIConnectionEvent|MIDIMessageEvent|MediaEncryptedEvent|MediaKeyMessageEvent|MediaQueryListEvent|MediaStreamEvent|MediaStreamTrackEvent|MessageEvent|MojoInterfaceRequestEvent|MutationEvent|NotificationEvent|OfflineAudioCompletionEvent|PageTransitionEvent|PaymentRequestEvent|PaymentRequestUpdateEvent|PopStateEvent|PresentationConnectionAvailableEvent|PresentationConnectionCloseEvent|PromiseRejectionEvent|PushEvent|RTCDTMFToneChangeEvent|RTCDataChannelEvent|RTCPeerConnectionIceEvent|RTCTrackEvent|SecurityPolicyViolationEvent|SpeechRecognitionEvent|SpeechSynthesisEvent|SyncEvent|TrackEvent|TransitionEvent|USBConnectionEvent|VRDeviceEvent|VRDisplayEvent|VRSessionEvent|WebGLContextEvent|WebKitTransitionEvent;Event|InputEvent"
     },
     EventTarget: {
       "^": "Interceptor;",
@@ -7780,6 +7813,7 @@
       _removeEventListener$3: function(receiver, type, listener, options) {
         return receiver.removeEventListener(type, H.convertDartClosureToJS(listener, 1), false);
       },
+      $isEventTarget: 1,
       "%": "MediaStream|ServiceWorker;EventTarget"
     },
     FieldSetElement: {
@@ -7791,7 +7825,7 @@
       "%": "HTMLFormElement"
     },
     HttpRequest: {
-      "^": "HttpRequestEventTarget;responseText=",
+      "^": "HttpRequestEventTarget;responseText=,status=,statusText=",
       open$5$async$password$user: function(receiver, method, url, async, password, user) {
         return receiver.open(method, url);
       },
@@ -8049,6 +8083,11 @@
       "^": "HtmlElement;value=",
       "%": "HTMLProgressElement"
     },
+    ProgressEvent: {
+      "^": "Event;",
+      $isProgressEvent: 1,
+      "%": "ProgressEvent|ResourceProgressEvent"
+    },
     SelectElement: {
       "^": "HtmlElement;length=,name=,value=",
       "%": "HTMLSelectElement"
@@ -8147,7 +8186,7 @@
       "%": "CompositionEvent|DragEvent|FocusEvent|MouseEvent|PointerEvent|TextEvent|TouchEvent|WheelEvent;UIEvent"
     },
     Window: {
-      "^": "EventTarget;",
+      "^": "EventTarget;status=",
       $isWindow: 1,
       "%": "DOMWindow|Window"
     },
@@ -8558,6 +8597,19 @@
         return this._html$_current;
       }
     },
+    _DOMWindowCrossFrame: {
+      "^": "Object;_window",
+      $isInterceptor: 1,
+      $isEventTarget: 1,
+      static: {
+        _DOMWindowCrossFrame__createSafe: function(w) {
+          if (w === window)
+            return w;
+          else
+            return new W._DOMWindowCrossFrame(w);
+        }
+      }
+    },
     NodeValidator: {
       "^": "Object;"
     },
@@ -8937,7 +8989,7 @@
         return o.o;
       else
         return P._wrapToDart(o);
-    }, "call$1", "js___convertToDart$closure", 4, 0, 21, 6],
+    }, "call$1", "js___convertToDart$closure", 4, 0, 20, 6],
     _wrapToDart: function(o) {
       if (typeof o == "function")
         return P._getDartProxy(o, $.$get$DART_CLOSURE_PROPERTY_NAME(), new P._wrapToDart_closure());
@@ -9224,18 +9276,13 @@
       return P._asyncStart($async$main, $async$completer);
     }, "call$0", "graph_viz_main__main$closure", 0, 0, 1],
     _error: function(message, error, stack) {
-      window;
-      if (typeof console != "undefined")
-        window.console.error(message);
-      window;
-      if (typeof console != "undefined")
-        window.console.log(error);
-      window;
-      if (typeof console != "undefined")
-        window.console.log(stack);
+      var t1, msg;
+      t1 = [message, error, stack];
+      msg = new H.WhereIterable(t1, new F._error_closure(), [H.getTypeArgumentByIndex(t1, 0)]).join$1(0, "\n");
+      J.set$innerHtml$x($.$get$_details(), "<pre>" + msg + "</pre>");
     },
     _focus: [function(query) {
-      var $async$goto = 0, $async$completer = P.Completer_Completer$sync(null), $async$returnValue, $async$handler = 2, $async$currentError, $async$next = [], requestPath, parts, $package, path, e, stack, nodeInfo, e0, stack0, requestPath0, t1, exception, graphData, primaryNode, $async$exception, $async$temp1, $async$temp2;
+      var $async$goto = 0, $async$completer = P.Completer_Completer$sync(null), $async$returnValue, $async$handler = 2, $async$currentError, $async$next = [], requestPath, parts, $package, path, e, stack, url, nodeInfo, e0, stack0, msg, target, requestPath0, t1, exception, graphData, primaryNode, $async$exception, $async$temp1, $async$temp2;
       var $async$_focus = P._wrapJsFunctionForAsync(function($async$errorCode, $async$result) {
         if ($async$errorCode === 1) {
           $async$currentError = $async$result;
@@ -9260,17 +9307,18 @@
               } catch (exception) {
                 e = H.unwrapException(exception);
                 stack = H.getTraceFromException(exception);
-                F._error("The query you provided (" + H.S(query) + ") could not be parsed.", e, stack);
+                F._error('The query you provided "' + H.S(query) + '" could not be parsed.', e, stack);
                 // goto return
                 $async$goto = 1;
                 break;
               }
+              url = "/$graph/" + H.S(requestPath);
               nodeInfo = null;
               $async$handler = 4;
               $async$temp1 = H;
               $async$temp2 = C.JsonCodec_null_null;
               $async$goto = 7;
-              return P._asyncAwait(W.HttpRequest_getString("/$graph/" + H.S(requestPath), null, null), $async$_focus);
+              return P._asyncAwait(W.HttpRequest_getString(url, null, null), $async$_focus);
             case 7:
               // returning from await.
               nodeInfo = $async$temp1.subtypeCast($async$temp2.decode$1(0, $async$result), "$isMap", [P.String, null], "$asMap");
@@ -9284,7 +9332,14 @@
               $async$exception = $async$currentError;
               e0 = H.unwrapException($async$exception);
               stack0 = H.getTraceFromException($async$exception);
-              F._error("Got an error making a request.", e0, stack0);
+              msg = "Error making a request: " + H.S(url);
+              if (!!J.getInterceptor(e0).$isProgressEvent) {
+                target = W._convertNativeToDart_EventTarget(J.get$_get_target$x(e0));
+                if (!!J.getInterceptor(target).$isHttpRequest)
+                  msg = H.S(msg) + "\n" + H.S(J.get$status$x(target)) + " " + H.S(J.get$statusText$x(target));
+                F._error(msg, null, null);
+              } else
+                F._error(msg, e0, stack0);
               // goto return
               $async$goto = 1;
               break;
@@ -9313,32 +9368,19 @@
           }
       });
       return P._asyncStart($async$_focus, $async$completer);
-    }, "call$1", "graph_viz_main___focus$closure", 4, 0, 22, 31],
+    }, "call$1", "graph_viz_main___focus$closure", 4, 0, 21, 31],
     main_closure: {
-      "^": "Closure:19;searchBox",
+      "^": "Closure:0;searchBox",
       call$1: function(e) {
-        var $async$goto = 0, $async$completer = P.Completer_Completer$sync(null), $async$returnValue, $async$self = this;
-        var $async$call$1 = P._wrapJsFunctionForAsync(function($async$errorCode, $async$result) {
-          if ($async$errorCode === 1)
-            return P._asyncRethrow($async$result, $async$completer);
-          while (true)
-            switch ($async$goto) {
-              case 0:
-                // Function start
-                J.preventDefault$0$x(e);
-                $async$goto = 3;
-                return P._asyncAwait(F._focus($async$self.searchBox.value), $async$call$1);
-              case 3:
-                // returning from await.
-                // goto return
-                $async$goto = 1;
-                break;
-              case 1:
-                // return
-                return P._asyncReturn($async$returnValue, $async$completer);
-            }
-        });
-        return P._asyncStart($async$call$1, $async$completer);
+        J.preventDefault$0$x(e);
+        F._focus(this.searchBox.value);
+        return;
+      }
+    },
+    _error_closure: {
+      "^": "Closure:0;",
+      call$1: function(e) {
+        return e != null;
       }
     }
   }, 1]];
@@ -9451,6 +9493,9 @@
   J.set$innerHtml$x = function(receiver, value) {
     return J.getInterceptor$x(receiver).set$innerHtml(receiver, value);
   };
+  J.get$_get_target$x = function(receiver) {
+    return J.getInterceptor$x(receiver).get$_get_target(receiver);
+  };
   J.get$attributes$x = function(receiver) {
     return J.getInterceptor$x(receiver).get$attributes(receiver);
   };
@@ -9477,6 +9522,12 @@
   };
   J.get$result$x = function(receiver) {
     return J.getInterceptor$x(receiver).get$result(receiver);
+  };
+  J.get$status$x = function(receiver) {
+    return J.getInterceptor$x(receiver).get$status(receiver);
+  };
+  J.get$statusText$x = function(receiver) {
+    return J.getInterceptor$x(receiver).get$statusText(receiver);
   };
   J.$add$ansx = function(receiver, a0) {
     if (typeof receiver == "number" && typeof a0 == "number")
@@ -9865,7 +9916,7 @@
   Isolate = Isolate.$finishIsolateConstructor(Isolate);
   $ = new Isolate();
   init.metadata = ["error", "stackTrace", "value", "invocation", null, "_", "o", "e", "x", "data", "element", "attributeName", "context", "result", "object", "sender", "closure", "isolate", "numberOfArguments", "arg1", "arg2", "arg3", "arg4", "each", "arg", "xhr", "attr", "callback", "captureThis", "self", "arguments", "query"];
-  init.types = [{func: 1, args: [,]}, {func: 1}, {func: 1, v: true}, {func: 1, v: true, args: [P.Object], opt: [P.StackTrace]}, {func: 1, v: true, args: [{func: 1, v: true}]}, {func: 1, args: [,,]}, {func: 1, ret: P.String, args: [P.int]}, {func: 1, ret: P.bool, args: [W.Element, P.String, P.String, W._Html5NodeValidator]}, {func: 1, args: [P.String,,]}, {func: 1, args: [, P.String]}, {func: 1, args: [P.String]}, {func: 1, args: [{func: 1, v: true}]}, {func: 1, args: [, P.StackTrace]}, {func: 1, args: [P.int,,]}, {func: 1, args: [,], opt: [,]}, {func: 1, v: true, args: [, P.StackTrace]}, {func: 1, args: [P.Symbol0,,]}, {func: 1, args: [W.HttpRequest]}, {func: 1, v: true, args: [W.Node, W.Node]}, {func: 1, ret: P.Future, args: [,]}, {func: 1, v: true, args: [P.Object]}, {func: 1, ret: P.Object, args: [,]}, {func: 1, ret: P.Future, args: [P.String]}];
+  init.types = [{func: 1, args: [,]}, {func: 1}, {func: 1, v: true}, {func: 1, v: true, args: [P.Object], opt: [P.StackTrace]}, {func: 1, v: true, args: [{func: 1, v: true}]}, {func: 1, args: [,,]}, {func: 1, ret: P.String, args: [P.int]}, {func: 1, ret: P.bool, args: [W.Element, P.String, P.String, W._Html5NodeValidator]}, {func: 1, args: [P.String,,]}, {func: 1, args: [, P.String]}, {func: 1, args: [P.String]}, {func: 1, args: [{func: 1, v: true}]}, {func: 1, args: [, P.StackTrace]}, {func: 1, args: [P.int,,]}, {func: 1, args: [,], opt: [,]}, {func: 1, v: true, args: [, P.StackTrace]}, {func: 1, args: [P.Symbol0,,]}, {func: 1, args: [W.HttpRequest]}, {func: 1, v: true, args: [W.Node, W.Node]}, {func: 1, v: true, args: [P.Object]}, {func: 1, ret: P.Object, args: [,]}, {func: 1, ret: P.Future, args: [P.String]}];
   function convertToFastObject(properties) {
     function MyClass() {
     }
