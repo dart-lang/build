@@ -83,7 +83,7 @@ class ImportOptimizer{
           }
         }
         catch (e, s) {
-          _log.fine('Error asset: ${assetId}', e, s);
+          _log.fine('Error asset: "${assetId}" for "${source.assetId}"', e, s);
         }
       }
     }
