@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner/build_runner.dart';
@@ -43,7 +43,8 @@ class ImportOptimizer{
       var sb = new StringBuffer();
       sb.writeln('//--------------------------');
       sb.writeln('// FileName: "$inputId"');
-      var sources = visitor._types.values.toSet();
+      var sources = visitor._sources;
+      var outputImports = new Set<String>();
       for (var source in sources ){
         if (source is AssetBasedSource){
           var assetId = source.assetId;
@@ -55,9 +56,15 @@ class ImportOptimizer{
             assetId = await _getCorrectImportAssetId(source, resolver);
             postMessage = '/* \'${source.assetId}\' -> \'$assetId\' entry point*/';
           }
-          sb.write("import 'package:${assetId.package}${assetId.path.substring(3)}'; $postMessage");
+          var generateImport = 'package:${assetId.package}${assetId.path.substring(3)}';
+          if (outputImports.add(generateImport)) {
+            sb.write("import '$generateImport';");
+          }
+          sb.write(' $postMessage');
         } else {
-          sb.write("import '${source.uri}';");
+          if (outputImports.add(source.uri.toString())) {
+            sb.write("import '${source.uri}';");
+          }
         }
         sb.writeln();
       }
@@ -83,7 +90,7 @@ class ImportOptimizer{
           }
         }
         catch (e, s) {
-          _log.fine('Error asset: "${assetId}" for "${source.assetId}"', e, s);
+          _log.fine('Error asset: "$assetId" for "${source.assetId}"', e, s);
         }
       }
     }
@@ -95,28 +102,44 @@ class ImportOptimizer{
 
 
 class ImportTypeCollectorVisitor extends GeneralizingAstVisitor<Object> {
-  final _types = <DartType, Source>{};
+  final _sources = new Set<Source>();
   final AssetId currentAssetId;
 
   ImportTypeCollectorVisitor(this.currentAssetId);
-  Map<DartType, Source> get collectedTypes => _types;
+  Iterable<Source> get collectedSources => _sources;
   @override
   Object visitTypeName(TypeName node){
-    if (node.type.element != null && !node.type.element.isPrivate && node.type.element.library!= null && !node.type.element.library.isDartCore){
-      var source = node.type.element.library.source;
-      if (source is AssetBasedSource) {
-        if (source.assetId != currentAssetId){
-          _types.putIfAbsent(node.type, () => node.type.element.library.source);
-        }
-      } else {
-        _types.putIfAbsent(node.type, () => node.type.element.library.source);
-      }
+    if (node.type.element != null && !node.type.element.isPrivate ){
+      _addLibrary(node.type.element.library);
     }
     return super.visitTypeName(node);
   }
+  void _addLibrary(LibraryElement library) {
+    if (library != null &&
+        library.isPublic &&
+        !library.isDartCore) {
+      var source = library.source;
+      if (source
+      is AssetBasedSource) {
+        if (source.assetId != currentAssetId) {
+          _sources.add(source);
+        }
+      }
+      else {
+        _sources.add(source);
+      }
+    }
+  }
 
-//  @override
-//  Object visitSimpleIdentifier(SimpleIdentifier node) {
-//     return super.visitSimpleIdentifier(node);
-//  }
+  @override
+  Object visitSimpleIdentifier(SimpleIdentifier node) {
+    if (node.staticElement != null && node.staticElement != null && node.staticElement.isPublic) {
+      _addLibrary(node.staticElement.library);
+    }
+//    if (node.staticType != null && node.staticType.element != null && node.staticType.element.isPublic) {
+//      _addLibrary(node.staticType.element.library);
+//    }
+
+     return super.visitSimpleIdentifier(node);
+  }
 }
