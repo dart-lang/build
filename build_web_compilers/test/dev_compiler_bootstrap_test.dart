@@ -30,6 +30,8 @@ main() {
     };
 
     // Set up all the other required inputs for this test.
+    await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
     await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
     await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
     await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);

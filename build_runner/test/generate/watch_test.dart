@@ -67,6 +67,15 @@ a:file://fake/pkg/path
         expect(await results.hasNext, isFalse);
       });
 
+      test('returns null if no builders are specified', () async {
+        var buildState = await startWatch(
+          [],
+          {'a|web/a.txt.copy': 'a'},
+          writer,
+        );
+        expect(buildState, isNull);
+      });
+
       test('rebuilds on file updates outside hardcoded whitelist', () async {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|test_files/a.txt': 'a'}, writer,
@@ -371,7 +380,8 @@ a:file://different/fake/pkg/path
         group('is added', () {
           setUp(() async {
             logs = <LogRecord>[];
-            var buildState = await startWatch([], {}, writer,
+            var buildState = await startWatch(
+                [copyABuildApplication], {}, writer,
                 logLevel: Level.SEVERE,
                 onLog: logs.add,
                 packageGraph: packageGraph);
@@ -411,8 +421,8 @@ a:file://different/fake/pkg/path
         group('is edited', () {
           setUp(() async {
             logs = <LogRecord>[];
-            var buildState = await startWatch(
-                [], {'a|build.yaml': '', 'b|build.yaml': ''}, writer,
+            var buildState = await startWatch([copyABuildApplication],
+                {'a|build.yaml': '', 'b|build.yaml': ''}, writer,
                 logLevel: Level.SEVERE,
                 onLog: logs.add,
                 packageGraph: packageGraph);
@@ -444,8 +454,8 @@ a:file://different/fake/pkg/path
         group('with --config', () {
           setUp(() async {
             logs = <LogRecord>[];
-            var buildState = await startWatch(
-                [], {'a|build.yaml': '', 'a|build.cool.yaml': ''}, writer,
+            var buildState = await startWatch([copyABuildApplication],
+                {'a|build.yaml': '', 'a|build.cool.yaml': ''}, writer,
                 configKey: 'cool',
                 logLevel: Level.SEVERE,
                 onLog: logs.add,

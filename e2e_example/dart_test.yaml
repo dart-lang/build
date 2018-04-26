@@ -6,4 +6,4 @@ concurrency: 1
 override_platforms:
   chrome:
     settings:
-      headless: false
+      headless: true

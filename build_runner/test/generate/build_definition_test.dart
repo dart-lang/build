@@ -307,161 +307,216 @@ main() {
       });
     });
 
-    test('invalidates the graph if the build phases change', () async {
-      // Gets rid of console spam during tests, we are setting up a new options
-      // object.
-      await options.logListener.cancel();
-
-      var buildPhases = [
-        new InBuildPhase(new TestBuilder(), 'a', hideOutput: true)
-      ];
+    group('invalidation', () {
       var logs = <LogRecord>[];
-      environment = new OverrideableEnvironment(environment, onLog: logs.add);
-      options = new BuildOptions(environment,
-          packageGraph: options.packageGraph,
-          logLevel: Level.WARNING,
-          skipBuildScriptCheck: true);
+      setUp(() async {
+        // Gets rid of console spam during tests, we are setting up a new options
+        // object.
+        await options.logListener.cancel();
+        logs.clear();
+        environment = new OverrideableEnvironment(environment, onLog: logs.add);
+        options = new BuildOptions(environment,
+            packageGraph: options.packageGraph,
+            logLevel: Level.WARNING,
+            skipBuildScriptCheck: true);
+      });
 
-      var originalAssetGraph = await AssetGraph.build(buildPhases,
-          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
+      test('invalidates the graph when adding a build phase', () async {
+        var buildPhases = [
+          new InBuildPhase(new TestBuilder(), 'a', hideOutput: true)
+        ];
 
-      await createFile(assetGraphPath, originalAssetGraph.serialize());
+        var originalAssetGraph = await AssetGraph.build(buildPhases,
+            <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
-      buildPhases.add(new InBuildPhase(new TestBuilder(), 'a',
-          targetSources: const InputSet(include: const ['.copy']),
-          hideOutput: true));
-      logs.clear();
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
-      var buildDefinition = await BuildDefinition.prepareWorkspace(
-          environment, options, buildPhases);
-      expect(
-          logs.any(
-            (log) =>
-                log.level == Level.WARNING &&
-                log.message.contains('build phases have changed'),
-          ),
-          isTrue);
+        buildPhases.add(new InBuildPhase(new TestBuilder(), 'a',
+            targetSources: const InputSet(include: const ['.copy']),
+            hideOutput: true));
+        logs.clear();
 
-      var newAssetGraph = buildDefinition.assetGraph;
-      expect(originalAssetGraph.buildPhasesDigest,
-          isNot(newAssetGraph.buildPhasesDigest));
-    });
-    test('invalidates the graph if the dart sdk version changes', () async {
-      // Gets rid of console spam during tests, we are setting up a new options
-      // object.
-      await options.logListener.cancel();
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildPhases);
+        expect(
+            logs.any(
+              (log) =>
+                  log.level == Level.WARNING &&
+                  log.message.contains('build phases have changed'),
+            ),
+            isTrue);
 
-      var buildPhases = [
-        new InBuildPhase(new TestBuilder(), 'a', hideOutput: true)
-      ];
-      var logs = <LogRecord>[];
-      environment = new OverrideableEnvironment(environment, onLog: logs.add);
-      options = new BuildOptions(environment,
-          packageGraph: options.packageGraph,
-          logLevel: Level.WARNING,
-          skipBuildScriptCheck: true);
+        var newAssetGraph = buildDefinition.assetGraph;
+        expect(originalAssetGraph.buildPhasesDigest,
+            isNot(newAssetGraph.buildPhasesDigest));
+      });
 
-      var originalAssetGraph = await AssetGraph.build(buildPhases,
-          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
+      test('invalidates the graph a phase has different build extension',
+          () async {
+        var buildPhases = [
+          new InBuildPhase(new TestBuilder(), 'a', hideOutput: true)
+        ];
 
-      var bytes = originalAssetGraph.serialize();
-      var serialized = json.decode(utf8.decode(bytes));
-      serialized['dart_version'] = 'some_fake_version';
-      var encoded = utf8.encode(json.encode(serialized));
-      await createFile(assetGraphPath, encoded);
+        var originalAssetGraph = await AssetGraph.build(buildPhases,
+            <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
-      logs.clear();
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
-      await BuildDefinition.prepareWorkspace(environment, options, buildPhases);
-      expect(
-          logs.any(
-            (log) =>
-                log.level == Level.WARNING &&
-                log.message.contains(
-                    'Throwing away cached asset graph due to Dart SDK update.'),
-          ),
-          isTrue);
-    });
+        buildPhases = [
+          new InBuildPhase(
+              new TestBuilder(buildExtensions: appendExtension('different')),
+              'a',
+              hideOutput: true)
+        ];
+        logs.clear();
 
-    test('does not invalidate the graph if the BuilderOptions change',
-        () async {
-      // Gets rid of console spam during tests, we are setting up a new options
-      // object.
-      await options.logListener.cancel();
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildPhases);
+        expect(
+            logs.any(
+              (log) =>
+                  log.level == Level.WARNING &&
+                  log.message.contains('build phases have changed'),
+            ),
+            isTrue);
 
-      var buildPhases = [
-        new InBuildPhase(new TestBuilder(), 'a',
-            hideOutput: true,
-            builderOptions: new BuilderOptions({'foo': 'bar'}))
-      ];
-      var logs = <LogRecord>[];
-      environment = new OverrideableEnvironment(environment, onLog: logs.add);
-      options = new BuildOptions(environment,
-          packageGraph: options.packageGraph,
-          logLevel: Level.WARNING,
-          skipBuildScriptCheck: true);
+        var newAssetGraph = buildDefinition.assetGraph;
+        expect(originalAssetGraph.buildPhasesDigest,
+            isNot(newAssetGraph.buildPhasesDigest));
+      });
 
-      var originalAssetGraph = await AssetGraph.build(buildPhases,
-          <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
+      test('invalidates the graph if the dart sdk version changes', () async {
+        var buildPhases = [
+          new InBuildPhase(new TestBuilder(), 'a', hideOutput: true)
+        ];
 
-      await createFile(assetGraphPath, originalAssetGraph.serialize());
+        var originalAssetGraph = await AssetGraph.build(buildPhases,
+            <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
-      buildPhases = [
-        new InBuildPhase(new TestBuilder(), 'a',
-            hideOutput: true,
-            builderOptions: new BuilderOptions({'baz': 'zap'}))
-      ];
-      logs.clear();
+        var bytes = originalAssetGraph.serialize();
+        var serialized = json.decode(utf8.decode(bytes));
+        serialized['dart_version'] = 'some_fake_version';
+        var encoded = utf8.encode(json.encode(serialized));
+        await createFile(assetGraphPath, encoded);
 
-      var buildDefinition = await BuildDefinition.prepareWorkspace(
-          environment, options, buildPhases);
-      expect(
-          logs.any(
-            (log) =>
-                log.level == Level.WARNING &&
-                log.message.contains('build phases have changed'),
-          ),
-          isFalse);
+        logs.clear();
 
-      var newAssetGraph = buildDefinition.assetGraph;
-      expect(originalAssetGraph.buildPhasesDigest,
-          equals(newAssetGraph.buildPhasesDigest));
-    });
+        await BuildDefinition.prepareWorkspace(
+            environment, options, buildPhases);
+        expect(
+            logs.any(
+              (log) =>
+                  log.level == Level.WARNING &&
+                  log.message.contains('due to Dart SDK update.'),
+            ),
+            isTrue);
+      });
 
-    test('deletes old source outputs if the build phases change', () async {
-      var buildPhases = [
-        new InBuildPhase(new TestBuilder(), 'a', hideOutput: false)
-      ];
-      var aTxt = new AssetId('a', 'lib/a.txt');
-      await createFile(aTxt.path, 'hello');
+      test('does not invalidate if a different Builder has the same extensions',
+          () async {
+        var buildPhases = [
+          new InBuildPhase(new TestBuilder(), 'a',
+              builderKey: 'testbuilder',
+              hideOutput: true,
+              builderOptions: new BuilderOptions({'foo': 'bar'}))
+        ];
 
-      var writerSpy = new RunnerAssetWriterSpy(environment.writer);
-      environment = new OverrideableEnvironment(environment, writer: writerSpy);
-      options = new BuildOptions(environment,
-          packageGraph: options.packageGraph,
-          skipBuildScriptCheck: true,
-          logLevel: Level.OFF);
+        var originalAssetGraph = await AssetGraph.build(buildPhases,
+            <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
 
-      var originalAssetGraph = await AssetGraph.build(
-          buildPhases,
-          <AssetId>[aTxt].toSet(),
-          new Set(),
-          aPackageGraph,
-          environment.reader);
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
 
-      var aTxtCopy = new AssetId('a', 'lib/a.txt.copy');
-      // Pretend we already output this without actually running a build.
-      (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode).wasOutput = true;
-      await createFile(aTxtCopy.path, 'hello');
+        buildPhases = [
+          new InBuildPhase(new DelegatingBuilder(new TestBuilder()), 'a',
+              builderKey: 'testbuilder',
+              hideOutput: true,
+              builderOptions: new BuilderOptions({'baz': 'zap'}))
+        ];
+        logs.clear();
 
-      await createFile(assetGraphPath, originalAssetGraph.serialize());
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildPhases);
+        expect(
+            logs.any(
+              (log) =>
+                  log.level == Level.WARNING &&
+                  log.message.contains('build phases have changed'),
+            ),
+            isFalse);
 
-      buildPhases.add(new InBuildPhase(new TestBuilder(), 'a',
-          targetSources: const InputSet(include: const ['.copy']),
-          hideOutput: true));
+        var newAssetGraph = buildDefinition.assetGraph;
+        expect(originalAssetGraph.buildPhasesDigest,
+            equals(newAssetGraph.buildPhasesDigest));
+      });
+      test('does not invalidate the graph if the BuilderOptions change',
+          () async {
+        var buildPhases = [
+          new InBuildPhase(new TestBuilder(), 'a',
+              hideOutput: true,
+              builderOptions: new BuilderOptions({'foo': 'bar'}))
+        ];
 
-      await BuildDefinition.prepareWorkspace(environment, options, buildPhases);
-      expect(writerSpy.assetsDeleted, contains(aTxtCopy));
+        var originalAssetGraph = await AssetGraph.build(buildPhases,
+            <AssetId>[].toSet(), new Set(), aPackageGraph, environment.reader);
+
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
+
+        buildPhases = [
+          new InBuildPhase(new TestBuilder(), 'a',
+              hideOutput: true,
+              builderOptions: new BuilderOptions({'baz': 'zap'}))
+        ];
+        logs.clear();
+
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildPhases);
+        expect(
+            logs.any(
+              (log) =>
+                  log.level == Level.WARNING &&
+                  log.message.contains('build phases have changed'),
+            ),
+            isFalse);
+
+        var newAssetGraph = buildDefinition.assetGraph;
+        expect(originalAssetGraph.buildPhasesDigest,
+            equals(newAssetGraph.buildPhasesDigest));
+      });
+
+      test('deletes old source outputs if the build phases change', () async {
+        var buildPhases = [
+          new InBuildPhase(new TestBuilder(), 'a', hideOutput: false)
+        ];
+        var aTxt = new AssetId('a', 'lib/a.txt');
+        await createFile(aTxt.path, 'hello');
+
+        var writerSpy = new RunnerAssetWriterSpy(environment.writer);
+        environment =
+            new OverrideableEnvironment(environment, writer: writerSpy);
+
+        var originalAssetGraph = await AssetGraph.build(
+            buildPhases,
+            <AssetId>[aTxt].toSet(),
+            new Set(),
+            aPackageGraph,
+            environment.reader);
+
+        var aTxtCopy = new AssetId('a', 'lib/a.txt.copy');
+        // Pretend we already output this without actually running a build.
+        (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode).wasOutput =
+            true;
+        await createFile(aTxtCopy.path, 'hello');
+
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
+
+        buildPhases.add(new InBuildPhase(new TestBuilder(), 'a',
+            targetSources: const InputSet(include: const ['.copy']),
+            hideOutput: true));
+
+        await BuildDefinition.prepareWorkspace(
+            environment, options, buildPhases);
+        expect(writerSpy.assetsDeleted, contains(aTxtCopy));
+      });
     });
 
     group('regression tests', () {

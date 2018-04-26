@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart' show PostProcessBuilder;
+
 import 'package:build_web_compilers/build_web_compilers.dart';
 
 Builder devCompilerBuilder(_) => const DevCompilerBuilder();
