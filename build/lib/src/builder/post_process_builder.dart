@@ -25,12 +25,6 @@ import 'post_process_build_step.dart';
 /// Dart files, or any other file which would should be processed by normal
 /// [Builder]s.
 abstract class PostProcessBuilder {
-  /// A [PostProcessBuilder] which does nothing.
-  ///
-  /// This is useful when a [PostProcessBuilderFactory] may decide to do no work
-  /// but still needs to output a builder.
-  static const noOp = const _NoOpPostProcessBuilder();
-
   /// The extensions this builder expects for its inputs.
   Iterable<String> get inputExtensions;
 
@@ -39,15 +33,3 @@ abstract class PostProcessBuilder {
 }
 
 typedef PostProcessBuilderFactory = PostProcessBuilder Function(BuilderOptions);
-
-class _NoOpPostProcessBuilder implements PostProcessBuilder {
-  @override
-  final inputExtensions = const [];
-
-  const _NoOpPostProcessBuilder();
-
-  @override
-  FutureOr<Null> build(PostProcessBuildStep buildStep) {
-    return null;
-  }
-}

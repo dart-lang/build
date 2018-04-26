@@ -1,6 +1,6 @@
 ## 0.12.4
 
-- Add `FileDeletingBuilder` and `PostProcessBuilder.noOp`
+- Add `FileDeletingBuilder`
 - Add `PostProcesBuilderFactory` typedef.
 
 ## 0.12.3

@@ -13,10 +13,13 @@ class FileDeletingBuilder implements PostProcessBuilder {
   @override
   final List<String> inputExtensions;
 
-  const FileDeletingBuilder(this.inputExtensions);
+  final bool isEnabled;
+
+  const FileDeletingBuilder(this.inputExtensions, {this.isEnabled: true});
 
   @override
   FutureOr<Null> build(PostProcessBuildStep buildStep) {
+    if (!isEnabled) return null;
     buildStep.deletePrimaryInput();
     return null;
   }
