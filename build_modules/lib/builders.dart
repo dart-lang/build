@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module_builder.dart';
 import 'package:build_modules/src/meta_module_clean_builder.dart';
+import 'package:build_modules/src/module_cleanup.dart';
 
 Builder moduleBuilder(BuilderOptions options) =>
     new ModuleBuilder.forOptions(options);
@@ -15,10 +16,4 @@ Builder metaModuleBuilder(_) => const MetaModuleBuilder();
 Builder metaModuleCleanBuilder(BuilderOptions options) =>
     const MetaModuleCleanBuilder();
 
-PostProcessBuilder moduleCleanup(_) => const FileDeletingBuilder(const [
-      '.meta_module.raw',
-      '.meta_module.clean',
-      '.module',
-      '.linked.sum',
-      '.unlinked.sum',
-    ]);
+PostProcessBuilder moduleCleanup(_) => const ModuleCleanup();

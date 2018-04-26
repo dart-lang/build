@@ -10,7 +10,7 @@ environment:
 dependencies:
   analyzer: ">0.30.0 < 0.32.0"
   bazel_worker: ^0.1.4
-  build: ^0.12.4
+  build: ^0.12.3
   build_config: ^0.2.1
   cli_util: ^0.1.2
   glob: ^1.0.0
@@ -30,7 +30,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  build:
-    path: ../build
