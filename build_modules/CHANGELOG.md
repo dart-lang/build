@@ -19,11 +19,11 @@
 
   ```yaml
   targets:
-  $default:
-    builders:
-      build_modules|modules:
-        options:
-          strategy: coarse
+    $default:
+      builders:
+        build_modules|modules:
+          options:
+            strategy: coarse
   ```
 
 ## 0.2.1
