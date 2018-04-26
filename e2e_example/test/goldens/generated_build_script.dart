@@ -69,6 +69,8 @@ final _builders = [
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
       _i6.dart2JsArchiveExtractor,
+      defaultReleaseOptions:
+          new _i7.BuilderOptions(_i8.json.decode('{"filter_outputs":true}')),
       defaultGenerateFor: const _i4.InputSet())
 ];
 main(List<String> args, [_i9.SendPort sendPort]) async {
