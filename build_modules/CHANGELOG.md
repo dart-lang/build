@@ -1,3 +1,8 @@
+## 0.2.2+3
+
+- Fix a race condition where we could fail to find the modules for some
+  dependencies.
+
 ## 0.2.2+2
 
 - Fix an issue where modules were unnecessarily being built with DDC.
