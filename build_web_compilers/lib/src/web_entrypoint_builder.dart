@@ -26,14 +26,16 @@ enum WebCompiler {
 /// The top level keys supported for the `options` config for the
 /// [WebEntrypointBuilder].
 const _supportedOptions = const [
+  _buildRootAppSummary,
   _compiler,
   _dart2jsArgs,
-  _buildRootAppSummary,
+  _enableSyncAsync,
   _ignoreCastFailures
 ];
 const _buildRootAppSummary = 'build_root_app_summary';
 const _compiler = 'compiler';
 const _dart2jsArgs = 'dart2js_args';
+const _enableSyncAsync = 'enable_sync_async';
 const _ignoreCastFailures = 'ignore_cast_failures';
 
 /// A builder which compiles entrypoints for the web.
@@ -45,12 +47,14 @@ class WebEntrypointBuilder implements Builder {
   final bool buildRootAppSummary;
   final bool useKernel;
   final bool ignoreCastFailures;
+  final bool enableSyncAsync;
 
   const WebEntrypointBuilder(this.webCompiler,
       {this.dart2JsArgs: const [],
       this.useKernel: false,
       this.buildRootAppSummary: false,
-      this.ignoreCastFailures: true});
+      this.ignoreCastFailures: true,
+      this.enableSyncAsync: enableSyncAsyncDefault});
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
     validateOptions(
@@ -79,9 +83,13 @@ class WebEntrypointBuilder implements Builder {
           'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
     }
 
+    final enableSyncAsync =
+        options.config[_enableSyncAsync] as bool ?? enableSyncAsyncDefault;
+
     return new WebEntrypointBuilder(compiler,
-        dart2JsArgs: dart2JsArgs as List<String>,
         buildRootAppSummary: buildRootAppSummary,
+        dart2JsArgs: dart2JsArgs as List<String>,
+        enableSyncAsync: enableSyncAsync,
         ignoreCastFailures: ignoreCastFailures);
   }
 
@@ -105,12 +113,13 @@ class WebEntrypointBuilder implements Builder {
         await bootstrapDdc(buildStep,
             useKernel: useKernel,
             buildRootAppSummary: buildRootAppSummary,
+            enableSyncAsync: enableSyncAsync,
             ignoreCastFailures: ignoreCastFailures);
       } on MissingModulesException catch (e) {
         log.severe('$e');
       }
     } else if (webCompiler == WebCompiler.Dart2Js) {
-      await bootstrapDart2Js(buildStep, dart2JsArgs);
+      await bootstrapDart2Js(buildStep, dart2JsArgs, enableSyncAsync);
     }
   }
 }

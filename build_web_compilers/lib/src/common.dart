@@ -10,6 +10,9 @@ import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 import 'package:build_modules/build_modules.dart';
 
+/// Shared default across dart2js/dartdevc.
+const enableSyncAsyncDefault = false;
+
 final defaultAnalysisOptionsId =
     new AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
 
