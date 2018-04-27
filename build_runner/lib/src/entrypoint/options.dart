@@ -15,13 +15,16 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf_io.dart';
 
-import 'package:build_runner/build_runner.dart';
-
 import '../asset/file_based.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../generate/build.dart';
+import '../generate/build_result.dart';
 import '../logging/logging.dart';
 import '../logging/std_io_logging.dart';
+import '../package_graph/apply_builders.dart';
+import '../package_graph/package_graph.dart';
+import '../server/server.dart';
 import '../util/constants.dart';
 
 const _assumeTty = 'assume-tty';
@@ -249,7 +252,7 @@ class _ServeTarget {
   _ServeTarget(this.dir, this.port);
 }
 
-abstract class BuildRunnerCommand extends Command<int> {
+abstract class _BuildRunnerCommand extends Command<int> {
   Logger get logger => new Logger(name);
 
   List<BuilderApplication> get builderApplications =>
@@ -257,7 +260,7 @@ abstract class BuildRunnerCommand extends Command<int> {
 
   PackageGraph get packageGraph => (runner as BuildCommandRunner).packageGraph;
 
-  BuildRunnerCommand() {
+  _BuildRunnerCommand() {
     _addBaseFlags();
   }
 
@@ -329,7 +332,7 @@ abstract class BuildRunnerCommand extends Command<int> {
 }
 
 /// A [Command] that does a single build and then exits.
-class _BuildCommand extends BuildRunnerCommand {
+class _BuildCommand extends _BuildRunnerCommand {
   @override
   String get name => 'build';
 
@@ -365,7 +368,7 @@ class _BuildCommand extends BuildRunnerCommand {
 
 /// A [Command] that watches the file system for updates and rebuilds as
 /// appropriate.
-class _WatchCommand extends BuildRunnerCommand {
+class _WatchCommand extends _BuildRunnerCommand {
   @override
   String get name => 'watch';
 
@@ -392,6 +395,8 @@ class _WatchCommand extends BuildRunnerCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
     );
+    if (handler == null) return ExitCode.config.code;
+
     await handler.currentBuild;
     await handler.buildResults.drain();
     return ExitCode.success.code;
@@ -443,6 +448,9 @@ class _ServeCommand extends _WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
     );
+
+    if (handler == null) return ExitCode.config.code;
+
     _ensureBuildWebCompilersDependency(packageGraph, logger);
     var servers = await Future.wait(options.serveTargets
         .map((target) => _startServer(options, target, handler)));
@@ -488,7 +496,7 @@ Future<HttpServer> _bindServer(_ServeOptions options, _ServeTarget target) {
 
 /// A [Command] that does a single build and then runs tests using the compiled
 /// assets.
-class _TestCommand extends BuildRunnerCommand {
+class _TestCommand extends _BuildRunnerCommand {
   @override
   final argParser = new ArgParser(allowTrailingOptions: false);
 
@@ -541,7 +549,7 @@ class _TestCommand extends BuildRunnerCommand {
         exitCode = testExitCode;
       }
       return testExitCode;
-    } on BuildTestDependencyError catch (e) {
+    } on _BuildTestDependencyError catch (e) {
       stdout.writeln(e);
       return ExitCode.config.code;
     } finally {
@@ -630,7 +638,7 @@ class _CleanCommand extends Command<int> {
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
   if (!packageGraph.allPackages.containsKey('build_test')) {
-    throw new BuildTestDependencyError();
+    throw new _BuildTestDependencyError();
   }
 }
 
@@ -689,8 +697,8 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
   return builderConfigOverrides;
 }
 
-class BuildTestDependencyError extends StateError {
-  BuildTestDependencyError() : super('''
+class _BuildTestDependencyError extends StateError {
+  _BuildTestDependencyError() : super('''
 Missing dev dependency on package:build_test, which is required to run tests.
 
 Please update your dev_dependencies section of your pubspec.yaml:

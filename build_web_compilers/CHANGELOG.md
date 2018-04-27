@@ -1,7 +1,11 @@
-# 0.3.7+4
+# 0.3.8
 
+- Remove `.dart` sources and `.js.map` files from the output directory in
+  release mode.
+- Clean up `.tar.gz` outputs produced by `Dart2Js.`
+- Don't output extra `Dart2Js` outputs other than deferred part files.
 - Fixed a logical error in `dartdevc` compiler to detect correct base url for require js.
-  
+
 # 0.3.7+3
 
 - The `dartdevc` compiler now respects the `<base href="/....">` tags and will

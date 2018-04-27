@@ -12,6 +12,11 @@ builders:
     auto_apply: all_packages
     required_inputs:
       - .dart
+    applies_builders:
+      # We want this to apply for dart2js as well - luckily this builder doesn't
+      # need to be disabled since it's lazy so we can use is as a handle to get
+      # the cleanup builder applied.
+      - build_web_compilers|dart_source_cleanup
   entrypoint:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -49,3 +54,12 @@ post_process_builders:
   dart2js_archive_extractor:
     import: "package:build_web_compilers/builders.dart"
     builder_factory: dart2JsArchiveExtractor
+    defaults:
+      release_options:
+        filter_outputs: true
+  dart_source_cleanup:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factory: dartSourceCleanup
+    defaults:
+      release_options:
+        enabled: true

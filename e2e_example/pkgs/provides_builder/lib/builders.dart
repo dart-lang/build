@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/build_runner.dart';
 
 class _SomeBuilder implements Builder {
   const _SomeBuilder();

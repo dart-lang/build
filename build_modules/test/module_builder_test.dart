@@ -42,7 +42,7 @@ main() {
     var assetA = new AssetId('a', 'lib/a.dart');
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
     var meta = new MetaModule([moduleA]);
-    await testBuilder(new ModuleBuilder(isCoarse: true), {
+    await testBuilder(new ModuleBuilder(), {
       'a|lib/$metaModuleCleanExtension': json.encode(meta),
       'a|lib/a.dart': '',
     }, outputs: {
@@ -57,7 +57,7 @@ main() {
     var assetC = new AssetId('a', 'lib/c.dart');
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
     var moduleB = new Module(assetB, [assetB, assetC], <AssetId>[]);
-    await testBuilder(new ModuleBuilder(isCoarse: true), {
+    await testBuilder(new ModuleBuilder(), {
       'a|lib/a.dart': '',
       'a|lib/b.dart': 'part "c.dart";',
       'a|lib/c.dart': 'part of "b.dart";',

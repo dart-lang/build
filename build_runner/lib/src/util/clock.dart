@@ -5,13 +5,14 @@
 import 'dart:async';
 
 /// A function that returns the current [DateTime].
-typedef DateTime Clock();
+typedef DateTime _Clock();
 DateTime _defaultClock() => new DateTime.now();
 
 /// Returns the current [DateTime].
 ///
 /// May be overridden for tests using [scopeClock].
-DateTime now() => (Zone.current[Clock] as Clock ?? _defaultClock)();
+DateTime now() => (Zone.current[_Clock] as _Clock ?? _defaultClock)();
 
 /// Runs [f], with [clock] scoped whenever [now] is called.
-T scopeClock<T>(Clock clock, T f()) => runZoned(f, zoneValues: {Clock: clock});
+T scopeClock<T>(DateTime clock(), T f()) =>
+    runZoned(f, zoneValues: {_Clock: clock});

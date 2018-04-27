@@ -33,9 +33,9 @@ Future<bool> createMergedOutputDirectories(
   for (var output in outputMap.keys) {
     if (!await _createMergedOutputDir(output, outputMap[output], assetGraph,
         packageGraph, reader, environment, buildPhases)) {
-      _logger.severe('Unable to create merged directory for $output. '
+      _logger.severe('Unable to create merged directory for $output.\n'
           'Choose a different directory or delete the contents of that '
-          'directory');
+          'directory.');
       return false;
     }
   }
@@ -129,7 +129,8 @@ Future<bool> _createMergedOutputDir(
   });
 
   logTimedSync(_logger, 'Writing asset manifest', () {
-    var content = outputAssets.map((id) => id.path).join(_manifestSeparator);
+    var paths = outputAssets.map((id) => id.path).toList()..sort();
+    var content = paths.join(_manifestSeparator);
     _writeAsString(
         outputDir, new AssetId(packageGraph.root.name, _manifestName), content);
   });
