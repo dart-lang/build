@@ -1,7 +1,7 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
+import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_modules/src/modules.dart';
 import 'package:build_modules/src/meta_module.dart';
@@ -45,8 +45,9 @@ void main() {
     var d = new AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(new Module(b, [b, d, c], [])),
       matchesModule(new Module(a, [a], [b, c])),
+      matchesModule(new Module(b, [b], [c])),
+      matchesModule(new Module(c, [c, d], [])),
     ];
 
     var meta = await MetaModule.forAssets(reader, assets);
@@ -116,8 +117,9 @@ void main() {
     var f = new AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, c, g, f, e], [])),
+      matchesModule(new Module(a, [a, c], [g, e])),
       matchesModule(new Module(b, [b, d], [c, e, g])),
+      matchesModule(new Module(e, [e, g, f], [])),
     ];
 
     var meta = await MetaModule.forAssets(reader, assets);
@@ -208,9 +210,12 @@ void main() {
     var f = new AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, d, e, f], [])),
+      matchesModule(new Module(a, [a], [d, e, f])),
       matchesModule(new Module(b, [b], [d, e])),
       matchesModule(new Module(c, [c], [d, f])),
+      matchesModule(new Module(d, [d], [])),
+      matchesModule(new Module(e, [e], [d])),
+      matchesModule(new Module(f, [f], [d])),
     ];
 
     var meta = await MetaModule.forAssets(reader, assets);
@@ -300,8 +305,9 @@ void main() {
     var d = new AssetId('myapp', 'web/d.dart');
 
     var expectedModules = [
-      matchesModule(new Module(b, [b, d, c], [])),
       matchesModule(new Module(a, [a], [b, c])),
+      matchesModule(new Module(b, [b], [c])),
+      matchesModule(new Module(c, [c, d], [])),
     ];
 
     var meta = await MetaModule.forAssets(reader, assets);
@@ -340,7 +346,8 @@ void main() {
     var e = new AssetId('myapp', 'web/e.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, b, c, d], [])),
+      matchesModule(new Module(a, [a, b], [c])),
+      matchesModule(new Module(c, [c, d], [])),
       matchesModule(new Module(e, [e], [d])),
     ];
 
