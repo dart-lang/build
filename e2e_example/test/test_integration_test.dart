@@ -18,6 +18,7 @@ void main() {
   test('Failing tests print mapped stack traces', () async {
     var result = await runManualTests(
         testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
+    printOnFailure(result.stderr.toString());
     expect(result.exitCode, isNot(ExitCode.success));
     expect(result.stdout,
         matches(new RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
