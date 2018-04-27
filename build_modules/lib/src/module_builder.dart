@@ -46,6 +46,7 @@ class _CleanMetaModuleCache {
 Future<Module> _cleanModuleDeps(
     BuildStep buildStep, Module module, _CleanMetaModuleCache cache) async {
   var cleanedDeps = new Set<AssetId>();
+  var depAssetToModules = <AssetId, Module>{};
   for (var dep in module.directDependencies) {
     // Since we are not using the course strategy we can safely add
     // all dependencies in the same package as they will have a
@@ -59,17 +60,24 @@ Future<Module> _cleanModuleDeps(
       cleanedDeps.add(dep);
       continue;
     }
-    // The dep must have come from a coarse module. Look for the corresponding
-    // primary source.
     var metaModule = await cache.find(dep.package, buildStep);
     if (metaModule == null) {
-      // TODO amek a new exception class for this
-      throw 'Could not find a module for $dep from ${buildStep.inputId}. '
-          'Is there a package cycle?';
+      // The dep is also fine but it's individual modules will come in a later
+      // phase. Need to recompute them.
+      if (!depAssetToModules.containsKey(dep)) {
+        var depLibrary = await buildStep.resolver.libraryFor(dep);
+        var depModule = new Module.forLibrary(depLibrary);
+        for (var source in depModule.sources) {
+          depAssetToModules[source] = depModule;
+        }
+      }
+      cleanedDeps.add(depAssetToModules[dep].primarySource);
+    } else {
+      // The dep has a course strategy
+      cleanedDeps.add(metaModule.modules
+          .firstWhere((m) => m.sources.contains(dep))
+          .primarySource);
     }
-    cleanedDeps.add(metaModule.modules
-        .firstWhere((m) => m.sources.contains(dep))
-        .primarySource);
   }
   return new Module(module.primarySource, module.sources, cleanedDeps);
 }
