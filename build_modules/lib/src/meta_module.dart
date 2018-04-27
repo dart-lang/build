@@ -123,7 +123,7 @@ Module _moduleForComponent(List<_AssetNode> componentNodes) {
 Map<AssetId, Module> _entryPointModules(
         Iterable<Module> modules, Set<AssetId> entrypoints) =>
     new Map.fromIterable(
-        modules.where((m) => m.sources.intersection(entrypoints).isNotEmpty),
+        modules.where((m) => m.sources.any(entrypoints.contains)),
         key: (m) => (m as Module).primarySource);
 
 /// Gets the local (same top level dir of the same package) transitive deps of
@@ -227,7 +227,7 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
 }
 
 Module _withConsistentPrimarySource(Module m) =>
-          new Module(m.sources.reduce(_min), m.sources, m.directDependencies);
+    new Module(m.sources.reduce(_min), m.sources, m.directDependencies);
 
 T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
