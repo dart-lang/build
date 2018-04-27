@@ -195,6 +195,7 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
   if (usePrecompiled) {
     var args = scriptArgs.toList()
       ..add('test')
+      ..add('--verbose')
       ..addAll(buildArgs ?? [])
       ..add('--')
       ..addAll(testArgs);
