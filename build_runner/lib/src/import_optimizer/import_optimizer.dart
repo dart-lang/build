@@ -11,6 +11,7 @@ import 'package:glob/glob.dart';
 import 'package:logging/logging.dart' as log show Logger;
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/src/generated/source.dart';
+import 'package:analyzer/src/generated/resolver.dart';
 import 'package:build_resolvers/src/resolver.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 
@@ -42,11 +43,12 @@ class ImportOptimizer{
          resourceManager);
      Resolver resolver = await _resolvers.get(buildStep);
      var lib = await buildStep.inputLibrary;
-     var visitor = new ImportTypeCollectorVisitor(inputId);
-     var ast = lib.unit;
-//     var sourceNodeCount = _getNodeCount(lib.importedLibraries);
-     ast.visitChildren(visitor);
-     await _generateInputs(inputId, visitor, resolver);
+     var vis = new GatherUsedImportedElementsVisitor(lib);
+     lib.unit.accept(vis);
+     var libraries = _convertElementToLibrary(vis.usedElements);
+     var optLibraries = await _optimizationImport(inputId, libraries, resolver);
+     var output = _generateImportText(inputId,lib, optLibraries);
+     print(output);
    }
 
    int _getNodeCount(Iterable<LibraryElement> libImports) {
@@ -63,40 +65,57 @@ class ImportOptimizer{
      return imports.length;
    }
 
-   Future _generateInputs(AssetId inputId, ImportTypeCollectorVisitor visitor, Resolver resolver) async {
-     var sb = new StringBuffer();
-     sb.writeln('//--------------------------');
-     sb.writeln('// FileName: "$inputId"');
-     var sources = visitor._sources;
-     var outputImports = new Set<String>();
-     for (var source in sources ){
+   Future<Iterable<LibraryElement>> _optimizationImport(AssetId inputId, Iterable<LibraryElement> libraries, Resolver resolver) async {
+     var outputImports = new Set<LibraryElement>();
+     for (var library in libraries ){
+       var source = library.source;
        if (source is AssetBasedSource){
          var assetId = source.assetId;
-         var postMessage = '';
-         if (assetId.package == inputId.package){
-           postMessage = '/* local import */';
-         } else if (source.assetId.path.contains('/src/')){
-           assetId = await _getCorrectImportAssetId(source, resolver);
-           postMessage = '/* \'${source.assetId}\' -> \'$assetId\' entry point*/';
+         var optLibrary = library;
+         if (assetId.package != inputId.package && source.assetId.path.contains('/src/')){
+           optLibrary = await _getOptLibraryImport(library, resolver);
          }
-         var generateImport = 'package:${assetId.package}${assetId.path.substring(3)}';
-         if (outputImports.add(generateImport)) {
-           sb.write("import '$generateImport';");
-         }
-         sb.write(' $postMessage');
+         outputImports.add(optLibrary);
        } else {
-         if (outputImports.add(source.uri.toString())) {
-           sb.write("import '${source.uri}';");
-         }
+         outputImports.add(library);
        }
-       sb.writeln();
+
      }
-     sb.writeln('//--------------------------');
-     print(sb.toString());
+     return outputImports;
    }
 
-  Future<AssetId> _getCorrectImportAssetId(AssetBasedSource source, Resolver resolver) async {
-    var result = source.assetId;
+  String _generateImportText(AssetId inputId, LibraryElement sourceLibrary, Iterable<LibraryElement> libraries) {
+    var sb = new StringBuffer();
+    sb.writeln('//--------------------------');
+    sb.writeln('// FileName: "$inputId"');
+    var sourceNodeCount = _getNodeCount(sourceLibrary.importedLibraries);
+    var optNodeCount = _getNodeCount(libraries);
+    if (sourceNodeCount > optNodeCount) {
+      for (var library in libraries) {
+        var source = library.source;
+        if (source is AssetBasedSource) {
+          var assetId = source.assetId;
+          var postMessage = '';
+          if (assetId.package == inputId.package) {
+            postMessage = '/* local import */';
+          }
+          var generateImport = 'package:${assetId.package}${assetId.path.substring(3)}';
+          sb.write("import '$generateImport'; $postMessage");
+        } else {
+          sb.write("import '${source.uri}';");
+        }
+        sb.writeln();
+      }
+    } else {
+      sb.writeln('// IMPORTS is optimal!');
+    }
+    sb.writeln('//-------------------------- old: $sourceNodeCount -> new: $optNodeCount');
+    return sb.toString();
+  }
+
+  Future<LibraryElement> _getOptLibraryImport(LibraryElement library, Resolver resolver) async {
+    var source = library.source as AssetBasedSource;
+    var result = library;
     var assets = await io.reader.findAssets(new Glob('lib/**.dart'), package: source.assetId.package).toList();
     for (var assetId in assets) {
       if (!assetId.path.contains('/src/')) {
@@ -107,7 +126,7 @@ class ImportOptimizer{
             return (sourceLib is AssetBasedSource && sourceLib.assetId == source.assetId);
           }, orElse: () => null);
           if (found != null) {
-            result = (lib.source as AssetBasedSource).assetId;
+            result = lib;
             break;
           }
         }
@@ -119,48 +138,20 @@ class ImportOptimizer{
     return result;
   }
 
-
-}
-
-
-class ImportTypeCollectorVisitor extends GeneralizingAstVisitor<Object> {
-  final _sources = new Set<Source>();
-  final AssetId currentAssetId;
-
-  ImportTypeCollectorVisitor(this.currentAssetId);
-  Iterable<Source> get collectedSources => _sources;
-  @override
-  Object visitTypeName(TypeName node){
-    if (node.type.element != null && !node.type.element.isPrivate ){
-      _addLibrary(node.type.element.library);
-    }
-    return super.visitTypeName(node);
-  }
-  void _addLibrary(LibraryElement library) {
-    if (library != null &&
-        library.isPublic &&
-        !library.isDartCore) {
-      var source = library.source;
-      if (source is AssetBasedSource) {
-        if (source.assetId != currentAssetId) {
-          _sources.add(source);
-        }
-      }
-      else {
-        _sources.add(source);
-      }
-    }
+  Iterable<LibraryElement> _convertElementToLibrary(UsedImportedElements usedElements) {
+     var libs = new Set<LibraryElement>();
+     usedElements.elements.forEach((element) {
+       var library = element.library;
+       if (library != null &&
+           library.isPublic &&
+           !library.isPrivate &&
+           !library.isDartCore &&
+           !library.source.uri.toString().contains(':_')
+       ) {
+         libs.add(library);
+       }
+     });
+     return libs;
   }
 
-  @override
-  Object visitSimpleIdentifier(SimpleIdentifier node) {
-    if (node.staticElement != null && node.staticElement != null && node.staticElement.isPublic) {
-      _addLibrary(node.staticElement.library);
-    }
-//    if (node.staticType != null && node.staticType.element != null && node.staticType.element.isPublic) {
-//      _addLibrary(node.staticType.element.library);
-//    }
-
-     return super.visitSimpleIdentifier(node);
-  }
 }
