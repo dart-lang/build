@@ -99,48 +99,32 @@ class _AssetNode {
   }
 }
 
-/// Creates simple modules based strictly off of [connectedComponents].
+/// Creates a module based strictly off of a strongly connected component of
+/// asset nodes.
 ///
 /// This creates more modules than we want, but we collapse them later on.
-Map<AssetId, Module> _createModulesFromComponents(
-    Iterable<List<_AssetNode>> connectedComponents) {
-  var modules = <AssetId, Module>{};
-  for (var componentNodes in connectedComponents) {
-    // Name components based on first alphabetically sorted node, preferring
-    // public srcs (not under lib/src).
-    var sortedNodes = componentNodes.toList()
-      ..sort((a, b) => a.id.path.compareTo(b.id.path));
-    var primaryNode = sortedNodes.firstWhere(
-        (node) => !node.id.path.startsWith('lib/src/'),
-        orElse: () => sortedNodes.first);
-    // Expand to include all the part files of each node, these aren't
-    // included as individual `_AssetNodes`s in `connectedComponents`.
-    var allAssetIds =
-        componentNodes.expand((node) => [node.id]..addAll(node.parts)).toSet();
-    var allDepIds = new Set<AssetId>();
-    for (var node in componentNodes) {
-      allDepIds.addAll(node.externalDeps);
-      for (var id in node.internalDeps) {
-        if (allAssetIds.contains(id)) continue;
-        allDepIds.add(id);
-      }
-    }
-    var module = new Module(primaryNode.id, allAssetIds, allDepIds);
-    modules[module.primarySource] = module;
-  }
-  return modules;
+Module _moduleForComponent(List<_AssetNode> componentNodes) {
+  // Name components based on first alphabetically sorted node, preferring
+  // public srcs (not under lib/src).
+  var sources = componentNodes.map((n) => n.id).toSet();
+  var nonSrcIds = sources.where((id) => !id.path.startsWith('lib/src/'));
+  var primaryId =
+      nonSrcIds.isNotEmpty ? nonSrcIds.reduce(_min) : sources.reduce(_min);
+  // Expand to include all the part files of each node, these aren't
+  // included as individual `_AssetNodes`s in `connectedComponents`.
+  sources.addAll(componentNodes.expand((n) => n.parts));
+  var directDependencies = new Set<AssetId>()
+    ..addAll(componentNodes.expand((n) => n.externalDeps))
+    ..addAll(componentNodes.expand((n) => n.internalDeps))
+    ..removeAll(sources);
+  return new Module(primaryId, sources, directDependencies);
 }
 
-Set<AssetId> _entryPointModules(
-    Iterable<Module> modules, Set<AssetId> entrypoints) {
-  var entrypointModules = new Set<AssetId>();
-  for (var module in modules) {
-    if (module.sources.intersection(entrypoints).isNotEmpty) {
-      entrypointModules.add(module.primarySource);
-    }
-  }
-  return entrypointModules;
-}
+Map<AssetId, Module> _entryPointModules(
+        Iterable<Module> modules, Set<AssetId> entrypoints) =>
+    new Map.fromIterable(
+        modules.where((m) => m.sources.intersection(entrypoints).isNotEmpty),
+        key: (m) => (m as Module).primarySource);
 
 /// Gets the local (same top level dir of the same package) transitive deps of
 /// [module] using [assetsToModules].
@@ -167,67 +151,85 @@ Set<AssetId> _localTransitiveDeps(
 /// Creates a map of modules to the entrypoint modules that transitively
 /// depend on those modules.
 Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
-    Set<AssetId> entrypointModules, Map<AssetId, Module> modulesById) {
+    Iterable<Module> entrypointModules, Iterable<Module> modules) {
   var reverseDeps = <AssetId, Set<AssetId>>{};
   var assetsToModules = <AssetId, Module>{};
-  for (var module in modulesById.values) {
+  for (var module in modules) {
     for (var assetId in module.sources) {
       assetsToModules[assetId] = module;
     }
   }
-  for (var id in entrypointModules) {
-    for (var moduleDep
-        in _localTransitiveDeps(modulesById[id], assetsToModules)) {
-      reverseDeps.putIfAbsent(moduleDep, () => new Set<AssetId>()).add(id);
+  for (var module in entrypointModules) {
+    for (var moduleDep in _localTransitiveDeps(module, assetsToModules)) {
+      reverseDeps
+          .putIfAbsent(moduleDep, () => new Set<AssetId>())
+          .add(module.primarySource);
     }
   }
   return reverseDeps;
 }
 
-/// Merges [originalModulesById] into a minimum set of [Module]s using the
+/// Merges [modules] into a minimum set of [Module]s using the
 /// following rules:
 ///
-///   * If it is an entrypoint module, skip it.
-///   * Else merge it into a module whose name is a the entrypoint
-///   that import it (create that module if it doesn't exist).
-List<Module> _mergeModules(
-    Map<AssetId, Module> originalModulesById, Set<AssetId> entrypoints) {
-  var modulesById = new Map<AssetId, Module>.from(originalModulesById);
+///   * If it is an entrypoint module do not merge it.
+///   * If it is not depended on my any entrypoint do not merge it.
+///   * If it is depended on by on entrypoint merge it into the entrypoint
+///     modules
+///   * Else merge it into with others that are depended on by the same set of
+///     entrypoints
+List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
+  // Modules which have any entrypoing keyed by primary source.
+  var entrypointModules = _entryPointModules(modules, entrypoints);
 
   // Maps modules to entrypoint modules that transitively depend on them.
-  var entrypointModuleIds = _entryPointModules(modulesById.values, entrypoints);
   var modulesToEntryPoints =
-      _findReverseEntrypointDeps(entrypointModuleIds, modulesById);
+      _findReverseEntrypointDeps(entrypointModules.values, modules);
 
-  for (var moduleId in modulesById.keys.toList()) {
+  // Modules which are not depended on by any entrypoint
+  var standaloneModules = <Module>[];
+
+  // Modules which are merged with others.
+  var mergedModules = <String, Module>{};
+
+  for (var module in modules) {
     // Skip entrypoint modules.
-    if (entrypointModuleIds.any((id) => id == moduleId)) continue;
+    if (entrypointModules.containsKey(module.primarySource)) continue;
 
     // The entry points that transitively import this module.
-    var entrypointIds = modulesToEntryPoints[moduleId];
+    var entrypointIds = modulesToEntryPoints[module.primarySource];
 
     // If no entrypoint imports the module, just leave it alone.
-    if (entrypointIds == null || entrypointIds.isEmpty) continue;
+    if (entrypointIds == null || entrypointIds.isEmpty) {
+      standaloneModules.add(module);
+      continue;
+    }
 
     // If there are multiple entry points for a given resource we must create
     // a new shared module. Use `$` to signal that it is a shared module.
-    var mId = entrypointIds.length > 1
-        ? new AssetId(entrypointIds.first.package,
-            (entrypointIds.toList()..sort()).map((m) => m.path).join('\$'))
-        : entrypointIds.first;
-    var newModule = modulesById.putIfAbsent(
-        mId, () => new Module(mId, new Set<AssetId>(), new Set<AssetId>()));
-
-    var oldModule = modulesById.remove(moduleId);
-    // Add all the original assets and deps to the new module.
-    newModule.sources.addAll(oldModule.sources);
-    newModule.directDependencies.addAll(oldModule.directDependencies);
-    // Clean up deps to remove assetIds, they may have been merged in.
-    newModule.directDependencies.removeAll(newModule.sources);
+    if (entrypointIds.length > 1) {
+      var mId = (entrypointIds.toList()..sort()).map((m) => m.path).join('\$');
+      if (mergedModules.containsKey(mId)) {
+        mergedModules[mId].merge(module);
+      } else {
+        mergedModules[mId] = module;
+      }
+    } else {
+      entrypointModules[entrypointIds.single].merge(module);
+    }
   }
 
-  return modulesById.values.toList();
+  return mergedModules.values
+      .map(_withConsistentPrimarySource)
+      .followedBy(entrypointModules.values)
+      .followedBy(standaloneModules)
+      .toList();
 }
+
+Module _withConsistentPrimarySource(Module m) =>
+          new Module(m.sources.reduce(_min), m.sources, m.directDependencies);
+
+T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
 // Returns whether [dart] contains a [PartOfDirective].
 bool _isPart(CompilationUnit dart) =>
@@ -241,14 +243,6 @@ bool _isEntrypoint(CompilationUnit dart) {
         node.functionExpression.parameters.parameters.length <= 2;
   });
 }
-
-/// Deterministically chooses a primary source for a shared module.
-List<Module> _cleanSharedModules(List<Module> modules) => modules
-    .map((m) => m.primarySource.path.contains('\$')
-        ? new Module(
-            (m.sources.toList()..sort()).first, m.sources, m.directDependencies)
-        : m)
-    .toList();
 
 Future<List<Module>> _computeModules(
     AssetReader reader, List<AssetId> assets, bool public) async {
@@ -311,9 +305,7 @@ Future<List<Module>> _computeModules(
       nodesById.values,
       (n) => n.id,
       (n) => n.internalDeps.map((dep) => nodesById[dep]));
-  var modulesById = _createModulesFromComponents(connectedComponents);
-  var modules = _mergeModules(modulesById, entryIds);
-  return _cleanSharedModules(modules);
+  return _mergeModules(connectedComponents.map(_moduleForComponent), entryIds);
 }
 
 @JsonSerializable()

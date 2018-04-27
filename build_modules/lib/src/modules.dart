@@ -148,6 +148,14 @@ class Module extends Object with _$ModuleSerializerMixin {
         (m) => m.directDependencies.map((s) => transitiveDeps[s]));
     return orderedModules.map((c) => c.single).toList();
   }
+
+  /// Add all of [other]'s source and dependencies to this module and keep this
+  /// module's primary source.
+  void merge(Module other) {
+    sources.addAll(other.sources);
+    directDependencies.addAll(other.directDependencies);
+    directDependencies.removeAll(sources);
+  }
 }
 
 /// Returns whether [library] owns the module for it's strongly connected import
