@@ -1,3 +1,8 @@
+## 0.8.7
+
+- Improve error handling in the `/$graph` page.
+- Support the latest `package:builde`
+
 ## 0.8.6
 
 - Forward default options for `PostProcessBuilder`s in the generated build
