@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -58,7 +59,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   appModuleScope = appModuleScope.replaceAll('.', '\$46');
 
   // Map from module name to module path for custom modules.
-  var modulePaths = {'dart_sdk': 'packages/\$sdk/dev_compiler/amd/dart_sdk'};
+  var modulePaths = new SplayTreeMap.of(
+      {'dart_sdk': r'packages/$sdk/dev_compiler/amd/dart_sdk'});
   var transitiveJsModules = [jsId]
     ..addAll(transitiveDeps.map((dep) => dep.jsId(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
