@@ -174,10 +174,10 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
 ///
 ///   * If it is an entrypoint module do not merge it.
 ///   * If it is not depended on my any entrypoint do not merge it.
-///   * If it is depended on by on entrypoint merge it into the entrypoint
-///     modules
+///   * If it is depended on by no entrypoint merge it into the entrypoint
+///   modules
 ///   * Else merge it into with others that are depended on by the same set of
-///     entrypoints
+///   entrypoints
 List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
   // Modules which have any entrypoing keyed by primary source.
   var entrypointModules = _entryPointModules(modules, entrypoints);
