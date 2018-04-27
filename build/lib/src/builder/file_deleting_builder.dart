@@ -4,6 +4,8 @@
 
 import 'dart:async';
 
+import 'package:glob/glob.dart';
+
 import 'post_process_build_step.dart';
 import 'post_process_builder.dart';
 
@@ -14,12 +16,20 @@ class FileDeletingBuilder implements PostProcessBuilder {
   final List<String> inputExtensions;
 
   final bool isEnabled;
+  final List<Glob> exclude;
 
-  const FileDeletingBuilder(this.inputExtensions, {this.isEnabled: true});
+  const FileDeletingBuilder(this.inputExtensions, {this.isEnabled: true})
+      : exclude = const [];
+
+  FileDeletingBuilder.withExcludes(
+      this.inputExtensions, Iterable<String> exclude,
+      {this.isEnabled: true})
+      : exclude = exclude?.map((s) => new Glob(s))?.toList() ?? const [];
 
   @override
   FutureOr<Null> build(PostProcessBuildStep buildStep) {
     if (!isEnabled) return null;
+    if (exclude.any((g) => g.matches(buildStep.inputId.path))) return null;
     buildStep.deletePrimaryInput();
     return null;
   }
