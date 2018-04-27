@@ -37,8 +37,11 @@ Future<ProcessResult> runCommand(List<String> args) =>
 /// expects that happen before that using [extraExpects]. All of these will be
 /// invoked and awaited before awaiting the next successful build.
 Future<Null> startServer(
-        {bool ensureCleanBuild, List<Function> extraExpects}) =>
-    _startServer(_pubBinary, ['run', 'build_runner', 'serve'],
+        {bool ensureCleanBuild,
+        List<Function> extraExpects,
+        List<String> buildArgs}) =>
+    _startServer(_pubBinary,
+        ['run', 'build_runner', 'serve']..addAll(buildArgs ?? const []),
         ensureCleanBuild: ensureCleanBuild, extraExpects: extraExpects);
 
 Future<ProcessResult> _runBuild(String command, List<String> args,

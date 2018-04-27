@@ -48,8 +48,21 @@ class _SomePostProcessBuilder extends PostProcessBuilder {
   }
 }
 
+class _ThrowingBuilder extends Builder {
+  @override
+  final buildExtensions = {
+    '.fail': ['.fail.message']
+  };
+
+  @override
+  Future<Null> build(BuildStep buildStep) async {
+    throw await buildStep.readAsString(buildStep.inputId);
+  }
+}
+
 Builder someBuilder(BuilderOptions options) =>
     new _SomeBuilder.fromOptions(options);
 Builder notApplied(_) => null;
 PostProcessBuilder somePostProcessBuilder(BuilderOptions options) =>
     new _SomePostProcessBuilder.fromOptions(options);
+Builder throwingBuilder(_) => new _ThrowingBuilder();

@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
-import 'dart:async';
 import 'dart:io';
 
 import 'package:build_runner/src/util/constants.dart';
@@ -21,11 +20,17 @@ void main() {
     });
 
     test('while serving prompt the user to restart', () async {
-      await testEditWhileServing();
-    });
-
-    test('while not serving invalidate the next build', () async {
-      await testEditBetweenBuilds();
+      var filePath = p.join('pkgs', 'provides_builder', 'lib', 'builders.dart');
+      var terminateLine =
+          nextStdOutLine('Terminating. No further builds will be scheduled');
+      await replaceAllInFile(filePath, new RegExp(r'$'), '// do a build');
+      await terminateLine;
+      await stopServer();
+      await startServer(extraExpects: [
+        () => nextStdOutLine(
+            'Invalidating asset graph due to build script update'),
+        () => nextStdOutLine('Building new asset graph'),
+      ]);
     });
 
     test('while not serving invalidate the next build', () async {
@@ -35,7 +40,14 @@ void main() {
       await createFile(extraFilePath, 'bar');
       expect(await new File(extraFilePath).exists(), isTrue);
 
-      await testEditBetweenBuilds();
+      var filePath = p.join('pkgs', 'provides_builder', 'lib', 'builders.dart');
+      await stopServer();
+      await replaceAllInFile(filePath, new RegExp(r'$'), '// do a build');
+      await startServer(extraExpects: [
+        () => nextStdOutLine(
+            'Invalidating asset graph due to build script update'),
+        () => nextStdOutLine('Building new asset graph'),
+      ]);
 
       expect(await new File(extraFilePath).exists(), isFalse,
           reason: 'The cache dir should get deleted when the build '
@@ -68,27 +80,4 @@ void main() {
               'can\'t be parsed');
     });
   });
-}
-
-Future<Null> testEditWhileServing() async {
-  var filePath = '.dart_tool/build/entrypoint/build.dart';
-  var terminateLine =
-      nextStdOutLine('Terminating. No further builds will be scheduled');
-  await replaceAllInFile(filePath, new RegExp(r'$'), '// do a build');
-  await terminateLine;
-  await stopServer();
-  await startServer(extraExpects: [
-    () => nextStdOutLine('Invalidating asset graph due to build script update'),
-    () => nextStdOutLine('Building new asset graph'),
-  ]);
-}
-
-Future<Null> testEditBetweenBuilds() async {
-  var filePath = '.dart_tool/build/entrypoint/build.dart';
-  await stopServer();
-  await replaceAllInFile(filePath, new RegExp(r'$'), '// do a build');
-  await startServer(extraExpects: [
-    () => nextStdOutLine('Invalidating asset graph due to build script update'),
-    () => nextStdOutLine('Building new asset graph'),
-  ]);
 }
