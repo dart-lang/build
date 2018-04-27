@@ -209,10 +209,14 @@ List<Module> _mergeModules(
     // If no entrypoint imports the module, just leave it alone.
     if (entrypointIds == null || entrypointIds.isEmpty) continue;
 
+    // If there are multiple entry points for a given resource we must create
+    // a new shared module. Use `$` to signal that it is a shared module.
+    var mId = entrypointIds.length > 1
+        ? new AssetId(entrypointIds.first.package,
+            (entrypointIds.toList()..sort()).map((m) => m.path).join('\$'))
+        : entrypointIds.first;
     var newModule = modulesById.putIfAbsent(
-        entrypointIds.first,
-        () => new Module(
-            entrypointIds.first, new Set<AssetId>(), new Set<AssetId>()));
+        mId, () => new Module(mId, new Set<AssetId>(), new Set<AssetId>()));
 
     var oldModule = modulesById.remove(moduleId);
     // Add all the original assets and deps to the new module.
@@ -237,6 +241,14 @@ bool _isEntrypoint(CompilationUnit dart) {
         node.functionExpression.parameters.parameters.length <= 2;
   });
 }
+
+/// Deterministically chooses a primary source for a shared module.
+List<Module> _cleanSharedModules(List<Module> modules) => modules
+    .map((m) => m.primarySource.path.contains('\$')
+        ? new Module(
+            (m.sources.toList()..sort()).first, m.sources, m.directDependencies)
+        : m)
+    .toList();
 
 Future<List<Module>> _computeModules(
     AssetReader reader, List<AssetId> assets, bool public) async {
@@ -294,13 +306,14 @@ Future<List<Module>> _computeModules(
         asset, parsedAssetsById[asset], srcAssetIds);
     nodesById[asset] = node;
   }
+
   var connectedComponents = stronglyConnectedComponents<AssetId, _AssetNode>(
       nodesById.values,
       (n) => n.id,
       (n) => n.internalDeps.map((dep) => nodesById[dep]));
   var modulesById = _createModulesFromComponents(connectedComponents);
   var modules = _mergeModules(modulesById, entryIds);
-  return modules;
+  return _cleanSharedModules(modules);
 }
 
 @JsonSerializable()

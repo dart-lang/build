@@ -1,3 +1,8 @@
+## 0.2.2+2
+
+- Fix an issue where modules were unnecessarily being built with DDC.
+  [#1375](https://github.com/dart-lang/build/issues/1375).
+
 ## 0.2.2+1
 
 - Fix an issue with new files causing subsequent build failures
