@@ -129,7 +129,8 @@ Future<bool> _createMergedOutputDir(
   });
 
   logTimedSync(_logger, 'Writing asset manifest', () {
-    var content = outputAssets.map((id) => id.path).join(_manifestSeparator);
+    var paths = outputAssets.map((id) => id.path).toList()..sort();
+    var content = paths.join(_manifestSeparator);
     _writeAsString(
         outputDir, new AssetId(packageGraph.root.name, _manifestName), content);
   });
