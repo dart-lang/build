@@ -132,8 +132,6 @@ final bool _dart2jsSupportsNoSyncAsync = () {
   // We only want the version so we take the substring up to the first space.
   var version = new Version.parse(
       Platform.version.substring(0, Platform.version.indexOf(' ')));
-  log.warning(version);
-  log.warning(_sdkVersionWithNoSyncAsync);
   return version >= _sdkVersionWithNoSyncAsync;
 }();
 
