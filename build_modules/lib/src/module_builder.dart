@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 
 import 'common.dart';
@@ -15,18 +16,27 @@ import 'modules.dart';
 /// The extension for serialized module assets.
 const moduleExtension = '.module';
 
-/// A map of primary [AssetId] to corresponding [Module].
-final _primaryToClean =
-    new Resource<Map<AssetId, Module>>(() => {}, dispose: (map) => map.clear());
+/// A map of package to corresponding clean [MetaModule].
+final _cleanMetaModules = new Resource<_CleanMetaModuleCache>(
+    () => new _CleanMetaModuleCache(),
+    dispose: (c) => c.dispose());
 
-/// Set of all [MetaModule]s which have been processed.
-final _readMetas = new Resource<Set<AssetId>>(() => new Set<AssetId>(),
-    dispose: (s) => s.clear());
+class _CleanMetaModuleCache {
+  final _modules = <String, Future<Result<MetaModule>>>{};
 
-/// Map of [AssetId] to corresponding primary [AssetId] within the same
-/// [Module].
-final _assetToPrimary = new Resource<Map<AssetId, AssetId>>(() => {},
-    dispose: (map) => map.clear());
+  void dispose() => _modules.clear();
+
+  Future<MetaModule> find(String packageName, AssetReader reader) async {
+    var cleanMetaAsset =
+        new AssetId(packageName, 'lib/$metaModuleCleanExtension');
+    if (!await reader.canRead(cleanMetaAsset)) return null;
+    var metaResult = _modules.putIfAbsent(
+        packageName,
+        () => Result.capture(reader.readAsString(cleanMetaAsset).then((c) =>
+            new MetaModule.fromJson(jsonDecode(c) as Map<String, dynamic>))));
+    return Result.release(metaResult);
+  }
+}
 
 /// Updates dependencies from the provided [Module] so that they point to the
 /// primary resource of the dependencies corresponding [Module].
@@ -34,11 +44,7 @@ final _assetToPrimary = new Resource<Map<AssetId, AssetId>>(() => {},
 /// Note that this will process the clean meta modules for the module
 /// dependencies if necessary.
 Future<Module> _cleanModuleDeps(
-    BuildStep buildStep,
-    Module module,
-    Map<AssetId, AssetId> assetToPrimary,
-    Map<AssetId, Module> primaryToClean,
-    Set<AssetId> readMetas) async {
+    BuildStep buildStep, Module module, _CleanMetaModuleCache cache) async {
   var cleanedDeps = new Set<AssetId>();
   for (var dep in module.directDependencies) {
     // Since we are not using the course strategy we can safely add
@@ -55,32 +61,17 @@ Future<Module> _cleanModuleDeps(
     }
     // The dep must have come from a coarse module. Look for the corresponding
     // primary source.
-    var depAsset = new AssetId(dep.package, 'lib/$metaModuleCleanExtension');
-    if (await buildStep.canRead(depAsset) && !readMetas.contains(depAsset)) {
-      await _processMeta(
-          buildStep, depAsset, primaryToClean, assetToPrimary, readMetas);
+    var metaModule = await cache.find(dep.package, buildStep);
+    if (metaModule == null) {
+      // TODO amek a new exception class for this
+      throw 'Could not find a module for $dep from ${buildStep.inputId}. '
+          'Is there a package cycle?';
     }
-    var primaryDep = assetToPrimary[dep];
-    cleanedDeps.add(primaryDep);
+    cleanedDeps.add(metaModule.modules
+        .firstWhere((m) => m.sources.contains(dep))
+        .primarySource);
   }
   return new Module(module.primarySource, module.sources, cleanedDeps);
-}
-
-Future<Null> _processMeta(
-    BuildStep buildStep,
-    AssetId asset,
-    Map<AssetId, Module> primaryToClean,
-    Map<AssetId, AssetId> assetToPrimary,
-    Set<AssetId> readMetas) async {
-  readMetas.add(asset);
-  var meta = new MetaModule.fromJson(
-      json.decode(await buildStep.readAsString(asset)) as Map<String, dynamic>);
-  for (var module in meta.modules) {
-    primaryToClean[module.primarySource] = module;
-    for (var source in module.sources) {
-      assetToPrimary[source] = module.primarySource;
-    }
-  }
 }
 
 /// Creates `.module` files for any `.dart` file that is the primary dart
@@ -102,19 +93,16 @@ class ModuleBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     Module outputModule;
-    var assetToPrimary = await buildStep.fetchResource(_assetToPrimary);
-    var readMetas = await buildStep.fetchResource(_readMetas);
-    var primaryToClean = await buildStep.fetchResource(_primaryToClean);
+    var cleanMetaModules = await buildStep.fetchResource(_cleanMetaModules);
     var cleanMetaAsset =
         new AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
     // If we can't read the clean meta module it is likely that this package
     // is in a module cycle so fall back to the fine strategy.
     if (_isCoarse && await buildStep.canRead(cleanMetaAsset)) {
-      if (!readMetas.contains(cleanMetaAsset)) {
-        await _processMeta(buildStep, cleanMetaAsset, primaryToClean,
-            assetToPrimary, readMetas);
-      }
-      outputModule = primaryToClean[buildStep.inputId];
+      var metaModule =
+          await cleanMetaModules.find(buildStep.inputId.package, buildStep);
+      outputModule = metaModule.modules
+          .firstWhere((m) => m.sources.contains(buildStep.inputId));
     } else {
       if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
 
@@ -122,8 +110,8 @@ class ModuleBuilder implements Builder {
       if (!isPrimary(library)) return;
 
       var module = new Module.forLibrary(library);
-      outputModule = await _cleanModuleDeps(
-          buildStep, module, assetToPrimary, primaryToClean, readMetas);
+      outputModule =
+          await _cleanModuleDeps(buildStep, module, cleanMetaModules);
     }
     if (outputModule == null) return;
     if (outputModule.primarySource != buildStep.inputId) return;
