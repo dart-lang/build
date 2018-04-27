@@ -26,52 +26,74 @@ class ImportOptimizer{
     var _reader = new CachingAssetReader(io.reader);
 
     for (var input in inputs){
-      var inputId = new AssetId.parse(input);
-      var buildStep = new BuildStepImpl(
-          inputId,
-          [],
-          _reader,
-          null,
-          inputId.package,
-          _resolvers,
-          resourceManager);
-      Resolver resolver = await _resolvers.get(buildStep);
-      var lib = await buildStep.inputLibrary;
-      var visitor = new ImportTypeCollectorVisitor(inputId);
-      var ast = lib.unit;
-      ast.visitChildren(visitor);
-      var sb = new StringBuffer();
-      sb.writeln('//--------------------------');
-      sb.writeln('// FileName: "$inputId"');
-      var sources = visitor._sources;
-      var outputImports = new Set<String>();
-      for (var source in sources ){
-        if (source is AssetBasedSource){
-          var assetId = source.assetId;
-          var postMessage = '';
-          // Local package
-          if (assetId.package == inputId.package){
-            postMessage = '/* local import */';
-          } else if (source.assetId.path.contains('/src/')){
-            assetId = await _getCorrectImportAssetId(source, resolver);
-            postMessage = '/* \'${source.assetId}\' -> \'$assetId\' entry point*/';
-          }
-          var generateImport = 'package:${assetId.package}${assetId.path.substring(3)}';
-          if (outputImports.add(generateImport)) {
-            sb.write("import '$generateImport';");
-          }
-          sb.write(' $postMessage');
-        } else {
-          if (outputImports.add(source.uri.toString())) {
-            sb.write("import '${source.uri}';");
-          }
-        }
-        sb.writeln();
-      }
-      sb.writeln('//--------------------------');
-      print(sb.toString());
+      await _parseInput(input, _reader, resourceManager);
     }
   }
+
+   Future _parseInput(String input, CachingAssetReader _reader, ResourceManager resourceManager) async {
+     var inputId = new AssetId.parse(input);
+     var buildStep = new BuildStepImpl(
+         inputId,
+         [],
+         _reader,
+         null,
+         inputId.package,
+         _resolvers,
+         resourceManager);
+     Resolver resolver = await _resolvers.get(buildStep);
+     var lib = await buildStep.inputLibrary;
+     var visitor = new ImportTypeCollectorVisitor(inputId);
+     var ast = lib.unit;
+//     var sourceNodeCount = _getNodeCount(lib.importedLibraries);
+     ast.visitChildren(visitor);
+     await _generateInputs(inputId, visitor, resolver);
+   }
+
+   int _getNodeCount(Iterable<LibraryElement> libImports) {
+     var imports = new Set<LibraryElement>();
+     _parseLib(Iterable<LibraryElement> libImports) {
+       for (var item in libImports) {
+         if (imports.add(item) && !item.isDartCore && !item.isInSdk) {
+           _parseLib(item.importedLibraries);
+           _parseLib(item.exportedLibraries);
+         }
+       }
+     }
+     _parseLib(libImports);
+     return imports.length;
+   }
+
+   Future _generateInputs(AssetId inputId, ImportTypeCollectorVisitor visitor, Resolver resolver) async {
+     var sb = new StringBuffer();
+     sb.writeln('//--------------------------');
+     sb.writeln('// FileName: "$inputId"');
+     var sources = visitor._sources;
+     var outputImports = new Set<String>();
+     for (var source in sources ){
+       if (source is AssetBasedSource){
+         var assetId = source.assetId;
+         var postMessage = '';
+         if (assetId.package == inputId.package){
+           postMessage = '/* local import */';
+         } else if (source.assetId.path.contains('/src/')){
+           assetId = await _getCorrectImportAssetId(source, resolver);
+           postMessage = '/* \'${source.assetId}\' -> \'$assetId\' entry point*/';
+         }
+         var generateImport = 'package:${assetId.package}${assetId.path.substring(3)}';
+         if (outputImports.add(generateImport)) {
+           sb.write("import '$generateImport';");
+         }
+         sb.write(' $postMessage');
+       } else {
+         if (outputImports.add(source.uri.toString())) {
+           sb.write("import '${source.uri}';");
+         }
+       }
+       sb.writeln();
+     }
+     sb.writeln('//--------------------------');
+     print(sb.toString());
+   }
 
   Future<AssetId> _getCorrectImportAssetId(AssetBasedSource source, Resolver resolver) async {
     var result = source.assetId;
@@ -119,8 +141,7 @@ class ImportTypeCollectorVisitor extends GeneralizingAstVisitor<Object> {
         library.isPublic &&
         !library.isDartCore) {
       var source = library.source;
-      if (source
-      is AssetBasedSource) {
+      if (source is AssetBasedSource) {
         if (source.assetId != currentAssetId) {
           _sources.add(source);
         }
