@@ -28,8 +28,8 @@ Future<Null> main(List<String> args) async {
 //        'Demo run: dart ./bin/import_optimizer.dart "build_runner|lib/src/entrypoint/options.dart" "build_runner|lib/src/asset_graph/graph.dart"');
    print('dart ./bin/import_optimizer.dart "build_runner"');
   }
-//  new ImportOptimizer().optimizePackage(args[0]);
-  new ImportOptimizer().optimizeFiles(args);
+  new ImportOptimizer().optimizePackage(args[0]);
+//  new ImportOptimizer().optimizeFiles(args);
 //  new ImportOptimizer().optimizeFiles(['build_runner|lib/src/server/asset_graph_handler.dart']);
 //  ArgResults parsedArgs;
 //  var commandRunner = new CommandRunner();
