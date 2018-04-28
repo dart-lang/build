@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
@@ -107,6 +108,60 @@ example:file://fake/pkg/path
     await nextBuild.future;
     final response = await handler(new Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
+  });
+
+  group(r'/$graph', () {
+    test('should (try) to send the HTML page', () async {
+      try {
+        await handler(
+            new Request('GET', Uri.parse(r'http://localhost/$graph')));
+        fail('Assets are not wired up. Expecting this to throw.');
+      } catch (e) {
+        expect(e, new isInstanceOf<AssetNotFoundException>());
+        expect((e as AssetNotFoundException).assetId,
+            new AssetId.parse('build_runner|lib/src/server/graph_viz.html'));
+      }
+    });
+
+    void test404(String testName, String path, String expected) {
+      test(testName, () async {
+        var response = await handler(
+            new Request('GET', Uri.parse('http://localhost/\$graph/$path')));
+
+        expect(response.statusCode, 404);
+        expect(await response.readAsString(), expected);
+      });
+    }
+
+    test404('404s on an unsupported URL', r'bob', 'Bad request: "bob".');
+    test404('empty query causes 404', '?=', 'Bad request: "?=".');
+    test404('bad asset query', '?q=bob|bob',
+        'Could not find asset in build graph: bob|bob');
+    test404(
+        'bad path query',
+        '?q=bob/bob',
+        'Could not find asset for path "bob/bob". Tried:\n'
+        '- example|bob/bob\n'
+        '- example|web/bob');
+
+    void testSuccess(String testName, String path, String expectedId) {
+      test(testName, () async {
+        var response = await handler(
+            new Request('GET', Uri.parse('http://localhost/\$graph/$path')));
+
+        var output = await response.readAsString();
+        expect(response.statusCode, 200, reason: output);
+        var json = jsonDecode(output) as Map<String, dynamic>;
+
+        expect(json, containsPair('primary', containsPair('id', expectedId)));
+      });
+    }
+
+    testSuccess('valid path', '?q=web/initial.txt', 'example|web/initial.txt');
+    testSuccess(
+        'valid path, 2nd try', '?q=bob/initial.txt', 'example|web/initial.txt');
+    testSuccess('valid AssetId', '?q=example|web/initial.txt',
+        'example|web/initial.txt');
   });
 }
 

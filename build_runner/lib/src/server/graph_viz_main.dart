@@ -27,30 +27,18 @@ void _error(String message, [Object error, StackTrace stack]) {
 }
 
 Future _focus(String query) async {
-  String requestPath;
-  try {
-    var parts = query.split('|');
-    var package = parts[0];
-    var path = parts[1];
-    requestPath = path.startsWith('lib/')
-        ? 'packages/$package/${path.substring(4)}'
-        : '${path.split('/').skip(1).join('/')}';
-  } catch (e, stack) {
-    _error('The query you provided "$query" could not be parsed.', e, stack);
-    return;
-  }
-
-  if (requestPath.isEmpty) {
-    _error('The query you provided "$query" could not be parsed.');
+  if (query.isEmpty) {
+    _error('Provide content in the query.');
     return;
   }
 
   Map nodeInfo;
+  var uri = new Uri(queryParameters: {'q': query});
   try {
-    nodeInfo = json.decode(await HttpRequest.getString(requestPath))
+    nodeInfo = json.decode(await HttpRequest.getString(uri.toString()))
         as Map<String, dynamic>;
   } catch (e, stack) {
-    var msg = 'Error making a request: $requestPath';
+    var msg = 'Error requesting query "$query".';
     if (e is ProgressEvent) {
       var target = e.target;
       if (target is HttpRequest) {

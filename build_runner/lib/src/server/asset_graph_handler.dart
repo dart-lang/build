@@ -21,16 +21,20 @@ class AssetGraphHandler {
 
   AssetGraphHandler(this._reader, this._rootPackage, this._assetGraph);
 
-  /// Returns a response with the  `$graph`, or with information about a
-  /// specific node in the graph.
+  /// Returns a response with the information about a specific node in the
+  /// graph.
   ///
-  /// For the path `$graph` returns the HTML page to render the graph.
+  /// For an empty path, returns the HTML page to render the graph.
   ///
-  /// For any other path under `$graph/` will look for the assetNode referenced.
-  /// Path patterns can be:
-  /// - `$graph/packages/<package>/<path_under_lib>`
-  /// - `$graph/<path_under_root_package>`
-  /// - `$graph/<path_under_rootDir>`
+  /// For queries with `q=QUERY` will look for the assetNode referenced.
+  /// QUERY can be an [AssetId] or a path.
+  ///
+  /// [AssetId] as `package|path`
+  ///
+  /// path as:
+  /// - `packages/<package>/<path_under_lib>`
+  /// - `<path_under_root_package>`
+  /// - `<path_under_rootDir>`
   ///
   /// There may be some ambiguity between paths which are under the top-level of
   /// the root package, and those which are under the rootDir. Preference is
@@ -41,28 +45,50 @@ class AssetGraphHandler {
   FutureOr<shelf.Response> handle(shelf.Request request, String rootDir) async {
     switch (request.url.path) {
       case '':
-        return new shelf.Response.ok(
-            await _reader.readAsString(
-                new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
-            headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+        if (!request.url.hasQuery) {
+          return new shelf.Response.ok(
+              await _reader.readAsString(
+                  new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
+              headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+        }
+        break;
       case 'assets.json':
         return _jsonResponse(_assetGraph.serialize());
     }
-    var assetId = pathToAssetId(_rootPackage, request.url.pathSegments.first,
-        request.url.pathSegments.skip(1).toList());
 
-    var tried = <AssetId>[];
-    if (!_assetGraph.contains(assetId)) {
-      tried.add(assetId);
-      assetId = pathToAssetId(
-          _rootPackage, rootDir, request.url.pathSegments.skip(1).toList());
+    var query = request.url.queryParameters['q']?.trim();
+
+    if (query == null || query.isEmpty) {
+      return new shelf.Response.notFound('Bad request: "${request.url}".');
     }
-    if (!_assetGraph.contains(assetId)) {
-      tried.add(assetId);
-      return new shelf.Response.notFound((<Object>[
-        'Could not find asset in build graph. Tried:'
-      ]..addAll(tried))
-          .join('\n'));
+
+    var pipeIndex = query.indexOf('|');
+
+    AssetId assetId;
+    if (pipeIndex < 0) {
+      var querySplit = query.split('/');
+
+      assetId = pathToAssetId(
+          _rootPackage, querySplit.first, querySplit.skip(1).toList());
+
+      if (!_assetGraph.contains(assetId)) {
+        var secondTry =
+            pathToAssetId(_rootPackage, rootDir, querySplit.skip(1).toList());
+
+        if (!_assetGraph.contains(secondTry)) {
+          return new shelf.Response.notFound(
+              'Could not find asset for path "$query". Tried:\n'
+              '- $assetId\n'
+              '- $secondTry');
+        }
+        assetId = secondTry;
+      }
+    } else {
+      assetId = new AssetId.parse(query);
+      if (!_assetGraph.contains(assetId)) {
+        return new shelf.Response.notFound(
+            'Could not find asset in build graph: $assetId');
+      }
     }
     var node = _assetGraph.get(assetId);
     var currentEdge = 0;
