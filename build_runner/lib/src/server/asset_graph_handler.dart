@@ -39,20 +39,18 @@ class AssetGraphHandler {
   /// prefer to serve `<package>|web/main.dart`, but if it does not exist will
   /// fall back to `<package>|web/web/main.dart`.
   FutureOr<shelf.Response> handle(shelf.Request request, String rootDir) async {
-    if (request.url.path == r'$graph') {
+    if (request.url.path.isEmpty) {
       return new shelf.Response.ok(
           await _reader.readAsString(
               new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
           headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
     }
-    if (request.url.path == r'$graph/assets.json') {
+    if (request.url.path == r'assets.json') {
       return new shelf.Response.ok(_assetGraph.serialize(),
           headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
     }
-    var assetId = pathToAssetId(
-        _rootPackage,
-        request.url.pathSegments.skip(1).first,
-        request.url.pathSegments.skip(2).toList());
+    var assetId = pathToAssetId(_rootPackage, request.url.pathSegments.first,
+        request.url.pathSegments.skip(1).toList());
 
     var tried = <AssetId>[];
     if (!_assetGraph.contains(assetId)) {

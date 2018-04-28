@@ -15,7 +15,7 @@ main() async {
   var searchForm = document.getElementById('searchform');
   searchForm.onSubmit.listen((e) {
     e.preventDefault();
-    _focus(searchBox.value);
+    _focus(searchBox.value.trim());
     return null;
   });
   _graphReference.callMethod('initializeGraph', [_focus]);
@@ -40,13 +40,17 @@ Future _focus(String query) async {
     return;
   }
 
-  var url = '/\$graph/$requestPath';
+  if (requestPath.isEmpty) {
+    _error('The query you provided "$query" could not be parsed.');
+    return;
+  }
+
   Map nodeInfo;
   try {
-    nodeInfo =
-        json.decode(await HttpRequest.getString(url)) as Map<String, dynamic>;
+    nodeInfo = json.decode(await HttpRequest.getString(requestPath))
+        as Map<String, dynamic>;
   } catch (e, stack) {
-    var msg = 'Error making a request: $url';
+    var msg = 'Error making a request: $requestPath';
     if (e is ProgressEvent) {
       var target = e.target;
       if (target is HttpRequest) {

@@ -970,6 +970,13 @@
     },
     JSString: {
       "^": "Interceptor;",
+      codeUnitAt$1: function(receiver, index) {
+        if (index < 0)
+          throw H.wrapException(H.diagnoseIndexError(receiver, index));
+        if (index >= receiver.length)
+          H.throwExpression(H.diagnoseIndexError(receiver, index));
+        return receiver.charCodeAt(index);
+      },
       _codeUnitAt$1: function(receiver, index) {
         if (index >= receiver.length)
           throw H.wrapException(H.diagnoseIndexError(receiver, index));
@@ -1034,6 +1041,24 @@
       toLowerCase$0: function(receiver) {
         return receiver.toLowerCase();
       },
+      trim$0: function(receiver) {
+        var result, endIndex, startIndex, t1, endIndex0;
+        result = receiver.trim();
+        endIndex = result.length;
+        if (endIndex === 0)
+          return result;
+        if (this._codeUnitAt$1(result, 0) === 133) {
+          startIndex = J.JSString__skipLeadingWhitespace(result, 1);
+          if (startIndex === endIndex)
+            return "";
+        } else
+          startIndex = 0;
+        t1 = endIndex - 1;
+        endIndex0 = this.codeUnitAt$1(result, t1) === 133 ? J.JSString__skipTrailingWhitespace(result, t1) : endIndex;
+        if (startIndex === 0 && endIndex0 === endIndex)
+          return result;
+        return result.substring(startIndex, endIndex0);
+      },
       toString$0: function(receiver) {
         return receiver;
       },
@@ -1060,7 +1085,68 @@
       },
       $isJSIndexable: 1,
       $asJSIndexable: Isolate.functionThatReturnsNull,
-      $isString: 1
+      $isString: 1,
+      static: {
+        JSString__isWhitespace: function(codeUnit) {
+          if (codeUnit < 256)
+            switch (codeUnit) {
+              case 9:
+              case 10:
+              case 11:
+              case 12:
+              case 13:
+              case 32:
+              case 133:
+              case 160:
+                return true;
+              default:
+                return false;
+            }
+          switch (codeUnit) {
+            case 5760:
+            case 8192:
+            case 8193:
+            case 8194:
+            case 8195:
+            case 8196:
+            case 8197:
+            case 8198:
+            case 8199:
+            case 8200:
+            case 8201:
+            case 8202:
+            case 8232:
+            case 8233:
+            case 8239:
+            case 8287:
+            case 12288:
+            case 65279:
+              return true;
+            default:
+              return false;
+          }
+        },
+        JSString__skipLeadingWhitespace: function(string, index) {
+          var t1, codeUnit;
+          for (t1 = string.length; index < t1;) {
+            codeUnit = C.JSString_methods._codeUnitAt$1(string, index);
+            if (codeUnit !== 32 && codeUnit !== 13 && !J.JSString__isWhitespace(codeUnit))
+              break;
+            ++index;
+          }
+          return index;
+        },
+        JSString__skipTrailingWhitespace: function(string, index) {
+          var index0, codeUnit;
+          for (; index > 0; index = index0) {
+            index0 = index - 1;
+            codeUnit = C.JSString_methods.codeUnitAt$1(string, index0);
+            if (codeUnit !== 32 && codeUnit !== 13 && !J.JSString__isWhitespace(codeUnit))
+              break;
+          }
+          return index;
+        }
+      }
     }
   }], ["dart._internal", "dart:_internal",, H, {
     "^": "",
@@ -9295,7 +9381,7 @@
       J.set$innerHtml$x($.$get$_details(), "<pre>" + msg + "</pre>");
     },
     _focus: [function(query) {
-      var $async$goto = 0, $async$completer = P.Completer_Completer$sync(null), $async$returnValue, $async$handler = 2, $async$currentError, $async$next = [], requestPath, parts, $package, path, e, stack, url, nodeInfo, e0, stack0, msg, target, requestPath0, t1, exception, graphData, primaryNode, $async$exception, $async$temp1, $async$temp2;
+      var $async$goto = 0, $async$completer = P.Completer_Completer$sync(null), $async$returnValue, $async$handler = 2, $async$currentError, $async$next = [], requestPath, parts, $package, path, e, stack, nodeInfo, e0, stack0, msg, target, requestPath0, t1, exception, graphData, primaryNode, $async$exception, $async$temp1, $async$temp2;
       var $async$_focus = P._wrapJsFunctionForAsync(function($async$errorCode, $async$result) {
         if ($async$errorCode === 1) {
           $async$currentError = $async$result;
@@ -9325,13 +9411,18 @@
                 $async$goto = 1;
                 break;
               }
-              url = "/$graph/" + H.S(requestPath);
+              if (J.get$length$asx(requestPath) === 0) {
+                F._error('The query you provided "' + H.S(query) + '" could not be parsed.', null, null);
+                // goto return
+                $async$goto = 1;
+                break;
+              }
               nodeInfo = null;
               $async$handler = 4;
               $async$temp1 = H;
               $async$temp2 = C.JsonCodec_null_null;
               $async$goto = 7;
-              return P._asyncAwait(W.HttpRequest_getString(url, null, null), $async$_focus);
+              return P._asyncAwait(W.HttpRequest_getString(requestPath, null, null), $async$_focus);
             case 7:
               // returning from await.
               nodeInfo = $async$temp1.subtypeCast($async$temp2.decode$1(0, $async$result), "$isMap", [P.String, null], "$asMap");
@@ -9345,7 +9436,7 @@
               $async$exception = $async$currentError;
               e0 = H.unwrapException($async$exception);
               stack0 = H.getTraceFromException($async$exception);
-              msg = "Error making a request: " + H.S(url);
+              msg = "Error making a request: " + H.S(requestPath);
               if (!!J.getInterceptor(e0).$isProgressEvent) {
                 target = W._convertNativeToDart_EventTarget(J.get$_get_target$x(e0));
                 if (!!J.getInterceptor(target).$isHttpRequest)
@@ -9386,7 +9477,7 @@
       "^": "Closure:0;searchBox",
       call$1: function(e) {
         J.preventDefault$0$x(e);
-        F._focus(this.searchBox.value);
+        F._focus(J.trim$0$s(this.searchBox.value));
         return;
       }
     },
@@ -9619,6 +9710,9 @@
   };
   J.toLowerCase$0$s = function(receiver) {
     return J.getInterceptor$s(receiver).toLowerCase$0(receiver);
+  };
+  J.trim$0$s = function(receiver) {
+    return J.getInterceptor$s(receiver).trim$0(receiver);
   };
   J.get$hashCode$ = function(receiver) {
     return J.getInterceptor(receiver).get$hashCode(receiver);
