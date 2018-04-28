@@ -53,12 +53,19 @@ class AssetGraphHandler {
         _rootPackage,
         request.url.pathSegments.skip(1).first,
         request.url.pathSegments.skip(2).toList());
+
+    var tried = <AssetId>[];
     if (!_assetGraph.contains(assetId)) {
+      tried.add(assetId);
       assetId = pathToAssetId(
           _rootPackage, rootDir, request.url.pathSegments.skip(1).toList());
     }
     if (!_assetGraph.contains(assetId)) {
-      return new shelf.Response.notFound('$assetId not present in build graph');
+      tried.add(assetId);
+      return new shelf.Response.notFound((<Object>[
+        'Could not find asset in build graph. Tried:'
+      ]..addAll(tried))
+          .join('\n'));
     }
     var node = _assetGraph.get(assetId);
     var currentEdge = 0;
