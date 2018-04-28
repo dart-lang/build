@@ -18,8 +18,7 @@ class ImportOptimizer{
   static final packageGraph = new PackageGraph.forThisPackage();
   final io = new IOEnvironment(packageGraph, true);
   final resourceManager = new ResourceManager();
-  int _sourceNodes = 0;
-  int _optNodes = 0;
+  final WorkResult _workResult = new WorkResult();
 
   optimizePackage(String package) async {
     _log.info("Optimization package: '$package'");
@@ -37,7 +36,8 @@ class ImportOptimizer{
        _log.info('$index/$count $input');
        await _parseInput(input, _reader, resourceManager);
      }
-    _log.info('Optimization completed, old: $_sourceNodes -> new: $_optNodes');
+    _log.info('Optimization completed');
+     _showReport();
    }
 
    Future _parseInput(String input, CachingAssetReader _reader, ResourceManager resourceManager) async {
@@ -58,7 +58,9 @@ class ImportOptimizer{
        var libraries = _convertElementToLibrary(vis.usedElements);
        var optLibraries = await _optimizationImport(inputId, libraries, resolver);
        var output = _generateImportText(inputId, lib, optLibraries);
-       print(output);
+       if (output.isNotEmpty) {
+         print(output);
+       }
      } catch(e,st){
        _log.fine("Skip '$inputId'", e, st);
      }
@@ -101,8 +103,7 @@ class ImportOptimizer{
     var sb = new StringBuffer();
     var sourceNodeCount = _getNodeCount(sourceLibrary.importedLibraries);
     var optNodeCount = _getNodeCount(libraries);
-    _sourceNodes += sourceNodeCount;
-    _optNodes += optNodeCount;
+    _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
     if (sourceNodeCount > optNodeCount) {
       sb.writeln('// FileName: "$inputId" old: $sourceNodeCount -> new: $optNodeCount');
       for (var library in libraries) {
@@ -119,9 +120,10 @@ class ImportOptimizer{
           sb.writeln("import '${source.uri}';");
         }
       }
-    } else {
-      sb.writeln('// FileName: "$inputId" IMPORTS is optimal!');
     }
+//    else {
+//      sb.writeln('// FileName: "$inputId" IMPORTS is optimal!');
+//    }
     return sb.toString();
   }
 
@@ -177,4 +179,59 @@ class ImportOptimizer{
      return libs;
   }
 
+  void _showReport() {
+    _log.info('--------------------------------');
+    _log.info('Report: ');
+    _log.info('--------------------------------');
+
+    _log.info('Total old: ${_workResult.sourceNodesTotal} -> new: ${_workResult.optNodesTotal}');
+    if (_workResult.topFile != null) {
+      _log.info('Top issue file: ${_workResult.topFile} nodes: ${_workResult.topNodeFile}');
+    }
+    if (_workResult.maxOptFile != null) {
+      _log.info('Best optimization file: ${_workResult.maxOptFile} delta: ${_workResult.maxOptDelta}');
+    }
+    _log.info('Average nodes: old: ${_workResult.sourceNodesTotal / _workResult.fileCount} -> new: ${_workResult.optNodesTotal / _workResult.fileCount}');
+    _log.info('--------------------------------');
+  }
+
+}
+
+class WorkResult {
+  AssetId _topFile;
+  int _topNodeFile = 0;
+  AssetId _maxOptFile;
+  int _maxOptDelta = 0;
+  int _sourceNodesTotal = 0;
+  int _optNodesTotal = 0;
+  int _fileCount = 0;
+
+  int get fileCount => _fileCount;
+
+  AssetId get topFile => _topFile;
+
+  int get topNodeFile => _topNodeFile;
+
+  AssetId get maxOptFile => _maxOptFile;
+
+  int get maxOptDelta => _maxOptDelta;
+
+  int get sourceNodesTotal => _sourceNodesTotal;
+
+  int get optNodesTotal => _optNodesTotal;
+
+  void addStatisticFile(AssetId file, int sourceNode, int optNode) {
+    _fileCount++;
+    _sourceNodesTotal += sourceNode;
+    _optNodesTotal += optNode;
+    if (_topNodeFile < sourceNode) {
+      _topNodeFile = sourceNode;
+      _topFile = file;
+    }
+    var delta = sourceNode - optNode;
+    if (_maxOptDelta < delta) {
+      _maxOptDelta = delta;
+      _maxOptFile = file;
+    }
+  }
 }

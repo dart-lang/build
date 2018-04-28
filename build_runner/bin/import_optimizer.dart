@@ -24,8 +24,9 @@ void initLog() {
 Future<Null> main(List<String> args) async {
   initLog();
   if (args.isEmpty) {
-    print(
-        'Demo run: dart ./bin/import_optimizer.dart "build_runner|lib/src/entrypoint/options.dart" "build_runner|lib/src/asset_graph/graph.dart"');
+//    print(
+//        'Demo run: dart ./bin/import_optimizer.dart "build_runner|lib/src/entrypoint/options.dart" "build_runner|lib/src/asset_graph/graph.dart"');
+   print('dart ./bin/import_optimizer.dart "build_runner"');
   }
   new ImportOptimizer().optimizePackage(args[0]);
 //  new ImportOptimizer().optimizeFiles(['build_runner|lib/src/server/asset_graph_handler.dart']);
