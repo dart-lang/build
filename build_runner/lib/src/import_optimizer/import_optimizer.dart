@@ -140,6 +140,10 @@ class ImportOptimizer{
           if (!await resolver.isLibrary(assetId)){
             resolver = await _resolvers.get(new BuildStepImpl(assetId, [], _reader, null, assetId.package, _resolvers, _resourceManager));
           }
+          if (!await resolver.isLibrary(assetId)){
+            //skip
+            continue;
+          }
           var lib = await resolver.libraryFor(assetId);
           var count = _getNodeCount(lib.exportedLibraries);
           if (resultImportsCount > count) {
