@@ -17,8 +17,9 @@ class ImportOptimizer{
   static final _resolvers = new AnalyzerResolvers();
   static final packageGraph = new PackageGraph.forThisPackage();
   final io = new IOEnvironment(packageGraph, true);
-  final resourceManager = new ResourceManager();
+  final _resourceManager = new ResourceManager();
   final WorkResult _workResult = new WorkResult();
+  CachingAssetReader _reader;
 
   optimizePackage(String package) async {
     _log.info("Optimization package: '$package'");
@@ -29,18 +30,18 @@ class ImportOptimizer{
   optimizeFiles(Iterable<String> inputs) async {
     var count = inputs.length;
     _log.info('Optimization files: $count');
-     var _reader = new CachingAssetReader(io.reader);
+     _reader = new CachingAssetReader(io.reader);
      var index = 0;
      for (var input in inputs) {
        index++;
        _log.info('$index/$count $input');
-       await _parseInput(input, _reader, resourceManager);
+       await _parseInput(input);
      }
     _log.info('Optimization completed');
      _showReport();
    }
 
-   Future _parseInput(String input, CachingAssetReader _reader, ResourceManager resourceManager) async {
+   Future _parseInput(String input) async {
      var inputId = new AssetId.parse(input);
      var buildStep = new BuildStepImpl(
          inputId,
@@ -49,7 +50,7 @@ class ImportOptimizer{
          null,
          inputId.package,
          _resolvers,
-         resourceManager);
+         _resourceManager);
      Resolver resolver = await _resolvers.get(buildStep);
      try {
        var lib = await buildStep.inputLibrary;
@@ -127,21 +128,25 @@ class ImportOptimizer{
     return sb.toString();
   }
 
-  Future<LibraryElement> _getOptLibraryImport(LibraryElement library, Resolver resolver) async {
+  Future<LibraryElement> _getOptLibraryImport(LibraryElement library, Resolver resolverI) async {
     var source = library.source as AssetBasedSource;
     var result = library;
+    var resultImportsCount = 99999999;
     var assets = await io.reader.findAssets(new Glob('lib/**.dart'), package: source.assetId.package).toList();
     for (var assetId in assets) {
       if (!assetId.path.contains('/src/')) {
         try {
+          var resolver = resolverI;
+          if (!await resolver.isLibrary(assetId)){
+            resolver = await _resolvers.get(new BuildStepImpl(assetId, [], _reader, null, assetId.package, _resolvers, _resourceManager));
+          }
           var lib = await resolver.libraryFor(assetId);
-          var found = lib.exportedLibraries.firstWhere((exportLib) {
-            var sourceLib = exportLib.source;
-            return (sourceLib is AssetBasedSource && sourceLib.assetId == source.assetId);
-          }, orElse: () => null);
-          if (found != null) {
-            result = lib;
-            break;
+          var count = _getNodeCount(lib.exportedLibraries);
+          if (resultImportsCount > count) {
+            if (_deepSearch(lib, source.assetId)) {
+              result = lib;
+              resultImportsCount = count;
+            }
           }
         }
         catch (e, s) {
@@ -150,6 +155,18 @@ class ImportOptimizer{
       }
     }
     return result;
+  }
+
+  bool _deepSearch(LibraryElement lib, AssetId target) {
+    for (var exportLib in lib.exportedLibraries) {
+      var sourceLib = exportLib.source;
+      if ((sourceLib is AssetBasedSource && sourceLib.assetId == target)
+          || _deepSearch(exportLib, target)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Iterable<LibraryElement> _convertElementToLibrary(UsedImportedElements usedElements) {
@@ -191,7 +208,7 @@ class ImportOptimizer{
     if (_workResult.maxOptFile != null) {
       _log.info('Best optimization file: ${_workResult.maxOptFile} delta: ${_workResult.maxOptDelta}');
     }
-    _log.info('Average nodes: old: ${_workResult.sourceNodesTotal / _workResult.fileCount} -> new: ${_workResult.optNodesTotal / _workResult.fileCount}');
+    _log.info('Average nodes: old: ${_workResult.sourceNodesTotal ~/ _workResult.fileCount} -> new: ${_workResult.optNodesTotal ~/ _workResult.fileCount}');
     _log.info('--------------------------------');
   }
 
