@@ -46,8 +46,7 @@ class AssetGraphHandler {
           headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
     }
     if (request.url.path == r'$graph/assets.json') {
-      var jsonContent = utf8.decode(_assetGraph.serialize());
-      return new shelf.Response.ok(jsonContent,
+      return new shelf.Response.ok(_assetGraph.serialize(),
           headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
     }
     var assetId = pathToAssetId(
