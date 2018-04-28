@@ -51,17 +51,20 @@ class AssetGraphHandler {
                   new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
               headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
         }
+
+        var query = request.url.queryParameters['q']?.trim();
+        if (query != null && query.isNotEmpty) {
+          return _handleQuery(query, rootDir);
+        }
         break;
       case 'assets.json':
         return _jsonResponse(_assetGraph.serialize());
     }
 
-    var query = request.url.queryParameters['q']?.trim();
+    return new shelf.Response.notFound('Bad request: "${request.url}".');
+  }
 
-    if (query == null || query.isEmpty) {
-      return new shelf.Response.notFound('Bad request: "${request.url}".');
-    }
-
+  Future<shelf.Response> _handleQuery(String query, String rootDir) async {
     var pipeIndex = query.indexOf('|');
 
     AssetId assetId;
