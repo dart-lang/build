@@ -126,9 +126,11 @@ class AssetGraphHandler {
       'edges': edges,
       'nodes': nodes,
     };
-    return _jsonResponse(jsonEncode(result));
+    return _jsonResponse(_jsonUtf8Encoder.convert(result));
   }
 }
 
-shelf.Response _jsonResponse(body) => new shelf.Response.ok(body,
+final _jsonUtf8Encoder = new JsonUtf8Encoder();
+
+shelf.Response _jsonResponse(List<int> body) => new shelf.Response.ok(body,
     headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
