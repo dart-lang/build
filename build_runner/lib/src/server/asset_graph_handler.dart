@@ -46,8 +46,7 @@ class AssetGraphHandler {
                 new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
             headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
       case 'assets.json':
-        return new shelf.Response.ok(_assetGraph.serialize(),
-            headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
+        return _jsonResponse(_assetGraph.serialize());
     }
     var assetId = pathToAssetId(_rootPackage, request.url.pathSegments.first,
         request.url.pathSegments.skip(1).toList());
@@ -99,7 +98,9 @@ class AssetGraphHandler {
       'edges': edges,
       'nodes': nodes,
     };
-    return new shelf.Response.ok(json.encode(result),
-        headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
+    return _jsonResponse(jsonEncode(result));
   }
 }
+
+shelf.Response _jsonResponse(body) => new shelf.Response.ok(body,
+    headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
