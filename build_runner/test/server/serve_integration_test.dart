@@ -147,7 +147,13 @@ example:file://fake/pkg/path
         '?q=bob/bob',
         'Could not find asset for path "bob/bob". Tried:\n'
         '- example|bob/bob\n'
-        '- example|web/bob');
+        '- example|web/bob/bob');
+    test404(
+        'valid path, 2nd try',
+        '?q=bob/initial.txt',
+        'Could not find asset for path "bob/initial.txt". Tried:\n'
+        '- example|bob/initial.txt\n'
+        '- example|web/bob/initial.txt');
 
     void testSuccess(String testName, String path, String expectedId) {
       test(testName, () async {
@@ -162,8 +168,12 @@ example:file://fake/pkg/path
     }
 
     testSuccess('valid path', '?q=web/initial.txt', 'example|web/initial.txt');
-    testSuccess(
-        'valid path, 2nd try', '?q=bob/initial.txt', 'example|web/initial.txt');
+    testSuccess('valid path, leading slash', '?q=/web/initial.txt',
+        'example|web/initial.txt');
+    testSuccess('valid path, assuming root', '?q=initial.txt',
+        'example|web/initial.txt');
+    testSuccess('valid path, assuming root, leading slash', '?q=/initial.txt',
+        'example|web/initial.txt');
     testSuccess('valid AssetId', '?q=example|web/initial.txt',
         'example|web/initial.txt');
   });
