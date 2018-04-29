@@ -1,3 +1,7 @@
+## 0.12.6
+
+- `log` will now always return a `Logger` instance.
+
 ## 0.12.5
 
 - Add exclude support to `FileDeletingBuilder`.
