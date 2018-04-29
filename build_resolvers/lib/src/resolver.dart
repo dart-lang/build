@@ -283,7 +283,7 @@ class _AssetUriResolver implements UriResolver {
     assert(uri.scheme != 'dart');
     AssetId assetId;
     if (uri.scheme == 'asset') {
-      var parts = path.split(uri.path);
+      var parts = uri.pathSegments;
       assetId = new AssetId(parts[0], path.joinAll(parts.skip(1)));
     } else {
       assetId = _resolve(null, uri.toString());
