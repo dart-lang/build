@@ -19,6 +19,9 @@ class AssetId implements Comparable<AssetId> {
   /// the host platform.
   final String path;
 
+  /// Splits [path] into its components.
+  List<String> get pathSegments => p.posix.split(path);
+
   /// The file extension of the asset, if it has one, including the ".".
   String get extension => p.extension(path);
 
@@ -153,7 +156,7 @@ String _normalizePath(String path) {
 }
 
 Uri _constructUri(AssetId id) {
-  final originalSegments = p.split(id.path);
+  final originalSegments = id.pathSegments;
   final isLib = originalSegments.first == 'lib';
   final scheme = isLib ? 'package' : 'asset';
   final pathSegments = isLib ? originalSegments.skip(1) : originalSegments;

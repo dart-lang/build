@@ -1,3 +1,7 @@
+## 0.12.6
+
+- Added `List<String> get pathSegments` to `AssetId`.
+
 ## 0.12.5
 
 - Add exclude support to `FileDeletingBuilder`.
