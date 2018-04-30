@@ -1,6 +1,7 @@
 ## 0.8.8
 
-- Improve search behavior on the `/$graph` page.
+- Improve search behavior on the `/$graph` page. Users can now query for
+  paths and `AssetID` values – `pkg_name|lib/pkg_name.dart`.
 
 ## 0.8.7
 
