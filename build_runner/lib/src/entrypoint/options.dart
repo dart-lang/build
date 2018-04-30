@@ -327,8 +327,21 @@ abstract class _BuildRunnerCommand extends Command<int> {
   ///
   /// You may override this to return more specific options if desired, but they
   /// must extend [_SharedOptions].
-  _SharedOptions _readOptions() =>
-      new _SharedOptions.fromParsedArgs(argResults, packageGraph.root.name);
+  _SharedOptions _readOptions({bool allowExtraArgs}) {
+    _checkExtraArgs(allowExtraArgs);
+    return new _SharedOptions.fromParsedArgs(
+        argResults, packageGraph.root.name);
+  }
+
+  /// Throws a [UsageException] if not [allowExtraArgs] and there are extra
+  /// unparsed args.
+  void _checkExtraArgs(bool allowExtraArgs) {
+    allowExtraArgs ??= false;
+    if (!allowExtraArgs && argResults.rest.isNotEmpty) {
+      throw new UsageException(
+          'Unrecognized arguments: ${argResults.rest}', usage);
+    }
+  }
 }
 
 /// A [Command] that does a single build and then exits.
@@ -427,7 +440,7 @@ class _ServeCommand extends _WatchCommand {
       'builds based on file system updates.';
 
   @override
-  _ServeOptions _readOptions() =>
+  _ServeOptions _readOptions({bool allowExtraArgs}) =>
       new _ServeOptions.fromParsedArgs(argResults, packageGraph.root.name);
 
   @override
@@ -519,7 +532,7 @@ class _TestCommand extends _BuildRunnerCommand {
         .toFilePath();
     try {
       _ensureBuildTestDependency(packageGraph);
-      options = _readOptions();
+      options = _readOptions(allowExtraArgs: true);
       var outputMap = options.outputMap ?? {};
       outputMap.addAll({tempPath: null});
       var result = await build(
