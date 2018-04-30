@@ -20,6 +20,7 @@ import 'asset_graph_handler.dart';
 import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
+final _graphPath = r'$graph';
 
 final _logger = new Logger('Serve');
 
@@ -66,8 +67,9 @@ class ServeHandler implements BuildState {
       if (request.url.path == _performancePath) {
         return _performanceHandler(request);
       }
-      if (request.url.path.startsWith(r'$graph')) {
-        return _assetGraphHandler.handle(request, rootDir);
+      if (request.url.path.startsWith(_graphPath)) {
+        return _assetGraphHandler.handle(
+            request.change(path: _graphPath), rootDir);
       }
       return _assetHandler.handle(request, rootDir);
     });
