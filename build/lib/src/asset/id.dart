@@ -20,7 +20,7 @@ class AssetId implements Comparable<AssetId> {
   final String path;
 
   /// Splits [path] into its components.
-  List<String> get pathSegments => p.posix.split(path);
+  List<String> get pathSegments => p.url.split(path);
 
   /// The file extension of the asset, if it has one, including the ".".
   String get extension => p.extension(path);
