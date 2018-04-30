@@ -1,6 +1,11 @@
+## 0.8.8
+
+- Improve search behavior on the `/$graph` page. Users can now query for
+  paths and `AssetID` values – `pkg_name|lib/pkg_name.dart`.
+
 ## 0.8.7
 
-- Improve error handling in the `/$graph` page.
+- Improve error handling on the `/$graph` page.
 - Support the latest `package:builde`
 
 ## 0.8.6
