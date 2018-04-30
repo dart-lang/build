@@ -1,6 +1,10 @@
+## 0.8.8
+
+- Improve search behavior on the `/$graph` page.
+
 ## 0.8.7
 
-- Improve error handling in the `/$graph` page.
+- Improve error handling on the `/$graph` page.
 - Support the latest `package:builde`
 
 ## 0.8.6
