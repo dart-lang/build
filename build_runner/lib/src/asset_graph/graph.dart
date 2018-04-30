@@ -234,7 +234,6 @@ class AssetGraph {
       String rootPackage,
       Future delete(AssetId id),
       AssetReader digestReader) async {
-    var invalidatedIds = new Set<AssetId>();
 
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
@@ -293,31 +292,33 @@ class AssetGraph {
           ..addAll(transitiveRemovedIds);
 
     // Transitively invalidates all assets.
-    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {bool forceUpdate: false}) {
+    var invalidatedIds = new Set<AssetId>();
+    void invalidateNodeAndDeps(AssetId id) {
       var node = get(id);
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
-      if (node is GeneratedAssetNode) {
+      if (node is GeneratedAssetNode &&
+          node.state == GeneratedNodeState.upToDate) {
         node.state = GeneratedNodeState.mayNeedUpdate;
       }
 
       // Update all outputs of this asset as well.
       for (var output in node.outputs) {
-        invalidateNodeAndDeps(output, rootChangeType);
+        invalidateNodeAndDeps(output);
       }
     }
 
-    updates.forEach(invalidateNodeAndDeps);
+    for (var changed in updates.keys) {
+      invalidateNodeAndDeps(changed);
+    }
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
       var samePackageOutputNodes =
           packageNodes(id.package).where((node) => node is GeneratedAssetNode);
       for (GeneratedAssetNode node in samePackageOutputNodes) {
         if (node.globs.any((glob) => glob.matches(id.path))) {
-          // The change type is irrelevant here.
-          invalidateNodeAndDeps(node.id, null);
+          invalidateNodeAndDeps(node.id);
           // Override to the `definitelyNeedsUpdate` state for glob changes.
           //
           // The regular input hash checks won't pick up glob changes.
