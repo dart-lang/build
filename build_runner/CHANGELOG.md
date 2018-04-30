@@ -2,6 +2,8 @@
 
 - Improve search behavior on the `/$graph` page. Users can now query for
   paths and `AssetID` values – `pkg_name|lib/pkg_name.dart`.
+- Commands that don't support trailing args will now approriately fail with a
+  usage exception.
 
 ## 0.8.7
 
