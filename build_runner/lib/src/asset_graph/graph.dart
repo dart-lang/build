@@ -191,7 +191,9 @@ class AssetGraph {
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
     }
-    _nodesByPackage[id.package].remove(id.path);
+    if (node is! SyntheticSourceAssetNode) {
+      _nodesByPackage[id.package].remove(id.path);
+    }
     return removedIds;
   }
 
@@ -233,25 +235,6 @@ class AssetGraph {
       Future delete(AssetId id),
       AssetReader digestReader) async {
     var invalidatedIds = new Set<AssetId>();
-
-    // Transitively invalidates all assets.
-    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {bool forceUpdate: false}) {
-      var node = get(id);
-      if (node == null) return;
-      if (!invalidatedIds.add(id)) return;
-
-      if (node is GeneratedAssetNode) {
-        node.state = GeneratedNodeState.mayNeedUpdate;
-      }
-
-      // Update all outputs of this asset as well.
-      for (var output in node.outputs) {
-        invalidateNodeAndDeps(output, rootChangeType);
-      }
-    }
-
-    updates.forEach(invalidateNodeAndDeps);
 
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
@@ -309,6 +292,24 @@ class AssetGraph {
         _addOutputsForSources(buildPhases, newIds, rootPackage)
           ..addAll(transitiveRemovedIds);
 
+    // Transitively invalidates all assets.
+    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType,
+        {bool forceUpdate: false}) {
+      var node = get(id);
+      if (node == null) return;
+      if (!invalidatedIds.add(id)) return;
+
+      if (node is GeneratedAssetNode) {
+        node.state = GeneratedNodeState.mayNeedUpdate;
+      }
+
+      // Update all outputs of this asset as well.
+      for (var output in node.outputs) {
+        invalidateNodeAndDeps(output, rootChangeType);
+      }
+    }
+
+    updates.forEach(invalidateNodeAndDeps);
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
       var samePackageOutputNodes =
