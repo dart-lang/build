@@ -107,26 +107,46 @@ class ImportOptimizer{
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
     if (sourceNodeCount > optNodeCount) {
       sb.writeln('// FileName: "$inputId" old: $sourceNodeCount -> new: $optNodeCount');
-      for (var library in libraries) {
-        var source = library.source;
-        if (source is AssetBasedSource) {
-          var assetId = source.assetId;
-          var postMessage = '';
-          if (assetId.package == inputId.package) {
-            postMessage = '/* local import */';
+
+      final directives = <_DirectiveInfo>[];
+      for (final library in libraries) {
+        final source = library.source;
+        final importUrl = (source is AssetBasedSource)
+            ? 'package:${source.assetId.package}${source.assetId.path.substring(3)}'
+            : source.uri.toString();
+
+        final priority = getDirectivePriority(importUrl);
+        directives
+            .add(new _DirectiveInfo(priority, importUrl, "import '$importUrl';"));
+      }
+
+      directives.sort();
+
+      _DirectivePriority currentPriority;
+      for (final directiveInfo in directives) {
+        if (currentPriority != directiveInfo.priority) {
+          if (sb.length != 0) {
+            sb.writeln();
           }
-          var generateImport = 'package:${assetId.package}${assetId.path.substring(3)}';
-          sb.writeln("import '$generateImport'; $postMessage");
-        } else {
-          sb.writeln("import '${source.uri}';");
+          currentPriority = directiveInfo.priority;
         }
+        sb.writeln(directiveInfo.text);
       }
     }
-//    else {
-//      sb.writeln('// FileName: "$inputId" IMPORTS is optimal!');
-//    }
     return sb.toString();
   }
+
+  static _DirectivePriority getDirectivePriority(String uriContent) {
+      if (uriContent.startsWith('dart:')) {
+        return _DirectivePriority.IMPORT_SDK;
+      } else if (uriContent.startsWith('package:')) {
+        return _DirectivePriority.IMPORT_PKG;
+      } else if (uriContent.contains('://')) {
+        return _DirectivePriority.IMPORT_OTHER;
+      }
+      return _DirectivePriority.IMPORT_REL;
+  }
+
 
   Future<LibraryElement> _getOptLibraryImport(LibraryElement library, Resolver resolverI) async {
     var source = library.source as AssetBasedSource;
@@ -256,3 +276,62 @@ class WorkResult {
     }
   }
 }
+
+class _DirectiveInfo implements Comparable<_DirectiveInfo> {
+  final _DirectivePriority priority;
+  final String uri;
+  final String text;
+
+  _DirectiveInfo(this.priority, this.uri, this.text);
+
+  @override
+  int compareTo(_DirectiveInfo other) {
+    if (priority == other.priority) {
+      return _compareUri(uri, other.uri);
+    }
+    return priority.ordinal - other.priority.ordinal;
+  }
+
+  @override
+  String toString() => '(priority=$priority; text=$text)';
+
+  static int _compareUri(String a, String b) {
+    final aList = _splitUri(a);
+    final bList = _splitUri(b);
+    int result;
+    if ((result = aList[0].compareTo(bList[0])) != 0) return result;
+    if ((result = aList[1].compareTo(bList[1])) != 0) return result;
+    return 0;
+  }
+
+  /// Split the given [uri] like `package:some.name/and/path.dart` into a list
+  /// like `[package:some.name, and/path.dart]`.
+  static List<String> _splitUri(String uri) {
+    final index = uri.indexOf('/');
+    if (index == -1) {
+      return <String>[uri, ''];
+    }
+    return <String>[uri.substring(0, index), uri.substring(index + 1)];
+  }
+}
+
+class _DirectivePriority {
+  static const IMPORT_SDK = const _DirectivePriority('IMPORT_SDK', 0);
+  static const IMPORT_PKG = const _DirectivePriority('IMPORT_PKG', 1);
+  static const IMPORT_OTHER = const _DirectivePriority('IMPORT_OTHER', 2);
+  static const IMPORT_REL = const _DirectivePriority('IMPORT_REL', 3);
+  static const EXPORT_SDK = const _DirectivePriority('EXPORT_SDK', 4);
+  static const EXPORT_PKG = const _DirectivePriority('EXPORT_PKG', 5);
+  static const EXPORT_OTHER = const _DirectivePriority('EXPORT_OTHER', 6);
+  static const EXPORT_REL = const _DirectivePriority('EXPORT_REL', 7);
+  static const PART = const _DirectivePriority('PART', 8);
+
+  final String name;
+  final int ordinal;
+
+  const _DirectivePriority(this.name, this.ordinal);
+
+  @override
+  String toString() => name;
+}
+
