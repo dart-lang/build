@@ -1,6 +1,7 @@
 ## 0.12.6
 
 - Added `List<String> get pathSegments` to `AssetId`.
+- `log` will now always return a `Logger` instance.
 
 ## 0.12.5
 
