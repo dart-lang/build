@@ -2,6 +2,8 @@
 
 - Improve search behavior on the `/$graph` page. Users can now query for
   paths and `AssetID` values – `pkg_name|lib/pkg_name.dart`.
+- Fix a bug where some rebuilds would not happen after adding a new file that
+  has outputs which were missing during the previous build.
 
 ## 0.8.7
 
