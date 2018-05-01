@@ -100,6 +100,6 @@ void main() {
       final successBuild =
           await runAutoBuild(trailingArgs: ['--fail-on-severe', '--release']);
       expect(successBuild.exitCode, 0);
-    });
+    }, timeout: new Timeout.factor(1.5));
   });
 }
