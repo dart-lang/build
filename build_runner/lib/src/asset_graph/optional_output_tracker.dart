@@ -50,6 +50,7 @@ class OptionalOutputTracker {
                 .any((o) => isRequired(o, currentlyChecking)) ||
             _assetGraph
                 .outputsForPhase(output.package, generatedNode.phaseNumber)
+                .where((n) => n.primaryInput == generatedNode.primaryInput)
                 .map((n) => n.id)
                 .any((o) => isRequired(o, currentlyChecking)));
   }
