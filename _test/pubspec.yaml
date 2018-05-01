@@ -1,4 +1,4 @@
-name: e2e_example
+name: _test
 description: A basic web app
 
 environment:

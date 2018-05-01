@@ -8,7 +8,7 @@ analyzer:
     override_on_non_overriding_method: error
   exclude:
     - "test/goldens/generated_build_script.dart"
-    - "e2e_example/build"
+    - "_test/build"
 linter:
   rules:
     - annotate_overrides

@@ -10,7 +10,7 @@ install:
   - cmd: 7z x dart-sdk.zip -o"C:\tools" -y > nul
   - set PATH=%PATH%;C:\tools\dart-sdk\bin
   - set PATH=%PATH%;%APPDATA%\Pub\Cache\bin
-  - cd e2e_example
+  - cd _test
   - pub get && exit 0
 
 build: off

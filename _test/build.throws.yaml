@@ -17,4 +17,3 @@ targets:
           - test/other_test.dart.browser_test.dart
           - test/subdir/subdir_test.dart
           - test/subdir/subdir_test.dart.browser_test.dart
-
