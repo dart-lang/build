@@ -36,33 +36,33 @@ while (( "$#" )); do
     ;;
   test_0) echo
     echo -e '\033[1mTASK: test_0\033[22m'
-    echo -e 'pub run test'
-    pub run test || EXIT_CODE=$?
-    ;;
-  test_1) echo
-    echo -e '\033[1mTASK: test_1\033[22m'
-    echo -e 'pub run test --run-skipped'
-    pub run test --run-skipped || EXIT_CODE=$?
-    ;;
-  test_2) echo
-    echo -e '\033[1mTASK: test_2\033[22m'
     echo -e 'pub run test --total-shards 4 --shard-index 0'
     pub run test --total-shards 4 --shard-index 0 || EXIT_CODE=$?
     ;;
-  test_3) echo
-    echo -e '\033[1mTASK: test_3\033[22m'
+  test_1) echo
+    echo -e '\033[1mTASK: test_1\033[22m'
     echo -e 'pub run test --total-shards 4 --shard-index 1'
     pub run test --total-shards 4 --shard-index 1 || EXIT_CODE=$?
     ;;
-  test_4) echo
-    echo -e '\033[1mTASK: test_4\033[22m'
+  test_2) echo
+    echo -e '\033[1mTASK: test_2\033[22m'
     echo -e 'pub run test --total-shards 4 --shard-index 2'
     pub run test --total-shards 4 --shard-index 2 || EXIT_CODE=$?
     ;;
-  test_5) echo
-    echo -e '\033[1mTASK: test_5\033[22m'
+  test_3) echo
+    echo -e '\033[1mTASK: test_3\033[22m'
     echo -e 'pub run test --total-shards 4 --shard-index 3'
     pub run test --total-shards 4 --shard-index 3 || EXIT_CODE=$?
+    ;;
+  test_4) echo
+    echo -e '\033[1mTASK: test_4\033[22m'
+    echo -e 'pub run test'
+    pub run test || EXIT_CODE=$?
+    ;;
+  test_5) echo
+    echo -e '\033[1mTASK: test_5\033[22m'
+    echo -e 'pub run test --run-skipped'
+    pub run test --run-skipped || EXIT_CODE=$?
     ;;
   *) echo -e "\033[31mNot expecting TASK '${TASK}'. Error!\033[0m"
     EXIT_CODE=1

@@ -12,7 +12,7 @@ import 'package:build_test/builder.dart';
 
 Future main(List<String> args) async {
   var builders = [
-    apply('e2e_example|test_bootstrap', [(_) => new TestBootstrapBuilder()],
+    apply('_test|test_bootstrap', [(_) => new TestBootstrapBuilder()],
         toRoot(),
         defaultGenerateFor:
             const InputSet(include: const ['test/**_test.dart']),

@@ -7,9 +7,10 @@ import 'dart:html';
 
 import 'package:test/test.dart';
 
-import 'package:e2e_example/app.dart';
+import 'package:_test/app.dart';
+//import_anchor
 
-import 'common/message.dart' deferred as m;
+import 'common/message.dart';
 
 void main() {
   setUp(startApp);
@@ -18,8 +19,11 @@ void main() {
     document.body.innerHtml = '';
   });
 
-  test('hello world', () async {
-    await m.loadLibrary();
-    expect(document.body.text, contains(m.message));
+  test('hello world', () {
+    expect(document.body.text, contains(message));
   });
+
+  test('failing test', () {
+    expect(true, isFalse);
+  }, skip: 'Expected failure');
 }
