@@ -257,6 +257,9 @@ void main() {
           var changes = {primaryInputId: ChangeType.MODIFY};
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
+          // pretend a build happened
+          (graph.get(primaryOutputId) as GeneratedAssetNode).state =
+              GeneratedNodeState.upToDate;
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
