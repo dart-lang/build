@@ -4,8 +4,9 @@
   release mode.
 - Clean up `.tar.gz` outputs produced by `Dart2Js.`
 - Don't output extra `Dart2Js` outputs other than deferred part files.
-- Fixed a logical error in `dartdevc` compiler to detect correct base url for require js.
-- Added the `dartdevc_enable_sync_async` option to
+- Fixed a logical error in `dartdevc` compiler to detect correct base url for
+  require js.
+- Added a `dartdevc_enable_sync_async` option.
 
 ## 0.3.7+3
 
