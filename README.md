@@ -75,8 +75,12 @@ TODO: scratch_space
 
 ## Examples
 
-The [e2e_example](https://github.com/dart-lang/build/tree/master/e2e_example)
-directory has demonstrations of running a `Builder` both
-through pub (see the transformers section of `pubspec.yaml`) and in place (see
-the `tool/build.dart` file). In real situations a project would choose one or
-the other approach rather than mix both.
+The [example](https://github.com/dart-lang/build/tree/master/example)
+directory has an example of a build with custom builders which generate outputs
+into both the source tree and a hidden generated directory. Try a build with
+`pub run build_runner build -o web:deploy` to see what the output looks like.
+
+Most projects should not need custom builders. A more typical project which uses
+Angular and compiles to javascript can be found in the [angular repo][hacker_news].
+
+[hacker_news]:https://github.com/dart-lang/angular/tree/master/examples/hacker_news_pwa
