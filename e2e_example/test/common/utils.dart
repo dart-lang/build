@@ -74,7 +74,10 @@ Future<ProcessResult> _runBuild(String command, List<String> args,
     await _toolDir.delete(recursive: true);
   }
 
-  return await Process.run(command, args);
+  final result = await Process.run(command, args);
+  printOnFailure('${result.stdout}');
+  printOnFailure('${result.stderr}');
+  return result;
 }
 
 Future<Null> _startServer(String command, List<String> buildArgs,
