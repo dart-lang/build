@@ -85,7 +85,7 @@ void main() {
       await createFile(path, 'not valid dart syntax');
       final testFile = p.join('test', 'hello_world_test.dart');
       await replaceAllInFile(testFile, '//import_anchor',
-          "import: 'package:e2e_example/bad_file.dart'");
+          "import: 'package:e2e_example/bad_file.dart';");
       final result = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
       expect(result.stderr, contains('Failed'));
@@ -93,7 +93,7 @@ void main() {
       // Remove the import to the bad file so it is no longer a requirement for
       // the overall build
       await replaceAllInFile(testFile,
-          "import: 'package:e2e_example/bad_file.dart'", '//import_anchor');
+          "import: 'package:e2e_example/bad_file.dart';", '//import_anchor');
       final nextBuild = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
       expect(nextBuild.exitCode, 0);
     });
