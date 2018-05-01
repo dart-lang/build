@@ -6,6 +6,8 @@
   usage exception.
 - Fix a bug where some rebuilds would not happen after adding a new file that
   has outputs which were missing during the previous build.
+- Fix a bug where failing actions which are no longer required can still cause
+  the overall build to fail.
 
 ## 0.8.7
 

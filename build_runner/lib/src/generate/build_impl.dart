@@ -19,6 +19,7 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../asset_graph/optional_output_tracker.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
@@ -229,10 +230,21 @@ class _SingleBuild {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild();
+    var optionalOutputTracker =
+        new OptionalOutputTracker(_assetGraph, _buildPhases);
+    if (result.status == BuildStatus.success) {
+      if (_assetGraph.failedOutputs
+          .map((n) => n.id)
+          .where(optionalOutputTracker.isRequired)
+          .isNotEmpty) {
+        result = new BuildResult(BuildStatus.failure, result.outputs,
+            performance: result.performance);
+      }
+    }
     await _resourceManager.disposeAll();
     if (_outputMap != null && result.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(_outputMap, _assetGraph,
-          _packageGraph, _reader, _environment, _buildPhases)) {
+          _packageGraph, _reader, _environment, optionalOutputTracker)) {
         result = _convertToFailure(
             result, 'Failed to create merged output directories.',
             failureType: FailureType.cantCreate);
@@ -337,10 +349,8 @@ class _SingleBuild {
         _lazyPhases.values,
         (Future<Iterable<AssetId>> lazyOuts) async =>
             outputs.addAll(await lazyOuts));
-    final status = _assetGraph.failedOutputs.isEmpty
-        ? BuildStatus.success
-        : BuildStatus.failure;
-    return new BuildResult(status, outputs,
+    // Assume success, `_assetGraph.failedOutputs` will be checked later.
+    return new BuildResult(BuildStatus.success, outputs,
         performance: _performanceTracker..stop());
   }
 

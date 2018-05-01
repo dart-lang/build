@@ -1054,4 +1054,46 @@ void main() {
           writer: writer);
     });
   });
+
+  group('regression tests', () {
+    test(
+        'a failed output on a primary input which is not output in later builds',
+        () async {
+      var builders = [
+        applyToRoot(new TestBuilder(
+            buildExtensions: replaceExtension('.source', '.g1'),
+            build: (buildStep, _) async {
+              var content = await buildStep.readAsString(buildStep.inputId);
+              if (content == 'true') {
+                await buildStep.writeAsString(
+                    buildStep.inputId.changeExtension('.g1'), '');
+              }
+            })),
+        applyToRoot(new TestBuilder(
+            buildExtensions: replaceExtension('.g1', '.g2'),
+            build: (buildStep, _) {
+              throw 'Fails always';
+            })),
+      ];
+      var writer = new InMemoryRunnerAssetWriter();
+      await testBuilders(
+        builders,
+        {'a|lib/a.source': 'true'},
+        status: BuildStatus.failure,
+        writer: writer,
+      );
+
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+
+      await testBuilders(
+          builders,
+          {
+            'a|lib/a.source': 'false',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {},
+          writer: writer);
+    });
+  });
 }
