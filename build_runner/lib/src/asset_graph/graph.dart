@@ -212,7 +212,10 @@ class AssetGraph {
 
   /// The outputs which were, or would have been, produced by failing actions.
   Iterable<GeneratedAssetNode> get failedOutputs => allNodes
-      .where((n) => n is GeneratedAssetNode && n.isFailure)
+      .where((n) =>
+          n is GeneratedAssetNode &&
+          n.isFailure &&
+          n.state == GeneratedNodeState.upToDate)
       .map((n) => n as GeneratedAssetNode);
 
   /// All the generated outputs for a particular phase.
