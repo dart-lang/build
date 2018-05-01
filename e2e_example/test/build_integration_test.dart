@@ -86,7 +86,7 @@ void main() {
       final testFile = p.join('test', 'hello_world_test.dart');
       await replaceAllInFile(testFile, '//import_anchor',
           "import: 'package:e2e_example/bad_file.dart';");
-      final result = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
+      final result = await runBuild(trailingArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
       expect(result.stderr, contains('Failed'));
 
@@ -94,7 +94,7 @@ void main() {
       // the overall build
       await replaceAllInFile(testFile,
           "import: 'package:e2e_example/bad_file.dart';", '//import_anchor');
-      final nextBuild = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
+      final nextBuild = await runBuild(trailingArgs: ['--fail-on-severe']);
       expect(nextBuild.exitCode, 0);
     });
   });
