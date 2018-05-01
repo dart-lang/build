@@ -8,6 +8,7 @@ import 'dart:html';
 import 'package:test/test.dart';
 
 import 'package:e2e_example/app.dart';
+//import_anchor
 
 import 'common/message.dart';
 

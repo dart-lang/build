@@ -81,25 +81,21 @@ void main() {
     test('Failing optional outputs which are required during the next build',
         () async {
       // Run a build with DDC that should fail
-      final path = p.join('test', 'common', 'message.dart');
-      await replaceAllInFile(path, "'Hello World!'", 'can not parse this');
+      final path = p.join('lib', 'bad_file.dart');
+      await createFile(path, 'not valid dart syntax');
+      final testFile = p.join('test', 'hello_world_test.dart');
+      await replaceAllInFile(testFile, '//import_anchor',
+          "import: 'package:e2e_example/bad_file.dart'");
       final result = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
       expect(result.stderr, contains('Failed'));
 
-      // Run a build with dart2js that should also fail. Makes the failing DDC
-      // outptus no longer necessary for the build but does not invalidate them
-      // by changing the file.
-      final nextBuild =
-          await runAutoBuild(trailingArgs: ['--fail-on-severe', '--release']);
-      expect(nextBuild.exitCode, isNot(0));
-      expect(nextBuild.stderr, contains('Failed'));
-
-      // Correct the build and build with dart2js that should
-      await replaceAllInFile(path, 'can not parse this', "'Hello World!'");
-      final successBuild =
-          await runAutoBuild(trailingArgs: ['--fail-on-severe', '--release']);
-      expect(successBuild.exitCode, 0);
-    }, timeout: new Timeout.factor(1.5));
+      // Remove the import to the bad file so it is no longer a requirement for
+      // the overall build
+      await replaceAllInFile(testFile,
+          "import: 'package:e2e_example/bad_file.dart'", '//import_anchor');
+      final nextBuild = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
+      expect(nextBuild.exitCode, 0);
+    });
   });
 }
