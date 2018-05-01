@@ -191,7 +191,10 @@ class AssetGraph {
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
     }
-    _nodesByPackage[id.package].remove(id.path);
+    // Synthetic nodes need to be kept to retain dependency tracking.
+    if (node is! SyntheticSourceAssetNode) {
+      _nodesByPackage[id.package].remove(id.path);
+    }
     return removedIds;
   }
 
@@ -232,27 +235,6 @@ class AssetGraph {
       String rootPackage,
       Future delete(AssetId id),
       AssetReader digestReader) async {
-    var invalidatedIds = new Set<AssetId>();
-
-    // Transitively invalidates all assets.
-    void invalidateNodeAndDeps(AssetId id, ChangeType rootChangeType,
-        {bool forceUpdate: false}) {
-      var node = get(id);
-      if (node == null) return;
-      if (!invalidatedIds.add(id)) return;
-
-      if (node is GeneratedAssetNode) {
-        node.state = GeneratedNodeState.mayNeedUpdate;
-      }
-
-      // Update all outputs of this asset as well.
-      for (var output in node.outputs) {
-        invalidateNodeAndDeps(output, rootChangeType);
-      }
-    }
-
-    updates.forEach(invalidateNodeAndDeps);
-
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
     var removeIds = new Set<AssetId>();
@@ -309,14 +291,35 @@ class AssetGraph {
         _addOutputsForSources(buildPhases, newIds, rootPackage)
           ..addAll(transitiveRemovedIds);
 
+    // Transitively invalidates all assets. This needs to happen after the
+    // structure of the graph has been updated.
+    var invalidatedIds = new Set<AssetId>();
+    void invalidateNodeAndDeps(AssetId id) {
+      var node = get(id);
+      if (node == null) return;
+      if (!invalidatedIds.add(id)) return;
+
+      if (node is GeneratedAssetNode &&
+          node.state == GeneratedNodeState.upToDate) {
+        node.state = GeneratedNodeState.mayNeedUpdate;
+      }
+
+      // Update all outputs of this asset as well.
+      for (var output in node.outputs) {
+        invalidateNodeAndDeps(output);
+      }
+    }
+
+    for (var changed in updates.keys) {
+      invalidateNodeAndDeps(changed);
+    }
     // For all new or deleted assets, check if they match any globs.
     for (var id in allNewAndDeletedIds) {
       var samePackageOutputNodes =
           packageNodes(id.package).where((node) => node is GeneratedAssetNode);
       for (GeneratedAssetNode node in samePackageOutputNodes) {
         if (node.globs.any((glob) => glob.matches(id.path))) {
-          // The change type is irrelevant here.
-          invalidateNodeAndDeps(node.id, null);
+          invalidateNodeAndDeps(node.id);
           // Override to the `definitelyNeedsUpdate` state for glob changes.
           //
           // The regular input hash checks won't pick up glob changes.
