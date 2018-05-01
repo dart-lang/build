@@ -9,7 +9,7 @@ import 'common/utils.dart';
 
 void main() {
   test('Exceptions from the isolate are handled properly', () async {
-    var asyncResult = runAutoBuild(trailingArgs: ['--config', 'throws']);
+    var asyncResult = runBuild(trailingArgs: ['--config', 'throws']);
     expect(asyncResult, completes,
         reason:
             'Wrapper script should not hang if the isolate has an unhandled '

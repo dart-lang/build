@@ -12,7 +12,9 @@ import 'common/utils.dart';
 
 void main() {
   setUpAll(() async {
-    await startManualServer(ensureCleanBuild: true);
+    // These tests depend on running `test` while a `serve` is ongoing.
+    await startServer(
+        ensureCleanBuild: true, buildArgs: ['--skip-build-script-check']);
   });
 
   tearDownAll(() async {

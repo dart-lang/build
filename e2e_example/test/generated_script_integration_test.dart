@@ -11,7 +11,7 @@ import 'common/utils.dart';
 
 void main() {
   setUpAll(() async {
-    await runAutoCommand(['generate-build-script']);
+    await runCommand(['generate-build-script']);
   });
 
   test('Generates a build script matching the golden', () {

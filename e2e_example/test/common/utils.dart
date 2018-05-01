@@ -18,39 +18,15 @@ Stream<String> _stdOutLines;
 
 final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
-/// Runs a single build using the build script in this package, and returns the
-/// [ProcessResult].
-///
-/// To ensure a clean build, set [ensureCleanBuild] to `true`.
-Future<ProcessResult> runManualBuild(
-        {bool ensureCleanBuild, String scriptPath = 'tool/build.dart'}) =>
-    _runBuild('dart', [scriptPath, 'build'],
-        ensureCleanBuild: ensureCleanBuild);
-
 /// Runs a single build using `pub run build_runner build`, and returns the
 /// [ProcessResult].
-Future<ProcessResult> runAutoBuild({List<String> trailingArgs = const []}) =>
+Future<ProcessResult> runBuild({List<String> trailingArgs = const []}) =>
     _runBuild(
         _pubBinary, ['run', 'build_runner', 'build']..addAll(trailingArgs));
 
 /// Runs `pub run build_runner <args>`, and returns the [ProcessResult].
-Future<ProcessResult> runAutoCommand(List<String> args) =>
+Future<ProcessResult> runCommand(List<String> args) =>
     _runBuild(_pubBinary, ['run', 'build_runner']..addAll(args));
-
-/// Runs the build script in this package, and waits for the first build to
-/// complete.
-///
-/// To ensure a clean build, set [ensureCleanBuild] to `true`.
-///
-/// This expects the first build to complete successfully, but you can add extra
-/// expects that happen before that using [extraExpects]. All of these will be
-/// invoked and awaited before awaiting the next successful build.
-Future<Null> startManualServer(
-        {bool ensureCleanBuild,
-        List<Function> extraExpects,
-        String scriptPath = 'tool/build.dart'}) =>
-    _startServer('dart', [scriptPath, 'serve'],
-        ensureCleanBuild: ensureCleanBuild, extraExpects: extraExpects);
 
 /// Runs `pub run build_runner serve` in this package, and waits for the first
 /// build to complete.
@@ -60,9 +36,12 @@ Future<Null> startManualServer(
 /// This expects the first build to complete successfully, but you can add extra
 /// expects that happen before that using [extraExpects]. All of these will be
 /// invoked and awaited before awaiting the next successful build.
-Future<Null> startAutoServer(
-        {bool ensureCleanBuild, List<Function> extraExpects}) =>
-    _startServer(_pubBinary, ['run', 'build_runner', 'serve'],
+Future<Null> startServer(
+        {bool ensureCleanBuild,
+        List<Function> extraExpects,
+        List<String> buildArgs}) =>
+    _startServer(_pubBinary,
+        ['run', 'build_runner', 'serve']..addAll(buildArgs ?? const []),
         ensureCleanBuild: ensureCleanBuild, extraExpects: extraExpects);
 
 Future<ProcessResult> _runBuild(String command, List<String> args,
@@ -174,15 +153,8 @@ Future<String> nextStdErrLine(String message) =>
 Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message));
 
-/// Runs tests using the manual build script.
-Future<ProcessResult> runManualTests(
-    {bool usePrecompiled, List<String> buildArgs, List<String> testArgs}) {
-  return _runTests('dart', [p.join('tool', 'build.dart')],
-      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
-}
-
 /// Runs tests using the auto build script.
-Future<ProcessResult> runAutoTests(
+Future<ProcessResult> runTests(
     {bool usePrecompiled, List<String> buildArgs, List<String> testArgs}) {
   return _runTests(_pubBinary, ['run', 'build_runner'],
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
@@ -209,23 +181,16 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
   }
 }
 
-Future<Null> expectTestsFail({bool useManualScript}) async {
-  useManualScript ??= true;
-  var result = useManualScript ? await runManualTests() : await runAutoTests();
+Future<Null> expectTestsFail() async {
+  var result = await runTests();
   printOnFailure('${result.stderr}');
   expect(result.stdout, contains('Some tests failed'));
   expect(result.exitCode, isNot(0));
 }
 
 Future<Null> expectTestsPass(
-    {int expectedNumRan,
-    bool usePrecompiled,
-    bool useManualScript,
-    List<String> args}) async {
-  useManualScript ??= true;
-  var result = useManualScript
-      ? await runManualTests(usePrecompiled: usePrecompiled, buildArgs: args)
-      : await runAutoTests(usePrecompiled: usePrecompiled, buildArgs: args);
+    {int expectedNumRan, bool usePrecompiled, List<String> args}) async {
+  var result = await runTests(usePrecompiled: usePrecompiled, buildArgs: args);
   printOnFailure('${result.stderr}');
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {

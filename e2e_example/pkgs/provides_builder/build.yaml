@@ -1,6 +1,5 @@
 builders:
   some_builder:
-    target: "provides_builder"
     import: "package:provides_builder/builders.dart"
     builder_factories: ["someBuilder"]
     build_extensions: {".dart": [".something.dart"]}
@@ -8,10 +7,14 @@ builders:
     applies_builders:
       - provides_builder|some_post_process_builder
   some_not_applied_builder:
-    target: "provides_builder"
     import: "package:provides_builder/builders.dart"
     builder_factories: ["notApplied"]
     build_extensions: {".dart": [".something.dart"]}
+  throwing_builder:
+    import: "package:provides_builder/builders.dart"
+    builder_factories: ["throwingBuilder"]
+    build_extensions: {".fail": [".fail.message"]}
+    auto_apply: dependents
 post_process_builders:
   some_post_process_builder:
     target: "provides_builder"

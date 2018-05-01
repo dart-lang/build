@@ -12,27 +12,27 @@ import 'common/utils.dart';
 
 void main() {
   test('pub run build_runner help', () async {
-    await testHelpCommand(() => runAutoCommand(['help']));
+    await testHelpCommand(() => runCommand(['help']));
   });
 
   test('pub run build_runner --help', () async {
-    await testHelpCommand(() => runAutoCommand(['--help']));
+    await testHelpCommand(() => runCommand(['--help']));
   });
 
   test('pub run build_runner build --help', () async {
-    await testHelpCommand(() => runAutoCommand(['build', '--help']));
+    await testHelpCommand(() => runCommand(['build', '--help']));
   });
 
   test('pub run build_runner serve --help', () async {
-    await testHelpCommand(() => runAutoCommand(['serve', '--help']));
+    await testHelpCommand(() => runCommand(['serve', '--help']));
   });
 
   test('pub run build_runner test --help', () async {
-    await testHelpCommand(() => runAutoCommand(['test', '--help']));
+    await testHelpCommand(() => runCommand(['test', '--help']));
   });
 
   test('pub run build_runner watch --help', () async {
-    await testHelpCommand(() => runAutoCommand(['watch', '--help']));
+    await testHelpCommand(() => runCommand(['watch', '--help']));
   });
 }
 

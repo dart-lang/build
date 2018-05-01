@@ -14,7 +14,7 @@ void main() {
   setUp(() async {
     ensureCleanGitClient();
     // Run a regular build in known clean state to speed up these tests.
-    await runAutoBuild();
+    await runBuild();
   });
 
   group('PostProcessBuilder', () {
@@ -26,7 +26,7 @@ void main() {
     });
 
     test('can be configured with build.yaml', () async {
-      await runAutoBuild(trailingArgs: ['--config', 'post_process']);
+      await runBuild(trailingArgs: ['--config', 'post_process']);
       var generated =
           await readGeneratedFileAsString('e2e_example/lib/hello.txt.post');
       expect(generated, equals('goodbye'));
@@ -34,7 +34,7 @@ void main() {
 
     test('can be configured with --define', () async {
       var content = 'cool';
-      await runAutoBuild(trailingArgs: [
+      await runBuild(trailingArgs: [
         '--define',
         'provides_builder|some_post_process_builder=default_content=$content'
       ]);
@@ -46,10 +46,10 @@ void main() {
     });
 
     test('rebuilds if the input file changes and not otherwise', () async {
-      var result = await runAutoBuild();
+      var result = await runBuild();
       expect(result.stdout, contains('with 0 outputs'));
       await replaceAllInFile('lib/hello.txt', 'hello', 'goodbye');
-      result = await runAutoBuild();
+      result = await runBuild();
       expect(result.stdout, contains('with 1 outputs'));
       var content =
           await readGeneratedFileAsString('e2e_example/lib/hello.txt.post');
@@ -64,13 +64,13 @@ void main() {
     });
 
     test('causes builds to return a non-zero exit code on errors', () async {
-      var result = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
+      var result = await runBuild(trailingArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
       expect(result.stderr, contains('Failed'));
     });
 
     test('causes tests to return a non-zero exit code on errors', () async {
-      var result = await runAutoTests(buildArgs: ['--fail-on-severe']);
+      var result = await runTests(buildArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
       expect(result.stderr, contains('Failed'));
       expect(result.stdout, contains('Skipping tests due to build failure'));
@@ -86,7 +86,7 @@ void main() {
       final testFile = p.join('test', 'hello_world_test.dart');
       await replaceAllInFile(testFile, '//import_anchor',
           "import: 'package:e2e_example/bad_file.dart';");
-      final result = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
+      final result = await runBuild(trailingArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
       expect(result.stderr, contains('Failed'));
 
@@ -94,7 +94,7 @@ void main() {
       // the overall build
       await replaceAllInFile(testFile,
           "import: 'package:e2e_example/bad_file.dart';", '//import_anchor');
-      final nextBuild = await runAutoBuild(trailingArgs: ['--fail-on-severe']);
+      final nextBuild = await runBuild(trailingArgs: ['--fail-on-severe']);
       expect(nextBuild.exitCode, 0);
     });
   });

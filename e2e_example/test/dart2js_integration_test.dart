@@ -23,54 +23,42 @@ void main() {
     });
 
     test('via build.yaml config flag', () async {
-      await expectTestsPass(
-          usePrecompiled: true,
-          useManualScript: false,
-          args: [
-            '--config=dart2js',
-            '--output=$_outputDir',
-          ]);
+      await expectTestsPass(usePrecompiled: true, args: [
+        '--config=dart2js',
+        '--output=$_outputDir',
+      ]);
       await expectWasCompiledWithDart2Js(minified: false);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --define flag', () async {
-      await expectTestsPass(
-          usePrecompiled: true,
-          useManualScript: false,
-          args: [
-            '--define',
-            'build_web_compilers|entrypoint=compiler=dart2js',
-            '--define',
-            'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
-            '--output=$_outputDir',
-          ]);
+      await expectTestsPass(usePrecompiled: true, args: [
+        '--define',
+        'build_web_compilers|entrypoint=compiler=dart2js',
+        '--define',
+        'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
+        '--output=$_outputDir',
+      ]);
       await expectWasCompiledWithDart2Js(minified: true);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --release mode', () async {
-      await expectTestsPass(
-          usePrecompiled: true,
-          useManualScript: false,
-          args: [
-            '--release',
-            '--output=$_outputDir',
-          ]);
+      await expectTestsPass(usePrecompiled: true, args: [
+        '--release',
+        '--output=$_outputDir',
+      ]);
       await expectWasCompiledWithDart2Js(minified: true);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('--define overrides --config', () async {
-      await expectTestsPass(
-          usePrecompiled: true,
-          useManualScript: false,
-          args: [
-            '--config',
-            'dart2js',
-            '--define',
-            'build_web_compilers|entrypoint=compiler=dart2js',
-            '--define',
-            'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
-            '--output=$_outputDir',
-          ]);
+      await expectTestsPass(usePrecompiled: true, args: [
+        '--config',
+        'dart2js',
+        '--define',
+        'build_web_compilers|entrypoint=compiler=dart2js',
+        '--define',
+        'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
+        '--output=$_outputDir',
+      ]);
       await expectWasCompiledWithDart2Js(minified: true);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
   });

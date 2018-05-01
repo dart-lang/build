@@ -16,7 +16,7 @@ void main() {
   });
 
   test('Failing tests print mapped stack traces', () async {
-    var result = await runManualTests(
+    var result = await runTests(
         testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
     printOnFailure(result.stderr.toString());
     expect(result.exitCode, isNot(ExitCode.success));
