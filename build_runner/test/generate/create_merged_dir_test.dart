@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner/src/generate/create_merged_dir.dart';
 import 'package:build_runner/src/generate/phase.dart';
 
@@ -45,12 +46,14 @@ main() {
     Directory anotherTmpDir;
     TestBuildEnvironment environment;
     InMemoryRunnerAssetReader assetReader;
+    OptionalOutputTracker optionalOutputTracker;
 
     setUp(() async {
       assetReader = new InMemoryRunnerAssetReader(sources);
       environment = new TestBuildEnvironment(reader: assetReader);
       graph = await AssetGraph.build(phases, sources.keys.toSet(),
           new Set<AssetId>(), packageGraph, assetReader);
+      optionalOutputTracker = new OptionalOutputTracker(graph, phases);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
         node.state = GeneratedNodeState.upToDate;
@@ -68,7 +71,7 @@ main() {
 
     test('creates a valid merged output directory', () async {
       var success = await createMergedOutputDirectories({tmpDir.path: null},
-          graph, packageGraph, assetReader, environment, phases);
+          graph, packageGraph, assetReader, environment, optionalOutputTracker);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -80,7 +83,7 @@ main() {
       node.isDeleted = true;
 
       var success = await createMergedOutputDirectories({tmpDir.path: null},
-          graph, packageGraph, assetReader, environment, phases);
+          graph, packageGraph, assetReader, environment, optionalOutputTracker);
       expect(success, isTrue);
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
@@ -94,7 +97,7 @@ main() {
           packageGraph,
           assetReader,
           environment,
-          phases);
+          optionalOutputTracker);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -104,7 +107,7 @@ main() {
     test('removes the provided root from the output path', () async {
       var success = await createMergedOutputDirectories({
         tmpDir.path: 'web',
-      }, graph, packageGraph, assetReader, environment, phases);
+      }, graph, packageGraph, assetReader, environment, optionalOutputTracker);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -118,7 +121,7 @@ main() {
     test('does not output the input directory', () async {
       var success = await createMergedOutputDirectories({
         tmpDir.path: 'web',
-      }, graph, packageGraph, assetReader, environment, phases);
+      }, graph, packageGraph, assetReader, environment, optionalOutputTracker);
       expect(success, isTrue);
 
       expect(new Directory(p.join(tmpDir.path, 'web')).existsSync(), isFalse);
@@ -131,7 +134,7 @@ main() {
           packageGraph,
           assetReader,
           environment,
-          phases);
+          optionalOutputTracker);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -152,7 +155,7 @@ main() {
           packageGraph,
           assetReader,
           environment,
-          phases);
+          optionalOutputTracker);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -182,7 +185,7 @@ main() {
       node.isFailure = false;
 
       var success = await createMergedOutputDirectories({tmpDir.path: null},
-          graph, packageGraph, assetReader, environment, phases);
+          graph, packageGraph, assetReader, environment, optionalOutputTracker);
       expect(success, isTrue);
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
@@ -199,15 +202,25 @@ main() {
       test('fails in non-interactive mode', () async {
         environment =
             new TestBuildEnvironment(reader: assetReader, throwOnPrompt: true);
-        var success = await createMergedOutputDirectories({tmpDir.path: null},
-            graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories(
+            {tmpDir.path: null},
+            graph,
+            packageGraph,
+            assetReader,
+            environment,
+            optionalOutputTracker);
         expect(success, isFalse);
       });
 
       test('can skip creating the directory', () async {
         environment.nextPromptResponse = 0;
-        var success = await createMergedOutputDirectories({tmpDir.path: null},
-            graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories(
+            {tmpDir.path: null},
+            graph,
+            packageGraph,
+            assetReader,
+            environment,
+            optionalOutputTracker);
         expect(success, isFalse,
             reason: 'Skipping creation of the directory should be considered a '
                 'failure.');
@@ -221,8 +234,13 @@ main() {
 
       test('can delete the entire existing directory', () async {
         environment.nextPromptResponse = 1;
-        var success = await createMergedOutputDirectories({tmpDir.path: null},
-            graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories(
+            {tmpDir.path: null},
+            graph,
+            packageGraph,
+            assetReader,
+            environment,
+            optionalOutputTracker);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isFalse);
@@ -231,8 +249,13 @@ main() {
 
       test('can merge into the existing directory', () async {
         environment.nextPromptResponse = 2;
-        var success = await createMergedOutputDirectories({tmpDir.path: null},
-            graph, packageGraph, assetReader, environment, phases);
+        var success = await createMergedOutputDirectories(
+            {tmpDir.path: null},
+            graph,
+            packageGraph,
+            assetReader,
+            environment,
+            optionalOutputTracker);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isTrue,
