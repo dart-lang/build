@@ -12,7 +12,7 @@ import 'common/utils.dart';
 
 void main() {
   setUpAll(() async {
-    // These tests depen on running `test` while a `serve` is ongoing.
+    // These tests depend on running `test` while a `serve` is ongoing.
     await startServer(
         ensureCleanBuild: true, buildArgs: ['--skip-build-script-check']);
   });
