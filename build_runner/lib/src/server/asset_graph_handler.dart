@@ -21,16 +21,20 @@ class AssetGraphHandler {
 
   AssetGraphHandler(this._reader, this._rootPackage, this._assetGraph);
 
-  /// Returns a response with the  `$graph`, or with information about a
-  /// specific node in the graph.
+  /// Returns a response with the information about a specific node in the
+  /// graph.
   ///
-  /// For the path `$graph` returns the HTML page to render the graph.
+  /// For an empty path, returns the HTML page to render the graph.
   ///
-  /// For any other path under `$graph/` will look for the assetNode referenced.
-  /// Path patterns can be:
-  /// - `$graph/packages/<package>/<path_under_lib>`
-  /// - `$graph/<path_under_root_package>`
-  /// - `$graph/<path_under_rootDir>`
+  /// For queries with `q=QUERY` will look for the assetNode referenced.
+  /// QUERY can be an [AssetId] or a path.
+  ///
+  /// [AssetId] as `package|path`
+  ///
+  /// path as:
+  /// - `packages/<package>/<path_under_lib>`
+  /// - `<path_under_root_package>`
+  /// - `<path_under_rootDir>`
   ///
   /// There may be some ambiguity between paths which are under the top-level of
   /// the root package, and those which are under the rootDir. Preference is
@@ -39,27 +43,54 @@ class AssetGraphHandler {
   /// prefer to serve `<package>|web/main.dart`, but if it does not exist will
   /// fall back to `<package>|web/web/main.dart`.
   FutureOr<shelf.Response> handle(shelf.Request request, String rootDir) async {
-    if (request.url.path == r'$graph') {
-      return new shelf.Response.ok(
-          await _reader.readAsString(
-              new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
-          headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+    switch (request.url.path) {
+      case '':
+        if (!request.url.hasQuery) {
+          return new shelf.Response.ok(
+              await _reader.readAsString(
+                  new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
+              headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+        }
+
+        var query = request.url.queryParameters['q']?.trim();
+        if (query != null && query.isNotEmpty) {
+          return _handleQuery(query, rootDir);
+        }
+        break;
+      case 'assets.json':
+        return _jsonResponse(_assetGraph.serialize());
     }
-    if (request.url.path == r'$graph/assets.json') {
-      var jsonContent = utf8.decode(_assetGraph.serialize());
-      return new shelf.Response.ok(jsonContent,
-          headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
-    }
-    var assetId = pathToAssetId(
-        _rootPackage,
-        request.url.pathSegments.skip(1).first,
-        request.url.pathSegments.skip(2).toList());
-    if (!_assetGraph.contains(assetId)) {
+
+    return new shelf.Response.notFound('Bad request: "${request.url}".');
+  }
+
+  Future<shelf.Response> _handleQuery(String query, String rootDir) async {
+    var pipeIndex = query.indexOf('|');
+
+    AssetId assetId;
+    if (pipeIndex < 0) {
+      var querySplit = query.split('/');
+
       assetId = pathToAssetId(
-          _rootPackage, rootDir, request.url.pathSegments.skip(1).toList());
-    }
-    if (!_assetGraph.contains(assetId)) {
-      return new shelf.Response.notFound('$assetId not present in build graph');
+          _rootPackage, querySplit.first, querySplit.skip(1).toList());
+
+      if (!_assetGraph.contains(assetId)) {
+        var secondTry = pathToAssetId(_rootPackage, rootDir, querySplit);
+
+        if (!_assetGraph.contains(secondTry)) {
+          return new shelf.Response.notFound(
+              'Could not find asset for path "$query". Tried:\n'
+              '- $assetId\n'
+              '- $secondTry');
+        }
+        assetId = secondTry;
+      }
+    } else {
+      assetId = new AssetId.parse(query);
+      if (!_assetGraph.contains(assetId)) {
+        return new shelf.Response.notFound(
+            'Could not find asset in build graph: $assetId');
+      }
     }
     var node = _assetGraph.get(assetId);
     var currentEdge = 0;
@@ -95,7 +126,11 @@ class AssetGraphHandler {
       'edges': edges,
       'nodes': nodes,
     };
-    return new shelf.Response.ok(json.encode(result),
-        headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
+    return _jsonResponse(_jsonUtf8Encoder.convert(result));
   }
 }
+
+final _jsonUtf8Encoder = new JsonUtf8Encoder();
+
+shelf.Response _jsonResponse(List<int> body) => new shelf.Response.ok(body,
+    headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});

@@ -257,6 +257,9 @@ void main() {
           var changes = {primaryInputId: ChangeType.MODIFY};
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
+          // pretend a build happened
+          (graph.get(primaryOutputId) as GeneratedAssetNode).state =
+              GeneratedNodeState.upToDate;
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
@@ -439,6 +442,44 @@ void main() {
               makeAssetId('foo|lib/1.txt.1'),
               makeAssetId('foo|lib/1.txt.1.2')
             ]));
+      });
+
+      test(
+          'invalidates generated outputs which read a non-existing asset '
+          'that gets replaced with a generated output', () async {
+        final nodeToRead = makeAssetId('foo|lib/a.1');
+        final outputReadingNode = makeAssetId('foo|lib/b.2');
+        final buildPhases = [
+          new InBuildPhase(
+              new TestBuilder(buildExtensions: replaceExtension('.txt', '.1')),
+              'foo'),
+          new InBuildPhase(
+              new TestBuilder(
+                  buildExtensions: replaceExtension('.anchor', '.2')),
+              'foo'),
+        ];
+        final graph = await AssetGraph.build(
+            buildPhases,
+            [makeAssetId('foo|lib/b.anchor')].toSet(),
+            new Set<AssetId>(),
+            fooPackageGraph,
+            digestReader);
+
+        // Pretend a build happened
+        graph.add(new SyntheticSourceAssetNode(nodeToRead)
+          ..outputs.add(outputReadingNode));
+        (graph.get(outputReadingNode) as GeneratedAssetNode)
+          ..state = GeneratedNodeState.upToDate
+          ..inputs.add(nodeToRead);
+
+        final invalidatedNodes = await graph.updateAndInvalidate(
+            buildPhases,
+            {makeAssetId('foo|lib/a.txt'): ChangeType.ADD},
+            'foo',
+            (_) async {},
+            digestReader);
+
+        expect(invalidatedNodes, contains(outputReadingNode));
       });
     });
   });

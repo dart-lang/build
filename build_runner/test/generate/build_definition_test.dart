@@ -162,6 +162,10 @@ main() {
             aPackageGraph,
             environment.reader);
 
+        // pretend a build happened
+        (originalAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
+                as GeneratedAssetNode)
+            .state = GeneratedNodeState.upToDate;
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
