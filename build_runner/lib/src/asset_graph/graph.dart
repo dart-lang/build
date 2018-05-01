@@ -191,6 +191,7 @@ class AssetGraph {
       var builderOptionsNode = get(node.builderOptionsId);
       builderOptionsNode.outputs.remove(id);
     }
+    // Synthetic nodes need to be kept to retain dependency tracking.
     if (node is! SyntheticSourceAssetNode) {
       _nodesByPackage[id.package].remove(id.path);
     }
@@ -290,7 +291,8 @@ class AssetGraph {
         _addOutputsForSources(buildPhases, newIds, rootPackage)
           ..addAll(transitiveRemovedIds);
 
-    // Transitively invalidates all assets.
+    // Transitively invalidates all assets. This needs to happen after the
+    // structure of the graph has been updated.
     var invalidatedIds = new Set<AssetId>();
     void invalidateNodeAndDeps(AssetId id) {
       var node = get(id);
