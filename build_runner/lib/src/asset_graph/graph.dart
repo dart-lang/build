@@ -234,7 +234,6 @@ class AssetGraph {
       String rootPackage,
       Future delete(AssetId id),
       AssetReader digestReader) async {
-
     var newIds = new Set<AssetId>();
     var modifyIds = new Set<AssetId>();
     var removeIds = new Set<AssetId>();
