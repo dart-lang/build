@@ -276,7 +276,7 @@ void _deleteUp(String from, String to) {
   var directoryPath = from;
   while (p.isWithin(to, directoryPath)) {
     var directory = new Directory(directoryPath);
-    if (directory.listSync().isNotEmpty) return;
+    if (!directory.existsSync() || directory.listSync().isNotEmpty) return;
     directory.deleteSync();
     directoryPath = p.dirname(directoryPath);
   }
