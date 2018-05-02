@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
@@ -68,8 +69,11 @@ class ImportOptimizer{
          print(output);
 
          if (_applyImports) {
-           _replaceImportsInFile(inputId.path, output, lib.unit.directives.beginToken.charOffset,
-               lib.unit.directives.endToken.charOffset);
+           final firstImport = lib.unit.directives.firstWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
+           final lastImport = lib.unit.directives.lastWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
+
+           _replaceImportsInFile(inputId.path, output, firstImport.beginToken.charOffset,
+               lastImport.endToken.charOffset);
          }
        }
      } catch(e,st){
