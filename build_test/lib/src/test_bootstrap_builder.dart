@@ -3,79 +3,60 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_barback/build_barback.dart';
-import 'package:test/pub_serve.dart';
+import 'package:path/path.dart' as p;
 
-/// A [Builder] that bootstraps dart tests.
-class TestBootstrapBuilder extends TransformerBuilder {
-  TestBootstrapBuilder()
-      : super(new PubServeTransformer.asPlugin(), {
-          '_test.dart': [
-            '_test.dart.vm_test.dart',
-            '_test.dart.browser_test.dart',
-            '_test.dart.node_test.dart',
-          ]
-        });
+/// A [Builder] that injects bootstrapping code used by the test runner to run
+/// tests in --precompiled mode.
+///
+/// This doesn't modify existing code at all, it just adds wrapper files that
+/// can be used to load isolates or iframes.
+class TestBootstrapBuilder extends Builder {
+  @override
+  final buildExtensions = const {
+    '_test.dart': const [
+      '_test.dart.vm_test.dart',
+      '_test.dart.browser_test.dart',
+      '_test.dart.node_test.dart',
+    ]
+  };
+  TestBootstrapBuilder();
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    if (!buildStep.inputId.path.endsWith('_test.dart')) return;
-    await super.build(new _WrappedBuildStep(buildStep));
+    var id = buildStep.inputId;
+
+    await buildStep.writeAsString(id.addExtension('.vm_test.dart'), '''
+          import "dart:isolate";
+
+          import "package:test/bootstrap/vm.dart";
+
+          import "${p.url.basename(id.path)}" as test;
+
+          void main(_, SendPort message) {
+            internalBootstrapVmTest(() => test.main, message);
+          }
+        ''');
+
+    await buildStep.writeAsString(id.addExtension('.browser_test.dart'), '''
+          import "package:test/bootstrap/browser.dart";
+
+          import "${p.url.basename(id.path)}" as test;
+
+          void main() {
+            internalBootstrapBrowserTest(() => test.main);
+          }
+        ''');
+
+    await buildStep.writeAsString(id.addExtension('.node_test.dart'), '''
+          import "package:test/bootstrap/node.dart";
+
+          import "${p.url.basename(id.path)}" as test;
+
+          void main() {
+            internalBootstrapNodeTest(() => test.main);
+          }
+        ''');
   }
-}
-
-/// Wraps a [BuildStep] and skips all writes for html files.
-///
-/// TODO: Remove this after https://github.com/dart-lang/build/issues/508
-class _WrappedBuildStep implements BuildStep {
-  final BuildStep _delegate;
-
-  _WrappedBuildStep(this._delegate);
-
-  @override
-  get inputId => _delegate.inputId;
-
-  @override
-  get inputLibrary => _delegate.inputLibrary;
-
-  @override
-  fetchResource<T>(_) =>
-      throw new UnimplementedError('fetchResource not implemented');
-
-  /// Forwards everything except html file writes.
-  @override
-  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
-    if (id.path.endsWith('html')) return new Future.value(null);
-    return _delegate.writeAsBytes(id, bytes);
-  }
-
-  /// Forwards everything except html file writes.
-  @override
-  Future writeAsString(AssetId id, FutureOr<String> contents,
-      {Encoding encoding: utf8}) {
-    if (id.path.endsWith('html')) return new Future.value(null);
-    return _delegate.writeAsString(id, contents, encoding: encoding);
-  }
-
-  @override
-  get resolver => _delegate.resolver;
-
-  @override
-  readAsBytes(_) => _delegate.readAsBytes(_);
-
-  @override
-  readAsString(_, {Encoding encoding: utf8}) =>
-      _delegate.readAsString(_, encoding: encoding);
-
-  @override
-  canRead(_) => _delegate.canRead(_);
-
-  @override
-  findAssets(_) => _delegate.findAssets(_);
-
-  @override
-  digest(_) => _delegate.digest(_);
 }
