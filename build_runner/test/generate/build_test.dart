@@ -638,26 +638,6 @@ void main() {
       }, status: BuildStatus.failure);
     });
 
-    test('won\'t try to delete files from other packages', () async {
-      final packageGraph = buildPackageGraph({
-        rootPackage('a', path: 'a/'): ['b'],
-        package('b', path: 'a/b'): []
-      });
-      var writer = new InMemoryRunnerAssetWriter()
-        ..onDelete = (AssetId assetId) {
-          if (assetId.package != 'a') {
-            throw 'Should not delete outside of package:a';
-          }
-        };
-      await testBuilders([applyToRoot(new TestBuilder())],
-          {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b', 'b|lib/b.txt.copy': 'b'},
-          packageGraph: packageGraph,
-          writer: writer,
-          outputs: {
-            'a|lib/a.txt.copy': 'a',
-          });
-    });
-
     test('Overdeclared outputs are not treated as inputs to later steps',
         () async {
       var builders = [
