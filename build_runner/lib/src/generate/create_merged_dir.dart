@@ -254,8 +254,19 @@ Future<bool> _cleanUpOutputDir(
       for (var path in previousOutputs) {
         var file = new File(p.join(outputPath, path));
         if (file.existsSync()) file.deleteSync();
+        _cleanParentDirectories(outputPath, file.path);
       }
     });
   }
   return true;
+}
+
+void _cleanParentDirectories(String outputPath, String filePath) {
+  var directoryPath = p.dirname(filePath);
+  while (p.isWithin(outputPath, directoryPath)) {
+    var directory = new Directory(directoryPath);
+    if (directory.listSync().isNotEmpty) return;
+    directory.deleteSync();
+    directoryPath = p.dirname(directoryPath);
+  }
 }
