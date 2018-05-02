@@ -96,5 +96,17 @@ void main() {
       final nextBuild = await runBuild(trailingArgs: ['--fail-on-severe']);
       expect(nextBuild.exitCode, 0);
     });
+
+    test(
+        'Restores previously deleted outputs if they are not deleted in subsequent builds',
+        () async {
+      final dartSource =
+          new File(p.join('build', 'web', 'packages', '_test', 'app.dart'));
+      await runBuild(trailingArgs: ['--release', '--output', 'build']);
+      expect(dartSource.existsSync(), false);
+
+      await runBuild(trailingArgs: ['--output', 'build']);
+      expect(dartSource.existsSync(), true);
+    });
   });
 }

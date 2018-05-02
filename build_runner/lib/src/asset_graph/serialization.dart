@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 20;
+const _version = 21;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -144,8 +144,8 @@ class _AssetGraphDeserializer {
         serializedNode[_AssetField.Outputs.index] as List<int>));
     node.primaryOutputs.addAll(_deserializeAssetIds(
         serializedNode[_AssetField.PrimaryOutputs.index] as List<int>));
-    node.isDeleted =
-        _deserializeBool(serializedNode[_AssetField.IsDeleted.index] as int);
+    node.deletedBy.addAll(_deserializeAssetIds(
+        (serializedNode[_AssetField.DeletedBy.index] as List)?.cast<int>()));
     return node;
   }
 
@@ -217,7 +217,7 @@ enum _AssetField {
   Outputs,
   PrimaryOutputs,
   Digest,
-  IsDeleted,
+  DeletedBy,
 }
 
 /// Field indexes for [GeneratedAssetNode]s
@@ -293,8 +293,10 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .toList(growable: false);
       case _AssetField.Digest:
         return _serializeDigest(node.lastKnownDigest);
-      case _AssetField.IsDeleted:
-        return _serializeBool(node.isDeleted);
+      case _AssetField.DeletedBy:
+        return node.deletedBy
+            .map((id) => serializer._assetIdToId[id])
+            .toList(growable: false);
       default:
         throw new RangeError.index(index, this);
     }
