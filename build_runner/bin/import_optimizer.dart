@@ -26,9 +26,9 @@ Future<Null> main(List<String> args) async {
   if (args.isEmpty) {
 //    print(
 //        'Demo run: dart ./bin/import_optimizer.dart "build_runner|lib/src/entrypoint/options.dart" "build_runner|lib/src/asset_graph/graph.dart"');
-   print('dart ./bin/import_optimizer.dart "build_runner"');
+   print('dart ./bin/import_optimizer.dart "build_runner" [apply]');
   }
-  new ImportOptimizer().optimizePackage(args[0]);
+  new ImportOptimizer().optimizePackage(args[0], applyImports: args.length > 1 && args[1].toLowerCase() == 'apply');
 //  new ImportOptimizer().optimizeFiles(args);
 //  new ImportOptimizer().optimizeFiles(['build_runner|lib/src/server/asset_graph_handler.dart']);
 //  ArgResults parsedArgs;

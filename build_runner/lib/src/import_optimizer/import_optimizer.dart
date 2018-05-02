@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
@@ -20,9 +22,11 @@ class ImportOptimizer{
   final _resourceManager = new ResourceManager();
   final WorkResult _workResult = new WorkResult();
   CachingAssetReader _reader;
+  bool _applyImports;
 
-  optimizePackage(String package) async {
+  optimizePackage(String package, {bool applyImports}) async {
     _log.info("Optimization package: '$package'");
+    _applyImports = applyImports;
     var assets = (await io.reader.findAssets(new Glob('lib/**.dart'), package: package).toList()).map((item)=>item.toString()).toList();
     optimizeFiles(assets);
   }
@@ -60,11 +64,32 @@ class ImportOptimizer{
        var optLibraries = await _optimizationImport(inputId, libraries, resolver);
        var output = _generateImportText(inputId, lib, optLibraries);
        if (output.isNotEmpty) {
+         final stat = _workResult.statistics[inputId];
+         print('// FileName: "$inputId" old: ${stat.sourceNode} -> new: ${stat.optNode}');
          print(output);
+
+         if (_applyImports) {
+           final firstImport = lib.unit.directives.firstWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
+           final lastImport = lib.unit.directives.lastWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
+
+           _replaceImportsInFile(inputId.path, output, firstImport.beginToken.charOffset,
+               lastImport.endToken.charOffset);
+         }
        }
      } catch(e,st){
        _log.fine("Skip '$inputId'", e, st);
      }
+   }
+
+   void _replaceImportsInFile(String filename, String newImports, int fromOffset, int toOffset) {
+     final fullname = path.join('.', filename);
+     final str = new File(fullname).readAsStringSync();
+     final res = new StringBuffer();
+     res.write(str.substring(0, fromOffset));
+     res.writeln(newImports);
+     res.write(str.substring(toOffset+1).trimLeft());
+     new File(fullname).writeAsStringSync(res.toString());
+     _log.info("File '$fullname' patched!");
    }
 
    int _getNodeCount(Iterable<LibraryElement> libImports) {
@@ -106,14 +131,14 @@ class ImportOptimizer{
     var optNodeCount = _getNodeCount(libraries);
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
     if (sourceNodeCount > optNodeCount) {
-      sb.writeln('// FileName: "$inputId" old: $sourceNodeCount -> new: $optNodeCount');
-
       final directives = <_DirectiveInfo>[];
       for (final library in libraries) {
         final source = library.source;
         final importUrl = (source is AssetBasedSource)
             ? 'package:${source.assetId.package}${source.assetId.path.substring(3)}'
             : source.uri.toString();
+
+        if (importUrl == 'dart:core') continue;
 
         final priority = getDirectivePriority(importUrl);
         directives
@@ -238,6 +263,12 @@ class ImportOptimizer{
 
 }
 
+class AssetStatistic {
+  int sourceNode;
+  int optNode;
+  AssetStatistic(this.sourceNode, this.optNode);
+}
+
 class WorkResult {
   AssetId _topFile;
   int _topNodeFile = 0;
@@ -246,6 +277,7 @@ class WorkResult {
   int _sourceNodesTotal = 0;
   int _optNodesTotal = 0;
   int _fileCount = 0;
+  final Map<AssetId, AssetStatistic> _statistics = <AssetId, AssetStatistic>{};
 
   int get fileCount => _fileCount;
 
@@ -261,7 +293,10 @@ class WorkResult {
 
   int get optNodesTotal => _optNodesTotal;
 
+  Map<AssetId, AssetStatistic> get statistics => _statistics;
+
   void addStatisticFile(AssetId file, int sourceNode, int optNode) {
+    _statistics[file] = new AssetStatistic(sourceNode, optNode);
     _fileCount++;
     _sourceNodesTotal += sourceNode;
     _optNodesTotal += optNode;
