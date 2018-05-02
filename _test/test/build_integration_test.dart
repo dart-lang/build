@@ -102,7 +102,11 @@ void main() {
         () async {
       final dartSource =
           new File(p.join('build', 'web', 'packages', '_test', 'app.dart'));
-      await runBuild(trailingArgs: ['--release', '--output', 'build']);
+      await runBuild(trailingArgs: [
+        '--define=build_web_compilers|dart_source_cleanup=enabled=true',
+        '--output',
+        'build'
+      ]);
       expect(dartSource.existsSync(), false);
 
       await runBuild(trailingArgs: ['--output', 'build']);
