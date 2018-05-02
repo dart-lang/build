@@ -254,16 +254,27 @@ Future<bool> _cleanUpOutputDir(
       for (var path in previousOutputs) {
         var file = new File(p.join(outputPath, path));
         if (file.existsSync()) file.deleteSync();
-        _cleanParentDirectories(outputPath, file.path);
       }
+      _cleanEmptyDirectories(outputPath, previousOutputs);
     });
   }
   return true;
 }
 
-void _cleanParentDirectories(String outputPath, String filePath) {
-  var directoryPath = p.dirname(filePath);
-  while (p.isWithin(outputPath, directoryPath)) {
+/// Deletes all the directories which used to contain any path in
+/// [removedFilePaths] if that directory is now empty.
+void _cleanEmptyDirectories(
+    String outputPath, Iterable<String> removedFilePaths) {
+  for (var directory in removedFilePaths.map(p.dirname).toSet()) {
+    _deleteUp(directory, outputPath);
+  }
+}
+
+/// Deletes the directory at [from] and and any parent directories which are
+/// subdirectories of [to] if they are empty.
+void _deleteUp(String from, String to) {
+  var directoryPath = from;
+  while (p.isWithin(to, directoryPath)) {
     var directory = new Directory(directoryPath);
     if (directory.listSync().isNotEmpty) return;
     directory.deleteSync();
