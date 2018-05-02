@@ -1,3 +1,8 @@
+## 0.10.2+3
+
+- Remove package:build_barback dependency, and use public apis from package:test
+  to directly do the bootstrapping instead of wrapping the transformer.
+
 ## 0.10.2+2
 
 - Avoid looking for files from `Uri.path` paths.
@@ -87,7 +92,7 @@ test('multiple assets, some mock, some on disk', () async {
   expect(type, isNotNull);
   expect(type.supertype.name, 'Example');
 });
-```  
+```
 
 ## 0.9.2
 
@@ -103,7 +108,7 @@ test('multiple assets, some mock, some on disk', () async {
 
 - Added the `TestBootstrapBuilder` under the `builder.dart` library. This can
   be used to bootstrap tests similar to the `test/pub_serve` Transformer.
-  - **Known Issue**: Custom html files are not supported.  
+  - **Known Issue**: Custom html files are not supported.
 - **Breaking**: All `AssetReader#findAssets` implementations now return a
   `Stream<AssetId>` to match the latest `build` package.
 - **Breaking**: The `DatedValue`, `DatedString`, and `DatedBytes` apis are now
@@ -126,7 +131,7 @@ test('multiple assets, some mock, some on disk', () async {
 - `InMemoryAssetReader`, `MultiAssetReader`, `StubAssetReader` and
   `PackageAssetReader` now implement the `MultiPackageAssetReader` interface.
 - `testBuilder` now supports `Builder`s that call `findAssets` in non-root
-  packages. 
+  packages.
 - Added a `GlobbingBuilder` which globs files in a package.
 - Added the `RecordingAssetReader` interface, which adds the
   `Iterable<AssetId> get assetsRead` getter.
