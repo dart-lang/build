@@ -22,7 +22,7 @@ void main() {
 
       notDeleted = makeAssetNode('a|web/a.txt', [], computeDigest('a'));
       deleted = makeAssetNode('a|lib/b.txt', [], computeDigest('b'));
-      deleted.isDeleted = true;
+      deleted.deletedBy.add(deleted.id.addExtension('.post_anchor.1'));
 
       graph.add(notDeleted);
       graph.add(deleted);

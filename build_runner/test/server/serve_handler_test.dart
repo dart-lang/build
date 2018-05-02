@@ -41,7 +41,9 @@ void main() {
 
   void _addSource(String id, String content, {bool deleted: false}) {
     var node = makeAssetNode(id, [], computeDigest('a'));
-    node.isDeleted = deleted;
+    if (deleted) {
+      node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+    }
     assetGraph.add(node);
     reader.cacheStringAsset(node.id, content);
   }

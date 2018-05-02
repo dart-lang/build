@@ -30,7 +30,9 @@ void main() {
 
   void _addAsset(String id, String content, {bool deleted: false}) {
     var node = makeAssetNode(id, [], computeDigest('a'));
-    node.isDeleted = deleted;
+    if (deleted) {
+      node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+    }
     graph.add(node);
     delegate.cacheStringAsset(node.id, content);
   }

@@ -80,7 +80,7 @@ main() {
     test('doesnt write deleted files', () async {
       var node =
           graph.get(new AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
-      node.isDeleted = true;
+      node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
 
       var success = await createMergedOutputDirectories({tmpDir.path: null},
           graph, packageGraph, assetReader, environment, optionalOutputTracker);
