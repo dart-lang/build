@@ -42,10 +42,14 @@ abstract class AssetNode {
   /// at this moment in time.
   bool get isReadable => true;
 
+  /// The IDs of the [PostProcessAnchorNode] for post process builder which
+  /// requested to delete this asset.
+  final Set<AssetId> deletedBy = new Set<AssetId>();
+
   /// Whether the node is deleted.
   ///
   /// Deleted nodes are ignored in the final merge step and watch handlers.
-  bool isDeleted = false;
+  bool get isDeleted => deletedBy.isNotEmpty;
 
   /// Whether or not this node can be used as a primary input.
   ///

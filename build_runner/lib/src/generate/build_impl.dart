@@ -537,6 +537,7 @@ class _SingleBuild {
     // Remove old nodes from the graph and clear `outputs`.
     anchorNode.outputs.toList().forEach(_assetGraph.remove);
     anchorNode.outputs.clear();
+    inputNode.deletedBy.remove(anchorNode.id);
 
     var wrappedWriter = new AssetWriterSpy(_writer);
     var actionDescription = '$builder on $input';
@@ -568,7 +569,11 @@ class _SingleBuild {
       if (!_assetGraph.contains(assetId)) {
         throw new AssetNotFoundException(assetId);
       }
-      _assetGraph.get(assetId).isDeleted = true;
+      if (assetId != input) {
+        throw new InvalidOutputException(
+            assetId, 'Can only delete primary input');
+      }
+      _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
     }).catchError((_) => errorThrown = true);
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
