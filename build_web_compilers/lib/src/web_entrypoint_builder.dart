@@ -53,7 +53,7 @@ class WebEntrypointBuilder implements Builder {
       {this.dart2JsArgs: const [],
       this.useKernel: false,
       this.buildRootAppSummary: false,
-      this.ignoreCastFailures: true,
+      this.ignoreCastFailures: false,
       this.enableSyncAsync: enableSyncAsyncDefault});
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
@@ -63,7 +63,7 @@ class WebEntrypointBuilder implements Builder {
     var buildRootAppSummary =
         options.config[_buildRootAppSummary] as bool ?? false;
     var ignoreCastFailures =
-        options.config[_ignoreCastFailures] as bool ?? true;
+        options.config[_ignoreCastFailures] as bool ?? false;
     WebCompiler compiler;
     switch (compilerOption) {
       case 'dartdevc':
