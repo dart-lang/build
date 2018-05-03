@@ -20,7 +20,6 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../generate/build.dart';
 import '../generate/build_result.dart';
-import '../generate/options.dart' show defaultRootPackageWhitelist;
 import '../logging/logging.dart';
 import '../logging/std_io_logging.dart';
 import '../package_graph/apply_builders.dart';
