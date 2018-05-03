@@ -194,9 +194,12 @@ main() {
 
     group('existing output dir handling', () {
       File garbageFile;
+      Directory emptyDirectory;
       setUp(() {
         garbageFile = new File(p.join(tmpDir.path, 'garbage_file.txt'));
         garbageFile.createSync();
+        emptyDirectory = new Directory(p.join(tmpDir.path, 'empty_directory'));
+        emptyDirectory.createSync();
       });
 
       test('fails in non-interactive mode', () async {
@@ -260,7 +263,39 @@ main() {
 
         expect(garbageFile.existsSync(), isTrue,
             reason: 'Existing files should be left alone.');
+        expect(emptyDirectory.existsSync(), isTrue,
+            reason: 'Does not remove existing empty directories.');
         _expectAllFiles(tmpDir);
+      });
+    });
+
+    group('Empty directory cleanup', () {
+      test('removes directories that become empty', () async {
+        var success = await createMergedOutputDirectories(
+            {tmpDir.path: null},
+            graph,
+            packageGraph,
+            assetReader,
+            environment,
+            optionalOutputTracker);
+        expect(success, isTrue);
+        final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
+        for (var remove in removes) {
+          graph
+              .get(makeAssetId(remove))
+              .deletedBy
+              .add(makeAssetId(remove).addExtension('.post_anchor.1'));
+        }
+        success = await createMergedOutputDirectories(
+            {tmpDir.path: null},
+            graph,
+            packageGraph,
+            assetReader,
+            environment,
+            optionalOutputTracker);
+        expect(success, isTrue);
+        var packageADir = p.join(tmpDir.path, 'packages', 'a');
+        expect(new Directory(packageADir).existsSync(), isFalse);
       });
     });
   });

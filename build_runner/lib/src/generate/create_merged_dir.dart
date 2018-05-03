@@ -265,7 +265,9 @@ Future<bool> _cleanUpOutputDir(
 /// [removedFilePaths] if that directory is now empty.
 void _cleanEmptyDirectories(
     String outputPath, Iterable<String> removedFilePaths) {
-  for (var directory in removedFilePaths.map(p.dirname).toSet()) {
+  for (var directory in removedFilePaths
+      .map((path) => p.join(outputPath, p.dirname(path)))
+      .toSet()) {
     _deleteUp(directory, outputPath);
   }
 }
