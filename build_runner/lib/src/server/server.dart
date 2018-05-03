@@ -35,7 +35,7 @@ Future<ServeHandler> createServeHandler(WatchImpl watch) async {
 }
 
 class ServeHandler implements BuildState {
-  final BuildState _state;
+  final WatchImpl _state;
   BuildResult _lastBuildResult;
   final AssetReader _reader;
   final String _rootPackage;
@@ -61,6 +61,7 @@ class ServeHandler implements BuildState {
       throw new ArgumentError.value(
           rootDir, 'rootDir', 'Only top level directories are supported');
     }
+    _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = new shelf.Cascade()
         .add(_blockOnCurrentBuild)
         .add((shelf.Request request) {
@@ -94,6 +95,17 @@ class ServeHandler implements BuildState {
     return new shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
         headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+  }
+
+  void _warnForEmptyDirectory(String rootDir) {
+    if (_state.assetGraph
+        .packageNodes(_rootPackage)
+        .where((n) => n.id.path.startsWith('$rootDir/'))
+        .isEmpty) {
+      _logger.warning('Requested a server for `$rootDir` but this directory '
+          'has no assets in the build. You may need to add some sources or '
+          'include this directory in some target in your `build.yaml`');
+    }
   }
 }
 
