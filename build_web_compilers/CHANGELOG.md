@@ -2,6 +2,8 @@
 
 - Changed the default for `enable_sync_async` to `true` for the
   `build_web_compilers|entrypoint` builder.
+- Changed the default for `ignore_cast_failures` to `false` for the
+  `build_web_compilers|entrypoint` builder.
 
 ## 0.3.8
 
