@@ -98,10 +98,9 @@ class ServeHandler implements BuildState {
   }
 
   void _warnForEmptyDirectory(String rootDir) {
-    if (_state.assetGraph
+    if (!_state.assetGraph
         .packageNodes(_rootPackage)
-        .where((n) => n.id.path.startsWith('$rootDir/'))
-        .isEmpty) {
+        .any((n) => n.id.path.startsWith('$rootDir/'))) {
       _logger.warning('Requested a server for `$rootDir` but this directory '
           'has no assets in the build. You may need to add some sources or '
           'include this directory in some target in your `build.yaml`');
