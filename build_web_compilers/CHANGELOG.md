@@ -1,3 +1,8 @@
+## 0.4.0
+
+- Changed the default for `enable_sync_async` to `true` for the
+  `build_web_compilers|entrypoint` builder.
+
 ## 0.3.8
 
 - Remove `.dart` sources and `.js.map` files from the output directory in
@@ -6,7 +11,8 @@
 - Don't output extra `Dart2Js` outputs other than deferred part files.
 - Fixed a logical error in `dartdevc` compiler to detect correct base url for
   require js.
-- Added a `dartdevc_enable_sync_async` option.
+- Added a `enable_sync_async` option to the `build_web_compilers|entrypoint`
+  builder, which defaults to `false`.
 
 ## 0.3.7+3
 
