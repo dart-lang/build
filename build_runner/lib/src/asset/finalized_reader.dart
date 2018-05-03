@@ -6,20 +6,21 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+
+import '../asset_graph/graph.dart';
+import '../asset_graph/node.dart';
+import '../asset_graph/optional_output_tracker.dart';
 
 /// An [AssetReader] which ignores deleted files.
 class FinalizedReader implements AssetReader {
   final AssetReader _delegate;
   final AssetGraph _assetGraph;
+  final OptionalOutputTracker _optionalOutputTracker;
 
   FinalizedReader(
-    this._delegate,
-    this._assetGraph,
-  );
+      this._delegate, this._assetGraph, this._optionalOutputTracker);
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason> unreadableReason(AssetId id) async {
@@ -29,7 +30,9 @@ class FinalizedReader implements AssetReader {
     if (!node.isReadable) return UnreadableReason.assetType;
     if (node is GeneratedAssetNode) {
       if (node.isFailure) return UnreadableReason.failed;
-      if (!node.wasOutput) return UnreadableReason.notOutput;
+      if (!(node.wasOutput && _optionalOutputTracker.isRequired(node.id))) {
+        return UnreadableReason.notOutput;
+      }
     }
     if (await _delegate.canRead(id)) return null;
     return UnreadableReason.unknown;

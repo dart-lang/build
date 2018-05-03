@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner/src/server/server.dart';
 
 import '../common/common.dart';
@@ -24,7 +25,8 @@ void main() {
     graph = await AssetGraph.build([], new Set(), new Set(),
         buildPackageGraph({rootPackage('foo'): []}), null);
     delegate = new InMemoryRunnerAssetReader();
-    reader = new FinalizedReader(delegate, graph);
+    reader = new FinalizedReader(
+        delegate, graph, new OptionalOutputTracker(graph, []));
     handler = new AssetHandler(reader, 'a');
   });
 

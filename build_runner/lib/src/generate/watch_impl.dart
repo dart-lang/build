@@ -19,6 +19,7 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../asset_graph/optional_output_tracker.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
@@ -281,8 +282,10 @@ class WatchImpl implements BuildState {
           true,
           packageGraph.root.name,
           null);
-      var finalizedReader =
-          new FinalizedReader(singleStepReader, _buildDefinition.assetGraph);
+      var finalizedReader = new FinalizedReader(
+          singleStepReader,
+          _buildDefinition.assetGraph,
+          new OptionalOutputTracker(_buildDefinition.assetGraph, buildPhases));
       _readerCompleter.complete(finalizedReader);
       _assetGraph = _buildDefinition.assetGraph;
       build = await BuildImpl.create(_buildDefinition, options, buildPhases,
