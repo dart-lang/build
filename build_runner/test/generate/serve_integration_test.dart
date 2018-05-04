@@ -128,7 +128,7 @@ main(List<String> args) async {
       while (await out.hasNext) {
         if ((await out.next).contains(message)) return;
       }
-      throw 'Did no emit a "Serving" line';
+      throw 'Did not emit line containing [$message]';
     }
 
     Future<void> expect404(String path) async {
