@@ -13,6 +13,7 @@ import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
@@ -33,7 +34,10 @@ void main() {
     assetGraph =
         await AssetGraph.build([], new Set(), new Set(), packageGraph, reader);
     watchImpl = new MockWatchImpl(
-        new FinalizedReader(reader, assetGraph), packageGraph, assetGraph);
+        new FinalizedReader(
+            reader, assetGraph, new OptionalOutputTracker(assetGraph, [])),
+        packageGraph,
+        assetGraph);
     serveHandler = await createServeHandler(watchImpl);
     watchImpl.addFutureResult(
         new Future.value(new BuildResult(BuildStatus.success, [])));
