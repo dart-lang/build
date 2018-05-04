@@ -188,9 +188,12 @@ class WatchImpl implements BuildState {
     // the end of this function. It must be non-null before `doBuild` is
     // invoked.
     BuildImpl build;
+    OptionalOutputTracker optionalOutputTracker;
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(build != null);
+      assert(optionalOutputTracker != null);
+      optionalOutputTracker.reset();
       _logger.info('${'-'*72}\n');
       _logger.info('Starting Build\n');
       var mergedChanges = _collectChanges(changes);
@@ -282,10 +285,10 @@ class WatchImpl implements BuildState {
           true,
           packageGraph.root.name,
           null);
+      optionalOutputTracker =
+          new OptionalOutputTracker(_buildDefinition.assetGraph, buildPhases);
       var finalizedReader = new FinalizedReader(
-          singleStepReader,
-          _buildDefinition.assetGraph,
-          new OptionalOutputTracker(_buildDefinition.assetGraph, buildPhases));
+          singleStepReader, _buildDefinition.assetGraph, optionalOutputTracker);
       _readerCompleter.complete(finalizedReader);
       _assetGraph = _buildDefinition.assetGraph;
       build = await BuildImpl.create(_buildDefinition, options, buildPhases,

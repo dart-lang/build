@@ -54,4 +54,12 @@ class OptionalOutputTracker {
                 .map((n) => n.id)
                 .any((o) => isRequired(o, currentlyChecking)));
   }
+
+  /// Clears the cache of which assets were required.
+  ///
+  /// If the tracker is used across multiple builds it must be reset in between
+  /// each one.
+  void reset() {
+    _checkedOutputs.clear();
+  }
 }

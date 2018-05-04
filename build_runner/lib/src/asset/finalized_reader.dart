@@ -39,11 +39,8 @@ class FinalizedReader implements AssetReader {
   }
 
   @override
-  Future<bool> canRead(AssetId id) async {
-    if (_assetGraph.get(id)?.isDeleted ?? true) return false;
-    if (!await _delegate.canRead(id)) return false;
-    return true;
-  }
+  Future<bool> canRead(AssetId id) async =>
+      (await unreadableReason(id)) == null;
 
   @override
   Future<Digest> digest(AssetId id) => _delegate.digest(id);
