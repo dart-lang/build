@@ -28,8 +28,8 @@ class TestBuilderDefinition {
 /// `build.yaml`.
 ///
 /// [key] must match the top level variable name of [builder]. It must exist in
-/// the invoking script between the last `import` and `main()`. The builder
-/// should only use references to `package:build_test/build_test.dart`.
+/// the invoking script between the `test-package-start/end` comments. The
+/// builder should only use references to `package:build_test/build_test.dart`.
 ///
 /// [requiredInputs] only has effect when using this builder with
 /// [packageWithBuilders]. In the [packageWithBuildScript] use case the ordering
@@ -41,7 +41,7 @@ TestBuilderDefinition builder(String key, Builder builder,
 /// Create a package in [d.sandbox] with a `buid.yaml` file exporting [builders]
 /// and auto applying them to dependents.
 ///
-/// The content in between the last `import` and the `main()` of the script that
+/// The content in between `test-package-start/end` comments of the script that
 /// this function is called from will be copied into 'lib/builders.dart'. It
 /// should contain top level fields with names matching they keys in [builders]
 /// and only rely on imports to `package:build_test/build_test.dart`.
@@ -97,7 +97,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
 /// Create a package in [d.sandbox] with a `tool/build.dart` script using
 /// [builders] and a [BuildTool] invoking it.
 ///
-/// The content in between the last `import` and the `main()` of the script that
+/// The content in between `test-package-start/end` comments of the script that
 /// this function is called from will be copied into the build script. It
 /// should contain top level fields with names matching they keys in [builders]
 /// and only rely on imports to `package:build_test/build_test.dart`.
@@ -167,9 +167,10 @@ apply('${builder.key}', [${builder.key}Factory], toRoot(),
 
 String _builders(Uri callingScript) {
   final content = new File.fromUri(callingScript).readAsLinesSync();
-  final lastImport = content.lastIndexWhere((l) => l.startsWith('import'));
-  final main = content.indexWhere((l) => l.contains('main()'));
-  return content.sublist(lastImport + 1, main).join('\n');
+  final start =
+      content.indexWhere((l) => l.startsWith('// test-package-start'));
+  final end = content.indexWhere((l) => l.contains('// test-package-end'));
+  return content.sublist(start + 1, end).join('\n');
 }
 
 /// Creates a `pubspec.yaml` file for package [name].
@@ -265,8 +266,7 @@ class BuildServer {
   BuildServer(this._process);
 
   Future<void> _serversStarted;
-  Future<void> get started =>
-      _serversStarted ??= readThrough('Serving `web`');
+  Future<void> get started => _serversStarted ??= readThrough('Serving `web`');
 
   Future<void> get nextSuccessfulBuild => readThrough('Succeeded after');
 
