@@ -156,9 +156,7 @@ class _SharedOptions {
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
     @required this.buildDirs,
-  }) {
-    print('\n$buildDirs\n');
-  }
+  });
 
   factory _SharedOptions.fromParsedArgs(
       ArgResults argResults, String rootPackage, Command command,
