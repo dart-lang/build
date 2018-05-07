@@ -13,6 +13,7 @@ import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 import 'package:shelf/shelf_io.dart';
 
 import '../asset/file_based.dart';
@@ -139,6 +140,9 @@ class _SharedOptions {
 
   final bool isReleaseBuild;
 
+  /// The directories that should be built.
+  final List<String> buildDirs;
+
   _SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
@@ -151,23 +155,39 @@ class _SharedOptions {
     @required this.verbose,
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
-  });
+    @required this.buildDirs,
+  }) {
+    print('\n$buildDirs\n');
+  }
 
   factory _SharedOptions.fromParsedArgs(
-      ArgResults argResults, String rootPackage) {
+      ArgResults argResults, String rootPackage, Command command) {
+    var outputMap = _parseOutputMap(argResults);
+    var buildDirs = _buildDirsFromOutputMap(outputMap);
+    for (var arg in argResults.rest) {
+      var parts = p.split(arg);
+      if (parts.length > 1) {
+        throw new UsageException(
+            'Only top level directories are allowed as positional args',
+            command.usage);
+      }
+      buildDirs.add(arg);
+    }
+
     return new _SharedOptions._(
       assumeTty: argResults[_assumeTty] as bool,
       deleteFilesByDefault: argResults[_deleteFilesByDefault] as bool,
       failOnSevere: argResults[_failOnSevere] as bool,
       enableLowResourcesMode: argResults[_lowResourcesMode] as bool,
       configKey: argResults[_config] as String,
-      outputMap: _parseOutputMap(argResults),
+      outputMap: outputMap,
       trackPerformance: argResults[_trackPerformance] as bool,
       skipBuildScriptCheck: argResults[_skipBuildScriptCheck] as bool,
       verbose: argResults[_verbose] as bool,
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
       isReleaseBuild: argResults[_release] as bool,
+      buildDirs: buildDirs.toList(),
     );
   }
 }
@@ -193,6 +213,7 @@ class _ServeOptions extends _SharedOptions {
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
+    @required List<String> buildDirs,
   }) : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -205,16 +226,27 @@ class _ServeOptions extends _SharedOptions {
           verbose: verbose,
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
+          buildDirs: buildDirs,
         );
 
   factory _ServeOptions.fromParsedArgs(
-      ArgResults argResults, String rootPackage) {
+      ArgResults argResults, String rootPackage, Command command) {
     var serveTargets = <_ServeTarget>[];
     var nextDefaultPort = 8080;
     for (var arg in argResults.rest) {
       var parts = arg.split(':');
       var path = parts.first;
-      var port = parts.length == 2 ? int.parse(parts[1]) : nextDefaultPort++;
+      if (parts.length > 2) {
+        throw new UsageException(
+            'Invalid format for positional argument to serve `$arg`'
+            ', expected <directory>:<port>.',
+            command.usage);
+      }
+      var port = parts.length == 2 ? int.tryParse(parts[1]) : nextDefaultPort++;
+      if (port == null) {
+        throw new UsageException(
+            'Unable to parse port number in `$arg`', command.usage);
+      }
       serveTargets.add(new _ServeTarget(path, port));
     }
     if (serveTargets.isEmpty) {
@@ -224,6 +256,11 @@ class _ServeOptions extends _SharedOptions {
         }
       }
     }
+
+    var outputMap = _parseOutputMap(argResults);
+    var buildDirs = _buildDirsFromOutputMap(outputMap)
+      ..addAll(serveTargets.map((t) => t.dir));
+
     return new _ServeOptions._(
       hostName: argResults[_hostname] as String,
       logRequests: argResults[_logRequests] as bool,
@@ -240,6 +277,7 @@ class _ServeOptions extends _SharedOptions {
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[_define], rootPackage),
       isReleaseBuild: argResults[_release] as bool,
+      buildDirs: buildDirs.toList(),
     );
   }
 }
@@ -327,20 +365,9 @@ abstract class _BuildRunnerCommand extends Command<int> {
   ///
   /// You may override this to return more specific options if desired, but they
   /// must extend [_SharedOptions].
-  _SharedOptions _readOptions({bool allowExtraArgs}) {
-    _checkExtraArgs(allowExtraArgs);
+  _SharedOptions _readOptions() {
     return new _SharedOptions.fromParsedArgs(
-        argResults, packageGraph.root.name);
-  }
-
-  /// Throws a [UsageException] if not [allowExtraArgs] and there are extra
-  /// unparsed args.
-  void _checkExtraArgs(bool allowExtraArgs) {
-    allowExtraArgs ??= false;
-    if (!allowExtraArgs && argResults.rest.isNotEmpty) {
-      throw new UsageException(
-          'Unrecognized arguments: ${argResults.rest}', usage);
-    }
+        argResults, packageGraph.root.name, this);
   }
 }
 
@@ -440,8 +467,8 @@ class _ServeCommand extends _WatchCommand {
       'builds based on file system updates.';
 
   @override
-  _ServeOptions _readOptions({bool allowExtraArgs}) =>
-      new _ServeOptions.fromParsedArgs(argResults, packageGraph.root.name);
+  _ServeOptions _readOptions() => new _ServeOptions.fromParsedArgs(
+      argResults, packageGraph.root.name, this);
 
   @override
   Future<int> run() async {
@@ -532,7 +559,7 @@ class _TestCommand extends _BuildRunnerCommand {
         .toFilePath();
     try {
       _ensureBuildTestDependency(packageGraph);
-      options = _readOptions(allowExtraArgs: true);
+      options = _readOptions();
       var outputMap = options.outputMap ?? {};
       outputMap.addAll({tempPath: null});
       var result = await build(
@@ -647,6 +674,15 @@ class _CleanCommand extends Command<int> {
 
     return 0;
   }
+}
+
+Set<String> _buildDirsFromOutputMap(Map<String, String> outputMap) {
+  var dirs = new Set<String>();
+  outputMap.forEach((k, v) {
+    if (v == null) return;
+    dirs.add(v);
+  });
+  return dirs;
 }
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
