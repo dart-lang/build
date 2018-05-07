@@ -702,14 +702,8 @@ class _CleanCommand extends Command<int> {
   }
 }
 
-Set<String> _buildDirsFromOutputMap(Map<String, String> outputMap) {
-  var dirs = new Set<String>();
-  outputMap.forEach((k, v) {
-    if (v == null) return;
-    dirs.add(v);
-  });
-  return dirs;
-}
+Set<String> _buildDirsFromOutputMap(Map<String, String> outputMap) =>
+    outputMap.values.where((v) => v != null).toSet();
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
   if (!packageGraph.allPackages.containsKey('build_test')) {
