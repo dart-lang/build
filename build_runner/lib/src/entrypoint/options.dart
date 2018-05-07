@@ -558,6 +558,22 @@ class _TestCommand extends _BuildRunnerCommand {
       'using the compiled assets.';
 
   @override
+  _SharedOptions _readOptions({Iterable<String> defaultBuildDirs}) {
+    // This command doesn't allow specifying directories to build, instead it
+    // always builds the `test` directory.
+    if (argResults.rest.contains('--')) {
+      throw new UsageException(
+          'The `test` command does not support building specific directories, '
+          'it always builds the `test` directory.\nGot the following '
+          'positional args: '
+          '${argResults.rest.takeWhile((arg) => arg != '--').toList()}',
+          usage);
+    }
+
+    return super._readOptions(defaultBuildDirs: defaultBuildDirs);
+  }
+
+  @override
   Future<int> run() async {
     _SharedOptions options;
     // We always run our tests in a temp dir.
