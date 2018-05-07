@@ -161,9 +161,12 @@ class _SharedOptions {
   }
 
   factory _SharedOptions.fromParsedArgs(
-      ArgResults argResults, String rootPackage, Command command) {
+      ArgResults argResults, String rootPackage, Command command,
+      {Iterable<String> defaultBuildDirs}) {
+    defaultBuildDirs ??= [];
     var outputMap = _parseOutputMap(argResults);
-    var buildDirs = _buildDirsFromOutputMap(outputMap);
+    var buildDirs = _buildDirsFromOutputMap(outputMap)
+      ..addAll(defaultBuildDirs);
     for (var arg in argResults.rest) {
       var parts = p.split(arg);
       if (parts.length > 1) {
@@ -230,7 +233,9 @@ class _ServeOptions extends _SharedOptions {
         );
 
   factory _ServeOptions.fromParsedArgs(
-      ArgResults argResults, String rootPackage, Command command) {
+      ArgResults argResults, String rootPackage, Command command,
+      {Iterable<String> defaultBuildDirs}) {
+    defaultBuildDirs ??= [];
     var serveTargets = <_ServeTarget>[];
     var nextDefaultPort = 8080;
     for (var arg in argResults.rest) {
@@ -259,7 +264,8 @@ class _ServeOptions extends _SharedOptions {
 
     var outputMap = _parseOutputMap(argResults);
     var buildDirs = _buildDirsFromOutputMap(outputMap)
-      ..addAll(serveTargets.map((t) => t.dir));
+      ..addAll(serveTargets.map((t) => t.dir))
+      ..addAll(defaultBuildDirs);
 
     return new _ServeOptions._(
       hostName: argResults[_hostname] as String,
@@ -365,9 +371,10 @@ abstract class _BuildRunnerCommand extends Command<int> {
   ///
   /// You may override this to return more specific options if desired, but they
   /// must extend [_SharedOptions].
-  _SharedOptions _readOptions() {
+  _SharedOptions _readOptions({Iterable<String> defaultBuildDirs}) {
     return new _SharedOptions.fromParsedArgs(
-        argResults, packageGraph.root.name, this);
+        argResults, packageGraph.root.name, this,
+        defaultBuildDirs: defaultBuildDirs);
   }
 }
 
@@ -467,8 +474,9 @@ class _ServeCommand extends _WatchCommand {
       'builds based on file system updates.';
 
   @override
-  _ServeOptions _readOptions() => new _ServeOptions.fromParsedArgs(
-      argResults, packageGraph.root.name, this);
+  _ServeOptions _readOptions({Iterable<String> defaultBuildDirs}) =>
+      new _ServeOptions.fromParsedArgs(argResults, packageGraph.root.name, this,
+          defaultBuildDirs: defaultBuildDirs);
 
   @override
   Future<int> run() async {
@@ -559,7 +567,7 @@ class _TestCommand extends _BuildRunnerCommand {
         .toFilePath();
     try {
       _ensureBuildTestDependency(packageGraph);
-      options = _readOptions();
+      options = _readOptions(defaultBuildDirs: ['test']);
       var outputMap = options.outputMap ?? {};
       outputMap.addAll({tempPath: null});
       var result = await build(
