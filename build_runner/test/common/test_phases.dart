@@ -87,6 +87,7 @@ Future<BuildResult> testBuilders(
   Map<String, BuildConfig> overrideBuildConfig,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose: false,
+  List<String> buildDirs,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= new InMemoryRunnerAssetWriter();
@@ -116,6 +117,7 @@ Future<BuildResult> testBuilders(
     overrideBuildConfig: overrideBuildConfig,
     verbose: verbose,
     builderConfigOverrides: builderConfigOverrides,
+    buildDirs: buildDirs ?? [],
   );
 
   if (checkBuildStatus) {
