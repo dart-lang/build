@@ -11,7 +11,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'utils/build_descriptor.dart';
 
-// test-package-start
+// test-package-start #########################################################
 /// Copies an asset to both `.txt.copy` and `.txt.extra`.
 final copyTwice = new TestBuilder(buildExtensions: {
   '.txt': ['.txt.copy', '.txt.extra']
@@ -25,7 +25,7 @@ final maybeReadCopy = new TestBuilder(
         await buildStep.readAsString(buildStep.inputId.addExtension('.copy'));
       }
     });
-// test-package-end
+// test-package-end ###########################################################
 
 main() {
   final builders = [
