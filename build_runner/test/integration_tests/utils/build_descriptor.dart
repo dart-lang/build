@@ -84,7 +84,12 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
           'a',
           <d.Descriptor>[
             await _pubspecWithDeps('a',
-                currentIsolateDependencies: ['build_runner', 'build'],
+                currentIsolateDependencies: [
+                  'build',
+                  'build_config',
+                  'build_resolvers',
+                  'build_runner',
+                ],
                 pathDependencies: new Map.fromIterable(otherPackages,
                     key: (o) => (o as d.Descriptor).name,
                     value: (o) => p.join(d.sandbox, (o as d.Descriptor).name))),
@@ -114,8 +119,10 @@ Future<BuildTool> packageWithBuildScript(
           'a',
           [
             await _pubspecWithDeps('a', currentIsolateDependencies: [
-              'build_runner',
               'build',
+              'build_config',
+              'build_resolvers',
+              'build_runner',
               'build_test'
             ]),
             d.dir('tool', [
