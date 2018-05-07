@@ -64,6 +64,7 @@ Future<BuildResult> build(
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
+  List<String> buildDirs,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -87,7 +88,8 @@ Future<BuildResult> build(
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
       trackPerformance: trackPerformance,
-      verbose: verbose);
+      verbose: verbose,
+      buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
   final buildPhases = await createBuildPhases(
@@ -133,6 +135,7 @@ class BuildImpl {
   final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
+  final List<String> _buildDirs;
 
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildPhases)
@@ -148,7 +151,8 @@ class BuildImpl {
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment,
-        _trackPerformance = options.trackPerformance;
+        _trackPerformance = options.trackPerformance,
+        _buildDirs = options.buildDirs;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
@@ -180,6 +184,7 @@ class _SingleBuild {
   final ResourceManager _resourceManager;
   final bool _verbose;
   final RunnerAssetWriter _writer;
+  final List<String> _buildDirs;
 
   int actionsCompletedCount = 0;
   int actionsStartedCount = 0;
@@ -204,7 +209,8 @@ class _SingleBuild {
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
-        _writer = buildImpl._writer {
+        _writer = buildImpl._writer,
+        _buildDirs = buildImpl._buildDirs {
     hungActionsHeartbeat = new HungActionsHeartbeat(() {
       final message = new StringBuffer();
       const actionsToLogMax = 5;
@@ -335,6 +341,12 @@ class _SingleBuild {
       if (phase.isOptional) continue;
       await _performanceTracker.trackBuildPhase(phase, () async {
         if (phase is InBuildPhase) {
+          // Bail early if building a non-root package and we are building
+          // specific output dirs.
+          if (_buildDirs.isNotEmpty &&
+              phase.package != _packageGraph.root.name) {
+            return;
+          }
           var primaryInputs =
               await _matchingPrimaryInputs(phase.package, phaseNum);
           outputs.addAll(await _runBuilder(phaseNum, phase, primaryInputs));
@@ -364,6 +376,11 @@ class _SingleBuild {
     var ids = new Set<AssetId>();
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
+      if (_buildDirs.isNotEmpty &&
+          !_buildDirs.any((d) => node.id.path.startsWith(d))) {
+        return;
+      }
+
       var input = _assetGraph.get(node.primaryInput);
       if (input is GeneratedAssetNode) {
         if (input.state != GeneratedNodeState.upToDate) {
@@ -491,8 +508,18 @@ class _SingleBuild {
 
   Future<Iterable<AssetId>> _runPostProcessAction(
       int phaseNum, int actionNum, PostBuildAction action) async {
+    // Bail early for non-root packages if building a specific package.
+    if (_buildDirs.isNotEmpty && action.package != _packageGraph.root.name) {
+      return <AssetId>[];
+    }
+
     var anchorNodes = _assetGraph.packageNodes(action.package).where((node) {
       if (node is PostProcessAnchorNode && node.actionNumber == actionNum) {
+        if (_buildDirs.isNotEmpty &&
+            !_buildDirs.any((d) => node.id.path.startsWith(d))) {
+          return false;
+        }
+
         var inputNode = _assetGraph.get(node.primaryInput);
         if (inputNode is SourceAssetNode) {
           return true;

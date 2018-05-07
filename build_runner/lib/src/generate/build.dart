@@ -66,7 +66,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         bool skipBuildScriptCheck,
         bool verbose,
         bool isReleaseBuild,
-        Map<String, Map<String, dynamic>> builderConfigOverrides}) =>
+        Map<String, Map<String, dynamic>> builderConfigOverrides,
+        List<String> buildDirs}) =>
     build_impl.build(
       builders,
       assumeTty: assumeTty,
@@ -86,6 +87,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       verbose: verbose,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
+      buildDirs: buildDirs,
     );
 
 /// Same as [build], except it watches the file system and re-runs builds
@@ -131,7 +133,8 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool skipBuildScriptCheck,
         bool verbose,
         bool isReleaseBuild,
-        Map<String, Map<String, dynamic>> builderConfigOverrides}) =>
+        Map<String, Map<String, dynamic>> builderConfigOverrides,
+        List<String> buildDirs}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,
@@ -153,4 +156,5 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       verbose: verbose,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
+      buildDirs: buildDirs,
     );

@@ -40,6 +40,7 @@ class BuildOptions {
   final Map<String, String> outputMap;
   final bool trackPerformance;
   final bool verbose;
+  final List<String> buildDirs;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -47,35 +48,39 @@ class BuildOptions {
   // For testing only, skips the build script updates check.
   bool skipBuildScriptCheck;
 
-  BuildOptions._(
-      {@required this.configKey,
-      @required this.debounceDelay,
-      @required this.deleteFilesByDefault,
-      @required this.enableLowResourcesMode,
-      @required this.failOnSevere,
-      @required this.logListener,
-      @required this.outputMap,
-      @required this.packageGraph,
-      @required List<String> rootPackageFilesWhitelist,
-      @required this.skipBuildScriptCheck,
-      @required this.trackPerformance,
-      @required this.verbose})
-      : this.rootPackageFilesWhitelist =
+  BuildOptions._({
+    @required this.configKey,
+    @required this.debounceDelay,
+    @required this.deleteFilesByDefault,
+    @required this.enableLowResourcesMode,
+    @required this.failOnSevere,
+    @required this.logListener,
+    @required this.outputMap,
+    @required this.packageGraph,
+    @required List<String> rootPackageFilesWhitelist,
+    @required this.skipBuildScriptCheck,
+    @required this.trackPerformance,
+    @required this.verbose,
+    @required this.buildDirs,
+  }) : this.rootPackageFilesWhitelist =
             new UnmodifiableListView(rootPackageFilesWhitelist);
 
-  factory BuildOptions(BuildEnvironment environment,
-      {String configKey,
-      Duration debounceDelay,
-      bool deleteFilesByDefault,
-      bool enableLowResourcesMode,
-      bool failOnSevere,
-      Level logLevel,
-      Map<String, String> outputMap,
-      @required PackageGraph packageGraph,
-      BuildConfig rootPackageConfig,
-      bool skipBuildScriptCheck,
-      bool trackPerformance,
-      bool verbose}) {
+  factory BuildOptions(
+    BuildEnvironment environment, {
+    String configKey,
+    Duration debounceDelay,
+    bool deleteFilesByDefault,
+    bool enableLowResourcesMode,
+    bool failOnSevere,
+    Level logLevel,
+    Map<String, String> outputMap,
+    @required PackageGraph packageGraph,
+    BuildConfig rootPackageConfig,
+    bool skipBuildScriptCheck,
+    bool trackPerformance,
+    bool verbose,
+    List<String> buildDirs,
+  }) {
     // Set up logging
     verbose ??= false;
     logLevel ??= verbose ? Level.ALL : Level.INFO;
@@ -96,6 +101,7 @@ class BuildOptions {
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
     trackPerformance ??= false;
+    buildDirs ??= [];
 
     var mergedWhitelist = new Set<String>();
     if (rootPackageConfig == null) {
@@ -121,6 +127,7 @@ class BuildOptions {
         rootPackageFilesWhitelist: mergedWhitelist.toList(),
         skipBuildScriptCheck: skipBuildScriptCheck,
         trackPerformance: trackPerformance,
-        verbose: verbose);
+        verbose: verbose,
+        buildDirs: buildDirs);
   }
 }

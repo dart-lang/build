@@ -62,6 +62,7 @@ Future<ServeHandler> watch(
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
+  List<String> buildDirs,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -87,7 +88,8 @@ Future<ServeHandler> watch(
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
       trackPerformance: trackPerformance,
-      verbose: verbose);
+      verbose: verbose,
+      buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
   final buildPhases = await createBuildPhases(

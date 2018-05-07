@@ -404,6 +404,7 @@ class _BuildCommand extends _BuildRunnerCommand {
       isReleaseBuild: options.isReleaseBuild,
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,
+      buildDirs: options.buildDirs,
     );
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
@@ -441,6 +442,7 @@ class _WatchCommand extends _BuildRunnerCommand {
       verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
+      buildDirs: options.buildDirs,
     );
     if (handler == null) return ExitCode.config.code;
 
@@ -495,6 +497,7 @@ class _ServeCommand extends _WatchCommand {
       verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
+      buildDirs: options.buildDirs,
     );
 
     if (handler == null) return ExitCode.config.code;
@@ -584,6 +587,7 @@ class _TestCommand extends _BuildRunnerCommand {
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides,
         isReleaseBuild: options.isReleaseBuild,
+        buildDirs: options.buildDirs,
       );
 
       if (result.status == BuildStatus.failure) {
