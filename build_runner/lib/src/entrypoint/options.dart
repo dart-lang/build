@@ -379,6 +379,9 @@ abstract class _BuildRunnerCommand extends Command<int> {
 /// A [Command] that does a single build and then exits.
 class _BuildCommand extends _BuildRunnerCommand {
   @override
+  String get invocation => '${super.invocation} [directories]';
+
+  @override
   String get name => 'build';
 
   @override
@@ -415,6 +418,9 @@ class _BuildCommand extends _BuildRunnerCommand {
 /// A [Command] that watches the file system for updates and rebuilds as
 /// appropriate.
 class _WatchCommand extends _BuildRunnerCommand {
+  @override
+  String get invocation => '${super.invocation} [directories]';
+
   @override
   String get name => 'watch';
 
@@ -512,8 +518,8 @@ class _ServeCommand extends _WatchCommand {
           'args in <dir>[:<port>] format.');
     } else {
       for (var target in options.serveTargets) {
-        stdout.writeln(
-            'Serving `${target.dir}` on http://${options.hostName}:${target.port}');
+        stdout.writeln('Serving `${target.dir}` on '
+            'http://${options.hostName}:${target.port}');
       }
     }
     await handler.buildResults.drain();
@@ -547,27 +553,46 @@ Future<HttpServer> _bindServer(_ServeOptions options, _ServeTarget target) {
 /// assets.
 class _TestCommand extends _BuildRunnerCommand {
   @override
-  final argParser = new ArgParser(allowTrailingOptions: false);
+  String get invocation =>
+      '${super.invocation.replaceFirst('[arguments]', '[build-arguments]')} '
+      '[-- [test-arguments]]';
 
   @override
   String get name => 'test';
 
   @override
   String get description =>
-      'Performs a single build on the specified targets and then runs tests '
+      'Performs a single build of the test directory only and then runs tests '
       'using the compiled assets.';
 
   @override
   _SharedOptions _readOptions({Iterable<String> defaultBuildDirs}) {
     // This command doesn't allow specifying directories to build, instead it
     // always builds the `test` directory.
-    if (argResults.rest.contains('--')) {
-      throw new UsageException(
-          'The `test` command does not support building specific directories, '
-          'it always builds the `test` directory.\nGot the following '
-          'positional args: '
-          '${argResults.rest.takeWhile((arg) => arg != '--').toList()}',
-          usage);
+    //
+    // Here we validate that [argResults.rest] is exactly equal to all the
+    // arguments after the `--`.
+    if (argResults.rest.isNotEmpty) {
+      void throwUsageException() {
+        throw new UsageException(
+            'The `test` command does not support positional args before the, '
+            '`--` separator, which should separate build args from test args.',
+            usage);
+      }
+
+      var separatorPos = argResults.arguments.indexOf('--');
+      if (separatorPos < 0) {
+        throwUsageException();
+      }
+      var expectedRest = argResults.arguments.skip(separatorPos + 1).toList();
+      if (argResults.rest.length != expectedRest.length) {
+        throwUsageException();
+      }
+      for (var i = 0; i < argResults.rest.length; i++) {
+        if (expectedRest[i] != argResults.rest[i]) {
+          throwUsageException();
+        }
+      }
     }
 
     return super._readOptions(defaultBuildDirs: defaultBuildDirs);
