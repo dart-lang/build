@@ -25,6 +25,7 @@ main() {
         'test',
       ], pathDependencies: {
         'build_web_compilers': p.absolute('../build_web_compilers'),
+        'scratch_space': p.absolute('../scratch_space'),
       }),
       d.dir('test', [
         d.file('hello_test.dart', '''
