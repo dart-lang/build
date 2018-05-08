@@ -48,8 +48,10 @@ class OptionalOutputTracker {
       final phase = _buildPhases[generatedNode.phaseNumber];
       if (!phase.isOptional) {
         if (_buildDirs.isEmpty) return true;
-        if (output.package != _rootPackage) return false;
-        return _buildDirs.any(output.path.startsWith);
+        if (output.package == _rootPackage &&
+            _buildDirs.any(output.path.startsWith)) {
+          return true;
+        }
       }
       return generatedNode.outputs
               .any((o) => isRequired(o, currentlyChecking)) ||
