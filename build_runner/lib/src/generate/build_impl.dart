@@ -236,8 +236,8 @@ class _SingleBuild {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild();
-    var optionalOutputTracker =
-        new OptionalOutputTracker(_assetGraph, _buildPhases);
+    var optionalOutputTracker = new OptionalOutputTracker(
+        _assetGraph, _buildDirs, _buildPhases, _packageGraph.root.name);
     if (result.status == BuildStatus.success) {
       if (_assetGraph.failedOutputs
           .map((n) => n.id)
@@ -376,8 +376,7 @@ class _SingleBuild {
     var ids = new Set<AssetId>();
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (_buildDirs.isNotEmpty &&
-          !_buildDirs.any((d) => node.id.path.startsWith(d))) {
+      if (_buildDirs.isNotEmpty && !_buildDirs.any(node.id.path.startsWith)) {
         return;
       }
 

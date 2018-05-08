@@ -53,7 +53,8 @@ main() {
       environment = new TestBuildEnvironment(reader: assetReader);
       graph = await AssetGraph.build(phases, sources.keys.toSet(),
           new Set<AssetId>(), packageGraph, assetReader);
-      optionalOutputTracker = new OptionalOutputTracker(graph, phases);
+      optionalOutputTracker =
+          new OptionalOutputTracker(graph, [], phases, packageGraph.root.name);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
         node.state = GeneratedNodeState.upToDate;
@@ -190,6 +191,28 @@ main() {
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
       expect(file.existsSync(), isFalse);
+    });
+
+    test('doesnt always write files not matching outputDirs', () async {
+      var success = await createMergedOutputDirectories(
+          {tmpDir.path: null},
+          graph,
+          packageGraph,
+          assetReader,
+          environment,
+          new OptionalOutputTracker(
+              graph, ['foo'], phases, packageGraph.root.name));
+      expect(success, isTrue);
+
+      var expectedFiles = <String, dynamic>{
+        'foo/d.txt': 'd',
+        'foo/d.txt.copy': 'd',
+        'packages/a/a.txt': 'a',
+        'packages/b/c.txt': 'c',
+        'web/b.txt': 'b',
+        '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+      };
+      _expectFiles(expectedFiles, tmpDir);
     });
 
     group('existing output dir handling', () {

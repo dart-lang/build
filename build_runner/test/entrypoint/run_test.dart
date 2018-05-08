@@ -25,6 +25,7 @@ main() {
         'test',
       ], pathDependencies: {
         'build_web_compilers': p.absolute('../build_web_compilers'),
+        'build_modules': p.absolute('../build_modules'),
         'scratch_space': p.absolute('../scratch_space'),
       }),
       d.dir('test', [

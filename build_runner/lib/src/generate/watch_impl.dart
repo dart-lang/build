@@ -287,8 +287,11 @@ class WatchImpl implements BuildState {
           true,
           packageGraph.root.name,
           null);
-      optionalOutputTracker =
-          new OptionalOutputTracker(_buildDefinition.assetGraph, buildPhases);
+      optionalOutputTracker = new OptionalOutputTracker(
+          _buildDefinition.assetGraph,
+          options.buildDirs,
+          buildPhases,
+          packageGraph.root.name);
       var finalizedReader = new FinalizedReader(
           singleStepReader, _buildDefinition.assetGraph, optionalOutputTracker);
       _readerCompleter.complete(finalizedReader);
