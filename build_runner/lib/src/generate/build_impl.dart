@@ -507,18 +507,8 @@ class _SingleBuild {
 
   Future<Iterable<AssetId>> _runPostProcessAction(
       int phaseNum, int actionNum, PostBuildAction action) async {
-    // Bail early for non-root packages if building a specific package.
-    if (_buildDirs.isNotEmpty && action.package != _packageGraph.root.name) {
-      return <AssetId>[];
-    }
-
     var anchorNodes = _assetGraph.packageNodes(action.package).where((node) {
       if (node is PostProcessAnchorNode && node.actionNumber == actionNum) {
-        if (_buildDirs.isNotEmpty &&
-            !_buildDirs.any((d) => node.id.path.startsWith(d))) {
-          return false;
-        }
-
         var inputNode = _assetGraph.get(node.primaryInput);
         if (inputNode is SourceAssetNode) {
           return true;
