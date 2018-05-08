@@ -74,8 +74,7 @@ main() {
           return 1;
         }
       }
-      // Shouldn't ever reach here.
-      return 1;
+      throw new StateError('Build process exited without success or failure.');
     }
     return await process.exitCode;
   }

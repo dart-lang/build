@@ -14,6 +14,8 @@ import 'node.dart';
 /// An optional output becomes required if:
 /// - Any of it's transitive outputs is non-optional.
 /// - It was output by the same build step as any required output.
+/// - If [_buildDirs] is non-empty then it must live in the root package and
+///   its path must be prefixed by one of the dirs.
 ///
 /// Any outputs from non-optional phases are aways considered required.
 ///
@@ -41,26 +43,27 @@ class OptionalOutputTracker {
     if (currentlyChecking.contains(output)) return false;
     currentlyChecking.add(output);
 
-    return _checkedOutputs.putIfAbsent(output, () {
-      final node = _assetGraph.get(output);
-      if (node is! GeneratedAssetNode) return true;
-      final generatedNode = node as GeneratedAssetNode;
-      final phase = _buildPhases[generatedNode.phaseNumber];
-      if (!phase.isOptional) {
-        if (_buildDirs.isEmpty) return true;
-        if (output.package == _rootPackage &&
-            _buildDirs.any(output.path.startsWith)) {
-          return true;
-        }
+    final node = _assetGraph.get(output);
+    if (node is! GeneratedAssetNode) return true;
+    final generatedNode = node as GeneratedAssetNode;
+    final phase = _buildPhases[generatedNode.phaseNumber];
+    if (!phase.isOptional) {
+      if (_buildDirs.isEmpty) return true;
+      if (output.package == _rootPackage &&
+          _buildDirs.any(output.path.startsWith)) {
+        return true;
       }
-      return generatedNode.outputs
-              .any((o) => isRequired(o, currentlyChecking)) ||
-          _assetGraph
-              .outputsForPhase(output.package, generatedNode.phaseNumber)
-              .where((n) => n.primaryInput == generatedNode.primaryInput)
-              .map((n) => n.id)
-              .any((o) => isRequired(o, currentlyChecking));
-    });
+    }
+    return _checkedOutputs.putIfAbsent(
+        output,
+        () =>
+            generatedNode.outputs
+                .any((o) => isRequired(o, currentlyChecking)) ||
+            _assetGraph
+                .outputsForPhase(output.package, generatedNode.phaseNumber)
+                .where((n) => n.primaryInput == generatedNode.primaryInput)
+                .map((n) => n.id)
+                .any((o) => isRequired(o, currentlyChecking)));
   }
 
   /// Clears the cache of which assets were required.
