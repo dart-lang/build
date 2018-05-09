@@ -9,7 +9,7 @@ import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
 import '../package_graph/apply_builders.dart';
-import 'options.dart';
+import 'runner.dart';
 
 /// A common entry point to parse command line arguments and build or serve with
 /// [builders].

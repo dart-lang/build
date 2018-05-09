@@ -27,3 +27,6 @@ const String cacheDir = '.dart_tool/build';
 
 /// Returns a hash for a given path.
 String _scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
+
+/// The name of the pub binary on the current platform.
+final pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
