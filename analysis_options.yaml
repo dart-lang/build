@@ -11,6 +11,8 @@ analyzer:
     # Note that these paths are actually package relative, this does not exclude
     # the `build` package from analysis.
     - "build/**"
+    # Prevents extra work during e2e test runs.
+    - "dart2js_test/**"
 linter:
   rules:
     - annotate_overrides
