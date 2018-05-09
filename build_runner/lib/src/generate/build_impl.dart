@@ -31,6 +31,7 @@ import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
+import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
@@ -64,6 +65,7 @@ Future<BuildResult> build(
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
+  List<String> buildDirs,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -87,7 +89,8 @@ Future<BuildResult> build(
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
       trackPerformance: trackPerformance,
-      verbose: verbose);
+      verbose: verbose,
+      buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
   final buildPhases = await createBuildPhases(
@@ -133,6 +136,7 @@ class BuildImpl {
   final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
+  final List<String> _buildDirs;
 
   BuildImpl._(
       BuildDefinition buildDefinition, BuildOptions options, this._buildPhases)
@@ -148,7 +152,8 @@ class BuildImpl {
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment,
-        _trackPerformance = options.trackPerformance;
+        _trackPerformance = options.trackPerformance,
+        _buildDirs = options.buildDirs;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
@@ -180,6 +185,7 @@ class _SingleBuild {
   final ResourceManager _resourceManager;
   final bool _verbose;
   final RunnerAssetWriter _writer;
+  final List<String> _buildDirs;
 
   int actionsCompletedCount = 0;
   int actionsStartedCount = 0;
@@ -204,7 +210,8 @@ class _SingleBuild {
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
-        _writer = buildImpl._writer {
+        _writer = buildImpl._writer,
+        _buildDirs = buildImpl._buildDirs {
     hungActionsHeartbeat = new HungActionsHeartbeat(() {
       final message = new StringBuffer();
       const actionsToLogMax = 5;
@@ -231,7 +238,7 @@ class _SingleBuild {
     }
     var result = await _safeBuild();
     var optionalOutputTracker =
-        new OptionalOutputTracker(_assetGraph, _buildPhases);
+        new OptionalOutputTracker(_assetGraph, _buildDirs, _buildPhases);
     if (result.status == BuildStatus.success) {
       if (_assetGraph.failedOutputs
           .map((n) => n.id)
@@ -364,6 +371,10 @@ class _SingleBuild {
     var ids = new Set<AssetId>();
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
+      if (!shouldBuildForDirs(node.id, _buildDirs)) {
+        return;
+      }
+
       var input = _assetGraph.get(node.primaryInput);
       if (input is GeneratedAssetNode) {
         if (input.state != GeneratedNodeState.upToDate) {

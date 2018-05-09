@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -655,6 +656,33 @@ void main() {
         'a|lib/a.txt.expected': 'a',
         'a|lib/a.txt.expected.copy': 'a',
       });
+    });
+
+    test('can build files from one dir when building another dir', () async {
+      await testBuilders([
+        applyToRoot(new TestBuilder(),
+            generateFor: new InputSet(include: ['test/*.txt'])),
+        applyToRoot(
+            new TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.txt'),
+                extraWork: (buildStep, _) async {
+                  // Should not trigger a.txt.copy to be built.
+                  await buildStep.readAsString(new AssetId('a', 'test/a.txt'));
+                  // Should trigger b.txt.copy to be built.
+                  await buildStep
+                      .readAsString(new AssetId('a', 'test/b.txt.copy'));
+                }),
+            generateFor: new InputSet(include: ['web/*.txt'])),
+      ], {
+        'a|test/a.txt': 'a',
+        'a|test/b.txt': 'b',
+        'a|web/a.txt': 'a',
+      }, outputs: {
+        r'a|web/a.txt.copy': 'a',
+        r'a|test/b.txt.copy': 'b',
+      }, buildDirs: [
+        'web'
+      ], verbose: true);
     });
   });
 

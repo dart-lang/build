@@ -61,6 +61,16 @@ while (( "$#" )); do
     ;;
   test_5) echo
     echo -e '\033[1mTASK: test_5\033[22m'
+    echo -e 'pub run test -x integration'
+    pub run test -x integration || EXIT_CODE=$?
+    ;;
+  test_6) echo
+    echo -e '\033[1mTASK: test_6\033[22m'
+    echo -e 'pub run test -t integration'
+    pub run test -t integration || EXIT_CODE=$?
+    ;;
+  test_7) echo
+    echo -e '\033[1mTASK: test_7\033[22m'
     echo -e 'pub run test --run-skipped'
     pub run test --run-skipped || EXIT_CODE=$?
     ;;

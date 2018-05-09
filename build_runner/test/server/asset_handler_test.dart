@@ -26,7 +26,7 @@ void main() {
         buildPackageGraph({rootPackage('foo'): []}), null);
     delegate = new InMemoryRunnerAssetReader();
     reader = new FinalizedReader(
-        delegate, graph, new OptionalOutputTracker(graph, []));
+        delegate, graph, new OptionalOutputTracker(graph, [], []));
     handler = new AssetHandler(reader, 'a');
   });
 

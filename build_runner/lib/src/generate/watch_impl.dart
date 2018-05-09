@@ -62,6 +62,7 @@ Future<ServeHandler> watch(
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
+  List<String> buildDirs,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -87,7 +88,8 @@ Future<ServeHandler> watch(
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
       trackPerformance: trackPerformance,
-      verbose: verbose);
+      verbose: verbose,
+      buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
   final buildPhases = await createBuildPhases(
@@ -285,8 +287,8 @@ class WatchImpl implements BuildState {
           true,
           packageGraph.root.name,
           null);
-      optionalOutputTracker =
-          new OptionalOutputTracker(_buildDefinition.assetGraph, buildPhases);
+      optionalOutputTracker = new OptionalOutputTracker(
+          _buildDefinition.assetGraph, options.buildDirs, buildPhases);
       var finalizedReader = new FinalizedReader(
           singleStepReader, _buildDefinition.assetGraph, optionalOutputTracker);
       _readerCompleter.complete(finalizedReader);

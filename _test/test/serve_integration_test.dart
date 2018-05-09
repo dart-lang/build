@@ -22,8 +22,7 @@ void main() {
   });
 
   test('Doesn\'t compile submodules into the root module', () {
-    expect(
-        readGeneratedFileAsString('_test/test/hello_world_test.ddc.js'),
+    expect(readGeneratedFileAsString('_test/test/hello_world_test.ddc.js'),
         isNot(contains('Hello World!')));
   });
 

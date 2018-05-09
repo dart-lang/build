@@ -97,7 +97,11 @@ jobs:
       env: PKG="build_runner"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_5
+      env: PKG="build_runner"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_6
       env: PKG="build_runner"
       dart: dev
     - stage: analyze_and_format
@@ -113,7 +117,7 @@ jobs:
       env: PKG="build_web_compilers"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_5
+      script: ./tool/travis.sh test_7
       env: PKG="build_web_compilers"
       dart: dev
     - stage: analyze_and_format
