@@ -45,7 +45,7 @@ main() {
       ]),
     ]).create();
 
-    await pubGet('a');
+    await pubGet('a', offline: false);
   });
 
   tearDown(() async {
