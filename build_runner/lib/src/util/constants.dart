@@ -3,7 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:io';
 
+import 'package:cli_util/cli_util.dart';
 import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
 
 /// Relative path to the asset graph from the root package dir.
 final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
@@ -29,4 +31,7 @@ const String cacheDir = '.dart_tool/build';
 String _scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
 
 /// The name of the pub binary on the current platform.
-final pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
+final pubBinary = p.join(sdkBin, Platform.isWindows ? 'pub.bat' : 'pub');
+
+/// The path to the sdk bin directory on the current platform.
+final sdkBin = p.join(getSdkPath(), 'bin');
