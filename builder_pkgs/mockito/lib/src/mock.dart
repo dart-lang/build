@@ -203,13 +203,9 @@ class _InvocationForTypedArguments extends Invocation {
     invocation.namedArguments.forEach((name, arg) {
       if (arg == null) {
         if (!_typedNamedArgSymbols.contains(name)) {
-          // Incorrect usage of [typed], something like:
-          // `when(obj.fn(a: typed(any)))`.
-          throw new ArgumentError(
-              'A typed argument was passed in as a named argument named "$name", '
-              'but did not pass a value for `named`. Each typed argument that is '
-              'passed as a named argument needs to specify the `named` argument. '
-              'For example: `when(obj.fn(x: typed(any, named: "x")))`.');
+          // This argument was not actually specified at the call site; it is
+          // just a parameter with default value `null`.
+          namedArguments[name] = null;
         }
       } else {
         // Add each real named argument that was _not_ passed with [typed].
@@ -246,10 +242,17 @@ class _InvocationForTypedArguments extends Invocation {
     var positionalArguments = <dynamic>[];
     var nullPositionalArguments =
         invocation.positionalArguments.where((arg) => arg == null);
-    if (_typedArgs.length != nullPositionalArguments.length) {
+    if (_typedArgs.length > nullPositionalArguments.length) {
+      // More _positional_ ArgMatchers were stored than were actually passed as
+      // positional arguments.  // The only way this call was parsed and
+      // resolved is if an ArgMatcher was // passed as a named argument, but
+      // without a name, and thus stored in // [_typedArgs], something like
+      // `when(obj.fn(a: typed(any)))`.
       throw new ArgumentError(
-          'null arguments are not allowed alongside typed(); use '
-          '"typed(eq(null))"');
+          'A typed argument was passed in as a named argument, but did not pass '
+          'a value for `named`. Each typed argument that is passed as a named '
+          'argument needs to specify the `named` argument. For example: '
+          '`when(obj.fn(x: typed(any, named: "x")))`.');
     }
     int typedIndex = 0;
     int positionalIndex = 0;
