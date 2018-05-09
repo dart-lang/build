@@ -5,7 +5,7 @@
 import 'package:build/build.dart';
 
 import '../generate/phase.dart';
-import '../util/util.dart';
+import '../util/build_dirs.dart';
 import 'graph.dart';
 import 'node.dart';
 
