@@ -19,6 +19,8 @@ import 'package:mockito/src/mock.dart'
     show resetMockitoState, throwOnMissingStub;
 import 'package:test/test.dart';
 
+import 'utils.dart';
+
 class RealClass {
   RealClass innerObj;
   String methodWithoutArgs() => "Real";
@@ -108,6 +110,7 @@ String noMatchingCallsFooter = "(If you called `verify(...).called(0);`, "
 
 void main() {
   RealClass mock;
+  var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
     mock = new MockedClass();
@@ -190,7 +193,10 @@ void main() {
           .thenReturn("x y");
       when(mock.methodWithTwoNamedArgs(typed(any), z: typed(any, named: 'z')))
           .thenReturn("x z");
-      expect(mock.methodWithTwoNamedArgs(42), isNull);
+      if (isNsmForwarding)
+        expect(mock.methodWithTwoNamedArgs(42), "x z");
+      else
+        expect(mock.methodWithTwoNamedArgs(42), isNull);
       expect(mock.methodWithTwoNamedArgs(42, y: 18), equals("x y"));
       expect(mock.methodWithTwoNamedArgs(42, z: 17), equals("x z"));
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
@@ -353,13 +359,6 @@ void main() {
       expect(mock.typeParameterizedFn([42], [43]), equals("A bunch!"));
     });
 
-    test("should throw when [typed] used alongside [null].", () {
-      expect(() => when(mock.typeParameterizedFn(typed(any), null, typed(any))),
-          throwsArgumentError);
-      expect(() => when(mock.typeParameterizedFn(typed(any), typed(any), null)),
-          throwsArgumentError);
-    });
-
     test("should mock method when [typed] used alongside matched [null].", () {
       when(mock.typeParameterizedFn(
               typed(any), typed(argThat(equals(null))), typed(any)))
@@ -406,7 +405,7 @@ void main() {
           () => when(mock.typeParameterizedNamedFn(
               typed(any), typed(any, named: "y"))),
           throwsArgumentError);
-    });
+    }, skip: isNsmForwarding);
 
     test(
         "should throw when [typed] used as a named arg, with the wrong `named:`",
@@ -415,7 +414,7 @@ void main() {
           () => when(mock.typeParameterizedNamedFn(typed(any), [43],
               y: typed(any, named: "z"))),
           throwsArgumentError);
-    });
+    }, skip: isNsmForwarding);
   });
 
   group("untilCalled", () {
@@ -1049,11 +1048,12 @@ void main() {
     test("should captureOut with matching arguments", () {
       mock.methodWithPositionalArgs(1);
       mock.methodWithPositionalArgs(2, 3);
+      var expectedCaptures = isNsmForwarding ? [1, null, 2, 3] : [2, 3];
       expect(
           verify(mock.methodWithPositionalArgs(
                   typed(captureAny), typed(captureAny)))
               .captured,
-          equals([2, 3]));
+          equals(expectedCaptures));
     });
 
     test("should captureOut multiple invocations", () {
@@ -1087,7 +1087,10 @@ void main() {
           .thenReturn("x y");
       when(mock.methodWithTwoNamedArgs(typed(any), z: anyNamed('z')))
           .thenReturn("x z");
-      expect(mock.methodWithTwoNamedArgs(42), isNull);
+      if (isNsmForwarding)
+        expect(mock.methodWithTwoNamedArgs(42), "x z");
+      else
+        expect(mock.methodWithTwoNamedArgs(42), isNull);
       expect(mock.methodWithTwoNamedArgs(42, y: 18), equals("x y"));
       expect(mock.methodWithTwoNamedArgs(42, z: 17), equals("x z"));
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
