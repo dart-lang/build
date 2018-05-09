@@ -17,17 +17,19 @@ import '../common/common.dart';
 main() {
   setUpAll(() async {
     await d.dir('a', [
-      await pubspec('a', currentIsolateDependencies: [
-        'build',
-        'build_config',
-        'build_runner',
-        'build_test',
-        'test',
-      ], pathDependencies: {
-        'build_web_compilers': p.absolute('../build_web_compilers'),
-        'build_modules': p.absolute('../build_modules'),
-        'scratch_space': p.absolute('../scratch_space'),
-      }),
+      await pubspec(
+        'a',
+        currentIsolateDependencies: [
+          'build',
+          'build_config',
+          'build_runner',
+          'build_test',
+          'test',
+        ],
+        versionDependencies: {
+          'build_web_compilers': 'any',
+        },
+      ),
       d.dir('test', [
         d.file('hello_test.dart', '''
 import 'package:test/test.dart';
