@@ -64,6 +64,6 @@ class IOEnvironment implements BuildEnvironment {
 }
 
 bool _canPrompt() =>
-    stdioType(stdin) == StdioType.TERMINAL &&
+    stdioType(stdin) == StdioType.terminal &&
     // Assume running inside a test if the code is running as a `data:` URI
     Platform.script.scheme != 'data';

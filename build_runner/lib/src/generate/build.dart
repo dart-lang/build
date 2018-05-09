@@ -38,7 +38,7 @@ import 'watch_impl.dart' as watch_impl;
 /// will be ignored, as well as an [onLog] handler which defaults to [print].
 ///
 /// The [terminateEventStream] is a stream which can send termination events.
-/// By default the [ProcessSignal.SIGINT] stream is used. In this mode, it
+/// By default the [ProcessSignal.sigint] stream is used. In this mode, it
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
 ///
@@ -106,7 +106,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// `DirectoryWatcher`s. By default a normal `DirectoryWatcher` will be used.
 ///
 /// The [terminateEventStream] is a stream which can send termination events.
-/// By default the [ProcessSignal.SIGINT] stream is used. In this mode, the
+/// By default the [ProcessSignal.sigint] stream is used. In this mode, the
 /// first event will allow any ongoing builds to finish, and then the program
 /// will complete normally. Subsequent events are not handled (and will
 /// typically cause a shutdown).

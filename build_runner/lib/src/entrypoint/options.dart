@@ -533,7 +533,7 @@ Future<HttpServer> _bindServer(_ServeOptions options, _ServeTarget target) {
   switch (options.hostName) {
     case 'any':
       // Listens on both IPv6 and IPv4
-      return HttpServer.bind(InternetAddress.ANY_IP_V6, target.port);
+      return HttpServer.bind(InternetAddress.anyIPv6, target.port);
     case 'localhost':
       return HttpMultiServer.loopback(target.port);
     default:
@@ -654,7 +654,7 @@ class _TestCommand extends _BuildRunnerCommand {
           '--precompiled',
           precompiledPath,
         ]..addAll(extraTestArgs),
-        mode: ProcessStartMode.INHERIT_STDIO);
+        mode: ProcessStartMode.inheritStdio);
     return testProcess.exitCode;
   }
 }

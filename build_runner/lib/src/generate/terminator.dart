@@ -19,7 +19,7 @@ class Terminator {
 
   factory Terminator([Stream terminateEventStream]) {
     var shouldTerminate = new Completer();
-    terminateEventStream ??= ProcessSignal.SIGINT.watch();
+    terminateEventStream ??= ProcessSignal.sigint.watch();
     var numEventsSeen = 0;
     var terminateListener = terminateEventStream.listen((_) {
       numEventsSeen++;
