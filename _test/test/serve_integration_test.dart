@@ -22,8 +22,7 @@ void main() {
   });
 
   test('Doesn\'t compile submodules into the root module', () {
-    expect(
-        readGeneratedFileAsString('_test/test/hello_world_test.ddc.js'),
+    expect(readGeneratedFileAsString('_test/test/hello_world_test.ddc.js'),
         isNot(contains('Hello World!')));
   });
 
@@ -53,7 +52,7 @@ void main() {
     });
 
     test('build errors can be fixed', () async {
-      var path = p.join('lib', 'expected.fail');
+      var path = p.join('web', 'expected.fail');
 
       var nextBuild = nextFailedBuild;
       await createFile(path, 'some error');
