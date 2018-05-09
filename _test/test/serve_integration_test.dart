@@ -52,7 +52,7 @@ void main() {
     });
 
     test('build errors can be fixed', () async {
-      var path = p.join('web', 'expected.fail');
+      var path = p.join('lib', 'expected.fail');
 
       var nextBuild = nextFailedBuild;
       await createFile(path, 'some error');

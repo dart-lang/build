@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 
 import '../generate/phase.dart';
+import '../util/util.dart';
 import 'graph.dart';
 import 'node.dart';
 
@@ -14,10 +15,12 @@ import 'node.dart';
 /// An optional output becomes required if:
 /// - Any of it's transitive outputs is non-optional.
 /// - It was output by the same build step as any required output.
-/// - If [_buildDirs] is non-empty then it must live in the root package and
-///   its path must be prefixed by one of the dirs.
 ///
-/// Any outputs from non-optional phases are aways considered required.
+/// Any outputs from non-optional phases are considered required, unless the
+/// following are all true.
+///  - [_buildDirs] is non-empty.
+///  - The output lives in a non-lib directory.
+///  - The outputs path is not prefixed by one of [_buildDirs].
 ///
 /// Non-required optional output might still exist in the generated directory an
 /// the asset graph but we should avoid serving them, outputting them in the
@@ -27,10 +30,8 @@ class OptionalOutputTracker {
   final AssetGraph _assetGraph;
   final List<String> _buildDirs;
   final List<BuildPhase> _buildPhases;
-  final String _rootPackage;
 
-  OptionalOutputTracker(
-      this._assetGraph, this._buildDirs, this._buildPhases, this._rootPackage);
+  OptionalOutputTracker(this._assetGraph, this._buildDirs, this._buildPhases);
 
   /// Returns whether [output] is required.
   ///
@@ -47,12 +48,8 @@ class OptionalOutputTracker {
     if (node is! GeneratedAssetNode) return true;
     final generatedNode = node as GeneratedAssetNode;
     final phase = _buildPhases[generatedNode.phaseNumber];
-    if (!phase.isOptional) {
-      if (_buildDirs.isEmpty) return true;
-      if (output.package == _rootPackage &&
-          _buildDirs.any(output.path.startsWith)) {
-        return true;
-      }
+    if (!phase.isOptional && shouldBuildForDirs(output, _buildDirs)) {
+      return true;
     }
     return _checkedOutputs.putIfAbsent(
         output,

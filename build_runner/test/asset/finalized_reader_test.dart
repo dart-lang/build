@@ -32,7 +32,7 @@ void main() {
       delegate.assets.addAll({notDeleted.id: [], deleted.id: []});
 
       reader = new FinalizedReader(
-          delegate, graph, new OptionalOutputTracker(graph, [], [], 'foo'));
+          delegate, graph, new OptionalOutputTracker(graph, [], []));
     });
 
     test('can not read deleted files', () async {

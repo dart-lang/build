@@ -32,6 +32,7 @@ import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/constants.dart';
+import '../util/util.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
 import 'create_merged_dir.dart';
@@ -236,8 +237,8 @@ class _SingleBuild {
       await _updateAssetGraph(updates);
     }
     var result = await _safeBuild();
-    var optionalOutputTracker = new OptionalOutputTracker(
-        _assetGraph, _buildDirs, _buildPhases, _packageGraph.root.name);
+    var optionalOutputTracker =
+        new OptionalOutputTracker(_assetGraph, _buildDirs, _buildPhases);
     if (result.status == BuildStatus.success) {
       if (_assetGraph.failedOutputs
           .map((n) => n.id)
@@ -341,12 +342,6 @@ class _SingleBuild {
       if (phase.isOptional) continue;
       await _performanceTracker.trackBuildPhase(phase, () async {
         if (phase is InBuildPhase) {
-          // Bail early if building a non-root package and we are building
-          // specific output dirs.
-          if (_buildDirs.isNotEmpty &&
-              phase.package != _packageGraph.root.name) {
-            return;
-          }
           var primaryInputs =
               await _matchingPrimaryInputs(phase.package, phaseNum);
           outputs.addAll(await _runBuilder(phaseNum, phase, primaryInputs));
@@ -376,7 +371,7 @@ class _SingleBuild {
     var ids = new Set<AssetId>();
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (_buildDirs.isNotEmpty && !_buildDirs.any(node.id.path.startsWith)) {
+      if (!shouldBuildForDirs(node.id, _buildDirs)) {
         return;
       }
 

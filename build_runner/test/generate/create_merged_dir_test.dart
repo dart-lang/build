@@ -53,8 +53,7 @@ main() {
       environment = new TestBuildEnvironment(reader: assetReader);
       graph = await AssetGraph.build(phases, sources.keys.toSet(),
           new Set<AssetId>(), packageGraph, assetReader);
-      optionalOutputTracker =
-          new OptionalOutputTracker(graph, [], phases, packageGraph.root.name);
+      optionalOutputTracker = new OptionalOutputTracker(graph, [], phases);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
         node.state = GeneratedNodeState.upToDate;
@@ -200,8 +199,7 @@ main() {
           packageGraph,
           assetReader,
           environment,
-          new OptionalOutputTracker(
-              graph, ['foo'], phases, packageGraph.root.name));
+          new OptionalOutputTracker(graph, ['foo'], phases));
       expect(success, isTrue);
 
       var expectedFiles = <String, dynamic>{
