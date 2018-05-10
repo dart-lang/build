@@ -50,8 +50,7 @@ class DevCompilerBuilder implements Builder {
     }
 
     try {
-      await _createDevCompilerModule(module, buildStep, useKernel,
-          debugMode: !useKernel);
+      await _createDevCompilerModule(module, buildStep, useKernel);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -102,9 +101,13 @@ Future _createDevCompilerModule(
   if (debugMode) {
     request.arguments.addAll([
       '--source-map',
-      '--source-map-comment',
-      '--inline-source-map',
     ]);
+    if (!useKernel) {
+      request.arguments.addAll([
+        '--source-map-comment',
+        '--inline-source-map',
+      ]);
+    }
   } else {
     request.arguments.add('--no-source-map');
   }
