@@ -11,7 +11,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:build_runner/src/util/constants.dart';
 
-String _dartBinary = p.join(sdkBin, 'bin', 'dart');
+String _dartBinary = p.join(sdkBin, 'dart');
 
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
