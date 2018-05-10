@@ -5,13 +5,13 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-String _dartBinary = p.join(getSdkPath(), 'bin', 'dart');
-String _pubBinary = p.join(getSdkPath(), 'bin', 'pub');
+import 'package:build_runner/src/util/constants.dart';
+
+String _dartBinary = p.join(sdkBin, 'dart');
 
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
@@ -26,13 +26,13 @@ Future<ProcessResult> pubGet(String package, {bool offline}) async {
 /// Runs the `pub` [command] on [package] with [args].
 Future<ProcessResult> runPub(String package, String command,
         {Iterable<String> args}) =>
-    Process.run(_pubBinary, [command]..addAll(args ?? []),
+    Process.run(pubBinary, [command]..addAll(args ?? []),
         workingDirectory: p.join(d.sandbox, package));
 
 /// Starts the `pub` [command] on [package] with [args].
 Future<Process> startPub(String package, String command,
         {Iterable<String> args}) =>
-    Process.start(_pubBinary, [command]..addAll(args ?? []),
+    Process.start(pubBinary, [command]..addAll(args ?? []),
         workingDirectory: p.join(d.sandbox, package));
 
 /// Runs the `dart` script [script] in [package] with [args].

@@ -15,7 +15,7 @@ import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
-import 'package:build_runner/src/entrypoint/options.dart';
+import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 
 Future<Null> main(List<String> args) async {
@@ -106,4 +106,7 @@ class _GenerateBuildScript extends Command<int> {
 
   @override
   final name = _generateCommand;
+
+  @override
+  bool get hidden => true;
 }

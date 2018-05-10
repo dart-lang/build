@@ -14,6 +14,8 @@ import 'package:test/test.dart' show expect;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test_process/test_process.dart';
 
+import '../../common/sdk.dart';
+
 class TestBuilderDefinition {
   final String key;
   final bool isOptional;
@@ -95,7 +97,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                     value: (o) => p.join(d.sandbox, (o as d.Descriptor).name))),
           ].followedBy(packageContents))
       .create();
-  await _pubGet('a');
+  await pubGet('a');
   return new BuildTool._('pub', ['run', 'build_runner']);
 }
 
@@ -131,7 +133,7 @@ Future<BuildTool> packageWithBuildScript(
             ])
           ].followedBy(contents))
       .create();
-  await _pubGet('a');
+  await pubGet('a');
   return new BuildTool._('dart', [p.join('tool', 'build.dart')]);
 }
 
@@ -234,14 +236,6 @@ d.FileDescriptor _pubspec(String name,
   });
 
   return d.file('pubspec.yaml', buffer.toString());
-}
-
-/// Runs `pub get` on [package] (which is assumed to be in a directory with
-/// that name under the [d.sandbox] directory).
-Future<void> _pubGet(String package) async {
-  var pubGetresult = await Process.run('pub', ['get'],
-      workingDirectory: p.join(d.sandbox, package));
-  expect(pubGetresult.exitCode, 0, reason: pubGetresult.stderr as String);
 }
 
 /// An executable that can run builds.
