@@ -1,3 +1,8 @@
+## 0.8.9
+
+- Improve error message when a dependency has a bad `build.yaml` with a missing
+  dependency.
+
 ## 0.8.8
 
 - Improve search behavior on the `/$graph` page. Users can now query for

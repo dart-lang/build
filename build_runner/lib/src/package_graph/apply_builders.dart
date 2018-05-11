@@ -245,11 +245,23 @@ Future<List<BuildPhase>> createBuildPhases(
     bool isReleaseMode) async {
   validateBuilderConfig(builderApplications, targetGraph.rootPackageConfig,
       builderConfigOverrides, _logger);
-  final cycles = stronglyConnectedComponents<String, TargetNode>(
-      targetGraph.allModules.values,
-      (node) => node.target.key,
-      (node) =>
-          node.target.dependencies?.map((key) => targetGraph.allModules[key]));
+  List<List<TargetNode>> cycles;
+  try {
+    cycles = stronglyConnectedComponents<String, TargetNode>(
+        targetGraph.allModules.values,
+        (node) => node.target.key,
+        (node) => node.target.dependencies?.map((key) {
+              if (!targetGraph.allModules.containsKey(key)) {
+                _logger
+                    .severe('${node.target.key} declares a dependency on $key '
+                        'but it does not exist');
+                throw new Exception();
+              }
+              return targetGraph.allModules[key];
+            })?.where((n) => n != null));
+  } catch (_) {
+    return [];
+  }
   final applyWith = _applyWith(builderApplications);
   var expandedPhases = cycles.expand((cycle) => _createBuildPhasesWithinCycle(
       cycle,
