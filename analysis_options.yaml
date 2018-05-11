@@ -13,6 +13,7 @@ analyzer:
     - "build/**"
     # Prevents extra work during e2e test runs.
     - "dart2js_test/**"
+    - ".dart_tool/**"
 linter:
   rules:
     - annotate_overrides
