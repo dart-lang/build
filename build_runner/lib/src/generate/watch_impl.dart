@@ -68,14 +68,25 @@ Future<ServeHandler> watch(
   packageGraph ??= new PackageGraph.forThisPackage();
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
-  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-      overrideBuildConfig: overrideBuildConfig);
-  var environment = new OverrideableEnvironment(
+  final environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
       writer: writer,
       directoryWatcherFactory: directoryWatcherFactory,
       onLog: onLog);
+  TargetGraph targetGraph;
+  try {
+    targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+        overrideBuildConfig: overrideBuildConfig);
+  } on BuildConfigParseException catch (e) {
+    // Logging is not set up until the BuildOptions is created
+    environment.onLog(new LogRecord(
+        Level.SEVERE,
+        'Failed to parse `build.yaml` for ${e.packageName}.',
+        'Watch',
+        e.exception));
+    return null;
+  }
   var options = new BuildOptions(environment,
       configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
