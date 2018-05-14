@@ -2,6 +2,7 @@
 
 - Added `List<String> get pathSegments` to `AssetId`.
 - `log` will now always return a `Logger` instance.
+- Support `package:analyzer` `0.32.0`.
 
 ## 0.12.5
 
