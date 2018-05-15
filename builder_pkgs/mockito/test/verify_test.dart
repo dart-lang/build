@@ -23,6 +23,7 @@ class RealClass {
   String methodWithListArgs(List<int> x) => 'Real';
   String methodWithPositionalArgs(int x, [int y]) => 'Real';
   String methodWithNamedArgs(int x, {int y}) => 'Real';
+  String methodWithOnlyNamedArgs({int y, int z}) => 'Real';
   String methodWithObjArgs(RealClass x) => 'Real';
   String get getter => 'Real';
   set setter(String arg) {
@@ -71,11 +72,6 @@ void main() {
 
     test('should verify method with normal args', () {
       mock.methodWithNormalArgs(42);
-      expectFail(
-          'No matching calls. All calls: MockedClass.methodWithNormalArgs(42)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithNormalArgs(43));
-      });
       verify(mock.methodWithNormalArgs(42));
     });
 
@@ -181,6 +177,51 @@ void main() {
         verify(mock.setter = 'B');
       });
       verify(mock.setter = 'A');
+    });
+
+    test(
+        'should fail when no matching call is found, '
+        'and there are no unmatched calls', () {
+      expectFail(
+          'No matching calls (actually, no calls at all).\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithNormalArgs(43));
+      });
+    });
+
+    test(
+        'should fail when no matching call is found, '
+        'and there is one unmatched call', () {
+      mock.methodWithNormalArgs(42);
+      expectFail(
+          'No matching calls. All calls: MockedClass.methodWithNormalArgs(42)\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithNormalArgs(43));
+      });
+    });
+
+    test(
+        'should fail when no matching call is found, '
+        'and there are multiple unmatched calls', () {
+      mock.methodWithNormalArgs(41);
+      mock.methodWithNormalArgs(42);
+      expectFail(
+          'No matching calls. All calls: '
+          'MockedClass.methodWithNormalArgs(41), MockedClass.methodWithNormalArgs(42)\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithNormalArgs(43));
+      });
+    });
+
+    test(
+        'should fail when no matching call is found, '
+        'and unmatched calls have only named args', () {
+      mock.methodWithOnlyNamedArgs(y: 1);
+      expectFail(
+          'No matching calls. All calls: MockedClass.methodWithOnlyNamedArgs({y: 1})\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithOnlyNamedArgs());
+      });
     });
 
     test('should throw meaningful errors when verification is interrupted', () {

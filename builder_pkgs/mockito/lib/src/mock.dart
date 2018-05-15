@@ -464,7 +464,8 @@ class RealCall {
           .map((key) =>
               "${_symbolToString(key)}: ${invocation.namedArguments[key]}")
           .join(", ");
-      args += ", {$namedArgs}";
+      if (args.isNotEmpty) args += ", ";
+      args += "{$namedArgs}";
     }
 
     var method = _symbolToString(invocation.memberName);
