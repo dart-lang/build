@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build_runner/src/asset/finalized_reader.dart';
+import 'package:build_runner/src/changes/build_script_updates.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
@@ -93,29 +95,33 @@ Future<BuildResult> build(
       buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildPhases = await createBuildPhases(
-      targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
-
-  BuildResult result;
-  if (buildPhases.isEmpty) {
-    _logger.severe('Nothing can be built, yet a build was requested.');
-    result = new BuildResult(BuildStatus.failure, []);
-  } else {
-    result = await _singleBuild(environment, options, buildPhases);
-  }
+  var result = await _singleBuild(options, environment, builders,
+      builderConfigOverrides, overrideBuildConfig,
+      isReleaseBuild: isReleaseBuild ?? false);
 
   await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
 
-Future<BuildResult> _singleBuild(BuildEnvironment environment,
-    BuildOptions options, List<BuildPhase> buildPhases) async {
-  var buildDefinition =
-      await BuildDefinition.prepareWorkspace(environment, options, buildPhases);
-  var result = (await BuildImpl.create(buildDefinition, options, buildPhases))
-      .firstBuild;
-  await buildDefinition.resourceManager.beforeExit();
+Future<BuildResult> _singleBuild(
+    BuildOptions options,
+    BuildEnvironment environment,
+    List<BuilderApplication> builders,
+    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    Map<String, BuildConfig> overrideBuildConfig,
+    {bool isReleaseBuild: false}) async {
+  var build = await BuildImpl.create(
+    options,
+    environment,
+    builders,
+    builderConfigOverrides,
+    overrideBuildConfig,
+    isReleaseBuild: isReleaseBuild,
+  );
+  if (build == null) return new BuildResult(BuildStatus.failure, []);
+  var result = build.firstBuild;
+  await build.beforeExit();
   return result;
 }
 
@@ -123,7 +129,17 @@ class BuildImpl {
   BuildResult _firstBuild;
   BuildResult get firstBuild => _firstBuild;
 
+  final FinalizedReader _finalizedReader;
+  FinalizedReader get finalizedReader => _finalizedReader;
+
   final AssetGraph _assetGraph;
+  // TODO(grouma) - do not expose the asset graph.
+  AssetGraph get assetGraph => _assetGraph;
+
+  final BuildScriptUpdates _buildScriptUpdates;
+  // TODO(grouma) - do not expose the build script updates.
+  BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
+
   final List<BuildPhase> _buildPhases;
   final bool _failOnSevere;
   final PackageGraph _packageGraph;
@@ -137,9 +153,12 @@ class BuildImpl {
   final BuildEnvironment _environment;
   final List<String> _buildDirs;
 
-  BuildImpl._(
-      BuildDefinition buildDefinition, BuildOptions options, this._buildPhases)
-      : _packageGraph = buildDefinition.packageGraph,
+  Future<Null> beforeExit() => _resourceManager.beforeExit();
+
+  BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
+      this._buildPhases, this._finalizedReader)
+      : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
+        _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : new CachingAssetReader(buildDefinition.reader),
@@ -156,10 +175,36 @@ class BuildImpl {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
 
-  static Future<BuildImpl> create(BuildDefinition buildDefinition,
-      BuildOptions options, List<BuildPhase> buildPhases) async {
-    var build = new BuildImpl._(buildDefinition, options, buildPhases);
-
+  static Future<BuildImpl> create(
+      BuildOptions options,
+      BuildEnvironment environment,
+      List<BuilderApplication> builders,
+      Map<String, Map<String, dynamic>> builderConfigOverrides,
+      Map<String, BuildConfig> overrideBuildConfig,
+      {bool isReleaseBuild: false}) async {
+    var targetGraph = await TargetGraph.forPackageGraph(options.packageGraph,
+        overrideBuildConfig: overrideBuildConfig);
+    var buildPhases = await createBuildPhases(
+        targetGraph, builders, builderConfigOverrides, isReleaseBuild);
+    if (buildPhases.isEmpty) {
+      _logger.severe('Nothing can be built, yet a build was requested.');
+      return null;
+    }
+    var buildDefinition = await BuildDefinition.prepareWorkspace(
+        environment, options, buildPhases);
+    var singleStepReader = new SingleStepReader(
+        buildDefinition.reader,
+        buildDefinition.assetGraph,
+        buildPhases.length,
+        true,
+        options.packageGraph.root.name,
+        null);
+    var optionalOutputTracker = new OptionalOutputTracker(
+        buildDefinition.assetGraph, options.buildDirs, buildPhases);
+    var finalizedReader = new FinalizedReader(
+        singleStepReader, buildDefinition.assetGraph, optionalOutputTracker);
+    var build =
+        new BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     build._firstBuild = await build.run({});
     return build;
   }
