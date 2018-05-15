@@ -43,6 +43,7 @@ class BuildOptions {
   final bool trackPerformance;
   final bool verbose;
   final List<String> buildDirs;
+  final TargetGraph targetGraph;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -64,6 +65,7 @@ class BuildOptions {
     @required this.trackPerformance,
     @required this.verbose,
     @required this.buildDirs,
+    @required this.targetGraph,
   }) : this.rootPackageFilesWhitelist =
             new UnmodifiableListView(rootPackageFilesWhitelist);
 
@@ -96,9 +98,9 @@ class BuildOptions {
 
     overrideBuildConfig ??=
         await findBuildConfigOverrides(packageGraph, configKey);
-    var rootPackageConfig = (await TargetGraph.forPackageGraph(packageGraph,
-            overrideBuildConfig: overrideBuildConfig))
-        .rootPackageConfig;
+    var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+        overrideBuildConfig: overrideBuildConfig);
+    var rootPackageConfig = targetGraph.rootPackageConfig;
 
     var logListener = Logger.root.onRecord.listen(environment.onLog);
 
@@ -136,6 +138,7 @@ class BuildOptions {
         skipBuildScriptCheck: skipBuildScriptCheck,
         trackPerformance: trackPerformance,
         verbose: verbose,
-        buildDirs: buildDirs);
+        buildDirs: buildDirs,
+        targetGraph: targetGraph);
   }
 }

@@ -62,6 +62,7 @@ Future<ServeHandler> watch(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
+
   var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
@@ -85,7 +86,7 @@ Future<ServeHandler> watch(
   var terminator = new Terminator(terminateEventStream);
 
   var watch = _runWatch(options, environment, builders, builderConfigOverrides,
-      overrideBuildConfig, terminator.shouldTerminate,
+      terminator.shouldTerminate,
       isReleaseMode: isReleaseBuild ?? false);
 
   // ignore: unawaited_futures
@@ -110,16 +111,9 @@ WatchImpl _runWatch(
         BuildEnvironment environment,
         List<BuilderApplication> builders,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
-        Map<String, BuildConfig> overrideBuildConfig,
         Future until,
         {bool isReleaseMode: false}) =>
-    new WatchImpl(
-        options,
-        environment,
-        builders,
-        builderConfigOverrides,
-        overrideBuildConfig,
-        until,
+    new WatchImpl(options, environment, builders, builderConfigOverrides, until,
         options.rootPackageFilesWhitelist.map((g) => new Glob(g)),
         isReleaseMode: isReleaseMode);
 
@@ -184,7 +178,6 @@ class WatchImpl implements BuildState {
       BuildEnvironment environment,
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
-      Map<String, BuildConfig> overrideBuildConfig,
       Future until,
       this._rootPackageFilesWhitelist,
       {bool isReleaseMode: false})
@@ -192,8 +185,8 @@ class WatchImpl implements BuildState {
         _directoryWatcherFactory = environment.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
-    buildResults = _run(options, environment, builders, builderConfigOverrides,
-            overrideBuildConfig, until,
+    buildResults = _run(
+            options, environment, builders, builderConfigOverrides, until,
             isReleaseMode: isReleaseMode)
         .asBroadcastStream();
   }
@@ -211,7 +204,6 @@ class WatchImpl implements BuildState {
       BuildEnvironment environment,
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
-      Map<String, BuildConfig> overrideBuildConfig,
       Future until,
       {bool isReleaseMode: false}) {
     var watcherEnvironment = new OverrideableEnvironment(environment,
@@ -306,8 +298,8 @@ class WatchImpl implements BuildState {
           () => graphWatcher.ready);
       originalRootPackagesDigest = md5
           .convert(await watcherEnvironment.reader.readAsBytes(rootPackagesId));
-      _build = await BuildImpl.create(options, watcherEnvironment, builders,
-          builderConfigOverrides, overrideBuildConfig,
+      _build = await BuildImpl.create(
+          options, watcherEnvironment, builders, builderConfigOverrides,
           isReleaseBuild: isReleaseMode);
 
       _reader = _build?.finalizedReader;
