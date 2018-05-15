@@ -117,6 +117,7 @@ Future<BuildResult> _singleBuild(
     builders,
     builderConfigOverrides,
     overrideBuildConfig,
+    isReleaseBuild: isReleaseBuild,
   );
   if (build == null) return new BuildResult(BuildStatus.failure, []);
   var result = build.firstBuild;
@@ -128,7 +129,7 @@ class BuildImpl {
   BuildResult _firstBuild;
   BuildResult get firstBuild => _firstBuild;
 
-  FinalizedReader _finalizedReader;
+  final FinalizedReader _finalizedReader;
   FinalizedReader get finalizedReader => _finalizedReader;
 
   final AssetGraph _assetGraph;
@@ -154,8 +155,8 @@ class BuildImpl {
 
   Future<Null> beforeExit() => _resourceManager.beforeExit();
 
-  BuildImpl._(
-      BuildDefinition buildDefinition, BuildOptions options, this._buildPhases)
+  BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
+      this._buildPhases, this._finalizedReader)
       : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
@@ -169,19 +170,7 @@ class BuildImpl {
         _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
-        _buildDirs = options.buildDirs {
-    var singleStepReader = new SingleStepReader(
-        buildDefinition.reader,
-        buildDefinition.assetGraph,
-        _buildPhases.length,
-        true,
-        _packageGraph.root.name,
-        null);
-    var optionalOutputTracker = new OptionalOutputTracker(
-        buildDefinition.assetGraph, options.buildDirs, _buildPhases);
-    _finalizedReader = new FinalizedReader(
-        singleStepReader, buildDefinition.assetGraph, optionalOutputTracker);
-  }
+        _buildDirs = options.buildDirs;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
@@ -203,8 +192,19 @@ class BuildImpl {
     }
     var buildDefinition = await BuildDefinition.prepareWorkspace(
         environment, options, buildPhases);
-    var build = new BuildImpl._(buildDefinition, options, buildPhases);
-
+    var singleStepReader = new SingleStepReader(
+        buildDefinition.reader,
+        buildDefinition.assetGraph,
+        buildPhases.length,
+        true,
+        options.packageGraph.root.name,
+        null);
+    var optionalOutputTracker = new OptionalOutputTracker(
+        buildDefinition.assetGraph, options.buildDirs, buildPhases);
+    var finalizedReader = new FinalizedReader(
+        singleStepReader, buildDefinition.assetGraph, optionalOutputTracker);
+    var build =
+        new BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     build._firstBuild = await build.run({});
     return build;
   }
