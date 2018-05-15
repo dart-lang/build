@@ -29,7 +29,6 @@ import '../logging/build_for_input_logger.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
-import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
@@ -71,21 +70,17 @@ Future<BuildResult> build(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
-  overrideBuildConfig ??=
-      await findBuildConfigOverrides(packageGraph, configKey);
-  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-      overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
       reader: reader,
       writer: writer,
       onLog: onLog);
-  var options = new BuildOptions(environment,
+  var options = await BuildOptions.create(environment,
       configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
-      rootPackageConfig: targetGraph.rootPackageConfig,
+      overrideBuildConfig: overrideBuildConfig,
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,

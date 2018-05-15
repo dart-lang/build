@@ -25,9 +25,7 @@ import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
-import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
-import '../package_graph/target_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
 import 'build_impl.dart';
@@ -64,23 +62,18 @@ Future<ServeHandler> watch(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
-  overrideBuildConfig ??=
-      await findBuildConfigOverrides(packageGraph, configKey);
-  // TODO(grouma) - don't construct a target graph.
-  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-      overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
       writer: writer,
       directoryWatcherFactory: directoryWatcherFactory,
       onLog: onLog);
-  var options = new BuildOptions(environment,
+  var options = await BuildOptions.create(environment,
       configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
-      rootPackageConfig: targetGraph.rootPackageConfig,
+      overrideBuildConfig: overrideBuildConfig,
       logLevel: logLevel,
       debounceDelay: debounceDelay,
       skipBuildScriptCheck: skipBuildScriptCheck,

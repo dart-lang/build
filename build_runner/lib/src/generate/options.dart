@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/package_graph/build_config_overrides.dart';
+import 'package:build_runner/src/package_graph/target_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
@@ -65,7 +67,7 @@ class BuildOptions {
   }) : this.rootPackageFilesWhitelist =
             new UnmodifiableListView(rootPackageFilesWhitelist);
 
-  factory BuildOptions(
+  static Future<BuildOptions> create(
     BuildEnvironment environment, {
     String configKey,
     Duration debounceDelay,
@@ -75,12 +77,12 @@ class BuildOptions {
     Level logLevel,
     Map<String, String> outputMap,
     @required PackageGraph packageGraph,
-    BuildConfig rootPackageConfig,
+    Map<String, BuildConfig> overrideBuildConfig,
     bool skipBuildScriptCheck,
     bool trackPerformance,
     bool verbose,
     List<String> buildDirs,
-  }) {
+  }) async {
     // Set up logging
     verbose ??= false;
     logLevel ??= verbose ? Level.ALL : Level.INFO;
@@ -91,6 +93,12 @@ class BuildOptions {
     }
 
     Logger.root.level = logLevel;
+
+    overrideBuildConfig ??=
+        await findBuildConfigOverrides(packageGraph, configKey);
+    var rootPackageConfig = (await TargetGraph.forPackageGraph(packageGraph,
+            overrideBuildConfig: overrideBuildConfig))
+        .rootPackageConfig;
 
     var logListener = Logger.root.onRecord.listen(environment.onLog);
 
