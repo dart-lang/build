@@ -72,7 +72,8 @@ class ServeHandler implements BuildState {
       }
       if (request.url.path.startsWith(_graphPath)) {
         var graphHandler = await _assetGraphHandler;
-        return graphHandler.handle(request.change(path: _graphPath), rootDir);
+        return await graphHandler.handle(
+            request.change(path: _graphPath), rootDir);
       }
       var assetHandler = await _assetHandler;
       return assetHandler.handle(request, rootDir);
