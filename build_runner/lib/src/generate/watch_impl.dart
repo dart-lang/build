@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -129,6 +130,28 @@ WatchImpl _runWatch(BuildEnvironment environment, BuildOptions options,
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
+class _OnDeleteWriter implements RunnerAssetWriter {
+  RunnerAssetWriter _writer;
+  Function(AssetId id) _onDelete;
+
+  _OnDeleteWriter(this._writer, this._onDelete);
+
+  @override
+  Future delete(AssetId id) {
+    _onDelete(id);
+    return _writer.delete(id);
+  }
+
+  @override
+  Future writeAsBytes(AssetId id, List<int> bytes) =>
+      _writer.writeAsBytes(id, bytes);
+
+  @override
+  Future writeAsString(AssetId id, String contents,
+          {Encoding encoding: utf8}) =>
+      _writer.writeAsString(id, contents, encoding: encoding);
+}
+
 class WatchImpl implements BuildState {
   AssetGraph _assetGraph;
   AssetGraph get assetGraph => _assetGraph;
@@ -182,6 +205,8 @@ class WatchImpl implements BuildState {
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(BuildEnvironment environment, BuildOptions options,
       List<BuildPhase> buildPhases, Future until) {
+    var watcherEnvironment = new OverrideableEnvironment(environment,
+        writer: new _OnDeleteWriter(environment.writer, _expectedDeletes.add));
     var firstBuildCompleter = new Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = new StreamController<BuildResult>();
@@ -236,7 +261,9 @@ class WatchImpl implements BuildState {
           assert(originalRootPackagesDigest != null);
           if (id == rootPackagesId) {
             // Kill future builds if the root packages file changes.
-            return environment.reader.readAsBytes(rootPackagesId).then((bytes) {
+            return watcherEnvironment.reader
+                .readAsBytes(rootPackagesId)
+                .then((bytes) {
               if (md5.convert(bytes) != originalRootPackagesDigest) {
                 _terminateCompleter.complete();
                 _logger
@@ -275,11 +302,10 @@ class WatchImpl implements BuildState {
     () async {
       await logTimedAsync(_logger, 'Waiting for all file watchers to be ready',
           () => graphWatcher.ready);
-      originalRootPackagesDigest =
-          md5.convert(await environment.reader.readAsBytes(rootPackagesId));
+      originalRootPackagesDigest = md5
+          .convert(await watcherEnvironment.reader.readAsBytes(rootPackagesId));
       _buildDefinition = await BuildDefinition.prepareWorkspace(
-          environment, options, buildPhases,
-          onDelete: _expectedDeletes.add);
+          watcherEnvironment, options, buildPhases);
       var singleStepReader = new SingleStepReader(
           _buildDefinition.reader,
           _buildDefinition.assetGraph,
@@ -293,8 +319,7 @@ class WatchImpl implements BuildState {
           singleStepReader, _buildDefinition.assetGraph, optionalOutputTracker);
       _readerCompleter.complete(finalizedReader);
       _assetGraph = _buildDefinition.assetGraph;
-      build = await BuildImpl.create(_buildDefinition, options, buildPhases,
-          onDelete: _expectedDeletes.add);
+      build = await BuildImpl.create(_buildDefinition, options, buildPhases);
 
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.

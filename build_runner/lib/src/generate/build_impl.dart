@@ -126,7 +126,6 @@ class BuildImpl {
   final AssetGraph _assetGraph;
   final List<BuildPhase> _buildPhases;
   final bool _failOnSevere;
-  final OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
   final _resolvers = new AnalyzerResolvers();
@@ -147,7 +146,6 @@ class BuildImpl {
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
-        _onDelete = buildDefinition.onDelete,
         _outputMap = options.outputMap,
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
@@ -159,8 +157,7 @@ class BuildImpl {
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
 
   static Future<BuildImpl> create(BuildDefinition buildDefinition,
-      BuildOptions options, List<BuildPhase> buildPhases,
-      {void onDelete(AssetId id)}) async {
+      BuildOptions options, List<BuildPhase> buildPhases) async {
     var build = new BuildImpl._(buildDefinition, options, buildPhases);
 
     build._firstBuild = await build.run({});
@@ -176,7 +173,6 @@ class _SingleBuild {
   final BuildEnvironment _environment;
   final bool _failOnSevere;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
-  final OnDelete _onDelete;
   final Map<String, String> _outputMap;
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
@@ -200,7 +196,6 @@ class _SingleBuild {
         _buildPhases = buildImpl._buildPhases,
         _environment = buildImpl._environment,
         _failOnSevere = buildImpl._failOnSevere,
-        _onDelete = buildImpl._onDelete,
         _outputMap = buildImpl._outputMap,
         _packageGraph = buildImpl._packageGraph,
         _performanceTracker = buildImpl._trackPerformance
@@ -779,10 +774,7 @@ class _SingleBuild {
     }
   }
 
-  Future _delete(AssetId id) {
-    _onDelete?.call(id);
-    return _writer.delete(id);
-  }
+  Future _delete(AssetId id) => _writer.delete(id);
 }
 
 String _actionLoggerName(
