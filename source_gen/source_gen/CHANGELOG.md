@@ -1,3 +1,7 @@
+## 0.8.1+1
+
+* Support `package:analyzer` `0.32.0`.
+
 ## 0.8.1
 
 * Cleanup logging output that duplicates headers provided by 
