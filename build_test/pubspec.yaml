@@ -25,4 +25,4 @@ dependencies:
   watcher: ^0.9.7
 
 dev_dependencies:
-  analyzer: ">=0.27.1 <0.32.0"
+  analyzer: ">=0.27.1 <0.33.0"
