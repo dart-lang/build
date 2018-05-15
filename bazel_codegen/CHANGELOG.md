@@ -1,3 +1,7 @@
+# 0.3.1+3
+
+- Support `package:analyzer` `0.32.0`.
+
 # 0.3.1+2
 
 - Fixed runtime errors when running in Dart 2 mode via `--preview-dart-2`.
