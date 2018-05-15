@@ -1,3 +1,7 @@
+## 0.4.0+1
+
+- Support `package:analyzer` `0.32.0`.
+
 ## 0.4.0
 
 - Changed the default for `enable_sync_async` to `true` for the
