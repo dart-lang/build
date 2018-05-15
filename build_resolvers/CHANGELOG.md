@@ -1,3 +1,7 @@
+# 0.2.0+2
+
+- Support `package:analyzer` `0.32.0`.
+
 # 0.2.0+1
 
 - Switch to `firstWhere(orElse)` for compatibility with the SDK dev.45
