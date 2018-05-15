@@ -21,6 +21,7 @@ class RealClass {
   String methodWithoutArgs() => 'Real';
   String methodWithNormalArgs(int x) => 'Real';
   String methodWithListArgs(List<int> x) => 'Real';
+  String methodWithOptionalArg([int x]) => 'Real';
   String methodWithPositionalArgs(int x, [int y]) => 'Real';
   String methodWithNamedArgs(int x, {int y}) => 'Real';
   String methodWithOnlyNamedArgs({int y, int z}) => 'Real';
@@ -29,6 +30,24 @@ class RealClass {
   set setter(String arg) {
     throw new StateError('I must be mocked');
   }
+
+  String methodWithLongArgs(LongToString a, LongToString b,
+          {LongToString c, LongToString d}) =>
+      'Real';
+}
+
+class LongToString {
+  final List aList;
+  final Map aMap;
+  final String aString;
+
+  LongToString(this.aList, this.aMap, this.aString);
+
+  String toString() => 'LongToString<\n'
+      '    aList: $aList\n'
+      '    aMap: $aMap\n'
+      '    aString: $aString\n'
+      '>';
 }
 
 class MockedClass extends Mock implements RealClass {}
@@ -179,51 +198,6 @@ void main() {
       verify(mock.setter = 'A');
     });
 
-    test(
-        'should fail when no matching call is found, '
-        'and there are no unmatched calls', () {
-      expectFail(
-          'No matching calls (actually, no calls at all).\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithNormalArgs(43));
-      });
-    });
-
-    test(
-        'should fail when no matching call is found, '
-        'and there is one unmatched call', () {
-      mock.methodWithNormalArgs(42);
-      expectFail(
-          'No matching calls. All calls: MockedClass.methodWithNormalArgs(42)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithNormalArgs(43));
-      });
-    });
-
-    test(
-        'should fail when no matching call is found, '
-        'and there are multiple unmatched calls', () {
-      mock.methodWithNormalArgs(41);
-      mock.methodWithNormalArgs(42);
-      expectFail(
-          'No matching calls. All calls: '
-          'MockedClass.methodWithNormalArgs(41), MockedClass.methodWithNormalArgs(42)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithNormalArgs(43));
-      });
-    });
-
-    test(
-        'should fail when no matching call is found, '
-        'and unmatched calls have only named args', () {
-      mock.methodWithOnlyNamedArgs(y: 1);
-      expectFail(
-          'No matching calls. All calls: MockedClass.methodWithOnlyNamedArgs({y: 1})\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithOnlyNamedArgs());
-      });
-    });
-
     test('should throw meaningful errors when verification is interrupted', () {
       var badHelper = () => throw 'boo';
       try {
@@ -245,6 +219,56 @@ void main() {
             contains('Verification appears to be in progress. '
                 '2 verify calls have been stored.'));
       }
+    });
+  });
+
+  group('verify should fail when no matching call is found', () {
+    test('and there are no unmatched calls', () {
+      expectFail(
+          'No matching calls (actually, no calls at all).\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithNormalArgs(43));
+      });
+    });
+
+    test('and there is one unmatched call', () {
+      mock.methodWithNormalArgs(42);
+      expectFail(
+          'No matching calls. All calls: MockedClass.methodWithNormalArgs(42)\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithNormalArgs(43));
+      });
+    });
+
+    test('and there is one unmatched call without args', () {
+      mock.methodWithOptionalArg();
+      expectFail(
+          'No matching calls. All calls: MockedClass.methodWithOptionalArg()\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithOptionalArg(43));
+      });
+    });
+
+    test('and there are multiple unmatched calls', () {
+      mock.methodWithNormalArgs(41);
+      mock.methodWithNormalArgs(42);
+      expectFail(
+          'No matching calls. All calls: '
+          'MockedClass.methodWithNormalArgs(41), '
+          'MockedClass.methodWithNormalArgs(42)\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithNormalArgs(43));
+      });
+    });
+
+    test('and unmatched calls have only named args', () {
+      mock.methodWithOnlyNamedArgs(y: 1);
+      expectFail(
+          'No matching calls. All calls: '
+          'MockedClass.methodWithOnlyNamedArgs({y: 1})\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithOnlyNamedArgs());
+      });
     });
   });
 
@@ -472,6 +496,45 @@ void main() {
           'MockedClass.getter', () {
         verifyInOrder(
             [mock.methodWithoutArgs(), mock.getter, mock.methodWithoutArgs()]);
+      });
+    });
+  });
+
+  group('multiline toStrings on objects', () {
+    test(
+        '"No matching calls" message visibly separates unmatched calls, '
+        'if an arg\'s string representations is multiline', () {
+      mock.methodWithLongArgs(new LongToString([1, 2], {1: 'a', 2: 'b'}, 'c'),
+          new LongToString([4, 5], {3: 'd', 4: 'e'}, 'f'));
+      mock.methodWithLongArgs(null, null,
+          c: new LongToString([5, 6], {5: 'g', 6: 'h'}, 'i'),
+          d: new LongToString([7, 8], {7: 'j', 8: 'k'}, 'l'));
+      expectFail(
+          'No matching calls. All calls: '
+          'MockedClass.methodWithLongArgs(\n'
+          '    LongToString<\n'
+          '        aList: [1, 2]\n'
+          '        aMap: {1: a, 2: b}\n'
+          '        aString: c\n'
+          '    >,\n'
+          '    LongToString<\n'
+          '        aList: [4, 5]\n'
+          '        aMap: {3: d, 4: e}\n'
+          '        aString: f\n'
+          '    >),\n'
+          'MockedClass.methodWithLongArgs(null, null, {\n'
+          '    c: LongToString<\n'
+          '        aList: [5, 6]\n'
+          '        aMap: {5: g, 6: h}\n'
+          '        aString: i\n'
+          '    >,\n'
+          '    d: LongToString<\n'
+          '        aList: [7, 8]\n'
+          '        aMap: {7: j, 8: k}\n'
+          '        aString: l\n'
+          '    >})\n'
+          '$noMatchingCallsFooter', () {
+        verify(mock.methodWithNormalArgs(43));
       });
     });
   });
