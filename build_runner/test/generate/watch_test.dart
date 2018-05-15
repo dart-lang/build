@@ -67,13 +67,14 @@ a:file://fake/pkg/path
         expect(await results.hasNext, isFalse);
       });
 
-      test('returns null if no builders are specified', () async {
+      test('emits an error when no builders are specified', () async {
         var buildState = await startWatch(
           [],
           {'a|web/a.txt.copy': 'a'},
           writer,
         );
-        expect(buildState, isNull);
+        var result = await buildState.buildResults.first;
+        expect(result.status, BuildStatus.failure);
       });
 
       test('rebuilds on file updates outside hardcoded whitelist', () async {

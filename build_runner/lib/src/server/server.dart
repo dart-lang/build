@@ -24,27 +24,29 @@ final _graphPath = r'$graph';
 
 final _logger = new Logger('Serve');
 
-Future<ServeHandler> createServeHandler(WatchImpl watch) async {
+ServeHandler createServeHandler(WatchImpl watch) {
   var rootPackage = watch.packageGraph.root.name;
-  var reader = await watch.reader;
-  var assetHandler = new AssetHandler(reader, rootPackage);
-  var assetGraphHandler =
-      new AssetGraphHandler(reader, rootPackage, watch.assetGraph);
-  return new ServeHandler._(
-      watch, assetHandler, assetGraphHandler, reader, rootPackage);
+  var assetGraphHanderCompleter = new Completer<AssetGraphHandler>();
+  var assetHandlerCompleter = new Completer<AssetHandler>();
+  watch.ready.then((_) async {
+    assetHandlerCompleter.complete(new AssetHandler(watch.reader, rootPackage));
+    assetGraphHanderCompleter.complete(
+        new AssetGraphHandler(watch.reader, rootPackage, watch.assetGraph));
+  });
+  return new ServeHandler._(watch, assetHandlerCompleter.future,
+      assetGraphHanderCompleter.future, rootPackage);
 }
 
 class ServeHandler implements BuildState {
   final WatchImpl _state;
   BuildResult _lastBuildResult;
-  final AssetReader _reader;
   final String _rootPackage;
 
-  final AssetHandler _assetHandler;
-  final AssetGraphHandler _assetGraphHandler;
+  final Future<AssetHandler> _assetHandler;
+  final Future<AssetGraphHandler> _assetGraphHandler;
 
   ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
-      this._reader, this._rootPackage) {
+      this._rootPackage) {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
     });
@@ -64,15 +66,16 @@ class ServeHandler implements BuildState {
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = new shelf.Cascade()
         .add(_blockOnCurrentBuild)
-        .add((shelf.Request request) {
+        .add((shelf.Request request) async {
       if (request.url.path == _performancePath) {
         return _performanceHandler(request);
       }
       if (request.url.path.startsWith(_graphPath)) {
-        return _assetGraphHandler.handle(
-            request.change(path: _graphPath), rootDir);
+        var graphHandler = await _assetGraphHandler;
+        return graphHandler.handle(request.change(path: _graphPath), rootDir);
       }
-      return _assetHandler.handle(request, rootDir);
+      var assetHandler = await _assetHandler;
+      return assetHandler.handle(request, rootDir);
     });
     var handler = logRequests
         ? const shelf.Pipeline()

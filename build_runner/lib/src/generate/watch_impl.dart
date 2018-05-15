@@ -20,7 +20,6 @@ import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../asset_graph/optional_output_tracker.dart';
 import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
@@ -31,12 +30,10 @@ import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../server/server.dart';
 import '../util/constants.dart';
-import 'build_definition.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
 import 'options.dart';
-import 'phase.dart';
 import 'terminator.dart';
 
 final _logger = new Logger('Watch');
@@ -69,6 +66,7 @@ Future<ServeHandler> watch(
   packageGraph ??= new PackageGraph.forThisPackage();
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
+  // TODO(grouma) - don't construct a target graph.
   final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
       overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
@@ -93,18 +91,9 @@ Future<ServeHandler> watch(
       buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildPhases = await createBuildPhases(
-      targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
-
-  if (buildPhases.isEmpty) {
-    _logger.severe('Nothing can be built, yet a build was requested.');
-    await terminator.cancel();
-    await options.logListener.cancel();
-    return null;
-  }
-
-  var watch =
-      _runWatch(environment, options, buildPhases, terminator.shouldTerminate);
+  var watch = _runWatch(options, environment, builders, builderConfigOverrides,
+      overrideBuildConfig, terminator.shouldTerminate,
+      isReleaseMode: isReleaseBuild ?? false);
 
   // ignore: unawaited_futures
   watch.buildResults.drain().then((_) async {
@@ -123,10 +112,23 @@ Future<ServeHandler> watch(
 ///
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
-WatchImpl _runWatch(BuildEnvironment environment, BuildOptions options,
-        List<BuildPhase> buildPhases, Future until) =>
-    new WatchImpl(environment, options, buildPhases, until,
-        options.rootPackageFilesWhitelist.map((g) => new Glob(g)));
+WatchImpl _runWatch(
+        BuildOptions options,
+        BuildEnvironment environment,
+        List<BuilderApplication> builders,
+        Map<String, Map<String, dynamic>> builderConfigOverrides,
+        Map<String, BuildConfig> overrideBuildConfig,
+        Future until,
+        {bool isReleaseMode: false}) =>
+    new WatchImpl(
+        options,
+        environment,
+        builders,
+        builderConfigOverrides,
+        overrideBuildConfig,
+        until,
+        options.rootPackageFilesWhitelist.map((g) => new Glob(g)),
+        isReleaseMode: isReleaseMode);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
 
@@ -153,10 +155,13 @@ class _OnDeleteWriter implements RunnerAssetWriter {
 }
 
 class WatchImpl implements BuildState {
-  AssetGraph _assetGraph;
-  AssetGraph get assetGraph => _assetGraph;
+  BuildImpl _build;
 
-  BuildDefinition _buildDefinition;
+  AssetGraph get assetGraph => _build?.assetGraph;
+
+  final _readyCompleter = new Completer<Null>();
+  Future<Null> get ready => _readyCompleter.future;
+
   final String _configKey; // may be null
   final Iterable<Glob> _rootPackageFilesWhitelist;
 
@@ -178,21 +183,26 @@ class WatchImpl implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = new Set<AssetId>();
 
-  final _readerCompleter = new Completer<FinalizedReader>();
-  Future<FinalizedReader> get reader => _readerCompleter.future;
+  FinalizedReader _reader;
+  FinalizedReader get reader => _reader;
 
   WatchImpl(
-      BuildEnvironment environment,
       BuildOptions options,
-      List<BuildPhase> buildPhases,
+      BuildEnvironment environment,
+      List<BuilderApplication> builders,
+      Map<String, Map<String, dynamic>> builderConfigOverrides,
+      Map<String, BuildConfig> overrideBuildConfig,
       Future until,
-      this._rootPackageFilesWhitelist)
+      this._rootPackageFilesWhitelist,
+      {bool isReleaseMode: false})
       : _configKey = options.configKey,
         _directoryWatcherFactory = environment.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
-    buildResults =
-        _run(environment, options, buildPhases, until).asBroadcastStream();
+    buildResults = _run(options, environment, builders, builderConfigOverrides,
+            overrideBuildConfig, until,
+            isReleaseMode: isReleaseMode)
+        .asBroadcastStream();
   }
 
   @override
@@ -203,38 +213,37 @@ class WatchImpl implements BuildState {
   /// Only one build will run at a time, and changes are batched.
   ///
   /// File watchers are scheduled synchronously.
-  Stream<BuildResult> _run(BuildEnvironment environment, BuildOptions options,
-      List<BuildPhase> buildPhases, Future until) {
+  Stream<BuildResult> _run(
+      BuildOptions options,
+      BuildEnvironment environment,
+      List<BuilderApplication> builders,
+      Map<String, Map<String, dynamic>> builderConfigOverrides,
+      Map<String, BuildConfig> overrideBuildConfig,
+      Future until,
+      {bool isReleaseMode: false}) {
     var watcherEnvironment = new OverrideableEnvironment(environment,
         writer: new _OnDeleteWriter(environment.writer, _expectedDeletes.add));
     var firstBuildCompleter = new Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = new StreamController<BuildResult>();
 
-    // We need this inside `doBuild`, but we won't actually create it until
-    // the end of this function. It must be non-null before `doBuild` is
-    // invoked.
-    BuildImpl build;
-    OptionalOutputTracker optionalOutputTracker;
-
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      assert(build != null);
-      assert(optionalOutputTracker != null);
-      optionalOutputTracker.reset();
+      assert(_build != null);
+      _build.finalizedReader.reset();
       _logger.info('${'-'*72}\n');
       _logger.info('Starting Build\n');
       var mergedChanges = _collectChanges(changes);
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        if (_buildDefinition.buildScriptUpdates
+        if (_build.buildScriptUpdates
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
           return new BuildResult(BuildStatus.failure, []);
         }
       }
-      return build.run(mergedChanges);
+      return _build.run(mergedChanges);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -292,7 +301,7 @@ class WatchImpl implements BuildState {
         })
         .onDone(() async {
           await currentBuild;
-          await _buildDefinition.resourceManager.beforeExit();
+          await _build?.beforeExit();
           await controller.close();
           _logger.info('Builds finished. Safe to exit\n');
         });
@@ -304,28 +313,25 @@ class WatchImpl implements BuildState {
           () => graphWatcher.ready);
       originalRootPackagesDigest = md5
           .convert(await watcherEnvironment.reader.readAsBytes(rootPackagesId));
-      _buildDefinition = await BuildDefinition.prepareWorkspace(
-          watcherEnvironment, options, buildPhases);
-      var singleStepReader = new SingleStepReader(
-          _buildDefinition.reader,
-          _buildDefinition.assetGraph,
-          buildPhases.length,
-          true,
-          packageGraph.root.name,
-          null);
-      optionalOutputTracker = new OptionalOutputTracker(
-          _buildDefinition.assetGraph, options.buildDirs, buildPhases);
-      var finalizedReader = new FinalizedReader(
-          singleStepReader, _buildDefinition.assetGraph, optionalOutputTracker);
-      _readerCompleter.complete(finalizedReader);
-      _assetGraph = _buildDefinition.assetGraph;
-      build = await BuildImpl.create(_buildDefinition, options, buildPhases);
+      _build = await BuildImpl.create(options, watcherEnvironment, builders,
+          builderConfigOverrides, overrideBuildConfig,
+          isReleaseBuild: isReleaseMode);
+
+      _reader = _build?.finalizedReader;
+      _readyCompleter.complete(null);
+
+      if (_build == null) {
+        var result = new BuildResult(BuildStatus.failure, []);
+        controller.add(result);
+        firstBuildCompleter.complete(result);
+        return;
+      }
 
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
-      if (!controller.isClosed) controller.add(build.firstBuild);
+      if (!controller.isClosed) controller.add(_build.firstBuild);
 
-      firstBuildCompleter.complete(build.firstBuild);
+      firstBuildCompleter.complete(_build.firstBuild);
     }();
 
     return controller.stream;
@@ -345,9 +351,9 @@ class WatchImpl implements BuildState {
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
-    assert(_assetGraph != null);
-    if (_isCacheFile(change) && !_assetGraph.contains(change.id)) return false;
-    var node = _assetGraph.get(change.id);
+    assert(_readyCompleter.isCompleted);
+    if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
+    var node = assetGraph.get(change.id);
     if (node != null) {
       if (!node.isInteresting) return false;
       if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
