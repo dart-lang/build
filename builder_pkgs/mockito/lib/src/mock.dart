@@ -133,6 +133,18 @@ class Mock {
 
   @override
   String toString() => _givenName != null ? _givenName : runtimeType.toString();
+
+  String _realCallsToString() {
+    var stringRepresentations = _realCalls.map((call) => call.toString());
+    if (stringRepresentations.any((s) => s.contains('\n'))) {
+      // As each call contains newlines, put each on its own line, for better
+      // readability.
+      return stringRepresentations.join(',\n');
+    } else {
+      // A compact String should be perfect.
+      return stringRepresentations.join(', ');
+    }
+  }
 }
 
 typedef CallPair _ReturnsCannedResponse();
@@ -456,32 +468,50 @@ class RealCall {
 
   @override
   String toString() {
+    var argString = '';
     var args = invocation.positionalArguments
-        .map((v) => v == null ? "null" : v.toString())
-        .join(", ");
+        .map((v) => v == null ? "null" : v.toString());
+    if (args.any((arg) => arg.contains('\n'))) {
+      // As one or more arg contains newlines, put each on its own line, and
+      // indent each, for better readability.
+      argString += '\n' +
+          args
+              .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'))
+              .join(',\n');
+    } else {
+      // A compact String should be perfect.
+      argString += args.join(', ');
+    }
     if (invocation.namedArguments.isNotEmpty) {
-      var namedArgs = invocation.namedArguments.keys
-          .map((key) =>
-              "${_symbolToString(key)}: ${invocation.namedArguments[key]}")
-          .join(", ");
-      if (args.isNotEmpty) args += ", ";
-      args += "{$namedArgs}";
+      if (argString.isNotEmpty) argString += ', ';
+      var namedArgs = invocation.namedArguments.keys.map((key) =>
+          '${_symbolToString(key)}: ${invocation.namedArguments[key]}');
+      if (namedArgs.any((arg) => arg.contains('\n'))) {
+        // As one or more arg contains newlines, put each on its own line, and
+        // indent each, for better readability.
+        namedArgs = namedArgs
+            .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'));
+        argString += '{\n${namedArgs.join(',\n')}}';
+      } else {
+        // A compact String should be perfect.
+        argString += '{${namedArgs.join(', ')}}';
+      }
     }
 
     var method = _symbolToString(invocation.memberName);
     if (invocation.isMethod) {
-      method = "$method($args)";
+      method = '$method($argString)';
     } else if (invocation.isGetter) {
-      method = "$method";
+      method = '$method';
     } else if (invocation.isSetter) {
-      method = "$method=$args";
+      method = '$method=$argString';
     } else {
       throw new StateError(
           'Invocation should be getter, setter or a method call.');
     }
 
-    var verifiedText = verified ? "[VERIFIED] " : "";
-    return "$verifiedText$mock.$method";
+    var verifiedText = verified ? '[VERIFIED] ' : '';
+    return '$verifiedText$mock.$method';
   }
 
   // This used to use MirrorSystem, which cleans up the Symbol() wrapper.
@@ -551,7 +581,7 @@ class _VerifyCall {
       if (mock._realCalls.isEmpty) {
         message = "No matching calls (actually, no calls at all).";
       } else {
-        var otherCalls = mock._realCalls.join(", ");
+        var otherCalls = mock._realCallsToString();
         message = "No matching calls. All calls: $otherCalls";
       }
       fail("$message\n"
@@ -559,7 +589,7 @@ class _VerifyCall {
           "`verifyNever(...);`.)");
     }
     if (never && matchingInvocations.isNotEmpty) {
-      var calls = mock._realCalls.join(", ");
+      var calls = mock._realCallsToString();
       fail("Unexpected calls. All calls: $calls");
     }
     matchingInvocations.forEach((inv) {
