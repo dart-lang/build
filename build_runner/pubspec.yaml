@@ -10,7 +10,7 @@ environment:
 dependencies:
   args: ">=1.4.0 <2.0.0"
   async: ">=1.13.3 <3.0.0"
-  build: ">=0.12.4 <0.12.6"
+  build: ">=0.12.4 <0.12.7"
   build_config: ^0.2.6
   build_resolvers: ^0.2.0
   cli_util: ^0.1.2

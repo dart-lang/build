@@ -1,3 +1,7 @@
+## 0.2.2+4
+
+- Support `package:analyzer` `0.32.0`.
+
 ## 0.2.2+3
 
 - Fix a race condition where we could fail to find the modules for some
