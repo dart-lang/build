@@ -29,9 +29,7 @@ import '../logging/build_for_input_logger.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
-import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
-import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -71,21 +69,17 @@ Future<BuildResult> build(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
-  overrideBuildConfig ??=
-      await findBuildConfigOverrides(packageGraph, configKey);
-  final targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-      overrideBuildConfig: overrideBuildConfig);
   var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
       reader: reader,
       writer: writer,
       onLog: onLog);
-  var options = new BuildOptions(environment,
+  var options = await BuildOptions.create(environment,
       configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
-      rootPackageConfig: targetGraph.rootPackageConfig,
+      overrideBuildConfig: overrideBuildConfig,
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
@@ -95,8 +89,8 @@ Future<BuildResult> build(
       buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
-  var result = await _singleBuild(options, environment, builders,
-      builderConfigOverrides, overrideBuildConfig,
+  var result = await _singleBuild(
+      options, environment, builders, builderConfigOverrides,
       isReleaseBuild: isReleaseBuild ?? false);
 
   await terminator.cancel();
@@ -109,14 +103,12 @@ Future<BuildResult> _singleBuild(
     BuildEnvironment environment,
     List<BuilderApplication> builders,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
-    Map<String, BuildConfig> overrideBuildConfig,
     {bool isReleaseBuild: false}) async {
   var build = await BuildImpl.create(
     options,
     environment,
     builders,
     builderConfigOverrides,
-    overrideBuildConfig,
     isReleaseBuild: isReleaseBuild,
   );
   if (build == null) return new BuildResult(BuildStatus.failure, []);
@@ -180,12 +172,9 @@ class BuildImpl {
       BuildEnvironment environment,
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
-      Map<String, BuildConfig> overrideBuildConfig,
       {bool isReleaseBuild: false}) async {
-    var targetGraph = await TargetGraph.forPackageGraph(options.packageGraph,
-        overrideBuildConfig: overrideBuildConfig);
     var buildPhases = await createBuildPhases(
-        targetGraph, builders, builderConfigOverrides, isReleaseBuild);
+        options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
     if (buildPhases.isEmpty) {
       _logger.severe('Nothing can be built, yet a build was requested.');
       return null;
