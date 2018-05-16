@@ -54,7 +54,7 @@ Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
       return await BuildConfig.fromBuildConfigDir(
           package.name, package.dependencies.map((n) => n.name), package.path);
     } on ArgumentError catch (_) {
-      // During the build an error will be logged
+      // During the build an error will be logged.
       return new BuildConfig.useDefault(
           package.name, package.dependencies.map((n) => n.name));
     }
