@@ -16,6 +16,8 @@ import 'package:mockito/mockito.dart';
 import 'package:mockito/src/mock.dart' show resetMockitoState;
 import 'package:test/test.dart';
 
+import 'utils.dart';
+
 class RealClass {
   RealClass innerObj;
   String methodWithNormalArgs(int x) => 'Real';
@@ -30,6 +32,8 @@ class MockedClass extends Mock implements RealClass {}
 
 void main() {
   MockedClass mock;
+
+  var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
     mock = new MockedClass();
@@ -78,11 +82,12 @@ void main() {
     test('should capture with matching arguments', () {
       mock.methodWithPositionalArgs(1);
       mock.methodWithPositionalArgs(2, 3);
+      var expectedCaptures = isNsmForwarding ? [1, null, 2, 3] : [2, 3];
       expect(
           verify(mock.methodWithPositionalArgs(
                   typed(captureAny), typed(captureAny)))
               .captured,
-          equals([2, 3]));
+          equals(expectedCaptures));
     });
 
     test('should capture multiple invocations', () {

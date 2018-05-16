@@ -16,6 +16,8 @@ import 'package:mockito/mockito.dart';
 import 'package:mockito/src/mock.dart' show resetMockitoState;
 import 'package:test/test.dart';
 
+import 'utils.dart';
+
 class RealClass {
   RealClass innerObj;
   String methodWithoutArgs() => 'Real';
@@ -72,6 +74,8 @@ String noMatchingCallsFooter = '(If you called `verify(...).called(0);`, '
 
 void main() {
   MockedClass mock;
+
+  var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
     mock = new MockedClass();
@@ -242,8 +246,9 @@ void main() {
 
     test('and there is one unmatched call without args', () {
       mock.methodWithOptionalArg();
+      var nsmForwardedArgs = isNsmForwarding ? 'null' : '';
       expectFail(
-          'No matching calls. All calls: MockedClass.methodWithOptionalArg()\n'
+          'No matching calls. All calls: MockedClass.methodWithOptionalArg($nsmForwardedArgs)\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithOptionalArg(43));
       });
@@ -263,9 +268,10 @@ void main() {
 
     test('and unmatched calls have only named args', () {
       mock.methodWithOnlyNamedArgs(y: 1);
+      var nsmForwardedArgs = isNsmForwarding ? '{y: 1, z: null}' : '{y: 1}';
       expectFail(
           'No matching calls. All calls: '
-          'MockedClass.methodWithOnlyNamedArgs({y: 1})\n'
+          'MockedClass.methodWithOnlyNamedArgs($nsmForwardedArgs)\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithOnlyNamedArgs());
       });
@@ -509,6 +515,8 @@ void main() {
       mock.methodWithLongArgs(null, null,
           c: new LongToString([5, 6], {5: 'g', 6: 'h'}, 'i'),
           d: new LongToString([7, 8], {7: 'j', 8: 'k'}, 'l'));
+      var nsmForwardedNamedArgs =
+          isNsmForwarding ? '>, {c: null, d: null}),' : '>),';
       expectFail(
           'No matching calls. All calls: '
           'MockedClass.methodWithLongArgs(\n'
@@ -521,7 +529,7 @@ void main() {
           '        aList: [4, 5]\n'
           '        aMap: {3: d, 4: e}\n'
           '        aString: f\n'
-          '    >),\n'
+          '    $nsmForwardedNamedArgs\n'
           'MockedClass.methodWithLongArgs(null, null, {\n'
           '    c: LongToString<\n'
           '        aList: [5, 6]\n'

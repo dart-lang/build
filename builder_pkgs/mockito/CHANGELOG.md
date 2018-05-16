@@ -1,3 +1,52 @@
+## 3.0.0-alpha+5
+
+* Fix compatibility with new [noSuchMethod Forwarding] feature of Dart 2. This
+  is thankfully a mostly backwards-compatible change. This means that this
+  version of Mockito should continue to work:
+
+  * with Dart `>=2.0.0-dev.16.0`,
+  * with Dart 2 runtime semantics (i.e. with `dart --preview-dart-2`, or with
+    Flutter Beta 3), and
+  * with the new noSuchMethod Forwarding feature, when it lands in CFE, and when
+    it lands in DDC.
+
+  This change, when combined with noSuchMethod Forwarding, will break a few
+  code paths which do not seem to be frequently used. Two examples:
+
+  ```dart
+  class A {
+    int fn(int a, [int b]) => 7;
+  }
+  class MockA extends Mock implements A {}
+
+  var a = new MockA();
+  when(a.fn(typed(any), typed(any))).thenReturn(0);
+  print(a.fn(1));
+  ```
+
+  This used to print `null`, because only one argument was passed, which did
+  not match the two-argument stub. Now it will print `0`, as the real call
+  contains a value for both the required argument, and the optional argument.
+
+  ```dart
+  a.fn(1);
+  a.fn(2, 3);
+  print(verify(a.fn(typed(captureAny), typed(captureAny))).captured);
+  ```
+
+  This used to print `[2, 3]`, because only the second call matched the `verify`
+  call. Now, it will print `[1, null, 2, 3]`, as both real calls contain a value
+  for both the required argument, and the optional argument.
+
+[noSuchMethod Forwarding]: https://github.com/dart-lang/sdk/blob/master/docs/language/informal/nosuchmethod-forwarding.md
+
+## 3.0.0-alpha+4
+
+* Introduce a backward-and-forward compatible API to help users migrate to
+  Mockito 3. See more details in the [upgrading-to-mockito-3] doc.
+
+[upgrading-to-mockito-3]: https://github.com/dart-lang/mockito/blob/master/upgrading-to-mockito-3.md
+
 ## 3.0.0-alpha+3
 
 * `thenReturn` and `thenAnswer` now support generics and infer the correct

@@ -215,20 +215,10 @@ class _InvocationForMatchedArguments extends Invocation {
     invocation.namedArguments.forEach((name, arg) {
       if (arg == null) {
         if (!_storedNamedArgSymbols.contains(name)) {
-          // Incorrect usage of an ArgMatcher, something like:
-          // `when(obj.fn(a: any))`.
-
-          // Clear things out for the next call.
-          _storedArgs.clear();
-          _storedNamedArgs.clear();
-          throw new ArgumentError(
-              'An ArgumentMatcher (or a null value) was passed in as a named '
-              'argument named "$name", but was not passed a value for `named`. '
-              'Each ArgumentMatcher that is passed as a named argument needs '
-              'to specify the `named` argument, and each null value must be '
-              'wrapped in an ArgMatcher. For example: '
-              '`when(obj.fn(x: anyNamed("x")))` or '
-              '`when(obj.fn(x: argThat(isNull, named: "x")))`.');
+          // Either this is a parameter with default value `null`, or a `null`
+          // argument was passed, or an unnamed ArgMatcher was used. Just use
+          // `null`.
+          namedArguments[name] = null;
         }
       } else {
         // Add each real named argument (not wrapped in an ArgMatcher).
@@ -271,13 +261,19 @@ class _InvocationForMatchedArguments extends Invocation {
     var positionalArguments = <dynamic>[];
     var nullPositionalArguments =
         invocation.positionalArguments.where((arg) => arg == null);
-    if (_storedArgs.length != nullPositionalArguments.length) {
-      // Clear things out for the next call.
+    if (_storedArgs.length > nullPositionalArguments.length) {
+      // More _positional_ ArgMatchers were stored than were actually passed as
+      // positional arguments. The only way this call was parsed and resolved is
+      // if an ArgMatcher was passed as a named argument, but without a name,
+      // and thus stored in [_storedArgs], something like
+      // `when(obj.fn(a: any))`.
       _storedArgs.clear();
       _storedNamedArgs.clear();
       throw new ArgumentError(
-          'null arguments are not allowed alongside ArgMatchers; use '
-          '"argThat(isNull)"');
+          'An argument matcher (like `any`) was used as a named argument, but '
+          'did not use a Mockito "named" API. Each argument matcher that is '
+          'used as a named argument needs to specify the name of the argument '
+          'it is being used in. For example: `when(obj.fn(x: anyNamed("x")))`.');
     }
     int storedIndex = 0;
     int positionalIndex = 0;
