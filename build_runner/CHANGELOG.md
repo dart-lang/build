@@ -1,3 +1,9 @@
+## 0.8.10-dev
+
+- All builders with `build_to: source` will now be ran regardless of which
+  directory is currently being built, see
+  https://github.com/dart-lang/build/issues/1454 for context.
+
 ## 0.8.9
 
 - Added support for building only specified top level directories.
