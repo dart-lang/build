@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build_runner/src/asset/finalized_reader.dart';
+import 'package:build_runner/src/changes/build_script_updates.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
@@ -27,9 +29,7 @@ import '../logging/build_for_input_logger.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
-import '../package_graph/build_config_overrides.dart';
 import '../package_graph/package_graph.dart';
-import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
@@ -69,32 +69,17 @@ Future<BuildResult> build(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
-  overrideBuildConfig ??=
-      await findBuildConfigOverrides(packageGraph, configKey);
-  final environment = new OverrideableEnvironment(
+  var environment = new OverrideableEnvironment(
       new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
       reader: reader,
       writer: writer,
       onLog: onLog);
-  TargetGraph targetGraph;
-  try {
-    targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-        overrideBuildConfig: overrideBuildConfig);
-  } on BuildConfigParseException catch (e) {
-    // Logging is not set up until the BuildOptions is created
-    environment.onLog(new LogRecord(
-        Level.SEVERE,
-        'Failed to parse `build.yaml` for ${e.packageName}.',
-        'Build',
-        e.exception));
-    return new BuildResult(BuildStatus.failure, []);
-  }
-  var options = new BuildOptions(environment,
+  var options = await BuildOptions.create(environment,
       configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
-      rootPackageConfig: targetGraph.rootPackageConfig,
+      overrideBuildConfig: overrideBuildConfig,
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
@@ -104,29 +89,31 @@ Future<BuildResult> build(
       buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
 
-  final buildPhases = await createBuildPhases(
-      targetGraph, builders, builderConfigOverrides, isReleaseBuild ?? false);
-
-  BuildResult result;
-  if (buildPhases.isEmpty) {
-    _logger.severe('Nothing can be built, yet a build was requested.');
-    result = new BuildResult(BuildStatus.failure, []);
-  } else {
-    result = await _singleBuild(environment, options, buildPhases);
-  }
+  var result = await _singleBuild(
+      options, environment, builders, builderConfigOverrides,
+      isReleaseBuild: isReleaseBuild ?? false);
 
   await terminator.cancel();
   await options.logListener.cancel();
   return result;
 }
 
-Future<BuildResult> _singleBuild(BuildEnvironment environment,
-    BuildOptions options, List<BuildPhase> buildPhases) async {
-  var buildDefinition =
-      await BuildDefinition.prepareWorkspace(environment, options, buildPhases);
-  var result = (await BuildImpl.create(buildDefinition, options, buildPhases))
-      .firstBuild;
-  await buildDefinition.resourceManager.beforeExit();
+Future<BuildResult> _singleBuild(
+    BuildOptions options,
+    BuildEnvironment environment,
+    List<BuilderApplication> builders,
+    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    {bool isReleaseBuild: false}) async {
+  var build = await BuildImpl.create(
+    options,
+    environment,
+    builders,
+    builderConfigOverrides,
+    isReleaseBuild: isReleaseBuild,
+  );
+  if (build == null) return new BuildResult(BuildStatus.failure, []);
+  var result = build.firstBuild;
+  await build.beforeExit();
   return result;
 }
 
@@ -134,10 +121,19 @@ class BuildImpl {
   BuildResult _firstBuild;
   BuildResult get firstBuild => _firstBuild;
 
+  final FinalizedReader _finalizedReader;
+  FinalizedReader get finalizedReader => _finalizedReader;
+
   final AssetGraph _assetGraph;
+  // TODO(grouma) - do not expose the asset graph.
+  AssetGraph get assetGraph => _assetGraph;
+
+  final BuildScriptUpdates _buildScriptUpdates;
+  // TODO(grouma) - do not expose the build script updates.
+  BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
+
   final List<BuildPhase> _buildPhases;
   final bool _failOnSevere;
-  final OnDelete _onDelete;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
   final _resolvers = new AnalyzerResolvers();
@@ -149,16 +145,18 @@ class BuildImpl {
   final BuildEnvironment _environment;
   final List<String> _buildDirs;
 
-  BuildImpl._(
-      BuildDefinition buildDefinition, BuildOptions options, this._buildPhases)
-      : _packageGraph = buildDefinition.packageGraph,
+  Future<Null> beforeExit() => _resourceManager.beforeExit();
+
+  BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
+      this._buildPhases, this._finalizedReader)
+      : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
+        _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : new CachingAssetReader(buildDefinition.reader),
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
-        _onDelete = buildDefinition.onDelete,
         _outputMap = options.outputMap,
         _verbose = options.verbose,
         _failOnSevere = options.failOnSevere,
@@ -169,11 +167,33 @@ class BuildImpl {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
 
-  static Future<BuildImpl> create(BuildDefinition buildDefinition,
-      BuildOptions options, List<BuildPhase> buildPhases,
-      {void onDelete(AssetId id)}) async {
-    var build = new BuildImpl._(buildDefinition, options, buildPhases);
-
+  static Future<BuildImpl> create(
+      BuildOptions options,
+      BuildEnvironment environment,
+      List<BuilderApplication> builders,
+      Map<String, Map<String, dynamic>> builderConfigOverrides,
+      {bool isReleaseBuild: false}) async {
+    var buildPhases = await createBuildPhases(
+        options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
+    if (buildPhases.isEmpty) {
+      _logger.severe('Nothing can be built, yet a build was requested.');
+      return null;
+    }
+    var buildDefinition = await BuildDefinition.prepareWorkspace(
+        environment, options, buildPhases);
+    var singleStepReader = new SingleStepReader(
+        buildDefinition.reader,
+        buildDefinition.assetGraph,
+        buildPhases.length,
+        true,
+        options.packageGraph.root.name,
+        null);
+    var optionalOutputTracker = new OptionalOutputTracker(
+        buildDefinition.assetGraph, options.buildDirs, buildPhases);
+    var finalizedReader = new FinalizedReader(
+        singleStepReader, buildDefinition.assetGraph, optionalOutputTracker);
+    var build =
+        new BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     build._firstBuild = await build.run({});
     return build;
   }
@@ -187,7 +207,6 @@ class _SingleBuild {
   final BuildEnvironment _environment;
   final bool _failOnSevere;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
-  final OnDelete _onDelete;
   final Map<String, String> _outputMap;
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
@@ -211,7 +230,6 @@ class _SingleBuild {
         _buildPhases = buildImpl._buildPhases,
         _environment = buildImpl._environment,
         _failOnSevere = buildImpl._failOnSevere,
-        _onDelete = buildImpl._onDelete,
         _outputMap = buildImpl._outputMap,
         _packageGraph = buildImpl._packageGraph,
         _performanceTracker = buildImpl._trackPerformance
@@ -790,10 +808,7 @@ class _SingleBuild {
     }
   }
 
-  Future _delete(AssetId id) {
-    _onDelete?.call(id);
-    return _writer.delete(id);
-  }
+  Future _delete(AssetId id) => _writer.delete(id);
 }
 
 String _actionLoggerName(

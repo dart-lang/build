@@ -42,8 +42,6 @@ class BuildDefinition {
   /// speed.
   final bool enableLowResourcesMode;
 
-  final OnDelete onDelete;
-
   final BuildEnvironment environment;
 
   BuildDefinition._(
@@ -55,23 +53,19 @@ class BuildDefinition {
       this.resourceManager,
       this.buildScriptUpdates,
       this.enableLowResourcesMode,
-      this.onDelete,
       this.environment);
 
   static Future<BuildDefinition> prepareWorkspace(BuildEnvironment environment,
-          BuildOptions options, List<BuildPhase> buildPhases,
-          {void onDelete(AssetId id)}) =>
-      new _Loader(environment, options, buildPhases, onDelete)
-          .prepareWorkspace();
+          BuildOptions options, List<BuildPhase> buildPhases) =>
+      new _Loader(environment, options, buildPhases).prepareWorkspace();
 }
 
 class _Loader {
   final List<BuildPhase> _buildPhases;
   final BuildOptions _options;
   final BuildEnvironment _environment;
-  final OnDelete _onDelete;
 
-  _Loader(this._environment, this._options, this._buildPhases, this._onDelete);
+  _Loader(this._environment, this._options, this._buildPhases);
 
   Future<BuildDefinition> prepareWorkspace() async {
     _checkBuildPhases();
@@ -140,7 +134,6 @@ class _Loader {
         new ResourceManager(),
         buildScriptUpdates,
         _options.enableLowResourcesMode,
-        _onDelete,
         _environment);
   }
 
@@ -257,7 +250,7 @@ class _Loader {
         _buildPhases,
         updates,
         _options.packageGraph.root.name,
-        (id) => _delete(id, _wrapWriter(_environment.writer, assetGraph)),
+        (id) => _wrapWriter(_environment.writer, assetGraph).delete(id),
         _wrapReader(_environment.reader, assetGraph));
     return updates;
   }
@@ -406,7 +399,7 @@ class _Loader {
     if (_options.deleteFilesByDefault) {
       _logger.info('Deleting ${conflictingAssets.length} declared outputs '
           'which already existed on disk.');
-      await Future.wait(conflictingAssets.map((id) => _delete(id, writer)));
+      await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
       return;
     }
 
@@ -425,8 +418,7 @@ class _Loader {
           case 0:
             _logger.info('Deleting files...');
             done = true;
-            await Future
-                .wait(conflictingAssets.map((id) => _delete(id, writer)));
+            await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
             break;
           case 1:
             throw new UnexpectedExistingOutputsException(conflictingAssets);
@@ -440,10 +432,5 @@ class _Loader {
         throw new UnexpectedExistingOutputsException(conflictingAssets);
       }
     }
-  }
-
-  Future _delete(AssetId id, RunnerAssetWriter writer) {
-    _onDelete?.call(id);
-    return writer.delete(id);
   }
 }

@@ -1,3 +1,7 @@
+## 0.5.0+4
+
+- Support `package:analyzer` `0.32.0`.
+
 ## 0.5.0+3
 
 - Support the latest `analyzer` package.

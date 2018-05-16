@@ -38,7 +38,7 @@ void main() {
             reader, assetGraph, new OptionalOutputTracker(assetGraph, [], [])),
         packageGraph,
         assetGraph);
-    serveHandler = await createServeHandler(watchImpl);
+    serveHandler = createServeHandler(watchImpl);
     watchImpl.addFutureResult(
         new Future.value(new BuildResult(BuildStatus.success, [])));
   });
@@ -192,14 +192,13 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final Future<FinalizedReader> reader;
+  final FinalizedReader reader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(FinalizedReader reader, this.packageGraph, this.assetGraph)
-      : this.reader = new Future.value(reader) {
+  MockWatchImpl(this.reader, this.packageGraph, this.assetGraph) {
     _futureBuildResultsController.stream.listen((futureBuildResult) {
       if (_currentBuild != null) {
         _currentBuild = _currentBuild.then((_) => futureBuildResult);
@@ -213,4 +212,7 @@ class MockWatchImpl implements WatchImpl {
       });
     });
   }
+
+  @override
+  Future<Null> get ready => new Future.value(null);
 }

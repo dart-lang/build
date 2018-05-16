@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -159,4 +160,7 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
 
   @override
   readAsString(_, {encoding}) => throw new UnimplementedError();
+
+  @override
+  Future<Digest> digest(AssetId id) => throw new UnimplementedError();
 }

@@ -78,7 +78,7 @@ main() {
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       var packageGraph = new PackageGraph.forPath(pkgARoot);
       environment = new IOEnvironment(packageGraph, null);
-      options = new BuildOptions(environment,
+      options = await BuildOptions.create(environment,
           packageGraph: packageGraph,
           logLevel: Level.OFF,
           skipBuildScriptCheck: true);
@@ -319,7 +319,7 @@ main() {
         await options.logListener.cancel();
         logs.clear();
         environment = new OverrideableEnvironment(environment, onLog: logs.add);
-        options = new BuildOptions(environment,
+        options = await BuildOptions.create(environment,
             packageGraph: options.packageGraph,
             logLevel: Level.WARNING,
             skipBuildScriptCheck: true);
@@ -533,39 +533,45 @@ main() {
 
       // https://github.com/dart-lang/build/issues/1042
       test('a missing sources/include does not cause an error', () async {
-        options = new BuildOptions(environment,
+        options = await BuildOptions.create(environment,
             packageGraph: options.packageGraph,
-            rootPackageConfig: new BuildConfig.fromMap('example', [], {
-              'targets': {
-                'another': {},
-                '\$default': {
-                  'sources': {
-                    'exclude': [
-                      'lib/src/**',
-                    ]
+            overrideBuildConfig: {
+              options.packageGraph.root.name:
+                  new BuildConfig.fromMap('example', [], {
+                'targets': {
+                  'another': {},
+                  '\$default': {
+                    'sources': {
+                      'exclude': [
+                        'lib/src/**',
+                      ]
+                    }
                   }
                 }
-              }
-            }));
+              })
+            });
         expect(options.rootPackageFilesWhitelist, isNotEmpty);
       });
 
       test('a missing sources/include results in the default whitelist',
           () async {
-        options = new BuildOptions(environment,
+        options = await BuildOptions.create(environment,
             packageGraph: options.packageGraph,
-            rootPackageConfig: new BuildConfig.fromMap('example', [], {
-              'targets': {
-                'another': {},
-                '\$default': {
-                  'sources': {
-                    'exclude': [
-                      'lib/src/**',
-                    ]
+            overrideBuildConfig: {
+              options.packageGraph.root.name:
+                  new BuildConfig.fromMap('example', [], {
+                'targets': {
+                  'another': {},
+                  '\$default': {
+                    'sources': {
+                      'exclude': [
+                        'lib/src/**',
+                      ]
+                    }
                   }
                 }
-              }
-            }));
+              })
+            });
         expect(options.rootPackageFilesWhitelist, defaultRootPackageWhitelist);
       });
     });

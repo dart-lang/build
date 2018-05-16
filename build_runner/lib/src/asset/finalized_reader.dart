@@ -19,6 +19,11 @@ class FinalizedReader implements AssetReader {
   final AssetGraph _assetGraph;
   final OptionalOutputTracker _optionalOutputTracker;
 
+  /// Clears the cache of which assets were required.
+  void reset() {
+    _optionalOutputTracker.reset();
+  }
+
   FinalizedReader(
       this._delegate, this._assetGraph, this._optionalOutputTracker);
 
