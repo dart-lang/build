@@ -23,14 +23,12 @@ class BuildRunner {
       _build.run(updates);
 
   static Future<BuildRunner> create(
-      BuildOptions options,
-      BuildEnvironment environment,
-      List<BuilderApplication> builders,
-      Map<String, Map<String, dynamic>> builderConfigOverrides,
-      {bool isReleaseBuild: false}) async {
-    var build = await BuildImpl.create(
-        options, environment, builders, builderConfigOverrides,
-        isReleaseBuild: isReleaseBuild);
-    return build == null ? null : new BuildRunner._(build);
-  }
+          BuildOptions options,
+          BuildEnvironment environment,
+          List<BuilderApplication> builders,
+          Map<String, Map<String, dynamic>> builderConfigOverrides,
+          {bool isReleaseBuild: false}) async =>
+      new BuildRunner._(await BuildImpl.create(
+          options, environment, builders, builderConfigOverrides,
+          isReleaseBuild: isReleaseBuild));
 }

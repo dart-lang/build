@@ -31,6 +31,7 @@ import '../util/constants.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
+import 'exceptions.dart';
 import 'options.dart';
 import 'terminator.dart';
 
@@ -298,15 +299,16 @@ class WatchImpl implements BuildState {
           () => graphWatcher.ready);
       originalRootPackagesDigest = md5
           .convert(await watcherEnvironment.reader.readAsBytes(rootPackagesId));
-      _build = await BuildImpl.create(
-          options, watcherEnvironment, builders, builderConfigOverrides,
-          isReleaseBuild: isReleaseMode);
 
       BuildResult firstBuild;
-      if (_build == null) {
-        firstBuild = new BuildResult(BuildStatus.failure, []);
-      } else {
+      try {
+        _build = await BuildImpl.create(
+            options, watcherEnvironment, builders, builderConfigOverrides,
+            isReleaseBuild: isReleaseMode);
+
         firstBuild = await _build.run({});
+      } on CannotBuildException {
+        firstBuild = new BuildResult(BuildStatus.failure, []);
       }
 
       _reader = _build?.finalizedReader;

@@ -8,6 +8,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/environment/io_environment.dart';
 import 'package:build_runner/src/environment/overridable_environment.dart';
 import 'package:build_runner/src/generate/build_result.dart';
+import 'package:build_runner/src/generate/exceptions.dart';
 import 'package:build_runner/src/generate/options.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
@@ -124,21 +125,23 @@ Future<BuildResult> testBuilders(
       enableLowResourcesMode: enableLowResourcesMode,
       verbose: verbose,
       buildDirs: buildDirs);
-  var build = await BuildRunner.create(
-    options,
-    environment,
-    builders,
-    builderConfigOverrides,
-    isReleaseBuild: false,
-  );
+
   BuildResult result;
-  if (build == null) {
-    result = new BuildResult(BuildStatus.failure, []);
-  } else {
+  try {
+    var build = await BuildRunner.create(
+      options,
+      environment,
+      builders,
+      builderConfigOverrides,
+      isReleaseBuild: false,
+    );
     result = await build.run({});
     await build.beforeExit();
     await options.logListener.cancel();
+  } on CannotBuildException {
+    result = new BuildResult(BuildStatus.failure, []);
   }
+
   if (checkBuildStatus) {
     checkBuild(result,
         outputs: outputs,

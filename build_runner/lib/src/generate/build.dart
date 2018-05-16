@@ -20,6 +20,7 @@ import '../server/server.dart';
 import 'build_result.dart';
 import 'build_runner.dart';
 import 'directory_watcher_factory.dart';
+import 'exceptions.dart';
 import 'watch_impl.dart' as watch_impl;
 
 /// Runs all of the BuilderApplications in [builders] once.
@@ -92,19 +93,22 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       verbose: verbose,
       buildDirs: buildDirs);
   var terminator = new Terminator(terminateEventStream);
-  var build = await BuildRunner.create(
-    options,
-    environment,
-    builders,
-    builderConfigOverrides,
-    isReleaseBuild: isReleaseBuild ?? false,
-  );
-  if (build == null) return new BuildResult(BuildStatus.failure, []);
-  var result = await build.run({});
-  await build.beforeExit();
-  await terminator.cancel();
-  await options.logListener.cancel();
-  return result;
+  try {
+    var build = await BuildRunner.create(
+      options,
+      environment,
+      builders,
+      builderConfigOverrides,
+      isReleaseBuild: isReleaseBuild ?? false,
+    );
+    var result = await build.run({});
+    await build.beforeExit();
+    await terminator.cancel();
+    await options.logListener.cancel();
+    return result;
+  } on CannotBuildException {
+    return new BuildResult(BuildStatus.failure, []);
+  }
 }
 
 /// Same as [build], except it watches the file system and re-runs builds
