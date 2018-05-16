@@ -1,3 +1,26 @@
+## 3.0.0-beta
+
+* This release is the first 3.0.0 release featuring the new Mockito 3 API. The
+  README has been updated, and an [upgrading-to-mockito-3] doc has been added
+  to help users upgrade. Here's a quick rundown:
+
+  ```dart
+  // Old API:
+  when(obj.fn(typed(any)))...
+  // New API:
+  when(obj.fn(any))...
+
+  // Old API:
+  when(obj.fn(foo: typed(any, named: 'foo')))...
+  // New API:
+  when(obj.fn(foo: anyNamed('foo')))...
+
+  // Old API:
+  when(obj.fn(foo: typed(null, named: 'foo')))...
+  // New API:
+  when(obj.fn(foo: argThat(isNull, named: 'foo')))...
+  ```
+
 ## 3.0.0-alpha+5
 
 * Fix compatibility with new [noSuchMethod Forwarding] feature of Dart 2. This
