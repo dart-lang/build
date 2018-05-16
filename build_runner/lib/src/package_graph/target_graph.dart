@@ -55,7 +55,7 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   try {
     return await BuildConfig.fromBuildConfigDir(
         package.name, dependencyNames, package.path);
-  } catch (e) {
+  } on ArgumentError catch (e) {
     throw new BuildConfigParseException(package.name, e);
   }
 }
