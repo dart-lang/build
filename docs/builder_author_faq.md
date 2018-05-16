@@ -1,10 +1,10 @@
 ## When should a Builder build to `cache` vs `source`?
 
 Use `build_to: source` when:
-- The generated code _does not_ depend on details outside of the package with
-  the generated code that might change with a different version of it's
-  dependencies. Any details from the _generating_ package, or any other relied
-  upon by the generated code must not change without a major version bump.
+- The generated code _does not_ depend on details outside of the containing
+  package that might change with a different version of it's dependencies. Any
+  details from the _generating_ package, or any other dependency used by the
+  generated code must not change without a major version bump.
 - The generated code should be `pub publish`ed with the package and used by
   downstream packages without running a build themselves.
 
