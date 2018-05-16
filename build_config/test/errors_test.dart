@@ -16,7 +16,6 @@ targets:
 ''';
       expect(() => new BuildConfig.parse('package_name', [], buildYaml),
           throwsArgumentError);
-      ;
     });
   });
 }
