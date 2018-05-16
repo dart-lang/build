@@ -124,6 +124,10 @@ BuildConfig parseFromMap(String packageName,
       sources: const InputSet(),
     );
   }
+  if (!buildTargets.containsKey(defaultTarget)) {
+    throw new ArgumentError('Must specify a target with the name '
+        '$packageName or `\$default`');
+  }
 
   final builderConfigs = config['builders'] as Map<String, Map> ?? {};
   for (var builderName in builderConfigs.keys) {
