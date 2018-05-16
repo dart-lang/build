@@ -5,13 +5,18 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/environment/io_environment.dart';
+import 'package:build_runner/src/environment/overridable_environment.dart';
+import 'package:build_runner/src/generate/build_result.dart';
+import 'package:build_runner/src/generate/options.dart';
+import 'package:build_runner/src/package_graph/apply_builders.dart';
+import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_test/build_test.dart';
-import 'package:build_runner/build_runner.dart';
 
-import 'package:build_runner/src/generate/build_impl.dart' as build_impl;
+import 'package:build_runner/src/generate/build_runner.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
@@ -74,6 +79,7 @@ Future<BuildResult> testBuilders(
   Map<String, /*String|List<int>*/ dynamic> outputs,
   PackageGraph packageGraph,
   BuildStatus status: BuildStatus.success,
+  Map<String, BuildConfig> overrideBuildConfig,
   Matcher exceptionMatcher,
   InMemoryRunnerAssetReader reader,
   InMemoryRunnerAssetWriter writer,
@@ -84,7 +90,6 @@ Future<BuildResult> testBuilders(
   bool failOnSevere: false,
   bool deleteFilesByDefault: true,
   bool enableLowResourcesMode: false,
-  Map<String, BuildConfig> overrideBuildConfig,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose: false,
   List<String> buildDirs,
@@ -103,23 +108,37 @@ Future<BuildResult> testBuilders(
     }
   });
 
-  var result = await build_impl.build(
+  builderConfigOverrides ??= const {};
+  var environment = new OverrideableEnvironment(
+      new IOEnvironment(packageGraph, null, verbose: verbose),
+      reader: reader,
+      writer: writer,
+      onLog: onLog);
+  var options = await BuildOptions.create(environment,
+      deleteFilesByDefault: deleteFilesByDefault,
+      failOnSevere: failOnSevere,
+      packageGraph: packageGraph,
+      logLevel: logLevel,
+      skipBuildScriptCheck: true,
+      overrideBuildConfig: overrideBuildConfig,
+      enableLowResourcesMode: enableLowResourcesMode,
+      verbose: verbose,
+      buildDirs: buildDirs);
+  var build = await BuildRunner.create(
+    options,
+    environment,
     builders,
-    deleteFilesByDefault: deleteFilesByDefault,
-    failOnSevere: failOnSevere,
-    reader: reader,
-    writer: writer,
-    packageGraph: packageGraph,
-    logLevel: logLevel,
-    onLog: onLog,
-    skipBuildScriptCheck: true,
-    enableLowResourcesMode: enableLowResourcesMode,
-    overrideBuildConfig: overrideBuildConfig,
-    verbose: verbose,
-    builderConfigOverrides: builderConfigOverrides,
-    buildDirs: buildDirs ?? [],
+    builderConfigOverrides,
+    isReleaseBuild: false,
   );
-
+  BuildResult result;
+  if (build == null) {
+    result = new BuildResult(BuildStatus.failure, []);
+  } else {
+    result = await build.run({});
+    await build.beforeExit();
+    await options.logListener.cancel();
+  }
   if (checkBuildStatus) {
     checkBuild(result,
         outputs: outputs,
@@ -128,7 +147,6 @@ Future<BuildResult> testBuilders(
         exceptionMatcher: exceptionMatcher,
         rootPackage: packageGraph.root.name);
   }
-
   return result;
 }
 

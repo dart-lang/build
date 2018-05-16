@@ -302,21 +302,19 @@ class WatchImpl implements BuildState {
           options, watcherEnvironment, builders, builderConfigOverrides,
           isReleaseBuild: isReleaseMode);
 
-      _reader = _build?.finalizedReader;
-      _readyCompleter.complete(null);
-
+      BuildResult firstBuild;
       if (_build == null) {
-        var result = new BuildResult(BuildStatus.failure, []);
-        controller.add(result);
-        firstBuildCompleter.complete(result);
-        return;
+        firstBuild = new BuildResult(BuildStatus.failure, []);
+      } else {
+        firstBuild = await _build.run({});
       }
 
+      _reader = _build?.finalizedReader;
+      _readyCompleter.complete(null);
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
-      if (!controller.isClosed) controller.add(_build.firstBuild);
-
-      firstBuildCompleter.complete(_build.firstBuild);
+      if (!controller.isClosed) controller.add(firstBuild);
+      firstBuildCompleter.complete(firstBuild);
     }();
 
     return controller.stream;

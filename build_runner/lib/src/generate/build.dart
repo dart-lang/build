@@ -5,6 +5,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build_runner/src/environment/io_environment.dart';
+import 'package:build_runner/src/environment/overridable_environment.dart';
+import 'package:build_runner/src/generate/options.dart';
+import 'package:build_runner/src/generate/terminator.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
@@ -13,8 +17,8 @@ import '../asset/writer.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
-import 'build_impl.dart' as build_impl;
 import 'build_result.dart';
+import 'build_runner.dart';
 import 'directory_watcher_factory.dart';
 import 'watch_impl.dart' as watch_impl;
 
@@ -50,45 +54,58 @@ import 'watch_impl.dart' as watch_impl;
 /// the default [logLevel] to [Level.ALL] and removes stack frame folding, among
 /// other things.
 Future<BuildResult> build(List<BuilderApplication> builders,
-        {bool deleteFilesByDefault,
-        bool failOnSevere,
-        bool assumeTty,
-        String configKey,
-        PackageGraph packageGraph,
-        RunnerAssetReader reader,
-        RunnerAssetWriter writer,
-        Level logLevel,
-        onLog(LogRecord record),
-        Stream terminateEventStream,
-        bool enableLowResourcesMode,
-        Map<String, String> outputMap,
-        bool trackPerformance,
-        bool skipBuildScriptCheck,
-        bool verbose,
-        bool isReleaseBuild,
-        Map<String, Map<String, dynamic>> builderConfigOverrides,
-        List<String> buildDirs}) =>
-    build_impl.build(
-      builders,
-      assumeTty: assumeTty,
-      deleteFilesByDefault: deleteFilesByDefault,
-      failOnSevere: failOnSevere,
-      configKey: configKey,
-      packageGraph: packageGraph,
+    {bool deleteFilesByDefault,
+    bool failOnSevere,
+    bool assumeTty,
+    String configKey,
+    PackageGraph packageGraph,
+    RunnerAssetReader reader,
+    RunnerAssetWriter writer,
+    Level logLevel,
+    onLog(LogRecord record),
+    Stream terminateEventStream,
+    bool enableLowResourcesMode,
+    Map<String, String> outputMap,
+    bool trackPerformance,
+    bool skipBuildScriptCheck,
+    bool verbose,
+    bool isReleaseBuild,
+    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    List<String> buildDirs}) async {
+  builderConfigOverrides ??= const {};
+  packageGraph ??= new PackageGraph.forThisPackage();
+  var environment = new OverrideableEnvironment(
+      new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
       reader: reader,
       writer: writer,
+      onLog: onLog);
+  var options = await BuildOptions.create(environment,
+      configKey: configKey,
+      deleteFilesByDefault: deleteFilesByDefault,
+      failOnSevere: failOnSevere,
+      packageGraph: packageGraph,
       logLevel: logLevel,
-      onLog: onLog,
-      terminateEventStream: terminateEventStream,
+      skipBuildScriptCheck: skipBuildScriptCheck,
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
       trackPerformance: trackPerformance,
-      skipBuildScriptCheck: skipBuildScriptCheck,
       verbose: verbose,
-      builderConfigOverrides: builderConfigOverrides,
-      isReleaseBuild: isReleaseBuild,
-      buildDirs: buildDirs,
-    );
+      buildDirs: buildDirs);
+  var terminator = new Terminator(terminateEventStream);
+  var build = await BuildRunner.create(
+    options,
+    environment,
+    builders,
+    builderConfigOverrides,
+    isReleaseBuild: isReleaseBuild ?? false,
+  );
+  if (build == null) return new BuildResult(BuildStatus.failure, []);
+  var result = await build.run({});
+  await build.beforeExit();
+  await terminator.cancel();
+  await options.logListener.cancel();
+  return result;
+}
 
 /// Same as [build], except it watches the file system and re-runs builds
 /// automatically.
