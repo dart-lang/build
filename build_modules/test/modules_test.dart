@@ -198,8 +198,9 @@ void main() {
                 printOnFailure(error.message);
                 return error.message.contains('''
 Unable to find modules for some sources, this is usually the result of either a
-bad import or a missing dependency in a package (or possibly a dev_dependency
-needs to move to a real dependency).
+bad import, a missing dependency in a package (or possibly a dev_dependency
+needs to move to a real dependency), or a build failure (if importing a
+generated file).
 
 Please check the following imports:
 
