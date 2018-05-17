@@ -227,6 +227,10 @@ class BuilderApplication {
 
 final _logger = new Logger('ApplyBuilders');
 
+class _MissingDependency {
+  const _MissingDependency();
+}
+
 /// Creates a [BuildPhase] to apply each builder in [builderApplications] to
 /// each target in [targetGraph] such that all builders are run for dependencies
 /// before moving on to later packages.
@@ -255,11 +259,11 @@ Future<List<BuildPhase>> createBuildPhases(
                 _logger
                     .severe('${node.target.key} declares a dependency on $key '
                         'but it does not exist');
-                throw new Exception();
+                throw const _MissingDependency();
               }
               return targetGraph.allModules[key];
             })?.where((n) => n != null));
-  } catch (_) {
+  } on _MissingDependency {
     return [];
   }
   final applyWith = _applyWith(builderApplications);

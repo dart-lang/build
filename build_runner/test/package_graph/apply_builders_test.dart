@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner/src/generate/phase.dart';
@@ -72,6 +73,33 @@ void main() {
           await createBuildPhases(targetGraph, builderApplications, {}, false);
       expect(phases, hasLength(2));
       expect(phases.map((a) => (a as InBuildPhase).package), ['a', 'a']);
+    });
+
+    test('returns empty phases if a dependency is missing', () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): [],
+      });
+      var overrides = {
+        'a': new BuildConfig(
+          packageName: 'a',
+          buildTargets: {
+            'a:a': new BuildTarget(
+                package: 'a',
+                key: 'a:a',
+                dependencies: new Set.of(['b:not_default']))
+          },
+        )
+      };
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          overrideBuildConfig: overrides);
+      var builderApplications = [
+        apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+            toAllPackages()),
+      ];
+      var phases =
+          await createBuildPhases(targetGraph, builderApplications, {}, false);
+      expect(phases, isEmpty);
     });
   });
 }
