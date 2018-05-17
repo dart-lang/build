@@ -2,17 +2,25 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'node.dart';
+import 'package:build/build.dart';
 
 class DuplicateAssetNodeException implements Exception {
-  final AssetNode assetNode;
+  final String rootPackage;
+  final AssetId assetId;
+  final String initialBuilderLabel;
+  final String newBuilderLabel;
 
-  DuplicateAssetNodeException(this.assetNode);
-
+  DuplicateAssetNodeException(this.rootPackage, this.assetId,
+      this.initialBuilderLabel, this.newBuilderLabel);
   @override
-  String toString() => 'DuplicateAssetNodeError: $assetNode\n'
-      'This probably means you have multiple actions that are trying to output '
-      'the same file.';
+  String toString() {
+    final friendlyAsset =
+        assetId.package == rootPackage ? assetId.path : assetId.uri;
+    return 'Both $initialBuilderLabel and $newBuilderLabel may output '
+        '$friendlyAsset. Potential outputs must be unique across all builders. '
+        'See https://github.com/dart-lang/build/blob/master/docs/faq.md'
+        '#why-do-builders-need-unique-outputs';
+  }
 }
 
 class AssetGraphVersionException implements Exception {

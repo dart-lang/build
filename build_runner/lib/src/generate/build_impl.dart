@@ -180,10 +180,7 @@ class _SingleBuild {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = new Stopwatch()..start();
-    if (updates.isNotEmpty) {
-      await _updateAssetGraph(updates);
-    }
-    var result = await _safeBuild();
+    var result = await _safeBuild(updates);
     var optionalOutputTracker =
         new OptionalOutputTracker(_assetGraph, _buildDirs, _buildPhases);
     if (result.status == BuildStatus.success) {
@@ -240,7 +237,7 @@ class _SingleBuild {
 
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
-  Future<BuildResult> _safeBuild() {
+  Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
     var done = new Completer<BuildResult>();
 
     var heartbeat = new HeartbeatLogger(
@@ -254,6 +251,9 @@ class _SingleBuild {
     });
 
     runZoned(() async {
+      if (updates.isNotEmpty) {
+        await _updateAssetGraph(updates);
+      }
       // Run a fresh build.
       var result = await logTimedAsync(_logger, 'Running build', _runPhases);
 
@@ -267,6 +267,7 @@ class _SingleBuild {
 
       if (!done.isCompleted) done.complete(result);
     }, onError: (e, StackTrace st) {
+      log.severe('$e');
       if (!done.isCompleted) {
         done.complete(new BuildResult(BuildStatus.failure, [],
             exception: e, stackTrace: st));
