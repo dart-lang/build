@@ -11,7 +11,6 @@ import 'package:logging/logging.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../generate/directory_watcher_factory.dart';
 import '../logging/std_io_logging.dart';
 import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
@@ -24,9 +23,6 @@ class IOEnvironment implements BuildEnvironment {
   @override
   final RunnerAssetWriter writer;
 
-  @override
-  final DirectoryWatcherFactory directoryWatcherFactory;
-
   final bool _isInteractive;
   final bool _assumeTty;
   final bool _verbose;
@@ -36,8 +32,7 @@ class IOEnvironment implements BuildEnvironment {
         _assumeTty = assumeTty,
         _verbose = verbose ?? false,
         reader = new FileBasedAssetReader(packageGraph),
-        writer = new FileBasedAssetWriter(packageGraph),
-        directoryWatcherFactory = defaultDirectoryWatcherFactory;
+        writer = new FileBasedAssetWriter(packageGraph);
 
   @override
   void onLog(LogRecord record) {

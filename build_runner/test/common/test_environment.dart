@@ -9,7 +9,6 @@ import 'package:logging/logging.dart';
 import 'package:build_runner/src/asset/reader.dart';
 import 'package:build_runner/src/asset/writer.dart';
 import 'package:build_runner/src/environment/build_environment.dart';
-import 'package:build_runner/src/generate/directory_watcher_factory.dart';
 
 import 'common.dart';
 
@@ -26,9 +25,6 @@ class TestBuildEnvironment implements BuildEnvironment {
   final RunnerAssetReader reader;
   @override
   final RunnerAssetWriter writer;
-  @override
-  DirectoryWatcherFactory get directoryWatcherFactory =>
-      (path) => new FakeWatcher(path);
 
   /// If true, this will throw a [NonInteractiveBuildException] for all calls to
   /// [prompt].

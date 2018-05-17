@@ -8,7 +8,6 @@ import 'package:logging/logging.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../generate/directory_watcher_factory.dart';
 
 /// Utilities to interact with the environment in which a build is running.
 ///
@@ -19,7 +18,6 @@ import '../generate/directory_watcher_factory.dart';
 abstract class BuildEnvironment {
   RunnerAssetReader get reader;
   RunnerAssetWriter get writer;
-  DirectoryWatcherFactory get directoryWatcherFactory;
 
   void onLog(LogRecord record);
 
