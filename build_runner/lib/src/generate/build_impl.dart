@@ -267,7 +267,6 @@ class _SingleBuild {
 
       if (!done.isCompleted) done.complete(result);
     }, onError: (e, StackTrace st) {
-      log.severe('$e');
       if (!done.isCompleted) {
         done.complete(new BuildResult(BuildStatus.failure, [],
             exception: e, stackTrace: st));
