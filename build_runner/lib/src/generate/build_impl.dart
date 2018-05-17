@@ -316,9 +316,10 @@ class _SingleBuild {
   Future<Set<AssetId>> _matchingPrimaryInputs(
       String package, int phaseNumber) async {
     var ids = new Set<AssetId>();
+    var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _buildDirs)) {
+      if (!shouldBuildForDirs(node.id, _buildDirs, phase)) {
         return;
       }
 
