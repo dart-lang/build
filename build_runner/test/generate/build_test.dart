@@ -399,16 +399,18 @@ void main() {
         rootPackage('a', path: 'a/'): ['b'],
         package('b', path: 'a/b'): []
       });
-      await testBuilders(
-          [
-            apply('', [(_) => new TestBuilder()], toPackage('b'),
-                hideOutput: false)
-          ],
-          {'b|lib/b.txt': 'b'},
-          packageGraph: packageGraph,
-          outputs: {},
-          // Nothing to build since everything is skipped
-          status: BuildStatus.failure);
+      expect(
+          () => testBuilders(
+              [
+                apply('', [(_) => new TestBuilder()], toPackage('b'),
+                    hideOutput: false)
+              ],
+              {'b|lib/b.txt': 'b'},
+              packageGraph: packageGraph,
+              outputs: {},
+              // Nothing to build since everything is skipped
+              status: BuildStatus.failure),
+          throwsA(new isInstanceOf<CannotBuildException>()));
     });
 
     group('with `hideOutput: true`', () {

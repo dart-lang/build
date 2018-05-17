@@ -127,20 +127,16 @@ Future<BuildResult> testBuilders(
       buildDirs: buildDirs);
 
   BuildResult result;
-  try {
-    var build = await BuildRunner.create(
-      options,
-      environment,
-      builders,
-      builderConfigOverrides,
-      isReleaseBuild: false,
-    );
-    result = await build.run({});
-    await build.beforeExit();
-    await options.logListener.cancel();
-  } on CannotBuildException {
-    result = new BuildResult(BuildStatus.failure, []);
-  }
+  var build = await BuildRunner.create(
+    options,
+    environment,
+    builders,
+    builderConfigOverrides,
+    isReleaseBuild: false,
+  );
+  result = await build.run({});
+  await build.beforeExit();
+  await options.logListener.cancel();
 
   if (checkBuildStatus) {
     checkBuild(result,
