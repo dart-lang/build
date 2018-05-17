@@ -57,9 +57,13 @@ class MissingModulesException implements Exception {
       Set<AssetId> missingSources,
       List<Module> transitiveModules,
       AssetReader reader) async {
-    var buffer = new StringBuffer(
-        ' Unable to find modules for some sources, check the following '
-        'imports:\n\n');
+    var buffer = new StringBuffer('''
+Unable to find modules for some sources, this is usually the result of either a
+bad import or a missing dependency in a package (or possibly a dev_dependency
+needs to move to a real dependency).
+
+Please check the following imports:\n\n
+''');
 
     var checkedSourceDependencies = <AssetId, Set<AssetId>>{};
     for (var module in transitiveModules) {
