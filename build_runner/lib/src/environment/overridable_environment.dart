@@ -8,7 +8,6 @@ import 'package:logging/logging.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../generate/directory_watcher_factory.dart';
 import 'build_environment.dart';
 
 /// A [BuildEnvironment] which can have individual features overridden.
@@ -17,7 +16,6 @@ class OverrideableEnvironment implements BuildEnvironment {
 
   final RunnerAssetReader _reader;
   final RunnerAssetWriter _writer;
-  final DirectoryWatcherFactory _directoryWatcherFactory;
 
   final void Function(LogRecord) _onLog;
 
@@ -25,11 +23,9 @@ class OverrideableEnvironment implements BuildEnvironment {
     this._default, {
     RunnerAssetReader reader,
     RunnerAssetWriter writer,
-    DirectoryWatcherFactory directoryWatcherFactory,
     void Function(LogRecord) onLog,
   })  : _reader = reader,
         _writer = writer,
-        _directoryWatcherFactory = directoryWatcherFactory,
         _onLog = onLog;
 
   @override
