@@ -62,7 +62,7 @@ Unable to find modules for some sources, this is usually the result of either a
 bad import or a missing dependency in a package (or possibly a dev_dependency
 needs to move to a real dependency).
 
-Please check the following imports:\n\n
+Please check the following imports:\n
 ''');
 
     var checkedSourceDependencies = <AssetId, Set<AssetId>>{};

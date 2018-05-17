@@ -195,8 +195,13 @@ void main() {
           allOf(throwsA(new isInstanceOf<MissingModulesException>()), throwsA(
             predicate<MissingModulesException>(
               (error) {
+                printOnFailure(error.message);
                 return error.message.contains('''
-Unable to find modules for some sources, check the following imports:
+Unable to find modules for some sources, this is usually the result of either a
+bad import or a missing dependency in a package (or possibly a dev_dependency
+needs to move to a real dependency).
+
+Please check the following imports:
 
 `import 'package:b/b_second_import_to_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 5:1
 `import 'package:b/b_imports_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 4:1
