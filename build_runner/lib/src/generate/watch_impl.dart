@@ -68,7 +68,6 @@ Future<ServeHandler> watch(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
       writer: writer,
-      directoryWatcherFactory: directoryWatcherFactory,
       onLog: onLog);
   var options = await BuildOptions.create(environment,
       configKey: configKey,
@@ -87,7 +86,7 @@ Future<ServeHandler> watch(
   var terminator = new Terminator(terminateEventStream);
 
   var watch = _runWatch(options, environment, builders, builderConfigOverrides,
-      terminator.shouldTerminate,
+      terminator.shouldTerminate, directoryWatcherFactory,
       isReleaseMode: isReleaseBuild ?? false);
 
   // ignore: unawaited_futures
@@ -113,8 +112,15 @@ WatchImpl _runWatch(
         List<BuilderApplication> builders,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
         Future until,
+        DirectoryWatcherFactory directoryWatcherFactory,
         {bool isReleaseMode: false}) =>
-    new WatchImpl(options, environment, builders, builderConfigOverrides, until,
+    new WatchImpl(
+        options,
+        environment,
+        builders,
+        builderConfigOverrides,
+        until,
+        directoryWatcherFactory,
         options.rootPackageFilesWhitelist.map((g) => new Glob(g)),
         isReleaseMode: isReleaseMode);
 
@@ -180,10 +186,10 @@ class WatchImpl implements BuildState {
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       Future until,
+      this._directoryWatcherFactory,
       this._rootPackageFilesWhitelist,
       {bool isReleaseMode: false})
       : _configKey = options.configKey,
-        _directoryWatcherFactory = environment.directoryWatcherFactory,
         _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
     buildResults = _run(

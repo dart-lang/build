@@ -39,10 +39,6 @@ class OverrideableEnvironment implements BuildEnvironment {
   RunnerAssetWriter get writer => _writer ?? _default.writer;
 
   @override
-  DirectoryWatcherFactory get directoryWatcherFactory =>
-      _directoryWatcherFactory ?? _default.directoryWatcherFactory;
-
-  @override
   void onLog(LogRecord record) {
     if (_onLog != null) {
       _onLog(record);
