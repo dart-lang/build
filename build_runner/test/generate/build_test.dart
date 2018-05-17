@@ -407,9 +407,7 @@ void main() {
               ],
               {'b|lib/b.txt': 'b'},
               packageGraph: packageGraph,
-              outputs: {},
-              // Nothing to build since everything is skipped
-              status: BuildStatus.failure),
+              outputs: {}),
           throwsA(new isInstanceOf<CannotBuildException>()));
     });
 
