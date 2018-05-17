@@ -20,7 +20,6 @@ import '../server/server.dart';
 import 'build_result.dart';
 import 'build_runner.dart';
 import 'directory_watcher_factory.dart';
-import 'exceptions.dart';
 import 'watch_impl.dart' as watch_impl;
 
 /// Runs all of the BuilderApplications in [builders] once.
@@ -102,12 +101,11 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       isReleaseBuild: isReleaseBuild ?? false,
     );
     var result = await build.run({});
-    await build.beforeExit();
+    await build?.beforeExit();
+    return result;
+  } finally {
     await terminator.cancel();
     await options.logListener.cancel();
-    return result;
-  } on CannotBuildException {
-    return new BuildResult(BuildStatus.failure, []);
   }
 }
 
