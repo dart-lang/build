@@ -3,6 +3,8 @@
 - All builders with `build_to: source` will now be ran regardless of which
   directory is currently being built, see
   https://github.com/dart-lang/build/issues/1454 for context.
+- `build` will now throw instead of returning a failed build result if nothing
+  was built.
 
 ## 0.8.9
 

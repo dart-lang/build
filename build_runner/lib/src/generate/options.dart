@@ -13,6 +13,7 @@ import 'package:meta/meta.dart';
 
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
+import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not
 /// provided.
@@ -98,8 +99,18 @@ class BuildOptions {
 
     overrideBuildConfig ??=
         await findBuildConfigOverrides(packageGraph, configKey);
-    var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-        overrideBuildConfig: overrideBuildConfig);
+    TargetGraph targetGraph;
+    try {
+      targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          overrideBuildConfig: overrideBuildConfig);
+    } on BuildConfigParseException catch (e) {
+      environment.onLog(new LogRecord(
+          Level.SEVERE,
+          'Failed to parse `build.yaml` for ${e.packageName}.',
+          'Build',
+          e.exception));
+      throw new CannotBuildException();
+    }
     var rootPackageConfig = targetGraph.rootPackageConfig;
 
     var logListener = Logger.root.onRecord.listen(environment.onLog);

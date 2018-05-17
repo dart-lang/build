@@ -31,6 +31,7 @@ import '../util/constants.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'directory_watcher_factory.dart';
+import 'exceptions.dart';
 import 'options.dart';
 import 'terminator.dart';
 
@@ -298,25 +299,24 @@ class WatchImpl implements BuildState {
           () => graphWatcher.ready);
       originalRootPackagesDigest = md5
           .convert(await watcherEnvironment.reader.readAsBytes(rootPackagesId));
-      _build = await BuildImpl.create(
-          options, watcherEnvironment, builders, builderConfigOverrides,
-          isReleaseBuild: isReleaseMode);
+
+      BuildResult firstBuild;
+      try {
+        _build = await BuildImpl.create(
+            options, watcherEnvironment, builders, builderConfigOverrides,
+            isReleaseBuild: isReleaseMode);
+
+        firstBuild = await _build.run({});
+      } on CannotBuildException {
+        firstBuild = new BuildResult(BuildStatus.failure, []);
+      }
 
       _reader = _build?.finalizedReader;
       _readyCompleter.complete(null);
-
-      if (_build == null) {
-        var result = new BuildResult(BuildStatus.failure, []);
-        controller.add(result);
-        firstBuildCompleter.complete(result);
-        return;
-      }
-
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
-      if (!controller.isClosed) controller.add(_build.firstBuild);
-
-      firstBuildCompleter.complete(_build.firstBuild);
+      if (!controller.isClosed) controller.add(firstBuild);
+      firstBuildCompleter.complete(firstBuild);
     }();
 
     return controller.stream;

@@ -42,3 +42,10 @@ class InvalidBuildPhaseException extends FatalBuildException {
   @override
   String toString() => 'InvalidBuildPhaseException: $_reason';
 }
+
+/// Indicates that the build cannot be attempted.
+///
+/// Before throwing this exception a user actionable message should be logged.
+class CannotBuildException implements Exception {
+  const CannotBuildException();
+}

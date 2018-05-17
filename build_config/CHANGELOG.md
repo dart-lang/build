@@ -1,3 +1,11 @@
+## 0.2.6+2
+
+- Restore error for missing default target.
+
+## 0.2.6+1
+
+- Restore error for missing build extensions.
+
 ## 0.2.6
 
 - The `target` and `build_extensions` keys for builder definitions are now

@@ -52,6 +52,17 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   if (package.path == null) {
     return new BuildConfig.useDefault(package.name, dependencyNames);
   }
-  return BuildConfig.fromBuildConfigDir(
-      package.name, dependencyNames, package.path);
+  try {
+    return await BuildConfig.fromBuildConfigDir(
+        package.name, dependencyNames, package.path);
+  } on ArgumentError catch (e) {
+    throw new BuildConfigParseException(package.name, e);
+  }
+}
+
+class BuildConfigParseException {
+  final String packageName;
+  final dynamic exception;
+
+  BuildConfigParseException(this.packageName, this.exception);
 }

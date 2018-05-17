@@ -7,6 +7,8 @@ These packages provide libraries for generating Dart code.
 TODO: bazel_codegen
 -->
 
+[FAQ for Builder authors](https://github.com/dart-lang/build/blob/master/docs/builder_author_faq.md).
+
 ## [build](https://github.com/dart-lang/build/blob/master/build/README.md)
 
 Defines the interfaces for creating a `Builder` which is a way of doing codegen
