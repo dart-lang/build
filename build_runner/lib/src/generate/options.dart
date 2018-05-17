@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/package_graph/target_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -36,7 +35,6 @@ class BuildOptions {
   final PackageGraph packageGraph;
   final List<String> rootPackageFilesWhitelist;
 
-  final String configKey; // May be null.
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
   final bool failOnSevere;
@@ -53,7 +51,6 @@ class BuildOptions {
   bool skipBuildScriptCheck;
 
   BuildOptions._({
-    @required this.configKey,
     @required this.debounceDelay,
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
@@ -72,7 +69,6 @@ class BuildOptions {
 
   static Future<BuildOptions> create(
     BuildEnvironment environment, {
-    String configKey,
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
@@ -97,8 +93,6 @@ class BuildOptions {
 
     Logger.root.level = logLevel;
 
-    overrideBuildConfig ??=
-        await findBuildConfigOverrides(packageGraph, configKey);
     TargetGraph targetGraph;
     try {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -137,7 +131,6 @@ class BuildOptions {
       }
     }
     return new BuildOptions._(
-        configKey: configKey,
         debounceDelay: debounceDelay,
         deleteFilesByDefault: deleteFilesByDefault,
         enableLowResourcesMode: enableLowResourcesMode,

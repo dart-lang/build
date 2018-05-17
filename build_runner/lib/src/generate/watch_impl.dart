@@ -10,6 +10,7 @@ import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
+import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -69,8 +70,9 @@ Future<ServeHandler> watch(
       reader: reader,
       writer: writer,
       onLog: onLog);
+  overrideBuildConfig ??=
+      await findBuildConfigOverrides(packageGraph, configKey);
   var options = await BuildOptions.create(environment,
-      configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
@@ -86,7 +88,7 @@ Future<ServeHandler> watch(
   var terminator = new Terminator(terminateEventStream);
 
   var watch = _runWatch(options, environment, builders, builderConfigOverrides,
-      terminator.shouldTerminate, directoryWatcherFactory,
+      terminator.shouldTerminate, directoryWatcherFactory, configKey,
       isReleaseMode: isReleaseBuild ?? false);
 
   // ignore: unawaited_futures
@@ -113,6 +115,7 @@ WatchImpl _runWatch(
         Map<String, Map<String, dynamic>> builderConfigOverrides,
         Future until,
         DirectoryWatcherFactory directoryWatcherFactory,
+        String configKey,
         {bool isReleaseMode: false}) =>
     new WatchImpl(
         options,
@@ -121,6 +124,7 @@ WatchImpl _runWatch(
         builderConfigOverrides,
         until,
         directoryWatcherFactory,
+        configKey,
         options.rootPackageFilesWhitelist.map((g) => new Glob(g)),
         isReleaseMode: isReleaseMode);
 
@@ -187,10 +191,10 @@ class WatchImpl implements BuildState {
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       Future until,
       this._directoryWatcherFactory,
+      this._configKey,
       this._rootPackageFilesWhitelist,
       {bool isReleaseMode: false})
-      : _configKey = options.configKey,
-        _debounceDelay = options.debounceDelay,
+      : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
     buildResults = _run(
             options, environment, builders, builderConfigOverrides, until,

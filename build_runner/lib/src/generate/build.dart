@@ -9,6 +9,7 @@ import 'package:build_runner/src/environment/io_environment.dart';
 import 'package:build_runner/src/environment/overridable_environment.dart';
 import 'package:build_runner/src/generate/options.dart';
 import 'package:build_runner/src/generate/terminator.dart';
+import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
@@ -80,12 +81,13 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       writer: writer,
       onLog: onLog);
   var options = await BuildOptions.create(environment,
-      configKey: configKey,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
       packageGraph: packageGraph,
       logLevel: logLevel,
       skipBuildScriptCheck: skipBuildScriptCheck,
+      overrideBuildConfig:
+          await findBuildConfigOverrides(packageGraph, configKey),
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
       trackPerformance: trackPerformance,
