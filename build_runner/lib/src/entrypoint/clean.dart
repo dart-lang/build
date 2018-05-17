@@ -29,7 +29,7 @@ class CleanCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    var logSubscription = Logger.root.onRecord.listen(stdIOLogListener);
+    var logSubscription = Logger.root.onRecord.listen(stdIOLogListener());
 
     logger.warning('Deleting cache and generated source files.\n'
         'This shouldn\'t be necessary for most applications, unless you have '

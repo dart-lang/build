@@ -54,7 +54,7 @@ Future<Null> main(List<String> args) async {
 
   StreamSubscription logListener;
   if (commandName != _generateCommand) {
-    logListener = Logger.root.onRecord.listen(stdIOLogListener);
+    logListener = Logger.root.onRecord.listen(stdIOLogListener());
   }
   var buildScript = await generateBuildScript();
   var scriptFile = new File(scriptLocation)..createSync(recursive: true);

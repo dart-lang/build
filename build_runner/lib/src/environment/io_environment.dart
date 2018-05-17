@@ -5,13 +5,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../logging/std_io_logging.dart';
 import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
 
@@ -24,21 +22,19 @@ class IOEnvironment implements BuildEnvironment {
   final RunnerAssetWriter writer;
 
   final bool _isInteractive;
-  final bool _assumeTty;
-  final bool _verbose;
 
-  IOEnvironment(PackageGraph packageGraph, bool assumeTty, {bool verbose})
+  IOEnvironment(PackageGraph packageGraph, bool assumeTty)
       : _isInteractive = assumeTty == true || _canPrompt(),
-        _assumeTty = assumeTty,
-        _verbose = verbose ?? false,
         reader = new FileBasedAssetReader(packageGraph),
         writer = new FileBasedAssetWriter(packageGraph);
 
   @override
   void onLog(LogRecord record) {
-    overrideAnsiOutput(_assumeTty == true || ansiOutputEnabled, () {
-      stdIOLogListener(record, verbose: _verbose);
-    });
+    if (record.level >= Level.SEVERE) {
+      stderr.writeln(record);
+    } else {
+      stdout.writeln(record);
+    }
   }
 
   @override
