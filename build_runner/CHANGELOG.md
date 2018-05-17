@@ -5,6 +5,8 @@
   https://github.com/dart-lang/build/issues/1454 for context.
 - `build` will now throw instead of returning a failed build result if nothing
   was built.
+- Improve error message when a dependency has a bad `build.yaml` with a missing
+  dependency.
 
 ## 0.8.9
 
