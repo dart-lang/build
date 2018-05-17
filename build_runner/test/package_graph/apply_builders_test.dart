@@ -7,6 +7,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:test/test.dart';
 
+import 'package:build_runner/src/generate/exceptions.dart';
 import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/target_graph.dart';
@@ -97,9 +98,9 @@ void main() {
         apply('b|cool_builder', [(options) => new CoolBuilder(options)],
             toAllPackages()),
       ];
-      var phases =
-          await createBuildPhases(targetGraph, builderApplications, {}, false);
-      expect(phases, isEmpty);
+      expect(
+          () => createBuildPhases(targetGraph, builderApplications, {}, false),
+          throwsA(new isInstanceOf<CannotBuildException>()));
     });
   });
 }

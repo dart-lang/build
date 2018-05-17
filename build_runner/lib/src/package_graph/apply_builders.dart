@@ -10,6 +10,7 @@ import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 
+import '../generate/exceptions.dart';
 import '../generate/phase.dart';
 import '../validation/config_validation.dart';
 import 'package_graph.dart';
@@ -227,10 +228,6 @@ class BuilderApplication {
 
 final _logger = new Logger('ApplyBuilders');
 
-class _MissingDependency {
-  const _MissingDependency();
-}
-
 /// Creates a [BuildPhase] to apply each builder in [builderApplications] to
 /// each target in [targetGraph] such that all builders are run for dependencies
 /// before moving on to later packages.
@@ -249,23 +246,17 @@ Future<List<BuildPhase>> createBuildPhases(
     bool isReleaseMode) async {
   validateBuilderConfig(builderApplications, targetGraph.rootPackageConfig,
       builderConfigOverrides, _logger);
-  List<List<TargetNode>> cycles;
-  try {
-    cycles = stronglyConnectedComponents<String, TargetNode>(
-        targetGraph.allModules.values,
-        (node) => node.target.key,
-        (node) => node.target.dependencies?.map((key) {
-              if (!targetGraph.allModules.containsKey(key)) {
-                _logger
-                    .severe('${node.target.key} declares a dependency on $key '
-                        'but it does not exist');
-                throw const _MissingDependency();
-              }
-              return targetGraph.allModules[key];
-            })?.where((n) => n != null));
-  } on _MissingDependency {
-    return [];
-  }
+  final cycles = stronglyConnectedComponents<String, TargetNode>(
+      targetGraph.allModules.values,
+      (node) => node.target.key,
+      (node) => node.target.dependencies?.map((key) {
+            if (!targetGraph.allModules.containsKey(key)) {
+              _logger.severe('${node.target.key} declares a dependency on $key '
+                  'but it does not exist');
+              throw new CannotBuildException();
+            }
+            return targetGraph.allModules[key];
+          })?.where((n) => n != null));
   final applyWith = _applyWith(builderApplications);
   var expandedPhases = cycles.expand((cycle) => _createBuildPhasesWithinCycle(
       cycle,
