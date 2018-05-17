@@ -1,3 +1,8 @@
+## 0.8.10
+
+- `build` will now throw instead of returning a failed build result if nothing
+  was built.
+
 ## 0.8.9
 
 - Added support for building only specified top level directories.

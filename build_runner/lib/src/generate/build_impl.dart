@@ -7,7 +7,6 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner/src/asset/finalized_reader.dart';
 import 'package:build_runner/src/changes/build_script_updates.dart';
@@ -23,8 +22,6 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
 import '../environment/build_environment.dart';
-import '../environment/io_environment.dart';
-import '../environment/overridable_environment.dart';
 import '../logging/build_for_input_logger.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
@@ -41,95 +38,17 @@ import 'heartbeat.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
-import 'terminator.dart';
 
 final _logger = new Logger('Build');
 
-Future<BuildResult> build(
-  List<BuilderApplication> builders, {
-  bool deleteFilesByDefault,
-  bool failOnSevere,
-  bool assumeTty,
-  String configKey,
-  PackageGraph packageGraph,
-  RunnerAssetReader reader,
-  RunnerAssetWriter writer,
-  Level logLevel,
-  onLog(LogRecord record),
-  Stream terminateEventStream,
-  bool skipBuildScriptCheck,
-  bool enableLowResourcesMode,
-  Map<String, BuildConfig> overrideBuildConfig,
-  Map<String, String> outputMap,
-  bool trackPerformance,
-  bool verbose,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
-  bool isReleaseBuild,
-  List<String> buildDirs,
-}) async {
-  builderConfigOverrides ??= const {};
-  packageGraph ??= new PackageGraph.forThisPackage();
-  var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
-      reader: reader,
-      writer: writer,
-      onLog: onLog);
-  var options = await BuildOptions.create(environment,
-      configKey: configKey,
-      deleteFilesByDefault: deleteFilesByDefault,
-      failOnSevere: failOnSevere,
-      packageGraph: packageGraph,
-      overrideBuildConfig: overrideBuildConfig,
-      logLevel: logLevel,
-      skipBuildScriptCheck: skipBuildScriptCheck,
-      enableLowResourcesMode: enableLowResourcesMode,
-      outputMap: outputMap,
-      trackPerformance: trackPerformance,
-      verbose: verbose,
-      buildDirs: buildDirs);
-  var terminator = new Terminator(terminateEventStream);
-
-  var result = await _singleBuild(
-      options, environment, builders, builderConfigOverrides,
-      isReleaseBuild: isReleaseBuild ?? false);
-
-  await terminator.cancel();
-  await options.logListener.cancel();
-  return result;
-}
-
-Future<BuildResult> _singleBuild(
-    BuildOptions options,
-    BuildEnvironment environment,
-    List<BuilderApplication> builders,
-    Map<String, Map<String, dynamic>> builderConfigOverrides,
-    {bool isReleaseBuild: false}) async {
-  var build = await BuildImpl.create(
-    options,
-    environment,
-    builders,
-    builderConfigOverrides,
-    isReleaseBuild: isReleaseBuild,
-  );
-  if (build == null) return new BuildResult(BuildStatus.failure, []);
-  var result = build.firstBuild;
-  await build.beforeExit();
-  return result;
-}
-
 class BuildImpl {
-  BuildResult _firstBuild;
-  BuildResult get firstBuild => _firstBuild;
-
   final FinalizedReader _finalizedReader;
   FinalizedReader get finalizedReader => _finalizedReader;
 
   final AssetGraph _assetGraph;
-  // TODO(grouma) - do not expose the asset graph.
   AssetGraph get assetGraph => _assetGraph;
 
   final BuildScriptUpdates _buildScriptUpdates;
-  // TODO(grouma) - do not expose the build script updates.
   BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
 
   final List<BuildPhase> _buildPhases;
@@ -177,7 +96,7 @@ class BuildImpl {
         options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
     if (buildPhases.isEmpty) {
       _logger.severe('Nothing can be built, yet a build was requested.');
-      return null;
+      throw new CannotBuildException();
     }
     var buildDefinition = await BuildDefinition.prepareWorkspace(
         environment, options, buildPhases);
@@ -194,7 +113,6 @@ class BuildImpl {
         singleStepReader, buildDefinition.assetGraph, optionalOutputTracker);
     var build =
         new BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
-    build._firstBuild = await build.run({});
     return build;
   }
 }
