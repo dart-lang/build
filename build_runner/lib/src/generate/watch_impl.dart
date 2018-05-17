@@ -70,7 +70,7 @@ Future<ServeHandler> watch(
       reader: reader,
       writer: writer,
       onLog: onLog);
-  overrideBuildConfig ??
+  overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
   var options = await BuildOptions.create(environment,
       deleteFilesByDefault: deleteFilesByDefault,
