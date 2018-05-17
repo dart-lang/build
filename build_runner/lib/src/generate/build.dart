@@ -15,6 +15,7 @@ import 'package:shelf/shelf.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../logging/std_io_logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
@@ -76,10 +77,10 @@ Future<BuildResult> build(List<BuilderApplication> builders,
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
   var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty, verbose: verbose),
+      new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
       writer: writer,
-      onLog: onLog);
+      onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
   var options = await BuildOptions.create(environment,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,

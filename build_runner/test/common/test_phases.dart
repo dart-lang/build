@@ -9,6 +9,7 @@ import 'package:build_runner/src/environment/io_environment.dart';
 import 'package:build_runner/src/environment/overridable_environment.dart';
 import 'package:build_runner/src/generate/build_result.dart';
 import 'package:build_runner/src/generate/options.dart';
+import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:logging/logging.dart';
@@ -110,10 +111,10 @@ Future<BuildResult> testBuilders(
 
   builderConfigOverrides ??= const {};
   var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, null, verbose: verbose),
+      new IOEnvironment(packageGraph, null),
       reader: reader,
       writer: writer,
-      onLog: onLog);
+      onLog: onLog ?? stdIOLogListener(verbose: verbose));
   var options = await BuildOptions.create(environment,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,

@@ -9,8 +9,12 @@ import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-void stdIOLogListener(LogRecord record, {bool verbose}) {
-  verbose ??= false;
+Function(LogRecord) stdIOLogListener({bool assumeTty, bool verbose}) =>
+    (record) => overrideAnsiOutput(assumeTty == true || ansiOutputEnabled, () {
+          _stdIOLogListener(record, verbose: verbose ?? false);
+        });
+
+void _stdIOLogListener(LogRecord record, {bool verbose}) {
   AnsiCode color;
   if (record.level < Level.WARNING) {
     color = cyan;
