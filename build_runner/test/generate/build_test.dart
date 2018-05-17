@@ -399,16 +399,16 @@ void main() {
         rootPackage('a', path: 'a/'): ['b'],
         package('b', path: 'a/b'): []
       });
-      await testBuilders(
-          [
-            apply('', [(_) => new TestBuilder()], toPackage('b'),
-                hideOutput: false)
-          ],
-          {'b|lib/b.txt': 'b'},
-          packageGraph: packageGraph,
-          outputs: {},
-          // Nothing to build since everything is skipped
-          status: BuildStatus.failure);
+      expect(
+          () => testBuilders(
+              [
+                apply('', [(_) => new TestBuilder()], toPackage('b'),
+                    hideOutput: false)
+              ],
+              {'b|lib/b.txt': 'b'},
+              packageGraph: packageGraph,
+              outputs: {}),
+          throwsA(new isInstanceOf<CannotBuildException>()));
     });
 
     group('with `hideOutput: true`', () {
@@ -661,7 +661,8 @@ void main() {
     test('can build files from one dir when building another dir', () async {
       await testBuilders([
         applyToRoot(new TestBuilder(),
-            generateFor: new InputSet(include: ['test/*.txt'])),
+            generateFor: new InputSet(include: ['test/*.txt']),
+            hideOutput: true),
         applyToRoot(
             new TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt'),
@@ -672,14 +673,32 @@ void main() {
                   await buildStep
                       .readAsString(new AssetId('a', 'test/b.txt.copy'));
                 }),
-            generateFor: new InputSet(include: ['web/*.txt'])),
+            generateFor: new InputSet(include: ['web/*.txt']),
+            hideOutput: true),
       ], {
         'a|test/a.txt': 'a',
         'a|test/b.txt': 'b',
         'a|web/a.txt': 'a',
       }, outputs: {
+        r'$$a|web/a.txt.copy': 'a',
+        r'$$a|test/b.txt.copy': 'b',
+      }, buildDirs: [
+        'web'
+      ], verbose: true);
+    });
+
+    test('build to source builders are always ran regardless of buildDirs',
+        () async {
+      await testBuilders([
+        applyToRoot(new TestBuilder(),
+            generateFor: new InputSet(include: ['**/*.txt']),
+            hideOutput: false),
+      ], {
+        'a|test/a.txt': 'a',
+        'a|web/a.txt': 'a',
+      }, outputs: {
+        r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
-        r'a|test/b.txt.copy': 'b',
       }, buildDirs: [
         'web'
       ], verbose: true);

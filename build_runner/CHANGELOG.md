@@ -1,7 +1,30 @@
-## 0.8.9
+## 0.8.10-dev
 
+- All builders with `build_to: source` will now be ran regardless of which
+  directory is currently being built, see
+  https://github.com/dart-lang/build/issues/1454 for context.
+- `build` will now throw instead of returning a failed build result if nothing
+  was built.
 - Improve error message when a dependency has a bad `build.yaml` with a missing
   dependency.
+
+## 0.8.9
+
+- Added support for building only specified top level directories.
+  - The `build`, `watch` commands support positional arguments which are the
+    directories to build. For example, `pub run build_runner build web` will
+    only build the `web` directory.
+  - The `serve` command treats positional args as it did before, except it will
+    only build the directories you ask it to serve.
+  - The `test` command will automatically only build the `test` directory.
+  - If using the `-o` option, with the `<dir-to-build>:<output-dir>` syntax,
+    then the `<dir-to-build>` will be added to the list of directories to build.
+    - If additional directories are supplied with positional arguments, then
+      those will also be built.
+- Update to latest analyzer and build packages.
+- Updated the `serve` logic to only serve files which were part of the actual
+  build, and not stale assets. This brings the semantics exactly in line with
+  what would be copied to the `-o` output directory.
 
 ## 0.8.8
 

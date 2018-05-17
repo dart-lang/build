@@ -6,11 +6,14 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/package_graph/build_config_overrides.dart';
+import 'package:build_runner/src/package_graph/target_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
+import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not
 /// provided.
@@ -41,6 +44,7 @@ class BuildOptions {
   final bool trackPerformance;
   final bool verbose;
   final List<String> buildDirs;
+  final TargetGraph targetGraph;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -62,10 +66,11 @@ class BuildOptions {
     @required this.trackPerformance,
     @required this.verbose,
     @required this.buildDirs,
+    @required this.targetGraph,
   }) : this.rootPackageFilesWhitelist =
             new UnmodifiableListView(rootPackageFilesWhitelist);
 
-  factory BuildOptions(
+  static Future<BuildOptions> create(
     BuildEnvironment environment, {
     String configKey,
     Duration debounceDelay,
@@ -75,12 +80,12 @@ class BuildOptions {
     Level logLevel,
     Map<String, String> outputMap,
     @required PackageGraph packageGraph,
-    BuildConfig rootPackageConfig,
+    Map<String, BuildConfig> overrideBuildConfig,
     bool skipBuildScriptCheck,
     bool trackPerformance,
     bool verbose,
     List<String> buildDirs,
-  }) {
+  }) async {
     // Set up logging
     verbose ??= false;
     logLevel ??= verbose ? Level.ALL : Level.INFO;
@@ -91,6 +96,22 @@ class BuildOptions {
     }
 
     Logger.root.level = logLevel;
+
+    overrideBuildConfig ??=
+        await findBuildConfigOverrides(packageGraph, configKey);
+    TargetGraph targetGraph;
+    try {
+      targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          overrideBuildConfig: overrideBuildConfig);
+    } on BuildConfigParseException catch (e) {
+      environment.onLog(new LogRecord(
+          Level.SEVERE,
+          'Failed to parse `build.yaml` for ${e.packageName}.',
+          'Build',
+          e.exception));
+      throw new CannotBuildException();
+    }
+    var rootPackageConfig = targetGraph.rootPackageConfig;
 
     var logListener = Logger.root.onRecord.listen(environment.onLog);
 
@@ -128,6 +149,7 @@ class BuildOptions {
         skipBuildScriptCheck: skipBuildScriptCheck,
         trackPerformance: trackPerformance,
         verbose: verbose,
-        buildDirs: buildDirs);
+        buildDirs: buildDirs,
+        targetGraph: targetGraph);
   }
 }

@@ -10,6 +10,7 @@ export 'src/asset/writer.dart';
 export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
 export 'src/generate/build_result.dart';
+export 'src/generate/exceptions.dart' show CannotBuildException;
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuilderActionPerformance, BuildPhasePerformance;
 export 'src/package_graph/apply_builders.dart'

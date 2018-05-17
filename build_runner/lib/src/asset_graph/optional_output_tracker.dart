@@ -48,7 +48,7 @@ class OptionalOutputTracker {
     if (node is! GeneratedAssetNode) return true;
     final generatedNode = node as GeneratedAssetNode;
     final phase = _buildPhases[generatedNode.phaseNumber];
-    if (!phase.isOptional && shouldBuildForDirs(output, _buildDirs)) {
+    if (!phase.isOptional && shouldBuildForDirs(output, _buildDirs, phase)) {
       return true;
     }
     return _checkedOutputs.putIfAbsent(
