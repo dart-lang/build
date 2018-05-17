@@ -8,7 +8,6 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/environment/io_environment.dart';
 import 'package:build_runner/src/environment/overridable_environment.dart';
 import 'package:build_runner/src/generate/build_result.dart';
-import 'package:build_runner/src/generate/exceptions.dart';
 import 'package:build_runner/src/generate/options.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
