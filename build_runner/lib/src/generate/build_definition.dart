@@ -104,8 +104,8 @@ class _Loader {
         try {
           assetGraph = await AssetGraph.build(_buildPhases, inputSources,
               internalSources, _options.packageGraph, _environment.reader);
-        } on DuplicateAssetNodeException catch (e) {
-          _logger.severe('$e');
+        } on DuplicateAssetNodeException catch (e, st) {
+          _logger.severe('Conflicting outputs', e, st);
           throw new CannotBuildException();
         }
         buildScriptUpdates = await BuildScriptUpdates.create(

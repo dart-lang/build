@@ -2,7 +2,7 @@
 
 `build_runner` relies on determining a static build graph before starting a
 build - it needs to know every file that may be written and which Builder would
-write it. If multiple builders are configured to (possibly) output the same file
+write it. If multiple Builders are configured to (possibly) output the same file
 you can:
 
 - Add a `generate_for` configuration for one or both Builders so they do not
