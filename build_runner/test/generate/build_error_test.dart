@@ -27,7 +27,7 @@ void main() {
         packageGraph: buildPackageGraph({rootPackage('a'): []}),
         deleteFilesByDefault: false,
       ),
-      throwsA(const isInstanceOf<UnexpectedExistingOutputsException>()),
+      throwsA(const isInstanceOf<CannotBuildException>()),
     );
   });
 
