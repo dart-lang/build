@@ -4,8 +4,11 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:glob/glob.dart';
 
+import '../generate/input_matcher.dart';
 import 'package_graph.dart';
 
 /// Like a [PackageGraph] but packages are further broken down into modules
@@ -14,34 +17,60 @@ class TargetGraph {
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
 
+  /// All [TargetNode]s by package name.
+  final Map<String, List<TargetNode>> modulesByPackage;
+
   /// The [BuildConfig] of the root package.
   final BuildConfig rootPackageConfig;
 
-  TargetGraph._(this.allModules, this.rootPackageConfig);
+  TargetGraph._(this.allModules, this.modulesByPackage, this.rootPackageConfig);
 
   static Future<TargetGraph> forPackageGraph(PackageGraph packageGraph,
-      {Map<String, BuildConfig> overrideBuildConfig}) async {
+      {Map<String, BuildConfig> overrideBuildConfig,
+      List<String> defaultRootPackageWhitelist}) async {
     overrideBuildConfig ??= const {};
-    final modules = <String, TargetNode>{};
+    final modulesByKey = <String, TargetNode>{};
+    final modulesByPackage = <String, List<TargetNode>>{};
     BuildConfig rootPackageConfig;
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
-      if (package.isRoot) rootPackageConfig = config;
-      final nodes = config.buildTargets.values
-          .map((target) => new TargetNode(target, package));
+      List<String> defaultInclude;
+      if (package.isRoot) {
+        defaultInclude = defaultRootPackageWhitelist;
+        rootPackageConfig = config;
+      } else {
+        defaultInclude = ['lib/**'];
+      }
+      final nodes = config.buildTargets.values.map((target) =>
+          new TargetNode(target, package, defaultInclude: defaultInclude));
       for (final node in nodes) {
-        modules[node.target.key] = node;
+        modulesByKey[node.target.key] = node;
+        modulesByPackage.putIfAbsent(node.target.package, () => []).add(node);
       }
     }
-    return new TargetGraph._(modules, rootPackageConfig);
+    return new TargetGraph._(modulesByKey, modulesByPackage, rootPackageConfig);
   }
+
+  /// Whether or not [id] is included in the sources of any target in the graph.
+  bool anyMatchesAsset(AssetId id) =>
+      modulesByPackage[id.package]?.any((t) => t.matchesSource(id)) ?? false;
 }
 
 class TargetNode {
   final BuildTarget target;
   final PackageNode package;
-  TargetNode(this.target, this.package);
+
+  List<Glob> get sourceIncludes => _sourcesMatcher.includeGlobs;
+  final InputMatcher _sourcesMatcher;
+
+  TargetNode(this.target, this.package, {List<String> defaultInclude})
+      : _sourcesMatcher =
+            new InputMatcher(target.sources, defaultInclude: defaultInclude);
+
+  bool excludesSource(AssetId id) => _sourcesMatcher.excludes(id);
+
+  bool matchesSource(AssetId id) => _sourcesMatcher.matches(id);
 
   @override
   String toString() => target.key;

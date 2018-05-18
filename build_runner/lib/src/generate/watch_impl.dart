@@ -11,8 +11,8 @@ import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
+import 'package:build_runner/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
@@ -117,15 +117,8 @@ WatchImpl _runWatch(
         DirectoryWatcherFactory directoryWatcherFactory,
         String configKey,
         {bool isReleaseMode: false}) =>
-    new WatchImpl(
-        options,
-        environment,
-        builders,
-        builderConfigOverrides,
-        until,
-        directoryWatcherFactory,
-        configKey,
-        options.rootPackageFilesWhitelist.map((g) => new Glob(g)),
+    new WatchImpl(options, environment, builders, builderConfigOverrides, until,
+        directoryWatcherFactory, configKey,
         isReleaseMode: isReleaseMode);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
@@ -161,7 +154,6 @@ class WatchImpl implements BuildState {
   Future<Null> get ready => _readyCompleter.future;
 
   final String _configKey; // may be null
-  final Iterable<Glob> _rootPackageFilesWhitelist;
 
   /// Delay to wait for more file watcher events.
   final Duration _debounceDelay;
@@ -174,6 +166,9 @@ class WatchImpl implements BuildState {
 
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
+
+  /// The [TargetGraph] for the current program.
+  final TargetGraph _targetGraph;
 
   @override
   Future<BuildResult> currentBuild;
@@ -192,10 +187,10 @@ class WatchImpl implements BuildState {
       Future until,
       this._directoryWatcherFactory,
       this._configKey,
-      this._rootPackageFilesWhitelist,
       {bool isReleaseMode: false})
       : _debounceDelay = options.debounceDelay,
-        packageGraph = options.packageGraph {
+        packageGraph = options.packageGraph,
+        _targetGraph = options.targetGraph {
     buildResults = _run(
             options, environment, builders, builderConfigOverrides, until,
             isReleaseMode: isReleaseMode)
@@ -353,8 +348,9 @@ class WatchImpl implements BuildState {
       if (!node.isInteresting) return false;
       if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     } else {
-      if (change.type == ChangeType.REMOVE) return false;
-      if (!_isWhitelistedPath(change.id)) return false;
+      // We don't care about deletes or modifications outside the asset graph.
+      if (change.type != ChangeType.ADD) return false;
+      if (!_targetGraph.anyMatchesAsset(change.id)) return false;
     }
     if (_isExpectedDelete(change)) return false;
     return true;
@@ -367,14 +363,6 @@ class WatchImpl implements BuildState {
 
   bool _isExpectedDelete(AssetChange change) =>
       _expectedDeletes.remove(change.id);
-
-  bool _isWhitelistedPath(AssetId id) {
-    if (packageGraph[id.package].isRoot) {
-      return _rootPackageFilesWhitelist.any((glob) => glob.matches(id.path));
-    } else {
-      return id.path.startsWith('lib/');
-    }
-  }
 }
 
 Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {

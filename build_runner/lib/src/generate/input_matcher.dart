@@ -8,51 +8,52 @@ import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 
 /// A filter on files to run through a Builder.
-abstract class InputMatcher {
-  /// Whether [input] is included in this set of assets.
-  bool matches(AssetId input);
-
-  factory InputMatcher(InputSet inputSet) = _GlobInputMatcher;
-}
-
-class _GlobInputMatcher implements InputMatcher {
+class InputMatcher {
   /// The files to include
   ///
   /// Null or empty means include everything.
-  final List<Glob> include;
+  final List<Glob> includeGlobs;
 
-  /// The files within [include] to exclude.
+  /// The files within [includeGlobs] to exclude.
   ///
   /// Null or empty means exclude nothing.
-  final List<Glob> exclude;
+  final List<Glob> excludeGlobs;
 
-  _GlobInputMatcher(InputSet inputSet)
-      : this.include = inputSet.include?.map((p) => new Glob(p))?.toList(),
-        this.exclude = inputSet.exclude?.map((p) => new Glob(p))?.toList();
+  InputMatcher(InputSet inputSet, {List<String> defaultInclude})
+      : this.includeGlobs = (inputSet.include ?? defaultInclude)
+            ?.map((p) => new Glob(p))
+            ?.toList(),
+        this.excludeGlobs = inputSet.exclude?.map((p) => new Glob(p))?.toList();
 
-  @override
-  bool matches(AssetId input) => _include(input) && !_exclude(input);
+  /// Whether [input] is included in this set of assets.
+  bool matches(AssetId input) => includes(input) && !excludes(input);
 
-  bool _include(AssetId input) =>
-      include == null ||
-      include.isEmpty ||
-      include.any((g) => g.matches(input.path));
+  /// Whether [input] matches any [includeGlobs].
+  ///
+  /// If there are no [includeGlobs] this always returns `true`.
+  bool includes(AssetId input) =>
+      includeGlobs == null ||
+      includeGlobs.isEmpty ||
+      includeGlobs.any((g) => g.matches(input.path));
 
-  bool _exclude(AssetId input) =>
-      exclude != null &&
-      exclude.isNotEmpty &&
-      exclude.any((g) => g.matches(input.path));
+  /// Whether [input] matches any [excludeGlobs].
+  ///
+  /// If there are no [excludeGlobs] this always returns `false`.
+  bool excludes(AssetId input) =>
+      excludeGlobs != null &&
+      excludeGlobs.isNotEmpty &&
+      excludeGlobs.any((g) => g.matches(input.path));
 
   @override
   String toString() {
     final result = new StringBuffer();
-    if (include == null || include.isEmpty) {
+    if (includeGlobs == null || includeGlobs.isEmpty) {
       result.write('any assets');
     } else {
-      result.write('assets matching ${_patterns(include).toList()}');
+      result.write('assets matching ${_patterns(includeGlobs).toList()}');
     }
-    if (exclude != null && exclude.isNotEmpty) {
-      result.write(' except ${_patterns(exclude).toList()}');
+    if (excludeGlobs != null && excludeGlobs.isNotEmpty) {
+      result.write(' except ${_patterns(excludeGlobs).toList()}');
     }
     return '$result';
   }
@@ -60,13 +61,15 @@ class _GlobInputMatcher implements InputMatcher {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is _GlobInputMatcher &&
-          _deepEquals.equals(_patterns(include), _patterns(other.include)) &&
-          _deepEquals.equals(_patterns(exclude), _patterns(other.exclude)));
+      (other is InputMatcher &&
+          _deepEquals.equals(
+              _patterns(includeGlobs), _patterns(other.includeGlobs)) &&
+          _deepEquals.equals(
+              _patterns(excludeGlobs), _patterns(other.excludeGlobs)));
 
   @override
   int get hashCode =>
-      _deepEquals.hash([_patterns(include), _patterns(exclude)]);
+      _deepEquals.hash([_patterns(includeGlobs), _patterns(excludeGlobs)]);
 }
 
 final _deepEquals = const DeepCollectionEquality();

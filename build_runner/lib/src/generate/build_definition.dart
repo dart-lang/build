@@ -19,6 +19,7 @@ import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
 import 'exceptions.dart';
 import 'options.dart';
@@ -363,23 +364,18 @@ class _Loader {
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> _findInputSources() {
-    final packageNames = new Stream<PackageNode>.fromIterable(
-        _options.packageGraph.allPackages.values);
-    return packageNames.asyncExpand(_listAssetIds).toSet();
+    final targets = new Stream<TargetNode>.fromIterable(
+        _options.targetGraph.allModules.values);
+    return targets.asyncExpand(_listAssetIds).toSet();
   }
 
-  Stream<AssetId> _listAssetIds(PackageNode package) async* {
-    for (final glob in _packageIncludes(package)) {
+  Stream<AssetId> _listAssetIds(TargetNode targetNode) async* {
+    for (final glob in targetNode.sourceIncludes) {
       yield* _environment.reader
-          .findAssets(new Glob(glob), package: package.name);
+          .findAssets(glob, package: targetNode.package.name)
+          .where((id) => !targetNode.excludesSource(id));
     }
   }
-
-  List<String> _packageIncludes(PackageNode package) => package.isRoot
-      ? _options.rootPackageFilesWhitelist
-      : package.name == r'$sdk'
-          ? const ['lib/dev_compiler/**.js', 'lib/_internal/**.sum']
-          : const ['lib/**'];
 
   Stream<AssetId> _listGeneratedAssetIds() async* {
     var glob = new Glob('$generatedOutputDirectory/**');
