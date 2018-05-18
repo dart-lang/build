@@ -501,8 +501,8 @@ main() async {
           reason: 'build should fail due to conflicting outputs');
       expect(
           result.stderr,
-          allOf(contains('Found 1 outputs already on disk'),
-              contains('a|web/a.txt.copy.copy')));
+          allOf(contains('Conflicting outputs'),
+              contains('web/a.txt.copy.copy')));
     });
 
     test('Missing build_test dependency reports the right error', () async {
