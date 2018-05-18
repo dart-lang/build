@@ -114,7 +114,11 @@ class _Loader {
             .where(inputSources.contains)
             .toSet();
         if (conflictsInDeps.isNotEmpty) {
-          throw new UnexpectedExistingOutputsException(conflictsInDeps);
+          log.severe('There are existing files in dependencies which conflict '
+              'with files that a Builder may produce. These must be removed or '
+              'the Builders disabled before a build can continue: '
+              '${conflictsInDeps.map((a) => a.uri).join('\n')}');
+          throw new CannotBuildException();
         }
       });
 
@@ -421,7 +425,11 @@ class _Loader {
             await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
             break;
           case 1:
-            throw new UnexpectedExistingOutputsException(conflictingAssets);
+            _logger.severe('The build will not be able to contiue until the '
+                'conflicting assets are removed or the Builders which may '
+                'output them are disabled. The outputs are: '
+                '${conflictingAssets.map((a) => a.path).join('\n')}');
+            throw new CannotBuildException();
             break;
           case 2:
             _logger.info('Conflicts:\n${conflictingAssets.join('\n')}');
@@ -429,7 +437,12 @@ class _Loader {
             await new Future(() {});
         }
       } on NonInteractiveBuildException {
-        throw new UnexpectedExistingOutputsException(conflictingAssets);
+        _logger.severe('Conflicting outputs were detected and the build '
+            'is unable to prompt for permission to remove them. '
+            'These outputs must be removed manually or the build can be '
+            'run with `--delete-conflicting-outputs`. The outputs are: '
+            '${conflictingAssets.map((a) => a.path).join('\n')}');
+        throw new CannotBuildException();
       }
     }
   }

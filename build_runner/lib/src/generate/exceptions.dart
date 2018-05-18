@@ -11,19 +11,6 @@ abstract class FatalBuildException implements Exception {
   const FatalBuildException();
 }
 
-class UnexpectedExistingOutputsException extends FatalBuildException {
-  final Set<AssetId> conflictingOutputs;
-
-  const UnexpectedExistingOutputsException(this.conflictingOutputs);
-
-  @override
-  String toString() => 'UnexpectedExistingOutputsException: Either you opted '
-      'not to delete existing files, or you are not running in interactive '
-      'mode and did not specify `deleteFilesByDefault` as `true`.\n\n'
-      'Found ${conflictingOutputs.length} outputs already on disk:\n\n'
-      '${conflictingOutputs.join('\n')}\n';
-}
-
 class InvalidBuildPhaseException extends FatalBuildException {
   final String _reason;
 
