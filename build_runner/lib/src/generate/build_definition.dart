@@ -101,8 +101,13 @@ class _Loader {
       Set<AssetId> conflictingOutputs;
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
-        assetGraph = await AssetGraph.build(_buildPhases, inputSources,
-            internalSources, _options.packageGraph, _environment.reader);
+        try {
+          assetGraph = await AssetGraph.build(_buildPhases, inputSources,
+              internalSources, _options.packageGraph, _environment.reader);
+        } on DuplicateAssetNodeException catch (e, st) {
+          _logger.severe('Conflicting outputs', e, st);
+          throw new CannotBuildException();
+        }
         buildScriptUpdates = await BuildScriptUpdates.create(
             _environment.reader, _options.packageGraph, assetGraph);
         conflictingOutputs = assetGraph.outputs

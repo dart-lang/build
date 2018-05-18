@@ -383,7 +383,8 @@ class AssetGraph {
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
-        allInputs.addAll(_addInBuildPhaseOutputs(phase, phaseNum, allInputs));
+        allInputs.addAll(_addInBuildPhaseOutputs(
+            phase, phaseNum, allInputs, buildPhases, rootPackage));
       } else if (phase is PostBuildPhase) {
         _addPostBuildPhaseAnchors(phase, allInputs);
       } else {
@@ -400,7 +401,11 @@ class AssetGraph {
   ///
   /// Returns all newly created asset ids.
   Set<AssetId> _addInBuildPhaseOutputs(
-      InBuildPhase phase, int phaseNum, Set<AssetId> allInputs) {
+      InBuildPhase phase,
+      int phaseNum,
+      Set<AssetId> allInputs,
+      List<BuildPhase> buildPhases,
+      String rootPackage) {
     var phaseOutputs = new Set<AssetId>();
     var buildOptionsNodeId = builderOptionsIdForAction(phase, phaseNum);
     var builderOptionsNode = get(buildOptionsNodeId) as BuilderOptionsAssetNode;
@@ -417,7 +422,8 @@ class AssetGraph {
       phaseOutputs.addAll(outputs);
       node.primaryOutputs.addAll(outputs);
       node.outputs.addAll(outputs);
-      var deleted = _addGeneratedOutputs(outputs, phaseNum, builderOptionsNode,
+      var deleted = _addGeneratedOutputs(
+          outputs, phaseNum, builderOptionsNode, buildPhases, rootPackage,
           primaryInput: input, isHidden: phase.hideOutput);
       allInputs.removeAll(deleted);
       // We may delete source nodes that were producing outputs previously.
@@ -454,9 +460,14 @@ class AssetGraph {
   /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
   /// from the graph as well. The return value is the set of assets that were
   /// removed from the graph.
-  Set<AssetId> _addGeneratedOutputs(Iterable<AssetId> outputs, int phaseNumber,
+  Set<AssetId> _addGeneratedOutputs(
+      Iterable<AssetId> outputs,
+      int phaseNumber,
       BuilderOptionsAssetNode builderOptionsNode,
-      {AssetId primaryInput, @required bool isHidden}) {
+      List<BuildPhase> buildPhases,
+      String rootPackage,
+      {AssetId primaryInput,
+      @required bool isHidden}) {
     var removed = new Set<AssetId>();
     for (var output in outputs) {
       // When any outputs aren't hidden we can pick up old generated outputs as
@@ -465,7 +476,11 @@ class AssetGraph {
       if (contains(output)) {
         var node = get(output);
         if (node is GeneratedAssetNode) {
-          throw new DuplicateAssetNodeException(node);
+          throw new DuplicateAssetNodeException(
+              rootPackage,
+              node.id,
+              (buildPhases[node.phaseNumber] as InBuildPhase).builderLabel,
+              (buildPhases[phaseNumber] as InBuildPhase).builderLabel);
         }
         _removeRecursive(output, removedIds: removed);
       }
