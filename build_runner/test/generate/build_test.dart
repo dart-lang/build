@@ -583,14 +583,15 @@ void main() {
           packageGraph: packageGraph);
     });
 
-    test('can glob files from packages with excludes applied', () async {
+    test('can glob files with excludes applied', () async {
       await testBuilders(
-          [applyToRoot(new TestBuilder())],
+          [applyToRoot(globBuilder)],
           {
             'a|lib/a/1.txt': '',
             'a|lib/a/2.txt': '',
             'a|lib/b/1.txt': '',
             'a|lib/b/2.txt': '',
+            'a|lib/test.globPlaceholder': '',
           },
           overrideBuildConfig: parseBuildConfigs({
             'a': {
@@ -604,8 +605,7 @@ void main() {
             }
           }),
           outputs: {
-            'a|lib/b/1.txt.copy': '',
-            'a|lib/b/2.txt.copy': '',
+            'a|lib/test.matchingFiles': 'a|lib/b/1.txt\na|lib/b/2.txt',
           });
     });
 
