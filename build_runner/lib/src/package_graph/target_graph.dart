@@ -39,8 +39,13 @@ class TargetGraph {
       if (package.isRoot) {
         defaultInclude = defaultRootPackageWhitelist;
         rootPackageConfig = config;
+      } else if (package.name == r'$sdk') {
+        defaultInclude = const [
+          'lib/dev_compiler/**.js',
+          'lib/_internal/**.sum'
+        ];
       } else {
-        defaultInclude = ['lib/**'];
+        defaultInclude = const ['lib/**'];
       }
       final nodes = config.buildTargets.values.map((target) =>
           new TargetNode(target, package, defaultInclude: defaultInclude));

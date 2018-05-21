@@ -89,6 +89,8 @@ class BuildOptions {
 
     Logger.root.level = logLevel;
 
+    var logListener = Logger.root.onRecord.listen(environment.onLog);
+
     TargetGraph targetGraph;
     try {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -102,8 +104,6 @@ class BuildOptions {
           e.exception));
       throw new CannotBuildException();
     }
-
-    var logListener = Logger.root.onRecord.listen(environment.onLog);
 
     /// Set up other defaults.
     debounceDelay ??= const Duration(milliseconds: 250);
