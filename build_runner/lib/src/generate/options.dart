@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/package_graph/target_graph.dart';
@@ -28,12 +27,13 @@ const List<String> defaultRootPackageWhitelist = const [
   'pubspec.lock',
 ];
 
+final _logger = new Logger('BuildOptions');
+
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
   // Build mode options.
   final StreamSubscription logListener;
   final PackageGraph packageGraph;
-  final List<String> rootPackageFilesWhitelist;
 
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
@@ -58,14 +58,12 @@ class BuildOptions {
     @required this.logListener,
     @required this.outputMap,
     @required this.packageGraph,
-    @required List<String> rootPackageFilesWhitelist,
     @required this.skipBuildScriptCheck,
     @required this.trackPerformance,
     @required this.verbose,
     @required this.buildDirs,
     @required this.targetGraph,
-  }) : this.rootPackageFilesWhitelist =
-            new UnmodifiableListView(rootPackageFilesWhitelist);
+  });
 
   static Future<BuildOptions> create(
     BuildEnvironment environment, {
@@ -93,21 +91,18 @@ class BuildOptions {
 
     Logger.root.level = logLevel;
 
+    var logListener = Logger.root.onRecord.listen(environment.onLog);
+
     TargetGraph targetGraph;
     try {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-          overrideBuildConfig: overrideBuildConfig);
-    } on BuildConfigParseException catch (e) {
-      environment.onLog(new LogRecord(
-          Level.SEVERE,
-          'Failed to parse `build.yaml` for ${e.packageName}.',
-          'Build',
-          e.exception));
+          overrideBuildConfig: overrideBuildConfig,
+          defaultRootPackageWhitelist: defaultRootPackageWhitelist);
+    } on BuildConfigParseException catch (e, s) {
+      _logger.severe(
+          'Failed to parse `build.yaml` for ${e.packageName}.', e.exception, s);
       throw new CannotBuildException();
     }
-    var rootPackageConfig = targetGraph.rootPackageConfig;
-
-    var logListener = Logger.root.onRecord.listen(environment.onLog);
 
     /// Set up other defaults.
     debounceDelay ??= const Duration(milliseconds: 250);
@@ -118,18 +113,6 @@ class BuildOptions {
     trackPerformance ??= false;
     buildDirs ??= [];
 
-    var mergedWhitelist = new Set<String>();
-    if (rootPackageConfig == null) {
-      mergedWhitelist.addAll(defaultRootPackageWhitelist);
-    } else {
-      for (var target in rootPackageConfig.buildTargets.values) {
-        if (target.sources.include == null) {
-          mergedWhitelist.addAll(defaultRootPackageWhitelist);
-        } else {
-          mergedWhitelist.addAll(target.sources.include);
-        }
-      }
-    }
     return new BuildOptions._(
         debounceDelay: debounceDelay,
         deleteFilesByDefault: deleteFilesByDefault,
@@ -138,7 +121,6 @@ class BuildOptions {
         logListener: logListener,
         outputMap: outputMap,
         packageGraph: packageGraph,
-        rootPackageFilesWhitelist: mergedWhitelist.toList(),
         skipBuildScriptCheck: skipBuildScriptCheck,
         trackPerformance: trackPerformance,
         verbose: verbose,

@@ -72,6 +72,15 @@ main() {
               d.dir('entrypoint', [d.file('build.dart', '// builds!')])
             ])
           ]),
+          d.file('build.yaml', '''
+targets:
+  \$default:
+    sources:
+      include:
+        - lib/**
+      exclude:
+        - lib/excluded/**
+'''),
           d.dir('lib'),
         ],
       ).create();
@@ -309,6 +318,19 @@ main() {
                 .contains(entryPoint.addExtension('.copy')),
             isFalse);
       });
+
+      test('doesnt include sources not matching the target glob', () async {
+        await createFile(p.join('lib', 'a.txt'), 'a');
+        await createFile(p.join('lib', 'excluded', 'b.txt'), 'b');
+
+        var buildPhases = [new InBuildPhase(new TestBuilder(), 'a')];
+        var buildDefinition = await BuildDefinition.prepareWorkspace(
+            environment, options, buildPhases);
+        var assetGraph = buildDefinition.assetGraph;
+        expect(assetGraph.contains(new AssetId('a', 'lib/a.txt')), isTrue);
+        expect(assetGraph.contains(new AssetId('a', 'lib/excluded/b.txt')),
+            isFalse);
+      });
     });
 
     group('invalidation', () {
@@ -533,11 +555,11 @@ main() {
 
       // https://github.com/dart-lang/build/issues/1042
       test('a missing sources/include does not cause an error', () async {
+        var rootPkg = options.packageGraph.root.name;
         options = await BuildOptions.create(environment,
             packageGraph: options.packageGraph,
             overrideBuildConfig: {
-              options.packageGraph.root.name:
-                  new BuildConfig.fromMap('example', [], {
+              rootPkg: new BuildConfig.fromMap(rootPkg, [], {
                 'targets': {
                   'another': {},
                   '\$default': {
@@ -550,16 +572,22 @@ main() {
                 }
               })
             });
-        expect(options.rootPackageFilesWhitelist, isNotEmpty);
+
+        expect(
+            options.targetGraph.allModules['$rootPkg:another'].sourceIncludes,
+            isNotEmpty);
+        expect(
+            options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes,
+            isNotEmpty);
       });
 
       test('a missing sources/include results in the default whitelist',
           () async {
+        var rootPkg = options.packageGraph.root.name;
         options = await BuildOptions.create(environment,
             packageGraph: options.packageGraph,
             overrideBuildConfig: {
-              options.packageGraph.root.name:
-                  new BuildConfig.fromMap('example', [], {
+              rootPkg: new BuildConfig.fromMap(rootPkg, [], {
                 'targets': {
                   'another': {},
                   '\$default': {
@@ -572,7 +600,14 @@ main() {
                 }
               })
             });
-        expect(options.rootPackageFilesWhitelist, defaultRootPackageWhitelist);
+        expect(
+            options.targetGraph.allModules['$rootPkg:another'].sourceIncludes
+                .map((glob) => glob.pattern),
+            defaultRootPackageWhitelist);
+        expect(
+            options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes
+                .map((glob) => glob.pattern),
+            defaultRootPackageWhitelist);
       });
     });
   });

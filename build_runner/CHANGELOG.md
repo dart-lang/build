@@ -7,6 +7,8 @@
   was built.
 - Improve error message when a dependency has a bad `build.yaml` with a missing
   dependency.
+- Sources that are not a part of a `target` will no longer appear in the asset
+  graph, so they will not be readable or globbable.
 
 ## 0.8.9
 
