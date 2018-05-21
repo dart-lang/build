@@ -73,6 +73,7 @@ String _loggerName(LogRecord record, bool verbose) {
   var knownNames = const [
     'Build',
     'BuildDefinition',
+    'BuildOptions',
     'BuildScriptUpdates',
     'CreateOutputDir',
     'Entrypoint',

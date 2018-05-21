@@ -27,6 +27,8 @@ const List<String> defaultRootPackageWhitelist = const [
   'pubspec.lock',
 ];
 
+final _logger = new Logger('BuildOptions');
+
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
   // Build mode options.
@@ -96,12 +98,9 @@ class BuildOptions {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           overrideBuildConfig: overrideBuildConfig,
           defaultRootPackageWhitelist: defaultRootPackageWhitelist);
-    } on BuildConfigParseException catch (e) {
-      environment.onLog(new LogRecord(
-          Level.SEVERE,
-          'Failed to parse `build.yaml` for ${e.packageName}.',
-          'Build',
-          e.exception));
+    } on BuildConfigParseException catch (e, s) {
+      _logger.severe(
+          'Failed to parse `build.yaml` for ${e.packageName}.', e.exception, s);
       throw new CannotBuildException();
     }
 
