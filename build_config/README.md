@@ -151,7 +151,7 @@ Each post process builder config may contain the following keys:
   containing the `Builder` class. This should always be a `package:` uri.
 - **builder_factory**: A `String` which contains the name of the top-level
   method in the imported library which is a function fitting the
-  typedef `PostProcessBuilderBuilder factoryName(BuilderOptions options)`.
+  typedef `PostProcessBuilder factoryName(BuilderOptions options)`.
 - **input_extensions**: Required. A list of input extensions that will be
   processed. This must match the `inputExtensions` from the `PostProcessBuilder`
   returned by the `builder_factory`.
