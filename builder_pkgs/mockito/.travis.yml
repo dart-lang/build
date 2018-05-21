@@ -35,6 +35,9 @@ jobs:
     - stage: testing
       script: ./tool/travis.sh dart2js_test
       dart: dev
+    - stage: testing
+      script: ./tool/travis.sh coverage
+      dart: dev
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
