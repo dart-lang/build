@@ -130,7 +130,8 @@ class ImportOptimizer{
     var sourceNodeCount = _getNodeCount(sourceLibrary.importedLibraries);
     var optNodeCount = _getNodeCount(libraries);
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
-    if (sourceNodeCount > optNodeCount) {
+
+    if (sourceNodeCount > optNodeCount || _hasDeprectatedAssets(sourceLibrary.importedLibraries)) {
       final directives = <_DirectiveInfo>[];
       for (final library in libraries) {
         final source = library.source;
@@ -160,6 +161,8 @@ class ImportOptimizer{
     }
     return sb.toString();
   }
+
+
 
   static _DirectivePriority getDirectivePriority(String uriContent) {
       if (uriContent.startsWith('dart:')) {
@@ -259,6 +262,13 @@ class ImportOptimizer{
     }
     _log.info('Average nodes: old: ${_workResult.sourceNodesTotal ~/ _workResult.fileCount} -> new: ${_workResult.optNodesTotal ~/ _workResult.fileCount}');
     _log.info('--------------------------------');
+  }
+
+
+  bool _hasDeprectatedAssets(List<LibraryElement> importedLibraries) {
+    return importedLibraries.any((library) {
+      return library.hasDeprecated;
+    });
   }
 
 }
