@@ -95,11 +95,14 @@ class ImportOptimizer{
      _log.info("File '$fullname' patched!");
    }
 
-   int _getNodeCount(Iterable<LibraryElement> libImports) {
+   int _getNodeCount(Iterable<LibraryElement> libImports,{final bool accumulationOfStatistics = false}) {
      var imports = new Set<LibraryElement>();
      _parseLib(Iterable<LibraryElement> libImports) {
        for (var item in libImports) {
          if (imports.add(item) && !item.isDartCore && !item.isInSdk) {
+           if (accumulationOfStatistics){
+             _workResult.addImportForPackage(item.source);
+           }
            _parseLib(item.importedLibraries);
            _parseLib(item.exportedLibraries);
          }
@@ -134,7 +137,7 @@ class ImportOptimizer{
 
   String _generateImportText(AssetId inputId, LibraryElement sourceLibrary, Iterable<LibraryElement> libraries) {
     var sb = new StringBuffer();
-    var sourceNodeCount = _getNodeCount(sourceLibrary.importedLibraries);
+    var sourceNodeCount = _getNodeCount(sourceLibrary.importedLibraries, accumulationOfStatistics: true);
     var optNodeCount = _getNodeCount(libraries);
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
 
@@ -261,7 +264,7 @@ class ImportOptimizer{
 
   void _showReport() {
     _log.info('--------------------------------');
-    _log.info('Report: ');
+    _log.info('Report: ${new DateTime.now().toIso8601String()}');
     _log.info('--------------------------------');
 
     _log.info('Total old: ${_workResult.sourceNodesTotal} -> new: ${_workResult.optNodesTotal}');
@@ -272,6 +275,16 @@ class ImportOptimizer{
       _log.info('Best optimization file: ${_workResult.maxOptFile} delta: ${_workResult.maxOptDelta}');
     }
     _log.info('Average nodes: old: ${_workResult.sourceNodesTotal ~/ _workResult.fileCount} -> new: ${_workResult.optNodesTotal ~/ _workResult.fileCount}');
+    _log.info('--------------------------------');
+    _log.info('Stat per package (${_workResult.statisticsPerPackages.length}):');
+    var packagesList = _workResult.statisticsPerPackages.keys.toList(growable: false);
+    packagesList.sort((a,b){
+      return _workResult.statisticsPerPackages[a].compareTo(_workResult.statisticsPerPackages[b]);
+    });
+    packagesList.forEach((package){
+      final count = _workResult.statisticsPerPackages[package];
+      _log.info('   ${package.padRight(20)}: ${count.toString().padLeft(6)}');
+    });
     _log.info('--------------------------------');
   }
 

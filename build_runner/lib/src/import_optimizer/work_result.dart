@@ -1,4 +1,6 @@
 import 'package:build/build.dart';
+import 'package:front_end/src/base/source.dart';
+import 'package:build_resolvers/src/resolver.dart';
 
 class WorkResult {
   AssetId _topFile;
@@ -9,6 +11,7 @@ class WorkResult {
   int _optNodesTotal = 0;
   int _fileCount = 0;
   final Map<AssetId, AssetStatistic> _statistics = <AssetId, AssetStatistic>{};
+  final Map<String, int> _statisticsPerPackages = <String, int>{};
 
   int get fileCount => _fileCount;
 
@@ -25,6 +28,7 @@ class WorkResult {
   int get optNodesTotal => _optNodesTotal;
 
   Map<AssetId, AssetStatistic> get statistics => _statistics;
+  Map<String, int> get statisticsPerPackages => _statisticsPerPackages;
 
   void addStatisticFile(AssetId file, int sourceNode, int optNode) {
     _statistics[file] = new AssetStatistic(sourceNode, optNode);
@@ -39,6 +43,14 @@ class WorkResult {
     if (_maxOptDelta < delta) {
       _maxOptDelta = delta;
       _maxOptFile = file;
+    }
+  }
+
+  void addImportForPackage(Source source) {
+    if (source is AssetBasedSource) {
+      _statisticsPerPackages.update(source.assetId.package,
+              (value) => value + 1,
+          ifAbsent: () => 1);
     }
   }
 }
