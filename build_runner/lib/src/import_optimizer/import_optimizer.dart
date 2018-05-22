@@ -117,7 +117,11 @@ class ImportOptimizer{
          var assetId = source.assetId;
          var optLibrary = library;
          if (assetId.package != inputId.package && source.assetId.path.contains('/src/')){
-           optLibrary = await _getOptLibraryImport(library, resolver);
+           if (settings.allowSrcImport){
+             optLibrary = library;
+           } else {
+             optLibrary = await _getOptLibraryImport(library, resolver);
+           }
          }
          outputImports.add(optLibrary);
        } else {
