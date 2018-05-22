@@ -290,7 +290,8 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
       checkExisting(output);
       var root = split.first;
       if (root.contains('/')) {
-        throw new ArgumentError('Input root can not be nested: $option');
+        throw new ArgumentError.value(
+            option, '--output', 'Input root can not be nested');
       }
       result[output] = split.first;
     }
