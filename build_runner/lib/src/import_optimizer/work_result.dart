@@ -13,7 +13,7 @@ class WorkResult {
   int _fileCount = 0;
   final Map<AssetId, AssetStatistic> _statistics = <AssetId, AssetStatistic>{};
   final Map<String, int> _statisticsPerPackages = <String, int>{};
-  final Map<AssetId, int> _statisticsPerExportOverLimit = <AssetId, int>{};
+  final Map<AssetId, _ExportStat> _statisticsPerExportOverLimit = <AssetId, _ExportStat>{};
   final ImportOptimizerSettings settings;
 
   WorkResult(this.settings);
@@ -34,7 +34,7 @@ class WorkResult {
 
   Map<AssetId, AssetStatistic> get statistics => _statistics;
   Map<String, int> get statisticsPerPackages => _statisticsPerPackages;
-  Map<AssetId, int> get statisticsPerExportOverLimit => _statisticsPerExportOverLimit;
+  Map<AssetId, _ExportStat> get statisticsPerExportOverLimit => _statisticsPerExportOverLimit;
 
   void addStatisticFile(AssetId file, int sourceNode, int optNode) {
     _statistics[file] = new AssetStatistic(sourceNode, optNode);
@@ -60,12 +60,21 @@ class WorkResult {
                 (value) => value + 1,
             ifAbsent: () => 1);
         if (settings.limitExportsPerFile > 0 && item.exportedLibraries.length > settings.limitExportsPerFile) {
-          _statisticsPerExportOverLimit.putIfAbsent(source.assetId, () => item.exportedLibraries.length);
+          _statisticsPerExportOverLimit.update(
+              source.assetId, (v){v._uses++; return v;},ifAbsent:() => new _ExportStat(item.exportedLibraries.length));
         }
       }
 
     }
   }
+}
+
+class _ExportStat {
+  final int exportCount;
+  int _uses = 1;
+
+  _ExportStat(this.exportCount);
+  int get uses => _uses;
 }
 
 class AssetStatistic {

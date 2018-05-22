@@ -279,14 +279,16 @@ class ImportOptimizer{
     _log.info('Average nodes: old: ${_workResult.sourceNodesTotal ~/ _workResult.fileCount} -> new: ${_workResult.optNodesTotal ~/ _workResult.fileCount}');
     _log.info('--------------------------------');
     _log.info('Stat export over limit "${settings.limitExportsPerFile}>" :');
-    _log.info(' COUNT    | AssetId');
+    _log.info(' ${'Exp COUNT'.padLeft(9)} | ${'USES'.padLeft(8)} | $AssetId');
     var packagesListExport = _workResult.statisticsPerExportOverLimit.keys.toList(growable: false);
     packagesListExport.sort((a,b){
-      return _workResult.statisticsPerExportOverLimit[b].compareTo(_workResult.statisticsPerExportOverLimit[a]);
+      var bb = _workResult.statisticsPerExportOverLimit[b];
+      var aa = _workResult.statisticsPerExportOverLimit[a];
+      return (bb.exportCount * bb.uses).compareTo(aa.exportCount * aa.uses);
     });
     packagesListExport.forEach((item){
-      final count = _workResult.statisticsPerExportOverLimit[item];
-      _log.info(' ${count.toString().padLeft(8)} | $item');
+      final expStat = _workResult.statisticsPerExportOverLimit[item];
+      _log.info(' ${expStat.exportCount.toString().padLeft(9)} | ${expStat.uses.toString().padLeft(8)} | $item');
     });
     _log.info('--------------------------------');
     _log.info('Stat import package in tree (${_workResult.statisticsPerPackages.length}):');

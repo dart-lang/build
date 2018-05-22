@@ -33,7 +33,7 @@ Future<Null> main(List<String> args) async {
     applyImports: args.length > 1 && args[1].toLowerCase() == 'apply',
       //showImportNodes: true,
       limitExportsPerFile: 25,
-      allowSrcImport: true
+//      allowSrcImport: true
   );
   new ImportOptimizer(settings).optimizePackage(args[0]);
 //  new ImportOptimizer(settings).optimizeFiles(args);
