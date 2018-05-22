@@ -22,15 +22,17 @@ class ImportOptimizer{
   static final packageGraph = new PackageGraph.forThisPackage();
   final io = new IOEnvironment(packageGraph, true);
   final _resourceManager = new ResourceManager();
-  final WorkResult _workResult = new WorkResult();
+  final WorkResult _workResult;
   CachingAssetReader _reader;
   final ImportOptimizerSettings settings;
 
-  ImportOptimizer(this.settings);
+  ImportOptimizer(ImportOptimizerSettings settings): this.settings = settings, _workResult = new WorkResult(settings);
 
   optimizePackage(String package) async {
     _log.info("Optimization package: '$package'");
-    var assets = (await io.reader.findAssets(new Glob('lib/**.dart'), package: package).toList()).map((item)=>item.toString()).toList();
+    var assets = (await io.reader.findAssets(new Glob('lib/**.dart'), package: package).toList()).map((item)=>item.toString())
+        //.where((item)=>!item.contains('/demo') && !item.contains('/example'))
+        .toList();
     optimizeFiles(assets);
   }
 
@@ -99,8 +101,8 @@ class ImportOptimizer{
      var imports = new Set<LibraryElement>();
      _parseLib(Iterable<LibraryElement> libImports) {
        for (var item in libImports) {
-         if (accumulationOfStatistics && !item.isDartCore && !item.isInSdk){
-           _workResult.addImportForPackage(item.source);
+         if (accumulationOfStatistics){
+           _workResult.addLibrary(item);
          }
          if (imports.add(item) && !item.isDartCore && !item.isInSdk) {
            _parseLib(item.importedLibraries);
@@ -276,14 +278,26 @@ class ImportOptimizer{
     }
     _log.info('Average nodes: old: ${_workResult.sourceNodesTotal ~/ _workResult.fileCount} -> new: ${_workResult.optNodesTotal ~/ _workResult.fileCount}');
     _log.info('--------------------------------');
-    _log.info('Stat per package (${_workResult.statisticsPerPackages.length}):');
+    _log.info('Stat export over limit "${settings.limitExportsPerFile}>" :');
+    _log.info(' COUNT    | AssetId');
+    var packagesListExport = _workResult.statisticsPerExportOverLimit.keys.toList(growable: false);
+    packagesListExport.sort((a,b){
+      return _workResult.statisticsPerExportOverLimit[b].compareTo(_workResult.statisticsPerExportOverLimit[a]);
+    });
+    packagesListExport.forEach((item){
+      final count = _workResult.statisticsPerExportOverLimit[item];
+      _log.info(' ${count.toString().padLeft(8)} | $item');
+    });
+    _log.info('--------------------------------');
+    _log.info('Stat import package in tree (${_workResult.statisticsPerPackages.length}):');
+    _log.info(' COUNT    | Package');
     var packagesList = _workResult.statisticsPerPackages.keys.toList(growable: false);
     packagesList.sort((a,b){
       return _workResult.statisticsPerPackages[b].compareTo(_workResult.statisticsPerPackages[a]);
     });
     packagesList.forEach((package){
       final count = _workResult.statisticsPerPackages[package];
-      _log.info('  ${package.padRight(30)}: ${count.toString().padLeft(6)}');
+      _log.info(' ${count.toString().padLeft(8)} | $package ');
     });
     _log.info('--------------------------------');
   }

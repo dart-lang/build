@@ -1,5 +1,6 @@
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:front_end/src/base/source.dart';
+import 'package:build_runner/src/import_optimizer/settings.dart';
 import 'package:build_resolvers/src/resolver.dart';
 
 class WorkResult {
@@ -12,6 +13,10 @@ class WorkResult {
   int _fileCount = 0;
   final Map<AssetId, AssetStatistic> _statistics = <AssetId, AssetStatistic>{};
   final Map<String, int> _statisticsPerPackages = <String, int>{};
+  final Map<AssetId, int> _statisticsPerExportOverLimit = <AssetId, int>{};
+  final ImportOptimizerSettings settings;
+
+  WorkResult(this.settings);
 
   int get fileCount => _fileCount;
 
@@ -29,6 +34,7 @@ class WorkResult {
 
   Map<AssetId, AssetStatistic> get statistics => _statistics;
   Map<String, int> get statisticsPerPackages => _statisticsPerPackages;
+  Map<AssetId, int> get statisticsPerExportOverLimit => _statisticsPerExportOverLimit;
 
   void addStatisticFile(AssetId file, int sourceNode, int optNode) {
     _statistics[file] = new AssetStatistic(sourceNode, optNode);
@@ -46,11 +52,18 @@ class WorkResult {
     }
   }
 
-  void addImportForPackage(Source source) {
-    if (source is AssetBasedSource) {
-      _statisticsPerPackages.update(source.assetId.package,
-              (value) => value + 1,
-          ifAbsent: () => 1);
+  void addLibrary(LibraryElement item) {
+    if (!item.isDartCore && !item.isInSdk) {
+      final source = item.source;
+      if (source is AssetBasedSource) {
+        _statisticsPerPackages.update(source.assetId.package,
+                (value) => value + 1,
+            ifAbsent: () => 1);
+        if (settings.limitExportsPerFile > 0 && item.exportedLibraries.length > settings.limitExportsPerFile) {
+          _statisticsPerExportOverLimit.putIfAbsent(source.assetId, () => item.exportedLibraries.length);
+        }
+      }
+
     }
   }
 }

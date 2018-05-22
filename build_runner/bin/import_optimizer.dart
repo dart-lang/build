@@ -32,7 +32,8 @@ Future<Null> main(List<String> args) async {
   var settings = new ImportOptimizerSettings(
     applyImports: args.length > 1 && args[1].toLowerCase() == 'apply',
       //showImportNodes: true,
-//      allowSrcImport: true
+      limitExportsPerFile: 25,
+      allowSrcImport: true
   );
   new ImportOptimizer(settings).optimizePackage(args[0]);
 //  new ImportOptimizer(settings).optimizeFiles(args);
