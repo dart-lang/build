@@ -271,16 +271,26 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
   var outputs = argResults[outputOption] as List<String>;
   if (outputs == null) return null;
   var result = <String, String>{};
+
+  void checkExisting(String outputDir) {
+    if (result.containsKey(outputDir)) {
+      throw new ArgumentError.value(outputs.join(' '), '--output',
+          'Duplicate output directories are not allowed, got');
+    }
+  }
+
   for (var option in argResults[outputOption] as List<String>) {
     var split = option.split(':');
     if (split.length == 1) {
       var output = split.first;
+      checkExisting(output);
       result[output] = null;
     } else if (split.length >= 2) {
       var output = split.sublist(1).join(':');
+      checkExisting(output);
       var root = split.first;
       if (root.contains('/')) {
-        throw 'Input root can not be nested: $option';
+        throw new ArgumentError('Input root can not be nested: $option');
       }
       result[output] = split.first;
     }
