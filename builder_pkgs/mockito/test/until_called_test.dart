@@ -15,7 +15,6 @@
 import 'dart:async';
 
 import 'package:mockito/mockito.dart';
-import 'package:mockito/src/mock.dart' show resetMockitoState;
 import 'package:test/test.dart';
 
 class RealClass {

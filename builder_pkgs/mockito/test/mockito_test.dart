@@ -15,8 +15,6 @@
 import 'dart:async';
 
 import 'package:mockito/mockito.dart';
-import 'package:mockito/src/mock.dart'
-    show resetMockitoState, throwOnMissingStub;
 import 'package:test/test.dart';
 
 import 'utils.dart';

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import 'package:mockito/mockito.dart';
-import 'package:mockito/src/mock.dart' show resetMockitoState;
 import 'package:test/test.dart';
 
 import 'utils.dart';
