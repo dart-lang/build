@@ -4,6 +4,7 @@ import 'dart:async';
 //import 'package:args/args.dart';
 //import 'package:args/command_runner.dart';
 import 'package:build_runner/src/import_optimizer/import_optimizer.dart';
+import 'package:build_runner/src/import_optimizer/settings.dart';
 import 'package:logging/logging.dart' show Logger, Level, LogRecord;
 
 
@@ -28,8 +29,12 @@ Future<Null> main(List<String> args) async {
 //        'Demo run: dart ./bin/import_optimizer.dart "build_runner|lib/src/entrypoint/options.dart" "build_runner|lib/src/asset_graph/graph.dart"');
    print('dart ./bin/import_optimizer.dart "build_runner" [apply]');
   }
-  new ImportOptimizer().optimizePackage(args[0], applyImports: args.length > 1 && args[1].toLowerCase() == 'apply');
-//  new ImportOptimizer().optimizeFiles(args);
+  var settings = new ImportOptimizerSettings(
+    applyImports: args.length > 1 && args[1].toLowerCase() == 'apply',
+    showImportNodes: false
+  );
+  new ImportOptimizer(settings).optimizePackage(args[0]);
+//  new ImportOptimizer(settings).optimizeFiles(args);
 //  new ImportOptimizer().optimizeFiles(['build_runner|lib/src/server/asset_graph_handler.dart']);
 //  ArgResults parsedArgs;
 //  var commandRunner = new CommandRunner();

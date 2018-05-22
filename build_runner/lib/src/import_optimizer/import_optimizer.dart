@@ -8,6 +8,8 @@ import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset/cache.dart';
 import 'package:build_runner/src/environment/io_environment.dart';
+import 'package:build_runner/src/import_optimizer/settings.dart';
+import 'package:build_runner/src/import_optimizer/work_result.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart' as log show Logger;
 import 'package:analyzer/src/generated/resolver.dart';
@@ -22,11 +24,12 @@ class ImportOptimizer{
   final _resourceManager = new ResourceManager();
   final WorkResult _workResult = new WorkResult();
   CachingAssetReader _reader;
-  bool _applyImports;
+  final ImportOptimizerSettings settings;
 
-  optimizePackage(String package, {bool applyImports}) async {
+  ImportOptimizer(this.settings);
+
+  optimizePackage(String package) async {
     _log.info("Optimization package: '$package'");
-    _applyImports = applyImports;
     var assets = (await io.reader.findAssets(new Glob('lib/**.dart'), package: package).toList()).map((item)=>item.toString()).toList();
     optimizeFiles(assets);
   }
@@ -68,7 +71,7 @@ class ImportOptimizer{
          print('// FileName: "$inputId" old: ${stat.sourceNode} -> new: ${stat.optNode}');
          print(output);
 
-         if (_applyImports) {
+         if (settings.applyImports) {
            final firstImport = lib.unit.directives.firstWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
            final lastImport = lib.unit.directives.lastWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
 
@@ -131,7 +134,7 @@ class ImportOptimizer{
     var optNodeCount = _getNodeCount(libraries);
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
 
-    if (sourceNodeCount > optNodeCount || _hasDeprectatedAssets(sourceLibrary.importedLibraries)) {
+    if (sourceNodeCount > optNodeCount || _hasDeprectatedAssets(sourceLibrary.importedLibraries) || settings.showImportNodes) {
       final directives = <_DirectiveInfo>[];
       for (final library in libraries) {
         final source = library.source;
@@ -142,8 +145,12 @@ class ImportOptimizer{
         if (importUrl == 'dart:core') continue;
 
         final priority = getDirectivePriority(importUrl);
+        var importString = "import '$importUrl';";
+        if (settings.showImportNodes){
+          importString += '// nodes: ${_getNodeCount([library])}';
+        }
         directives
-            .add(new _DirectiveInfo(priority, importUrl, "import '$importUrl';"));
+            .add(new _DirectiveInfo(priority, importUrl, importString));
       }
 
       directives.sort();
@@ -271,55 +278,6 @@ class ImportOptimizer{
     });
   }
 
-}
-
-class AssetStatistic {
-  int sourceNode;
-  int optNode;
-  AssetStatistic(this.sourceNode, this.optNode);
-}
-
-class WorkResult {
-  AssetId _topFile;
-  int _topNodeFile = 0;
-  AssetId _maxOptFile;
-  int _maxOptDelta = 0;
-  int _sourceNodesTotal = 0;
-  int _optNodesTotal = 0;
-  int _fileCount = 0;
-  final Map<AssetId, AssetStatistic> _statistics = <AssetId, AssetStatistic>{};
-
-  int get fileCount => _fileCount;
-
-  AssetId get topFile => _topFile;
-
-  int get topNodeFile => _topNodeFile;
-
-  AssetId get maxOptFile => _maxOptFile;
-
-  int get maxOptDelta => _maxOptDelta;
-
-  int get sourceNodesTotal => _sourceNodesTotal;
-
-  int get optNodesTotal => _optNodesTotal;
-
-  Map<AssetId, AssetStatistic> get statistics => _statistics;
-
-  void addStatisticFile(AssetId file, int sourceNode, int optNode) {
-    _statistics[file] = new AssetStatistic(sourceNode, optNode);
-    _fileCount++;
-    _sourceNodesTotal += sourceNode;
-    _optNodesTotal += optNode;
-    if (_topNodeFile < sourceNode) {
-      _topNodeFile = sourceNode;
-      _topFile = file;
-    }
-    var delta = sourceNode - optNode;
-    if (_maxOptDelta < delta) {
-      _maxOptDelta = delta;
-      _maxOptFile = file;
-    }
-  }
 }
 
 class _DirectiveInfo implements Comparable<_DirectiveInfo> {
