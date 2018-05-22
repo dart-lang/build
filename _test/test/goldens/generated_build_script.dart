@@ -56,9 +56,9 @@ final _builders = <_i1.BuilderApplication>[
         'test/**.vm_test.dart'
       ]),
       defaultOptions: new _i7.BuilderOptions(
-          _i8.json.decode('{"dart2js_args":["--minify"]}')),
+          _i8.jsonDecode('{"dart2js_args":["--minify"]}')),
       defaultReleaseOptions:
-          new _i7.BuilderOptions(_i8.json.decode('{"compiler":"dart2js"}')),
+          new _i7.BuilderOptions(_i8.jsonDecode('{"compiler":"dart2js"}')),
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.applyPostProcess(
       'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder,
@@ -68,12 +68,12 @@ final _builders = <_i1.BuilderApplication>[
   _i1.applyPostProcess(
       'build_web_compilers|dart_source_cleanup', _i6.dartSourceCleanup,
       defaultReleaseOptions:
-          new _i7.BuilderOptions(_i8.json.decode('{"enabled":true}')),
+          new _i7.BuilderOptions(_i8.jsonDecode('{"enabled":true}')),
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
       _i6.dart2JsArchiveExtractor,
       defaultReleaseOptions:
-          new _i7.BuilderOptions(_i8.json.decode('{"filter_outputs":true}')),
+          new _i7.BuilderOptions(_i8.jsonDecode('{"filter_outputs":true}')),
       defaultGenerateFor: const _i4.InputSet())
 ];
 main(List<String> args, [_i9.SendPort sendPort]) async {
