@@ -50,7 +50,7 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
     var packagePath = packageNode.path;
     try {
       var fileStream = glob
-          .list(followLinks: false, root: packagePath)
+          .list(followLinks: true, root: packagePath)
           .where((e) => e is File);
       await for (var file in fileStream) {
         // TODO(jakemac): Where do these files come from???
