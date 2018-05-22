@@ -99,10 +99,10 @@ class ImportOptimizer{
      var imports = new Set<LibraryElement>();
      _parseLib(Iterable<LibraryElement> libImports) {
        for (var item in libImports) {
+         if (accumulationOfStatistics && !item.isDartCore && !item.isInSdk){
+           _workResult.addImportForPackage(item.source);
+         }
          if (imports.add(item) && !item.isDartCore && !item.isInSdk) {
-           if (accumulationOfStatistics){
-             _workResult.addImportForPackage(item.source);
-           }
            _parseLib(item.importedLibraries);
            _parseLib(item.exportedLibraries);
          }
@@ -279,11 +279,11 @@ class ImportOptimizer{
     _log.info('Stat per package (${_workResult.statisticsPerPackages.length}):');
     var packagesList = _workResult.statisticsPerPackages.keys.toList(growable: false);
     packagesList.sort((a,b){
-      return _workResult.statisticsPerPackages[a].compareTo(_workResult.statisticsPerPackages[b]);
+      return _workResult.statisticsPerPackages[b].compareTo(_workResult.statisticsPerPackages[a]);
     });
     packagesList.forEach((package){
       final count = _workResult.statisticsPerPackages[package];
-      _log.info('   ${package.padRight(20)}: ${count.toString().padLeft(6)}');
+      _log.info('  ${package.padRight(30)}: ${count.toString().padLeft(6)}');
     });
     _log.info('--------------------------------');
   }
