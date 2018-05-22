@@ -221,7 +221,6 @@ Expression _findToExpression(BuilderDefinition definition) {
 /// An expression creating a [BuilderOptions] from a json string.
 Expression _constructBuilderOptions(BuilderOptions options) =>
     refer('BuilderOptions', 'package:build/build.dart').newInstance([
-      refer('json', 'dart:convert')
-          .property('decode')
-          .call([literalString(json.encode(options.config))])
+      refer('jsonDecode', 'dart:convert')
+          .call([literalString(jsonEncode(options.config))])
     ]);
