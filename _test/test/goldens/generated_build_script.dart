@@ -8,7 +8,7 @@ import 'package:build/build.dart' as _i7;
 import 'dart:convert' as _i8;
 import 'dart:isolate' as _i9;
 
-final _builders = [
+final _builders = <_i1.BuilderApplication>[
   _i1.apply('provides_builder|some_not_applied_builder', [_i2.notApplied],
       _i1.toNoneByDefault(),
       hideOutput: true),

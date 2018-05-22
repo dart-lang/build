@@ -27,8 +27,15 @@ Future<String> generateBuildScript([String configKey]) => logTimedAsync(
 
 Future<String> _generateBuildScript(String configKey) async {
   final builders = await _findBuilderApplications(configKey);
-  final library = new Library((b) => b.body.addAll(
-      [literalList(builders).assignFinal('_builders').statement, _main()]));
+  final library = new Library((b) => b.body.addAll([
+        literalList(
+                builders,
+                refer('BuilderApplication',
+                    'package:build_runner/build_runner.dart'))
+            .assignFinal('_builders')
+            .statement,
+        _main()
+      ]));
   final emitter = new DartEmitter(new Allocator.simplePrefixing());
   return new DartFormatter().format('${library.accept(emitter)}');
 }
