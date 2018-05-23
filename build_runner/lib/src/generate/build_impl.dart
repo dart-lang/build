@@ -421,8 +421,10 @@ class _SingleBuild {
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
                 new PerformanceTrackingResolvers(_resolvers, tracker),
-                logger: logger, resourceManager: _resourceManager)
-            .catchError((_) => errorThrown = true),
+                logger: logger,
+                resourceManager: _resourceManager).catchError((_) {
+              errorThrown = true;
+            }),
         'Build');
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
@@ -533,7 +535,9 @@ class _SingleBuild {
             assetId, 'Can only delete primary input');
       }
       _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
-    }).catchError((_) => errorThrown = true);
+    }).catchError((_) {
+      errorThrown = true;
+    });
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
     pendingActions[phaseNum].remove(actionDescription);
