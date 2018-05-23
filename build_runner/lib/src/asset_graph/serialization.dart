@@ -30,12 +30,12 @@ class _AssetGraphDeserializer {
         _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
         _serializedGraph['dart_version'] as String);
 
-    var packageNames = _serializedGraph['packages'] as List<String>;
+    var packageNames = _serializedGraph['packages'] as List;
 
     // Read in the id => AssetId map from the graph first.
     var assetPaths = _serializedGraph['assetPaths'] as List;
     for (var i = 0; i < assetPaths.length; i += 2) {
-      var packageName = packageNames[assetPaths[i + 1] as int];
+      var packageName = packageNames[assetPaths[i + 1] as int] as String;
       _idToAssetId[i ~/ 2] = new AssetId(packageName, assetPaths[i] as String);
     }
 
@@ -101,10 +101,10 @@ class _AssetGraphDeserializer {
           builderOptionsId: _idToAssetId[
               serializedNode[_GeneratedField.BuilderOptions.index + offset]
                   as int],
-          globs: (serializedNode[_GeneratedField.Globs.index + offset]
-                  as Iterable<String>)
-              .map((pattern) => new Glob(pattern))
-              .toSet(),
+          globs:
+              (serializedNode[_GeneratedField.Globs.index + offset] as Iterable)
+                  .map((pattern) => new Glob(pattern as String))
+                  .toSet(),
           lastKnownDigest: digest,
           previousInputsDigest: _deserializeDigest(serializedNode[
               _GeneratedField.PreviousInputsDigest.index + offset] as String),
@@ -141,15 +141,15 @@ class _AssetGraphDeserializer {
                 as String));
     }
     node.outputs.addAll(_deserializeAssetIds(
-        serializedNode[_AssetField.Outputs.index] as List<int>));
+        serializedNode[_AssetField.Outputs.index] as List));
     node.primaryOutputs.addAll(_deserializeAssetIds(
-        serializedNode[_AssetField.PrimaryOutputs.index] as List<int>));
+        serializedNode[_AssetField.PrimaryOutputs.index] as List));
     node.deletedBy.addAll(_deserializeAssetIds(
         (serializedNode[_AssetField.DeletedBy.index] as List)?.cast<int>()));
     return node;
   }
 
-  Iterable<AssetId> _deserializeAssetIds(List<int> serializedIds) =>
+  Iterable<AssetId> _deserializeAssetIds(List serializedIds) =>
       serializedIds.map((id) => _idToAssetId[id]);
 
   bool _deserializeBool(int value) => value == 0 ? false : true;

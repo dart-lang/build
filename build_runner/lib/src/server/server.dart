@@ -86,7 +86,7 @@ class ServeHandler implements BuildState {
     return handler;
   }
 
-  FutureOr<shelf.Response> _blockOnCurrentBuild(_) async {
+  Future<shelf.Response> _blockOnCurrentBuild(_) async {
     await currentBuild;
     return new shelf.Response.notFound('');
   }
