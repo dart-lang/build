@@ -74,8 +74,7 @@ const _builderConfigDefaultOptions = const [
 
 BuildConfig parseFromYaml(
         String packageName, Iterable<String> dependencies, String configYaml) =>
-    parseFromMap(packageName, dependencies,
-        loadYaml(configYaml) as Map<String, dynamic> ?? {});
+    parseFromMap(packageName, dependencies, _loadMap(configYaml));
 
 BuildConfig parseFromMap(String packageName,
     Iterable<String> packageDependencies, Map<String, dynamic> config) {
@@ -87,7 +86,7 @@ BuildConfig parseFromMap(String packageName,
   final postProcessBuilderDefinitions =
       <String, PostProcessBuilderDefinition>{};
 
-  final targetConfigs = config['targets'] as Map<String, Map> ?? {};
+  final targetConfigs = config['targets'] as Map<String, dynamic> ?? {};
   for (var targetName in targetConfigs.keys) {
     var targetConfig = _readMapOrThrow(
         targetConfigs, targetName, _targetOptions, 'target `$targetName`');
@@ -129,7 +128,7 @@ BuildConfig parseFromMap(String packageName,
         '$packageName or `\$default`');
   }
 
-  final builderConfigs = config['builders'] as Map<String, Map> ?? {};
+  final builderConfigs = config['builders'] as Map<String, dynamic> ?? {};
   for (var builderName in builderConfigs.keys) {
     final builderConfig = _readMapOrThrow(builderConfigs, builderName,
         _builderDefinitionOptions, 'builder `$builderName`',
@@ -197,7 +196,7 @@ BuildConfig parseFromMap(String packageName,
   }
 
   final postProcessBuilderConfigs =
-      config['post_process_builders'] as Map<String, Map> ?? {};
+      config['post_process_builders'] as Map<String, dynamic> ?? {};
   for (var builderName in postProcessBuilderConfigs.keys) {
     final builderConfig = _readMapOrThrow(
         postProcessBuilderConfigs,
@@ -255,11 +254,12 @@ Map<String, List<String>> _readBuildExtensions(Map<String, dynamic> options) {
   if (value == null) {
     throw new ArgumentError('Missing configuration for build_extensions');
   }
-  if (value is! Map<String, List<String>>) {
+  if (value is! Map) {
     throw new ArgumentError('Invalid value for build_extensions, '
         'got `$value` but expected a Map');
   }
-  return value as Map<String, List<String>>;
+  return (value as Map).map((key, value) => new MapEntry<String, List<String>>(
+      '$key', (value as List).cast<String>()));
 }
 
 Map<String, dynamic> _readMapOrThrow(Map<String, dynamic> options,
@@ -433,4 +433,21 @@ BuilderOptions _readBuilderOptions(
     return new BuilderOptions(options as Map<String, dynamic>);
   }
   return null;
+}
+
+Map<String, dynamic> _loadMap(String encoded) {
+  var parsed = loadYaml(encoded);
+  if (parsed == null) return {};
+  return _actualDartType(parsed as YamlNode) as Map<String, dynamic>;
+}
+
+dynamic _actualDartType(YamlNode yamlNode) {
+  if (yamlNode is YamlScalar) return yamlNode.value;
+  // YamlList can already be safely treated as a List
+  if (yamlNode is YamlList) return yamlNode;
+  if (yamlNode is YamlMap) {
+    return yamlNode.map((key, value) => new MapEntry<String, dynamic>(
+        '$key', (value is YamlNode) ? _actualDartType(value) : value));
+  }
+  throw 'Unhandled noe type ${yamlNode.runtimeType}';
 }
