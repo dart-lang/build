@@ -27,6 +27,9 @@ Future<int> run(List<String> args, List<BuilderApplication> builders) async {
     print('');
     print(e.usage);
     return ExitCode.usage.code;
+  } on ArgumentError catch (e) {
+    print(ansi.red.wrap(e.toString()));
+    return ExitCode.usage.code;
   } on CannotBuildException {
     // A message should have already been logged.
     return ExitCode.config.code;
