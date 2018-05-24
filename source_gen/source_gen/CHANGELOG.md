@@ -1,3 +1,7 @@
+## 0.8.1+3
+
+* More redundant new lines elimination.
+
 ## 0.8.1+2
 
 * Eliminate redundant new lines in the core builder. These were almost removed

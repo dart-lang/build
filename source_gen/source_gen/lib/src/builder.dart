@@ -45,7 +45,7 @@ class _Builder extends Builder {
         },
         _isStandalone = isStandalone,
         formatOutput = formatOutput ?? _formatter.format,
-        _header = header ?? defaultFileHeader {
+        _header = (header ?? defaultFileHeader).trim() {
     if (_generatedExtension == null) {
       throw new ArgumentError.notNull('generatedExtension');
     }
@@ -107,7 +107,6 @@ class _Builder extends Builder {
       }
       contentBuffer.writeln();
       contentBuffer.writeln('part of $name;');
-      contentBuffer.writeln();
     }
 
     for (var output in generatedOutputs) {
@@ -226,7 +225,6 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
 
 final _formatter = new DartFormatter();
 
-const defaultFileHeader = '''// GENERATED CODE - DO NOT MODIFY BY HAND
-''';
+const defaultFileHeader = '// GENERATED CODE - DO NOT MODIFY BY HAND';
 
 final _headerLine = '// '.padRight(77, '*');
