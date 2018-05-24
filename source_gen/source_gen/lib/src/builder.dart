@@ -105,18 +105,19 @@ class _Builder extends Builder {
         // TODO: Upgrade to error in a future breaking change?
         log.warning('Missing "part \'$part\';".');
       }
+      contentBuffer.writeln();
       contentBuffer.writeln('part of $name;');
       contentBuffer.writeln();
     }
 
     for (var output in generatedOutputs) {
       contentBuffer
-        ..writeln('')
+        ..writeln()
         ..writeln(_headerLine)
         ..writeln('// Generator: ${output.generator}')
         ..writeln(_headerLine)
-        ..writeln('')
-        ..writeln(output.output);
+        ..writeln()
+        ..write(output.output);
     }
 
     var genPartContent = contentBuffer.toString();
@@ -226,7 +227,6 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
 final _formatter = new DartFormatter();
 
 const defaultFileHeader = '''// GENERATED CODE - DO NOT MODIFY BY HAND
-
 ''';
 
 final _headerLine = '// '.padRight(77, '*');

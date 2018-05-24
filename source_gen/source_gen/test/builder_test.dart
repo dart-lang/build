@@ -152,7 +152,7 @@ void main() {
         generateFor: new Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
           '$_pkgName|lib/a.g.dart':
-              decodedMatches(startsWith('$_customHeader\npart of')),
+              decodedMatches(startsWith('$_customHeader\n\npart of')),
         });
   });
 

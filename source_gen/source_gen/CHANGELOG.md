@@ -1,3 +1,9 @@
+## 0.8.1+2
+
+* Eliminate redundant new lines in the core builder. These were almost removed
+  by running the default formatter. Now the unformatted code more closely
+  matches the default output. 
+
 ## 0.8.1+1
 
 * Support `package:analyzer` `0.32.0`.

@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.8.1+1
+version: 0.8.1+2
 author: Dart Team <misc@dartlang.org>
 description: Automated source code generation for Dart.
 homepage: https://github.com/dart-lang/source_gen
