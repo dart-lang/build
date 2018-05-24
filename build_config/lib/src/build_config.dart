@@ -146,10 +146,10 @@ Map<String, T> _normalizeBuilderDefinitions<T>(
 
 String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
   var message = 'Could not create `${err.className}`.';
+  var map = err.map;
   if (err.key == null) {
-    if (err.map is YamlMap) {
-      message =
-          '${(err.map as YamlMap).span.message(message)} ${err.innerError}';
+    if (map is YamlMap) {
+      message = '${map.span.message(message)} ${err.innerError}';
     } else {
       message = '${err.innerError}';
     }
@@ -160,8 +160,8 @@ String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
     } else {
       message += '${err.innerError}\n';
     }
-    if (err.map is YamlMap) {
-      var yamlKey = (err.map as YamlMap).nodes.keys.singleWhere(
+    if (map is YamlMap) {
+      var yamlKey = map.nodes.keys.singleWhere(
           (k) => (k as YamlScalar).value == err.key,
           orElse: () => null) as YamlScalar;
       message += yamlKey.span.message(message);
