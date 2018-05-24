@@ -10,11 +10,8 @@ BuildConfig _$BuildConfigFromJson(Map json) => $checkedNew(
         'BuildConfig',
         json,
         () => new BuildConfig(
-            buildTargets: $checkedConvert(
-                json,
-                'targets',
-                (v) => (v as Map)?.map((k, e) => new MapEntry(k as String,
-                    e == null ? null : new BuildTarget.fromJson(e as Map)))),
+            buildTargets: $checkedConvert(json, 'targets',
+                (v) => v == null ? null : _buildTargetsFromJson(v as Map)),
             builderDefinitions: $checkedConvert(
                 json,
                 'builders',

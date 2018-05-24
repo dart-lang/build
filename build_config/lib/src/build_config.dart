@@ -62,7 +62,7 @@ class BuildConfig {
   final Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions;
 
   /// All the `targets` defined in a `build.yaml` file.
-  @JsonKey(name: 'targets')
+  @JsonKey(name: 'targets', fromJson: _buildTargetsFromJson)
   final Map<String, BuildTarget> buildTargets;
 
   /// The default config if you have no `build.yaml` file.
@@ -84,9 +84,13 @@ class BuildConfig {
   /// Create a [BuildConfig] by parsing [configYaml].
   factory BuildConfig.parse(
       String packageName, Iterable<String> dependencies, String configYaml) {
-    var parsed = loadYaml(configYaml) as Map;
-    return new BuildConfig.fromMap(
-        packageName, dependencies, new Map.from(parsed ?? const {}));
+    try {
+      var parsed = loadYaml(configYaml) as Map;
+      return new BuildConfig.fromMap(
+          packageName, dependencies, parsed ?? const {});
+    } on CheckedFromJsonException catch (e) {
+      throw new ArgumentError(_prettyPrintCheckedFromJsonException(e));
+    }
   }
 
   /// Create a [BuildConfig] read a map which was already parsed.
@@ -102,14 +106,12 @@ class BuildConfig {
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions:
         const {},
-  })  : this.buildTargets = _normalizeBuildTargetKeys(
-            buildTargets ??
-                {
-                  r'$default': new BuildTarget(
-                    dependencies: currentPackageDefaultDependencies,
-                  )
-                },
-            packageName ?? currentPackage),
+  })  : this.buildTargets = buildTargets ??
+            {
+              _defaultTarget(packageName ?? currentPackage): new BuildTarget(
+                dependencies: currentPackageDefaultDependencies,
+              )
+            },
         this.builderDefinitions = _normalizeBuilderDefinitions(
             builderDefinitions ?? const {}, packageName ?? currentPackage),
         this.postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
@@ -130,11 +132,6 @@ class BuildConfig {
       packageExpando[definition] = this.packageName;
       builderKeyExpando[definition] = key;
     });
-
-    if (!this.buildTargets.containsKey(_defaultTarget(this.packageName))) {
-      throw new ArgumentError('Must specify a target with the name '
-          '`${this.packageName}` or `\$default`.');
-    }
   }
 
   factory BuildConfig._fromJson(Map json) => _$BuildConfigFromJson(json);
@@ -142,12 +139,44 @@ class BuildConfig {
 
 String _defaultTarget(String package) => '$package:$package';
 
-Map<String, BuildTarget> _normalizeBuildTargetKeys(
-        Map<String, BuildTarget> buildTargets, String packageName) =>
-    buildTargets.map((key, target) =>
-        new MapEntry(normalizeTargetKeyDefinition(key, packageName), target));
-
 Map<String, T> _normalizeBuilderDefinitions<T>(
         Map<String, T> builderDefinitions, String packageName) =>
     builderDefinitions.map((key, definition) => new MapEntry(
         normalizeBuilderKeyDefinition(key, packageName), definition));
+
+String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
+  var yamlMap = err.map as YamlMap;
+
+  var yamlKey = yamlMap.nodes.keys.singleWhere(
+      (k) => (k as YamlScalar).value == err.key,
+      orElse: () => null) as YamlScalar;
+
+  var message = 'Could not create `${err.className}`.';
+  if (yamlKey == null) {
+    assert(err.key == null);
+    message = '${yamlMap.span.message(message)} ${err.innerError}';
+  } else {
+    message = '$message\nUnsupported value for `${err.key}`: ';
+    if (err.message != null) {
+      message += '${err.message}\n';
+    } else {
+      message += '${err.innerError}\n';
+    }
+    message = yamlKey.span.message(message);
+  }
+
+  return message;
+}
+
+Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
+  var targets = json.map((key, target) => new MapEntry(
+      normalizeTargetKeyDefinition(key as String, currentPackage),
+      new BuildTarget.fromJson(target as Map)));
+
+  if (!targets.containsKey(_defaultTarget(currentPackage))) {
+    throw new ArgumentError('Must specify a target with the name '
+        '`$currentPackage` or `\$default`.');
+  }
+
+  return targets;
+}
