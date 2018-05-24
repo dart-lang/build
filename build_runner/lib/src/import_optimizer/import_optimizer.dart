@@ -165,7 +165,7 @@ class ImportOptimizer{
     var optNodeCount = _getNodeCount(libraries);
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount, sourceAccNodeCount, optAccNodeCount);
 
-    if (sourceAccNodeCount > optAccNodeCount || _hasDeprectatedAssets(sourceLibrary.importedLibraries) || settings.showImportNodes) {
+    if ( sourceNodeCount > optNodeCount || sourceAccNodeCount > optAccNodeCount || (sourceNodeCount == optNodeCount  && optAccNodeCount > sourceAccNodeCount) || _hasDeprectatedAssets(sourceLibrary.importedLibraries) || settings.showImportNodes) {
       final directives = <_DirectiveInfo>[];
       for (final library in libraries) {
         final source = library.source;
@@ -333,6 +333,7 @@ class ImportOptimizer{
       return library.hasDeprecated;
     });
   }
+
 
 }
 
