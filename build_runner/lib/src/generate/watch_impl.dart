@@ -25,6 +25,7 @@ import '../environment/build_environment.dart';
 import '../environment/io_environment.dart';
 import '../environment/overridable_environment.dart';
 import '../logging/logging.dart';
+import '../logging/std_io_logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../server/server.dart';
@@ -69,7 +70,7 @@ Future<ServeHandler> watch(
       new IOEnvironment(packageGraph, assumeTty),
       reader: reader,
       writer: writer,
-      onLog: onLog);
+      onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
   var options = await BuildOptions.create(environment,
