@@ -70,7 +70,7 @@ class ImportOptimizer{
        var output = _generateImportText(inputId, lib, optLibraries);
        if (output.isNotEmpty) {
          final stat = _workResult.statistics[inputId];
-         print('// FileName: "$inputId" old: ${stat.sourceNode} -> new: ${stat.optNode}');
+         print('// FileName: "$inputId"  unique old: ${stat.sourceNode} -> new: ${stat.optNode}, agg old: ${stat.sourceAggNode} -> new: ${stat.optAggNode}');
          print(output);
 
          if (settings.applyImports) {
@@ -159,11 +159,13 @@ class ImportOptimizer{
   String _generateImportText(AssetId inputId, LibraryElement sourceLibrary, Iterable<LibraryElement> libraries) {
     var sb = new StringBuffer();
     _parseLibraryStat(sourceLibrary.importedLibraries);
-    var sourceNodeCount = _getNodeCountAccumulate(sourceLibrary.importedLibraries);
-    var optNodeCount = _getNodeCountAccumulate(libraries);
-    _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
+    var sourceAccNodeCount = _getNodeCountAccumulate(sourceLibrary.importedLibraries);
+    var optAccNodeCount = _getNodeCountAccumulate(libraries);
+    var sourceNodeCount = _getNodeCount(sourceLibrary.importedLibraries);
+    var optNodeCount = _getNodeCount(libraries);
+    _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount, sourceAccNodeCount, optAccNodeCount);
 
-    if (sourceNodeCount > optNodeCount || _hasDeprectatedAssets(sourceLibrary.importedLibraries) || settings.showImportNodes) {
+    if (sourceAccNodeCount > optAccNodeCount || _hasDeprectatedAssets(sourceLibrary.importedLibraries) || settings.showImportNodes) {
       final directives = <_DirectiveInfo>[];
       for (final library in libraries) {
         final source = library.source;
@@ -289,14 +291,15 @@ class ImportOptimizer{
     _log.info('Report: ${new DateTime.now().toIso8601String()}');
     _log.info('--------------------------------');
 
-    _log.info('Total old: ${_workResult.sourceNodesTotal} -> new: ${_workResult.optNodesTotal}');
+    _log.info('Total aggregate old: ${_workResult.sourceAggNodesTotal} -> new: ${_workResult.optAggNodesTotal} (${-((1.0 - _workResult.optAggNodesTotal/_workResult.sourceAggNodesTotal)*100).truncate() }%)');
+    _log.info('Total uniq old: ${_workResult.sourceNodesTotal} -> new: ${_workResult.optNodesTotal} (${-((1.0 - _workResult.optNodesTotal/_workResult.sourceNodesTotal)*100).truncate() }%)');
     if (_workResult.topFile != null) {
       _log.info('Top issue file: ${_workResult.topFile} nodes: ${_workResult.topNodeFile}');
     }
     if (_workResult.maxOptFile != null) {
       _log.info('Best optimization file: ${_workResult.maxOptFile} delta: ${_workResult.maxOptDelta}');
     }
-    _log.info('Average nodes: old: ${_workResult.sourceNodesTotal ~/ _workResult.fileCount} -> new: ${_workResult.optNodesTotal ~/ _workResult.fileCount}');
+    _log.info('Average nodes per file: old: ${_workResult.sourceNodesTotal ~/ _workResult.fileCount} -> new: ${_workResult.optNodesTotal ~/ _workResult.fileCount}');
     _log.info('--------------------------------');
     _log.info('Stat export over limit "${settings.limitExportsPerFile}>" :');
     _log.info(' ${'Exp COUNT'.padLeft(9)} | ${'USES'.padLeft(8)} | $AssetId');
@@ -390,4 +393,3 @@ class _DirectivePriority {
   @override
   String toString() => name;
 }
-

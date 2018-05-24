@@ -10,6 +10,8 @@ class WorkResult {
   int _maxOptDelta = 0;
   int _sourceNodesTotal = 0;
   int _optNodesTotal = 0;
+  int _sourceAggNodesTotal = 0;
+  int _optAggNodesTotal = 0;
   int _fileCount = 0;
   final Map<AssetId, AssetStatistic> _statistics = <AssetId, AssetStatistic>{};
   final Map<String, int> _statisticsPerPackages = <String, int>{};
@@ -32,15 +34,21 @@ class WorkResult {
 
   int get optNodesTotal => _optNodesTotal;
 
+  int get sourceAggNodesTotal => _sourceAggNodesTotal;
+
+  int get optAggNodesTotal => _optAggNodesTotal;
+
   Map<AssetId, AssetStatistic> get statistics => _statistics;
   Map<String, int> get statisticsPerPackages => _statisticsPerPackages;
   Map<AssetId, _ExportStat> get statisticsPerExportOverLimit => _statisticsPerExportOverLimit;
 
-  void addStatisticFile(AssetId file, int sourceNode, int optNode) {
-    _statistics[file] = new AssetStatistic(sourceNode, optNode);
+  void addStatisticFile(AssetId file, int sourceNode, int optNode, int sourceAggNode, int optAggNode) {
+    _statistics[file] = new AssetStatistic(sourceNode, optNode, sourceAggNode, optAggNode);
     _fileCount++;
     _sourceNodesTotal += sourceNode;
     _optNodesTotal += optNode;
+    _sourceAggNodesTotal += sourceAggNode;
+    _optAggNodesTotal += optAggNode;
     if (_topNodeFile < sourceNode) {
       _topNodeFile = sourceNode;
       _topFile = file;
@@ -78,7 +86,9 @@ class _ExportStat {
 }
 
 class AssetStatistic {
-  int sourceNode;
-  int optNode;
-  AssetStatistic(this.sourceNode, this.optNode);
+  final int sourceNode;
+  final int optNode;
+  final int sourceAggNode;
+  final int optAggNode;
+  AssetStatistic(this.sourceNode, this.optNode, this.sourceAggNode, this.optAggNode);
 }
