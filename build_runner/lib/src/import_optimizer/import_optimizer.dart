@@ -97,13 +97,24 @@ class ImportOptimizer{
      _log.info("File '$fullname' patched!");
    }
 
-   int _getNodeCount(Iterable<LibraryElement> libImports,{final bool accumulationOfStatistics = false}) {
+
+   _parseLibraryStat(Iterable<LibraryElement> libImports){
      var imports = new Set<LibraryElement>();
      _parseLib(Iterable<LibraryElement> libImports) {
        for (var item in libImports) {
-         if (accumulationOfStatistics){
-           _workResult.addLibrary(item);
+         _workResult.addStatisticLibrary(item);
+         if (imports.add(item) && !item.isDartCore && !item.isInSdk) {
+           _parseLib(item.importedLibraries);
+           _parseLib(item.exportedLibraries);
          }
+       }
+     }
+     _parseLib(libImports);
+   }
+   int _getNodeCount(Iterable<LibraryElement> libImports) {
+     var imports = new Set<LibraryElement>();
+     _parseLib(Iterable<LibraryElement> libImports) {
+       for (var item in libImports) {
          if (imports.add(item) && !item.isDartCore && !item.isInSdk) {
            _parseLib(item.importedLibraries);
            _parseLib(item.exportedLibraries);
@@ -137,10 +148,19 @@ class ImportOptimizer{
      return outputImports;
    }
 
+  int _getNodeCountAccumulate(Iterable<LibraryElement> libImports) {
+    var sum = 0;
+    for (var lib in  libImports){
+      sum += _getNodeCount([lib]);
+    }
+    return sum;
+  }
+
   String _generateImportText(AssetId inputId, LibraryElement sourceLibrary, Iterable<LibraryElement> libraries) {
     var sb = new StringBuffer();
-    var sourceNodeCount = _getNodeCount(sourceLibrary.importedLibraries, accumulationOfStatistics: true);
-    var optNodeCount = _getNodeCount(libraries);
+    _parseLibraryStat(sourceLibrary.importedLibraries);
+    var sourceNodeCount = _getNodeCountAccumulate(sourceLibrary.importedLibraries);
+    var optNodeCount = _getNodeCountAccumulate(libraries);
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount);
 
     if (sourceNodeCount > optNodeCount || _hasDeprectatedAssets(sourceLibrary.importedLibraries) || settings.showImportNodes) {

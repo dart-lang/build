@@ -52,7 +52,7 @@ class WorkResult {
     }
   }
 
-  void addLibrary(LibraryElement item) {
+  void addStatisticLibrary(LibraryElement item) {
     if (!item.isDartCore && !item.isInSdk) {
       final source = item.source;
       if (source is AssetBasedSource) {
