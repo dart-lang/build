@@ -249,14 +249,16 @@ class BuildTool {
 
   Future<BuildServer> serve() async => new BuildServer(await TestProcess.start(
       _executable, _baseArgs.followedBy(['serve']),
-      workingDirectory: p.join(d.sandbox, 'a')));
+      workingDirectory: rootPackageDir));
 
   Future<void> build([List<String> args = const []]) async {
     var process = await TestProcess.start(
         _executable, _baseArgs.followedBy(['build']).followedBy(args).toList(),
-        workingDirectory: p.join(d.sandbox, 'a'));
+        workingDirectory: rootPackageDir);
     expect(await process.exitCode, 0);
   }
+
+  String get rootPackageDir => p.join(d.sandbox, 'a');
 }
 
 /// A process running the `serve` command.
