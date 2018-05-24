@@ -22,6 +22,8 @@ void main() {
         .transform(new LineSplitter()));
   });
 
+  tearDown(() => stdoutLines.cancel());
+
   test('Can give the user interactive prompts', () async {
     await expectEmits(stdoutLines, contains('Select an option!'));
     await expectEmits(stdoutLines, contains('1 - a'));
