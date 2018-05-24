@@ -22,11 +22,11 @@ class Pubspec {
     throw new FileSystemException('No file found', p.absolute(pubspec));
   }
 
-  final Map<String, dynamic> _pubspecContents;
+  final Map _pubspecContents;
 
   /// Create a [Pubspec] by parsing [pubspecYaml].
   Pubspec.parse(String pubspecYaml)
-      : _pubspecContents = loadYaml(pubspecYaml) as Map<String, dynamic>;
+      : _pubspecContents = loadYaml(pubspecYaml) as Map;
 
   /// Dependencies for a pub package.
   ///

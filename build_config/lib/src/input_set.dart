@@ -29,11 +29,11 @@ class InputSet {
   factory InputSet.fromJson(dynamic json) {
     if (json is List) {
       json = {'include': json};
-    } else if (json is! Map<String, dynamic>) {
+    } else if (json is! Map) {
       throw new ArgumentError.value(json, 'sources',
           'Expected a Map or a List but got a ${json.runtimeType}');
     }
-    return _$InputSetFromJson(json as Map<String, dynamic>);
+    return _$InputSetFromJson(json as Map);
   }
 
   @override

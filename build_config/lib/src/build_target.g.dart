@@ -6,32 +6,39 @@ part of 'build_target.dart';
 // Generator: JsonSerializableGenerator
 // **************************************************************************
 
-BuildTarget _$BuildTargetFromJson(Map<String, dynamic> json) => new BuildTarget(
-    sources:
-        json['sources'] == null ? null : new InputSet.fromJson(json['sources']),
-    dependencies: (json['dependencies'] as List)?.map((e) => e as String),
-    builders: (json['builders'] as Map<String, dynamic>)?.map((k, e) =>
-        new MapEntry(
-            k,
-            e == null
-                ? null
-                : new TargetBuilderConfig.fromJson(
-                    e as Map<String, dynamic>))));
+BuildTarget _$BuildTargetFromJson(Map json) => $checkedNew(
+    'BuildTarget',
+    json,
+    () => new BuildTarget(
+        sources: $checkedConvert(json, 'sources',
+            (v) => v == null ? null : new InputSet.fromJson(v)),
+        dependencies: $checkedConvert(
+            json, 'dependencies', (v) => (v as List)?.map((e) => e as String)),
+        builders: $checkedConvert(
+            json,
+            'builders',
+            (v) => (v as Map)?.map((k, e) => new MapEntry(
+                k as String,
+                e == null
+                    ? null
+                    : new TargetBuilderConfig.fromJson(e as Map))))));
 
-TargetBuilderConfig _$TargetBuilderConfigFromJson(Map<String, dynamic> json) =>
-    new TargetBuilderConfig(
-        isEnabled: json['is_enabled'] as bool,
-        generateFor: json['generate_for'] == null
-            ? null
-            : new InputSet.fromJson(json['generate_for']),
-        options: json['options'] == null
-            ? null
-            : builderOptionsFromJson(json['options'] as Map<String, dynamic>),
-        devOptions: json['dev_options'] == null
-            ? null
-            : builderOptionsFromJson(
-                json['dev_options'] as Map<String, dynamic>),
-        releaseOptions: json['release_options'] == null
-            ? null
-            : builderOptionsFromJson(
-                json['release_options'] as Map<String, dynamic>));
+TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) => $checkedNew(
+        'TargetBuilderConfig',
+        json,
+        () => new TargetBuilderConfig(
+            isEnabled: $checkedConvert(json, 'is_enabled', (v) => v as bool),
+            generateFor: $checkedConvert(json, 'generate_for',
+                (v) => v == null ? null : new InputSet.fromJson(v)),
+            options: $checkedConvert(json, 'options',
+                (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+            devOptions: $checkedConvert(json, 'dev_options',
+                (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+            releaseOptions: $checkedConvert(json, 'release_options',
+                (v) => v == null ? null : builderOptionsFromJson(v as Map))),
+        fieldKeyMap: const {
+          'isEnabled': 'is_enabled',
+          'generateFor': 'generate_for',
+          'devOptions': 'dev_options',
+          'releaseOptions': 'release_options'
+        });

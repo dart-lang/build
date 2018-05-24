@@ -6,8 +6,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
-BuilderOptions builderOptionsFromJson(Map<String, dynamic> config) =>
-    new BuilderOptions(config);
+BuilderOptions builderOptionsFromJson(Map config) =>
+    new BuilderOptions(new Map<String, dynamic>.from(config));
 
 final _defaultDependenciesZoneKey =
     new Symbol('buildConfigDefaultDependencies');

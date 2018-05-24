@@ -126,7 +126,7 @@ class BuilderDefinition {
     }
   }
 
-  factory BuilderDefinition.fromJson(Map<String, Object> json) =>
+  factory BuilderDefinition.fromJson(Map json) =>
       _$BuilderDefinitionFromJson(json);
 
   @override
@@ -185,7 +185,7 @@ class PostProcessBuilderDefinition {
     TargetBuilderConfigDefaults defaults,
   }) : this.defaults = defaults ?? const TargetBuilderConfigDefaults();
 
-  factory PostProcessBuilderDefinition.fromJson(Map<String, Object> json) =>
+  factory PostProcessBuilderDefinition.fromJson(Map json) =>
       _$PostProcessBuilderDefinitionFromJson(json);
 
   @override
@@ -222,7 +222,7 @@ class TargetBuilderConfigDefaults {
         devOptions = devOptions ?? BuilderOptions.empty,
         releaseOptions = releaseOptions ?? BuilderOptions.empty;
 
-  factory TargetBuilderConfigDefaults.fromJson(Map<String, dynamic> json) =>
+  factory TargetBuilderConfigDefaults.fromJson(Map json) =>
       _$TargetBuilderConfigDefaultsFromJson(json);
 }
 

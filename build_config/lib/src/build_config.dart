@@ -84,14 +84,14 @@ class BuildConfig {
   /// Create a [BuildConfig] by parsing [configYaml].
   factory BuildConfig.parse(
       String packageName, Iterable<String> dependencies, String configYaml) {
-    var parsed = loadYaml(configYaml) as Map<String, dynamic>;
+    var parsed = loadYaml(configYaml) as Map;
     return new BuildConfig.fromMap(
         packageName, dependencies, new Map.from(parsed ?? const {}));
   }
 
   /// Create a [BuildConfig] read a map which was already parsed.
-  factory BuildConfig.fromMap(String packageName, Iterable<String> dependencies,
-      Map<String, dynamic> config) {
+  factory BuildConfig.fromMap(
+      String packageName, Iterable<String> dependencies, Map config) {
     return runInBuildConfigZone(() => new BuildConfig._fromJson(config),
         packageName, dependencies.toList());
   }
@@ -137,8 +137,7 @@ class BuildConfig {
     }
   }
 
-  factory BuildConfig._fromJson(Map<String, dynamic> json) =>
-      _$BuildConfigFromJson(json);
+  factory BuildConfig._fromJson(Map json) => _$BuildConfigFromJson(json);
 }
 
 String _defaultTarget(String package) => '$package:$package';

@@ -43,8 +43,7 @@ class BuildTarget {
                 normalizeBuilderKeyUsage(key, currentPackage), config)),
         this.sources = sources ?? InputSet.anything;
 
-  factory BuildTarget.fromJson(Map<String, dynamic> json) =>
-      _$BuildTargetFromJson(json);
+  factory BuildTarget.fromJson(Map json) => _$BuildTargetFromJson(json);
 
   @override
   String toString() => {
@@ -108,7 +107,7 @@ class TargetBuilderConfig {
         devOptions = devOptions ?? BuilderOptions.empty,
         releaseOptions = releaseOptions ?? BuilderOptions.empty;
 
-  factory TargetBuilderConfig.fromJson(Map<String, dynamic> json) =>
+  factory TargetBuilderConfig.fromJson(Map json) =>
       _$TargetBuilderConfigFromJson(json);
 
   @override

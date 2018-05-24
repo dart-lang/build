@@ -6,60 +6,84 @@ part of 'builder_definition.dart';
 // Generator: JsonSerializableGenerator
 // **************************************************************************
 
-BuilderDefinition _$BuilderDefinitionFromJson(Map<String, dynamic> json) =>
-    new BuilderDefinition(
-        builderFactories: (json['builder_factories'] as List)
-            .map((e) => e as String)
-            .toList(),
-        buildExtensions: (json['build_extensions'] as Map<String, dynamic>).map(
-            (k, e) =>
-                new MapEntry(k, (e as List).map((e) => e as String).toList())),
-        import: json['import'] as String,
-        target: json['target'] as String,
-        autoApply: json['auto_apply'] == null
-            ? null
-            : _autoApplyFromJson(json['auto_apply'] as String),
-        requiredInputs:
-            (json['required_inputs'] as List)?.map((e) => e as String),
-        runsBefore: (json['runs_before'] as List)?.map((e) => e as String),
-        appliesBuilders:
-            (json['applies_builders'] as List)?.map((e) => e as String),
-        isOptional: json['is_optional'] as bool,
-        buildTo: json['build_to'] == null
-            ? null
-            : _buildToFromJson(json['build_to'] as String),
-        defaults: json['defaults'] == null
-            ? null
-            : new TargetBuilderConfigDefaults.fromJson(
-                json['defaults'] as Map<String, dynamic>));
+BuilderDefinition _$BuilderDefinitionFromJson(Map json) => $checkedNew(
+        'BuilderDefinition',
+        json,
+        () => new BuilderDefinition(
+            builderFactories: $checkedConvert(json, 'builder_factories',
+                (v) => (v as List).map((e) => e as String).toList()),
+            buildExtensions: $checkedConvert(
+                json,
+                'build_extensions',
+                (v) => (v as Map).map((k, e) => new MapEntry(k as String,
+                    (e as List).map((e) => e as String).toList()))),
+            import: $checkedConvert(json, 'import', (v) => v as String),
+            target: $checkedConvert(json, 'target', (v) => v as String),
+            autoApply: $checkedConvert(json, 'auto_apply',
+                (v) => v == null ? null : _autoApplyFromJson(v as String)),
+            requiredInputs: $checkedConvert(json, 'required_inputs',
+                (v) => (v as List)?.map((e) => e as String)),
+            runsBefore: $checkedConvert(json, 'runs_before',
+                (v) => (v as List)?.map((e) => e as String)),
+            appliesBuilders: $checkedConvert(json, 'applies_builders',
+                (v) => (v as List)?.map((e) => e as String)),
+            isOptional: $checkedConvert(json, 'is_optional', (v) => v as bool),
+            buildTo: $checkedConvert(json, 'build_to',
+                (v) => v == null ? null : _buildToFromJson(v as String)),
+            defaults: $checkedConvert(
+                json,
+                'defaults',
+                (v) => v == null
+                    ? null
+                    : new TargetBuilderConfigDefaults.fromJson(v as Map))),
+        fieldKeyMap: const {
+          'builderFactories': 'builder_factories',
+          'buildExtensions': 'build_extensions',
+          'autoApply': 'auto_apply',
+          'requiredInputs': 'required_inputs',
+          'runsBefore': 'runs_before',
+          'appliesBuilders': 'applies_builders',
+          'isOptional': 'is_optional',
+          'buildTo': 'build_to'
+        });
 
-PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
-        Map<String, dynamic> json) =>
-    new PostProcessBuilderDefinition(
-        builderFactory: json['builder_factory'] as String,
-        import: json['import'] as String,
-        inputExtensions:
-            (json['input_extensions'] as List)?.map((e) => e as String),
-        target: json['target'] as String,
-        defaults: json['defaults'] == null
-            ? null
-            : new TargetBuilderConfigDefaults.fromJson(
-                json['defaults'] as Map<String, dynamic>));
+PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) =>
+    $checkedNew(
+        'PostProcessBuilderDefinition',
+        json,
+        () => new PostProcessBuilderDefinition(
+            builderFactory:
+                $checkedConvert(json, 'builder_factory', (v) => v as String),
+            import: $checkedConvert(json, 'import', (v) => v as String),
+            inputExtensions: $checkedConvert(json, 'input_extensions',
+                (v) => (v as List)?.map((e) => e as String)),
+            target: $checkedConvert(json, 'target', (v) => v as String),
+            defaults: $checkedConvert(
+                json,
+                'defaults',
+                (v) => v == null
+                    ? null
+                    : new TargetBuilderConfigDefaults.fromJson(v as Map))),
+        fieldKeyMap: const {
+          'builderFactory': 'builder_factory',
+          'inputExtensions': 'input_extensions'
+        });
 
-TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(
-        Map<String, dynamic> json) =>
-    new TargetBuilderConfigDefaults(
-        generateFor: json['generate_for'] == null
-            ? null
-            : new InputSet.fromJson(json['generate_for']),
-        options: json['options'] == null
-            ? null
-            : builderOptionsFromJson(json['options'] as Map<String, dynamic>),
-        devOptions: json['dev_options'] == null
-            ? null
-            : builderOptionsFromJson(
-                json['dev_options'] as Map<String, dynamic>),
-        releaseOptions: json['release_options'] == null
-            ? null
-            : builderOptionsFromJson(
-                json['release_options'] as Map<String, dynamic>));
+TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) =>
+    $checkedNew(
+        'TargetBuilderConfigDefaults',
+        json,
+        () => new TargetBuilderConfigDefaults(
+            generateFor: $checkedConvert(json, 'generate_for',
+                (v) => v == null ? null : new InputSet.fromJson(v)),
+            options: $checkedConvert(json, 'options',
+                (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+            devOptions: $checkedConvert(json, 'dev_options',
+                (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+            releaseOptions: $checkedConvert(json, 'release_options',
+                (v) => v == null ? null : builderOptionsFromJson(v as Map))),
+        fieldKeyMap: const {
+          'generateFor': 'generate_for',
+          'devOptions': 'dev_options',
+          'releaseOptions': 'release_options'
+        });
