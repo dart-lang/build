@@ -98,12 +98,13 @@ class TargetBuilderConfig {
   final BuilderOptions releaseOptions;
 
   TargetBuilderConfig({
-    this.isEnabled,
+    bool isEnabled,
     this.generateFor,
     BuilderOptions options,
     BuilderOptions devOptions,
     BuilderOptions releaseOptions,
-  })  : options = options ?? BuilderOptions.empty,
+  })  : isEnabled = isEnabled ?? true,
+        options = options ?? BuilderOptions.empty,
         devOptions = devOptions ?? BuilderOptions.empty,
         releaseOptions = releaseOptions ?? BuilderOptions.empty;
 

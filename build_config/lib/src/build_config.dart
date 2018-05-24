@@ -86,7 +86,7 @@ class BuildConfig {
       String packageName, Iterable<String> dependencies, String configYaml) {
     var parsed = loadYaml(configYaml) as Map<String, dynamic>;
     return new BuildConfig.fromMap(
-        packageName, dependencies, new Map.from(parsed));
+        packageName, dependencies, new Map.from(parsed ?? const {}));
   }
 
   /// Create a [BuildConfig] read a map which was already parsed.
@@ -97,7 +97,7 @@ class BuildConfig {
   }
 
   BuildConfig({
-    @required String packageName,
+    String packageName,
     @required Map<String, BuildTarget> buildTargets,
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions:

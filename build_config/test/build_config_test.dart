@@ -6,12 +6,16 @@ import 'package:build/build.dart';
 import 'package:test/test.dart';
 
 import 'package:build_config/build_config.dart';
+import 'package:build_config/src/common.dart';
+import 'package:build_config/src/expandos.dart';
 
 void main() {
   test('build.yaml can be parsed', () {
     var buildConfig = new BuildConfig.parse('example', ['a', 'b'], buildYaml);
     expectBuildTargets(buildConfig.buildTargets, {
-      'example:a': new BuildTarget(
+      'example:a': createBuildTarget(
+        'example',
+        key: 'example:a',
         builders: {
           'b|b': new TargetBuilderConfig(
               isEnabled: true,
@@ -22,22 +26,21 @@ void main() {
               isEnabled: true, options: new BuilderOptions({'baz': 'zap'})),
         },
         // Expecting $default => example:example
-        dependencies: ['example:example', 'b:b', 'c:d'].toSet(),
-        package: 'example',
-        key: 'example:a',
+        dependencies: ['example:example', 'b:b', 'c:d'],
         sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
-      'example:example': new BuildTarget(
-        dependencies: ['f:f', 'example:a'].toSet(),
-        package: 'example',
-        key: 'example:example',
+      'example:example': createBuildTarget(
+        'example',
+        dependencies: ['f:f', 'example:a'],
         sources: new InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
             exclude: ['lib/src/e/g.dart']),
       )
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'example|h': new BuilderDefinition(
+      'example|h': createBuilderDefinition(
+        'example',
+        key: 'example|h',
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.dependents,
         isOptional: true,
@@ -49,8 +52,6 @@ void main() {
             '.json',
           ]
         },
-        package: 'example',
-        key: 'example|h',
         requiredInputs: ['.dart'],
         runsBefore: ['foo_builder|foo_builder'].toSet(),
         appliesBuilders: ['foo_builder|foo_builder'].toSet(),
@@ -63,11 +64,11 @@ void main() {
     });
     expectPostProcessBuilderDefinitions(
         buildConfig.postProcessBuilderDefinitions, {
-      'example|p': new PostProcessBuilderDefinition(
+      'example|p': createPostProcessBuilderDefinition(
+        'example',
+        key: 'example|p',
         builderFactory: 'createPostProcessBuilder',
         import: 'package:example/p.dart',
-        package: 'example',
-        key: 'example|p',
         defaults: new TargetBuilderConfigDefaults(
           generateFor: const InputSet(include: const ['web/**']),
           options: const BuilderOptions(const {'foo': 'bar'}),
@@ -81,15 +82,16 @@ void main() {
     var buildConfig =
         new BuildConfig.parse('example', ['a', 'b'], buildYamlNoTargets);
     expectBuildTargets(buildConfig.buildTargets, {
-      'example:example': new BuildTarget(
+      'example:example': createBuildTarget(
+        'example',
         dependencies: ['a:a', 'b:b'].toSet(),
-        package: 'example',
-        key: 'example:example',
         sources: new InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'example|a': new BuilderDefinition(
+      'example|a': createBuilderDefinition(
+        'example',
+        key: 'example|a',
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.none,
         isOptional: false,
@@ -101,8 +103,6 @@ void main() {
             '.json',
           ]
         },
-        package: 'example',
-        key: 'example|a',
         requiredInputs: const [],
         runsBefore: new Set<String>(),
         appliesBuilders: new Set<String>(),
@@ -113,10 +113,9 @@ void main() {
   test('build.yaml can be empty', () {
     var buildConfig = new BuildConfig.parse('example', ['a', 'b'], '');
     expectBuildTargets(buildConfig.buildTargets, {
-      'example:example': new BuildTarget(
+      'example:example': createBuildTarget(
+        'example',
         dependencies: ['a:a', 'b:b'].toSet(),
-        package: 'example',
-        key: 'example:example',
         sources: new InputSet(),
       ),
     });
@@ -343,4 +342,67 @@ class _BuilderConfigMatcher extends Matcher {
   @override
   Description describe(Description description) =>
       description.addDescriptionOf(_expected);
+}
+
+BuildTarget createBuildTarget(String package,
+    {String key,
+    Map<String, TargetBuilderConfig> builders,
+    Iterable<String> dependencies,
+    InputSet sources}) {
+  return runInBuildConfigZone(() {
+    var target = new BuildTarget(
+      builders: builders,
+      dependencies: dependencies,
+      sources: sources,
+    );
+
+    packageExpando[target] = package;
+    builderKeyExpando[target] = key ?? '$package:$package';
+
+    return target;
+  }, package, []);
+}
+
+BuilderDefinition createBuilderDefinition(String package,
+    {List<String> builderFactories,
+    AutoApply autoApply,
+    bool isOptional,
+    BuildTo buildTo,
+    String import,
+    Map<String, List<String>> buildExtensions,
+    String key,
+    Iterable<String> requiredInputs,
+    Iterable<String> runsBefore,
+    Iterable<String> appliesBuilders,
+    TargetBuilderConfigDefaults defaults}) {
+  return runInBuildConfigZone(() {
+    var definition = new BuilderDefinition(
+        builderFactories: builderFactories,
+        autoApply: autoApply,
+        isOptional: isOptional,
+        buildTo: buildTo,
+        import: import,
+        buildExtensions: buildExtensions,
+        requiredInputs: requiredInputs,
+        runsBefore: runsBefore,
+        appliesBuilders: appliesBuilders,
+        defaults: defaults);
+    packageExpando[definition] = package;
+    builderKeyExpando[definition] = key ?? '$package:$package';
+    return definition;
+  }, package, []);
+}
+
+PostProcessBuilderDefinition createPostProcessBuilderDefinition(String package,
+    {String builderFactory,
+    String import,
+    String key,
+    TargetBuilderConfigDefaults defaults}) {
+  return runInBuildConfigZone(() {
+    var definition = new PostProcessBuilderDefinition(
+        builderFactory: builderFactory, import: import, defaults: defaults);
+    packageExpando[definition] = package;
+    builderKeyExpando[definition] = key ?? '$package:$package';
+    return definition;
+  }, package, []);
 }
