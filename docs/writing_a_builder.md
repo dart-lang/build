@@ -3,7 +3,7 @@
 A `Builder` must have outputs that are known statically based on input paths and
 file extensions. For example an input named `foo.dart` always results in an
 output named `foo.something.dart`. Builders are not allowed to read the input in
-order to determine outputs. The only outputs that can be produces are those
+order to determine outputs. The only outputs that can be produced are those
 which share a file base name with an input.
 
 Having a predictable set of outputs allows:
