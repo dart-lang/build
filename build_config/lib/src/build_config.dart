@@ -84,20 +84,20 @@ class BuildConfig {
   /// Create a [BuildConfig] by parsing [configYaml].
   factory BuildConfig.parse(
       String packageName, Iterable<String> dependencies, String configYaml) {
-    var parsed = loadYaml(configYaml) as Map;
-    return new BuildConfig.fromMap(
-        packageName, dependencies, parsed ?? const {});
+    try {
+      var parsed = loadYaml(configYaml) as Map;
+      return new BuildConfig.fromMap(
+          packageName, dependencies, parsed ?? const {});
+    } on CheckedFromJsonException catch (e) {
+      throw new ArgumentError(_prettyPrintCheckedFromJsonException(e));
+    }
   }
 
   /// Create a [BuildConfig] read a map which was already parsed.
   factory BuildConfig.fromMap(
       String packageName, Iterable<String> dependencies, Map config) {
-    try {
-      return runInBuildConfigZone(() => new BuildConfig._fromJson(config),
-          packageName, dependencies.toList());
-    } on CheckedFromJsonException catch (e) {
-      throw new ArgumentError(_prettyPrintCheckedFromJsonException(e));
-    }
+    return runInBuildConfigZone(() => new BuildConfig._fromJson(config),
+        packageName, dependencies.toList());
   }
 
   BuildConfig({
@@ -145,14 +145,16 @@ Map<String, T> _normalizeBuilderDefinitions<T>(
         normalizeBuilderKeyDefinition(key, packageName), definition));
 
 String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
+  var yamlMap = err.map as YamlMap;
+
+  var yamlKey = yamlMap.nodes.keys.singleWhere(
+      (k) => (k as YamlScalar).value == err.key,
+      orElse: () => null) as YamlScalar;
+
   var message = 'Could not create `${err.className}`.';
-  var map = err.map;
-  if (err.key == null) {
-    if (map is YamlMap) {
-      message = '${map.span.message(message)} ${err.innerError}';
-    } else {
-      message = '${err.innerError}';
-    }
+  if (yamlKey == null) {
+    assert(err.key == null);
+    message = '${yamlMap.span.message(message)} ${err.innerError}';
   } else {
     message = '$message\nUnsupported value for `${err.key}`: ';
     if (err.message != null) {
@@ -160,12 +162,7 @@ String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
     } else {
       message += '${err.innerError}\n';
     }
-    if (map is YamlMap) {
-      var yamlKey = map.nodes.keys.singleWhere(
-          (k) => (k as YamlScalar).value == err.key,
-          orElse: () => null) as YamlScalar;
-      message += yamlKey.span.message(message);
-    }
+    message = yamlKey.span.message(message);
   }
 
   return message;
