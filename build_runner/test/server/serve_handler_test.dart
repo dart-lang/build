@@ -146,7 +146,7 @@ void main() {
       actionTracker.stop();
       watchImpl.addFutureResult(new Future.value(
           new BuildResult(BuildStatus.success, [], performance: tracker)));
-      await new Future.value();
+      await new Future(() {});
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse(r'http://server.com/$perf')));
 
@@ -159,7 +159,7 @@ void main() {
       watchImpl.addFutureResult(new Future.value(new BuildResult(
           BuildStatus.success, [],
           performance: new BuildPerformanceTracker.noOp())));
-      await new Future.value();
+      await new Future(() {});
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse(r'http://server.com/$perf')));
 
@@ -199,17 +199,14 @@ class MockWatchImpl implements WatchImpl {
   }
 
   MockWatchImpl(this.reader, this.packageGraph, this.assetGraph) {
+    var firstBuild = new Completer<BuildResult>();
+    _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {
-      if (_currentBuild != null) {
-        _currentBuild = _currentBuild.then((_) => futureBuildResult);
-      } else {
-        _currentBuild = futureBuildResult;
+      if (!firstBuild.isCompleted) {
+        firstBuild.complete(futureBuildResult);
       }
-
-      _currentBuild.then((result) {
-        _buildResultsController.add(result);
-        _currentBuild = null;
-      });
+      _currentBuild = _currentBuild.then((_) => futureBuildResult);
+      _currentBuild.then(_buildResultsController.add);
     });
   }
 
