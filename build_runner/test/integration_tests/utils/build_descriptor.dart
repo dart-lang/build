@@ -255,7 +255,7 @@ class BuildTool {
     var process = await TestProcess.start(
         _executable, _baseArgs.followedBy(['build']).followedBy(args).toList(),
         workingDirectory: p.join(d.sandbox, 'a'));
-    expect(await process.exitCode, 0);
+    await process.shouldExit(0);
   }
 }
 
@@ -293,6 +293,7 @@ class BuildServer {
     final request = await _client.get('localhost', 8080, path);
     final response = await request.close();
     expect(response.statusCode, 404);
+    await response.drain();
   }
 
   /// Request [path] from the default server and expect it returns a 200

@@ -1,3 +1,7 @@
+## 0.4.0+2
+
+- Fix a dart2 error.
+
 ## 0.4.0+1
 
 - Support `package:analyzer` `0.32.0`.
