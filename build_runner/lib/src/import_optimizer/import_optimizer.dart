@@ -180,8 +180,15 @@ class ImportOptimizer{
         if (settings.showImportNodes){
           importString += '// nodes: ${_getNodeCount([library])}';
         }
-        directives
-            .add(new _DirectiveInfo(priority, importUrl, importString));
+        var existedImportDirectives = sourceLibrary.unit.directives.where((dir) => dir.keyword.keyword == Keyword.IMPORT);
+        var isAnyImportContainsImportUrl = existedImportDirectives.any((importToken) => importToken.toSource().contains(importUrl));
+        if (!isAnyImportContainsImportUrl) {
+          directives.add(new _DirectiveInfo(priority, importUrl, importString));
+        } else {
+          var existedImportSource = existedImportDirectives.firstWhere((importToken) => importToken.toSource().contains(importUrl)).toSource();
+          var existedImportUrl = existedImportSource.replaceFirst('import ', '');
+          directives.add(new _DirectiveInfo(priority, existedImportUrl, existedImportSource));
+        }
       }
 
       directives.sort();
