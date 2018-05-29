@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/src/build_script_generate/builder_ordering.dart';
 
-import '../common/build_configs.dart';
+import 'package:test_common/build_configs.dart';
 
 void main() {
   group('Builder ordering', () {

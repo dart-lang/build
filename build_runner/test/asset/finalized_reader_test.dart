@@ -9,7 +9,7 @@ import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import '../common/common.dart';
+import 'package:test_common/common.dart';
 
 void main() {
   group('FinalizedReader', () {

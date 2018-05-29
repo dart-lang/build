@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
 
-import '../common/common.dart';
+import 'package:test_common/common.dart';
 
 final PackageGraph packageGraph =
     new PackageGraph.forPath('test/fixtures/basic_pkg');

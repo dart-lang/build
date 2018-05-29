@@ -19,8 +19,8 @@ import 'package:build_runner/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
 import 'package:build_runner/src/server/server.dart';
 
-import '../common/common.dart';
-import '../common/package_graphs.dart';
+import 'package:test_common/common.dart';
+import 'package:test_common/package_graphs.dart';
 
 void main() {
   ServeHandler serveHandler;

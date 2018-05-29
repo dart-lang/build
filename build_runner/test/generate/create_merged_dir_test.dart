@@ -15,9 +15,9 @@ import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner/src/generate/create_merged_dir.dart';
 import 'package:build_runner/src/generate/phase.dart';
 
-import '../common/common.dart';
-import '../common/package_graphs.dart';
-import '../common/test_environment.dart';
+import 'package:test_common/common.dart';
+import 'package:test_common/package_graphs.dart';
+import 'package:test_common/test_environment.dart';
 
 main() {
   group('createMergedDir', () {

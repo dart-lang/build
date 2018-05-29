@@ -13,7 +13,7 @@ import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner/src/server/server.dart';
 
-import '../common/common.dart';
+import 'package:test_common/common.dart';
 
 void main() {
   AssetHandler handler;
