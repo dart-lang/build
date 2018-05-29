@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/src/asset/cache.dart';
 
-import '../common/common.dart';
+import 'package:_test_common/common.dart';
 
 void main() {
   var fooTxt = new AssetId('a', 'foo.txt');

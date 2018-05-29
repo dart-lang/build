@@ -12,7 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import '../common/common.dart';
+import 'package:_test_common/common.dart';
 
 main() {
   group('build integration tests', () {

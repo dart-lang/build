@@ -12,9 +12,9 @@ import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/asset_graph/graph.dart';
 import 'package:build_runner/src/asset_graph/node.dart';
 
-import '../common/build_configs.dart';
-import '../common/common.dart';
-import '../common/package_graphs.dart';
+import 'package:_test_common/build_configs.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests

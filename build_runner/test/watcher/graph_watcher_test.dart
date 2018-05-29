@@ -13,7 +13,7 @@ import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 
-import '../common/package_graphs.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   group('PackageGraphWatcher', () {

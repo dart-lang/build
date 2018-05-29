@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
 
-import '../common/common.dart';
+import 'package:_test_common/common.dart';
 
 void main() {
   group('Resolver Reuse', () {
