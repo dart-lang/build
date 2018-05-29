@@ -77,7 +77,7 @@ class ImportOptimizer{
            final firstImport = lib.unit.directives.firstWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
            final lastImport = lib.unit.directives.lastWhere((dir) => dir.keyword.keyword == Keyword.IMPORT);
 
-           _replaceImportsInFile(inputId.path, output, firstImport.beginToken.charOffset,
+           _replaceImportsInFile(inputId.path, output, firstImport.firstTokenAfterCommentAndMetadata.charOffset,
                lastImport.endToken.charOffset);
          }
        }
