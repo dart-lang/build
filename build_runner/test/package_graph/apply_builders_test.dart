@@ -12,8 +12,8 @@ import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 import 'package:build_runner/src/package_graph/target_graph.dart';
 
-import 'package:test_common/common.dart';
-import 'package:test_common/package_graphs.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   group('apply_builders.createBuildPhases', () {

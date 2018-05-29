@@ -14,7 +14,7 @@ import 'package:test/test.dart' show expect;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test_process/test_process.dart';
 
-import 'package:test_common/sdk.dart';
+import 'package:_test_common/sdk.dart';
 
 class TestBuilderDefinition {
   final String key;

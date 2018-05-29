@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import 'package:test_common/common.dart';
+import 'package:_test_common/common.dart';
 
 main() {
   group('serve integration tests', () {

@@ -17,9 +17,9 @@ import 'package:build_runner/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
-import 'package:test_common/build_configs.dart';
-import 'package:test_common/common.dart';
-import 'package:test_common/package_graphs.dart';
+import 'package:_test_common/build_configs.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests

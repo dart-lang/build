@@ -1,4 +1,4 @@
-name: test_common 
+name: _test_common 
 version: 0.1.0
 description: Test infra for writing build tests. Is not published.
 author: Dart Team <misc@dartlang.org>

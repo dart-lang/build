@@ -24,9 +24,9 @@ import 'package:build_runner/src/generate/phase.dart';
 import 'package:build_runner/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/util/constants.dart';
 
-import 'package:test_common/common.dart';
-import 'package:test_common/package_graphs.dart';
-import 'package:test_common/runner_asset_writer_spy.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
+import 'package:_test_common/runner_asset_writer_spy.dart';
 
 main() {
   final aPackageGraph = buildPackageGraph({rootPackage('a'): []});

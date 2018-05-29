@@ -8,8 +8,8 @@ import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
 
-import 'package:test_common/build_configs.dart';
-import 'package:test_common/common.dart';
+import 'package:_test_common/build_configs.dart';
+import 'package:_test_common/common.dart';
 
 void main() {
   test('uses builder options', () async {

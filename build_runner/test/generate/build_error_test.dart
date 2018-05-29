@@ -12,8 +12,8 @@ import 'package:test/test.dart';
 import 'package:build_runner/src/generate/exceptions.dart';
 import 'package:build_runner/src/package_graph/apply_builders.dart';
 
-import 'package:test_common/common.dart';
-import 'package:test_common/package_graphs.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
