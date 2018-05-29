@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+import 'dart:convert';
 import 'dart:io' show HttpClient, HttpHeaders, HttpStatus;
 
 import 'package:path/path.dart' as p;
@@ -11,14 +12,17 @@ import 'package:test/test.dart';
 import 'common/utils.dart';
 
 void main() {
+  HttpClient httpClient;
   setUpAll(() async {
     // These tests depend on running `test` while a `serve` is ongoing.
     await startServer(
         ensureCleanBuild: true, buildArgs: ['--skip-build-script-check']);
+    httpClient = new HttpClient();
   });
 
   tearDownAll(() async {
     await stopServer(cleanUp: true);
+    httpClient.close();
   });
 
   test('Doesn\'t compile submodules into the root module', () {
@@ -29,6 +33,15 @@ void main() {
   test('Can run passing tests with --pub-serve', () async {
     await expectTestsPass(usePrecompiled: false);
   }, skip: 'TODO: Get non-custom html tests passing with pub serve');
+
+  test('Serves a directory list when it fails to fallback on index.html',
+      () async {
+    var request = await httpClient.get('localhost', 8080, 'dir_without_index/');
+    var firstResponse = await request.close();
+    expect(firstResponse.statusCode, HttpStatus.NOT_FOUND);
+    expect(await utf8.decodeStream(firstResponse),
+        contains('dir_without_index/hello.txt'));
+  });
 
   group('File changes', () {
     setUp(() async {
@@ -64,7 +77,6 @@ void main() {
     });
 
     test('can hit the server and get cached results', () async {
-      var httpClient = new HttpClient();
       var firstRequest =
           await httpClient.get('localhost', 8080, 'main.dart.js');
       var firstResponse = await firstRequest.close();
@@ -81,7 +93,6 @@ void main() {
 
     group('regression tests', () {
       test('can get changes to files not read during build', () async {
-        var httpClient = new HttpClient();
         var firstRequest =
             await httpClient.get('localhost', 8080, 'index.html');
         var firstResponse = await firstRequest.close();
