@@ -8,6 +8,9 @@
 
 ### Breaking Changes
 
+There are no changes to the `build.yaml` format, the following changes only
+affect the imperative apis of this package.
+
 - The Constructors for most of the build config classes other than `BuildConfig`
   itself now have to be ran inside a build config zone, which can be done using
   the `runInBuildConfigZone` function. This gives the context about what package
