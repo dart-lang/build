@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
@@ -120,17 +121,22 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<shelf.Response> handle(shelf.Request request, String rootDir) {
-    var pathSegments =
-        (request.url.path.endsWith('/') || request.url.path.isEmpty)
-            ? request.url.pathSegments.followedBy(const ['index.html']).toList()
-            : request.url.pathSegments;
-    return _handle(
-        request.headers, pathToAssetId(_rootPackage, rootDir, pathSegments));
-  }
+  Future<shelf.Response> handle(shelf.Request request, String rootDir) =>
+      (request.url.path.endsWith('/') || request.url.path.isEmpty)
+          ? _handle(
+              request.headers,
+              pathToAssetId(
+                  _rootPackage,
+                  rootDir,
+                  request.url.pathSegments
+                      .followedBy(const ['index.html']).toList()),
+              fallbackToDirectoryList: true)
+          : _handle(request.headers,
+              pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
 
   Future<shelf.Response> _handle(
-      Map<String, String> requestHeaders, AssetId assetId) async {
+      Map<String, String> requestHeaders, AssetId assetId,
+      {bool fallbackToDirectoryList = false}) async {
     try {
       if (!await _reader.canRead(assetId)) {
         var reason = await _reader.unreadableReason(assetId);
@@ -140,6 +146,12 @@ class AssetHandler {
                 body: 'Build failed for $assetId');
           case UnreadableReason.notOutput:
             return new shelf.Response.notFound('$assetId was not output');
+          case UnreadableReason.notFound:
+            if (fallbackToDirectoryList) {
+              return new shelf.Response.notFound(
+                  await _findDirectoryList(assetId));
+            }
+            return new shelf.Response.notFound('Not Found');
           default:
             return new shelf.Response.notFound('Not Found');
         }
@@ -168,6 +180,17 @@ class AssetHandler {
     var bytes = await _reader.readAsBytes(assetId);
     headers[HttpHeaders.CONTENT_LENGTH] = '${bytes.length}';
     return new shelf.Response.ok(bytes, headers: headers);
+  }
+
+  Future<String> _findDirectoryList(AssetId from) async {
+    var directoryPath = p.url.dirname(from.path);
+    var glob = p.url.join(directoryPath, '*');
+    var result =
+        await _reader.findAssets(new Glob(glob)).map((a) => a.path).toList();
+    return (result.isEmpty)
+        ? 'Could not find ${from.path} or any files in $directoryPath.'
+        : 'Could not find ${from.path}. $directoryPath contains:\n'
+        '${result.join('\n')}';
   }
 }
 
