@@ -11,6 +11,7 @@ export 'src/builder_definition.dart'
         BuildTo,
         PostProcessBuilderDefinition,
         TargetBuilderConfigDefaults;
+export 'src/common.dart' show runInBuildConfigZone;
 export 'src/input_set.dart' show InputSet;
 export 'src/key_normalization.dart'
     show normalizeBuilderKeyUsage, normalizeTargetKeyUsage;

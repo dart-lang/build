@@ -22,13 +22,21 @@ T runInBuildConfigZone<T>(
 
 String get currentPackage {
   var package = Zone.current[_packageZoneKey] as String;
-  assert(package != null);
+  if (package == null) {
+    throw new StateError(
+        'Must be running inside a build config zone, which can be done using '
+        'the `runInBuildConfigZone` function.');
+  }
   return package;
 }
 
 List<String> get currentPackageDefaultDependencies {
   var defaultDependencies =
       Zone.current[_defaultDependenciesZoneKey] as List<String>;
-  assert(defaultDependencies != null);
+  if (defaultDependencies == null) {
+    throw new StateError(
+        'Must be running inside a build config zone, which can be done using '
+        'the `runInBuildConfigZone` function.');
+  }
   return defaultDependencies;
 }

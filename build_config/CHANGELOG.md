@@ -1,3 +1,21 @@
+## 0.3.0-dev
+
+- Parsing of `build.yaml` files is now done with the `json_serializable` package
+  and is Dart 2 compatible.
+
+  - The error reporting will be a bit different, but generally should be better,
+    and will include the yaml spans of the problem sections.
+
+### Breaking Changes
+
+- The Constructors for most of the build config classes other than `BuildConfig`
+  itself now have to be ran inside a build config zone, which can be done using
+  the `runInBuildConfigZone` function. This gives the context about what package
+  is currently being parsed, as well as what the default dependencies should be
+  for targets.
+- Many constructor signatures have changed, for the most part removing the
+  `package` parameter (it is now read off the zone).
+
 ## 0.2.6+2
 
 - Restore error for missing default target.
