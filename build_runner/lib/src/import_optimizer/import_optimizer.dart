@@ -152,7 +152,7 @@ class ImportOptimizer{
     }
     // Remove library if another library exports all entities from this library which we use
     var unnecessaryDependentLibraries = new Set<LibraryElement>();
-    if (!settings.allowEunnecessaryDependenciesImports) {
+    if (!settings.allowUnnecessaryDependenciesImports) {
       for (var library in libraries.keys) {
         var elementsImportedFromLibrary = libraries[library];
         for (var anotherLibrary in libraries.keys) {
