@@ -1,3 +1,7 @@
+## 0.4.0+3
+
+- Expand support for `package:archive` to include version `2.x.x`.
+
 ## 0.4.0+2
 
 - Fix a dart2 error.
