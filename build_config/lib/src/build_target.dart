@@ -13,7 +13,7 @@ import 'key_normalization.dart';
 
 part 'build_target.g.dart';
 
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class BuildTarget {
   /// A map from builder key to the configuration used for this target.
   ///
@@ -59,7 +59,7 @@ class BuildTarget {
 /// Build targets may have builders applied automatically based on
 /// [BuilderDefinition.autoApply] and may override with more specific
 /// configuration.
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class TargetBuilderConfig {
   /// Overrides the setting of whether the Builder would run on this target.
   ///

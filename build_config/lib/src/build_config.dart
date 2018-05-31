@@ -21,7 +21,7 @@ import 'pubspec.dart';
 part 'build_config.g.dart';
 
 /// The parsed values from a `build.yaml` file.
-@JsonSerializable(createToJson: false, allowUnrecognizedKeys: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: false)
 class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
   /// default config.

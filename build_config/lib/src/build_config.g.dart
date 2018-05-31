@@ -8,8 +8,6 @@ part of 'build_config.dart';
 
 BuildConfig _$BuildConfigFromJson(Map json) {
   return $checkedNew('BuildConfig', json, () {
-    $checkAllowedKeys(
-        json, const ['builders', 'post_process_builders', 'targets']);
     var val = new BuildConfig(
         buildTargets: $checkedConvert(json, 'targets',
             (v) => v == null ? null : _buildTargetsFromJson(v as Map)),

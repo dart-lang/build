@@ -8,6 +8,21 @@ part of 'builder_definition.dart';
 
 BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
   return $checkedNew('BuilderDefinition', json, () {
+    $checkAllowedKeys(json, const [
+      'package',
+      'key',
+      'builder_factories',
+      'import',
+      'build_extensions',
+      'target',
+      'auto_apply',
+      'required_inputs',
+      'runs_before',
+      'applies_builders',
+      'is_optional',
+      'build_to',
+      'defaults'
+    ]);
     var val = new BuilderDefinition(
         builderFactories: $checkedConvert(json, 'builder_factories',
             (v) => (v as List).map((e) => e as String).toList()),
@@ -50,6 +65,15 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
 
 PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
   return $checkedNew('PostProcessBuilderDefinition', json, () {
+    $checkAllowedKeys(json, const [
+      'package',
+      'key',
+      'builder_factory',
+      'import',
+      'input_extensions',
+      'target',
+      'defaults'
+    ]);
     var val = new PostProcessBuilderDefinition(
         builderFactory:
             $checkedConvert(json, 'builder_factory', (v) => v as String),
@@ -72,6 +96,8 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
 
 TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) {
   return $checkedNew('TargetBuilderConfigDefaults', json, () {
+    $checkAllowedKeys(json,
+        const ['generate_for', 'options', 'dev_options', 'release_options']);
     var val = new TargetBuilderConfigDefaults(
         generateFor: $checkedConvert(json, 'generate_for',
             (v) => v == null ? null : new InputSet.fromJson(v)),

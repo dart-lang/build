@@ -8,6 +8,8 @@ part of 'build_target.dart';
 
 BuildTarget _$BuildTargetFromJson(Map json) {
   return $checkedNew('BuildTarget', json, () {
+    $checkAllowedKeys(
+        json, const ['builders', 'dependencies', 'sources', 'key', 'package']);
     var val = new BuildTarget(
         sources: $checkedConvert(json, 'sources',
             (v) => v == null ? null : new InputSet.fromJson(v)),
@@ -27,6 +29,13 @@ BuildTarget _$BuildTargetFromJson(Map json) {
 
 TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
   return $checkedNew('TargetBuilderConfig', json, () {
+    $checkAllowedKeys(json, const [
+      'is_enabled',
+      'generate_for',
+      'options',
+      'dev_options',
+      'release_options'
+    ]);
     var val = new TargetBuilderConfig(
         isEnabled: $checkedConvert(json, 'is_enabled', (v) => v as bool),
         generateFor: $checkedConvert(json, 'generate_for',
