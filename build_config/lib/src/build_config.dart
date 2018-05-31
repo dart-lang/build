@@ -68,17 +68,19 @@ class BuildConfig {
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
-    final key = '$packageName:$packageName';
-    final target = new BuildTarget(
-      dependencies: dependencies
-          .map((dep) => normalizeTargetKeyUsage(dep, packageName))
-          .toList(),
-      sources: InputSet.anything,
-    );
-    return new BuildConfig(
-      packageName: packageName,
-      buildTargets: {key: target},
-    );
+    return runInBuildConfigZone(() {
+      final key = '$packageName:$packageName';
+      final target = new BuildTarget(
+        dependencies: dependencies
+            .map((dep) => normalizeTargetKeyUsage(dep, packageName))
+            .toList(),
+        sources: InputSet.anything,
+      );
+      return new BuildConfig(
+        packageName: packageName,
+        buildTargets: {key: target},
+      );
+    }, packageName, dependencies.toList());
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].

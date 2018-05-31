@@ -15,13 +15,13 @@ void main() {
         'a': {
           'builders': {
             'runs_second': {
-              'builder_factories': [],
+              'builder_factories': ['createBuilder'],
               'build_extensions': {},
               'target': '',
               'import': '',
             },
             'runs_first': {
-              'builder_factories': [],
+              'builder_factories': ['createBuilder'],
               'build_extensions': {},
               'target': '',
               'import': '',
@@ -41,14 +41,14 @@ void main() {
         'a': {
           'builders': {
             'runs_second': {
-              'builder_factories': [],
+              'builder_factories': ['createBuilder'],
               'build_extensions': {},
               'target': '',
               'import': '',
               'required_inputs': ['.first_output'],
             },
             'runs_first': {
-              'builder_factories': [],
+              'builder_factories': ['createBuilder'],
               'build_extensions': {
                 '.anything': ['.first_output']
               },
@@ -69,7 +69,7 @@ void main() {
         'a': {
           'builders': {
             'builder_a': {
-              'builder_factories': [],
+              'builder_factories': ['createBuilder'],
               'build_extensions': {},
               'target': '',
               'import': '',
@@ -77,7 +77,7 @@ void main() {
               'runs_before': ['|builder_b'],
             },
             'builder_b': {
-              'builder_factories': [],
+              'builder_factories': ['createBuilder'],
               'build_extensions': {
                 '.anything': ['.output_b']
               },

@@ -81,26 +81,28 @@ void main() {
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      var overrides = {
-        'a': new BuildConfig(
-          packageName: 'a',
-          buildTargets: {
-            'a:a': new BuildTarget(
-                package: 'a',
-                key: 'a:a',
-                dependencies: new Set.of(['b:not_default']))
-          },
-        )
-      };
-      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-          overrideBuildConfig: overrides);
-      var builderApplications = [
-        apply('b|cool_builder', [(options) => new CoolBuilder(options)],
-            toAllPackages()),
-      ];
-      expect(
-          () => createBuildPhases(targetGraph, builderApplications, {}, false),
-          throwsA(new isInstanceOf<CannotBuildException>()));
+      await runInBuildConfigZone(() async {
+        var overrides = {
+          'a': new BuildConfig(
+            packageName: 'a',
+            buildTargets: {
+              'a:a':
+                  new BuildTarget(dependencies: new Set.of(['b:not_default']))
+            },
+          )
+        };
+        var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+            overrideBuildConfig: overrides);
+        var builderApplications = [
+          apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+              toAllPackages()),
+        ];
+        expect(
+            () =>
+                createBuildPhases(targetGraph, builderApplications, {}, false),
+            throwsA(new isInstanceOf<CannotBuildException>()));
+      }, packageGraph.root.name,
+          packageGraph.root.dependencies.map((node) => node.name).toList());
     });
   });
 }
