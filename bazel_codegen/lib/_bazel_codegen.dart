@@ -38,3 +38,6 @@ Future bazelGenerateMulti(List<BuilderFactory> builders, List<String> args,
     }
   }, when: options.asyncStackTrace);
 }
+
+
+// whitespace!
