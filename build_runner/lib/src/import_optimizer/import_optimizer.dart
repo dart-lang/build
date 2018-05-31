@@ -32,7 +32,7 @@ class ImportOptimizer{
 
   optimizePackage(String package) async {
     _log.info("Optimization package: '$package'");
-    var assets = (await io.reader.findAssets(new Glob('lib/component/calendar/calendar_abstract.dart'), package: package).toList()).map((item)=>item.toString())
+    var assets = (await io.reader.findAssets(new Glob('lib/**.dart'), package: package).toList()).map((item)=>item.toString())
         .toList();
     optimizeFiles(assets);
   }
