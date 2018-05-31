@@ -3,7 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:io';
 
-import 'package:cli_util/cli_util.dart'; // TODO(grouma) - remove.
+// TODO(grouma) - copy SDK path logic to remove dep below.
+import 'package:cli_util/cli_util.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
