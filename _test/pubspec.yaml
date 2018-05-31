@@ -13,8 +13,6 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
-  build_barback:
-    path: ../build_barback
   build_config:
     path: ../build_config
   build_modules:
@@ -30,7 +28,7 @@ dependency_overrides:
   scratch_space:
     path: ../scratch_space
 
-transformers:
-# TODO: only needed because pub serve complains otherwise
-- test/pub_serve:
-    $include: []
+  json_annotation:
+    path: ../../json_serializable/json_annotation
+  json_serializable:
+    path: ../../json_serializable/json_serializable
