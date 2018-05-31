@@ -91,6 +91,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                   'build_config',
                   'build_resolvers',
                   'build_runner',
+                  'build_runner_core',
                 ],
                 pathDependencies: new Map.fromIterable(otherPackages,
                     key: (o) => (o as d.Descriptor).name,
@@ -125,6 +126,7 @@ Future<BuildTool> packageWithBuildScript(
               'build_config',
               'build_resolvers',
               'build_runner',
+              'build_runner_core',
               'build_test'
             ]),
             d.dir('tool', [

@@ -6,9 +6,9 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 
-import 'package:build_runner/src/asset/reader.dart';
-import 'package:build_runner/src/asset/writer.dart';
-import 'package:build_runner/src/environment/build_environment.dart';
+import 'package:build_runner_core/src/asset/reader.dart';
+import 'package:build_runner_core/src/asset/writer.dart';
+import 'package:build_runner_core/src/environment/build_environment.dart';
 
 import 'common.dart';
 

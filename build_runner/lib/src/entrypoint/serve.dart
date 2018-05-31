@@ -6,12 +6,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:http_multi_server/http_multi_server.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
 
 import '../generate/build.dart';
-import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import 'options.dart';
 import 'watch.dart';

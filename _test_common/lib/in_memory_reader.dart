@@ -5,7 +5,7 @@
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 
-import 'package:build_runner/src/asset/reader.dart';
+import 'package:build_runner_core/src/asset/reader.dart';
 
 class InMemoryRunnerAssetReader extends InMemoryAssetReader
     implements RunnerAssetReader {

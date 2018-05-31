@@ -6,10 +6,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
-
-import 'package_graph.dart';
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     PackageGraph packageGraph, String configKey) async {

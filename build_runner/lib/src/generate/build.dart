@@ -5,22 +5,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner/src/environment/io_environment.dart';
-import 'package:build_runner/src/environment/overridable_environment.dart';
-import 'package:build_runner/src/generate/options.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner/src/generate/terminator.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
-import '../asset/reader.dart';
-import '../asset/writer.dart';
 import '../logging/std_io_logging.dart';
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
-import 'build_result.dart';
-import 'build_runner.dart';
 import 'directory_watcher_factory.dart';
 import 'watch_impl.dart' as watch_impl;
 

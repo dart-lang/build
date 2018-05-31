@@ -34,6 +34,7 @@ main(List<String> args) async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
             'glob'
           ]),
@@ -129,6 +130,7 @@ main(List<String> args) async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
             'glob'
           ]),
@@ -233,6 +235,7 @@ main() async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
             'glob'
           ]),
@@ -350,6 +353,7 @@ main(List<String> args) async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
           ]),
           d.file('build.yaml', r'''
@@ -412,6 +416,7 @@ main(List<String> args) async {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
         ]),
         d.file('build.yaml', r'''
@@ -442,6 +447,7 @@ targets:
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
         ]),
         d.dir('tool', [d.file('build.dart', buildContent)]),
@@ -470,6 +476,7 @@ targets:
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
           'glob'
         ]),
@@ -512,6 +519,7 @@ main() async {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
         ]),
         d.dir('web', [
           d.file('a.txt', 'a'),
@@ -534,6 +542,7 @@ main() async {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test'
         ]),
         d.dir('web', [

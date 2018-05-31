@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
 PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
   var packagesByName = new Map<String, PackageNode>.fromIterable(packages.keys,

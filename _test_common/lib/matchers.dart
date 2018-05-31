@@ -3,9 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/asset_graph/exceptions.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/exceptions.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
 
 final Matcher assetGraphVersionException =
     new isInstanceOf<AssetGraphVersionException>();

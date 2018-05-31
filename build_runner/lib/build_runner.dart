@@ -4,16 +4,17 @@
 
 export 'package:build/build.dart' show PostProcessBuilder, PostProcessBuildStep;
 
-export 'src/asset/file_based.dart';
-export 'src/asset/reader.dart' show RunnerAssetReader;
-export 'src/asset/writer.dart';
+export 'package:build_runner_core/src/asset/file_based.dart';
+export 'package:build_runner_core/src/asset/reader.dart' show RunnerAssetReader;
+export 'package:build_runner_core/src/asset/writer.dart';
 export 'src/entrypoint/run.dart' show run;
 export 'src/generate/build.dart';
-export 'src/generate/build_result.dart';
-export 'src/generate/exceptions.dart' show CannotBuildException;
-export 'src/generate/performance_tracker.dart'
+export 'package:build_runner_core/src/generate/build_result.dart';
+export 'package:build_runner_core/src/generate/exceptions.dart'
+    show CannotBuildException;
+export 'package:build_runner_core/src/generate/performance_tracker.dart'
     show BuildPerformance, BuilderActionPerformance, BuildPhasePerformance;
-export 'src/package_graph/apply_builders.dart'
+export 'package:build_runner_core/src/package_graph/apply_builders.dart'
     show
         BuilderApplication,
         apply,
@@ -26,5 +27,5 @@ export 'src/package_graph/apply_builders.dart'
         toPackage,
         toPackages,
         toRoot;
-export 'src/package_graph/package_graph.dart';
+export 'package:build_runner_core/src/package_graph/package_graph.dart';
 export 'src/server/server.dart' show ServeHandler;

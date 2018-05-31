@@ -4,9 +4,8 @@
 
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
 import 'options.dart';
 import 'runner.dart';
 

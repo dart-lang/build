@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build_runner/src/package_graph/package_graph.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
