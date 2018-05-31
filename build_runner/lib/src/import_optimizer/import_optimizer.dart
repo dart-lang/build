@@ -37,6 +37,8 @@ class ImportOptimizer{
   }
 
   optimizeFiles(Iterable<String> inputs) async {
+    var sw = new Stopwatch();
+    sw.start();
     var count = inputs.length;
     _log.info('Optimization files: $count');
      _reader = new CachingAssetReader(io.reader);
@@ -48,6 +50,8 @@ class ImportOptimizer{
      }
     _log.info('Optimization completed');
      _showReport();
+    sw.stop();
+    _log.info('Duraction: ${sw.elapsed.toString()}');
    }
 
    Future _parseInput(String input) async {
