@@ -143,7 +143,7 @@ class ImportOptimizer{
         }
       }
       if (libraries.containsKey(optLibrary)) {
-          libraries[optLibrary].add(optLibrary);
+          libraries[optLibrary].add(element);
       } else {
         var elementsImportedFromLibrary = new List<Element>();
         elementsImportedFromLibrary.add(element);
@@ -538,8 +538,8 @@ class UsedImportedElementsVisitor extends RecursiveAstVisitor {
    * Visit identifiers used by the given [directive].
    */
   void _visitDirective(Directive directive) {
-    directive.documentationComment?.accept(this);
-    directive.metadata.accept(this);
+       directive.documentationComment?.accept(this);
+       directive.metadata.accept(this);
   }
 
   void _visitIdentifier(SimpleIdentifier identifier, Element element) {
