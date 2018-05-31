@@ -12,7 +12,7 @@ doc/
 tool/test_all.dart
 
 # Include .packages files from tests which are hand coded
-!build_runner/test/fixtures/**/.packages
+!build_runner_core/test/fixtures/**/.packages
 
 # Ignore dazel generated
 .dazel
