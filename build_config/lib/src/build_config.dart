@@ -21,7 +21,7 @@ import 'pubspec.dart';
 part 'build_config.g.dart';
 
 /// The parsed values from a `build.yaml` file.
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, allowUnrecognizedKeys: false)
 class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
   /// default config.
@@ -146,25 +146,35 @@ Map<String, T> _normalizeBuilderDefinitions<T>(
 
 String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
   var yamlMap = err.map as YamlMap;
-
-  var yamlKey = yamlMap.nodes.keys.singleWhere(
-      (k) => (k as YamlScalar).value == err.key,
-      orElse: () => null) as YamlScalar;
-
   var message = 'Could not create `${err.className}`.';
-  if (yamlKey == null) {
-    assert(err.key == null);
-    message = '${yamlMap.span.message(message)} ${err.innerError}';
-  } else {
-    message = '$message\nUnsupported value for `${err.key}`: ';
-    if (err.message != null) {
-      message += '${err.message}\n';
-    } else {
-      message += '${err.innerError}\n';
-    }
-    message = yamlKey.span.message(message);
-  }
 
+  var innerError = err.innerError;
+  if (innerError is UnrecognizedKeysException) {
+    message = 'Invalid key(s), could not create ${err.className}.\n'
+        'Supported keys are [${innerError.allowedKeys.join(', ')}].\n';
+    for (var key in innerError.unrecognizedKeys) {
+      var yamlKey = yamlMap.nodes.keys
+          .singleWhere((k) => (k as YamlScalar).value == key) as YamlScalar;
+      message += '${yamlKey.span.message('')}\n';
+    }
+  } else {
+    var yamlKey = yamlMap.nodes.keys.singleWhere(
+        (k) => (k as YamlScalar).value == err.key,
+        orElse: () => null) as YamlScalar;
+
+    if (yamlKey == null) {
+      assert(err.key == null);
+      message = '${yamlMap.span.message(message)} ${err.innerError}';
+    } else {
+      message = '$message\nUnsupported value for `${err.key}`: ';
+      if (err.message != null) {
+        message += '${err.message}\n';
+      } else {
+        message += '${err.innerError}\n';
+      }
+      message = yamlKey.span.message(message);
+    }
+  }
   return message;
 }
 

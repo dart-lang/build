@@ -5,3 +5,7 @@ targets:
         options:
           any_map: true
           checked: true
+foo: bar
+baz:
+zap:
+  - zip
