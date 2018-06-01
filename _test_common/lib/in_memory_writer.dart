@@ -9,7 +9,7 @@ import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
 typedef void OnDelete(AssetId id);
 

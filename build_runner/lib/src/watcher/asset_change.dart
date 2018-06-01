@@ -6,7 +6,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../package_graph/package_graph.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
 /// Represents an [id] that was modified on disk as a result of [type].
 class AssetChange {

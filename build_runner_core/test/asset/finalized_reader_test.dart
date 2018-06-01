@@ -2,10 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
-import 'package:build_runner/src/asset/finalized_reader.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
+import 'package:build_runner_core/src/asset/finalized_reader.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 

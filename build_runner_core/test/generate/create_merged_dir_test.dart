@@ -9,11 +9,11 @@ import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
-import 'package:build_runner/src/generate/create_merged_dir.dart';
-import 'package:build_runner/src/generate/phase.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
+import 'package:build_runner_core/src/generate/create_merged_dir.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
 
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';

@@ -6,7 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
 import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';

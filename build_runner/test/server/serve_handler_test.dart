@@ -10,12 +10,11 @@ import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/asset/finalized_reader.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
-import 'package:build_runner/src/generate/build_result.dart';
-import 'package:build_runner/src/generate/performance_tracker.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
+import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
 import 'package:build_runner/src/server/server.dart';
 

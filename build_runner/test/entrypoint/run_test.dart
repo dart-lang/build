@@ -26,6 +26,7 @@ main() {
           'build',
           'build_config',
           'build_runner',
+          'build_runner_core',
           'build_test',
           'test',
         ],

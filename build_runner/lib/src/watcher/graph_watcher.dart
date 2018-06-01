@@ -4,8 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build_runner/src/logging/logging.dart';
-import 'package:build_runner/src/package_graph/package_graph.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 
 import 'asset_change.dart';

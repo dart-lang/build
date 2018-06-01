@@ -5,12 +5,12 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/generate/build_result.dart';
+import 'package:build_runner_core/src/generate/build_result.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/generate/exceptions.dart';
-import 'package:build_runner/src/package_graph/apply_builders.dart';
+import 'package:build_runner_core/src/generate/exceptions.dart';
+import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';

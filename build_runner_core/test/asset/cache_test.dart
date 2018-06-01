@@ -5,7 +5,7 @@
 import 'package:build/build.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/asset/cache.dart';
+import 'package:build_runner_core/src/asset/cache.dart';
 
 import 'package:_test_common/common.dart';
 

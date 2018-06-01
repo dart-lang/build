@@ -12,9 +12,9 @@ import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/generate/phase.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_test/build_test.dart';
 
 import 'package:_test_common/common.dart';
