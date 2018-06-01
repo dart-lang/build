@@ -160,11 +160,9 @@ String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
       message += '${yamlKey.span.message('')}\n';
     }
   } else {
-    var yamlKey = yamlMap.nodes.keys.singleWhere(
-        (k) => (k as YamlScalar).value == err.key,
-        orElse: () => null) as YamlScalar;
+    var yamlValue = yamlMap.nodes[err.key];
 
-    if (yamlKey == null) {
+    if (yamlValue == null) {
       assert(err.key == null);
       message = '${yamlMap.span.message(message)} ${err.innerError}';
     } else {
@@ -174,7 +172,7 @@ String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
       } else {
         message += '${err.innerError}\n';
       }
-      message = yamlKey.span.message(message);
+      message = yamlValue.span.message(message);
     }
   }
   return message;
