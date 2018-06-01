@@ -6,17 +6,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 
-import '../asset/finalized_reader.dart';
-import '../generate/build_result.dart';
-import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
-import '../logging/human_readable_duration.dart';
 import 'asset_graph_handler.dart';
 import 'path_to_asset_id.dart';
 

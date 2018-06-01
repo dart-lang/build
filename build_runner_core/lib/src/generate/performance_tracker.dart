@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 
-import 'package:build_runner/src/util/clock.dart';
+import '../util/clock.dart';
 import 'phase.dart';
 
 /// The timings of an operation, including its [startTime], [stopTime], and

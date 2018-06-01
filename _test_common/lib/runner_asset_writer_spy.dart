@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build/build.dart';
 
 class RunnerAssetWriterSpy extends AssetWriterSpy implements RunnerAssetWriter {

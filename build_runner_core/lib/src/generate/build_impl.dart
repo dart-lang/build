@@ -8,19 +8,21 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
-import 'package:build_runner/src/asset/finalized_reader.dart';
-import 'package:build_runner/src/changes/build_script_updates.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
+// TODO(grouma) - remove dependency on ChangeType API to remove the following
+// import.
 import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
+import '../asset/finalized_reader.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
+import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
 import '../logging/human_readable_duration.dart';

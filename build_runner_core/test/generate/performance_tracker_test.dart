@@ -5,11 +5,10 @@
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/generate/phase.dart';
-import 'package:build_runner/src/util/clock.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/generate/performance_tracker.dart';
+import 'package:build_runner_core/src/util/clock.dart';
 import 'package:build_test/build_test.dart';
-
-import 'package:build_runner/src/generate/performance_tracker.dart';
 
 main() {
   group('PerformanceTracker', () {

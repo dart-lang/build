@@ -12,17 +12,17 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/environment/build_environment.dart';
-import 'package:build_runner/src/environment/io_environment.dart';
-import 'package:build_runner/src/environment/overridable_environment.dart';
-import 'package:build_runner/src/generate/build_definition.dart';
-import 'package:build_runner/src/generate/options.dart';
-import 'package:build_runner/src/generate/phase.dart';
-import 'package:build_runner/src/package_graph/package_graph.dart';
-import 'package:build_runner/src/util/constants.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/environment/build_environment.dart';
+import 'package:build_runner_core/src/environment/io_environment.dart';
+import 'package:build_runner_core/src/environment/overridable_environment.dart';
+import 'package:build_runner_core/src/generate/build_definition.dart';
+import 'package:build_runner_core/src/generate/options.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/package_graph/package_graph.dart';
+import 'package:build_runner_core/src/util/constants.dart';
 
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';

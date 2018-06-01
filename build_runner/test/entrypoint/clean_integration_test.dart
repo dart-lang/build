@@ -16,6 +16,7 @@ main() {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
           'glob'
         ]),

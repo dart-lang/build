@@ -4,6 +4,7 @@
 
 import 'dart:io';
 
+// TODO(grouma) - copy SDK path logic to remove dep below.
 import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';

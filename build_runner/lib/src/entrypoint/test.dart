@@ -6,12 +6,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
 import '../generate/build.dart';
-import '../generate/build_result.dart';
-import '../package_graph/package_graph.dart';
-import '../util/constants.dart';
 import 'base_command.dart';
 import 'options.dart';
 

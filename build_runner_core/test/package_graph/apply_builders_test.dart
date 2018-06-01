@@ -7,10 +7,10 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/generate/exceptions.dart';
-import 'package:build_runner/src/generate/phase.dart';
-import 'package:build_runner/src/package_graph/apply_builders.dart';
-import 'package:build_runner/src/package_graph/target_graph.dart';
+import 'package:build_runner_core/src/generate/exceptions.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/package_graph/apply_builders.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
 
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';

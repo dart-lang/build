@@ -7,15 +7,13 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 
-import '../logging/logging.dart';
 import '../package_graph/build_config_overrides.dart';
-import '../package_graph/package_graph.dart';
-import '../util/constants.dart';
 import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';

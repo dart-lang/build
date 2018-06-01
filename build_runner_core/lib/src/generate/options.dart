@@ -5,12 +5,12 @@
 import 'dart:async';
 
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/package_graph/target_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not

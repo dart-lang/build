@@ -5,9 +5,8 @@
 import 'dart:convert';
 
 import 'package:args/command_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
 import 'build.dart';
 import 'clean.dart';
 import 'serve.dart';

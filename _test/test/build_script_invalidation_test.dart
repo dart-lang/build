@@ -5,7 +5,7 @@
 @TestOn('vm')
 import 'dart:io';
 
-import 'package:build_runner/src/util/constants.dart';
+import 'package:build_runner_core/src/util/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
