@@ -171,7 +171,7 @@ class ImportOptimizer{
     var source = element.library.source as AssetBasedSource;
     var result = element.library;
     var resultImportsCount = 99999999;
-    var assets = await io.reader.findAssets(new Glob('lib/**.dart'), package: source.assetId.package).toList();
+    var assets = await io.reader.findAssets(new Glob('**.dart'), package: source.assetId.package).toList();
     for (var assetId in assets) {
       if (!assetId.path.contains('/src/')) {
         
@@ -219,28 +219,28 @@ class ImportOptimizer{
     _workResult.addStatisticFile(inputId, sourceNodeCount, optNodeCount, sourceAccNodeCount, optAccNodeCount);
 
     if ( sourceNodeCount > optNodeCount || sourceAccNodeCount > optAccNodeCount || (sourceNodeCount == optNodeCount  && optAccNodeCount > sourceAccNodeCount) || _hasDeprectatedAssets(sourceLibrary.importedLibraries) || settings.showImportNodes) {
-      final directives = <_DirectiveInfo>[];
+      final directives = new List<_DirectiveInfo>();
       for (final library in libraries) {
         final source = library.source;
-        final importUrl = (source is AssetBasedSource)
+        final importUri = (source is AssetBasedSource)
             ? 'package:${source.assetId.package}${source.assetId.path.substring(3)}'
             : source.uri.toString();
 
-        if (importUrl == 'dart:core') continue;
+        if (importUri == 'dart:core') continue;
 
-        final priority = getDirectivePriority(importUrl);
-        var importString = "import '$importUrl';";
+        final priority = getDirectivePriority(importUri);
+        var importString = "import '$importUri';";
         if (settings.showImportNodes){
           importString += '// nodes: ${_getNodeCount([library])}';
         }
-        var existedImportDirectives = sourceLibrary.unit.directives.where((dir) => dir.keyword.keyword == Keyword.IMPORT);
-        var isAnyImportContainsImportUrl = existedImportDirectives.any((importToken) => importToken.toSource().contains(importUrl));
+        List<ImportDirective> existedImportDirectives = sourceLibrary.unit.directives.where((dir) => dir.keyword.keyword == Keyword.IMPORT);
+        var isAnyImportContainsImportUrl = existedImportDirectives.any((importToken) => importToken.toSource().contains(importUri));
         if (!isAnyImportContainsImportUrl) {
-          directives.add(new _DirectiveInfo(priority, importUrl, importString));
+          directives.add(new _DirectiveInfo(priority, importUri, importString));
         } else {
-          var existedImportSource = existedImportDirectives.firstWhere((importToken) => importToken.toSource().contains(importUrl)).toSource();
-          var existedImportUrl = existedImportSource.replaceFirst('import ', '');
-          directives.add(new _DirectiveInfo(priority, existedImportUrl, existedImportSource));
+          var existedImportDirective = existedImportDirectives.firstWhere((importToken) => importToken.toSource().contains(importUri));
+          var existedImportUri = existedImportDirective.uri.toSource().replaceAll("'", '');
+          directives.add(new _DirectiveInfo(priority, existedImportUri, existedImportDirective.toSource()));
         }
       }
 
