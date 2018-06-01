@@ -29,8 +29,3 @@ dependency_overrides:
     path: ../build_web_compilers
   scratch_space:
     path: ../scratch_space
-
-  json_annotation:
-    path: ../../json_serializable/json_annotation
-  json_serializable:
-    path: ../../json_serializable/json_serializable
