@@ -9,6 +9,8 @@
   dependency.
 - Sources that are not a part of a `target` will no longer appear in the asset
   graph, so they will not be readable or globbable.
+- Updated the generated build script to not rely on json encode/decode for the
+  builder options object. Instead it now directly inlines a map literal.
 
 ## 0.8.9
 
