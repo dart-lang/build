@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -218,7 +217,5 @@ Expression _findToExpression(BuilderDefinition definition) {
 
 /// An expression creating a [BuilderOptions] from a json string.
 Expression _constructBuilderOptions(BuilderOptions options) =>
-    refer('BuilderOptions', 'package:build/build.dart').newInstance([
-      refer('jsonDecode', 'dart:convert')
-          .call([literalString(jsonEncode(options.config))])
-    ]);
+    refer('BuilderOptions', 'package:build/build.dart')
+        .newInstance([literalMap(options.config)]);
