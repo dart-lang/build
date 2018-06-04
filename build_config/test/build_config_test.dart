@@ -20,6 +20,7 @@ void main() {
           'b|b': new TargetBuilderConfig(
               isEnabled: true,
               generateFor: new InputSet(include: ['lib/a.dart'])),
+          'c|c': new TargetBuilderConfig(isEnabled: false),
           'example|h': new TargetBuilderConfig(
               isEnabled: true, options: new BuilderOptions({'foo': 'bar'})),
           'example|p': new TargetBuilderConfig(
@@ -138,6 +139,8 @@ targets:
       b|b:
         generate_for:
           - lib/a.dart
+      c|c:
+        enabled: false
     dependencies:
       - $default
       - b

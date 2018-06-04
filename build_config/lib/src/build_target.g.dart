@@ -30,14 +30,14 @@ BuildTarget _$BuildTargetFromJson(Map json) {
 TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
   return $checkedNew('TargetBuilderConfig', json, () {
     $checkAllowedKeys(json, const [
-      'is_enabled',
+      'enabled',
       'generate_for',
       'options',
       'dev_options',
       'release_options'
     ]);
     var val = new TargetBuilderConfig(
-        isEnabled: $checkedConvert(json, 'is_enabled', (v) => v as bool),
+        isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool),
         generateFor: $checkedConvert(json, 'generate_for',
             (v) => v == null ? null : new InputSet.fromJson(v)),
         options: $checkedConvert(json, 'options',
@@ -48,7 +48,7 @@ TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
             (v) => v == null ? null : builderOptionsFromJson(v as Map)));
     return val;
   }, fieldKeyMap: const {
-    'isEnabled': 'is_enabled',
+    'isEnabled': 'enabled',
     'generateFor': 'generate_for',
     'devOptions': 'dev_options',
     'releaseOptions': 'release_options'
