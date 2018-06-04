@@ -13,8 +13,6 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
-  build_barback:
-    path: ../build_barback
   build_config:
     path: ../build_config
   build_modules:
@@ -31,8 +29,3 @@ dependency_overrides:
     path: ../build_web_compilers
   scratch_space:
     path: ../scratch_space
-
-transformers:
-# TODO: only needed because pub serve complains otherwise
-- test/pub_serve:
-    $include: []
