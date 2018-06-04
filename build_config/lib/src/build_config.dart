@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 
 import 'build_target.dart';
@@ -16,7 +17,6 @@ import 'common.dart';
 import 'expandos.dart';
 import 'input_set.dart';
 import 'key_normalization.dart';
-import 'pubspec.dart';
 
 part 'build_config.g.dart';
 
@@ -29,9 +29,8 @@ class BuildConfig {
   /// [path] must be a directory which contains a `pubspec.yaml` file and
   /// optionally a `build.yaml`.
   static Future<BuildConfig> fromPackageDir(String path) async {
-    final pubspec = await Pubspec.fromPackageDir(path);
-    return fromBuildConfigDir(
-        pubspec.pubPackageName, pubspec.dependencies, path);
+    final pubspec = await _fromPackageDir(path);
+    return fromBuildConfigDir(pubspec.name, pubspec.dependencies.keys, path);
   }
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
@@ -189,4 +188,13 @@ Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
   }
 
   return targets;
+}
+
+Future<Pubspec> _fromPackageDir(String path) async {
+  final pubspec = p.join(path, 'pubspec.yaml');
+  final file = new File(pubspec);
+  if (await file.exists()) {
+    return new Pubspec.parse(await file.readAsString());
+  }
+  throw new FileSystemException('No file found', p.absolute(pubspec));
 }
