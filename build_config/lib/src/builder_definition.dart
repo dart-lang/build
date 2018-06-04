@@ -26,7 +26,7 @@ enum BuildTo {
 }
 
 /// Definition of a builder parsed from the `builders` section of `build.yaml`.
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class BuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this];
@@ -145,7 +145,7 @@ class BuilderDefinition {
 
 /// The definition of a `PostProcessBuilder` in the `post_process_builders`
 /// section of a `build.yaml`.
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class PostProcessBuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this];
@@ -198,7 +198,7 @@ class PostProcessBuilderDefinition {
 
 /// Default values that builder authors can specify when users don't fill in the
 /// corresponding key for [TargetBuilderConfig].
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class TargetBuilderConfigDefaults {
   @JsonKey(name: 'generate_for')
   final InputSet generateFor;
