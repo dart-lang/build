@@ -1,6 +1,6 @@
 # Build.yaml format
 
-A `build.yaml` file is decribed by the [BuildConfig](#build-config) object.
+A `build.yaml` file is decribed by the [BuildConfig](#buildconfig) object.
 
 This is a more technical doc of the exact build.yaml format, if you would like
 to see examples or goal oriented docs you may want to look at the
@@ -10,17 +10,17 @@ to see examples or goal oriented docs you may want to look at the
 
 key | value | default
 --- | --- | ---
-targets | Map<[TargetKey](#target-key), [BuildTarget](#build-target)> | a single target with the same name as the package
-builders | Map<[BuilderKey](#builder-key), [BuilderDefinition](#builder-definition)> | empty
-post_process_builders | Map<[BuilderKey](#builder-key), [PostProcessBuilderDefinition](#post-process-builder-definition)> | empty
+targets | Map<[TargetKey](#targetkey), [BuildTarget](#buildtarget)> | a single target with the same name as the package
+builders | Map<[BuilderKey](#builderkey), [BuilderDefinition](#builderdefinition)> | empty
+post_process_builders | Map<[BuilderKey](#builderkey), [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
 
 ## BuildTarget
 
 key | value | default
 --- | --- | ---
-builders | Map<[BuilderKey](#builder-key), [TargetBuilderConfig](#target-builder-config)> | empty
-dependencies | List<[TargetKey](#target-key)> | all default targets from all dependencies in your pubspec
-sources | [InputSet](#input-set) | all whitelisted directories
+builders | Map<[BuilderKey](#builderkey), [TargetBuilderConfig](#targetbuilderconfig)> | empty
+dependencies | List<[TargetKey](#targetkey)> | all default targets from all dependencies in your pubspec
+sources | [InputSet](#inputset) | all whitelisted directories
 
 ## BuilderDefinition
 
@@ -29,13 +29,13 @@ key | value | default
 builder_factories | List<String> | none
 import | String | none
 build_extensions | Map<String, List<String>> | none
-auto_apply | [AutoApply](#auto-apply) | `AutoApply.none`
+auto_apply | [AutoApply](#autoapply) | `AutoApply.none`
 required_inputs | List<String> | none
-runs_before | List<[BuilderKey](#builder-key)> | none
-applies_builders | List<[BuilderKey](#builder-key)> | none
+runs_before | List<[BuilderKey](#builderkey)> | none
+applies_builders | List<[BuilderKey](#builderkey)> | none
 is_optional | bool | false
-build_to | [BuildTo](#build-to) | `BuildTo.cache`
-defaults | [TargetBuilderConfigDefaults](#target-builder-config-defaults) | none
+build_to | [BuildTo](#buildto) | `BuildTo.cache`
+defaults | [TargetBuilderConfigDefaults](#targetbuilderconfigdefaults) | none
 
 ## PostProcessBuilderDefinition
 
@@ -44,7 +44,7 @@ key | value | default
 builder_factory | String | none
 import | String | none
 input_extensions | List<String> | none
-defaults | [TargetBuilderConfigDefaults](#target-builder-config-defaults) | none
+defaults | [TargetBuilderConfigDefaults](#targetbuilderconfigdefaults) | none
 
 ## InputSet
 
@@ -61,19 +61,19 @@ exclude | List<String> | none
 key | value | default
 --- | --- | ---
 enabled | bool | true
-generate_for | [InputSet](#input-set) | `**`
-options | [BuilderOptions](#builder-options) | none
-dev_options | [BuilderOptions](#builder-options) | none
-release_options | [BuilderOptions](#builder-options) | none
+generate_for | [InputSet](#inputset) | `**`
+options | [BuilderOptions](#builderoptions) | none
+dev_options | [BuilderOptions](#builderoptions) | none
+release_options | [BuilderOptions](#builderoptions) | none
 
 ## TargetBuilderConfigDefaults
 
 key | value | default
 --- | --- | ---
-generate_for | [InputSet](#input-set) | `**`
-options | [BuilderOptions](#builder-options) | none
-dev_options | [BuilderOptions](#builder-options) | none
-release_options | [BuilderOptions](#builder-options) | none
+generate_for | [InputSet](#inputset) | `**`
+options | [BuilderOptions](#builderoptions) | none
+dev_options | [BuilderOptions](#builderoptions) | none
+release_options | [BuilderOptions](#builderoptions) | none
 
 ## AutoApply
 
