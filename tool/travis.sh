@@ -11,6 +11,8 @@ if [ "$#" == "0" ]; then
   exit 1
 fi
 
+export DART_VM_OPTIONS=--preview-dart-2
+
 pushd $PKG
 pub upgrade || exit $?
 
