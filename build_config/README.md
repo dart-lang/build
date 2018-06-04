@@ -4,8 +4,9 @@ Customizing the build behavior of a package is done  by creating a `build.yaml`
 file, which describes your configuration.
 
 The full format is described in the
-[docs/build_yaml_format.md](../docs/build_yaml_format.md) file, while this
-documentation is more focused on specific usage scenarios of the file.
+[docs/build_yaml_format.md](https://github.com/dart-lang/build/blob/master/docs/build_yaml_format.md)
+file, while this documentation is more focused on specific usage scenarios of
+the file.
 
 ## Dividing a package into Build targets
 

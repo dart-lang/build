@@ -75,6 +75,12 @@ options | [BuilderOptions](#builderoptions) | none
 dev_options | [BuilderOptions](#builderoptions) | none
 release_options | [BuilderOptions](#builderoptions) | none
 
+## BuilderOptions
+
+An arbitrary `Map<String, dynamc>` of configuration options exposed by the
+individual builders. See the documentation for the builder you are configuring
+for guidance.
+
 ## AutoApply
 
 value | meaning
