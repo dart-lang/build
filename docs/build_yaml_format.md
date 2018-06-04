@@ -10,9 +10,9 @@ to see examples or goal oriented docs you may want to look at the
 
 key | value | default
 --- | --- | ---
-targets | Map<[TargetKey](#targetkey), [BuildTarget](#buildtarget)> | a single target with the same name as the package
-builders | Map<[BuilderKey](#builderkey), [BuilderDefinition](#builderdefinition)> | empty
-post_process_builders | Map<[BuilderKey](#builderkey), [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
+targets | Map<String, [BuildTarget](#buildtarget)> | a single target with the same name as the package
+builders | Map<String, [BuilderDefinition](#builderdefinition)> | empty
+post_process_builders | Map<String, [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
 
 ## BuildTarget
 
@@ -97,7 +97,6 @@ value | meaning
 cache | Writes all files to the cache directory
 source | Writes all files directly to the source directory
 
-
 ## TargetKey
 
 An identifier for a `target`. A target key has two parts, a `package` and a
@@ -106,13 +105,7 @@ An identifier for a `target`. A target key has two parts, a `package` and a
 To construct a key, you join the package and name with a `:`, so for instance
 the `bar` target in the `foo` package would be referenced like this `foo:bar`.
 
-When referring to targets in the current package, you can omit the package and
-start with a `:` instead, so the above example could be shorted to `:bar`.
-
-Additionally, for any target you can omit the target name, and it will be
-defaulted to the package name, so `foo` would become `foo:foo`.
-
-There is one additional shorthand, which is the `:$default` target. This refers
+There is one special alias, which is the `$default` target. This refers
 to the default target in the current package (which has the same name as the
 package).
 
@@ -123,9 +116,3 @@ An identifier for a `builder`. A builder has two parts, a `package` and a
 
 To construct a key, you join the package and name with a `|`, so for instance
 the `bar` builder in the `foo` package would be referenced like this `foo:bar`.
-
-When referring to builders in the current package, you can omit the package and
-start with a `|` instead, so the above example could be shorted to `|bar`.
-
-Additionally, for any builder you can omit the target name, and it will be
-defaulted to the package name, so `foo` would become `foo|foo`.
