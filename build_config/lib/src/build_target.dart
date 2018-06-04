@@ -67,7 +67,7 @@ class TargetBuilderConfig {
   /// argument, set to `false` to disable a Builder which would otherwise run.
   ///
   /// By default including a config for a Builder enables that builder.
-  @JsonKey(name: 'is_enabled')
+  @JsonKey(name: 'enabled')
   final bool isEnabled;
 
   /// Sources to use as inputs for this Builder in glob format.
