@@ -125,7 +125,7 @@ jobs:
       env: PKG="build_web_compilers"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_7
+      script: ./tool/travis.sh test_7 test_8
       env: PKG="build_web_compilers"
       dart: dev
     - stage: analyze_and_format
