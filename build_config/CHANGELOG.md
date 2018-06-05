@@ -1,4 +1,4 @@
-## 0.3.0-dev
+## 0.3.0
 
 - Parsing of `build.yaml` files is now done with the `json_serializable` package
   and is Dart 2 compatible.
