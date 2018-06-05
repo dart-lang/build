@@ -71,8 +71,13 @@ while (( "$#" )); do
     ;;
   test_7) echo
     echo -e '\033[1mTASK: test_7\033[22m'
-    echo -e 'pub run test --run-skipped'
-    pub run test --run-skipped || EXIT_CODE=$?
+    echo -e 'pub run test -x presubmit-only'
+    pub run test -x presubmit-only || EXIT_CODE=$?
+    ;;
+  test_8) echo
+    echo -e '\033[1mTASK: test_8\033[22m'
+    echo -e 'pub run test -t presubmit-only --run-skipped'
+    pub run test -t presubmit-only --run-skipped || EXIT_CODE=$?
     ;;
   *) echo -e "\033[31mNot expecting TASK '${TASK}'. Error!\033[0m"
     EXIT_CODE=1
