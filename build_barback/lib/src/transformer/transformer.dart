@@ -145,7 +145,7 @@ class _TransformAssetReader extends AssetReader {
       await combineByteStream(transform.readInput(toBarbackAssetId(id)));
 
   @override
-  Future<String> readAsString(build.AssetId id, {Encoding encoding: utf8}) =>
+  Future<String> readAsString(build.AssetId id, {Encoding encoding = utf8}) =>
       transform.readInputAsString(toBarbackAssetId(id), encoding: encoding);
 
   @override
@@ -169,7 +169,7 @@ class _TransformAssetWriter implements AssetWriter {
 
   @override
   Future writeAsString(build.AssetId id, String contents,
-      {Encoding encoding: utf8}) {
+      {Encoding encoding = utf8}) {
     transform.addOutput(barbackAssetFromString(id, contents));
     return new Future.value(null);
   }

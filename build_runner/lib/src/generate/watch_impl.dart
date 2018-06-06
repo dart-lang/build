@@ -105,7 +105,7 @@ WatchImpl _runWatch(
         Future until,
         DirectoryWatcherFactory directoryWatcherFactory,
         String configKey,
-        {bool isReleaseMode: false}) =>
+        {bool isReleaseMode = false}) =>
     new WatchImpl(options, environment, builders, builderConfigOverrides, until,
         directoryWatcherFactory, configKey,
         isReleaseMode: isReleaseMode);
@@ -130,7 +130,7 @@ class _OnDeleteWriter implements RunnerAssetWriter {
 
   @override
   Future writeAsString(AssetId id, String contents,
-          {Encoding encoding: utf8}) =>
+          {Encoding encoding = utf8}) =>
       _writer.writeAsString(id, contents, encoding: encoding);
 }
 
@@ -176,7 +176,7 @@ class WatchImpl implements BuildState {
       Future until,
       this._directoryWatcherFactory,
       this._configKey,
-      {bool isReleaseMode: false})
+      {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph,
         _targetGraph = options.targetGraph {
@@ -200,7 +200,7 @@ class WatchImpl implements BuildState {
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       Future until,
-      {bool isReleaseMode: false}) {
+      {bool isReleaseMode = false}) {
     var watcherEnvironment = new OverrideableEnvironment(environment,
         writer: new _OnDeleteWriter(environment.writer, _expectedDeletes.add));
     var firstBuildCompleter = new Completer<BuildResult>();

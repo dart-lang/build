@@ -41,7 +41,7 @@ void main() {
   Future validateResolver(
       {Map<String, String> inputs,
       Future validator(Resolver resolver),
-      List messages: const []}) async {
+      List messages = const []}) async {
     var writer = new InMemoryAssetWriter();
     var reader = new InMemoryAssetReader.shareAssetCache(writer.assets);
     var actualInputs = <AssetId, String>{};

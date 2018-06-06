@@ -33,7 +33,7 @@ class PlaceholderBuilder extends Builder {
       {inputExtension: outputExtensionsToContent.keys.toList()};
 
   PlaceholderBuilder(this.outputExtensionsToContent,
-      {this.inputExtension: r'$lib$'});
+      {this.inputExtension = r'$lib$'});
 
   @override
   Future build(BuildStep buildStep) async {

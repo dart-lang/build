@@ -729,7 +729,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
     {PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
     onLog(LogRecord record),
-    Level logLevel: Level.OFF,
+    Level logLevel = Level.OFF,
     String configKey}) {
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);

@@ -35,7 +35,7 @@ void checkOutputs(
     Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
-    {AssetId mapAssetIds(AssetId id): _passThrough}) {
+    {AssetId mapAssetIds(AssetId id) = _passThrough}) {
   var modifiableActualAssets = new Set.from(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {

@@ -134,7 +134,7 @@ class PackageAssetReader extends AssetReader
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) {
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     final file = _resolve(id);
     if (file == null) {
       throw new ArgumentError('Could not read $id.');
