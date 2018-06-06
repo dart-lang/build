@@ -141,10 +141,6 @@ jobs:
       env: PKG="scratch_space"
       dart: dev
 
-matrix:
-  allow_failures:
-    - env: PKG="build_config"
-
 stages:
   - analyze_and_format
   - unit_test
