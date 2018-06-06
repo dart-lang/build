@@ -89,10 +89,31 @@ class _AssetNode {
               'same package');
         }
         parts.add(linkedId);
-      } else if (internalSrcs.contains(linkedId)) {
-        internalDeps.add(linkedId);
-      } else {
-        externalDeps.add(linkedId);
+        continue;
+      }
+
+      List<Configuration> conditionalImportConfigurations;
+
+      if (directive is ImportDirective && directive.configurations.isNotEmpty) {
+        conditionalImportConfigurations = directive.configurations;
+      } else if (directive is ExportDirective && directive.configurations.isNotEmpty) {
+        conditionalImportConfigurations = directive.configurations;
+      }
+
+      final allDeps = <AssetId>[linkedId];
+      if (conditionalImportConfigurations != null) {
+        allDeps.addAll(conditionalImportConfigurations
+            .map((c) => Uri.parse(c.uri.value))
+            .where((u) => u.scheme != 'dart')
+            .map((u) => new AssetId.resolve(u.toString())));
+      }
+
+      for (var dep in allDeps) {
+        if (internalSrcs.contains(dep)) {
+          internalDeps.add(dep);
+        } else {
+          externalDeps.add(dep);
+        }
       }
     }
     return new _AssetNode(id, internalDeps, parts, externalDeps);
