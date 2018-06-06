@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
 import 'input_matcher.dart';
@@ -34,6 +35,15 @@ abstract class BuildPhase {
   /// which are tracked separately via a `BuilderOptionsNode` which supports
   /// more fine grained invalidation.
   int get identity;
+
+  factory BuildPhase.fromJson(Map<String, dynamic> json) {
+    // if (json.containsKey('builderActions')) {
+    //   return new PostBuildPhase.fromJson(json);
+    // } else {
+    //   return new InBuildPhase.fromJson(json);
+    // }
+    return null;
+  }
 }
 
 /// An "action" in the build graph which represents running a single builder
@@ -49,18 +59,23 @@ abstract class BuildAction {
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
-class InBuildPhase extends BuildPhase implements BuildAction {
+@JsonSerializable()
+class InBuildPhase extends Object implements BuildAction, BuildPhase {
   @override
+  @JsonKey(ignore: true)
   final Builder builder;
   @override
   final String builderLabel;
   @override
+  @JsonKey(toJson: _builderOptionsToJson, fromJson: _builderOptionsFromJson)
   final BuilderOptions builderOptions;
   @override
+  @JsonKey(fromJson: _inputMatcherFromJson, toJson: _inputMatcherToJson)
   final InputMatcher generateFor;
   @override
   final String package;
   @override
+  @JsonKey(fromJson: _inputMatcherFromJson, toJson: _inputMatcherToJson)
   final InputMatcher targetSources;
 
   @override
@@ -112,6 +127,9 @@ class InBuildPhase extends BuildPhase implements BuildAction {
         hideOutput: hideOutput);
   }
 
+  // factory InBuildPhase.fromJson(Map<String, dynamic> json) =>
+  //     _$InBuildPhaseFromJson(json);
+
   @override
   String toString() {
     final settings = <String>[];
@@ -139,7 +157,8 @@ class InBuildPhase extends BuildPhase implements BuildAction {
 ///
 /// There should only be one of these per build, and it should be the final
 /// phase.
-class PostBuildPhase extends BuildPhase {
+@JsonSerializable()
+class PostBuildPhase extends Object implements BuildPhase {
   final List<PostBuildAction> builderActions;
 
   @override
@@ -148,6 +167,9 @@ class PostBuildPhase extends BuildPhase {
   bool get isOptional => false;
 
   PostBuildPhase(this.builderActions);
+
+  // factory PostBuildPhase.fromJson(Map<String, dynamic> json) =>
+  //     _$PostBuildPhaseFromJson(json);
 
   @override
   String toString() =>
@@ -164,18 +186,22 @@ class PostBuildPhase extends BuildPhase {
 
 /// Part of a larger [PostBuildPhase], applies a single
 /// [PostProcessBuilder] to a single [package] with some additional options.
+@JsonSerializable()
 class PostBuildAction implements BuildAction {
   @override
+  @JsonKey(ignore: true)
   final PostProcessBuilder builder;
   @override
   final String builderLabel;
   @override
   final BuilderOptions builderOptions;
   @override
+  @JsonKey(fromJson: _inputMatcherFromJson, toJson: _inputMatcherToJson)
   final InputMatcher generateFor;
   @override
   final String package;
   @override
+  @JsonKey(fromJson: _inputMatcherFromJson, toJson: _inputMatcherToJson)
   final InputMatcher targetSources;
 
   PostBuildAction(this.builder, this.package,
@@ -189,6 +215,9 @@ class PostBuildAction implements BuildAction {
         builderOptions = builderOptions ?? const BuilderOptions(const {}),
         targetSources = new InputMatcher(targetSources ?? const InputSet()),
         generateFor = new InputMatcher(generateFor ?? const InputSet());
+
+  // factory PostBuildAction.fromJson(Map<String, dynamic> json) =>
+  //     _$PostBuildActionFromJson(json);
 
   int get identity => _deepEquals.hash([
         builderLabel,
@@ -217,3 +246,17 @@ String _simpleBuilderKey(String builderKey) {
 }
 
 final _deepEquals = const DeepCollectionEquality();
+
+BuilderOptions _builderOptionsFromJson(Map<String, dynamic> json) =>
+    new BuilderOptions(json);
+Map<String, dynamic> _builderOptionsToJson(BuilderOptions options) =>
+    options.config;
+
+InputMatcher _inputMatcherFromJson(Map<String, List> json) =>
+    new InputMatcher(new InputSet(
+        include: json['include'].cast(), exclude: json['exclude'].cast()));
+
+Map<String, List<String>> _inputMatcherToJson(InputMatcher matcher) => {
+      'include': matcher.includeGlobs.map((g) => g.pattern).toList(),
+      'exclude': matcher.excludeGlobs.map((g) => g.pattern).toList()
+    };

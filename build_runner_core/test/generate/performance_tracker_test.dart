@@ -70,10 +70,9 @@ main() {
           makeAssetId('a|web/b.txt'),
           makeAssetId('a|web/c.txt'),
         ];
-        var builder = new TestBuilder();
 
         for (var input in inputs) {
-          var actionTracker = tracker.startBuilderAction(input, builder);
+          var actionTracker = tracker.startBuilderAction(input, 'test_builder');
           await actionTracker.track(() async {
             time = time.add(const Duration(seconds: 1));
           }, 'Setup');

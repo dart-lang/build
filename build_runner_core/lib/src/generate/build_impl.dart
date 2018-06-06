@@ -378,7 +378,8 @@ class _SingleBuild {
       int phaseNumber, InBuildPhase phase, AssetId input) async {
     final builder = phase.builder;
     final outputsHidden = phase.hideOutput;
-    var tracker = _performanceTracker.startBuilderAction(input, builder);
+    var tracker =
+        _performanceTracker.startBuilderAction(input, phase.builderLabel);
 
     var builderOutputs = expectedOutputs(builder, input);
 
