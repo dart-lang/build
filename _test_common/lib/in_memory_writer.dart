@@ -27,7 +27,7 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
 
   @override
   Future writeAsString(AssetId id, String contents,
-      {Encoding encoding: utf8}) async {
+      {Encoding encoding = utf8}) async {
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
     FakeWatcher

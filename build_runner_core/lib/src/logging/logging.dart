@@ -18,7 +18,7 @@ Future<T> logTimedAsync<T>(
   Logger logger,
   String description,
   Future<T> action(), {
-  Level level: Level.INFO,
+  Level level = Level.INFO,
 }) async {
   final watch = new Stopwatch()..start();
   logger.log(level, '$description...');
@@ -36,7 +36,7 @@ T logTimedSync<T>(
   Logger logger,
   String description,
   T action(), {
-  Level level: Level.INFO,
+  Level level = Level.INFO,
 }) {
   final watch = new Stopwatch()..start();
   logger.log(level, '$description...');

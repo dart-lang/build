@@ -50,11 +50,11 @@ class WebEntrypointBuilder implements Builder {
   final bool enableSyncAsync;
 
   const WebEntrypointBuilder(this.webCompiler,
-      {this.dart2JsArgs: const [],
-      this.useKernel: false,
-      this.buildRootAppSummary: false,
-      this.ignoreCastFailures: false,
-      this.enableSyncAsync: enableSyncAsyncDefault});
+      {this.dart2JsArgs = const [],
+      this.useKernel = false,
+      this.buildRootAppSummary = false,
+      this.ignoreCastFailures = false,
+      this.enableSyncAsync = enableSyncAsyncDefault});
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
     validateOptions(

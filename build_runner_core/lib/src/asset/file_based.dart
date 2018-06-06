@@ -88,7 +88,7 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
 
   @override
   Future writeAsString(AssetId id, String contents,
-      {Encoding encoding: utf8}) async {
+      {Encoding encoding = utf8}) async {
     var file = _fileFor(id, packageGraph);
     await _descriptorPool.withResource(() async {
       await file.create(recursive: true);

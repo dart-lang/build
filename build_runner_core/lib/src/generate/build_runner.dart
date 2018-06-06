@@ -27,7 +27,7 @@ class BuildRunner {
           BuildEnvironment environment,
           List<BuilderApplication> builders,
           Map<String, Map<String, dynamic>> builderConfigOverrides,
-          {bool isReleaseBuild: false}) async =>
+          {bool isReleaseBuild = false}) async =>
       new BuildRunner._(await BuildImpl.create(
           options, environment, builders, builderConfigOverrides,
           isReleaseBuild: isReleaseBuild));

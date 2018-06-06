@@ -105,7 +105,7 @@ class BuildConfig {
     String packageName,
     @required Map<String, BuildTarget> buildTargets,
     Map<String, BuilderDefinition> builderDefinitions,
-    Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions:
+    Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
   })  : this.buildTargets = buildTargets ??
             {

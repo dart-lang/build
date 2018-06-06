@@ -44,7 +44,7 @@ class TestBuildEnvironment implements BuildEnvironment {
   TestBuildEnvironment(
       {RunnerAssetReader reader,
       RunnerAssetWriter writer,
-      this.throwOnPrompt: false})
+      this.throwOnPrompt = false})
       : this.reader = reader ?? new InMemoryRunnerAssetReader(),
         this.writer = writer ?? new InMemoryRunnerAssetWriter();
 
