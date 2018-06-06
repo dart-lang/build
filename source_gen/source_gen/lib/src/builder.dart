@@ -35,9 +35,9 @@ class _Builder extends Builder {
   /// Wrap [_generators] to form a [Builder]-compatible API.
   _Builder(this._generators,
       {String formatOutput(String code),
-      String generatedExtension: '.g.dart',
-      List<String> additionalOutputExtensions: const [],
-      bool isStandalone: false,
+      String generatedExtension = '.g.dart',
+      List<String> additionalOutputExtensions = const [],
+      bool isStandalone = false,
       String header})
       : _generatedExtension = generatedExtension,
         buildExtensions = {
@@ -162,8 +162,8 @@ class PartBuilder extends _Builder {
   /// If [header] is an empty `String` no header is added.
   PartBuilder(List<Generator> generators,
       {String formatOutput(String code),
-      String generatedExtension: '.g.dart',
-      List<String> additionalOutputExtensions: const [],
+      String generatedExtension = '.g.dart',
+      List<String> additionalOutputExtensions = const [],
       String header})
       : super(generators,
             formatOutput: formatOutput,
@@ -189,8 +189,8 @@ class LibraryBuilder extends _Builder {
   /// If [header] is an empty `String` no header is added.
   LibraryBuilder(Generator generator,
       {String formatOutput(String code),
-      String generatedExtension: '.g.dart',
-      List<String> additionalOutputExtensions: const [],
+      String generatedExtension = '.g.dart',
+      List<String> additionalOutputExtensions = const [],
       String header})
       : super([generator],
             formatOutput: formatOutput,

@@ -11,7 +11,7 @@ import 'package:source_gen/source_gen.dart';
 class CommentGenerator extends Generator {
   final bool forClasses, forLibrary;
 
-  const CommentGenerator({this.forClasses: true, this.forLibrary: false});
+  const CommentGenerator({this.forClasses = true, this.forLibrary = false});
 
   @override
   Future<String> generate(LibraryReader library, _) async {

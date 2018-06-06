@@ -104,9 +104,9 @@ class Revivable {
 
   const Revivable._({
     this.source,
-    this.accessor: '',
-    this.positionalArguments: const [],
-    this.namedArguments: const {},
+    this.accessor = '',
+    this.positionalArguments = const [],
+    this.namedArguments = const {},
   });
 
   /// Whether this instance is visible outside the same library.

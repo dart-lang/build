@@ -39,7 +39,7 @@ class PublicAnnotationClass {
         child2 = null;
 
   const PublicAnnotationClass.withPositionalArgs(int intArg, this.aString,
-      {bool boolArg: false, List listArg: const [2, 3, 4]})
+      {bool boolArg = false, List listArg = const [2, 3, 4]})
       : anInt = intArg,
         aList = listArg,
         aBool = boolArg,
