@@ -19,7 +19,6 @@ main() async {
           hideOutput: false,
           generateFor: new InputSet(include: const [
             'lib/src/generate/performance_tracker.dart',
-            'lib/src/generate/phase.dart'
           ]))
     ],
     const {},

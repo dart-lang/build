@@ -35,15 +35,6 @@ abstract class BuildPhase {
   /// which are tracked separately via a `BuilderOptionsNode` which supports
   /// more fine grained invalidation.
   int get identity;
-
-  factory BuildPhase.fromJson(Map<String, dynamic> json) {
-    // if (json.containsKey('builderActions')) {
-    //   return new PostBuildPhase.fromJson(json);
-    // } else {
-    //   return new InBuildPhase.fromJson(json);
-    // }
-    return null;
-  }
 }
 
 /// An "action" in the build graph which represents running a single builder
@@ -59,7 +50,6 @@ abstract class BuildAction {
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
-@JsonSerializable()
 class InBuildPhase extends Object implements BuildAction, BuildPhase {
   @override
   @JsonKey(ignore: true)
@@ -127,9 +117,6 @@ class InBuildPhase extends Object implements BuildAction, BuildPhase {
         hideOutput: hideOutput);
   }
 
-  // factory InBuildPhase.fromJson(Map<String, dynamic> json) =>
-  //     _$InBuildPhaseFromJson(json);
-
   @override
   String toString() {
     final settings = <String>[];
@@ -157,7 +144,6 @@ class InBuildPhase extends Object implements BuildAction, BuildPhase {
 ///
 /// There should only be one of these per build, and it should be the final
 /// phase.
-@JsonSerializable()
 class PostBuildPhase extends Object implements BuildPhase {
   final List<PostBuildAction> builderActions;
 
@@ -167,9 +153,6 @@ class PostBuildPhase extends Object implements BuildPhase {
   bool get isOptional => false;
 
   PostBuildPhase(this.builderActions);
-
-  // factory PostBuildPhase.fromJson(Map<String, dynamic> json) =>
-  //     _$PostBuildPhaseFromJson(json);
 
   @override
   String toString() =>
@@ -186,7 +169,6 @@ class PostBuildPhase extends Object implements BuildPhase {
 
 /// Part of a larger [PostBuildPhase], applies a single
 /// [PostProcessBuilder] to a single [package] with some additional options.
-@JsonSerializable()
 class PostBuildAction implements BuildAction {
   @override
   @JsonKey(ignore: true)
@@ -215,9 +197,6 @@ class PostBuildAction implements BuildAction {
         builderOptions = builderOptions ?? const BuilderOptions(const {}),
         targetSources = new InputMatcher(targetSources ?? const InputSet()),
         generateFor = new InputMatcher(generateFor ?? const InputSet());
-
-  // factory PostBuildAction.fromJson(Map<String, dynamic> json) =>
-  //     _$PostBuildActionFromJson(json);
 
   int get identity => _deepEquals.hash([
         builderLabel,

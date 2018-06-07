@@ -49,7 +49,8 @@ main() {
         }
 
         tracker.stop();
-        expect(tracker.phases.map((p) => p.action), orderedEquals(phases));
+        expect(tracker.phases.map((p) => p.builderKeys),
+            orderedEquals(phases.map((phase) => phase.builderLabel)));
 
         var times = tracker.phases.map((t) => t.stopTime).toList();
         var expectedTimes = [5000, 10000, 15000].map((millis) =>
