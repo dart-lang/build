@@ -139,7 +139,7 @@ void main() {
     test('serves some sort of page if enabled', () async {
       var tracker = new BuildPerformanceTracker()..start();
       var actionTracker = tracker.startBuilderAction(
-          makeAssetId('a|web/a.txt'), new TestBuilder());
+          makeAssetId('a|web/a.txt'), 'test_builder');
       actionTracker.track(() {}, 'SomeLabel');
       tracker.stop();
       actionTracker.stop();
@@ -151,7 +151,7 @@ void main() {
 
       expect(response.statusCode, HttpStatus.OK);
       expect(await response.readAsString(),
-          allOf(contains('TestBuilder:a|web/a.txt'), contains('SomeLabel')));
+          allOf(contains('test_builder:a|web/a.txt'), contains('SomeLabel')));
     });
 
     test('serves an error page if not enabled', () async {
