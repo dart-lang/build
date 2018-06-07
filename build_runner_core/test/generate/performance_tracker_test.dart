@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
@@ -49,8 +51,10 @@ main() {
         }
 
         tracker.stop();
-        expect(tracker.phases.map((p) => p.builderKeys),
-            orderedEquals(phases.map((phase) => phase.builderLabel)));
+        expect(
+            tracker.phases.map((p) => p.builderKeys),
+            orderedEquals(
+                phases.map((phase) => orderedEquals([phase.builderLabel]))));
 
         var times = tracker.phases.map((t) => t.stopTime).toList();
         var expectedTimes = [5000, 10000, 15000].map((millis) =>
@@ -64,30 +68,17 @@ main() {
       });
     });
 
-    test('can track multiple actions and phases within them', () async {
-      await scopeClock(fakeClock, () async {
-        var inputs = [
-          makeAssetId('a|web/a.txt'),
-          makeAssetId('a|web/b.txt'),
-          makeAssetId('a|web/c.txt'),
-        ];
+    test(
+        'can track multiple actions and phases within them, and '
+        'serialize/deserialize it', () async {
+      var inputs = [
+        makeAssetId('a|web/a.txt'),
+        makeAssetId('a|web/b.txt'),
+        makeAssetId('a|web/c.txt'),
+      ];
 
-        for (var input in inputs) {
-          var actionTracker = tracker.startBuilderAction(input, 'test_builder');
-          await actionTracker.track(() async {
-            time = time.add(const Duration(seconds: 1));
-          }, 'Setup');
-          await actionTracker.track(() async {
-            time = time.add(const Duration(seconds: 1));
-          }, 'Build');
-          await actionTracker.track(() async {
-            time = time.add(const Duration(seconds: 1));
-          }, 'Finalize');
-          actionTracker.stop();
-        }
-        tracker.stop();
-
-        var allActions = tracker.actions.toList();
+      void checkMatchesExpected(BuildPerformance performance) {
+        var allActions = performance.actions.toList();
         for (var i = 0; i < inputs.length; i++) {
           var action = allActions[i];
           expect(action.startTime, startTime.add(new Duration(seconds: i * 3)));
@@ -110,10 +101,32 @@ main() {
           }
         }
 
-        var total = tracker.actions.fold(new Duration(),
+        var total = performance.actions.fold(new Duration(),
             (Duration total, action) => action.duration + total);
         expect(total, new Duration(seconds: inputs.length * 3));
+      }
+
+      await scopeClock(fakeClock, () async {
+        for (var input in inputs) {
+          var actionTracker = tracker.startBuilderAction(input, 'test_builder');
+          await actionTracker.track(() async {
+            time = time.add(const Duration(seconds: 1));
+          }, 'Setup');
+          await actionTracker.track(() async {
+            time = time.add(const Duration(seconds: 1));
+          }, 'Build');
+          await actionTracker.track(() async {
+            time = time.add(const Duration(seconds: 1));
+          }, 'Finalize');
+          actionTracker.stop();
+        }
+        tracker.stop();
       });
+
+      checkMatchesExpected(tracker);
+
+      checkMatchesExpected(new BuildPerformance.fromJson(
+          jsonDecode(jsonEncode(tracker.toJson())) as Map<String, dynamic>));
     });
   });
 }
