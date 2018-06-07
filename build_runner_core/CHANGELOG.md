@@ -1,6 +1,20 @@
-## 0.1.1
+## 0.2.0-dev
 
-Remove dependency on package:cli_util.
+### New Features
+
+- The `BuildPerformance` class is now serializable, it has a `fromJson`
+  constructor and a `toJson` instance method.
+
+### Breaking changes
+
+- `BuildPhasePerformance.action` has been replaced with
+  `BuildPhasePerformance.builderKeys`.
+- `BuilderActionPerformance.builder` has been replaced with
+  `BuilderActionPerformance.builderKey`.
+
+### Internal changes
+
+- Remove dependency on package:cli_util.
 
 ## 0.1.0
 

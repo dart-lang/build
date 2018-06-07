@@ -199,7 +199,7 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
           !action.phases.any((phase) => phase.label == 'Build')) {
         continue;
       }
-      var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
+      var actionKey = '${action.builderKey}:${action.primaryInput}';
       for (var phase in action.phases) {
         var start = phase.startTime.millisecondsSinceEpoch -
             performance.startTime.millisecondsSinceEpoch;

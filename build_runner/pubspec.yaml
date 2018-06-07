@@ -1,5 +1,5 @@
 name: build_runner
-version: 0.8.10
+version: 0.9.0-dev
 description: Tools to write binaries that run builders.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_runner
@@ -13,7 +13,9 @@ dependencies:
   build: ">=0.12.4 <0.12.7"
   build_config: ^0.3.0
   build_resolvers: ^0.2.0
-  build_runner_core: ^0.1.0
+  # We re-export many types from this package, so we maintain a tight
+  # constraint on it.
+  build_runner_core: ">=0.2.0 <0.2.1"
   cli_util: ^0.1.2
   code_builder: ">2.3.0 <4.0.0"
   collection: ^1.14.0
@@ -43,3 +45,7 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
+
+dependency_overrides:
+  build_runner_core:
+    path: ../build_runner_core
