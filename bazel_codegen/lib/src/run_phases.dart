@@ -117,7 +117,7 @@ Future<IOSinkLogHandle> _runBuilders(
     BuildArgs buildArgs,
     Map<String, String> defaultContent,
     CodegenTiming timings,
-    {bool isWorker: false,
+    {bool isWorker = false,
     Set<String> validInputs}) async {
   assert(timings.isRunning);
 

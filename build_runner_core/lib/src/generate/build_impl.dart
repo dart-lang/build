@@ -93,7 +93,7 @@ class BuildImpl {
       BuildEnvironment environment,
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
-      {bool isReleaseBuild: false}) async {
+      {bool isReleaseBuild = false}) async {
     var buildPhases = await createBuildPhases(
         options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
     if (buildPhases.isEmpty) {

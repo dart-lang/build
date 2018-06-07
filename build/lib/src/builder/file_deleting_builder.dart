@@ -18,12 +18,12 @@ class FileDeletingBuilder implements PostProcessBuilder {
   final bool isEnabled;
   final List<Glob> exclude;
 
-  const FileDeletingBuilder(this.inputExtensions, {this.isEnabled: true})
+  const FileDeletingBuilder(this.inputExtensions, {this.isEnabled = true})
       : exclude = const [];
 
   FileDeletingBuilder.withExcludes(
       this.inputExtensions, Iterable<String> exclude,
-      {this.isEnabled: true})
+      {this.isEnabled = true})
       : exclude = exclude?.map((s) => new Glob(s))?.toList() ?? const [];
 
   @override

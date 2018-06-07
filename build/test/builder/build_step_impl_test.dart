@@ -227,6 +227,6 @@ class SlowAssetWriter implements AssetWriter {
 
   @override
   Future writeAsString(AssetId id, FutureOr<String> contents,
-          {Encoding encoding: utf8}) =>
+          {Encoding encoding = utf8}) =>
       _writeCompleter.future;
 }

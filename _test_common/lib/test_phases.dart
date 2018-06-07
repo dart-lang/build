@@ -79,20 +79,20 @@ Future<BuildResult> testBuilders(
   Map<String, /*String|List<int>*/ dynamic> inputs, {
   Map<String, /*String|List<int>*/ dynamic> outputs,
   PackageGraph packageGraph,
-  BuildStatus status: BuildStatus.success,
+  BuildStatus status = BuildStatus.success,
   Map<String, BuildConfig> overrideBuildConfig,
   Matcher exceptionMatcher,
   InMemoryRunnerAssetReader reader,
   InMemoryRunnerAssetWriter writer,
   Level logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
-  onLog(LogRecord record): _nullLog,
-  bool checkBuildStatus: true,
-  bool failOnSevere: false,
-  bool deleteFilesByDefault: true,
-  bool enableLowResourcesMode: false,
+  onLog(LogRecord record) = _nullLog,
+  bool checkBuildStatus = true,
+  bool failOnSevere = false,
+  bool deleteFilesByDefault = true,
+  bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
-  bool verbose: false,
+  bool verbose = false,
   List<String> buildDirs,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});

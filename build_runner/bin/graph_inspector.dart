@@ -199,7 +199,7 @@ AssetId _idFromString(String stringUri) {
   }
 }
 
-_listAsset(AssetId output, StringSink buffer, {String indentation: '  '}) {
+_listAsset(AssetId output, StringSink buffer, {String indentation = '  '}) {
   var outputUri = output.uri;
   if (outputUri.scheme == 'package') {
     buffer.writeln('$indentation${output.uri}');

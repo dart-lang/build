@@ -54,7 +54,7 @@ class FinalizedReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) async {
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (_assetGraph.get(id)?.isDeleted ?? true) {
       throw new AssetNotFoundException(id);
     }

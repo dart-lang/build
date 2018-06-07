@@ -30,7 +30,7 @@ void main() {
     handler = new AssetHandler(reader, 'a');
   });
 
-  void _addAsset(String id, String content, {bool deleted: false}) {
+  void _addAsset(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest('a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
