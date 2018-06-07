@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -702,6 +703,30 @@ void main() {
       }, buildDirs: [
         'web'
       ], verbose: true);
+    });
+
+    test('can output performance logs', () async {
+      var writer = new InMemoryRunnerAssetWriter();
+      var reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+          rootPackage: 'a');
+      await testBuilders(
+        [
+          apply('test_builder', [(_) => new TestBuilder()], toRoot(),
+              isOptional: false, hideOutput: false),
+        ],
+        {'a|web/a.txt': 'a'},
+        outputs: {'a|web/a.txt.copy': 'a'},
+        writer: writer,
+        reader: reader,
+        logPerformanceDir: 'perf',
+      );
+      var logs = await reader.findAssets(new Glob('perf/**')).toList();
+      expect(logs.length, 1);
+      var perf = new BuildPerformance.fromJson(
+          jsonDecode(await reader.readAsString(logs.first))
+              as Map<String, dynamic>);
+      expect(perf.phases.length, 1);
+      expect(perf.phases.first.builderKeys, equals(['test_builder']));
     });
   });
 

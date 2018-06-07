@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -11,6 +12,7 @@ import 'package:build_resolvers/build_resolvers.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 // TODO(grouma) - remove dependency on ChangeType API to remove the following
 // import.
 import 'package:watcher/watcher.dart';
@@ -65,6 +67,7 @@ class BuildImpl {
   final bool _verbose;
   final BuildEnvironment _environment;
   final List<String> _buildDirs;
+  final String _logPerformanceDir;
 
   Future<Null> beforeExit() => _resourceManager.beforeExit();
 
@@ -83,7 +86,8 @@ class BuildImpl {
         _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
-        _buildDirs = options.buildDirs;
+        _buildDirs = options.buildDirs,
+        _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
@@ -136,6 +140,7 @@ class _SingleBuild {
   final bool _verbose;
   final RunnerAssetWriter _writer;
   final List<String> _buildDirs;
+  final String _logPerformanceDir;
 
   int actionsCompletedCount = 0;
   int actionsStartedCount = 0;
@@ -160,7 +165,8 @@ class _SingleBuild {
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
-        _buildDirs = buildImpl._buildDirs {
+        _buildDirs = buildImpl._buildDirs,
+        _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = new HungActionsHeartbeat(() {
       final message = new StringBuffer();
       const actionsToLogMax = 5;
@@ -266,6 +272,18 @@ class _SingleBuild {
             new AssetId(_packageGraph.root.name, assetGraphPath),
             _assetGraph.serialize());
       });
+
+      // Log performance information if requested
+      if (_logPerformanceDir != null) {
+        assert(result.performance != null);
+        var logPath =
+            p.join(_logPerformanceDir, new DateTime.now().toIso8601String());
+        await logTimedAsync(_logger, 'Writing performance log to $logPath', () {
+          var performanceLogId = new AssetId(_packageGraph.root.name, logPath);
+          var serialized = jsonEncode(result.performance);
+          return _writer.writeAsString(performanceLogId, serialized);
+        });
+      }
 
       if (!done.isCompleted) done.complete(result);
     }, onError: (e, StackTrace st) {

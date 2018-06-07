@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
@@ -44,6 +45,9 @@ class BuildOptions {
   final List<String> buildDirs;
   final TargetGraph targetGraph;
 
+  /// If present, the path to a directory to write performance logs to.
+  final String logPerformanceDir;
+
   // Watch mode options.
   Duration debounceDelay;
 
@@ -63,6 +67,7 @@ class BuildOptions {
     @required this.verbose,
     @required this.buildDirs,
     @required this.targetGraph,
+    @required this.logPerformanceDir,
   });
 
   static Future<BuildOptions> create(
@@ -79,6 +84,7 @@ class BuildOptions {
     bool trackPerformance,
     bool verbose,
     List<String> buildDirs,
+    String logPerformanceDir,
   }) async {
     // Set up logging
     verbose ??= false;
@@ -110,8 +116,18 @@ class BuildOptions {
     failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
-    trackPerformance ??= false;
     buildDirs ??= [];
+    trackPerformance ??= false;
+    if (logPerformanceDir != null) {
+      // Requiring this to be under the root package allows us to use an
+      // `AssetWriter` to write logs.
+      if (!p.isWithin(p.current, logPerformanceDir)) {
+        _logger.severe('Performance logs may only be output under the root '
+            'package, but got `$logPerformanceDir` which is not.');
+        throw new CannotBuildException();
+      }
+      trackPerformance = true;
+    }
 
     return new BuildOptions._(
         debounceDelay: debounceDelay,
@@ -125,6 +141,7 @@ class BuildOptions {
         trackPerformance: trackPerformance,
         verbose: verbose,
         buildDirs: buildDirs,
-        targetGraph: targetGraph);
+        targetGraph: targetGraph,
+        logPerformanceDir: logPerformanceDir);
   }
 }
