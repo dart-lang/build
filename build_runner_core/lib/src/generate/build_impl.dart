@@ -280,7 +280,7 @@ class _SingleBuild {
             p.join(_logPerformanceDir, new DateTime.now().toIso8601String());
         await logTimedAsync(_logger, 'Writing performance log to $logPath', () {
           var performanceLogId = new AssetId(_packageGraph.root.name, logPath);
-          var serialized = jsonEncode(result.performance.toJson());
+          var serialized = jsonEncode(result.performance);
           return _writer.writeAsString(performanceLogId, serialized);
         });
       }
