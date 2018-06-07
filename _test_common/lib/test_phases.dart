@@ -94,7 +94,7 @@ Future<BuildResult> testBuilders(
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose = false,
   List<String> buildDirs,
-  String logPerformance,
+  String logPerformanceDir,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= new InMemoryRunnerAssetWriter();
@@ -126,7 +126,7 @@ Future<BuildResult> testBuilders(
       enableLowResourcesMode: enableLowResourcesMode,
       verbose: verbose,
       buildDirs: buildDirs,
-      logPerformance: logPerformance);
+      logPerformanceDir: logPerformanceDir);
 
   BuildResult result;
   var build = await BuildRunner.create(

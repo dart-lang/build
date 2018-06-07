@@ -46,7 +46,7 @@ class BuildOptions {
   final TargetGraph targetGraph;
 
   /// If present, the path to a directory to write performance logs to.
-  final String logPerformance;
+  final String logPerformanceDir;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -67,7 +67,7 @@ class BuildOptions {
     @required this.verbose,
     @required this.buildDirs,
     @required this.targetGraph,
-    @required this.logPerformance,
+    @required this.logPerformanceDir,
   });
 
   static Future<BuildOptions> create(
@@ -84,7 +84,7 @@ class BuildOptions {
     bool trackPerformance,
     bool verbose,
     List<String> buildDirs,
-    String logPerformance,
+    String logPerformanceDir,
   }) async {
     // Set up logging
     verbose ??= false;
@@ -118,13 +118,12 @@ class BuildOptions {
     enableLowResourcesMode ??= false;
     buildDirs ??= [];
     trackPerformance ??= false;
-    if (logPerformance != null) {
+    if (logPerformanceDir != null) {
       // Requiring this to be under the root package allows us to use an
       // `AssetWriter` to write logs.
-      if (!p.isWithin(p.current, logPerformance)) {
-        _logger
-            .severe('--log-performance directory must be a path under the root '
-                'package, but got `$logPerformance` which is not.');
+      if (!p.isWithin(p.current, logPerformanceDir)) {
+        _logger.severe('Performance logs may only be output under the root '
+            'package, but got `$logPerformanceDir` which is not.');
         throw new CannotBuildException();
       }
       trackPerformance = true;
@@ -143,6 +142,6 @@ class BuildOptions {
         verbose: verbose,
         buildDirs: buildDirs,
         targetGraph: targetGraph,
-        logPerformance: logPerformance);
+        logPerformanceDir: logPerformanceDir);
   }
 }

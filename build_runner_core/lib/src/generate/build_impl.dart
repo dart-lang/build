@@ -87,7 +87,7 @@ class BuildImpl {
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
         _buildDirs = options.buildDirs,
-        _logPerformanceDir = options.logPerformance;
+        _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
       new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);

@@ -718,7 +718,7 @@ void main() {
         outputs: {'a|web/a.txt.copy': 'a'},
         writer: writer,
         reader: reader,
-        logPerformance: 'perf',
+        logPerformanceDir: 'perf',
       );
       var logs = await reader.findAssets(new Glob('perf/**')).toList();
       expect(logs.length, 1);
