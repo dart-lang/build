@@ -4,6 +4,8 @@
 
 - The `BuildPerformance` class is now serializable, it has a `fromJson`
   constructor and a `toJson` instance method.
+- Added `BuildOptions.logPerformanceDir`, performance logs will be continuously
+  written to that directory if provided.
 
 ### Breaking changes
 
