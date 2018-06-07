@@ -77,7 +77,10 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: 'Build with release mode defaults for builders.')
       ..addMultiOption(defineOption,
           splitCommas: false,
-          help: 'Sets the global `options` config for a builder by key.');
+          help: 'Sets the global `options` config for a builder by key.')
+      ..addOption(logPerformanceOption,
+          help: 'A directory to write performance logs to. '
+              'Must be in the current package.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.

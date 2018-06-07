@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 const assumeTtyOption = 'assume-tty';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
+const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
 const lowResourcesModeOption = 'low-resources-mode';
 const failOnSevereOption = 'fail-on-severe';
@@ -72,6 +73,8 @@ class SharedOptions {
   /// The directories that should be built.
   final List<String> buildDirs;
 
+  String logPerformanceDir;
+
   SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
@@ -85,6 +88,7 @@ class SharedOptions {
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
     @required this.buildDirs,
+    @required this.logPerformanceDir,
   });
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
@@ -115,6 +119,7 @@ class SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       buildDirs: buildDirs.toList(),
+      logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
 }

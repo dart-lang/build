@@ -50,6 +50,7 @@ Future<ServeHandler> watch(
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
   List<String> buildDirs,
+  String logPerformanceDir,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -73,7 +74,8 @@ Future<ServeHandler> watch(
       outputMap: outputMap,
       trackPerformance: trackPerformance,
       verbose: verbose,
-      buildDirs: buildDirs);
+      buildDirs: buildDirs,
+      logPerformanceDir: logPerformanceDir);
   var terminator = new Terminator(terminateEventStream);
 
   var watch = _runWatch(options, environment, builders, builderConfigOverrides,
