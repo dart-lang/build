@@ -56,6 +56,9 @@ class SharedOptions {
   /// Enables performance tracking and the `/$perf` page.
   final bool trackPerformance;
 
+  /// A directory to log performance information to.
+  String logPerformanceDir;
+
   /// Check digest of imports to the build script to invalidate the build.
   final bool skipBuildScriptCheck;
 
@@ -72,8 +75,6 @@ class SharedOptions {
 
   /// The directories that should be built.
   final List<String> buildDirs;
-
-  String logPerformanceDir;
 
   SharedOptions._({
     @required this.assumeTty,

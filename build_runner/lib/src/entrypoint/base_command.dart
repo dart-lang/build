@@ -55,6 +55,9 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: r'Enables performance tracking and the /$perf page.',
           negatable: true,
           defaultsTo: false)
+      ..addOption(logPerformanceOption,
+          help: 'A directory to write performance logs to, must be in the '
+              'current package. Implies `--track-performance`.')
       ..addFlag(skipBuildScriptCheckOption,
           help: r'Skip validation for the digests of files imported by the '
               'build script.',
@@ -77,10 +80,7 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: 'Build with release mode defaults for builders.')
       ..addMultiOption(defineOption,
           splitCommas: false,
-          help: 'Sets the global `options` config for a builder by key.')
-      ..addOption(logPerformanceOption,
-          help: 'A directory to write performance logs to. '
-              'Must be in the current package.');
+          help: 'Sets the global `options` config for a builder by key.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
