@@ -1,3 +1,8 @@
+## 0.4.0+5
+
+- Fixed an issue where subdirectories with hyphens in the name weren't
+  bootstrapped properly in dartdevc.
+
 ## 0.4.0+4
 
 - Expand support for `package:build_config` to include version `0.3.x`.
