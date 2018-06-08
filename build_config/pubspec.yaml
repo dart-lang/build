@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   build: ^0.12.1
-  json_annotation: ^0.2.7
+  json_annotation: ^0.2.8
   meta: ^1.1.0
   path: ^1.4.0
   pubspec_parse: ^0.1.0
