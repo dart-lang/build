@@ -38,7 +38,7 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
           .withResource(() => file.readAsString(encoding: encoding ?? utf8)));
 
   @override
-  Stream<AssetId> findAssets(Glob glob, {String package}) async* {
+  Stream<AssetId> findAssets(Glob glob, {String package}) {
     var packageNode =
         package == null ? packageGraph.root : packageGraph[package];
     if (packageNode == null) {
@@ -47,19 +47,10 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
           'an input. Please ensure you have that package in your deps, or '
           'remove it from your input sets.');
     }
-    var packagePath = packageNode.path;
-    try {
-      var fileStream = glob
-          .list(followLinks: false, root: packagePath)
-          .where((e) => e is File);
-      await for (var file in fileStream) {
-        // TODO(jakemac): Where do these files come from???
-        if (path.basename(file.path).startsWith('._')) continue;
-        yield _fileToAssetId(file as File, packageNode);
-      }
-    } on FileSystemException catch (_) {
-      // Empty results
-    }
+    return glob
+        .list(followLinks: false, root: packageNode.path)
+        .where((e) => e is File && !path.basename(e.path).startsWith('._'))
+        .map((file) => _fileToAssetId(file as File, packageNode));
   }
 }
 

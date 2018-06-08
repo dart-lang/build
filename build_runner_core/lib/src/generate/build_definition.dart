@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
+import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
@@ -177,11 +178,8 @@ class _Loader {
       _listGeneratedAssetIds().toSet();
 
   /// Returns all the internal sources, such as those under [entryPointDir].
-  Future<Set<AssetId>> _findInternalSources() {
-    return _environment.reader
-        .findAssets(new Glob('$entryPointDir/**'))
-        .toSet();
-  }
+  Future<Set<AssetId>> _findInternalSources() =>
+      _listIdsSafe(new Glob('$entryPointDir/**')).toSet();
 
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
   /// fails for any reason.
@@ -374,25 +372,35 @@ class _Loader {
     return targets.asyncExpand(_listAssetIds).toSet();
   }
 
-  Stream<AssetId> _listAssetIds(TargetNode targetNode) async* {
-    for (final glob in targetNode.sourceIncludes) {
-      yield* _environment.reader
-          .findAssets(glob, package: targetNode.package.name)
-          .where((id) => !targetNode.excludesSource(id));
-    }
+  Stream<AssetId> _mergeAll(Iterable<Stream<AssetId>> streams) =>
+      streams.first.transform(mergeAll(streams.skip(1).toList()));
+
+  Stream<AssetId> _listAssetIds(TargetNode targetNode) {
+    return _mergeAll(targetNode.sourceIncludes.map((glob) =>
+        _listIdsSafe(glob, package: targetNode.package.name)
+            .where((id) => !targetNode.excludesSource(id))));
   }
 
-  Stream<AssetId> _listGeneratedAssetIds() async* {
+  Stream<AssetId> _listGeneratedAssetIds() {
     var glob = new Glob('$generatedOutputDirectory/**');
-    await for (var id in _environment.reader.findAssets(glob)) {
+
+    return _listIdsSafe(glob).map((id) {
       var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
       var firstSlash = packagePath.indexOf('/');
-      if (firstSlash == -1) continue;
+      if (firstSlash == -1) return null;
       var package = packagePath.substring(0, firstSlash);
       var path = packagePath.substring(firstSlash + 1);
-      yield new AssetId(package, path);
-    }
+      return new AssetId(package, path);
+    }).where((id) => id != null);
   }
+
+  /// Lists asset ids and swallows file not found errors.
+  ///
+  /// Ideally we would warn but in practice the default whitelist will give this
+  /// error a lot and it would be noisy.
+  Stream<AssetId> _listIdsSafe(Glob glob, {String package}) =>
+      _environment.reader.findAssets(glob, package: package).handleError((e) {},
+          test: (e) => e is FileSystemException && e.osError.errorCode == 2);
 
   /// Handles cleanup of pre-existing outputs for initial builds (where there is
   /// no cached graph).

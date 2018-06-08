@@ -78,6 +78,7 @@ targets:
     sources:
       include:
         - lib/**
+        - does_not_exist/**
       exclude:
         - lib/excluded/**
 '''),
