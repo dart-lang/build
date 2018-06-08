@@ -1,3 +1,7 @@
+## 0.4.0+4
+
+- Expand support for `package:build_config` to include version `0.3.x`.
+
 ## 0.4.0+3
 
 - Expand support for `package:archive` to include version `2.x.x`.
