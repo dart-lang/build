@@ -178,11 +178,8 @@ class _Loader {
       _listGeneratedAssetIds().toSet();
 
   /// Returns all the internal sources, such as those under [entryPointDir].
-  Future<Set<AssetId>> _findInternalSources() {
-    return _environment.reader
-        .findAssets(new Glob('$entryPointDir/**'))
-        .toSet();
-  }
+  Future<Set<AssetId>> _findInternalSources() =>
+      _listIdsSafe(new Glob('$entryPointDir/**')).toSet();
 
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
   /// fails for any reason.
