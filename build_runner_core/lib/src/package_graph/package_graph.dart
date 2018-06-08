@@ -4,15 +4,15 @@
 
 import 'dart:io';
 
-// TODO(grouma) - copy SDK path logic to remove dep below.
-import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
+
+import '../util/constants.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
 final PackageNode _sdkPackageNode =
-    new PackageNode(r'$sdk', getSdkPath(), DependencyType.hosted);
+    new PackageNode(r'$sdk', sdkPath, DependencyType.hosted);
 
 /// A graph of the package dependencies for an application.
 class PackageGraph {
