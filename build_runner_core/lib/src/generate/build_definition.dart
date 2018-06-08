@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
+import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
@@ -374,20 +375,13 @@ class _Loader {
     return targets.asyncExpand(_listAssetIds).toSet();
   }
 
+  Stream<AssetId> _mergeAll(Iterable<Stream<AssetId>> streams) =>
+      streams.first.transform(mergeAll(streams.skip(1).toList()));
+
   Stream<AssetId> _listAssetIds(TargetNode targetNode) {
-    var controller = new StreamController<AssetId>();
-    () async {
-      try {
-        for (final glob in targetNode.sourceIncludes) {
-          await controller.addStream(
-              _listIdsSafe(glob, package: targetNode.package.name)
-                  .where((id) => !targetNode.excludesSource(id)));
-        }
-      } finally {
-        await controller.close();
-      }
-    }();
-    return controller.stream;
+    return _mergeAll(targetNode.sourceIncludes.map((glob) =>
+        _listIdsSafe(glob, package: targetNode.package.name)
+            .where((id) => !targetNode.excludesSource(id))));
   }
 
   Stream<AssetId> _listGeneratedAssetIds() {
