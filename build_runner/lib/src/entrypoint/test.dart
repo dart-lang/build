@@ -92,6 +92,7 @@ class TestCommand extends BuildRunnerCommand {
         builderConfigOverrides: options.builderConfigOverrides,
         isReleaseBuild: options.isReleaseBuild,
         buildDirs: options.buildDirs,
+        logPerformanceDir: options.logPerformanceDir,
       );
 
       if (result.status == BuildStatus.failure) {

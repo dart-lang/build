@@ -55,6 +55,9 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: r'Enables performance tracking and the /$perf page.',
           negatable: true,
           defaultsTo: false)
+      ..addOption(logPerformanceOption,
+          help: 'A directory to write performance logs to, must be in the '
+              'current package. Implies `--track-performance`.')
       ..addFlag(skipBuildScriptCheckOption,
           help: r'Skip validation for the digests of files imported by the '
               'build script.',

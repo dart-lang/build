@@ -61,6 +61,7 @@ class ServeCommand extends WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       buildDirs: options.buildDirs,
+      logPerformanceDir: options.logPerformanceDir,
     );
 
     if (handler == null) return ExitCode.config.code;

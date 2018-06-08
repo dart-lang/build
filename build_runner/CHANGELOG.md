@@ -2,6 +2,8 @@
 
 ### New Features
 
+- Added the `--log-performance <dir>` option which will dump performance
+  information to `<dir>` after each build.
 - The `BuildPerformance` class is now serializable, it has a `fromJson`
   constructor and a `toJson` instance method.
 
