@@ -3,8 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:io';
 
-// TODO(grouma) - copy SDK path logic to remove dep below.
-import 'package:cli_util/cli_util.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
@@ -35,4 +33,7 @@ String _scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
 final pubBinary = p.join(sdkBin, Platform.isWindows ? 'pub.bat' : 'pub');
 
 /// The path to the sdk bin directory on the current platform.
-final sdkBin = p.join(getSdkPath(), 'bin');
+final sdkBin = p.join(sdkPath, 'bin');
+
+/// The path to the sdk on the current platform.
+final sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));

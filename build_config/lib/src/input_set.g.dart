@@ -8,7 +8,7 @@ part of 'input_set.dart';
 
 InputSet _$InputSetFromJson(Map json) {
   return $checkedNew('InputSet', json, () {
-    $checkAllowedKeys(json, const ['include', 'exclude']);
+    $checkKeys(json, allowedKeys: const ['include', 'exclude']);
     var val = new InputSet(
         include: $checkedConvert(json, 'include',
             (v) => (v as List)?.map((e) => e as String)?.toList()),

@@ -8,7 +8,7 @@ part of 'builder_definition.dart';
 
 BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
   return $checkedNew('BuilderDefinition', json, () {
-    $checkAllowedKeys(json, const [
+    $checkKeys(json, allowedKeys: const [
       'package',
       'key',
       'builder_factories',
@@ -65,7 +65,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
 
 PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
   return $checkedNew('PostProcessBuilderDefinition', json, () {
-    $checkAllowedKeys(json, const [
+    $checkKeys(json, allowedKeys: const [
       'package',
       'key',
       'builder_factory',
@@ -96,8 +96,12 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
 
 TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) {
   return $checkedNew('TargetBuilderConfigDefaults', json, () {
-    $checkAllowedKeys(json,
-        const ['generate_for', 'options', 'dev_options', 'release_options']);
+    $checkKeys(json, allowedKeys: const [
+      'generate_for',
+      'options',
+      'dev_options',
+      'release_options'
+    ]);
     var val = new TargetBuilderConfigDefaults(
         generateFor: $checkedConvert(json, 'generate_for',
             (v) => v == null ? null : new InputSet.fromJson(v)),

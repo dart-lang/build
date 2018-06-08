@@ -78,6 +78,6 @@ void main() {
       expect(await new File(extraFilePath).exists(), isFalse,
           reason: 'The cache dir should get deleted when the asset graph '
               'can\'t be parsed');
-    });
+    }, onPlatform: {'windows': const Skip('flaky on windows')});
   });
 }

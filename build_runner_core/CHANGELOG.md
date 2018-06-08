@@ -14,6 +14,10 @@
 - `BuilderActionPerformance.builder` has been replaced with
   `BuilderActionPerformance.builderKey`.
 
+### Internal changes
+
+- Remove dependency on package:cli_util.
+
 ## 0.1.0
 
 Initial release, migrating the core functionality of package:build_runner to
