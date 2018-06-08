@@ -61,7 +61,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
       return scope.skip(1).join('__');
     }
   }();
-  appModuleScope = appModuleScope.replaceAll('.', '\$46');
+  appModuleScope =
+      appModuleScope.replaceAll('.', '\$46').replaceAll('-', '\$45');
 
   // Map from module name to module path for custom modules.
   var modulePaths = new SplayTreeMap.of(
