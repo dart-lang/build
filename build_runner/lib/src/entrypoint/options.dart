@@ -147,6 +147,7 @@ class ServeOptions extends SharedOptions {
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
     @required List<String> buildDirs,
+    @required String logPerformanceDir,
   }) : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -160,6 +161,7 @@ class ServeOptions extends SharedOptions {
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
           buildDirs: buildDirs,
+          logPerformanceDir: logPerformanceDir,
         );
 
   factory ServeOptions.fromParsedArgs(ArgResults argResults,
@@ -211,6 +213,7 @@ class ServeOptions extends SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       buildDirs: buildDirs.toList(),
+      logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
 }
