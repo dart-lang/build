@@ -374,25 +374,42 @@ class _Loader {
     return targets.asyncExpand(_listAssetIds).toSet();
   }
 
-  Stream<AssetId> _listAssetIds(TargetNode targetNode) async* {
-    for (final glob in targetNode.sourceIncludes) {
-      yield* _environment.reader
-          .findAssets(glob, package: targetNode.package.name)
-          .where((id) => !targetNode.excludesSource(id));
-    }
+  Stream<AssetId> _listAssetIds(TargetNode targetNode) {
+    var controller = new StreamController<AssetId>();
+    () async {
+      try {
+        for (final glob in targetNode.sourceIncludes) {
+          await controller.addStream(
+              _listIdsSafe(glob, package: targetNode.package.name)
+                  .where((id) => !targetNode.excludesSource(id)));
+        }
+      } finally {
+        await controller.close();
+      }
+    }();
+    return controller.stream;
   }
 
-  Stream<AssetId> _listGeneratedAssetIds() async* {
+  Stream<AssetId> _listGeneratedAssetIds() {
     var glob = new Glob('$generatedOutputDirectory/**');
-    await for (var id in _environment.reader.findAssets(glob)) {
+
+    return _listIdsSafe(glob).map((id) {
       var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
       var firstSlash = packagePath.indexOf('/');
-      if (firstSlash == -1) continue;
+      if (firstSlash == -1) return null;
       var package = packagePath.substring(0, firstSlash);
       var path = packagePath.substring(firstSlash + 1);
-      yield new AssetId(package, path);
-    }
+      return new AssetId(package, path);
+    }).where((id) => id != null);
   }
+
+  /// Lists asset ids and swallows file not found errors.
+  ///
+  /// Ideally we would warn but in practice the default whitelist will give this
+  /// error a lot and it would be noisy.
+  Stream<AssetId> _listIdsSafe(Glob glob, {String package}) =>
+      _environment.reader.findAssets(glob, package: package).handleError((e) {},
+          test: (e) => e is FileSystemException && e.osError.errorCode == 2);
 
   /// Handles cleanup of pre-existing outputs for initial builds (where there is
   /// no cached graph).
