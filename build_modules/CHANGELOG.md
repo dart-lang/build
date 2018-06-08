@@ -1,3 +1,7 @@
+## 0.2.2+6
+
+- Support the latest `package:build_config`.
+
 ## 0.2.2+5
 
 - Updated the missing modules message to highlight that the error is likely due
