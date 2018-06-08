@@ -12,6 +12,7 @@ import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:pool/pool.dart';
 
 import 'common.dart';
+import 'ddc_names.dart';
 import 'dev_compiler_builder.dart';
 import 'web_entrypoint_builder.dart';
 
