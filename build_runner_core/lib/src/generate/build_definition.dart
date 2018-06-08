@@ -373,7 +373,7 @@ class _Loader {
   }
 
   Stream<AssetId> _mergeAll(Iterable<Stream<AssetId>> streams) =>
-      streams.first.transform(mergeAll(streams.skip(1).toList()));
+      streams.first.transform(mergeAll(streams.skip(1)));
 
   Stream<AssetId> _listAssetIds(TargetNode targetNode) {
     return _mergeAll(targetNode.sourceIncludes.map((glob) =>
