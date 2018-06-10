@@ -1,3 +1,7 @@
+## 0.3.1
+
+- Improve validation and errors when parsing `build.yaml`.
+
 ## 0.3.0
 
 - Parsing of `build.yaml` files is now done with the `json_serializable` package

@@ -35,16 +35,24 @@ class BuilderDefinition {
   String get key => builderKeyExpando[this];
 
   /// The names of the top-level methods in [import] from args -> Builder.
-  @JsonKey(name: 'builder_factories', nullable: false)
+  @JsonKey(
+      name: 'builder_factories',
+      nullable: false,
+      required: true,
+      disallowNullValue: true)
   final List<String> builderFactories;
 
   /// The import to be used to load `clazz`.
-  @JsonKey(nullable: false)
+  @JsonKey(nullable: false, required: true, disallowNullValue: true)
   final String import;
 
   /// A map from input extension to the output extensions created for matching
   /// inputs.
-  @JsonKey(name: 'build_extensions', nullable: false)
+  @JsonKey(
+      name: 'build_extensions',
+      nullable: false,
+      required: true,
+      disallowNullValue: true)
   final Map<String, List<String>> buildExtensions;
 
   /// The name of the dart_library target that contains `import`.
@@ -155,11 +163,15 @@ class PostProcessBuilderDefinition {
 
   /// The name of the top-level method in [import] from
   /// BuilderOptions -> Builder.
-  @JsonKey(name: 'builder_factory', nullable: false)
+  @JsonKey(
+      name: 'builder_factory',
+      nullable: false,
+      required: true,
+      disallowNullValue: true)
   final String builderFactory;
 
   /// The import to be used to load `clazz`.
-  @JsonKey(nullable: false)
+  @JsonKey(nullable: false, required: true, disallowNullValue: true)
   final String import;
 
   /// A list of input extensions for this builder.
