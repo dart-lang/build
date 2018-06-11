@@ -258,8 +258,7 @@ Future<List<BuildPhase>> createBuildPhases(
             return targetGraph.allModules[key];
           })?.where((n) => n != null));
   final applyWith = _applyWith(builderApplications);
-
-  var expandedPhases = cycles
+  final expandedPhases = cycles
       .expand((cycle) => _createBuildPhasesWithinCycle(
           cycle,
           builderApplications,
@@ -267,15 +266,15 @@ Future<List<BuildPhase>> createBuildPhases(
           applyWith,
           isReleaseMode))
       .toList();
-  var inBuildPhases =
+
+  final inBuildPhases =
       expandedPhases.where((p) => p is InBuildPhase).cast<BuildPhase>();
 
-  var postBuildPhases = expandedPhases
+  final postBuildPhases = expandedPhases
       .where((p) => p is PostBuildPhase)
       .cast<PostBuildPhase>()
       .toList();
-
-  var collapsedPostBuildPhase = <PostBuildPhase>[];
+  final collapsedPostBuildPhase = <PostBuildPhase>[];
   if (postBuildPhases.isNotEmpty) {
     collapsedPostBuildPhase.add(postBuildPhases
         .fold<PostBuildPhase>(new PostBuildPhase([]), (previous, next) {
