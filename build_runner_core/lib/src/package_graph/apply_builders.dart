@@ -258,28 +258,32 @@ Future<List<BuildPhase>> createBuildPhases(
             return targetGraph.allModules[key];
           })?.where((n) => n != null));
   final applyWith = _applyWith(builderApplications);
-  var expandedPhases = cycles.expand((cycle) => _createBuildPhasesWithinCycle(
-      cycle,
-      builderApplications,
-      builderConfigOverrides,
-      applyWith,
-      isReleaseMode));
+  final expandedPhases = cycles
+      .expand((cycle) => _createBuildPhasesWithinCycle(
+          cycle,
+          builderApplications,
+          builderConfigOverrides,
+          applyWith,
+          isReleaseMode))
+      .toList();
 
-  var combinedPhases = <BuildPhase>[]
-    ..addAll(expandedPhases.where((phase) => phase is InBuildPhase));
-  var postBuilderPhases = expandedPhases
-      .where((phase) => phase is PostBuildPhase)
+  final inBuildPhases =
+      expandedPhases.where((p) => p is InBuildPhase).cast<BuildPhase>();
+
+  final postBuildPhases = expandedPhases
+      .where((p) => p is PostBuildPhase)
       .cast<PostBuildPhase>()
       .toList();
-  if (postBuilderPhases.isNotEmpty) {
-    combinedPhases.add(postBuilderPhases
+  final collapsedPostBuildPhase = <PostBuildPhase>[];
+  if (postBuildPhases.isNotEmpty) {
+    collapsedPostBuildPhase.add(postBuildPhases
         .fold<PostBuildPhase>(new PostBuildPhase([]), (previous, next) {
       previous.builderActions.addAll(next.builderActions);
       return previous;
     }));
   }
 
-  return combinedPhases;
+  return inBuildPhases.followedBy(collapsedPostBuildPhase).toList();
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
