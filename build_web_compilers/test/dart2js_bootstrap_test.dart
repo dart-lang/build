@@ -56,5 +56,5 @@ main() {
             dart2JsArgs: ['--no-source-maps']),
         assets,
         outputs: expectedOutputs);
-  }, skip: 'https://github.com/dart-lang/sdk/issues/33332');
+  });
 }
