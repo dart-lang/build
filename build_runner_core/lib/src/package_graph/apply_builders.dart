@@ -259,32 +259,32 @@ Future<List<BuildPhase>> createBuildPhases(
           })?.where((n) => n != null));
   final applyWith = _applyWith(builderApplications);
 
-  var combinedPhases = <BuildPhase>[];
-  var postBuilderPhases = <PostBuildPhase>[];
+  var expandedPhases = cycles
+      .expand((cycle) => _createBuildPhasesWithinCycle(
+          cycle,
+          builderApplications,
+          builderConfigOverrides,
+          applyWith,
+          isReleaseMode))
+      .toList();
+  var inBuildPhases =
+      expandedPhases.where((p) => p is InBuildPhase).cast<BuildPhase>();
 
-  for (var phase in cycles.expand((cycle) => _createBuildPhasesWithinCycle(
-      cycle,
-      builderApplications,
-      builderConfigOverrides,
-      applyWith,
-      isReleaseMode))) {
-    if (phase is PostBuildPhase) {
-      postBuilderPhases.add(phase);
-    } else {
-      assert(phase is InBuildPhase);
-      combinedPhases.add(phase);
-    }
-  }
+  var postBuildPhases = expandedPhases
+      .where((p) => p is PostBuildPhase)
+      .cast<PostBuildPhase>()
+      .toList();
 
-  if (postBuilderPhases.isNotEmpty) {
-    combinedPhases.add(postBuilderPhases
+  var collapsedPostBuildPhase = <PostBuildPhase>[];
+  if (postBuildPhases.isNotEmpty) {
+    collapsedPostBuildPhase.add(postBuildPhases
         .fold<PostBuildPhase>(new PostBuildPhase([]), (previous, next) {
       previous.builderActions.addAll(next.builderActions);
       return previous;
     }));
   }
 
-  return combinedPhases;
+  return inBuildPhases.followedBy(collapsedPostBuildPhase).toList();
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
