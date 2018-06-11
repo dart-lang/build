@@ -55,6 +55,30 @@ void main() {
       );
     });
 
+    test('Builder factories are only invoked once per application', () async {
+      var invokedCount = 0;
+      final packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): []
+      });
+      await testBuilders([
+        apply(
+            '',
+            [
+              (_) {
+                invokedCount += 1;
+                return new TestBuilder();
+              }
+            ],
+            toAllPackages(),
+            isOptional: false,
+            hideOutput: true),
+      ], {}, packageGraph: packageGraph);
+
+      // Once per package, including the SDK.
+      expect(invokedCount, 3);
+    });
+
     test('throws an error if the builderFactory fails', () async {
       expect(
           () async => await testBuilders(
