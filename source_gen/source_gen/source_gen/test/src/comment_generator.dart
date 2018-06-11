@@ -15,13 +15,13 @@ class CommentGenerator extends Generator {
 
   @override
   Future<String> generate(LibraryReader library, _) async {
-    var output = new StringBuffer();
+    var output = <String>[];
     if (forLibrary) {
       var name = library.element.name;
       if (name.isEmpty) {
         name = library.element.source.uri.pathSegments.last;
       }
-      output.writeln('// Code for "$name"');
+      output.add('// Code for "$name"');
     }
     if (forClasses) {
       for (var classElement
@@ -32,9 +32,9 @@ class CommentGenerator extends Generator {
               todo: 'Rename ${classElement.displayName} to something else.',
               element: classElement);
         }
-        output.writeln('// Code for "$classElement"');
+        output.add('// Code for "$classElement"');
       }
     }
-    return '$output';
+    return output.join('\n');
   }
 }

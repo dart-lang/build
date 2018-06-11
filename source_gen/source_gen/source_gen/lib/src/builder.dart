@@ -115,7 +115,7 @@ class _Builder extends Builder {
             LineSplitter.split(item.toString()).map((line) => '// $line\n'))
         ..writeln(_headerLine)
         ..writeln()
-        ..write(item.output);
+        ..writeln(item.output);
     }
 
     var genPartContent = contentBuffer.toString();
@@ -212,9 +212,16 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
       log.fine(msg);
       var createdUnit = await gen.generate(libraryReader, buildStep);
 
-      if (createdUnit != null && createdUnit.isNotEmpty) {
-        yield new GeneratedOutput(gen, createdUnit);
+      if (createdUnit == null) {
+        continue;
       }
+
+      createdUnit = createdUnit.trim();
+      if (createdUnit.isEmpty) {
+        continue;
+      }
+
+      yield new GeneratedOutput(gen, createdUnit);
     } catch (e, stack) {
       log.severe('Error running $gen', e, stack);
       yield new GeneratedOutput.fromError(gen, e, stack);

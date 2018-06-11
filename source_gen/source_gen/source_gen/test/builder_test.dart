@@ -65,8 +65,8 @@ void main() {
   test('Expect no error when multiple generators used on nonstandalone builder',
       () async {
     expect(
-        () =>
-            new PartBuilder([const CommentGenerator(), const _NoOpGenerator()]),
+        () => new PartBuilder(
+            [const CommentGenerator(), const _LiteralGenerator()]),
         returnsNormally);
   });
 
@@ -103,9 +103,9 @@ void main() {
           const CommentGenerator(forClasses: true, forLibrary: true),
           _testGenPartContentForClassesAndLibrary));
 
-  test('No-op generator produces no generated parts', () async {
+  test('null result produces no generated parts', () async {
     var srcs = _createPackageStub();
-    var builder = new PartBuilder([const _NoOpGenerator()]);
+    var builder = _unformattedLiteral();
     await testBuilder(builder, srcs, outputs: {});
   });
 
@@ -131,6 +131,38 @@ void main() {
       },
     );
     expect(logs, ['Missing "part \'test_lib.g.dart\';".']);
+  });
+
+  test('generator with an empty result creates no outputs', () async {
+    var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+    var builder = _unformattedLiteral('');
+    await testBuilder(
+      builder,
+      srcs,
+      outputs: {},
+    );
+  });
+
+  test('generator with whitespace-only result has no outputs', () async {
+    var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+    var builder = _unformattedLiteral('\n  \n');
+    await testBuilder(
+      builder,
+      srcs,
+      outputs: {},
+    );
+  });
+
+  test('generator result with wrapping whitespace is trimmed', () async {
+    var srcs = _createPackageStub(testLibContent: _testLibContent);
+    var builder = _unformattedLiteral('\n// hello\n');
+    await testBuilder(
+      builder,
+      srcs,
+      outputs: {
+        '$_pkgName|lib/test_lib.g.dart': _whitespaceTrimmed,
+      },
+    );
   });
 
   test('defaults to formatting generated code with the DartFormatter',
@@ -191,15 +223,15 @@ void main() {
   });
 
   test('Should have a readable toString() message for builders', () {
-    final builder = new LibraryBuilder(const _NoOpGenerator());
-    expect(builder.toString(), 'Generating .g.dart: _NoOpGenerator');
+    final builder = new LibraryBuilder(const _LiteralGenerator());
+    expect(builder.toString(), 'Generating .g.dart: _LiteralGenerator');
 
     final builders = new PartBuilder([
-      const _NoOpGenerator(),
-      const _NoOpGenerator(),
+      const _LiteralGenerator(),
+      const _LiteralGenerator(),
     ]);
     expect(builders.toString(),
-        'Generating .g.dart: _NoOpGenerator, _NoOpGenerator');
+        'Generating .g.dart: _LiteralGenerator, _LiteralGenerator');
   });
 }
 
@@ -223,12 +255,17 @@ Map<String, String> _createPackageStub(
   };
 }
 
-/// Doesn't generate output for any element
-class _NoOpGenerator extends Generator {
-  const _NoOpGenerator();
+PartBuilder _unformattedLiteral([String content]) =>
+    new PartBuilder([new _LiteralGenerator(content)], formatOutput: (s) => s);
+
+/// Returns the [String] provided in the constructor, or `null`.
+class _LiteralGenerator extends Generator {
+  final String _content;
+
+  const _LiteralGenerator([this._content]);
 
   @override
-  Future<String> generate(LibraryReader library, _) => null;
+  FutureOr<String> generate(_, __) => _content;
 }
 
 class _BadOutputGenerator extends Generator {
@@ -340,4 +377,15 @@ part of 'test_lib.dart';
 // **************************************************************************
 
 // Code for "class A"
+''';
+
+const _whitespaceTrimmed = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of test_lib;
+
+// **************************************************************************
+// _LiteralGenerator
+// **************************************************************************
+
+// hello
 ''';

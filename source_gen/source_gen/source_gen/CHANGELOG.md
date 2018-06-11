@@ -2,6 +2,12 @@
 
 * Simplification to the output of generator names in header sections.
 
+* Update handling of whitespace in generator outputs.
+  * If the output from a generator has wrapping whitespace, it is trimmed.
+  * If the output from a generator is empty or whitespace-only, it is ignored.
+  * These changes will likely have no effect on output, unless you customize
+    the code formatter.
+
 ## 0.8.1+3
 
 * More redundant new lines elimination.
