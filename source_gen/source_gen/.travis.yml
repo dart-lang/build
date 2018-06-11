@@ -1,12 +1,24 @@
+# Created with https://github.com/dart-lang/mono_repo
 language: dart
 
-dart:
-  - dev
+jobs:
+  include:
+    - stage: analyze_format
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="_test_annotations"
+      dart: dev
+    - stage: analyze_format
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="source_gen"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test
+      env: PKG="source_gen"
+      dart: dev
 
-dart_task:
-  - test
-  - dartfmt
-  - dartanalyzer
+stages:
+  - analyze_format
+  - unit_test
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
