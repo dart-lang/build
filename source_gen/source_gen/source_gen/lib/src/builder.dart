@@ -67,9 +67,6 @@ class _Builder extends Builder {
     await _generateForLibrary(lib, buildStep);
   }
 
-  AssetId _generatedFile(AssetId input) =>
-      input.changeExtension(_generatedExtension);
-
   Future _generateForLibrary(
       LibraryElement library, BuildStep buildStep) async {
     var generatedOutputs =
@@ -81,7 +78,7 @@ class _Builder extends Builder {
     // library/part definitions because users expect some files to be skipped
     // therefore they do not have "library".
     if (generatedOutputs.isEmpty) return;
-    final outputId = _generatedFile(buildStep.inputId);
+    final outputId = buildStep.inputId.changeExtension(_generatedExtension);
 
     var contentBuffer = new StringBuffer();
 
