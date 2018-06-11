@@ -21,6 +21,9 @@ class GeneratedOutput {
 
   GeneratedOutput.fromError(this.generator, this.error, this.stackTrace)
       : this.output = _outputFromError(error);
+
+  @override
+  String toString() => 'Generator: $generator';
 }
 
 String _outputFromError(Object error) {

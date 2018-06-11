@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
@@ -106,14 +107,15 @@ class _Builder extends Builder {
       contentBuffer.writeln('part of $name;');
     }
 
-    for (var output in generatedOutputs) {
+    for (var item in generatedOutputs) {
       contentBuffer
         ..writeln()
         ..writeln(_headerLine)
-        ..writeln('// Generator: ${output.generator}')
+        ..writeAll(
+            LineSplitter.split(item.toString()).map((line) => '// $line\n'))
         ..writeln(_headerLine)
         ..writeln()
-        ..write(output.output);
+        ..write(item.output);
     }
 
     var genPartContent = contentBuffer.toString();
