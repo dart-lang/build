@@ -63,14 +63,14 @@ void main() {
     var handler = serveHandler.handlerFor('web');
     var requestUri = Uri.parse('http://server.com/index.html');
     var firstResponse = await handler(new Request('GET', requestUri));
-    var etag = firstResponse.headers[HttpHeaders.ETAG];
+    var etag = firstResponse.headers[HttpHeaders.etagHeader];
     expect(etag, isNotNull);
-    expect(firstResponse.statusCode, HttpStatus.OK);
+    expect(firstResponse.statusCode, HttpStatus.ok);
     expect(await firstResponse.readAsString(), 'content');
 
     var cachedResponse = await handler(new Request('GET', requestUri,
-        headers: {HttpHeaders.IF_NONE_MATCH: etag}));
-    expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+        headers: {HttpHeaders.ifNoneMatchHeader: etag}));
+    expect(cachedResponse.statusCode, HttpStatus.notModified);
     expect(await cachedResponse.readAsString(), isEmpty);
   });
 
@@ -103,14 +103,14 @@ void main() {
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse('http://server.com/index.html')));
 
-      expect(response.statusCode, HttpStatus.OK);
+      expect(response.statusCode, HttpStatus.ok);
     });
 
     test('rejects requests for failed assets', () async {
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse('http://server.com/main.ddc.js')));
 
-      expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(response.statusCode, HttpStatus.internalServerError);
     });
 
     test('logs rejected requests', () async {
@@ -149,7 +149,7 @@ void main() {
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse(r'http://server.com/$perf')));
 
-      expect(response.statusCode, HttpStatus.OK);
+      expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(),
           allOf(contains('test_builder:a|web/a.txt'), contains('SomeLabel')));
     });
@@ -162,7 +162,7 @@ void main() {
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse(r'http://server.com/$perf')));
 
-      expect(response.statusCode, HttpStatus.OK);
+      expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(), contains('--track-performance'));
     });
   });

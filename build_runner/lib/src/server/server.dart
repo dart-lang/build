@@ -96,7 +96,7 @@ class ServeHandler implements BuildState {
     }
     return new shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
-        headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+        headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
 
   void _warnForEmptyDirectory(String rootDir) {
@@ -159,23 +159,23 @@ class AssetHandler {
 
     var etag = base64.encode((await _reader.digest(assetId)).bytes);
     var headers = {
-      HttpHeaders.CONTENT_TYPE: _typeResolver.lookup(assetId.path),
-      HttpHeaders.ETAG: etag,
+      HttpHeaders.contentTypeHeader: _typeResolver.lookup(assetId.path),
+      HttpHeaders.etagHeader: etag,
       // We always want this revalidated, which requires specifying both
       // max-age=0 and must-revalidate.
       //
       // See spec https://goo.gl/Lhvttg for more info about this header.
-      HttpHeaders.CACHE_CONTROL: 'max-age=0, must-revalidate',
+      HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
     };
 
-    if (requestHeaders[HttpHeaders.IF_NONE_MATCH] == etag) {
+    if (requestHeaders[HttpHeaders.ifNoneMatchHeader] == etag) {
       // This behavior is still useful for cases where a file is hit
       // without a cache-busting query string.
       return new shelf.Response.notModified(headers: headers);
     }
 
     var bytes = await _reader.readAsBytes(assetId);
-    headers[HttpHeaders.CONTENT_LENGTH] = '${bytes.length}';
+    headers[HttpHeaders.contentLengthHeader] = '${bytes.length}';
     return new shelf.Response.ok(bytes, headers: headers);
   }
 

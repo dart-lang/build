@@ -104,6 +104,6 @@ void main() {
     ));
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/main.ddc.js')), 'web');
-    expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(response.statusCode, HttpStatus.internalServerError);
   });
 }
