@@ -14,6 +14,11 @@
 - `BuilderActionPerformance.builder` has been replaced with
   `BuilderActionPerformance.builderKey`.
 
+## Other
+
+- Updated to the latest camel case constants from the sdk.
+- Minimum sdk version is now `>=2.0.0-dev.61`.
+
 ## 0.8.10
 
 - All builders with `build_to: source` will now be ran regardless of which
