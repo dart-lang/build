@@ -16,17 +16,14 @@ class GeneratedOutput {
 
   GeneratedOutput(this.generator, this.output)
       : error = null,
-        stackTrace = null;
+        stackTrace = null,
+        assert(output != null && output.isNotEmpty);
 
-  GeneratedOutput.fromError(this.generator, this.error, [this.stackTrace])
+  GeneratedOutput.fromError(this.generator, this.error, this.stackTrace)
       : this.output = _outputFromError(error);
 }
 
 String _outputFromError(Object error) {
-  if (error == null) {
-    throw new ArgumentError.notNull('error');
-  }
-
   var buffer = new StringBuffer();
 
   _commentWithHeader(_errorHeader, error.toString(), buffer);
