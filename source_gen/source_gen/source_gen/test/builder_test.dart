@@ -192,13 +192,14 @@ void main() {
 
   test('Should have a readable toString() message for builders', () {
     final builder = new LibraryBuilder(const _NoOpGenerator());
-    expect(builder.toString(), 'Generating .g.dart: NOOP');
+    expect(builder.toString(), 'Generating .g.dart: _NoOpGenerator');
 
     final builders = new PartBuilder([
       const _NoOpGenerator(),
       const _NoOpGenerator(),
     ]);
-    expect(builders.toString(), 'Generating .g.dart: NOOP, NOOP');
+    expect(builders.toString(),
+        'Generating .g.dart: _NoOpGenerator, _NoOpGenerator');
   });
 }
 
@@ -228,9 +229,6 @@ class _NoOpGenerator extends Generator {
 
   @override
   Future<String> generate(LibraryReader library, _) => null;
-
-  @override
-  String toString() => 'NOOP';
 }
 
 class _BadOutputGenerator extends Generator {

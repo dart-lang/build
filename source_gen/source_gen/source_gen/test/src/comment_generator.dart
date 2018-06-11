@@ -37,7 +37,4 @@ class CommentGenerator extends Generator {
     }
     return '$output';
   }
-
-  @override
-  String toString() => 'CommentGenerator';
 }
