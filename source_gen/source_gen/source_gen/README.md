@@ -121,7 +121,7 @@ detail*.
 [api:LibraryBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/LibraryBuilder-class.html
 
 [Dart transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
-[Trivial example]: https://github.com/dart-lang/source_gen/blob/master/test/src/comment_generator.dart
+[Trivial example]: https://github.com/dart-lang/source_gen/blob/master/source_gen/test/src/comment_generator.dart
 [build.dart]: https://github.com/dart-lang/source_gen/blob/master/build.dart
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
 [build]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_build
