@@ -265,14 +265,14 @@ class _LiteralGenerator extends Generator {
   const _LiteralGenerator([this._content]);
 
   @override
-  FutureOr<String> generate(_, __) => _content;
+  String generate(_, __) => _content;
 }
 
 class _BadOutputGenerator extends Generator {
   const _BadOutputGenerator();
 
   @override
-  Future<String> generate(LibraryReader library, _) async => 'not valid code!';
+  String generate(_, __) => 'not valid code!';
 }
 
 final _customHeader = '// Copyright 1979';
