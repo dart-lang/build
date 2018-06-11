@@ -22,6 +22,14 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
       'is_optional',
       'build_to',
       'defaults'
+    ], requiredKeys: const [
+      'builder_factories',
+      'import',
+      'build_extensions'
+    ], disallowNullValues: const [
+      'builder_factories',
+      'import',
+      'build_extensions'
     ]);
     var val = new BuilderDefinition(
         builderFactories: $checkedConvert(json, 'builder_factories',
@@ -73,6 +81,12 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
       'input_extensions',
       'target',
       'defaults'
+    ], requiredKeys: const [
+      'builder_factory',
+      'import'
+    ], disallowNullValues: const [
+      'builder_factory',
+      'import'
     ]);
     var val = new PostProcessBuilderDefinition(
         builderFactory:

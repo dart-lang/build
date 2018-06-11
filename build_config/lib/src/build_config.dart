@@ -158,6 +158,10 @@ String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
           .singleWhere((k) => (k as YamlScalar).value == key) as YamlScalar;
       message += '${yamlKey.span.message('')}\n';
     }
+  } else if (innerError is MissingRequiredKeysException) {
+    message = 'Missing key(s), could not create ${err.className}.\n'
+        'Missing keys are [${innerError.missingKeys.join(', ')}].\n';
+    message = yamlMap.span.message(message);
   } else {
     var yamlValue = yamlMap.nodes[err.key];
 
