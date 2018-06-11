@@ -1,3 +1,7 @@
+## 0.8.2
+
+* Simplification to the output of generator names in header sections.
+
 ## 0.8.1+3
 
 * More redundant new lines elimination.

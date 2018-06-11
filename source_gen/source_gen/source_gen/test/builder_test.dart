@@ -273,7 +273,7 @@ const _testGenPartContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 part of test_lib;
 
 // **************************************************************************
-// Generator: CommentGenerator
+// CommentGenerator
 // **************************************************************************
 
 // Code for "class Person"
@@ -286,7 +286,7 @@ const _testGenPartContentForLibrary =
 part of test_lib;
 
 // **************************************************************************
-// Generator: CommentGenerator
+// CommentGenerator
 // **************************************************************************
 
 // Code for "test_lib"
@@ -295,7 +295,7 @@ part of test_lib;
 const _testGenStandaloneContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
-// Generator: CommentGenerator
+// CommentGenerator
 // **************************************************************************
 
 // Code for "class Person"
@@ -308,7 +308,7 @@ const _testGenPartContentForClassesAndLibrary =
 part of test_lib;
 
 // **************************************************************************
-// Generator: CommentGenerator
+// CommentGenerator
 // **************************************************************************
 
 // Code for "test_lib"
@@ -321,7 +321,7 @@ const _testGenPartContentError = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 part of test_lib;
 
 // **************************************************************************
-// Generator: CommentGenerator
+// CommentGenerator
 // **************************************************************************
 
 // Error: Don't use classes with the word 'Error' in the name
@@ -336,7 +336,7 @@ const _testGenNoLibrary = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 part of 'test_lib.dart';
 
 // **************************************************************************
-// Generator: CommentGenerator
+// CommentGenerator
 // **************************************************************************
 
 // Code for "class A"

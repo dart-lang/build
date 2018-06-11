@@ -23,7 +23,13 @@ class GeneratedOutput {
       : this.output = _outputFromError(error);
 
   @override
-  String toString() => 'Generator: $generator';
+  String toString() {
+    var output = generator.toString();
+    if (output.endsWith('Generator')) {
+      return output;
+    }
+    return 'Generator: $output';
+  }
 }
 
 String _outputFromError(Object error) {
