@@ -11,6 +11,7 @@ import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
@@ -152,11 +153,11 @@ Expression _applyBuilder(BuilderDefinition definition) {
   if (definition.appliesBuilders.isNotEmpty) {
     namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
   }
+  var import = _buildScriptImport(definition.import);
   return refer('apply', 'package:build_runner/build_runner.dart').call([
     literalString(definition.key),
-    literalList(definition.builderFactories
-        .map((f) => refer(f, definition.import))
-        .toList()),
+    literalList(
+        definition.builderFactories.map((f) => refer(f, import)).toList()),
     _findToExpression(definition),
   ], namedArgs);
 }
@@ -191,11 +192,27 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
         refer('InputSet', 'package:build_config/build_config.dart')
             .constInstance([], inputSetArgs);
   }
+  var import = _buildScriptImport(definition.import);
   return refer('applyPostProcess', 'package:build_runner/build_runner.dart')
       .call([
     literalString(definition.key),
-    refer(definition.builderFactory, definition.import),
+    refer(definition.builderFactory, import),
   ], namedArgs);
+}
+
+/// Returns the actual import to put in the generated script based on an import
+/// found in the build.yaml.
+String _buildScriptImport(String import) {
+  if (import.startsWith('package:')) {
+    return import;
+  } else if (import.startsWith('../') || import.startsWith('/')) {
+    log.warning('The `../` import syntax in build.yaml is now deprecated, '
+        'instead do a normal relative import as if it was from the root of '
+        'the package. Found `$import` in your `build.yaml` file.');
+    return import;
+  } else {
+    return p.relative(import, from: p.dirname(scriptLocation));
+  }
 }
 
 Expression _findToExpression(BuilderDefinition definition) {
