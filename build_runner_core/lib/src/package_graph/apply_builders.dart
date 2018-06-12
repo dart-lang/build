@@ -175,9 +175,19 @@ class BuilderApplication {
               optionsWithDefaults.overrideWith(BuilderOptions.forRoot);
         }
 
-        var builder = _scopeLogSync(
-            () => builderFactory(optionsWithDefaults), new Logger(builderKey));
-        if (builder == null) throw 'builderFactory did not return a builder.';
+        final logger = new Logger(builderKey);
+        Builder builder;
+        try {
+          builder =
+              _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
+        } catch (e, st) {
+          logger.severe('Failed to instantiate builder.', e, st);
+          throw new CannotBuildException();
+        }
+        if (builder == null) {
+          logger.severe('Failed to instantiate builder.');
+          throw new CannotBuildException();
+        }
         return new InBuildPhase(builder, package.name,
             builderKey: builderKey,
             targetSources: targetSources,
@@ -214,7 +224,19 @@ class BuilderApplication {
             optionsWithDefaults.overrideWith(BuilderOptions.forRoot);
       }
 
-      var builder = builderFactory(optionsWithDefaults);
+      final logger = new Logger(builderKey);
+      PostProcessBuilder builder;
+      try {
+        builder =
+            _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
+      } catch (e, st) {
+        logger.severe('Failed to instantiate builder.', e, st);
+        throw new CannotBuildException();
+      }
+      if (builder == null) {
+        logger.severe('Failed to instantiate builder.');
+        throw new CannotBuildException();
+      }
       var builderAction = new PostBuildAction(builder, package.name,
           builderOptions: optionsWithDefaults,
           generateFor: generateFor,
