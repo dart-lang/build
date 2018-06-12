@@ -176,16 +176,10 @@ class BuilderApplication {
         }
 
         final logger = new Logger(builderKey);
-        Builder builder;
-        try {
-          builder =
-              _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
-        } catch (e, st) {
-          logger.severe('Failed to instantiate builder.', e, st);
-          throw new CannotBuildException();
-        }
+        final builder =
+            _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
         if (builder == null) {
-          logger.severe('Failed to instantiate builder.');
+          logger.severe(_factoryFailure(package.name, optionsWithDefaults));
           throw new CannotBuildException();
         }
         return new InBuildPhase(builder, package.name,
@@ -225,16 +219,10 @@ class BuilderApplication {
       }
 
       final logger = new Logger(builderKey);
-      PostProcessBuilder builder;
-      try {
-        builder =
-            _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
-      } catch (e, st) {
-        logger.severe('Failed to instantiate builder.', e, st);
-        throw new CannotBuildException();
-      }
+      final builder =
+          _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
       if (builder == null) {
-        logger.severe('Failed to instantiate builder.');
+        logger.severe(_factoryFailure(package.name, optionsWithDefaults));
         throw new CannotBuildException();
       }
       var builderAction = new PostBuildAction(builder, package.name,
@@ -390,3 +378,7 @@ T _scopeLogSync<T>(T fn(), Logger log) {
         log.severe('', e, s);
       });
 }
+
+String _factoryFailure(String packageName, BuilderOptions options) =>
+    'Failed to instantiate builder for $packageName '
+    'with configuration ${options.config}';
