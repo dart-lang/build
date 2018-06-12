@@ -96,7 +96,7 @@ void main() {
                 ],
                 {'a|web/a.txt': 'a'},
               ),
-          throwsA('builderFactory did not return a builder.'));
+          throwsA(new isInstanceOf<CannotBuildException>()));
     });
 
     group('with root package inputs', () {
