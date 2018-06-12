@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/logging.dart';
@@ -175,9 +176,13 @@ class BuilderApplication {
               optionsWithDefaults.overrideWith(BuilderOptions.forRoot);
         }
 
-        var builder = _scopeLogSync(
-            () => builderFactory(optionsWithDefaults), new Logger(builderKey));
-        if (builder == null) throw 'builderFactory did not return a builder.';
+        final logger = new Logger(builderKey);
+        final builder =
+            _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
+        if (builder == null) {
+          logger.severe(_factoryFailure(package.name, optionsWithDefaults));
+          throw new CannotBuildException();
+        }
         return new InBuildPhase(builder, package.name,
             builderKey: builderKey,
             targetSources: targetSources,
@@ -214,7 +219,13 @@ class BuilderApplication {
             optionsWithDefaults.overrideWith(BuilderOptions.forRoot);
       }
 
-      var builder = builderFactory(optionsWithDefaults);
+      final logger = new Logger(builderKey);
+      final builder =
+          _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
+      if (builder == null) {
+        logger.severe(_factoryFailure(package.name, optionsWithDefaults));
+        throw new CannotBuildException();
+      }
       var builderAction = new PostBuildAction(builder, package.name,
           builderOptions: optionsWithDefaults,
           generateFor: generateFor,
@@ -368,3 +379,7 @@ T _scopeLogSync<T>(T fn(), Logger log) {
         log.severe('', e, s);
       });
 }
+
+String _factoryFailure(String packageName, BuilderOptions options) =>
+    'Failed to instantiate builder for $packageName with configuration:\n'
+    '${new JsonEncoder.withIndent(' ').convert(options.config)}';
