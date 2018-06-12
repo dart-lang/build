@@ -108,7 +108,7 @@ class BuildConfig {
   BuildConfig({
     String packageName,
     @required Map<String, BuildTarget> buildTargets,
-    @required Map<String, GlobalBuilderConfig> globalOptions,
+    Map<String, GlobalBuilderConfig> globalOptions,
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
