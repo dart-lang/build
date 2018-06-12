@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/logging.dart';
@@ -380,5 +381,5 @@ T _scopeLogSync<T>(T fn(), Logger log) {
 }
 
 String _factoryFailure(String packageName, BuilderOptions options) =>
-    'Failed to instantiate builder for $packageName '
-    'with configuration ${options.config}';
+    'Failed to instantiate builder for $packageName with configuration:\n'
+    '${new JsonEncoder.withIndent(' ').convert(options.config)}';
