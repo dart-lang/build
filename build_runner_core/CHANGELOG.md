@@ -6,6 +6,7 @@
   constructor and a `toJson` instance method.
 - Added `BuildOptions.logPerformanceDir`, performance logs will be continuously
   written to that directory if provided.
+- Added support for `global_options` in `build.yaml` of the root package.
 
 ### Breaking changes
 

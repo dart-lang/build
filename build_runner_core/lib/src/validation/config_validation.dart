@@ -28,4 +28,10 @@ void validateBuilderConfig(
       }
     }
   }
+  for (final key in rootPackageConfig.globalOptions.keys) {
+    if (!builderKeys.contains(key)) {
+      logger.warning('Configuring `$key` in global options but this is not a '
+          'known Builder');
+    }
+  }
 }
