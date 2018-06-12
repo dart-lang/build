@@ -77,6 +77,13 @@ void main() {
         ),
       ),
     });
+    expectGlobalOptions(buildConfig.globalOptions, {
+      'example|h': new GlobalBuilderConfig(
+          options: const BuilderOptions(const {'foo': 'global'})),
+      'b|b': new GlobalBuilderConfig(
+          devOptions: const BuilderOptions(const {'foo': 'global_dev'}),
+          releaseOptions: const BuilderOptions(const {'foo': 'global_release'}))
+    });
   });
 
   test('build.yaml can omit a targets section', () {
@@ -127,6 +134,15 @@ void main() {
 }
 
 var buildYaml = r'''
+global_options:
+  "|h":
+    options:
+      foo: global
+  b|b:
+    dev_options:
+      foo: global_dev
+    release_options:
+      foo: global_release
 targets:
   a:
     builders:
@@ -211,6 +227,14 @@ void expectPostProcessBuilderDefinitions(
   }
 }
 
+void expectGlobalOptions(Map<String, GlobalBuilderConfig> actual,
+    Map<String, GlobalBuilderConfig> expected) {
+  expect(actual.keys, unorderedEquals(expected.keys));
+  for (var p in actual.keys) {
+    expect(actual[p], new _GlobalBuilderConfigMatcher(expected[p]));
+  }
+}
+
 class _BuilderDefinitionMatcher extends Matcher {
   final BuilderDefinition _expected;
   _BuilderDefinitionMatcher(this._expected);
@@ -250,6 +274,23 @@ class _PostProcessBuilderDefinitionMatcher extends Matcher {
       item.import == _expected.import &&
       item.key == _expected.key &&
       item.package == _expected.package;
+
+  @override
+  Description describe(Description description) =>
+      description.addDescriptionOf(_expected);
+}
+
+class _GlobalBuilderConfigMatcher extends Matcher {
+  final GlobalBuilderConfig _expected;
+  _GlobalBuilderConfigMatcher(this._expected);
+
+  @override
+  bool matches(item, _) =>
+      item is GlobalBuilderConfig &&
+      equals(_expected.options.config).matches(item.options.config, _) &&
+      equals(_expected.devOptions.config).matches(item.devOptions.config, _) &&
+      equals(_expected.releaseOptions.config)
+          .matches(item.releaseOptions.config, _);
 
   @override
   Description describe(Description description) =>

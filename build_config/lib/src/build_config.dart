@@ -64,6 +64,9 @@ class BuildConfig {
   @JsonKey(name: 'targets', fromJson: _buildTargetsFromJson)
   final Map<String, BuildTarget> buildTargets;
 
+  @JsonKey(name: 'global_options')
+  final Map<String, GlobalBuilderConfig> globalOptions;
+
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
@@ -78,6 +81,7 @@ class BuildConfig {
       return new BuildConfig(
         packageName: packageName,
         buildTargets: {key: target},
+        globalOptions: {},
       );
     }, packageName, dependencies.toList());
   }
@@ -104,6 +108,7 @@ class BuildConfig {
   BuildConfig({
     String packageName,
     @required Map<String, BuildTarget> buildTargets,
+    @required Map<String, GlobalBuilderConfig> globalOptions,
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
@@ -113,6 +118,9 @@ class BuildConfig {
                 dependencies: currentPackageDefaultDependencies,
               )
             },
+        this.globalOptions = (globalOptions ?? const {}).map((key, config) =>
+            new MapEntry(
+                normalizeBuilderKeyUsage(key, currentPackage), config)),
         this.builderDefinitions = _normalizeBuilderDefinitions(
             builderDefinitions ?? const {}, packageName ?? currentPackage),
         this.postProcessBuilderDefinitions = _normalizeBuilderDefinitions(

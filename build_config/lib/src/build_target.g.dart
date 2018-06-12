@@ -59,3 +59,21 @@ TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
     'releaseOptions': 'release_options'
   });
 }
+
+GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) {
+  return $checkedNew('GlobalBuilderConfig', json, () {
+    $checkKeys(json,
+        allowedKeys: const ['options', 'dev_options', 'release_options']);
+    var val = new GlobalBuilderConfig(
+        options: $checkedConvert(json, 'options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+        devOptions: $checkedConvert(json, 'dev_options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+        releaseOptions: $checkedConvert(json, 'release_options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)));
+    return val;
+  }, fieldKeyMap: const {
+    'devOptions': 'dev_options',
+    'releaseOptions': 'release_options'
+  });
+}

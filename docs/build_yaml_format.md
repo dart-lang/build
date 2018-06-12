@@ -13,6 +13,7 @@ key | value | default
 targets | Map<String, [BuildTarget](#buildtarget)> | a single target with the same name as the package
 builders | Map<String, [BuilderDefinition](#builderdefinition)> | empty
 post_process_builders | Map<String, [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
+global_options | Map<String, [GlobalBuilderOptions](#globalBuilderOptions)> | empty
 
 ## BuildTarget
 
@@ -71,6 +72,13 @@ release_options | [BuilderOptions](#builderoptions) | none
 key | value | default
 --- | --- | ---
 generate_for | [InputSet](#inputset) | `**`
+options | [BuilderOptions](#builderoptions) | none
+dev_options | [BuilderOptions](#builderoptions) | none
+release_options | [BuilderOptions](#builderoptions) | none
+
+## GlobalBuilderOptions
+key | value | default
+--- | --- | ---
 options | [BuilderOptions](#builderoptions) | none
 dev_options | [BuilderOptions](#builderoptions) | none
 release_options | [BuilderOptions](#builderoptions) | none

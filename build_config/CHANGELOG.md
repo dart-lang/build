@@ -1,6 +1,7 @@
 ## 0.3.1
 
 - Improve validation and errors when parsing `build.yaml`.
+- Add `BuildConfig.globalOptions` support.
 
 ## 0.3.0
 
