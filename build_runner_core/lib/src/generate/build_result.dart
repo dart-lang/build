@@ -25,8 +25,7 @@ class BuildResult {
   final BuildPerformance performance;
 
   BuildResult(this.status, List<AssetId> outputs,
-      {this.performance,
-      FailureType failureType})
+      {this.performance, FailureType failureType})
       : outputs = new List.unmodifiable(outputs),
         this.failureType = failureType == null && status == BuildStatus.failure
             ? FailureType.general
