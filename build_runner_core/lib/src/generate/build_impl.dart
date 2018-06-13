@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
@@ -204,31 +203,23 @@ class _SingleBuild {
     if (_outputMap != null && result.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(_outputMap, _assetGraph,
           _packageGraph, _reader, _environment, optionalOutputTracker)) {
-        result = _convertToFailure(
-            result, 'Failed to create merged output directories.',
-            failureType: FailureType.cantCreate);
+        result = _convertToFailure(result, failureType: FailureType.cantCreate);
       }
     }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs ($actionsCompletedCount actions)\n');
     } else {
-      if (result.exception is FatalBuildException) {
-        // TODO(???) Really bad idea. Should not set exit codes in libraries!
-        exitCode = 1;
-      }
-      _logger.severe('Failed after ${humanReadable(watch.elapsed)}',
-          result.exception, result.stackTrace);
+      _logger.severe('Failed after ${humanReadable(watch.elapsed)}');
     }
     return result;
   }
 
-  BuildResult _convertToFailure(BuildResult previous, String errorMessge,
+  BuildResult _convertToFailure(BuildResult previous,
           {FailureType failureType}) =>
       new BuildResult(
         BuildStatus.failure,
         previous.outputs,
-        exception: errorMessge,
         performance: previous.performance,
         failureType: failureType,
       );
@@ -288,8 +279,7 @@ class _SingleBuild {
       if (!done.isCompleted) done.complete(result);
     }, onError: (e, StackTrace st) {
       if (!done.isCompleted) {
-        done.complete(new BuildResult(BuildStatus.failure, [],
-            exception: e, stackTrace: st));
+        done.complete(new BuildResult(BuildStatus.failure, []));
       }
     });
     return done.future;
