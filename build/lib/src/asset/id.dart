@@ -59,10 +59,10 @@ class AssetId implements Comparable<AssetId> {
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
         return new AssetId(parsedUri.pathSegments.first,
-            p.join('lib', p.joinAll(parsedUri.pathSegments.skip(1))));
+            p.url.join('lib', p.url.joinAll(parsedUri.pathSegments.skip(1))));
       } else if (parsedUri.scheme == 'asset') {
         return new AssetId(parsedUri.pathSegments.first,
-            p.joinAll(parsedUri.pathSegments.skip(1)));
+            p.url.joinAll(parsedUri.pathSegments.skip(1)));
       }
       throw new UnsupportedError(
           'Cannot resolve $uri; only "package" and "asset" schemes supported');
@@ -72,7 +72,7 @@ class AssetId implements Comparable<AssetId> {
           'An AssetId "from" must be specified to resolve a relative URI');
     }
     return new AssetId(
-        p.normalize(from.package), p.join(p.dirname(from.path), uri));
+        p.normalize(from.package), p.url.join(p.dirname(from.path), uri));
   }
 
   /// Parses an [AssetId] string of the form "package|path/to/asset.txt".
