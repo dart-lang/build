@@ -100,12 +100,7 @@ class TestCommand extends BuildRunnerCommand {
         return result.failureType.exitCode;
       }
 
-      var testExitCode = await _runTests(tempPath);
-      if (testExitCode != 0) {
-        // No need to log - should see failed tests in the console.
-        exitCode = testExitCode;
-      }
-      return testExitCode;
+      return await _runTests(tempPath);
     } on _BuildTestDependencyError catch (e) {
       stdout.writeln(e);
       return ExitCode.config.code;
