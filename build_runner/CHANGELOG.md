@@ -6,6 +6,7 @@
   information to `<dir>` after each build.
 - The `BuildPerformance` class is now serializable, it has a `fromJson`
   constructor and a `toJson` instance method.
+- Added support for `global_options` in `build.yaml` of the root package.
 
 ### Breaking changes
 

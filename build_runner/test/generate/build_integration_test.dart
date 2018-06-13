@@ -409,7 +409,7 @@ main(List<String> args) async {
       return '${result.stdout}';
     }
 
-    test('warns on invalid builder key --define', () async {
+    test('warns on invalid builder key in target options', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
@@ -428,14 +428,39 @@ targets:
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
           d.file('a.txt', 'a'),
-          d.file('b.txt', 'b'),
-          d.file('c.txt', 'c'),
         ]),
       ]).create();
 
       await pubGet('a');
 
-      var result = await runBuild(extraArgs: ['--define=bad|key=foo=bar']);
+      var result = await runBuild();
+
+      expect(result, contains('not a known Builder'));
+    });
+
+    test('warns on invalid builder key in global options', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_config',
+          'build_resolvers',
+          'build_runner',
+          'build_runner_core',
+          'build_test',
+        ]),
+        d.file('build.yaml', r'''
+global_options:
+  bad|builder:
+'''),
+        d.dir('tool', [d.file('build.dart', buildContent)]),
+        d.dir('web', [
+          d.file('a.txt', 'a'),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+
+      var result = await runBuild();
 
       expect(result, contains('not a known Builder'));
     });
@@ -453,8 +478,6 @@ targets:
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
           d.file('a.txt', 'a'),
-          d.file('b.txt', 'b'),
-          d.file('c.txt', 'c'),
         ]),
       ]).create();
 

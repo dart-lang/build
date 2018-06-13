@@ -41,6 +41,52 @@ void main() {
       }
     });
 
+    test('applies root package global options before builderConfigOverrides',
+        () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): []
+      });
+      await runInBuildConfigZone(() async {
+        var overrides = {
+          'a': new BuildConfig(
+            packageName: 'a',
+            buildTargets: {
+              'a:a': new BuildTarget(dependencies: new Set.of(['b:b']))
+            },
+            globalOptions: {
+              'b|cool_builder': new GlobalBuilderConfig(
+                options: const BuilderOptions(
+                    const {'option_a': 'global a', 'option_b': 'global b'}),
+                releaseOptions: const BuilderOptions(
+                    const {'option_b': 'release global b'}),
+              ),
+            },
+          )
+        };
+        var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+            overrideBuildConfig: overrides);
+        var builderApplications = [
+          apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+              toAllPackages())
+        ];
+        var phases = await createBuildPhases(
+            targetGraph,
+            builderApplications,
+            {
+              'b|cool_builder': {'option_c': '--define c'},
+            },
+            true);
+        for (InBuildPhase phase in phases) {
+          expect((phase.builder as CoolBuilder).optionA, equals('global a'));
+          expect((phase.builder as CoolBuilder).optionB,
+              equals('release global b'));
+          expect((phase.builder as CoolBuilder).optionC, equals('--define c'));
+        }
+      }, packageGraph.root.name,
+          packageGraph.root.dependencies.map((node) => node.name).toList());
+    });
+
     test('honors package filter', () async {
       var packageGraph = buildPackageGraph({
         rootPackage('a'): ['b'],

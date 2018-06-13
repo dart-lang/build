@@ -257,6 +257,17 @@ Future<List<BuildPhase>> createBuildPhases(
     bool isReleaseMode) async {
   validateBuilderConfig(builderApplications, targetGraph.rootPackageConfig,
       builderConfigOverrides, _logger);
+  final globalOptions = targetGraph.rootPackageConfig.globalOptions.map(
+      (key, config) => new MapEntry(
+          key,
+          (config?.options ?? BuilderOptions.empty).overrideWith(
+              isReleaseMode ? config?.releaseOptions : config?.devOptions)));
+  for (final key in builderConfigOverrides.keys) {
+    final overrides = new BuilderOptions(builderConfigOverrides[key]);
+    globalOptions[key] =
+        (globalOptions[key] ?? BuilderOptions.empty).overrideWith(overrides);
+  }
+
   final cycles = stronglyConnectedComponents<String, TargetNode>(
       targetGraph.allModules.values,
       (node) => node.target.key,
@@ -271,11 +282,7 @@ Future<List<BuildPhase>> createBuildPhases(
   final applyWith = _applyWith(builderApplications);
   final expandedPhases = cycles
       .expand((cycle) => _createBuildPhasesWithinCycle(
-          cycle,
-          builderApplications,
-          builderConfigOverrides,
-          applyWith,
-          isReleaseMode))
+          cycle, builderApplications, globalOptions, applyWith, isReleaseMode))
       .toList();
 
   final inBuildPhases =
@@ -300,21 +307,22 @@ Future<List<BuildPhase>> createBuildPhases(
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
         Iterable<TargetNode> cycle,
         Iterable<BuilderApplication> builderApplications,
-        Map<String, Map<String, dynamic>> builderConfigOverrides,
+        Map<String, BuilderOptions> globalOptions,
         Map<String, List<BuilderApplication>> applyWith,
         bool isReleaseMode) =>
     builderApplications.expand((builderApplication) =>
         _createBuildPhasesForBuilderInCycle(
             cycle,
             builderApplication,
-            builderConfigOverrides[builderApplication.builderKey] ?? const {},
+            globalOptions[builderApplication.builderKey] ??
+                BuilderOptions.empty,
             applyWith,
             isReleaseMode));
 
 Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
     Iterable<TargetNode> cycle,
     BuilderApplication builderApplication,
-    Map<String, dynamic> builderConfigOverrides,
+    BuilderOptions globalOptionOverrides,
     Map<String, List<BuilderApplication>> applyWith,
     bool isReleaseMode) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
@@ -324,9 +332,6 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
               _shouldApply(builderApplication, targetNode, applyWith))
           .map((node) {
         final builderConfig = targetConfig(node);
-        final globalOptionOverrides = builderConfigOverrides.isNotEmpty
-            ? new BuilderOptions(builderConfigOverrides)
-            : BuilderOptions.empty;
         final options = (builderConfig?.options ?? BuilderOptions.empty)
             .overrideWith(isReleaseMode
                 ? builderConfig?.releaseOptions
