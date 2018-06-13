@@ -14,6 +14,7 @@
   `BuildPhasePerformance.builderKeys`.
 - `BuilderActionPerformance.builder` has been replaced with
   `BuilderActionPerformance.builderKey`.
+- `BuildResult` no longer has an `exception` or `stackTrace` field.
 
 ## Other
 

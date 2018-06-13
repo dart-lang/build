@@ -154,10 +154,22 @@ class _Loader {
     final root = _options.packageGraph.root.name;
     for (final action in _buildPhases) {
       if (!action.hideOutput) {
-        // Only `BuilderBuildAction`s can be not hidden.
-        if (action is InBuildPhase &&
-            action.package != _options.packageGraph.root.name) {
-          throw new InvalidBuildPhaseException.nonRootPackage(action, root);
+        // Only `InBuildPhase`s can be not hidden.
+        if (action is InBuildPhase && action.package != root) {
+          // This should happen only with a manual build script since the build
+          // script generation filters these out.
+          _logger.severe('A build phase (${action.builderLabel}) is attempting '
+              'to operate on package "${action.package}", but the build script '
+              'is located in package "$root". It\'s not valid to attempt to '
+              'generate files for another package unless the BuilderApplication'
+              'specified "hideOutput".'
+              '\n\n'
+              'Did you mean to write:\n'
+              '  new BuilderApplication(..., toRoot())\n'
+              'or\n'
+              '  new BuilderApplication(..., hideOutput: true)\n'
+              '... instead?');
+          throw new CannotBuildException();
         }
       }
     }

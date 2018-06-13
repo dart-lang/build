@@ -17,12 +17,6 @@ class BuildResult {
   /// The type of failure.
   final FailureType failureType;
 
-  /// The error that was thrown during this build if it failed.
-  final Object exception;
-
-  /// The [StackTrace] for [exception] if non-null.
-  final StackTrace stackTrace;
-
   /// All outputs created/updated during this build.
   final List<AssetId> outputs;
 
@@ -31,10 +25,7 @@ class BuildResult {
   final BuildPerformance performance;
 
   BuildResult(this.status, List<AssetId> outputs,
-      {this.exception,
-      this.stackTrace,
-      this.performance,
-      FailureType failureType})
+      {this.performance, FailureType failureType})
       : outputs = new List.unmodifiable(outputs),
         this.failureType = failureType == null && status == BuildStatus.failure
             ? FailureType.general
@@ -50,9 +41,6 @@ Build Succeeded!
       return '''
 
 Build Failed :(
-Exception: $exception
-Stack Trace:
-$stackTrace
 ''';
     }
   }

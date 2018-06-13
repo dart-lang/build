@@ -81,8 +81,6 @@ void main() {
   group('build failures', () {
     setUp(() async {
       _addSource('a|web/index.html', '');
-      var fakeException = 'Really bad error omg!';
-      var fakeStackTrace = 'My cool stack trace!';
       assetGraph.add(new GeneratedAssetNode(
         makeAssetId('a|web/main.ddc.js'),
         builderOptionsId: null,
@@ -93,10 +91,8 @@ void main() {
         isFailure: true,
         primaryInput: null,
       ));
-      watchImpl.addFutureResult(new Future.value(new BuildResult(
-          BuildStatus.failure, [],
-          exception: fakeException,
-          stackTrace: new StackTrace.fromString(fakeStackTrace))));
+      watchImpl.addFutureResult(
+          new Future.value(new BuildResult(BuildStatus.failure, [])));
     });
 
     test('serves successful assets', () async {
