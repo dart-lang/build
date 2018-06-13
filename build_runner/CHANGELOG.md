@@ -15,6 +15,9 @@
 - `BuilderActionPerformance.builder` has been replaced with
   `BuilderActionPerformance.builderKey`.
 - `BuildResult` no longer has an `exception` or `stackTrace` field.
+- The 'test' command through `run` will no longer set an exit code. All manual
+  build scripts which call `run` should use the `Future<int>` return to set the
+  exit code for the process.
 
 ## Other
 
