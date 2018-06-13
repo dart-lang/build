@@ -119,3 +119,43 @@ class TargetBuilderConfig {
         'releaseOptions': releaseOptions.config,
       }.toString();
 }
+
+/// The configuration for a Builder applied globally.
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+class GlobalBuilderConfig {
+  /// The options to pass to the `BuilderFactory` when constructing this
+  /// builder.
+  ///
+  /// The `options` key in the configuration.
+  ///
+  /// Individual keys may be overridden by either [devOptions] or
+  /// [releaseOptions].
+  @JsonKey(fromJson: builderOptionsFromJson)
+  final BuilderOptions options;
+
+  /// Overrides for [options] in dev mode.
+  @JsonKey(name: 'dev_options', fromJson: builderOptionsFromJson)
+  final BuilderOptions devOptions;
+
+  /// Overrides for [options] in release mode.
+  @JsonKey(name: 'release_options', fromJson: builderOptionsFromJson)
+  final BuilderOptions releaseOptions;
+
+  GlobalBuilderConfig({
+    BuilderOptions options,
+    BuilderOptions devOptions,
+    BuilderOptions releaseOptions,
+  })  : options = options ?? BuilderOptions.empty,
+        devOptions = devOptions ?? BuilderOptions.empty,
+        releaseOptions = releaseOptions ?? BuilderOptions.empty;
+
+  factory GlobalBuilderConfig.fromJson(Map json) =>
+      _$GlobalBuilderConfigFromJson(json);
+
+  @override
+  String toString() => {
+        'options': options.config,
+        'devOptions': devOptions.config,
+        'releaseOptions': releaseOptions.config,
+      }.toString();
+}

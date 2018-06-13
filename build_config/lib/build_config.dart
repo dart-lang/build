@@ -3,7 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/build_config.dart' show BuildConfig;
-export 'src/build_target.dart' show BuildTarget, TargetBuilderConfig;
+export 'src/build_target.dart'
+    show BuildTarget, TargetBuilderConfig, GlobalBuilderConfig;
 export 'src/builder_definition.dart'
     show
         BuilderDefinition,
