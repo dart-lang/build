@@ -50,8 +50,7 @@ void _nullLog(_) {}
 /// [packageGraph] supplies the root package into which the outputs are to be
 /// written.
 ///
-/// [status] optionally indicates the desired outcome. [exceptionMatcher]
-/// optionally allows you to expect a specific exception.
+/// [status] optionally indicates the desired outcome.
 ///
 /// [writer] can optionally be provided to capture assets written by the
 /// builders (e.g. when [outputs] is not sufficient).
@@ -81,7 +80,6 @@ Future<BuildResult> testBuilders(
   PackageGraph packageGraph,
   BuildStatus status = BuildStatus.success,
   Map<String, BuildConfig> overrideBuildConfig,
-  Matcher exceptionMatcher,
   InMemoryRunnerAssetReader reader,
   InMemoryRunnerAssetWriter writer,
   Level logLevel,
@@ -145,7 +143,6 @@ Future<BuildResult> testBuilders(
         outputs: outputs,
         writer: writer,
         status: status,
-        exceptionMatcher: exceptionMatcher,
         rootPackage: packageGraph.root.name);
   }
   return result;
@@ -157,12 +154,8 @@ void checkBuild(BuildResult result,
     {Map<String, dynamic> outputs,
     InMemoryAssetWriter writer,
     BuildStatus status = BuildStatus.success,
-    Matcher exceptionMatcher,
     String rootPackage}) {
   expect(result.status, status, reason: '$result');
-  if (exceptionMatcher != null) {
-    expect(result.exception, exceptionMatcher);
-  }
 
   final unhiddenOutputs = <String, dynamic>{};
   final unhiddenAssets = new Set<AssetId>();
