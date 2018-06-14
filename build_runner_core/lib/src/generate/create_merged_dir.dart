@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pool/pool.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
@@ -15,6 +16,9 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../environment/build_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
+
+/// Pool for async file operations, we don't want to use too many file handles.
+final _descriptorPool = new Pool(32);
 
 final _logger = new Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
@@ -67,21 +71,21 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    for (var node in assetGraph.allNodes) {
+    await Future.wait(assetGraph.allNodes.map((node) async {
       if (_shouldSkipNode(node, root, optionalOutputTracker)) {
-        continue;
+        return;
       }
       originalOutputAssets.add(node.id);
       node.lastKnownDigest ??= await reader.digest(node.id);
       outputAssets.add(
           await _writeAsset(node.id, outputDir, root, packageGraph, reader));
-    }
+    }));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
         .join('\r\n');
     var packagesAsset = new AssetId(packageGraph.root.name, '.packages');
-    _writeAsString(outputDir, packagesAsset, packagesFileContent);
+    await _writeAsString(outputDir, packagesAsset, packagesFileContent);
     outputAssets.add(packagesAsset);
 
     if (root == null) {
@@ -95,10 +99,10 @@ Future<bool> _createMergedOutputDir(
     }
   });
 
-  logTimedSync(_logger, 'Writing asset manifest', () {
+  await logTimedAsync(_logger, 'Writing asset manifest', () async {
     var paths = outputAssets.map((id) => id.path).toList()..sort();
     var content = paths.join(_manifestSeparator);
-    _writeAsString(
+    await _writeAsString(
         outputDir, new AssetId(packageGraph.root.name, _manifestName), content);
   });
 
@@ -159,7 +163,7 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
 
   var outputId = new AssetId(packageGraph.root.name, assetPath);
   try {
-    _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+    await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
   } on AssetNotFoundException catch (e, __) {
     if (p.basename(id.path).startsWith('.')) {
       _logger.fine('Skipping missing hidden file ${id.path}');
@@ -175,17 +179,15 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
   return outputId;
 }
 
-void _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) {
-  var file = _fileFor(outputDir, id);
-  file.writeAsBytesSync(bytes);
-}
+Future<void> _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) =>
+    _descriptorPool.withResource(
+        () => _fileFor(outputDir, id).then((file) => file.writeAsBytes(bytes)));
 
-void _writeAsString(Directory outputDir, AssetId id, String contents) {
-  var file = _fileFor(outputDir, id);
-  file.writeAsStringSync(contents);
-}
+Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) =>
+    _descriptorPool.withResource(() =>
+        _fileFor(outputDir, id).then((file) => file.writeAsString(contents)));
 
-File _fileFor(Directory outputDir, AssetId id) {
+Future<File> _fileFor(Directory outputDir, AssetId id) {
   String relativePath;
   if (id.path.startsWith('lib')) {
     relativePath =
@@ -193,9 +195,7 @@ File _fileFor(Directory outputDir, AssetId id) {
   } else {
     relativePath = id.path;
   }
-  var file = new File(p.join(outputDir.path, relativePath));
-  file.createSync(recursive: true);
-  return file;
+  return new File(p.join(outputDir.path, relativePath)).create(recursive: true);
 }
 
 /// Checks for a manifest file in [outputDir] and deletes all referenced files.
