@@ -45,6 +45,10 @@ jobs:
       env: PKG="_test"
       dart: be/raw/latest
     - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="_test_common"
+      dart: dev
+    - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="bazel_codegen"
       dart: dev
