@@ -92,20 +92,20 @@ class _AssetNode {
         continue;
       }
 
-      List<Configuration> conditionalImportConfigurations;
+      List<Configuration> conditionalDirectiveConfigurations;
 
       if (directive is ImportDirective && directive.configurations.isNotEmpty) {
-        conditionalImportConfigurations = directive.configurations;
+        conditionalDirectiveConfigurations = directive.configurations;
       } else if (directive is ExportDirective && directive.configurations.isNotEmpty) {
-        conditionalImportConfigurations = directive.configurations;
+        conditionalDirectiveConfigurations = directive.configurations;
       }
 
       final allDeps = <AssetId>[linkedId];
-      if (conditionalImportConfigurations != null) {
-        allDeps.addAll(conditionalImportConfigurations
-            .map((c) => Uri.parse(c.uri.value))
+      if (conditionalDirectiveConfigurations != null) {
+        allDeps.addAll(conditionalDirectiveConfigurations
+            .map((c) => Uri.parse(c.uri.stringValue))
             .where((u) => u.scheme != 'dart')
-            .map((u) => new AssetId.resolve(u.toString())));
+            .map((u) => new AssetId.resolve(u.toString(), from: id)));
       }
 
       for (var dep in allDeps) {
