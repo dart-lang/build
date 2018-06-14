@@ -26,6 +26,7 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
 import '../logging/build_for_input_logger.dart';
+import '../logging/failure_reporter.dart';
 import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
@@ -137,6 +138,7 @@ class _SingleBuild {
   final RunnerAssetWriter _writer;
   final List<String> _buildDirs;
   final String _logPerformanceDir;
+  final _failureReporter = new FailureReporter();
 
   int actionsCompletedCount = 0;
   int actionsStartedCount = 0;
@@ -187,10 +189,10 @@ class _SingleBuild {
     var optionalOutputTracker =
         new OptionalOutputTracker(_assetGraph, _buildDirs, _buildPhases);
     if (result.status == BuildStatus.success) {
-      if (_assetGraph.failedOutputs
-          .map((n) => n.id)
-          .where(optionalOutputTracker.isRequired)
-          .isNotEmpty) {
+      final failures = _assetGraph.failedOutputs
+          .where((n) => optionalOutputTracker.isRequired(n.id));
+      if (failures.isNotEmpty) {
+        _failureReporter.reportErrors(failures, _logger);
         result = new BuildResult(BuildStatus.failure, result.outputs,
             performance: result.performance);
       }
@@ -424,13 +426,12 @@ class _SingleBuild {
         .putIfAbsent(phaseNumber, () => new Set<String>())
         .add(actionDescription);
 
-    var errorThrown = false;
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
                 new PerformanceTrackingResolvers(_resolvers, tracker),
                 logger: logger,
-                resourceManager: _resourceManager).catchError((_) {
-              errorThrown = true;
+                resourceManager: _resourceManager).catchError((e) {
+              logger.errorsSeen.add(new ErrorReport('$e', null));
             }),
         'Build');
     actionsCompletedCount++;
@@ -440,8 +441,8 @@ class _SingleBuild {
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
     await tracker.track(
-        () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
-            logger.errorWasSeen || errorThrown),
+        () => _setOutputsState(
+            builderOutputs, wrappedReader, wrappedWriter, logger.errorsSeen),
         'Finalize');
 
     tracker.stop();
@@ -516,7 +517,6 @@ class _SingleBuild {
         .putIfAbsent(phaseNum, () => new Set<String>())
         .add(actionDescription);
 
-    var errorThrown = false;
     await runPostProcessBuilder(
         builder, input, wrappedReader, wrappedWriter, logger,
         addAsset: (assetId) {
@@ -542,8 +542,8 @@ class _SingleBuild {
             assetId, 'Can only delete primary input');
       }
       _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
-    }).catchError((_) {
-      errorThrown = true;
+    }).catchError((e) {
+      logger.errorsSeen.add(new ErrorReport('$e', null));
     });
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
@@ -554,8 +554,8 @@ class _SingleBuild {
     // Reset the state for all the output nodes based on what was read and
     // written.
     inputNode.primaryOutputs.addAll(assetsWritten);
-    await _setOutputsState(assetsWritten, wrappedReader, wrappedWriter,
-        logger.errorWasSeen || errorThrown);
+    await _setOutputsState(
+        assetsWritten, wrappedReader, wrappedWriter, logger.errorsSeen);
 
     return assetsWritten;
   }
@@ -664,8 +664,12 @@ class _SingleBuild {
   /// - Adding `outputs` as outputs to all `reader.assetsRead`.
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
-  Future<Null> _setOutputsState(Iterable<AssetId> outputs,
-      SingleStepReader reader, AssetWriterSpy writer, bool isFailure) async {
+  /// - Storing the error message with the [_failureReporter].
+  Future<Null> _setOutputsState(
+      Iterable<AssetId> outputs,
+      SingleStepReader reader,
+      AssetWriterSpy writer,
+      Iterable<ErrorReport> errors) async {
     if (outputs.isEmpty) return;
 
     final inputsDigest = await _computeCombinedDigest(
@@ -673,6 +677,8 @@ class _SingleBuild {
         (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
         reader);
     final globsRan = reader.globsRan.toSet();
+
+    final isFailure = errors.isNotEmpty;
 
     for (var output in outputs) {
       var wasOutput = writer.assetsWritten.contains(output);
@@ -693,7 +699,9 @@ class _SingleBuild {
         ..previousInputsDigest = inputsDigest;
 
       if (isFailure) {
+        _failureReporter.markReported(node, errors);
         var needsMarkAsFailure = new Queue.of(node.primaryOutputs);
+        var allSkippedFailures = <GeneratedAssetNode>[];
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
           var outputNode = _assetGraph.get(output) as GeneratedAssetNode;
@@ -704,8 +712,10 @@ class _SingleBuild {
             ..lastKnownDigest = null
             ..globs = new Set()
             ..previousInputsDigest = null;
+          allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
         }
+        await _failureReporter.markSkipped(allSkippedFailures);
       }
     }
   }
