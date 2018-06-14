@@ -96,7 +96,8 @@ class _AssetNode {
 
       if (directive is ImportDirective && directive.configurations.isNotEmpty) {
         conditionalDirectiveConfigurations = directive.configurations;
-      } else if (directive is ExportDirective && directive.configurations.isNotEmpty) {
+      } else if (directive is ExportDirective &&
+          directive.configurations.isNotEmpty) {
         conditionalDirectiveConfigurations = directive.configurations;
       }
 
