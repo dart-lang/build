@@ -7,7 +7,15 @@ These packages provide libraries for generating Dart code.
 TODO: bazel_codegen
 -->
 
+[Getting started with build_runner](https://github.com/dart-lang/build/blob/master/docs/getting_started.md)
+
+[General FAQ](https://github.com/dart-lang/build/blob/master/docs/faq.md)
+
+[Windows FAQ](https://github.com/dart-lang/build/blob/master/docs/windows_faq.md)
+
 [FAQ for Builder authors](https://github.com/dart-lang/build/blob/master/docs/builder_author_faq.md).
+
+[Additional Docs](https://github.com/dart-lang/build/blob/master/docs/)
 
 ## [build](https://github.com/dart-lang/build/blob/master/build/README.md)
 
@@ -37,12 +45,10 @@ Support for discovering the sub-modules within packages and creating summaries
 of those modules. Used by `build_web_compilers` but should not be used directly
 by most users.
 
-
 ## [build_resolvers](https://github.com/dart-lang/build/blob/master/build_resolers/README.md)
 
 An implementation of the `Resolver` interface to use the analyzer during build
 steps.
-
 
 ## [build_runner](https://github.com/dart-lang/build/blob/master/build_runner/README.md)
 
