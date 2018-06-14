@@ -262,8 +262,8 @@ Future<List<Module>> _computeModules(
   for (var asset in assets) {
     var content = await reader.readAsString(asset);
     // Skip errors here, dartdevc gives nicer messages.
-    var parsed = parseCompilationUnit(content,
-        name: asset.path, parseFunctionBodies: false, suppressErrors: true);
+    var parsed = parseDirectives(content,
+        name: asset.path, suppressErrors: true);
     parsedAssetsById[asset] = parsed;
 
     // Skip any files which contain a `dart:_` import.
