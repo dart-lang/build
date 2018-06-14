@@ -47,10 +47,11 @@ abstract class BuildRunnerCommand extends Command<int> {
       ..addOption(configOption,
           help: 'Read `build.<name>.yaml` instead of the default `build.yaml`',
           abbr: 'c')
-      ..addFlag(failOnSevereOption,
-          help: 'Whether to consider the build a failure on an error logged.',
+      ..addFlag('fail-on-severe',
+          help: 'Deprecated argument - always enabled',
           negatable: true,
-          defaultsTo: false)
+          defaultsTo: true,
+          hide: true)
       ..addFlag(trackPerformanceOption,
           help: r'Enables performance tracking and the /$perf page.',
           negatable: true,

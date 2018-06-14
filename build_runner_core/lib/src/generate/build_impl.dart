@@ -55,7 +55,6 @@ class BuildImpl {
   BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
 
   final List<BuildPhase> _buildPhases;
-  final bool _failOnSevere;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
   final _resolvers = new AnalyzerResolvers();
@@ -82,7 +81,6 @@ class BuildImpl {
         _resourceManager = buildDefinition.resourceManager,
         _outputMap = options.outputMap,
         _verbose = options.verbose,
-        _failOnSevere = options.failOnSevere,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
         _buildDirs = options.buildDirs,
@@ -128,7 +126,6 @@ class _SingleBuild {
   final AssetGraph _assetGraph;
   final List<BuildPhase> _buildPhases;
   final BuildEnvironment _environment;
-  final bool _failOnSevere;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final Map<String, String> _outputMap;
   final PackageGraph _packageGraph;
@@ -153,7 +150,6 @@ class _SingleBuild {
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _environment = buildImpl._environment,
-        _failOnSevere = buildImpl._failOnSevere,
         _outputMap = buildImpl._outputMap,
         _packageGraph = buildImpl._packageGraph,
         _performanceTracker = buildImpl._trackPerformance
@@ -445,7 +441,7 @@ class _SingleBuild {
     // read and written.
     await tracker.track(
         () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
-            (logger.errorWasSeen && _failOnSevere) || errorThrown),
+            logger.errorWasSeen || errorThrown),
         'Finalize');
 
     tracker.stop();
@@ -559,7 +555,7 @@ class _SingleBuild {
     // written.
     inputNode.primaryOutputs.addAll(assetsWritten);
     await _setOutputsState(assetsWritten, wrappedReader, wrappedWriter,
-        (logger.errorWasSeen && _failOnSevere) || errorThrown);
+        logger.errorWasSeen || errorThrown);
 
     return assetsWritten;
   }

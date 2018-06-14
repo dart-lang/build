@@ -18,6 +18,8 @@
 - The 'test' command through `run` will no longer set an exit code. All manual
   build scripts which call `run` should use the `Future<int>` return to set the
   exit code for the process.
+- Dropped `failOnSevere` arguments and `--fail-on-severe` flag. Severe logs are
+  always considered failing.
 
 ## Other
 

@@ -15,6 +15,7 @@
 - `BuilderActionPerformance.builder` has been replaced with
   `BuilderActionPerformance.builderKey`.
 - `BuildResult` no longer has an `exception` or `stackTrace` field.
+- Dropped `failOnSevere` arguments. Severe logs are always considered failing.
 
 ### Internal changes
 

@@ -30,7 +30,6 @@ final _logger = new Logger('Watch');
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
   bool deleteFilesByDefault,
-  bool failOnSevere,
   bool assumeTty,
   String configKey,
   PackageGraph packageGraph,
@@ -64,7 +63,6 @@ Future<ServeHandler> watch(
       await findBuildConfigOverrides(packageGraph, configKey);
   var options = await BuildOptions.create(environment,
       deleteFilesByDefault: deleteFilesByDefault,
-      failOnSevere: failOnSevere,
       packageGraph: packageGraph,
       overrideBuildConfig: overrideBuildConfig,
       logLevel: logLevel,
