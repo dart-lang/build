@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pool/pool.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
@@ -15,6 +16,9 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../environment/build_environment.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
+
+/// Pool for async file operations, we don't want to use too many file handles.
+final _descriptorPool = new Pool(32);
 
 final _logger = new Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
@@ -81,7 +85,7 @@ Future<bool> _createMergedOutputDir(
         .map((p) => '$p:packages/$p/')
         .join('\r\n');
     var packagesAsset = new AssetId(packageGraph.root.name, '.packages');
-    _writeAsString(outputDir, packagesAsset, packagesFileContent);
+    await _writeAsString(outputDir, packagesAsset, packagesFileContent);
     outputAssets.add(packagesAsset);
 
     if (root == null) {
@@ -95,10 +99,10 @@ Future<bool> _createMergedOutputDir(
     }
   });
 
-  logTimedSync(_logger, 'Writing asset manifest', () {
+  await logTimedAsync(_logger, 'Writing asset manifest', () async {
     var paths = outputAssets.map((id) => id.path).toList()..sort();
     var content = paths.join(_manifestSeparator);
-    _writeAsString(
+    await _writeAsString(
         outputDir, new AssetId(packageGraph.root.name, _manifestName), content);
   });
 
@@ -159,7 +163,7 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
 
   var outputId = new AssetId(packageGraph.root.name, assetPath);
   try {
-    _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+    await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
   } on AssetNotFoundException catch (e, __) {
     if (p.basename(id.path).startsWith('.')) {
       _logger.fine('Skipping missing hidden file ${id.path}');
@@ -175,14 +179,14 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
   return outputId;
 }
 
-void _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) {
+Future<void> _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) {
   var file = _fileFor(outputDir, id);
-  file.writeAsBytesSync(bytes);
+  return _descriptorPool.withResource(() => file.writeAsBytes(bytes));
 }
 
-void _writeAsString(Directory outputDir, AssetId id, String contents) {
+Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) {
   var file = _fileFor(outputDir, id);
-  file.writeAsStringSync(contents);
+  return _descriptorPool.withResource(() => file.writeAsString(contents));
 }
 
 File _fileFor(Directory outputDir, AssetId id) {
