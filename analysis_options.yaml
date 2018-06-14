@@ -6,6 +6,7 @@ analyzer:
     unused_local_variable: error
     dead_code: error
     override_on_non_overriding_method: error
+    todo: ignore
   exclude:
     # Prevents extra work during e2e test runs.
     - "_test/dart2js_test/**"
