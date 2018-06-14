@@ -56,7 +56,6 @@ void main() {
       await replaceAllInFile(path, "'Hello World!'", '1');
       await error;
       await nextBuild;
-      await expectTestsFail();
 
       nextBuild = nextSuccessfulBuild;
       await replaceAllInFile(path, '1', "'Hello World!'");
