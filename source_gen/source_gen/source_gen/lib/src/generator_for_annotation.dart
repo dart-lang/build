@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'constants/reader.dart';
 import 'generator.dart';
 import 'library.dart';
+import 'output_helpers.dart';
 import 'type_checker.dart';
 
 /// A [Generator] that invokes [generateForAnnotatedElement] for every [T].
@@ -34,18 +35,37 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   TypeChecker get typeChecker => new TypeChecker.fromRuntime(T);
 
   @override
-  Future<String> generate(LibraryReader library, BuildStep buildStep) async {
-    var elements = library.annotatedWith(typeChecker);
-    var allOutput = await Future.wait(elements.map((e) async =>
-        await generateForAnnotatedElement(e.element, e.annotation, buildStep)));
-    // TODO interleave comments indicating which element produced the output?
-    return allOutput.where((o) => o != null && o.isNotEmpty).join('\n');
+  FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
+    var values =
+        await new Stream.fromIterable(library.annotatedWith(typeChecker))
+            .asyncExpand((e) {
+      return normalizeGeneratorOutput(() =>
+          generateForAnnotatedElement(e.element, e.annotation, buildStep));
+    }).fold(new Set<String>(), (Set<String> uniqueValues, value) {
+      value = value?.trim();
+
+      if (value != null && value.isNotEmpty) {
+        uniqueValues.add(value);
+      }
+      return uniqueValues;
+    });
+
+    return values.join('\n\n');
   }
 
   /// Override to return source code to generate for [element].
   ///
   /// This method is invoked based on finding elements annotated with an
   /// instance of [T]. The [annotation] is provided as a [ConstantReader].
-  FutureOr<String> generateForAnnotatedElement(
+  ///
+  /// Supported return values include a single [String] or multiple [String]
+  /// instances within an [Iterable] or [Stream].
+  ///
+  /// It is also valid to return a [Future] of any of the above.
+  ///
+  /// Implementations should return `null` when no content is generated.
+  ///
+  /// Empty or whitespace-only [String] instances are also ignored.
+  generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep);
 }
