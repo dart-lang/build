@@ -31,30 +31,13 @@ void main() {
     );
   });
 
-  test('should not fail if a severe is logged without failOnSevere', () async {
+  test('should fail if a severe logged', () async {
     await testBuilders(
       [applyToRoot(new _LoggingBuilder(Level.SEVERE))],
       {
         'a|lib/a.dart': '',
       },
       packageGraph: buildPackageGraph({rootPackage('a'): []}),
-      failOnSevere: false,
-      checkBuildStatus: true,
-      status: BuildStatus.success,
-      outputs: {
-        'a|lib/a.dart.empty': '',
-      },
-    );
-  });
-
-  test('should fail if a severe logged and failOnSevere is set', () async {
-    await testBuilders(
-      [applyToRoot(new _LoggingBuilder(Level.SEVERE))],
-      {
-        'a|lib/a.dart': '',
-      },
-      packageGraph: buildPackageGraph({rootPackage('a'): []}),
-      failOnSevere: true,
       checkBuildStatus: true,
       status: BuildStatus.failure,
       outputs: {
@@ -76,7 +59,6 @@ void main() {
           'a|lib/a.dart': '',
         },
         packageGraph: packageGraph,
-        failOnSevere: true,
         checkBuildStatus: true,
         status: BuildStatus.failure,
         outputs: {
@@ -86,7 +68,6 @@ void main() {
         writer: writer);
     await testBuilders(builders, {},
         packageGraph: packageGraph,
-        failOnSevere: true,
         checkBuildStatus: true,
         status: BuildStatus.failure,
         outputs: {},
@@ -108,7 +89,6 @@ void main() {
           'a|lib/a.dart': '',
         },
         packageGraph: packageGraph,
-        failOnSevere: true,
         checkBuildStatus: true,
         status: BuildStatus.failure,
         outputs: {
@@ -123,7 +103,6 @@ void main() {
           'a|lib/a.dart': 'changed',
         },
         packageGraph: packageGraph,
-        failOnSevere: true,
         checkBuildStatus: true,
         status: BuildStatus.success,
         outputs: {
@@ -174,7 +153,6 @@ void main() {
         'a|lib/a.txt': '',
       },
       packageGraph: buildPackageGraph({rootPackage('a'): []}),
-      failOnSevere: true,
       status: BuildStatus.failure,
     );
   });

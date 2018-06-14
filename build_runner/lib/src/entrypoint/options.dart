@@ -40,9 +40,6 @@ class SharedOptions {
   /// This option can be set to `true` to skip this prompt.
   final bool deleteFilesByDefault;
 
-  /// Any log of type `SEVERE` should fail the current build.
-  final bool failOnSevere;
-
   final bool enableLowResourcesMode;
 
   /// Read `build.$configKey.yaml` instead of `build.yaml`.
@@ -79,7 +76,6 @@ class SharedOptions {
   SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
-    @required this.failOnSevere,
     @required this.enableLowResourcesMode,
     @required this.configKey,
     @required this.outputMap,
@@ -109,7 +105,6 @@ class SharedOptions {
     return new SharedOptions._(
       assumeTty: argResults[assumeTtyOption] as bool,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
-      failOnSevere: argResults[failOnSevereOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
       outputMap: outputMap,
@@ -137,7 +132,6 @@ class ServeOptions extends SharedOptions {
     @required this.serveTargets,
     @required bool assumeTty,
     @required bool deleteFilesByDefault,
-    @required bool failOnSevere,
     @required bool enableLowResourcesMode,
     @required String configKey,
     @required Map<String, String> outputMap,
@@ -151,7 +145,6 @@ class ServeOptions extends SharedOptions {
   }) : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
-          failOnSevere: failOnSevere,
           enableLowResourcesMode: enableLowResourcesMode,
           configKey: configKey,
           outputMap: outputMap,
@@ -202,7 +195,6 @@ class ServeOptions extends SharedOptions {
       serveTargets: serveTargets,
       assumeTty: argResults[assumeTtyOption] as bool,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
-      failOnSevere: argResults[failOnSevereOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
       outputMap: _parseOutputMap(argResults),

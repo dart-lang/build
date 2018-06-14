@@ -30,7 +30,6 @@ class WatchCommand extends BuildRunnerCommand {
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
-      failOnSevere: options.failOnSevere,
       configKey: options.configKey,
       assumeTty: options.assumeTty,
       outputMap: options.outputMap,

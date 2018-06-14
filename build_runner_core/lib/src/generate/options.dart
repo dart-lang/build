@@ -38,7 +38,6 @@ class BuildOptions {
 
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
-  final bool failOnSevere;
   final Map<String, String> outputMap;
   final bool trackPerformance;
   final bool verbose;
@@ -58,7 +57,6 @@ class BuildOptions {
     @required this.debounceDelay,
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
-    @required this.failOnSevere,
     @required this.logListener,
     @required this.outputMap,
     @required this.packageGraph,
@@ -75,7 +73,6 @@ class BuildOptions {
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
-    bool failOnSevere,
     Level logLevel,
     Map<String, String> outputMap,
     @required PackageGraph packageGraph,
@@ -90,10 +87,8 @@ class BuildOptions {
     verbose ??= false;
     logLevel ??= verbose ? Level.ALL : Level.INFO;
 
-    // Invalid to have Level.OFF but want severe logs to fail the build.
-    if (logLevel == Level.OFF && failOnSevere == true) {
-      logLevel = Level.SEVERE;
-    }
+    // Severe logs can fail the build and should always be shown.
+    if (logLevel == Level.OFF) logLevel = Level.SEVERE;
 
     Logger.root.level = logLevel;
 
@@ -113,7 +108,6 @@ class BuildOptions {
     /// Set up other defaults.
     debounceDelay ??= const Duration(milliseconds: 250);
     deleteFilesByDefault ??= false;
-    failOnSevere ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
     buildDirs ??= [];
@@ -133,7 +127,6 @@ class BuildOptions {
         debounceDelay: debounceDelay,
         deleteFilesByDefault: deleteFilesByDefault,
         enableLowResourcesMode: enableLowResourcesMode,
-        failOnSevere: failOnSevere,
         logListener: logListener,
         outputMap: outputMap,
         packageGraph: packageGraph,

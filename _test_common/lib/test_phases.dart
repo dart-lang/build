@@ -86,7 +86,6 @@ Future<BuildResult> testBuilders(
   // A better way to "silence" logging than setting logLevel to OFF.
   onLog(LogRecord record) = _nullLog,
   bool checkBuildStatus = true,
-  bool failOnSevere = false,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
@@ -116,7 +115,6 @@ Future<BuildResult> testBuilders(
       onLog: onLog);
   var options = await BuildOptions.create(environment,
       deleteFilesByDefault: deleteFilesByDefault,
-      failOnSevere: failOnSevere,
       packageGraph: packageGraph,
       logLevel: logLevel,
       skipBuildScriptCheck: true,
