@@ -6,7 +6,7 @@ debug an error which only happens in `dart2js`, you will want to change your
 debug mode compiler to `dart2js`. You can either do this using the `--define`
 command line option:
 
-```
+```text
 --define "build_web_compilers|entrypoint=compiler=dart2js"
 ```
 
