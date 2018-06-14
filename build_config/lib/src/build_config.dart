@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 
 import 'build_target.dart';
@@ -16,12 +17,11 @@ import 'common.dart';
 import 'expandos.dart';
 import 'input_set.dart';
 import 'key_normalization.dart';
-import 'pubspec.dart';
 
 part 'build_config.g.dart';
 
 /// The parsed values from a `build.yaml` file.
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
   /// default config.
@@ -29,9 +29,8 @@ class BuildConfig {
   /// [path] must be a directory which contains a `pubspec.yaml` file and
   /// optionally a `build.yaml`.
   static Future<BuildConfig> fromPackageDir(String path) async {
-    final pubspec = await Pubspec.fromPackageDir(path);
-    return fromBuildConfigDir(
-        pubspec.pubPackageName, pubspec.dependencies, path);
+    final pubspec = await _fromPackageDir(path);
+    return fromBuildConfigDir(pubspec.name, pubspec.dependencies.keys, path);
   }
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
@@ -65,6 +64,9 @@ class BuildConfig {
   @JsonKey(name: 'targets', fromJson: _buildTargetsFromJson)
   final Map<String, BuildTarget> buildTargets;
 
+  @JsonKey(name: 'global_options')
+  final Map<String, GlobalBuilderConfig> globalOptions;
+
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
@@ -79,6 +81,7 @@ class BuildConfig {
       return new BuildConfig(
         packageName: packageName,
         buildTargets: {key: target},
+        globalOptions: {},
       );
     }, packageName, dependencies.toList());
   }
@@ -105,8 +108,9 @@ class BuildConfig {
   BuildConfig({
     String packageName,
     @required Map<String, BuildTarget> buildTargets,
+    Map<String, GlobalBuilderConfig> globalOptions,
     Map<String, BuilderDefinition> builderDefinitions,
-    Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions:
+    Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
   })  : this.buildTargets = buildTargets ??
             {
@@ -114,6 +118,9 @@ class BuildConfig {
                 dependencies: currentPackageDefaultDependencies,
               )
             },
+        this.globalOptions = (globalOptions ?? const {}).map((key, config) =>
+            new MapEntry(
+                normalizeBuilderKeyUsage(key, currentPackage), config)),
         this.builderDefinitions = _normalizeBuilderDefinitions(
             builderDefinitions ?? const {}, packageName ?? currentPackage),
         this.postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
@@ -148,25 +155,37 @@ Map<String, T> _normalizeBuilderDefinitions<T>(
 
 String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
   var yamlMap = err.map as YamlMap;
-
-  var yamlKey = yamlMap.nodes.keys.singleWhere(
-      (k) => (k as YamlScalar).value == err.key,
-      orElse: () => null) as YamlScalar;
-
   var message = 'Could not create `${err.className}`.';
-  if (yamlKey == null) {
-    assert(err.key == null);
-    message = '${yamlMap.span.message(message)} ${err.innerError}';
-  } else {
-    message = '$message\nUnsupported value for `${err.key}`: ';
-    if (err.message != null) {
-      message += '${err.message}\n';
-    } else {
-      message += '${err.innerError}\n';
-    }
-    message = yamlKey.span.message(message);
-  }
 
+  var innerError = err.innerError;
+  if (innerError is UnrecognizedKeysException) {
+    message = 'Invalid key(s), could not create ${err.className}.\n'
+        'Supported keys are [${innerError.allowedKeys.join(', ')}].\n';
+    for (var key in innerError.unrecognizedKeys) {
+      var yamlKey = yamlMap.nodes.keys
+          .singleWhere((k) => (k as YamlScalar).value == key) as YamlScalar;
+      message += '${yamlKey.span.message('')}\n';
+    }
+  } else if (innerError is MissingRequiredKeysException) {
+    message = 'Missing key(s), could not create ${err.className}.\n'
+        'Missing keys are [${innerError.missingKeys.join(', ')}].\n';
+    message = yamlMap.span.message(message);
+  } else {
+    var yamlValue = yamlMap.nodes[err.key];
+
+    if (yamlValue == null) {
+      assert(err.key == null);
+      message = '${yamlMap.span.message(message)} ${err.innerError}';
+    } else {
+      message = '$message\nUnsupported value for `${err.key}`: ';
+      if (err.message != null) {
+        message += '${err.message}\n';
+      } else {
+        message += '${err.innerError}\n';
+      }
+      message = yamlValue.span.message(message);
+    }
+  }
   return message;
 }
 
@@ -181,4 +200,13 @@ Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
   }
 
   return targets;
+}
+
+Future<Pubspec> _fromPackageDir(String path) async {
+  final pubspec = p.join(path, 'pubspec.yaml');
+  final file = new File(pubspec);
+  if (await file.exists()) {
+    return new Pubspec.parse(await file.readAsString());
+  }
+  throw new FileSystemException('No file found', p.absolute(pubspec));
 }

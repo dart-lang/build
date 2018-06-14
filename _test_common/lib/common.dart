@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 
-export 'package:build_runner/src/util/constants.dart';
+export 'package:build_runner_core/src/util/constants.dart';
 export 'package:build_test/build_test.dart'
     hide InMemoryAssetReader, InMemoryAssetWriter;
 
@@ -33,7 +33,7 @@ class PlaceholderBuilder extends Builder {
       {inputExtension: outputExtensionsToContent.keys.toList()};
 
   PlaceholderBuilder(this.outputExtensionsToContent,
-      {this.inputExtension: r'$lib$'});
+      {this.inputExtension = r'$lib$'});
 
   @override
   Future build(BuildStep buildStep) async {

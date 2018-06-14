@@ -45,13 +45,13 @@ class BuildStepTransform implements barback.Transform {
 
   @override
   Future<barback.Asset> getInput(barback.AssetId id,
-          {Encoding encoding: utf8}) async =>
+          {Encoding encoding = utf8}) async =>
       new barback.Asset.fromString(
           id, await readInputAsString(id, encoding: encoding));
 
   @override
   Future<String> readInputAsString(barback.AssetId id,
-          {Encoding encoding: utf8}) =>
+          {Encoding encoding = utf8}) =>
       buildStep.readAsString(toBuildAssetId(id), encoding: encoding);
 
   @override
@@ -109,6 +109,6 @@ class _BuildAsset implements barback.Asset {
       _assetReader.readAsBytes(toBuildAssetId(id)).asStream();
 
   @override
-  Future<String> readAsString({Encoding encoding: utf8}) =>
+  Future<String> readAsString({Encoding encoding = utf8}) =>
       _assetReader.readAsString(toBuildAssetId(id), encoding: encoding);
 }

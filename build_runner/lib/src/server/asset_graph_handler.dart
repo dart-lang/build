@@ -9,8 +9,8 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:shelf/shelf.dart' as shelf;
 
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'path_to_asset_id.dart';
 
 /// A handler for `/$graph` requests under a specific `rootDir`.
@@ -49,7 +49,7 @@ class AssetGraphHandler {
           return new shelf.Response.ok(
               await _reader.readAsString(
                   new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
-              headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+              headers: {HttpHeaders.contentTypeHeader: 'text/html'});
         }
 
         var query = request.url.queryParameters['q']?.trim();
@@ -133,4 +133,4 @@ class AssetGraphHandler {
 final _jsonUtf8Encoder = new JsonUtf8Encoder();
 
 shelf.Response _jsonResponse(List<int> body) => new shelf.Response.ok(body,
-    headers: {HttpHeaders.CONTENT_TYPE: 'application/json'});
+    headers: {HttpHeaders.contentTypeHeader: 'application/json'});

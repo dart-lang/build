@@ -354,4 +354,40 @@ void main() {
     var meta = await MetaModule.forAssets(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
+
+  test('conditional import directive added to module dependencies', () async {
+    var assets = makeAssets({
+      'myapp|web/a.dart': '''
+        import 'b.dart'
+        if (expression1) 'b1.dart'
+        if (expression2) 'b2.dart'
+        if (expression3) 'b3.dart';
+      ''',
+      'myapp|web/b.dart': '',
+      'myapp|web/b1.dart': '''
+      ''',
+      'myapp|web/b2.dart': '''
+      ''',
+      'myapp|web/b3.dart': '''
+      ''',
+    });
+
+    var a = new AssetId('myapp', 'web/a.dart');
+    var b = new AssetId('myapp', 'web/b.dart');
+    var b1 = new AssetId('myapp', 'web/b1.dart');
+    var b2 = new AssetId('myapp', 'web/b2.dart');
+    var b3 = new AssetId('myapp', 'web/b3.dart');
+
+    var expectedModules = [
+      matchesModule(new Module(a, [a], [b, b1, b2, b3])),
+      matchesModule(new Module(b, [b], [])),
+      matchesModule(new Module(b1, [b1], [])),
+      matchesModule(new Module(b2, [b2], [])),
+      matchesModule(new Module(b3, [b3], [])),
+    ];
+
+    var meta = await MetaModule.forAssets(reader, assets);
+
+    expect(meta.modules, unorderedMatches(expectedModules));
+  });
 }

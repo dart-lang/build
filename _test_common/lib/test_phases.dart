@@ -5,19 +5,19 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/environment/io_environment.dart';
-import 'package:build_runner/src/environment/overridable_environment.dart';
-import 'package:build_runner/src/generate/build_result.dart';
-import 'package:build_runner/src/generate/options.dart';
-import 'package:build_runner/src/logging/std_io_logging.dart';
-import 'package:build_runner/src/package_graph/apply_builders.dart';
-import 'package:build_runner/src/package_graph/package_graph.dart';
+import 'package:build_runner_core/src/environment/io_environment.dart';
+import 'package:build_runner_core/src/environment/overridable_environment.dart';
+import 'package:build_runner_core/src/generate/build_result.dart';
+import 'package:build_runner_core/src/generate/options.dart';
+//import 'package:build_runner/src/logging/std_io_logging.dart';
+import 'package:build_runner_core/src/package_graph/apply_builders.dart';
+import 'package:build_runner_core/src/package_graph/package_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_test/build_test.dart';
 
-import 'package:build_runner/src/generate/build_runner.dart';
+import 'package:build_runner_core/src/generate/build_runner.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
@@ -79,21 +79,22 @@ Future<BuildResult> testBuilders(
   Map<String, /*String|List<int>*/ dynamic> inputs, {
   Map<String, /*String|List<int>*/ dynamic> outputs,
   PackageGraph packageGraph,
-  BuildStatus status: BuildStatus.success,
+  BuildStatus status = BuildStatus.success,
   Map<String, BuildConfig> overrideBuildConfig,
   Matcher exceptionMatcher,
   InMemoryRunnerAssetReader reader,
   InMemoryRunnerAssetWriter writer,
   Level logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
-  onLog(LogRecord record): _nullLog,
-  bool checkBuildStatus: true,
-  bool failOnSevere: false,
-  bool deleteFilesByDefault: true,
-  bool enableLowResourcesMode: false,
+  onLog(LogRecord record) = _nullLog,
+  bool checkBuildStatus = true,
+  bool failOnSevere = false,
+  bool deleteFilesByDefault = true,
+  bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
-  bool verbose: false,
+  bool verbose = false,
   List<String> buildDirs,
+  String logPerformanceDir,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= new InMemoryRunnerAssetWriter();
@@ -114,7 +115,7 @@ Future<BuildResult> testBuilders(
       new IOEnvironment(packageGraph, null),
       reader: reader,
       writer: writer,
-      onLog: onLog ?? stdIOLogListener(verbose: verbose));
+      onLog: onLog);
   var options = await BuildOptions.create(environment,
       deleteFilesByDefault: deleteFilesByDefault,
       failOnSevere: failOnSevere,
@@ -124,7 +125,8 @@ Future<BuildResult> testBuilders(
       overrideBuildConfig: overrideBuildConfig,
       enableLowResourcesMode: enableLowResourcesMode,
       verbose: verbose,
-      buildDirs: buildDirs);
+      buildDirs: buildDirs,
+      logPerformanceDir: logPerformanceDir);
 
   BuildResult result;
   var build = await BuildRunner.create(

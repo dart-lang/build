@@ -37,7 +37,7 @@ class TestBuilderDefinition {
 /// [packageWithBuilders]. In the [packageWithBuildScript] use case the ordering
 /// of the `builders` argument determines builder ordering.
 TestBuilderDefinition builder(String key, Builder builder,
-        {bool isOptional: false, List<String> requiredInputs: const []}) =>
+        {bool isOptional = false, List<String> requiredInputs = const []}) =>
     new TestBuilderDefinition(key, isOptional, builder, requiredInputs);
 
 /// Create a package in [d.sandbox] with a `buid.yaml` file exporting [builders]
@@ -48,7 +48,7 @@ TestBuilderDefinition builder(String key, Builder builder,
 /// should contain top level fields with names matching they keys in [builders]
 /// and only rely on imports to `package:build_test/build_test.dart`.
 d.Descriptor packageWithBuilders(Iterable<TestBuilderDefinition> builders,
-        {String name: 'provides_builders'}) =>
+        {String name = 'provides_builders'}) =>
     d.dir(name, [
       _pubspec(name),
       d.file('build.yaml', jsonEncode(_buildConfig(builders))),
@@ -91,6 +91,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                   'build_config',
                   'build_resolvers',
                   'build_runner',
+                  'build_runner_core',
                 ],
                 pathDependencies: new Map.fromIterable(otherPackages,
                     key: (o) => (o as d.Descriptor).name,
@@ -125,6 +126,7 @@ Future<BuildTool> packageWithBuildScript(
               'build_config',
               'build_resolvers',
               'build_runner',
+              'build_runner_core',
               'build_test'
             ]),
             d.dir('tool', [

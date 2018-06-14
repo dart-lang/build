@@ -1,3 +1,7 @@
+## 0.10.2+4
+
+- Allow the latest build_config.
+
 ## 0.10.2+3
 
 - Remove package:build_barback dependency, and use public apis from package:test

@@ -31,7 +31,7 @@ class BazelAssetWriter implements AssetWriter {
 
   @override
   Future writeAsString(AssetId id, String contents,
-      {Encoding encoding: utf8}) async {
+      {Encoding encoding = utf8}) async {
     var file = _fileForId(id);
     await file.create(recursive: true);
     await file.writeAsString(contents, encoding: encoding);

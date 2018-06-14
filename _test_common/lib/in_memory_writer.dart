@@ -9,7 +9,7 @@ import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
 typedef void OnDelete(AssetId id);
 
@@ -27,7 +27,7 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
 
   @override
   Future writeAsString(AssetId id, String contents,
-      {Encoding encoding: utf8}) async {
+      {Encoding encoding = utf8}) async {
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
     FakeWatcher

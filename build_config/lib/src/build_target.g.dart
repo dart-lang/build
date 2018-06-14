@@ -6,10 +6,16 @@ part of 'build_target.dart';
 // Generator: JsonSerializableGenerator
 // **************************************************************************
 
-BuildTarget _$BuildTargetFromJson(Map json) => $checkedNew(
-    'BuildTarget',
-    json,
-    () => new BuildTarget(
+BuildTarget _$BuildTargetFromJson(Map json) {
+  return $checkedNew('BuildTarget', json, () {
+    $checkKeys(json, allowedKeys: const [
+      'builders',
+      'dependencies',
+      'sources',
+      'key',
+      'package'
+    ]);
+    var val = new BuildTarget(
         sources: $checkedConvert(json, 'sources',
             (v) => v == null ? null : new InputSet.fromJson(v)),
         dependencies: $checkedConvert(
@@ -21,24 +27,53 @@ BuildTarget _$BuildTargetFromJson(Map json) => $checkedNew(
                 k as String,
                 e == null
                     ? null
-                    : new TargetBuilderConfig.fromJson(e as Map))))));
+                    : new TargetBuilderConfig.fromJson(e as Map)))));
+    return val;
+  });
+}
 
-TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) => $checkedNew(
-        'TargetBuilderConfig',
-        json,
-        () => new TargetBuilderConfig(
-            isEnabled: $checkedConvert(json, 'is_enabled', (v) => v as bool),
-            generateFor: $checkedConvert(json, 'generate_for',
-                (v) => v == null ? null : new InputSet.fromJson(v)),
-            options: $checkedConvert(json, 'options',
-                (v) => v == null ? null : builderOptionsFromJson(v as Map)),
-            devOptions: $checkedConvert(json, 'dev_options',
-                (v) => v == null ? null : builderOptionsFromJson(v as Map)),
-            releaseOptions: $checkedConvert(json, 'release_options',
-                (v) => v == null ? null : builderOptionsFromJson(v as Map))),
-        fieldKeyMap: const {
-          'isEnabled': 'is_enabled',
-          'generateFor': 'generate_for',
-          'devOptions': 'dev_options',
-          'releaseOptions': 'release_options'
-        });
+TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
+  return $checkedNew('TargetBuilderConfig', json, () {
+    $checkKeys(json, allowedKeys: const [
+      'enabled',
+      'generate_for',
+      'options',
+      'dev_options',
+      'release_options'
+    ]);
+    var val = new TargetBuilderConfig(
+        isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool),
+        generateFor: $checkedConvert(json, 'generate_for',
+            (v) => v == null ? null : new InputSet.fromJson(v)),
+        options: $checkedConvert(json, 'options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+        devOptions: $checkedConvert(json, 'dev_options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+        releaseOptions: $checkedConvert(json, 'release_options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)));
+    return val;
+  }, fieldKeyMap: const {
+    'isEnabled': 'enabled',
+    'generateFor': 'generate_for',
+    'devOptions': 'dev_options',
+    'releaseOptions': 'release_options'
+  });
+}
+
+GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) {
+  return $checkedNew('GlobalBuilderConfig', json, () {
+    $checkKeys(json,
+        allowedKeys: const ['options', 'dev_options', 'release_options']);
+    var val = new GlobalBuilderConfig(
+        options: $checkedConvert(json, 'options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+        devOptions: $checkedConvert(json, 'dev_options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+        releaseOptions: $checkedConvert(json, 'release_options',
+            (v) => v == null ? null : builderOptionsFromJson(v as Map)));
+    return val;
+  }, fieldKeyMap: const {
+    'devOptions': 'dev_options',
+    'releaseOptions': 'release_options'
+  });
+}

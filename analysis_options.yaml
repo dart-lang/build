@@ -7,13 +7,12 @@ analyzer:
     dead_code: error
     override_on_non_overriding_method: error
   exclude:
-    - "test/goldens/generated_build_script.dart"
-    # Note that these paths are actually package relative, this does not exclude
-    # the `build` package from analysis.
-    - "build/**"
     # Prevents extra work during e2e test runs.
-    - "dart2js_test/**"
-    - ".dart_tool/**"
+    - "_test/dart2js_test/**"
+    - "_test/test/goldens/generated_build_script.dart"
+    # Common top level directories containing generated files in any package.
+    - "*/build/**"
+    - "*/.dart_tool/**"
 linter:
   rules:
     - annotate_overrides
@@ -58,6 +57,7 @@ linter:
     - prefer_conditional_assignment
     #- prefer_const_constructors
     - prefer_contains
+    - prefer_equal_for_default_values
     - prefer_final_fields
     - prefer_initializing_formals
     #- prefer_interpolation_to_compose_strings

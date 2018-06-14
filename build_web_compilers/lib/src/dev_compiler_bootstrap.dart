@@ -12,6 +12,7 @@ import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:pool/pool.dart';
 
 import 'common.dart';
+import 'ddc_names.dart';
 import 'dev_compiler_builder.dart';
 import 'web_entrypoint_builder.dart';
 
@@ -49,7 +50,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
   // which will allow us to not rely on the naming schemes that dartdevc uses
   // internally, but instead specify our own.
-  var appModuleScope = () {
+  var appModuleScope = toJSIdentifier(() {
     if (useKernel) {
       var basename = _context.basename(jsId.path);
       return basename.substring(0, basename.length - jsModuleExtension.length);
@@ -60,8 +61,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
       }
       return scope.skip(1).join('__');
     }
-  }();
-  appModuleScope = appModuleScope.replaceAll('.', '\$46');
+  }());
 
   // Map from module name to module path for custom modules.
   var modulePaths = new SplayTreeMap.of(

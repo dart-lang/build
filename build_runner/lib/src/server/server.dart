@@ -6,17 +6,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 
-import '../asset/finalized_reader.dart';
-import '../generate/build_result.dart';
-import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
-import '../logging/human_readable_duration.dart';
 import 'asset_graph_handler.dart';
 import 'path_to_asset_id.dart';
 
@@ -99,7 +96,7 @@ class ServeHandler implements BuildState {
     }
     return new shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
-        headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+        headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
 
   void _warnForEmptyDirectory(String rootDir) {
@@ -162,23 +159,23 @@ class AssetHandler {
 
     var etag = base64.encode((await _reader.digest(assetId)).bytes);
     var headers = {
-      HttpHeaders.CONTENT_TYPE: _typeResolver.lookup(assetId.path),
-      HttpHeaders.ETAG: etag,
+      HttpHeaders.contentTypeHeader: _typeResolver.lookup(assetId.path),
+      HttpHeaders.etagHeader: etag,
       // We always want this revalidated, which requires specifying both
       // max-age=0 and must-revalidate.
       //
       // See spec https://goo.gl/Lhvttg for more info about this header.
-      HttpHeaders.CACHE_CONTROL: 'max-age=0, must-revalidate',
+      HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
     };
 
-    if (requestHeaders[HttpHeaders.IF_NONE_MATCH] == etag) {
+    if (requestHeaders[HttpHeaders.ifNoneMatchHeader] == etag) {
       // This behavior is still useful for cases where a file is hit
       // without a cache-busting query string.
       return new shelf.Response.notModified(headers: headers);
     }
 
     var bytes = await _reader.readAsBytes(assetId);
-    headers[HttpHeaders.CONTENT_LENGTH] = '${bytes.length}';
+    headers[HttpHeaders.contentLengthHeader] = '${bytes.length}';
     return new shelf.Response.ok(bytes, headers: headers);
   }
 
@@ -202,7 +199,7 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
           !action.phases.any((phase) => phase.label == 'Build')) {
         continue;
       }
-      var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
+      var actionKey = '${action.builderKey}:${action.primaryInput}';
       for (var phase in action.phases) {
         var start = phase.startTime.millisecondsSinceEpoch -
             performance.startTime.millisecondsSinceEpoch;

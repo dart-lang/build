@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 const assumeTtyOption = 'assume-tty';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
+const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
 const lowResourcesModeOption = 'low-resources-mode';
 const failOnSevereOption = 'fail-on-severe';
@@ -55,6 +56,9 @@ class SharedOptions {
   /// Enables performance tracking and the `/$perf` page.
   final bool trackPerformance;
 
+  /// A directory to log performance information to.
+  String logPerformanceDir;
+
   /// Check digest of imports to the build script to invalidate the build.
   final bool skipBuildScriptCheck;
 
@@ -85,6 +89,7 @@ class SharedOptions {
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
     @required this.buildDirs,
+    @required this.logPerformanceDir,
   });
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
@@ -115,6 +120,7 @@ class SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       buildDirs: buildDirs.toList(),
+      logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
 }
@@ -141,6 +147,7 @@ class ServeOptions extends SharedOptions {
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
     @required List<String> buildDirs,
+    @required String logPerformanceDir,
   }) : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -154,6 +161,7 @@ class ServeOptions extends SharedOptions {
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
           buildDirs: buildDirs,
+          logPerformanceDir: logPerformanceDir,
         );
 
   factory ServeOptions.fromParsedArgs(ArgResults argResults,
@@ -205,6 +213,7 @@ class ServeOptions extends SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       buildDirs: buildDirs.toList(),
+      logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
 }

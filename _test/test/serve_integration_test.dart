@@ -38,7 +38,7 @@ void main() {
       () async {
     var request = await httpClient.get('localhost', 8080, 'dir_without_index/');
     var firstResponse = await request.close();
-    expect(firstResponse.statusCode, HttpStatus.NOT_FOUND);
+    expect(firstResponse.statusCode, HttpStatus.notFound);
     expect(await utf8.decodeStream(firstResponse),
         contains('dir_without_index/hello.txt'));
   });
@@ -80,15 +80,15 @@ void main() {
       var firstRequest =
           await httpClient.get('localhost', 8080, 'main.dart.js');
       var firstResponse = await firstRequest.close();
-      expect(firstResponse.statusCode, HttpStatus.OK);
-      var etag = firstResponse.headers[HttpHeaders.ETAG];
+      expect(firstResponse.statusCode, HttpStatus.ok);
+      var etag = firstResponse.headers[HttpHeaders.etagHeader];
       expect(etag, isNotNull);
 
       var cachedRequest =
           await httpClient.get('localhost', 8080, 'main.dart.js');
-      cachedRequest.headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+      cachedRequest.headers.add(HttpHeaders.ifNoneMatchHeader, etag);
       var cachedResponse = await cachedRequest.close();
-      expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+      expect(cachedResponse.statusCode, HttpStatus.notModified);
     });
 
     group('regression tests', () {
@@ -96,15 +96,15 @@ void main() {
         var firstRequest =
             await httpClient.get('localhost', 8080, 'index.html');
         var firstResponse = await firstRequest.close();
-        expect(firstResponse.statusCode, HttpStatus.OK);
-        var etag = firstResponse.headers[HttpHeaders.ETAG];
+        expect(firstResponse.statusCode, HttpStatus.ok);
+        var etag = firstResponse.headers[HttpHeaders.etagHeader];
         expect(etag, isNotNull);
 
         var cachedRequest =
             await httpClient.get('localhost', 8080, 'index.html')
-              ..headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+              ..headers.add(HttpHeaders.ifNoneMatchHeader, etag);
         var cachedResponse = await cachedRequest.close();
-        expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+        expect(cachedResponse.statusCode, HttpStatus.notModified);
 
         var nextBuild = nextSuccessfulBuild;
         await replaceAllInFile(
@@ -112,10 +112,10 @@ void main() {
         await nextBuild;
         var changedRequest =
             await httpClient.get('localhost', 8080, 'index.html')
-              ..headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+              ..headers.add(HttpHeaders.ifNoneMatchHeader, etag);
         var changedResponse = await changedRequest.close();
-        expect(changedResponse.statusCode, HttpStatus.OK);
-        var newEtag = changedResponse.headers[HttpHeaders.ETAG];
+        expect(changedResponse.statusCode, HttpStatus.ok);
+        var newEtag = changedResponse.headers[HttpHeaders.etagHeader];
         expect(newEtag, isNot(etag));
       });
     });

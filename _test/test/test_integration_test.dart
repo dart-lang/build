@@ -47,7 +47,7 @@ void main() {
     });
 
     test('delete test', () async {
-      await deleteFile(p.join('test', 'subdir', 'subdir_test.dart'));
+      await deleteFile(p.join('test', 'sub-dir', 'subdir_test.dart'));
       await expectTestsPass(expectedNumRan: 3);
     });
   });

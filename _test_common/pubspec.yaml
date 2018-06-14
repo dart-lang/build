@@ -9,7 +9,7 @@ environment:
 dependencies:
   build: any
   build_config: any
-  build_runner: any
+  build_runner_core: any
   build_test: any
   test_descriptor: ^1.0.0
 
@@ -18,7 +18,7 @@ dependency_overrides:
     path: ../build
   build_config:
     path: ../build_config
-  build_runner:
-    path: ../build_runner
+  build_runner_core:
+    path: ../build_runner_core
   build_test:
     path: ../build_test

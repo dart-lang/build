@@ -10,7 +10,7 @@ part 'input_set.g.dart';
 ///
 /// Takes a list of strings in glob format for [include] and [exclude]. Matches
 /// the `glob()` function in skylark.
-@JsonSerializable(createToJson: false)
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class InputSet {
   static const anything = const InputSet();
 

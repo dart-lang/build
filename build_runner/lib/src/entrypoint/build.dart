@@ -4,10 +4,10 @@
 
 import 'dart:async';
 
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
 import '../generate/build.dart';
-import '../generate/build_result.dart';
 import 'base_command.dart';
 
 /// A command that does a single build and then exits.
@@ -40,6 +40,7 @@ class BuildCommand extends BuildRunnerCommand {
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,
       buildDirs: options.buildDirs,
+      logPerformanceDir: options.logPerformanceDir,
     );
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;

@@ -5,22 +5,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner/src/environment/io_environment.dart';
-import 'package:build_runner/src/environment/overridable_environment.dart';
-import 'package:build_runner/src/generate/options.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner/src/generate/terminator.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
-import '../asset/reader.dart';
-import '../asset/writer.dart';
 import '../logging/std_io_logging.dart';
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
-import 'build_result.dart';
-import 'build_runner.dart';
 import 'directory_watcher_factory.dart';
 import 'watch_impl.dart' as watch_impl;
 
@@ -73,7 +65,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     bool verbose,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
-    List<String> buildDirs}) async {
+    List<String> buildDirs,
+    String logPerformanceDir}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
   var environment = new OverrideableEnvironment(
@@ -93,7 +86,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       outputMap: outputMap,
       trackPerformance: trackPerformance,
       verbose: verbose,
-      buildDirs: buildDirs);
+      buildDirs: buildDirs,
+      logPerformanceDir: logPerformanceDir);
   var terminator = new Terminator(terminateEventStream);
   try {
     var build = await BuildRunner.create(
@@ -156,7 +150,8 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool verbose,
         bool isReleaseBuild,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
-        List<String> buildDirs}) =>
+        List<String> buildDirs,
+        String logPerformanceDir}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,
@@ -179,4 +174,5 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
       buildDirs: buildDirs,
+      logPerformanceDir: logPerformanceDir,
     );

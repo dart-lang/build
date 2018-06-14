@@ -1,4 +1,9 @@
-## 0.3.0-dev
+## 0.3.1
+
+- Improve validation and errors when parsing `build.yaml`.
+- Add `BuildConfig.globalOptions` support.
+
+## 0.3.0
 
 - Parsing of `build.yaml` files is now done with the `json_serializable` package
   and is Dart 2 compatible.

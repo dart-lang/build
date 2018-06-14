@@ -4,9 +4,8 @@
 
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
 import 'options.dart';
 import 'runner.dart';
 
@@ -56,6 +55,9 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: r'Enables performance tracking and the /$perf page.',
           negatable: true,
           defaultsTo: false)
+      ..addOption(logPerformanceOption,
+          help: 'A directory to write performance logs to, must be in the '
+              'current package. Implies `--track-performance`.')
       ..addFlag(skipBuildScriptCheckOption,
           help: r'Skip validation for the digests of files imported by the '
               'build script.',

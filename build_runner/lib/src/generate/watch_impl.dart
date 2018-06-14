@@ -6,35 +6,23 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/asset/finalized_reader.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
-import 'package:build_runner/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/reader.dart';
-import '../asset/writer.dart';
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
-import '../environment/build_environment.dart';
-import '../environment/io_environment.dart';
-import '../environment/overridable_environment.dart';
-import '../logging/logging.dart';
 import '../logging/std_io_logging.dart';
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
 import '../server/server.dart';
-import '../util/constants.dart';
-import 'build_impl.dart';
-import 'build_result.dart';
 import 'directory_watcher_factory.dart';
-import 'exceptions.dart';
-import 'options.dart';
 import 'terminator.dart';
 
 final _logger = new Logger('Watch');
@@ -62,6 +50,7 @@ Future<ServeHandler> watch(
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
   List<String> buildDirs,
+  String logPerformanceDir,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
@@ -85,7 +74,8 @@ Future<ServeHandler> watch(
       outputMap: outputMap,
       trackPerformance: trackPerformance,
       verbose: verbose,
-      buildDirs: buildDirs);
+      buildDirs: buildDirs,
+      logPerformanceDir: logPerformanceDir);
   var terminator = new Terminator(terminateEventStream);
 
   var watch = _runWatch(options, environment, builders, builderConfigOverrides,
@@ -117,7 +107,7 @@ WatchImpl _runWatch(
         Future until,
         DirectoryWatcherFactory directoryWatcherFactory,
         String configKey,
-        {bool isReleaseMode: false}) =>
+        {bool isReleaseMode = false}) =>
     new WatchImpl(options, environment, builders, builderConfigOverrides, until,
         directoryWatcherFactory, configKey,
         isReleaseMode: isReleaseMode);
@@ -142,7 +132,7 @@ class _OnDeleteWriter implements RunnerAssetWriter {
 
   @override
   Future writeAsString(AssetId id, String contents,
-          {Encoding encoding: utf8}) =>
+          {Encoding encoding = utf8}) =>
       _writer.writeAsString(id, contents, encoding: encoding);
 }
 
@@ -188,7 +178,7 @@ class WatchImpl implements BuildState {
       Future until,
       this._directoryWatcherFactory,
       this._configKey,
-      {bool isReleaseMode: false})
+      {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph,
         _targetGraph = options.targetGraph {
@@ -212,7 +202,7 @@ class WatchImpl implements BuildState {
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       Future until,
-      {bool isReleaseMode: false}) {
+      {bool isReleaseMode = false}) {
     var watcherEnvironment = new OverrideableEnvironment(environment,
         writer: new _OnDeleteWriter(environment.writer, _expectedDeletes.add));
     var firstBuildCompleter = new Completer<BuildResult>();

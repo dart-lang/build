@@ -1,3 +1,26 @@
+## How can I debug my release mode web app (dart2js)?
+
+By default, the `dart2js` compiler is only enabled in `--release` mode, which
+does not include source maps or the original `.dart` files. If you need to
+debug an error which only happens in `dart2js`, you will want to change your
+debug mode compiler to `dart2js`. You can either do this using the `--define`
+command line option:
+
+```
+--define "build_web_compilers|entrypoint=compiler=dart2js"
+```
+
+Or by editing your `build.yaml` file:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        options:
+          compiler: dart2js
+```
+
 ## Why do Builders need unique outputs?
 
 `build_runner` relies on determining a static build graph before starting a

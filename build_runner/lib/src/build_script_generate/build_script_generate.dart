@@ -3,19 +3,17 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
-import '../logging/logging.dart';
 import '../package_graph/build_config_overrides.dart';
-import '../package_graph/package_graph.dart';
-import '../util/constants.dart';
 import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
@@ -155,11 +153,11 @@ Expression _applyBuilder(BuilderDefinition definition) {
   if (definition.appliesBuilders.isNotEmpty) {
     namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
   }
+  var import = _buildScriptImport(definition.import);
   return refer('apply', 'package:build_runner/build_runner.dart').call([
     literalString(definition.key),
-    literalList(definition.builderFactories
-        .map((f) => refer(f, definition.import))
-        .toList()),
+    literalList(
+        definition.builderFactories.map((f) => refer(f, import)).toList()),
     _findToExpression(definition),
   ], namedArgs);
 }
@@ -194,11 +192,27 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
         refer('InputSet', 'package:build_config/build_config.dart')
             .constInstance([], inputSetArgs);
   }
+  var import = _buildScriptImport(definition.import);
   return refer('applyPostProcess', 'package:build_runner/build_runner.dart')
       .call([
     literalString(definition.key),
-    refer(definition.builderFactory, definition.import),
+    refer(definition.builderFactory, import),
   ], namedArgs);
+}
+
+/// Returns the actual import to put in the generated script based on an import
+/// found in the build.yaml.
+String _buildScriptImport(String import) {
+  if (import.startsWith('package:')) {
+    return import;
+  } else if (import.startsWith('../') || import.startsWith('/')) {
+    log.warning('The `../` import syntax in build.yaml is now deprecated, '
+        'instead do a normal relative import as if it was from the root of '
+        'the package. Found `$import` in your `build.yaml` file.');
+    return import;
+  } else {
+    return p.relative(import, from: p.dirname(scriptLocation));
+  }
 }
 
 Expression _findToExpression(BuilderDefinition definition) {
@@ -220,7 +234,5 @@ Expression _findToExpression(BuilderDefinition definition) {
 
 /// An expression creating a [BuilderOptions] from a json string.
 Expression _constructBuilderOptions(BuilderOptions options) =>
-    refer('BuilderOptions', 'package:build/build.dart').newInstance([
-      refer('jsonDecode', 'dart:convert')
-          .call([literalString(jsonEncode(options.config))])
-    ]);
+    refer('BuilderOptions', 'package:build/build.dart')
+        .newInstance([literalMap(options.config)]);

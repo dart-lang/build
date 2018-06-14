@@ -33,7 +33,7 @@ Future<Null> runBuilders(
     Logger logger,
     Resolvers resolvers,
     BuilderOptions builderOptions,
-    {bool isWorker: false,
+    {bool isWorker = false,
     Set<String> validInputs}) async {
   assert(timings.isRunning);
 

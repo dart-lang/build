@@ -2,7 +2,7 @@ name: _test
 description: A basic web app
 
 environment:
-  sdk: '>=1.24.0 <2.0.0'
+  sdk: '>=2.0.0-dev.61 <2.0.0'
 
 dev_dependencies:
   path: ^1.4.2
@@ -13,8 +13,6 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
-  build_barback:
-    path: ../build_barback
   build_config:
     path: ../build_config
   build_modules:
@@ -23,14 +21,11 @@ dependency_overrides:
     path: ../build_resolvers
   build_runner:
     path: ../build_runner
+  build_runner_core:
+    path: ../build_runner_core
   build_test:
     path: ../build_test
   build_web_compilers:
     path: ../build_web_compilers
   scratch_space:
     path: ../scratch_space
-
-transformers:
-# TODO: only needed because pub serve complains otherwise
-- test/pub_serve:
-    $include: []
