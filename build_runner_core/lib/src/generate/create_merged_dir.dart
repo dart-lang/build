@@ -71,15 +71,15 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    for (var node in assetGraph.allNodes) {
+    await Future.wait(assetGraph.allNodes.map((node) async {
       if (_shouldSkipNode(node, root, optionalOutputTracker)) {
-        continue;
+        return;
       }
       originalOutputAssets.add(node.id);
       node.lastKnownDigest ??= await reader.digest(node.id);
       outputAssets.add(
           await _writeAsset(node.id, outputDir, root, packageGraph, reader));
-    }
+    }));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
@@ -179,17 +179,15 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
   return outputId;
 }
 
-Future<void> _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) {
-  var file = _fileFor(outputDir, id);
-  return _descriptorPool.withResource(() => file.writeAsBytes(bytes));
-}
+Future<void> _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) =>
+    _descriptorPool.withResource(
+        () => _fileFor(outputDir, id).then((file) => file.writeAsBytes(bytes)));
 
-Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) {
-  var file = _fileFor(outputDir, id);
-  return _descriptorPool.withResource(() => file.writeAsString(contents));
-}
+Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) =>
+    _descriptorPool.withResource(() =>
+        _fileFor(outputDir, id).then((file) => file.writeAsString(contents)));
 
-File _fileFor(Directory outputDir, AssetId id) {
+Future<File> _fileFor(Directory outputDir, AssetId id) {
   String relativePath;
   if (id.path.startsWith('lib')) {
     relativePath =
@@ -197,9 +195,7 @@ File _fileFor(Directory outputDir, AssetId id) {
   } else {
     relativePath = id.path;
   }
-  var file = new File(p.join(outputDir.path, relativePath));
-  file.createSync(recursive: true);
-  return file;
+  return new File(p.join(outputDir.path, relativePath)).create(recursive: true);
 }
 
 /// Checks for a manifest file in [outputDir] and deletes all referenced files.
