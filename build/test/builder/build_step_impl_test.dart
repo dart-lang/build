@@ -38,9 +38,9 @@ void main() {
     test('doesnt allow non-expected outputs', () {
       var id = makeAssetId();
       expect(() => buildStep.writeAsString(id, '$id'),
-          throwsA(new isInstanceOf<UnexpectedOutputException>()));
+          throwsA(new TypeMatcher<UnexpectedOutputException>()));
       expect(() => buildStep.writeAsBytes(id, [0]),
-          throwsA(new isInstanceOf<UnexpectedOutputException>()));
+          throwsA(new TypeMatcher<UnexpectedOutputException>()));
     });
 
     test('canRead throws invalidInputExceptions', () async {

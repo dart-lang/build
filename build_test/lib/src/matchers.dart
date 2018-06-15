@@ -10,19 +10,19 @@ import 'package:build/build.dart';
 
 /// Matches instance of [AssetNotFoundException].
 final Matcher assetNotFoundException =
-    const isInstanceOf<AssetNotFoundException>();
+    const TypeMatcher<AssetNotFoundException>();
 
 /// Matches instance of [InvalidInputException].
 final Matcher invalidInputException =
-    const isInstanceOf<InvalidInputException>();
+    const TypeMatcher<InvalidInputException>();
 
 /// Matches instance of [InvalidOutputException].
 final Matcher invalidOutputException =
-    const isInstanceOf<InvalidOutputException>();
+    const TypeMatcher<InvalidOutputException>();
 
 /// Matches instance of [PackageNotFoundException].
 final Matcher packageNotFoundException =
-    const isInstanceOf<PackageNotFoundException>();
+    const TypeMatcher<PackageNotFoundException>();
 
 /// Decodes the value using [encoding] and matches it agains [expected].
 Matcher decodedMatches(dynamic expected, {Encoding encoding}) =>

@@ -210,7 +210,7 @@ void main() {
         expect(excludedNode.lastKnownDigest, isNull,
             reason: 'Nodes with no output shouldn\'t get an eager digest.');
 
-        expect(graph.get(internalId), new isInstanceOf<InternalAssetNode>());
+        expect(graph.get(internalId), new TypeMatcher<InternalAssetNode>());
 
         var primaryOutputNode =
             graph.get(primaryOutputId) as GeneratedAssetNode;
@@ -283,16 +283,16 @@ void main() {
               buildPhases, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticId), isTrue);
-          expect(graph.get(syntheticId), new isInstanceOf<SourceAssetNode>());
+          expect(graph.get(syntheticId), new TypeMatcher<SourceAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(graph.get(syntheticOutputId),
-              new isInstanceOf<GeneratedAssetNode>());
+              new TypeMatcher<GeneratedAssetNode>());
 
           var newAnchor =
               new PostProcessAnchorNode.forInputAndAction(syntheticId, 0, null);
           expect(graph.contains(newAnchor.id), isTrue);
           expect(graph.get(newAnchor.id),
-              new isInstanceOf<PostProcessAnchorNode>());
+              new TypeMatcher<PostProcessAnchorNode>());
         });
 
         test('add new generated asset which replaces a synthetic node',
@@ -307,7 +307,7 @@ void main() {
 
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(graph.get(syntheticOutputId),
-              new isInstanceOf<GeneratedAssetNode>());
+              new TypeMatcher<GeneratedAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
         });
 

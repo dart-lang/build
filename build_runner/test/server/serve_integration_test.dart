@@ -120,7 +120,7 @@ example:file://fake/pkg/path
           await getResponse(slashOrNot);
           fail('Assets are not wired up. Expecting this to throw.');
         } catch (e) {
-          expect(e, new isInstanceOf<AssetNotFoundException>());
+          expect(e, new TypeMatcher<AssetNotFoundException>());
           expect((e as AssetNotFoundException).assetId,
               new AssetId.parse('build_runner|lib/src/server/graph_viz.html'));
         }
