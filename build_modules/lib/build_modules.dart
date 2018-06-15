@@ -4,7 +4,12 @@
 
 export 'src/errors.dart' show MissingModulesException;
 export 'src/kernel_builder.dart'
-    show KernelSummaryBuilder, kernelSummaryExtension, multiRootScheme;
+    show
+        KernelSummaryBuilder,
+        kernelSummaryExtension,
+        KernelModuleBuilder,
+        kernelModuleExtension,
+        multiRootScheme;
 export 'src/meta_module_builder.dart'
     show MetaModuleBuilder, metaModuleExtension;
 export 'src/meta_module_clean_builder.dart'

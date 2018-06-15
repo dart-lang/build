@@ -32,6 +32,10 @@ class Module extends Object with _$ModuleSerializerMixin {
   AssetId jsSourceMapId(String jsSourceMapExtension) =>
       primarySource.changeExtension(jsSourceMapExtension);
 
+  // The full kernel module for this module.
+  AssetId get kernelModuleId =>
+      primarySource.changeExtension(kernelModuleExtension);
+
   // The kernel summary for this module.
   AssetId get kernelSummaryId =>
       primarySource.changeExtension(kernelSummaryExtension);
