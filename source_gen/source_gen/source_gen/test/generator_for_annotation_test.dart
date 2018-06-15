@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// The first test that runs `testBuilder` takes a LOT longer than the rest.
+@Timeout.factor(3)
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -10,22 +13,20 @@ import 'package:test/test.dart';
 import 'package:source_gen/source_gen.dart';
 
 void main() {
-  test('Skips output if per-annotation output is `null`', () async {
-    final generator = const LiteralOutput();
-    var builder = new LibraryBuilder(generator);
-    await testBuilder(builder, _inputMap, outputs: {});
-  });
-
-  test('Skips output if per-annotation output is empty string', () async {
-    final generator = const LiteralOutput('');
-    var builder = new LibraryBuilder(generator);
-    await testBuilder(builder, _inputMap, outputs: {});
-  });
-
-  test('Skips output if per-annotation output is only whitespace', () async {
-    final generator = const LiteralOutput('\n  \n   \t');
-    var builder = new LibraryBuilder(generator);
-    await testBuilder(builder, _inputMap, outputs: {});
+  group('skips output if per-annotation output is', () {
+    for (var entry in {
+      '`null`': null,
+      'empty string': '',
+      'only whitespace': '\n \t',
+      'empty list': [],
+      'list with null, empty, and whitespace items': [null, '', '\n \t']
+    }.entries) {
+      test(entry.key, () async {
+        final generator = new LiteralOutput(entry.value);
+        var builder = new LibraryBuilder(generator);
+        await testBuilder(builder, _inputMap, outputs: {});
+      });
+    }
   });
 
   test('Supports and dedupes multiple return values', () async {
