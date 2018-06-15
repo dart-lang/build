@@ -1,7 +1,11 @@
 ## 0.9.0
 
-* `GeneratorForAnnotation.generateForAnnotatedElement` now allow multiple return
-  values when implementations return an `Iterable` or `Stream`.
+* `GeneratorForAnnotation`
+  * **BREAKING** `generateForAnnotatedElement` now takes two arguments instead
+    of three: `(AnnotatedElement annotatedElement, BuildStep buildStep)`.
+    `AnnotatedElement` contains the `element` and `annotation` values.
+  * `generateForAnnotatedElement` now allow multiple return values when
+    implementations return an `Iterable` or `Stream`.
   * Values from `generateForAnnotatedElement` have whitespace trimmed. `null`
     and empty values are ignored.
   * Duplicate values are collapsed into a single values. This allows emitting

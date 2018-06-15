@@ -5,7 +5,6 @@
 // The first test that runs `testBuilder` takes a LOT longer than the rest.
 @Timeout.factor(3)
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -51,11 +50,15 @@ void main() {
     });
   });
 
-  test('handles errors correctly', () async {
-    final generator = const FailingGenerator();
-    var builder = new LibraryBuilder(generator);
-    await testBuilder(builder, _inputMap, outputs: {
-      'a|lib/file.g.dart': r'''
+  group('handles errors correctly', () {
+    for (var entry in {
+      'sync errors': const FailingGenerator(),
+      'from iterable': const FailingIterableGenerator()
+    }.entries) {
+      test(entry.key, () async {
+        var builder = new LibraryBuilder(entry.value);
+        await testBuilder(builder, _inputMap, outputs: {
+          'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
@@ -64,17 +67,32 @@ void main() {
 
 // Error: Bad state: not supported!
 '''
-    });
+        });
+      });
+    }
   });
+}
+
+class FailingIterableGenerator extends GeneratorForAnnotation<Deprecated> {
+  const FailingIterableGenerator();
+
+  @override
+  Iterable<String> generateForAnnotatedElement(
+      AnnotatedElement annotatedElement, BuildStep buildStep) sync* {
+    yield '// There are deprecated values in this library!';
+    throw new StateError('not supported!');
+  }
+
+  @override
+  String toString() => 'FailingGenerator';
 }
 
 class FailingGenerator extends GeneratorForAnnotation<Deprecated> {
   const FailingGenerator();
 
   @override
-  Iterable<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) sync* {
-    yield '// There are deprecated values in this library!';
+  generateForAnnotatedElement(
+      AnnotatedElement annotatedElement, BuildStep buildStep) {
     throw new StateError('not supported!');
   }
 }
@@ -84,10 +102,10 @@ class RepeatingGenerator extends GeneratorForAnnotation<Deprecated> {
 
   @override
   Iterable<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) sync* {
+      AnnotatedElement annotatedElement, BuildStep buildStep) sync* {
     yield '// There are deprecated values in this library!';
 
-    yield '// $element';
+    yield '// ${annotatedElement.element}';
   }
 }
 
@@ -98,7 +116,7 @@ class LiteralOutput<T> extends GeneratorForAnnotation<Deprecated> {
 
   @override
   T generateForAnnotatedElement(
-          Element element, ConstantReader annotation, BuildStep buildStep) =>
+          AnnotatedElement annotatedElement, BuildStep buildStep) =>
       null;
 }
 

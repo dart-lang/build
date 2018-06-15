@@ -17,74 +17,58 @@ void main() {
         ['0', '1', '2']);
 
     _testFunction('Future<Stream>',
-        () => new Future.value(new Stream.fromIterable(['value'])), ['value']);
+        new Future.value(new Stream.fromIterable(['value'])), ['value']);
   });
 
   group('invalid values', () {
-    _testSimpleValue('number', 42, [badValueErrorMessage(42)]);
-    _testSimpleValue('mixed good and bad', ['good', 42, 'also good'],
-        ['good', badValueErrorMessage(42), 'also good']);
+    _testSimpleValue('number', 42, throwsArgumentError);
+    _testSimpleValue(
+        'mixed good and bad', ['good', 42, 'also good'], throwsArgumentError);
 
     var badInstance = new _ThrowOnToString();
-    _testSimpleValue(
-        'really bad class', badInstance, [badValueErrorMessage(badInstance)]);
+    _testSimpleValue('really bad class', badInstance, throwsArgumentError);
 
-    _testSimpleValue('iterable with errors', _throwingIterable(),
-        ['a', 'b', 'Error in iterator!']);
+    _testSimpleValue(
+        'iterable with errors', _throwingIterable(), throwsArgumentError);
 
     _testFunction('sync throw', () => throw new ArgumentError('Error message'),
-        ['Error message']);
+        throwsArgumentError);
 
     _testFunction(
         'new Future.error',
         () => new Future.error(new ArgumentError('Error message')),
-        ['Error message']);
+        throwsArgumentError);
 
     _testFunction(
         'throw in async',
         () async => throw new ArgumentError('Error message'),
-        ['Error message']);
+        throwsArgumentError);
   });
 }
 
-void _testSimpleValue(String testName, Object value, List expected) {
-  _testFunction(testName, () => value, expected);
+void _testSimpleValue(String testName, Object value, expected) {
+  _testFunction(testName, value, expected);
 
   assert(value is! Future);
 
-  _testFunction('Future<$testName>', () => new Future.value(value), expected);
+  _testFunction('Future<$testName>', new Future.value(value), expected);
 
   if (value is Iterable) {
     _testFunction('Stream with values from $testName',
-        () => safeIteratorToStream(value), expected);
+        new Stream.fromIterable(value), expected);
   } else {
     _testFunction('Stream single value $testName',
-        () => new Stream.fromIterable([value]), expected);
+        new Stream.fromIterable([value]), expected);
   }
 }
 
-/// [expected] contains the [String] items expected from the [Stream] returned
-/// by [normalizeGeneratorOutput].
-///
-/// If the stream returned by [normalizeGeneratorOutput] has errors of type
-/// [ArgumentError], they are transformed into strings containing the content
-/// of `toString` on the error. You can validate error behavior by including
-/// the `message` content of any expected errors in [expected].
-void _testFunction(String testName, Object func(), List expected) {
+void _testFunction(String testName, value, expected) {
   test(testName, () async {
-    var items = await normalizeGeneratorOutput(func).transform(
-        new StreamTransformer<String, String>.fromHandlers(
-            handleError: (error, stack, sink) {
-      if (error is ArgumentError) {
-        sink.add(error.message.toString());
-      } else {
-        printOnFailure(
-            'Careful! Transforming to an error! $error (${error.runtimeType}).');
-        sink.addError(error, stack);
-      }
-    })).toList();
-
-    expect(items, expected);
+    if (expected is List) {
+      expect(await normalizeGeneratorOutput(value).toList(), expected);
+    } else {
+      expect(() => normalizeGeneratorOutput(value).drain(), expected);
+    }
   });
 }
 
