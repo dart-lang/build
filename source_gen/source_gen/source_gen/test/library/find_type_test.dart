@@ -44,4 +44,4 @@ void main() {
   });
 }
 
-final _isClassElement = const isInstanceOf<ClassElement>();
+final _isClassElement = const TypeMatcher<ClassElement>();
