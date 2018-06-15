@@ -28,7 +28,7 @@ void main() {
       var outputs = {'a|lib/a.txt': 'a'};
 
       expect(() => checkOutputs(outputs, actualAssets, writer),
-          throwsA(new isInstanceOf<TestFailure>()));
+          throwsA(new TypeMatcher<TestFailure>()));
     });
 
     test('with missing output', () async {
@@ -40,7 +40,7 @@ void main() {
       var outputs = {'a|lib/a.txt': 'a', 'a|lib/b.txt': 'b'};
 
       expect(() => checkOutputs(outputs, actualAssets, writer),
-          throwsA(new isInstanceOf<TestFailure>()));
+          throwsA(new TypeMatcher<TestFailure>()));
     });
 
     test('with asset mapping', () async {

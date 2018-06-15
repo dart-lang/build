@@ -96,7 +96,7 @@ void main() {
                 ],
                 {'a|web/a.txt': 'a'},
               ),
-          throwsA(new isInstanceOf<CannotBuildException>()));
+          throwsA(new TypeMatcher<CannotBuildException>()));
     });
 
     group('with root package inputs', () {
@@ -433,7 +433,7 @@ void main() {
               {'b|lib/b.txt': 'b'},
               packageGraph: packageGraph,
               outputs: {}),
-          throwsA(new isInstanceOf<CannotBuildException>()));
+          throwsA(new TypeMatcher<CannotBuildException>()));
     });
 
     group('with `hideOutput: true`', () {
