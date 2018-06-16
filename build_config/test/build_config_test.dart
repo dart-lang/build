@@ -214,7 +214,7 @@ void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
     Map<String, BuilderDefinition> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], new _BuilderDefinitionMatcher(expected[p]));
+    expect(actual[p], _matchesBuilderDefinition(expected[p]));
   }
 }
 
@@ -223,7 +223,7 @@ void expectPostProcessBuilderDefinitions(
     Map<String, PostProcessBuilderDefinition> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], new _PostProcessBuilderDefinitionMatcher(expected[p]));
+    expect(actual[p], _matchesPostProcessBuilderDefinition(expected[p]));
   }
 }
 
@@ -231,162 +231,98 @@ void expectGlobalOptions(Map<String, GlobalBuilderConfig> actual,
     Map<String, GlobalBuilderConfig> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], new _GlobalBuilderConfigMatcher(expected[p]));
+    expect(actual[p], _matchesGlobalBuilderConfig(expected[p]));
   }
 }
 
-class _BuilderDefinitionMatcher extends Matcher {
-  final BuilderDefinition _expected;
-  _BuilderDefinitionMatcher(this._expected);
+Matcher _matchesBuilderDefinition(BuilderDefinition definition) =>
+    new TypeMatcher<BuilderDefinition>()
+        .having((d) => d.builderFactories, 'builderFactories',
+            definition.builderFactories)
+        .having((d) => d.buildExtensions, 'buildExtensions',
+            definition.buildExtensions)
+        .having((d) => d.requiredInputs, 'requiredInputs',
+            definition.requiredInputs)
+        .having((d) => d.runsBefore, 'runsBefore', definition.runsBefore)
+        .having((d) => d.appliesBuilders, 'appliesBuilders',
+            definition.appliesBuilders)
+        .having((d) => d.defaults, 'defaults',
+            _matchesBuilderConfigDefaults(definition.defaults))
+        .having((d) => d.autoApply, 'autoApply', definition.autoApply)
+        .having((d) => d.isOptional, 'isOptional', definition.isOptional)
+        .having((d) => d.buildTo, 'buildTo', definition.buildTo)
+        .having((d) => d.import, 'import', definition.import)
+        .having((d) => d.key, 'key', definition.key)
+        .having((d) => d.package, 'package', definition.package);
 
-  @override
-  bool matches(item, _) =>
-      item is BuilderDefinition &&
-      equals(_expected.builderFactories).matches(item.builderFactories, _) &&
-      equals(_expected.buildExtensions).matches(item.buildExtensions, _) &&
-      equals(_expected.requiredInputs).matches(item.requiredInputs, _) &&
-      equals(_expected.runsBefore).matches(item.runsBefore, _) &&
-      equals(_expected.appliesBuilders).matches(item.appliesBuilders, _) &&
-      new _TargetBuilderConfigDefaultsMatcher(_expected.defaults)
-          .matches(item.defaults, _) &&
-      item.autoApply == _expected.autoApply &&
-      item.isOptional == _expected.isOptional &&
-      item.buildTo == _expected.buildTo &&
-      item.import == _expected.import &&
-      item.key == _expected.key &&
-      item.package == _expected.package;
+Matcher _matchesPostProcessBuilderDefinition(
+        PostProcessBuilderDefinition definition) =>
+    new TypeMatcher<PostProcessBuilderDefinition>()
+        .having((d) => d.builderFactory, 'builderFactory',
+            definition.builderFactory)
+        .having((d) => d.defaults, 'defaults',
+            _matchesBuilderConfigDefaults(definition.defaults))
+        .having((d) => d.import, 'import', definition.import)
+        .having((d) => d.key, 'key', definition.key)
+        .having((d) => d.package, 'package', definition.package);
 
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
+Matcher _matchesGlobalBuilderConfig(GlobalBuilderConfig config) =>
+    new TypeMatcher<GlobalBuilderConfig>()
+        .having(
+            (c) => c.options.config, 'options.config', config.options.config)
+        .having((c) => c.devOptions.config, 'devOptions.config',
+            config.devOptions.config)
+        .having((c) => c.releaseOptions.config, 'releaseOptions.config',
+            config.releaseOptions.config);
 
-class _PostProcessBuilderDefinitionMatcher extends Matcher {
-  final PostProcessBuilderDefinition _expected;
-  _PostProcessBuilderDefinitionMatcher(this._expected);
-
-  @override
-  bool matches(item, _) =>
-      item is PostProcessBuilderDefinition &&
-      equals(_expected.builderFactory).matches(item.builderFactory, _) &&
-      new _TargetBuilderConfigDefaultsMatcher(_expected.defaults)
-          .matches(item.defaults, _) &&
-      item.import == _expected.import &&
-      item.key == _expected.key &&
-      item.package == _expected.package;
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
-
-class _GlobalBuilderConfigMatcher extends Matcher {
-  final GlobalBuilderConfig _expected;
-  _GlobalBuilderConfigMatcher(this._expected);
-
-  @override
-  bool matches(item, _) =>
-      item is GlobalBuilderConfig &&
-      equals(_expected.options.config).matches(item.options.config, _) &&
-      equals(_expected.devOptions.config).matches(item.devOptions.config, _) &&
-      equals(_expected.releaseOptions.config)
-          .matches(item.releaseOptions.config, _);
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
-
-class _TargetBuilderConfigDefaultsMatcher extends Matcher {
-  final TargetBuilderConfigDefaults _expected;
-  _TargetBuilderConfigDefaultsMatcher(this._expected);
-
-  @override
-  bool matches(item, _) =>
-      item is TargetBuilderConfigDefaults &&
-      equals(_expected.generateFor.include)
-          .matches(item.generateFor.include, _) &&
-      equals(_expected.generateFor.exclude)
-          .matches(item.generateFor.exclude, _) &&
-      equals(_expected.options.config).matches(item.options.config, _) &&
-      equals(_expected.devOptions.config).matches(item.devOptions.config, _) &&
-      equals(_expected.releaseOptions.config)
-          .matches(item.releaseOptions.config, _);
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
+Matcher _matchesBuilderConfigDefaults(TargetBuilderConfigDefaults defaults) =>
+    new TypeMatcher<TargetBuilderConfigDefaults>()
+        .having((d) => d.generateFor.include, 'generateFor.include',
+            defaults.generateFor.include)
+        .having((d) => d.generateFor.exclude, 'generateFor.exclude',
+            defaults.generateFor.exclude)
+        .having(
+            (d) => d.options.config, 'options.config', defaults.options.config)
+        .having((d) => d.devOptions.config, 'devOptions.config',
+            defaults.devOptions.config)
+        .having((d) => d.releaseOptions.config, 'releaseOptions.config',
+            defaults.releaseOptions.config);
 
 void expectBuildTargets(
     Map<String, BuildTarget> actual, Map<String, BuildTarget> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], new _BuildTargetMatcher(expected[p]));
+    expect(actual[p], _matchesBuildTarget(expected[p]));
   }
 }
 
-class _BuildTargetMatcher extends Matcher {
-  final BuildTarget _expected;
-  _BuildTargetMatcher(this._expected);
+Matcher _matchesBuildTarget(BuildTarget target) =>
+    new TypeMatcher<BuildTarget>()
+        .having((t) => t.package, 'package', target.package)
+        .having((t) => t.builders, 'builders',
+            _matchesBuilderConfigs(target.builders))
+        .having((t) => t.dependencies, 'dependencies', target.dependencies)
+        .having(
+            (t) => t.sources.include, 'sources.include', target.sources.include)
+        .having((t) => t.sources.exclude, 'sources.exclude',
+            target.sources.exclude);
 
-  @override
-  bool matches(item, _) =>
-      item is BuildTarget &&
-      item.package == _expected.package &&
-      new _BuilderConfigsMatcher(_expected.builders)
-          .matches(item.builders, _) &&
-      equals(_expected.dependencies).matches(item.dependencies, _) &&
-      equals(_expected.sources.include).matches(item.sources.include, _) &&
-      equals(_expected.sources.exclude).matches(item.sources.exclude, _);
+Matcher _matchesBuilderConfigs(Map<String, TargetBuilderConfig> configs) =>
+    equals(configs.map((k, v) => new MapEntry(k, _matchesBuilderConfig(v))));
 
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
-
-class _BuilderConfigsMatcher extends Matcher {
-  final Map<String, TargetBuilderConfig> _expected;
-  _BuilderConfigsMatcher(this._expected);
-
-  @override
-  bool matches(item, _) {
-    if (item is! Map<String, TargetBuilderConfig>) return false;
-    final other = item as Map<String, TargetBuilderConfig>;
-    if (!equals(_expected.keys).matches(other.keys, _)) return false;
-    for (final key in _expected.keys) {
-      final matcher = new _BuilderConfigMatcher(_expected[key]);
-      if (!matcher.matches(other[key], _)) return false;
-    }
-    return true;
-  }
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
-
-class _BuilderConfigMatcher extends Matcher {
-  final TargetBuilderConfig _expected;
-  _BuilderConfigMatcher(this._expected);
-
-  @override
-  bool matches(item, _) =>
-      item is TargetBuilderConfig &&
-      item.isEnabled == _expected.isEnabled &&
-      equals(_expected.generateFor?.include)
-          .matches(item.generateFor?.include, _) &&
-      equals(_expected.generateFor?.exclude)
-          .matches(item.generateFor?.exclude, _) &&
-      equals(_expected.options.config).matches(item.options.config, _) &&
-      equals(_expected.devOptions.config).matches(item.devOptions.config, _) &&
-      equals(_expected.releaseOptions.config)
-          .matches(item.releaseOptions.config, _);
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
+Matcher _matchesBuilderConfig(TargetBuilderConfig expected) =>
+    new TypeMatcher<TargetBuilderConfig>()
+        .having((c) => c.isEnabled, 'isEnabled', expected.isEnabled)
+        .having(
+            (c) => c.options.config, 'options.config', expected.options.config)
+        .having((c) => c.devOptions.config, 'devOptions.config',
+            expected.devOptions.config)
+        .having((c) => c.releaseOptions.config, 'releaseOptions.config',
+            expected.releaseOptions.config)
+        .having((c) => c.generateFor?.include, 'generateFor.include',
+            expected.generateFor?.include)
+        .having((c) => c.generateFor?.exclude, 'generateFor.exclude',
+            expected.generateFor?.exclude);
 
 BuildTarget createBuildTarget(String package,
     {String key,
