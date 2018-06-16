@@ -322,71 +322,37 @@ void expectBuildTargets(
     Map<String, BuildTarget> actual, Map<String, BuildTarget> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], new _BuildTargetMatcher(expected[p]));
+    expect(actual[p], _matchesBuildTarget(expected[p]));
   }
 }
 
-class _BuildTargetMatcher extends Matcher {
-  final BuildTarget _expected;
-  _BuildTargetMatcher(this._expected);
+Matcher _matchesBuildTarget(BuildTarget target) =>
+    new TypeMatcher<BuildTarget>()
+        .having((t) => t.package, 'package', target.package)
+        .having((t) => t.builders, 'builders',
+            _matchesBuilderConfigs(target.builders))
+        .having((t) => t.dependencies, 'dependencies', target.dependencies)
+        .having(
+            (t) => t.sources.include, 'sources.include', target.sources.include)
+        .having((t) => t.sources.exclude, 'sources.exclude',
+            target.sources.exclude);
 
-  @override
-  bool matches(item, _) =>
-      item is BuildTarget &&
-      item.package == _expected.package &&
-      new _BuilderConfigsMatcher(_expected.builders)
-          .matches(item.builders, _) &&
-      equals(_expected.dependencies).matches(item.dependencies, _) &&
-      equals(_expected.sources.include).matches(item.sources.include, _) &&
-      equals(_expected.sources.exclude).matches(item.sources.exclude, _);
+Matcher _matchesBuilderConfigs(Map<String, TargetBuilderConfig> configs) =>
+    equals(configs.map((k, v) => new MapEntry(k, _matchesBuilderConfig(v))));
 
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
-
-class _BuilderConfigsMatcher extends Matcher {
-  final Map<String, TargetBuilderConfig> _expected;
-  _BuilderConfigsMatcher(this._expected);
-
-  @override
-  bool matches(item, _) {
-    if (item is! Map<String, TargetBuilderConfig>) return false;
-    final other = item as Map<String, TargetBuilderConfig>;
-    if (!equals(_expected.keys).matches(other.keys, _)) return false;
-    for (final key in _expected.keys) {
-      final matcher = new _BuilderConfigMatcher(_expected[key]);
-      if (!matcher.matches(other[key], _)) return false;
-    }
-    return true;
-  }
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
-
-class _BuilderConfigMatcher extends Matcher {
-  final TargetBuilderConfig _expected;
-  _BuilderConfigMatcher(this._expected);
-
-  @override
-  bool matches(item, _) =>
-      item is TargetBuilderConfig &&
-      item.isEnabled == _expected.isEnabled &&
-      equals(_expected.generateFor?.include)
-          .matches(item.generateFor?.include, _) &&
-      equals(_expected.generateFor?.exclude)
-          .matches(item.generateFor?.exclude, _) &&
-      equals(_expected.options.config).matches(item.options.config, _) &&
-      equals(_expected.devOptions.config).matches(item.devOptions.config, _) &&
-      equals(_expected.releaseOptions.config)
-          .matches(item.releaseOptions.config, _);
-
-  @override
-  Description describe(Description description) =>
-      description.addDescriptionOf(_expected);
-}
+Matcher _matchesBuilderConfig(TargetBuilderConfig expected) =>
+    new TypeMatcher<TargetBuilderConfig>()
+        .having((c) => c.isEnabled, 'isEnabled', expected.isEnabled)
+        .having(
+            (c) => c.options.config, 'options.config', expected.options.config)
+        .having((c) => c.devOptions.config, 'devOptions.config',
+            expected.devOptions.config)
+        .having((c) => c.releaseOptions.config, 'releaseOptions.config',
+            expected.releaseOptions.config)
+        .having((c) => c.generateFor?.include, 'generateFor.include',
+            expected.generateFor?.include)
+        .having((c) => c.generateFor?.exclude, 'generateFor.exclude',
+            expected.generateFor?.exclude);
 
 BuildTarget createBuildTarget(String package,
     {String key,
