@@ -90,6 +90,11 @@
 
 * Add new feature to wait for an interaction: `untilCalled`. See the README for
   documentation.
+* `capture*` calls outside of a `verify*` call no longer capture arguments.
+* Some collections require stricter argument matching. For example, a stub like:
+  `mock.methodWithListArgs([1,2,3].map((e) => e*2))` (note the _`Iterable`_
+  argument) will no longer match the following stub:
+  `when(mock.methodWithListArgs([42])).thenReturn(7);`.
 
 ## 2.1.0
 
