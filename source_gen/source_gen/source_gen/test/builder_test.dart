@@ -202,7 +202,7 @@ void main() {
         });
   });
 
-  group('ShardPartBilder', () {
+  group('SharedPartBuilder', () {
     test('outputs <partId>.g.part files', () async {
       await testBuilder(
           new SharedPartBuilder(
@@ -230,23 +230,7 @@ void main() {
                 decodedMatches(isNot(contains('part of'))),
           });
     });
-  });
 
-  test('CombiningBuilder includes a generated code header', () async {
-    await testBuilder(
-        new CombiningBuilder(),
-        {
-          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-          '$_pkgName|lib/a.foo.g.part': 'some generated content'
-        },
-        generateFor: new Set.from(['$_pkgName|lib/a.dart']),
-        outputs: {
-          '$_pkgName|lib/a.g.dart': decodedMatches(
-              startsWith('// GENERATED CODE - DO NOT MODIFY BY HAND')),
-        });
-  });
-
-  group('ShardPartBilder', () {
     group('constructor', () {
       for (var entry in {
         'starts with `.`': '.foo',
@@ -269,6 +253,20 @@ void main() {
   });
 
   group('CombiningBuilder', () {
+    test('CombiningBuilder includes a generated code header', () async {
+      await testBuilder(
+          new CombiningBuilder(),
+          {
+            '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+            '$_pkgName|lib/a.foo.g.part': 'some generated content'
+          },
+          generateFor: new Set.from(['$_pkgName|lib/a.dart']),
+          outputs: {
+            '$_pkgName|lib/a.g.dart': decodedMatches(
+                startsWith('// GENERATED CODE - DO NOT MODIFY BY HAND')),
+          });
+    });
+
     test('outputs `.g.dart` files', () async {
       await testBuilder(
           new CombiningBuilder(),
