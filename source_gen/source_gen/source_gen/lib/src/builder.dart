@@ -106,13 +106,22 @@ class _Builder extends Builder {
                 'Consider adding the following to your source file:\n\n'
                 'library $suggest;');
       }
-      final part = computePartUrl(buildStep.inputId, outputId);
+      contentBuffer.writeln();
+
+      String part;
+      if (_outputPartOf) {
+        contentBuffer.writeln('part of $name;');
+        part = computePartUrl(buildStep.inputId, outputId);
+      } else {
+        assert(_generatedExtension.endsWith('.g.part'),
+            'in the SharedPartBuilder flow');
+        var finalPartId = buildStep.inputId.changeExtension('.g.dart');
+        part = computePartUrl(buildStep.inputId, finalPartId);
+      }
       if (!library.parts.map((c) => c.uri).contains(part)) {
         // TODO: Upgrade to error in a future breaking change?
         log.warning('Missing "part \'$part\';".');
       }
-      contentBuffer.writeln();
-      if (_outputPartOf) contentBuffer.writeln('part of $name;');
     }
 
     for (var item in generatedOutputs) {

@@ -203,6 +203,21 @@ void main() {
   });
 
   group('SharedPartBuilder', () {
+    test('warns about missing part', () async {
+      var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+      var builder =
+          new SharedPartBuilder([const CommentGenerator()], 'comment');
+      var logs = <String>[];
+      await testBuilder(
+        builder,
+        srcs,
+        onLog: (log) {
+          logs.add(log.message);
+        },
+      );
+      expect(logs, ['Missing "part \'test_lib.g.dart\';".']);
+    });
+
     test('outputs <partId>.g.part files', () async {
       await testBuilder(
           new SharedPartBuilder(
