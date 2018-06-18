@@ -1,3 +1,7 @@
+## 0.12.7
+
+- Added `Resolvers.reset` method.
+
 ## 0.12.6
 
 - Added `List<String> get pathSegments` to `AssetId`.

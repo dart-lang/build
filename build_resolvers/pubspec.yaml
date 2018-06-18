@@ -9,10 +9,14 @@ environment:
 
 dependencies:
   analyzer: '>=0.27.1 <0.33.0'
-  build: ^0.12.0
+  build: ^0.12.7
   cli_util: ^0.1.0
   path: ^1.1.0
 
 dev_dependencies:
   test: ^0.12.0
   build_test: ^0.10.1
+
+dependency_overrides:
+  build:
+    path: ../build
