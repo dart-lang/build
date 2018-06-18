@@ -432,7 +432,7 @@ class _SingleBuild {
                 new PerformanceTrackingResolvers(_resolvers, tracker),
                 logger: logger,
                 resourceManager: _resourceManager).catchError((_) {
-              // Errors tracked throug logger
+              // Errors tracked through the logger
             }),
         'Build');
     actionsCompletedCount++;
@@ -545,7 +545,7 @@ class _SingleBuild {
       }
       _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
     }).catchError((_) {
-      // Errors tracked through logger
+      // Errors tracked through the logger
     });
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
