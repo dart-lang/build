@@ -7,31 +7,31 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
 /// Relative path to the asset graph from the root package dir.
-final assetGraphPath = assetGraphPathFor(_scriptPath);
-
-final _scriptPath = Platform.script.scheme == 'file'
-    ? Platform.script.toFilePath()
-    : Platform.script.path;
+final String assetGraphPath = assetGraphPathFor(_scriptPath);
 
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>
-    p.join(cacheDir, _scriptHashFor(path), 'asset_graph.json');
+    '$cacheDir/${_scriptHashFor(path)}/asset_graph.json';
 
 /// Relative path to the directory which holds serialized versions of errors
 /// reported during previous builds.
 final errorCachePath =
-    p.join(cacheDir, _scriptHashFor(_scriptPath), 'error_cache');
+    p.url.join(cacheDir, _scriptHashFor(_scriptPath), 'error_cache');
+
+final String _scriptPath = Platform.script.scheme == 'file'
+    ? Platform.script.toFilePath()
+    : Platform.script.path;
 
 /// Directory containing automatically generated build entrypoints.
 ///
 /// Files in this directory must be read to do build script invalidation.
-final entryPointDir = p.join(cacheDir, 'entrypoint');
+const entryPointDir = '.dart_tool/build/entrypoint';
 
 /// The directory to which hidden assets will be written.
-final generatedOutputDirectory = p.join(cacheDir, 'generated');
+const generatedOutputDirectory = '$cacheDir/generated';
 
 /// Relative path to the cache directory from the root package dir.
-final cacheDir = p.join('.dart_tool', 'build');
+const String cacheDir = '.dart_tool/build';
 
 /// Returns a hash for a given path.
 String _scriptHashFor(String path) => md5.convert(path.codeUnits).toString();

@@ -192,7 +192,7 @@ class _SingleBuild {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
       if (failures.isNotEmpty) {
-        _failureReporter.reportErrors(failures, _logger);
+        await _failureReporter.reportErrors(failures);
         result = new BuildResult(BuildStatus.failure, result.outputs,
             performance: result.performance);
       }
@@ -411,6 +411,7 @@ class _SingleBuild {
     }
 
     await _cleanUpStaleOutputs(builderOutputs);
+    await FailureReporter.clean(phaseNumber, input);
 
     // We may have read some inputs in the call to `_buildShouldRun`, we want
     // to remove those.
@@ -441,8 +442,8 @@ class _SingleBuild {
     // Reset the state for all the `builderOutputs` nodes based on what was
     // read and written.
     await tracker.track(
-        () => _setOutputsState(
-            builderOutputs, wrappedReader, wrappedWriter, logger.errorsSeen),
+        () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
+            actionDescription, logger.errorsSeen),
         'Finalize');
 
     tracker.stop();
@@ -502,6 +503,7 @@ class _SingleBuild {
 
     // Delete old assets from disk.
     await _cleanUpStaleOutputs(anchorNode.outputs);
+    await FailureReporter.clean(phaseNum, input);
 
     // Remove old nodes from the graph and clear `outputs`.
     anchorNode.outputs.toList().forEach(_assetGraph.remove);
@@ -554,8 +556,8 @@ class _SingleBuild {
     // Reset the state for all the output nodes based on what was read and
     // written.
     inputNode.primaryOutputs.addAll(assetsWritten);
-    await _setOutputsState(
-        assetsWritten, wrappedReader, wrappedWriter, logger.errorsSeen);
+    await _setOutputsState(assetsWritten, wrappedReader, wrappedWriter,
+        actionDescription, logger.errorsSeen);
 
     return assetsWritten;
   }
@@ -621,13 +623,11 @@ class _SingleBuild {
   /// This should be called after deciding that an asset really needs to be
   /// regenerated based on its inputs hash changing.
   Future<Null> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
-    var nodes =
-        outputs.map((o) => _assetGraph.get(o) as GeneratedAssetNode).toList();
-    await Future.wait(nodes.map((node) {
-      if (node.wasOutput) return _delete(node.id);
+    await Future.wait(outputs.map((output) {
+      var node = _assetGraph.get(output) as GeneratedAssetNode;
+      if (node.wasOutput) return _delete(output);
       return new Future.value(null);
     }));
-    await FailureReporter.clean(nodes.first);
   }
 
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
@@ -671,6 +671,7 @@ class _SingleBuild {
       Iterable<AssetId> outputs,
       SingleStepReader reader,
       AssetWriterSpy writer,
+      String actionDescription,
       Iterable<ErrorReport> errors) async {
     if (outputs.isEmpty) return;
 
@@ -701,7 +702,7 @@ class _SingleBuild {
         ..previousInputsDigest = inputsDigest;
 
       if (isFailure) {
-        _failureReporter.markReported(node, errors);
+        await _failureReporter.markReported(actionDescription, node, errors);
         var needsMarkAsFailure = new Queue.of(node.primaryOutputs);
         var allSkippedFailures = <GeneratedAssetNode>[];
         while (needsMarkAsFailure.isNotEmpty) {

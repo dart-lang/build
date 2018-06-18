@@ -3,10 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import '../asset_graph/node.dart';
+import '../util/constants.dart';
 
 /// A tracker for the errors which have already been reported during the current
 /// build.
@@ -23,15 +28,21 @@ class FailureReporter {
   /// This should be called any time the build phases change since the naming
   /// scheme is dependent on the build phases.
   static Future<void> cleanErrorCache() async {
-    // TODO: Remove all error files
+    final errorCacheDirectory = new Directory(p.fromUri(errorCachePath));
+    if (await errorCacheDirectory.exists()) {
+      await errorCacheDirectory.delete(recursive: true);
+    }
   }
 
-  /// Remove the stored error for [output] if it existed.
+  /// Remove the stored error for [phaseNumber] runnon on [primaryInput].
   ///
-  /// This should be called anytime an action is being run that could produce
-  /// [output].
-  static Future<void> clean(GeneratedAssetNode output) async {
-    // TODO: Remove the specific file associated with this action
+  /// This should be called anytime the action is being run.
+  static Future<void> clean(int phaseNumber, AssetId primaryInput) async {
+    final errorFile =
+        new File(_errorPathForPrimaryInput(phaseNumber, primaryInput));
+    if (await errorFile.exists()) {
+      await errorFile.delete();
+    }
   }
 
   /// A set of Strings which uniquely identify a particular build action and
@@ -40,26 +51,45 @@ class FailureReporter {
 
   /// Indicate that a failure reason for the build step which would produce
   /// [output] and all other outputs from the same build step has been printed.
-  void markReported(GeneratedAssetNode output, Iterable<ErrorReport> errors) {
-    _reportedActions.add(_actionKey(output));
-    // TODO: Store the errors
+  Future<void> markReported(String actionDescription, GeneratedAssetNode output,
+      Iterable<ErrorReport> errors) async {
+    if (!_reportedActions.add(_actionKey(output))) return;
+    final errorFile =
+        await new File(_errorPathForOutput(output)).create(recursive: true);
+    await errorFile.writeAsString(jsonEncode(<dynamic>[actionDescription]
+        .followedBy(errors
+            .map((e) => [e.message, e.error, e.stackTrace?.toString() ?? '']))
+        .toList()));
   }
 
   /// Indicate that the build steps which would produce [outputs] are failing
   /// due to a dependency and being skipped so no actuall error will be
   /// produced.
-  Future<void> markSkipped(Iterable<GeneratedAssetNode> outputs) async {
-    // TODO: mark these as "reported" and remove any cached errors.
-  }
+  Future<void> markSkipped(Iterable<GeneratedAssetNode> outputs) =>
+      Future.wait(outputs.map((output) async {
+        if (!_reportedActions.add(_actionKey(output))) return;
+        await clean(output.phaseNumber, output.primaryInput);
+      }));
 
-  /// Print stored errors for any build steps which would output nodes in
+  /// Log stored errors for any build steps which would output nodes in
   /// [failingNodes] which haven't already been reported.
-  void reportErrors(Iterable<GeneratedAssetNode> failingNodes, Logger logger) {
+  Future<void> reportErrors(Iterable<GeneratedAssetNode> failingNodes) async {
     for (final failure in failingNodes) {
       final key = _actionKey(failure);
-      if (_reportedActions.contains(key)) continue;
-      // TODO: Log the error from the stored file.
-      _reportedActions.add(key);
+      if (!_reportedActions.add(key)) continue;
+      final errorFile = new File(_errorPathForOutput(failure));
+      if (await errorFile.exists()) {
+        final errorReports = jsonDecode(await errorFile.readAsString());
+        final actionDescription = (errorReports as List).first as String;
+        final logger = new Logger(actionDescription);
+        for (final List error in errorReports.skip(1)) {
+          final stackTraceString = error[2] as String;
+          final stackTrace = stackTraceString.isEmpty
+              ? null
+              : new StackTrace.fromString(stackTraceString);
+          logger.severe(error[0], error[1], stackTrace);
+        }
+      }
     }
   }
 }
@@ -75,3 +105,13 @@ class ErrorReport {
 
 String _actionKey(GeneratedAssetNode node) =>
     '${node.builderOptionsId} on ${node.primaryInput}';
+
+String _errorPathForOutput(GeneratedAssetNode output) => p.join(
+    p.fromUri(errorCachePath),
+    output.id.package,
+    '${output.phaseNumber}',
+    p.fromUri(output.primaryInput.path));
+
+String _errorPathForPrimaryInput(int phaseNumber, AssetId primaryInput) =>
+    p.join(p.fromUri(errorCachePath), primaryInput.package, '$phaseNumber',
+        p.fromUri(primaryInput.path));
