@@ -64,10 +64,13 @@ class FailureReporter {
   }
 }
 
+/// Matches the call to [Logger.severe] except the [message] and [error] are
+/// eagerly converted to String.
 class ErrorReport {
   final String message;
+  final String error;
   final StackTrace stackTrace;
-  ErrorReport(this.message, this.stackTrace);
+  ErrorReport(this.message, this.error, this.stackTrace);
 }
 
 String _actionKey(GeneratedAssetNode node) =>

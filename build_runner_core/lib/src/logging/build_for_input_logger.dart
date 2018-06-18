@@ -59,7 +59,7 @@ class BuildForInputLogger implements Logger {
   void log(Level logLevel, message,
       [Object error, StackTrace stackTrace, Zone zone]) {
     if (logLevel >= Level.SEVERE) {
-      errorsSeen.add(new ErrorReport('$message', stackTrace));
+      errorsSeen.add(new ErrorReport('$message', '$error', stackTrace));
     }
     _delegate.log(logLevel, message, error, stackTrace, zone);
   }
@@ -75,13 +75,13 @@ class BuildForInputLogger implements Logger {
 
   @override
   void severe(message, [Object error, StackTrace stackTrace]) {
-    errorsSeen.add(new ErrorReport('$message', stackTrace));
+    errorsSeen.add(new ErrorReport('$message', '$error', stackTrace));
     _delegate.severe(message, error, stackTrace);
   }
 
   @override
   void shout(message, [Object error, StackTrace stackTrace]) {
-    errorsSeen.add(new ErrorReport('$message', stackTrace));
+    errorsSeen.add(new ErrorReport('$message', '$error', stackTrace));
     _delegate.shout(message, error, stackTrace);
   }
 
