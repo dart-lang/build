@@ -83,8 +83,9 @@ class AnalyzerResolver implements ReleasableResolver {
   /// later). If this happens we don't want to hide the asset from the analyzer.
   final _seenAssets = new Set<AssetId>();
 
-  AnalyzerResolver(DartUriResolver dartUriResolver) {
-    _context.analysisOptions = new AnalysisOptionsImpl()..strongMode = true;
+  AnalyzerResolver(
+      DartUriResolver dartUriResolver, AnalysisOptions analysisOptions) {
+    _context.analysisOptions = analysisOptions;
     _context.sourceFactory =
         new SourceFactory([dartUriResolver, new _AssetUriResolver(this)]);
   }
@@ -411,13 +412,19 @@ class AnalyzerResolvers implements Resolvers {
 
   AnalyzerResolvers._(this._resolver);
 
-  factory AnalyzerResolvers() {
+  /// Create a Resolvers backed by an [AnalysisContext] using options
+  /// [analysisOptions].
+  ///
+  /// By default the only option changed from the default is
+  /// [AnalysisOptions.strongMode] which is set to `true`.
+  factory AnalyzerResolvers([AnalysisOptions analysisOptions]) {
     _initAnalysisEngine();
     var resourceProvider = PhysicalResourceProvider.INSTANCE;
     var sdk = new FolderBasedDartSdk(
         resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()));
     var uriResolver = new DartUriResolver(sdk);
-    return new AnalyzerResolvers._(new AnalyzerResolver(uriResolver));
+    return new AnalyzerResolvers._(new AnalyzerResolver(uriResolver,
+        analysisOptions ?? (new AnalysisOptionsImpl()..strongMode = true)));
   }
 
   @override
