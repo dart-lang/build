@@ -621,11 +621,13 @@ class _SingleBuild {
   /// This should be called after deciding that an asset really needs to be
   /// regenerated based on its inputs hash changing.
   Future<Null> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
-    await Future.wait(outputs.map((output) {
-      var node = _assetGraph.get(output) as GeneratedAssetNode;
-      if (node.wasOutput) return _delete(output);
+    var nodes =
+        outputs.map((o) => _assetGraph.get(o) as GeneratedAssetNode).toList();
+    await Future.wait(nodes.map((node) {
+      if (node.wasOutput) return _delete(node.id);
       return new Future.value(null);
     }));
+    await FailureReporter.clean(nodes.first);
   }
 
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
