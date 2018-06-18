@@ -1,5 +1,11 @@
 ## 0.9.0
 
+* Introduce `SharedPartBuilder` for creating part files that can be merged
+  with a new `CombiningBuilder`. Note that `CombiningBuilder` only outputs
+  `.g.dart` files.
+* `PartBuilder` now requires a `generatedExtensions` argument. The value should
+  not be `.g.dart`. To produce `.g.dart` files please use the
+  `SharedPartBuilder`.
 * `GeneratorForAnnotation`
   * **BREAKING** `generateForAnnotatedElement` now takes two arguments instead
     of three: `(AnnotatedElement annotatedElement, BuildStep buildStep)`.
