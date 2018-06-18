@@ -26,13 +26,7 @@ class _Builder extends Builder {
   final String _generatedExtension;
 
   /// Whether to emit a standalone (non-`part`) file in this builder.
-  final bool _isStandalone;
-
-  /// Whether to include `part of` in the output.
-  ///
-  /// This allows the easy merging of outputs without multiple `part of`
-  /// statements.
-  final bool _outputPartOf;
+  bool get _isLibraryBuilder => this is LibraryBuilder;
 
   final String _header;
 
@@ -44,17 +38,13 @@ class _Builder extends Builder {
       {String formatOutput(String code),
       String generatedExtension = '.g.dart',
       List<String> additionalOutputExtensions = const [],
-      bool isStandalone = false,
-      String header,
-      bool outputPartOf = true})
+      String header})
       : _generatedExtension = generatedExtension,
         buildExtensions = {
           '.dart': [generatedExtension]..addAll(additionalOutputExtensions)
         },
-        _isStandalone = isStandalone,
         formatOutput = formatOutput ?? _formatter.format,
-        _header = (header ?? defaultFileHeader).trim(),
-        _outputPartOf = outputPartOf {
+        _header = (header ?? defaultFileHeader).trim() {
     if (_generatedExtension == null) {
       throw new ArgumentError.notNull('generatedExtension');
     }
@@ -62,7 +52,7 @@ class _Builder extends Builder {
       throw new ArgumentError.value(_generatedExtension, 'generatedExtension',
           'Extension must be in the format of .*');
     }
-    if (_isStandalone && _generators.length > 1) {
+    if (_isLibraryBuilder && _generators.length > 1) {
       throw new ArgumentError(
           'A standalone file can only be generated from a single Generator.');
     }
@@ -95,7 +85,7 @@ class _Builder extends Builder {
       contentBuffer.writeln(_header);
     }
 
-    if (!_isStandalone) {
+    if (!_isLibraryBuilder) {
       var asset = buildStep.inputId;
       var name = nameOfPartial(library, asset);
       if (name == null) {
@@ -109,12 +99,11 @@ class _Builder extends Builder {
       contentBuffer.writeln();
 
       String part;
-      if (_outputPartOf) {
+      if (this is PartBuilder) {
         contentBuffer.writeln('part of $name;');
         part = computePartUrl(buildStep.inputId, outputId);
       } else {
-        assert(_generatedExtension.endsWith('.g.part'),
-            'in the SharedPartBuilder flow');
+        assert(this is SharedPartBuilder);
         var finalPartId = buildStep.inputId.changeExtension('.g.dart');
         part = computePartUrl(buildStep.inputId, finalPartId);
       }
@@ -184,8 +173,7 @@ class SharedPartBuilder extends _Builder {
             formatOutput: formatOutput,
             generatedExtension: '.$partId.g.part',
             additionalOutputExtensions: additionalOutputExtensions,
-            header: '',
-            outputPartOf: false) {
+            header: '') {
     if (!_partIdRegExp.hasMatch(partId)) {
       throw new ArgumentError.value(
           partId,
@@ -248,7 +236,6 @@ class LibraryBuilder extends _Builder {
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
             additionalOutputExtensions: additionalOutputExtensions,
-            isStandalone: true,
             header: header);
 }
 
