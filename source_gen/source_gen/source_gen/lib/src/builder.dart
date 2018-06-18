@@ -175,6 +175,7 @@ class SharedPartBuilder extends _Builder {
             formatOutput: formatOutput,
             generatedExtension: '.$partId.g.part',
             additionalOutputExtensions: additionalOutputExtensions,
+            header: '',
             outputPartOf: false) {
     if (!_partIdRegExp.hasMatch(partId)) {
       throw new ArgumentError.value(
