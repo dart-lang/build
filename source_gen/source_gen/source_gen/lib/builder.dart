@@ -24,6 +24,17 @@ import 'src/builder.dart';
 const _outputExtensions = '.g.dart';
 const _partFiles = '.g.part';
 
+Builder combiningBuilder([BuilderOptions options]) {
+  if (options != null && options.config.isNotEmpty) {
+    if (log == null) {
+      throw new StateError('Upgrade `build_runner` to at least 0.8.2.');
+    } else {
+      log.warning('These options were ignored: `${options.config}`.');
+    }
+  }
+  return const CombiningBuilder();
+}
+
 /// A [Builder] which combines part files generated from [SharedPartBuilder].
 ///
 /// This will glob all files of the form `.*.g.part`.
