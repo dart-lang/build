@@ -430,8 +430,8 @@ class _SingleBuild {
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
                 new PerformanceTrackingResolvers(_resolvers, tracker),
                 logger: logger,
-                resourceManager: _resourceManager).catchError((e) {
-              logger.errorsSeen.add(new ErrorReport('$e', null));
+                resourceManager: _resourceManager).catchError((_) {
+              // Errors tracked throug logger
             }),
         'Build');
     actionsCompletedCount++;
@@ -542,8 +542,8 @@ class _SingleBuild {
             assetId, 'Can only delete primary input');
       }
       _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
-    }).catchError((e) {
-      logger.errorsSeen.add(new ErrorReport('$e', null));
+    }).catchError((_) {
+      // Errors tracked through logger
     });
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
