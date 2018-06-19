@@ -73,11 +73,14 @@ class FailureReporter {
 
   /// Log stored errors for any build steps which would output nodes in
   /// [failingNodes] which haven't already been reported.
-  Future<void> reportErrors(Iterable<GeneratedAssetNode> failingNodes) async {
+  Future<void> reportErrors(Iterable<GeneratedAssetNode> failingNodes) {
+    final errorFiles = <File>[];
     for (final failure in failingNodes) {
       final key = _actionKey(failure);
       if (!_reportedActions.add(key)) continue;
-      final errorFile = new File(_errorPathForOutput(failure));
+      errorFiles.add(new File(_errorPathForOutput(failure)));
+    }
+    return Future.wait(errorFiles.map((errorFile) async {
       if (await errorFile.exists()) {
         final errorReports = jsonDecode(await errorFile.readAsString());
         final actionDescription = (errorReports as List).first as String;
@@ -90,7 +93,7 @@ class FailureReporter {
           logger.severe(error[0], error[1], stackTrace);
         }
       }
-    }
+    }));
   }
 }
 
