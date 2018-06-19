@@ -314,13 +314,13 @@ void main() {
           new CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-            '$_pkgName|lib/a.foo.g.part': 'some generated content',
-            '$_pkgName|lib/a.bar.g.part': 'more generated content',
+            '$_pkgName|lib/a.foo.g.part': 'foo generated content',
+            '$_pkgName|lib/a.bar.g.part': 'bar generated content',
           },
           generateFor: new Set.from(['$_pkgName|lib/a.dart']),
           outputs: {
             '$_pkgName|lib/a.g.dart': decodedMatches(
-                contains('some generated content\nmore generated content')),
+                contains('bar generated content\nfoo generated content')),
           });
     });
 
@@ -329,14 +329,14 @@ void main() {
           new CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-            '$_pkgName|lib/a.foo.g.part': 'some generated content',
-            '$_pkgName|lib/a.bar.g.part': 'more generated content',
-            '$_pkgName|lib/a.bar.other.g.part': 'skipped generated content',
+            '$_pkgName|lib/a.foo.g.part': 'foo generated content',
+            '$_pkgName|lib/a.bar.g.part': 'bar generated content',
+            '$_pkgName|lib/a.bar.other.g.part': 'bar.other generated content',
           },
           generateFor: new Set.from(['$_pkgName|lib/a.dart']),
           outputs: {
             '$_pkgName|lib/a.g.dart': decodedMatches(
-                contains('some generated content\nmore generated content')),
+                contains('bar generated content\nfoo generated content')),
           });
     });
 

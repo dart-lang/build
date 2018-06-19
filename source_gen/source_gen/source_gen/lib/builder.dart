@@ -18,7 +18,6 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/src/utils.dart';
-import 'package:stream_transform/stream_transform.dart';
 import 'src/builder.dart';
 
 const _outputExtensions = '.g.dart';
@@ -65,10 +64,21 @@ class CombiningBuilder implements Builder {
       '\$', // end of string
     ].join(''));
 
-    var assets = await buildStep
+    var assetIds = await buildStep
         .findAssets(new Glob(pattern))
         .where((id) => restrictedPattern.hasMatch(id.pathSegments.last))
-        .transform(concurrentAsyncMap(buildStep.readAsString))
+        .toList();
+
+    assetIds.sort((a, b) {
+      var value = a.package.compareTo(b.package);
+      if (value == 0) {
+        value = a.path.compareTo(b.path);
+      }
+      return value;
+    });
+
+    var assets = await new Stream.fromIterable(assetIds)
+        .asyncMap(buildStep.readAsString)
         .join('\n');
     if (assets.isEmpty) return;
     var partOf = nameOfPartial(await buildStep.inputLibrary, buildStep.inputId);
