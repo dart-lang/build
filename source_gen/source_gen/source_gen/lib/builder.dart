@@ -24,26 +24,39 @@ const _outputExtensions = '.g.dart';
 const _partFiles = '.g.part';
 
 Builder combiningBuilder([BuilderOptions options]) {
-  if (options != null && options.config.isNotEmpty) {
+  var optionsMap = new Map<String, dynamic>.from(options?.config ?? {});
+
+  var builder = new CombiningBuilder(
+      includePartName: optionsMap.remove('include_part_name') as bool);
+
+  if (optionsMap.isNotEmpty) {
     if (log == null) {
       throw new StateError('Upgrade `build_runner` to at least 0.8.2.');
     } else {
-      log.warning('These options were ignored: `${options.config}`.');
+      log.warning('These options were ignored: `$optionsMap`.');
     }
   }
-  return const CombiningBuilder();
+  return builder;
 }
 
 /// A [Builder] which combines part files generated from [SharedPartBuilder].
 ///
 /// This will glob all files of the form `.*.g.part`.
 class CombiningBuilder implements Builder {
+  final bool _includePartName;
+
   @override
   Map<String, List<String>> get buildExtensions => const {
         '.dart': const [_outputExtensions]
       };
 
-  const CombiningBuilder();
+  /// Returns a new [CombiningBuilder].
+  ///
+  /// If [includePartName] is `true`, the name of each source part file
+  /// is output as a comment before its content. This can be useful when
+  /// debugging build issues.
+  const CombiningBuilder({bool includePartName = false})
+      : _includePartName = includePartName ?? false;
 
   @override
   Future build(BuildStep buildStep) async {
@@ -78,8 +91,13 @@ class CombiningBuilder implements Builder {
     });
 
     var assets = await new Stream.fromIterable(assetIds)
-        .asyncMap(buildStep.readAsString)
-        .map((s) => s.trim())
+        .asyncMap((id) async {
+          var content = (await buildStep.readAsString(id)).trim();
+          if (_includePartName) {
+            content = '// Part: ${id.pathSegments.last}\n$content';
+          }
+          return content;
+        })
         .where((s) => s.isNotEmpty)
         .join('\n\n');
     if (assets.isEmpty) return;

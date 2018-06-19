@@ -268,7 +268,7 @@ void main() {
   });
 
   group('CombiningBuilder', () {
-    test('CombiningBuilder includes a generated code header', () async {
+    test('includes a generated code header', () async {
       await testBuilder(
           new CombiningBuilder(),
           {
@@ -364,6 +364,26 @@ void main() {
           outputs: {
             '$_pkgName|lib/a.g.dart': decodedMatches(endsWith(
                 '\n\nbar generated content\n\nfoo generated content\n')),
+          });
+    });
+
+    test('includes part header if enabled', () async {
+      await testBuilder(
+          new CombiningBuilder(includePartName: true),
+          {
+            '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+            '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
+            '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
+            '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
+          },
+          generateFor: new Set.from(['$_pkgName|lib/a.dart']),
+          outputs: {
+            '$_pkgName|lib/a.g.dart': decodedMatches(endsWith('\n\n'
+                '// Part: a.bar.g.part\n'
+                'bar generated content\n\n'
+                '// Part: a.foo.g.part\n'
+                'foo generated content\n\n'
+                '// Part: a.only_whitespace.g.part\n\n')),
           });
     });
   });
