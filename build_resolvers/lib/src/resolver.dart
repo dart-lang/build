@@ -84,7 +84,12 @@ class AnalyzerResolver implements ReleasableResolver {
   final _seenAssets = new Set<AssetId>();
 
   AnalyzerResolver(DartUriResolver dartUriResolver) {
-    _context.analysisOptions = new AnalysisOptionsImpl()..strongMode = true;
+    _context.analysisOptions = new AnalysisOptionsImpl()
+      ..strongMode = true
+      ..analyzeFunctionBodies = false
+      ..disableCacheFlushing = false
+      ..trackCacheDependencies = false
+      ..preserveComments = false;
     _context.sourceFactory =
         new SourceFactory([dartUriResolver, new _AssetUriResolver(this)]);
   }
