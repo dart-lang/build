@@ -42,9 +42,9 @@ class IssLocator {
     // Returns the point on the earth directly under the space station
     // at this moment.
     Response rs = await client.get('http://api.open-notify.org/iss-now.json');
-    Map data = jsonDecode(rs.body);
-    double latitude = double.parse(data['iss_position']['latitude']);
-    double longitude = double.parse(data['iss_position']['longitude']);
+    var data = jsonDecode(rs.body);
+    var latitude = double.parse(data['iss_position']['latitude'] as String);
+    var longitude = double.parse(data['iss_position']['longitude'] as String);
     _position = new Point<double>(latitude, longitude);
   }
 }
@@ -68,14 +68,14 @@ class IssSpotter {
 // Returns the distance, in kilometers, between p1 and p2 along the earth's
 // curved surface.
 double sphericalDistanceKm(Point<double> p1, Point<double> p2) {
-  double dLat = _toRadian(p1.x - p2.x);
-  double sLat = pow(sin(dLat / 2), 2);
-  double dLng = _toRadian(p1.y - p2.y);
-  double sLng = pow(sin(dLng / 2), 2);
-  double cosALat = cos(_toRadian(p1.x));
-  double cosBLat = cos(_toRadian(p2.x));
-  double x = sLat + cosALat * cosBLat * sLng;
-  double d = 2 * atan2(sqrt(x), sqrt(1 - x)) * _radiusOfEarth;
+  var dLat = _toRadian(p1.x - p2.x);
+  var sLat = pow(sin(dLat / 2), 2);
+  var dLng = _toRadian(p1.y - p2.y);
+  var sLng = pow(sin(dLng / 2), 2);
+  var cosALat = cos(_toRadian(p1.x));
+  var cosBLat = cos(_toRadian(p2.x));
+  var x = sLat + cosALat * cosBLat * sLng;
+  var d = 2 * atan2(sqrt(x), sqrt(1 - x)) * _radiusOfEarth;
   return d;
 }
 
