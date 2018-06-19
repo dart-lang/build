@@ -292,7 +292,7 @@ void main() {
           generateFor: new Set.from(['$_pkgName|lib/a.dart']),
           outputs: {
             '$_pkgName|lib/a.g.dart':
-                decodedMatches(contains('some generated content')),
+                decodedMatches(endsWith('some generated content\n')),
           });
     });
 
@@ -319,8 +319,8 @@ void main() {
           },
           generateFor: new Set.from(['$_pkgName|lib/a.dart']),
           outputs: {
-            '$_pkgName|lib/a.g.dart': decodedMatches(
-                contains('bar generated content\nfoo generated content')),
+            '$_pkgName|lib/a.g.dart': decodedMatches(endsWith(
+                '\n\nbar generated content\n\nfoo generated content\n')),
           });
     });
 
@@ -336,7 +336,7 @@ void main() {
           generateFor: new Set.from(['$_pkgName|lib/a.dart']),
           outputs: {
             '$_pkgName|lib/a.g.dart': decodedMatches(
-                contains('bar generated content\nfoo generated content')),
+                endsWith('bar generated content\n\nfoo generated content\n')),
           });
     });
 
@@ -348,6 +348,23 @@ void main() {
           },
           generateFor: new Set.from(['$_pkgName|lib/a.dart']),
           outputs: {});
+    });
+
+    test('trims part content and skips empty and whitespace-only parts',
+        () async {
+      await testBuilder(
+          new CombiningBuilder(),
+          {
+            '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+            '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
+            '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
+            '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
+          },
+          generateFor: new Set.from(['$_pkgName|lib/a.dart']),
+          outputs: {
+            '$_pkgName|lib/a.g.dart': decodedMatches(endsWith(
+                '\n\nbar generated content\n\nfoo generated content\n')),
+          });
     });
   });
 

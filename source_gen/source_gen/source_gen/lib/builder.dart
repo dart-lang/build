@@ -79,7 +79,9 @@ class CombiningBuilder implements Builder {
 
     var assets = await new Stream.fromIterable(assetIds)
         .asyncMap(buildStep.readAsString)
-        .join('\n');
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .join('\n\n');
     if (assets.isEmpty) return;
     var partOf = nameOfPartial(await buildStep.inputLibrary, buildStep.inputId);
     var output = '''
@@ -87,7 +89,8 @@ $defaultFileHeader
 
 part of $partOf;
 
-$assets''';
+$assets
+''';
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(_outputExtensions), output);
   }
