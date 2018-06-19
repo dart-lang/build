@@ -1,3 +1,7 @@
+# 0.2.1
+
+- Allow passing in custom `AnalysisOptions`.
+
 # 0.2.0+2
 
 - Support `package:analyzer` `0.32.0`.
