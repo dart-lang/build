@@ -9,33 +9,20 @@ import 'package:test/test.dart';
 import 'package:build/build.dart';
 
 /// Matches instance of [AssetNotFoundException].
-final Matcher assetNotFoundException =
-    const TypeMatcher<AssetNotFoundException>();
+final assetNotFoundException = const TypeMatcher<AssetNotFoundException>();
 
 /// Matches instance of [InvalidInputException].
-final Matcher invalidInputException =
-    const TypeMatcher<InvalidInputException>();
+final invalidInputException = const TypeMatcher<InvalidInputException>();
 
 /// Matches instance of [InvalidOutputException].
-final Matcher invalidOutputException =
-    const TypeMatcher<InvalidOutputException>();
+final invalidOutputException = const TypeMatcher<InvalidOutputException>();
 
 /// Matches instance of [PackageNotFoundException].
-final Matcher packageNotFoundException =
-    const TypeMatcher<PackageNotFoundException>();
+final packageNotFoundException = const TypeMatcher<PackageNotFoundException>();
 
-/// Decodes the value using [encoding] and matches it agains [expected].
-Matcher decodedMatches(dynamic expected, {Encoding encoding}) =>
-    new _DecodedMatcher(expected, encoding: encoding);
-
-/// A matcher that decodes bytes and matches against the resulting string.
-class _DecodedMatcher extends CustomMatcher {
-  final Encoding _encoding;
-
-  _DecodedMatcher(matcher, {Encoding encoding})
-      : this._encoding = encoding ?? utf8,
-        super('Utf8 decoded bytes', 'utf8.decode', matcher);
-
-  @override
-  featureValueOf(bytes) => _encoding.decode(bytes as List<int>);
+/// Decodes the value using [encoding] and matches it against [expected].
+TypeMatcher<List<int>> decodedMatches(dynamic expected, {Encoding encoding}) {
+  encoding ??= utf8;
+  return new TypeMatcher<List<int>>().having(
+      (e) => encoding.decode(e), '${encoding.name} decoded bytes', expected);
 }
