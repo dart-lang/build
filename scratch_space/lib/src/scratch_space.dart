@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
@@ -28,6 +29,8 @@ class ScratchSpace {
 
   // Assets which have a file created but are still being written to.
   final _pendingWrites = <AssetId, Future<void>>{};
+
+  final _digests = <AssetId, Digest>{};
 
   ScratchSpace._(this.tempDir)
       : packagesDir = new Directory(p.join(tempDir.path, 'packages'));
@@ -80,30 +83,31 @@ class ScratchSpace {
       throw new StateError('Tried to use a deleted ScratchSpace!');
     }
 
-    var futures = <Future>[];
-    for (var id in assetIds) {
-      // Always track `id` as a dependency, we do this by just calling
-      // `canRead` for now.
-      //
-      // ignore: unawaited_futures
-      reader.canRead(id);
-      var file = fileFor(id);
-      if (file.existsSync()) {
-        var pending = _pendingWrites[id];
-        if (pending != null) futures.add(pending);
-      } else {
-        file.createSync(recursive: true);
-        var done = reader
-            .readAsBytes(id)
-            .then((bytes) =>
-                _descriptorPool.withResource(() => file.writeAsBytes(bytes)))
-            .whenComplete(() {
-          _pendingWrites.remove(id);
-        });
-        _pendingWrites[id] = done;
-        futures.add(done);
+    var futures = assetIds.map((id) async {
+      var digest = await reader.digest(id);
+      var existing = _digests[id];
+      if (digest == existing) {
+        await _pendingWrites[id];
+        return;
       }
-    }
+      _digests[id] = digest;
+
+      try {
+        await _pendingWrites.putIfAbsent(
+            id,
+            () => _descriptorPool.withResource(() async {
+                  var file = fileFor(id);
+                  if (await file.exists()) {
+                    await file.delete();
+                  }
+                  await file.create(recursive: true);
+                  await file.writeAsBytes(await reader.readAsBytes(id));
+                }));
+      } finally {
+        _pendingWrites..remove(id);
+      }
+    }).toList();
+
     return Future.wait(futures, eagerError: true);
   }
 
