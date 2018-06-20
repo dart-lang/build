@@ -10,7 +10,7 @@ environment:
 dependencies:
   args: ">=1.4.0 <2.0.0"
   async: ">=1.13.3 <3.0.0"
-  build: ">=0.12.4 <0.12.7"
+  build: ">=0.12.7 <0.12.8"
   build_config: ^0.3.1
   build_resolvers: ^0.2.0
   # We re-export many types from this package, so we maintain a tight
@@ -51,3 +51,5 @@ dependency_overrides:
     path: ../build_runner_core
   build_config:
     path: ../build_config
+  build:
+    path: ../build
