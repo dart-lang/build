@@ -26,3 +26,5 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
+  build_barback:
+    path: ../build_barback
