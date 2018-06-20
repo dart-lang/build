@@ -25,6 +25,9 @@ class ResolversSpy implements BarbackResolvers {
         false);
     return new BarbackResolver(lastResolved);
   }
+
+  @override
+  void reset() {}
 }
 
 // Ported from

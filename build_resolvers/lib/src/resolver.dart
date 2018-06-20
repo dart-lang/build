@@ -433,6 +433,7 @@ class AnalyzerResolvers implements Resolvers {
           (r) => new PerActionResolver(r, [buildStep.inputId]));
 
   /// Must be called between each build.
+  @override
   void reset() => _resolver.reset();
 }
 

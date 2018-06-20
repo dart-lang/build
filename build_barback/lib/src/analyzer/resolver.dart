@@ -44,7 +44,7 @@ final code_transformers.Resolvers codeTransformerResolvers =
         // Same as bazel_codegen/src/summaries/analysis_context.dart
         options: new AnalysisOptionsImpl()..strongMode = true);
 
-class BarbackResolvers implements Resolvers {
+class BarbackResolvers extends Resolvers {
   const BarbackResolvers();
 
   @override
