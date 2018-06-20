@@ -7,7 +7,6 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_resolvers/build_resolvers.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
@@ -57,7 +56,7 @@ class BuildImpl {
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
-  final Resolvers _resolvers = new AnalyzerResolvers();
+  final Resolvers _resolvers;
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final Map<String, String> _outputMap;
@@ -76,6 +75,7 @@ class BuildImpl {
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : new CachingAssetReader(buildDefinition.reader),
+        _resolvers = options.resolvers,
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,

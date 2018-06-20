@@ -4,7 +4,9 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -43,6 +45,7 @@ class BuildOptions {
   final bool verbose;
   final List<String> buildDirs;
   final TargetGraph targetGraph;
+  final Resolvers resolvers;
 
   /// If present, the path to a directory to write performance logs to.
   final String logPerformanceDir;
@@ -66,6 +69,7 @@ class BuildOptions {
     @required this.buildDirs,
     @required this.targetGraph,
     @required this.logPerformanceDir,
+    @required this.resolvers,
   });
 
   static Future<BuildOptions> create(
@@ -82,6 +86,7 @@ class BuildOptions {
     bool verbose,
     List<String> buildDirs,
     String logPerformanceDir,
+    Resolvers resolvers,
   }) async {
     // Set up logging
     verbose ??= false;
@@ -122,19 +127,22 @@ class BuildOptions {
       }
       trackPerformance = true;
     }
+    resolvers ??= new AnalyzerResolvers();
 
     return new BuildOptions._(
-        debounceDelay: debounceDelay,
-        deleteFilesByDefault: deleteFilesByDefault,
-        enableLowResourcesMode: enableLowResourcesMode,
-        logListener: logListener,
-        outputMap: outputMap,
-        packageGraph: packageGraph,
-        skipBuildScriptCheck: skipBuildScriptCheck,
-        trackPerformance: trackPerformance,
-        verbose: verbose,
-        buildDirs: buildDirs,
-        targetGraph: targetGraph,
-        logPerformanceDir: logPerformanceDir);
+      debounceDelay: debounceDelay,
+      deleteFilesByDefault: deleteFilesByDefault,
+      enableLowResourcesMode: enableLowResourcesMode,
+      logListener: logListener,
+      outputMap: outputMap,
+      packageGraph: packageGraph,
+      skipBuildScriptCheck: skipBuildScriptCheck,
+      trackPerformance: trackPerformance,
+      verbose: verbose,
+      buildDirs: buildDirs,
+      targetGraph: targetGraph,
+      logPerformanceDir: logPerformanceDir,
+      resolvers: resolvers,
+    );
   }
 }
