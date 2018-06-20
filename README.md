@@ -26,15 +26,6 @@ For packages doing code generation this should generally be the only package
 against which there is a public dependency. Packages may have a dev_depenency on
 one or more of the other packages.
 
-In particular, transformers should only be exposed via a separate package, which
-has a dependency on `build_barback`. This allows core packages to not leak the
-dependency on barback and all of its transitive deps to all consumers.
-
-## [build_barback](https://github.com/dart-lang/build/blob/master/build_barback/README.md)
-
-Allows wrapping up a `Builder` as a `Transformer` so that it can be run in `pub`
-or vice-versa.
-
 ## [build_config](https://github.com/dart-lang/build/blob/master/build_config/README.md)
 
 Support for parsing `build.yaml` files. Used by `build_runner`.

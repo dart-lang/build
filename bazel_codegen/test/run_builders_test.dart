@@ -5,7 +5,7 @@
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
-import 'package:build_barback/build_barback.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 
@@ -44,7 +44,7 @@ void main() {
         writer,
         reader,
         logger,
-        const BarbackResolvers(),
+        new AnalyzerResolvers(),
         const BuilderOptions(const {}),
       );
       expect(writer.assets.keys,
@@ -73,7 +73,7 @@ void main() {
         writer,
         reader,
         logger,
-        const BarbackResolvers(),
+        new AnalyzerResolvers(),
         const BuilderOptions(const {}),
       );
       expect(logs, isNot(contains(startsWith('Missing expected output'))));
