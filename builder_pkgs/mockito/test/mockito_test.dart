@@ -19,15 +19,15 @@ import 'package:test/test.dart';
 
 import 'utils.dart';
 
-class RealClass {
-  RealClass innerObj;
+class _RealClass {
+  _RealClass innerObj;
   String methodWithoutArgs() => "Real";
   String methodWithNormalArgs(int x) => "Real";
   String methodWithListArgs(List<int> x) => "Real";
   String methodWithPositionalArgs(int x, [int y]) => "Real";
   String methodWithNamedArgs(int x, {int y}) => "Real";
   String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
-  String methodWithObjArgs(RealClass x) => "Real";
+  String methodWithObjArgs(_RealClass x) => "Real";
   Future<String> methodReturningFuture() => new Future.value("Real");
   Stream<String> methodReturningStream() => new Stream.fromIterable(["Real"]);
   String get getter => "Real";
@@ -36,20 +36,20 @@ class RealClass {
   }
 }
 
-abstract class Foo {
+abstract class _Foo {
   String bar();
 }
 
-abstract class AbstractFoo implements Foo {
+abstract class _AbstractFoo implements _Foo {
   @override
   String bar() => baz();
 
   String baz();
 }
 
-class MockFoo extends AbstractFoo with Mock {}
+class _MockFoo extends _AbstractFoo with Mock {}
 
-class MockedClass extends Mock implements RealClass {}
+class _MockedClass extends Mock implements _RealClass {}
 
 expectFail(String expectedMessage, expectedToFail()) {
   try {
@@ -70,12 +70,12 @@ String noMatchingCallsFooter = "(If you called `verify(...).called(0);`, "
     "please instead use `verifyNever(...);`.)";
 
 void main() {
-  MockedClass mock;
+  _MockedClass mock;
 
   var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
-    mock = new MockedClass();
+    mock = new _MockedClass();
   });
 
   tearDown(() {
@@ -86,7 +86,7 @@ void main() {
 
   group("mixin support", () {
     test("should work", () {
-      var foo = new MockFoo();
+      var foo = new _MockFoo();
       when(foo.baz()).thenReturn('baz');
       expect(foo.bar(), 'baz');
     });
@@ -105,9 +105,9 @@ void main() {
     });
 
     test("should mock method with mock args", () {
-      var m1 = new MockedClass();
+      var m1 = new _MockedClass();
       when(mock.methodWithObjArgs(m1)).thenReturn("Ultimate Answer");
-      expect(mock.methodWithObjArgs(new MockedClass()), isNull);
+      expect(mock.methodWithObjArgs(new _MockedClass()), isNull);
       expect(mock.methodWithObjArgs(m1), equals("Ultimate Answer"));
     });
 
@@ -132,20 +132,20 @@ void main() {
     });
 
     test("should mock method with argument matcher", () {
-      when(mock.methodWithNormalArgs(typed(argThat(greaterThan(100)))))
+      when(mock.methodWithNormalArgs(argThat(greaterThan(100))))
           .thenReturn("A lot!");
       expect(mock.methodWithNormalArgs(100), isNull);
       expect(mock.methodWithNormalArgs(101), equals("A lot!"));
     });
 
     test("should mock method with any argument matcher", () {
-      when(mock.methodWithNormalArgs(typed(any))).thenReturn("A lot!");
+      when(mock.methodWithNormalArgs(any)).thenReturn("A lot!");
       expect(mock.methodWithNormalArgs(100), equals("A lot!"));
       expect(mock.methodWithNormalArgs(101), equals("A lot!"));
     });
 
     test("should mock method with any list argument matcher", () {
-      when(mock.methodWithListArgs(typed(any))).thenReturn("A lot!");
+      when(mock.methodWithListArgs(any)).thenReturn("A lot!");
       expect(mock.methodWithListArgs([42]), equals("A lot!"));
       expect(mock.methodWithListArgs([43]), equals("A lot!"));
     });
@@ -169,7 +169,7 @@ void main() {
 
     test("should mock method with mix of argument matchers and real things",
         () {
-      when(mock.methodWithPositionalArgs(typed(argThat(greaterThan(100))), 17))
+      when(mock.methodWithPositionalArgs(argThat(greaterThan(100)), 17))
           .thenReturn("A lot with 17");
       expect(mock.methodWithPositionalArgs(100, 17), isNull);
       expect(mock.methodWithPositionalArgs(101, 18), isNull);
@@ -191,7 +191,7 @@ void main() {
     });
 
     test("should have default toString when it is not mocked", () {
-      expect(mock.toString(), equals("MockedClass"));
+      expect(mock.toString(), equals("_MockedClass"));
     });
 
     test("should have toString as name when it is not mocked", () {
@@ -200,33 +200,32 @@ void main() {
     });
 
     test("should mock equals between mocks when givenHashCode is equals", () {
-      var anotherMock = named(new MockedClass(), hashCode: 42);
+      var anotherMock = named(new _MockedClass(), hashCode: 42);
       named(mock, hashCode: 42);
       expect(mock == anotherMock, isTrue);
     });
 
     test("should use identical equality between it is not mocked", () {
-      var anotherMock = new MockedClass();
+      var anotherMock = new _MockedClass();
       expect(mock == anotherMock, isFalse);
       expect(mock == mock, isTrue);
     });
 
     //no need to mock setter, except if we will have spies later...
     test("should mock method with thrown result", () {
-      when(mock.methodWithNormalArgs(typed(any)))
-          .thenThrow(new StateError('Boo'));
+      when(mock.methodWithNormalArgs(any)).thenThrow(new StateError('Boo'));
       expect(() => mock.methodWithNormalArgs(42), throwsStateError);
     });
 
     test("should mock method with calculated result", () {
-      when(mock.methodWithNormalArgs(typed(any))).thenAnswer(
+      when(mock.methodWithNormalArgs(any)).thenAnswer(
           (Invocation inv) => inv.positionalArguments[0].toString());
       expect(mock.methodWithNormalArgs(43), equals("43"));
       expect(mock.methodWithNormalArgs(42), equals("42"));
     });
 
     test("should return mock to make simple oneline mocks", () {
-      RealClass mockWithSetup = new MockedClass();
+      _RealClass mockWithSetup = new _MockedClass();
       when(mockWithSetup.methodWithoutArgs()).thenReturn("oneline");
       expect(mockWithSetup.methodWithoutArgs(), equals("oneline"));
     });
@@ -238,10 +237,8 @@ void main() {
     });
 
     test("should mock method with calculated result", () {
-      when(mock.methodWithNormalArgs(typed(argThat(equals(43)))))
-          .thenReturn("43");
-      when(mock.methodWithNormalArgs(typed(argThat(equals(42)))))
-          .thenReturn("42");
+      when(mock.methodWithNormalArgs(argThat(equals(43)))).thenReturn("43");
+      when(mock.methodWithNormalArgs(argThat(equals(42)))).thenReturn("42");
       expect(mock.methodWithNormalArgs(43), equals("43"));
     });
 
@@ -249,7 +246,7 @@ void main() {
     test("should throw if `when` is called while stubbing", () {
       expect(() {
         var responseHelper = () {
-          var mock2 = new MockedClass();
+          var mock2 = new _MockedClass();
           when(mock2.getter).thenReturn("A");
           return mock2;
         };

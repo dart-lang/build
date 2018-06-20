@@ -10,7 +10,7 @@ bool assessNsmForwarding() {
   var signal = new MockNsmForwardingSignal();
   signal.fn();
   try {
-    verify(signal.fn(typed(any)));
+    verify(signal.fn(any));
     return true;
   } catch (_) {
     // The verify failed, because the default value of 7 was not passed to

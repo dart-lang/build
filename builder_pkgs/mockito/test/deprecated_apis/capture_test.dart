@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+@deprecated
+library mockito.test.deprecated_apis.capture_test;
+
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
-import 'utils.dart';
+import '../utils.dart';
 
 class _RealClass {
   _RealClass innerObj;
@@ -27,15 +30,15 @@ class _RealClass {
   }
 }
 
-class _MockedClass extends Mock implements _RealClass {}
+class MockedClass extends Mock implements _RealClass {}
 
 void main() {
-  _MockedClass mock;
+  MockedClass mock;
 
   var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
-    mock = new _MockedClass();
+    mock = new MockedClass();
   });
 
   tearDown(() {
@@ -47,7 +50,8 @@ void main() {
   group('capture', () {
     test('captureAny should match anything', () {
       mock.methodWithNormalArgs(42);
-      expect(verify(mock.methodWithNormalArgs(captureAny)).captured.single,
+      expect(
+          verify(mock.methodWithNormalArgs(typed(captureAny))).captured.single,
           equals(42));
     });
 
@@ -57,20 +61,22 @@ void main() {
       mock.methodWithNormalArgs(43);
       mock.methodWithNormalArgs(45);
       expect(
-          verify(mock.methodWithNormalArgs(captureThat(lessThan(44)))).captured,
+          verify(mock.methodWithNormalArgs(typed(captureThat(lessThan(44)))))
+              .captured,
           equals([42, 43]));
     });
 
     test('should capture list arguments', () {
       mock.methodWithListArgs([42]);
-      expect(verify(mock.methodWithListArgs(captureAny)).captured.single,
+      expect(verify(mock.methodWithListArgs(typed(captureAny))).captured.single,
           equals([42]));
     });
 
     test('should capture multiple arguments', () {
       mock.methodWithPositionalArgs(1, 2);
       expect(
-          verify(mock.methodWithPositionalArgs(captureAny, captureAny))
+          verify(mock.methodWithPositionalArgs(
+                  typed(captureAny), typed(captureAny)))
               .captured,
           equals([1, 2]));
     });
@@ -80,7 +86,8 @@ void main() {
       mock.methodWithPositionalArgs(2, 3);
       var expectedCaptures = isNsmForwarding ? [1, null, 2, 3] : [2, 3];
       expect(
-          verify(mock.methodWithPositionalArgs(captureAny, captureAny))
+          verify(mock.methodWithPositionalArgs(
+                  typed(captureAny), typed(captureAny)))
               .captured,
           equals(expectedCaptures));
     });
@@ -88,7 +95,7 @@ void main() {
     test('should capture multiple invocations', () {
       mock.methodWithNormalArgs(1);
       mock.methodWithNormalArgs(2);
-      expect(verify(mock.methodWithNormalArgs(captureAny)).captured,
+      expect(verify(mock.methodWithNormalArgs(typed(captureAny))).captured,
           equals([1, 2]));
     });
   });

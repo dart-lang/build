@@ -593,6 +593,7 @@ class _VerifyCall {
     });
   }
 
+  @override
   String toString() =>
       'VerifyCall<mock: $mock, memberName: ${verifyInvocation.memberName}>';
 }

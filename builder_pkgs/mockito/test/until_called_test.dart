@@ -17,15 +17,15 @@ import 'dart:async';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
-class RealClass {
-  RealClass innerObj;
+class _RealClass {
+  _RealClass innerObj;
   String methodWithoutArgs() => 'Real';
   String methodWithNormalArgs(int x) => 'Real';
   String methodWithListArgs(List<int> x) => 'Real';
   String methodWithPositionalArgs(int x, [int y]) => 'Real';
   String methodWithNamedArgs(int x, {int y}) => 'Real';
   String methodWithTwoNamedArgs(int x, {int y, int z}) => 'Real';
-  String methodWithObjArgs(RealClass x) => 'Real';
+  String methodWithObjArgs(_RealClass x) => 'Real';
   String typeParameterizedFn(List<int> w, List<int> x,
           [List<int> y, List<int> z]) =>
       'Real';
@@ -40,11 +40,11 @@ class RealClass {
 
 class CallMethodsEvent {}
 
-/// Listens on a stream and upon any event calls all methods in [RealClass].
-class RealClassController {
-  final RealClass _realClass;
+/// Listens on a stream and upon any event calls all methods in [_RealClass].
+class _RealClassController {
+  final _RealClass _realClass;
 
-  RealClassController(
+  _RealClassController(
       this._realClass, StreamController<CallMethodsEvent> streamController) {
     streamController.stream.listen(_callAllMethods);
   }
@@ -57,7 +57,7 @@ class RealClassController {
       ..methodWithPositionalArgs(1, 2)
       ..methodWithNamedArgs(1, y: 2)
       ..methodWithTwoNamedArgs(1, y: 2, z: 3)
-      ..methodWithObjArgs(new RealClass())
+      ..methodWithObjArgs(new _RealClass())
       ..typeParameterizedFn([1, 2], [3, 4], [5, 6], [7, 8])
       ..typeParameterizedNamedFn([1, 2], [3, 4], y: [5, 6], z: [7, 8])
       ..getter
@@ -65,13 +65,13 @@ class RealClassController {
   }
 }
 
-class MockedClass extends Mock implements RealClass {}
+class _MockedClass extends Mock implements _RealClass {}
 
 void main() {
-  MockedClass mock;
+  _MockedClass mock;
 
   setUp(() {
-    mock = new MockedClass();
+    mock = new _MockedClass();
   });
 
   tearDown(() {
@@ -96,26 +96,25 @@ void main() {
       test('waits for method with normal args', () async {
         mock.methodWithNormalArgs(1);
 
-        await untilCalled(mock.methodWithNormalArgs(typed(any)));
+        await untilCalled(mock.methodWithNormalArgs(any));
 
-        verify(mock.methodWithNormalArgs(typed(any))).called(1);
+        verify(mock.methodWithNormalArgs(any)).called(1);
       });
 
       test('waits for method with list args', () async {
         mock.methodWithListArgs([1]);
 
-        await untilCalled(mock.methodWithListArgs(typed(any)));
+        await untilCalled(mock.methodWithListArgs(any));
 
-        verify(mock.methodWithListArgs(typed(any))).called(1);
+        verify(mock.methodWithListArgs(any)).called(1);
       });
 
       test('waits for method with positional args', () async {
         mock.methodWithPositionalArgs(1, 2);
 
-        await untilCalled(
-            mock.methodWithPositionalArgs(typed(any), typed(any)));
+        await untilCalled(mock.methodWithPositionalArgs(any, any));
 
-        verify(mock.methodWithPositionalArgs(typed(any), typed(any))).called(1);
+        verify(mock.methodWithPositionalArgs(any, any)).called(1);
       });
 
       test('waits for method with named args', () async {
@@ -138,22 +137,19 @@ void main() {
       });
 
       test('waits for method with obj args', () async {
-        mock.methodWithObjArgs(new RealClass());
+        mock.methodWithObjArgs(new _RealClass());
 
-        await untilCalled(mock.methodWithObjArgs(typed(any)));
+        await untilCalled(mock.methodWithObjArgs(any));
 
-        verify(mock.methodWithObjArgs(typed(any))).called(1);
+        verify(mock.methodWithObjArgs(any)).called(1);
       });
 
       test('waits for function with positional parameters', () async {
         mock.typeParameterizedFn([1, 2], [3, 4], [5, 6], [7, 8]);
 
-        await untilCalled(mock.typeParameterizedFn(
-            typed(any), typed(any), typed(any), typed(any)));
+        await untilCalled(mock.typeParameterizedFn(any, any, any, any));
 
-        verify(mock.typeParameterizedFn(
-                typed(any), typed(any), typed(any), typed(any)))
-            .called(1);
+        verify(mock.typeParameterizedFn(any, any, any, any)).called(1);
       });
 
       test('waits for function with named parameters', () async {
@@ -186,7 +182,7 @@ void main() {
 
     group('on methods not yet called', () {
       setUp(() {
-        new RealClassController(mock, streamController);
+        new _RealClassController(mock, streamController);
       });
 
       test('waits for method without args', () async {
@@ -200,30 +196,29 @@ void main() {
 
       test('waits for method with normal args', () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(mock.methodWithNormalArgs(typed(any)));
+        verifyNever(mock.methodWithNormalArgs(any));
 
-        await untilCalled(mock.methodWithNormalArgs(typed(any)));
+        await untilCalled(mock.methodWithNormalArgs(any));
 
-        verify(mock.methodWithNormalArgs(typed(any))).called(1);
+        verify(mock.methodWithNormalArgs(any)).called(1);
       });
 
       test('waits for method with list args', () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(mock.methodWithListArgs(typed(any)));
+        verifyNever(mock.methodWithListArgs(any));
 
-        await untilCalled(mock.methodWithListArgs(typed(any)));
+        await untilCalled(mock.methodWithListArgs(any));
 
-        verify(mock.methodWithListArgs(typed(any))).called(1);
+        verify(mock.methodWithListArgs(any)).called(1);
       });
 
       test('waits for method with positional args', () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(mock.methodWithPositionalArgs(typed(any), typed(any)));
+        verifyNever(mock.methodWithPositionalArgs(any, any));
 
-        await untilCalled(
-            mock.methodWithPositionalArgs(typed(any), typed(any)));
+        await untilCalled(mock.methodWithPositionalArgs(any, any));
 
-        verify(mock.methodWithPositionalArgs(typed(any), typed(any))).called(1);
+        verify(mock.methodWithPositionalArgs(any, any)).called(1);
       });
 
       test('waits for method with named args', () async {
@@ -250,24 +245,20 @@ void main() {
 
       test('waits for method with obj args', () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(mock.methodWithObjArgs(typed(any)));
+        verifyNever(mock.methodWithObjArgs(any));
 
-        await untilCalled(mock.methodWithObjArgs(typed(any)));
+        await untilCalled(mock.methodWithObjArgs(any));
 
-        verify(mock.methodWithObjArgs(typed(any))).called(1);
+        verify(mock.methodWithObjArgs(any)).called(1);
       });
 
       test('waits for function with positional parameters', () async {
         streamController.add(new CallMethodsEvent());
-        verifyNever(mock.typeParameterizedFn(
-            typed(any), typed(any), typed(any), typed(any)));
+        verifyNever(mock.typeParameterizedFn(any, any, any, any));
 
-        await untilCalled(mock.typeParameterizedFn(
-            typed(any), typed(any), typed(any), typed(any)));
+        await untilCalled(mock.typeParameterizedFn(any, any, any, any));
 
-        verify(mock.typeParameterizedFn(
-                typed(any), typed(any), typed(any), typed(any)))
-            .called(1);
+        verify(mock.typeParameterizedFn(any, any, any, any)).called(1);
       });
 
       test('waits for function with named parameters', () async {
