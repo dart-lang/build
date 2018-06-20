@@ -5,8 +5,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build/build.dart';
 import 'package:build_runner/src/generate/terminator.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
@@ -54,6 +55,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
     RunnerAssetWriter writer,
+    Resolvers resolvers,
     Level logLevel,
     onLog(LogRecord record),
     Stream terminateEventStream,
@@ -73,19 +75,22 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
-  var options = await BuildOptions.create(environment,
-      deleteFilesByDefault: deleteFilesByDefault,
-      packageGraph: packageGraph,
-      logLevel: logLevel,
-      skipBuildScriptCheck: skipBuildScriptCheck,
-      overrideBuildConfig:
-          await findBuildConfigOverrides(packageGraph, configKey),
-      enableLowResourcesMode: enableLowResourcesMode,
-      outputMap: outputMap,
-      trackPerformance: trackPerformance,
-      verbose: verbose,
-      buildDirs: buildDirs,
-      logPerformanceDir: logPerformanceDir);
+  var options = await BuildOptions.create(
+    environment,
+    deleteFilesByDefault: deleteFilesByDefault,
+    packageGraph: packageGraph,
+    logLevel: logLevel,
+    skipBuildScriptCheck: skipBuildScriptCheck,
+    overrideBuildConfig:
+        await findBuildConfigOverrides(packageGraph, configKey),
+    enableLowResourcesMode: enableLowResourcesMode,
+    outputMap: outputMap,
+    trackPerformance: trackPerformance,
+    verbose: verbose,
+    buildDirs: buildDirs,
+    logPerformanceDir: logPerformanceDir,
+    resolvers: resolvers,
+  );
   var terminator = new Terminator(terminateEventStream);
   try {
     var build = await BuildRunner.create(
@@ -135,6 +140,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         PackageGraph packageGraph,
         RunnerAssetReader reader,
         RunnerAssetWriter writer,
+        Resolvers resolvers,
         Level logLevel,
         onLog(LogRecord record),
         Duration debounceDelay,
@@ -157,6 +163,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
+      resolvers: resolvers,
       logLevel: logLevel,
       onLog: onLog,
       debounceDelay: debounceDelay,

@@ -7,6 +7,7 @@
 - Added `BuildOptions.logPerformanceDir`, performance logs will be continuously
   written to that directory if provided.
 - Added support for `global_options` in `build.yaml` of the root package.
+- Allow overriding the default `Resolvers` implementation.
 
 ### Breaking changes
 

@@ -7,6 +7,7 @@
 - The `BuildPerformance` class is now serializable, it has a `fromJson`
   constructor and a `toJson` instance method.
 - Added support for `global_options` in `build.yaml` of the root package.
+- Allow overriding the default `Resolvers` implementation.
 
 ### Breaking changes
 
