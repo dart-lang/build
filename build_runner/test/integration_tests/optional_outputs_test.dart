@@ -94,19 +94,19 @@ main() {
     }
 
     test('only copies assets that were actually required', () async {
-      await buildTool.build(['-o', 'build']);
+      await buildTool.build(args: const ['-o', 'build']);
       await expectBuildOutput(expectCopy: false, content: 'false');
 
       // Run another build but with the file indicating that the copy should be
       // read
       await updateTxtContent('true');
-      await buildTool.build(['-o', 'build']);
+      await buildTool.build(args: const ['-o', 'build']);
       await expectBuildOutput(expectCopy: true, content: 'true');
 
       // Run again without reading the copy, should not copy over the .copy
       // file even though it does exist now.
       await updateTxtContent('false');
-      await buildTool.build(['-o', 'build']);
+      await buildTool.build(args: const ['-o', 'build']);
       await expectBuildOutput(expectCopy: false, content: 'false');
     });
   });
