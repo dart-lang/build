@@ -195,6 +195,8 @@ class AssetBasedSource extends Source {
 
   /// The file contents.
   String _contents;
+  /// Temporary new contents
+  String _contentsForUpdateDependencies;
 
   AssetBasedSource(this.assetId);
 
@@ -202,6 +204,8 @@ class AssetBasedSource extends Source {
   /// any analyzer resolution.
   void updateDependencies(String contents) {
     if (contents == _contents) return;
+    if (contents == _contentsForUpdateDependencies) return;
+    _contentsForUpdateDependencies = contents;
     var unit = parseDirectives(contents, suppressErrors: true);
     _dependentAssets = unit.directives
         .where((d) => d is UriBasedDirective)
@@ -214,6 +218,7 @@ class AssetBasedSource extends Source {
   ///
   /// Returns true if the contents of this asset have changed.
   bool updateContents(String contents) {
+    _contentsForUpdateDependencies = null;
     if (contents == _contents) return false;
     _contents = contents;
     ++_revision;
