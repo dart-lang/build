@@ -7,13 +7,20 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
 /// Relative path to the asset graph from the root package dir.
-final String assetGraphPath = assetGraphPathFor(Platform.script.scheme == 'file'
-    ? Platform.script.toFilePath()
-    : Platform.script.path);
+final String assetGraphPath = assetGraphPathFor(_scriptPath);
 
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>
     '$cacheDir/${_scriptHashFor(path)}/asset_graph.json';
+
+/// Relative path to the directory which holds serialized versions of errors
+/// reported during previous builds.
+final errorCachePath =
+    p.url.join(cacheDir, _scriptHashFor(_scriptPath), 'error_cache');
+
+final String _scriptPath = Platform.script.scheme == 'file'
+    ? Platform.script.toFilePath()
+    : Platform.script.path;
 
 /// Directory containing automatically generated build entrypoints.
 ///

@@ -6,13 +6,14 @@ import 'dart:async';
 
 import 'package:logging/logging.dart';
 
+import 'failure_reporter.dart';
+
 /// A delegating [Logger] that records if any logs of level >= [Level.SEVERE]
 /// were seen.
 class BuildForInputLogger implements Logger {
   final Logger _delegate;
 
-  bool _errorWasSeen = false;
-  bool get errorWasSeen => _errorWasSeen;
+  final errorsSeen = <ErrorReport>[];
 
   BuildForInputLogger(this._delegate);
 
@@ -58,7 +59,7 @@ class BuildForInputLogger implements Logger {
   void log(Level logLevel, message,
       [Object error, StackTrace stackTrace, Zone zone]) {
     if (logLevel >= Level.SEVERE) {
-      _errorWasSeen = true;
+      errorsSeen.add(new ErrorReport('$message', '${error ?? ''}', stackTrace));
     }
     _delegate.log(logLevel, message, error, stackTrace, zone);
   }
@@ -74,13 +75,13 @@ class BuildForInputLogger implements Logger {
 
   @override
   void severe(message, [Object error, StackTrace stackTrace]) {
-    _errorWasSeen = true;
+    errorsSeen.add(new ErrorReport('$message', '${error ?? ''}', stackTrace));
     _delegate.severe(message, error, stackTrace);
   }
 
   @override
   void shout(message, [Object error, StackTrace stackTrace]) {
-    _errorWasSeen = true;
+    errorsSeen.add(new ErrorReport('$message', '${error ?? ''}', stackTrace));
     _delegate.shout(message, error, stackTrace);
   }
 

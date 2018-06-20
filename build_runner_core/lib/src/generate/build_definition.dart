@@ -18,6 +18,7 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../changes/build_script_updates.dart';
 import '../environment/build_environment.dart';
+import '../logging/failure_reporter.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
@@ -212,13 +213,19 @@ class _Loader {
               'Throwing away cached asset graph because the build phases have '
               'changed. This most commonly would happen as a result of adding a '
               'new dependency or updating your dependencies.');
-          await _cleanupOldOutputs(cachedGraph);
+          await Future.wait([
+            _cleanupOldOutputs(cachedGraph),
+            FailureReporter.cleanErrorCache(),
+          ]);
           return null;
         }
         if (cachedGraph.dartVersion != Platform.version) {
           _logger.warning(
               'Throwing away cached asset graph due to Dart SDK update.');
-          await _cleanupOldOutputs(cachedGraph);
+          await Future.wait([
+            _cleanupOldOutputs(cachedGraph),
+            FailureReporter.cleanErrorCache(),
+          ]);
           return null;
         }
         return cachedGraph;
@@ -227,7 +234,10 @@ class _Loader {
         // the current version. We don't currently support old graph versions.
         _logger.warning(
             'Throwing away cached asset graph due to version mismatch.');
-        await _deleteGeneratedDir();
+        await Future.wait([
+          _deleteGeneratedDir(),
+          FailureReporter.cleanErrorCache(),
+        ]);
         return null;
       }
     });

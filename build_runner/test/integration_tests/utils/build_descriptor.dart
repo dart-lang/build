@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
@@ -253,11 +254,13 @@ class BuildTool {
       _executable, _baseArgs.followedBy(['serve']),
       workingDirectory: p.join(d.sandbox, 'a')));
 
-  Future<void> build([List<String> args = const []]) async {
+  Future<StreamQueue<String>> build(
+      {List<String> args = const [], int expectExitCode = 0}) async {
     var process = await TestProcess.start(
         _executable, _baseArgs.followedBy(['build']).followedBy(args).toList(),
         workingDirectory: p.join(d.sandbox, 'a'));
-    await process.shouldExit(0);
+    await process.shouldExit(expectExitCode);
+    return process.stderr;
   }
 }
 
