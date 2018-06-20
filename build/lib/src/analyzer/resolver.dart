@@ -44,7 +44,17 @@ abstract class ReleasableResolver implements Resolver {
 
 /// A factory that returns a resolver for a given [BuildStep].
 abstract class Resolvers {
+  const Resolvers();
+
   Future<ReleasableResolver> get(BuildStep buildStep);
+
+  /// Reset the state of any caches within [Resolver] instances produced by
+  /// this [Resolvers].
+  ///
+  /// In between calls to [reset] no Assets should change, so every call to
+  /// [BuildStep.readAsString] for a given AssetId should return identical
+  /// contents. Any time an Asset's contents may change [reset] must be called.
+  void reset() {}
 }
 
 /// Thrown when attempting to read a non-Dart library in a [Resolver].

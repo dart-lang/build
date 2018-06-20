@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:analyzer/src/generated/engine.dart' show AnalysisEngine;
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -71,9 +70,7 @@ Future<Null> runBuilders(
     allWrittenAssets.addAll(writerSpy.assetsWritten);
   }
 
-  // Technically we don't always have to do this, but better safe than sorry.
-  timings.trackOperation(
-      'Clearing analysis engine cache', AnalysisEngine.instance.clearCaches);
+  timings.trackOperation('Resetting Resolvers', resolvers.reset);
 
   await timings.trackOperation('Checking outputs and writing defaults',
       () async {

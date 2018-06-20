@@ -58,7 +58,7 @@ class BuildImpl {
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
-  final _resolvers = new AnalyzerResolvers();
+  final Resolvers _resolvers = new AnalyzerResolvers();
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final Map<String, String> _outputMap;

@@ -1,3 +1,8 @@
+# 0.3.1+4
+
+- Drop dependency on `build_barback`.
+- Use the latest `build`.
+
 # 0.3.1+3
 
 - Support `package:analyzer` `0.32.0`.
