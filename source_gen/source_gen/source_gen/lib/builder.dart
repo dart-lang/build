@@ -80,15 +80,8 @@ class CombiningBuilder implements Builder {
     var assetIds = await buildStep
         .findAssets(new Glob(pattern))
         .where((id) => restrictedPattern.hasMatch(id.pathSegments.last))
-        .toList();
-
-    assetIds.sort((a, b) {
-      var value = a.package.compareTo(b.package);
-      if (value == 0) {
-        value = a.path.compareTo(b.path);
-      }
-      return value;
-    });
+        .toList()
+      ..sort();
 
     var assets = await new Stream.fromIterable(assetIds)
         .asyncMap((id) async {
