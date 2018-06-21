@@ -40,7 +40,7 @@ class PostProcessBuildStep {
 
   Future<List<int>> readInputAsBytes() => _reader.readAsBytes(inputId);
 
-  Future<String> readInputAsString({Encoding encoding: utf8}) =>
+  Future<String> readInputAsString({Encoding encoding = utf8}) =>
       _reader.readAsString(inputId, encoding: encoding);
 
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
@@ -52,7 +52,7 @@ class PostProcessBuildStep {
   }
 
   Future writeAsString(AssetId id, FutureOr<String> content,
-      {Encoding encoding: utf8}) {
+      {Encoding encoding = utf8}) {
     _addAsset(id);
     var done = _futureOrWrite(content,
         (String c) => _writer.writeAsString(id, c, encoding: encoding));

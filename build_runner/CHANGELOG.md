@@ -1,4 +1,37 @@
-## 0.8.10-dev
+## 0.9.0-dev
+
+### New Features
+
+- Added the `--log-performance <dir>` option which will dump performance
+  information to `<dir>` after each build.
+- The `BuildPerformance` class is now serializable, it has a `fromJson`
+  constructor and a `toJson` instance method.
+- Added support for `global_options` in `build.yaml` of the root package.
+- Allow overriding the default `Resolvers` implementation.
+
+### Breaking changes
+
+- `BuildPhasePerformance.action` has been replaced with
+  `BuildPhasePerformance.builderKeys`.
+- `BuilderActionPerformance.builder` has been replaced with
+  `BuilderActionPerformance.builderKey`.
+- `BuildResult` no longer has an `exception` or `stackTrace` field.
+- The 'test' command through `run` will no longer set an exit code. All manual
+  build scripts which call `run` should use the `Future<int>` return to set the
+  exit code for the process.
+- Dropped `failOnSevere` arguments and `--fail-on-severe` flag. Severe logs are
+  always considered failing.
+- Severe level logs now go to `stdout` along with other logs rather than
+  `stderr`. Uncaught exceptions from the `build_runner` system itself still go
+  to `stderr`.
+
+
+## Other
+
+- Updated to the latest camel case constants from the sdk.
+- Minimum sdk version is now `>=2.0.0-dev.61`.
+
+## 0.8.10
 
 - All builders with `build_to: source` will now be ran regardless of which
   directory is currently being built, see
@@ -9,6 +42,8 @@
   dependency.
 - Sources that are not a part of a `target` will no longer appear in the asset
   graph, so they will not be readable or globbable.
+- Updated the generated build script to not rely on json encode/decode for the
+  builder options object. Instead it now directly inlines a map literal.
 
 ## 0.8.9
 

@@ -15,8 +15,8 @@ import 'package:watcher/watcher.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 
-import '../common/common.dart';
-import '../common/package_graphs.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   FutureOr<Response> Function(Request) handler;
@@ -120,7 +120,7 @@ example:file://fake/pkg/path
           await getResponse(slashOrNot);
           fail('Assets are not wired up. Expecting this to throw.');
         } catch (e) {
-          expect(e, new isInstanceOf<AssetNotFoundException>());
+          expect(e, new TypeMatcher<AssetNotFoundException>());
           expect((e as AssetNotFoundException).assetId,
               new AssetId.parse('build_runner|lib/src/server/graph_viz.html'));
         }

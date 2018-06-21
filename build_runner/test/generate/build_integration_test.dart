@@ -12,7 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import '../common/common.dart';
+import 'package:_test_common/common.dart';
 
 main() {
   group('build integration tests', () {
@@ -34,6 +34,7 @@ main(List<String> args) async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
             'glob'
           ]),
@@ -129,11 +130,15 @@ main(List<String> args) async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
             'glob'
           ]),
           d.dir('tool', [
             d.file('build.dart', '''
+import 'dart:async';
+
+import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -233,11 +238,15 @@ main() async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
             'glob'
           ]),
           d.dir('tool', [
             d.file('build.dart', '''
+import 'dart:async';
+
+import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -350,6 +359,7 @@ main(List<String> args) async {
             'build_config',
             'build_resolvers',
             'build_runner',
+            'build_runner_core',
             'build_test',
           ]),
           d.file('build.yaml', r'''
@@ -405,13 +415,14 @@ main(List<String> args) async {
       return '${result.stdout}';
     }
 
-    test('warns on invalid builder key --define', () async {
+    test('warns on invalid builder key in target options', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
         ]),
         d.file('build.yaml', r'''
@@ -423,14 +434,39 @@ targets:
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
           d.file('a.txt', 'a'),
-          d.file('b.txt', 'b'),
-          d.file('c.txt', 'c'),
         ]),
       ]).create();
 
       await pubGet('a');
 
-      var result = await runBuild(extraArgs: ['--define=bad|key=foo=bar']);
+      var result = await runBuild();
+
+      expect(result, contains('not a known Builder'));
+    });
+
+    test('warns on invalid builder key in global options', () async {
+      await d.dir('a', [
+        await pubspec('a', currentIsolateDependencies: [
+          'build',
+          'build_config',
+          'build_resolvers',
+          'build_runner',
+          'build_runner_core',
+          'build_test',
+        ]),
+        d.file('build.yaml', r'''
+global_options:
+  bad|builder:
+'''),
+        d.dir('tool', [d.file('build.dart', buildContent)]),
+        d.dir('web', [
+          d.file('a.txt', 'a'),
+        ]),
+      ]).create();
+
+      await pubGet('a');
+
+      var result = await runBuild();
 
       expect(result, contains('not a known Builder'));
     });
@@ -442,13 +478,12 @@ targets:
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
         ]),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
           d.file('a.txt', 'a'),
-          d.file('b.txt', 'b'),
-          d.file('c.txt', 'c'),
         ]),
       ]).create();
 
@@ -470,6 +505,7 @@ targets:
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
           'glob'
         ]),
@@ -500,7 +536,7 @@ main() async {
       expect(result.exitCode, isNot(0),
           reason: 'build should fail due to conflicting outputs');
       expect(
-          result.stderr,
+          result.stdout,
           allOf(contains('Conflicting outputs'),
               contains('web/a.txt.copy.copy')));
     });
@@ -512,6 +548,7 @@ main() async {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
         ]),
         d.dir('web', [
           d.file('a.txt', 'a'),
@@ -534,6 +571,7 @@ main() async {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test'
         ]),
         d.dir('web', [

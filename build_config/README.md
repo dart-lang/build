@@ -3,6 +3,11 @@
 Customizing the build behavior of a package is done  by creating a `build.yaml`
 file, which describes your configuration.
 
+The full format is described in the
+[docs/build_yaml_format.md](https://github.com/dart-lang/build/blob/master/docs/build_yaml_format.md)
+file, while this documentation is more focused on specific usage scenarios of
+the file.
+
 ## Dividing a package into Build targets
 
 When a `Builder` should be applied to a subset of files in a package the package
@@ -49,6 +54,26 @@ configuration may have the following keys:
   on the particular builder. Values in this map will override the default
   provided by builder authors. Values may also be overridden based on the build
   mode with `dev_options` or `release_options`.
+- **dev_options**: Map, Optional: A free-form map which will be passed to the
+  `Builder` as a `BuilderOptions` when it is constructed. Usage varies depending
+  on the particular builder. The values in this map override Builder defaults or
+  non mode-specific options per-key when the build is done in dev mode.
+- **release_options**: Map, Optional: A free-form map which will be passed to
+  the `Builder` as a `BuilderOptions` when it is constructed. Usage varies
+  depending on the particular builder. The values in this map override Builder
+  defaults or non mode-specific options when the build is done in release mode.
+
+## Configuring `Builder`s globally
+Target level builder options can be overridden globally across all packages with
+the `global_options` section. These options are applied _after_ all Builder
+defaults and target level configuration, and _before_ `--define` command line
+arguments.
+
+- **options**: Map, Optional: A free-form map which will be passed to the
+  `Builder` as a `BuilderOptions` when it is constructed. Usage varies depending
+  on the particular builder. Values in this map will override the default
+  provided by builder authors or at the target level. Values may also be
+  overridden based on the build mode with `dev_options` or `release_options`.
 - **dev_options**: Map, Optional: A free-form map which will be passed to the
   `Builder` as a `BuilderOptions` when it is constructed. Usage varies depending
   on the particular builder. The values in this map override all other values

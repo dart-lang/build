@@ -5,11 +5,10 @@
 import 'dart:async';
 
 import 'package:args/command_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
-import '../generate/exceptions.dart';
-import '../package_graph/apply_builders.dart';
 import 'runner.dart';
 
 /// A common entry point to parse command line arguments and build or serve with
@@ -26,6 +25,9 @@ Future<int> run(List<String> args, List<BuilderApplication> builders) async {
     print(ansi.red.wrap(e.message));
     print('');
     print(e.usage);
+    return ExitCode.usage.code;
+  } on ArgumentError catch (e) {
+    print(ansi.red.wrap(e.toString()));
     return ExitCode.usage.code;
   } on CannotBuildException {
     // A message should have already been logged.

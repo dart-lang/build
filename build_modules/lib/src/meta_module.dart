@@ -89,10 +89,32 @@ class _AssetNode {
               'same package');
         }
         parts.add(linkedId);
-      } else if (internalSrcs.contains(linkedId)) {
-        internalDeps.add(linkedId);
-      } else {
-        externalDeps.add(linkedId);
+        continue;
+      }
+
+      List<Configuration> conditionalDirectiveConfigurations;
+
+      if (directive is ImportDirective && directive.configurations.isNotEmpty) {
+        conditionalDirectiveConfigurations = directive.configurations;
+      } else if (directive is ExportDirective &&
+          directive.configurations.isNotEmpty) {
+        conditionalDirectiveConfigurations = directive.configurations;
+      }
+
+      final allDeps = <AssetId>[linkedId];
+      if (conditionalDirectiveConfigurations != null) {
+        allDeps.addAll(conditionalDirectiveConfigurations
+            .map((c) => Uri.parse(c.uri.stringValue))
+            .where((u) => u.scheme != 'dart')
+            .map((u) => new AssetId.resolve(u.toString(), from: id)));
+      }
+
+      for (var dep in allDeps) {
+        if (internalSrcs.contains(dep)) {
+          internalDeps.add(dep);
+        } else {
+          externalDeps.add(dep);
+        }
       }
     }
     return new _AssetNode(id, internalDeps, parts, externalDeps);
@@ -262,8 +284,10 @@ Future<List<Module>> _computeModules(
   for (var asset in assets) {
     var content = await reader.readAsString(asset);
     // Skip errors here, dartdevc gives nicer messages.
-    var parsed = parseCompilationUnit(content,
-        name: asset.path, parseFunctionBodies: false, suppressErrors: true);
+    var parsed = public
+        ? parseDirectives(content, name: asset.path, suppressErrors: true)
+        : parseCompilationUnit(content,
+            name: asset.path, suppressErrors: true, parseFunctionBodies: false);
     parsedAssetsById[asset] = parsed;
 
     // Skip any files which contain a `dart:_` import.

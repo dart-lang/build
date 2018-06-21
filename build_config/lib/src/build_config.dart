@@ -5,49 +5,23 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build/build.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:yaml/yaml.dart';
 
+import 'build_target.dart';
+import 'builder_definition.dart';
+import 'common.dart';
+import 'expandos.dart';
+import 'input_set.dart';
 import 'key_normalization.dart';
-import 'parse.dart';
-import 'pubspec.dart';
 
-/// A filter on files inputs or sources.
-///
-/// Takes a list of strings in glob format for [include] and [exclude]. Matches
-/// the `glob()` function in skylark.
-class InputSet {
-  static const anything = const InputSet();
-
-  /// The globs to include in the set.
-  ///
-  /// May be null or empty which means every possible path (like `'**'`).
-  final List<String> include;
-
-  /// The globs as a subset of [include] to remove from the set.
-  ///
-  /// May be null or empty which means every path in [include].
-  final List<String> exclude;
-
-  const InputSet({this.include, this.exclude});
-
-  @override
-  String toString() {
-    final result = new StringBuffer();
-    if (include == null || include.isEmpty) {
-      result.write('any path');
-    } else {
-      result.write('paths matching $include');
-    }
-    if (exclude != null && exclude.isNotEmpty) {
-      result.write(' except $exclude');
-    }
-    return '$result';
-  }
-}
+part 'build_config.g.dart';
 
 /// The parsed values from a `build.yaml` file.
+@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
   /// default config.
@@ -55,9 +29,8 @@ class BuildConfig {
   /// [path] must be a directory which contains a `pubspec.yaml` file and
   /// optionally a `build.yaml`.
   static Future<BuildConfig> fromPackageDir(String path) async {
-    final pubspec = await Pubspec.fromPackageDir(path);
-    return fromBuildConfigDir(
-        pubspec.pubPackageName, pubspec.dependencies, path);
+    final pubspec = await _fromPackageDir(path);
+    return fromBuildConfigDir(pubspec.name, pubspec.dependencies.keys, path);
   }
 
   /// Returns a parsed [BuildConfig] file in [path], if one exists, otherwise a
@@ -76,302 +49,164 @@ class BuildConfig {
     }
   }
 
+  @JsonKey(ignore: true)
   final String packageName;
 
   /// All the `builders` defined in a `build.yaml` file.
+  @JsonKey(name: 'builders')
   final Map<String, BuilderDefinition> builderDefinitions;
 
   /// All the `post_process_builders` defined in a `build.yaml` file.
+  @JsonKey(name: 'post_process_builders')
   final Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions;
 
   /// All the `targets` defined in a `build.yaml` file.
+  @JsonKey(name: 'targets', fromJson: _buildTargetsFromJson)
   final Map<String, BuildTarget> buildTargets;
+
+  @JsonKey(name: 'global_options')
+  final Map<String, GlobalBuilderConfig> globalOptions;
 
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
-    final defaultTarget = '$packageName:$packageName';
-    final buildTargets = {
-      defaultTarget: new BuildTarget(
+    return runInBuildConfigZone(() {
+      final key = '$packageName:$packageName';
+      final target = new BuildTarget(
         dependencies: dependencies
             .map((dep) => normalizeTargetKeyUsage(dep, packageName))
-            .toSet(),
-        package: packageName,
-        key: defaultTarget,
+            .toList(),
         sources: InputSet.anything,
-      )
-    };
-    return new BuildConfig(
-      packageName: packageName,
-      buildTargets: buildTargets,
-    );
+      );
+      return new BuildConfig(
+        packageName: packageName,
+        buildTargets: {key: target},
+        globalOptions: {},
+      );
+    }, packageName, dependencies.toList());
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].
-  factory BuildConfig.parse(String packageName, Iterable<String> dependencies,
-          String configYaml) =>
-      parseFromYaml(packageName, dependencies, configYaml);
+  factory BuildConfig.parse(
+      String packageName, Iterable<String> dependencies, String configYaml) {
+    try {
+      var parsed = loadYaml(configYaml) as Map;
+      return new BuildConfig.fromMap(
+          packageName, dependencies, parsed ?? const {});
+    } on CheckedFromJsonException catch (e) {
+      throw new ArgumentError(_prettyPrintCheckedFromJsonException(e));
+    }
+  }
 
   /// Create a [BuildConfig] read a map which was already parsed.
-  factory BuildConfig.fromMap(String packageName, Iterable<String> dependencies,
-          Map<String, dynamic> config) =>
-      parseFromMap(packageName, dependencies, config);
+  factory BuildConfig.fromMap(
+      String packageName, Iterable<String> dependencies, Map config) {
+    return runInBuildConfigZone(() => new BuildConfig._fromJson(config),
+        packageName, dependencies.toList());
+  }
 
   BuildConfig({
-    @required this.packageName,
-    @required this.buildTargets,
-    this.builderDefinitions: const {},
-    this.postProcessBuilderDefinitions: const {},
-  });
+    String packageName,
+    @required Map<String, BuildTarget> buildTargets,
+    Map<String, GlobalBuilderConfig> globalOptions,
+    Map<String, BuilderDefinition> builderDefinitions,
+    Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
+        const {},
+  })  : this.buildTargets = buildTargets ??
+            {
+              _defaultTarget(packageName ?? currentPackage): new BuildTarget(
+                dependencies: currentPackageDefaultDependencies,
+              )
+            },
+        this.globalOptions = (globalOptions ?? const {}).map((key, config) =>
+            new MapEntry(
+                normalizeBuilderKeyUsage(key, currentPackage), config)),
+        this.builderDefinitions = _normalizeBuilderDefinitions(
+            builderDefinitions ?? const {}, packageName ?? currentPackage),
+        this.postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
+            postProcessBuilderDefinitions ?? const {},
+            packageName ?? currentPackage),
+        this.packageName = packageName ?? currentPackage {
+    // Set up the expandos for all our build targets and definitions so they
+    // can know which package and builder key they refer to.
+    this.buildTargets.forEach((key, target) {
+      packageExpando[target] = this.packageName;
+      builderKeyExpando[target] = key;
+    });
+    this.builderDefinitions.forEach((key, definition) {
+      packageExpando[definition] = this.packageName;
+      builderKeyExpando[definition] = key;
+    });
+    this.postProcessBuilderDefinitions.forEach((key, definition) {
+      packageExpando[definition] = this.packageName;
+      builderKeyExpando[definition] = key;
+    });
+  }
+
+  factory BuildConfig._fromJson(Map json) => _$BuildConfigFromJson(json);
 }
 
-/// Definition of a builder parsed from the `builders` section of `build.yaml`.
-class BuilderDefinition {
-  /// The package which provides this Builder.
-  final String package;
+String _defaultTarget(String package) => '$package:$package';
 
-  /// A unique key for this Builder in `'$package|$builder'` format.
-  final String key;
+Map<String, T> _normalizeBuilderDefinitions<T>(
+        Map<String, T> builderDefinitions, String packageName) =>
+    builderDefinitions.map((key, definition) => new MapEntry(
+        normalizeBuilderKeyDefinition(key, packageName), definition));
 
-  /// The names of the top-level methods in [import] from args -> Builder.
-  final List<String> builderFactories;
+String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
+  var yamlMap = err.map as YamlMap;
+  var message = 'Could not create `${err.className}`.';
 
-  /// The import to be used to load `clazz`.
-  final String import;
+  var innerError = err.innerError;
+  if (innerError is UnrecognizedKeysException) {
+    message = 'Invalid key(s), could not create ${err.className}.\n'
+        'Supported keys are [${innerError.allowedKeys.join(', ')}].\n';
+    for (var key in innerError.unrecognizedKeys) {
+      var yamlKey = yamlMap.nodes.keys
+          .singleWhere((k) => (k as YamlScalar).value == key) as YamlScalar;
+      message += '${yamlKey.span.message('')}\n';
+    }
+  } else if (innerError is MissingRequiredKeysException) {
+    message = 'Missing key(s), could not create ${err.className}.\n'
+        'Missing keys are [${innerError.missingKeys.join(', ')}].\n';
+    message = yamlMap.span.message(message);
+  } else {
+    var yamlValue = yamlMap.nodes[err.key];
 
-  /// A map from input extension to the output extensions created for matching
-  /// inputs.
-  final Map<String, List<String>> buildExtensions;
-
-  /// The name of the dart_library target that contains `import`.
-  ///
-  /// May be null or unreliable and should not be used.
-  @deprecated
-  final String target;
-
-  /// Which packages should have this builder applied automatically.
-  final AutoApply autoApply;
-
-  /// A list of file extensions which are required to run this builder.
-  ///
-  /// No builder which outputs any extension in this list is allowed to run
-  /// after this builder.
-  final List<String> requiredInputs;
-
-  /// Builder keys in `$package|$builder` format which should only be run after
-  /// this Builder.
-  final Set<String> runsBefore;
-
-  /// Builder keys in `$package|$builder` format which should be run on any
-  /// target which also runs this Builder.
-  final Set<String> appliesBuilders;
-
-  /// Whether this Builder should be deferred until it's output is requested.
-  ///
-  /// Optional builders are lazy and will not run unless some later builder
-  /// requests one of it's possible outputs through either `readAs*` or
-  /// `canRead`.
-  final bool isOptional;
-
-  /// Where the outputs of this builder should be written.
-  final BuildTo buildTo;
-
-  final TargetBuilderConfigDefaults defaults;
-
-  BuilderDefinition({
-    @required this.package,
-    @required this.key,
-    @required this.builderFactories,
-    @required this.buildExtensions,
-    @required this.import,
-    this.target,
-    this.autoApply,
-    this.requiredInputs,
-    this.runsBefore,
-    this.appliesBuilders,
-    this.isOptional,
-    this.buildTo,
-    TargetBuilderConfigDefaults defaults,
-  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
-
-  @override
-  String toString() => {
-        'autoApply': autoApply,
-        'import': import,
-        'builderFactories': builderFactories,
-        'buildExtensions': buildExtensions,
-        'requiredInputs': requiredInputs,
-        'runsBefore': runsBefore,
-        'isOptional': isOptional,
-        'buildTo': buildTo,
-        'defaults': defaults,
-      }.toString();
+    if (yamlValue == null) {
+      assert(err.key == null);
+      message = '${yamlMap.span.message(message)} ${err.innerError}';
+    } else {
+      message = '$message\nUnsupported value for `${err.key}`: ';
+      if (err.message != null) {
+        message += '${err.message}\n';
+      } else {
+        message += '${err.innerError}\n';
+      }
+      message = yamlValue.span.message(message);
+    }
+  }
+  return message;
 }
 
-/// The definition of a `PostProcessBuilder` in the `post_process_builders`
-/// section of a `build.yaml`.
-class PostProcessBuilderDefinition {
-  /// The package which provides this Builder.
-  final String package;
+Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
+  var targets = json.map((key, target) => new MapEntry(
+      normalizeTargetKeyDefinition(key as String, currentPackage),
+      new BuildTarget.fromJson(target as Map)));
 
-  /// A unique key for this Builder in `'$package|$builder'` format.
-  final String key;
+  if (!targets.containsKey(_defaultTarget(currentPackage))) {
+    throw new ArgumentError('Must specify a target with the name '
+        '`$currentPackage` or `\$default`.');
+  }
 
-  /// The name of the top-level method in [import] from
-  /// BuilderOptions -> Builder.
-  final String builderFactory;
-
-  /// The import to be used to load `clazz`.
-  final String import;
-
-  /// A list of input extensions for this builder.
-  ///
-  /// May be null or unreliable and should not be used.
-  @deprecated
-  final Iterable<String> inputExtensions;
-
-  /// The name of the dart_library target that contains `import`.
-  ///
-  /// May be null or unreliable and should not be used.
-  @deprecated
-  final String target;
-
-  final TargetBuilderConfigDefaults defaults;
-
-  PostProcessBuilderDefinition({
-    @required this.package,
-    @required this.key,
-    @required this.builderFactory,
-    @required this.import,
-    this.inputExtensions,
-    this.target,
-    TargetBuilderConfigDefaults defaults,
-  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
-
-  @override
-  String toString() => {
-        'import': import,
-        'builderFactory': builderFactory,
-        'defaults': defaults,
-      }.toString();
+  return targets;
 }
 
-/// Default values that builder authors can specify when users don't fill in the
-/// corresponding key for [TargetBuilderConfig].
-class TargetBuilderConfigDefaults {
-  final InputSet generateFor;
-  final BuilderOptions options;
-  final BuilderOptions devOptions;
-  final BuilderOptions releaseOptions;
-
-  const TargetBuilderConfigDefaults({
-    InputSet generateFor,
-    BuilderOptions options,
-    BuilderOptions devOptions,
-    BuilderOptions releaseOptions,
-  })  : generateFor = generateFor ?? InputSet.anything,
-        options = options ?? BuilderOptions.empty,
-        devOptions = devOptions ?? BuilderOptions.empty,
-        releaseOptions = releaseOptions ?? BuilderOptions.empty;
-}
-
-enum AutoApply { none, dependents, allPackages, rootPackage }
-
-enum BuildTo {
-  /// Generated files are written to the source directory next to their primary
-  /// inputs.
-  source,
-
-  /// Generated files are written to the hidden 'generated' directory.
-  cache
-}
-
-class BuildTarget {
-  final Set<String> dependencies;
-
-  final String package;
-
-  /// A unique key for this target in `'$package:$target'` format.
-  final String key;
-
-  final InputSet sources;
-
-  /// A map from builder key to the configuration used for this target.
-  ///
-  /// Builder keys are in the format `"$package|$builder"`. This does not
-  /// represent the full set of builders that are applied to the target, only
-  /// those which have configuration customized against the default.
-  final Map<String, TargetBuilderConfig> builders;
-
-  BuildTarget({
-    @required this.package,
-    @required this.key,
-    this.sources: InputSet.anything,
-    this.dependencies,
-    this.builders: const {},
-  });
-
-  @override
-  String toString() => {
-        'package': package,
-        'sources': sources,
-        'dependencies': dependencies,
-        'builders': builders,
-      }.toString();
-}
-
-/// The configuration a particular [BuildTarget] applies to a Builder.
-///
-/// Build targets may have builders applied automatically based on
-/// [BuilderDefinition.autoApply] and may override with more specific
-/// configuration.
-class TargetBuilderConfig {
-  /// Overrides the setting of whether the Builder would run on this target.
-  ///
-  /// Builders may run on this target by default based on the `apply_to`
-  /// argument, set to `false` to disable a Builder which would otherwise run.
-  ///
-  /// By default including a config for a Builder enables that builder.
-  final bool isEnabled;
-
-  /// Sources to use as inputs for this Builder in glob format.
-  ///
-  /// This is always a subset of the `include` argument in the containing
-  /// [BuildTarget]. May be `null` in which cases it will be all the sources in
-  /// the target.
-  final InputSet generateFor;
-
-  /// The options to pass to the `BuilderFactory` when constructing this
-  /// builder.
-  ///
-  /// The `options` key in the configuration.
-  ///
-  /// Individual keys may be overridden by either [devOptions] or
-  /// [releaseOptions].
-  final BuilderOptions options;
-
-  /// Overrides for [options] in dev mode.
-  final BuilderOptions devOptions;
-
-  /// Overrides for [options] in release mode.
-  final BuilderOptions releaseOptions;
-
-  TargetBuilderConfig({
-    this.isEnabled,
-    this.generateFor,
-    BuilderOptions options,
-    BuilderOptions devOptions,
-    BuilderOptions releaseOptions,
-  })  : options = options ?? BuilderOptions.empty,
-        devOptions = devOptions ?? BuilderOptions.empty,
-        releaseOptions = releaseOptions ?? BuilderOptions.empty;
-
-  @override
-  String toString() => {
-        'isEnabled': isEnabled,
-        'generateFor': generateFor,
-        'options': options.config,
-        'devOptions': devOptions.config,
-        'releaseOptions': releaseOptions.config,
-      }.toString();
+Future<Pubspec> _fromPackageDir(String path) async {
+  final pubspec = p.join(path, 'pubspec.yaml');
+  final file = new File(pubspec);
+  if (await file.exists()) {
+    return new Pubspec.parse(await file.readAsString());
+  }
+  throw new FileSystemException('No file found', p.absolute(pubspec));
 }

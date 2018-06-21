@@ -9,10 +9,9 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import '../common/common.dart';
+import 'package:_test_common/common.dart';
 
 Process process;
-Stream<String> stdErrLines;
 Stream<String> stdOutLines;
 
 final String originalBuildContent = '''
@@ -36,6 +35,7 @@ main() {
           'build_config',
           'build_resolvers',
           'build_runner',
+          'build_runner_core',
           'build_test',
           'glob'
         ]),
@@ -53,11 +53,6 @@ main() {
           .transform(const LineSplitter())
           .asBroadcastStream();
 
-      stdErrLines = process.stderr
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .asBroadcastStream();
-
       await nextSuccessfulBuild;
       await d.dir('a', [
         d.dir('web', [d.file('a.txt.copy', 'a')])
@@ -71,7 +66,7 @@ main() {
           d.dir('tool', [d.file('build.dart', '$originalBuildContent\n')])
         ]).create();
 
-        await nextStdErrLine('Terminating builds due to build script update');
+        await nextStdOutLine('Terminating builds due to build script update');
         expect(await process.exitCode, equals(0));
       });
     });
@@ -105,5 +100,5 @@ main() {
 Future get nextSuccessfulBuild =>
     stdOutLines.firstWhere((line) => line.contains('Succeeded after'));
 
-Future nextStdErrLine(String message) =>
-    stdErrLines.firstWhere((line) => line.contains(message));
+Future nextStdOutLine(String message) =>
+    stdOutLines.firstWhere((line) => line.contains(message));

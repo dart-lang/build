@@ -16,5 +16,5 @@ targets:
           - test/hello_world_custom_html_test.dart
           - test/hello_world_custom_html_test.dart.browser_test.dart
           - test/other_test.dart.browser_test.dart
-          - test/subdir/subdir_test.dart
-          - test/subdir/subdir_test.dart.browser_test.dart
+          - test/sub-dir/subdir_test.dart
+          - test/sub-dir/subdir_test.dart.browser_test.dart

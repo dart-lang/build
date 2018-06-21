@@ -77,9 +77,18 @@ Future<Null> main(List<String> args) async {
     stderr.writeln(new Trace.parse(trace).terse);
     if (exitCode == 0) exitCode = 1;
   });
-  await Isolate.spawnUri(
-      new Uri.file(p.absolute(scriptLocation)), args, messagePort.sendPort,
-      onExit: exitPort.sendPort, onError: errorPort.sendPort);
+  try {
+    await Isolate.spawnUri(
+        new Uri.file(p.absolute(scriptLocation)), args, messagePort.sendPort,
+        onExit: exitPort.sendPort, onError: errorPort.sendPort);
+  } on IsolateSpawnException catch (e) {
+    print(red.wrap('Failed to launch the build script. '
+        'This is likely due to a misconfigured builder definition. '
+        'See the generated script at $scriptLocation to find errors.'));
+    print(e);
+    messagePort.sendPort.send(ExitCode.config.code);
+    exitPort.sendPort.send(null);
+  }
   StreamSubscription exitCodeListener;
   exitCodeListener = messagePort.listen((isolateExitCode) {
     if (isolateExitCode is! int) {

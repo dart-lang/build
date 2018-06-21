@@ -64,7 +64,7 @@ class InMemoryAssetReader extends AssetReader
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding: utf8}) async {
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (!await canRead(id)) throw new AssetNotFoundException(id);
     assetsRead.add(id);
     return utf8.decode(assets[id]);

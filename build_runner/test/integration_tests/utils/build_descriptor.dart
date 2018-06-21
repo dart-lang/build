@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
@@ -14,7 +15,7 @@ import 'package:test/test.dart' show expect;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test_process/test_process.dart';
 
-import '../../common/sdk.dart';
+import 'package:_test_common/sdk.dart';
 
 class TestBuilderDefinition {
   final String key;
@@ -37,7 +38,7 @@ class TestBuilderDefinition {
 /// [packageWithBuilders]. In the [packageWithBuildScript] use case the ordering
 /// of the `builders` argument determines builder ordering.
 TestBuilderDefinition builder(String key, Builder builder,
-        {bool isOptional: false, List<String> requiredInputs: const []}) =>
+        {bool isOptional = false, List<String> requiredInputs = const []}) =>
     new TestBuilderDefinition(key, isOptional, builder, requiredInputs);
 
 /// Create a package in [d.sandbox] with a `buid.yaml` file exporting [builders]
@@ -48,7 +49,7 @@ TestBuilderDefinition builder(String key, Builder builder,
 /// should contain top level fields with names matching they keys in [builders]
 /// and only rely on imports to `package:build_test/build_test.dart`.
 d.Descriptor packageWithBuilders(Iterable<TestBuilderDefinition> builders,
-        {String name: 'provides_builders'}) =>
+        {String name = 'provides_builders'}) =>
     d.dir(name, [
       _pubspec(name),
       d.file('build.yaml', jsonEncode(_buildConfig(builders))),
@@ -91,6 +92,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                   'build_config',
                   'build_resolvers',
                   'build_runner',
+                  'build_runner_core',
                 ],
                 pathDependencies: new Map.fromIterable(otherPackages,
                     key: (o) => (o as d.Descriptor).name,
@@ -125,6 +127,7 @@ Future<BuildTool> packageWithBuildScript(
               'build_config',
               'build_resolvers',
               'build_runner',
+              'build_runner_core',
               'build_test'
             ]),
             d.dir('tool', [
@@ -156,6 +159,7 @@ String _buildToolFile(
     '''
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
@@ -251,11 +255,13 @@ class BuildTool {
       _executable, _baseArgs.followedBy(['serve']),
       workingDirectory: rootPackageDir));
 
-  Future<void> build([List<String> args = const []]) async {
+  Future<StreamQueue<String>> build(
+      {List<String> args = const [], int expectExitCode = 0}) async {
     var process = await TestProcess.start(
         _executable, _baseArgs.followedBy(['build']).followedBy(args).toList(),
         workingDirectory: rootPackageDir);
-    expect(await process.exitCode, 0);
+    await process.shouldExit(expectExitCode);
+    return process.stdout;
   }
 
   String get rootPackageDir => p.join(d.sandbox, 'a');
@@ -295,6 +301,7 @@ class BuildServer {
     final request = await _client.get('localhost', 8080, path);
     final response = await request.close();
     expect(response.statusCode, 404);
+    await response.drain();
   }
 
   /// Request [path] from the default server and expect it returns a 200

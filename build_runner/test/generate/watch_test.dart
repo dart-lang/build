@@ -12,14 +12,14 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
-import '../common/build_configs.dart';
-import '../common/common.dart';
-import '../common/package_graphs.dart';
+import 'package:_test_common/build_configs.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
@@ -729,8 +729,9 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
     {PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
     onLog(LogRecord record),
-    Level logLevel: Level.OFF,
+    Level logLevel = Level.OFF,
     String configKey}) {
+  onLog ??= (_) {};
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });

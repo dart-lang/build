@@ -2,16 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-export 'src/build_config.dart'
+export 'src/build_config.dart' show BuildConfig;
+export 'src/build_target.dart'
+    show BuildTarget, TargetBuilderConfig, GlobalBuilderConfig;
+export 'src/builder_definition.dart'
     show
-        AutoApply,
-        BuildConfig,
         BuilderDefinition,
-        PostProcessBuilderDefinition,
-        BuildTarget,
+        AutoApply,
         BuildTo,
-        InputSet,
-        TargetBuilderConfig,
+        PostProcessBuilderDefinition,
         TargetBuilderConfigDefaults;
+export 'src/common.dart' show runInBuildConfigZone;
+export 'src/input_set.dart' show InputSet;
 export 'src/key_normalization.dart'
     show normalizeBuilderKeyUsage, normalizeTargetKeyUsage;

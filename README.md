@@ -7,7 +7,15 @@ These packages provide libraries for generating Dart code.
 TODO: bazel_codegen
 -->
 
+[Getting started with build_runner](https://github.com/dart-lang/build/blob/master/docs/getting_started.md)
+
+[General FAQ](https://github.com/dart-lang/build/blob/master/docs/faq.md)
+
+[Windows FAQ](https://github.com/dart-lang/build/blob/master/docs/windows_faq.md)
+
 [FAQ for Builder authors](https://github.com/dart-lang/build/blob/master/docs/builder_author_faq.md).
+
+[Additional Docs](https://github.com/dart-lang/build/blob/master/docs/)
 
 ## [build](https://github.com/dart-lang/build/blob/master/build/README.md)
 
@@ -17,15 +25,6 @@ that is compatible across build systems (pub, bazel, standalone runner).
 For packages doing code generation this should generally be the only package
 against which there is a public dependency. Packages may have a dev_depenency on
 one or more of the other packages.
-
-In particular, transformers should only be exposed via a separate package, which
-has a dependency on `build_barback`. This allows core packages to not leak the
-dependency on barback and all of its transitive deps to all consumers.
-
-## [build_barback](https://github.com/dart-lang/build/blob/master/build_barback/README.md)
-
-Allows wrapping up a `Builder` as a `Transformer` so that it can be run in `pub`
-or vice-versa.
 
 ## [build_config](https://github.com/dart-lang/build/blob/master/build_config/README.md)
 
@@ -37,12 +36,10 @@ Support for discovering the sub-modules within packages and creating summaries
 of those modules. Used by `build_web_compilers` but should not be used directly
 by most users.
 
-
 ## [build_resolvers](https://github.com/dart-lang/build/blob/master/build_resolers/README.md)
 
 An implementation of the `Resolver` interface to use the analyzer during build
 steps.
-
 
 ## [build_runner](https://github.com/dart-lang/build/blob/master/build_runner/README.md)
 

@@ -5,22 +5,15 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner/src/environment/io_environment.dart';
-import 'package:build_runner/src/environment/overridable_environment.dart';
-import 'package:build_runner/src/generate/options.dart';
+import 'package:build/build.dart';
 import 'package:build_runner/src/generate/terminator.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 
-import '../asset/reader.dart';
-import '../asset/writer.dart';
 import '../logging/std_io_logging.dart';
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
-import 'build_result.dart';
-import 'build_runner.dart';
 import 'directory_watcher_factory.dart';
 import 'watch_impl.dart' as watch_impl;
 
@@ -57,12 +50,12 @@ import 'watch_impl.dart' as watch_impl;
 /// other things.
 Future<BuildResult> build(List<BuilderApplication> builders,
     {bool deleteFilesByDefault,
-    bool failOnSevere,
     bool assumeTty,
     String configKey,
     PackageGraph packageGraph,
     RunnerAssetReader reader,
     RunnerAssetWriter writer,
+    Resolvers resolvers,
     Level logLevel,
     onLog(LogRecord record),
     Stream terminateEventStream,
@@ -73,7 +66,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     bool verbose,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
-    List<String> buildDirs}) async {
+    List<String> buildDirs,
+    String logPerformanceDir}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
   var environment = new OverrideableEnvironment(
@@ -81,19 +75,22 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
-  var options = await BuildOptions.create(environment,
-      deleteFilesByDefault: deleteFilesByDefault,
-      failOnSevere: failOnSevere,
-      packageGraph: packageGraph,
-      logLevel: logLevel,
-      skipBuildScriptCheck: skipBuildScriptCheck,
-      overrideBuildConfig:
-          await findBuildConfigOverrides(packageGraph, configKey),
-      enableLowResourcesMode: enableLowResourcesMode,
-      outputMap: outputMap,
-      trackPerformance: trackPerformance,
-      verbose: verbose,
-      buildDirs: buildDirs);
+  var options = await BuildOptions.create(
+    environment,
+    deleteFilesByDefault: deleteFilesByDefault,
+    packageGraph: packageGraph,
+    logLevel: logLevel,
+    skipBuildScriptCheck: skipBuildScriptCheck,
+    overrideBuildConfig:
+        await findBuildConfigOverrides(packageGraph, configKey),
+    enableLowResourcesMode: enableLowResourcesMode,
+    outputMap: outputMap,
+    trackPerformance: trackPerformance,
+    verbose: verbose,
+    buildDirs: buildDirs,
+    logPerformanceDir: logPerformanceDir,
+    resolvers: resolvers,
+  );
   var terminator = new Terminator(terminateEventStream);
   try {
     var build = await BuildRunner.create(
@@ -138,12 +135,12 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// sources and built sources contained in the provided path.
 Future<ServeHandler> watch(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
-        bool failOnSevere,
         bool assumeTty,
         String configKey,
         PackageGraph packageGraph,
         RunnerAssetReader reader,
         RunnerAssetWriter writer,
+        Resolvers resolvers,
         Level logLevel,
         onLog(LogRecord record),
         Duration debounceDelay,
@@ -156,16 +153,17 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool verbose,
         bool isReleaseBuild,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
-        List<String> buildDirs}) =>
+        List<String> buildDirs,
+        String logPerformanceDir}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,
       deleteFilesByDefault: deleteFilesByDefault,
-      failOnSevere: failOnSevere,
       configKey: configKey,
       packageGraph: packageGraph,
       reader: reader,
       writer: writer,
+      resolvers: resolvers,
       logLevel: logLevel,
       onLog: onLog,
       debounceDelay: debounceDelay,
@@ -179,4 +177,5 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
       buildDirs: buildDirs,
+      logPerformanceDir: logPerformanceDir,
     );

@@ -50,11 +50,11 @@ class WebEntrypointBuilder implements Builder {
   final bool enableSyncAsync;
 
   const WebEntrypointBuilder(this.webCompiler,
-      {this.dart2JsArgs: const [],
-      this.useKernel: false,
-      this.buildRootAppSummary: false,
-      this.ignoreCastFailures: false,
-      this.enableSyncAsync: enableSyncAsyncDefault});
+      {this.dart2JsArgs = const [],
+      this.useKernel = false,
+      this.buildRootAppSummary = false,
+      this.ignoreCastFailures = false,
+      this.enableSyncAsync = enableSyncAsyncDefault});
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
     validateOptions(
@@ -77,7 +77,8 @@ class WebEntrypointBuilder implements Builder {
             'Only `dartdevc` and `dart2js` are supported.');
     }
 
-    var dart2JsArgs = options.config[_dart2jsArgs] ?? const <String>[];
+    var dart2JsArgs =
+        options.config[_dart2jsArgs]?.cast<String>() ?? const <String>[];
     if (dart2JsArgs is! List<String>) {
       throw new ArgumentError.value(dart2JsArgs, _dart2jsArgs,
           'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');

@@ -30,7 +30,6 @@ class WatchCommand extends BuildRunnerCommand {
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
-      failOnSevere: options.failOnSevere,
       configKey: options.configKey,
       assumeTty: options.assumeTty,
       outputMap: options.outputMap,
@@ -41,6 +40,7 @@ class WatchCommand extends BuildRunnerCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       buildDirs: options.buildDirs,
+      logPerformanceDir: options.logPerformanceDir,
     );
     if (handler == null) return ExitCode.config.code;
 

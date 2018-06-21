@@ -28,7 +28,7 @@ import 'src/run_phases.dart';
 /// provided default content to satisfy bazel's requirement that we generate all
 /// declared outputs.
 Future bazelGenerateMulti(List<BuilderFactory> builders, List<String> args,
-    {Map<String, String> defaultContent: const {}}) {
+    {Map<String, String> defaultContent = const {}}) {
   var options = new StartupArgs.parse(args);
   return Chain.capture(() {
     if (options.persistentWorker) {

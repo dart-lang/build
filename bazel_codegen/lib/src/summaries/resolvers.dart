@@ -6,7 +6,8 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/src/generated/engine.dart' show AnalysisContext;
+import 'package:analyzer/src/generated/engine.dart'
+    show AnalysisContext, AnalysisEngine;
 import 'package:analyzer/src/generated/source.dart' show SourceKind;
 import 'package:build/build.dart';
 
@@ -55,6 +56,9 @@ class SummaryResolvers implements Resolvers {
     var assets = findAssetIds(sourceFiles, _packagePath, _packageMap);
     await _assetResolver.addAssets(assets, readAsset);
   }
+
+  @override
+  void reset() => AnalysisEngine.instance.clearCaches();
 }
 
 /// a [Resolver] backed by an [AnalysisContext].

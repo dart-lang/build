@@ -6,15 +6,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:logging/logging.dart';
 
-import '../asset/file_based.dart';
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
-import '../logging/logging.dart';
 import '../logging/std_io_logging.dart';
-import '../package_graph/package_graph.dart';
-import '../util/constants.dart';
 
 class CleanCommand extends Command<int> {
   @override

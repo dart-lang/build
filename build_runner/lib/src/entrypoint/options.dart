@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 const assumeTtyOption = 'assume-tty';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
+const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
 const lowResourcesModeOption = 'low-resources-mode';
 const failOnSevereOption = 'fail-on-severe';
@@ -39,9 +40,6 @@ class SharedOptions {
   /// This option can be set to `true` to skip this prompt.
   final bool deleteFilesByDefault;
 
-  /// Any log of type `SEVERE` should fail the current build.
-  final bool failOnSevere;
-
   final bool enableLowResourcesMode;
 
   /// Read `build.$configKey.yaml` instead of `build.yaml`.
@@ -54,6 +52,9 @@ class SharedOptions {
 
   /// Enables performance tracking and the `/$perf` page.
   final bool trackPerformance;
+
+  /// A directory to log performance information to.
+  String logPerformanceDir;
 
   /// Check digest of imports to the build script to invalidate the build.
   final bool skipBuildScriptCheck;
@@ -75,7 +76,6 @@ class SharedOptions {
   SharedOptions._({
     @required this.assumeTty,
     @required this.deleteFilesByDefault,
-    @required this.failOnSevere,
     @required this.enableLowResourcesMode,
     @required this.configKey,
     @required this.outputMap,
@@ -85,6 +85,7 @@ class SharedOptions {
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
     @required this.buildDirs,
+    @required this.logPerformanceDir,
   });
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
@@ -104,7 +105,6 @@ class SharedOptions {
     return new SharedOptions._(
       assumeTty: argResults[assumeTtyOption] as bool,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
-      failOnSevere: argResults[failOnSevereOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
       outputMap: outputMap,
@@ -115,6 +115,7 @@ class SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       buildDirs: buildDirs.toList(),
+      logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
 }
@@ -131,7 +132,6 @@ class ServeOptions extends SharedOptions {
     @required this.serveTargets,
     @required bool assumeTty,
     @required bool deleteFilesByDefault,
-    @required bool failOnSevere,
     @required bool enableLowResourcesMode,
     @required String configKey,
     @required Map<String, String> outputMap,
@@ -141,10 +141,10 @@ class ServeOptions extends SharedOptions {
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
     @required List<String> buildDirs,
+    @required String logPerformanceDir,
   }) : super._(
           assumeTty: assumeTty,
           deleteFilesByDefault: deleteFilesByDefault,
-          failOnSevere: failOnSevere,
           enableLowResourcesMode: enableLowResourcesMode,
           configKey: configKey,
           outputMap: outputMap,
@@ -154,6 +154,7 @@ class ServeOptions extends SharedOptions {
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
           buildDirs: buildDirs,
+          logPerformanceDir: logPerformanceDir,
         );
 
   factory ServeOptions.fromParsedArgs(ArgResults argResults,
@@ -194,7 +195,6 @@ class ServeOptions extends SharedOptions {
       serveTargets: serveTargets,
       assumeTty: argResults[assumeTtyOption] as bool,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
-      failOnSevere: argResults[failOnSevereOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
       outputMap: _parseOutputMap(argResults),
@@ -205,6 +205,7 @@ class ServeOptions extends SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       buildDirs: buildDirs.toList(),
+      logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
 }
@@ -271,16 +272,27 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
   var outputs = argResults[outputOption] as List<String>;
   if (outputs == null) return null;
   var result = <String, String>{};
+
+  void checkExisting(String outputDir) {
+    if (result.containsKey(outputDir)) {
+      throw new ArgumentError.value(outputs.join(' '), '--output',
+          'Duplicate output directories are not allowed, got');
+    }
+  }
+
   for (var option in argResults[outputOption] as List<String>) {
     var split = option.split(':');
     if (split.length == 1) {
       var output = split.first;
+      checkExisting(output);
       result[output] = null;
     } else if (split.length >= 2) {
       var output = split.sublist(1).join(':');
+      checkExisting(output);
       var root = split.first;
       if (root.contains('/')) {
-        throw 'Input root can not be nested: $option';
+        throw new ArgumentError.value(
+            option, '--output', 'Input root can not be nested');
       }
       result[output] = split.first;
     }

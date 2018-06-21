@@ -1,0 +1,25 @@
+name: _test_common
+version: 0.1.0
+description: Test infra for writing build tests. Is not published.
+author: Dart Team <misc@dartlang.org>
+
+environment:
+  sdk: '>=2.0.0-dev.54 <2.0.0'
+
+dependencies:
+  build: any
+  build_config: any
+  build_runner_core: any
+  build_test: any
+  test_descriptor: ^1.0.0
+  test: ^0.12.42
+
+dependency_overrides:
+  build:
+    path: ../build
+  build_config:
+    path: ../build_config
+  build_runner_core:
+    path: ../build_runner_core
+  build_test:
+    path: ../build_test

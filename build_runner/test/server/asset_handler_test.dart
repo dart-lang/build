@@ -7,13 +7,13 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/asset/finalized_reader.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner/src/server/server.dart';
 
-import '../common/common.dart';
+import 'package:_test_common/common.dart';
 
 void main() {
   AssetHandler handler;
@@ -30,7 +30,7 @@ void main() {
     handler = new AssetHandler(reader, 'a');
   });
 
-  void _addAsset(String id, String content, {bool deleted: false}) {
+  void _addAsset(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest('a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
@@ -104,6 +104,6 @@ void main() {
     ));
     var response = await handler.handle(
         new Request('GET', Uri.parse('http://server.com/main.ddc.js')), 'web');
-    expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(response.statusCode, HttpStatus.internalServerError);
   });
 }

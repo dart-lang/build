@@ -15,7 +15,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import '../common/common.dart';
+import 'package:_test_common/common.dart';
 
 main() {
   setUpAll(() async {
@@ -26,6 +26,7 @@ main() {
           'build',
           'build_config',
           'build_runner',
+          'build_runner_core',
           'build_test',
           'test',
         ],
@@ -61,12 +62,19 @@ main() {
     expect(new File(path).existsSync(), exists);
   }
 
-  Future<int> runSingleBuild(String command, List<String> args) async {
+  Future<int> runSingleBuild(String command, List<String> args,
+      {StreamSink<String> stdoutSink}) async {
     var process = await startPub('a', 'run', args: args);
+    var stdoutLines = process.stdout
+        .transform(new Utf8Decoder())
+        .transform(new LineSplitter())
+        .asBroadcastStream();
+    stdoutLines.listen((line) {
+      stdoutSink?.add(line);
+      printOnFailure(line);
+    });
+    var queue = new StreamQueue(stdoutLines);
     if (command == 'serve' || command == 'watch') {
-      var queue = new StreamQueue(process.stdout
-          .transform(new Utf8Decoder())
-          .transform(new LineSplitter()));
       while (await queue.hasNext) {
         var nextLine = (await queue.next).toLowerCase();
         if (nextLine.contains('succeeded after')) {
@@ -81,7 +89,8 @@ main() {
       }
       throw new StateError('Build process exited without success or failure.');
     }
-    return await process.exitCode;
+    var result = await process.exitCode;
+    return result;
   }
 
   group('Building explicit output directories', () {
@@ -134,5 +143,35 @@ main() {
     expect(await runSingleBuild(command, args), ExitCode.success.code);
     expectOutput('web/main.dart.js', exists: false);
     expectOutput('test/hello_test.dart.js', exists: true);
+  });
+
+  test('Duplicate output directories give a nice error', () async {
+    var command = 'build';
+    var args = ['build_runner', command, '-o', 'web:build', '-o', 'test:build'];
+    var stdoutController = new StreamController<String>();
+    expect(
+        await runSingleBuild(command, args, stdoutSink: stdoutController.sink),
+        ExitCode.usage.code);
+    expect(
+        stdoutController.stream,
+        emitsThrough(contains(
+            'Invalid argument (--output): Duplicate output directories are not '
+            'allowed, got: "web:build test:build"')));
+    await stdoutController.close();
+  });
+
+  test('Build directories have to be top level dirs', () async {
+    var command = 'build';
+    var args = ['build_runner', command, '-o', 'foo/bar:build'];
+    var stdoutController = new StreamController<String>();
+    expect(
+        await runSingleBuild(command, args, stdoutSink: stdoutController.sink),
+        ExitCode.usage.code);
+    expect(
+        stdoutController.stream,
+        emitsThrough(contains(
+            'Invalid argument (--output): Input root can not be nested: '
+            '"foo/bar:build"')));
+    await stdoutController.close();
   });
 }

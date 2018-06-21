@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+import 'dart:convert';
 import 'dart:io' show HttpClient, HttpHeaders, HttpStatus;
 
 import 'package:path/path.dart' as p;
@@ -11,14 +12,17 @@ import 'package:test/test.dart';
 import 'common/utils.dart';
 
 void main() {
+  HttpClient httpClient;
   setUpAll(() async {
     // These tests depend on running `test` while a `serve` is ongoing.
     await startServer(
         ensureCleanBuild: true, buildArgs: ['--skip-build-script-check']);
+    httpClient = new HttpClient();
   });
 
   tearDownAll(() async {
     await stopServer(cleanUp: true);
+    httpClient.close();
   });
 
   test('Doesn\'t compile submodules into the root module', () {
@@ -30,6 +34,15 @@ void main() {
     await expectTestsPass(usePrecompiled: false);
   }, skip: 'TODO: Get non-custom html tests passing with pub serve');
 
+  test('Serves a directory list when it fails to fallback on index.html',
+      () async {
+    var request = await httpClient.get('localhost', 8080, 'dir_without_index/');
+    var firstResponse = await request.close();
+    expect(firstResponse.statusCode, HttpStatus.notFound);
+    expect(await utf8.decodeStream(firstResponse),
+        contains('dir_without_index/hello.txt'));
+  });
+
   group('File changes', () {
     setUp(() async {
       ensureCleanGitClient();
@@ -37,13 +50,12 @@ void main() {
 
     test('ddc errors can be fixed', () async {
       var path = p.join('test', 'common', 'message.dart');
-      var error = nextStdErrLine('Error compiling dartdevc module:'
+      var error = nextStdOutLine('Error compiling dartdevc module:'
           '_test|test/common/message.ddc.js');
-      var nextBuild = nextSuccessfulBuild;
+      var nextBuild = nextFailedBuild;
       await replaceAllInFile(path, "'Hello World!'", '1');
       await error;
       await nextBuild;
-      await expectTestsFail();
 
       nextBuild = nextSuccessfulBuild;
       await replaceAllInFile(path, '1', "'Hello World!'");
@@ -64,36 +76,34 @@ void main() {
     });
 
     test('can hit the server and get cached results', () async {
-      var httpClient = new HttpClient();
       var firstRequest =
           await httpClient.get('localhost', 8080, 'main.dart.js');
       var firstResponse = await firstRequest.close();
-      expect(firstResponse.statusCode, HttpStatus.OK);
-      var etag = firstResponse.headers[HttpHeaders.ETAG];
+      expect(firstResponse.statusCode, HttpStatus.ok);
+      var etag = firstResponse.headers[HttpHeaders.etagHeader];
       expect(etag, isNotNull);
 
       var cachedRequest =
           await httpClient.get('localhost', 8080, 'main.dart.js');
-      cachedRequest.headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+      cachedRequest.headers.add(HttpHeaders.ifNoneMatchHeader, etag);
       var cachedResponse = await cachedRequest.close();
-      expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+      expect(cachedResponse.statusCode, HttpStatus.notModified);
     });
 
     group('regression tests', () {
       test('can get changes to files not read during build', () async {
-        var httpClient = new HttpClient();
         var firstRequest =
             await httpClient.get('localhost', 8080, 'index.html');
         var firstResponse = await firstRequest.close();
-        expect(firstResponse.statusCode, HttpStatus.OK);
-        var etag = firstResponse.headers[HttpHeaders.ETAG];
+        expect(firstResponse.statusCode, HttpStatus.ok);
+        var etag = firstResponse.headers[HttpHeaders.etagHeader];
         expect(etag, isNotNull);
 
         var cachedRequest =
             await httpClient.get('localhost', 8080, 'index.html')
-              ..headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+              ..headers.add(HttpHeaders.ifNoneMatchHeader, etag);
         var cachedResponse = await cachedRequest.close();
-        expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+        expect(cachedResponse.statusCode, HttpStatus.notModified);
 
         var nextBuild = nextSuccessfulBuild;
         await replaceAllInFile(
@@ -101,10 +111,10 @@ void main() {
         await nextBuild;
         var changedRequest =
             await httpClient.get('localhost', 8080, 'index.html')
-              ..headers.add(HttpHeaders.IF_NONE_MATCH, etag);
+              ..headers.add(HttpHeaders.ifNoneMatchHeader, etag);
         var changedResponse = await changedRequest.close();
-        expect(changedResponse.statusCode, HttpStatus.OK);
-        var newEtag = changedResponse.headers[HttpHeaders.ETAG];
+        expect(changedResponse.statusCode, HttpStatus.ok);
+        var newEtag = changedResponse.headers[HttpHeaders.etagHeader];
         expect(newEtag, isNot(etag));
       });
     });

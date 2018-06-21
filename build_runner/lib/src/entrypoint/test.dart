@@ -6,12 +6,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
 import '../generate/build.dart';
-import '../generate/build_result.dart';
-import '../package_graph/package_graph.dart';
-import '../util/constants.dart';
 import 'base_command.dart';
 import 'options.dart';
 
@@ -83,7 +81,6 @@ class TestCommand extends BuildRunnerCommand {
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
-        failOnSevere: options.failOnSevere,
         configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputMap: outputMap,
@@ -94,6 +91,7 @@ class TestCommand extends BuildRunnerCommand {
         builderConfigOverrides: options.builderConfigOverrides,
         isReleaseBuild: options.isReleaseBuild,
         buildDirs: options.buildDirs,
+        logPerformanceDir: options.logPerformanceDir,
       );
 
       if (result.status == BuildStatus.failure) {
@@ -101,12 +99,7 @@ class TestCommand extends BuildRunnerCommand {
         return result.failureType.exitCode;
       }
 
-      var testExitCode = await _runTests(tempPath);
-      if (testExitCode != 0) {
-        // No need to log - should see failed tests in the console.
-        exitCode = testExitCode;
-      }
-      return testExitCode;
+      return await _runTests(tempPath);
     } on _BuildTestDependencyError catch (e) {
       stdout.writeln(e);
       return ExitCode.config.code;

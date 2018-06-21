@@ -10,17 +10,16 @@ import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
-import 'package:build_runner/src/asset/finalized_reader.dart';
-import 'package:build_runner/src/asset_graph/graph.dart';
-import 'package:build_runner/src/asset_graph/node.dart';
-import 'package:build_runner/src/asset_graph/optional_output_tracker.dart';
-import 'package:build_runner/src/generate/build_result.dart';
-import 'package:build_runner/src/generate/performance_tracker.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
+import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
 import 'package:build_runner/src/server/server.dart';
 
-import '../common/common.dart';
-import '../common/package_graphs.dart';
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 
 void main() {
   ServeHandler serveHandler;
@@ -43,7 +42,7 @@ void main() {
         new Future.value(new BuildResult(BuildStatus.success, [])));
   });
 
-  void _addSource(String id, String content, {bool deleted: false}) {
+  void _addSource(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest('a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
@@ -64,14 +63,14 @@ void main() {
     var handler = serveHandler.handlerFor('web');
     var requestUri = Uri.parse('http://server.com/index.html');
     var firstResponse = await handler(new Request('GET', requestUri));
-    var etag = firstResponse.headers[HttpHeaders.ETAG];
+    var etag = firstResponse.headers[HttpHeaders.etagHeader];
     expect(etag, isNotNull);
-    expect(firstResponse.statusCode, HttpStatus.OK);
+    expect(firstResponse.statusCode, HttpStatus.ok);
     expect(await firstResponse.readAsString(), 'content');
 
     var cachedResponse = await handler(new Request('GET', requestUri,
-        headers: {HttpHeaders.IF_NONE_MATCH: etag}));
-    expect(cachedResponse.statusCode, HttpStatus.NOT_MODIFIED);
+        headers: {HttpHeaders.ifNoneMatchHeader: etag}));
+    expect(cachedResponse.statusCode, HttpStatus.notModified);
     expect(await cachedResponse.readAsString(), isEmpty);
   });
 
@@ -82,8 +81,6 @@ void main() {
   group('build failures', () {
     setUp(() async {
       _addSource('a|web/index.html', '');
-      var fakeException = 'Really bad error omg!';
-      var fakeStackTrace = 'My cool stack trace!';
       assetGraph.add(new GeneratedAssetNode(
         makeAssetId('a|web/main.ddc.js'),
         builderOptionsId: null,
@@ -94,24 +91,22 @@ void main() {
         isFailure: true,
         primaryInput: null,
       ));
-      watchImpl.addFutureResult(new Future.value(new BuildResult(
-          BuildStatus.failure, [],
-          exception: fakeException,
-          stackTrace: new StackTrace.fromString(fakeStackTrace))));
+      watchImpl.addFutureResult(
+          new Future.value(new BuildResult(BuildStatus.failure, [])));
     });
 
     test('serves successful assets', () async {
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse('http://server.com/index.html')));
 
-      expect(response.statusCode, HttpStatus.OK);
+      expect(response.statusCode, HttpStatus.ok);
     });
 
     test('rejects requests for failed assets', () async {
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse('http://server.com/main.ddc.js')));
 
-      expect(response.statusCode, HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(response.statusCode, HttpStatus.internalServerError);
     });
 
     test('logs rejected requests', () async {
@@ -140,30 +135,30 @@ void main() {
     test('serves some sort of page if enabled', () async {
       var tracker = new BuildPerformanceTracker()..start();
       var actionTracker = tracker.startBuilderAction(
-          makeAssetId('a|web/a.txt'), new TestBuilder());
+          makeAssetId('a|web/a.txt'), 'test_builder');
       actionTracker.track(() {}, 'SomeLabel');
       tracker.stop();
       actionTracker.stop();
       watchImpl.addFutureResult(new Future.value(
           new BuildResult(BuildStatus.success, [], performance: tracker)));
-      await new Future.value();
+      await new Future(() {});
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse(r'http://server.com/$perf')));
 
-      expect(response.statusCode, HttpStatus.OK);
+      expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(),
-          allOf(contains('TestBuilder:a|web/a.txt'), contains('SomeLabel')));
+          allOf(contains('test_builder:a|web/a.txt'), contains('SomeLabel')));
     });
 
     test('serves an error page if not enabled', () async {
       watchImpl.addFutureResult(new Future.value(new BuildResult(
           BuildStatus.success, [],
           performance: new BuildPerformanceTracker.noOp())));
-      await new Future.value();
+      await new Future(() {});
       var response = await serveHandler.handlerFor('web')(
           new Request('GET', Uri.parse(r'http://server.com/$perf')));
 
-      expect(response.statusCode, HttpStatus.OK);
+      expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(), contains('--track-performance'));
     });
   });
@@ -199,17 +194,14 @@ class MockWatchImpl implements WatchImpl {
   }
 
   MockWatchImpl(this.reader, this.packageGraph, this.assetGraph) {
+    var firstBuild = new Completer<BuildResult>();
+    _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {
-      if (_currentBuild != null) {
-        _currentBuild = _currentBuild.then((_) => futureBuildResult);
-      } else {
-        _currentBuild = futureBuildResult;
+      if (!firstBuild.isCompleted) {
+        firstBuild.complete(futureBuildResult);
       }
-
-      _currentBuild.then((result) {
-        _buildResultsController.add(result);
-        _currentBuild = null;
-      });
+      _currentBuild = _currentBuild.then((_) => futureBuildResult);
+      _currentBuild.then(_buildResultsController.add);
     });
   }
 

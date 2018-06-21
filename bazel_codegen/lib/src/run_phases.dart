@@ -6,7 +6,7 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
-import 'package:build_barback/build_barback.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:path/path.dart' as p;
 
 import 'args/build_args.dart';
@@ -117,7 +117,7 @@ Future<IOSinkLogHandle> _runBuilders(
     BuildArgs buildArgs,
     Map<String, String> defaultContent,
     CodegenTiming timings,
-    {bool isWorker: false,
+    {bool isWorker = false,
     Set<String> validInputs}) async {
   assert(timings.isRunning);
 
@@ -145,7 +145,7 @@ Future<IOSinkLogHandle> _runBuilders(
     resolvers = new SummaryResolvers(summaryOptions, packageMap);
     builderArgs = summaryOptions.additionalArgs;
   } else {
-    resolvers = const BarbackResolvers();
+    resolvers = new AnalyzerResolvers();
     builderArgs = buildArgs.additionalArgs;
   }
   await runBuilders(

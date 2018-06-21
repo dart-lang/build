@@ -6,12 +6,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:http_multi_server/http_multi_server.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
 
 import '../generate/build.dart';
-import '../package_graph/package_graph.dart';
 import '../server/server.dart';
 import 'options.dart';
 import 'watch.dart';
@@ -50,7 +50,6 @@ class ServeCommand extends WatchCommand {
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
-      failOnSevere: options.failOnSevere,
       configKey: options.configKey,
       assumeTty: options.assumeTty,
       outputMap: options.outputMap,
@@ -61,6 +60,7 @@ class ServeCommand extends WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       buildDirs: options.buildDirs,
+      logPerformanceDir: options.logPerformanceDir,
     );
 
     if (handler == null) return ExitCode.config.code;

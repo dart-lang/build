@@ -27,7 +27,7 @@ class IOSinkLogHandle {
   int _errorCount = 0;
   int get errorCount => _errorCount;
 
-  IOSinkLogHandle(IOSink ioSink, {Level printLevel, bool printToStdErr: true})
+  IOSinkLogHandle(IOSink ioSink, {Level printLevel, bool printToStdErr = true})
       : _outSink = ioSink,
         logger = _createLogger(),
         printedMessages = <String>[] {
@@ -60,7 +60,7 @@ class IOSinkLogHandle {
   }
 
   factory IOSinkLogHandle.toFile(String logFile,
-          {Level printLevel, bool printToStdErr: true}) =>
+          {Level printLevel, bool printToStdErr = true}) =>
       new IOSinkLogHandle(new File(logFile).openWrite(),
           printLevel: printLevel, printToStdErr: printToStdErr);
 

@@ -45,6 +45,10 @@ jobs:
       env: PKG="_test"
       dart: be/raw/latest
     - stage: analyze_and_format
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="_test_common"
+      dart: dev
+    - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="bazel_codegen"
       dart: dev
@@ -59,14 +63,6 @@ jobs:
     - stage: unit_test
       script: ./tool/travis.sh test_4
       env: PKG="build"
-      dart: dev
-    - stage: analyze_and_format
-      script: ./tool/travis.sh dartfmt dartanalyzer
-      env: PKG="build_barback"
-      dart: dev
-    - stage: unit_test
-      script: ./tool/travis.sh test_4
-      env: PKG="build_barback"
       dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
@@ -106,6 +102,14 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="build_runner_core"
+      dart: dev
+    - stage: unit_test
+      script: ./tool/travis.sh test_4
+      env: PKG="build_runner_core"
+      dart: dev
+    - stage: analyze_and_format
+      script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_test"
       dart: dev
     - stage: unit_test
@@ -117,7 +121,7 @@ jobs:
       env: PKG="build_web_compilers"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_7
+      script: ./tool/travis.sh test_7 test_8
       env: PKG="build_web_compilers"
       dart: dev
     - stage: analyze_and_format

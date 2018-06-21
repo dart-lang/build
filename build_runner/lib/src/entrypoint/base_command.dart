@@ -4,9 +4,8 @@
 
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
-import '../package_graph/apply_builders.dart';
-import '../package_graph/package_graph.dart';
 import 'options.dart';
 import 'runner.dart';
 
@@ -48,21 +47,25 @@ abstract class BuildRunnerCommand extends Command<int> {
       ..addOption(configOption,
           help: 'Read `build.<name>.yaml` instead of the default `build.yaml`',
           abbr: 'c')
-      ..addFlag(failOnSevereOption,
-          help: 'Whether to consider the build a failure on an error logged.',
+      ..addFlag('fail-on-severe',
+          help: 'Deprecated argument - always enabled',
           negatable: true,
-          defaultsTo: false)
+          defaultsTo: true,
+          hide: true)
       ..addFlag(trackPerformanceOption,
           help: r'Enables performance tracking and the /$perf page.',
           negatable: true,
           defaultsTo: false)
+      ..addOption(logPerformanceOption,
+          help: 'A directory to write performance logs to, must be in the '
+              'current package. Implies `--track-performance`.')
       ..addFlag(skipBuildScriptCheckOption,
           help: r'Skip validation for the digests of files imported by the '
               'build script.',
           hide: true,
           defaultsTo: false)
       ..addMultiOption(outputOption,
-          help: 'A directory to write the result of a build to. Or a mapping '
+          help: 'A directory to copy the fully built package to. Or a mapping '
               'from a top-level directory in the package to the directory to '
               'write a filtered build output to. For example "web:deploy".',
           abbr: 'o')

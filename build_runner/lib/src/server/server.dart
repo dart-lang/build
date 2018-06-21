@@ -6,16 +6,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 
-import '../asset/finalized_reader.dart';
-import '../generate/build_result.dart';
-import '../generate/performance_tracker.dart';
 import '../generate/watch_impl.dart';
-import '../logging/human_readable_duration.dart';
 import 'asset_graph_handler.dart';
 import 'path_to_asset_id.dart';
 
@@ -86,7 +84,7 @@ class ServeHandler implements BuildState {
     return handler;
   }
 
-  FutureOr<shelf.Response> _blockOnCurrentBuild(_) async {
+  Future<shelf.Response> _blockOnCurrentBuild(_) async {
     await currentBuild;
     return new shelf.Response.notFound('');
   }
@@ -98,7 +96,7 @@ class ServeHandler implements BuildState {
     }
     return new shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
-        headers: {HttpHeaders.CONTENT_TYPE: 'text/html'});
+        headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
 
   void _warnForEmptyDirectory(String rootDir) {
@@ -120,17 +118,22 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<shelf.Response> handle(shelf.Request request, String rootDir) {
-    var pathSegments =
-        (request.url.path.endsWith('/') || request.url.path.isEmpty)
-            ? request.url.pathSegments.followedBy(const ['index.html']).toList()
-            : request.url.pathSegments;
-    return _handle(
-        request.headers, pathToAssetId(_rootPackage, rootDir, pathSegments));
-  }
+  Future<shelf.Response> handle(shelf.Request request, String rootDir) =>
+      (request.url.path.endsWith('/') || request.url.path.isEmpty)
+          ? _handle(
+              request.headers,
+              pathToAssetId(
+                  _rootPackage,
+                  rootDir,
+                  request.url.pathSegments
+                      .followedBy(const ['index.html']).toList()),
+              fallbackToDirectoryList: true)
+          : _handle(request.headers,
+              pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
 
   Future<shelf.Response> _handle(
-      Map<String, String> requestHeaders, AssetId assetId) async {
+      Map<String, String> requestHeaders, AssetId assetId,
+      {bool fallbackToDirectoryList = false}) async {
     try {
       if (!await _reader.canRead(assetId)) {
         var reason = await _reader.unreadableReason(assetId);
@@ -140,6 +143,12 @@ class AssetHandler {
                 body: 'Build failed for $assetId');
           case UnreadableReason.notOutput:
             return new shelf.Response.notFound('$assetId was not output');
+          case UnreadableReason.notFound:
+            if (fallbackToDirectoryList) {
+              return new shelf.Response.notFound(
+                  await _findDirectoryList(assetId));
+            }
+            return new shelf.Response.notFound('Not Found');
           default:
             return new shelf.Response.notFound('Not Found');
         }
@@ -150,24 +159,35 @@ class AssetHandler {
 
     var etag = base64.encode((await _reader.digest(assetId)).bytes);
     var headers = {
-      HttpHeaders.CONTENT_TYPE: _typeResolver.lookup(assetId.path),
-      HttpHeaders.ETAG: etag,
+      HttpHeaders.contentTypeHeader: _typeResolver.lookup(assetId.path),
+      HttpHeaders.etagHeader: etag,
       // We always want this revalidated, which requires specifying both
       // max-age=0 and must-revalidate.
       //
       // See spec https://goo.gl/Lhvttg for more info about this header.
-      HttpHeaders.CACHE_CONTROL: 'max-age=0, must-revalidate',
+      HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
     };
 
-    if (requestHeaders[HttpHeaders.IF_NONE_MATCH] == etag) {
+    if (requestHeaders[HttpHeaders.ifNoneMatchHeader] == etag) {
       // This behavior is still useful for cases where a file is hit
       // without a cache-busting query string.
       return new shelf.Response.notModified(headers: headers);
     }
 
     var bytes = await _reader.readAsBytes(assetId);
-    headers[HttpHeaders.CONTENT_LENGTH] = '${bytes.length}';
+    headers[HttpHeaders.contentLengthHeader] = '${bytes.length}';
     return new shelf.Response.ok(bytes, headers: headers);
+  }
+
+  Future<String> _findDirectoryList(AssetId from) async {
+    var directoryPath = p.url.dirname(from.path);
+    var glob = p.url.join(directoryPath, '*');
+    var result =
+        await _reader.findAssets(new Glob(glob)).map((a) => a.path).toList();
+    return (result.isEmpty)
+        ? 'Could not find ${from.path} or any files in $directoryPath.'
+        : 'Could not find ${from.path}. $directoryPath contains:\n'
+        '${result.join('\n')}';
   }
 }
 
@@ -179,7 +199,7 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
           !action.phases.any((phase) => phase.label == 'Build')) {
         continue;
       }
-      var actionKey = '${action.builder.runtimeType}:${action.primaryInput}';
+      var actionKey = '${action.builderKey}:${action.primaryInput}';
       for (var phase in action.phases) {
         var start = phase.startTime.millisecondsSinceEpoch -
             performance.startTime.millisecondsSinceEpoch;
