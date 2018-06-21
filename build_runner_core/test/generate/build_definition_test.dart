@@ -87,7 +87,9 @@ targets:
       ).create();
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       var packageGraph = new PackageGraph.forPath(pkgARoot);
-      environment = new IOEnvironment(packageGraph, null);
+      environment = new OverrideableEnvironment(
+          new IOEnvironment(packageGraph, null),
+          onLog: (_) {});
       options = await BuildOptions.create(environment,
           packageGraph: packageGraph,
           logLevel: Level.OFF,
@@ -609,6 +611,24 @@ targets:
             options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes
                 .map((glob) => glob.pattern),
             defaultRootPackageWhitelist);
+      });
+
+      test('allows a target config with empty sources list', () async {
+        var rootPkg = options.packageGraph.root.name;
+        options = await BuildOptions.create(environment,
+            packageGraph: options.packageGraph,
+            overrideBuildConfig: {
+              rootPkg: new BuildConfig.fromMap(rootPkg, [], {
+                'targets': {
+                  'another': {},
+                  '\$default': {
+                    'sources': {'include': []}
+                  }
+                }
+              })
+            });
+        expect(BuildDefinition.prepareWorkspace(environment, options, []),
+            completes);
       });
     });
   });
