@@ -72,7 +72,7 @@ class AssetId implements Comparable<AssetId> {
           'An AssetId "from" must be specified to resolve a relative URI');
     }
     return new AssetId(
-        p.normalize(from.package), p.url.join(p.dirname(from.path), uri));
+        p.url.normalize(from.package), p.url.join(p.url.dirname(from.path), uri));
   }
 
   /// Parses an [AssetId] string of the form "package|path/to/asset.txt".
