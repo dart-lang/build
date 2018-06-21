@@ -136,6 +136,9 @@ main(List<String> args) async {
           ]),
           d.dir('tool', [
             d.file('build.dart', '''
+import 'dart:async';
+
+import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -533,7 +536,7 @@ main() async {
       expect(result.exitCode, isNot(0),
           reason: 'build should fail due to conflicting outputs');
       expect(
-          result.stderr,
+          result.stdout,
           allOf(contains('Conflicting outputs'),
               contains('web/a.txt.copy.copy')));
     });

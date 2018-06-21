@@ -16,7 +16,7 @@ void main() {
             'error.');
     var result = await asyncResult;
     expect(
-        result.stderr, contains('Throwing on purpose cause you asked for it!'),
+        result.stdout, contains('Throwing on purpose cause you asked for it!'),
         reason: 'Exceptions from the isolate should be logged.');
     expect(result.exitCode, isNot(0),
         reason:
