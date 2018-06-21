@@ -211,7 +211,7 @@ String _buildScriptImport(String import) {
         'the package. Found `$import` in your `build.yaml` file.');
     return import;
   } else {
-    return p.relative(import, from: p.dirname(scriptLocation));
+    return p.url.relative(import, from: p.url.dirname(scriptLocation));
   }
 }
 
