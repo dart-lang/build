@@ -77,7 +77,7 @@ class SingleStepReader implements AssetReader {
       return _doAfter(_ensureAssetIsBuilt(node.id),
           (_) => node.wasOutput && !node.isFailure);
     }
-    return node.isReadable;
+    return node.isReadable && node.isValidInput;
   }
 
   @override

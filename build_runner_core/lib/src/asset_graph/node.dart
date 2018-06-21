@@ -51,11 +51,12 @@ abstract class AssetNode {
   /// Deleted nodes are ignored in the final merge step and watch handlers.
   bool get isDeleted => deletedBy.isNotEmpty;
 
-  /// Whether or not this node can be used as a primary input.
+  /// Whether or not this node can be read by a builder as a primary or
+  /// secondary input.
   ///
   /// Some nodes are valid primary inputs but are not readable (see
-  /// [PlaceHolderAssetNode]), while others are readable but are not valid
-  /// primary inputs (see [InternalAssetNode]).
+  /// [PlaceHolderAssetNode]), while others are readable in the overall build
+  /// system  but are not valid builder inputs (see [InternalAssetNode]).
   bool get isValidInput => true;
 
   /// Whether or not changes to this node will have any effect on other nodes.
