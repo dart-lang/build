@@ -60,11 +60,7 @@ void _stdIOLogListener(LogRecord record, {bool verbose}) {
     message.writeln('');
   }
 
-  if (record.level >= Level.SEVERE) {
-    stderr.write(message);
-  } else {
-    stdout.write(message);
-  }
+  stdout.write(message);
 }
 
 /// Filter out the Logger names known to come from `build_runner` and splits the

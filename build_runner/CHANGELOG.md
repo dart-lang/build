@@ -21,6 +21,10 @@
   exit code for the process.
 - Dropped `failOnSevere` arguments and `--fail-on-severe` flag. Severe logs are
   always considered failing.
+- Severe level logs now go to `stdout` along with other logs rather than
+  `stderr`. Uncaught exceptions from the `build_runner` system itself still go
+  to `stderr`.
+
 
 ## Other
 

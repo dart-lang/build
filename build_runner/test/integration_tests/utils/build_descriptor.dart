@@ -261,7 +261,7 @@ class BuildTool {
         _executable, _baseArgs.followedBy(['build']).followedBy(args).toList(),
         workingDirectory: p.join(d.sandbox, 'a'));
     await process.shouldExit(expectExitCode);
-    return process.stderr;
+    return process.stdout;
   }
 }
 

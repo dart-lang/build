@@ -56,26 +56,6 @@ void main() {
     });
   });
 
-  group('--fail-on-severe', () {
-    setUp(() async {
-      // Perform an edit that should cause a failure.
-      await deleteFile('test/common/message.dart');
-    });
-
-    test('causes builds to return a non-zero exit code on errors', () async {
-      var result = await runBuild(trailingArgs: ['--fail-on-severe']);
-      expect(result.exitCode, isNot(0));
-      expect(result.stderr, contains('Failed'));
-    });
-
-    test('causes tests to return a non-zero exit code on errors', () async {
-      var result = await runTests(buildArgs: ['--fail-on-severe']);
-      expect(result.exitCode, isNot(0));
-      expect(result.stderr, contains('Failed'));
-      expect(result.stdout, contains('Skipping tests due to build failure'));
-    });
-  });
-
   group('regression tests', () {
     test('Failing optional outputs which are required during the next build',
         () async {
@@ -87,7 +67,7 @@ void main() {
           "import: 'package:_test/bad_file.dart';");
       final result = await runBuild(trailingArgs: ['--fail-on-severe']);
       expect(result.exitCode, isNot(0));
-      expect(result.stderr, contains('Failed'));
+      expect(result.stdout, contains('Failed'));
 
       // Remove the import to the bad file so it is no longer a requirement for
       // the overall build

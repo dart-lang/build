@@ -731,6 +731,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
     onLog(LogRecord record),
     Level logLevel = Level.OFF,
     String configKey}) {
+  onLog ??= (_) {};
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
   });
