@@ -65,7 +65,7 @@ abstract class BuildRunnerCommand extends Command<int> {
           hide: true,
           defaultsTo: false)
       ..addMultiOption(outputOption,
-          help: 'A directory to write the result of a build to. Or a mapping '
+          help: 'A directory to copy the fully built package to. Or a mapping '
               'from a top-level directory in the package to the directory to '
               'write a filtered build output to. For example "web:deploy".',
           abbr: 'o')
