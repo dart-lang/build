@@ -159,6 +159,7 @@ String _buildToolFile(
     '''
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/build_test.dart';
 
