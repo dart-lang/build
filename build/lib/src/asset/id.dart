@@ -71,8 +71,8 @@ class AssetId implements Comparable<AssetId> {
       throw new ArgumentError.value(from, 'from',
           'An AssetId "from" must be specified to resolve a relative URI');
     }
-    return new AssetId(
-        p.url.normalize(from.package), p.url.join(p.url.dirname(from.path), uri));
+    return new AssetId(p.url.normalize(from.package),
+        p.url.join(p.url.dirname(from.path), uri));
   }
 
   /// Parses an [AssetId] string of the form "package|path/to/asset.txt".
