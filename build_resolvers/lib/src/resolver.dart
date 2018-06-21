@@ -195,6 +195,7 @@ class AssetBasedSource extends Source {
 
   /// The file contents.
   String _contents;
+
   /// Temporary new contents
   String _contentsForUpdateDependencies;
 
