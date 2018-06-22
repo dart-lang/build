@@ -1,4 +1,4 @@
-## 0.2.3-dev
+## 0.2.3
 
 - Update to the latest `package:scratch_space` and don't manually clear it out
   between builds. This provides significant speed improvements for large
