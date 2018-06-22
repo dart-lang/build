@@ -105,7 +105,8 @@ class ScratchSpace {
                   await file.writeAsBytes(await reader.readAsBytes(id));
                 }));
       } finally {
-        _pendingWrites..remove(id);
+        // ignore: unawaited_futures
+        _pendingWrites.remove(id);
       }
     }).toList();
 
