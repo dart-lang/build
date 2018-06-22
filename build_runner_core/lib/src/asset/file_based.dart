@@ -48,7 +48,7 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
           'remove it from your input sets.');
     }
     return glob
-        .list(followLinks: false, root: packageNode.path)
+        .list(followLinks: true, root: packageNode.path)
         .where((e) => e is File && !path.basename(e.path).startsWith('._'))
         .map((file) => _fileToAssetId(file as File, packageNode));
   }
