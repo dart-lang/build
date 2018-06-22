@@ -51,5 +51,3 @@ dependency_overrides:
     path: ../build_runner_core
   build_config:
     path: ../build_config
-  build:
-    path: ../build
