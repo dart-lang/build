@@ -1,3 +1,9 @@
+## 0.0.3
+
+- Use digests to improve `ensureAssets` performance.
+  - Scratch spaces can now be used across builds without cleaning them up, and
+    will check digests and update assets as needed.
+
 ## 0.0.2+1
 
 - Fix a bug where failing to read an asset in serve mode could get the build
@@ -19,7 +25,7 @@
 
 - Fix a deadlock issue around the file descriptor pool, only take control of a
   resource right before actually touching disk instead of also encapsulating
-  the `readAsBytes` call from the wrapped `AssetReader`.  
+  the `readAsBytes` call from the wrapped `AssetReader`.
 
 ## 0.0.1
 
