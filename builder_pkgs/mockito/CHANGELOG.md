@@ -1,3 +1,7 @@
+## 3.0.0-beta+1
+
+- Upgrade package dependencies.
+
 ## 3.0.0-beta
 
 * This release is the first 3.0.0 release featuring the new Mockito 3 API. The

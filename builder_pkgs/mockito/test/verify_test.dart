@@ -54,22 +54,18 @@ class LongToString {
 
 class _MockedClass extends Mock implements _RealClass {}
 
-expectFail(String expectedMessage, expectedToFail()) {
+expectFail(Pattern expectedMessage, expectedToFail()) {
   try {
     expectedToFail();
     fail('It was expected to fail!');
-  } catch (e) {
-    if (!(e is TestFailure)) {
-      throw e;
-    } else {
-      if (expectedMessage != e.message) {
-        throw new TestFailure('Failed, but with wrong message: ${e.message}');
-      }
-    }
+  } on TestFailure catch (e) {
+    expect(e.message,
+        expectedMessage is String ? expectedMessage : contains(expectedMessage),
+        reason: 'Failed but with unexpected message');
   }
 }
 
-String noMatchingCallsFooter = '(If you called `verify(...).called(0);`, '
+const noMatchingCallsFooter = '(If you called `verify(...).called(0);`, '
     'please instead use `verifyNever(...);`.)';
 
 void main() {
@@ -192,11 +188,12 @@ void main() {
 
     test('should mock setter', () {
       mock.setter = 'A';
-      expectFail(
-          'No matching calls. All calls: _MockedClass.setter==A\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.setter = 'B');
-      });
+      final expectedMessage = RegExp.escape('No matching calls. '
+          'All calls: _MockedClass.setter==A\n$noMatchingCallsFooter');
+      // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
+      var expectedPattern = RegExp(expectedMessage.replaceFirst('==', '=?='));
+
+      expectFail(expectedPattern, () => verify(mock.setter = 'B'));
       verify(mock.setter = 'A');
     });
 
@@ -215,7 +212,7 @@ void main() {
         verify(mock.methodWithNamedArgs(42, y: 17));
         fail('verify call was expected to throw!');
       } catch (e) {
-        expect(e, new isInstanceOf<StateError>());
+        expect(e, TypeMatcher<StateError>());
         expect(
             e.message,
             contains('Verification appears to be in progress. '

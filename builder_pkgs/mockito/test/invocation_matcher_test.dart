@@ -83,9 +83,10 @@ void main() {
       shouldFail(
         call1,
         isInvocation(call3),
-        "Expected: set value= <true> "
+        // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
+        RegExp('Expected: set value=? <true> '
             "Actual: <Instance of '${call3.runtimeType}'> "
-            "Which: Does not match get value",
+            'Which: Does not match get value'),
       );
     });
 
@@ -100,9 +101,10 @@ void main() {
       shouldFail(
         call1,
         isInvocation(call3),
-        "Expected: set value= <false> "
+        // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
+        RegExp("Expected: set value=? <false> "
             "Actual: <Instance of '${call3.runtimeType}'> "
-            "Which: Does not match set value= <true>",
+            "Which: Does not match set value=? <true>"),
       );
     });
   });
@@ -161,25 +163,18 @@ class Stub implements Interface {
   }
 }
 
-// Copied from package:test, which doesn't expose it to users.
-// https://github.com/dart-lang/matcher/issues/39
+// Inspired by shouldFail() from package:test, which doesn't expose it to users.
 void shouldFail(value, Matcher matcher, expected) {
-  var failed = false;
+  const reason = 'Expected to fail.';
   try {
     expect(value, matcher);
-  } on TestFailure catch (err) {
-    failed = true;
-
-    var _errorString = err.message;
-
-    if (expected is String) {
-      expect(_errorString, equalsIgnoringWhitespace(expected));
-    } else {
-      expect(_errorString.replaceAll('\n', ''), expected);
-    }
+    fail(reason);
+  } on TestFailure catch (e) {
+    final matcher = expected is String
+        ? equalsIgnoringWhitespace(expected)
+        : expected is RegExp ? contains(expected) : expected;
+    expect(collapseWhitespace(e.message), matcher, reason: reason);
   }
-
-  expect(failed, isTrue, reason: 'Expected to fail.');
 }
 
 void shouldPass(value, Matcher matcher) {

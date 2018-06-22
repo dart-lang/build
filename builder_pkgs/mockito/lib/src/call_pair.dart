@@ -29,7 +29,7 @@ class CallPair<T> {
   const CallPair(this.call, this.response);
 
   const CallPair.allInvocations(this.response)
-      : call = const isInstanceOf<Invocation>();
+      : call = const TypeMatcher<Invocation>();
 
   @override
   String toString() => '$CallPair {$call -> $response}';

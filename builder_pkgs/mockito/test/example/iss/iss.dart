@@ -81,4 +81,4 @@ double sphericalDistanceKm(Point<double> p1, Point<double> p2) {
 
 /// Radius of the earth in km.
 const int _radiusOfEarth = 6371;
-double _toRadian(num degree) => degree * PI / 180.0;
+double _toRadian(num degree) => degree * pi / 180.0;
