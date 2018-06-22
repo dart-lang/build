@@ -1,8 +1,8 @@
 name: build_runner_core
-version: 0.2.0-dev
+version: 0.2.0
 description: Core tools to write binaries that run builders.
 author: Dart Team <misc@dartlang.org>
-homepage: https://github.com/dart-lang/build/tree/master/build_runner
+homepage: https://github.com/dart-lang/build/tree/master/build_runner_core
 
 environment:
   sdk: '>=2.0.0-dev.54 <2.0.0'
@@ -35,7 +35,3 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
-
-dependency_overrides:
-  build_config:
-    path: ../build_config
