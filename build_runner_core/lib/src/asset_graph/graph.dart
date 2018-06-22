@@ -505,6 +505,8 @@ class AssetGraph {
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
   Set<AssetId> remove(AssetId id) => _removeRecursive(id);
+
+  AssetId canonicalize(AssetId id) => get(id)?.id ?? id;
 }
 
 /// Computes a [Digest] for [buildPhases] which can be used to compare one set
