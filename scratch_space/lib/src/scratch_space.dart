@@ -66,6 +66,7 @@ class ScratchSpace {
           'Tried to delete a ScratchSpace which was already deleted');
     }
     exists = false;
+    _digests.clear();
     return tempDir.delete(recursive: true);
   }
 
