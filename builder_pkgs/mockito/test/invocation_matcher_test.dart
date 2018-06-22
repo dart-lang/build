@@ -84,7 +84,7 @@ void main() {
         call1,
         isInvocation(call3),
         // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-        RegExp('Expected: set value=? <true> '
+        new RegExp('Expected: set value=? <true> '
             "Actual: <Instance of '${call3.runtimeType}'> "
             'Which: Does not match get value'),
       );
@@ -102,7 +102,7 @@ void main() {
         call1,
         isInvocation(call3),
         // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-        RegExp("Expected: set value=? <false> "
+        new RegExp("Expected: set value=? <false> "
             "Actual: <Instance of '${call3.runtimeType}'> "
             "Which: Does not match set value=? <true>"),
       );

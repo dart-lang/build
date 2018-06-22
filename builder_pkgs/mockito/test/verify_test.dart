@@ -191,7 +191,8 @@ void main() {
       final expectedMessage = RegExp.escape('No matching calls. '
           'All calls: _MockedClass.setter==A\n$noMatchingCallsFooter');
       // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-      var expectedPattern = RegExp(expectedMessage.replaceFirst('==', '=?='));
+      var expectedPattern =
+          new RegExp(expectedMessage.replaceFirst('==', '=?='));
 
       expectFail(expectedPattern, () => verify(mock.setter = 'B'));
       verify(mock.setter = 'A');
@@ -212,7 +213,7 @@ void main() {
         verify(mock.methodWithNamedArgs(42, y: 17));
         fail('verify call was expected to throw!');
       } catch (e) {
-        expect(e, TypeMatcher<StateError>());
+        expect(e, new TypeMatcher<StateError>());
         expect(
             e.message,
             contains('Verification appears to be in progress. '
