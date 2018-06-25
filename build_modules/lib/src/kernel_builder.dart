@@ -28,7 +28,6 @@ class KernelBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
 
-  /// The output extension for this builder.
   final String outputExtension;
 
   /// Whether this should create summary kernel files or full kernel files.

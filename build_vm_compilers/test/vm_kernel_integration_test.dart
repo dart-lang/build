@@ -46,5 +46,5 @@ void main() {
     // Run the app and expect certain output.
     expect(runResult.exitCode, 0, reason: runResult.stderr as String);
     expect(runResult.stdout, 'hello/world\n');
-  });
+  }, skip: 'Blocked on https://dart-review.googlesource.com/c/sdk/+/62120');
 }
