@@ -1,0 +1,11 @@
+name: build_vm_compilers
+version: 0.1.0-dev
+
+dependencies:
+  build: ^0.12.0
+  build_modules: ^0.3.0
+  path: ^1.6.0
+
+dependency_overrides:
+  build_modules:
+    path: ../build_modules
