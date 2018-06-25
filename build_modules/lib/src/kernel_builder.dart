@@ -57,7 +57,7 @@ class KernelBuilder implements Builder {
       await _createKernel(
           module: module,
           buildStep: buildStep,
-          summaryOnly: true,
+          summaryOnly: summaryOnly,
           outputExtension: outputExtension,
           sdkKernelPath: sdkKernelPath);
     } on KernelException catch (e, s) {

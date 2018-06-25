@@ -14,7 +14,7 @@ const vmKernelEntrypointExtension = '.vm.app.dill';
 Builder vmKernelModuleBuilder(_) => new KernelBuilder(
       summaryOnly: false,
       sdkKernelPath: p.join('lib', '_internal', 'vm_platform_strong.dill'),
-      outputExtension: 'vmKernelModuleExtension',
+      outputExtension: vmKernelModuleExtension,
     );
 
 Builder vmKernelEntrypointBuilder(_) => new VmEntrypointBuilder();
