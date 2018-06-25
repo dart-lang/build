@@ -13,7 +13,6 @@ Directory _generatedDir = new Directory(p.join(_toolDir.path, 'generated'));
 Directory _toolDir = new Directory(p.join('.dart_tool', 'build'));
 
 Process _process;
-Stream<String> _stdErrLines;
 Stream<String> _stdOutLines;
 
 final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
@@ -75,13 +74,13 @@ Future<Null> _startServer(String command, List<String> buildArgs,
       .transform(const LineSplitter())
       .asBroadcastStream();
 
-  _stdErrLines = _process.stderr
+  var stdErrLines = _process.stderr
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
 
   _stdOutLines.listen((line) => printOnFailure('StdOut: $line'));
-  _stdErrLines.listen((line) => printOnFailure('StdErr: $line'));
+  stdErrLines.listen((line) => printOnFailure('StdErr: $line'));
 
   extraExpects.add(() => nextSuccessfulBuild);
   await Future.wait(extraExpects.map((cb) async => await cb()));
@@ -98,7 +97,6 @@ Future<Null> stopServer({bool cleanUp}) async {
     _process = null;
   }
   _stdOutLines = null;
-  _stdErrLines = null;
 
   if (cleanUp && await _toolDir.exists()) {
     await _toolDir.delete(recursive: true);
@@ -144,11 +142,8 @@ Future<Null> get nextSuccessfulBuild async {
 }
 
 Future<Null> get nextFailedBuild async {
-  await _stdErrLines.firstWhere((line) => line.contains('Failed after'));
+  await _stdOutLines.firstWhere((line) => line.contains('Failed after'));
 }
-
-Future<String> nextStdErrLine(String message) =>
-    _stdErrLines.firstWhere((line) => line.contains(message));
 
 Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message));

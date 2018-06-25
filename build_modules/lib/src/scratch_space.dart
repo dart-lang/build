@@ -26,10 +26,6 @@ final scratchSpaceResource = new Resource<ScratchSpace>(() {
     scratchSpace.exists = true;
   }
   return scratchSpace;
-}, dispose: (_) async {
-  await for (var entity in scratchSpace.tempDir.list()) {
-    await entity.delete(recursive: true);
-  }
 }, beforeExit: () async {
   // The workers are running inside the scratch space, so wait for them to
   // shut down before deleting it.

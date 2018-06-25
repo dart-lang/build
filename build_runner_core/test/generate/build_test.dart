@@ -96,7 +96,7 @@ void main() {
                 ],
                 {'a|web/a.txt': 'a'},
               ),
-          throwsA(new isInstanceOf<CannotBuildException>()));
+          throwsA(new TypeMatcher<CannotBuildException>()));
     });
 
     group('with root package inputs', () {
@@ -433,7 +433,7 @@ void main() {
               {'b|lib/b.txt': 'b'},
               packageGraph: packageGraph,
               outputs: {}),
-          throwsA(new isInstanceOf<CannotBuildException>()));
+          throwsA(new TypeMatcher<CannotBuildException>()));
     });
 
     group('with `hideOutput: true`', () {
@@ -1170,6 +1170,30 @@ void main() {
           },
           outputs: {},
           writer: writer);
+    });
+
+    test('the entrypoint cannot be read by a builder', () async {
+      var builders = [
+        applyToRoot(new TestBuilder(
+            buildExtensions: replaceExtension('.txt', '.hasEntrypoint'),
+            build: (buildStep, _) async {
+              var hasEntrypoint = await buildStep
+                  .findAssets(new Glob('**'))
+                  .contains(
+                      makeAssetId('a|.dart_tool/build/entrypoint/build.dart'));
+              await buildStep.writeAsString(
+                  buildStep.inputId.changeExtension('.hasEntrypoint'),
+                  '$hasEntrypoint');
+            }))
+      ];
+      await testBuilders(
+        builders,
+        {
+          'a|lib/a.txt': 'a',
+          'a|.dart_tool/build/entrypoint/build.dart': 'some build script',
+        },
+        outputs: {'a|lib/a.hasEntrypoint': 'false'},
+      );
     });
   });
 }

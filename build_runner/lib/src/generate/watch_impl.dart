@@ -35,6 +35,7 @@ Future<ServeHandler> watch(
   PackageGraph packageGraph,
   RunnerAssetReader reader,
   RunnerAssetWriter writer,
+  Resolvers resolvers,
   Level logLevel,
   onLog(LogRecord record),
   Duration debounceDelay,
@@ -61,19 +62,22 @@ Future<ServeHandler> watch(
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
-  var options = await BuildOptions.create(environment,
-      deleteFilesByDefault: deleteFilesByDefault,
-      packageGraph: packageGraph,
-      overrideBuildConfig: overrideBuildConfig,
-      logLevel: logLevel,
-      debounceDelay: debounceDelay,
-      skipBuildScriptCheck: skipBuildScriptCheck,
-      enableLowResourcesMode: enableLowResourcesMode,
-      outputMap: outputMap,
-      trackPerformance: trackPerformance,
-      verbose: verbose,
-      buildDirs: buildDirs,
-      logPerformanceDir: logPerformanceDir);
+  var options = await BuildOptions.create(
+    environment,
+    deleteFilesByDefault: deleteFilesByDefault,
+    packageGraph: packageGraph,
+    overrideBuildConfig: overrideBuildConfig,
+    logLevel: logLevel,
+    debounceDelay: debounceDelay,
+    skipBuildScriptCheck: skipBuildScriptCheck,
+    enableLowResourcesMode: enableLowResourcesMode,
+    outputMap: outputMap,
+    trackPerformance: trackPerformance,
+    verbose: verbose,
+    buildDirs: buildDirs,
+    logPerformanceDir: logPerformanceDir,
+    resolvers: resolvers,
+  );
   var terminator = new Terminator(terminateEventStream);
 
   var watch = _runWatch(options, environment, builders, builderConfigOverrides,

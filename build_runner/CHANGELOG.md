@@ -1,4 +1,4 @@
-## 0.9.0-dev
+## 0.9.0
 
 ### New Features
 
@@ -7,6 +7,9 @@
 - The `BuildPerformance` class is now serializable, it has a `fromJson`
   constructor and a `toJson` instance method.
 - Added support for `global_options` in `build.yaml` of the root package.
+- Allow overriding the default `Resolvers` implementation.
+- Allows building with symlinked files. Note that changes to the linked files
+  will not trigger rebuilds in watch or serve mode.
 
 ### Breaking changes
 
@@ -20,6 +23,10 @@
   exit code for the process.
 - Dropped `failOnSevere` arguments and `--fail-on-severe` flag. Severe logs are
   always considered failing.
+- Severe level logs now go to `stdout` along with other logs rather than
+  `stderr`. Uncaught exceptions from the `build_runner` system itself still go
+  to `stderr`.
+
 
 ## Other
 

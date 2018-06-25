@@ -192,7 +192,7 @@ void main() {
           json.encode(immediateDep.toJson()));
       expect(
           () => rootModule.computeTransitiveDependencies(reader),
-          allOf(throwsA(new isInstanceOf<MissingModulesException>()), throwsA(
+          allOf(throwsA(new TypeMatcher<MissingModulesException>()), throwsA(
             predicate<MissingModulesException>(
               (error) {
                 printOnFailure(error.message);

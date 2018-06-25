@@ -1,4 +1,4 @@
-## 0.2.0-dev
+## 0.2.0
 
 ### New Features
 
@@ -7,6 +7,9 @@
 - Added `BuildOptions.logPerformanceDir`, performance logs will be continuously
   written to that directory if provided.
 - Added support for `global_options` in `build.yaml` of the root package.
+- Allow overriding the default `Resolvers` implementation.
+- Allows building with symlinked files. Note that changes to the linked files
+  will not trigger rebuilds in watch or serve mode.
 
 ### Breaking changes
 

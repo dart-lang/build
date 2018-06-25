@@ -50,7 +50,7 @@ void main() {
 
     test('ddc errors can be fixed', () async {
       var path = p.join('test', 'common', 'message.dart');
-      var error = nextStdErrLine('Error compiling dartdevc module:'
+      var error = nextStdOutLine('Error compiling dartdevc module:'
           '_test|test/common/message.ddc.js');
       var nextBuild = nextFailedBuild;
       await replaceAllInFile(path, "'Hello World!'", '1');

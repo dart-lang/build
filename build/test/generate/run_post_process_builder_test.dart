@@ -58,7 +58,7 @@ main() {
           () => runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
               addAsset: (id) => throw new InvalidOutputException(id, ''),
               deleteAsset: deleteAsset),
-          throwsA(new isInstanceOf<InvalidOutputException>()));
+          throwsA(new TypeMatcher<InvalidOutputException>()));
     });
   });
 }

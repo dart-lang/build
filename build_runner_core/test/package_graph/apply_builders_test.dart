@@ -146,7 +146,7 @@ void main() {
         expect(
             () =>
                 createBuildPhases(targetGraph, builderApplications, {}, false),
-            throwsA(new isInstanceOf<CannotBuildException>()));
+            throwsA(new TypeMatcher<CannotBuildException>()));
       }, packageGraph.root.name,
           packageGraph.root.dependencies.map((node) => node.name).toList());
     });
