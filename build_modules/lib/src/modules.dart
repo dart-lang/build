@@ -11,7 +11,6 @@ import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
-import 'kernel_builder.dart';
 import 'module_builder.dart';
 import 'summary_builder.dart';
 
@@ -31,14 +30,6 @@ class Module extends Object with _$ModuleSerializerMixin {
   // The sourcemap for the JS file for this module.
   AssetId jsSourceMapId(String jsSourceMapExtension) =>
       primarySource.changeExtension(jsSourceMapExtension);
-
-  // The full kernel module for this module.
-  AssetId get kernelModuleId =>
-      primarySource.changeExtension(kernelModuleExtension);
-
-  // The kernel summary for this module.
-  AssetId get kernelSummaryId =>
-      primarySource.changeExtension(kernelSummaryExtension);
 
   /// The linked summary for this module.
   AssetId get linkedSummaryId =>

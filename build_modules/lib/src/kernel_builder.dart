@@ -18,40 +18,35 @@ import 'modules.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
 
-const kernelModuleExtension = '.full.dill';
-const kernelSummaryExtension = '.sum.dill';
 const multiRootScheme = 'org-dartlang-app';
 
-/// A builder which can output kernel summaries.
-class KernelSummaryBuilder implements Builder {
-  const KernelSummaryBuilder();
-
+/// A builder which can output kernel files for a given sdk.
+///
+/// This creates kernel files based on [moduleExtension] files, which are what
+/// determine the module structure of an application.
+class KernelBuilder implements Builder {
   @override
-  final buildExtensions = const {
-    moduleExtension: const [kernelSummaryExtension]
-  };
+  final Map<String, List<String>> buildExtensions;
 
-  @override
-  Future build(BuildStep buildStep) async {
-    var module = new Module.fromJson(
-        json.decode(await buildStep.readAsString(buildStep.inputId))
-            as Map<String, dynamic>);
-    try {
-      await _createKernel(module, buildStep, summaryOnly: true);
-    } on KernelException catch (e, s) {
-      log.warning('Error creating ${module.kernelSummaryId}:\n', e, s);
-    }
-  }
-}
+  /// The output extension for this builder.
+  final String outputExtension;
 
-/// A builder which can output a full kernel module.
-class KernelModuleBuilder implements Builder {
-  const KernelModuleBuilder();
+  /// Whether this should create summary kernel files or full kernel files.
+  ///
+  /// Summary files only contain the "outline" of the module - you can think of
+  /// this as everything but the method bodies.
+  final bool summaryOnly;
 
-  @override
-  final buildExtensions = const {
-    moduleExtension: const [kernelModuleExtension]
-  };
+  /// The sdk kernel file for the current platform.
+  final String sdkKernelPath;
+
+  KernelBuilder(
+      {@required this.summaryOnly,
+      @required this.sdkKernelPath,
+      @required this.outputExtension})
+      : buildExtensions = {
+          moduleExtension: [outputExtension]
+        };
 
   @override
   Future build(BuildStep buildStep) async {
@@ -59,24 +54,37 @@ class KernelModuleBuilder implements Builder {
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
-      await _createKernel(module, buildStep, summaryOnly: false);
+      await _createKernel(
+          module: module,
+          buildStep: buildStep,
+          summaryOnly: true,
+          outputExtension: outputExtension,
+          sdkKernelPath: sdkKernelPath);
     } on KernelException catch (e, s) {
-      log.warning('Error creating ${module.kernelModuleId}:\n$e\n$s');
+      log.severe(
+          'Error creating '
+          '${module.primarySource.changeExtension(outputExtension)}',
+          e,
+          s);
     }
   }
 }
 
 /// Creates a kernel file for [module].
-Future _createKernel(Module module, BuildStep buildStep,
-    {bool isRoot = false, @required bool summaryOnly}) async {
+Future _createKernel(
+    {@required Module module,
+    @required BuildStep buildStep,
+    @required bool summaryOnly,
+    @required String outputExtension,
+    @required String sdkKernelPath}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveKernelDeps = <AssetId>[];
   var transitiveSourceDeps = <AssetId>[];
 
-  // Provide kernel summaries where possible (if created in a previous phase),
-  // otherwise provide dart sources.
+  // Provide kernel dependencies where possible (if created in a previous
+  // phase), otherwise provide dart sources.
   await Future.wait(transitiveDeps.map((dep) async {
-    var kernelId = summaryOnly ? dep.kernelSummaryId : dep.kernelModuleId;
+    var kernelId = dep.primarySource.changeExtension(outputExtension);
     if (await buildStep.canRead(kernelId)) {
       transitiveKernelDeps.add(kernelId);
     } else {
@@ -91,7 +99,7 @@ Future _createKernel(Module module, BuildStep buildStep,
     ..addAll(transitiveKernelDeps)
     ..addAll(transitiveSourceDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
-  var outputId = summaryOnly ? module.kernelSummaryId : module.kernelModuleId;
+  var outputId = module.primarySource.changeExtension(outputExtension);
   var outputFile = scratchSpace.fileFor(outputId);
   var request = new WorkRequest();
 
@@ -102,9 +110,7 @@ Future _createKernel(Module module, BuildStep buildStep,
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    // var sdkSummary = p.url.join(sdkDir, 'lib', '_internal', 'ddc_sdk.dill');
-    var sdkSummary =
-        p.url.join(sdkDir, 'lib', '_internal', 'vm_platform_strong.dill');
+    var sdkSummary = p.url.join(sdkDir, sdkKernelPath);
     request.arguments.addAll([
       '--dart-sdk-summary',
       sdkSummary,
@@ -137,9 +143,12 @@ Future _createKernel(Module module, BuildStep buildStep,
 
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
     var response = await analyzer.doWork(request);
-    log.warning(response.output);
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
       throw new KernelException(outputId, response.output);
+    }
+
+    if (response.output?.isEmpty == false) {
+      log.info(response.output);
     }
 
     // Copy the output back using the buildStep.
