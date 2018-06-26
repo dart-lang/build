@@ -1,4 +1,4 @@
-## 0.9.0
+## 0.8.3
 
 * `GeneratorForAnnotation.generateForAnnotatedElement` now allow multiple return
   values when implementations return an `Iterable` or `Stream`.
