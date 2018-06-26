@@ -9,8 +9,9 @@ import 'package:async/async.dart';
 /// Runs [run] and converts [Future], [Iterable], and [Stream] implementations
 /// containing [String] to a single [Stream] while ensuring all thrown
 /// exceptions are forwarded through the return value.
-Stream<String> normalizeGeneratorOutput(dynamic run()) => StreamCompleter
-    .fromFuture(new Future.sync(run).then(_normalizeGeneratorOutput));
+Stream<String> normalizeGeneratorOutput(dynamic run()) =>
+    StreamCompleter.fromFuture(
+        new Future.sync(run).then(_normalizeGeneratorOutput));
 
 Stream<String> _normalizeGeneratorOutput(Object value) {
   if (value is String) {
