@@ -21,8 +21,8 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
   Future writeAsBytes(AssetId id, List<int> bytes) async {
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsBytes(id, bytes);
-    FakeWatcher
-        .notifyWatchers(new WatchEvent(type, p.absolute(id.package, id.path)));
+    FakeWatcher.notifyWatchers(
+        new WatchEvent(type, p.absolute(id.package, id.path)));
   }
 
   @override
@@ -30,8 +30,8 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
       {Encoding encoding = utf8}) async {
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
-    FakeWatcher
-        .notifyWatchers(new WatchEvent(type, p.absolute(id.package, id.path)));
+    FakeWatcher.notifyWatchers(
+        new WatchEvent(type, p.absolute(id.package, id.path)));
   }
 
   @override

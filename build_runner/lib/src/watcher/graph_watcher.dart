@@ -87,8 +87,8 @@ class PackageGraphWatcher {
     // Asynchronously complete the `_readyCompleter` once all the watchers
     // are done.
     () async {
-      await Future
-          .wait(allWatchers.map((nodeWatcher) => nodeWatcher.watcher.ready));
+      await Future.wait(
+          allWatchers.map((nodeWatcher) => nodeWatcher.watcher.ready));
       _readyCompleter.complete();
     }();
     return subscriptions;
