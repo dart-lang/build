@@ -34,10 +34,10 @@ class VmEntrypointBuilder implements Builder {
             as Map<String, dynamic>);
     var transitiveModules =
         await module.computeTransitiveDependencies(buildStep);
-    var transitiveKernelModules = transitiveModules
-        .map((m) => m.primarySource.changeExtension(vmKernelModuleExtension))
-        .followedBy(
-            [module.primarySource.changeExtension(vmKernelModuleExtension)]);
+    var transitiveKernelModules = [
+      module.primarySource.changeExtension(vmKernelModuleExtension)
+    ].followedBy(transitiveModules
+        .map((m) => m.primarySource.changeExtension(vmKernelModuleExtension)));
     var appContents = <int>[];
     for (var dependencyId in transitiveKernelModules) {
       appContents.addAll(await buildStep.readAsBytes(dependencyId));
