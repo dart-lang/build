@@ -109,14 +109,14 @@ Future _createKernel(
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    var sdkSummary = p.url.join(sdkDir, sdkKernelPath);
+    var sdkSummary = p.join(sdkDir, sdkKernelPath);
     request.arguments.addAll([
       '--dart-sdk-summary',
-      sdkSummary,
+      new Uri.file(sdkSummary).toString(),
       '--output',
       outputFile.path,
       '--packages-file',
-      packagesFile.path,
+      packagesFile.uri.toString(),
       '--multi-root-scheme',
       multiRootScheme,
       '--exclude-non-sources',
@@ -125,8 +125,8 @@ Future _createKernel(
 
     // Add all summaries as summary inputs.
     request.arguments.addAll(transitiveKernelDeps.map((id) {
-      var relativePath = p.url.relative(scratchSpace.fileFor(id).path,
-          from: scratchSpace.tempDir.path);
+      var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
+          from: scratchSpace.tempDir.uri.path);
       if (summaryOnly) {
         return '--input-summary=$multiRootScheme:///$relativePath';
       } else {
@@ -143,7 +143,7 @@ Future _createKernel(
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
     var response = await analyzer.doWork(request);
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
-      throw new KernelException(outputId, response.output);
+      throw new KernelException(outputId, '${response.output}');
     }
 
     if (response.output?.isEmpty == false) {
