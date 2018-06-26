@@ -5,7 +5,8 @@ import 'package:build_config/build_config.dart' as _i4;
 import 'package:build_modules/builders.dart' as _i5;
 import 'package:build_web_compilers/builders.dart' as _i6;
 import 'package:build/build.dart' as _i7;
-import 'dart:isolate' as _i8;
+import 'package:build_vm_compilers/builders.dart' as _i8;
+import 'dart:isolate' as _i9;
 
 final _builders = <_i1.BuilderApplication>[
   _i1.apply('provides_builder|some_not_applied_builder', [_i2.notApplied],
@@ -59,6 +60,19 @@ final _builders = <_i1.BuilderApplication>[
       }),
       defaultReleaseOptions: new _i7.BuilderOptions({'compiler': 'dart2js'}),
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
+  _i1.apply(
+      'build_vm_compilers|vm', [_i8.vmKernelModuleBuilder], _i1.toAllPackages(),
+      isOptional: true, hideOutput: true),
+  _i1.apply('build_vm_compilers|entrypoint', [_i8.vmKernelEntrypointBuilder],
+      _i1.toRoot(),
+      hideOutput: true,
+      defaultGenerateFor: const _i4.InputSet(include: const [
+        'bin/**',
+        'tool/**',
+        'test/**.dart.vm_test.dart',
+        'example/**',
+        'benchmark/**'
+      ])),
   _i1.applyPostProcess(
       'provides_builder|some_post_process_builder', _i2.somePostProcessBuilder,
       defaultGenerateFor: const _i4.InputSet()),
@@ -73,7 +87,7 @@ final _builders = <_i1.BuilderApplication>[
       defaultReleaseOptions: new _i7.BuilderOptions({'filter_outputs': true}),
       defaultGenerateFor: const _i4.InputSet())
 ];
-main(List<String> args, [_i8.SendPort sendPort]) async {
+main(List<String> args, [_i9.SendPort sendPort]) async {
   var result = await _i1.run(args, _builders);
   sendPort?.send(result);
 }
