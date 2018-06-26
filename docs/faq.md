@@ -53,3 +53,11 @@ you can:
 - Contact the author of the Builder and ask that a more unique input extension
   is chose, for example only generating for files that end in `_something.dart`
   rather than all files that end in `.dart`.
+  
+## How can I use my own development server to serve generated files?
+
+There are 2 options for using a different server during development:
+
+1. Run `build_runner serve web:<port>` and proxy the requests to it from your other server. This has the benefit of delaying requests while a build is ongoing so you don't get an inconsistent set of assets.
+
+2. Run `build_runner watch --output web:build` and use the created `build/` directory to serve files from. This will include a `build/packages` directory that has these files in it.
