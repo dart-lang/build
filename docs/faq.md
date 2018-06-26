@@ -58,6 +58,6 @@ you can:
 
 There are 2 options for using a different server during development:
 
-1. Run `build_runner serve web:<port>` proxy the requests to it from your other server. This has the benefit of delaying requests while a build is ongoing so you don't get an inconsistent set of assets.
+1. Run `build_runner serve web:<port>` and proxy the requests to it from your other server. This has the benefit of delaying requests while a build is ongoing so you don't get an inconsistent set of assets.
 
 2. Run `build_runner watch --output web:build` and use the created `build/` directory to serve files from. This will include a `build/packages` directory that has these files in it.
