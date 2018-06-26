@@ -132,8 +132,7 @@ BazelWorkerDriver get _frontendDriver {
       () => Process.start(
           p.join(sdkDir, 'bin', 'dart'),
           [
-            p.join(sdkDir, 'bin', 'snapshots',
-                'kernel_summary_worker.dart.snapshot'),
+            p.join(sdkDir, 'bin', 'snapshots', 'kernel_worker.dart.snapshot'),
             '--persistent_worker'
           ],
           workingDirectory: scratchSpace.tempDir.path),

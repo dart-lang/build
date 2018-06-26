@@ -21,7 +21,7 @@ abstract class _WorkerException implements Exception {
   _WorkerException(this.failedAsset, this.error);
 
   @override
-  String toString() => '$message:$failedAsset\n\n$error';
+  String toString() => '$message:$failedAsset\n\nResponse:$error\n';
 }
 
 /// An [Exception] that is thrown when the analyzer fails to create a summary.
@@ -35,12 +35,11 @@ class AnalyzerSummaryException extends _WorkerException {
 
 /// An [Exception] that is thrown when the common frontend fails to create a
 /// kernel summary.
-class KernelSummaryException extends _WorkerException {
+class KernelException extends _WorkerException {
   @override
   final String message = 'Error creating kernel summary for module';
 
-  KernelSummaryException(AssetId summaryId, String error)
-      : super(summaryId, error);
+  KernelException(AssetId summaryId, String error) : super(summaryId, error);
 }
 
 /// An [Exception] that is thrown when there are some missing modules.

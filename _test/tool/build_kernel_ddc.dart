@@ -5,9 +5,9 @@
 import 'dart:async';
 
 import 'package:build_config/build_config.dart';
+import 'package:build_web_compilers/builders.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_modules/builders.dart';
-import 'package:build_modules/build_modules.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
 
@@ -18,12 +18,12 @@ Future main(List<String> args) async {
             const InputSet(include: const ['test/**_test.dart']),
         hideOutput: true),
     apply(
-        'build_modules|modules',
+        '_test|ddc_kernel',
         [
           metaModuleBuilder,
           metaModuleCleanBuilder,
           moduleBuilder,
-          (_) => new KernelSummaryBuilder(),
+          ddcKernelBuilder,
         ],
         toAllPackages(),
         isOptional: true,

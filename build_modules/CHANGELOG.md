@@ -1,3 +1,9 @@
+## 0.3.0-dev
+
+- Removed the `kernelSummaryExtension`, and renamed the `KernelSummaryBuilder`
+  to `KernelBuilder`. The new builder can be used to create summaries or full
+  kernel files, and requires users to give it a custom sdk.
+
 ## 0.2.3
 
 - Update to the latest `package:scratch_space` and don't manually clear it out

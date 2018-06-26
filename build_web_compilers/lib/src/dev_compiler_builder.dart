@@ -12,6 +12,7 @@ import 'package:scratch_space/scratch_space.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:cli_util/cli_util.dart' as cli_util;
 
+import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
 
@@ -64,8 +65,9 @@ Future _createDevCompilerModule(
     Module module, BuildStep buildStep, bool useKernel,
     {bool debugMode = true}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
-  var transitiveSummaryDeps = transitiveDeps.map(
-      (module) => useKernel ? module.kernelSummaryId : module.linkedSummaryId);
+  var transitiveSummaryDeps = transitiveDeps.map((module) => useKernel
+      ? module.primarySource.changeExtension(ddcKernelExtension)
+      : module.linkedSummaryId);
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = new Set<AssetId>()

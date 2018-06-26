@@ -4,7 +4,10 @@
 
 import 'package:build/build.dart';
 
+import 'package:build_modules/build_modules.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+
+import 'package:path/path.dart' as p;
 
 Builder devCompilerBuilder(_) => const DevCompilerBuilder();
 Builder webEntrypointBuilder(BuilderOptions options) =>
@@ -16,3 +19,9 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
         ? const FileDeletingBuilder(const ['.dart', '.js.map'])
         : const FileDeletingBuilder(const ['.dart', '.js.map'],
             isEnabled: false);
+
+const ddcKernelExtension = '.ddc.dill';
+Builder ddcKernelBuilder(_) => new KernelBuilder(
+    summaryOnly: true,
+    sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+    outputExtension: ddcKernelExtension);

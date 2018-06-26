@@ -32,8 +32,7 @@ class BuildCommandRunner extends CommandRunner<int> {
   // CommandRunner._usageWithoutDescription is private – this is a reasonable
   // facsimile.
   /// Returns [usage] with [description] removed from the beginning.
-  String get usageWithoutDescription => LineSplitter
-      .split(usage)
+  String get usageWithoutDescription => LineSplitter.split(usage)
       .skipWhile((line) => line == description || line.isEmpty)
       .join('\n');
 }

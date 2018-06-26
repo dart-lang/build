@@ -5,6 +5,7 @@ environment:
   sdk: '>=2.0.0-dev.61 <2.0.0'
 
 dev_dependencies:
+  analyzer: ">=0.30.0 <0.33.0"
   path: ^1.4.2
   test: ^0.12.0
   provides_builder:
@@ -25,6 +26,8 @@ dependency_overrides:
     path: ../build_runner_core
   build_test:
     path: ../build_test
+  build_vm_compilers:
+    path: ../build_vm_compilers
   build_web_compilers:
     path: ../build_web_compilers
   scratch_space:
