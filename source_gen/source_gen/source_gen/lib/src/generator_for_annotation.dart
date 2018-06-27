@@ -36,19 +36,16 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
   @override
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
-    var values =
-        await new Stream.fromIterable(library.annotatedWith(typeChecker))
-            .asyncExpand((e) {
-      return normalizeGeneratorOutput(() =>
-          generateForAnnotatedElement(e.element, e.annotation, buildStep));
-    }).fold(new Set<String>(), (Set<String> uniqueValues, value) {
-      value = value?.trim();
+    var values = new Set<String>();
 
-      if (value != null && value.isNotEmpty) {
-        uniqueValues.add(value);
+    for (var annotatedElement in library.annotatedWith(typeChecker)) {
+      var generatedValue = generateForAnnotatedElement(
+          annotatedElement.element, annotatedElement.annotation, buildStep);
+      await for (var value in normalizeGeneratorOutput(generatedValue)) {
+        assert(value == null || (value.length == value.trim().length));
+        values.add(value);
       }
-      return uniqueValues;
-    });
+    }
 
     return values.join('\n\n');
   }
