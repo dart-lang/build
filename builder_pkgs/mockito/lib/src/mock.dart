@@ -31,7 +31,7 @@ final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
 final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 
 // Hidden from the public API, used by spy.dart.
-void setDefaultResponse(Mock mock, CallPair defaultResponse()) {
+void setDefaultResponse(Mock mock, CallPair<dynamic> defaultResponse()) {
   mock._defaultResponse = defaultResponse;
 }
 
@@ -39,7 +39,8 @@ void setDefaultResponse(Mock mock, CallPair defaultResponse()) {
 ///
 /// The default behavior when not using this is to always return `null`.
 void throwOnMissingStub(Mock mock) {
-  mock._defaultResponse = () => new CallPair.allInvocations(mock._noSuchMethod);
+  mock._defaultResponse =
+      () => new CallPair<dynamic>.allInvocations(mock._noSuchMethod);
 }
 
 /// Extend or mixin this class to mark the implementation as a [Mock].
@@ -75,27 +76,27 @@ void throwOnMissingStub(Mock mock) {
 /// used within the context of Dart for Web (dart2js, DDC) and Dart for Mobile
 /// (Flutter).
 class Mock {
-  static _answerNull(_) => null;
+  static Null _answerNull(_) => null;
 
-  static const _nullResponse = const CallPair.allInvocations(_answerNull);
+  static const _nullResponse = const CallPair<Null>.allInvocations(_answerNull);
 
   final StreamController<Invocation> _invocationStreamController =
       new StreamController.broadcast();
   final _realCalls = <RealCall>[];
-  final _responses = <CallPair>[];
+  final _responses = <CallPair<dynamic>>[];
 
   String _givenName;
   int _givenHashCode;
 
   _ReturnsCannedResponse _defaultResponse = () => _nullResponse;
 
-  void _setExpected(CallPair cannedResponse) {
+  void _setExpected(CallPair<dynamic> cannedResponse) {
     _responses.add(cannedResponse);
   }
 
   @override
   @visibleForTesting
-  noSuchMethod(Invocation invocation) {
+  dynamic noSuchMethod(Invocation invocation) {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
     // See "Emulating Functions and Interactions" on dartlang.org: goo.gl/r3IQUH
@@ -120,7 +121,7 @@ class Mock {
     }
   }
 
-  _noSuchMethod(Invocation invocation) =>
+  dynamic _noSuchMethod(Invocation invocation) =>
       const Object().noSuchMethod(invocation);
 
   @override
@@ -147,7 +148,7 @@ class Mock {
   }
 }
 
-typedef CallPair _ReturnsCannedResponse();
+typedef CallPair<dynamic> _ReturnsCannedResponse();
 
 // When using an [ArgMatcher], we transform our invocation to have knowledge of
 // which arguments are wrapped, and which ones are not. Otherwise we just use
@@ -346,8 +347,8 @@ class PostExpectation<T> {
     return _completeWhen(answer);
   }
 
-  void _completeWhen(Answering answer) {
-    _whenCall._setExpected(answer);
+  void _completeWhen(Answering<T> answer) {
+    _whenCall._setExpected<T>(answer);
     _whenCall = null;
     _whenInProgress = false;
   }
@@ -524,8 +525,8 @@ class _WhenCall {
   final Invocation whenInvocation;
   _WhenCall(this.mock, this.whenInvocation);
 
-  void _setExpected(Answering answer) {
-    mock._setExpected(new CallPair(isInvocation(whenInvocation), answer));
+  void _setExpected<T>(Answering<T> answer) {
+    mock._setExpected(new CallPair<T>(isInvocation(whenInvocation), answer));
   }
 }
 
@@ -651,11 +652,11 @@ Null _registerMatcher(Matcher matcher, bool capture, {String named}) {
 }
 
 class VerificationResult {
-  List captured = [];
+  List<dynamic> captured = [];
   int callCount;
 
   VerificationResult(this.callCount) {
-    captured = new List.from(_capturedArgs, growable: false);
+    captured = new List<dynamic>.from(_capturedArgs, growable: false);
     _capturedArgs.clear();
   }
 

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// ignore_for_file: strong_mode_implicit_dynamic_function
+
 @deprecated
 library mockito.test.deprecated_apis.until_called_test;
 

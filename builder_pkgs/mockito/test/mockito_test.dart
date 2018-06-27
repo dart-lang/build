@@ -51,7 +51,7 @@ class _MockFoo extends _AbstractFoo with Mock {}
 
 class _MockedClass extends Mock implements _RealClass {}
 
-expectFail(String expectedMessage, expectedToFail()) {
+void expectFail(String expectedMessage, dynamic expectedToFail()) {
   try {
     expectedToFail();
     fail("It was expected to fail!");

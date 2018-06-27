@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// ignore_for_file: strong_mode_implicit_dynamic_function
+
 @deprecated
 library mockito.test.deprecated_apis.verify_test;
 
@@ -55,7 +57,7 @@ class LongToString {
 
 class _MockedClass extends Mock implements _RealClass {}
 
-expectFail(String expectedMessage, expectedToFail()) {
+void expectFail(String expectedMessage, dynamic expectedToFail()) {
   try {
     expectedToFail();
     fail('It was expected to fail!');

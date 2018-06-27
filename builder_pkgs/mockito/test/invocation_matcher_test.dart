@@ -143,10 +143,10 @@ void main() {
 abstract class Interface {
   bool get value;
   set value(value);
-  say(String text);
-  eat(String food, {bool alsoDrink});
-  lie([bool facingDown]);
-  fly({int miles});
+  void say(String text);
+  void eat(String food, {bool alsoDrink});
+  void lie([bool facingDown]);
+  void fly({int miles});
 }
 
 /// An example of a class that captures Invocation objects.
@@ -158,7 +158,7 @@ class Stub implements Interface {
   const Stub();
 
   @override
-  noSuchMethod(Invocation invocation) {
+  void noSuchMethod(Invocation invocation) {
     lastInvocation = invocation;
   }
 }

@@ -33,7 +33,7 @@ import 'package:mockito/src/mock.dart';
 /// what a user expects to be called.
 Matcher invokes(
   Symbol memberName, {
-  List positionalArguments: const [],
+  List<dynamic> positionalArguments: const [],
   Map<Symbol, dynamic> namedArguments: const {},
   bool isGetter: false,
   bool isSetter: false,
@@ -156,9 +156,10 @@ class _InvocationMatcher implements Matcher {
       _invocation.memberName == item.memberName &&
       _invocation.isSetter == item.isSetter &&
       _invocation.isGetter == item.isGetter &&
-      const ListEquality(const _MatcherEquality())
+      const ListEquality<dynamic /* Matcher | E */ >(const _MatcherEquality())
           .equals(_invocation.positionalArguments, item.positionalArguments) &&
-      const MapEquality(values: const _MatcherEquality())
+      const MapEquality<dynamic, dynamic /* Matcher | E */ >(
+              values: const _MatcherEquality())
           .equals(_invocation.namedArguments, item.namedArguments);
 }
 
