@@ -22,7 +22,7 @@ part 'modules.g.dart';
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
 @JsonSerializable()
-class Module extends Object with _$ModuleSerializerMixin {
+class Module {
   /// The JS file for this module.
   AssetId jsId(String jsModuleExtension) =>
       primarySource.changeExtension(jsModuleExtension);
@@ -44,7 +44,6 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// The assets which are built once per module, such as DDC compiled output or
   /// Analyzer summaries, will be named after the primary source and will
   /// encompass everything in [sources].
-  @override
   @JsonKey(
       name: 'p',
       nullable: false,
@@ -73,7 +72,6 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// Libraries `foo` and `bar` form an import cycle so they would be grouped in
   /// the same module. Every Dart library will only be contained in a single
   /// [Module].
-  @override
   @JsonKey(
       name: 's',
       nullable: false,
@@ -83,7 +81,6 @@ class Module extends Object with _$ModuleSerializerMixin {
 
   /// The [primarySource]s of the [Module]s which contain any library imported
   /// from any of the [sources] in this module.
-  @override
   @JsonKey(
       name: 'd',
       nullable: false,
@@ -120,6 +117,8 @@ class Module extends Object with _$ModuleSerializerMixin {
 
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ModuleToJson(this);
 
   /// Returns all [Module]s in the transitive dependencies of this module in
   /// reverse dependency order.

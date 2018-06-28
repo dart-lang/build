@@ -3,7 +3,7 @@
 part of build_runner.src.generate.performance_tracker;
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
 BuildPerformance _$BuildPerformanceFromJson(Map<String, dynamic> json) {

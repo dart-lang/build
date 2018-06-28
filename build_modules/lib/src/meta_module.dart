@@ -198,8 +198,7 @@ List<Module> _computeModules(Map<AssetId, ModuleLibrary> libraries) {
 }
 
 @JsonSerializable()
-class MetaModule extends Object with _$MetaModuleSerializerMixin {
-  @override
+class MetaModule {
   @JsonKey(name: 'm', nullable: false)
   final List<Module> modules;
 
@@ -208,6 +207,8 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
   /// Generated factory constructor.
   factory MetaModule.fromJson(Map<String, dynamic> json) =>
       _$MetaModuleFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MetaModuleToJson(this);
 
   static Future<MetaModule> forLibraries(
       AssetReader reader, List<AssetId> libraryAssets) async {

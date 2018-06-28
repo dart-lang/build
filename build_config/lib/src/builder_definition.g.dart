@@ -42,7 +42,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
         import: $checkedConvert(json, 'import', (v) => v as String),
         target: $checkedConvert(json, 'target', (v) => v as String),
         autoApply: $checkedConvert(json, 'auto_apply',
-            (v) => v == null ? null : _autoApplyFromJson(v as String)),
+            (v) => _$enumDecodeNullable(_$AutoApplyEnumMap, v)),
         requiredInputs: $checkedConvert(json, 'required_inputs',
             (v) => (v as List)?.map((e) => e as String)),
         runsBefore: $checkedConvert(
@@ -50,8 +50,8 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
         appliesBuilders: $checkedConvert(json, 'applies_builders',
             (v) => (v as List)?.map((e) => e as String)),
         isOptional: $checkedConvert(json, 'is_optional', (v) => v as bool),
-        buildTo: $checkedConvert(json, 'build_to',
-            (v) => v == null ? null : _buildToFromJson(v as String)),
+        buildTo: $checkedConvert(
+            json, 'build_to', (v) => _$enumDecodeNullable(_$BuildToEnumMap, v)),
         defaults: $checkedConvert(
             json,
             'defaults',
@@ -70,6 +70,38 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
     'buildTo': 'build_to'
   });
 }
+
+T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
+  if (source == null) {
+    throw new ArgumentError('A value must be provided. Supported values: '
+        '${enumValues.values.join(', ')}');
+  }
+  return enumValues.entries
+      .singleWhere((e) => e.value == source,
+          orElse: () => throw new ArgumentError(
+              '`$source` is not one of the supported values: '
+              '${enumValues.values.join(', ')}'))
+      .key;
+}
+
+T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
+  if (source == null) {
+    return null;
+  }
+  return _$enumDecode<T>(enumValues, source);
+}
+
+const _$AutoApplyEnumMap = const <AutoApply, dynamic>{
+  AutoApply.none: 'none',
+  AutoApply.dependents: 'dependents',
+  AutoApply.allPackages: 'all_packages',
+  AutoApply.rootPackage: 'root_package'
+};
+
+const _$BuildToEnumMap = const <BuildTo, dynamic>{
+  BuildTo.source: 'source',
+  BuildTo.cache: 'cache'
+};
 
 PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
   return $checkedNew('PostProcessBuilderDefinition', json, () {

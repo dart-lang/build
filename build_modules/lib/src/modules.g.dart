@@ -13,13 +13,8 @@ Module _$ModuleFromJson(Map<String, dynamic> json) {
       _assetIdsFromJson(json['d'] as List));
 }
 
-abstract class _$ModuleSerializerMixin {
-  AssetId get primarySource;
-  Set<AssetId> get sources;
-  Set<AssetId> get directDependencies;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'p': _assetIdToJson(primarySource),
-        's': _assetIdsToJson(sources),
-        'd': _assetIdsToJson(directDependencies)
-      };
-}
+Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
+      'p': _assetIdToJson(instance.primarySource),
+      's': _assetIdsToJson(instance.sources),
+      'd': _assetIdsToJson(instance.directDependencies)
+    };
