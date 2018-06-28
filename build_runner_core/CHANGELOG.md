@@ -1,4 +1,4 @@
-## 0.2.0+1
+## 0.2.1
 
 - The hash dir for the asset graph under `.dart_tool/build` is now based on a
   relative path to the build script instead of the absolute path.
