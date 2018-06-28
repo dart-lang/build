@@ -34,7 +34,8 @@ Future main(List<String> args) async {
         'Expected a build script at $scriptPath but didn\'t find one.');
   }
 
-  var assetGraphFile = new File(assetGraphPathFor(scriptPath));
+  var assetGraphFile =
+      new File(assetGraphPathFor(p.url.joinAll(p.split(scriptPath))));
   if (!assetGraphFile.existsSync()) {
     throw new ArgumentError(
         'Unable to find AssetGraph for $scriptPath at ${assetGraphFile.path}');
