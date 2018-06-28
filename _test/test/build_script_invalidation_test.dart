@@ -57,9 +57,7 @@ void main() {
     test('Invalid asset graph version causes a new full build', () async {
       await stopServer();
       var assetGraph = assetGraphPathFor(
-          new File(p.join('.dart_tool', 'build', 'entrypoint', 'build.dart'))
-              .absolute
-              .path);
+          p.join('.dart_tool', 'build', 'entrypoint', 'build.dart'));
       // Prepend a 1 to the version number
       await replaceAllInFile(assetGraph, '"version":', '"version":1');
 

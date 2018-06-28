@@ -19,7 +19,8 @@ final errorCachePath =
     p.url.join(cacheDir, _scriptHashFor(_scriptPath), 'error_cache');
 
 final String _scriptPath = Platform.script.scheme == 'file'
-    ? Platform.script.toFilePath()
+    ? p.url.joinAll(
+        p.split(p.relative(Platform.script.toFilePath(), from: p.current)))
     : Platform.script.path;
 
 /// Directory containing automatically generated build entrypoints.

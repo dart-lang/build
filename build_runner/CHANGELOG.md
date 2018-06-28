@@ -1,3 +1,10 @@
+## 0.9.1
+
+- The hash dir for the asset graph under `.dart_tool/build` is now based on a
+  relative path to the build script instead of the absolute path.
+  - This enables `.dart_tool/build` directories to be reused across different
+    computers and directories for the same project.
+
 ## 0.9.0
 
 ### New Features
