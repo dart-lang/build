@@ -85,7 +85,15 @@ Future _createKernel(
   await Future.wait(transitiveDeps.map((dep) async {
     var kernelId = dep.primarySource.changeExtension(outputExtension);
     if (await buildStep.canRead(kernelId)) {
-      transitiveKernelDeps.add(kernelId);
+      // If we can read the kernel file, but it depends on any module in this
+      // package, then we need to only provide sources for that file since its
+      // dependencies in this package will only be providing sources as well.
+      if ((await dep.computeTransitiveDependencies(buildStep)).any(
+          (m) => m.primarySource.package == module.primarySource.package)) {
+        transitiveSourceDeps.addAll(dep.sources);
+      } else {
+        transitiveKernelDeps.add(kernelId);
+      }
     } else {
       transitiveSourceDeps.addAll(dep.sources);
     }
@@ -102,10 +110,7 @@ Future _createKernel(
   var outputFile = scratchSpace.fileFor(outputId);
   var request = new WorkRequest();
 
-  var allDeps = <AssetId>[]
-    ..addAll(transitiveKernelDeps)
-    ..addAll(module.sources);
-  var packagesFile = await createPackagesFile(allDeps, scratchSpace);
+  var packagesFile = await createPackagesFile(allAssetIds);
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
@@ -133,6 +138,7 @@ Future _createKernel(
         return '--input-linked=$multiRootScheme:///$relativePath';
       }
     }));
+
     request.arguments.addAll(module.sources.map((id) {
       var uri = id.path.startsWith('lib')
           ? canonicalUriFor(id)
@@ -143,7 +149,8 @@ Future _createKernel(
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
     var response = await analyzer.doWork(request);
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
-      throw new KernelException(outputId, '${response.output}');
+      throw new KernelException(
+          outputId, '${request.arguments.join(' ')}\n${response.output}');
     }
 
     if (response.output?.isEmpty == false) {
