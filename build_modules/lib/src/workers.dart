@@ -151,27 +151,95 @@ final frontendDriverResource = new Resource<BazelWorkerDriver>(
 });
 
 /// Manages a shared set of persistent dart2js workers.
-Dart2JsBatchWorker get _dart2jsWorker {
+Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
   _dart2jsWorkersAreDoneCompleter ??= new Completer<Null>();
-  return __dart2jsWorker ??= new Dart2JsBatchWorker(() => Process.start(
+  return __dart2jsWorkerPool ??= new Dart2JsBatchWorkerPool(() => Process.start(
       p.join(sdkDir, 'bin', 'dart2js$_scriptExtension'), ['--batch'],
       workingDirectory: scratchSpace.tempDir.path));
 }
 
-Dart2JsBatchWorker __dart2jsWorker;
+Dart2JsBatchWorkerPool __dart2jsWorkerPool;
 
-/// Resource for fetching the current [Dart2JsBatchWorker] for dart2js.
-final dart2JsWorkerResource = new Resource<Dart2JsBatchWorker>(
-    () => _dart2jsWorker, beforeExit: () async {
-  await _dart2jsWorker.terminateWorkers();
+/// Resource for fetching the current [Dart2JsBatchWorkerPool] for dart2js.
+final dart2JsWorkerResource = new Resource<Dart2JsBatchWorkerPool>(
+    () => _dart2jsWorkerPool, beforeExit: () async {
+  await _dart2jsWorkerPool.terminateWorkers();
   _dart2jsWorkersAreDoneCompleter.complete();
   _dart2jsWorkersAreDoneCompleter = null;
 });
 
-/// Manages a persistent dart2js worker running in batch mode and schedules jobs
-/// one at a time.
-class Dart2JsBatchWorker {
+/// Manages a pool of persistent [_Dart2JsWorker]s running in batch mode and
+/// schedules jobs among them.
+class Dart2JsBatchWorkerPool {
   final Future<Process> Function() _spawnWorker;
+
+  final _workQueue = new Queue<_Dart2JsJob>();
+
+  bool _queueIsActive = false;
+
+  final _availableWorkers = new Queue<_Dart2JsWorker>();
+
+  final _allWorkers = <_Dart2JsWorker>[];
+
+  Dart2JsBatchWorkerPool(this._spawnWorker);
+
+  Future<Dart2JsResult> compile(List<String> args) async {
+    var job = new _Dart2JsJob(args);
+    _workQueue.add(job);
+    if (!_queueIsActive) _startWorkQueue();
+    return job.result;
+  }
+
+  void _startWorkQueue() {
+    assert(!_queueIsActive);
+    _queueIsActive = true;
+    () async {
+      while (_workQueue.isNotEmpty) {
+        _Dart2JsWorker worker;
+        if (_availableWorkers.isEmpty &&
+            _allWorkers.length < _maxWorkersPerTask) {
+          worker = new _Dart2JsWorker(_spawnWorker);
+          _allWorkers.add(worker);
+        }
+
+        _Dart2JsWorker nextWorker() => _availableWorkers.isNotEmpty
+            ? _availableWorkers.removeFirst()
+            : null;
+
+        worker ??= nextWorker();
+        while (worker == null) {
+          // TODO: something smarter here? in practice this seems to work
+          // reasonably well though and simplifies things a lot ¯\_(ツ)_/¯.
+          await new Future.delayed(new Duration(seconds: 1));
+          worker = nextWorker();
+        }
+        // ignore: unawaited_futures
+        worker
+            .doJob(_workQueue.removeFirst())
+            .whenComplete(() => _availableWorkers.add(worker));
+      }
+      _queueIsActive = false;
+    }();
+  }
+
+  Future<Null> terminateWorkers() async {
+    var allWorkers = _allWorkers.toList();
+    _allWorkers.clear();
+    _availableWorkers.clear();
+    await Future.wait(allWorkers.map((w) => w.terminate()));
+  }
+}
+
+/// A single dart2js worker process running in batch mode.
+///
+/// This may actually spawn multiple processes over time, if a running worker
+/// dies or it decides that it should be restarted for some reason.
+class _Dart2JsWorker {
+  final Future<Process> Function() _spawnWorker;
+
+  int _jobsSinceLastRestartCount = 0;
+  static const int _jobsBeforeRestartMax = 5;
+  static const int _retryCountMax = 2;
 
   Stream<String> __workerStderrLines;
   Stream<String> get _workerStderrLines {
@@ -192,69 +260,98 @@ class Dart2JsBatchWorker {
   }
 
   Process __worker;
-  Future<Process> get _worker async {
-    __worker ??= await _spawnWorker();
-    return __worker;
-  }
-
-  final _workQueue = new Queue<_Dart2JsJob>();
-
-  bool _queueIsActive = false;
-
-  Dart2JsBatchWorker(this._spawnWorker);
-
-  Future<Dart2JsResult> compile(List<String> args) async {
-    var job = new _Dart2JsJob(args);
-    _workQueue.add(job);
-    if (!_queueIsActive) _startWorkQueue();
-    return job.result;
-  }
-
-  void _startWorkQueue() {
-    assert(!_queueIsActive);
-    _queueIsActive = true;
-    () async {
-      while (_workQueue.isNotEmpty) {
-        var worker = await _worker;
-        var next = _workQueue.removeFirst();
-        var output = new StringBuffer();
-        var sawError = false;
-        var stderrListener = _workerStderrLines.listen((line) {
-          if (line == '>>> EOF STDERR') {
-            next.resultCompleter.complete(new Dart2JsResult(
-                !sawError, 'Dart2Js finished with:\n\n$output'));
-          }
-          if (!line.startsWith('>>> ')) {
-            output.writeln(line);
-          }
+  Future<Process> _spawningWorker;
+  Future<Process> get _worker {
+    if (__worker != null) return new Future.value(__worker);
+    return _spawningWorker ??= () async {
+      if (__worker == null) {
+        _jobsSinceLastRestartCount = 0;
+        __worker ??= await _spawnWorker();
+        _spawningWorker = null;
+        // ignore: unawaited_futures
+        __worker.exitCode.then((_) {
+          __worker = null;
+          __workerStdoutLines = null;
+          __workerStderrLines = null;
+          _currentJobResult
+              ?.completeError('Dart2js exited with an unknown error');
         });
-        var stdoutListener = _workerStdoutLines.listen((line) {
-          if (line.contains('>>> TEST FAIL')) {
-            sawError = true;
-          }
-          if (!line.startsWith('>>> ')) {
-            output.writeln(line);
-          }
-        });
-
-        log.info('Running dart2js with ${next.args.join(' ')}\n');
-        worker.stdin.writeln(next.args.join(' '));
-
-        await next.result;
-        await stderrListener.cancel();
-        await stdoutListener.cancel();
       }
-      _queueIsActive = false;
+      return __worker;
     }();
   }
 
-  Future<Null> terminateWorkers() async {
-    var worker = await _worker;
+  Completer<Dart2JsResult> _currentJobResult;
+
+  _Dart2JsWorker(this._spawnWorker);
+
+  /// Performs [job], gracefully handling worker failures by retrying
+  /// [_retryCountMax] times and restarting the worker between jobs based on
+  /// [_jobsBeforeRestartMax] to limit memory consumption.
+  ///
+  /// Only one job may be performed at a time.
+  Future<void> doJob(_Dart2JsJob job) async {
+    assert(_currentJobResult == null);
+    var tryCount = 0;
+    var succeeded = false;
+    while (tryCount < _retryCountMax && !succeeded) {
+      tryCount++;
+      _jobsSinceLastRestartCount++;
+      var worker = await _worker;
+      var output = new StringBuffer();
+      _currentJobResult = new Completer<Dart2JsResult>();
+      var sawError = false;
+      var stderrListener = _workerStderrLines.listen((line) {
+        if (line == '>>> EOF STDERR') {
+          _currentJobResult?.complete(new Dart2JsResult(
+              !sawError, 'Dart2Js finished with:\n\n$output'));
+        }
+        if (!line.startsWith('>>> ')) {
+          output.writeln(line);
+        }
+      });
+      var stdoutListener = _workerStdoutLines.listen((line) {
+        if (line.contains('>>> TEST FAIL')) {
+          sawError = true;
+        }
+        if (!line.startsWith('>>> ')) {
+          output.writeln(line);
+        }
+      });
+
+      log.info('Running dart2js with ${job.args.join(' ')}\n');
+      worker.stdin.writeln(job.args.join(' '));
+
+      Dart2JsResult result;
+      try {
+        result = await _currentJobResult.future;
+        job.resultCompleter.complete(result);
+        succeeded = true;
+      } catch (e) {
+        log.warning('Dart2Js failure: $e');
+        succeeded = false;
+        if (tryCount >= _retryCountMax) {
+          job.resultCompleter.complete(_currentJobResult.future);
+        }
+      } finally {
+        _currentJobResult = null;
+        // TODO: Remove this hack once dart-lang/sdk#33708 is resolved.
+        if (_jobsSinceLastRestartCount >= _jobsBeforeRestartMax) {
+          await terminate();
+        }
+        await stderrListener.cancel();
+        await stdoutListener.cancel();
+      }
+    }
+  }
+
+  Future<void> terminate() async {
+    var worker = __worker ?? await _spawningWorker;
     __worker = null;
     __workerStdoutLines = null;
     __workerStderrLines = null;
-    worker.kill();
-    await worker.exitCode;
+    worker?.kill();
+    await worker?.exitCode;
   }
 }
 
