@@ -7,10 +7,12 @@ stages:
   - unit_test:
     - command: pub run build_runner test -- -p chrome
   - e2e_test:
-    - test: --total-shards 4 --shard-index 0
-    - test: --total-shards 4 --shard-index 1
-    - test: --total-shards 4 --shard-index 2
-    - test: --total-shards 4 --shard-index 3
+    - test: --total-shards 6 --shard-index 0
+    - test: --total-shards 6 --shard-index 1
+    - test: --total-shards 6 --shard-index 2
+    - test: --total-shards 6 --shard-index 3
+    - test: --total-shards 6 --shard-index 4
+    - test: --total-shards 6 --shard-index 5
   - e2e_test_cron:
     - test:
       dart:

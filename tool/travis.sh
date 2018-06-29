@@ -34,48 +34,73 @@ while (( "$#" )); do
     echo -e 'dartfmt -n --set-exit-if-changed .'
     dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
     ;;
-  test_0) echo
-    echo -e '\033[1mTASK: test_0\033[22m'
-    echo -e 'pub run test --total-shards 4 --shard-index 0'
-    pub run test --total-shards 4 --shard-index 0 || EXIT_CODE=$?
+  test_00) echo
+    echo -e '\033[1mTASK: test_00\033[22m'
+    echo -e 'pub run test --total-shards 6 --shard-index 0'
+    pub run test --total-shards 6 --shard-index 0 || EXIT_CODE=$?
     ;;
-  test_1) echo
-    echo -e '\033[1mTASK: test_1\033[22m'
-    echo -e 'pub run test --total-shards 4 --shard-index 1'
-    pub run test --total-shards 4 --shard-index 1 || EXIT_CODE=$?
+  test_01) echo
+    echo -e '\033[1mTASK: test_01\033[22m'
+    echo -e 'pub run test --total-shards 6 --shard-index 1'
+    pub run test --total-shards 6 --shard-index 1 || EXIT_CODE=$?
     ;;
-  test_2) echo
-    echo -e '\033[1mTASK: test_2\033[22m'
-    echo -e 'pub run test --total-shards 4 --shard-index 2'
-    pub run test --total-shards 4 --shard-index 2 || EXIT_CODE=$?
+  test_02) echo
+    echo -e '\033[1mTASK: test_02\033[22m'
+    echo -e 'pub run test --total-shards 6 --shard-index 2'
+    pub run test --total-shards 6 --shard-index 2 || EXIT_CODE=$?
     ;;
-  test_3) echo
-    echo -e '\033[1mTASK: test_3\033[22m'
-    echo -e 'pub run test --total-shards 4 --shard-index 3'
-    pub run test --total-shards 4 --shard-index 3 || EXIT_CODE=$?
+  test_03) echo
+    echo -e '\033[1mTASK: test_03\033[22m'
+    echo -e 'pub run test --total-shards 6 --shard-index 3'
+    pub run test --total-shards 6 --shard-index 3 || EXIT_CODE=$?
     ;;
-  test_4) echo
-    echo -e '\033[1mTASK: test_4\033[22m'
+  test_04) echo
+    echo -e '\033[1mTASK: test_04\033[22m'
+    echo -e 'pub run test --total-shards 6 --shard-index 4'
+    pub run test --total-shards 6 --shard-index 4 || EXIT_CODE=$?
+    ;;
+  test_05) echo
+    echo -e '\033[1mTASK: test_05\033[22m'
+    echo -e 'pub run test --total-shards 6 --shard-index 5'
+    pub run test --total-shards 6 --shard-index 5 || EXIT_CODE=$?
+    ;;
+  test_06) echo
+    echo -e '\033[1mTASK: test_06\033[22m'
     echo -e 'pub run test'
     pub run test || EXIT_CODE=$?
     ;;
-  test_5) echo
-    echo -e '\033[1mTASK: test_5\033[22m'
+  test_07) echo
+    echo -e '\033[1mTASK: test_07\033[22m'
     echo -e 'pub run test -x integration'
     pub run test -x integration || EXIT_CODE=$?
     ;;
-  test_6) echo
-    echo -e '\033[1mTASK: test_6\033[22m'
-    echo -e 'pub run test -t integration'
-    pub run test -t integration || EXIT_CODE=$?
+  test_08) echo
+    echo -e '\033[1mTASK: test_08\033[22m'
+    echo -e 'pub run test -t integration --total-shards 4 --shard-index 0'
+    pub run test -t integration --total-shards 4 --shard-index 0 || EXIT_CODE=$?
     ;;
-  test_7) echo
-    echo -e '\033[1mTASK: test_7\033[22m'
+  test_09) echo
+    echo -e '\033[1mTASK: test_09\033[22m'
+    echo -e 'pub run test -t integration --total-shards 4 --shard-index 1'
+    pub run test -t integration --total-shards 4 --shard-index 1 || EXIT_CODE=$?
+    ;;
+  test_10) echo
+    echo -e '\033[1mTASK: test_10\033[22m'
+    echo -e 'pub run test -t integration --total-shards 4 --shard-index 2'
+    pub run test -t integration --total-shards 4 --shard-index 2 || EXIT_CODE=$?
+    ;;
+  test_11) echo
+    echo -e '\033[1mTASK: test_11\033[22m'
+    echo -e 'pub run test -t integration --total-shards 4 --shard-index 3'
+    pub run test -t integration --total-shards 4 --shard-index 3 || EXIT_CODE=$?
+    ;;
+  test_12) echo
+    echo -e '\033[1mTASK: test_12\033[22m'
     echo -e 'pub run test -x presubmit-only'
     pub run test -x presubmit-only || EXIT_CODE=$?
     ;;
-  test_8) echo
-    echo -e '\033[1mTASK: test_8\033[22m'
+  test_13) echo
+    echo -e '\033[1mTASK: test_13\033[22m'
     echo -e 'pub run test -t presubmit-only --run-skipped'
     pub run test -t presubmit-only --run-skipped || EXIT_CODE=$?
     ;;

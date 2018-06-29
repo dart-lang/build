@@ -25,23 +25,31 @@ jobs:
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
-      script: ./tool/travis.sh test_0
+      script: ./tool/travis.sh test_00
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
-      script: ./tool/travis.sh test_1
+      script: ./tool/travis.sh test_01
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
-      script: ./tool/travis.sh test_2
+      script: ./tool/travis.sh test_02
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
-      script: ./tool/travis.sh test_3
+      script: ./tool/travis.sh test_03
+      env: PKG="_test"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_04
+      env: PKG="_test"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_05
       env: PKG="_test"
       dart: dev
     - stage: e2e_test_cron
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="_test"
       dart: be/raw/latest
     - stage: analyze_and_format
@@ -53,7 +61,7 @@ jobs:
       env: PKG="bazel_codegen"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="bazel_codegen"
       dart: dev
     - stage: analyze_and_format
@@ -61,7 +69,7 @@ jobs:
       env: PKG="build"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="build"
       dart: dev
     - stage: analyze_and_format
@@ -69,7 +77,7 @@ jobs:
       env: PKG="build_config"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
@@ -77,7 +85,7 @@ jobs:
       env: PKG="build_modules"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format
@@ -85,7 +93,7 @@ jobs:
       env: PKG="build_resolvers"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="build_resolvers"
       dart: dev
     - stage: analyze_and_format
@@ -93,11 +101,23 @@ jobs:
       env: PKG="build_runner"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_5
+      script: ./tool/travis.sh test_07
       env: PKG="build_runner"
       dart: dev
     - stage: e2e_test
-      script: ./tool/travis.sh test_6
+      script: ./tool/travis.sh test_08
+      env: PKG="build_runner"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_09
+      env: PKG="build_runner"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_10
+      env: PKG="build_runner"
+      dart: dev
+    - stage: e2e_test
+      script: ./tool/travis.sh test_11
       env: PKG="build_runner"
       dart: dev
     - stage: analyze_and_format
@@ -105,7 +125,7 @@ jobs:
       env: PKG="build_runner_core"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="build_runner_core"
       dart: dev
     - stage: analyze_and_format
@@ -113,7 +133,7 @@ jobs:
       env: PKG="build_test"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="build_test"
       dart: dev
     - stage: analyze_and_format
@@ -121,7 +141,7 @@ jobs:
       env: PKG="build_vm_compilers"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="build_vm_compilers"
       dart: dev
     - stage: analyze_and_format
@@ -129,7 +149,7 @@ jobs:
       env: PKG="build_web_compilers"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_7 test_8
+      script: ./tool/travis.sh test_12 test_13
       env: PKG="build_web_compilers"
       dart: dev
     - stage: analyze_and_format
@@ -141,7 +161,7 @@ jobs:
       env: PKG="scratch_space"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_4
+      script: ./tool/travis.sh test_06
       env: PKG="scratch_space"
       dart: dev
 
