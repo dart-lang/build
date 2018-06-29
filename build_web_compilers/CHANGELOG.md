@@ -1,3 +1,12 @@
+## 0.4.1-dev
+
+- Support the latest build_modules, with updated dart2js support so that it can
+  do multiple builds concurrently and will restart workers periodically to
+  mitigate the effects of dart-lang/sdk#33708.
+- Improvements to reduce the memory usage of the dart2js builder, so that
+  transitive dependency information can be garbage collected before the dart2js
+  compile is completed.
+
 ## 0.4.0+5
 
 - Fixed an issue where subdirectories with hyphens in the name weren't

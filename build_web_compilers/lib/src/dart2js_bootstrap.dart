@@ -23,30 +23,34 @@ Future<Null> bootstrapDart2Js(
   var dartEntrypointId = buildStep.inputId;
   enableSyncAsync ??= enableSyncAsyncDefault;
   var moduleId = dartEntrypointId.changeExtension(moduleExtension);
-  var module = new Module.fromJson(json
-      .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
-  var allDeps = (await module.computeTransitiveDependencies(buildStep))
-    ..add(module);
-  var allSrcs = allDeps.expand((module) => module.sources);
-  var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-  await scratchSpace.ensureAssets(allSrcs, buildStep);
+  var args = <String>[];
+  {
+    var module = new Module.fromJson(
+        json.decode(await buildStep.readAsString(moduleId))
+            as Map<String, dynamic>);
+    var allDeps = (await module.computeTransitiveDependencies(buildStep))
+      ..add(module);
+    var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    var allSrcs = allDeps.expand((module) => module.sources);
+    await scratchSpace.ensureAssets(allSrcs, buildStep);
+    var packageFile =
+        await _createPackageFile(allSrcs, buildStep, scratchSpace);
 
-  var packageFile = await _createPackageFile(allSrcs, buildStep, scratchSpace);
-
-  var dartPath = dartEntrypointId.path.startsWith('lib/')
-      ? 'package:${dartEntrypointId.package}/${dartEntrypointId.path.substring('lib/'.length)}'
-      : dartEntrypointId.path;
-  var jsOutputPath =
-      '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
-      '$jsEntrypointExtension';
-  var args = dart2JsArgs.toList()
-    ..addAll([
-      '--packages=$packageFile',
-      '-o$jsOutputPath',
-      dartPath,
-    ]);
-  if (_shouldAddNoSyncAsyncFlag(enableSyncAsync)) {
-    args.add('--no-sync-async');
+    var dartPath = dartEntrypointId.path.startsWith('lib/')
+        ? 'package:${dartEntrypointId.package}/${dartEntrypointId.path.substring('lib/'.length)}'
+        : dartEntrypointId.path;
+    var jsOutputPath =
+        '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
+        '$jsEntrypointExtension';
+    args = dart2JsArgs.toList()
+      ..addAll([
+        '--packages=$packageFile',
+        '-o$jsOutputPath',
+        dartPath,
+      ]);
+    if (_shouldAddNoSyncAsyncFlag(enableSyncAsync)) {
+      args.add('--no-sync-async');
+    }
   }
 
   var dart2js = await buildStep.fetchResource(dart2JsWorkerResource);

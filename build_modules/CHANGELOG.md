@@ -1,5 +1,13 @@
 ## 0.3.0-dev
 
+### Improvements
+
+- Updated dart2js support so that it can do multiple builds concurrently and
+  will restart workers periodically to mitigate the effects of
+  dart-lang/sdk#33708.
+
+### Breaking Changes
+
 - Removed the `kernelSummaryExtension`, and renamed the `KernelSummaryBuilder`
   to `KernelBuilder`. The new builder can be used to create summaries or full
   kernel files, and requires users to give it a custom sdk.
