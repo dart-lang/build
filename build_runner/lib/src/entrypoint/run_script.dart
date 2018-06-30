@@ -6,12 +6,13 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:build_runner/build_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 
-import '../generate/build.dart';
 import 'base_command.dart';
+import 'options.dart';
 
 class RunCommand extends BuildRunnerCommand {
   @override
@@ -20,6 +21,16 @@ class RunCommand extends BuildRunnerCommand {
   @override
   String get description =>
       'Performs a single build on the specified targets, and executes a Dart script with the given arguments.';
+
+  @override
+  SharedOptions readOptions() {
+    // The default option parser will throw if we pass additional arguments,
+    // because it expects positional arguments to be build directories.
+    //
+    // Instead, pass an empty list, and we'll handle positional arguments ourselves.
+    return new SharedOptions.fromParsedArgs(
+        argResults, [], packageGraph.root.name, this);
+  }
 
   @override
   FutureOr<int> run() async {
@@ -31,9 +42,12 @@ class RunCommand extends BuildRunnerCommand {
         ..writeln()
         ..writeln('Usage: pub run build_runner run <executable> [args...]')
         ..writeln(usage);
+      return ExitCode.usage.code;
     }
 
     var scriptName = argResults.rest[0];
+    var passedArgs = argResults.rest.skip(1).toList();
+    var options = readOptions();
 
     // Create a temporary directory in which to execute the script.
     var tempPath = Directory.systemTemp
@@ -42,8 +56,13 @@ class RunCommand extends BuildRunnerCommand {
         .uri
         .toFilePath();
 
+    // Create two ReceivePorts, so that we can quit when the isolate is done.
+    //
+    // Define these before starting the isolate, so that we can close
+    // them if there is a spawn exception.
+    ReceivePort onExit, onError;
+
     try {
-      var options = readOptions();
       var outputMap = options.outputMap ?? {};
       outputMap.addAll({tempPath: null});
 
@@ -71,23 +90,27 @@ class RunCommand extends BuildRunnerCommand {
 
       // Find the path of the script to run.
       var scriptPath = p.setExtension(p.join(tempPath, scriptName), '.dart');
+      var packageConfigPath = p.join(tempPath, '.packages');
 
       // Use a completer to determine the exit code.
       var completer = new Completer<int>();
 
-      // Create two ReceivePorts, so that we can quit when the isolate is done.
-      var onExit = new ReceivePort(), onError = new ReceivePort();
       Isolate isolate;
+      onExit = new ReceivePort();
+      onError = new ReceivePort();
 
       // On an error, kill the isolate, and rethrow the error.
       onError.listen((e) {
         isolate?.kill();
         onExit.close();
+        onError.close();
         Zone.current.handleUncaughtError(
             e[0], new StackTrace.fromString(e[1].toString()));
       });
 
       onExit.listen((_) {
+        onExit.close();
+        onError.close();
         if (!completer.isCompleted) {
           completer.complete(ExitCode.success.code);
         }
@@ -95,16 +118,25 @@ class RunCommand extends BuildRunnerCommand {
 
       isolate = await Isolate.spawnUri(
         p.toUri(scriptPath),
-        argResults.rest.skip(1).toList(),
+        passedArgs,
         null,
         onExit: onExit.sendPort,
         onError: onError.sendPort,
+        packageConfig: p.toUri(packageConfigPath),
       );
 
       return await completer.future;
+    } on IsolateSpawnException catch (e) {
+      stderr.writeln(e);
+      onExit?.close();
+      onError?.close();
+      stderr.writeln(
+          'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "lib", "web", "test).');
+      return ExitCode.ioError.code;
     } finally {
       // Clean up the output dir.
-      await new Directory(tempPath).delete(recursive: true);
+      var dir = new Directory(tempPath);
+      if (await dir.exists()) await dir.delete(recursive: true);
     }
   }
 }
