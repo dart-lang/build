@@ -1,6 +1,8 @@
-## 0.10.2+5-dev
+## 0.10.3
 
 - Require test version ^0.12.42 and use `TypeMatcher`.
+- Improve performance of test methods which use a `Resolver` by keeping a cached
+  instance of `AnalyzerResolvers`.
 
 ## 0.10.2+4
 

@@ -13,6 +13,8 @@ import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'package_reader.dart';
 
+final defaultResolvers = new AnalyzerResolvers();
+
 /// Marker constant that may be used in combination with [resolveSources].
 ///
 /// Use of this string means instead of using the contents of the string as the
@@ -197,7 +199,7 @@ Future<T> _resolveAssets<T>(
     inputAssets.keys,
     new MultiAssetReader([inMemory, assetReader]),
     new InMemoryAssetWriter(),
-    resolvers ?? new AnalyzerResolvers(),
+    resolvers ?? defaultResolvers,
   );
   return resolveBuilder.onDone.future;
 }
