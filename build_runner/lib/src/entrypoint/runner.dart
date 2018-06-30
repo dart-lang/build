@@ -9,6 +9,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 
 import 'build.dart';
 import 'clean.dart';
+import 'run_script.dart';
 import 'serve.dart';
 import 'test.dart';
 import 'watch.dart';
