@@ -23,7 +23,7 @@ Defines the interfaces for creating a `Builder` which is a way of doing codegen
 that is compatible across build systems (pub, bazel, standalone runner).
 
 For packages doing code generation this should generally be the only package
-against which there is a public dependency. Packages may have a dev_depenency on
+against which there is a public dependency. Packages may have a dev_dependency on
 one or more of the other packages.
 
 ## [build_config](https://github.com/dart-lang/build/blob/master/build_config/README.md)
