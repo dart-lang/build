@@ -23,6 +23,11 @@ class RunCommand extends BuildRunnerCommand {
       'Performs a single build on the specified targets, and executes a Dart script with the given arguments.';
 
   @override
+  String get invocation =>
+      '${super.invocation.replaceFirst('[arguments]', '[build-arguments]')} '
+      '<executable> [-- [script-arguments]]';
+
+  @override
   SharedOptions readOptions() {
     // The default option parser will throw if we pass additional arguments,
     // because it expects positional arguments to be build directories.
@@ -36,11 +41,9 @@ class RunCommand extends BuildRunnerCommand {
   FutureOr<int> run() async {
     // Ensure that the user passed the name of a file to run.
     if (argResults.rest.isEmpty) {
-      // Print the same message as Pub, for consistency's sake.
       stderr
         ..writeln('Must specify an executable to run.')
         ..writeln()
-        ..writeln('Usage: pub run build_runner run <executable> [args...]')
         ..writeln(usage);
       return ExitCode.usage.code;
     }
