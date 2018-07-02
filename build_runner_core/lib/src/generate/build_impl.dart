@@ -429,9 +429,9 @@ class _SingleBuild {
 
     await tracker.track(
         () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
-                    new PerformanceTrackingResolvers(_resolvers, tracker),
-                    logger: logger, resourceManager: _resourceManager)
-                .catchError((_) {
+                new PerformanceTrackingResolvers(_resolvers, tracker),
+                logger: logger,
+                resourceManager: _resourceManager).catchError((_) {
               // Errors tracked through the logger
             }),
         'Build');
