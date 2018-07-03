@@ -47,8 +47,8 @@ void main() {
 
     group('simple graph', () {
       setUp(() async {
-        graph = await AssetGraph
-            .build([], new Set(), new Set(), fooPackageGraph, digestReader);
+        graph = await AssetGraph.build(
+            [], new Set(), new Set(), fooPackageGraph, digestReader);
       });
 
       test('add, contains, get, allNodes', () {
