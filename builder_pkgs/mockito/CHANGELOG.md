@@ -1,6 +1,11 @@
+## 3.0.0-beta+2
+
+* Fix matcher package's version constraint to only support versions with `const
+  TypeMatcher`.
+
 ## 3.0.0-beta+1
 
-- Upgrade package dependencies.
+* Upgrade package dependencies.
 
 ## 3.0.0-beta
 

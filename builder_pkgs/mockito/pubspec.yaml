@@ -1,5 +1,5 @@
 name: mockito
-version: 3.0.0-beta+1
+version: 3.0.0-beta+2
 
 authors:
   - Dmitriy Fibulwinter <fibulwinter@gmail.com>
@@ -13,7 +13,7 @@ environment:
 
 dependencies:
   collection: ^1.1.0
-  matcher: ^0.12.0
+  matcher: ^0.12.3
   meta: ^1.0.4
   test: '>=0.12.25 <2.0.0'
 
