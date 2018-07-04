@@ -22,7 +22,6 @@ dependencies:
   meta: ^1.1.0
   path: ^1.1.0
   pool: ^1.0.0
-  pub_semver: ^1.4.1
   stream_transform: ^0.0.13
   watcher: ^0.9.7
   yaml: ^2.1.0
