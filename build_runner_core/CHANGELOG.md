@@ -1,5 +1,7 @@
-PATCH
-- The SDK version comparison in asset graph check function compare actual version ignoring everything after version value
+## 0.2.1+1
+
+- Allow reuse cache between machines with different OS
+
 ## 0.2.1
 
 - The hash dir for the asset graph under `.dart_tool/build` is now based on a
