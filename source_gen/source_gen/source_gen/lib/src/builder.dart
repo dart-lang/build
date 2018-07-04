@@ -247,7 +247,7 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
     try {
       var msg = 'Running $gen';
       if (generators.length > 1) {
-        msg = '$msg - ${i+1} of ${generators.length}';
+        msg = '$msg - ${i + 1} of ${generators.length}';
       }
       log.fine(msg);
       var createdUnit = await gen.generate(libraryReader, buildStep);
