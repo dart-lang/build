@@ -220,7 +220,7 @@ class _Loader {
           ]);
           return null;
         }
-        if (!areSdkVersionsSame(cachedGraph.dartVersion, Platform.version)) {
+        if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
           _logger.warning(
               'Throwing away cached asset graph due to Dart SDK update.');
           await Future.wait([
