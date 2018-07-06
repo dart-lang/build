@@ -93,5 +93,5 @@ class AssetSource implements Source {
 Uri assetUri(AssetId assetId) => assetId.path.startsWith('lib/')
     ? new Uri(
         scheme: 'package',
-        path: '${assetId.package}/${assetId.path.replaceFirst('lib/','')}')
+        path: '${assetId.package}/${assetId.path.replaceFirst('lib/', '')}')
     : new Uri(scheme: 'asset', path: '${assetId.package}/${assetId.path}');
