@@ -32,8 +32,7 @@ void main() {
           isSameSdkVersion('2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
               '2.0.0-dev30.4 (unknown_timestamp) "linux_x64"'),
           isFalse);
-      expect(
-          isSameSdkVersion('random_string', 'random_string_other'), isFalse);
+      expect(isSameSdkVersion('random_string', 'random_string_other'), isFalse);
     });
   });
 }
