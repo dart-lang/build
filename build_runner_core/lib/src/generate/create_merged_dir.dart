@@ -210,8 +210,8 @@ Future<bool> _cleanUpOutputDir(
   if (!manifestFile.existsSync()) {
     if (outputDir.listSync(recursive: false).isNotEmpty) {
       var choices = [
-        'Skip creating the output directory',
-        'Delete the existing directory entirely',
+        'Leave the directory unchanged and skip writing the build output',
+        'Delete the directory and all contents',
         'Leave the directory in place and write over any existing files',
       ];
       int choice;
