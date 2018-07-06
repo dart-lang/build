@@ -5,13 +5,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_resolvers/build_resolvers.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
+import 'resolve_source.dart';
 
 AssetId _passThrough(AssetId id) => id;
 
@@ -133,8 +133,7 @@ Future testBuilder(
   var writerSpy = new AssetWriterSpy(writer);
   var logger = new Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
-  await runBuilder(
-      builder, inputIds, reader, writerSpy, new AnalyzerResolvers(),
+  await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
       logger: logger);
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
