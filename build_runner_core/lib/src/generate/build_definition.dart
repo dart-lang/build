@@ -23,6 +23,7 @@ import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../util/constants.dart';
+import '../util/sdk_version_match.dart';
 import 'exceptions.dart';
 import 'options.dart';
 import 'phase.dart';
@@ -219,7 +220,7 @@ class _Loader {
           ]);
           return null;
         }
-        if (cachedGraph.dartVersion != Platform.version) {
+        if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
           _logger.warning(
               'Throwing away cached asset graph due to Dart SDK update.');
           await Future.wait([
