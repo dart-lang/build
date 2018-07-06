@@ -133,8 +133,7 @@ Future testBuilder(
   var writerSpy = new AssetWriterSpy(writer);
   var logger = new Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
-  await runBuilder(
-      builder, inputIds, reader, writerSpy, defaultResolvers,
+  await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
       logger: logger);
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
