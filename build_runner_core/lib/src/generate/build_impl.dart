@@ -206,7 +206,8 @@ class _SingleBuild {
     }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
-          '${result.outputs.length} outputs ($actionsCompletedCount actions)\n');
+          '${result
+              .outputs.length} outputs ($actionsCompletedCount actions)\n');
     } else {
       _logger.severe('Failed after ${humanReadable(watch.elapsed)}');
     }

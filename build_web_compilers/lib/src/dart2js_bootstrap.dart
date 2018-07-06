@@ -37,7 +37,8 @@ Future<Null> bootstrapDart2Js(
         await _createPackageFile(allSrcs, buildStep, scratchSpace);
 
     var dartPath = dartEntrypointId.path.startsWith('lib/')
-        ? 'package:${dartEntrypointId.package}/${dartEntrypointId.path.substring('lib/'.length)}'
+        ? 'package:${dartEntrypointId.package}/${dartEntrypointId.path
+            .substring('lib/'.length)}'
         : dartEntrypointId.path;
     var jsOutputPath =
         '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
