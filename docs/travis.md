@@ -53,6 +53,10 @@ script:
   - pub run build_runner test
 ```
 
+**Note:** If you are running out of memory due to large builds, you can use the
+`--low-resources-mode` option. This will remove all file caching which is slower
+but more reliable in low memory environments.
+
 ## Using build stages to share a cache across multiple jobs
 
 If you have a lot of tests you might be sharding those tests across multiple
@@ -103,10 +107,6 @@ stages:
 
 In practice, you probably want to add an additional stage before both of these,
 which runs the dartanalyzer and dartfmt checks.
-
-**Note:** If you are running out of memory due to large builds, you can use the
-`--low-resources-mode` option (pass it before the `--`). This will remove all
-file caching which is slower but more reliable in low memory environments.
 
 ## Complete example
 
