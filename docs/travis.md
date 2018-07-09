@@ -170,5 +170,6 @@ stages:
 
 cache:
   directories:
+    - $HOME/.pub-cache
     - .dart_tool/build
 ```
