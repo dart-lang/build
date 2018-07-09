@@ -1,3 +1,8 @@
+## 0.2.1+2-dev
+
+- Clarify wording for conflicting output directory options. No behavioral
+  differences.
+
 ## 0.2.1+1
 
 - Allow reuse cache between machines with different OS
