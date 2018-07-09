@@ -72,8 +72,7 @@ documentation for information on running Builders.
 ### What is the difference between `source_gen` and [`build`][build]?
 
 Build is a platform-agnostic framework for Dart asset or code generation that
-is pluggable into multiple build systems including
-[barback (pub/dart transformers)][build_barback], [bazel][bazel_codegen], and
+is pluggable into build systems including [bazel][bazel_codegen], and
 standalone tools like [build_runner][]. You could also build your own.
 
 Meanwhile, `source_gen` provides an API and tooling that is easily usable on
@@ -111,7 +110,6 @@ detail*.
 [angular2]: https://pub.dartlang.org/packages/angular2
 [bazel_codegen]: https://pub.dartlang.org/packages/_bazel_codegen
 [build]: https://pub.dartlang.org/packages/build
-[build_barback]: https://pub.dartlang.org/packages/build_barback
 [build_runner]: https://pub.dartlang.org/packages/build_runner
 
 <!-- Dartdoc -->
