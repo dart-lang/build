@@ -75,7 +75,6 @@ jobs:
     # This stage builds the entire `test` directory
     - stage: build
       script:
-        - pub get
         - pub run build_runner build test
     # Set up several jobs in the next stage, using the built in sharding
     # feature from the `test` package.
@@ -85,19 +84,15 @@ jobs:
     # properly above!).
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 0
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 1
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 2
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 3
 
 # Specify the ordering of your stages
@@ -109,6 +104,10 @@ stages:
 In practice, you probably want to add an additional stage before both of these,
 which runs the dartanalyzer and dartfmt checks.
 
+**Note:** If you are running out of memory due to large builds, you can use the
+`--low-resources-mode` option (pass it before the `--`). This will remove all
+file caching which is slower but more reliable in low memory environments.
+
 ## Complete example
 
 That might have been a lot to digest, so here is a full example `.travis.yml`
@@ -118,7 +117,8 @@ file, which includes all the basics:
 language: dart
 
 # Optional, the dart sdk release channel to use.
-dart: dev
+dart:
+  - dev
 
 # Optional, required for web tests.
 sudo: required
@@ -129,15 +129,13 @@ addons:
 jobs:
   include:
     # First, check that everything analyzes properly and is formatted.
-    - stage: analyze_format
+    - stage: analyze_and_format
       script:
-        - pub get
         - datanalyzer --fatal-warnings .
         - dartfmt -n --set-exit-if-changed .
     # Next, build the entire `test` directory
     - stage: build
       script:
-        - pub get
         - pub run build_runner build test
     # Set up several jobs in the next stage, using the built in sharding
     # feature from the `test` package.
@@ -147,24 +145,20 @@ jobs:
     # properly above!).
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 0
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 1
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 2
     - stage: unit_test
       script:
-        - pub get
         - pub run build_runner test -- --total-shards 4 --shard-index 3
 
 # Specify the ordering of your stages
 stages:
-  - analyze_format
+  - analyze_and_format
   - build
   - unit_test
 
