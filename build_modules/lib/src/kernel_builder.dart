@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
@@ -76,44 +77,47 @@ Future _createKernel(
     @required bool summaryOnly,
     @required String outputExtension,
     @required String sdkKernelPath}) async {
-  var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
-  var transitiveKernelDeps = <AssetId>[];
-  var transitiveSourceDeps = <AssetId>[];
-
-  // Provide kernel dependencies where possible (if created in a previous
-  // phase), otherwise provide dart sources.
-  await Future.wait(transitiveDeps.map((dep) async {
-    var kernelId = dep.primarySource.changeExtension(outputExtension);
-    if (await buildStep.canRead(kernelId)) {
-      // If we can read the kernel file, but it depends on any module in this
-      // package, then we need to only provide sources for that file since its
-      // dependencies in this package will only be providing sources as well.
-      if ((await dep.computeTransitiveDependencies(buildStep)).any(
-          (m) => m.primarySource.package == module.primarySource.package)) {
-        transitiveSourceDeps.addAll(dep.sources);
-      } else {
-        transitiveKernelDeps.add(kernelId);
-      }
-    } else {
-      transitiveSourceDeps.addAll(dep.sources);
-    }
-  }));
-
-  var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-
-  var allAssetIds = new Set<AssetId>()
-    ..addAll(module.sources)
-    ..addAll(transitiveKernelDeps)
-    ..addAll(transitiveSourceDeps);
-  await scratchSpace.ensureAssets(allAssetIds, buildStep);
-  var outputId = module.primarySource.changeExtension(outputExtension);
-  var outputFile = scratchSpace.fileFor(outputId);
   var request = new WorkRequest();
+  AssetId outputId;
+  File outputFile;
+  File packagesFile;
+  {
+    var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
+    var transitiveKernelDeps = <AssetId>[];
+    var transitiveSourceDeps = <AssetId>[];
 
-  var packagesFile = await createPackagesFile(allAssetIds);
+    // Provide kernel dependencies where possible (if created in a previous
+    // phase), otherwise provide dart sources.
+    await Future.wait(transitiveDeps.map((dep) async {
+      var kernelId = dep.primarySource.changeExtension(outputExtension);
+      if (await buildStep.canRead(kernelId)) {
+        // If we can read the kernel file, but it depends on any module in this
+        // package, then we need to only provide sources for that file since its
+        // dependencies in this package will only be providing sources as well.
+        if ((await dep.computeTransitiveDependencies(buildStep)).any(
+            (m) => m.primarySource.package == module.primarySource.package)) {
+          transitiveSourceDeps.addAll(dep.sources);
+        } else {
+          transitiveKernelDeps.add(kernelId);
+        }
+      } else {
+        transitiveSourceDeps.addAll(dep.sources);
+      }
+    }));
 
-  // We need to make sure and clean up the temp dir, even if we fail to compile.
-  try {
+    var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+
+    var allAssetIds = new Set<AssetId>()
+      ..addAll(module.sources)
+      ..addAll(transitiveKernelDeps)
+      ..addAll(transitiveSourceDeps);
+    await scratchSpace.ensureAssets(allAssetIds, buildStep);
+
+    packagesFile = await createPackagesFile(allAssetIds);
+
+    outputId = module.primarySource.changeExtension(outputExtension);
+    outputFile = scratchSpace.fileFor(outputId);
+
     var sdkSummary = p.join(sdkDir, sdkKernelPath);
     request.arguments.addAll([
       '--dart-sdk-summary',
@@ -145,7 +149,10 @@ Future _createKernel(
           : '$multiRootScheme:///${id.path}';
       return '--source=$uri';
     }));
+  }
 
+  // We need to make sure and clean up the temp dir, even if we fail to compile.
+  try {
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
     var response = await analyzer.doWork(request);
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {

@@ -8,8 +8,13 @@ import 'dart:convert';
 import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:pool/pool.dart';
 
 import '../builders.dart';
+
+/// Because we hold bytes in memory we don't want to compile to many app entry
+/// points at once.
+final _buildPool = new Pool(16);
 
 /// A builder which combines several [vmKernelModuleExtension] modules into a
 /// single [vmKernelEntrypointExtension] file, which represents an entire
@@ -24,27 +29,29 @@ class VmEntrypointBuilder implements Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    var dartEntrypointId = buildStep.inputId;
-    var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
-    if (!isAppEntrypoint) return;
+    await _buildPool.withResource(() async {
+      var dartEntrypointId = buildStep.inputId;
+      var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
+      if (!isAppEntrypoint) return;
 
-    var moduleId = buildStep.inputId.changeExtension(moduleExtension);
-    var module = new Module.fromJson(
-        json.decode(await buildStep.readAsString(moduleId))
-            as Map<String, dynamic>);
-    var transitiveModules =
-        await module.computeTransitiveDependencies(buildStep);
-    var transitiveKernelModules = [
-      module.primarySource.changeExtension(vmKernelModuleExtension)
-    ].followedBy(transitiveModules
-        .map((m) => m.primarySource.changeExtension(vmKernelModuleExtension)));
-    var appContents = <int>[];
-    for (var dependencyId in transitiveKernelModules) {
-      appContents.addAll(await buildStep.readAsBytes(dependencyId));
-    }
-    await buildStep.writeAsBytes(
-        buildStep.inputId.changeExtension(vmKernelEntrypointExtension),
-        appContents);
+      var moduleId = buildStep.inputId.changeExtension(moduleExtension);
+      var module = new Module.fromJson(
+          json.decode(await buildStep.readAsString(moduleId))
+              as Map<String, dynamic>);
+      var transitiveModules =
+          await module.computeTransitiveDependencies(buildStep);
+      var transitiveKernelModules = [
+        module.primarySource.changeExtension(vmKernelModuleExtension)
+      ].followedBy(transitiveModules.map(
+          (m) => m.primarySource.changeExtension(vmKernelModuleExtension)));
+      var appContents = <int>[];
+      for (var dependencyId in transitiveKernelModules) {
+        appContents.addAll(await buildStep.readAsBytes(dependencyId));
+      }
+      await buildStep.writeAsBytes(
+          buildStep.inputId.changeExtension(vmKernelEntrypointExtension),
+          appContents);
+    });
   }
 }
 
