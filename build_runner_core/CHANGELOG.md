@@ -2,6 +2,7 @@
 
 - Clarify wording for conflicting output directory options. No behavioral
   differences.
+- Reduce the memory consumption required to create an output dir significantly.
 
 ## 0.2.1+1
 
