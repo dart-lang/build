@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module_clean_builder.dart';
+import 'package:build_modules/src/module_library_builder.dart';
 
 import 'matchers.dart';
 import 'util.dart';
@@ -33,6 +34,7 @@ main() {
       };
 
       // Set up all the other required inputs for this test.
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
       await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
       await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
       await testBuilderAndCollectAssets(new ModuleBuilder(), assets);

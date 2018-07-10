@@ -11,6 +11,10 @@
 - Removed the `kernelSummaryExtension`, and renamed the `KernelSummaryBuilder`
   to `KernelBuilder`. The new builder can be used to create summaries or full
   kernel files, and requires users to give it a custom sdk.
+- Changed `metaModuleCleanBuilder` to read `.dart.library` files which are
+  produced by the `moduleLibrayBuilder`. Clients using the automatically
+  generated build script will get this automatically. Clients which have
+  manually written build scripts will need to add it.
 
 ## 0.2.3
 

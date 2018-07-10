@@ -2,28 +2,45 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:build/build.dart';
-import 'package:build_modules/src/modules.dart';
-import 'package:build_modules/src/meta_module.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
+import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/module_library.dart';
+import 'package:build_modules/src/modules.dart';
+
 import 'matchers.dart';
 
-InMemoryAssetReader reader;
-
-List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
-  reader = new InMemoryAssetReader();
-  var assets = new Set<AssetId>();
-  assetDescriptors.forEach((serializedId, content) {
-    var id = new AssetId.parse(serializedId);
-    reader.cacheStringAsset(id, content);
-    assets.add(id);
-  });
-  return assets.toList();
-}
-
 void main() {
+  InMemoryAssetReader reader;
+
+  List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
+    reader = new InMemoryAssetReader();
+    var assets = new Set<AssetId>();
+    assetDescriptors.forEach((serializedId, content) {
+      var id = new AssetId.parse(serializedId);
+      reader.cacheStringAsset(id, content);
+      assets.add(id);
+    });
+    return assets.toList();
+  }
+
+  Future<MetaModule> metaModuleFromSources(
+      InMemoryAssetReader reader, List<AssetId> sources) async {
+    final libraries = (await Future.wait(sources.map((s) async =>
+            ModuleLibrary.fromSource(s, await reader.readAsString(s)))))
+        .where((l) => l.isImportable);
+    for (final library in libraries) {
+        reader.cacheStringAsset(
+            library.id.addExtension('.library'), '$library');
+    }
+    return MetaModule.forLibraries(
+        reader, libraries.map((l) => l.id.addExtension('.library')).toList());
+  }
+
   test('no strongly connected components, one shared lib', () async {
     var assets = makeAssets({
       'myapp|lib/a.dart': '''
@@ -50,7 +67,7 @@ void main() {
       matchesModule(new Module(c, [c, d], [])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -76,7 +93,7 @@ void main() {
       matchesModule(new Module(a, [a, b, c], []))
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -122,7 +139,7 @@ void main() {
       matchesModule(new Module(e, [e, g, f], [])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -144,7 +161,7 @@ void main() {
       ])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -173,7 +190,7 @@ void main() {
       matchesModule(new Module(b, [b], [])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -218,7 +235,7 @@ void main() {
       matchesModule(new Module(f, [f], [d])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -246,7 +263,7 @@ void main() {
       matchesModule(new Module(a, [a, ap, sap], [])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -276,7 +293,7 @@ void main() {
       matchesModule(new Module(sa, [sa], [c])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -310,7 +327,7 @@ void main() {
       matchesModule(new Module(c, [c, d], [])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -351,7 +368,7 @@ void main() {
       matchesModule(new Module(e, [e], [d])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -386,7 +403,7 @@ void main() {
       matchesModule(new Module(b3, [b3], [])),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
 
     expect(meta.modules, unorderedMatches(expectedModules));
   });

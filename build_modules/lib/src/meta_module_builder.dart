@@ -36,8 +36,9 @@ class MetaModuleBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (!_isCoarse) return;
 
-    var assets = await buildStep.findAssets(new Glob('**.dart')).toList();
-    var metaModule = await MetaModule.forAssets(buildStep, assets);
+    var libraryAssets =
+        await buildStep.findAssets(new Glob('**.dart.library')).toList();
+    var metaModule = await MetaModule.forLibraries(buildStep, libraryAssets);
     var id = new AssetId(buildStep.inputId.package, 'lib/$metaModuleExtension');
     await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
   }

@@ -17,6 +17,7 @@ class ModuleCleanup implements PostProcessBuilder {
 
   @override
   final inputExtensions = const [
+    '.dart.library',
     '.meta_module.raw',
     '.meta_module.clean',
     '.module',
