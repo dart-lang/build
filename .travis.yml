@@ -21,7 +21,7 @@ jobs:
       env: PKG="_test"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh command
+      script: ./tool/travis.sh command_0
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
@@ -69,7 +69,7 @@ jobs:
       env: PKG="build"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_1
       env: PKG="build"
       dart: dev
     - stage: analyze_and_format
@@ -179,3 +179,4 @@ branches:
 cache:
   directories:
     - $HOME/.pub-cache
+    - build/.dart_tool/build

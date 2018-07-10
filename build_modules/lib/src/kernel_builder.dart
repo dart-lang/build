@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
@@ -70,80 +71,51 @@ class KernelBuilder implements Builder {
 }
 
 /// Creates a kernel file for [module].
-Future _createKernel(
+Future<void> _createKernel(
     {@required Module module,
     @required BuildStep buildStep,
     @required bool summaryOnly,
     @required String outputExtension,
     @required String sdkKernelPath}) async {
-  var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
-  var transitiveKernelDeps = <AssetId>[];
-  var transitiveSourceDeps = <AssetId>[];
-
-  // Provide kernel dependencies where possible (if created in a previous
-  // phase), otherwise provide dart sources.
-  await Future.wait(transitiveDeps.map((dep) async {
-    var kernelId = dep.primarySource.changeExtension(outputExtension);
-    if (await buildStep.canRead(kernelId)) {
-      transitiveKernelDeps.add(kernelId);
-    } else {
-      transitiveSourceDeps.addAll(dep.sources);
-    }
-  }));
-
+  var request = new WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-
-  var allAssetIds = new Set<AssetId>()
-    ..addAll(module.sources)
-    ..addAll(transitiveKernelDeps)
-    ..addAll(transitiveSourceDeps);
-  await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var outputId = module.primarySource.changeExtension(outputExtension);
   var outputFile = scratchSpace.fileFor(outputId);
-  var request = new WorkRequest();
 
-  var allDeps = <AssetId>[]
-    ..addAll(transitiveKernelDeps)
-    ..addAll(module.sources);
-  var packagesFile = await createPackagesFile(allDeps, scratchSpace);
+  File packagesFile;
+
+  {
+    var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
+    var transitiveKernelDeps = <AssetId>[];
+    var transitiveSourceDeps = <AssetId>[];
+
+    await Future.wait(transitiveDeps.map((dep) => _addModuleDeps(
+        dep,
+        module,
+        transitiveKernelDeps,
+        transitiveSourceDeps,
+        buildStep,
+        outputExtension)));
+
+    var allAssetIds = new Set<AssetId>()
+      ..addAll(module.sources)
+      ..addAll(transitiveKernelDeps)
+      ..addAll(transitiveSourceDeps);
+    await scratchSpace.ensureAssets(allAssetIds, buildStep);
+
+    packagesFile = await createPackagesFile(allAssetIds);
+
+    _addRequestArguments(request, module, transitiveKernelDeps, sdkDir,
+        sdkKernelPath, outputFile, packagesFile, summaryOnly);
+  }
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    var sdkSummary = p.join(sdkDir, sdkKernelPath);
-    request.arguments.addAll([
-      '--dart-sdk-summary',
-      new Uri.file(sdkSummary).toString(),
-      '--output',
-      outputFile.path,
-      '--packages-file',
-      packagesFile.uri.toString(),
-      '--multi-root-scheme',
-      multiRootScheme,
-      '--exclude-non-sources',
-      summaryOnly ? '--summary-only' : '--no-summary-only',
-    ]);
-
-    // Add all summaries as summary inputs.
-    request.arguments.addAll(transitiveKernelDeps.map((id) {
-      var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
-          from: scratchSpace.tempDir.uri.path);
-      if (summaryOnly) {
-        return '--input-summary=$multiRootScheme:///$relativePath';
-      } else {
-        return '--input-linked=$multiRootScheme:///$relativePath';
-      }
-    }));
-    request.arguments.addAll(module.sources.map((id) {
-      var uri = id.path.startsWith('lib')
-          ? canonicalUriFor(id)
-          : '$multiRootScheme:///${id.path}';
-      return '--source=$uri';
-    }));
-
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
     var response = await analyzer.doWork(request);
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
-      throw new KernelException(outputId, '${response.output}');
+      throw new KernelException(
+          outputId, '${request.arguments.join(' ')}\n${response.output}');
     }
 
     if (response.output?.isEmpty == false) {
@@ -155,4 +127,72 @@ Future _createKernel(
   } finally {
     await packagesFile.parent.delete(recursive: true);
   }
+}
+
+/// Adds the source or kernel dependencies for [dependency] to
+/// [transitiveKernelDeps] or [transitiveSourceDeps].
+Future<void> _addModuleDeps(
+    Module dependency,
+    Module root,
+    List<AssetId> transitiveKernelDeps,
+    List<AssetId> transitiveSourceDeps,
+    BuildStep buildStep,
+    String outputExtension) async {
+  var kernelId = dependency.primarySource.changeExtension(outputExtension);
+  if (await buildStep.canRead(kernelId)) {
+    // If we can read the kernel file, but it depends on any module in this
+    // package, then we need to only provide sources for that file since its
+    // dependencies in this package will only be providing sources as well.
+    if ((await dependency.computeTransitiveDependencies(buildStep))
+        .any((m) => m.primarySource.package == root.primarySource.package)) {
+      transitiveSourceDeps.addAll(dependency.sources);
+    } else {
+      transitiveKernelDeps.add(kernelId);
+    }
+  } else {
+    transitiveSourceDeps.addAll(dependency.sources);
+  }
+}
+
+/// Fills in all the required arguments for [request] in order to compile the
+/// kernel file for [module].
+void _addRequestArguments(
+    WorkRequest request,
+    Module module,
+    Iterable<AssetId> transitiveKernelDeps,
+    String sdkDir,
+    String sdkKernelPath,
+    File outputFile,
+    File packagesFile,
+    bool summaryOnly) {
+  request.arguments.addAll([
+    '--dart-sdk-summary',
+    new Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
+    '--output',
+    outputFile.path,
+    '--packages-file',
+    packagesFile.uri.toString(),
+    '--multi-root-scheme',
+    multiRootScheme,
+    '--exclude-non-sources',
+    summaryOnly ? '--summary-only' : '--no-summary-only',
+  ]);
+
+  // Add all summaries as summary inputs.
+  request.arguments.addAll(transitiveKernelDeps.map((id) {
+    var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
+        from: scratchSpace.tempDir.uri.path);
+    if (summaryOnly) {
+      return '--input-summary=$multiRootScheme:///$relativePath';
+    } else {
+      return '--input-linked=$multiRootScheme:///$relativePath';
+    }
+  }));
+
+  request.arguments.addAll(module.sources.map((id) {
+    var uri = id.path.startsWith('lib')
+        ? canonicalUriFor(id)
+        : '$multiRootScheme:///${id.path}';
+    return '--source=$uri';
+  }));
 }

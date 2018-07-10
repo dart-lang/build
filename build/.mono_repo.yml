@@ -6,7 +6,5 @@ stages:
     - group:
         - dartfmt: sdk
         - dartanalyzer: --fatal-infos --fatal-warnings .
-      dart:
-        - dev
   - unit_test:
-    - test
+    - command: pub run build_runner test
