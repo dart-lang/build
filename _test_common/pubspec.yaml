@@ -1,5 +1,4 @@
 name: _test_common
-# This package is not intended to be published
 publish_to: none
 description: Test infra for writing build tests. Is not published.
 
