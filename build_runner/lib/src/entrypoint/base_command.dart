@@ -17,11 +17,11 @@ abstract class BuildRunnerCommand extends Command<int> {
 
   PackageGraph get packageGraph => (runner as BuildCommandRunner).packageGraph;
 
-  BuildRunnerCommand() {
-    _addBaseFlags();
+  BuildRunnerCommand({bool symlinksDefault}) {
+    _addBaseFlags(symlinksDefault ?? false);
   }
 
-  void _addBaseFlags() {
+  void _addBaseFlags(bool symlinksDefault) {
     argParser
       ..addFlag(assumeTtyOption,
           help: 'Enables colors and interactive input when the script does not'
@@ -81,7 +81,11 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: 'Build with release mode defaults for builders.')
       ..addMultiOption(defineOption,
           splitCommas: false,
-          help: 'Sets the global `options` config for a builder by key.');
+          help: 'Sets the global `options` config for a builder by key.')
+      ..addFlag(symlinkOption,
+          defaultsTo: symlinksDefault,
+          negatable: true,
+          help: 'Symlink files in the output directories, instead of copying.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.

@@ -41,6 +41,7 @@ class BuildOptions {
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
   final Map<String, String> outputMap;
+  final bool outputSymlinksOnly;
   final bool trackPerformance;
   final bool verbose;
   final List<String> buildDirs;
@@ -62,6 +63,7 @@ class BuildOptions {
     @required this.enableLowResourcesMode,
     @required this.logListener,
     @required this.outputMap,
+    @required this.outputSymlinksOnly,
     @required this.packageGraph,
     @required this.skipBuildScriptCheck,
     @required this.trackPerformance,
@@ -79,6 +81,7 @@ class BuildOptions {
     bool enableLowResourcesMode,
     Level logLevel,
     Map<String, String> outputMap,
+    bool outputSymlinksOnly,
     @required PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
     bool skipBuildScriptCheck,
@@ -117,6 +120,7 @@ class BuildOptions {
     enableLowResourcesMode ??= false;
     buildDirs ??= [];
     trackPerformance ??= false;
+    outputSymlinksOnly ??= false;
     if (logPerformanceDir != null) {
       // Requiring this to be under the root package allows us to use an
       // `AssetWriter` to write logs.
@@ -135,6 +139,7 @@ class BuildOptions {
       enableLowResourcesMode: enableLowResourcesMode,
       logListener: logListener,
       outputMap: outputMap,
+      outputSymlinksOnly: outputSymlinksOnly,
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,

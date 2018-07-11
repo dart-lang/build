@@ -61,6 +61,7 @@ class BuildImpl {
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final Map<String, String> _outputMap;
+  final bool _outputSymlinksOnly;
   final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
@@ -81,6 +82,7 @@ class BuildImpl {
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
         _outputMap = options.outputMap,
+        _outputSymlinksOnly = options.outputSymlinksOnly,
         _verbose = options.verbose,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
@@ -129,6 +131,7 @@ class _SingleBuild {
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final Map<String, String> _outputMap;
+  final bool _outputSymlinksOnly;
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
@@ -153,6 +156,7 @@ class _SingleBuild {
         _buildPhases = buildImpl._buildPhases,
         _environment = buildImpl._environment,
         _outputMap = buildImpl._outputMap,
+        _outputSymlinksOnly = buildImpl._outputSymlinksOnly,
         _packageGraph = buildImpl._packageGraph,
         _performanceTracker = buildImpl._trackPerformance
             ? new BuildPerformanceTracker()
@@ -217,7 +221,7 @@ class _SingleBuild {
             _reader as PathProvidingAssetReader,
             _environment,
             optionalOutputTracker,
-            symlinkOnly: true)) {
+            symlinkOnly: _outputSymlinksOnly)) {
           result =
               _convertToFailure(result, failureType: FailureType.cantCreate);
         }

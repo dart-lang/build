@@ -16,6 +16,10 @@ import 'options.dart';
 /// A command that does a single build and then runs tests using the compiled
 /// assets.
 class TestCommand extends BuildRunnerCommand {
+  /// For tests we always want to default symlinks on, we know this isn't a
+  /// deployed directory.
+  TestCommand() : super(symlinksDefault: true);
+
   @override
   String get invocation =>
       '${super.invocation.replaceFirst('[arguments]', '[build-arguments]')} '
@@ -84,6 +88,7 @@ class TestCommand extends BuildRunnerCommand {
         configKey: options.configKey,
         assumeTty: options.assumeTty,
         outputMap: outputMap,
+        outputSymlinksOnly: options.outputSymlinksOnly,
         packageGraph: packageGraph,
         trackPerformance: options.trackPerformance,
         skipBuildScriptCheck: options.skipBuildScriptCheck,

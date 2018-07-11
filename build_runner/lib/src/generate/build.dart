@@ -45,6 +45,10 @@ import 'watch_impl.dart' as watch_impl;
 /// will be created for each value in the map which contains all original
 /// sources and built sources contained in the provided path.
 ///
+/// If [outputSymlinksOnly] is `true`, then the merged output directories will
+/// contain only symlinks, which is much faster but not generally suitable for
+/// deployment.
+///
 /// If [verbose] is `true` then verbose logging will be enabled. This changes
 /// the default [logLevel] to [Level.ALL] and removes stack frame folding, among
 /// other things.
@@ -61,6 +65,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     Stream terminateEventStream,
     bool enableLowResourcesMode,
     Map<String, String> outputMap,
+    bool outputSymlinksOnly,
     bool trackPerformance,
     bool skipBuildScriptCheck,
     bool verbose,
@@ -85,6 +90,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         await findBuildConfigOverrides(packageGraph, configKey),
     enableLowResourcesMode: enableLowResourcesMode,
     outputMap: outputMap,
+    outputSymlinksOnly: outputSymlinksOnly,
     trackPerformance: trackPerformance,
     verbose: verbose,
     buildDirs: buildDirs,
@@ -148,6 +154,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
         Map<String, String> outputMap,
+        bool outputSymlinksOnly,
         bool trackPerformance,
         bool skipBuildScriptCheck,
         bool verbose,
@@ -171,6 +178,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       terminateEventStream: terminateEventStream,
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
+      outputSymlinksOnly: outputSymlinksOnly,
       trackPerformance: trackPerformance,
       skipBuildScriptCheck: skipBuildScriptCheck,
       verbose: verbose,
