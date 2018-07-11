@@ -1,8 +1,25 @@
-## 0.2.1+2-dev
+## 0.3.0-dev
 
+### Breaking Changes
+
+- The `RunnerAssetReader` interface now requires that you implement the new
+  `PathProvidingAssetReader` interface, in order to support creating symlinks
+  to the original files.
+
+### New Features/Updates
+
+- Reduce the memory consumption required to create an output dir significantly.
+- Added a `outputSymlinksOnly` option to `BuildOptions`, that causes the merged
+  output directories to contain only symlinks, which is much faster than copying
+  files.
+- Added the `PathProvidingAssetReader` interface, which requires a
+  `String pathTo(AssetId id)` method that returns the underlying path to a
+  given file.
+- Added the `DelegatingAssetReader` interface, which allows an `AssetReader` to
+  indicate it is wrapping another `AssetReader`, and provide public access to
+  it.
 - Clarify wording for conflicting output directory options. No behavioral
   differences.
-- Reduce the memory consumption required to create an output dir significantly.
 
 ## 0.2.1+1
 

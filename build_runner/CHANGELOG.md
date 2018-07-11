@@ -1,3 +1,23 @@
+## 0.10.0-dev
+
+### Breaking Changes
+
+- The `RunnerAssetReader` interface now requires that you implement the new
+  `PathProvidingAssetReader` interface, in order to support creating symlinks
+  to the original files.
+
+### New Features
+
+- Added the `--symlink` option, which causes the merged output directories to
+  contain only symlinks, which is much faster than copying files.
+  - This is now the default for the `test` command.
+- Added the `PathProvidingAssetReader` interface, which requires a
+  `String pathTo(AssetId id)` method that returns the underlying path to a
+  given file.
+- Added the `DelegatingAssetReader` interface, which allows an `AssetReader` to
+  indicate it is wrapping another `AssetReader`, and provide public access to
+  it.
+
 ## 0.9.1
 
 - The hash dir for the asset graph under `.dart_tool/build` is now based on a
