@@ -218,7 +218,7 @@ class _SingleBuild {
             _outputMap,
             _assetGraph,
             _packageGraph,
-            _reader as PathProvidingAssetReader,
+            reader as PathProvidingAssetReader,
             _environment,
             optionalOutputTracker,
             symlinkOnly: _outputSymlinksOnly)) {
