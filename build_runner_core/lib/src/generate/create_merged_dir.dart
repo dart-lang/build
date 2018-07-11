@@ -148,44 +148,44 @@ bool _shouldSkipNode(
 }
 
 Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
-    PackageGraph packageGraph, AssetReader reader) async {
-  String assetPath;
-  if (id.path.startsWith('lib/')) {
-    assetPath =
-        p.url.join('packages', id.package, id.path.substring('lib/'.length));
-  } else {
-    assetPath = id.path;
-    assert(id.package == packageGraph.root.name);
-    if (root != null && p.isWithin(root, id.path)) {
-      assetPath = p.relative(id.path, from: root);
-    }
-  }
-
-  var outputId = new AssetId(packageGraph.root.name, assetPath);
-  try {
-    await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
-  } on AssetNotFoundException catch (e, __) {
-    if (p.basename(id.path).startsWith('.')) {
-      _logger.fine('Skipping missing hidden file ${id.path}');
+    PackageGraph packageGraph, AssetReader reader) {
+  return _descriptorPool.withResource(() async {
+    String assetPath;
+    if (id.path.startsWith('lib/')) {
+      assetPath =
+          p.url.join('packages', id.package, id.path.substring('lib/'.length));
     } else {
-      _logger.severe(
-          'Missing asset ${e.assetId}, it may have been deleted during the '
-          'build. Please try rebuilding and if you continue to see the '
-          'error then file a bug at '
-          'https://github.com/dart-lang/build/issues/new.');
-      rethrow;
+      assetPath = id.path;
+      assert(id.package == packageGraph.root.name);
+      if (root != null && p.isWithin(root, id.path)) {
+        assetPath = p.relative(id.path, from: root);
+      }
     }
-  }
-  return outputId;
+
+    var outputId = new AssetId(packageGraph.root.name, assetPath);
+    try {
+      await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+    } on AssetNotFoundException catch (e, __) {
+      if (p.basename(id.path).startsWith('.')) {
+        _logger.fine('Skipping missing hidden file ${id.path}');
+      } else {
+        _logger.severe(
+            'Missing asset ${e.assetId}, it may have been deleted during the '
+            'build. Please try rebuilding and if you continue to see the '
+            'error then file a bug at '
+            'https://github.com/dart-lang/build/issues/new.');
+        rethrow;
+      }
+    }
+    return outputId;
+  });
 }
 
 Future<void> _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) =>
-    _descriptorPool.withResource(
-        () => _fileFor(outputDir, id).then((file) => file.writeAsBytes(bytes)));
+    _fileFor(outputDir, id).then((file) => file.writeAsBytes(bytes));
 
 Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) =>
-    _descriptorPool.withResource(() =>
-        _fileFor(outputDir, id).then((file) => file.writeAsString(contents)));
+    _fileFor(outputDir, id).then((file) => file.writeAsString(contents));
 
 Future<File> _fileFor(Directory outputDir, AssetId id) {
   String relativePath;
