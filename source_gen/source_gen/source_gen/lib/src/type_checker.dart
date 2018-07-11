@@ -287,6 +287,8 @@ class UnresolvedAnnotationException implements Exception {
   final Element annotatedElement;
 
   /// Source span of the annotation that was not resolved.
+  ///
+  /// May be `null` if the import library was not found.
   final SourceSpan annotationSource;
 
   // TODO: Remove internal API once ElementAnnotation has source information.
@@ -295,6 +297,10 @@ class UnresolvedAnnotationException implements Exception {
     final internals = annotation as ElementAnnotationImpl;
     final astNode = internals.annotationAst;
     final contents = annotation.source.contents.data;
+    if (contents == null || contents.isEmpty) {
+      // If there is no import statement.
+      return null;
+    }
     final start = astNode.offset;
     final end = start + astNode.length;
     return new SourceSpan(
@@ -321,6 +327,11 @@ class UnresolvedAnnotationException implements Exception {
   );
 
   @override
-  String toString() => annotationSource
-      .message('Could not resolve annotation for $annotatedElement');
+  String toString() {
+    final message = 'Could not resolve annotation for $annotatedElement';
+    if (annotationSource != null) {
+      return annotationSource.message(message);
+    }
+    return message;
+  }
 }
