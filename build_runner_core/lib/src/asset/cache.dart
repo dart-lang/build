@@ -9,13 +9,14 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
-/// An [AssetReader] that wraps another [AssetReader] and caches all results
-/// from it.
+import 'reader.dart';
+
+/// An [DelegatingAssetReader] that caches all results from the delegate.
 ///
 /// Assets are cached until [invalidate] is invoked.
 ///
 /// Does not implement [findAssets].
-class CachingAssetReader implements AssetReader {
+class CachingAssetReader implements AssetReader, DelegatingAssetReader {
   /// Cached results of [readAsBytes].
   final _bytesContentCache = <AssetId, Future<List<int>>>{};
 
@@ -27,17 +28,17 @@ class CachingAssetReader implements AssetReader {
   /// These are computed and stored lazily using [readAsBytes].
   final _stringContentCache = <AssetId, Map<Encoding, Future<String>>>{};
 
-  /// The [AssetReader] to delegate all reads to.
-  final AssetReader _delegate;
+  @override
+  final AssetReader delegate;
 
-  CachingAssetReader(this._delegate);
+  CachingAssetReader(this.delegate);
 
   @override
   Future<bool> canRead(AssetId id) =>
-      _canReadCache.putIfAbsent(id, () => _delegate.canRead(id));
+      _canReadCache.putIfAbsent(id, () => delegate.canRead(id));
 
   @override
-  Future<Digest> digest(id) => _delegate.digest(id);
+  Future<Digest> digest(id) => delegate.digest(id);
 
   @override
   Stream<AssetId> findAssets(Glob glob) =>
@@ -45,7 +46,7 @@ class CachingAssetReader implements AssetReader {
 
   @override
   Future<List<int>> readAsBytes(AssetId id) =>
-      _bytesContentCache.putIfAbsent(id, () => _delegate.readAsBytes(id));
+      _bytesContentCache.putIfAbsent(id, () => delegate.readAsBytes(id));
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding}) {

@@ -10,6 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
+import '../asset/reader.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
@@ -31,12 +32,21 @@ Future<bool> createMergedOutputDirectories(
     Map<String, String> outputMap,
     AssetGraph assetGraph,
     PackageGraph packageGraph,
-    AssetReader reader,
+    PathProvidingAssetReader reader,
     BuildEnvironment environment,
-    OptionalOutputTracker optionalOutputTracker) async {
+    OptionalOutputTracker optionalOutputTracker,
+    {bool symlinkOnly = false}) async {
+  symlinkOnly ??= false;
   for (var output in outputMap.keys) {
-    if (!await _createMergedOutputDir(output, outputMap[output], assetGraph,
-        packageGraph, reader, environment, optionalOutputTracker)) {
+    if (!await _createMergedOutputDir(
+        output,
+        outputMap[output],
+        assetGraph,
+        packageGraph,
+        reader,
+        environment,
+        optionalOutputTracker,
+        symlinkOnly)) {
       _logger.severe('Unable to create merged directory for $output.\n'
           'Choose a different directory or delete the contents of that '
           'directory.');
@@ -47,14 +57,14 @@ Future<bool> createMergedOutputDirectories(
 }
 
 Future<bool> _createMergedOutputDir(
-  String outputPath,
-  String root,
-  AssetGraph assetGraph,
-  PackageGraph packageGraph,
-  AssetReader reader,
-  BuildEnvironment environment,
-  OptionalOutputTracker optionalOutputTracker,
-) async {
+    String outputPath,
+    String root,
+    AssetGraph assetGraph,
+    PackageGraph packageGraph,
+    PathProvidingAssetReader reader,
+    BuildEnvironment environment,
+    OptionalOutputTracker optionalOutputTracker,
+    bool symlinkOnly) async {
   var outputDir = new Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
@@ -77,8 +87,8 @@ Future<bool> _createMergedOutputDir(
       }
       originalOutputAssets.add(node.id);
       node.lastKnownDigest ??= await reader.digest(node.id);
-      outputAssets.add(
-          await _writeAsset(node.id, outputDir, root, packageGraph, reader));
+      outputAssets.add(await _writeAsset(
+          node.id, outputDir, root, packageGraph, reader, symlinkOnly));
     }));
 
     var packagesFileContent = packageGraph.allPackages.keys
@@ -147,8 +157,13 @@ bool _shouldSkipNode(
   return false;
 }
 
-Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
-    PackageGraph packageGraph, AssetReader reader) {
+Future<AssetId> _writeAsset(
+    AssetId id,
+    Directory outputDir,
+    String root,
+    PackageGraph packageGraph,
+    PathProvidingAssetReader reader,
+    bool symlinkOnly) {
   return _descriptorPool.withResource(() async {
     String assetPath;
     if (id.path.startsWith('lib/')) {
@@ -164,7 +179,12 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
 
     var outputId = new AssetId(packageGraph.root.name, assetPath);
     try {
-      await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+      if (symlinkOnly) {
+        var outputPath = _filePathFor(outputDir, id);
+        await new Link(outputPath).create(reader.pathTo(id), recursive: true);
+      } else {
+        await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+      }
     } on AssetNotFoundException catch (e, __) {
       if (p.basename(id.path).startsWith('.')) {
         _logger.fine('Skipping missing hidden file ${id.path}');
@@ -188,6 +208,10 @@ Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) =>
     _fileFor(outputDir, id).then((file) => file.writeAsString(contents));
 
 Future<File> _fileFor(Directory outputDir, AssetId id) {
+  return new File(_filePathFor(outputDir, id)).create(recursive: true);
+}
+
+String _filePathFor(Directory outputDir, AssetId id) {
   String relativePath;
   if (id.path.startsWith('lib')) {
     relativePath =
@@ -195,7 +219,7 @@ Future<File> _fileFor(Directory outputDir, AssetId id) {
   } else {
     relativePath = id.path;
   }
-  return new File(p.join(outputDir.path, relativePath)).create(recursive: true);
+  return p.join(outputDir.path, relativePath);
 }
 
 /// Checks for a manifest file in [outputDir] and deletes all referenced files.

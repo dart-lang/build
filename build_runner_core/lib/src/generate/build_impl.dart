@@ -199,9 +199,28 @@ class _SingleBuild {
     }
     await _resourceManager.disposeAll();
     if (_outputMap != null && result.status == BuildStatus.success) {
-      if (!await createMergedOutputDirectories(_outputMap, _assetGraph,
-          _packageGraph, _reader, _environment, optionalOutputTracker)) {
+      AssetReader reader;
+      reader = _reader;
+      while (reader is DelegatingAssetReader &&
+          reader is! PathProvidingAssetReader) {
+        reader = (reader as DelegatingAssetReader).delegate;
+      }
+      if (reader is! PathProvidingAssetReader) {
+        _logger.severe('Unable to create a merged output directory since no '
+            'AssetReader implements PathProvidingAssetReader.');
         result = _convertToFailure(result, failureType: FailureType.cantCreate);
+      } else {
+        if (!await createMergedOutputDirectories(
+            _outputMap,
+            _assetGraph,
+            _packageGraph,
+            _reader as PathProvidingAssetReader,
+            _environment,
+            optionalOutputTracker,
+            symlinkOnly: true)) {
+          result =
+              _convertToFailure(result, failureType: FailureType.cantCreate);
+        }
       }
     }
     if (result.status == BuildStatus.success) {

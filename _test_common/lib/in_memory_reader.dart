@@ -16,4 +16,7 @@ class InMemoryRunnerAssetReader extends InMemoryAssetReader
   InMemoryRunnerAssetReader.shareAssetCache(Map<AssetId, List<int>> assetCache,
       {String rootPackage})
       : super.shareAssetCache(assetCache, rootPackage: rootPackage);
+
+  @override
+  String pathTo(AssetId id) => throw new UnimplementedError();
 }
