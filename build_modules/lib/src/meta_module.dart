@@ -268,11 +268,10 @@ bool _isEntrypoint(CompilationUnit dart) {
 
 Future<List<Module>> _computeModules(
     AssetReader reader, List<AssetId> assets, bool public) async {
-  var dir = _topLevelDir(assets.first.path);
-  if (!assets.every((src) => _topLevelDir(src.path) == dir)) {
-    throw new ArgumentError(
-        'All srcs must live in the same top level directory.');
-  }
+  assert(() {
+    var dir = _topLevelDir(assets.first.path);
+    return assets.every((src) => _topLevelDir(src.path) == dir);
+  }());
 
   // The set of entry points from `srcAssets` based on `mode`.
   var entryIds = new Set<AssetId>();
