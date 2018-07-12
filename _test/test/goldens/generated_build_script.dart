@@ -28,6 +28,7 @@ final _builders = <_i1.BuilderApplication>[
   _i1.apply(
       'build_modules|modules',
       [
+        _i5.moduleLibraryBuilder,
         _i5.metaModuleBuilder,
         _i5.metaModuleCleanBuilder,
         _i5.moduleBuilder,
