@@ -34,8 +34,7 @@ void main() {
             ModuleLibrary.fromSource(s, await reader.readAsString(s)))))
         .where((l) => l.isImportable);
     for (final library in libraries) {
-        reader.cacheStringAsset(
-            library.id.addExtension('.library'), '$library');
+      reader.cacheStringAsset(library.id.addExtension('.library'), '$library');
     }
     return MetaModule.forLibraries(
         reader, libraries.map((l) => l.id.addExtension('.library')).toList());
