@@ -9,6 +9,7 @@ export 'src/meta_module_builder.dart'
 export 'src/meta_module_clean_builder.dart'
     show MetaModuleCleanBuilder, metaModuleCleanExtension;
 export 'src/module_builder.dart' show ModuleBuilder, moduleExtension;
+export 'src/module_library_builder.dart' show ModuleLibraryBuilder;
 export 'src/modules.dart';
 export 'src/scratch_space.dart' show scratchSpace, scratchSpaceResource;
 export 'src/summary_builder.dart'
