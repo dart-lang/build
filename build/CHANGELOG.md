@@ -1,3 +1,8 @@
+## 0.12.7+1
+
+- `AssetId`s can no longer be constructed with paths that reach outside their
+  package.
+
 ## 0.12.7
 
 - Added `Resolvers.reset` method.

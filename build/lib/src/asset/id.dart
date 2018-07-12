@@ -16,7 +16,8 @@ class AssetId implements Comparable<AssetId> {
   /// path used to identify it.
   ///
   /// Asset paths always use forward slashes as path separators, regardless of
-  /// the host platform.
+  /// the host platform. Asset paths will always be within their package, that
+  /// is they will never contain "../".
   final String path;
 
   /// Splits [path] into its components.
@@ -145,14 +146,19 @@ class AssetId implements Comparable<AssetId> {
 
 String _normalizePath(String path) {
   if (p.isAbsolute(path)) {
-    throw new ArgumentError('Asset paths must be relative, but got "$path".');
+    throw new ArgumentError.value(path, 'Asset paths must be relative.');
   }
 
   // Normalize path separators so that they are always "/" in the AssetID.
   path = path.replaceAll(r'\', '/');
 
   // Collapse "." and "..".
-  return p.posix.normalize(path);
+  final collapsed = p.posix.normalize(path);
+  if (collapsed.startsWith('../')) {
+    throw new ArgumentError.value(
+        path, 'Asset paths may not reach outside the package.');
+  }
+  return collapsed;
 }
 
 Uri _constructUri(AssetId id) {
