@@ -8,7 +8,7 @@ import 'package:meta/meta.dart';
 
 /// A Dart library within a module.
 ///
-/// Modules can be computed based on library dependencies (imports and expors)
+/// Modules can be computed based on library dependencies (imports and exports)
 /// and parts.
 class ModuleLibrary {
   /// The AssetId of the original Dart source file.
