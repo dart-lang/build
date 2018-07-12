@@ -6,6 +6,10 @@ import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 
+/// A Dart library within a module.
+///
+/// Modules can be computed based on library dependencies (imports and expors)
+/// and parts.
 class ModuleLibrary {
   /// The AssetId of the original Dart source file.
   final AssetId id;
