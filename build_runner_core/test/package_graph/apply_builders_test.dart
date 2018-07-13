@@ -119,7 +119,55 @@ void main() {
       var phases =
           await createBuildPhases(targetGraph, builderApplications, {}, false);
       expect(phases, hasLength(2));
-      expect(phases.map((a) => (a as InBuildPhase).package), ['a', 'a']);
+      expect(
+          phases,
+          everyElement(new TypeMatcher<InBuildPhase>()
+              .having((p) => p.package, 'package', 'a')));
+    });
+
+    test('skips non-hidden builders on non-root packages', () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b', 'c'],
+        package('b'): ['c'],
+        package('c'): [],
+      });
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var builderApplications = [
+        apply('c|cool_builder', [(options) => new CoolBuilder(options)],
+            toDependentsOf('c'),
+            hideOutput: false),
+      ];
+      var phases =
+          await createBuildPhases(targetGraph, builderApplications, {}, false);
+      expect(phases, hasLength(1));
+      expect(
+          phases,
+          everyElement(new TypeMatcher<InBuildPhase>()
+              .having((p) => p.package, 'package', 'a')));
+    });
+
+    test('skips builders which apply non-hidden builders on non-root packages',
+        () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b', 'c'],
+        package('b'): ['c'],
+        package('c'): [],
+      });
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var builderApplications = [
+        apply('c|cool_builder', [(options) => new CoolBuilder(options)],
+            toDependentsOf('c'),
+            appliesBuilders: ['c|not_by_default']),
+        apply('c|not_by_default', [(_) => new TestBuilder()], toNoneByDefault(),
+            hideOutput: false),
+      ];
+      var phases =
+          await createBuildPhases(targetGraph, builderApplications, {}, false);
+      expect(phases, hasLength(2));
+      expect(
+          phases,
+          everyElement(new TypeMatcher<InBuildPhase>()
+              .having((p) => p.package, 'package', 'a')));
     });
 
     test('returns empty phases if a dependency is missing', () async {
