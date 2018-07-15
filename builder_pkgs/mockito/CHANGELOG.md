@@ -1,3 +1,7 @@
+## 3.0.0-beta+3
+
+* Set max SDK version to <3.0.0, and adjusted other dependencies.
+  
 ## 3.0.0-beta+2
 
 * Fix matcher package's version constraint to only support versions with `const

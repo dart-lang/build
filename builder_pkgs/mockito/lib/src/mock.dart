@@ -766,8 +766,8 @@ _InOrderVerification get verifyInOrder {
         if (allInvocations.isNotEmpty) {
           otherCalls = " All calls: ${allInvocations.join(", ")}";
         }
-        fail("Matching call #${tmpVerifyCalls
-            .indexOf(verifyCall)} not found.$otherCalls");
+        fail('Matching call #${tmpVerifyCalls.indexOf(verifyCall)} '
+            'not found.$otherCalls');
       }
     }
     for (var call in matchedCalls) {
