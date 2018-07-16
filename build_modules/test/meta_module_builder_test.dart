@@ -17,9 +17,7 @@ main() {
     var moduleA = new Module(assetA, [assetA], <AssetId>[]);
     var metaA = new MetaModule([moduleA]);
     await testBuilder(new MetaModuleBuilder(), {
-      'a|lib/a.module.library': 'a|lib/a.dart\n'
-          'true\n'
-          '\n',
+      'a|lib/a.module.library': 'true\n\n',
     }, outputs: {
       'a|lib/$metaModuleExtension': encodedMatchesMetaModule(metaA),
     });
