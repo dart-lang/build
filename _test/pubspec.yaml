@@ -2,12 +2,12 @@ name: _test
 description: A basic web app
 
 environment:
-  sdk: '>=2.0.0-dev.61 <2.0.0'
+  sdk: '>=2.0.0-dev.61 <3.0.0'
 
 dev_dependencies:
   analyzer: ">=0.30.0 <0.33.0"
   path: ^1.4.2
-  test: ^0.12.0
+  test: ^1.0.0
   provides_builder:
     path: pkgs/provides_builder/
 

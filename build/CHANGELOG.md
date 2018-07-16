@@ -1,3 +1,7 @@
+## 0.12.7+2
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.12.7+1
 
 - `AssetId`s can no longer be constructed with paths that reach outside their

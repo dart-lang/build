@@ -1,3 +1,7 @@
+## 0.10.3+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.10.3
 
 - Require test version ^0.12.42 and use `TypeMatcher`.

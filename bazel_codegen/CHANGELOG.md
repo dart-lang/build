@@ -1,10 +1,8 @@
-# 0.3.1+4
+# 0.3.2-dev
 
+- Increased the upper bound for the sdk to `<3.0.0`.
 - Drop dependency on `build_barback`.
 - Use the latest `build`.
-
-# 0.3.1+3
-
 - Support `package:analyzer` `0.32.0`.
 
 # 0.3.1+2

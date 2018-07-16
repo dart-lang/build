@@ -1,3 +1,7 @@
+## 0.0.3+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.0.3
 
 - Use digests to improve `ensureAssets` performance.

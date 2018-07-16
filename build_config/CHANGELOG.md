@@ -1,3 +1,7 @@
+## 0.3.1+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.3.1
 
 - Improve validation and errors when parsing `build.yaml`.
