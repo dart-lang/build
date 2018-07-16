@@ -213,8 +213,9 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
       AssetReader reader, List<AssetId> libraryAssets) async {
     var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
     for (var libraryAsset in libraryAssets) {
-      final library =
-          ModuleLibrary.parse(await reader.readAsString(libraryAsset));
+      final library = ModuleLibrary.parse(
+          libraryAsset.changeExtension('').changeExtension('.dart'),
+          await reader.readAsString(libraryAsset));
       final dir = _topLevelDir(libraryAsset.path);
       if (!librariesByDirectory.containsKey(dir)) {
         librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};

@@ -110,13 +110,12 @@ class ModuleLibrary {
   ///
   /// Importable libraries can be round tripped to a String. Non-importable
   /// libraries should not be printed or parsed.
-  static ModuleLibrary parse(String encoded) {
+  static ModuleLibrary parse(AssetId id, String encoded) {
     final lines = encoded.split('\n');
-    final id = new AssetId.parse(lines.first);
-    final isEntryPoint = lines[1] == 'true';
+    final isEntryPoint = lines.first == 'true';
     final separator = lines.indexOf('');
     final deps =
-        lines.sublist(2, separator).map((l) => new AssetId.parse(l)).toSet();
+        lines.sublist(1, separator).map((l) => new AssetId.parse(l)).toSet();
     final parts = lines
         .sublist(separator + 1)
         .where((l) => l.isNotEmpty)
@@ -127,8 +126,7 @@ class ModuleLibrary {
   }
 
   @override
-  String toString() => '$id\n'
-      '${isEntryPoint ? 'true' : 'false'}\n'
+  String toString() => '${isEntryPoint ? 'true' : 'false'}\n'
       '${deps.join('\n')}\n'
       '\n'
       '${parts.join('\n')}\n';
