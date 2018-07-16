@@ -25,7 +25,7 @@ class BuildCommandRunner extends CommandRunner<int> {
     addCommand(new BuildCommand());
     addCommand(new WatchCommand());
     addCommand(new ServeCommand());
-    addCommand(new TestCommand());
+    addCommand(new TestCommand(packageGraph));
     addCommand(new CleanCommand());
   }
 
