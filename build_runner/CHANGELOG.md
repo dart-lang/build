@@ -5,6 +5,8 @@
 - The `RunnerAssetReader` interface now requires that you implement the new
   `PathProvidingAssetReader` interface, in order to support creating symlinks
   to the original files.
+  - This should not impact most applications, only packages which implement the
+    `RunnerAssetReader` interface.
 
 ### New Features
 
@@ -53,7 +55,6 @@
 - Severe level logs now go to `stdout` along with other logs rather than
   `stderr`. Uncaught exceptions from the `build_runner` system itself still go
   to `stderr`.
-
 
 ## Other
 
