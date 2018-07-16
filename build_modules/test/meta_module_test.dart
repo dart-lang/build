@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
+import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/module_library.dart';
 import 'package:build_modules/src/modules.dart';
@@ -34,10 +35,14 @@ void main() {
             ModuleLibrary.fromSource(s, await reader.readAsString(s)))))
         .where((l) => l.isImportable);
     for (final library in libraries) {
-      reader.cacheStringAsset(library.id.addExtension('.library'), '$library');
+      reader.cacheStringAsset(
+          library.id.changeExtension(moduleLibraryExtension), '$library');
     }
     return MetaModule.forLibraries(
-        reader, libraries.map((l) => l.id.addExtension('.library')).toList());
+        reader,
+        libraries
+            .map((l) => l.id.changeExtension(moduleLibraryExtension))
+            .toList());
   }
 
   test('no strongly connected components, one shared lib', () async {

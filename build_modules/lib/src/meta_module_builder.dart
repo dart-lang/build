@@ -10,6 +10,7 @@ import 'package:glob/glob.dart';
 
 import 'common.dart';
 import 'meta_module.dart';
+import 'module_library_builder.dart';
 
 /// The extension for serialized meta module assets.
 const metaModuleExtension = '.meta_module.raw';
@@ -36,8 +37,9 @@ class MetaModuleBuilder implements Builder {
   Future build(BuildStep buildStep) async {
     if (!_isCoarse) return;
 
-    var libraryAssets =
-        await buildStep.findAssets(new Glob('**.dart.library')).toList();
+    var libraryAssets = await buildStep
+        .findAssets(new Glob('**$moduleLibraryExtension'))
+        .toList();
     var metaModule = await MetaModule.forLibraries(buildStep, libraryAssets);
     var id = new AssetId(buildStep.inputId.package, 'lib/$metaModuleExtension');
     await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
