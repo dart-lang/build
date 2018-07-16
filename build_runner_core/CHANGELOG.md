@@ -1,8 +1,9 @@
-## 0.2.1+2-dev
+## 0.2.1+2
 
 - Clarify wording for conflicting output directory options. No behavioral
   differences.
 - Reduce the memory consumption required to create an output dir significantly.
+- Increased the upper bound for the sdk to `<3.0.0`.
 
 ## 0.2.1+1
 

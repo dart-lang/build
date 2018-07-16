@@ -5,6 +5,7 @@
 - Updated dart2js support so that it can do multiple builds concurrently and
   will restart workers periodically to mitigate the effects of
   dart-lang/sdk#33708.
+- Increased the upper bound for the sdk to `<3.0.0`.
 
 ### Breaking Changes
 
