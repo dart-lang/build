@@ -2,12 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-
-import 'package:build_modules/build_modules.dart';
-import 'package:build_modules/src/meta_module_clean_builder.dart';
 
 import 'matchers.dart';
 import 'util.dart';
@@ -33,6 +31,7 @@ main() {
       };
 
       // Set up all the other required inputs for this test.
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
       await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
       await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
       await testBuilderAndCollectAssets(new ModuleBuilder(), assets);

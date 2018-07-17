@@ -32,6 +32,7 @@ main() {
       };
 
       // Set up all the other required inputs for this test.
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
       await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
       await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
       await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
@@ -63,6 +64,7 @@ main() {
         };
 
         // Set up all the other required inputs for this test.
+        await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
         await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
         await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
         await testBuilderAndCollectAssets(new ModuleBuilder(), assets);

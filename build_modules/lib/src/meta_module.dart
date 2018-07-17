@@ -209,18 +209,18 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
   factory MetaModule.fromJson(Map<String, dynamic> json) =>
       _$MetaModuleFromJson(json);
 
-  static Future<MetaModule> forAssets(
-      AssetReader reader, List<AssetId> assets) async {
+  static Future<MetaModule> forLibraries(
+      AssetReader reader, List<AssetId> libraryAssets) async {
     var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
-    for (var asset in assets) {
-      final library =
-          ModuleLibrary.fromSource(asset, await reader.readAsString(asset));
-      if (!library.isImportable) continue;
-      final dir = _topLevelDir(asset.path);
+    for (var libraryAsset in libraryAssets) {
+      final library = ModuleLibrary.parse(
+          libraryAsset.changeExtension('').changeExtension('.dart'),
+          await reader.readAsString(libraryAsset));
+      final dir = _topLevelDir(libraryAsset.path);
       if (!librariesByDirectory.containsKey(dir)) {
         librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};
       }
-      librariesByDirectory[dir][asset] = library;
+      librariesByDirectory[dir][library.id] = library;
     }
     final modules =
         librariesByDirectory.values.expand(_computeModules).toList();

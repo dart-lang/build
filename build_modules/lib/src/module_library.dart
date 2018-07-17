@@ -105,6 +105,31 @@ class ModuleLibrary {
         (isLibDir && !id.path.startsWith('lib/src/')) || _hasMainMethod(parsed);
     return new ModuleLibrary._fromCompilationUnit(id, isEntryPoint, parsed);
   }
+
+  /// Parses the output of [toString] back into a [ModuleLibrary].
+  ///
+  /// Importable libraries can be round tripped to a String. Non-importable
+  /// libraries should not be printed or parsed.
+  static ModuleLibrary parse(AssetId id, String encoded) {
+    final lines = encoded.split('\n');
+    final isEntryPoint = lines.first == 'true';
+    final separator = lines.indexOf('');
+    final deps =
+        lines.sublist(1, separator).map((l) => new AssetId.parse(l)).toSet();
+    final parts = lines
+        .sublist(separator + 1)
+        .where((l) => l.isNotEmpty)
+        .map((l) => new AssetId.parse(l))
+        .toSet();
+    return new ModuleLibrary._(id,
+        isEntryPoint: isEntryPoint, deps: deps, parts: parts);
+  }
+
+  @override
+  String toString() => '${isEntryPoint ? 'true' : 'false'}\n'
+      '${deps.join('\n')}\n'
+      '\n'
+      '${parts.join('\n')}\n';
 }
 
 bool _isPart(CompilationUnit dart) =>
