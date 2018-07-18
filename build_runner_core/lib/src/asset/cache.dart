@@ -68,12 +68,8 @@ class CachingAssetReader implements AssetReader {
     return _pendingBytesContentCache.putIfAbsent(
         id,
         () => _delegate.readAsBytes(id).then((result) {
-              // Defensive tactic for unawaited futures which could potentially
-              // leak old data into the cache.
-              if (_pendingBytesContentCache.containsKey(id)) {
-                if (cache) _bytesContentCache[id] = result;
-                _pendingBytesContentCache.remove(id);
-              }
+              if (cache) _bytesContentCache[id] = result;
+              _pendingBytesContentCache.remove(id);
               return result;
             }));
   }
@@ -94,12 +90,8 @@ class CachingAssetReader implements AssetReader {
         encoding,
         () => readAsBytes(id, cache: false).then((bytes) {
               var decoded = encoding.decode(bytes);
-              // Defensive tactic for unawaited futures which could potentially
-              // leak old data into the cache.
-              if (_pendingStringContentCache.containsKey(id)) {
-                _stringContentCache[id] = decoded;
-                _pendingStringContentCache.remove(id);
-              }
+              _stringContentCache[id] = decoded;
+              _pendingStringContentCache.remove(id);
               return decoded;
             }));
   }
