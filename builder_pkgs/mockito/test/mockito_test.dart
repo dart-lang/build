@@ -45,6 +45,8 @@ abstract class _AbstractFoo implements _Foo {
   String bar() => baz();
 
   String baz();
+
+  String quux() => "Real";
 }
 
 class _MockFoo extends _AbstractFoo with Mock {}
@@ -287,6 +289,13 @@ void main() {
         when(mock.methodWithNamedArgs(argThat(equals(42)), y: anyNamed("z")))
             .thenReturn("99");
       }, throwsArgumentError);
+    });
+
+    test("should throw if attempting to stub a real method", () {
+      var foo = new _MockFoo();
+      expect(() {
+        when(foo.quux()).thenReturn("Stub");
+      }, throwsStateError);
     });
   });
 
