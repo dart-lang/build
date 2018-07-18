@@ -73,13 +73,13 @@ void main() {
       expect(delegate.assetsRead, [fooTxt]);
     });
 
-    test('caches bytes from readAsString calls', () async {
+    test('should not cache bytes during readAsString calls', () async {
       expect(await reader.readAsString(fooTxt), fooContent);
       expect(delegate.assetsRead, [fooTxt]);
       delegate.assetsRead.clear();
 
       expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
-      expect(delegate.assetsRead, []);
+      expect(delegate.assetsRead, [fooTxt]);
     });
   });
 
