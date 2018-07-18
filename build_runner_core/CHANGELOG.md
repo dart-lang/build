@@ -1,4 +1,4 @@
-## 0.2.2-dev
+## 0.2.2
 
 - Changed the default file caching logic to use an LRU cache.
 
