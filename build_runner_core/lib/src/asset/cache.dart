@@ -20,14 +20,10 @@ import 'lru_cache.dart';
 /// Does not implement [findAssets].
 class CachingAssetReader implements AssetReader {
   /// Cached results of [readAsBytes].
-  final _bytesContentCache =
-      new LruCache<AssetId, List<int>>(1024 * 1024, 1024 * 1024 * 512, (value) {
-    if (value is Uint8List) {
-      return value.lengthInBytes;
-    } else {
-      return value.length * 8;
-    }
-  });
+  final _bytesContentCache = new LruCache<AssetId, List<int>>(
+      1024 * 1024,
+      1024 * 1024 * 512,
+      (value) => value is Uint8List ? value.lengthInBytes : value.length * 8);
 
   /// Pending [readAsBytes] operations.
   final _pendingBytesContentCache = <AssetId, Future<List<int>>>{};
@@ -37,17 +33,16 @@ class CachingAssetReader implements AssetReader {
   /// Don't bother using an LRU cache for this since it's just booleans.
   final _canReadCache = <AssetId, Future<bool>>{};
 
-  /// Cached results of [readAsString], per [Encoding] type used.
+  /// Cached results of [readAsString].
   ///
   /// These are computed and stored lazily using [readAsBytes].
-  final _stringContentCache = new LruCache<_AssetIdWithEncoding, String>(
+  ///
+  /// Only files read with [utf8] encoding (the default) will ever be cached.
+  final _stringContentCache = new LruCache<AssetId, String>(
       1024 * 1024, 1024 * 1024 * 512, (value) => value.length);
 
   /// Pending `readAsString` operations.
   final _pendingStringContentCache = <AssetId, Map<Encoding, Future<String>>>{};
-
-  /// All [Encoding]s ever used.
-  final _encodingsUsed = new Set<Encoding>();
 
   /// The [AssetReader] to delegate all reads to.
   final AssetReader _delegate;
@@ -87,8 +82,12 @@ class CachingAssetReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding}) {
     encoding ??= utf8;
 
-    var key = new _AssetIdWithEncoding(id, encoding);
-    var cached = _stringContentCache[key];
+    if (encoding != utf8) {
+      // Fallback case, we never cache for the non-default encoding.
+      return readAsBytes(id).then(encoding.decode);
+    }
+
+    var cached = _stringContentCache[id];
     if (cached != null) return new Future.value(cached);
 
     return _pendingStringContentCache.putIfAbsent(id, () => {}).putIfAbsent(
@@ -98,7 +97,7 @@ class CachingAssetReader implements AssetReader {
               // Defensive tactic for unawaited futures which could potentially
               // leak old data into the cache.
               if (_pendingStringContentCache.containsKey(id)) {
-                _stringContentCache[key] = decoded;
+                _stringContentCache[id] = decoded;
                 _pendingStringContentCache.remove(id);
               }
               return decoded;
@@ -110,32 +109,10 @@ class CachingAssetReader implements AssetReader {
     for (var id in ids) {
       _bytesContentCache.remove(id);
       _canReadCache.remove(id);
-      for (var encoding in _encodingsUsed) {
-        _stringContentCache.remove(new _AssetIdWithEncoding(id, encoding));
-      }
+      _stringContentCache.remove(id);
 
       _pendingBytesContentCache.remove(id);
       _pendingStringContentCache.remove(id);
     }
   }
-}
-
-/// Combines an [AssetId] and an [Encoding] for use as a hash key.
-class _AssetIdWithEncoding {
-  final AssetId id;
-  final Encoding encoding;
-
-  _AssetIdWithEncoding(this.id, this.encoding);
-
-  @override
-  bool operator ==(other) =>
-      other is _AssetIdWithEncoding &&
-      other.id == id &&
-      other.encoding.name == encoding.name;
-
-  @override
-  int get hashCode => id.hashCode ^ encoding.name.hashCode;
-
-  @override
-  String toString() => '$id:$encoding';
 }
