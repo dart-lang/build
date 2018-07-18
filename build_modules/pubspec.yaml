@@ -18,6 +18,7 @@ dependencies:
   graphs: ^0.1.0
   json_annotation: ^0.2.2
   logging: ^0.11.2
+  meta: ^1.1.0
   path: ^1.4.2
   scratch_space: ^0.0.3
 
