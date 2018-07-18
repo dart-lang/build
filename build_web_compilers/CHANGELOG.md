@@ -1,4 +1,4 @@
-## 0.4.1-dev
+## 0.4.1
 
 - Support the latest build_modules, with updated dart2js support so that it can
   do multiple builds concurrently and will restart workers periodically to
