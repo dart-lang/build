@@ -1,3 +1,7 @@
+## 0.2.2-dev
+
+- Changed the default file caching logic to use an LRU cache.
+
 ## 0.2.1+2
 
 - Clarify wording for conflicting output directory options. No behavioral
