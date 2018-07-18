@@ -5,6 +5,7 @@
 // The first test that runs `testBuilder` takes a LOT longer than the rest.
 @Timeout.factor(3)
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -78,7 +79,7 @@ class FailingIterableGenerator extends GeneratorForAnnotation<Deprecated> {
 
   @override
   Iterable<String> generateForAnnotatedElement(
-      AnnotatedElement annotatedElement, BuildStep buildStep) sync* {
+      Element element, ConstantReader annotation, BuildStep buildStep) sync* {
     yield '// There are deprecated values in this library!';
     throw new StateError('not supported!');
   }
@@ -92,7 +93,7 @@ class FailingGenerator extends GeneratorForAnnotation<Deprecated> {
 
   @override
   generateForAnnotatedElement(
-      AnnotatedElement annotatedElement, BuildStep buildStep) {
+      Element element, ConstantReader annotation, BuildStep buildStep) {
     throw new StateError('not supported!');
   }
 }
@@ -102,10 +103,10 @@ class RepeatingGenerator extends GeneratorForAnnotation<Deprecated> {
 
   @override
   Iterable<String> generateForAnnotatedElement(
-      AnnotatedElement annotatedElement, BuildStep buildStep) sync* {
+      Element element, ConstantReader annotation, BuildStep buildStep) sync* {
     yield '// There are deprecated values in this library!';
 
-    yield '// ${annotatedElement.element}';
+    yield '// $element';
   }
 }
 
@@ -116,7 +117,7 @@ class LiteralOutput<T> extends GeneratorForAnnotation<Deprecated> {
 
   @override
   T generateForAnnotatedElement(
-          AnnotatedElement annotatedElement, BuildStep buildStep) =>
+          Element element, ConstantReader annotation, BuildStep buildStep) =>
       null;
 }
 

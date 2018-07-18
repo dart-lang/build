@@ -4,8 +4,10 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
+import 'constants/reader.dart';
 import 'generator.dart';
 import 'library.dart';
 import 'output_helpers.dart';
@@ -42,8 +44,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     var values = new Set<String>();
 
     for (var annotatedElement in library.annotatedWith(typeChecker)) {
-      var generatedValue =
-          generateForAnnotatedElement(annotatedElement, buildStep);
+      var generatedValue = generateForAnnotatedElement(
+          annotatedElement.element, annotatedElement.annotation, buildStep);
       await for (var value in normalizeGeneratorOutput(generatedValue)) {
         assert(value == null || (value.length == value.trim().length));
         values.add(value);
@@ -53,10 +55,10 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     return values.join('\n\n');
   }
 
-  /// Implement to return source code to generate for [annotatedElement].
+  /// Implement to return source code to generate for [element].
   ///
   /// This method is invoked based on finding elements annotated with an
-  /// instance of [T].
+  /// instance of [T]. The [annotation] is provided as a [ConstantReader].
   ///
   /// Supported return values include a single [String] or multiple [String]
   /// instances within an [Iterable] or [Stream]. It is also valid to return a
@@ -65,5 +67,5 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   /// Implementations should return `null` when no content is generated. Empty
   /// or whitespace-only [String] instances are also ignored.
   generateForAnnotatedElement(
-      AnnotatedElement annotatedElement, BuildStep buildStep);
+      Element element, ConstantReader annotation, BuildStep buildStep);
 }
