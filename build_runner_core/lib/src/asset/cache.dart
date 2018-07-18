@@ -42,7 +42,7 @@ class CachingAssetReader implements AssetReader {
       1024 * 1024, 1024 * 1024 * 512, (value) => value.length);
 
   /// Pending `readAsString` operations.
-  final _pendingStringContentCache = <AssetId, Map<Encoding, Future<String>>>{};
+  final _pendingStringContentCache = <AssetId, Future<String>>{};
 
   /// The [AssetReader] to delegate all reads to.
   final AssetReader _delegate;
@@ -79,15 +79,16 @@ class CachingAssetReader implements AssetReader {
     encoding ??= utf8;
 
     if (encoding != utf8) {
-      // Fallback case, we never cache for the non-default encoding.
+      // Fallback case, we never cache the String value for the non-default,
+      // encoding but we do allow it to cache the bytes.
       return readAsBytes(id).then(encoding.decode);
     }
 
     var cached = _stringContentCache[id];
     if (cached != null) return new Future.value(cached);
 
-    return _pendingStringContentCache.putIfAbsent(id, () => {}).putIfAbsent(
-        encoding,
+    return _pendingStringContentCache.putIfAbsent(
+        id,
         () => readAsBytes(id, cache: false).then((bytes) {
               var decoded = encoding.decode(bytes);
               _stringContentCache[id] = decoded;
