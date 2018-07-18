@@ -1,16 +1,21 @@
-## 0.3.0-dev
+## 0.3.0
 
 ### Improvements
 
 - Updated dart2js support so that it can do multiple builds concurrently and
   will restart workers periodically to mitigate the effects of
   dart-lang/sdk#33708.
+- Increased the upper bound for the sdk to `<3.0.0`.
 
 ### Breaking Changes
 
 - Removed the `kernelSummaryExtension`, and renamed the `KernelSummaryBuilder`
   to `KernelBuilder`. The new builder can be used to create summaries or full
   kernel files, and requires users to give it a custom sdk.
+- Changed `metaModuleCleanBuilder` to read `.module.library` files which are
+  produced by the `moduleLibrayBuilder`. Clients using the automatically
+  generated build script will get this automatically. Clients which have
+  manually written build scripts will need to add it.
 
 ## 0.2.3
 

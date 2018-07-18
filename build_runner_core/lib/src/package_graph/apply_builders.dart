@@ -280,9 +280,17 @@ Future<List<BuildPhase>> createBuildPhases(
             return targetGraph.allModules[key];
           })?.where((n) => n != null));
   final applyWith = _applyWith(builderApplications);
+  final allBuilders = new Map<String, BuilderApplication>.fromIterable(
+      builderApplications,
+      key: (b) => (b as BuilderApplication).builderKey);
   final expandedPhases = cycles
       .expand((cycle) => _createBuildPhasesWithinCycle(
-          cycle, builderApplications, globalOptions, applyWith, isReleaseMode))
+          cycle,
+          builderApplications,
+          globalOptions,
+          applyWith,
+          allBuilders,
+          isReleaseMode))
       .toList();
 
   final inBuildPhases =
@@ -309,6 +317,7 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
         Iterable<BuilderApplication> builderApplications,
         Map<String, BuilderOptions> globalOptions,
         Map<String, List<BuilderApplication>> applyWith,
+        Map<String, BuilderApplication> allBuilders,
         bool isReleaseMode) =>
     builderApplications.expand((builderApplication) =>
         _createBuildPhasesForBuilderInCycle(
@@ -317,6 +326,7 @@ Iterable<BuildPhase> _createBuildPhasesWithinCycle(
             globalOptions[builderApplication.builderKey] ??
                 BuilderOptions.empty,
             applyWith,
+            allBuilders,
             isReleaseMode));
 
 Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
@@ -324,12 +334,13 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
     BuilderApplication builderApplication,
     BuilderOptions globalOptionOverrides,
     Map<String, List<BuilderApplication>> applyWith,
+    Map<String, BuilderApplication> allBuilders,
     bool isReleaseMode) {
   TargetBuilderConfig targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   return builderApplication.buildPhaseFactories.expand((createPhase) => cycle
-          .where((targetNode) =>
-              _shouldApply(builderApplication, targetNode, applyWith))
+          .where((targetNode) => _shouldApply(
+              builderApplication, targetNode, applyWith, allBuilders))
           .map((node) {
         final builderConfig = targetConfig(node);
         final options = (builderConfig?.options ?? BuilderOptions.empty)
@@ -342,9 +353,15 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
       }));
 }
 
-bool _shouldApply(BuilderApplication builderApplication, TargetNode node,
-    Map<String, List<BuilderApplication>> applyWith) {
-  if (!builderApplication.hideOutput && !node.package.isRoot) {
+bool _shouldApply(
+    BuilderApplication builderApplication,
+    TargetNode node,
+    Map<String, List<BuilderApplication>> applyWith,
+    Map<String, BuilderApplication> allBuilders) {
+  if (!(builderApplication.hideOutput &&
+          builderApplication.appliesBuilders
+              .every((b) => allBuilders[b]?.hideOutput ?? true)) &&
+      !node.package.isRoot) {
     return false;
   }
   final builderConfig = node.target.builders[builderApplication.builderKey];
@@ -352,8 +369,9 @@ bool _shouldApply(BuilderApplication builderApplication, TargetNode node,
     return builderConfig.isEnabled;
   }
   return builderApplication.filter(node.package) ||
-      (applyWith[builderApplication.builderKey] ?? const [])
-          .any((anchorBuilder) => _shouldApply(anchorBuilder, node, applyWith));
+      (applyWith[builderApplication.builderKey] ?? const []).any(
+          (anchorBuilder) =>
+              _shouldApply(anchorBuilder, node, applyWith, allBuilders));
 }
 
 /// Inverts the dependency map from 'applies builders' to 'applied with

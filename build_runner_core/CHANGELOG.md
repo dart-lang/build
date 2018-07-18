@@ -21,6 +21,15 @@
 - Clarify wording for conflicting output directory options. No behavioral
   differences.
 
+## 0.2.2
+
+- Changed the default file caching logic to use an LRU cache.
+
+## 0.2.1+2
+
+- Reduce the memory consumption required to create an output dir significantly.
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.2.1+1
 
 - Allow reuse cache between machines with different OS

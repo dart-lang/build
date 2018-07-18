@@ -7,6 +7,7 @@ import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module_builder.dart';
 import 'package:build_modules/src/meta_module_clean_builder.dart';
 import 'package:build_modules/src/module_cleanup.dart';
+import 'package:build_modules/src/module_library_builder.dart';
 
 Builder moduleBuilder(BuilderOptions options) =>
     new ModuleBuilder.forOptions(options);
@@ -15,5 +16,6 @@ Builder linkedSummaryBuilder(_) => const LinkedSummaryBuilder();
 Builder metaModuleBuilder(_) => const MetaModuleBuilder();
 Builder metaModuleCleanBuilder(BuilderOptions options) =>
     const MetaModuleCleanBuilder();
+Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
 
 PostProcessBuilder moduleCleanup(_) => const ModuleCleanup();

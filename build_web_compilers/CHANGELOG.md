@@ -1,4 +1,4 @@
-## 0.4.1-dev
+## 0.4.1
 
 - Support the latest build_modules, with updated dart2js support so that it can
   do multiple builds concurrently and will restart workers periodically to
@@ -6,6 +6,7 @@
 - Improvements to reduce the memory usage of the dart2js builder, so that
   transitive dependency information can be garbage collected before the dart2js
   compile is completed.
+- Increased the upper bound for the sdk to `<3.0.0`.
 
 ## 0.4.0+5
 

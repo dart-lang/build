@@ -20,6 +20,10 @@
   indicate it is wrapping another `AssetReader`, and provide public access to
   it.
 
+## 0.9.1+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.9.1
 
 - The hash dir for the asset graph under `.dart_tool/build` is now based on a
