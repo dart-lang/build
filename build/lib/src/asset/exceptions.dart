@@ -40,3 +40,9 @@ class InvalidInputException implements Exception {
   String toString() => 'InvalidInputException: $assetId\n'
       'For package dependencies, only files under `lib` may be used as inputs.';
 }
+
+class BuildStepCompletedException implements Exception {
+  @override
+  String toString() => 'BuildStepCompletedException: '
+      'Attempt to use a BuildStep after is has completed';
+}

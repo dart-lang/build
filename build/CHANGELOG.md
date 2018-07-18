@@ -1,3 +1,7 @@
+## 0.12.7+3
+
+- Throw when attempting to use a `BuildStep` after it has been completed.
+
 ## 0.12.7+2
 
 - Increased the upper bound for the sdk to `<3.0.0`.
