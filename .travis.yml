@@ -161,7 +161,7 @@ jobs:
       env: PKG="scratch_space"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_1
       env: PKG="scratch_space"
       dart: dev
 
