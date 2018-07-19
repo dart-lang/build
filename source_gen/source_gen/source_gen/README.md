@@ -16,43 +16,35 @@
 
 `source_gen` provides utilities for automated source code generation for Dart:
 
-* A **tool** for generating code that is part of your Dart project.
-* A **framework** for creating and using multiple code generators in a single
-  project.
+* A **framework** for writing Builders that consume and produce Dart code.
 * A **convention** for human and tool generated Dart code to coexist with clean
-  separation.
+  separation, and for multiple code generators to integrate in the same project.
 
 It's main purpose is to expose a developer-friendly API on top of lower-level
-packages like the [analyzer](https://pub.dartlang.org/packages/analyzer) or
-[build][]. You don't _have_ to use `source_gen` in order to generate source code;
-we also expose a set of library APIs that might be useful in your generators.
+packages like the [analyzer][] or [build][]. You don't _have_ to use
+`source_gen` in order to generate source code; we also expose a set of library
+APIs that might be useful in your generators.
 
-## Quick Start Guide
+## Quick Start Guide for writing a Generator
 
-Because `source_gen` is a package, not an executable, it should be included as
-a dependency in your project. If you are creating a generator for others to use
-(for example, a JSON serialization generator) or a library that builds on top
-of `source_gen` include it in your [pubspec `dependencies`][pub_deps]:
+Add a dependency on `source_gen` in your pubspec.
 
 ```yaml
 dependencies:
   source_gen:
 ```
 
-If you're only using `source_gen` in your own project to generate code, and
-then you publish that code (generated code included), then you can simply add
-as a `dev_dependency`:
+If you're only using `source_gen` in your own project to generate code and you
+won't publish your Generator for others to use, it can be a `dev_dependency`:
 
 ```yaml
 dev_dependencies:
   source_gen:
 ```
 
-[pub_deps]: https://www.dartlang.org/tools/pub/dependencies
-  
 Once you have `source_gen` setup, you should reference the examples below.
 
-## Creating a generator
+### Writing a generator to output Dart source code
 
 Extend the `Generator` or `GeneratorForAnnotation` class and `source_gen` will
 call your generator for a Dart library or for each element within a library
@@ -60,16 +52,51 @@ tagged with the annotation you are interested in.
 
 * [Trivial example][]
 
-## Running generators
+### Configuring and Running generators
 
-`source_gen` is based on the [`build`][build] package. Use a `PartBuilder` or
-`LibraryBuilder` to wrap your `Generator` as a `Builder` which can be run using
-a build system compatible with `package:build`. See the build package
-documentation for information on running Builders.
+`source_gen` is based on the [build][] package and exposes options for using
+your `Generator` in a `Builder`. Choose a Builder based on where you want the
+generated code to end up:
+
+- If you want to write to `.g.dart` files which are referenced as a `part` in
+  the original source file, use `SharedPartBuilder`. This is the convention for
+  generated code in part files, and this file may also contain code from
+  `Generator`s provided by other packages.
+- If you want to write to `.some_name.dart` files which are referenced as a
+  `part` in the original source file, use `PartBuilder`. You should choose an
+  extension unique to your package. Multiple `Generator`s may output to this
+  file, but they will all come from your package and you will set up the entire
+  list when constructing the builder.
+- If you want to write standalone Dart library which can be `import`ed use
+  `LibraryBuilder`. Only a single `Generator` may be used as a `LibraryBuilder`.
+
+In order to get the `Builder` used with [build_runner][] it must be configured
+in a `build.yaml` file. See [build_config][] for more details. Whenever you are
+publishing a package that includes a `build.yaml` file you should include a
+dependency on `build_config` in your pubspec.
+
+When using `SharedPartBuilder` it should always be configured to `build_to:
+cache` (hidden files) and apply the `combining_builder` from this package. The
+combining builder reads in all the pieces written by different shared part
+builders and writes them to the final `.g.dart` output in the user's source
+directory. You should never use the `.g.dart` extension for any other Builder.
+
+```yaml
+builders:
+  some_cool_builder:
+    import: "package:this_package/builder.dart"
+    builder_factories: ["someCoolBuilder"]
+    # The `partId` argument to `SharedPartBuilder` is "some_cool_builder"
+    build_exceptions: {".dart": [".some_cool_buidler.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    # To copy the `.g.part` content into `.g.dart` in the source tree
+    applies_builders: ["source_gen|combining_builder"]
+```
 
 ## FAQ
 
-### What is the difference between `source_gen` and [`build`][build]?
+### What is the difference between `source_gen` and [build][]?
 
 Build is a platform-agnostic framework for Dart asset or code generation that
 is pluggable into build systems including [bazel][bazel_codegen], and
@@ -82,34 +109,12 @@ example the [`PartBuilder`][api:PartBuilder] class wraps one or more
 creates `part of` files, while the [`LibraryBuilder`][api:LibraryBuilder] class
 wraps a single Generator to make a `Builder` which creates Dart library files.
 
-### What is the difference between `source_gen` and transformers?
-
-[Dart transformers][] are often used to create and modify code and assets as part
-of a Dart project.
-
-Transformers allow modification of existing code and encapsulates changes by
-having developers use `pub` commands – `run`, `serve`, and `build`.
-Unfortunately the API exposed by transformers hinder fast incremental builds,
-output caching, and predictability, so we introduced _builders_ as part of
-[`package:build`][build].
-
-Builders and `source_gen` provide for a different model: outputs _must_ be
-declared ahead of time and code is generated and updated as part of a project.
-It is designed to create *part* _or_ standalone files that augment developer
-maintained Dart libraries. For example [AngularDart][angular2] uses `build` and
-`source_gen` to "compile" HTML and annotation metadata into plain `.dart` code.
-
-Unlike _transformers_, generated code **MAY** be checked in as part of your
-project source, although the decision may vary depending on project needs.
-
-Generated code **SHOULD** be included when publishing a project as a *pub
-package*. The fact that `source_gen` is used in a package is an *implementation
-detail*.
-
 <!-- Packages -->
+[analyzer]: https://pub.dartlang.org/packages/analyzer
 [angular2]: https://pub.dartlang.org/packages/angular2
 [bazel_codegen]: https://pub.dartlang.org/packages/_bazel_codegen
 [build]: https://pub.dartlang.org/packages/build
+[build_config]: https://pub.dartlang.org/packages/build_config
 [build_runner]: https://pub.dartlang.org/packages/build_runner
 
 <!-- Dartdoc -->
@@ -118,7 +123,6 @@ detail*.
 [api:PartBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/PartBuilder-class.html
 [api:LibraryBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/LibraryBuilder-class.html
 
-[Dart transformers]: https://www.dartlang.org/tools/pub/assets-and-transformers.html
 [Trivial example]: https://github.com/dart-lang/source_gen/blob/master/source_gen/test/src/comment_generator.dart
 [build.dart]: https://github.com/dart-lang/source_gen/blob/master/build.dart
 [generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
