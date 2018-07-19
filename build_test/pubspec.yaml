@@ -26,3 +26,5 @@ dependencies:
 
 dev_dependencies:
   analyzer: ">=0.27.1 <0.33.0"
+  build_runner: ^0.9.0
+  build_vm_compilers: ^0.1.0

@@ -3,7 +3,7 @@
 part of 'build_config.dart';
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
 BuildConfig _$BuildConfigFromJson(Map json) {

@@ -3,7 +3,7 @@
 part of 'build_target.dart';
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
 BuildTarget _$BuildTargetFromJson(Map json) {

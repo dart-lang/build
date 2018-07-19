@@ -3,13 +3,14 @@
 part of 'meta_module.dart';
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
-MetaModule _$MetaModuleFromJson(Map<String, dynamic> json) =>
-    new MetaModule((json['m'] as List)
-        .map((e) => new Module.fromJson(e as Map<String, dynamic>))
-        .toList());
+MetaModule _$MetaModuleFromJson(Map<String, dynamic> json) {
+  return new MetaModule((json['m'] as List)
+      .map((e) => new Module.fromJson(e as Map<String, dynamic>))
+      .toList());
+}
 
 abstract class _$MetaModuleSerializerMixin {
   List<Module> get modules;

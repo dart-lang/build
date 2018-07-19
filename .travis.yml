@@ -61,7 +61,7 @@ jobs:
       env: PKG="bazel_codegen"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_1
       env: PKG="bazel_codegen"
       dart: dev
     - stage: analyze_and_format
@@ -77,7 +77,7 @@ jobs:
       env: PKG="build_config"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_2
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
@@ -85,7 +85,7 @@ jobs:
       env: PKG="build_modules"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_3
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format
@@ -93,7 +93,7 @@ jobs:
       env: PKG="build_resolvers"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_1
       env: PKG="build_resolvers"
       dart: dev
     - stage: analyze_and_format
@@ -133,7 +133,7 @@ jobs:
       env: PKG="build_test"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_1
       env: PKG="build_test"
       dart: dev
     - stage: analyze_and_format
@@ -161,7 +161,7 @@ jobs:
       env: PKG="scratch_space"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh test_06
+      script: ./tool/travis.sh command_1
       env: PKG="scratch_space"
       dart: dev
 
@@ -179,4 +179,9 @@ branches:
 cache:
   directories:
     - $HOME/.pub-cache
+    - bazel_codegen/.dart_tool/build
     - build/.dart_tool/build
+    - build_config/.dart_tool/build
+    - build_modules/.dart_tool/build
+    - build_resolvers/.dart_tool/build
+    - build_test/.dart_tool/build

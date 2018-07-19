@@ -3,7 +3,7 @@
 part of 'input_set.dart';
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
 InputSet _$InputSetFromJson(Map json) {
