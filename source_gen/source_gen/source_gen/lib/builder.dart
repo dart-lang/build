@@ -39,6 +39,9 @@ Builder combiningBuilder([BuilderOptions options]) {
   return builder;
 }
 
+PostProcessBuilder partCleanup(BuilderOptions options) =>
+    const FileDeletingBuilder(const ['.g.part']);
+
 /// A [Builder] which combines part files generated from [SharedPartBuilder].
 ///
 /// This will glob all files of the form `.*.g.part`.
