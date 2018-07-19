@@ -39,7 +39,7 @@ like the Dart VM would normally do on each run.
 ## Usage
 
 This package creates a `.vm.app.dill` file corresponding to each `.dart` file
-that contains a main which it is applied to.
+that contains a `main` function.
 
 These files can be passed directly to the vm, instead of the dart script, and
 the vm will skip its initial parse and compile step.
