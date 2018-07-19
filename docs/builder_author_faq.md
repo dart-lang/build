@@ -27,14 +27,15 @@ phase, but the intermediate result is not a useful output outside of the build.
 Use a `PostProcessBuilder` to "delete" files so they are not included in the
 merged output directory or available through the development server. Note that
 files are never deleted from disk, instead a "delete" by a `PostProcessBuilder`
-acts a filter on what assets can be see in the result of the build. This works
-best if temporary assets have a unique extension. The `FileDeletingBuilder` from
-the `build` package is designed for this case and only needs to be configured
-with the extensions it should remove. In some cases the builder should only
-operate in release mode so the files can see be seen in development mode - use
-the `isEnabled` argument to the constructor rather than returning a different
-builder or passing a different set of extensions - if the extensions change
-between modes it will invalidate the entire build.
+acts a filter on what assets can be seen in the result of the build. This works
+best if temporary assets have a unique extension.
+
+The `FileDeletingBuilder` from the `build` package is designed for this case and
+only needs to be configured with the extensions it should remove. In some cases
+the builder should only operate in release mode so the files can see be seen in
+development mode - use the `isEnabled` argument to the constructor rather than
+returning a different builder or passing a different set of extensions - if the
+extensions change between modes it will invalidate the entire build.
 
 For example:
 
@@ -54,7 +55,7 @@ builders:
     builder_factories:
        - writesTemporary
        - readsTemporaryWritesPermanent
-    build_extensions: {".dart": [".used_during_build", ".output_for_real"]}
+    build_extensions:
       .dart:
         - .used_during_build
         - .output_for_real
