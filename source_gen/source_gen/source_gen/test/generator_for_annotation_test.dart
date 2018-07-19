@@ -51,11 +51,15 @@ void main() {
     });
   });
 
-  test('handles errors correctly', () async {
-    final generator = const FailingGenerator();
-    var builder = new LibraryBuilder(generator);
-    await testBuilder(builder, _inputMap, outputs: {
-      'a|lib/file.g.dart': r'''
+  group('handles errors correctly', () {
+    for (var entry in {
+      'sync errors': const FailingGenerator(),
+      'from iterable': const FailingIterableGenerator()
+    }.entries) {
+      test(entry.key, () async {
+        var builder = new LibraryBuilder(entry.value);
+        await testBuilder(builder, _inputMap, outputs: {
+          'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
@@ -64,17 +68,32 @@ void main() {
 
 // Error: Bad state: not supported!
 '''
-    });
+        });
+      });
+    }
   });
+}
+
+class FailingIterableGenerator extends GeneratorForAnnotation<Deprecated> {
+  const FailingIterableGenerator();
+
+  @override
+  Iterable<String> generateForAnnotatedElement(
+      Element element, ConstantReader annotation, BuildStep buildStep) sync* {
+    yield '// There are deprecated values in this library!';
+    throw new StateError('not supported!');
+  }
+
+  @override
+  String toString() => 'FailingGenerator';
 }
 
 class FailingGenerator extends GeneratorForAnnotation<Deprecated> {
   const FailingGenerator();
 
   @override
-  Iterable<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) sync* {
-    yield '// There are deprecated values in this library!';
+  generateForAnnotatedElement(
+      Element element, ConstantReader annotation, BuildStep buildStep) {
     throw new StateError('not supported!');
   }
 }

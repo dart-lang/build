@@ -26,7 +26,7 @@ class _Builder extends Builder {
   final String _generatedExtension;
 
   /// Whether to emit a standalone (non-`part`) file in this builder.
-  final bool _isStandalone;
+  bool get _isLibraryBuilder => this is LibraryBuilder;
 
   final String _header;
 
@@ -38,13 +38,11 @@ class _Builder extends Builder {
       {String formatOutput(String code),
       String generatedExtension = '.g.dart',
       List<String> additionalOutputExtensions = const [],
-      bool isStandalone = false,
       String header})
       : _generatedExtension = generatedExtension,
         buildExtensions = {
           '.dart': [generatedExtension]..addAll(additionalOutputExtensions)
         },
-        _isStandalone = isStandalone,
         formatOutput = formatOutput ?? _formatter.format,
         _header = (header ?? defaultFileHeader).trim() {
     if (_generatedExtension == null) {
@@ -54,7 +52,7 @@ class _Builder extends Builder {
       throw new ArgumentError.value(_generatedExtension, 'generatedExtension',
           'Extension must be in the format of .*');
     }
-    if (_isStandalone && _generators.length > 1) {
+    if (_isLibraryBuilder && _generators.length > 1) {
       throw new ArgumentError(
           'A standalone file can only be generated from a single Generator.');
     }
@@ -87,7 +85,7 @@ class _Builder extends Builder {
       contentBuffer.writeln(_header);
     }
 
-    if (!_isStandalone) {
+    if (!_isLibraryBuilder) {
       var asset = buildStep.inputId;
       var name = nameOfPartial(library, asset);
       if (name == null) {
@@ -98,13 +96,21 @@ class _Builder extends Builder {
                 'Consider adding the following to your source file:\n\n'
                 'library $suggest;');
       }
-      final part = computePartUrl(buildStep.inputId, outputId);
+      contentBuffer.writeln();
+
+      String part;
+      if (this is PartBuilder) {
+        contentBuffer.writeln('part of $name;');
+        part = computePartUrl(buildStep.inputId, outputId);
+      } else {
+        assert(this is SharedPartBuilder);
+        var finalPartId = buildStep.inputId.changeExtension('.g.dart');
+        part = computePartUrl(buildStep.inputId, finalPartId);
+      }
       if (!library.parts.map((c) => c.uri).contains(part)) {
         // TODO: Upgrade to error in a future breaking change?
         log.warning('Missing "part \'$part\';".');
       }
-      contentBuffer.writeln();
-      contentBuffer.writeln('part of $name;');
     }
 
     for (var item in generatedOutputs) {
@@ -145,13 +151,49 @@ class _Builder extends Builder {
 }
 
 /// A [Builder] which generates `part of` files.
+///
+/// Generated files will be prefixed with a `partId` to ensure multiple
+/// [SharedPartBuilder]s can produce non conflicting `part of` files.
+class SharedPartBuilder extends _Builder {
+  /// Wrap [generators] as a [Builder] that generates `part of` files.
+  ///
+  /// [partId] indicates what files will be created for each `.dart`
+  /// input. This extension should be unique as to not conflict with other
+  /// [SharedPartBuilder]s. The resulting file will be of the form
+  /// `<generatedExtension>.g.part`. If any generator in [generators] will
+  /// create additional outputs through the [BuildStep] they should be indicated
+  /// in [additionalOutputExtensions].
+  ///
+  /// [formatOutput] is called to format the generated code. Defaults to
+  /// [DartFormatter.format].
+  SharedPartBuilder(List<Generator> generators, String partId,
+      {String formatOutput(String code),
+      List<String> additionalOutputExtensions = const []})
+      : super(generators,
+            formatOutput: formatOutput,
+            generatedExtension: '.$partId.g.part',
+            additionalOutputExtensions: additionalOutputExtensions,
+            header: '') {
+    if (!_partIdRegExp.hasMatch(partId)) {
+      throw new ArgumentError.value(
+          partId,
+          'partId',
+          '`partId` can only contain letters, numbers, `_` and `.`. '
+          'It cannot start or end with `.`.');
+    }
+  }
+}
+
+/// A [Builder] which generates `part of` files.
 class PartBuilder extends _Builder {
   /// Wrap [generators] as a [Builder] that generates `part of` files.
   ///
-  /// [generatedExtension] indicates what files will be created for each `.dart`
-  /// input. Defaults to `.g.dart`. If any generator in [generators] will create
-  /// additional outputs through the [BuildStep] they should be indicated in
-  /// [additionalOutputExtensions].
+  /// [generatedExtension] indiciates what files will be created for each
+  /// `.dart` input. The [generatedExtension] should *not* be `.g.dart`. If you
+  /// wish to produce `.g.dart` files please use [SharedPartBuilder].
+  ///
+  /// If any generator in [generators] will create additional outputs through
+  /// the [BuildStep] they should be indicated in [additionalOutputExtensions].
   ///
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
@@ -159,9 +201,8 @@ class PartBuilder extends _Builder {
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
-  PartBuilder(List<Generator> generators,
+  PartBuilder(List<Generator> generators, String generatedExtension,
       {String formatOutput(String code),
-      String generatedExtension = '.g.dart',
       List<String> additionalOutputExtensions = const [],
       String header})
       : super(generators,
@@ -195,7 +236,6 @@ class LibraryBuilder extends _Builder {
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
             additionalOutputExtensions: additionalOutputExtensions,
-            isStandalone: true,
             header: header);
 }
 
@@ -234,3 +274,7 @@ final _formatter = new DartFormatter();
 const defaultFileHeader = '// GENERATED CODE - DO NOT MODIFY BY HAND';
 
 final _headerLine = '// '.padRight(77, '*');
+
+const partIdRegExpLiteral = r'[A-Za-z_\d-]+';
+
+final _partIdRegExp = new RegExp('^$partIdRegExpLiteral\$');

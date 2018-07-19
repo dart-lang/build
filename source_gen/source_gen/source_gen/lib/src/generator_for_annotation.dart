@@ -13,7 +13,12 @@ import 'library.dart';
 import 'output_helpers.dart';
 import 'type_checker.dart';
 
-/// A [Generator] that invokes [generateForAnnotatedElement] for every [T].
+/// Extend this type to create a [Generator] that invokes
+/// [generateForAnnotatedElement] for every element in the source file annotated
+/// with [T].
+///
+/// When all annotated elements have been processed, the results will be
+/// combined into a single output with duplicate items collapsed.
 ///
 /// For example, this will allow code generated for all elements which are
 /// annotated with `@Deprecated`:
@@ -50,19 +55,17 @@ abstract class GeneratorForAnnotation<T> extends Generator {
     return values.join('\n\n');
   }
 
-  /// Override to return source code to generate for [element].
+  /// Implement to return source code to generate for [element].
   ///
   /// This method is invoked based on finding elements annotated with an
   /// instance of [T]. The [annotation] is provided as a [ConstantReader].
   ///
   /// Supported return values include a single [String] or multiple [String]
-  /// instances within an [Iterable] or [Stream].
+  /// instances within an [Iterable] or [Stream]. It is also valid to return a
+  /// [Future] of [String], [Iterable], or [Stream].
   ///
-  /// It is also valid to return a [Future] of any of the above.
-  ///
-  /// Implementations should return `null` when no content is generated.
-  ///
-  /// Empty or whitespace-only [String] instances are also ignored.
+  /// Implementations should return `null` when no content is generated. Empty
+  /// or whitespace-only [String] instances are also ignored.
   generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep);
 }

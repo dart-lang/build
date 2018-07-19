@@ -1,11 +1,21 @@
+## 0.9.0
+
+* Introduce `SharedPartBuilder` for creating part files that can be merged
+  with a new `CombiningBuilder`. Note that `CombiningBuilder` only outputs
+  `.g.dart` files.
+* **Breaking** `PartBuilder` now requires a `generatedExtensions` argument. The
+  value should not be `.g.dart`. To produce `.g.dart` files please use the
+  `SharedPartBuilder`.
+
 ## 0.8.3+1
 
 * Allow using non-dev Dart 2 SDK.
 
 ## 0.8.3
 
-* `GeneratorForAnnotation.generateForAnnotatedElement` now allow multiple return
-  values when implementations return an `Iterable` or `Stream`.
+* `GeneratorForAnnotation`
+  * `generateForAnnotatedElement` now allow multiple return values when
+    implementations return an `Iterable` or `Stream`.
   * Values from `generateForAnnotatedElement` have whitespace trimmed. `null`
     and empty values are ignored.
   * Duplicate values are collapsed into a single values. This allows emitting
