@@ -7,6 +7,10 @@
   value should not be `.g.dart`. To produce `.g.dart` files please use the
   `SharedPartBuilder`.
 
+## 0.8.3+1
+
+* Allow using non-dev Dart 2 SDK.
+
 ## 0.8.3
 
 * `GeneratorForAnnotation`
