@@ -45,7 +45,11 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// Analyzer summaries, will be named after the primary source and will
   /// encompass everything in [sources].
   @override
-  @JsonKey(name: 'p', nullable: false)
+  @JsonKey(
+      name: 'p',
+      nullable: false,
+      toJson: _assetIdToJson,
+      fromJson: _assetIdFromJson)
   final AssetId primarySource;
 
   /// The libraries in the strongly connected import cycle with [primarySource].
@@ -70,13 +74,21 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// the same module. Every Dart library will only be contained in a single
   /// [Module].
   @override
-  @JsonKey(name: 's', nullable: false)
+  @JsonKey(
+      name: 's',
+      nullable: false,
+      toJson: _assetIdsToJson,
+      fromJson: _assetIdsFromJson)
   final Set<AssetId> sources;
 
   /// The [primarySource]s of the [Module]s which contain any library imported
   /// from any of the [sources] in this module.
   @override
-  @JsonKey(name: 'd', nullable: false)
+  @JsonKey(
+      name: 'd',
+      nullable: false,
+      toJson: _assetIdsToJson,
+      fromJson: _assetIdsFromJson)
   final Set<AssetId> directDependencies;
 
   Module(this.primarySource, Iterable<AssetId> sources,
@@ -191,3 +203,13 @@ Iterable<Uri> _cycleSources(Iterable<LibraryElement> libraries) =>
 /// All sources for a library, including part files.
 Iterable<Uri> _libraryUris(LibraryElement library) =>
     library.parts.map((u) => u.source.uri).toList()..add(library.source.uri);
+
+AssetId _assetIdFromJson(List json) => new AssetId.deserialize(json);
+
+List _assetIdToJson(AssetId id) => id.serialize() as List;
+
+Iterable<AssetId> _assetIdsFromJson(Iterable<dynamic> json) =>
+    json.cast<List>().map(_assetIdFromJson);
+
+List<List<dynamic>> _assetIdsToJson(Iterable<AssetId> ids) =>
+    ids.map(_assetIdToJson).toList();
