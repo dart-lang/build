@@ -77,7 +77,7 @@ jobs:
       env: PKG="build_config"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh command_1
+      script: ./tool/travis.sh command_2
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
@@ -85,7 +85,7 @@ jobs:
       env: PKG="build_modules"
       dart: dev
     - stage: unit_test
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh command_3
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format
