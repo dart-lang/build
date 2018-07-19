@@ -20,6 +20,10 @@
   indicate it is wrapping another `AssetReader`, and provide public access to
   it.
 
+## 0.9.2
+
+- Changed the default file caching logic to use an LRU cache.
+
 ## 0.9.1+1
 
 - Increased the upper bound for the sdk to `<3.0.0`.
