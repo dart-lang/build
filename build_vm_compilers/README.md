@@ -41,7 +41,7 @@ like the Dart VM would normally do on each run.
 This package creates a `.vm.app.dill` file corresponding to each `.dart` file
 that contains a main which it is applied to.
 
-These files can be passed directly do the vm, instead of the dart script, and
+These files can be passed directly to the vm, instead of the dart script, and
 the vm will skip its initial parse and compile step.
 
 You can find the output either by using the `-o <dir>` option for build_runner,
