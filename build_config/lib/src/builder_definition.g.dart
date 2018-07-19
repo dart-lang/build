@@ -3,7 +3,7 @@
 part of 'builder_definition.dart';
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
 BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
