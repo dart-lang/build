@@ -1,3 +1,7 @@
+## 0.8.3+1
+
+* Allow using non-dev Dart 2 SDK.
+
 ## 0.8.3
 
 * `GeneratorForAnnotation.generateForAnnotatedElement` now allow multiple return
