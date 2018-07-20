@@ -84,3 +84,13 @@ targets:
         # Example that excludes intellij's swap files
         - **/*___jb_tmp___
 ```
+
+## Why are some logs "(cached)"?
+
+`build_runner` will only run actions that have changes in their inputs. When an
+action fails, and a subsequent build has exactly the same inputs for that action
+it will not be rerun - the previous error messages, however, will get reprinted
+to avoid confusion if a build fails with no printed errors. To force the action
+to run again make an edit to any file that is an input to that action, or throw
+away all cached values with `pub run build_runner clean` before starting the
+next build.
