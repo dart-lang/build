@@ -5,18 +5,17 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../asset_graph/graph.dart';
-import '../asset_graph/optional_output_tracker.dart';
 import '../generate/build_result.dart';
+import '../generate/finalized_assets_view.dart';
 import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
-
-
+import 'create_merged_dir.dart';
 
 /// A [BuildEnvironment] writing to disk and stdout.
 class IOEnvironment implements BuildEnvironment {
@@ -28,10 +27,19 @@ class IOEnvironment implements BuildEnvironment {
 
   final bool _isInteractive;
 
-  IOEnvironment(PackageGraph packageGraph, bool assumeTty)
+  final Map<String, String> _outputMap;
+
+  final bool _outputSymlinksOnly;
+
+  final PackageGraph _packageGraph;
+
+  IOEnvironment(this._packageGraph,
+      {bool assumeTty, Map<String, String> outputMap, bool outputSymlinksOnly})
       : _isInteractive = assumeTty == true || _canPrompt(),
-        reader = new FileBasedAssetReader(packageGraph),
-        writer = new FileBasedAssetWriter(packageGraph);
+        _outputMap = outputMap,
+        _outputSymlinksOnly = outputSymlinksOnly ?? false,
+        reader = new FileBasedAssetReader(_packageGraph),
+        writer = new FileBasedAssetWriter(_packageGraph);
 
   @override
   void onLog(LogRecord record) {
@@ -59,29 +67,13 @@ class IOEnvironment implements BuildEnvironment {
   }
 
   @override
-  Future<BuildResult> finalizeBuild(BuildResult buildResult, AssetGraph assetGraph, OptionalOutputTracker optionalOutputsTracker) {
+  Future<BuildResult> finalizeBuild(BuildResult buildResult,
+      FinalizedAssetsView finalizedAssetsView, AssetReader reader) async {
     if (_outputMap != null && buildResult.status == BuildStatus.success) {
-      AssetReader reader;
-      reader = _reader;
-      while (reader is DelegatingAssetReader &&
-          reader is! PathProvidingAssetReader) {
-        reader = (reader as DelegatingAssetReader).delegate;
-      }
-      if (reader is! PathProvidingAssetReader) {
-        _logger.severe('Unable to create a merged output directory since no '
-            'AssetReader implements PathProvidingAssetReader.');
-        return _convertToFailure(buildResult, failureType: FailureType.cantCreate);
-      } else {
-        if (!await _environment.createOutputDirectories(
-            _outputMap,
-            _assetGraph,
-            _packageGraph,
-            reader as PathProvidingAssetReader,
-            _environment,
-            optionalOutputTracker,
-            symlinkOnly: _outputSymlinksOnly)) {
-          return _convertToFailure(buildResult, failureType: FailureType.cantCreate);
-        }
+      if (!await createMergedOutputDirectories(_outputMap, _packageGraph, this,
+          finalizedAssetsView, _outputSymlinksOnly)) {
+        return _convertToFailure(buildResult,
+            failureType: FailureType.cantCreate);
       }
     }
     return buildResult;
@@ -92,7 +84,6 @@ bool _canPrompt() =>
     stdioType(stdin) == StdioType.terminal &&
     // Assume running inside a test if the code is running as a `data:` URI
     Platform.script.scheme != 'data';
-
 
 BuildResult _convertToFailure(BuildResult previous,
         {FailureType failureType}) =>

@@ -11,10 +11,8 @@ import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
 import '../asset/reader.dart';
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
-import '../asset_graph/optional_output_tracker.dart';
 import '../environment/build_environment.dart';
+import '../generate/finalized_assets_view.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 
@@ -30,23 +28,19 @@ const _manifestSeparator = '\n';
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
     Map<String, String> outputMap,
-    AssetGraph assetGraph,
     PackageGraph packageGraph,
-    PathProvidingAssetReader reader,
     BuildEnvironment environment,
-    OptionalOutputTracker optionalOutputTracker,
-    {bool symlinkOnly = false}) async {
-  symlinkOnly ??= false;
+    FinalizedAssetsView finalizedAssetsView,
+    bool outputSymlinksOnly) async {
+  if (outputSymlinksOnly && environment.reader is! PathProvidingAssetReader) {
+    _logger.severe(
+        'The current environment does not support symlinks, but symlinks were '
+        'requested.');
+    return false;
+  }
   for (var output in outputMap.keys) {
-    if (!await _createMergedOutputDir(
-        output,
-        outputMap[output],
-        assetGraph,
-        packageGraph,
-        reader,
-        environment,
-        optionalOutputTracker,
-        symlinkOnly)) {
+    if (!await _createMergedOutputDir(output, outputMap[output], packageGraph,
+        environment, finalizedAssetsView, outputSymlinksOnly)) {
       _logger.severe('Unable to create merged directory for $output.\n'
           'Choose a different directory or delete the contents of that '
           'directory.');
@@ -59,11 +53,9 @@ Future<bool> createMergedOutputDirectories(
 Future<bool> _createMergedOutputDir(
     String outputPath,
     String root,
-    AssetGraph assetGraph,
     PackageGraph packageGraph,
-    PathProvidingAssetReader reader,
     BuildEnvironment environment,
-    OptionalOutputTracker optionalOutputTracker,
+    FinalizedAssetsView finalizedOutputsView,
     bool symlinkOnly) async {
   var outputDir = new Directory(outputPath);
   var outputDirExists = await outputDir.exists();
@@ -72,7 +64,7 @@ Future<bool> _createMergedOutputDir(
     if (!result) return result;
   }
 
-  var outputAssets = new Set<AssetId>();
+  var outputAssets = <AssetId>[];
 
   await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
       () async {
@@ -80,14 +72,10 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    await Future.wait(assetGraph.allNodes.map((node) async {
-      if (_shouldSkipNode(node, root, optionalOutputTracker)) {
-        return;
-      }
-      node.lastKnownDigest ??= await reader.digest(node.id);
-      outputAssets.add(await _writeAsset(
-          node.id, outputDir, root, packageGraph, reader, symlinkOnly));
-    }));
+    outputAssets.addAll(await Future.wait(finalizedOutputsView
+        .allAssets(rootDir: root)
+        .map((id) => _writeAsset(id, outputDir, root, packageGraph,
+            environment.reader, symlinkOnly))));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
@@ -97,8 +85,7 @@ Future<bool> _createMergedOutputDir(
     outputAssets.add(packagesAsset);
 
     if (root == null) {
-      for (var dir in _findRootDirs(
-          outputPath, assetGraph, packageGraph, optionalOutputTracker)) {
+      for (var dir in _findRootDirs(outputAssets, outputPath)) {
         var link = new Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
           link.createSync(p.join('..', 'packages'), recursive: true);
@@ -117,14 +104,10 @@ Future<bool> _createMergedOutputDir(
   return true;
 }
 
-Set<String> _findRootDirs(String outputPath, AssetGraph assetGraph,
-    PackageGraph packageGraph, OptionalOutputTracker optionalOutputTracker) {
+Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
   var rootDirs = new Set<String>();
-  for (var node in assetGraph.packageNodes(packageGraph.root.name)) {
-    if (_shouldSkipNode(node, null, optionalOutputTracker)) {
-      continue;
-    }
-    var parts = p.url.split(node.id.path);
+  for (var id in allAssets) {
+    var parts = p.url.split(id.path);
     if (parts.length == 1) continue;
     var dir = parts.first;
     if (dir == outputPath || dir == 'lib') continue;
@@ -133,35 +116,8 @@ Set<String> _findRootDirs(String outputPath, AssetGraph assetGraph,
   return rootDirs;
 }
 
-bool _shouldSkipNode(
-    AssetNode node, String root, OptionalOutputTracker optionalOutputTracker) {
-  if (!node.isReadable) return true;
-  if (node.isDeleted) return true;
-  if (root != null &&
-      !(node.id.path.startsWith('lib/')) &&
-      !p.isWithin(root, node.id.path)) {
-    return true;
-  }
-  if (node is InternalAssetNode) return true;
-  if (node is GeneratedAssetNode) {
-    if (!node.wasOutput ||
-        node.isFailure ||
-        node.state != GeneratedNodeState.upToDate) {
-      return true;
-    }
-    return !optionalOutputTracker.isRequired(node.id);
-  }
-  if (node.id.path == '.packages') return true;
-  return false;
-}
-
-Future<AssetId> _writeAsset(
-    AssetId id,
-    Directory outputDir,
-    String root,
-    PackageGraph packageGraph,
-    PathProvidingAssetReader reader,
-    bool symlinkOnly) {
+Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
+    PackageGraph packageGraph, AssetReader reader, bool symlinkOnly) {
   return _descriptorPool.withResource(() async {
     String assetPath;
     if (id.path.startsWith('lib/')) {
@@ -179,7 +135,11 @@ Future<AssetId> _writeAsset(
     try {
       if (symlinkOnly) {
         var outputPath = _filePathFor(outputDir, id);
-        await new Link(outputPath).create(reader.pathTo(id), recursive: true);
+        await new Link(outputPath).create(
+            // We assert at the top of `createMergedOutputDirectories` that the
+            // reader implements this type when requesting symlinks.
+            (reader as PathProvidingAssetReader).pathTo(id),
+            recursive: true);
       } else {
         await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
       }

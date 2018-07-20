@@ -36,6 +36,7 @@ import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
 import 'exceptions.dart';
+import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
@@ -59,8 +60,6 @@ class BuildImpl {
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
-  final Map<String, String> _outputMap;
-  final bool _outputSymlinksOnly;
   final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
@@ -80,8 +79,6 @@ class BuildImpl {
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
-        _outputMap = options.outputMap,
-        _outputSymlinksOnly = options.outputSymlinksOnly,
         _verbose = options.verbose,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
@@ -129,8 +126,6 @@ class _SingleBuild {
   final List<BuildPhase> _buildPhases;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
-  final Map<String, String> _outputMap;
-  final bool _outputSymlinksOnly;
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
@@ -154,8 +149,6 @@ class _SingleBuild {
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _environment = buildImpl._environment,
-        _outputMap = buildImpl._outputMap,
-        _outputSymlinksOnly = buildImpl._outputSymlinksOnly,
         _packageGraph = buildImpl._packageGraph,
         _performanceTracker = buildImpl._trackPerformance
             ? new BuildPerformanceTracker()
@@ -208,7 +201,8 @@ class _SingleBuild {
     } else {
       _logger.severe('Failed after ${humanReadable(watch.elapsed)}');
     }
-    return result;
+    return _environment.finalizeBuild(result,
+        new FinalizedAssetsView(_assetGraph, optionalOutputTracker), _reader);
   }
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {

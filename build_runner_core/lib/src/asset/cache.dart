@@ -13,12 +13,12 @@ import 'package:glob/glob.dart';
 import 'lru_cache.dart';
 import 'reader.dart';
 
-/// An [DelegatingAssetReader] that caches all results from the delegate.
+/// An [AssetReader] that caches all results from the delegate.
 ///
 /// Assets are cached until [invalidate] is invoked.
 ///
 /// Does not implement [findAssets].
-class CachingAssetReader implements AssetReader, DelegatingAssetReader {
+class CachingAssetReader implements AssetReader {
   /// Cached results of [readAsBytes].
   final _bytesContentCache = new LruCache<AssetId, List<int>>(
       1024 * 1024,
@@ -44,17 +44,21 @@ class CachingAssetReader implements AssetReader, DelegatingAssetReader {
   /// Pending `readAsString` operations.
   final _pendingStringContentCache = <AssetId, Future<String>>{};
 
-  @override
-  final AssetReader delegate;
+  final AssetReader _delegate;
 
-  CachingAssetReader(this.delegate);
+  CachingAssetReader._(this._delegate);
+
+  factory CachingAssetReader(AssetReader delegate) =>
+      delegate is PathProvidingAssetReader
+          ? new _PathProvidingCachingAssetReader._(delegate)
+          : new CachingAssetReader._(delegate);
 
   @override
   Future<bool> canRead(AssetId id) =>
-      _canReadCache.putIfAbsent(id, () => delegate.canRead(id));
+      _canReadCache.putIfAbsent(id, () => _delegate.canRead(id));
 
   @override
-  Future<Digest> digest(id) => delegate.digest(id);
+  Future<Digest> digest(id) => _delegate.digest(id);
 
   @override
   Stream<AssetId> findAssets(Glob glob) =>
@@ -67,7 +71,7 @@ class CachingAssetReader implements AssetReader, DelegatingAssetReader {
 
     return _pendingBytesContentCache.putIfAbsent(
         id,
-        () => delegate.readAsBytes(id).then((result) {
+        () => _delegate.readAsBytes(id).then((result) {
               if (cache) _bytesContentCache[id] = result;
               _pendingBytesContentCache.remove(id);
               return result;
@@ -108,4 +112,18 @@ class CachingAssetReader implements AssetReader, DelegatingAssetReader {
       _pendingStringContentCache.remove(id);
     }
   }
+}
+
+/// A version of a [CachingAssetReader] that implements
+/// [PathProvidingAssetReader].
+class _PathProvidingCachingAssetReader extends CachingAssetReader
+    implements PathProvidingAssetReader {
+  @override
+  PathProvidingAssetReader get _delegate =>
+      super._delegate as PathProvidingAssetReader;
+
+  _PathProvidingCachingAssetReader._(AssetReader delegate) : super._(delegate);
+
+  @override
+  String pathTo(AssetId id) => _delegate.pathTo(id);
 }

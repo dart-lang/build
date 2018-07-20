@@ -76,7 +76,12 @@ Future<BuildResult> build(List<BuilderApplication> builders,
   builderConfigOverrides ??= const {};
   packageGraph ??= new PackageGraph.forThisPackage();
   var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty),
+      new IOEnvironment(
+        packageGraph,
+        assumeTty: assumeTty,
+        outputMap: outputMap,
+        outputSymlinksOnly: outputSymlinksOnly,
+      ),
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
@@ -89,8 +94,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     overrideBuildConfig:
         await findBuildConfigOverrides(packageGraph, configKey),
     enableLowResourcesMode: enableLowResourcesMode,
-    outputMap: outputMap,
-    outputSymlinksOnly: outputSymlinksOnly,
     trackPerformance: trackPerformance,
     verbose: verbose,
     buildDirs: buildDirs,

@@ -57,7 +57,10 @@ Future<ServeHandler> watch(
   packageGraph ??= new PackageGraph.forThisPackage();
 
   var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty),
+      new IOEnvironment(packageGraph,
+          assumeTty: assumeTty,
+          outputMap: outputMap,
+          outputSymlinksOnly: outputSymlinksOnly),
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
@@ -72,8 +75,6 @@ Future<ServeHandler> watch(
     debounceDelay: debounceDelay,
     skipBuildScriptCheck: skipBuildScriptCheck,
     enableLowResourcesMode: enableLowResourcesMode,
-    outputMap: outputMap,
-    outputSymlinksOnly: outputSymlinksOnly,
     trackPerformance: trackPerformance,
     verbose: verbose,
     buildDirs: buildDirs,

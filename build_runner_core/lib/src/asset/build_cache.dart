@@ -13,39 +13,55 @@ import 'writer.dart';
 
 /// Wraps an [AssetReader] and translates reads for generated files into reads
 /// from the build cache directory
-class BuildCacheReader
-    implements AssetReader, PathProvidingAssetReader, DelegatingAssetReader {
-  @override
-  final PathProvidingAssetReader delegate;
+class BuildCacheReader implements AssetReader {
   final AssetGraph _assetGraph;
+  final AssetReader _delegate;
   final String _rootPackage;
 
-  BuildCacheReader(this.delegate, this._assetGraph, this._rootPackage);
+  BuildCacheReader._(this._delegate, this._assetGraph, this._rootPackage);
+
+  factory BuildCacheReader(
+          AssetReader delegate, AssetGraph assetGraph, String rootPackage) =>
+      delegate is PathProvidingAssetReader
+          ? new _PathProvidingBuildCacheReader._(
+              delegate, assetGraph, rootPackage)
+          : new BuildCacheReader._(delegate, assetGraph, rootPackage);
 
   @override
   Future<bool> canRead(AssetId id) =>
-      delegate.canRead(_cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.canRead(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
   Future<Digest> digest(AssetId id) =>
-      delegate.digest(_cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.digest(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
   Future<List<int>> readAsBytes(AssetId id) =>
-      delegate.readAsBytes(_cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.readAsBytes(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
-      delegate.readAsString(_cacheLocation(id, _assetGraph, _rootPackage),
+      _delegate.readAsString(_cacheLocation(id, _assetGraph, _rootPackage),
           encoding: encoding);
 
   @override
   Stream<AssetId> findAssets(Glob glob) => throw new UnimplementedError(
       'Asset globbing should be done per phase with the AssetGraph');
+}
+
+class _PathProvidingBuildCacheReader extends BuildCacheReader
+    implements PathProvidingAssetReader {
+  @override
+  PathProvidingAssetReader get _delegate =>
+      super._delegate as PathProvidingAssetReader;
+
+  _PathProvidingBuildCacheReader._(PathProvidingAssetReader delegate,
+      AssetGraph assetGraph, String rootPackage)
+      : super._(delegate, assetGraph, rootPackage);
 
   @override
   String pathTo(AssetId id) =>
-      delegate.pathTo(_cacheLocation(id, _assetGraph, _rootPackage));
+      _delegate.pathTo(_cacheLocation(id, _assetGraph, _rootPackage));
 }
 
 class BuildCacheWriter implements RunnerAssetWriter {

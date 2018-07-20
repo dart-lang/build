@@ -12,7 +12,8 @@ import 'package:test/test.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
-import 'package:build_runner_core/src/generate/create_merged_dir.dart';
+import 'package:build_runner_core/src/environment/create_merged_dir.dart';
+import 'package:build_runner_core/src/generate/finalized_assets_view.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 
 import 'package:_test_common/common.dart';
@@ -47,6 +48,7 @@ main() {
     TestBuildEnvironment environment;
     InMemoryRunnerAssetReader assetReader;
     OptionalOutputTracker optionalOutputTracker;
+    FinalizedAssetsView finalizedAssetsView;
 
     setUp(() async {
       assetReader = new InMemoryRunnerAssetReader(sources);
@@ -54,6 +56,8 @@ main() {
       graph = await AssetGraph.build(phases, sources.keys.toSet(),
           new Set<AssetId>(), packageGraph, assetReader);
       optionalOutputTracker = new OptionalOutputTracker(graph, [], phases);
+      finalizedAssetsView =
+          new FinalizedAssetsView(graph, optionalOutputTracker);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
         node.state = GeneratedNodeState.upToDate;
@@ -71,7 +75,7 @@ main() {
 
     test('creates a valid merged output directory', () async {
       var success = await createMergedOutputDirectories({tmpDir.path: null},
-          graph, packageGraph, assetReader, environment, optionalOutputTracker);
+          packageGraph, environment, finalizedAssetsView, false);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -83,7 +87,7 @@ main() {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
 
       var success = await createMergedOutputDirectories({tmpDir.path: null},
-          graph, packageGraph, assetReader, environment, optionalOutputTracker);
+          packageGraph, environment, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
@@ -93,11 +97,10 @@ main() {
     test('can create multiple merged directories', () async {
       var success = await createMergedOutputDirectories(
           {tmpDir.path: null, anotherTmpDir.path: null},
-          graph,
           packageGraph,
-          assetReader,
           environment,
-          optionalOutputTracker);
+          finalizedAssetsView,
+          false);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -107,7 +110,7 @@ main() {
     test('removes the provided root from the output path', () async {
       var success = await createMergedOutputDirectories({
         tmpDir.path: 'web',
-      }, graph, packageGraph, assetReader, environment, optionalOutputTracker);
+      }, packageGraph, environment, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -121,7 +124,7 @@ main() {
     test('does not output the input directory', () async {
       var success = await createMergedOutputDirectories({
         tmpDir.path: 'web',
-      }, graph, packageGraph, assetReader, environment, optionalOutputTracker);
+      }, packageGraph, environment, finalizedAssetsView, false);
       expect(success, isTrue);
 
       expect(new Directory(p.join(tmpDir.path, 'web')).existsSync(), isFalse);
@@ -130,11 +133,10 @@ main() {
     test('outputs the packages when input root is provided', () async {
       var success = await createMergedOutputDirectories(
           {tmpDir.path: 'web', anotherTmpDir.path: 'foo'},
-          graph,
           packageGraph,
-          assetReader,
           environment,
-          optionalOutputTracker);
+          finalizedAssetsView,
+          false);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -151,11 +153,10 @@ main() {
     test('only outputs files contained in the provided root', () async {
       var success = await createMergedOutputDirectories(
           {tmpDir.path: 'web', anotherTmpDir.path: 'foo'},
-          graph,
           packageGraph,
-          assetReader,
           environment,
-          optionalOutputTracker);
+          finalizedAssetsView,
+          false);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -185,7 +186,7 @@ main() {
       node.isFailure = false;
 
       var success = await createMergedOutputDirectories({tmpDir.path: null},
-          graph, packageGraph, assetReader, environment, optionalOutputTracker);
+          packageGraph, environment, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
@@ -193,13 +194,11 @@ main() {
     });
 
     test('doesnt always write files not matching outputDirs', () async {
-      var success = await createMergedOutputDirectories(
-          {tmpDir.path: null},
-          graph,
-          packageGraph,
-          assetReader,
-          environment,
-          new OptionalOutputTracker(graph, ['foo'], phases));
+      optionalOutputTracker = new OptionalOutputTracker(graph, ['foo'], phases);
+      finalizedAssetsView =
+          new FinalizedAssetsView(graph, optionalOutputTracker);
+      var success = await createMergedOutputDirectories({tmpDir.path: null},
+          packageGraph, environment, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var expectedFiles = <String, dynamic>{
@@ -226,25 +225,15 @@ main() {
       test('fails in non-interactive mode', () async {
         environment =
             new TestBuildEnvironment(reader: assetReader, throwOnPrompt: true);
-        var success = await createMergedOutputDirectories(
-            {tmpDir.path: null},
-            graph,
-            packageGraph,
-            assetReader,
-            environment,
-            optionalOutputTracker);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            packageGraph, environment, finalizedAssetsView, false);
         expect(success, isFalse);
       });
 
       test('can skip creating the directory', () async {
         environment.nextPromptResponse = 0;
-        var success = await createMergedOutputDirectories(
-            {tmpDir.path: null},
-            graph,
-            packageGraph,
-            assetReader,
-            environment,
-            optionalOutputTracker);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            packageGraph, environment, finalizedAssetsView, false);
         expect(success, isFalse,
             reason: 'Skipping creation of the directory should be considered a '
                 'failure.');
@@ -258,13 +247,8 @@ main() {
 
       test('can delete the entire existing directory', () async {
         environment.nextPromptResponse = 1;
-        var success = await createMergedOutputDirectories(
-            {tmpDir.path: null},
-            graph,
-            packageGraph,
-            assetReader,
-            environment,
-            optionalOutputTracker);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            packageGraph, environment, finalizedAssetsView, false);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isFalse);
@@ -273,13 +257,8 @@ main() {
 
       test('can merge into the existing directory', () async {
         environment.nextPromptResponse = 2;
-        var success = await createMergedOutputDirectories(
-            {tmpDir.path: null},
-            graph,
-            packageGraph,
-            assetReader,
-            environment,
-            optionalOutputTracker);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            packageGraph, environment, finalizedAssetsView, false);
         expect(success, isTrue);
 
         expect(garbageFile.existsSync(), isTrue,
@@ -292,13 +271,8 @@ main() {
 
     group('Empty directory cleanup', () {
       test('removes directories that become empty', () async {
-        var success = await createMergedOutputDirectories(
-            {tmpDir.path: null},
-            graph,
-            packageGraph,
-            assetReader,
-            environment,
-            optionalOutputTracker);
+        var success = await createMergedOutputDirectories({tmpDir.path: null},
+            packageGraph, environment, finalizedAssetsView, false);
         expect(success, isTrue);
         final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
         for (var remove in removes) {
@@ -307,13 +281,8 @@ main() {
               .deletedBy
               .add(makeAssetId(remove).addExtension('.post_anchor.1'));
         }
-        success = await createMergedOutputDirectories(
-            {tmpDir.path: null},
-            graph,
-            packageGraph,
-            assetReader,
-            environment,
-            optionalOutputTracker);
+        success = await createMergedOutputDirectories({tmpDir.path: null},
+            packageGraph, environment, finalizedAssetsView, false);
         expect(success, isTrue);
         var packageADir = p.join(tmpDir.path, 'packages', 'a');
         expect(new Directory(packageADir).existsSync(), isFalse);

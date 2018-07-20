@@ -296,8 +296,7 @@ class _Loader {
   }
 
   /// Wraps [original] in a [BuildCacheReader].
-  AssetReader _wrapReader(
-      PathProvidingAssetReader original, AssetGraph assetGraph) {
+  AssetReader _wrapReader(RunnerAssetReader original, AssetGraph assetGraph) {
     assert(assetGraph != null);
     return new BuildCacheReader(
         original, assetGraph, _options.packageGraph.root.name);

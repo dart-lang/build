@@ -87,8 +87,7 @@ targets:
       ).create();
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       var packageGraph = new PackageGraph.forPath(pkgARoot);
-      environment = new OverrideableEnvironment(
-          new IOEnvironment(packageGraph, null),
+      environment = new OverrideableEnvironment(new IOEnvironment(packageGraph),
           onLog: (_) {});
       options = await BuildOptions.create(environment,
           packageGraph: packageGraph,
