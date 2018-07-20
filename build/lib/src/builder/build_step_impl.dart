@@ -30,7 +30,10 @@ class BuildStepImpl implements BuildStep {
   final AssetId inputId;
 
   @override
-  Future<LibraryElement> get inputLibrary async => resolver.libraryFor(inputId);
+  Future<LibraryElement> get inputLibrary async {
+    if (_isComplete) throw new BuildStepCompletedException();
+    return resolver.libraryFor(inputId);
+  }
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
@@ -50,40 +53,50 @@ class BuildStepImpl implements BuildStep {
 
   final ResourceManager _resourceManager;
 
+  bool _isComplete = false;
+
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
       this._writer, this._rootPackage, this._resolvers, this._resourceManager)
       : _expectedOutputs = expectedOutputs.toSet();
 
   @override
-  Resolver get resolver =>
-      new _DelayedResolver(_resolver ??= _resolvers.get(this));
+  Resolver get resolver {
+    if (_isComplete) throw new BuildStepCompletedException();
+    return new _DelayedResolver(_resolver ??= _resolvers.get(this));
+  }
 
   Future<ReleasableResolver> _resolver;
 
   @override
   Future<bool> canRead(AssetId id) {
+    if (_isComplete) throw new BuildStepCompletedException();
     _checkInput(id);
     return _reader.canRead(id);
   }
 
   @override
-  Future<T> fetchResource<T>(Resource<T> resource) =>
-      _resourceManager.fetch(resource);
+  Future<T> fetchResource<T>(Resource<T> resource) {
+    if (_isComplete) throw new BuildStepCompletedException();
+    return _resourceManager.fetch(resource);
+  }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) {
+    if (_isComplete) throw new BuildStepCompletedException();
     _checkInput(id);
     return _reader.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+    if (_isComplete) throw new BuildStepCompletedException();
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
   @override
   Stream<AssetId> findAssets(Glob glob) {
+    if (_isComplete) throw new BuildStepCompletedException();
     if (_reader is MultiPackageAssetReader) {
       return (_reader as MultiPackageAssetReader)
           .findAssets(glob, package: inputId?.package ?? _rootPackage);
@@ -94,6 +107,7 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
+    if (_isComplete) throw new BuildStepCompletedException();
     _checkOutput(id);
     var done =
         _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
@@ -104,6 +118,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding = utf8}) {
+    if (_isComplete) throw new BuildStepCompletedException();
     _checkOutput(id);
     var done = _futureOrWrite(content,
         (String c) => _writer.writeAsString(id, c, encoding: encoding));
@@ -113,6 +128,7 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Future<Digest> digest(AssetId id) {
+    if (_isComplete) throw new BuildStepCompletedException();
     _checkInput(id);
     return _reader.digest(id);
   }
@@ -126,6 +142,7 @@ class BuildStepImpl implements BuildStep {
   /// returned [Future] completes then all outputs have been written and the
   /// [Resolver] for this build step - if any - has been released.
   Future complete() async {
+    _isComplete = true;
     await Future.wait(_writeResults.map(Result.release));
     (await _resolver)?.release();
   }
