@@ -4,6 +4,7 @@
 - Drop dependency on `build_barback`.
 - Use the latest `build`.
 - Support `package:analyzer` `0.32.0`.
+- Don't pass any analysis options to the summary resolver - use the defaults.
 
 # 0.3.1+2
 

@@ -85,7 +85,9 @@ class AnalyzerResolver implements ReleasableResolver {
 
   AnalyzerResolver(
       DartUriResolver dartUriResolver, AnalysisOptions analysisOptions) {
-    _context.analysisOptions = analysisOptions;
+    if (analysisOptions != null) {
+      _context.analysisOptions = analysisOptions;
+    }
     _context.sourceFactory =
         new SourceFactory([dartUriResolver, new _AssetUriResolver(this)]);
   }
@@ -428,8 +430,8 @@ class AnalyzerResolvers implements Resolvers {
     var sdk = new FolderBasedDartSdk(
         resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()));
     var uriResolver = new DartUriResolver(sdk);
-    return new AnalyzerResolvers._(new AnalyzerResolver(
-        uriResolver, analysisOptions ?? new AnalysisOptionsImpl()));
+    return new AnalyzerResolvers._(
+        new AnalyzerResolver(uriResolver, analysisOptions));
   }
 
   @override

@@ -6,7 +6,6 @@ import 'package:analyzer/src/generated/engine.dart'
     show
         AnalysisContext,
         AnalysisEngine,
-        AnalysisOptionsImpl,
         InternalAnalysisContext;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/package_bundle_reader.dart'
@@ -44,7 +43,6 @@ AnalysisContext summaryAnalysisContext(
   (context as AnalysisContextImpl).resultProvider =
       new InputPackagesResultProvider(
           context as InternalAnalysisContext, summaryData);
-  context.analysisOptions = new AnalysisOptionsImpl()..strongMode = true;
 
   return context;
 }
