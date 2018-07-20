@@ -421,16 +421,15 @@ class AnalyzerResolvers implements Resolvers {
   /// Create a Resolvers backed by an [AnalysisContext] using options
   /// [analysisOptions].
   ///
-  /// By default the only option changed from the default is
-  /// [AnalysisOptions.strongMode] which is set to `true`.
+  /// If no argument is passed a default AnalysisOptions is used.
   factory AnalyzerResolvers([AnalysisOptions analysisOptions]) {
     _initAnalysisEngine();
     var resourceProvider = PhysicalResourceProvider.INSTANCE;
     var sdk = new FolderBasedDartSdk(
         resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()));
     var uriResolver = new DartUriResolver(sdk);
-    return new AnalyzerResolvers._(new AnalyzerResolver(uriResolver,
-        analysisOptions ?? (new AnalysisOptionsImpl()..strongMode = true)));
+    return new AnalyzerResolvers._(new AnalyzerResolver(
+        uriResolver, analysisOptions ?? new AnalysisOptionsImpl()));
   }
 
   @override
