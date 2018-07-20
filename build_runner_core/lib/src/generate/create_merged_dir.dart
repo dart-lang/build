@@ -73,7 +73,6 @@ Future<bool> _createMergedOutputDir(
   }
 
   var outputAssets = new Set<AssetId>();
-  var originalOutputAssets = new Set<AssetId>();
 
   await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
       () async {
@@ -85,7 +84,6 @@ Future<bool> _createMergedOutputDir(
       if (_shouldSkipNode(node, root, optionalOutputTracker)) {
         return;
       }
-      originalOutputAssets.add(node.id);
       node.lastKnownDigest ??= await reader.digest(node.id);
       outputAssets.add(await _writeAsset(
           node.id, outputDir, root, packageGraph, reader, symlinkOnly));

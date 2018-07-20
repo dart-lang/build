@@ -35,7 +35,6 @@ import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
-import 'create_merged_dir.dart';
 import 'exceptions.dart';
 import 'heartbeat.dart';
 import 'options.dart';
@@ -202,31 +201,6 @@ class _SingleBuild {
       }
     }
     await _resourceManager.disposeAll();
-    if (_outputMap != null && result.status == BuildStatus.success) {
-      AssetReader reader;
-      reader = _reader;
-      while (reader is DelegatingAssetReader &&
-          reader is! PathProvidingAssetReader) {
-        reader = (reader as DelegatingAssetReader).delegate;
-      }
-      if (reader is! PathProvidingAssetReader) {
-        _logger.severe('Unable to create a merged output directory since no '
-            'AssetReader implements PathProvidingAssetReader.');
-        result = _convertToFailure(result, failureType: FailureType.cantCreate);
-      } else {
-        if (!await createMergedOutputDirectories(
-            _outputMap,
-            _assetGraph,
-            _packageGraph,
-            reader as PathProvidingAssetReader,
-            _environment,
-            optionalOutputTracker,
-            symlinkOnly: _outputSymlinksOnly)) {
-          result =
-              _convertToFailure(result, failureType: FailureType.cantCreate);
-        }
-      }
-    }
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs '
@@ -236,15 +210,6 @@ class _SingleBuild {
     }
     return result;
   }
-
-  BuildResult _convertToFailure(BuildResult previous,
-          {FailureType failureType}) =>
-      new BuildResult(
-        BuildStatus.failure,
-        previous.outputs,
-        performance: previous.performance,
-        failureType: failureType,
-      );
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {

@@ -10,8 +10,13 @@ import 'package:logging/logging.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../asset_graph/graph.dart';
+import '../asset_graph/optional_output_tracker.dart';
+import '../generate/build_result.dart';
 import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
+
+
 
 /// A [BuildEnvironment] writing to disk and stdout.
 class IOEnvironment implements BuildEnvironment {
@@ -52,9 +57,48 @@ class IOEnvironment implements BuildEnvironment {
           'a number between 1 and ${choices.length} expected');
     }
   }
+
+  @override
+  Future<BuildResult> finalizeBuild(BuildResult buildResult, AssetGraph assetGraph, OptionalOutputTracker optionalOutputsTracker) {
+    if (_outputMap != null && buildResult.status == BuildStatus.success) {
+      AssetReader reader;
+      reader = _reader;
+      while (reader is DelegatingAssetReader &&
+          reader is! PathProvidingAssetReader) {
+        reader = (reader as DelegatingAssetReader).delegate;
+      }
+      if (reader is! PathProvidingAssetReader) {
+        _logger.severe('Unable to create a merged output directory since no '
+            'AssetReader implements PathProvidingAssetReader.');
+        return _convertToFailure(buildResult, failureType: FailureType.cantCreate);
+      } else {
+        if (!await _environment.createOutputDirectories(
+            _outputMap,
+            _assetGraph,
+            _packageGraph,
+            reader as PathProvidingAssetReader,
+            _environment,
+            optionalOutputTracker,
+            symlinkOnly: _outputSymlinksOnly)) {
+          return _convertToFailure(buildResult, failureType: FailureType.cantCreate);
+        }
+      }
+    }
+    return buildResult;
+  }
 }
 
 bool _canPrompt() =>
     stdioType(stdin) == StdioType.terminal &&
     // Assume running inside a test if the code is running as a `data:` URI
     Platform.script.scheme != 'data';
+
+
+BuildResult _convertToFailure(BuildResult previous,
+        {FailureType failureType}) =>
+    new BuildResult(
+      BuildStatus.failure,
+      previous.outputs,
+      performance: previous.performance,
+      failureType: failureType,
+    );
