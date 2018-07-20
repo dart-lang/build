@@ -30,17 +30,19 @@ Future<bool> createMergedOutputDirectories(
     Map<String, String> outputMap,
     PackageGraph packageGraph,
     BuildEnvironment environment,
+    AssetReader reader,
     FinalizedAssetsView finalizedAssetsView,
     bool outputSymlinksOnly) async {
-  if (outputSymlinksOnly && environment.reader is! PathProvidingAssetReader) {
+  if (outputSymlinksOnly && reader is! PathProvidingAssetReader) {
     _logger.severe(
         'The current environment does not support symlinks, but symlinks were '
         'requested.');
     return false;
   }
+
   for (var output in outputMap.keys) {
     if (!await _createMergedOutputDir(output, outputMap[output], packageGraph,
-        environment, finalizedAssetsView, outputSymlinksOnly)) {
+        environment, reader, finalizedAssetsView, outputSymlinksOnly)) {
       _logger.severe('Unable to create merged directory for $output.\n'
           'Choose a different directory or delete the contents of that '
           'directory.');
@@ -55,6 +57,7 @@ Future<bool> _createMergedOutputDir(
     String root,
     PackageGraph packageGraph,
     BuildEnvironment environment,
+    AssetReader reader,
     FinalizedAssetsView finalizedOutputsView,
     bool symlinkOnly) async {
   var outputDir = new Directory(outputPath);
@@ -74,8 +77,8 @@ Future<bool> _createMergedOutputDir(
 
     outputAssets.addAll(await Future.wait(finalizedOutputsView
         .allAssets(rootDir: root)
-        .map((id) => _writeAsset(id, outputDir, root, packageGraph,
-            environment.reader, symlinkOnly))));
+        .map((id) => _writeAsset(
+            id, outputDir, root, packageGraph, reader, symlinkOnly))));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
@@ -134,8 +137,7 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
     var outputId = new AssetId(packageGraph.root.name, assetPath);
     try {
       if (symlinkOnly) {
-        var outputPath = _filePathFor(outputDir, id);
-        await new Link(outputPath).create(
+        await new Link(_filePathFor(outputDir, id)).create(
             // We assert at the top of `createMergedOutputDirectories` that the
             // reader implements this type when requesting symlinks.
             (reader as PathProvidingAssetReader).pathTo(id),

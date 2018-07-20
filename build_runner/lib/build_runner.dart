@@ -9,6 +9,8 @@ export 'package:build_runner_core/src/asset/writer.dart';
 export 'package:build_runner_core/src/generate/build_result.dart';
 export 'package:build_runner_core/src/generate/exceptions.dart'
     show CannotBuildException;
+export 'package:build_runner_core/src/generate/finalized_assets_view.dart'
+    show FinalizedAssetsView;
 export 'package:build_runner_core/src/generate/performance_tracker.dart'
     show BuildPerformance, BuilderActionPerformance, BuildPhasePerformance;
 export 'package:build_runner_core/src/package_graph/apply_builders.dart'

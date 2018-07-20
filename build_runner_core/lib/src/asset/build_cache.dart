@@ -65,9 +65,8 @@ class _PathProvidingBuildCacheReader extends BuildCacheReader
 }
 
 class BuildCacheWriter implements RunnerAssetWriter {
-  final RunnerAssetWriter _delegate;
-
   final AssetGraph _assetGraph;
+  final RunnerAssetWriter _delegate;
   final String _rootPackage;
 
   BuildCacheWriter(this._delegate, this._assetGraph, this._rootPackage);

@@ -12,7 +12,6 @@ import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
-import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -296,7 +295,7 @@ class _Loader {
   }
 
   /// Wraps [original] in a [BuildCacheReader].
-  AssetReader _wrapReader(RunnerAssetReader original, AssetGraph assetGraph) {
+  AssetReader _wrapReader(AssetReader original, AssetGraph assetGraph) {
     assert(assetGraph != null);
     return new BuildCacheReader(
         original, assetGraph, _options.packageGraph.root.name);

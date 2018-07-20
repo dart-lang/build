@@ -14,7 +14,7 @@ import '../asset_graph/node.dart';
 
 typedef Future _RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 
-/// A [RunnerAssetReader] must implement some additional interfaces.
+/// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
 abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 
 /// An [AssetReader] that can provide actual paths to assets on disk.

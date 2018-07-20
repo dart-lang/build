@@ -71,7 +71,7 @@ class IOEnvironment implements BuildEnvironment {
       FinalizedAssetsView finalizedAssetsView, AssetReader reader) async {
     if (_outputMap != null && buildResult.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(_outputMap, _packageGraph, this,
-          finalizedAssetsView, _outputSymlinksOnly)) {
+          reader, finalizedAssetsView, _outputSymlinksOnly)) {
         return _convertToFailure(buildResult,
             failureType: FailureType.cantCreate);
       }
