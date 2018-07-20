@@ -83,8 +83,8 @@ class AnalyzerResolver implements ReleasableResolver {
   /// later). If this happens we don't want to hide the asset from the analyzer.
   final _seenAssets = new Set<AssetId>();
 
-  AnalyzerResolver(
-      DartUriResolver dartUriResolver, AnalysisOptions analysisOptions) {
+  AnalyzerResolver(DartUriResolver dartUriResolver,
+      [AnalysisOptions analysisOptions]) {
     if (analysisOptions != null) {
       _context.analysisOptions = analysisOptions;
     }
