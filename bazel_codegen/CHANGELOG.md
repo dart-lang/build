@@ -1,4 +1,4 @@
-# 0.3.2-dev
+# 0.3.2
 
 - Increased the upper bound for the sdk to `<3.0.0`.
 - Drop dependency on `build_barback`.
