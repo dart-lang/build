@@ -18,3 +18,8 @@ Builder vmKernelModuleBuilder(_) => new KernelBuilder(
     );
 
 Builder vmKernelEntrypointBuilder(_) => new VmEntrypointBuilder();
+
+PostProcessBuilder kernelModuleCleanup(BuilderOptions options) =>
+    (options.config['enabled'] as bool ?? false)
+        ? const FileDeletingBuilder(const ['.vm.dill'])
+        : const FileDeletingBuilder(const ['.vm.dill'], isEnabled: false);
