@@ -83,7 +83,7 @@ class FailureReporter {
     return Future.wait(errorFiles.map((errorFile) async {
       if (await errorFile.exists()) {
         final errorReports = jsonDecode(await errorFile.readAsString());
-        final actionDescription = (errorReports as List).first as String;
+        final actionDescription = '${(errorReports as List).first} (cached)';
         final logger = new Logger(actionDescription);
         for (final List error in errorReports.skip(1)) {
           final stackTraceString = error[2] as String;
