@@ -1,3 +1,7 @@
+## 0.2.2+1
+
+- Tag errors from cached actions when they are printed.
+
 ## 0.2.2
 
 - Changed the default file caching logic to use an LRU cache.
