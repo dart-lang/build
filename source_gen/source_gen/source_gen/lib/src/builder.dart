@@ -188,7 +188,7 @@ class SharedPartBuilder extends _Builder {
 class PartBuilder extends _Builder {
   /// Wrap [generators] as a [Builder] that generates `part of` files.
   ///
-  /// [generatedExtension] indiciates what files will be created for each
+  /// [generatedExtension] indicates what files will be created for each
   /// `.dart` input. The [generatedExtension] should *not* be `.g.dart`. If you
   /// wish to produce `.g.dart` files please use [SharedPartBuilder].
   ///
