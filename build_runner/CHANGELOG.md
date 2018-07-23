@@ -17,10 +17,6 @@
 - Added a `outputSymlinksOnly` option to `IOEnvironment` constructor, that
   causes the merged output directories to contain only symlinks, which is much
   faster than copying files.
-- Added the `PathProvidingAssetReader` interface, which requires a
-  `String pathTo(AssetId id)` method that returns the underlying path to a
-  given file. You must implement this in your `AssetReader` if you want to use
-  the new symlinks option.
 - Added the `FinalizedAssetView` class which provides a list of all available
   assets to the `BuildEnvironment` during the build finalization phase.
   - `outputMap` has moved from `BuildOptions` to this constructor, as a named
