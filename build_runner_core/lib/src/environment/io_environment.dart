@@ -17,6 +17,8 @@ import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
 import 'create_merged_dir.dart';
 
+final _logger = new Logger('IOEnvironment');
+
 /// A [BuildEnvironment] writing to disk and stdout.
 class IOEnvironment implements BuildEnvironment {
   @override
@@ -39,7 +41,13 @@ class IOEnvironment implements BuildEnvironment {
         _outputMap = outputMap,
         _outputSymlinksOnly = outputSymlinksOnly ?? false,
         reader = new FileBasedAssetReader(_packageGraph),
-        writer = new FileBasedAssetWriter(_packageGraph);
+        writer = new FileBasedAssetWriter(_packageGraph) {
+    if (outputSymlinksOnly && Platform.isWindows) {
+      _logger.warning('Symlinks to files are not yet working on Windows, you '
+          'may experience issues using this mode. Follow '
+          'https://github.com/dart-lang/sdk/issues/33966 for updates.');
+    }
+  }
 
   @override
   void onLog(LogRecord record) {
