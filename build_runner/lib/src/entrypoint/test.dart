@@ -22,7 +22,8 @@ class TestCommand extends BuildRunnerCommand {
   TestCommand(PackageGraph packageGraph)
       : super(
           // Use symlinks by default, if package:test supports it.
-          symlinksDefault: _packageTestSupportsSymlinks(packageGraph),
+          symlinksDefault:
+              _packageTestSupportsSymlinks(packageGraph) && !Platform.isWindows,
         );
 
   @override
