@@ -1,3 +1,7 @@
+## 0.3.1
+
+- Change the default module strategy for the root package to `coarse`.
+
 ## 0.3.0
 
 ### Improvements
