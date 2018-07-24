@@ -67,14 +67,15 @@ void _stdIOLogListener(LogRecord record, {bool verbose}) {
 /// header for levels >= WARNING.
 String _loggerName(LogRecord record, bool verbose) {
   var knownNames = const [
+    'ApplyBuilders',
     'Build',
     'BuildDefinition',
     'BuildOptions',
     'BuildScriptUpdates',
     'CreateOutputDir',
     'Entrypoint',
-    'ApplyBuilders',
     'Heartbeat',
+    'IOEnvironment',
     'Serve',
     'Watch',
     'build_runner',
