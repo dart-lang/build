@@ -24,6 +24,10 @@
 - The `OverridableEnvironment` now supports overriding the new `finalizeBuild`
   api.
 
+## 0.2.2+2
+
+- Support `package:json_annotation` v1.
+
 ## 0.2.2+1
 
 - Tag errors from cached actions when they are printed.
