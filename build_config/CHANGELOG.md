@@ -1,3 +1,7 @@
+## 0.3.1+2
+
+- Support `package:json_annotation` v1.
+
 ## 0.3.1+1
 
 - Increased the upper bound for the sdk to `<3.0.0`.
