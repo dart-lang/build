@@ -42,7 +42,7 @@ class IOEnvironment implements BuildEnvironment {
         _outputSymlinksOnly = outputSymlinksOnly ?? false,
         reader = new FileBasedAssetReader(_packageGraph),
         writer = new FileBasedAssetWriter(_packageGraph) {
-    if (outputSymlinksOnly && Platform.isWindows) {
+    if (_outputSymlinksOnly && Platform.isWindows) {
       _logger.warning('Symlinks to files are not yet working on Windows, you '
           'may experience issues using this mode. Follow '
           'https://github.com/dart-lang/sdk/issues/33966 for updates.');
