@@ -17,6 +17,11 @@ typedef Future _RunPhaseForInput(int phaseNumber, AssetId primaryInput);
 /// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
 abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 
+/// An [AssetReader] that can provide actual paths to assets on disk.
+abstract class PathProvidingAssetReader implements AssetReader {
+  String pathTo(AssetId id);
+}
+
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
 ///

@@ -25,6 +25,7 @@ const verboseOption = 'verbose';
 const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const skipBuildScriptCheckOption = 'skip-build-script-check';
+const symlinkOption = 'symlink';
 
 final _defaultWebDirs = const ['web', 'test', 'example', 'benchmark'];
 
@@ -49,6 +50,10 @@ class SharedOptions {
   ///
   /// If null, no directory will be created.
   final Map<String, String> outputMap;
+
+  /// Whether or not the output directories should contain only symlinks,
+  /// or full copies of all files.
+  final bool outputSymlinksOnly;
 
   /// Enables performance tracking and the `/$perf` page.
   final bool trackPerformance;
@@ -79,6 +84,7 @@ class SharedOptions {
     @required this.enableLowResourcesMode,
     @required this.configKey,
     @required this.outputMap,
+    @required this.outputSymlinksOnly,
     @required this.trackPerformance,
     @required this.skipBuildScriptCheck,
     @required this.verbose,
@@ -108,6 +114,7 @@ class SharedOptions {
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
       outputMap: outputMap,
+      outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
       skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
       verbose: argResults[verboseOption] as bool,
@@ -135,6 +142,7 @@ class ServeOptions extends SharedOptions {
     @required bool enableLowResourcesMode,
     @required String configKey,
     @required Map<String, String> outputMap,
+    @required bool outputSymlinksOnly,
     @required bool trackPerformance,
     @required bool skipBuildScriptCheck,
     @required bool verbose,
@@ -148,6 +156,7 @@ class ServeOptions extends SharedOptions {
           enableLowResourcesMode: enableLowResourcesMode,
           configKey: configKey,
           outputMap: outputMap,
+          outputSymlinksOnly: outputSymlinksOnly,
           trackPerformance: trackPerformance,
           skipBuildScriptCheck: skipBuildScriptCheck,
           verbose: verbose,
@@ -198,6 +207,7 @@ class ServeOptions extends SharedOptions {
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
       outputMap: _parseOutputMap(argResults),
+      outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
       skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
       verbose: argResults[verboseOption] as bool,

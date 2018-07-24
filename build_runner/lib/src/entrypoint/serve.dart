@@ -53,6 +53,7 @@ class ServeCommand extends WatchCommand {
       configKey: options.configKey,
       assumeTty: options.assumeTty,
       outputMap: options.outputMap,
+      outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,

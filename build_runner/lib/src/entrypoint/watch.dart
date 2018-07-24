@@ -33,6 +33,7 @@ class WatchCommand extends BuildRunnerCommand {
       configKey: options.configKey,
       assumeTty: options.assumeTty,
       outputMap: options.outputMap,
+      outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,

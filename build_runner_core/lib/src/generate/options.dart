@@ -40,7 +40,6 @@ class BuildOptions {
 
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
-  final Map<String, String> outputMap;
   final bool trackPerformance;
   final bool verbose;
   final List<String> buildDirs;
@@ -61,7 +60,6 @@ class BuildOptions {
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
     @required this.logListener,
-    @required this.outputMap,
     @required this.packageGraph,
     @required this.skipBuildScriptCheck,
     @required this.trackPerformance,
@@ -78,7 +76,6 @@ class BuildOptions {
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
     Level logLevel,
-    Map<String, String> outputMap,
     @required PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
     bool skipBuildScriptCheck,
@@ -134,7 +131,6 @@ class BuildOptions {
       deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,
       logListener: logListener,
-      outputMap: outputMap,
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,

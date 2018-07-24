@@ -20,7 +20,7 @@ import 'common.dart';
 /// To handle prompts you must first set `nextPromptResponse`. Alternatively
 /// you can set `throwOnPrompt` to `true` to emulate a
 /// [NonInteractiveBuildException].
-class TestBuildEnvironment implements BuildEnvironment {
+class TestBuildEnvironment extends BuildEnvironment {
   @override
   final RunnerAssetReader reader;
   @override

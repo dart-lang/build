@@ -6,7 +6,7 @@ import 'package:json_serializable/builder.dart';
 main() async {
   var packageGraph = new PackageGraph.forThisPackage();
   var environment =
-      new OverrideableEnvironment(new IOEnvironment(packageGraph, null));
+      new OverrideableEnvironment(new IOEnvironment(packageGraph));
   var options =
       await BuildOptions.create(environment, packageGraph: packageGraph);
 

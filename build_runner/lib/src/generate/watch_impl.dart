@@ -45,6 +45,7 @@ Future<ServeHandler> watch(
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   Map<String, String> outputMap,
+  bool outputSymlinksOnly,
   bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
@@ -56,7 +57,10 @@ Future<ServeHandler> watch(
   packageGraph ??= new PackageGraph.forThisPackage();
 
   var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty),
+      new IOEnvironment(packageGraph,
+          assumeTty: assumeTty,
+          outputMap: outputMap,
+          outputSymlinksOnly: outputSymlinksOnly),
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
@@ -71,7 +75,6 @@ Future<ServeHandler> watch(
     debounceDelay: debounceDelay,
     skipBuildScriptCheck: skipBuildScriptCheck,
     enableLowResourcesMode: enableLowResourcesMode,
-    outputMap: outputMap,
     trackPerformance: trackPerformance,
     verbose: verbose,
     buildDirs: buildDirs,
@@ -80,8 +83,15 @@ Future<ServeHandler> watch(
   );
   var terminator = new Terminator(terminateEventStream);
 
-  var watch = _runWatch(options, environment, builders, builderConfigOverrides,
-      terminator.shouldTerminate, directoryWatcherFactory, configKey,
+  var watch = _runWatch(
+      options,
+      environment,
+      builders,
+      builderConfigOverrides,
+      terminator.shouldTerminate,
+      directoryWatcherFactory,
+      configKey,
+      outputMap?.isNotEmpty == true,
       isReleaseMode: isReleaseBuild ?? false);
 
   // ignore: unawaited_futures
@@ -109,9 +119,10 @@ WatchImpl _runWatch(
         Future until,
         DirectoryWatcherFactory directoryWatcherFactory,
         String configKey,
+        bool willCreateOutputDirs,
         {bool isReleaseMode = false}) =>
     new WatchImpl(options, environment, builders, builderConfigOverrides, until,
-        directoryWatcherFactory, configKey,
+        directoryWatcherFactory, configKey, willCreateOutputDirs,
         isReleaseMode: isReleaseMode);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
@@ -154,6 +165,11 @@ class WatchImpl implements BuildState {
   /// Injectable factory for creating directory watchers.
   final DirectoryWatcherFactory _directoryWatcherFactory;
 
+  /// Whether or not we will be creating any output directories.
+  ///
+  /// If not, then we don't care about source edits that don't have outputs.
+  final bool _willCreateOutputDirs;
+
   /// Should complete when we need to kill the build.
   final _terminateCompleter = new Completer<Null>();
 
@@ -180,6 +196,7 @@ class WatchImpl implements BuildState {
       Future until,
       this._directoryWatcherFactory,
       this._configKey,
+      this._willCreateOutputDirs,
       {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph,
@@ -338,7 +355,7 @@ class WatchImpl implements BuildState {
     if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
     var node = assetGraph.get(change.id);
     if (node != null) {
-      if (!node.isInteresting) return false;
+      if (!_willCreateOutputDirs && !node.isInteresting) return false;
       if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     } else {
       // We don't care about deletes or modifications outside the asset graph.

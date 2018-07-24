@@ -5,13 +5,19 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../generate/build_result.dart';
+import '../generate/finalized_assets_view.dart';
 import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
+import 'create_merged_dir.dart';
+
+final _logger = new Logger('IOEnvironment');
 
 /// A [BuildEnvironment] writing to disk and stdout.
 class IOEnvironment implements BuildEnvironment {
@@ -23,10 +29,25 @@ class IOEnvironment implements BuildEnvironment {
 
   final bool _isInteractive;
 
-  IOEnvironment(PackageGraph packageGraph, bool assumeTty)
+  final Map<String, String> _outputMap;
+
+  final bool _outputSymlinksOnly;
+
+  final PackageGraph _packageGraph;
+
+  IOEnvironment(this._packageGraph,
+      {bool assumeTty, Map<String, String> outputMap, bool outputSymlinksOnly})
       : _isInteractive = assumeTty == true || _canPrompt(),
-        reader = new FileBasedAssetReader(packageGraph),
-        writer = new FileBasedAssetWriter(packageGraph);
+        _outputMap = outputMap,
+        _outputSymlinksOnly = outputSymlinksOnly ?? false,
+        reader = new FileBasedAssetReader(_packageGraph),
+        writer = new FileBasedAssetWriter(_packageGraph) {
+    if (_outputSymlinksOnly && Platform.isWindows) {
+      _logger.warning('Symlinks to files are not yet working on Windows, you '
+          'may experience issues using this mode. Follow '
+          'https://github.com/dart-lang/sdk/issues/33966 for updates.');
+    }
+  }
 
   @override
   void onLog(LogRecord record) {
@@ -52,9 +73,31 @@ class IOEnvironment implements BuildEnvironment {
           'a number between 1 and ${choices.length} expected');
     }
   }
+
+  @override
+  Future<BuildResult> finalizeBuild(BuildResult buildResult,
+      FinalizedAssetsView finalizedAssetsView, AssetReader reader) async {
+    if (_outputMap != null && buildResult.status == BuildStatus.success) {
+      if (!await createMergedOutputDirectories(_outputMap, _packageGraph, this,
+          reader, finalizedAssetsView, _outputSymlinksOnly)) {
+        return _convertToFailure(buildResult,
+            failureType: FailureType.cantCreate);
+      }
+    }
+    return buildResult;
+  }
 }
 
 bool _canPrompt() =>
     stdioType(stdin) == StdioType.terminal &&
     // Assume running inside a test if the code is running as a `data:` URI
     Platform.script.scheme != 'data';
+
+BuildResult _convertToFailure(BuildResult previous,
+        {FailureType failureType}) =>
+    new BuildResult(
+      BuildStatus.failure,
+      previous.outputs,
+      performance: previous.performance,
+      failureType: failureType,
+    );

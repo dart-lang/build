@@ -19,7 +19,8 @@ final _descriptorPool = new Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
-class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
+class FileBasedAssetReader extends AssetReader
+    implements RunnerAssetReader, PathProvidingAssetReader {
   final PackageGraph packageGraph;
 
   FileBasedAssetReader(this.packageGraph);
@@ -52,6 +53,9 @@ class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
         .where((e) => e is File && !path.basename(e.path).startsWith('._'))
         .map((file) => _fileToAssetId(file as File, packageNode));
   }
+
+  @override
+  String pathTo(AssetId id) => _filePathFor(id, packageGraph);
 }
 
 /// Creates an [AssetId] for [file], which is a part of [packageNode].
@@ -103,13 +107,18 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   }
 }
 
-/// Returns a [File] for [id] given [packageGraph].
-File _fileFor(AssetId id, PackageGraph packageGraph) {
+/// Returns the path to [id] for a given [packageGraph].
+String _filePathFor(AssetId id, PackageGraph packageGraph) {
   var package = packageGraph[id.package];
   if (package == null) {
     throw new PackageNotFoundException(id.package);
   }
-  return new File(path.join(package.path, id.path));
+  return path.join(package.path, id.path);
+}
+
+/// Returns a [File] for [id] given [packageGraph].
+File _fileFor(AssetId id, PackageGraph packageGraph) {
+  return new File(_filePathFor(id, packageGraph));
 }
 
 /// Returns a [Future<File>] for [id] given [packageGraph].

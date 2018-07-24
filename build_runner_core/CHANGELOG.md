@@ -1,3 +1,29 @@
+## 0.3.0-dev
+
+### Breaking Changes
+
+- Implementations of `BuildEnvironment` must now implement the `finalizeBuild`
+  method. There is a default implementation if you extend `BuildEnvironment`
+  that is a no-op.
+  - This method is invoked at the end of the build that allows you to do
+    arbitrary additional work, such as creating merged output directories.
+- The `assumeTty` argument on `IOEnvironment` has moved to a named argument
+  since `null` is an accepted value.
+- The `outputMap` field on `BuildOptions` has moved to the `IOEnvironment`
+  class.
+
+### New Features/Updates
+
+- Added a `outputSymlinksOnly` option to `IOEnvironment` constructor, that
+  causes the merged output directories to contain only symlinks, which is much
+  faster than copying files.
+- Added the `FinalizedAssetView` class which provides a list of all available
+  assets to the `BuildEnvironment` during the build finalization phase.
+  - `outputMap` has moved from `BuildOptions` to this constructor, as a named
+    argument.
+- The `OverridableEnvironment` now supports overriding the new `finalizeBuild`
+  api.
+
 ## 0.2.2+1
 
 - Tag errors from cached actions when they are printed.

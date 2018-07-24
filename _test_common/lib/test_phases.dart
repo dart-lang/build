@@ -108,11 +108,8 @@ Future<BuildResult> testBuilders(
   });
 
   builderConfigOverrides ??= const {};
-  var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, null),
-      reader: reader,
-      writer: writer,
-      onLog: onLog);
+  var environment = new OverrideableEnvironment(new IOEnvironment(packageGraph),
+      reader: reader, writer: writer, onLog: onLog);
   var options = await BuildOptions.create(environment,
       deleteFilesByDefault: deleteFilesByDefault,
       packageGraph: packageGraph,
