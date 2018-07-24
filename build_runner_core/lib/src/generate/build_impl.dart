@@ -194,6 +194,8 @@ class _SingleBuild {
       }
     }
     await _resourceManager.disposeAll();
+    result = await _environment.finalizeBuild(result,
+        new FinalizedAssetsView(_assetGraph, optionalOutputTracker), _reader);
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs '
@@ -201,8 +203,7 @@ class _SingleBuild {
     } else {
       _logger.severe('Failed after ${humanReadable(watch.elapsed)}');
     }
-    return _environment.finalizeBuild(result,
-        new FinalizedAssetsView(_assetGraph, optionalOutputTracker), _reader);
+    return result;
   }
 
   Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
