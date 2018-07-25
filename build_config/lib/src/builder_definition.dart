@@ -14,7 +14,14 @@ import 'key_normalization.dart';
 
 part 'builder_definition.g.dart';
 
-enum AutoApply { none, dependents, allPackages, rootPackage }
+enum AutoApply {
+  none,
+  dependents,
+  @JsonValue('all_packages')
+  allPackages,
+  @JsonValue('root_package')
+  rootPackage
+}
 
 enum BuildTo {
   /// Generated files are written to the source directory next to their primary
@@ -62,7 +69,7 @@ class BuilderDefinition {
   final String target;
 
   /// Which packages should have this builder applied automatically.
-  @JsonKey(name: 'auto_apply', fromJson: _autoApplyFromJson)
+  @JsonKey(name: 'auto_apply')
   final AutoApply autoApply;
 
   /// A list of file extensions which are required to run this builder.
@@ -91,7 +98,7 @@ class BuilderDefinition {
   final bool isOptional;
 
   /// Where the outputs of this builder should be written.
-  @JsonKey(name: 'build_to', fromJson: _buildToFromJson)
+  @JsonKey(name: 'build_to')
   final BuildTo buildTo;
 
   final TargetBuilderConfigDefaults defaults;
@@ -237,27 +244,3 @@ class TargetBuilderConfigDefaults {
   factory TargetBuilderConfigDefaults.fromJson(Map json) =>
       _$TargetBuilderConfigDefaultsFromJson(json);
 }
-
-const _autoApplyConvert = const {
-  'none': AutoApply.none,
-  'dependents': AutoApply.dependents,
-  'all_packages': AutoApply.allPackages,
-  'root_package': AutoApply.rootPackage
-};
-
-AutoApply _autoApplyFromJson(String input) {
-  var value = _autoApplyConvert[input];
-  if (value == null) {
-    var allowed = _autoApplyConvert.keys.map((e) => '"$e"').join(', ');
-    throw new ArgumentError.value(
-        input, 'autoApply', '"$input" is not in the supported set: $allowed.');
-  }
-  return value;
-}
-
-BuildTo _buildToFromJson(String input) => BuildTo.values
-        .firstWhere((e) => e.toString() == 'BuildTo.$input', orElse: () {
-      var allowed = BuildTo.values.join(', ');
-      throw new ArgumentError.value(
-          input, 'build_to', '"$input" is not in the supported set: $allowed.');
-    });

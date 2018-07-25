@@ -12,7 +12,5 @@ MetaModule _$MetaModuleFromJson(Map<String, dynamic> json) {
       .toList());
 }
 
-abstract class _$MetaModuleSerializerMixin {
-  List<Module> get modules;
-  Map<String, dynamic> toJson() => <String, dynamic>{'m': modules};
-}
+Map<String, dynamic> _$MetaModuleToJson(MetaModule instance) =>
+    <String, dynamic>{'m': instance.modules};
