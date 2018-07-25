@@ -31,12 +31,8 @@ abstract class Timings {
 /// The [Timings] of an entire build, including all its [actions].
 @JsonSerializable()
 class BuildPerformance extends Timings {
-  @override
-
   /// The [Timings] of each phase ran in this build.
   final Iterable<BuildPhasePerformance> phases;
-
-  @override
 
   /// The [Timings] of running an individual [Builder] on an individual input.
   final Iterable<BuilderActionPerformance> actions;
