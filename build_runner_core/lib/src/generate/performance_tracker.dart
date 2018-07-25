@@ -30,7 +30,7 @@ abstract class Timings {
 
 /// The [Timings] of an entire build, including all its [actions].
 @JsonSerializable()
-class BuildPerformance extends Timings with _$BuildPerformanceSerializerMixin {
+class BuildPerformance extends Timings {
   @override
 
   /// The [Timings] of each phase ran in this build.
@@ -47,13 +47,13 @@ class BuildPerformance extends Timings with _$BuildPerformanceSerializerMixin {
 
   factory BuildPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPerformanceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
 /// The [Timings] of a full [BuildPhase] within a larger build.
 @JsonSerializable()
-class BuildPhasePerformance extends Timings
-    with _$BuildPhasePerformanceSerializerMixin {
-  @override
+class BuildPhasePerformance extends Timings {
   final List<String> builderKeys;
 
   BuildPhasePerformance(this.builderKeys, DateTime startTime, DateTime stopTime)
@@ -61,20 +61,18 @@ class BuildPhasePerformance extends Timings
 
   factory BuildPhasePerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPhasePerformanceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
 /// The [Timings] of a [builderKey] running on [primaryInput] within a build.
 @JsonSerializable()
-class BuilderActionPerformance extends Timings
-    with _$BuilderActionPerformanceSerializerMixin {
-  @override
+class BuilderActionPerformance extends Timings {
   final String builderKey;
 
-  @override
   @JsonKey(fromJson: _assetIdFromJson, toJson: _assetIdToJson)
   final AssetId primaryInput;
 
-  @override
   final Iterable<BuilderActionPhasePerformance> phases;
 
   BuilderActionPerformance(this.builderKey, this.primaryInput, this.phases,
@@ -83,6 +81,8 @@ class BuilderActionPerformance extends Timings
 
   factory BuilderActionPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuilderActionPerformanceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
 /// The [Timings] of a particular task within a builder action.
@@ -98,6 +98,8 @@ class BuilderActionPhasePerformance extends Timings {
 
   factory BuilderActionPhasePerformance.fromJson(Map<String, dynamic> json) =>
       _$BuilderActionPhasePerformanceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BuilderActionPhasePerformanceToJson(this);
 }
 
 /// Interface for tracking the overall performance of a build.
@@ -125,7 +127,7 @@ abstract class BuildPerformanceTracker
 ///
 /// Use [BuildPerformanceTracker] factory to get an instance.
 class _BuildPerformanceTrackerImpl extends Object
-    with _TimeTrackerImpl, _$BuildPerformanceSerializerMixin
+    with _TimeTrackerImpl
     implements BuildPerformanceTracker {
   @override
   Iterable<BuildPhaseTracker> get phases => _phases;
@@ -160,6 +162,9 @@ class _BuildPerformanceTrackerImpl extends Object
     _actions.add(tracker);
     return tracker;
   }
+
+  @override
+  Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
 /// No-op implementation of [BuildPerformanceTracker].
@@ -169,7 +174,7 @@ class _BuildPerformanceTrackerImpl extends Object
 ///
 /// Use [BuildPerformanceTracker.noOp] to get an instance.
 class _NoOpBuildPerformanceTracker extends Object
-    with _NoOpTimeTracker, _$BuildPerformanceSerializerMixin
+    with _NoOpTimeTracker
     implements BuildPerformanceTracker {
   static final _NoOpBuildPerformanceTracker sharedInstance =
       new _NoOpBuildPerformanceTracker();
@@ -189,6 +194,9 @@ class _NoOpBuildPerformanceTracker extends Object
   Future<Iterable<AssetId>> trackBuildPhase(
           BuildPhase action, Future<Iterable<AssetId>> runPhase()) =>
       runPhase();
+
+  @override
+  Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
 /// Internal class that tracks the [Timings] of an entire [BuildPhase].
@@ -199,7 +207,7 @@ class _NoOpBuildPerformanceTracker extends Object
 ///
 /// This is only meaningful for non-lazy phases.
 class BuildPhaseTracker extends Object
-    with _TimeTrackerImpl, _$BuildPhasePerformanceSerializerMixin
+    with _TimeTrackerImpl
     implements BuildPhasePerformance {
   @override
   List<String> get builderKeys => _builderKeys;
@@ -224,6 +232,9 @@ class BuildPhaseTracker extends Object
       return outputs;
     });
   }
+
+  @override
+  Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
 /// Interface for tracking the [Timings] of an indiviual [Builder] on a given
@@ -246,7 +257,7 @@ abstract class BuilderActionTracker
 ///
 /// Use the [BuilderActionTracker] factory to get an instance.
 class _BuilderActionTrackerImpl extends Object
-    with _TimeTrackerImpl, _$BuilderActionPerformanceSerializerMixin
+    with _TimeTrackerImpl
     implements BuilderActionTracker {
   @override
   final String builderKey;
@@ -274,6 +285,9 @@ class _BuilderActionTrackerImpl extends Object
       return result;
     }
   }
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
 /// No-op instance of [BuilderActionTracker] which does nothing and throws an
@@ -282,7 +296,7 @@ class _BuilderActionTrackerImpl extends Object
 ///
 /// Use the [BuilderActionTracker.noOp] factory to get an instance.
 class _NoOpBuilderActionTracker extends Object
-    with _NoOpTimeTracker, _$BuilderActionPerformanceSerializerMixin
+    with _NoOpTimeTracker
     implements BuilderActionTracker {
   static final _NoOpBuilderActionTracker _sharedInstance =
       new _NoOpBuilderActionTracker();
@@ -302,18 +316,24 @@ class _NoOpBuilderActionTracker extends Object
 
   @override
   FutureOr<T> track<T>(FutureOr<T> runPhase(), String label) => runPhase();
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
 /// Tracks the [Timings] of an indivual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
 class BuilderActionPhaseTracker extends Object
-    with _TimeTrackerImpl, _$BuilderActionPhasePerformanceSerializerMixin
+    with _TimeTrackerImpl
     implements BuilderActionPhasePerformance {
   @override
   final String label;
 
   BuilderActionPhaseTracker(this.label);
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionPhasePerformanceToJson(this);
 }
 
 /// Interface for tracking the [Timings] of an operation using the [start] and

@@ -22,18 +22,13 @@ BuildPerformance _$BuildPerformanceFromJson(Map<String, dynamic> json) {
           : DateTime.parse(json['stopTime'] as String));
 }
 
-abstract class _$BuildPerformanceSerializerMixin {
-  DateTime get startTime;
-  DateTime get stopTime;
-  Iterable<BuildPhasePerformance> get phases;
-  Iterable<BuilderActionPerformance> get actions;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'startTime': startTime?.toIso8601String(),
-        'stopTime': stopTime?.toIso8601String(),
-        'phases': phases?.toList(),
-        'actions': actions?.toList()
-      };
-}
+Map<String, dynamic> _$BuildPerformanceToJson(BuildPerformance instance) =>
+    <String, dynamic>{
+      'startTime': instance.startTime?.toIso8601String(),
+      'stopTime': instance.stopTime?.toIso8601String(),
+      'phases': instance.phases?.toList(),
+      'actions': instance.actions?.toList()
+    };
 
 BuildPhasePerformance _$BuildPhasePerformanceFromJson(
     Map<String, dynamic> json) {
@@ -47,16 +42,13 @@ BuildPhasePerformance _$BuildPhasePerformanceFromJson(
           : DateTime.parse(json['stopTime'] as String));
 }
 
-abstract class _$BuildPhasePerformanceSerializerMixin {
-  DateTime get startTime;
-  DateTime get stopTime;
-  List<String> get builderKeys;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'startTime': startTime?.toIso8601String(),
-        'stopTime': stopTime?.toIso8601String(),
-        'builderKeys': builderKeys
-      };
-}
+Map<String, dynamic> _$BuildPhasePerformanceToJson(
+        BuildPhasePerformance instance) =>
+    <String, dynamic>{
+      'startTime': instance.startTime?.toIso8601String(),
+      'stopTime': instance.stopTime?.toIso8601String(),
+      'builderKeys': instance.builderKeys
+    };
 
 BuilderActionPerformance _$BuilderActionPerformanceFromJson(
     Map<String, dynamic> json) {
@@ -77,21 +69,17 @@ BuilderActionPerformance _$BuilderActionPerformanceFromJson(
           : DateTime.parse(json['stopTime'] as String));
 }
 
-abstract class _$BuilderActionPerformanceSerializerMixin {
-  DateTime get startTime;
-  DateTime get stopTime;
-  String get builderKey;
-  AssetId get primaryInput;
-  Iterable<BuilderActionPhasePerformance> get phases;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'startTime': startTime?.toIso8601String(),
-        'stopTime': stopTime?.toIso8601String(),
-        'builderKey': builderKey,
-        'primaryInput':
-            primaryInput == null ? null : _assetIdToJson(primaryInput),
-        'phases': phases?.toList()
-      };
-}
+Map<String, dynamic> _$BuilderActionPerformanceToJson(
+        BuilderActionPerformance instance) =>
+    <String, dynamic>{
+      'startTime': instance.startTime?.toIso8601String(),
+      'stopTime': instance.stopTime?.toIso8601String(),
+      'builderKey': instance.builderKey,
+      'primaryInput': instance.primaryInput == null
+          ? null
+          : _assetIdToJson(instance.primaryInput),
+      'phases': instance.phases?.toList()
+    };
 
 BuilderActionPhasePerformance _$BuilderActionPhasePerformanceFromJson(
     Map<String, dynamic> json) {
@@ -105,13 +93,10 @@ BuilderActionPhasePerformance _$BuilderActionPhasePerformanceFromJson(
           : DateTime.parse(json['stopTime'] as String));
 }
 
-abstract class _$BuilderActionPhasePerformanceSerializerMixin {
-  DateTime get startTime;
-  DateTime get stopTime;
-  String get label;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'startTime': startTime?.toIso8601String(),
-        'stopTime': stopTime?.toIso8601String(),
-        'label': label
-      };
-}
+Map<String, dynamic> _$BuilderActionPhasePerformanceToJson(
+        BuilderActionPhasePerformance instance) =>
+    <String, dynamic>{
+      'startTime': instance.startTime?.toIso8601String(),
+      'stopTime': instance.stopTime?.toIso8601String(),
+      'label': instance.label
+    };

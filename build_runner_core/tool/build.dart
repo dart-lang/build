@@ -16,9 +16,7 @@ main() async {
     options,
     environment,
     [
-      applyToRoot(
-          jsonSerializable(
-              new BuilderOptions({'generate_to_json_function': false})),
+      applyToRoot(jsonSerializable(BuilderOptions.forRoot),
           hideOutput: true,
           generateFor: new InputSet(include: const [
             'lib/src/generate/performance_tracker.dart',
