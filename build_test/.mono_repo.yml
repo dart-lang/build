@@ -8,3 +8,7 @@ stages:
         - dartanalyzer: --fatal-infos --fatal-warnings .
   - unit_test:
     - command: pub run build_runner test
+
+cache:
+  directories:
+    - .dart_tool/build
