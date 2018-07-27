@@ -63,7 +63,9 @@ final _builders = <_i1.BuilderApplication>[
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.apply(
       'build_vm_compilers|vm', [_i8.vmKernelModuleBuilder], _i1.toAllPackages(),
-      isOptional: true, hideOutput: true),
+      isOptional: true,
+      hideOutput: true,
+      appliesBuilders: ['build_vm_compilers|kernel_module_cleanup']),
   _i1.apply('build_vm_compilers|entrypoint', [_i8.vmKernelEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,
@@ -86,6 +88,10 @@ final _builders = <_i1.BuilderApplication>[
   _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
       _i6.dart2JsArchiveExtractor,
       defaultReleaseOptions: new _i7.BuilderOptions({'filter_outputs': true}),
+      defaultGenerateFor: const _i4.InputSet()),
+  _i1.applyPostProcess(
+      'build_vm_compilers|kernel_module_cleanup', _i8.kernelModuleCleanup,
+      defaultOptions: new _i7.BuilderOptions({'enabled': true}),
       defaultGenerateFor: const _i4.InputSet())
 ];
 main(List<String> args, [_i9.SendPort sendPort]) async {

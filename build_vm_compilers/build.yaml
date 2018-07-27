@@ -11,6 +11,8 @@ builders:
     required_inputs:
       - .dart
       - .module
+    applies_builders:
+      - build_vm_compilers|kernel_module_cleanup
   entrypoint:
     import: "package:build_vm_compilers/builders.dart"
     builder_factories:
@@ -32,3 +34,10 @@ builders:
           - test/**.dart.vm_test.dart
           - example/**
           - benchmark/**
+post_process_builders:
+  kernel_module_cleanup:
+    import: "package:build_vm_compilers/builders.dart"
+    builder_factory: kernelModuleCleanup
+    defaults:
+      options:
+        enabled: true
