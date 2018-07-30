@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
 [![Build Status](https://ci.appveyor.com/api/projects/status/wga4jexvmjih346p?svg=true)](https://ci.appveyor.com/project/kevmoo/build)
 
-These packages provide libraries for generating Dart code.
+These packages provide libraries for generating, compiling and serving Dart code.
 
 <!--
 TODO: bazel_codegen
