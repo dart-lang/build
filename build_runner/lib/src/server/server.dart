@@ -12,6 +12,8 @@ import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
+import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../generate/watch_impl.dart';
 import 'asset_graph_handler.dart';
@@ -19,6 +21,7 @@ import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
+final _hotReloadPath = r'$hotreload';
 
 final _logger = new Logger('Serve');
 
@@ -43,10 +46,13 @@ class ServeHandler implements BuildState {
   final Future<AssetHandler> _assetHandler;
   final Future<AssetGraphHandler> _assetGraphHandler;
 
+  final WebSocketHandler _webSocketHandler = WebSocketHandler();
+
   ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
       this._rootPackage) {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
+      _webSocketHandler.emitUpdateMessage(result);
     });
   }
 
@@ -55,14 +61,16 @@ class ServeHandler implements BuildState {
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
-  shelf.Handler handlerFor(String rootDir, {bool logRequests}) {
+  shelf.Handler handlerFor(String rootDir, {bool logRequests, bool liveReload}) {
+    liveReload ??= false;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
       throw new ArgumentError.value(
           rootDir, 'rootDir', 'Only top level directories are supported');
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
-    var cascade = new shelf.Cascade()
+    var cascade = new shelf.Cascade();
+    cascade = (liveReload ? cascade.add(_webSocketHandler.handler) : cascade)
         .add(_blockOnCurrentBuild)
         .add((shelf.Request request) async {
       if (request.url.path == _performancePath) {
@@ -107,6 +115,34 @@ class ServeHandler implements BuildState {
           'has no assets in the build. You may need to add some sources or '
           'include this directory in some target in your `build.yaml`');
     }
+  }
+}
+
+class WebSocketHandler {
+  final Set<WebSocketChannel> _connectionPull = Set();
+  final shelf.Handler _internalHandler;
+
+  // is it OK?
+  // ignore: implicit_this_reference_in_initializer
+  WebSocketHandler() : _internalHandler = webSocketHandler(_handleConnection);
+
+  Future<shelf.Response> handler(shelf.Request request) async {
+    if (!request.url.path.startsWith(_hotReloadPath)) {
+      return new shelf.Response.notFound('');
+    }
+    return _internalHandler(request);
+  }
+
+  void emitUpdateMessage(BuildResult buildResult) {
+    for (var webSocket in _connectionPull) {
+      webSocket.sink.add('update');
+    }
+  }
+
+  void _handleConnection(WebSocketChannel webSocket) async {
+    _connectionPull.add(webSocket);
+    await webSocket.stream.drain();
+    _connectionPull.remove(webSocket);
   }
 }
 
