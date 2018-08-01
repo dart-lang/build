@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -116,7 +116,7 @@ void main() {
                     return new TestBuilder(build: (_, __) async {
                       concurrentCount += 1;
                       maxConcurrentCount =
-                          max(concurrentCount, maxConcurrentCount);
+                          math.max(concurrentCount, maxConcurrentCount);
                       await new Future.delayed(new Duration(milliseconds: 100));
                       concurrentCount -= 1;
                     });
