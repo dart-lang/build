@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -97,6 +98,37 @@ void main() {
                 {'a|web/a.txt': 'a'},
               ),
           throwsA(new TypeMatcher<CannotBuildException>()));
+    });
+
+    test('runs a max of 16 concurrent actions per phase', () async {
+      var assets = <String, String>{};
+      for (var i = 0; i < buildPhasePoolSize * 2; i++) {
+        assets['a|web/$i.txt'] = '$i';
+      }
+      var concurrentCount = 0;
+      var maxConcurrentCount = 0;
+      await testBuilders(
+          [
+            apply(
+                '',
+                [
+                  (_) {
+                    return new TestBuilder(build: (_, __) async {
+                      concurrentCount += 1;
+                      maxConcurrentCount =
+                          math.max(concurrentCount, maxConcurrentCount);
+                      await new Future.delayed(new Duration(milliseconds: 100));
+                      concurrentCount -= 1;
+                    });
+                  }
+                ],
+                toRoot(),
+                isOptional: false,
+                hideOutput: false),
+          ],
+          assets,
+          outputs: {});
+      expect(maxConcurrentCount, buildPhasePoolSize);
     });
 
     group('with root package inputs', () {
