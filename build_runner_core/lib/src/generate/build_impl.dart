@@ -369,7 +369,7 @@ class _SingleBuild {
 
   Future<Iterable<AssetId>> _runForInput(
       int phaseNumber, InBuildPhase phase, AssetId input) {
-    var pool = _buildPhasePool[phaseNumber] ??= new Pool(16);
+    var pool = _buildPhasePool[phaseNumber] ??= new Pool(buildPhasePoolSize);
     return pool.withResource(() async {
       final builder = phase.builder;
       final outputsHidden = phase.hideOutput;
@@ -385,8 +385,8 @@ class _SingleBuild {
       assert(
           inputNode.primaryOutputs.containsAll(builderOutputs),
           'input $input with builder $builder missing primary outputs: \n'
-              'Got ${inputNode.primaryOutputs
-                  .join(', ')} which was missing:\n' +
+              'Got ${inputNode.primaryOutputs.join(', ')} '
+              'which was missing:\n' +
               builderOutputs
                   .where((id) => !inputNode.primaryOutputs.contains(id))
                   .join(', '));
