@@ -82,6 +82,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   var bootstrapContent = new StringBuffer('(function() {\n');
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
+  bootstrapContent.write(_hotReloadConfig);
 
   bootstrapContent.write(_appBootstrap(
       appModuleName, appModuleScope, ignoreCastFailures, enableSyncAsync));
@@ -319,6 +320,36 @@ require.config({
     waitSeconds: 0,
     paths: customModulePaths
 });
+''';
+
+/// Hot-reload config
+///
+/// Listen WebSocket for updates in build results
+///
+/// Now only ilve-reload functional - just reload page on update message
+final _hotReloadConfig = '''
+(function() {
+  var wsUrl; 
+  if (baseUrl.startsWith('http')) {
+    wsUrl = baseUrl.replace('http', 'ws');
+  } else {
+    // TODO: when it may make sense? WebWorkers? Tests?
+    wsUrl = 'ws://' + location.host + baseUrl;
+  }
+  wsUrl += '\$hotreload';
+  try {
+    var ws = new WebSocket(wsUrl);
+    ws.onmessage = function(event) {
+      console.log(event);
+      if(event.data === 'update'){
+        location.reload();
+      }
+    };
+  } catch (e) {
+    // Live reload might be turned off. Just ignore it for now
+    // TODO: Find a way to pass serve option here, to not inject this code at all, if live/hot reload is turned off
+  }
+}());
 ''';
 
 final _baseUrlScript = '''
