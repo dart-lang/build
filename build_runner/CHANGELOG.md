@@ -1,4 +1,4 @@
-## 0.10.0-dev
+## 0.10.0
 
 ### Breaking Changes
 
