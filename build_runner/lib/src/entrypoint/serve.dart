@@ -25,7 +25,11 @@ class ServeCommand extends WatchCommand {
       ..addFlag(logRequestsOption,
           defaultsTo: false,
           negatable: false,
-          help: 'Enables logging for each request to the server.');
+          help: 'Enables logging for each request to the server.')
+      ..addFlag(liveReloadOption,
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables automatic page reloading on rebuilds.');
   }
 
   @override
