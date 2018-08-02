@@ -2,7 +2,7 @@
 
 - Added `--live-reload` cli option and appropriate functionality
 
-## 0.10.0-dev
+## 0.10.0
 
 ### Breaking Changes
 
@@ -27,6 +27,8 @@
     argument.
 - The `OverridableEnvironment` now supports overriding the new `finalizeBuild`
   api.
+- The number of concurrent actions per phase is now limited (currently to 16),
+  which should help with memory and cpu usage for large builds.
 
 ## 0.9.2
 

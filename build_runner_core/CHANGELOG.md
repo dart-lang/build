@@ -1,4 +1,4 @@
-## 0.3.0-dev
+## 0.3.0
 
 ### Breaking Changes
 
@@ -23,6 +23,8 @@
     argument.
 - The `OverridableEnvironment` now supports overriding the new `finalizeBuild`
   api.
+- The number of concurrent actions per phase is now limited (currently to 16),
+  which should help with memory and cpu usage for large builds.
 
 ## 0.2.2+2
 

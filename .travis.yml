@@ -222,3 +222,4 @@ cache:
     - build_modules/.dart_tool/build
     - build_resolvers/.dart_tool/build
     - build_test/.dart_tool/build
+    - scratch_space/.dart_tool/build
