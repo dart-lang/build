@@ -1,3 +1,7 @@
+## 0.10.1-dev
+
+- Added `--live-reload` cli option and appropriate functionality
+
 ## 0.10.0-dev
 
 ### Breaking Changes
