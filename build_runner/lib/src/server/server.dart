@@ -127,10 +127,14 @@ class ServeHandler implements BuildState {
 /// build updates
 class BuildUpdatesWebSocketHandler {
   final activeConnections = <WebSocketChannel>[];
+  final Function _handlerFactory;
   shelf.Handler _internalHandler;
 
-  BuildUpdatesWebSocketHandler() {
-    _internalHandler = webSocketHandler(_handleConnection, protocols: [_buildUpdatesProtocol]);
+  BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
+    var untypedTearOff = (webSocket, protocol) =>
+        _handleConnection(webSocket as WebSocketChannel, protocol as String);
+    _internalHandler = _handlerFactory(
+        untypedTearOff, protocols: [_buildUpdatesProtocol]) as shelf.Handler;
   }
 
   shelf.Handler get handler => _internalHandler;
@@ -149,18 +153,17 @@ class BuildUpdatesWebSocketHandler {
 }
 
 shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
-  return (shelf.Request request) {
+  return (shelf.Request request) async {
     if (!request.url.path.endsWith('.js')) {
       return innerHandler(request);
     }
-    return Future.sync(() => innerHandler(request)).then((response) async {
-      // TODO: Find a way how to check and/or modify body without reading it whole
-      var body = await response.readAsString();
-      if (body.startsWith(_entrypointExtensionMarker)) {
-        body += _buildUpdatesInjectedJS;
-      }
-      return response.change(body: body);
-    });
+    var response = await innerHandler(request);
+    // TODO: Find a way how to check and/or modify body without reading it whole
+    var body = await response.readAsString();
+    if (body.startsWith(_entrypointExtensionMarker)) {
+      body += _buildUpdatesInjectedJS;
+    }
+    return response.change(body: body);
   };
 }
 
@@ -168,8 +171,8 @@ shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
 ///
 /// Listen WebSocket for updates in build results
 ///
-/// Now only ilve-reload functional - just reload page on update message
-final _buildUpdatesInjectedJS = '''
+/// Now only live-reload functional - just reload page on update message
+final _buildUpdatesInjectedJS = '''\n
 (function() {
   var ws = new WebSocket('ws://' + location.host, ['$_buildUpdatesProtocol']);
   ws.onmessage = function(event) {

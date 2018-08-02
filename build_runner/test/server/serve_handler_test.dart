@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
+import 'package:stream_channel/stream_channel.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner/build_runner.dart';
@@ -20,6 +21,7 @@ import 'package:build_runner/src/server/server.dart';
 
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
   ServeHandler serveHandler;
@@ -160,6 +162,97 @@ void main() {
 
       expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(), contains('--track-performance'));
+    });
+  });
+
+  group('build updates', () {
+    final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
+
+    test('injects client code if enabled', () async {
+      _addSource('a|web/some.js', _entrypointExtensionMarker);
+      var response = await serveHandler.handlerFor('web', liveReload: true)(
+          new Request('GET', Uri.parse('http://server.com/some.js')));
+      expect(await response.readAsString(), contains('\$livereload'));
+    });
+
+    test('doesn\'t inject client code if disabled', () async {
+      _addSource('a|web/some.js', _entrypointExtensionMarker);
+      var response = await serveHandler.handlerFor('web', liveReload: false)(
+          new Request('GET', Uri.parse('http://server.com/some.js')));
+      expect(await response.readAsString(), isNot(contains('\$livereload')));
+    });
+
+    test('doesn\'t inject client code in non-js files', () async {
+      _addSource('a|web/some.html', _entrypointExtensionMarker);
+      var response = await serveHandler.handlerFor('web', liveReload: true)(
+          new Request('GET', Uri.parse('http://server.com/some.html')));
+      expect(await response.readAsString(), isNot(contains('\$livereload')));
+    });
+
+    test('doesn\'t inject client code in non-marked files', () async {
+      _addSource('a|web/some.js', 'content');
+      var response = await serveHandler.handlerFor('web', liveReload: true)(
+          new Request('GET', Uri.parse('http://server.com/some.js')));
+      expect(await response.readAsString(), isNot(contains('\$livereload')));
+    });
+
+    test('emmits a message to all listners', () async {
+      Function exposedOnConnect;
+      var mockHandlerFactory = (Function onConnect, {protocols}) {
+        exposedOnConnect = onConnect;
+      };
+      var buildUpdatesWebSocketHandler = BuildUpdatesWebSocketHandler(
+          mockHandlerFactory);
+
+      var streamControllerFirst1 = StreamController<List<int>>();
+      var streamControllerFirst2 = StreamController<List<int>>();
+      var serverChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst1.stream, streamControllerFirst2.sink), serverSide: true);
+      var clientChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst2.stream, streamControllerFirst1.sink), serverSide: false);
+
+      var streamControllerSecond1 = StreamController<List<int>>();
+      var streamControllerSecond2 = StreamController<List<int>>();
+      var serverChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond1.stream, streamControllerSecond2.sink), serverSide: true);
+      var clientChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond2.stream, streamControllerSecond1.sink), serverSide: false);
+
+      var deferredExpect1 = clientChannelFirst.stream.single.then((value) => expect(value, 'update'));
+      var deferredExpect2 = clientChannelSecond.stream.single.then((value) => expect(value, 'update'));
+      exposedOnConnect(serverChannelFirst, '');
+      exposedOnConnect(serverChannelSecond, '');
+      buildUpdatesWebSocketHandler.emitUpdateMessage(null);
+      await clientChannelFirst.sink.close();
+      await clientChannelSecond.sink.close();
+      await deferredExpect1;
+      await deferredExpect2;
+    });
+
+    test('deletes listners on disconect', () async {
+      Function exposedOnConnect;
+      var mockHandlerFactory = (Function onConnect, {protocols}) {
+        exposedOnConnect = onConnect;
+      };
+      var buildUpdatesWebSocketHandler = BuildUpdatesWebSocketHandler(
+          mockHandlerFactory);
+
+      var streamControllerFirst1 = StreamController<List<int>>();
+      var streamControllerFirst2 = StreamController<List<int>>();
+      var serverChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst1.stream, streamControllerFirst2.sink), serverSide: true);
+      var clientChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst2.stream, streamControllerFirst1.sink), serverSide: false);
+
+      var streamControllerSecond1 = StreamController<List<int>>();
+      var streamControllerSecond2 = StreamController<List<int>>();
+      var serverChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond1.stream, streamControllerSecond2.sink), serverSide: true);
+      var clientChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond2.stream, streamControllerSecond1.sink), serverSide: false);
+
+      var deferredExpect1 = clientChannelFirst.stream.toList().then((value) => expect(value, ['update', 'update']));
+      var deferredExpect2 = clientChannelSecond.stream.single.then((value) => expect(value, 'update'));
+      exposedOnConnect(serverChannelFirst, '');
+      exposedOnConnect(serverChannelSecond, '');
+      buildUpdatesWebSocketHandler.emitUpdateMessage(null);
+      await clientChannelSecond.sink.close();
+      buildUpdatesWebSocketHandler.emitUpdateMessage(null);
+      await clientChannelFirst.sink.close();
+      await deferredExpect1;
+      await deferredExpect2;
     });
   });
 }
