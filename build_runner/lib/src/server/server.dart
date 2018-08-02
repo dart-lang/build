@@ -21,7 +21,9 @@ import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
-final _buildUpdatesPath = r'$livereload';
+final _buildUpdatesProtocol = r'$livereload';
+final _buildUpdatesMessage = 'update';
+final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = new Logger('Serve');
 
@@ -85,12 +87,14 @@ class ServeHandler implements BuildState {
       var assetHandler = await _assetHandler;
       return assetHandler.handle(request, rootDir);
     });
-    var handler = logRequests
-        ? const shelf.Pipeline()
-            .addMiddleware(_logRequests)
-            .addHandler(cascade.handler)
-        : cascade.handler;
-    return handler;
+    var pipeline = shelf.Pipeline();
+    if (logRequests) {
+      pipeline = pipeline.addMiddleware(_logRequests);
+    }
+    if (liveReload) {
+      pipeline = pipeline.addMiddleware(_injectBuildUpdatesClientCode);
+    }
+    return pipeline.addHandler(cascade.handler);
   }
 
   Future<shelf.Response> _blockOnCurrentBuild(_) async {
@@ -119,33 +123,63 @@ class ServeHandler implements BuildState {
   }
 }
 
+/// Class that manages web socket connection handler to inform clients about
+/// build updates
 class BuildUpdatesWebSocketHandler {
   final activeConnections = <WebSocketChannel>[];
   shelf.Handler _internalHandler;
 
   BuildUpdatesWebSocketHandler() {
-    _internalHandler = webSocketHandler(_handleConnection);
+    _internalHandler = webSocketHandler(_handleConnection, protocols: [_buildUpdatesProtocol]);
   }
 
-  Future<shelf.Response> handler(shelf.Request request) async {
-    if (!request.url.path.startsWith(_buildUpdatesPath)) {
-      return new shelf.Response.notFound('');
-    }
-    return _internalHandler(request);
-  }
+  shelf.Handler get handler => _internalHandler;
 
   void emitUpdateMessage(BuildResult buildResult) {
     for (var webSocket in activeConnections) {
-      webSocket.sink.add('update');
+      webSocket.sink.add(_buildUpdatesMessage);
     }
   }
 
-  void _handleConnection(WebSocketChannel webSocket) async {
+  void _handleConnection(WebSocketChannel webSocket, String protocol) async {
     activeConnections.add(webSocket);
     await webSocket.stream.drain();
     activeConnections.remove(webSocket);
   }
 }
+
+shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
+  return (shelf.Request request) {
+    if (!request.url.path.endsWith('.js')) {
+      return innerHandler(request);
+    }
+    return Future.sync(() => innerHandler(request)).then((response) async {
+      // TODO: Find a way how to check and/or modify body without reading it whole
+      var body = await response.readAsString();
+      if (body.startsWith(_entrypointExtensionMarker)) {
+        body += _buildUpdatesInjectedJS;
+      }
+      return response.change(body: body);
+    });
+  };
+}
+
+/// Hot-reload config
+///
+/// Listen WebSocket for updates in build results
+///
+/// Now only ilve-reload functional - just reload page on update message
+final _buildUpdatesInjectedJS = '''
+(function() {
+  var ws = new WebSocket('ws://' + location.host, ['$_buildUpdatesProtocol']);
+  ws.onmessage = function(event) {
+    console.log(event);
+    if(event.data === '$_buildUpdatesMessage'){
+      location.reload();
+    }
+  };
+}());
+''';
 
 class AssetHandler {
   final FinalizedReader _reader;

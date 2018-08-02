@@ -79,10 +79,9 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
             : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
-  var bootstrapContent = new StringBuffer('(function() {\n');
+  var bootstrapContent = new StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
-  bootstrapContent.write(_hotReloadConfig);
 
   bootstrapContent.write(_appBootstrap(
       appModuleName, appModuleScope, ignoreCastFailures, enableSyncAsync));
@@ -322,35 +321,11 @@ require.config({
 });
 ''';
 
-/// Hot-reload config
+/// Marker comment used by build_runner (or any other thinks) to identify
+/// entrypoint file, to inject custom code there.
 ///
-/// Listen WebSocket for updates in build results
-///
-/// Now only ilve-reload functional - just reload page on update message
-final _hotReloadConfig = '''
-(function() {
-  var wsUrl; 
-  if (baseUrl.startsWith('http')) {
-    wsUrl = baseUrl.replace('http', 'ws');
-  } else {
-    // TODO: when it may make sense? WebWorkers? Tests?
-    wsUrl = 'ws://' + location.host + baseUrl;
-  }
-  wsUrl += '\$livereload';
-  try {
-    var ws = new WebSocket(wsUrl);
-    ws.onmessage = function(event) {
-      console.log(event);
-      if(event.data === 'update'){
-        location.reload();
-      }
-    };
-  } catch (e) {
-    // Live reload might be turned off. Just ignore it for now
-    // TODO: Find a way to pass serve option here, to not inject this code at all, if live/hot reload is turned off
-  }
-}());
-''';
+/// Should be first line in a file, so server don't need to parse whole body
+final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _baseUrlScript = '''
 var baseUrl = (function () {
