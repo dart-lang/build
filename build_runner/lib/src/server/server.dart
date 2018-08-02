@@ -21,7 +21,7 @@ import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
-final _hotReloadPath = r'$hotreload';
+final _buildUpdatesPath = r'$livereload';
 
 final _logger = new Logger('Serve');
 
@@ -46,7 +46,7 @@ class ServeHandler implements BuildState {
   final Future<AssetHandler> _assetHandler;
   final Future<AssetGraphHandler> _assetGraphHandler;
 
-  final WebSocketHandler _webSocketHandler = WebSocketHandler();
+  final _webSocketHandler = BuildUpdatesWebSocketHandler();
 
   ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
       this._rootPackage) {
@@ -119,31 +119,31 @@ class ServeHandler implements BuildState {
   }
 }
 
-class WebSocketHandler {
-  final Set<WebSocketChannel> _connectionPull = Set();
-  final shelf.Handler _internalHandler;
+class BuildUpdatesWebSocketHandler {
+  final activeConnections = <WebSocketChannel>[];
+  shelf.Handler _internalHandler;
 
-  // is it OK?
-  // ignore: implicit_this_reference_in_initializer
-  WebSocketHandler() : _internalHandler = webSocketHandler(_handleConnection);
+  BuildUpdatesWebSocketHandler() {
+    _internalHandler = webSocketHandler(_handleConnection);
+  }
 
   Future<shelf.Response> handler(shelf.Request request) async {
-    if (!request.url.path.startsWith(_hotReloadPath)) {
+    if (!request.url.path.startsWith(_buildUpdatesPath)) {
       return new shelf.Response.notFound('');
     }
     return _internalHandler(request);
   }
 
   void emitUpdateMessage(BuildResult buildResult) {
-    for (var webSocket in _connectionPull) {
+    for (var webSocket in activeConnections) {
       webSocket.sink.add('update');
     }
   }
 
   void _handleConnection(WebSocketChannel webSocket) async {
-    _connectionPull.add(webSocket);
+    activeConnections.add(webSocket);
     await webSocket.stream.drain();
-    _connectionPull.remove(webSocket);
+    activeConnections.remove(webSocket);
   }
 }
 

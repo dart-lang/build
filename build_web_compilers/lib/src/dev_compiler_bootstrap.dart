@@ -336,7 +336,7 @@ final _hotReloadConfig = '''
     // TODO: when it may make sense? WebWorkers? Tests?
     wsUrl = 'ws://' + location.host + baseUrl;
   }
-  wsUrl += '\$hotreload';
+  wsUrl += '\$livereload';
   try {
     var ws = new WebSocket(wsUrl);
     ws.onmessage = function(event) {
