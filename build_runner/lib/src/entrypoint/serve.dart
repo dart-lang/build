@@ -97,7 +97,9 @@ Future<HttpServer> _startServer(
     ServeOptions options, ServeTarget target, ServeHandler handler) async {
   var server = await _bindServer(options, target);
   serveRequests(
-      server, handler.handlerFor(target.dir, logRequests: options.logRequests, liveReload: options.liveReload));
+      server,
+      handler.handlerFor(target.dir,
+          logRequests: options.logRequests, liveReload: options.liveReload));
   return server;
 }
 
