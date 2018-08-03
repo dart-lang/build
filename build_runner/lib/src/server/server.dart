@@ -23,7 +23,7 @@ const _performancePath = r'$perf';
 final _graphPath = r'$graph';
 final _buildUpdatesProtocol = r'$livereload';
 final _buildUpdatesMessage = 'update';
-final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
+final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = new Logger('Serve');
 
@@ -127,15 +127,15 @@ class ServeHandler implements BuildState {
 /// build updates
 class BuildUpdatesWebSocketHandler {
   final activeConnections = <WebSocketChannel>[];
-  final Function _handlerFactory;
+  final shelf.Handler Function(Function, {Iterable<String> protocols})
+      _handlerFactory;
   shelf.Handler _internalHandler;
 
   BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
     var untypedTearOff = (webSocket, protocol) =>
         _handleConnection(webSocket as WebSocketChannel, protocol as String);
     _internalHandler =
-        _handlerFactory(untypedTearOff, protocols: [_buildUpdatesProtocol])
-            as shelf.Handler;
+        _handlerFactory(untypedTearOff, protocols: [_buildUpdatesProtocol]);
   }
 
   shelf.Handler get handler => _internalHandler;
@@ -161,7 +161,7 @@ shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
     var response = await innerHandler(request);
     // TODO: Find a way how to check and/or modify body without reading it whole
     var body = await response.readAsString();
-    if (body.startsWith(_entrypointExtensionMarker)) {
+    if (body.startsWith(entrypointExtensionMarker)) {
       body += _buildUpdatesInjectedJS;
     }
     return response.change(body: body);
