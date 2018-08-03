@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -162,6 +163,24 @@ void main() {
 
       expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(), contains('--track-performance'));
+    });
+  });
+
+  test('serve asset digests', () async {
+    _addSource('a|web/index.html', 'content1');
+    _addSource('a|lib/some.dart.js', 'content2');
+    _addSource('a|lib/another.dart.js', 'content3');
+    var response = await serveHandler.handlerFor('web')(new Request(
+        'GET', Uri.parse('http://server.com/\$assets'),
+        body: jsonEncode([
+          'index.html',
+          'packages/a/some.dart.js',
+          'packages/a/absent.dart.js'
+        ])));
+    expect(jsonDecode(await response.readAsString()), {
+      'index.html': '7e55db001d319a94b0b713529a756623',
+      'packages/a/some.dart.js': 'eea670f4ac941df71a3b5f268ebe3eac',
+      'packages/a/absent.dart.js': null
     });
   });
 
