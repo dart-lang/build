@@ -1,3 +1,7 @@
+## 0.3.1
+
+- Migrated glob tracking to a specialized node type to fix dart-lang/build#1702.
+
 ## 0.3.0
 
 ### Breaking Changes

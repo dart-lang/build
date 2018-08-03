@@ -110,8 +110,8 @@ class SourceAssetNode extends AssetNode {
   String toString() => 'SourceAssetNode: $id';
 }
 
-/// States for generated asset nodes.
-enum GeneratedNodeState {
+/// States for nodes that can be invalidated.
+enum NodeState {
   // This node does not need an update, and no checks need to be performed.
   upToDate,
   // This node may need an update, the inputs hash should be checked for
@@ -122,7 +122,7 @@ enum GeneratedNodeState {
 }
 
 /// A generated node in the asset graph.
-class GeneratedAssetNode extends AssetNode {
+class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
   @override
   bool get isGenerated => true;
 
@@ -132,22 +132,19 @@ class GeneratedAssetNode extends AssetNode {
   /// The primary input which generated this node.
   final AssetId primaryInput;
 
-  GeneratedNodeState state;
+  @override
+  NodeState state;
 
   /// Whether the asset was actually output.
   bool wasOutput;
-
-  /// All the [Glob]s that were ran to create this asset.
-  ///
-  /// Any new or deleted files matching this glob should invalidate this node.
-  Set<Glob> globs;
 
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
   ///
   /// This needs to be an ordered set because we compute combined input digests
   /// using this later on.
-  final SplayTreeSet<AssetId> inputs;
+  @override
+  SplayTreeSet<AssetId> inputs;
 
   /// A digest combining all digests of all previous inputs.
   ///
@@ -168,7 +165,6 @@ class GeneratedAssetNode extends AssetNode {
   GeneratedAssetNode(
     AssetId id, {
     Digest lastKnownDigest,
-    Set<Glob> globs,
     Iterable<AssetId> inputs,
     this.previousInputsDigest,
     @required this.isHidden,
@@ -178,8 +174,7 @@ class GeneratedAssetNode extends AssetNode {
     @required this.isFailure,
     @required this.primaryInput,
     @required this.builderOptionsId,
-  })  : this.globs = globs ?? new Set<Glob>(),
-        this.inputs = inputs != null
+  })  : this.inputs = inputs != null
             ? new SplayTreeSet.from(inputs)
             : new SplayTreeSet<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);
@@ -259,4 +254,42 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
         actionNumber,
         builderOptionsId);
   }
+}
+
+/// A node representing a glob ran from a builder.
+///
+/// The [id] must always be unique to a given package, phase, and glob
+/// pattern.
+class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
+  final Glob glob;
+
+  /// All the potential inputs matching this glob. Whether they appear in
+  /// [results] is dependent on if they were actually created or not.
+  ///
+  /// This needs to be an ordered set because we compute combined input digests
+  /// using this later on.
+  @override
+  SplayTreeSet<AssetId> inputs;
+
+  @override
+  bool get isReadable => false;
+
+  final int phaseNumber;
+
+  /// The actual results of the glob.
+  List<AssetId> results;
+
+  @override
+  NodeState state;
+
+  GlobAssetNode(AssetId id, this.glob, this.phaseNumber, this.state,
+      {this.inputs, Digest lastKnownDigest, this.results})
+      : super(id, lastKnownDigest: lastKnownDigest);
+}
+
+/// A node which has [inputs] and a [NodeState].
+abstract class NodeWithInputs implements AssetNode {
+  SplayTreeSet<AssetId> inputs;
+
+  NodeState state;
 }

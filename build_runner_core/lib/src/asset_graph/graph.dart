@@ -174,12 +174,12 @@ class AssetGraph {
       _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
-      var generatedNode = get(output) as GeneratedAssetNode;
-      if (generatedNode != null) {
-        generatedNode.inputs.remove(id);
+      var inputsNode = get(output) as NodeWithInputs;
+      if (inputsNode != null) {
+        inputsNode.inputs.remove(id);
       }
     }
-    if (node is GeneratedAssetNode) {
+    if (node is NodeWithInputs) {
       for (var input in node.inputs) {
         var inputNode = get(input);
         // We may have already removed this node entirely.
@@ -188,8 +188,9 @@ class AssetGraph {
           inputNode.primaryOutputs.remove(id);
         }
       }
-      var builderOptionsNode = get(node.builderOptionsId);
-      builderOptionsNode.outputs.remove(id);
+      if (node is GeneratedAssetNode) {
+        get(node.builderOptionsId).outputs.remove(id);
+      }
     }
     // Synthetic nodes need to be kept to retain dependency tracking.
     if (node is! SyntheticSourceAssetNode) {
@@ -215,7 +216,7 @@ class AssetGraph {
       .where((n) =>
           n is GeneratedAssetNode &&
           n.isFailure &&
-          n.state == GeneratedNodeState.upToDate)
+          n.state == NodeState.upToDate)
       .map((n) => n as GeneratedAssetNode);
 
   /// All the generated outputs for a particular phase.
@@ -283,11 +284,10 @@ class AssetGraph {
     var idsToDelete = new Set<AssetId>.from(transitiveRemovedIds)
       ..removeAll(removeIds);
 
-    // For manually deleted generated outputs, we bash away their
-    // `previousInputsDigest` to make sure they actually get regenerated.
+    // We definitely need to update manually deleted outputs.
     for (var deletedOutput
-        in removeIds.where((id) => get(id) is GeneratedAssetNode)) {
-      (get(deletedOutput) as GeneratedAssetNode).previousInputsDigest = null;
+        in removeIds.map(get).whereType<GeneratedAssetNode>()) {
+      deletedOutput.state = NodeState.definitelyNeedsUpdate;
     }
 
     var allNewAndDeletedIds =
@@ -302,9 +302,8 @@ class AssetGraph {
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
-      if (node is GeneratedAssetNode &&
-          node.state == GeneratedNodeState.upToDate) {
-        node.state = GeneratedNodeState.mayNeedUpdate;
+      if (node is NodeWithInputs && node.state == NodeState.upToDate) {
+        node.state = NodeState.mayNeedUpdate;
       }
 
       // Update all outputs of this asset as well.
@@ -316,17 +315,17 @@ class AssetGraph {
     for (var changed in updates.keys) {
       invalidateNodeAndDeps(changed);
     }
-    // For all new or deleted assets, check if they match any globs.
+
+    // For all new or deleted assets, check if they match any glob nodes and
+    // invalidate those.
     for (var id in allNewAndDeletedIds) {
-      var samePackageOutputNodes =
-          packageNodes(id.package).where((node) => node is GeneratedAssetNode);
-      for (GeneratedAssetNode node in samePackageOutputNodes) {
-        if (node.globs.any((glob) => glob.matches(id.path))) {
+      var samePackageGlobNodes = packageNodes(id.package)
+          .whereType<GlobAssetNode>()
+          .where((n) => n.state == NodeState.upToDate);
+      for (final node in samePackageGlobNodes) {
+        if (node.glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
-          // Override to the `definitelyNeedsUpdate` state for glob changes.
-          //
-          // The regular input hash checks won't pick up glob changes.
-          node.state = GeneratedNodeState.definitelyNeedsUpdate;
+          node.state = NodeState.mayNeedUpdate;
         }
       }
     }
@@ -488,7 +487,7 @@ class AssetGraph {
       var newNode = new GeneratedAssetNode(output,
           phaseNumber: phaseNumber,
           primaryInput: primaryInput,
-          state: GeneratedNodeState.definitelyNeedsUpdate,
+          state: NodeState.definitelyNeedsUpdate,
           wasOutput: false,
           isFailure: false,
           builderOptionsId: builderOptionsNode.id,

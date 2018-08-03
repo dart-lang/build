@@ -114,9 +114,7 @@ class AssetGraphHandler {
       'primary': {
         'id': '${node.id}',
         'isGenerated': node is GeneratedAssetNode,
-        'globs': node is GeneratedAssetNode
-            ? node.globs.map((g) => g.pattern).toList()
-            : null,
+        'isGlob': node is GlobAssetNode,
         'hidden': node is GeneratedAssetNode ? node.isHidden : null,
         'state': node is GeneratedAssetNode ? '${node.state}' : null,
         'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,

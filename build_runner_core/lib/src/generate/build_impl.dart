@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -32,6 +33,7 @@ import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
+import '../util/async.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -107,9 +109,8 @@ class BuildImpl {
         buildDefinition.reader,
         buildDefinition.assetGraph,
         buildPhases.length,
-        true,
         options.packageGraph.root.name,
-        null);
+        _isReadableAfterBuildFactory(buildPhases));
     var optionalOutputTracker = new OptionalOutputTracker(
         buildDefinition.assetGraph, options.buildDirs, buildPhases);
     var finalizedReader = new FinalizedReader(
@@ -118,6 +119,15 @@ class BuildImpl {
         new BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     return build;
   }
+
+  static bool Function(AssetNode, int, String) _isReadableAfterBuildFactory(
+          List<BuildPhase> buildPhases) =>
+      (AssetNode node, int phaseNum, String package) {
+        if (node is GeneratedAssetNode) {
+          return node.wasOutput && !node.isFailure;
+        }
+        return node.isReadable && node.isValidInput;
+      };
 }
 
 /// Performs a single build and manages state that only lives for a single
@@ -128,6 +138,7 @@ class _SingleBuild {
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
+  final _lazyGlobs = <AssetId, Future<Null>>{};
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
@@ -264,6 +275,7 @@ class _SingleBuild {
       if (!done.isCompleted) done.complete(result);
     }, onError: (e, StackTrace st) {
       if (!done.isCompleted) {
+        _logger.severe('Unhandled build failure!', e, st);
         done.complete(new BuildResult(BuildStatus.failure, []));
       }
     });
@@ -320,7 +332,7 @@ class _SingleBuild {
 
       var input = _assetGraph.get(node.primaryInput);
       if (input is GeneratedAssetNode) {
-        if (input.state != GeneratedNodeState.upToDate) {
+        if (input.state != NodeState.upToDate) {
           await _runLazyPhaseForInput(input.phaseNumber, input.primaryInput);
         }
         if (!input.wasOutput) return;
@@ -353,7 +365,7 @@ class _SingleBuild {
       var inputNode = _assetGraph.get(input);
       if (inputNode is GeneratedAssetNode) {
         // Make sure the `inputNode` is up to date, and rebuild it if not.
-        if (inputNode.state != GeneratedNodeState.upToDate) {
+        if (inputNode.state != NodeState.upToDate) {
           await _runLazyPhaseForInput(
               inputNode.phaseNumber, inputNode.primaryInput);
         }
@@ -367,12 +379,33 @@ class _SingleBuild {
     });
   }
 
+  /// Checks whether [node] can be read by this step - attempting to build the
+  /// asset if necessary.
+  FutureOr<bool> _isReadableNode(
+      AssetNode node, int phaseNum, String fromPackage) {
+    if (node is GeneratedAssetNode) {
+      var phase = _buildPhases[phaseNum];
+      if (node.phaseNumber >= phaseNum) return false;
+      if (!phase.hideOutput && node.isHidden && node.id.package != fromPackage)
+        return false;
+      return doAfter(
+          _ensureAssetIsBuilt(node), (_) => node.wasOutput && !node.isFailure);
+    }
+    return node.isReadable && node.isValidInput;
+  }
+
+  FutureOr<dynamic> _ensureAssetIsBuilt(AssetNode node) {
+    if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
+      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
+    }
+    return null;
+  }
+
   Future<Iterable<AssetId>> _runForInput(
       int phaseNumber, InBuildPhase phase, AssetId input) {
     var pool = _buildPhasePool[phaseNumber] ??= new Pool(buildPhasePoolSize);
     return pool.withResource(() async {
       final builder = phase.builder;
-      final outputsHidden = phase.hideOutput;
       var tracker =
           _performanceTracker.startBuilderAction(input, phase.builderLabel);
 
@@ -392,7 +425,7 @@ class _SingleBuild {
                   .join(', '));
 
       var wrappedReader = new SingleStepReader(_reader, _assetGraph,
-          phaseNumber, outputsHidden, input.package, _runLazyPhaseForInput);
+          phaseNumber, input.package, _isReadableNode, _getUpdatedGlobNode);
 
       if (!await tracker.track(
           () => _buildShouldRun(builderOutputs, wrappedReader), 'Setup')) {
@@ -460,7 +493,7 @@ class _SingleBuild {
         } else if (inputNode is GeneratedAssetNode) {
           return inputNode.wasOutput &&
               !inputNode.isFailure &&
-              inputNode.state == GeneratedNodeState.upToDate;
+              inputNode.state == NodeState.upToDate;
         }
       }
       return false;
@@ -483,7 +516,7 @@ class _SingleBuild {
         'Inputs should be known in the static graph. Missing $input');
 
     var wrappedReader = new SingleStepReader(
-        _reader, _assetGraph, phaseNum, true, input.package, null);
+        _reader, _assetGraph, phaseNum, input.package, _isReadableNode);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
@@ -523,7 +556,7 @@ class _SingleBuild {
           phaseNumber: phaseNum,
           wasOutput: true,
           isFailure: false,
-          state: GeneratedNodeState.upToDate);
+          state: NodeState.upToDate);
       _assetGraph.add(node);
       anchorNode.outputs.add(assetId);
     }, deleteAsset: (assetId) {
@@ -575,9 +608,9 @@ class _SingleBuild {
         'All outputs of a build action should share the same inputs.');
 
     // No need to build an up to date output
-    if (node.state == GeneratedNodeState.upToDate) return false;
+    if (node.state == NodeState.upToDate) return false;
     // Early bail out condition, this is a forced update.
-    if (node.state == GeneratedNodeState.definitelyNeedsUpdate) return true;
+    if (node.state == NodeState.definitelyNeedsUpdate) return true;
     // This is a fresh build or the first time we've seen this output.
     if (node.previousInputsDigest == null) return true;
 
@@ -588,8 +621,7 @@ class _SingleBuild {
     } else {
       // Make sure to update the `state` field for all outputs.
       for (var id in outputs) {
-        (_assetGraph.get(id) as GeneratedAssetNode).state =
-            GeneratedNodeState.upToDate;
+        (_assetGraph.get(id) as GeneratedAssetNode).state = NodeState.upToDate;
       }
       return false;
     }
@@ -621,6 +653,53 @@ class _SingleBuild {
     }));
   }
 
+  Future<GlobAssetNode> _getUpdatedGlobNode(
+      Glob glob, String package, int phaseNum) {
+    var globNodeId = new AssetId(
+        package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');
+    var globNode = _assetGraph.get(globNodeId) as GlobAssetNode;
+    if (globNode == null) {
+      globNode = new GlobAssetNode(
+          globNodeId, glob, phaseNum, NodeState.definitelyNeedsUpdate);
+      _assetGraph.add(globNode);
+    }
+
+    return toFuture(
+        doAfter(_updateGlobNodeIfNecessary(globNode), (_) => globNode));
+  }
+
+  FutureOr<Null> _updateGlobNodeIfNecessary(GlobAssetNode globNode) {
+    if (globNode.state == NodeState.upToDate) return null;
+
+    return _lazyGlobs.putIfAbsent(globNode.id, () async {
+      var potentialNodes = _assetGraph
+          .packageNodes(globNode.id.package)
+          .where((n) => globNode.glob.matches(n.id.path))
+          .toList();
+      var potentialIds = new SplayTreeSet.of(potentialNodes.map((n) => n.id));
+      globNode.inputs = potentialIds;
+      for (var node in potentialNodes) {
+        node.outputs.add(globNode.id);
+      }
+
+      var actualMatches = <AssetId>[];
+      for (var node in potentialNodes) {
+        if (await _isReadableNode(
+            node, globNode.phaseNumber, globNode.id.package)) {
+          actualMatches.add(node.id);
+        }
+      }
+      globNode.results = actualMatches;
+
+      globNode.state = NodeState.upToDate;
+      globNode.lastKnownDigest =
+          md5.convert(utf8.encode(globNode.results.join(' ')));
+
+      // ignore: unawaited_futures
+      _lazyGlobs.remove(globNode.id);
+    });
+  }
+
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
@@ -633,13 +712,16 @@ class _SingleBuild {
 
     for (var id in ids) {
       var node = _assetGraph.get(id);
-      if (!await reader.canRead(id)) {
+      if (node is GlobAssetNode) {
+        await _updateGlobNodeIfNecessary(node);
+      } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
         bytesSink.add([1]);
         continue;
+      } else {
+        node.lastKnownDigest ??= await reader.digest(id);
       }
-      node.lastKnownDigest ??= await reader.digest(id);
       bytesSink.add(node.lastKnownDigest.bytes);
     }
 
@@ -653,7 +735,6 @@ class _SingleBuild {
   /// - Setting `needsUpdate` to `false` for each output
   /// - Setting `wasOutput` based on `writer.assetsWritten`.
   /// - Setting `isFailed` based on action success.
-  /// - Setting `globs` on each output based on `reader.globsRan`
   /// - Adding `outputs` as outputs to all `reader.assetsRead`.
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
@@ -670,7 +751,6 @@ class _SingleBuild {
         reader.assetsRead,
         (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
         reader);
-    final globsRan = reader.globsRan.toSet();
 
     final isFailure = errors.isNotEmpty;
 
@@ -685,11 +765,10 @@ class _SingleBuild {
       _removeOldInputs(node, reader.assetsRead);
       _addNewInputs(node, reader.assetsRead);
       node
-        ..state = GeneratedNodeState.upToDate
+        ..state = NodeState.upToDate
         ..wasOutput = wasOutput
         ..isFailure = isFailure
         ..lastKnownDigest = digest
-        ..globs = globsRan
         ..previousInputsDigest = inputsDigest;
 
       if (isFailure) {
@@ -700,11 +779,10 @@ class _SingleBuild {
           var output = needsMarkAsFailure.removeLast();
           var outputNode = _assetGraph.get(output) as GeneratedAssetNode;
           outputNode
-            ..state = GeneratedNodeState.upToDate
+            ..state = NodeState.upToDate
             ..wasOutput = false
             ..isFailure = true
             ..lastKnownDigest = null
-            ..globs = new Set()
             ..previousInputsDigest = null;
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
