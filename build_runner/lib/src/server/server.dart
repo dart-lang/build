@@ -133,8 +133,9 @@ class BuildUpdatesWebSocketHandler {
   BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
     var untypedTearOff = (webSocket, protocol) =>
         _handleConnection(webSocket as WebSocketChannel, protocol as String);
-    _internalHandler = _handlerFactory(
-        untypedTearOff, protocols: [_buildUpdatesProtocol]) as shelf.Handler;
+    _internalHandler =
+        _handlerFactory(untypedTearOff, protocols: [_buildUpdatesProtocol])
+            as shelf.Handler;
   }
 
   shelf.Handler get handler => _internalHandler;

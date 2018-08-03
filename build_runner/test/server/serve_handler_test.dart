@@ -196,26 +196,68 @@ void main() {
       expect(await response.readAsString(), isNot(contains('\$livereload')));
     });
 
+    test('expect websocket connection if enabled', () async {
+      _addSource('a|web/index.html', 'content');
+      expect(
+          serveHandler.handlerFor('web', liveReload: true)(
+              new Request('GET', Uri.parse('ws://server.com/'),
+                  headers: {
+                    'Connection': 'Upgrade',
+                    'Upgrade': 'websocket',
+                    'Sec-WebSocket-Version': '13',
+                    'Sec-WebSocket-Key': 'abc',
+                  },
+                  onHijack: (f) {})),
+          throwsA(TypeMatcher<HijackException>()));
+    });
+
+    test('reject websocket connection if disabled', () async {
+      _addSource('a|web/index.html', 'content');
+      var response = await serveHandler.handlerFor('web', liveReload: false)(
+          new Request('GET', Uri.parse('ws://server.com/'), headers: {
+        'Connection': 'Upgrade',
+        'Upgrade': 'websocket',
+        'Sec-WebSocket-Version': '13',
+        'Sec-WebSocket-Key': 'abc',
+      }));
+      expect(response.statusCode, 200);
+      expect(await response.readAsString(), 'content');
+    });
+
     test('emmits a message to all listners', () async {
       Function exposedOnConnect;
       var mockHandlerFactory = (Function onConnect, {protocols}) {
         exposedOnConnect = onConnect;
       };
-      var buildUpdatesWebSocketHandler = BuildUpdatesWebSocketHandler(
-          mockHandlerFactory);
+      var buildUpdatesWebSocketHandler =
+          BuildUpdatesWebSocketHandler(mockHandlerFactory);
 
       var streamControllerFirst1 = StreamController<List<int>>();
       var streamControllerFirst2 = StreamController<List<int>>();
-      var serverChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst1.stream, streamControllerFirst2.sink), serverSide: true);
-      var clientChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst2.stream, streamControllerFirst1.sink), serverSide: false);
+      var serverChannelFirst = WebSocketChannel(
+          StreamChannel(
+              streamControllerFirst1.stream, streamControllerFirst2.sink),
+          serverSide: true);
+      var clientChannelFirst = WebSocketChannel(
+          StreamChannel(
+              streamControllerFirst2.stream, streamControllerFirst1.sink),
+          serverSide: false);
 
       var streamControllerSecond1 = StreamController<List<int>>();
       var streamControllerSecond2 = StreamController<List<int>>();
-      var serverChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond1.stream, streamControllerSecond2.sink), serverSide: true);
-      var clientChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond2.stream, streamControllerSecond1.sink), serverSide: false);
+      var serverChannelSecond = WebSocketChannel(
+          StreamChannel(
+              streamControllerSecond1.stream, streamControllerSecond2.sink),
+          serverSide: true);
+      var clientChannelSecond = WebSocketChannel(
+          StreamChannel(
+              streamControllerSecond2.stream, streamControllerSecond1.sink),
+          serverSide: false);
 
-      var deferredExpect1 = clientChannelFirst.stream.single.then((value) => expect(value, 'update'));
-      var deferredExpect2 = clientChannelSecond.stream.single.then((value) => expect(value, 'update'));
+      var deferredExpect1 = clientChannelFirst.stream.single
+          .then((value) => expect(value, 'update'));
+      var deferredExpect2 = clientChannelSecond.stream.single
+          .then((value) => expect(value, 'update'));
       exposedOnConnect(serverChannelFirst, '');
       exposedOnConnect(serverChannelSecond, '');
       buildUpdatesWebSocketHandler.emitUpdateMessage(null);
@@ -230,21 +272,36 @@ void main() {
       var mockHandlerFactory = (Function onConnect, {protocols}) {
         exposedOnConnect = onConnect;
       };
-      var buildUpdatesWebSocketHandler = BuildUpdatesWebSocketHandler(
-          mockHandlerFactory);
+      var buildUpdatesWebSocketHandler =
+          BuildUpdatesWebSocketHandler(mockHandlerFactory);
 
       var streamControllerFirst1 = StreamController<List<int>>();
       var streamControllerFirst2 = StreamController<List<int>>();
-      var serverChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst1.stream, streamControllerFirst2.sink), serverSide: true);
-      var clientChannelFirst = WebSocketChannel(StreamChannel(streamControllerFirst2.stream, streamControllerFirst1.sink), serverSide: false);
+      var serverChannelFirst = WebSocketChannel(
+          StreamChannel(
+              streamControllerFirst1.stream, streamControllerFirst2.sink),
+          serverSide: true);
+      var clientChannelFirst = WebSocketChannel(
+          StreamChannel(
+              streamControllerFirst2.stream, streamControllerFirst1.sink),
+          serverSide: false);
 
       var streamControllerSecond1 = StreamController<List<int>>();
       var streamControllerSecond2 = StreamController<List<int>>();
-      var serverChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond1.stream, streamControllerSecond2.sink), serverSide: true);
-      var clientChannelSecond = WebSocketChannel(StreamChannel(streamControllerSecond2.stream, streamControllerSecond1.sink), serverSide: false);
+      var serverChannelSecond = WebSocketChannel(
+          StreamChannel(
+              streamControllerSecond1.stream, streamControllerSecond2.sink),
+          serverSide: true);
+      var clientChannelSecond = WebSocketChannel(
+          StreamChannel(
+              streamControllerSecond2.stream, streamControllerSecond1.sink),
+          serverSide: false);
 
-      var deferredExpect1 = clientChannelFirst.stream.toList().then((value) => expect(value, ['update', 'update']));
-      var deferredExpect2 = clientChannelSecond.stream.single.then((value) => expect(value, 'update'));
+      var deferredExpect1 = clientChannelFirst.stream
+          .toList()
+          .then((value) => expect(value, ['update', 'update']));
+      var deferredExpect2 = clientChannelSecond.stream.single
+          .then((value) => expect(value, 'update'));
       exposedOnConnect(serverChannelFirst, '');
       exposedOnConnect(serverChannelSecond, '');
       buildUpdatesWebSocketHandler.emitUpdateMessage(null);

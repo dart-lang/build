@@ -79,7 +79,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
             : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
-  var bootstrapContent = new StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
+  var bootstrapContent =
+      new StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
 
