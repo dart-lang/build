@@ -132,6 +132,9 @@ class BuildUpdatesWebSocketHandler {
   shelf.Handler _internalHandler;
 
   BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
+    // Because of dart-lang/shelf_web_socket#11, webSocketHandler doesn't work
+    // with strongly typed functions. As a workaround diskard type information
+    // wrapping it with lambda for now
     var untypedTearOff = (webSocket, protocol) =>
         _handleConnection(webSocket as WebSocketChannel, protocol as String);
     _internalHandler =
@@ -174,6 +177,7 @@ shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
 ///
 /// Now only live-reload functional - just reload page on update message
 final _buildUpdatesInjectedJS = '''\n
+// Injected by build_runner for live reload support
 (function() {
   var ws = new WebSocket('ws://' + location.host, ['$_buildUpdatesProtocol']);
   ws.onmessage = function(event) {
