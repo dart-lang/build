@@ -25,7 +25,11 @@ class ServeCommand extends WatchCommand {
       ..addFlag(logRequestsOption,
           defaultsTo: false,
           negatable: false,
-          help: 'Enables logging for each request to the server.');
+          help: 'Enables logging for each request to the server.')
+      ..addFlag(liveReloadOption,
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables automatic page reloading on rebuilds.');
   }
 
   @override
@@ -93,7 +97,9 @@ Future<HttpServer> _startServer(
     ServeOptions options, ServeTarget target, ServeHandler handler) async {
   var server = await _bindServer(options, target);
   serveRequests(
-      server, handler.handlerFor(target.dir, logRequests: options.logRequests));
+      server,
+      handler.handlerFor(target.dir,
+          logRequests: options.logRequests, liveReload: options.liveReload));
   return server;
 }
 

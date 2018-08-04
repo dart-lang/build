@@ -79,7 +79,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
             : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
-  var bootstrapContent = new StringBuffer('(function() {\n');
+  var bootstrapContent =
+      new StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
 
@@ -320,6 +321,12 @@ require.config({
     paths: customModulePaths
 });
 ''';
+
+/// Marker comment used by build_runner (or any other thinks) to identify
+/// entrypoint file, to inject custom code there.
+///
+/// Should be first line in a file, so server don't need to parse whole body
+final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _baseUrlScript = '''
 var baseUrl = (function () {
