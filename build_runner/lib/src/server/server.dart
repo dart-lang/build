@@ -48,10 +48,11 @@ class ServeHandler implements BuildState {
   final Future<AssetHandler> _assetHandler;
   final Future<AssetGraphHandler> _assetGraphHandler;
 
-  final _webSocketHandler = BuildUpdatesWebSocketHandler();
+  final BuildUpdatesWebSocketHandler _webSocketHandler;
 
   ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
-      this._rootPackage) {
+      this._rootPackage)
+      : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
       _webSocketHandler.emitUpdateMessage(result);
@@ -73,9 +74,11 @@ class ServeHandler implements BuildState {
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = new shelf.Cascade();
-    cascade = (liveReload ? cascade.add(_webSocketHandler.handler) : cascade)
-        .add(_blockOnCurrentBuild)
-        .add((shelf.Request request) async {
+    if (liveReload) {
+      cascade = cascade.add(_webSocketHandler.getHandlerByRootDir(rootDir));
+    }
+    cascade =
+        cascade.add(_blockOnCurrentBuild).add((shelf.Request request) async {
       if (request.url.path == _performancePath) {
         return _performanceHandler(request);
       }
@@ -123,36 +126,62 @@ class ServeHandler implements BuildState {
   }
 }
 
+class _ConnectionInfo {
+  final WebSocketChannel webSocket;
+  final String rootDir;
+
+  _ConnectionInfo(this.webSocket, this.rootDir);
+}
+
 /// Class that manages web socket connection handler to inform clients about
 /// build updates
 class BuildUpdatesWebSocketHandler {
-  final activeConnections = <WebSocketChannel>[];
+  final activeConnections = <_ConnectionInfo>[];
   final shelf.Handler Function(Function, {Iterable<String> protocols})
       _handlerFactory;
-  shelf.Handler _internalHandler;
+  final _internalHandlers = <String, shelf.Handler>{};
+  final WatchImpl _state;
 
-  BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
-    // Because of dart-lang/shelf_web_socket#11, webSocketHandler doesn't work
-    // with strongly typed functions. As a workaround diskard type information
-    // wrapping it with lambda for now
-    var untypedTearOff = (webSocket, protocol) =>
-        _handleConnection(webSocket as WebSocketChannel, protocol as String);
-    _internalHandler =
-        _handlerFactory(untypedTearOff, protocols: [_buildUpdatesProtocol]);
+  BuildUpdatesWebSocketHandler(this._state,
+      [this._handlerFactory = webSocketHandler]) {}
+
+  shelf.Handler getHandlerByRootDir(String rootDir) {
+    if (!_internalHandlers.containsKey(rootDir)) {
+      // Because of dart-lang/shelf_web_socket#11, webSocketHandler doesn't work
+      // with strongly typed functions. As a workaround discard type information
+      // for now.
+      var closureForRootDir = (webSocket, protocol) => _handleConnection(
+          webSocket as WebSocketChannel, protocol as String, rootDir);
+      _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
+          protocols: [_buildUpdatesProtocol]);
+    }
+    return _internalHandlers[rootDir];
   }
 
-  shelf.Handler get handler => _internalHandler;
-
-  void emitUpdateMessage(BuildResult buildResult) {
-    for (var webSocket in activeConnections) {
-      webSocket.sink.add(_buildUpdatesMessage);
+  Future emitUpdateMessage(BuildResult buildResult) async {
+    if (buildResult.status == BuildStatus.success) {
+      var digestMap = <AssetId, String>{};
+      for (var assetId in buildResult.outputs) {
+        var digest = await _state.reader.digest(assetId);
+        digestMap[assetId] = digest.toString();
+      }
+      for (var con in activeConnections) {
+        var resultMap = <String, String>{};
+        for (var assetId in digestMap.keys) {
+          var path = assetIdToPath(assetId, con.rootDir);
+          resultMap[path] = digestMap[assetId];
+        }
+        con.webSocket.sink.add(jsonEncode(resultMap));
+      }
     }
   }
 
-  void _handleConnection(WebSocketChannel webSocket, String protocol) async {
-    activeConnections.add(webSocket);
+  void _handleConnection(
+      WebSocketChannel webSocket, String protocol, String rootDir) async {
+    var connection = _ConnectionInfo(webSocket, rootDir);
+    activeConnections.add(connection);
     await webSocket.stream.drain();
-    activeConnections.remove(webSocket);
+    activeConnections.remove(connection);
   }
 }
 
@@ -181,10 +210,7 @@ final _buildUpdatesInjectedJS = '''\n
 (function() {
   var ws = new WebSocket('ws://' + location.host, ['$_buildUpdatesProtocol']);
   ws.onmessage = function(event) {
-    console.log(event);
-    if(event.data === '$_buildUpdatesMessage'){
-      location.reload();
-    }
+    location.reload();
   };
 }());
 ''';

@@ -13,3 +13,8 @@ AssetId pathToAssetId(
           p.join('lib', p.joinAll(pathSegments.sublist(packagesIndex + 2))))
       : new AssetId(rootPackage, p.joinAll([rootDir].followedBy(pathSegments)));
 }
+
+String assetIdToPath(AssetId assetId, String rootDir) =>
+    assetId.path.startsWith('lib/')
+        ? assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')
+        : assetId.path.replaceFirst('${rootDir}/', '');
