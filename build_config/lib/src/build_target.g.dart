@@ -15,19 +15,16 @@ BuildTarget _$BuildTargetFromJson(Map json) {
       'key',
       'package'
     ]);
-    var val = new BuildTarget(
-        sources: $checkedConvert(json, 'sources',
-            (v) => v == null ? null : new InputSet.fromJson(v)),
+    var val = BuildTarget(
+        sources: $checkedConvert(
+            json, 'sources', (v) => v == null ? null : InputSet.fromJson(v)),
         dependencies: $checkedConvert(
             json, 'dependencies', (v) => (v as List)?.map((e) => e as String)),
         builders: $checkedConvert(
             json,
             'builders',
-            (v) => (v as Map)?.map((k, e) => new MapEntry(
-                k as String,
-                e == null
-                    ? null
-                    : new TargetBuilderConfig.fromJson(e as Map)))));
+            (v) => (v as Map)?.map((k, e) => MapEntry(k as String,
+                e == null ? null : TargetBuilderConfig.fromJson(e as Map)))));
     return val;
   });
 }
@@ -41,10 +38,10 @@ TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
       'dev_options',
       'release_options'
     ]);
-    var val = new TargetBuilderConfig(
+    var val = TargetBuilderConfig(
         isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool),
         generateFor: $checkedConvert(json, 'generate_for',
-            (v) => v == null ? null : new InputSet.fromJson(v)),
+            (v) => v == null ? null : InputSet.fromJson(v)),
         options: $checkedConvert(json, 'options',
             (v) => v == null ? null : builderOptionsFromJson(v as Map)),
         devOptions: $checkedConvert(json, 'dev_options',
@@ -64,7 +61,7 @@ GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) {
   return $checkedNew('GlobalBuilderConfig', json, () {
     $checkKeys(json,
         allowedKeys: const ['options', 'dev_options', 'release_options']);
-    var val = new GlobalBuilderConfig(
+    var val = GlobalBuilderConfig(
         options: $checkedConvert(json, 'options',
             (v) => v == null ? null : builderOptionsFromJson(v as Map)),
         devOptions: $checkedConvert(json, 'dev_options',

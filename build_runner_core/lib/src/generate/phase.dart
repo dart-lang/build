@@ -98,11 +98,10 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     bool isOptional,
     bool hideOutput,
   }) {
-    var targetSourceMatcher =
-        new InputMatcher(targetSources ?? const InputSet());
-    var generateForMatcher = new InputMatcher(generateFor ?? const InputSet());
-    builderOptions ??= const BuilderOptions(const {});
-    return new InBuildPhase._(package, builder, builderOptions,
+    var targetSourceMatcher = InputMatcher(targetSources ?? const InputSet());
+    var generateForMatcher = InputMatcher(generateFor ?? const InputSet());
+    builderOptions ??= const BuilderOptions({});
+    return InBuildPhase._(package, builder, builderOptions,
         targetSources: targetSourceMatcher,
         generateFor: generateForMatcher,
         builderLabel: builderKey == null || builderKey.isEmpty
@@ -186,9 +185,9 @@ class PostBuildAction implements BuildAction {
       : builderLabel = builderKey == null || builderKey.isEmpty
             ? _builderLabel(builder)
             : _simpleBuilderKey(builderKey),
-        builderOptions = builderOptions ?? const BuilderOptions(const {}),
-        targetSources = new InputMatcher(targetSources ?? const InputSet()),
-        generateFor = new InputMatcher(generateFor ?? const InputSet());
+        builderOptions = builderOptions ?? const BuilderOptions({}),
+        targetSources = InputMatcher(targetSources ?? const InputSet()),
+        generateFor = InputMatcher(generateFor ?? const InputSet());
 
   int get identity => _deepEquals.hash([
         builderLabel,

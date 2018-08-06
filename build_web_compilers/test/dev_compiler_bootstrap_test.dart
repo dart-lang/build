@@ -31,12 +31,12 @@ main() {
 
     // Set up all the other required inputs for this test.
     await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-    await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
-    await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
-    await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
-    await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
-    await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
-    await testBuilderAndCollectAssets(new DevCompilerBuilder(), assets);
+    await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
+    await testBuilderAndCollectAssets(ModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(), assets);
+    await testBuilderAndCollectAssets(LinkedSummaryBuilder(), assets);
+    await testBuilderAndCollectAssets(DevCompilerBuilder(), assets);
   });
 
   test('can bootstrap dart entrypoints', () async {
@@ -57,7 +57,7 @@ main() {
         isNot(contains('lib/a')),
       ])),
     };
-    await testBuilder(new WebEntrypointBuilder(WebCompiler.DartDevc), assets,
+    await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
         outputs: expectedOutputs);
   });
 }

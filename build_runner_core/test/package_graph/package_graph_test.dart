@@ -13,7 +13,7 @@ void main() {
   group('PackageGraph', () {
     group('forThisPackage ', () {
       setUp(() async {
-        graph = new PackageGraph.forThisPackage();
+        graph = PackageGraph.forThisPackage();
       });
 
       test('root', () {
@@ -25,7 +25,7 @@ void main() {
       var basicPkgPath = 'test/fixtures/basic_pkg';
 
       setUp(() async {
-        graph = new PackageGraph.forPath(basicPkgPath);
+        graph = PackageGraph.forPath(basicPkgPath);
       });
 
       test('allPackages', () {
@@ -56,7 +56,7 @@ void main() {
       var withDevDepsPkgPath = 'test/fixtures/with_dev_deps';
 
       setUp(() async {
-        graph = new PackageGraph.forPath(withDevDepsPkgPath);
+        graph = PackageGraph.forPath(withDevDepsPkgPath);
       });
 
       test('allPackages contains dev deps of root pkg, but not others', () {
@@ -90,7 +90,7 @@ void main() {
       var withFlutterDeps = 'test/fixtures/flutter_pkg';
 
       setUp(() async {
-        graph = new PackageGraph.forPath(withFlutterDeps);
+        graph = PackageGraph.forPath(withFlutterDeps);
       });
 
       test('allPackages resolved correctly with all packages', () {
@@ -111,13 +111,13 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      var a = new PackageNode('a', null, DependencyType.path, isRoot: true);
-      var b = new PackageNode('b', null, null);
-      var c = new PackageNode('c', null, null);
-      var d = new PackageNode('d', null, null);
+      var a = PackageNode('a', null, DependencyType.path, isRoot: true);
+      var b = PackageNode('b', null, null);
+      var c = PackageNode('c', null, null);
+      var d = PackageNode('d', null, null);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
-      var graph = new PackageGraph.fromRoot(a);
+      var graph = PackageGraph.fromRoot(a);
       expect(graph.root, a);
       expect(graph.allPackages,
           equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}));
@@ -125,14 +125,13 @@ void main() {
 
     test('missing pubspec throws on create', () {
       expect(
-          () => new PackageGraph.forPath(
-              p.join('test', 'fixtures', 'no_pubspec')),
+          () => PackageGraph.forPath(p.join('test', 'fixtures', 'no_pubspec')),
           throwsA(anything));
     });
 
     test('missing .packages file throws on create', () {
       expect(
-          () => new PackageGraph.forPath(
+          () => PackageGraph.forPath(
               p.join('test', 'fixtures', 'no_packages_file')),
           throwsA(anything));
     });

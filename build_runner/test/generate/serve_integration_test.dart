@@ -36,8 +36,8 @@ main() {
       await pubGet('a');
       pubProcess = await startPub('a', 'run', args: ['build_runner', 'serve']);
       pubStdOutLines = pubProcess.stdout
-          .transform(new Utf8Decoder())
-          .transform(new LineSplitter())
+          .transform(Utf8Decoder())
+          .transform(LineSplitter())
           .asBroadcastStream();
     });
 

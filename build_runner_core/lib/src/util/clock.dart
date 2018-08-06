@@ -6,7 +6,7 @@ import 'dart:async';
 
 /// A function that returns the current [DateTime].
 typedef DateTime _Clock();
-DateTime _defaultClock() => new DateTime.now();
+DateTime _defaultClock() => DateTime.now();
 
 /// Returns the current [DateTime].
 ///

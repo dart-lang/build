@@ -111,7 +111,7 @@ abstract class BuildPerformanceTracker
   BuilderActionTracker startBuilderAction(
       AssetId primaryInput, String builderKey);
 
-  factory BuildPerformanceTracker() => new _BuildPerformanceTrackerImpl();
+  factory BuildPerformanceTracker() => _BuildPerformanceTrackerImpl();
 
   /// A [BuildPerformanceTracker] with as little overhead as possible. Does no
   /// actual tracking and does not implement many fields/methods.
@@ -142,7 +142,7 @@ class _BuildPerformanceTrackerImpl extends Object
   Future<Iterable<AssetId>> trackBuildPhase(
       BuildPhase action, Future<Iterable<AssetId>> runPhase()) {
     assert(startTime != null && stopTime == null);
-    var tracker = new BuildPhaseTracker(action);
+    var tracker = BuildPhaseTracker(action);
     _phases.add(tracker);
     return tracker.track(runPhase);
   }
@@ -154,7 +154,7 @@ class _BuildPerformanceTrackerImpl extends Object
   BuilderActionTracker startBuilderAction(
       AssetId primaryInput, String builderKey) {
     assert(startTime != null && stopTime == null);
-    var tracker = new BuilderActionTracker(primaryInput, builderKey)..start();
+    var tracker = BuilderActionTracker(primaryInput, builderKey)..start();
     _actions.add(tracker);
     return tracker;
   }
@@ -173,18 +173,18 @@ class _NoOpBuildPerformanceTracker extends Object
     with _NoOpTimeTracker
     implements BuildPerformanceTracker {
   static final _NoOpBuildPerformanceTracker sharedInstance =
-      new _NoOpBuildPerformanceTracker();
+      _NoOpBuildPerformanceTracker();
 
   @override
-  Iterable<BuilderActionTracker> get actions => throw new UnimplementedError();
+  Iterable<BuilderActionTracker> get actions => throw UnimplementedError();
 
   @override
-  Iterable<BuildPhaseTracker> get phases => throw new UnimplementedError();
+  Iterable<BuildPhaseTracker> get phases => throw UnimplementedError();
 
   @override
   BuilderActionTracker startBuilderAction(
           AssetId primaryInput, String builderKey) =>
-      new BuilderActionTracker.noOp();
+      BuilderActionTracker.noOp();
 
   @override
   Future<Iterable<AssetId>> trackBuildPhase(
@@ -241,7 +241,7 @@ abstract class BuilderActionTracker
   FutureOr<T> track<T>(FutureOr<T> runPhase(), String label);
 
   factory BuilderActionTracker(AssetId primaryInput, String builderKey) =>
-      new _BuilderActionTrackerImpl(primaryInput, builderKey);
+      _BuilderActionTrackerImpl(primaryInput, builderKey);
 
   /// A [BuilderActionTracker] with as little overhead as possible. Does no
   /// actual tracking and does not implement many fields/methods.
@@ -267,7 +267,7 @@ class _BuilderActionTrackerImpl extends Object
 
   @override
   FutureOr<T> track<T>(FutureOr<T> action(), String label) {
-    var tracker = new BuilderActionPhaseTracker(label);
+    var tracker = BuilderActionPhaseTracker(label);
     phases.add(tracker);
     tracker.start();
     var result = action();
@@ -295,20 +295,20 @@ class _NoOpBuilderActionTracker extends Object
     with _NoOpTimeTracker
     implements BuilderActionTracker {
   static final _NoOpBuilderActionTracker _sharedInstance =
-      new _NoOpBuilderActionTracker();
+      _NoOpBuilderActionTracker();
 
   @override
-  String get builderKey => throw new UnimplementedError();
+  String get builderKey => throw UnimplementedError();
 
   @override
-  Duration get duration => throw new UnimplementedError();
+  Duration get duration => throw UnimplementedError();
 
   @override
   Iterable<BuilderActionPhasePerformance> get phases =>
-      throw new UnimplementedError();
+      throw UnimplementedError();
 
   @override
-  AssetId get primaryInput => throw new UnimplementedError();
+  AssetId get primaryInput => throw UnimplementedError();
 
   @override
   FutureOr<T> track<T>(FutureOr<T> runPhase(), String label) => runPhase();
@@ -335,7 +335,7 @@ class BuilderActionPhaseTracker extends Object
 /// Interface for tracking the [Timings] of an operation using the [start] and
 /// [stop] methods.
 abstract class TimeTracker implements Timings {
-  factory TimeTracker() => new _TimeTrackerImpl();
+  factory TimeTracker() => _TimeTrackerImpl();
   factory TimeTracker.noOp() => _NoOpTimeTracker.sharedInstance;
 
   void start();
@@ -361,7 +361,7 @@ class _TimeTrackerImpl implements TimeTracker {
   @override
   Duration get duration {
     assert(_startTime != null && _stopTime != null);
-    return new Duration(
+    return Duration(
         microseconds:
             stopTime.microsecondsSinceEpoch - startTime.microsecondsSinceEpoch);
   }
@@ -385,14 +385,14 @@ class _TimeTrackerImpl implements TimeTracker {
 ///
 /// Use [TimeTracker.noOp] factory to get an instance.
 class _NoOpTimeTracker implements TimeTracker {
-  static final sharedInstance = new _NoOpTimeTracker();
+  static final sharedInstance = _NoOpTimeTracker();
 
   @override
-  Duration get duration => throw new UnimplementedError();
+  Duration get duration => throw UnimplementedError();
   @override
-  DateTime get startTime => throw new UnimplementedError();
+  DateTime get startTime => throw UnimplementedError();
   @override
-  DateTime get stopTime => throw new UnimplementedError();
+  DateTime get stopTime => throw UnimplementedError();
 
   @override
   void start() {}
@@ -401,5 +401,5 @@ class _NoOpTimeTracker implements TimeTracker {
   void stop() {}
 }
 
-AssetId _assetIdFromJson(String json) => new AssetId.parse(json);
+AssetId _assetIdFromJson(String json) => AssetId.parse(json);
 String _assetIdToJson(AssetId id) => id.toString();

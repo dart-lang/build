@@ -15,12 +15,12 @@ import 'utils/build_descriptor.dart';
 
 // test-package-start #########################################################
 /// Copies an asset to both `.txt.copy` and `.txt.extra`.
-final copyTwice = new TestBuilder(buildExtensions: {
+final copyTwice = TestBuilder(buildExtensions: {
   '.txt': ['.txt.copy', '.txt.extra']
 });
 
 /// Reads `.txt.copy` files if the primary input contains "true".
-final maybeReadCopy = new TestBuilder(
+final maybeReadCopy = TestBuilder(
     buildExtensions: appendExtension('.other', from: '.txt'),
     extraWork: (buildStep, _) async {
       if ((await buildStep.readAsString(buildStep.inputId)).contains('true')) {

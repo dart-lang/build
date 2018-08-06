@@ -6,7 +6,7 @@ import 'package:args/args.dart';
 const _persistentWorkerParam = 'persistent_worker';
 const _asyncStackTraceParam = 'async-stack-trace';
 
-final _argParser = new ArgParser(allowTrailingOptions: true)
+final _argParser = ArgParser(allowTrailingOptions: true)
   ..addFlag(_persistentWorkerParam,
       negatable: false,
       defaultsTo: false,
@@ -27,7 +27,7 @@ class StartupArgs {
     final argResults = _argParser.parse(args);
     final persistentWorker = argResults[_persistentWorkerParam] as bool;
     final asyncStackTrace = argResults[_asyncStackTraceParam] as bool;
-    return new StartupArgs._(
+    return StartupArgs._(
       persistentWorker,
       asyncStackTrace,
       argResults.rest,

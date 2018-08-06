@@ -12,7 +12,7 @@ part 'input_set.g.dart';
 /// the `glob()` function in skylark.
 @JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class InputSet {
-  static const anything = const InputSet();
+  static const anything = InputSet();
 
   /// The globs to include in the set.
   ///
@@ -30,7 +30,7 @@ class InputSet {
     if (json is List) {
       json = {'include': json};
     } else if (json is! Map) {
-      throw new ArgumentError.value(json, 'sources',
+      throw ArgumentError.value(json, 'sources',
           'Expected a Map or a List but got a ${json.runtimeType}');
     }
     return _$InputSetFromJson(json as Map);
@@ -38,7 +38,7 @@ class InputSet {
 
   @override
   String toString() {
-    final result = new StringBuffer();
+    final result = StringBuffer();
     if (include == null || include.isEmpty) {
       result.write('any path');
     } else {

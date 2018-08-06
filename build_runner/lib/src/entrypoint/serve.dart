@@ -44,7 +44,7 @@ class ServeCommand extends WatchCommand {
       'builds based on file system updates.';
 
   @override
-  ServeOptions readOptions() => new ServeOptions.fromParsedArgs(
+  ServeOptions readOptions() => ServeOptions.fromParsedArgs(
       argResults, argResults.rest, packageGraph.root.name, this);
 
   @override

@@ -5,9 +5,8 @@ import 'package:json_serializable/builder.dart';
 import 'package:source_gen/builder.dart';
 
 main() async {
-  var packageGraph = new PackageGraph.forThisPackage();
-  var environment =
-      new OverrideableEnvironment(new IOEnvironment(packageGraph));
+  var packageGraph = PackageGraph.forThisPackage();
+  var environment = OverrideableEnvironment(IOEnvironment(packageGraph));
   var options =
       await BuildOptions.create(environment, packageGraph: packageGraph);
 
@@ -18,7 +17,7 @@ main() async {
     [
       applyToRoot(jsonSerializable(BuilderOptions.forRoot),
           hideOutput: true,
-          generateFor: new InputSet(include: const [
+          generateFor: InputSet(include: const [
             'lib/src/generate/performance_tracker.dart',
           ])),
       applyToRoot(combiningBuilder())

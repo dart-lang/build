@@ -19,10 +19,10 @@ String humanReadable(Duration duration) {
   }
   if (duration < const Duration(hours: 1)) {
     final minutes = duration.inMinutes;
-    final remaining = duration - new Duration(minutes: minutes);
+    final remaining = duration - Duration(minutes: minutes);
     return '${minutes}m ${remaining.inSeconds}s';
   }
   final hours = duration.inHours;
-  final remaining = duration - new Duration(hours: hours);
+  final remaining = duration - Duration(hours: hours);
   return '${hours}h ${remaining.inMinutes}m';
 }

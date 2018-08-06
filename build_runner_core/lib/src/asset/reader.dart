@@ -36,7 +36,7 @@ abstract class PathProvidingAssetReader implements AssetReader {
 class SingleStepReader implements AssetReader {
   final AssetGraph _assetGraph;
   final AssetReader _delegate;
-  final _globsRan = new Set<Glob>();
+  final _globsRan = Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
   final _RunPhaseForInput _runPhaseForInput;
@@ -48,7 +48,7 @@ class SingleStepReader implements AssetReader {
   final bool _outputsHidden;
 
   /// The assets read during this step in sorted order.
-  final assetsRead = new SplayTreeSet<AssetId>();
+  final assetsRead = SplayTreeSet<AssetId>();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._outputsHidden, this._primaryPackage, this._runPhaseForInput);
@@ -65,7 +65,7 @@ class SingleStepReader implements AssetReader {
     assetsRead.add(id);
     var node = _assetGraph.get(id);
     if (node == null) {
-      _assetGraph.add(new SyntheticSourceAssetNode(id));
+      _assetGraph.add(SyntheticSourceAssetNode(id));
       return false;
     }
     return _isReadableNode(node);
@@ -111,7 +111,7 @@ class SingleStepReader implements AssetReader {
   Future<Digest> digest(AssetId id) {
     return _toFuture(_doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
-        return new Future.error(new AssetNotFoundException(id));
+        return Future.error(AssetNotFoundException(id));
       }
       return _ensureDigest(id);
     }));
@@ -121,7 +121,7 @@ class SingleStepReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) {
     return _toFuture(_doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
-        return new Future.error(new AssetNotFoundException(id));
+        return Future.error(AssetNotFoundException(id));
       }
       return _doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
     }));
@@ -131,7 +131,7 @@ class SingleStepReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     return _toFuture(_doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
-        return new Future.error(new AssetNotFoundException(id));
+        return Future.error(AssetNotFoundException(id));
       }
       return _doAfter(_ensureDigest(id),
           (_) => _delegate.readAsString(id, encoding: encoding));
@@ -179,4 +179,4 @@ FutureOr<S> _doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
 
 /// Converts [value] to a [Future] if it is not already.
 Future<T> _toFuture<T>(FutureOr<T> value) =>
-    value is Future<T> ? value : new Future.value(value);
+    value is Future<T> ? value : Future.value(value);

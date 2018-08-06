@@ -24,7 +24,7 @@ final _builders = <_i1.BuilderApplication>[
       [_i3.debugIndexBuilder, _i3.debugTestBuilder, _i3.testBootstrapBuilder],
       _i1.toRoot(),
       hideOutput: true,
-      defaultGenerateFor: const _i4.InputSet(include: const ['test/**'])),
+      defaultGenerateFor: const _i4.InputSet(include: ['test/**'])),
   _i1.apply(
       'build_modules|modules',
       [
@@ -47,19 +47,19 @@ final _builders = <_i1.BuilderApplication>[
   _i1.apply('build_web_compilers|entrypoint', [_i6.webEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,
-      defaultGenerateFor: const _i4.InputSet(include: const [
+      defaultGenerateFor: const _i4.InputSet(include: [
         'web/**',
         'test/**_test.dart',
         'example/**',
         'benchmark/**'
-      ], exclude: const [
+      ], exclude: [
         'test/**.node_test.dart',
         'test/**.vm_test.dart'
       ]),
-      defaultOptions: new _i7.BuilderOptions({
+      defaultOptions: _i7.BuilderOptions({
         'dart2js_args': ['--minify']
       }),
-      defaultReleaseOptions: new _i7.BuilderOptions({'compiler': 'dart2js'}),
+      defaultReleaseOptions: _i7.BuilderOptions({'compiler': 'dart2js'}),
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.apply(
       'build_vm_compilers|vm', [_i8.vmKernelModuleBuilder], _i1.toAllPackages(),
@@ -67,7 +67,7 @@ final _builders = <_i1.BuilderApplication>[
   _i1.apply('build_vm_compilers|entrypoint', [_i8.vmKernelEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,
-      defaultGenerateFor: const _i4.InputSet(include: const [
+      defaultGenerateFor: const _i4.InputSet(include: [
         'bin/**',
         'tool/**',
         'test/**.dart.vm_test.dart',
@@ -81,11 +81,11 @@ final _builders = <_i1.BuilderApplication>[
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess(
       'build_web_compilers|dart_source_cleanup', _i6.dartSourceCleanup,
-      defaultReleaseOptions: new _i7.BuilderOptions({'enabled': true}),
+      defaultReleaseOptions: _i7.BuilderOptions({'enabled': true}),
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_web_compilers|dart2js_archive_extractor',
       _i6.dart2JsArchiveExtractor,
-      defaultReleaseOptions: new _i7.BuilderOptions({'filter_outputs': true}),
+      defaultReleaseOptions: _i7.BuilderOptions({'filter_outputs': true}),
       defaultGenerateFor: const _i4.InputSet())
 ];
 main(List<String> args, [_i9.SendPort sendPort]) async {

@@ -12,20 +12,20 @@ import 'package:watcher/watcher.dart';
 void main() {
   group('AssetChange', () {
     test('should be equal if asset and type are equivalent', () {
-      AssetId asset(String name) => new AssetId(name, 'lib/$asset.dart');
+      AssetId asset(String name) => AssetId(name, 'lib/$asset.dart');
       final pkgA1 = asset('a');
       final pkgA2 = asset('a');
 
-      final change1 = new AssetChange(pkgA1, ChangeType.ADD);
-      final change2 = new AssetChange(pkgA2, ChangeType.ADD);
+      final change1 = AssetChange(pkgA1, ChangeType.ADD);
+      final change2 = AssetChange(pkgA2, ChangeType.ADD);
 
       expect(change1, equals(change2));
 
-      final change3 = new AssetChange(pkgA1, ChangeType.MODIFY);
+      final change3 = AssetChange(pkgA1, ChangeType.MODIFY);
       expect(change1, isNot(equals(change3)));
 
       final pkgB = asset('b');
-      final change4 = new AssetChange(pkgB, ChangeType.ADD);
+      final change4 = AssetChange(pkgB, ChangeType.ADD);
       expect(change1, isNot(equals(change4)));
     });
 
@@ -33,10 +33,10 @@ void main() {
       final pkgBar = p.join('/', 'foo', 'bar');
       final barFile =
           p.join(p.relative(pkgBar, from: p.current), 'lib', 'bar.dart');
-      final nodeBar = new PackageNode('bar', pkgBar, null);
+      final nodeBar = PackageNode('bar', pkgBar, null);
 
-      final event = new WatchEvent(ChangeType.ADD, barFile);
-      final change = new AssetChange.fromEvent(nodeBar, event);
+      final event = WatchEvent(ChangeType.ADD, barFile);
+      final change = AssetChange.fromEvent(nodeBar, event);
 
       expect(change.id.package, 'bar');
       expect(change.id.path, p.join('lib', 'bar.dart'));
@@ -46,9 +46,9 @@ void main() {
       final pkgBar = p.join('/', 'foo', 'bar');
       final barFile = p.join('/', 'foo', 'bar', 'lib', 'bar.dart');
 
-      final nodeBar = new PackageNode('bar', pkgBar, null);
-      final event = new WatchEvent(ChangeType.ADD, barFile);
-      final change = new AssetChange.fromEvent(nodeBar, event);
+      final nodeBar = PackageNode('bar', pkgBar, null);
+      final event = WatchEvent(ChangeType.ADD, barFile);
+      final change = AssetChange.fromEvent(nodeBar, event);
 
       expect(change.id.package, 'bar');
       expect(change.id.path, p.join('lib', 'bar.dart'));

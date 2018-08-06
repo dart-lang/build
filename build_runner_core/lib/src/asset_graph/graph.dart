@@ -39,7 +39,7 @@ class AssetGraph {
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
-      new _AssetGraphDeserializer(serializedGraph).deserialize();
+      _AssetGraphDeserializer(serializedGraph).deserialize();
 
   static Future<AssetGraph> build(
       List<BuildPhase> buildPhases,
@@ -47,8 +47,8 @@ class AssetGraph {
       Set<AssetId> internalSources,
       PackageGraph packageGraph,
       AssetReader digestReader) async {
-    var graph = new AssetGraph._(
-        computeBuildPhasesDigest(buildPhases), Platform.version);
+    var graph =
+        AssetGraph._(computeBuildPhasesDigest(buildPhases), Platform.version);
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
     graph._addBuilderOptionsNodes(buildPhases);
@@ -63,7 +63,7 @@ class AssetGraph {
     return graph;
   }
 
-  List<int> serialize() => new _AssetGraphSerializer(this).serialize();
+  List<int> serialize() => _AssetGraphSerializer(this).serialize();
 
   /// Checks if [id] exists in the graph.
   bool contains(AssetId id) =>
@@ -89,7 +89,7 @@ class AssetGraph {
         node.outputs.addAll(existing.outputs);
         node.primaryOutputs.addAll(existing.primaryOutputs);
       } else {
-        throw new StateError(
+        throw StateError(
             'Tried to add node ${node.id} to the asset graph but it already '
             'exists.');
       }
@@ -100,7 +100,7 @@ class AssetGraph {
   /// Adds [assetIds] as [InternalAssetNode]s to this graph.
   Iterable<AssetNode> _addInternalSources(Set<AssetId> assetIds) sync* {
     for (var id in assetIds) {
-      var node = new InternalAssetNode(id);
+      var node = InternalAssetNode(id);
       _add(node);
       yield node;
     }
@@ -110,7 +110,7 @@ class AssetGraph {
   Set<AssetId> _addPlaceHolderNodes(PackageGraph packageGraph) {
     var placeholders = placeholderIdsFor(packageGraph);
     for (var id in placeholders) {
-      _add(new PlaceHolderAssetNode(id));
+      _add(PlaceHolderAssetNode(id));
     }
     return placeholders;
   }
@@ -119,7 +119,7 @@ class AssetGraph {
   /// created nodes.
   List<AssetNode> _addSources(Set<AssetId> assetIds) {
     return assetIds.map((id) {
-      var node = new SourceAssetNode(id);
+      var node = SourceAssetNode(id);
       _add(node);
       return node;
     }).toList();
@@ -130,19 +130,18 @@ class AssetGraph {
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
-        add(new BuilderOptionsAssetNode(
-            builderOptionsIdForAction(phase, phaseNum),
+        add(BuilderOptionsAssetNode(builderOptionsIdForAction(phase, phaseNum),
             computeBuilderOptionsDigest(phase.builderOptions)));
       } else if (phase is PostBuildPhase) {
         var actionNum = 0;
         for (var builderAction in phase.builderActions) {
-          add(new BuilderOptionsAssetNode(
+          add(BuilderOptionsAssetNode(
               builderOptionsIdForAction(builderAction, actionNum),
               computeBuilderOptionsDigest(builderAction.builderOptions)));
           actionNum++;
         }
       } else {
-        throw new StateError('Invalid action type $phase');
+        throw StateError('Invalid action type $phase');
       }
     }
   }
@@ -163,7 +162,7 @@ class AssetGraph {
   ///
   /// Returns a [Set<AssetId>] of all removed nodes.
   Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId> removedIds}) {
-    removedIds ??= new Set<AssetId>();
+    removedIds ??= Set<AssetId>();
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
@@ -238,9 +237,9 @@ class AssetGraph {
       String rootPackage,
       Future delete(AssetId id),
       AssetReader digestReader) async {
-    var newIds = new Set<AssetId>();
-    var modifyIds = new Set<AssetId>();
-    var removeIds = new Set<AssetId>();
+    var newIds = Set<AssetId>();
+    var modifyIds = Set<AssetId>();
+    var removeIds = Set<AssetId>();
     updates.forEach((id, changeType) {
       if (changeType != ChangeType.ADD && get(id) == null) return;
       switch (changeType) {
@@ -269,7 +268,7 @@ class AssetGraph {
     // Collects the set of all transitive ids to be removed from the graph,
     // based on the removed `SourceAssetNode`s by following the
     // `primaryOutputs`.
-    var transitiveRemovedIds = new Set<AssetId>();
+    var transitiveRemovedIds = Set<AssetId>();
     addTransitivePrimaryOutputs(AssetId id) {
       transitiveRemovedIds.add(id);
       get(id).primaryOutputs.forEach(addTransitivePrimaryOutputs);
@@ -280,7 +279,7 @@ class AssetGraph {
         .forEach(addTransitivePrimaryOutputs);
 
     // The generated nodes to actually delete from the file system.
-    var idsToDelete = new Set<AssetId>.from(transitiveRemovedIds)
+    var idsToDelete = Set<AssetId>.from(transitiveRemovedIds)
       ..removeAll(removeIds);
 
     // For manually deleted generated outputs, we bash away their
@@ -296,7 +295,7 @@ class AssetGraph {
 
     // Transitively invalidates all assets. This needs to happen after the
     // structure of the graph has been updated.
-    var invalidatedIds = new Set<AssetId>();
+    var invalidatedIds = Set<AssetId>();
     void invalidateNodeAndDeps(AssetId id) {
       var node = get(id);
       if (node == null) return;
@@ -356,7 +355,7 @@ class AssetGraph {
     } else if (action is PostBuildAction) {
       inputExtensions = action.builder.inputExtensions;
     } else {
-      throw new StateError('Unrecognized action type $action');
+      throw StateError('Unrecognized action type $action');
     }
     if (!inputExtensions.any(input.path.endsWith)) {
       return false;
@@ -377,7 +376,7 @@ class AssetGraph {
   Set<AssetId> _addOutputsForSources(
       List<BuildPhase> buildPhases, Set<AssetId> newSources, String rootPackage,
       {Set<AssetId> placeholders}) {
-    var allInputs = new Set<AssetId>.from(newSources);
+    var allInputs = Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
 
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
@@ -388,7 +387,7 @@ class AssetGraph {
       } else if (phase is PostBuildPhase) {
         _addPostBuildPhaseAnchors(phase, allInputs);
       } else {
-        throw new StateError('Unrecognized phase type $phase');
+        throw StateError('Unrecognized phase type $phase');
       }
     }
     return allInputs;
@@ -406,7 +405,7 @@ class AssetGraph {
       Set<AssetId> allInputs,
       List<BuildPhase> buildPhases,
       String rootPackage) {
-    var phaseOutputs = new Set<AssetId>();
+    var phaseOutputs = Set<AssetId>();
     var buildOptionsNodeId = builderOptionsIdForAction(phase, phaseNum);
     var builderOptionsNode = get(buildOptionsNodeId) as BuilderOptionsAssetNode;
     var inputs =
@@ -444,7 +443,7 @@ class AssetGraph {
       var inputs = allInputs.where((input) => _actionMatches(action, input));
       for (var input in inputs) {
         var buildOptionsNodeId = builderOptionsIdForAction(action, actionNum);
-        var anchor = new PostProcessAnchorNode.forInputAndAction(
+        var anchor = PostProcessAnchorNode.forInputAndAction(
             input, actionNum, buildOptionsNodeId);
         add(anchor);
         get(input).anchorOutputs.add(anchor.id);
@@ -468,7 +467,7 @@ class AssetGraph {
       String rootPackage,
       {AssetId primaryInput,
       @required bool isHidden}) {
-    var removed = new Set<AssetId>();
+    var removed = Set<AssetId>();
     for (var output in outputs) {
       // When any outputs aren't hidden we can pick up old generated outputs as
       // regular `AssetNode`s, we need to delete them and all their primary
@@ -476,7 +475,7 @@ class AssetGraph {
       if (contains(output)) {
         var node = get(output);
         if (node is GeneratedAssetNode) {
-          throw new DuplicateAssetNodeException(
+          throw DuplicateAssetNodeException(
               rootPackage,
               node.id,
               (buildPhases[node.phaseNumber] as InBuildPhase).builderLabel,
@@ -485,7 +484,7 @@ class AssetGraph {
         _removeRecursive(output, removedIds: removed);
       }
 
-      var newNode = new GeneratedAssetNode(output,
+      var newNode = GeneratedAssetNode(output,
           phaseNumber: phaseNumber,
           primaryInput: primaryInput,
           state: GeneratedNodeState.definitelyNeedsUpdate,
@@ -510,7 +509,7 @@ class AssetGraph {
 /// Computes a [Digest] for [buildPhases] which can be used to compare one set
 /// of [BuildPhase]s against another.
 Digest computeBuildPhasesDigest(Iterable<BuildPhase> buildPhases) {
-  var digestSink = new AccumulatorSink<Digest>();
+  var digestSink = AccumulatorSink<Digest>();
   var bytesSink = md5.startChunkedConversion(digestSink);
   bytesSink.add(buildPhases.map((phase) => phase.identity).toList());
   bytesSink.close();
@@ -523,17 +522,17 @@ Digest computeBuilderOptionsDigest(BuilderOptions options) =>
 
 AssetId builderOptionsIdForAction(BuildAction action, int actionNum) {
   if (action is InBuildPhase) {
-    return new AssetId(action.package, 'Phase$actionNum.builderOptions');
+    return AssetId(action.package, 'Phase$actionNum.builderOptions');
   } else if (action is PostBuildAction) {
-    return new AssetId(action.package, 'PostPhase$actionNum.builderOptions');
+    return AssetId(action.package, 'PostPhase$actionNum.builderOptions');
   } else {
-    throw new StateError('Unsupported action type $action');
+    throw StateError('Unsupported action type $action');
   }
 }
 
 Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
-    new Set<AssetId>.from(packageGraph.allPackages.keys.expand((package) => [
-          new AssetId(package, r'lib/$lib$'),
-          new AssetId(package, r'test/$test$'),
-          new AssetId(package, r'web/$web$'),
+    Set<AssetId>.from(packageGraph.allPackages.keys.expand((package) => [
+          AssetId(package, r'lib/$lib$'),
+          AssetId(package, r'test/$test$'),
+          AssetId(package, r'web/$web$'),
         ]));

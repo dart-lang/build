@@ -97,8 +97,8 @@ class Module {
   factory Module.forLibrary(LibraryElement library) {
     final cycle = library.libraryCycle;
     final cycleUris = cycle.map((l) => l.source.uri).toSet();
-    final dependencyModules = new Set<Uri>();
-    final seenDependencies = new Set<Uri>();
+    final dependencyModules = Set<Uri>();
+    final seenDependencies = Set<Uri>();
     for (var dependency in _cycleDependencies(cycle)) {
       var uri = dependency.source.uri;
       if (seenDependencies.contains(uri) || cycleUris.contains(uri)) continue;
@@ -107,9 +107,9 @@ class Module {
       seenDependencies.addAll(cycle.map((l) => l.source.uri));
     }
 
-    AssetId toAssetId(Uri uri) => new AssetId.resolve('$uri');
+    AssetId toAssetId(Uri uri) => AssetId.resolve('$uri');
 
-    return new Module(
+    return Module(
         toAssetId(_earliest(cycle)),
         _cycleSources(cycle).map(toAssetId).toSet(),
         dependencyModules.map(toAssetId).toSet());
@@ -128,7 +128,7 @@ class Module {
   Future<List<Module>> computeTransitiveDependencies(AssetReader reader) async {
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = directDependencies.toSet();
-    var missingModuleSources = new Set<AssetId>();
+    var missingModuleSources = Set<AssetId>();
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
@@ -138,7 +138,7 @@ class Module {
         missingModuleSources.add(next);
         continue;
       }
-      var module = new Module.fromJson(
+      var module = Module.fromJson(
           json.decode(await reader.readAsString(nextModuleId))
               as Map<String, dynamic>);
       transitiveDeps[next] = module;
@@ -203,7 +203,7 @@ Iterable<Uri> _cycleSources(Iterable<LibraryElement> libraries) =>
 Iterable<Uri> _libraryUris(LibraryElement library) =>
     library.parts.map((u) => u.source.uri).toList()..add(library.source.uri);
 
-AssetId _assetIdFromJson(List json) => new AssetId.deserialize(json);
+AssetId _assetIdFromJson(List json) => AssetId.deserialize(json);
 
 List _assetIdToJson(AssetId id) => id.serialize() as List;
 

@@ -35,7 +35,7 @@ void main() {
         "import 'package:dep/dep.dart';\n");
     expect(
         library.deps,
-        new Set.of([
+        Set.of([
           makeAssetId('myapp|lib/b.dart'),
           makeAssetId('dep|lib/dep.dart')
         ]));
@@ -48,7 +48,7 @@ void main() {
         "export 'package:dep/dep.dart';\n");
     expect(
         library.deps,
-        new Set.of([
+        Set.of([
           makeAssetId('myapp|lib/b.dart'),
           makeAssetId('dep|lib/dep.dart')
         ]));
@@ -85,7 +85,7 @@ void main() {
         "part 'package:dep/dep.dart';\n");
     expect(
         library.parts,
-        new Set.of([
+        Set.of([
           makeAssetId('myapp|lib/b.dart'),
           makeAssetId('dep|lib/dep.dart')
         ]));
@@ -99,7 +99,7 @@ void main() {
         "    if (dart.library.html) 'for_web.dart'\n");
     expect(
         library.deps,
-        new Set.of([
+        Set.of([
           makeAssetId('myapp|lib/default.dart'),
           makeAssetId('myapp|lib/for_vm.dart'),
           makeAssetId('myapp|lib/for_web.dart'),

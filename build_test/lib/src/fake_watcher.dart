@@ -19,13 +19,13 @@ class FakeWatcher implements DirectoryWatcher {
     watchers.add(this);
   }
 
-  final _eventsController = new StreamController<WatchEvent>();
+  final _eventsController = StreamController<WatchEvent>();
 
   @override
   Stream<WatchEvent> get events => _eventsController.stream;
 
   @override
-  Future get ready => new Future(() {});
+  Future get ready => Future(() {});
 
   @override
   bool get isReady => true;
@@ -38,7 +38,7 @@ class FakeWatcher implements DirectoryWatcher {
   static void notifyWatchers(WatchEvent event) {
     for (var watcher in watchers) {
       if (event.path.startsWith(watcher.path)) {
-        watcher._eventsController.add(new WatchEvent(event.type, event.path));
+        watcher._eventsController.add(WatchEvent(event.type, event.path));
       }
     }
   }

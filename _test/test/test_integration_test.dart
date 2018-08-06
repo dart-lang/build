@@ -20,8 +20,8 @@ void main() {
         testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
     printOnFailure(result.stderr.toString());
     expect(result.exitCode, isNot(ExitCode.success));
-    expect(result.stdout,
-        matches(new RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
+    expect(
+        result.stdout, matches(RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
     expect(result.stdout, isNot(contains('.js')));
   });
 

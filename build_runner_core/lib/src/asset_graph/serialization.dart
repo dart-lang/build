@@ -13,7 +13,7 @@ const _version = 21;
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
   // Iteration order does not matter
-  final _idToAssetId = new HashMap<int, AssetId>();
+  final _idToAssetId = HashMap<int, AssetId>();
   final Map _serializedGraph;
 
   _AssetGraphDeserializer(List<int> bytes)
@@ -22,11 +22,11 @@ class _AssetGraphDeserializer {
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
     if (_serializedGraph['version'] != _version) {
-      throw new AssetGraphVersionException(
+      throw AssetGraphVersionException(
           _serializedGraph['version'] as int, _version);
     }
 
-    var graph = new AssetGraph._(
+    var graph = AssetGraph._(
         _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
         _serializedGraph['dart_version'] as String);
 
@@ -36,7 +36,7 @@ class _AssetGraphDeserializer {
     var assetPaths = _serializedGraph['assetPaths'] as List;
     for (var i = 0; i < assetPaths.length; i += 2) {
       var packageName = packageNames[assetPaths[i + 1] as int] as String;
-      _idToAssetId[i ~/ 2] = new AssetId(packageName, assetPaths[i] as String);
+      _idToAssetId[i ~/ 2] = AssetId(packageName, assetPaths[i] as String);
     }
 
     // Read in all the nodes and their outputs.
@@ -76,16 +76,16 @@ class _AssetGraphDeserializer {
     switch (typeId) {
       case _NodeType.Source:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new SourceAssetNode(id, lastKnownDigest: digest);
+        node = SourceAssetNode(id, lastKnownDigest: digest);
         break;
       case _NodeType.SyntheticSource:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new SyntheticSourceAssetNode(id);
+        node = SyntheticSourceAssetNode(id);
         break;
       case _NodeType.Generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
         var offset = _AssetField.values.length;
-        node = new GeneratedAssetNode(
+        node = GeneratedAssetNode(
           id,
           phaseNumber:
               serializedNode[_GeneratedField.PhaseNumber.index + offset] as int,
@@ -103,7 +103,7 @@ class _AssetGraphDeserializer {
                   as int],
           globs:
               (serializedNode[_GeneratedField.Globs.index + offset] as Iterable)
-                  .map((pattern) => new Glob(pattern as String))
+                  .map((pattern) => Glob(pattern as String))
                   .toSet(),
           lastKnownDigest: digest,
           previousInputsDigest: _deserializeDigest(serializedNode[
@@ -114,20 +114,20 @@ class _AssetGraphDeserializer {
         break;
       case _NodeType.Internal:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new InternalAssetNode(id, lastKnownDigest: digest);
+        node = InternalAssetNode(id, lastKnownDigest: digest);
         break;
       case _NodeType.BuilderOptions:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new BuilderOptionsAssetNode(id, digest);
+        node = BuilderOptionsAssetNode(id, digest);
         break;
       case _NodeType.Placeholder:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = new PlaceHolderAssetNode(id);
+        node = PlaceHolderAssetNode(id);
         break;
       case _NodeType.PostProcessAnchor:
         assert(serializedNode.length == _WrappedPostProcessAnchorNode._length);
         var offset = _AssetField.values.length;
-        node = new PostProcessAnchorNode(
+        node = PostProcessAnchorNode(
             id,
             _idToAssetId[
                 serializedNode[_PostAnchorField.PrimaryInput.index + offset]
@@ -158,7 +158,7 @@ class _AssetGraphDeserializer {
 /// Serializes an [AssetGraph] into a [Map].
 class _AssetGraphSerializer {
   // Iteration order does not matter
-  final _assetIdToId = new HashMap<AssetId, int>();
+  final _assetIdToId = HashMap<AssetId, int>();
 
   final AssetGraph _graph;
 
@@ -190,11 +190,11 @@ class _AssetGraphSerializer {
 
   List _serializeNode(AssetNode node) {
     if (node is GeneratedAssetNode) {
-      return new _WrappedGeneratedAssetNode(node, this);
+      return _WrappedGeneratedAssetNode(node, this);
     } else if (node is PostProcessAnchorNode) {
-      return new _WrappedPostProcessAnchorNode(node, this);
+      return _WrappedPostProcessAnchorNode(node, this);
     } else {
-      return new _WrappedAssetNode(node, this);
+      return _WrappedAssetNode(node, this);
     }
   }
 }
@@ -255,7 +255,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
   int get length => _length;
 
   @override
-  set length(_) => throw new UnsupportedError(
+  set length(_) => throw UnsupportedError(
       'length setter not unsupported for WrappedAssetNode');
 
   @override
@@ -278,7 +278,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
         } else if (node is PostProcessAnchorNode) {
           return _NodeType.PostProcessAnchor.index;
         } else {
-          throw new StateError('Unrecognized node type');
+          throw StateError('Unrecognized node type');
         }
         break;
       case _AssetField.Id:
@@ -298,13 +298,13 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .map((id) => serializer._assetIdToId[id])
             .toList(growable: false);
       default:
-        throw new RangeError.index(index, this);
+        throw RangeError.index(index, this);
     }
   }
 
   @override
   operator []=(_, __) =>
-      throw new UnsupportedError('[]= not supported for WrappedAssetNode');
+      throw UnsupportedError('[]= not supported for WrappedAssetNode');
 }
 
 /// Wraps a [GeneratedAssetNode] in a class that implements [List] instead of
@@ -355,7 +355,7 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
       case _GeneratedField.IsHidden:
         return _serializeBool(generatedNode.isHidden);
       default:
-        throw new RangeError.index(index, this);
+        throw RangeError.index(index, this);
     }
   }
 }
@@ -396,14 +396,13 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
             ? serializer._assetIdToId[wrappedNode.primaryInput]
             : null;
       default:
-        throw new RangeError.index(index, this);
+        throw RangeError.index(index, this);
     }
   }
 }
 
-Digest _deserializeDigest(String serializedDigest) => serializedDigest == null
-    ? null
-    : new Digest(base64.decode(serializedDigest));
+Digest _deserializeDigest(String serializedDigest) =>
+    serializedDigest == null ? null : Digest(base64.decode(serializedDigest));
 
 String _serializeDigest(Digest digest) =>
     digest == null ? null : base64.encode(digest.bytes);

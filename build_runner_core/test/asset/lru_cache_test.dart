@@ -12,7 +12,7 @@ main() {
   final maxTotalWeight = 100;
 
   setUp(() {
-    cache = new LruCache(maxIndividualWeight, maxTotalWeight, (v) => v);
+    cache = LruCache(maxIndividualWeight, maxTotalWeight, (v) => v);
   });
 
   test('can cache values', () {

@@ -11,17 +11,16 @@ import 'package:path/path.dart' as p;
 
 Builder devCompilerBuilder(_) => const DevCompilerBuilder();
 Builder webEntrypointBuilder(BuilderOptions options) =>
-    new WebEntrypointBuilder.fromOptions(options);
+    WebEntrypointBuilder.fromOptions(options);
 PostProcessBuilder dart2JsArchiveExtractor(BuilderOptions options) =>
-    new Dart2JsArchiveExtractor.fromOptions(options);
+    Dart2JsArchiveExtractor.fromOptions(options);
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool ?? false)
-        ? const FileDeletingBuilder(const ['.dart', '.js.map'])
-        : const FileDeletingBuilder(const ['.dart', '.js.map'],
-            isEnabled: false);
+        ? const FileDeletingBuilder(['.dart', '.js.map'])
+        : const FileDeletingBuilder(['.dart', '.js.map'], isEnabled: false);
 
 const ddcKernelExtension = '.ddc.dill';
-Builder ddcKernelBuilder(_) => new KernelBuilder(
+Builder ddcKernelBuilder(_) => KernelBuilder(
     summaryOnly: true,
     sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
     outputExtension: ddcKernelExtension);

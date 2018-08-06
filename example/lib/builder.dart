@@ -6,8 +6,8 @@ import 'package:build/build.dart';
 
 import 'example.dart';
 
-Builder copyBuilder(BuilderOptions options) => new CopyBuilder();
+Builder copyBuilder(BuilderOptions options) => CopyBuilder();
 
-Builder resolvingBuilder(BuilderOptions options) => new ResolvingBuilder();
+Builder resolvingBuilder(BuilderOptions options) => ResolvingBuilder();
 
-Builder cssBuilder(BuilderOptions options) => new CssBuilder();
+Builder cssBuilder(BuilderOptions options) => CssBuilder();

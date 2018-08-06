@@ -7,11 +7,10 @@ import 'dart:async';
 import 'package:build/build.dart';
 
 BuilderOptions builderOptionsFromJson(Map config) =>
-    new BuilderOptions(new Map<String, dynamic>.from(config));
+    BuilderOptions(Map<String, dynamic>.from(config));
 
-final _defaultDependenciesZoneKey =
-    new Symbol('buildConfigDefaultDependencies');
-final _packageZoneKey = new Symbol('buildConfigPackage');
+final _defaultDependenciesZoneKey = Symbol('buildConfigDefaultDependencies');
+final _packageZoneKey = Symbol('buildConfigPackage');
 
 T runInBuildConfigZone<T>(
         T fn(), String package, List<String> defaultDependencies) =>
@@ -23,7 +22,7 @@ T runInBuildConfigZone<T>(
 String get currentPackage {
   var package = Zone.current[_packageZoneKey] as String;
   if (package == null) {
-    throw new StateError(
+    throw StateError(
         'Must be running inside a build config zone, which can be done using '
         'the `runInBuildConfigZone` function.');
   }
@@ -34,7 +33,7 @@ List<String> get currentPackageDefaultDependencies {
   var defaultDependencies =
       Zone.current[_defaultDependenciesZoneKey] as List<String>;
   if (defaultDependencies == null) {
-    throw new StateError(
+    throw StateError(
         'Must be running inside a build config zone, which can be done using '
         'the `runInBuildConfigZone` function.');
   }

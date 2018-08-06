@@ -17,15 +17,15 @@ abstract class AssetNode {
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
-  final Set<AssetId> primaryOutputs = new Set<AssetId>();
+  final Set<AssetId> primaryOutputs = Set<AssetId>();
 
   /// The [AssetId]s of all generated assets which are output by a [Builder]
   /// which reads this asset.
-  final Set<AssetId> outputs = new Set<AssetId>();
+  final Set<AssetId> outputs = Set<AssetId>();
 
   /// The [AssetId]s of all [PostProcessAnchorNode] assets for which this node
   /// is the primary input.
-  final Set<AssetId> anchorOutputs = new Set<AssetId>();
+  final Set<AssetId> anchorOutputs = Set<AssetId>();
 
   /// The [Digest] for this node in its last known state.
   ///
@@ -44,7 +44,7 @@ abstract class AssetNode {
 
   /// The IDs of the [PostProcessAnchorNode] for post process builder which
   /// requested to delete this asset.
-  final Set<AssetId> deletedBy = new Set<AssetId>();
+  final Set<AssetId> deletedBy = Set<AssetId>();
 
   /// Whether the node is deleted.
   ///
@@ -178,10 +178,10 @@ class GeneratedAssetNode extends AssetNode {
     @required this.isFailure,
     @required this.primaryInput,
     @required this.builderOptionsId,
-  })  : this.globs = globs ?? new Set<Glob>(),
+  })  : this.globs = globs ?? Set<Glob>(),
         this.inputs = inputs != null
-            ? new SplayTreeSet.from(inputs)
-            : new SplayTreeSet<AssetId>(),
+            ? SplayTreeSet.from(inputs)
+            : SplayTreeSet<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override
@@ -253,7 +253,7 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
 
   factory PostProcessAnchorNode.forInputAndAction(
       AssetId primaryInput, int actionNumber, AssetId builderOptionsId) {
-    return new PostProcessAnchorNode(
+    return PostProcessAnchorNode(
         primaryInput.addExtension('.post_anchor.$actionNumber'),
         primaryInput,
         actionNumber,

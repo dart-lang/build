@@ -59,20 +59,20 @@ class AssetId implements Comparable<AssetId> {
     final parsedUri = Uri.parse(uri);
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
-        return new AssetId(parsedUri.pathSegments.first,
+        return AssetId(parsedUri.pathSegments.first,
             p.url.join('lib', p.url.joinAll(parsedUri.pathSegments.skip(1))));
       } else if (parsedUri.scheme == 'asset') {
-        return new AssetId(parsedUri.pathSegments.first,
+        return AssetId(parsedUri.pathSegments.first,
             p.url.joinAll(parsedUri.pathSegments.skip(1)));
       }
-      throw new UnsupportedError(
+      throw UnsupportedError(
           'Cannot resolve $uri; only "package" and "asset" schemes supported');
     }
     if (from == null) {
-      throw new ArgumentError.value(from, 'from',
+      throw ArgumentError.value(from, 'from',
           'An AssetId "from" must be specified to resolve a relative URI');
     }
-    return new AssetId(p.url.normalize(from.package),
+    return AssetId(p.url.normalize(from.package),
         p.url.join(p.url.dirname(from.path), uri));
   }
 
@@ -84,19 +84,19 @@ class AssetId implements Comparable<AssetId> {
   factory AssetId.parse(String description) {
     var parts = description.split('|');
     if (parts.length != 2) {
-      throw new FormatException('Could not parse "$description".');
+      throw FormatException('Could not parse "$description".');
     }
 
     if (parts[0].isEmpty) {
-      throw new FormatException(
+      throw FormatException(
           'Cannot have empty package name in "$description".');
     }
 
     if (parts[1].isEmpty) {
-      throw new FormatException('Cannot have empty path in "$description".');
+      throw FormatException('Cannot have empty path in "$description".');
     }
 
-    return new AssetId(parts[0], parts[1]);
+    return AssetId(parts[0], parts[1]);
   }
 
   /// A `package:` URI suitable for use directly with other systems if this
@@ -128,13 +128,12 @@ class AssetId implements Comparable<AssetId> {
 
   /// Returns a new [AssetId] with the same [package] as this one and with the
   /// [path] extended to include [extension].
-  AssetId addExtension(String extension) =>
-      new AssetId(package, '$path$extension');
+  AssetId addExtension(String extension) => AssetId(package, '$path$extension');
 
   /// Returns a new [AssetId] with the same [package] and [path] as this one
   /// but with file extension [newExtension].
   AssetId changeExtension(String newExtension) =>
-      new AssetId(package, p.withoutExtension(path) + newExtension);
+      AssetId(package, p.withoutExtension(path) + newExtension);
 
   @override
   String toString() => '$package|$path';
@@ -146,7 +145,7 @@ class AssetId implements Comparable<AssetId> {
 
 String _normalizePath(String path) {
   if (p.isAbsolute(path)) {
-    throw new ArgumentError.value(path, 'Asset paths must be relative.');
+    throw ArgumentError.value(path, 'Asset paths must be relative.');
   }
 
   // Normalize path separators so that they are always "/" in the AssetID.
@@ -155,7 +154,7 @@ String _normalizePath(String path) {
   // Collapse "." and "..".
   final collapsed = p.posix.normalize(path);
   if (collapsed.startsWith('../')) {
-    throw new ArgumentError.value(
+    throw ArgumentError.value(
         path, 'Asset paths may not reach outside the package.');
   }
   return collapsed;
@@ -166,6 +165,5 @@ Uri _constructUri(AssetId id) {
   final isLib = originalSegments.first == 'lib';
   final scheme = isLib ? 'package' : 'asset';
   final pathSegments = isLib ? originalSegments.skip(1) : originalSegments;
-  return new Uri(
-      scheme: scheme, pathSegments: [id.package]..addAll(pathSegments));
+  return Uri(scheme: scheme, pathSegments: [id.package]..addAll(pathSegments));
 }
