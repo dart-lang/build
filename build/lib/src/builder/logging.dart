@@ -13,8 +13,8 @@ Logger get log => Zone.current[logKey] as Logger ?? _default;
 
 /// Runs [fn] in an error handling [Zone].
 ///
-/// Any calls to [print] will be logged with `log.info`, and any errors will be
-/// logged with `log.severe`.
+/// Any calls to [print] will be logged with `log.warning`, and any errors will
+/// be logged with `log.severe`.
 ///
 /// Completes with the first error or result of `fn`, whichever comes first.
 Future<T> scopeLogAsync<T>(Future<T> fn(), Logger log) {
@@ -22,7 +22,7 @@ Future<T> scopeLogAsync<T>(Future<T> fn(), Logger log) {
   runZoned(fn,
       zoneSpecification:
           new ZoneSpecification(print: (self, parent, zone, message) {
-        log.info(message);
+        log.warning(message);
       }),
       zoneValues: {logKey: log},
       onError: (Object e, StackTrace s) {
