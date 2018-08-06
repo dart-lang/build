@@ -96,6 +96,27 @@ targets:
           - --fast-startup
 ```
 
+## Including additional sources in your build
+
+By default, the `build_runner` package only includes some specifically
+whitelisted directories, derived from the [package layout conventions](
+https://www.dartlang.org/tools/pub/package-layout).
+
+If you have some additional files which you would like to be included as part of
+the build, you will need a custom `build.yaml` file. You will want to modify the
+`sources` field on the `$default` target:
+
+```yaml
+targets:
+  $default:
+    sources:
+      - my_custom_sources/**
+      - lib/**
+      - web/**
+      # Note that it is important to include these in the default target.
+      - pubspec.*
+```
+
 ## Compatibility with other packages
 
 ### Upgrading from transformers
