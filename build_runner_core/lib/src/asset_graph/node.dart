@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
@@ -285,6 +286,10 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   GlobAssetNode(AssetId id, this.glob, this.phaseNumber, this.state,
       {this.inputs, Digest lastKnownDigest, this.results})
       : super(id, lastKnownDigest: lastKnownDigest);
+
+  static AssetId createId(String package, Glob glob, int phaseNum) =>
+      new AssetId(package,
+          'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');
 }
 
 /// A node which has [inputs] and a [NodeState].

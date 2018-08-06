@@ -394,7 +394,7 @@ class _SingleBuild {
     return node.isReadable && node.isValidInput;
   }
 
-  FutureOr<dynamic> _ensureAssetIsBuilt(AssetNode node) {
+  FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {
     if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
       return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
     }
@@ -655,8 +655,7 @@ class _SingleBuild {
 
   Future<GlobAssetNode> _getUpdatedGlobNode(
       Glob glob, String package, int phaseNum) {
-    var globNodeId = new AssetId(
-        package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');
+    var globNodeId = GlobAssetNode.createId(package, glob, phaseNum);
     var globNode = _assetGraph.get(globNodeId) as GlobAssetNode;
     if (globNode == null) {
       globNode = new GlobAssetNode(
@@ -668,7 +667,7 @@ class _SingleBuild {
         doAfter(_updateGlobNodeIfNecessary(globNode), (_) => globNode));
   }
 
-  FutureOr<Null> _updateGlobNodeIfNecessary(GlobAssetNode globNode) {
+  FutureOr<void> _updateGlobNodeIfNecessary(GlobAssetNode globNode) {
     if (globNode.state == NodeState.upToDate) return null;
 
     return _lazyGlobs.putIfAbsent(globNode.id, () async {
@@ -689,11 +688,11 @@ class _SingleBuild {
           actualMatches.add(node.id);
         }
       }
-      globNode.results = actualMatches;
-
-      globNode.state = NodeState.upToDate;
-      globNode.lastKnownDigest =
-          md5.convert(utf8.encode(globNode.results.join(' ')));
+      globNode
+        ..results = actualMatches
+        ..state = NodeState.upToDate
+        ..lastKnownDigest =
+            md5.convert(utf8.encode(globNode.results.join(' ')));
 
       // ignore: unawaited_futures
       _lazyGlobs.remove(globNode.id);
