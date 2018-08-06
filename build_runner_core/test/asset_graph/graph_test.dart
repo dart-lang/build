@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -84,8 +85,14 @@ void main() {
       });
 
       test('serialize/deserialize', () {
+        var globNode = new GlobAssetNode(makeAssetId(), new Glob('**/*.dart'),
+            0, NodeState.definitelyNeedsUpdate,
+            inputs: new SplayTreeSet(), results: []);
+        graph.add(globNode);
         for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
+          globNode.inputs.add(node.id);
+          node.outputs.add(globNode.id);
           graph.add(node);
           var phaseNum = n;
           var builderOptionsNode =
@@ -109,6 +116,7 @@ void main() {
                 isHidden: g % 3 == 0);
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
+            globNode.outputs.add(generatedNode.id);
             builderOptionsNode.outputs.add(generatedNode.id);
             if (g % 2 == 0) {
               node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
@@ -117,7 +125,8 @@ void main() {
             var syntheticNode = new SyntheticSourceAssetNode(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);
 
-            generatedNode.inputs.addAll([node.id, syntheticNode.id]);
+            generatedNode.inputs
+                .addAll([node.id, syntheticNode.id, globNode.id]);
             if (g % 2 == 1) {
               // Fake a digest using the id, we just care that this gets
               // serialized/deserialized properly.
@@ -333,31 +342,46 @@ void main() {
         });
 
         test(
-            'a new or deleted asset matching a glob invalidates the glob node '
-            'and its outputs', () async {
+            'a new, modified, or deleted asset matching a glob invalidates the '
+            'glob node and its outputs', () async {
           var primaryOutputNode =
               graph.get(primaryOutputId) as GeneratedAssetNode;
           primaryOutputNode.state = NodeState.upToDate;
           var globNode = new GlobAssetNode(primaryInputId.addExtension('.glob'),
-              new Glob('lib/*.cool'), 0, NodeState.upToDate);
+              new Glob('lib/*.cool'), 0, NodeState.upToDate,
+              inputs: new SplayTreeSet());
           primaryOutputNode.inputs.add(globNode.id);
           globNode.outputs.add(primaryOutputId);
           graph.add(globNode);
 
           var coolAssetId = new AssetId('foo', 'lib/really.cool');
-          var changes = {coolAssetId: ChangeType.ADD};
-          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
-              (_) => new Future.value(null), digestReader);
-          expect(primaryOutputNode.state, NodeState.mayNeedUpdate);
-          expect(globNode.state, NodeState.mayNeedUpdate);
 
+          checkChangeType(ChangeType changeType) async {
+            var changes = {coolAssetId: changeType};
+            await graph.updateAndInvalidate(buildPhases, changes, 'foo',
+                (_) => new Future.value(null), digestReader);
+            expect(primaryOutputNode.state, NodeState.mayNeedUpdate,
+                reason: 'A $changeType matching a glob should invalidate its '
+                    'outputs.');
+            expect(globNode.state, NodeState.mayNeedUpdate,
+                reason: 'A $changeType matching a glob should invalidate the '
+                    'node.');
+          }
+
+          await checkChangeType(ChangeType.ADD);
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
-          changes = {coolAssetId: ChangeType.REMOVE};
-          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
-              (_) => new Future.value(null), digestReader);
-          expect(primaryOutputNode.state, NodeState.mayNeedUpdate);
-          expect(globNode.state, NodeState.mayNeedUpdate);
+
+          await checkChangeType(ChangeType.REMOVE);
+          primaryOutputNode.state = NodeState.upToDate;
+          globNode.state = NodeState.upToDate;
+
+          await checkChangeType(ChangeType.ADD);
+          primaryOutputNode.state = NodeState.upToDate;
+          globNode.state = NodeState.upToDate;
+          globNode.inputs.add(coolAssetId);
+          graph.get(coolAssetId).outputs.add(globNode.id);
+          await checkChangeType(ChangeType.MODIFY);
         });
       });
     });
