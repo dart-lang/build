@@ -31,9 +31,6 @@ class _RealClass {
   Future<String> methodReturningFuture() => new Future.value("Real");
   Stream<String> methodReturningStream() => new Stream.fromIterable(["Real"]);
   String get getter => "Real";
-  set setter(String arg) {
-    throw new StateError("I must be mocked");
-  }
 }
 
 abstract class _Foo {
@@ -213,7 +210,6 @@ void main() {
       expect(mock == mock, isTrue);
     });
 
-    //no need to mock setter, except if we will have spies later...
     test("should mock method with thrown result", () {
       when(mock.methodWithNormalArgs(any)).thenThrow(new StateError('Boo'));
       expect(() => mock.methodWithNormalArgs(42), throwsStateError);

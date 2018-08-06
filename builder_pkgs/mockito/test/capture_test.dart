@@ -22,6 +22,7 @@ class _RealClass {
   String methodWithNormalArgs(int x) => 'Real';
   String methodWithListArgs(List<int> x) => 'Real';
   String methodWithPositionalArgs(int x, [int y]) => 'Real';
+  String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
   set setter(String arg) {
     throw new StateError('I must be mocked');
   }
@@ -67,6 +68,11 @@ void main() {
           equals([42]));
     });
 
+    test('should capture setter invocations', () {
+      mock.setter = 'value';
+      expect(verify(mock.setter = captureAny).captured, equals(['value']));
+    });
+
     test('should capture multiple arguments', () {
       mock.methodWithPositionalArgs(1, 2);
       expect(
@@ -91,8 +97,34 @@ void main() {
       expect(verify(mock.methodWithNormalArgs(captureAny)).captured,
           equals([1, 2]));
     });
-  });
 
-  // TODO(srawlins): Test capturing in a setter.
-  // TODO(srawlins): Test capturing named arguments.
+    test('should capture invocations with named arguments', () {
+      mock.methodWithTwoNamedArgs(1, y: 42, z: 43);
+      expect(
+          verify(mock.methodWithTwoNamedArgs(any,
+                  y: captureAnyNamed('y'), z: captureAnyNamed('z')))
+              .captured,
+          equals([42, 43]));
+    });
+
+    test('should capture invocations with named arguments', () {
+      mock.methodWithTwoNamedArgs(1, y: 42, z: 43);
+      mock.methodWithTwoNamedArgs(1, y: 44, z: 45);
+      expect(
+          verify(mock.methodWithTwoNamedArgs(any,
+                  y: captureAnyNamed('y'), z: captureAnyNamed('z')))
+              .captured,
+          equals([42, 43, 44, 45]));
+    });
+
+    test('should capture invocations with named arguments', () {
+      mock.methodWithTwoNamedArgs(1, z: 42, y: 43);
+      mock.methodWithTwoNamedArgs(1, y: 44, z: 45);
+      expect(
+          verify(mock.methodWithTwoNamedArgs(any,
+                  y: captureAnyNamed('y'), z: captureAnyNamed('z')))
+              .captured,
+          equals([43, 42, 44, 45]));
+    });
+  });
 }

@@ -101,7 +101,4 @@ void main() {
           equals([1, 2]));
     });
   });
-
-  // TODO(srawlins): Test capturing in a setter.
-  // TODO(srawlins): Test capturing named arguments.
 }
