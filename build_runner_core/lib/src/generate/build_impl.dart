@@ -114,7 +114,10 @@ class BuildImpl {
     var optionalOutputTracker = new OptionalOutputTracker(
         buildDefinition.assetGraph, options.buildDirs, buildPhases);
     var finalizedReader = new FinalizedReader(
-        singleStepReader, buildDefinition.assetGraph, optionalOutputTracker);
+        singleStepReader,
+        buildDefinition.assetGraph,
+        optionalOutputTracker,
+        options.packageGraph.root.name);
     var build =
         new BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     return build;

@@ -35,8 +35,8 @@ void main() {
     assetGraph =
         await AssetGraph.build([], new Set(), new Set(), packageGraph, reader);
     watchImpl = new MockWatchImpl(
-        new FinalizedReader(
-            reader, assetGraph, new OptionalOutputTracker(assetGraph, [], [])),
+        new FinalizedReader(reader, assetGraph,
+            new OptionalOutputTracker(assetGraph, [], []), 'a'),
         packageGraph,
         assetGraph);
     serveHandler = createServeHandler(watchImpl);
