@@ -621,7 +621,7 @@ class _SingleBuild {
     } else {
       // Make sure to update the `state` field for all outputs.
       for (var id in outputs) {
-        (_assetGraph.get(id) as GeneratedAssetNode).state = NodeState.upToDate;
+        (_assetGraph.get(id) as NodeWithInputs).state = NodeState.upToDate;
       }
       return false;
     }
