@@ -102,8 +102,7 @@ void main() {
             var generatedNode = new GeneratedAssetNode(makeAssetId(),
                 phaseNumber: phaseNum,
                 primaryInput: node.id,
-                state: GeneratedNodeState
-                    .values[g % GeneratedNodeState.values.length],
+                state: NodeState.values[g % NodeState.values.length],
                 wasOutput: g % 2 == 0,
                 isFailure: phaseNum % 2 == 0,
                 builderOptionsId: builderOptionsNode.id,
@@ -261,7 +260,7 @@ void main() {
           expect(graph.contains(primaryOutputId), isTrue);
           // pretend a build happened
           (graph.get(primaryOutputId) as GeneratedAssetNode).state =
-              GeneratedNodeState.upToDate;
+              NodeState.upToDate;
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
@@ -270,7 +269,7 @@ void main() {
           expect(deletes, equals([]));
           var outputNode = graph.get(primaryOutputId) as GeneratedAssetNode;
           // But we should mark it as needing an update
-          expect(outputNode.state, GeneratedNodeState.mayNeedUpdate);
+          expect(outputNode.state, NodeState.mayNeedUpdate);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
@@ -334,26 +333,31 @@ void main() {
         });
 
         test(
-            'a new or deleted asset matching a glob definitely invalidates '
-            'a node', () async {
+            'a new or deleted asset matching a glob invalidates the glob node '
+            'and its outputs', () async {
           var primaryOutputNode =
               graph.get(primaryOutputId) as GeneratedAssetNode;
-          primaryOutputNode.globs.add(new Glob('lib/*.cool'));
-          primaryOutputNode.state = GeneratedNodeState.upToDate;
+          primaryOutputNode.state = NodeState.upToDate;
+          var globNode = new GlobAssetNode(primaryInputId.addExtension('.glob'),
+              new Glob('lib/*.cool'), 0, NodeState.upToDate);
+          primaryOutputNode.inputs.add(globNode.id);
+          globNode.outputs.add(primaryOutputId);
+          graph.add(globNode);
 
           var coolAssetId = new AssetId('foo', 'lib/really.cool');
           var changes = {coolAssetId: ChangeType.ADD};
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (_) => new Future.value(null), digestReader);
-          expect(primaryOutputNode.state,
-              GeneratedNodeState.definitelyNeedsUpdate);
+          expect(primaryOutputNode.state, NodeState.mayNeedUpdate);
+          expect(globNode.state, NodeState.mayNeedUpdate);
 
-          primaryOutputNode.state = GeneratedNodeState.upToDate;
+          primaryOutputNode.state = NodeState.upToDate;
+          globNode.state = NodeState.upToDate;
           changes = {coolAssetId: ChangeType.REMOVE};
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (_) => new Future.value(null), digestReader);
-          expect(primaryOutputNode.state,
-              GeneratedNodeState.definitelyNeedsUpdate);
+          expect(primaryOutputNode.state, NodeState.mayNeedUpdate);
+          expect(globNode.state, NodeState.mayNeedUpdate);
         });
       });
     });
@@ -471,7 +475,7 @@ void main() {
         graph.add(new SyntheticSourceAssetNode(nodeToRead)
           ..outputs.add(outputReadingNode));
         (graph.get(outputReadingNode) as GeneratedAssetNode)
-          ..state = GeneratedNodeState.upToDate
+          ..state = NodeState.upToDate
           ..inputs.add(nodeToRead);
 
         final invalidatedNodes = await graph.updateAndInvalidate(
