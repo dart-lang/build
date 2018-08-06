@@ -104,7 +104,7 @@ targets:
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'b.txt'), 'b');
         var buildPhases = [
-          new InBuildPhase(new TestBuilder(), 'a', hideOutput: true)
+          new InBuildPhase(new TestBuilder(), 'a', hideOutput: false)
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -129,7 +129,7 @@ targets:
 
         generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.state, NodeState.mayNeedUpdate);
+        expect(generatedANode.state, NodeState.definitelyNeedsUpdate);
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/b.txt')), isFalse);
         expect(
@@ -218,12 +218,15 @@ targets:
 
       test('for changed BuilderOptions', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
+        await createFile(p.join('lib', 'a.txt.copy'), 'a');
+        await createFile(p.join('lib', 'a.txt.clone'), 'a');
+        var inputSources = const InputSet(include: const ['lib/a.txt']);
         var buildPhases = [
-          new InBuildPhase(new TestBuilder(), 'a', hideOutput: true),
+          new InBuildPhase(new TestBuilder(), 'a',
+              hideOutput: false, targetSources: inputSources),
           new InBuildPhase(
               new TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
-              targetSources: const InputSet(include: const ['**/*.txt']),
-              hideOutput: true),
+              targetSources: inputSources, hideOutput: false),
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -247,11 +250,11 @@ targets:
         var newBuildPhases = [
           new InBuildPhase(new TestBuilder(), 'a',
               builderOptions: new BuilderOptions({'test': 'option'}),
-              hideOutput: true),
+              targetSources: inputSources,
+              hideOutput: false),
           new InBuildPhase(
               new TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
-              targetSources: const InputSet(include: const ['**/*.txt']),
-              hideOutput: true),
+              targetSources: inputSources, hideOutput: false),
         ];
         var buildDefinition = await BuildDefinition.prepareWorkspace(
             environment, options, newBuildPhases);
@@ -267,7 +270,7 @@ targets:
         var generatedACloneNode =
             newAssetGraph.get(generatedACloneId) as GeneratedAssetNode;
         expect(generatedACloneNode, isNotNull);
-        expect(generatedACloneNode.state, NodeState.mayNeedUpdate);
+        expect(generatedACloneNode.state, NodeState.upToDate);
       });
     });
 
