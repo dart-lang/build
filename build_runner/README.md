@@ -99,6 +99,7 @@ Some commands also have additional options:
 ##### serve
 
 - `--hostname`: The host to run the server on.
+- `--live-reload`: Enables automatic page reloading on rebuilds.
 
 Trailing args of the form `<directory>:<port>` are supported to customize what
 directories are served, and on what ports.

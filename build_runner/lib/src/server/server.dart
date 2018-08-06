@@ -12,6 +12,8 @@ import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
+import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../generate/watch_impl.dart';
 import 'asset_graph_handler.dart';
@@ -19,6 +21,9 @@ import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
+final _buildUpdatesProtocol = r'$livereload';
+final _buildUpdatesMessage = 'update';
+final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = new Logger('Serve');
 
@@ -43,10 +48,13 @@ class ServeHandler implements BuildState {
   final Future<AssetHandler> _assetHandler;
   final Future<AssetGraphHandler> _assetGraphHandler;
 
+  final _webSocketHandler = BuildUpdatesWebSocketHandler();
+
   ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
       this._rootPackage) {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
+      _webSocketHandler.emitUpdateMessage(result);
     });
   }
 
@@ -55,14 +63,17 @@ class ServeHandler implements BuildState {
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
-  shelf.Handler handlerFor(String rootDir, {bool logRequests}) {
+  shelf.Handler handlerFor(String rootDir,
+      {bool logRequests, bool liveReload}) {
+    liveReload ??= false;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
       throw new ArgumentError.value(
           rootDir, 'rootDir', 'Only top level directories are supported');
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
-    var cascade = new shelf.Cascade()
+    var cascade = new shelf.Cascade();
+    cascade = (liveReload ? cascade.add(_webSocketHandler.handler) : cascade)
         .add(_blockOnCurrentBuild)
         .add((shelf.Request request) async {
       if (request.url.path == _performancePath) {
@@ -76,12 +87,14 @@ class ServeHandler implements BuildState {
       var assetHandler = await _assetHandler;
       return assetHandler.handle(request, rootDir);
     });
-    var handler = logRequests
-        ? const shelf.Pipeline()
-            .addMiddleware(_logRequests)
-            .addHandler(cascade.handler)
-        : cascade.handler;
-    return handler;
+    var pipeline = shelf.Pipeline();
+    if (logRequests) {
+      pipeline = pipeline.addMiddleware(_logRequests);
+    }
+    if (liveReload) {
+      pipeline = pipeline.addMiddleware(_injectBuildUpdatesClientCode);
+    }
+    return pipeline.addHandler(cascade.handler);
   }
 
   Future<shelf.Response> _blockOnCurrentBuild(_) async {
@@ -109,6 +122,72 @@ class ServeHandler implements BuildState {
     }
   }
 }
+
+/// Class that manages web socket connection handler to inform clients about
+/// build updates
+class BuildUpdatesWebSocketHandler {
+  final activeConnections = <WebSocketChannel>[];
+  final shelf.Handler Function(Function, {Iterable<String> protocols})
+      _handlerFactory;
+  shelf.Handler _internalHandler;
+
+  BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
+    // Because of dart-lang/shelf_web_socket#11, webSocketHandler doesn't work
+    // with strongly typed functions. As a workaround diskard type information
+    // wrapping it with lambda for now
+    var untypedTearOff = (webSocket, protocol) =>
+        _handleConnection(webSocket as WebSocketChannel, protocol as String);
+    _internalHandler =
+        _handlerFactory(untypedTearOff, protocols: [_buildUpdatesProtocol]);
+  }
+
+  shelf.Handler get handler => _internalHandler;
+
+  void emitUpdateMessage(BuildResult buildResult) {
+    for (var webSocket in activeConnections) {
+      webSocket.sink.add(_buildUpdatesMessage);
+    }
+  }
+
+  void _handleConnection(WebSocketChannel webSocket, String protocol) async {
+    activeConnections.add(webSocket);
+    await webSocket.stream.drain();
+    activeConnections.remove(webSocket);
+  }
+}
+
+shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
+  return (shelf.Request request) async {
+    if (!request.url.path.endsWith('.js')) {
+      return innerHandler(request);
+    }
+    var response = await innerHandler(request);
+    // TODO: Find a way how to check and/or modify body without reading it whole
+    var body = await response.readAsString();
+    if (body.startsWith(entrypointExtensionMarker)) {
+      body += _buildUpdatesInjectedJS;
+    }
+    return response.change(body: body);
+  };
+}
+
+/// Hot-reload config
+///
+/// Listen WebSocket for updates in build results
+///
+/// Now only live-reload functional - just reload page on update message
+final _buildUpdatesInjectedJS = '''\n
+// Injected by build_runner for live reload support
+(function() {
+  var ws = new WebSocket('ws://' + location.host, ['$_buildUpdatesProtocol']);
+  ws.onmessage = function(event) {
+    console.log(event);
+    if(event.data === '$_buildUpdatesMessage'){
+      location.reload();
+    }
+  };
+}());
+''';
 
 class AssetHandler {
   final FinalizedReader _reader;
