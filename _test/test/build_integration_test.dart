@@ -21,7 +21,7 @@ void main() {
     test('creates expected outputs', () async {
       var generated =
           await readGeneratedFileAsString('_test/lib/hello.txt.post');
-      var original = await new File('lib/hello.txt').readAsString();
+      var original = await File('lib/hello.txt').readAsString();
       expect(generated, equals(original));
     });
 
@@ -81,7 +81,7 @@ void main() {
         'Restores previously deleted outputs if they are not deleted in subsequent builds',
         () async {
       final dartSource =
-          new File(p.join('build', 'web', 'packages', '_test', 'app.dart'));
+          File(p.join('build', 'web', 'packages', '_test', 'app.dart'));
       await runBuild(trailingArgs: [
         '--define=build_web_compilers|dart_source_cleanup=enabled=true',
         '--output',

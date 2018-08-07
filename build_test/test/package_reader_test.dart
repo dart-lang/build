@@ -11,10 +11,10 @@ void main() {
   group('$PackageAssetReader', () {
     PackageAssetReader reader;
 
-    final buildAsset = new AssetId('build', 'lib/build.dart');
-    final buildTest = new AssetId('build_test', 'lib/build_test.dart');
-    final buildMissing = new AssetId('build_test', 'lib/build_missing.dart');
-    final thisFile = new AssetId('build_test', 'test/package_reader_test.dart');
+    final buildAsset = AssetId('build', 'lib/build.dart');
+    final buildTest = AssetId('build_test', 'lib/build_test.dart');
+    final buildMissing = AssetId('build_test', 'lib/build_missing.dart');
+    final thisFile = AssetId('build_test', 'test/package_reader_test.dart');
 
     setUp(() async {
       reader = await PackageAssetReader.currentIsolate(
@@ -36,18 +36,16 @@ void main() {
     });
 
     test('should be able to use `findAssets` for files in lib', () {
-      expect(
-          reader.findAssets(new Glob('lib/*.dart')), emitsThrough(buildTest));
+      expect(reader.findAssets(Glob('lib/*.dart')), emitsThrough(buildTest));
     });
 
     test('should be able to use `findAssets` for files in test', () {
-      expect(
-          reader.findAssets(new Glob('test/*.dart')), emitsThrough(thisFile));
+      expect(reader.findAssets(Glob('test/*.dart')), emitsThrough(thisFile));
     });
 
     test('should be able to use `findAssets` for files in non-root packages',
         () {
-      expect(reader.findAssets(new Glob('lib/*.dart'), package: 'build'),
+      expect(reader.findAssets(Glob('lib/*.dart'), package: 'build'),
           emitsThrough(buildAsset));
     });
   });
@@ -57,17 +55,17 @@ void main() {
 
     final exampleLibA = 'test/_libs/example_a/';
     final exampleLibB = 'test/_libs/example_b/';
-    final exampleLibAFile = new AssetId('example_a', 'lib/example_a.dart');
-    final exampleLibBFile = new AssetId('example_b', 'lib/example_b.dart');
+    final exampleLibAFile = AssetId('example_a', 'lib/example_a.dart');
+    final exampleLibBFile = AssetId('example_b', 'lib/example_b.dart');
 
     test('should resolve one library', () async {
-      reader = new PackageAssetReader.forPackageRoot('test/_libs');
+      reader = PackageAssetReader.forPackageRoot('test/_libs');
       expect(await reader.canRead(exampleLibAFile), isTrue);
       expect(await reader.canRead(exampleLibBFile), isTrue);
     });
 
     test('should resolve multiple libraries', () async {
-      reader = new PackageAssetReader.forPackages({
+      reader = PackageAssetReader.forPackages({
         'example_a': exampleLibA,
         'example_b': exampleLibB,
       });

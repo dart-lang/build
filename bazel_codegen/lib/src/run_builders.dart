@@ -40,11 +40,11 @@ Future<Null> runBuilders(
       .where((id) => buildExtensions.keys.any(id.path.endsWith))
       .toList();
 
-  var allWrittenAssets = new Set<AssetId>();
+  var allWrittenAssets = Set<AssetId>();
 
-  var inputSrcs = new Set<AssetId>()..addAll(srcAssets);
+  var inputSrcs = Set<AssetId>()..addAll(srcAssets);
   for (var builder in builders.map((f) => f(builderOptions))) {
-    var writerSpy = new AssetWriterSpy(writer);
+    var writerSpy = AssetWriterSpy(writer);
     reader.startPhase(writerSpy);
     try {
       if (inputSrcs.isNotEmpty) {
@@ -81,7 +81,7 @@ Future<Null> runBuilders(
         for (var extension in buildExtensions[inputExtension]) {
           if (!assetId.path.endsWith(inputExtension)) continue;
 
-          var expectedAssetId = new AssetId(
+          var expectedAssetId = AssetId(
               assetId.package,
               assetId.path.substring(
                       0, assetId.path.length - inputExtension.length) +

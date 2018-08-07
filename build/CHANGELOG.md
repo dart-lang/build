@@ -1,3 +1,7 @@
+## 0.12.7+4
+
+- `print` calls inside a Builder will now log at warning instead of info.
+
 ## 0.12.7+3
 
 - Throw when attempting to use a `BuildStep` after it has been completed.

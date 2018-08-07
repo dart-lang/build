@@ -33,7 +33,7 @@ Future _focus(String query) async {
   }
 
   Map nodeInfo;
-  var uri = new Uri(queryParameters: {'q': query});
+  var uri = Uri(queryParameters: {'q': query});
   try {
     nodeInfo = json.decode(await HttpRequest.getString(uri.toString()))
         as Map<String, dynamic>;
@@ -56,7 +56,7 @@ Future _focus(String query) async {
   }
 
   var graphData = {'edges': nodeInfo['edges'], 'nodes': nodeInfo['nodes']};
-  _graphReference.callMethod('setData', [new js.JsObject.jsify(graphData)]);
+  _graphReference.callMethod('setData', [js.JsObject.jsify(graphData)]);
   var primaryNode = nodeInfo['primary'];
   _details.innerHtml = '<strong>ID:</strong> ${primaryNode['id']} <br />'
       '<strong>Generated:</strong> ${primaryNode['isGenerated']} <br />'

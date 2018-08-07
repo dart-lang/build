@@ -33,11 +33,11 @@ main() {
 
       // Set up all the other required inputs for this test.
       await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-      await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
-      await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
-      await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
-      await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
-      await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder(), assets);
+      await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(), assets);
+      await testBuilderAndCollectAssets(LinkedSummaryBuilder(), assets);
     });
 
     test('can compile ddc modules under lib and web', () async {
@@ -50,8 +50,7 @@ main() {
         'a|web/index$jsSourceMapExtension':
             decodedMatches(contains('index.dart')),
       };
-      await testBuilder(new DevCompilerBuilder(), assets,
-          outputs: expectedOutputs);
+      await testBuilder(DevCompilerBuilder(), assets, outputs: expectedOutputs);
     });
   });
 
@@ -65,11 +64,11 @@ main() {
 
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
-        await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
-        await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
-        await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
-        await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
+        await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
+        await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder(), assets);
+        await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(), assets);
+        await testBuilderAndCollectAssets(LinkedSummaryBuilder(), assets);
       });
 
       test('reports useful messages', () async {
@@ -78,7 +77,7 @@ main() {
               allOf(contains('String'), contains('assigned'), contains('int'))),
         };
         var logs = <LogRecord>[];
-        await testBuilder(new DevCompilerBuilder(), assets,
+        await testBuilder(DevCompilerBuilder(), assets,
             outputs: expectedOutputs, onLog: logs.add);
         expect(
             logs,
@@ -98,7 +97,7 @@ main() {
         };
 
         // Set up all the other required inputs for this test.
-        await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder(), assets);
       });
 
       test('reports useful messages', () async {
@@ -107,7 +106,7 @@ main() {
               contains('Unable to find modules for some sources')),
         };
         var logs = <LogRecord>[];
-        await testBuilder(new DevCompilerBuilder(), assets,
+        await testBuilder(DevCompilerBuilder(), assets,
             outputs: expectedOutputs, onLog: logs.add);
         expect(
             logs,

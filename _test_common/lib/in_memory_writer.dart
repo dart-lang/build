@@ -22,7 +22,7 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsBytes(id, bytes);
     FakeWatcher.notifyWatchers(
-        new WatchEvent(type, p.absolute(id.package, id.path)));
+        WatchEvent(type, p.absolute(id.package, id.path)));
   }
 
   @override
@@ -31,7 +31,7 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
     FakeWatcher.notifyWatchers(
-        new WatchEvent(type, p.absolute(id.package, id.path)));
+        WatchEvent(type, p.absolute(id.package, id.path)));
   }
 
   @override
@@ -39,6 +39,6 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     if (onDelete != null) onDelete(id);
     assets.remove(id);
     FakeWatcher.notifyWatchers(
-        new WatchEvent(ChangeType.REMOVE, p.absolute(id.package, id.path)));
+        WatchEvent(ChangeType.REMOVE, p.absolute(id.package, id.path)));
   }
 }

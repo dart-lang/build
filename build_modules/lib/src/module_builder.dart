@@ -17,8 +17,8 @@ import 'modules.dart';
 const moduleExtension = '.module';
 
 /// A map of package to corresponding clean [MetaModule].
-final _cleanMetaModules = new Resource<_CleanMetaModuleCache>(
-    () => new _CleanMetaModuleCache(),
+final _cleanMetaModules = Resource<_CleanMetaModuleCache>(
+    () => _CleanMetaModuleCache(),
     dispose: (c) => c.dispose());
 
 class _CleanMetaModuleCache {
@@ -27,13 +27,12 @@ class _CleanMetaModuleCache {
   void dispose() => _modules.clear();
 
   Future<MetaModule> find(String packageName, AssetReader reader) async {
-    var cleanMetaAsset =
-        new AssetId(packageName, 'lib/$metaModuleCleanExtension');
+    var cleanMetaAsset = AssetId(packageName, 'lib/$metaModuleCleanExtension');
     if (!await reader.canRead(cleanMetaAsset)) return null;
     var metaResult = _modules.putIfAbsent(
         packageName,
         () => Result.capture(reader.readAsString(cleanMetaAsset).then((c) =>
-            new MetaModule.fromJson(jsonDecode(c) as Map<String, dynamic>))));
+            MetaModule.fromJson(jsonDecode(c) as Map<String, dynamic>))));
     return Result.release(metaResult);
   }
 }
@@ -45,7 +44,7 @@ class _CleanMetaModuleCache {
 /// dependencies if necessary.
 Future<Module> _cleanModuleDeps(
     BuildStep buildStep, Module module, _CleanMetaModuleCache cache) async {
-  var cleanedDeps = new Set<AssetId>();
+  var cleanedDeps = Set<AssetId>();
   var depAssetToModules = <AssetId, Module>{};
   for (var dep in module.directDependencies) {
     // Since we are not using the course strategy we can safely add
@@ -66,7 +65,7 @@ Future<Module> _cleanModuleDeps(
       // phase. Need to recompute them.
       if (!depAssetToModules.containsKey(dep)) {
         var depLibrary = await buildStep.resolver.libraryFor(dep);
-        var depModule = new Module.forLibrary(depLibrary);
+        var depModule = Module.forLibrary(depLibrary);
         for (var source in depModule.sources) {
           depAssetToModules[source] = depModule;
         }
@@ -79,7 +78,7 @@ Future<Module> _cleanModuleDeps(
           .primarySource);
     }
   }
-  return new Module(module.primarySource, module.sources, cleanedDeps);
+  return Module(module.primarySource, module.sources, cleanedDeps);
 }
 
 /// Creates `.module` files for any `.dart` file that is the primary dart
@@ -89,13 +88,13 @@ class ModuleBuilder implements Builder {
   const ModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
 
   factory ModuleBuilder.forOptions(BuilderOptions options) {
-    return new ModuleBuilder(
+    return ModuleBuilder(
         isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
   }
 
   @override
   final buildExtensions = const {
-    '.dart': const [moduleExtension]
+    '.dart': [moduleExtension]
   };
 
   @override
@@ -103,7 +102,7 @@ class ModuleBuilder implements Builder {
     Module outputModule;
     var cleanMetaModules = await buildStep.fetchResource(_cleanMetaModules);
     var cleanMetaAsset =
-        new AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
+        AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
     // If we can't read the clean meta module it is likely that this package
     // is in a module cycle so fall back to the fine strategy.
     if (_isCoarse && await buildStep.canRead(cleanMetaAsset)) {
@@ -117,7 +116,7 @@ class ModuleBuilder implements Builder {
       var library = await buildStep.inputLibrary;
       if (!isPrimary(library)) return;
 
-      var module = new Module.forLibrary(library);
+      var module = Module.forLibrary(library);
       outputModule =
           await _cleanModuleDeps(buildStep, module, cleanMetaModules);
     }

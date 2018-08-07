@@ -19,7 +19,7 @@ class InMemoryAssetReader extends AssetReader
   final String rootPackage;
 
   @override
-  final Set<AssetId> assetsRead = new Set<AssetId>();
+  final Set<AssetId> assetsRead = Set<AssetId>();
 
   /// Create a new asset reader that contains [sourceAssets].
   ///
@@ -44,7 +44,7 @@ class InMemoryAssetReader extends AssetReader
       } else if (stringOrBytes is String) {
         output[id] = utf8.encode(stringOrBytes);
       } else {
-        throw new UnsupportedError('Invalid asset contents: $stringOrBytes.');
+        throw UnsupportedError('Invalid asset contents: $stringOrBytes.');
       }
     });
     return output;
@@ -58,14 +58,14 @@ class InMemoryAssetReader extends AssetReader
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    if (!await canRead(id)) throw new AssetNotFoundException(id);
+    if (!await canRead(id)) throw AssetNotFoundException(id);
     assetsRead.add(id);
     return assets[id];
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    if (!await canRead(id)) throw new AssetNotFoundException(id);
+    if (!await canRead(id)) throw AssetNotFoundException(id);
     assetsRead.add(id);
     return utf8.decode(assets[id]);
   }
@@ -74,11 +74,11 @@ class InMemoryAssetReader extends AssetReader
   Stream<AssetId> findAssets(Glob glob, {String package}) {
     package ??= rootPackage;
     if (package == null) {
-      throw new UnsupportedError(
+      throw UnsupportedError(
           'Root package is required to use findAssets without providing an '
           'explicit package.');
     }
-    return new Stream.fromIterable(assets.keys
+    return Stream.fromIterable(assets.keys
         .where((id) => id.package == package && glob.matches(id.path)));
   }
 

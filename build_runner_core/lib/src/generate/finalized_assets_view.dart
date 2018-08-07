@@ -24,7 +24,7 @@ class FinalizedAssetsView {
 
   List<AssetId> allAssets({String rootDir}) {
     if (_expired) {
-      throw new StateError(
+      throw StateError(
           'Cannot use a FinalizedAssetsView after it has expired!');
     }
     return _assetGraph.allNodes
@@ -55,9 +55,7 @@ bool _shouldSkipNode(AssetNode node, String rootDir,
   }
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
-    if (!node.wasOutput ||
-        node.isFailure ||
-        node.state != GeneratedNodeState.upToDate) {
+    if (!node.wasOutput || node.isFailure || node.state != NodeState.upToDate) {
       return true;
     }
     return !optionalOutputTracker.isRequired(node.id);

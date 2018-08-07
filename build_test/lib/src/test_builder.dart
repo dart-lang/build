@@ -36,7 +36,7 @@ void checkOutputs(
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
     {AssetId mapAssetIds(AssetId id) = _passThrough}) {
-  var modifiableActualAssets = new Set.from(actualAssets);
+  var modifiableActualAssets = Set.from(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
       assert(contentsMatcher is String ||
@@ -58,7 +58,7 @@ void checkOutputs(
       } else if (contentsMatcher is Matcher) {
         expected = actual;
       } else {
-        throw new ArgumentError('Expected values for `outputs` to be of type '
+        throw ArgumentError('Expected values for `outputs` to be of type '
             '`String`, `List<int>`, or `Matcher`, but got `$contentsMatcher`.');
       }
       expect(expected, contentsMatcher,
@@ -105,8 +105,8 @@ Future testBuilder(
     RecordingAssetWriter writer,
     Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
     void onLog(LogRecord log)}) async {
-  writer ??= new InMemoryAssetWriter();
-  final reader = new InMemoryAssetReader(rootPackage: rootPackage);
+  writer ??= InMemoryAssetWriter();
+  final reader = InMemoryAssetReader(rootPackage: rootPackage);
 
   var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {
@@ -122,7 +122,7 @@ Future testBuilder(
   var allPackages = reader.assets.keys.map((a) => a.package).toSet();
   for (var pkg in allPackages) {
     for (var dir in const ['lib', 'web', 'test']) {
-      var asset = new AssetId(pkg, '$dir/\$$dir\$');
+      var asset = AssetId(pkg, '$dir/\$$dir\$');
       inputIds.add(asset);
     }
   }
@@ -130,8 +130,8 @@ Future testBuilder(
   isInput ??= generateFor?.contains ?? (_) => true;
   inputIds = inputIds.where((id) => isInput('$id')).toList();
 
-  var writerSpy = new AssetWriterSpy(writer);
-  var logger = new Logger('testBuilder');
+  var writerSpy = AssetWriterSpy(writer);
+  var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
   await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
       logger: logger);

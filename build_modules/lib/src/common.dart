@@ -12,7 +12,7 @@ import 'package:scratch_space/scratch_space.dart';
 import 'kernel_builder.dart';
 
 final defaultAnalysisOptionsId =
-    new AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
+    AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
 
 String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
@@ -23,7 +23,7 @@ Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
   var allPackages = allAssets.map((id) => id.package).toSet();
   var packagesFileDir =
       await Directory.systemTemp.createTemp('kernel_builder_');
-  var packagesFile = new File(p.join(packagesFileDir.path, '.packages'));
+  var packagesFile = File(p.join(packagesFileDir.path, '.packages'));
   await packagesFile.create();
   await packagesFile.writeAsString(allPackages
       .map((pkg) => '$pkg:$multiRootScheme:///packages/$pkg')
@@ -57,7 +57,7 @@ void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
   var unsupportedOptions =
       config.keys.where((o) => !supportedOptions.contains(o));
   if (unsupportedOptions.isNotEmpty) {
-    throw new ArgumentError.value(unsupportedOptions.join(', '), builderKey,
+    throw ArgumentError.value(unsupportedOptions.join(', '), builderKey,
         'only $supportedOptions are supported options, but got');
   }
 }

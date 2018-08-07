@@ -17,7 +17,7 @@ import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
 import 'create_merged_dir.dart';
 
-final _logger = new Logger('IOEnvironment');
+final _logger = Logger('IOEnvironment');
 
 /// A [BuildEnvironment] writing to disk and stdout.
 class IOEnvironment implements BuildEnvironment {
@@ -40,8 +40,8 @@ class IOEnvironment implements BuildEnvironment {
       : _isInteractive = assumeTty == true || _canPrompt(),
         _outputMap = outputMap,
         _outputSymlinksOnly = outputSymlinksOnly ?? false,
-        reader = new FileBasedAssetReader(_packageGraph),
-        writer = new FileBasedAssetWriter(_packageGraph) {
+        reader = FileBasedAssetReader(_packageGraph),
+        writer = FileBasedAssetWriter(_packageGraph) {
     if (_outputSymlinksOnly && Platform.isWindows) {
       _logger.warning('Symlinks to files are not yet working on Windows, you '
           'may experience issues using this mode. Follow '
@@ -60,7 +60,7 @@ class IOEnvironment implements BuildEnvironment {
 
   @override
   Future<int> prompt(String message, List<String> choices) async {
-    if (!_isInteractive) throw new NonInteractiveBuildException();
+    if (!_isInteractive) throw NonInteractiveBuildException();
     while (true) {
       stdout.writeln('\n$message');
       for (var i = 0, l = choices.length; i < l; i++) {
@@ -95,7 +95,7 @@ bool _canPrompt() =>
 
 BuildResult _convertToFailure(BuildResult previous,
         {FailureType failureType}) =>
-    new BuildResult(
+    BuildResult(
       BuildStatus.failure,
       previous.outputs,
       performance: previous.performance,

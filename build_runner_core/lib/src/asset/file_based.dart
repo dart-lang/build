@@ -15,7 +15,7 @@ import 'reader.dart';
 import 'writer.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
-final _descriptorPool = new Pool(32);
+final _descriptorPool = Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
@@ -43,7 +43,7 @@ class FileBasedAssetReader extends AssetReader
     var packageNode =
         package == null ? packageGraph.root : packageGraph[package];
     if (packageNode == null) {
-      throw new ArgumentError(
+      throw ArgumentError(
           "Could not find package '$package' which was listed as "
           'an input. Please ensure you have that package in your deps, or '
           'remove it from your input sets.');
@@ -62,7 +62,7 @@ class FileBasedAssetReader extends AssetReader
 AssetId _fileToAssetId(File file, PackageNode packageNode) {
   var filePath = path.normalize(file.absolute.path);
   var relativePath = path.relative(filePath, from: packageNode.path);
-  return new AssetId(packageNode.name, relativePath);
+  return AssetId(packageNode.name, relativePath);
 }
 
 /// Basic [AssetWriter] which uses a [PackageGraph] to look up where to write
@@ -94,7 +94,7 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   @override
   Future delete(AssetId id) {
     if (id.package != packageGraph.root.name) {
-      throw new InvalidOutputException(
+      throw InvalidOutputException(
           id, 'Should not delete assets outside of ${packageGraph.root.name}');
     }
 
@@ -111,14 +111,14 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
 String _filePathFor(AssetId id, PackageGraph packageGraph) {
   var package = packageGraph[id.package];
   if (package == null) {
-    throw new PackageNotFoundException(id.package);
+    throw PackageNotFoundException(id.package);
   }
   return path.join(package.path, id.path);
 }
 
 /// Returns a [File] for [id] given [packageGraph].
 File _fileFor(AssetId id, PackageGraph packageGraph) {
-  return new File(_filePathFor(id, packageGraph));
+  return File(_filePathFor(id, packageGraph));
 }
 
 /// Returns a [Future<File>] for [id] given [packageGraph].
@@ -126,11 +126,11 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
 /// Throws an `AssetNotFoundException` if it doesn't exist.
 Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) {
   if (packageGraph[id.package] == null) {
-    return new Future.error(new PackageNotFoundException(id.package));
+    return Future.error(PackageNotFoundException(id.package));
   }
   var file = _fileFor(id, packageGraph);
   return _descriptorPool.withResource(file.exists).then((exists) {
-    if (!exists) throw new AssetNotFoundException(id);
+    if (!exists) throw AssetNotFoundException(id);
     return file;
   });
 }

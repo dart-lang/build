@@ -11,14 +11,14 @@ import 'package:build_modules/src/modules.dart';
 import 'package:build_modules/src/meta_module.dart';
 
 /// Matches an encoded [Module] against an [expected] Module instance.
-encodedMatchesModule(Module expected) => new EncodedModuleMatcher(expected);
+encodedMatchesModule(Module expected) => EncodedModuleMatcher(expected);
 
 /// Matches an encoded [MetaModule] against an [expected] Module instance.
 encodedMatchesMetaModule(MetaModule expected) =>
-    new EncodedMetaModuleMatcher(expected);
+    EncodedMetaModuleMatcher(expected);
 
 /// Matches a [Module] against an [expected] Module instance.
-matchesModule(Module expected) => new ModuleMatcher(expected);
+matchesModule(Module expected) => ModuleMatcher(expected);
 
 /// A [Matcher] for an analyzer summary that matches against the linked uris.
 class HasLinkedUris extends CustomMatcher {
@@ -27,7 +27,7 @@ class HasLinkedUris extends CustomMatcher {
 
   @override
   featureValueOf(summaryBytes) {
-    var bundle = new PackageBundle.fromBuffer(summaryBytes as List<int>);
+    var bundle = PackageBundle.fromBuffer(summaryBytes as List<int>);
     return bundle.linkedLibraryUris;
   }
 }
@@ -39,7 +39,7 @@ class HasUnlinkedUris extends CustomMatcher {
 
   @override
   featureValueOf(summaryBytes) {
-    var bundle = new PackageBundle.fromBuffer(summaryBytes as List<int>);
+    var bundle = PackageBundle.fromBuffer(summaryBytes as List<int>);
     return bundle.unlinkedUnitUris;
   }
 }
@@ -57,7 +57,7 @@ class EncodedMetaModuleMatcher extends Matcher {
     }
     if (actual is! String) return false;
     var jSon = json.decode(actual as String) as Map<String, dynamic>;
-    var meta = new MetaModule.fromJson(jSon);
+    var meta = MetaModule.fromJson(jSon);
     return unorderedMatches(expected.modules.map(matchesModule))
         .matches(meta.modules, description);
   }
@@ -116,8 +116,8 @@ class EncodedModuleMatcher extends Matcher {
     }
     if (actual is! String) return false;
     var jSon = json.decode(actual as String) as Map<String, dynamic>;
-    var module = new Module.fromJson(jSon);
-    return new ModuleMatcher(expected).matches(module, description);
+    var module = Module.fromJson(jSon);
+    return ModuleMatcher(expected).matches(module, description);
   }
 
   @override

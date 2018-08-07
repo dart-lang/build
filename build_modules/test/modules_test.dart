@@ -66,7 +66,7 @@ void main() {
 
   group('defineModule.sources', () {
     test('Finds the assets in a cycle', () {
-      var sources = new Module.forLibrary(libCycle).sources;
+      var sources = Module.forLibrary(libCycle).sources;
       expect(
           sources,
           unorderedEquals(
@@ -74,27 +74,26 @@ void main() {
     });
 
     test('Finds a single asset with no cycle', () {
-      var sources = new Module.forLibrary(libNoCycle).sources;
+      var sources = Module.forLibrary(libNoCycle).sources;
       expect(sources, unorderedEquals([assetNoCycle]));
     });
 
     test('Finds the assets in a cycle across packages', () {
-      var sources = new Module.forLibrary(libCycleWithB).sources;
+      var sources = Module.forLibrary(libCycleWithB).sources;
       expect(sources, unorderedEquals([assetCycleWithA, assetCycleWithB]));
     });
   });
 
   group('defineModule.directDependencies', () {
     test('Chooses primary from cycle for dependency', () {
-      var dependencies = new Module.forLibrary(libCycle).directDependencies;
+      var dependencies = Module.forLibrary(libCycle).directDependencies;
       expect(dependencies, unorderedEquals([assetCycleWithB]));
     });
 
     test('Includes libraries that have names starting with "dart."', () {
       // https://github.com/dart-lang/sdk/issues/31045
       // `library.isInSdk` is broken - we shouldn't use it
-      var dependencies =
-          new Module.forLibrary(libDepOnNonSdk).directDependencies;
+      var dependencies = Module.forLibrary(libDepOnNonSdk).directDependencies;
       expect(dependencies, unorderedEquals([assetNonSdk]));
     });
   });
@@ -131,32 +130,32 @@ void main() {
     InMemoryAssetReader reader;
 
     setUp(() {
-      rootModule = new Module.forLibrary(libAImportsBNoCycle);
-      immediateDep = new Module.forLibrary(libBImportsANoCycle);
-      immediateDep2 = new Module.forLibrary(libBSecondImportsANoCycle);
-      transitiveDep = new Module.forLibrary(libNoCycle);
-      reader = new InMemoryAssetReader();
+      rootModule = Module.forLibrary(libAImportsBNoCycle);
+      immediateDep = Module.forLibrary(libBImportsANoCycle);
+      immediateDep2 = Module.forLibrary(libBSecondImportsANoCycle);
+      transitiveDep = Module.forLibrary(libNoCycle);
+      reader = InMemoryAssetReader();
       reader.cacheStringAsset(
           assetAImportsBNoCycle,
-          new File('test/fixtures/a/${assetAImportsBNoCycle.path}')
+          File('test/fixtures/a/${assetAImportsBNoCycle.path}')
               .readAsStringSync());
       reader.cacheStringAsset(
           assetAPartLibraryName,
-          new File('test/fixtures/a/${assetAPartLibraryName.path}')
+          File('test/fixtures/a/${assetAPartLibraryName.path}')
               .readAsStringSync());
       reader.cacheStringAsset(
           assetBImportsANoCycle,
-          new File('test/fixtures/b/${assetBImportsANoCycle.path}')
+          File('test/fixtures/b/${assetBImportsANoCycle.path}')
               .readAsStringSync());
       reader.cacheStringAsset(
           assetBSecondImportsANoCycle,
-          new File('test/fixtures/b/${assetBSecondImportsANoCycle.path}')
+          File('test/fixtures/b/${assetBSecondImportsANoCycle.path}')
               .readAsStringSync());
       reader.cacheStringAsset(assetCycle,
-          new File('test/fixtures/a/${assetCycle.path}').readAsStringSync());
+          File('test/fixtures/a/${assetCycle.path}').readAsStringSync());
       reader.cacheStringAsset(
           assetSecondaryInCycle,
-          new File('test/fixtures/a/${assetSecondaryInCycle.path}')
+          File('test/fixtures/a/${assetSecondaryInCycle.path}')
               .readAsStringSync());
     });
 
@@ -192,7 +191,7 @@ void main() {
           json.encode(immediateDep.toJson()));
       expect(
           () => rootModule.computeTransitiveDependencies(reader),
-          allOf(throwsA(new TypeMatcher<MissingModulesException>()), throwsA(
+          allOf(throwsA(TypeMatcher<MissingModulesException>()), throwsA(
             predicate<MissingModulesException>(
               (error) {
                 printOnFailure(error.message);

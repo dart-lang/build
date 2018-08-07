@@ -13,9 +13,8 @@ import 'package:build_test/builder.dart';
 
 Future main(List<String> args) async {
   var builders = [
-    apply('_test|test_bootstrap', [(_) => new TestBootstrapBuilder()], toRoot(),
-        defaultGenerateFor:
-            const InputSet(include: const ['test/**_test.dart']),
+    apply('_test|test_bootstrap', [(_) => TestBootstrapBuilder()], toRoot(),
+        defaultGenerateFor: const InputSet(include: ['test/**_test.dart']),
         hideOutput: true),
     apply(
         '_test|ddc_kernel',
@@ -31,18 +30,16 @@ Future main(List<String> args) async {
     apply(
         'build_web_compilers|ddc',
         [
-          (_) => new DevCompilerBuilder(useKernel: true),
+          (_) => DevCompilerBuilder(useKernel: true),
         ],
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
     apply(
         'build_web_compilers|entrypoint',
-        [
-          (_) => new WebEntrypointBuilder(WebCompiler.DartDevc, useKernel: true)
-        ],
+        [(_) => WebEntrypointBuilder(WebCompiler.DartDevc, useKernel: true)],
         toRoot(),
-        defaultGenerateFor: const InputSet(include: const [
+        defaultGenerateFor: const InputSet(include: [
           'web/**.dart',
           'test/**.browser_test.dart',
         ]),

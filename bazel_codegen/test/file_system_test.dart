@@ -8,7 +8,7 @@ void main() {
   BazelFileSystem fileSystem;
 
   setUp(() async {
-    fileSystem = new BazelFileSystem(d.sandbox, ['', 'blaze-bin']);
+    fileSystem = BazelFileSystem(d.sandbox, ['', 'blaze-bin']);
   });
 
   test('findAssets lists files across search paths', () async {
@@ -21,7 +21,7 @@ void main() {
       ])
     ]).create();
 
-    expect(fileSystem.findAssets('some_package', new Glob('lib/*.dart')),
+    expect(fileSystem.findAssets('some_package', Glob('lib/*.dart')),
         ['lib/foo.dart', 'lib/bar.dart']);
   });
 }

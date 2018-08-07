@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -21,7 +22,7 @@ import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
 
 void main() {
-  final digestReader = new StubAssetReader();
+  final digestReader = StubAssetReader();
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   group('AssetGraph', () {
@@ -48,7 +49,7 @@ void main() {
     group('simple graph', () {
       setUp(() async {
         graph = await AssetGraph.build(
-            [], new Set(), new Set(), fooPackageGraph, digestReader);
+            [], Set(), Set(), fooPackageGraph, digestReader);
       });
 
       test('add, contains, get, allNodes', () {
@@ -84,41 +85,48 @@ void main() {
       });
 
       test('serialize/deserialize', () {
+        var globNode = GlobAssetNode(makeAssetId(), Glob('**/*.dart'), 0,
+            NodeState.definitelyNeedsUpdate,
+            inputs: SplayTreeSet(), results: []);
+        graph.add(globNode);
         for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
+          globNode.inputs.add(node.id);
+          node.outputs.add(globNode.id);
           graph.add(node);
           var phaseNum = n;
           var builderOptionsNode =
-              new BuilderOptionsAssetNode(makeAssetId(), new Digest([n]));
+              BuilderOptionsAssetNode(makeAssetId(), Digest([n]));
           graph.add(builderOptionsNode);
-          var anchorNode = new PostProcessAnchorNode.forInputAndAction(
+          var anchorNode = PostProcessAnchorNode.forInputAndAction(
               node.id, n, builderOptionsNode.id);
           graph.add(anchorNode);
           node.anchorOutputs.add(anchorNode.id);
           for (var g = 0; g < 5 - n; g++) {
-            var builderOptionsNode = new BuilderOptionsAssetNode(
+            var builderOptionsNode = BuilderOptionsAssetNode(
                 makeAssetId(), md5.convert(utf8.encode('test')));
 
-            var generatedNode = new GeneratedAssetNode(makeAssetId(),
+            var generatedNode = GeneratedAssetNode(makeAssetId(),
                 phaseNumber: phaseNum,
                 primaryInput: node.id,
-                state: GeneratedNodeState
-                    .values[g % GeneratedNodeState.values.length],
+                state: NodeState.values[g % NodeState.values.length],
                 wasOutput: g % 2 == 0,
                 isFailure: phaseNum % 2 == 0,
                 builderOptionsId: builderOptionsNode.id,
                 isHidden: g % 3 == 0);
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
+            globNode.outputs.add(generatedNode.id);
             builderOptionsNode.outputs.add(generatedNode.id);
             if (g % 2 == 0) {
               node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
             }
 
-            var syntheticNode = new SyntheticSourceAssetNode(makeAssetId());
+            var syntheticNode = SyntheticSourceAssetNode(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);
 
-            generatedNode.inputs.addAll([node.id, syntheticNode.id]);
+            generatedNode.inputs
+                .addAll([node.id, syntheticNode.id, globNode.id]);
             if (g % 2 == 1) {
               // Fake a digest using the id, we just care that this gets
               // serialized/deserialized properly.
@@ -133,7 +141,7 @@ void main() {
         }
 
         var encoded = graph.serialize();
-        var decoded = new AssetGraph.deserialize(encoded);
+        var decoded = AssetGraph.deserialize(encoded);
         expect(decoded.failedOutputs, isNotEmpty);
         expect(graph, equalsAssetGraph(decoded));
       });
@@ -143,24 +151,24 @@ void main() {
         var serialized = json.decode(utf8.decode(bytes));
         serialized['version'] = -1;
         var encoded = utf8.encode(json.encode(serialized));
-        expect(() => new AssetGraph.deserialize(encoded),
+        expect(() => AssetGraph.deserialize(encoded),
             throwsA(assetGraphVersionException));
       });
     });
 
     group('with buildPhases', () {
-      var targetSources = const InputSet(exclude: const ['excluded.txt']);
+      var targetSources = const InputSet(exclude: ['excluded.txt']);
       final buildPhases = [
-        new InBuildPhase(
-            new TestBuilder(
+        InBuildPhase(
+            TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt')),
             'foo',
             targetSources: targetSources),
-        new PostBuildPhase([
-          new PostBuildAction(
-              new CopyingPostProcessBuilder(outputExtension: '.post'), 'foo',
+        PostBuildPhase([
+          PostBuildAction(
+              CopyingPostProcessBuilder(outputExtension: '.post'), 'foo',
               targetSources: targetSources,
-              builderOptions: const BuilderOptions(const {}),
+              builderOptions: const BuilderOptions({}),
               generateFor: const InputSet())
         ])
       ];
@@ -174,13 +182,13 @@ void main() {
       final builderOptionsId = makeAssetId('foo|Phase0.builderOptions');
       final postBuilderOptionsId = makeAssetId('foo|PostPhase0.builderOptions');
       final placeholders = placeholderIdsFor(fooPackageGraph);
-      final expectedAnchorNode = new PostProcessAnchorNode.forInputAndAction(
+      final expectedAnchorNode = PostProcessAnchorNode.forInputAndAction(
           primaryInputId, 0, postBuilderOptionsId);
 
       setUp(() async {
         graph = await AssetGraph.build(
             buildPhases,
-            new Set.from([primaryInputId, excludedInputId]),
+            Set.from([primaryInputId, excludedInputId]),
             [internalId].toSet(),
             fooPackageGraph,
             digestReader);
@@ -210,7 +218,7 @@ void main() {
         expect(excludedNode.lastKnownDigest, isNull,
             reason: 'Nodes with no output shouldn\'t get an eager digest.');
 
-        expect(graph.get(internalId), new TypeMatcher<InternalAssetNode>());
+        expect(graph.get(internalId), TypeMatcher<InternalAssetNode>());
 
         var primaryOutputNode =
             graph.get(primaryOutputId) as GeneratedAssetNode;
@@ -234,12 +242,12 @@ void main() {
 
       group('updateAndInvalidate', () {
         test('add new primary input', () async {
-          var changes = {new AssetId('foo', 'new.txt'): ChangeType.ADD};
+          var changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
           await graph.updateAndInvalidate(
               buildPhases, changes, 'foo', null, digestReader);
-          expect(graph.contains(new AssetId('foo', 'new.txt.copy')), isTrue);
-          var newAnchor = new PostProcessAnchorNode.forInputAndAction(
-              primaryInputId, 0, null);
+          expect(graph.contains(AssetId('foo', 'new.txt.copy')), isTrue);
+          var newAnchor =
+              PostProcessAnchorNode.forInputAndAction(primaryInputId, 0, null);
           expect(graph.contains(newAnchor.id), isTrue);
         });
 
@@ -261,7 +269,7 @@ void main() {
           expect(graph.contains(primaryOutputId), isTrue);
           // pretend a build happened
           (graph.get(primaryOutputId) as GeneratedAssetNode).state =
-              GeneratedNodeState.upToDate;
+              NodeState.upToDate;
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
@@ -270,11 +278,11 @@ void main() {
           expect(deletes, equals([]));
           var outputNode = graph.get(primaryOutputId) as GeneratedAssetNode;
           // But we should mark it as needing an update
-          expect(outputNode.state, GeneratedNodeState.mayNeedUpdate);
+          expect(outputNode.state, NodeState.mayNeedUpdate);
         });
 
         test('add new primary input which replaces a synthetic node', () async {
-          var syntheticNode = new SyntheticSourceAssetNode(syntheticId);
+          var syntheticNode = SyntheticSourceAssetNode(syntheticId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticId), syntheticNode);
 
@@ -283,21 +291,20 @@ void main() {
               buildPhases, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticId), isTrue);
-          expect(graph.get(syntheticId), new TypeMatcher<SourceAssetNode>());
+          expect(graph.get(syntheticId), TypeMatcher<SourceAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
-          expect(graph.get(syntheticOutputId),
-              new TypeMatcher<GeneratedAssetNode>());
+          expect(
+              graph.get(syntheticOutputId), TypeMatcher<GeneratedAssetNode>());
 
           var newAnchor =
-              new PostProcessAnchorNode.forInputAndAction(syntheticId, 0, null);
+              PostProcessAnchorNode.forInputAndAction(syntheticId, 0, null);
           expect(graph.contains(newAnchor.id), isTrue);
-          expect(graph.get(newAnchor.id),
-              new TypeMatcher<PostProcessAnchorNode>());
+          expect(graph.get(newAnchor.id), TypeMatcher<PostProcessAnchorNode>());
         });
 
         test('add new generated asset which replaces a synthetic node',
             () async {
-          var syntheticNode = new SyntheticSourceAssetNode(syntheticOutputId);
+          var syntheticNode = SyntheticSourceAssetNode(syntheticOutputId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticOutputId), syntheticNode);
 
@@ -306,15 +313,15 @@ void main() {
               buildPhases, changes, 'foo', null, digestReader);
 
           expect(graph.contains(syntheticOutputId), isTrue);
-          expect(graph.get(syntheticOutputId),
-              new TypeMatcher<GeneratedAssetNode>());
+          expect(
+              graph.get(syntheticOutputId), TypeMatcher<GeneratedAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
         });
 
         test('removing nodes deletes primary outputs and secondary edges',
             () async {
           var secondaryId = makeAssetId('foo|secondary.txt');
-          var secondaryNode = new SourceAssetNode(secondaryId);
+          var secondaryNode = SourceAssetNode(secondaryId);
           secondaryNode.outputs.add(primaryOutputId);
           var primaryOutputNode =
               graph.get(primaryOutputId) as GeneratedAssetNode;
@@ -325,7 +332,7 @@ void main() {
 
           var changes = {primaryInputId: ChangeType.REMOVE};
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
-              (_) => new Future.value(null), digestReader);
+              (_) => Future.value(null), digestReader);
 
           expect(graph.contains(primaryInputId), isFalse);
           expect(graph.contains(primaryOutputId), isFalse);
@@ -334,26 +341,46 @@ void main() {
         });
 
         test(
-            'a new or deleted asset matching a glob definitely invalidates '
-            'a node', () async {
+            'a new, modified, or deleted asset matching a glob invalidates the '
+            'glob node and its outputs', () async {
           var primaryOutputNode =
               graph.get(primaryOutputId) as GeneratedAssetNode;
-          primaryOutputNode.globs.add(new Glob('lib/*.cool'));
-          primaryOutputNode.state = GeneratedNodeState.upToDate;
+          primaryOutputNode.state = NodeState.upToDate;
+          var globNode = GlobAssetNode(primaryInputId.addExtension('.glob'),
+              Glob('lib/*.cool'), 0, NodeState.upToDate,
+              inputs: SplayTreeSet());
+          primaryOutputNode.inputs.add(globNode.id);
+          globNode.outputs.add(primaryOutputId);
+          graph.add(globNode);
 
-          var coolAssetId = new AssetId('foo', 'lib/really.cool');
-          var changes = {coolAssetId: ChangeType.ADD};
-          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
-              (_) => new Future.value(null), digestReader);
-          expect(primaryOutputNode.state,
-              GeneratedNodeState.definitelyNeedsUpdate);
+          var coolAssetId = AssetId('foo', 'lib/really.cool');
 
-          primaryOutputNode.state = GeneratedNodeState.upToDate;
-          changes = {coolAssetId: ChangeType.REMOVE};
-          await graph.updateAndInvalidate(buildPhases, changes, 'foo',
-              (_) => new Future.value(null), digestReader);
-          expect(primaryOutputNode.state,
-              GeneratedNodeState.definitelyNeedsUpdate);
+          checkChangeType(ChangeType changeType) async {
+            var changes = {coolAssetId: changeType};
+            await graph.updateAndInvalidate(buildPhases, changes, 'foo',
+                (_) => Future.value(null), digestReader);
+            expect(primaryOutputNode.state, NodeState.mayNeedUpdate,
+                reason: 'A $changeType matching a glob should invalidate its '
+                    'outputs.');
+            expect(globNode.state, NodeState.mayNeedUpdate,
+                reason: 'A $changeType matching a glob should invalidate the '
+                    'node.');
+          }
+
+          await checkChangeType(ChangeType.ADD);
+          primaryOutputNode.state = NodeState.upToDate;
+          globNode.state = NodeState.upToDate;
+
+          await checkChangeType(ChangeType.REMOVE);
+          primaryOutputNode.state = NodeState.upToDate;
+          globNode.state = NodeState.upToDate;
+
+          await checkChangeType(ChangeType.ADD);
+          primaryOutputNode.state = NodeState.upToDate;
+          globNode.state = NodeState.upToDate;
+          globNode.inputs.add(coolAssetId);
+          graph.get(coolAssetId).outputs.add(globNode.id);
+          await checkChangeType(ChangeType.MODIFY);
         });
       });
     });
@@ -361,9 +388,9 @@ void main() {
     test('overlapping build phases cause an error', () async {
       expect(
           () => AssetGraph.build(
-              new List.filled(2, new InBuildPhase(new TestBuilder(), 'foo')),
+              List.filled(2, InBuildPhase(TestBuilder(), 'foo')),
               [makeAssetId('foo|file')].toSet(),
-              new Set(),
+              Set(),
               fooPackageGraph,
               digestReader),
           throwsA(duplicateAssetNodeException));
@@ -373,18 +400,18 @@ void main() {
       test('build can chains of pre-existing to-source outputs', () async {
         final graph = await AssetGraph.build(
             [
-              new InBuildPhase(
-                  new TestBuilder(
+              InBuildPhase(
+                  TestBuilder(
                       buildExtensions: replaceExtension('.txt', '.a.txt')),
                   'foo',
                   hideOutput: false),
-              new InBuildPhase(
-                  new TestBuilder(
+              InBuildPhase(
+                  TestBuilder(
                       buildExtensions: replaceExtension('.txt', '.b.txt')),
                   'foo',
                   hideOutput: false),
-              new InBuildPhase(
-                  new TestBuilder(
+              InBuildPhase(
+                  TestBuilder(
                       buildExtensions:
                           replaceExtension('.a.b.txt', '.a.b.c.txt')),
                   'foo',
@@ -400,7 +427,7 @@ void main() {
               makeAssetId('foo|lib/2.a.b.txt'),
               makeAssetId('foo|lib/2.a.b.c.txt'),
             ].toSet(),
-            new Set<AssetId>(),
+            Set<AssetId>(),
             fooPackageGraph,
             digestReader);
         expect(
@@ -427,16 +454,14 @@ void main() {
           'allows running on generated inputs that do not match target '
           'source globs', () async {
         final graph = await AssetGraph.build([
-          new InBuildPhase(
-              new TestBuilder(
-                  buildExtensions: appendExtension('.1', from: '.txt')),
+          InBuildPhase(
+              TestBuilder(buildExtensions: appendExtension('.1', from: '.txt')),
               'foo'),
-          new InBuildPhase(
-              new TestBuilder(
-                  buildExtensions: appendExtension('.2', from: '.1')),
+          InBuildPhase(
+              TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
               'foo',
-              targetSources: new InputSet(include: ['lib/*.txt'])),
-        ], [makeAssetId('foo|lib/1.txt')].toSet(), new Set<AssetId>(),
+              targetSources: InputSet(include: ['lib/*.txt'])),
+        ], [makeAssetId('foo|lib/1.txt')].toSet(), Set<AssetId>(),
             fooPackageGraph, digestReader);
         expect(
             graph.outputs,
@@ -452,26 +477,25 @@ void main() {
         final nodeToRead = makeAssetId('foo|lib/a.1');
         final outputReadingNode = makeAssetId('foo|lib/b.2');
         final buildPhases = [
-          new InBuildPhase(
-              new TestBuilder(buildExtensions: replaceExtension('.txt', '.1')),
+          InBuildPhase(
+              TestBuilder(buildExtensions: replaceExtension('.txt', '.1')),
               'foo'),
-          new InBuildPhase(
-              new TestBuilder(
-                  buildExtensions: replaceExtension('.anchor', '.2')),
+          InBuildPhase(
+              TestBuilder(buildExtensions: replaceExtension('.anchor', '.2')),
               'foo'),
         ];
         final graph = await AssetGraph.build(
             buildPhases,
             [makeAssetId('foo|lib/b.anchor')].toSet(),
-            new Set<AssetId>(),
+            Set<AssetId>(),
             fooPackageGraph,
             digestReader);
 
         // Pretend a build happened
-        graph.add(new SyntheticSourceAssetNode(nodeToRead)
+        graph.add(SyntheticSourceAssetNode(nodeToRead)
           ..outputs.add(outputReadingNode));
         (graph.get(outputReadingNode) as GeneratedAssetNode)
-          ..state = GeneratedNodeState.upToDate
+          ..state = NodeState.upToDate
           ..inputs.add(nodeToRead);
 
         final invalidatedNodes = await graph.updateAndInvalidate(

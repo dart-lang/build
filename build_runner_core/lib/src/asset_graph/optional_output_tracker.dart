@@ -40,7 +40,7 @@ class OptionalOutputTracker {
   ///
   /// [currentlyChecking] is used to aovid repeatedly checking the same outputs.
   bool isRequired(AssetId output, [Set<AssetId> currentlyChecking]) {
-    currentlyChecking ??= new Set<AssetId>();
+    currentlyChecking ??= Set<AssetId>();
     if (currentlyChecking.contains(output)) return false;
     currentlyChecking.add(output);
 

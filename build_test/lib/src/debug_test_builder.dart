@@ -54,7 +54,7 @@ class DebugTestBuilder implements Builder {
 
     // Replace <link rel="x-dart-test"> with <script src="{jsScriptPath}">.
     final linkTag = document.querySelector('link[rel="x-dart-test"]');
-    final scriptTag = new Element.tag('script');
+    final scriptTag = Element.tag('script');
     scriptTag.attributes['src'] = jsScriptPath;
     linkTag.replaceWith(scriptTag);
 
@@ -75,7 +75,7 @@ class DebugTestBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    _inputExtension: const [_outputExtension],
+    _inputExtension: [_outputExtension],
   };
 
   @override
@@ -86,17 +86,17 @@ class DebugTestBuilder implements Builder {
 
 /// Generates `text/index.html`, useful for navigating and running tests.
 class DebugIndexBuilder implements Builder {
-  static final _allTests = new Glob(p.join('test', '**$_inputExtension'));
+  static final _allTests = Glob(p.join('test', '**$_inputExtension'));
 
   static AssetId _outputFor(BuildStep buildStep) {
-    return new AssetId(buildStep.inputId.package, p.join('test', 'index.html'));
+    return AssetId(buildStep.inputId.package, p.join('test', 'index.html'));
   }
 
   static String _generateHtml(Iterable<AssetId> tests) {
     if (tests.isEmpty) {
       return '<strong>No tests found!</strong>';
     }
-    final buffer = new StringBuffer('    <ul>');
+    final buffer = StringBuffer('    <ul>');
     for (final test in tests) {
       final path = p.joinAll(p.split(_debugHtmlId(test).path)..removeAt(0));
       buffer.writeln('      <li><a href="/$path">${test.path}</a></li>');
@@ -109,7 +109,7 @@ class DebugIndexBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    r'$test$': const ['index.html'],
+    r'$test$': ['index.html'],
   };
 
   @override

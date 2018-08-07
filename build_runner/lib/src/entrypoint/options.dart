@@ -102,14 +102,14 @@ class SharedOptions {
     for (var arg in positionalArgs) {
       var parts = p.split(arg);
       if (parts.length > 1) {
-        throw new UsageException(
+        throw UsageException(
             'Only top level directories are allowed as positional args',
             command.usage);
       }
       buildDirs.add(arg);
     }
 
-    return new SharedOptions._(
+    return SharedOptions._(
       assumeTty: argResults[assumeTtyOption] as bool,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
@@ -177,22 +177,22 @@ class ServeOptions extends SharedOptions {
       var parts = arg.split(':');
       var path = parts.first;
       if (parts.length > 2) {
-        throw new UsageException(
+        throw UsageException(
             'Invalid format for positional argument to serve `$arg`'
             ', expected <directory>:<port>.',
             command.usage);
       }
       var port = parts.length == 2 ? int.tryParse(parts[1]) : nextDefaultPort++;
       if (port == null) {
-        throw new UsageException(
+        throw UsageException(
             'Unable to parse port number in `$arg`', command.usage);
       }
-      serveTargets.add(new ServeTarget(path, port));
+      serveTargets.add(ServeTarget(path, port));
     }
     if (serveTargets.isEmpty) {
       for (var dir in _defaultWebDirs) {
-        if (new Directory(dir).existsSync()) {
-          serveTargets.add(new ServeTarget(dir, nextDefaultPort++));
+        if (Directory(dir).existsSync()) {
+          serveTargets.add(ServeTarget(dir, nextDefaultPort++));
         }
       }
     }
@@ -201,7 +201,7 @@ class ServeOptions extends SharedOptions {
     var buildDirs = _buildDirsFromOutputMap(outputMap)
       ..addAll(serveTargets.map((t) => t.dir));
 
-    return new ServeOptions._(
+    return ServeOptions._(
       hostName: argResults[hostnameOption] as String,
       liveReload: argResults[liveReloadOption] as bool,
       logRequests: argResults[logRequestsOption] as bool,
@@ -244,7 +244,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     final parts = define.split('=');
     const expectedFormat = '--define "<builder_key>=<option>=<value>"';
     if (parts.length < 3) {
-      throw new ArgumentError.value(
+      throw ArgumentError.value(
           define,
           defineOption,
           'Expected at least 2 `=` signs, should be of the format like '
@@ -267,7 +267,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     final config = builderConfigOverrides.putIfAbsent(
         builderKey, () => <String, dynamic>{});
     if (config.containsKey(option)) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'Got duplicate overrides for the same builder option: '
           '$builderKey=$option. Only one is allowed.');
     }
@@ -289,7 +289,7 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
 
   void checkExisting(String outputDir) {
     if (result.containsKey(outputDir)) {
-      throw new ArgumentError.value(outputs.join(' '), '--output',
+      throw ArgumentError.value(outputs.join(' '), '--output',
           'Duplicate output directories are not allowed, got');
     }
   }
@@ -305,7 +305,7 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
       checkExisting(output);
       var root = split.first;
       if (root.contains('/')) {
-        throw new ArgumentError.value(
+        throw ArgumentError.value(
             option, '--output', 'Input root can not be nested');
       }
       result[output] = split.first;

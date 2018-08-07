@@ -13,12 +13,12 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:_test_common/common.dart';
 
 final PackageGraph packageGraph =
-    new PackageGraph.forPath('test/fixtures/basic_pkg');
+    PackageGraph.forPath('test/fixtures/basic_pkg');
 final String newLine = Platform.isWindows ? '\r\n' : '\n';
 
 void main() {
   group('FileBasedAssetReader', () {
-    final reader = new FileBasedAssetReader(packageGraph);
+    final reader = FileBasedAssetReader(packageGraph);
 
     test('can read any application package files', () async {
       expect(await reader.readAsString(makeAssetId('basic_pkg|hello.txt')),
@@ -63,7 +63,7 @@ void main() {
     test('can list files based on glob', () async {
       expect(
           await reader
-              .findAssets(new Glob('{lib,web}/**'), package: 'basic_pkg')
+              .findAssets(Glob('{lib,web}/**'), package: 'basic_pkg')
               .toList(),
           unorderedEquals([
             makeAssetId('basic_pkg|lib/hello.txt'),
@@ -99,13 +99,13 @@ void main() {
   });
 
   group('FileBasedAssetWriter', () {
-    final writer = new FileBasedAssetWriter(packageGraph);
+    final writer = FileBasedAssetWriter(packageGraph);
 
     test('can output and delete files in the application package', () async {
       var id = makeAssetId('basic_pkg|test_file.txt');
       var content = 'test';
       await writer.writeAsString(id, content);
-      var file = new File(path.join('test', 'fixtures', id.package, id.path));
+      var file = File(path.join('test', 'fixtures', id.package, id.path));
       expect(await file.exists(), isTrue);
       expect(await file.readAsString(), content);
 

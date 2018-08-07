@@ -32,18 +32,17 @@ void main() {
   AssetGraph assetGraph;
 
   setUp(() async {
-    reader = new InMemoryRunnerAssetReader();
+    reader = InMemoryRunnerAssetReader();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    assetGraph =
-        await AssetGraph.build([], new Set(), new Set(), packageGraph, reader);
-    watchImpl = new MockWatchImpl(
-        new FinalizedReader(
-            reader, assetGraph, new OptionalOutputTracker(assetGraph, [], [])),
+    assetGraph = await AssetGraph.build([], Set(), Set(), packageGraph, reader);
+    watchImpl = MockWatchImpl(
+        FinalizedReader(
+            reader, assetGraph, OptionalOutputTracker(assetGraph, [], []), 'a'),
         packageGraph,
         assetGraph);
     serveHandler = createServeHandler(watchImpl);
-    watchImpl.addFutureResult(
-        new Future.value(new BuildResult(BuildStatus.success, [])));
+    watchImpl
+        .addFutureResult(Future.value(BuildResult(BuildStatus.success, [])));
   });
 
   void _addSource(String id, String content, {bool deleted = false}) {
@@ -58,7 +57,7 @@ void main() {
   test('can get handlers for a subdirectory', () async {
     _addSource('a|web/index.html', 'content');
     var response = await serveHandler.handlerFor('web')(
-        new Request('GET', Uri.parse('http://server.com/index.html')));
+        Request('GET', Uri.parse('http://server.com/index.html')));
     expect(await response.readAsString(), 'content');
   });
 
@@ -66,13 +65,13 @@ void main() {
     _addSource('a|web/index.html', 'content');
     var handler = serveHandler.handlerFor('web');
     var requestUri = Uri.parse('http://server.com/index.html');
-    var firstResponse = await handler(new Request('GET', requestUri));
+    var firstResponse = await handler(Request('GET', requestUri));
     var etag = firstResponse.headers[HttpHeaders.etagHeader];
     expect(etag, isNotNull);
     expect(firstResponse.statusCode, HttpStatus.ok);
     expect(await firstResponse.readAsString(), 'content');
 
-    var cachedResponse = await handler(new Request('GET', requestUri,
+    var cachedResponse = await handler(Request('GET', requestUri,
         headers: {HttpHeaders.ifNoneMatchHeader: etag}));
     expect(cachedResponse.statusCode, HttpStatus.notModified);
     expect(await cachedResponse.readAsString(), isEmpty);
@@ -85,30 +84,30 @@ void main() {
   group('build failures', () {
     setUp(() async {
       _addSource('a|web/index.html', '');
-      assetGraph.add(new GeneratedAssetNode(
+      assetGraph.add(GeneratedAssetNode(
         makeAssetId('a|web/main.ddc.js'),
         builderOptionsId: null,
         phaseNumber: null,
-        state: GeneratedNodeState.upToDate,
+        state: NodeState.upToDate,
         isHidden: false,
         wasOutput: true,
         isFailure: true,
         primaryInput: null,
       ));
-      watchImpl.addFutureResult(
-          new Future.value(new BuildResult(BuildStatus.failure, [])));
+      watchImpl
+          .addFutureResult(Future.value(BuildResult(BuildStatus.failure, [])));
     });
 
     test('serves successful assets', () async {
       var response = await serveHandler.handlerFor('web')(
-          new Request('GET', Uri.parse('http://server.com/index.html')));
+          Request('GET', Uri.parse('http://server.com/index.html')));
 
       expect(response.statusCode, HttpStatus.ok);
     });
 
     test('rejects requests for failed assets', () async {
       var response = await serveHandler.handlerFor('web')(
-          new Request('GET', Uri.parse('http://server.com/main.ddc.js')));
+          Request('GET', Uri.parse('http://server.com/main.ddc.js')));
 
       expect(response.statusCode, HttpStatus.internalServerError);
     });
@@ -120,7 +119,7 @@ void main() {
               record.message.contains('main.ddc.js') &&
               record.level == Level.WARNING)));
       await serveHandler.handlerFor('web', logRequests: true)(
-          new Request('GET', Uri.parse('http://server.com/main.ddc.js')));
+          Request('GET', Uri.parse('http://server.com/main.ddc.js')));
     });
   });
 
@@ -132,22 +131,22 @@ void main() {
             record.message.contains('index.html') &&
             record.level == Level.INFO)));
     await serveHandler.handlerFor('web', logRequests: true)(
-        new Request('GET', Uri.parse('http://server.com/index.html')));
+        Request('GET', Uri.parse('http://server.com/index.html')));
   });
 
   group(r'/$perf', () {
     test('serves some sort of page if enabled', () async {
-      var tracker = new BuildPerformanceTracker()..start();
+      var tracker = BuildPerformanceTracker()..start();
       var actionTracker = tracker.startBuilderAction(
           makeAssetId('a|web/a.txt'), 'test_builder');
       actionTracker.track(() {}, 'SomeLabel');
       tracker.stop();
       actionTracker.stop();
-      watchImpl.addFutureResult(new Future.value(
-          new BuildResult(BuildStatus.success, [], performance: tracker)));
-      await new Future(() {});
+      watchImpl.addFutureResult(Future.value(
+          BuildResult(BuildStatus.success, [], performance: tracker)));
+      await Future(() {});
       var response = await serveHandler.handlerFor('web')(
-          new Request('GET', Uri.parse(r'http://server.com/$perf')));
+          Request('GET', Uri.parse(r'http://server.com/$perf')));
 
       expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(),
@@ -155,12 +154,12 @@ void main() {
     });
 
     test('serves an error page if not enabled', () async {
-      watchImpl.addFutureResult(new Future.value(new BuildResult(
+      watchImpl.addFutureResult(Future.value(BuildResult(
           BuildStatus.success, [],
-          performance: new BuildPerformanceTracker.noOp())));
-      await new Future(() {});
+          performance: BuildPerformanceTracker.noOp())));
+      await Future(() {});
       var response = await serveHandler.handlerFor('web')(
-          new Request('GET', Uri.parse(r'http://server.com/$perf')));
+          Request('GET', Uri.parse(r'http://server.com/$perf')));
 
       expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(), contains('--track-performance'));
@@ -188,28 +187,28 @@ void main() {
     test('injects client code if enabled', () async {
       _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
       var response = await serveHandler.handlerFor('web', liveReload: true)(
-          new Request('GET', Uri.parse('http://server.com/some.js')));
+          Request('GET', Uri.parse('http://server.com/some.js')));
       expect(await response.readAsString(), contains('\$livereload'));
     });
 
     test('doesn\'t inject client code if disabled', () async {
       _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
       var response = await serveHandler.handlerFor('web', liveReload: false)(
-          new Request('GET', Uri.parse('http://server.com/some.js')));
+          Request('GET', Uri.parse('http://server.com/some.js')));
       expect(await response.readAsString(), isNot(contains('\$livereload')));
     });
 
     test('doesn\'t inject client code in non-js files', () async {
       _addSource('a|web/some.html', entrypointExtensionMarker + '\n<br>some');
       var response = await serveHandler.handlerFor('web', liveReload: true)(
-          new Request('GET', Uri.parse('http://server.com/some.html')));
+          Request('GET', Uri.parse('http://server.com/some.html')));
       expect(await response.readAsString(), isNot(contains('\$livereload')));
     });
 
     test('doesn\'t inject client code in non-marked files', () async {
       _addSource('a|web/some.js', 'alert(1)');
       var response = await serveHandler.handlerFor('web', liveReload: true)(
-          new Request('GET', Uri.parse('http://server.com/some.js')));
+          Request('GET', Uri.parse('http://server.com/some.js')));
       expect(await response.readAsString(), isNot(contains('\$livereload')));
     });
 
@@ -217,7 +216,7 @@ void main() {
       _addSource('a|web/index.html', 'content');
       expect(
           serveHandler.handlerFor('web', liveReload: true)(
-              new Request('GET', Uri.parse('ws://server.com/'),
+              Request('GET', Uri.parse('ws://server.com/'),
                   headers: {
                     'Connection': 'Upgrade',
                     'Upgrade': 'websocket',
@@ -231,7 +230,7 @@ void main() {
     test('reject websocket connection if disabled', () async {
       _addSource('a|web/index.html', 'content');
       var response = await serveHandler.handlerFor('web', liveReload: false)(
-          new Request('GET', Uri.parse('ws://server.com/'), headers: {
+          Request('GET', Uri.parse('ws://server.com/'), headers: {
         'Connection': 'Upgrade',
         'Upgrade': 'websocket',
         'Sec-WebSocket-Version': '13',
@@ -392,16 +391,15 @@ class MockWatchImpl implements WatchImpl {
   @override
   Future<BuildResult> get currentBuild => _currentBuild;
   @override
-  set currentBuild(newValue) => throw new UnsupportedError('unsupported!');
+  set currentBuild(newValue) => throw UnsupportedError('unsupported!');
 
-  final _futureBuildResultsController =
-      new StreamController<Future<BuildResult>>();
-  final _buildResultsController = new StreamController<BuildResult>();
+  final _futureBuildResultsController = StreamController<Future<BuildResult>>();
+  final _buildResultsController = StreamController<BuildResult>();
 
   @override
   get buildResults => _buildResultsController.stream;
   @override
-  set buildResults(_) => throw new UnsupportedError('unsupported!');
+  set buildResults(_) => throw UnsupportedError('unsupported!');
 
   @override
   final PackageGraph packageGraph;
@@ -414,7 +412,7 @@ class MockWatchImpl implements WatchImpl {
   }
 
   MockWatchImpl(this.reader, this.packageGraph, this.assetGraph) {
-    var firstBuild = new Completer<BuildResult>();
+    var firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {
       if (!firstBuild.isCompleted) {
@@ -426,5 +424,5 @@ class MockWatchImpl implements WatchImpl {
   }
 
   @override
-  Future<Null> get ready => new Future.value(null);
+  Future<Null> get ready => Future.value(null);
 }

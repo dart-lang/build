@@ -25,7 +25,7 @@ void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
     {AssetId readFrom(AssetId assetId) = _identity,
     Future<String> read(BuildStep buildStep, AssetId assetId) = _readAsset}) {
   if (!buildExtensions.keys.any((e) => buildStep.inputId.path.endsWith(e))) {
-    throw new ArgumentError('Only expected inputs with extension in '
+    throw ArgumentError('Only expected inputs with extension in '
         '${buildExtensions.keys.toList()} but got ${buildStep.inputId}');
   }
   for (final inputExtension in buildExtensions.keys) {
@@ -33,7 +33,7 @@ void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
     for (final outputExtension in buildExtensions[inputExtension]) {
       final newPath = _replaceSuffix(
           buildStep.inputId.path, inputExtension, outputExtension);
-      final id = new AssetId(buildStep.inputId.package, newPath);
+      final id = AssetId(buildStep.inputId.package, newPath);
       buildStep.writeAsString(id, read(buildStep, readFrom(buildStep.inputId)));
     }
   }
@@ -62,7 +62,7 @@ Map<String, List<String>> appendExtension(String postFix,
     {
       from: numCopies == 1
           ? ['$from$postFix']
-          : new List.generate(numCopies, (i) => '$from$postFix.$i')
+          : List.generate(numCopies, (i) => '$from$postFix.$i')
     };
 
 Map<String, List<String>> replaceExtension(String from, String to) => {
@@ -80,13 +80,13 @@ class TestBuilder implements Builder {
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
   /// Events are added at the start of the [build] method.
-  final _buildInputsController = new StreamController<AssetId>.broadcast();
+  final _buildInputsController = StreamController<AssetId>.broadcast();
   Stream<AssetId> get buildInputs => _buildInputsController.stream;
 
   /// A stream of all the [BuildStep.inputId]s that are completed.
   ///
   /// Events are added at the end of the [build] method.
-  final _buildsCompletedController = new StreamController<AssetId>.broadcast();
+  final _buildsCompletedController = StreamController<AssetId>.broadcast();
   Stream<AssetId> get buildsCompleted => _buildsCompletedController.stream;
 
   TestBuilder({

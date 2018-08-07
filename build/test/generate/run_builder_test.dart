@@ -23,13 +23,13 @@ main() {
 
   setUp(() async {
     resourceDisposed = false;
-    resource = new Resource(() => 0, dispose: (_) {
+    resource = Resource(() => 0, dispose: (_) {
       resourceDisposed = true;
     });
-    builder = new TestBuilder(
+    builder = TestBuilder(
         extraWork: (buildStep, __) => buildStep.fetchResource(resource));
-    writer = new InMemoryAssetWriter();
-    reader = new InMemoryAssetReader.shareAssetCache(writer.assets);
+    writer = InMemoryAssetWriter();
+    reader = InMemoryAssetReader.shareAssetCache(writer.assets);
     addAssets(inputs, writer);
   });
 
@@ -37,7 +37,7 @@ main() {
     TrackingResourceManager resourceManager;
 
     setUp(() async {
-      resourceManager = new TrackingResourceManager();
+      resourceManager = TrackingResourceManager();
       await runBuilder(builder, inputs.keys, reader, writer, null,
           resourceManager: resourceManager);
     });
@@ -73,7 +73,7 @@ main() {
 
 class TrackingResourceManager extends ResourceManager {
   bool disposed = false;
-  final fetchedResources = new Set<Resource>();
+  final fetchedResources = Set<Resource>();
 
   @override
   Future<T> fetch<T>(Resource<T> resource) {

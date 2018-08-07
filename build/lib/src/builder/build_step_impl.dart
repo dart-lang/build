@@ -31,7 +31,7 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Future<LibraryElement> get inputLibrary async {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     return resolver.libraryFor(inputId);
   }
 
@@ -61,42 +61,42 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Resolver get resolver {
-    if (_isComplete) throw new BuildStepCompletedException();
-    return new _DelayedResolver(_resolver ??= _resolvers.get(this));
+    if (_isComplete) throw BuildStepCompletedException();
+    return _DelayedResolver(_resolver ??= _resolvers.get(this));
   }
 
   Future<ReleasableResolver> _resolver;
 
   @override
   Future<bool> canRead(AssetId id) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.canRead(id);
   }
 
   @override
   Future<T> fetchResource<T>(Resource<T> resource) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     return _resourceManager.fetch(resource);
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
   @override
   Stream<AssetId> findAssets(Glob glob) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     if (_reader is MultiPackageAssetReader) {
       return (_reader as MultiPackageAssetReader)
           .findAssets(glob, package: inputId?.package ?? _rootPackage);
@@ -107,7 +107,7 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
     var done =
         _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
@@ -118,7 +118,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding = utf8}) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
     var done = _futureOrWrite(content,
         (String c) => _writer.writeAsString(id, c, encoding: encoding));
@@ -128,7 +128,7 @@ class BuildStepImpl implements BuildStep {
 
   @override
   Future<Digest> digest(AssetId id) {
-    if (_isComplete) throw new BuildStepCompletedException();
+    if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.digest(id);
   }
@@ -151,7 +151,7 @@ class BuildStepImpl implements BuildStep {
   /// if its not.
   void _checkInput(AssetId id) {
     if (id.package != _rootPackage && !id.path.startsWith('lib/')) {
-      throw new InvalidInputException(id);
+      throw InvalidInputException(id);
     }
   }
 
@@ -159,7 +159,7 @@ class BuildStepImpl implements BuildStep {
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(AssetId id) {
     if (!_expectedOutputs.contains(id)) {
-      throw new UnexpectedOutputException(id, expected: _expectedOutputs);
+      throw UnexpectedOutputException(id, expected: _expectedOutputs);
     }
   }
 }
@@ -175,7 +175,7 @@ class _DelayedResolver implements Resolver {
 
   @override
   Stream<LibraryElement> get libraries {
-    var completer = new StreamCompleter<LibraryElement>();
+    var completer = StreamCompleter<LibraryElement>();
     _delegate.then((r) => completer.setSourceStream(r.libraries));
     return completer.stream;
   }

@@ -75,7 +75,7 @@ void main() {
     });
 
     test('waits for tearDown', () async {
-      var resolverDone = new Completer<Null>();
+      var resolverDone = Completer<Null>();
       var resolver = await resolveSource(r'''
         library example;
 
@@ -113,7 +113,7 @@ void main() {
 
   group('should resolveAsset', () {
     test('asset:build_test/test/_files/example_lib.dart', () async {
-      var asset = new AssetId('build_test', 'test/_files/example_lib.dart');
+      var asset = AssetId('build_test', 'test/_files/example_lib.dart');
       var libExample = await resolveAsset(
           asset, (resolver) => resolver.findLibraryByName('example_lib'));
       expect(libExample.getType('Example'), isNotNull);
