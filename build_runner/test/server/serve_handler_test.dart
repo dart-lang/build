@@ -300,7 +300,7 @@ void main() {
         await clientChannel1.sink.close();
       });
 
-      test('emmits only on sussesful builds', () async {
+      test('emmits only on successful builds', () async {
         expect(clientChannel1.stream, emitsDone);
         await createMockConnection(serverChannel1, 'web');
         await handler.emitUpdateMessage(BuildResult(BuildStatus.failure, []));
