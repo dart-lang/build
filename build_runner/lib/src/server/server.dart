@@ -23,7 +23,6 @@ const _performancePath = r'$perf';
 final _graphPath = r'$graph';
 final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$livereload';
-final _buildUpdatesMessage = 'update';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = Logger('Serve');
@@ -133,7 +132,7 @@ class ServeHandler implements BuildState {
         results.remove(path);
       }
     }
-    return new shelf.Response.ok(jsonEncode(results),
+    return shelf.Response.ok(jsonEncode(results),
         headers: {HttpHeaders.contentTypeHeader: 'application/json'});
   }
 
@@ -158,7 +157,7 @@ class BuildUpdatesWebSocketHandler {
   final WatchImpl _state;
 
   BuildUpdatesWebSocketHandler(this._state,
-      [this._handlerFactory = webSocketHandler]) {}
+      [this._handlerFactory = webSocketHandler]);
 
   shelf.Handler createHandlerByRootDir(String rootDir) {
     if (!_internalHandlers.containsKey(rootDir)) {

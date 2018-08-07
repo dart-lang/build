@@ -170,7 +170,7 @@ void main() {
     _addSource('a|web/index.html', 'content1');
     _addSource('a|lib/some.dart.js', 'content2');
     _addSource('a|lib/another.dart.js', 'content3');
-    var response = await serveHandler.handlerFor('web')(new Request(
+    var response = await serveHandler.handlerFor('web')(Request(
         'GET', Uri.parse('http://server.com/\$assetDigests'),
         body: jsonEncode([
           'index.html',
@@ -262,7 +262,8 @@ void main() {
 
         createMockConnection =
             (WebSocketChannel serverChannel, String rootDir) async {
-          var mockResponse = await handler.createHandlerByRootDir(rootDir)(null);
+          var mockResponse =
+              await handler.createHandlerByRootDir(rootDir)(null);
           var onConnect = mockResponse.context['onConnect'] as Function;
           onConnect(serverChannel, '');
         };
