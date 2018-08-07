@@ -16,4 +16,4 @@ FutureOr<S> doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
 
 /// Converts [value] to a [Future] if it is not already.
 Future<T> toFuture<T>(FutureOr<T> value) =>
-    value is Future<T> ? value : new Future.value(value);
+    value is Future<T> ? value : Future.value(value);
