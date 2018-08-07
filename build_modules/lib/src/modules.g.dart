@@ -7,7 +7,7 @@ part of 'modules.dart';
 // **************************************************************************
 
 Module _$ModuleFromJson(Map<String, dynamic> json) {
-  return Module(
+  return new Module(
       _assetIdFromJson(json['p'] as List),
       _assetIdsFromJson(json['s'] as List),
       _assetIdsFromJson(json['d'] as List));

@@ -7,8 +7,8 @@ part of 'meta_module.dart';
 // **************************************************************************
 
 MetaModule _$MetaModuleFromJson(Map<String, dynamic> json) {
-  return MetaModule((json['m'] as List)
-      .map((e) => Module.fromJson(e as Map<String, dynamic>))
+  return new MetaModule((json['m'] as List)
+      .map((e) => new Module.fromJson(e as Map<String, dynamic>))
       .toList());
 }
 
