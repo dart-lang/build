@@ -103,7 +103,7 @@ targets:
       test('for deleted source and generated nodes', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'b.txt'), 'b');
-        var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
+        var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: false)];
 
         var originalAssetGraph = await AssetGraph.build(
             buildPhases,
@@ -116,7 +116,7 @@ targets:
             originalAssetGraph.get(generatedAId) as GeneratedAssetNode;
         generatedANode.wasOutput = true;
         generatedANode.isFailure = false;
-        generatedANode.state = GeneratedNodeState.upToDate;
+        generatedANode.state = NodeState.upToDate;
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -127,7 +127,7 @@ targets:
 
         generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.state, GeneratedNodeState.mayNeedUpdate);
+        expect(generatedANode.state, NodeState.definitelyNeedsUpdate);
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/b.txt')), isFalse);
         expect(
@@ -153,7 +153,7 @@ targets:
             as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
         // New nodes definitely need an update.
-        expect(generatedANode.state, GeneratedNodeState.definitelyNeedsUpdate);
+        expect(generatedANode.state, NodeState.definitelyNeedsUpdate);
       });
 
       test('for changed sources', () async {
@@ -170,7 +170,7 @@ targets:
         // pretend a build happened
         (originalAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
                 as GeneratedAssetNode)
-            .state = GeneratedNodeState.upToDate;
+            .state = NodeState.upToDate;
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
@@ -181,7 +181,7 @@ targets:
         var generatedANode = newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
             as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.state, GeneratedNodeState.mayNeedUpdate);
+        expect(generatedANode.state, NodeState.mayNeedUpdate);
       });
 
       test('retains non-output generated nodes', () async {
@@ -211,12 +211,15 @@ targets:
 
       test('for changed BuilderOptions', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
+        await createFile(p.join('lib', 'a.txt.copy'), 'a');
+        await createFile(p.join('lib', 'a.txt.clone'), 'a');
+        var inputSources = const InputSet(include: ['lib/a.txt']);
         var buildPhases = [
-          InBuildPhase(TestBuilder(), 'a', hideOutput: true),
+          InBuildPhase(TestBuilder(), 'a',
+              hideOutput: false, targetSources: inputSources),
           InBuildPhase(
               TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
-              targetSources: const InputSet(include: ['**/*.txt']),
-              hideOutput: true),
+              targetSources: inputSources, hideOutput: false),
         ];
 
         var originalAssetGraph = await AssetGraph.build(
@@ -231,7 +234,7 @@ targets:
           var node = originalAssetGraph.get(id) as GeneratedAssetNode;
           node.wasOutput = true;
           node.isFailure = false;
-          node.state = GeneratedNodeState.upToDate;
+          node.state = NodeState.upToDate;
         }
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -240,11 +243,11 @@ targets:
         var newBuildPhases = [
           InBuildPhase(TestBuilder(), 'a',
               builderOptions: BuilderOptions({'test': 'option'}),
-              hideOutput: true),
+              targetSources: inputSources,
+              hideOutput: false),
           InBuildPhase(
               TestBuilder(buildExtensions: appendExtension('.clone')), 'a',
-              targetSources: const InputSet(include: ['**/*.txt']),
-              hideOutput: true),
+              targetSources: inputSources, hideOutput: false),
         ];
         var buildDefinition = await BuildDefinition.prepareWorkspace(
             environment, options, newBuildPhases);
@@ -254,13 +257,13 @@ targets:
         var generatedACopyNode =
             newAssetGraph.get(generatedACopyId) as GeneratedAssetNode;
         expect(generatedACopyNode, isNotNull);
-        expect(generatedACopyNode.state, GeneratedNodeState.mayNeedUpdate);
+        expect(generatedACopyNode.state, NodeState.mayNeedUpdate);
 
         // But the *.clone node should remain the same since its options didn't.
         var generatedACloneNode =
             newAssetGraph.get(generatedACloneId) as GeneratedAssetNode;
         expect(generatedACloneNode, isNotNull);
-        expect(generatedACloneNode.state, GeneratedNodeState.mayNeedUpdate);
+        expect(generatedACloneNode.state, NodeState.upToDate);
       });
     });
 

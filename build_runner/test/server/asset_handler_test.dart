@@ -25,8 +25,8 @@ void main() {
     graph = await AssetGraph.build(
         [], Set(), Set(), buildPackageGraph({rootPackage('foo'): []}), null);
     delegate = InMemoryRunnerAssetReader();
-    reader =
-        FinalizedReader(delegate, graph, OptionalOutputTracker(graph, [], []));
+    reader = FinalizedReader(
+        delegate, graph, OptionalOutputTracker(graph, [], []), 'a');
     handler = AssetHandler(reader, 'a');
   });
 
@@ -96,7 +96,7 @@ void main() {
       makeAssetId('a|web/main.ddc.js'),
       builderOptionsId: null,
       phaseNumber: null,
-      state: GeneratedNodeState.upToDate,
+      state: NodeState.upToDate,
       isHidden: false,
       wasOutput: true,
       isFailure: true,

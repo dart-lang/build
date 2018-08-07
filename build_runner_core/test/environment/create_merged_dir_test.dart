@@ -57,7 +57,7 @@ main() {
       finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
-        node.state = GeneratedNodeState.upToDate;
+        node.state = NodeState.upToDate;
         node.wasOutput = true;
         node.isFailure = false;
         assetReader.cacheStringAsset(id, sources[node.primaryInput]);
