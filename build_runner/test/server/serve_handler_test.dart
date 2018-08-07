@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:stream_channel/stream_channel.dart';
@@ -241,8 +242,8 @@ void main() {
     });
 
     group('WebSocket handler', () {
-      BuildUpdatesWebSocketHandler buildUpdatesWebSocketHandler;
-      Function createMockConection;
+      BuildUpdatesWebSocketHandler handler;
+      Future<void> Function(WebSocketChannel, String) createMockConnection;
 
       // client to server stream controlllers
       StreamController<List<int>> c2sController1;
@@ -257,12 +258,17 @@ void main() {
       WebSocketChannel serverChannel2;
 
       setUp(() {
-        var mockHandlerFactory = (Function onConnect, {protocols}) {
-          createMockConection =
-              (WebSocketChannel serverChannel) => onConnect(serverChannel, '');
+        var mockHandlerFactory = (Function onConnect, {protocols}) =>
+            (request) => Response(200, context: {'onConnect': onConnect});
+
+        createMockConnection =
+            (WebSocketChannel serverChannel, String rootDir) async {
+          var mockResponse = await handler.createHandlerByRootDir(rootDir)(null);
+          var onConnect = mockResponse.context['onConnect'] as Function;
+          onConnect(serverChannel, '');
         };
-        buildUpdatesWebSocketHandler =
-            BuildUpdatesWebSocketHandler(mockHandlerFactory);
+
+        handler = BuildUpdatesWebSocketHandler(watchImpl, mockHandlerFactory);
 
         c2sController1 = StreamController<List<int>>();
         s2cController1 = StreamController<List<int>>();
@@ -291,25 +297,88 @@ void main() {
       });
 
       test('emmits a message to all listners', () async {
-        expect(clientChannel1.stream, emitsInOrder(['update', emitsDone]));
-        expect(clientChannel2.stream, emitsInOrder(['update', emitsDone]));
-        createMockConection(serverChannel1);
-        createMockConection(serverChannel2);
-        buildUpdatesWebSocketHandler.emitUpdateMessage(null);
+        expect(clientChannel1.stream, emitsInOrder(['{}', emitsDone]));
+        expect(clientChannel2.stream, emitsInOrder(['{}', emitsDone]));
+        await createMockConnection(serverChannel1, 'web');
+        await createMockConnection(serverChannel2, 'web');
+        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();
       });
 
       test('deletes listners on disconect', () async {
-        expect(clientChannel1.stream,
-            emitsInOrder(['update', 'update', emitsDone]));
-        expect(clientChannel2.stream, emitsInOrder(['update', emitsDone]));
-        createMockConection(serverChannel1);
-        createMockConection(serverChannel2);
-        buildUpdatesWebSocketHandler.emitUpdateMessage(null);
+        expect(clientChannel1.stream, emitsInOrder(['{}', '{}', emitsDone]));
+        expect(clientChannel2.stream, emitsInOrder(['{}', emitsDone]));
+        await createMockConnection(serverChannel1, 'web');
+        await createMockConnection(serverChannel2, 'web');
+        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
         await clientChannel2.sink.close();
-        buildUpdatesWebSocketHandler.emitUpdateMessage(null);
+        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
         await clientChannel1.sink.close();
+      });
+
+      test('emmits only on successful builds', () async {
+        expect(clientChannel1.stream, emitsDone);
+        await createMockConnection(serverChannel1, 'web');
+        await handler.emitUpdateMessage(BuildResult(BuildStatus.failure, []));
+        await clientChannel1.sink.close();
+      });
+
+      test('emmits build results digests', () async {
+        _addSource('a|web/index.html', 'content1');
+        _addSource('a|lib/some.dart.js', 'content2');
+        expect(
+            clientChannel1.stream.map((s) => jsonDecode(s.toString())),
+            emitsInOrder([
+              {'index.html': '7e55db001d319a94b0b713529a756623'},
+              {
+                'index.html': '7e55db001d319a94b0b713529a756623',
+                'packages/a/some.dart.js': 'eea670f4ac941df71a3b5f268ebe3eac'
+              },
+              emitsDone
+            ]));
+        await createMockConnection(serverChannel1, 'web');
+        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, [
+          AssetId('a', 'web/index.html'),
+        ]));
+        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, [
+          AssetId('a', 'web/index.html'),
+          AssetId('a', 'lib/some.dart.js'),
+        ]));
+        await clientChannel1.sink.close();
+      });
+
+      test('works for different root dirs', () async {
+        _addSource('a|web1/index.html', 'content1');
+        _addSource('a|web2/index.html', 'content2');
+        _addSource('a|lib/some.dart.js', 'content3');
+        expect(
+            clientChannel1.stream.map((s) => jsonDecode(s.toString())),
+            emitsInOrder([
+              {
+                'index.html': '7e55db001d319a94b0b713529a756623',
+                'packages/a/some.dart.js': 'c96310e55d9677b978eae0dada47642c'
+              },
+              emitsDone
+            ]));
+        expect(
+            clientChannel2.stream.map((s) => jsonDecode(s.toString())),
+            emitsInOrder([
+              {
+                'index.html': 'eea670f4ac941df71a3b5f268ebe3eac',
+                'packages/a/some.dart.js': 'c96310e55d9677b978eae0dada47642c'
+              },
+              emitsDone
+            ]));
+        await createMockConnection(serverChannel1, 'web1');
+        await createMockConnection(serverChannel2, 'web2');
+        await handler.emitUpdateMessage(BuildResult(BuildStatus.success, [
+          AssetId('a', 'web1/index.html'),
+          AssetId('a', 'web2/index.html'),
+          AssetId('a', 'lib/some.dart.js'),
+        ]));
+        await clientChannel1.sink.close();
+        await clientChannel2.sink.close();
       });
     });
   });

@@ -49,10 +49,11 @@ class ServeHandler implements BuildState {
   final Future<AssetHandler> _assetHandler;
   final Future<AssetGraphHandler> _assetGraphHandler;
 
-  final _webSocketHandler = BuildUpdatesWebSocketHandler();
+  final BuildUpdatesWebSocketHandler _webSocketHandler;
 
   ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
-      this._rootPackage) {
+      this._rootPackage)
+      : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
       _webSocketHandler.emitUpdateMessage(result);
@@ -74,9 +75,11 @@ class ServeHandler implements BuildState {
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = new shelf.Cascade();
-    cascade = (liveReload ? cascade.add(_webSocketHandler.handler) : cascade)
-        .add(_blockOnCurrentBuild)
-        .add((shelf.Request request) async {
+    if (liveReload) {
+      cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
+    }
+    cascade =
+        cascade.add(_blockOnCurrentBuild).add((shelf.Request request) async {
       if (request.url.path == _performancePath) {
         return _performanceHandler(request);
       }
@@ -148,33 +151,57 @@ class ServeHandler implements BuildState {
 /// Class that manages web socket connection handler to inform clients about
 /// build updates
 class BuildUpdatesWebSocketHandler {
-  final activeConnections = <WebSocketChannel>[];
+  final connectionsByRootDir = <String, List<WebSocketChannel>>{};
   final shelf.Handler Function(Function, {Iterable<String> protocols})
       _handlerFactory;
-  shelf.Handler _internalHandler;
+  final _internalHandlers = <String, shelf.Handler>{};
+  final WatchImpl _state;
 
-  BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
-    // Because of dart-lang/shelf_web_socket#11, webSocketHandler doesn't work
-    // with strongly typed functions. As a workaround diskard type information
-    // wrapping it with lambda for now
-    var untypedTearOff = (webSocket, protocol) =>
-        _handleConnection(webSocket as WebSocketChannel, protocol as String);
-    _internalHandler =
-        _handlerFactory(untypedTearOff, protocols: [_buildUpdatesProtocol]);
+  BuildUpdatesWebSocketHandler(this._state,
+      [this._handlerFactory = webSocketHandler]) {}
+
+  shelf.Handler createHandlerByRootDir(String rootDir) {
+    if (!_internalHandlers.containsKey(rootDir)) {
+      var closureForRootDir = (WebSocketChannel webSocket, String protocol) =>
+          _handleConnection(webSocket, protocol, rootDir);
+      _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
+          protocols: [_buildUpdatesProtocol]);
+    }
+    return _internalHandlers[rootDir];
   }
 
-  shelf.Handler get handler => _internalHandler;
-
-  void emitUpdateMessage(BuildResult buildResult) {
-    for (var webSocket in activeConnections) {
-      webSocket.sink.add(_buildUpdatesMessage);
+  Future emitUpdateMessage(BuildResult buildResult) async {
+    if (buildResult.status != BuildStatus.success) return;
+    var digests = <AssetId, String>{};
+    for (var assetId in buildResult.outputs) {
+      var digest = await _state.reader.digest(assetId);
+      digests[assetId] = digest.toString();
+    }
+    for (var rootDir in connectionsByRootDir.keys) {
+      var resultMap = <String, String>{};
+      for (var assetId in digests.keys) {
+        var path = assetIdToPath(assetId, rootDir);
+        if (path != null) {
+          resultMap[path] = digests[assetId];
+        }
+      }
+      for (var connection in connectionsByRootDir[rootDir]) {
+        connection.sink.add(jsonEncode(resultMap));
+      }
     }
   }
 
-  void _handleConnection(WebSocketChannel webSocket, String protocol) async {
-    activeConnections.add(webSocket);
+  void _handleConnection(
+      WebSocketChannel webSocket, String protocol, String rootDir) async {
+    if (!connectionsByRootDir.containsKey(rootDir)) {
+      connectionsByRootDir[rootDir] = [];
+    }
+    connectionsByRootDir[rootDir].add(webSocket);
     await webSocket.stream.drain();
-    activeConnections.remove(webSocket);
+    connectionsByRootDir[rootDir].remove(webSocket);
+    if (connectionsByRootDir[rootDir].isEmpty) {
+      connectionsByRootDir.remove(rootDir);
+    }
   }
 }
 
@@ -203,10 +230,7 @@ final _buildUpdatesInjectedJS = '''\n
 (function() {
   var ws = new WebSocket('ws://' + location.host, ['$_buildUpdatesProtocol']);
   ws.onmessage = function(event) {
-    console.log(event);
-    if(event.data === '$_buildUpdatesMessage'){
-      location.reload();
-    }
+    location.reload();
   };
 }());
 ''';

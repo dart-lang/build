@@ -34,7 +34,7 @@ dependencies:
   pub_semver: ^1.4.0
   pubspec_parse: ^0.1.0
   shelf: ">=0.6.5 <0.8.0"
-  shelf_web_socket: ^0.2.2+3
+  shelf_web_socket: ^0.2.2+4
   stack_trace: ^1.9.0
   stream_transform: ^0.0.9
   watcher: ^0.9.7
