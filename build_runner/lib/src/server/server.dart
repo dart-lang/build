@@ -126,17 +126,10 @@ class ServeHandler implements BuildState {
   }
 }
 
-class _ConnectionInfo {
-  final WebSocketChannel webSocket;
-  final String rootDir;
-
-  _ConnectionInfo(this.webSocket, this.rootDir);
-}
-
 /// Class that manages web socket connection handler to inform clients about
 /// build updates
 class BuildUpdatesWebSocketHandler {
-  final activeConnections = <_ConnectionInfo>[];
+  final connectionsByRootDir = <String, List<WebSocketChannel>>{};
   final shelf.Handler Function(Function, {Iterable<String> protocols})
       _handlerFactory;
   final _internalHandlers = <String, shelf.Handler>{};
@@ -147,11 +140,8 @@ class BuildUpdatesWebSocketHandler {
 
   shelf.Handler getHandlerByRootDir(String rootDir) {
     if (!_internalHandlers.containsKey(rootDir)) {
-      // Because of dart-lang/shelf_web_socket#11, webSocketHandler doesn't work
-      // with strongly typed functions. As a workaround discard type information
-      // for now.
-      var closureForRootDir = (webSocket, protocol) => _handleConnection(
-          webSocket as WebSocketChannel, protocol as String, rootDir);
+      var closureForRootDir = (WebSocketChannel webSocket, String protocol) =>
+          _handleConnection(webSocket, protocol, rootDir);
       _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
           protocols: [_buildUpdatesProtocol]);
     }
@@ -159,29 +149,37 @@ class BuildUpdatesWebSocketHandler {
   }
 
   Future emitUpdateMessage(BuildResult buildResult) async {
-    if (buildResult.status == BuildStatus.success) {
-      var digestMap = <AssetId, String>{};
-      for (var assetId in buildResult.outputs) {
-        var digest = await _state.reader.digest(assetId);
-        digestMap[assetId] = digest.toString();
-      }
-      for (var con in activeConnections) {
-        var resultMap = <String, String>{};
-        for (var assetId in digestMap.keys) {
-          var path = assetIdToPath(assetId, con.rootDir);
-          resultMap[path] = digestMap[assetId];
+    if (buildResult.status != BuildStatus.success) return;
+    var digests = <AssetId, String>{};
+    for (var assetId in buildResult.outputs) {
+      var digest = await _state.reader.digest(assetId);
+      digests[assetId] = digest.toString();
+    }
+    for (var rootDir in connectionsByRootDir.keys) {
+      var resultMap = <String, String>{};
+      for (var assetId in digests.keys) {
+        var path = assetIdToPath(assetId, rootDir);
+        if (path != null) {
+          resultMap[path] = digests[assetId];
         }
-        con.webSocket.sink.add(jsonEncode(resultMap));
+      }
+      for (var connection in connectionsByRootDir[rootDir]) {
+        connection.sink.add(jsonEncode(resultMap));
       }
     }
   }
 
   void _handleConnection(
       WebSocketChannel webSocket, String protocol, String rootDir) async {
-    var connection = _ConnectionInfo(webSocket, rootDir);
-    activeConnections.add(connection);
+    if (!connectionsByRootDir.containsKey(rootDir)) {
+      connectionsByRootDir[rootDir] = [];
+    }
+    connectionsByRootDir[rootDir].add(webSocket);
     await webSocket.stream.drain();
-    activeConnections.remove(connection);
+    connectionsByRootDir[rootDir].remove(webSocket);
+    if (connectionsByRootDir[rootDir].isEmpty) {
+      connectionsByRootDir.remove(rootDir);
+    }
   }
 }
 

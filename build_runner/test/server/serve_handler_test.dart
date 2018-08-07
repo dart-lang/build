@@ -334,12 +334,13 @@ void main() {
       test('works for different root dirs', () async {
         _addSource('a|web1/index.html', 'content1');
         _addSource('a|web2/index.html', 'content2');
+        _addSource('a|lib/some.dart.js', 'content3');
         expect(
             clientChannel1.stream.map((s) => jsonDecode(s.toString())),
             emitsInOrder([
               {
                 'index.html': '7e55db001d319a94b0b713529a756623',
-                'web2/index.html': 'eea670f4ac941df71a3b5f268ebe3eac'
+                'packages/a/some.dart.js': 'c96310e55d9677b978eae0dada47642c'
               },
               emitsDone
             ]));
@@ -347,8 +348,8 @@ void main() {
             clientChannel2.stream.map((s) => jsonDecode(s.toString())),
             emitsInOrder([
               {
-                'web1/index.html': '7e55db001d319a94b0b713529a756623',
-                'index.html': 'eea670f4ac941df71a3b5f268ebe3eac'
+                'index.html': 'eea670f4ac941df71a3b5f268ebe3eac',
+                'packages/a/some.dart.js': 'c96310e55d9677b978eae0dada47642c'
               },
               emitsDone
             ]));
@@ -357,6 +358,7 @@ void main() {
         await handler.emitUpdateMessage(BuildResult(BuildStatus.success, [
           AssetId('a', 'web1/index.html'),
           AssetId('a', 'web2/index.html'),
+          AssetId('a', 'lib/some.dart.js'),
         ]));
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();
