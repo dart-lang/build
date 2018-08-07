@@ -21,6 +21,7 @@ import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
+final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$livereload';
 final _buildUpdatesMessage = 'update';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
@@ -79,6 +80,9 @@ class ServeHandler implements BuildState {
       if (request.url.path == _performancePath) {
         return _performanceHandler(request);
       }
+      if (request.url.path == _assetsDigestPath) {
+        return _assetsDigestHandler(request, rootDir);
+      }
       if (request.url.path.startsWith(_graphPath)) {
         var graphHandler = await _assetGraphHandler;
         return await graphHandler.handle(
@@ -110,6 +114,24 @@ class ServeHandler implements BuildState {
     return new shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
         headers: {HttpHeaders.contentTypeHeader: 'text/html'});
+  }
+
+  Future<shelf.Response> _assetsDigestHandler(
+      shelf.Request request, String rootDir) async {
+    var assertPathList = jsonDecode(await request.readAsString()) as List;
+    var rootPackage = _state.packageGraph.root.name;
+    var results = <String, String>{};
+    for (String path in assertPathList) {
+      try {
+        var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
+        var digest = await _state.reader.digest(assetId);
+        results[path] = digest.toString();
+      } on AssetNotFoundException {
+        results.remove(path);
+      }
+    }
+    return new shelf.Response.ok(jsonEncode(results),
+        headers: {HttpHeaders.contentTypeHeader: 'application/json'});
   }
 
   void _warnForEmptyDirectory(String rootDir) {
