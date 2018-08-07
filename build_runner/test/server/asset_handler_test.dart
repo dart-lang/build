@@ -22,12 +22,12 @@ void main() {
   AssetGraph graph;
 
   setUp(() async {
-    graph = await AssetGraph.build([], new Set(), new Set(),
-        buildPackageGraph({rootPackage('foo'): []}), null);
-    delegate = new InMemoryRunnerAssetReader();
-    reader = new FinalizedReader(
-        delegate, graph, new OptionalOutputTracker(graph, [], []), 'a');
-    handler = new AssetHandler(reader, 'a');
+    graph = await AssetGraph.build(
+        [], Set(), Set(), buildPackageGraph({rootPackage('foo'): []}), null);
+    delegate = InMemoryRunnerAssetReader();
+    reader = FinalizedReader(
+        delegate, graph, OptionalOutputTracker(graph, [], []), 'a');
+    handler = AssetHandler(reader, 'a');
   });
 
   void _addAsset(String id, String content, {bool deleted = false}) {
@@ -42,7 +42,7 @@ void main() {
   test('can not read deleted nodes', () async {
     _addAsset('a|web/index.html', 'content', deleted: true);
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/index.html')), 'web');
+        Request('GET', Uri.parse('http://server.com/index.html')), 'web');
     expect(response.statusCode, 404);
     expect(await response.readAsString(), 'Not Found');
   });
@@ -50,14 +50,14 @@ void main() {
   test('can read from the root package', () async {
     _addAsset('a|web/index.html', 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/index.html')), 'web');
+        Request('GET', Uri.parse('http://server.com/index.html')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('can read from dependencies', () async {
     _addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
+        Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
         'web');
     expect(await response.readAsString(), 'content');
   });
@@ -65,7 +65,7 @@ void main() {
   test('can read from dependencies nested under top-level dir', () async {
     _addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
+        Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
         'web');
     expect(await response.readAsString(), 'content');
   });
@@ -73,26 +73,26 @@ void main() {
   test('defaults to index.html if path is empty', () async {
     _addAsset('a|web/index.html', 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/')), 'web');
+        Request('GET', Uri.parse('http://server.com/')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('defaults to index.html if URI ends with slash', () async {
     _addAsset('a|web/sub/index.html', 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/sub/')), 'web');
+        Request('GET', Uri.parse('http://server.com/sub/')), 'web');
     expect(await response.readAsString(), 'content');
   });
 
   test('does not default to index.html if URI does not end in slash', () async {
     _addAsset('a|web/sub/index.html', 'content');
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/sub')), 'web');
+        Request('GET', Uri.parse('http://server.com/sub')), 'web');
     expect(response.statusCode, 404);
   });
 
   test('Fails request for failed outputs', () async {
-    graph.add(new GeneratedAssetNode(
+    graph.add(GeneratedAssetNode(
       makeAssetId('a|web/main.ddc.js'),
       builderOptionsId: null,
       phaseNumber: null,
@@ -103,7 +103,7 @@ void main() {
       primaryInput: null,
     ));
     var response = await handler.handle(
-        new Request('GET', Uri.parse('http://server.com/main.ddc.js')), 'web');
+        Request('GET', Uri.parse('http://server.com/main.ddc.js')), 'web');
     expect(response.statusCode, HttpStatus.internalServerError);
   });
 }

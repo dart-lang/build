@@ -46,9 +46,9 @@ class AssetGraphHandler {
     switch (request.url.path) {
       case '':
         if (!request.url.hasQuery) {
-          return new shelf.Response.ok(
+          return shelf.Response.ok(
               await _reader.readAsString(
-                  new AssetId('build_runner', 'lib/src/server/graph_viz.html')),
+                  AssetId('build_runner', 'lib/src/server/graph_viz.html')),
               headers: {HttpHeaders.contentTypeHeader: 'text/html'});
         }
 
@@ -61,7 +61,7 @@ class AssetGraphHandler {
         return _jsonResponse(_assetGraph.serialize());
     }
 
-    return new shelf.Response.notFound('Bad request: "${request.url}".');
+    return shelf.Response.notFound('Bad request: "${request.url}".');
   }
 
   Future<shelf.Response> _handleQuery(String query, String rootDir) async {
@@ -78,7 +78,7 @@ class AssetGraphHandler {
         var secondTry = pathToAssetId(_rootPackage, rootDir, querySplit);
 
         if (!_assetGraph.contains(secondTry)) {
-          return new shelf.Response.notFound(
+          return shelf.Response.notFound(
               'Could not find asset for path "$query". Tried:\n'
               '- $assetId\n'
               '- $secondTry');
@@ -86,9 +86,9 @@ class AssetGraphHandler {
         assetId = secondTry;
       }
     } else {
-      assetId = new AssetId.parse(query);
+      assetId = AssetId.parse(query);
       if (!_assetGraph.contains(assetId)) {
-        return new shelf.Response.notFound(
+        return shelf.Response.notFound(
             'Could not find asset in build graph: $assetId');
       }
     }
@@ -128,7 +128,7 @@ class AssetGraphHandler {
   }
 }
 
-final _jsonUtf8Encoder = new JsonUtf8Encoder();
+final _jsonUtf8Encoder = JsonUtf8Encoder();
 
-shelf.Response _jsonResponse(List<int> body) => new shelf.Response.ok(body,
+shelf.Response _jsonResponse(List<int> body) => shelf.Response.ok(body,
     headers: {HttpHeaders.contentTypeHeader: 'application/json'});

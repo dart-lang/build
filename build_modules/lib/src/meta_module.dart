@@ -26,7 +26,7 @@ String _topLevelDir(String path) {
     error = 'The path `$path` reaches outside the root directory.';
   }
   if (error != null) {
-    throw new ArgumentError(
+    throw ArgumentError(
         'Cannot compute top level dir for path `$path`. $error');
   }
   return parts.first;
@@ -46,29 +46,28 @@ Module _moduleForComponent(List<ModuleLibrary> componentLibraries) {
   // Expand to include all the part files of each node, these aren't
   // included as individual `_AssetNodes`s in `connectedComponents`.
   sources.addAll(componentLibraries.expand((n) => n.parts));
-  var directDependencies = new Set<AssetId>()
+  var directDependencies = Set<AssetId>()
     ..addAll(componentLibraries.expand((n) => n.deps))
     ..removeAll(sources);
-  return new Module(primaryId, sources, directDependencies);
+  return Module(primaryId, sources, directDependencies);
 }
 
 Map<AssetId, Module> _entryPointModules(
         Iterable<Module> modules, Set<AssetId> entrypoints) =>
-    new Map.fromIterable(
-        modules.where((m) => m.sources.any(entrypoints.contains)),
+    Map.fromIterable(modules.where((m) => m.sources.any(entrypoints.contains)),
         key: (m) => (m as Module).primarySource);
 
 /// Gets the local (same top level dir of the same package) transitive deps of
 /// [module] using [assetsToModules].
 Set<AssetId> _localTransitiveDeps(
     Module module, Map<AssetId, Module> assetsToModules) {
-  var localTransitiveDeps = new Set<AssetId>();
+  var localTransitiveDeps = Set<AssetId>();
   var nextIds = module.directDependencies;
-  var seenIds = new Set<AssetId>();
+  var seenIds = Set<AssetId>();
   while (nextIds.isNotEmpty) {
     var ids = nextIds;
     seenIds.addAll(ids);
-    nextIds = new Set<AssetId>();
+    nextIds = Set<AssetId>();
     for (var id in ids) {
       var module = assetsToModules[id];
       if (module == null) continue; // Skip non-local modules
@@ -94,7 +93,7 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
   for (var module in entrypointModules) {
     for (var moduleDep in _localTransitiveDeps(module, assetsToModules)) {
       reverseDeps
-          .putIfAbsent(moduleDep, () => new Set<AssetId>())
+          .putIfAbsent(moduleDep, () => Set<AssetId>())
           .add(module.primarySource);
     }
   }
@@ -159,7 +158,7 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
 }
 
 Module _withConsistentPrimarySource(Module m) =>
-    new Module(m.sources.reduce(_min), m.sources, m.directDependencies);
+    Module(m.sources.reduce(_min), m.sources, m.directDependencies);
 
 T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
@@ -227,6 +226,6 @@ class MetaModule {
         librariesByDirectory.values.expand(_computeModules).toList();
     // Deterministically output the modules.
     modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
-    return new MetaModule(modules);
+    return MetaModule(modules);
   }
 }

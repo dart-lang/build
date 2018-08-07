@@ -18,7 +18,7 @@ import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not
 /// provided.
-const List<String> defaultRootPackageWhitelist = const [
+const List<String> defaultRootPackageWhitelist = [
   'benchmark/**',
   'bin/**',
   'example/**',
@@ -30,7 +30,7 @@ const List<String> defaultRootPackageWhitelist = const [
   'pubspec.lock',
 ];
 
-final _logger = new Logger('BuildOptions');
+final _logger = Logger('BuildOptions');
 
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
@@ -104,7 +104,7 @@ class BuildOptions {
     } on BuildConfigParseException catch (e, s) {
       _logger.severe(
           'Failed to parse `build.yaml` for ${e.packageName}.', e.exception, s);
-      throw new CannotBuildException();
+      throw CannotBuildException();
     }
 
     /// Set up other defaults.
@@ -120,13 +120,13 @@ class BuildOptions {
       if (!p.isWithin(p.current, logPerformanceDir)) {
         _logger.severe('Performance logs may only be output under the root '
             'package, but got `$logPerformanceDir` which is not.');
-        throw new CannotBuildException();
+        throw CannotBuildException();
       }
       trackPerformance = true;
     }
-    resolvers ??= new AnalyzerResolvers();
+    resolvers ??= AnalyzerResolvers();
 
-    return new BuildOptions._(
+    return BuildOptions._(
       debounceDelay: debounceDelay,
       deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,

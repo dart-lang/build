@@ -19,13 +19,13 @@ import 'builder_ordering.dart';
 const scriptLocation = '$entryPointDir/build.dart';
 
 Future<String> generateBuildScript([String configKey]) => logTimedAsync(
-    new Logger('Entrypoint'),
+    Logger('Entrypoint'),
     'Generating build script',
     () => _generateBuildScript(configKey));
 
 Future<String> _generateBuildScript(String configKey) async {
   final builders = await _findBuilderApplications(configKey);
-  final library = new Library((b) => b.body.addAll([
+  final library = Library((b) => b.body.addAll([
         literalList(
                 builders,
                 refer('BuilderApplication',
@@ -34,8 +34,8 @@ Future<String> _generateBuildScript(String configKey) async {
             .statement,
         _main()
       ]));
-  final emitter = new DartEmitter(new Allocator.simplePrefixing());
-  return new DartFormatter().format('${library.accept(emitter)}');
+  final emitter = DartEmitter(Allocator.simplePrefixing());
+  return DartFormatter().format('${library.accept(emitter)}');
 }
 
 /// Finds expressions to create all the `BuilderApplication` instances that
@@ -45,7 +45,7 @@ Future<String> _generateBuildScript(String configKey) async {
 /// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
   final builderApplications = <Expression>[];
-  final packageGraph = new PackageGraph.forThisPackage();
+  final packageGraph = PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
           [packageGraph.root], (node) => node.name, (node) => node.dependencies)
       .expand((c) => c);
@@ -60,7 +60,7 @@ Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
           package.name, package.dependencies.map((n) => n.name), package.path);
     } on ArgumentError catch (_) {
       // During the build an error will be logged.
-      return new BuildConfig.useDefault(
+      return BuildConfig.useDefault(
           package.name, package.dependencies.map((n) => n.name));
     }
   }
@@ -91,18 +91,18 @@ Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
 }
 
 /// A method forwarding to `run`.
-Method _main() => new Method((b) => b
+Method _main() => Method((b) => b
   ..name = 'main'
   ..modifier = MethodModifier.async
-  ..requiredParameters.add(new Parameter((b) => b
+  ..requiredParameters.add(Parameter((b) => b
     ..name = 'args'
-    ..type = new TypeReference((b) => b
+    ..type = TypeReference((b) => b
       ..symbol = 'List'
       ..types.add(refer('String')))))
-  ..optionalParameters.add(new Parameter((b) => b
+  ..optionalParameters.add(Parameter((b) => b
     ..name = 'sendPort'
     ..type = refer('SendPort', 'dart:isolate')))
-  ..body = new Block.of([
+  ..body = Block.of([
     refer('run', 'package:build_runner/build_runner.dart')
         .call([refer('args'), refer('_builders')])
         .awaited
@@ -229,7 +229,7 @@ Expression _findToExpression(BuilderDefinition definition) {
     case AutoApply.rootPackage:
       return refer('toRoot', 'package:build_runner/build_runner.dart').call([]);
   }
-  throw new ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
+  throw ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }
 
 /// An expression creating a [BuilderOptions] from a json string.

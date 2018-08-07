@@ -25,7 +25,7 @@ import '../server/server.dart';
 import 'directory_watcher_factory.dart';
 import 'terminator.dart';
 
-final _logger = new Logger('Watch');
+final _logger = Logger('Watch');
 
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
@@ -54,10 +54,10 @@ Future<ServeHandler> watch(
   String logPerformanceDir,
 }) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= new PackageGraph.forThisPackage();
+  packageGraph ??= PackageGraph.forThisPackage();
 
-  var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph,
+  var environment = OverrideableEnvironment(
+      IOEnvironment(packageGraph,
           assumeTty: assumeTty,
           outputMap: outputMap,
           outputSymlinksOnly: outputSymlinksOnly),
@@ -81,7 +81,7 @@ Future<ServeHandler> watch(
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
   );
-  var terminator = new Terminator(terminateEventStream);
+  var terminator = Terminator(terminateEventStream);
 
   var watch = _runWatch(
       options,
@@ -121,7 +121,7 @@ WatchImpl _runWatch(
         String configKey,
         bool willCreateOutputDirs,
         {bool isReleaseMode = false}) =>
-    new WatchImpl(options, environment, builders, builderConfigOverrides, until,
+    WatchImpl(options, environment, builders, builderConfigOverrides, until,
         directoryWatcherFactory, configKey, willCreateOutputDirs,
         isReleaseMode: isReleaseMode);
 
@@ -154,7 +154,7 @@ class WatchImpl implements BuildState {
 
   AssetGraph get assetGraph => _build?.assetGraph;
 
-  final _readyCompleter = new Completer<Null>();
+  final _readyCompleter = Completer<Null>();
   Future<Null> get ready => _readyCompleter.future;
 
   final String _configKey; // may be null
@@ -171,7 +171,7 @@ class WatchImpl implements BuildState {
   final bool _willCreateOutputDirs;
 
   /// Should complete when we need to kill the build.
-  final _terminateCompleter = new Completer<Null>();
+  final _terminateCompleter = Completer<Null>();
 
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
@@ -183,7 +183,7 @@ class WatchImpl implements BuildState {
   Future<BuildResult> currentBuild;
 
   /// Pending expected delete events from the build.
-  final Set<AssetId> _expectedDeletes = new Set<AssetId>();
+  final Set<AssetId> _expectedDeletes = Set<AssetId>();
 
   FinalizedReader _reader;
   FinalizedReader get reader => _reader;
@@ -222,11 +222,11 @@ class WatchImpl implements BuildState {
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       Future until,
       {bool isReleaseMode = false}) {
-    var watcherEnvironment = new OverrideableEnvironment(environment,
-        writer: new _OnDeleteWriter(environment.writer, _expectedDeletes.add));
-    var firstBuildCompleter = new Completer<BuildResult>();
+    var watcherEnvironment = OverrideableEnvironment(environment,
+        writer: _OnDeleteWriter(environment.writer, _expectedDeletes.add));
+    var firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
-    var controller = new StreamController<BuildResult>();
+    var controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(_build != null);
@@ -241,7 +241,7 @@ class WatchImpl implements BuildState {
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
-          return new BuildResult(BuildStatus.failure, []);
+          return BuildResult(BuildStatus.failure, []);
         }
       }
       return _build.run(mergedChanges);
@@ -252,13 +252,13 @@ class WatchImpl implements BuildState {
     });
 
     Digest originalRootPackagesDigest;
-    final rootPackagesId = new AssetId(packageGraph.root.name, '.packages');
+    final rootPackagesId = AssetId(packageGraph.root.name, '.packages');
 
     // Start watching files immediately, before the first build is even started.
-    var graphWatcher = new PackageGraphWatcher(packageGraph,
+    var graphWatcher = PackageGraphWatcher(packageGraph,
         logger: _logger,
         watch: (node) =>
-            new PackageNodeWatcher(node, watch: _directoryWatcherFactory));
+            PackageNodeWatcher(node, watch: _directoryWatcherFactory));
     graphWatcher
         .watch()
         .asyncMap<AssetChange>((change) {
@@ -323,7 +323,7 @@ class WatchImpl implements BuildState {
 
         firstBuild = await _build.run({});
       } on CannotBuildException {
-        firstBuild = new BuildResult(BuildStatus.failure, []);
+        firstBuild = BuildResult(BuildStatus.failure, []);
       }
 
       _reader = _build?.finalizedReader;
@@ -347,7 +347,7 @@ class WatchImpl implements BuildState {
   bool _isPackageBuildYamlOverride(AssetId id) =>
       id.package == packageGraph.root.name &&
       id.path.contains(_packageBuildYamlRegexp);
-  final _packageBuildYamlRegexp = new RegExp(r'^[a-z0-9_]+\.build\.yaml$');
+  final _packageBuildYamlRegexp = RegExp(r'^[a-z0-9_]+\.build\.yaml$');
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
@@ -393,7 +393,7 @@ Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
             changeMap[change.id] = ChangeType.MODIFY;
           } else if (change.type == ChangeType.MODIFY) {
             // REMOVE followed by MODIFY isn't sensible, just throw.
-            throw new StateError(
+            throw StateError(
                 'Internal error, got REMOVE event followed by MODIFY event for '
                 '${change.id}.');
           }
@@ -404,7 +404,7 @@ Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
             changeMap[change.id] = change.type;
           } else if (change.type == ChangeType.ADD) {
             // MODIFY followed by ADD isn't sensible, just throw.
-            throw new StateError(
+            throw StateError(
                 'Internal error, got MODIFY event followed by ADD event for '
                 '${change.id}.');
           }

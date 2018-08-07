@@ -43,13 +43,13 @@ class Resource<T> {
 
   /// Disposes the actual instance of this resource for [manager] if present.
   Future _dispose(ResourceManager manager) {
-    if (!_instanceByManager.containsKey(manager)) return new Future.value(null);
+    if (!_instanceByManager.containsKey(manager)) return Future.value(null);
     var oldInstance = _fetch(manager);
     _instanceByManager.remove(manager);
     if (_userDispose != null) {
       return oldInstance.then(_userDispose);
     } else {
-      return new Future.value(null);
+      return Future.value(null);
     }
   }
 }
@@ -60,14 +60,14 @@ class Resource<T> {
 /// implementations and not general end users. Instead end users should use
 /// the `buildStep#fetchResource` method to get [Resource]s.
 class ResourceManager {
-  final _resources = new Set<Resource>();
+  final _resources = Set<Resource>();
 
   /// The [Resource]s that we need to call `beforeExit` on.
   ///
   /// We have to hang on to these forever, but they should be small in number,
   /// and we don't hold on to the actual created instances, just the [Resource]
   /// instances.
-  final _resourcesWithBeforeExit = new Set<Resource>();
+  final _resourcesWithBeforeExit = Set<Resource>();
 
   /// Fetches an instance of [resource].
   Future<T> fetch<T>(Resource<T> resource) async {

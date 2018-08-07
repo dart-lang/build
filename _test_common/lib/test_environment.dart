@@ -45,8 +45,8 @@ class TestBuildEnvironment extends BuildEnvironment {
       {RunnerAssetReader reader,
       RunnerAssetWriter writer,
       this.throwOnPrompt = false})
-      : this.reader = reader ?? new InMemoryRunnerAssetReader(),
-        this.writer = writer ?? new InMemoryRunnerAssetWriter();
+      : this.reader = reader ?? InMemoryRunnerAssetReader(),
+        this.writer = writer ?? InMemoryRunnerAssetWriter();
 
   @override
   void onLog(LogRecord record) => logRecords.add(record);
@@ -60,9 +60,9 @@ class TestBuildEnvironment extends BuildEnvironment {
   /// this method should throw [NonInteractiveBuildException].
   @override
   Future<int> prompt(String message, List<String> choices) {
-    if (throwOnPrompt) throw new NonInteractiveBuildException();
+    if (throwOnPrompt) throw NonInteractiveBuildException();
 
     assert(_nextPromptResponse != null);
-    return new Future.value(_nextPromptResponse);
+    return Future.value(_nextPromptResponse);
   }
 }

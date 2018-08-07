@@ -136,7 +136,7 @@ class BuilderDefinition {
         this.buildTo = buildTo ?? BuildTo.cache,
         this.defaults = defaults ?? const TargetBuilderConfigDefaults() {
     if (builderFactories.isEmpty) {
-      throw new ArgumentError.value(builderFactories, 'builderFactories',
+      throw ArgumentError.value(builderFactories, 'builderFactories',
           'Must have at least one value.');
     }
   }

@@ -13,7 +13,7 @@ import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'package_reader.dart';
 
-final defaultResolvers = new AnalyzerResolvers();
+final defaultResolvers = AnalyzerResolvers();
 
 /// Marker constant that may be used in combination with [resolveSources].
 ///
@@ -31,7 +31,7 @@ Future<T> resolveSource<T>(
   Future<Null> tearDown,
   Resolvers resolvers,
 }) {
-  inputId ??= new AssetId('_resolve_source', 'lib/_resolve_source.dart');
+  inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
   return _resolveAssets(
     {
       '${inputId.package}|${inputId.path}': inputSource,
@@ -124,14 +124,14 @@ Future<T> resolveSources<T>(
   Resolvers resolvers,
 }) {
   if (inputs == null || inputs.isEmpty) {
-    throw new ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
+    throw ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
   }
   return _resolveAssets(
     inputs,
-    rootPackage ?? new AssetId.parse(inputs.keys.first).package,
+    rootPackage ?? AssetId.parse(inputs.keys.first).package,
     action,
     resolver: resolver,
-    resolverFor: new AssetId.parse(resolverFor ?? inputs.keys.first),
+    resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
     tearDown: tearDown,
     resolvers: resolvers,
   );
@@ -173,22 +173,22 @@ Future<T> _resolveAssets<T>(
   Resolvers resolvers,
 }) async {
   final syncResolver = await (resolver ?? PackageResolver.current).asSync;
-  final assetReader = new PackageAssetReader(syncResolver, rootPackage);
-  final resolveBuilder = new _ResolveSourceBuilder(
+  final assetReader = PackageAssetReader(syncResolver, rootPackage);
+  final resolveBuilder = _ResolveSourceBuilder(
     action,
     resolverFor,
     tearDown,
   );
   final inputAssets = <AssetId, String>{};
   await Future.wait(inputs.keys.map((String rawAssetId) async {
-    final assetId = new AssetId.parse(rawAssetId);
+    final assetId = AssetId.parse(rawAssetId);
     var assetValue = inputs[rawAssetId];
     if (assetValue == useAssetReader) {
       assetValue = await assetReader.readAsString(assetId);
     }
     inputAssets[assetId] = assetValue;
   }));
-  final inMemory = new InMemoryAssetReader(
+  final inMemory = InMemoryAssetReader(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
   );
@@ -197,8 +197,8 @@ Future<T> _resolveAssets<T>(
   runBuilder(
     resolveBuilder,
     inputAssets.keys,
-    new MultiAssetReader([inMemory, assetReader]),
-    new InMemoryAssetWriter(),
+    MultiAssetReader([inMemory, assetReader]),
+    InMemoryAssetWriter(),
     resolvers ?? defaultResolvers,
   );
   return resolveBuilder.onDone.future;
@@ -215,7 +215,7 @@ class _ResolveSourceBuilder<T> implements Builder {
   final Future _tearDown;
   final AssetId _resolverFor;
 
-  final onDone = new Completer<T>();
+  final onDone = Completer<T>();
 
   _ResolveSourceBuilder(this._action, this._resolverFor, this._tearDown);
 
@@ -229,6 +229,6 @@ class _ResolveSourceBuilder<T> implements Builder {
 
   @override
   final buildExtensions = const {
-    '': const ['.unused']
+    '': ['.unused']
   };
 }

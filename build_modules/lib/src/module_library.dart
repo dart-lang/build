@@ -49,13 +49,13 @@ class ModuleLibrary {
 
   factory ModuleLibrary._fromCompilationUnit(
       AssetId id, bool isEntryPoint, CompilationUnit parsed) {
-    var deps = new Set<AssetId>();
-    var parts = new Set<AssetId>();
+    var deps = Set<AssetId>();
+    var parts = Set<AssetId>();
     for (var directive in parsed.directives) {
       if (directive is! UriBasedDirective) continue;
       var path = (directive as UriBasedDirective).uri.stringValue;
       if (Uri.parse(path).scheme == 'dart') continue;
-      var linkedId = new AssetId.resolve(path, from: id);
+      var linkedId = AssetId.resolve(path, from: id);
       if (linkedId == null) continue;
       if (directive is PartDirective) {
         parts.add(linkedId);
@@ -75,10 +75,10 @@ class ModuleLibrary {
         deps.addAll(conditionalDirectiveConfigurations
             .map((c) => Uri.parse(c.uri.stringValue))
             .where((u) => u.scheme != 'dart')
-            .map((u) => new AssetId.resolve(u.toString(), from: id)));
+            .map((u) => AssetId.resolve(u.toString(), from: id)));
       }
     }
-    return new ModuleLibrary._(id,
+    return ModuleLibrary._(id,
         isEntryPoint: isEntryPoint, deps: deps, parts: parts);
   }
 
@@ -95,15 +95,15 @@ class ModuleLibrary {
         d is UriBasedDirective &&
         d.uri.stringValue.startsWith('dart:_') &&
         id.package != 'dart_internal')) {
-      return new ModuleLibrary._nonImportable(id);
+      return ModuleLibrary._nonImportable(id);
     }
     if (_isPart(parsed)) {
-      return new ModuleLibrary._nonImportable(id);
+      return ModuleLibrary._nonImportable(id);
     }
 
     final isEntryPoint =
         (isLibDir && !id.path.startsWith('lib/src/')) || _hasMainMethod(parsed);
-    return new ModuleLibrary._fromCompilationUnit(id, isEntryPoint, parsed);
+    return ModuleLibrary._fromCompilationUnit(id, isEntryPoint, parsed);
   }
 
   /// Parses the output of [toString] back into a [ModuleLibrary].
@@ -115,13 +115,13 @@ class ModuleLibrary {
     final isEntryPoint = lines.first == 'true';
     final separator = lines.indexOf('');
     final deps =
-        lines.sublist(1, separator).map((l) => new AssetId.parse(l)).toSet();
+        lines.sublist(1, separator).map((l) => AssetId.parse(l)).toSet();
     final parts = lines
         .sublist(separator + 1)
         .where((l) => l.isNotEmpty)
-        .map((l) => new AssetId.parse(l))
+        .map((l) => AssetId.parse(l))
         .toSet();
-    return new ModuleLibrary._(id,
+    return ModuleLibrary._(id,
         isEntryPoint: isEntryPoint, deps: deps, parts: parts);
   }
 

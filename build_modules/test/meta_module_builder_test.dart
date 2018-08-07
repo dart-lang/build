@@ -13,10 +13,10 @@ import 'matchers.dart';
 
 main() {
   test('can serialize meta modules', () async {
-    var assetA = new AssetId('a', 'lib/a.dart');
-    var moduleA = new Module(assetA, [assetA], <AssetId>[]);
-    var metaA = new MetaModule([moduleA]);
-    await testBuilder(new MetaModuleBuilder(), {
+    var assetA = AssetId('a', 'lib/a.dart');
+    var moduleA = Module(assetA, [assetA], <AssetId>[]);
+    var metaA = MetaModule([moduleA]);
+    await testBuilder(MetaModuleBuilder(), {
       'a|lib/a.module.library': 'true\n\n',
     }, outputs: {
       'a|lib/$metaModuleExtension': encodedMatchesMetaModule(metaA),

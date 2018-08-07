@@ -44,7 +44,7 @@ class SingleStepReader implements AssetReader {
       Glob glob, String package, int phaseNum) _getGlobNode;
 
   /// The assets read during this step in sorted order.
-  final assetsRead = new SplayTreeSet<AssetId>();
+  final assetsRead = SplayTreeSet<AssetId>();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode,
@@ -56,7 +56,7 @@ class SingleStepReader implements AssetReader {
     assetsRead.add(id);
     var node = _assetGraph.get(id);
     if (node == null) {
-      _assetGraph.add(new SyntheticSourceAssetNode(id));
+      _assetGraph.add(SyntheticSourceAssetNode(id));
       return false;
     }
     return _isReadableNode(node, _phaseNumber, _primaryPackage);
@@ -88,7 +88,7 @@ class SingleStepReader implements AssetReader {
   Future<Digest> digest(AssetId id) {
     return toFuture(doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
-        return new Future.error(new AssetNotFoundException(id));
+        return Future.error(AssetNotFoundException(id));
       }
       return _ensureDigest(id);
     }));
@@ -98,7 +98,7 @@ class SingleStepReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) {
     return toFuture(doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
-        return new Future.error(new AssetNotFoundException(id));
+        return Future.error(AssetNotFoundException(id));
       }
       return doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
     }));
@@ -108,7 +108,7 @@ class SingleStepReader implements AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     return toFuture(doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
-        return new Future.error(new AssetNotFoundException(id));
+        return Future.error(AssetNotFoundException(id));
       }
       return doAfter(_ensureDigest(id),
           (_) => _delegate.readAsString(id, encoding: encoding));
@@ -117,13 +117,12 @@ class SingleStepReader implements AssetReader {
 
   @override
   Stream<AssetId> findAssets(Glob glob) {
-    var streamCompleter = new StreamCompleter<AssetId>();
+    var streamCompleter = StreamCompleter<AssetId>();
 
     doAfter(_getGlobNode(glob, _primaryPackage, _phaseNumber),
         (GlobAssetNode globNode) {
       assetsRead.add(globNode.id);
-      streamCompleter
-          .setSourceStream(new Stream.fromIterable(globNode.results));
+      streamCompleter.setSourceStream(Stream.fromIterable(globNode.results));
     });
     return streamCompleter.stream;
   }

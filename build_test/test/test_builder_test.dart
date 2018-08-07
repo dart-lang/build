@@ -23,7 +23,7 @@ void main() {
       'a|lib/a.matchingFiles':
           'a|lib/a.txt\na|lib/b.txt\na|lib/c.txt\na|lib/d.txt',
     };
-    await testBuilder(new GlobbingBuilder(new Glob('**.txt')), assets,
+    await testBuilder(GlobbingBuilder(Glob('**.txt')), assets,
         rootPackage: 'a', outputs: expectedOutputs);
   });
 
@@ -46,12 +46,12 @@ void main() {
           'b|lib/c.txt\n'
           'b|lib/d.txt'),
     };
-    await testBuilder(new GlobbingBuilder(new Glob('**.txt')), assets,
+    await testBuilder(GlobbingBuilder(Glob('**.txt')), assets,
         rootPackage: 'a', outputs: expectedOutputs);
   });
 
   group('can output special placeholder outpout files', () {
-    const placeholders = const ['lib', 'web', 'test'];
+    const placeholders = ['lib', 'web', 'test'];
 
     for (var dir in placeholders) {
       test('using the special "$dir" sset', () async {
@@ -66,7 +66,7 @@ void main() {
         };
 
         await testBuilder(
-          new _ConcatBuilder(dir),
+          _ConcatBuilder(dir),
           assets,
           rootPackage: 'a',
           outputs: outputs,
@@ -88,11 +88,11 @@ class _ConcatBuilder implements Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    final results = new StringBuffer();
-    await for (final asset in buildStep.findAssets(new Glob('data/*.txt'))) {
+    final results = StringBuffer();
+    await for (final asset in buildStep.findAssets(Glob('data/*.txt'))) {
       results.writeln(await buildStep.readAsString(asset));
     }
-    final output = new AssetId(buildStep.inputId.package, '$_input/concat.txt');
+    final output = AssetId(buildStep.inputId.package, '$_input/concat.txt');
     await buildStep.writeAsString(output, results.toString());
   }
 

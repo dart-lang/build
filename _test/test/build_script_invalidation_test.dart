@@ -23,7 +23,7 @@ void main() {
       var filePath = p.join('pkgs', 'provides_builder', 'lib', 'builders.dart');
       var terminateLine =
           nextStdOutLine('Terminating. No further builds will be scheduled');
-      await replaceAllInFile(filePath, new RegExp(r'$'), '// do a build');
+      await replaceAllInFile(filePath, RegExp(r'$'), '// do a build');
       await terminateLine;
       await stopServer();
       await startServer(extraExpects: [
@@ -38,18 +38,18 @@ void main() {
       var extraFilePath =
           p.join('.dart_tool', 'build', 'generated', 'foo', 'foo.txt');
       await createFile(extraFilePath, 'bar');
-      expect(await new File(extraFilePath).exists(), isTrue);
+      expect(await File(extraFilePath).exists(), isTrue);
 
       var filePath = p.join('pkgs', 'provides_builder', 'lib', 'builders.dart');
       await stopServer();
-      await replaceAllInFile(filePath, new RegExp(r'$'), '// do a build');
+      await replaceAllInFile(filePath, RegExp(r'$'), '// do a build');
       await startServer(extraExpects: [
         () => nextStdOutLine(
             'Invalidating asset graph due to build script update'),
         () => nextStdOutLine('Building new asset graph'),
       ]);
 
-      expect(await new File(extraFilePath).exists(), isFalse,
+      expect(await File(extraFilePath).exists(), isFalse,
           reason: 'The cache dir should get deleted when the build '
               'script changes.');
     });
@@ -65,7 +65,7 @@ void main() {
       var extraFilePath =
           p.join('.dart_tool', 'build', 'generated', 'foo', 'foo.txt');
       await createFile(extraFilePath, 'bar');
-      expect(await new File(extraFilePath).exists(), isTrue);
+      expect(await File(extraFilePath).exists(), isTrue);
 
       await startServer(extraExpects: [
         () => nextStdOutLine(
@@ -73,7 +73,7 @@ void main() {
         () => nextStdOutLine('Building new asset graph'),
       ]);
 
-      expect(await new File(extraFilePath).exists(), isFalse,
+      expect(await File(extraFilePath).exists(), isFalse,
           reason: 'The cache dir should get deleted when the asset graph '
               'can\'t be parsed');
     }, onPlatform: {'windows': const Skip('flaky on windows')});

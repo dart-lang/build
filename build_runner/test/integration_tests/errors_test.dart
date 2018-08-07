@@ -11,7 +11,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'utils/build_descriptor.dart';
 
 // test-package-start #########################################################
-final alwaysThrow = new TestBuilder(
+final alwaysThrow = TestBuilder(
     buildExtensions: {
       '.txt': ['.txt.copy'],
     },

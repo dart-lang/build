@@ -48,13 +48,13 @@ class TargetGraph {
         defaultInclude = const ['lib/**'];
       }
       final nodes = config.buildTargets.values.map((target) =>
-          new TargetNode(target, package, defaultInclude: defaultInclude));
+          TargetNode(target, package, defaultInclude: defaultInclude));
       for (final node in nodes) {
         modulesByKey[node.target.key] = node;
         modulesByPackage.putIfAbsent(node.target.package, () => []).add(node);
       }
     }
-    return new TargetGraph._(modulesByKey, modulesByPackage, rootPackageConfig);
+    return TargetGraph._(modulesByKey, modulesByPackage, rootPackageConfig);
   }
 
   /// Whether or not [id] is included in the sources of any target in the graph.
@@ -71,7 +71,7 @@ class TargetNode {
 
   TargetNode(this.target, this.package, {List<String> defaultInclude})
       : _sourcesMatcher =
-            new InputMatcher(target.sources, defaultInclude: defaultInclude);
+            InputMatcher(target.sources, defaultInclude: defaultInclude);
 
   bool excludesSource(AssetId id) => _sourcesMatcher.excludes(id);
 
@@ -84,13 +84,13 @@ class TargetNode {
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   final dependencyNames = package.dependencies.map((n) => n.name);
   if (package.path == null) {
-    return new BuildConfig.useDefault(package.name, dependencyNames);
+    return BuildConfig.useDefault(package.name, dependencyNames);
   }
   try {
     return await BuildConfig.fromBuildConfigDir(
         package.name, dependencyNames, package.path);
   } on ArgumentError catch (e) {
-    throw new BuildConfigParseException(package.name, e);
+    throw BuildConfigParseException(package.name, e);
   }
 }
 

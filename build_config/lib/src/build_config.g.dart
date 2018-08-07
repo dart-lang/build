@@ -14,30 +14,27 @@ BuildConfig _$BuildConfigFromJson(Map json) {
       'targets',
       'global_options'
     ]);
-    var val = new BuildConfig(
+    var val = BuildConfig(
         buildTargets: $checkedConvert(json, 'targets',
             (v) => v == null ? null : _buildTargetsFromJson(v as Map)),
         globalOptions: $checkedConvert(
             json,
             'global_options',
-            (v) => (v as Map)?.map((k, e) => new MapEntry(
-                k as String,
-                e == null
-                    ? null
-                    : new GlobalBuilderConfig.fromJson(e as Map)))),
+            (v) => (v as Map)?.map((k, e) => MapEntry(k as String,
+                e == null ? null : GlobalBuilderConfig.fromJson(e as Map)))),
         builderDefinitions: $checkedConvert(
             json,
             'builders',
-            (v) => (v as Map)?.map((k, e) => new MapEntry(k as String,
-                e == null ? null : new BuilderDefinition.fromJson(e as Map)))),
+            (v) => (v as Map)?.map((k, e) => MapEntry(k as String,
+                e == null ? null : BuilderDefinition.fromJson(e as Map)))),
         postProcessBuilderDefinitions: $checkedConvert(
             json,
             'post_process_builders',
-            (v) => (v as Map)?.map((k, e) => new MapEntry(
+            (v) => (v as Map)?.map((k, e) => MapEntry(
                 k as String,
                 e == null
                     ? null
-                    : new PostProcessBuilderDefinition.fromJson(e as Map)))));
+                    : PostProcessBuilderDefinition.fromJson(e as Map)))));
     return val;
   }, fieldKeyMap: const {
     'buildTargets': 'targets',

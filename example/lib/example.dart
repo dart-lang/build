@@ -26,7 +26,7 @@ class CopyBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    '.txt': const ['.txt.copy']
+    '.txt': ['.txt.copy']
   };
 }
 
@@ -35,18 +35,18 @@ class CssBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     await buildStep.writeAsString(
-        new AssetId(buildStep.inputId.package, 'web/generated.css'),
+        AssetId(buildStep.inputId.package, 'web/generated.css'),
         _cssContent(buildStep.inputId));
   }
 
   @override
   final buildExtensions = const {
-    r'$web$': const ['generated.css']
+    r'$web$': ['generated.css']
   };
 
   static String _cssContent(AssetId inputId) => '''
 /*
-Generated at: ${new DateTime.now()}
+Generated at: ${DateTime.now()}
      AssetId: $inputId
 */
 pre {
@@ -77,6 +77,6 @@ Visible libraries: $visibleLibraries
 
   @override
   final buildExtensions = const {
-    '.dart': const ['.dart.info']
+    '.dart': ['.dart.info']
   };
 }

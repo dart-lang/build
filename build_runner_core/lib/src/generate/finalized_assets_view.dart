@@ -24,7 +24,7 @@ class FinalizedAssetsView {
 
   List<AssetId> allAssets({String rootDir}) {
     if (_expired) {
-      throw new StateError(
+      throw StateError(
           'Cannot use a FinalizedAssetsView after it has expired!');
     }
     return _assetGraph.allNodes

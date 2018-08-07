@@ -16,8 +16,8 @@ void main() {
     MultiAssetReader assetReader;
 
     test('should throw an $AssetNotFoundException with no readers', () {
-      var missingId = new AssetId('some_pkg', 'some_pkg.dart');
-      assetReader = new MultiAssetReader([]);
+      var missingId = AssetId('some_pkg', 'some_pkg.dart');
+      assetReader = MultiAssetReader([]);
       expect(
         assetReader.readAsString(missingId),
         throwsAssetNotFound,
@@ -25,14 +25,14 @@ void main() {
     });
 
     test('should read an asset from an underyling reader', () async {
-      var idA = new AssetId('some_pkg', 'a.dart');
-      var idB = new AssetId('some_pkg', 'b.dart');
-      var idC = new AssetId('some_pkg', 'missing.dart');
-      assetReader = new MultiAssetReader([
-        new InMemoryAssetReader(sourceAssets: {
+      var idA = AssetId('some_pkg', 'a.dart');
+      var idB = AssetId('some_pkg', 'b.dart');
+      var idC = AssetId('some_pkg', 'missing.dart');
+      assetReader = MultiAssetReader([
+        InMemoryAssetReader(sourceAssets: {
           idA: 'A',
         }),
-        new InMemoryAssetReader(sourceAssets: {
+        InMemoryAssetReader(sourceAssets: {
           idB: 'B',
         }),
       ]);
@@ -42,36 +42,36 @@ void main() {
     });
 
     test('should combine files when using `findAssets`', () async {
-      var idA = new AssetId('some_pkg', 'lib/a.dart');
-      var idB = new AssetId('some_pkg', 'lib/b.dart');
-      assetReader = new MultiAssetReader([
-        new InMemoryAssetReader(
+      var idA = AssetId('some_pkg', 'lib/a.dart');
+      var idB = AssetId('some_pkg', 'lib/b.dart');
+      assetReader = MultiAssetReader([
+        InMemoryAssetReader(
           sourceAssets: {
             idA: 'A',
           },
           rootPackage: 'some_pkg',
         ),
-        new InMemoryAssetReader(
+        InMemoryAssetReader(
           sourceAssets: {
             idB: 'B',
           },
           rootPackage: 'some_pkg',
         ),
       ]);
-      expect(await assetReader.findAssets(new Glob('lib/*.dart')).toList(),
+      expect(await assetReader.findAssets(Glob('lib/*.dart')).toList(),
           [idA, idB]);
     });
 
     test('should support the `package` arg in `findAssets`', () async {
-      var idA = new AssetId('a', 'lib/a.dart');
-      var idB = new AssetId('b', 'lib/b.dart');
-      assetReader = new MultiAssetReader([
-        new InMemoryAssetReader(
+      var idA = AssetId('a', 'lib/a.dart');
+      var idB = AssetId('b', 'lib/b.dart');
+      assetReader = MultiAssetReader([
+        InMemoryAssetReader(
           sourceAssets: {
             idA: 'A',
           },
         ),
-        new InMemoryAssetReader(
+        InMemoryAssetReader(
           sourceAssets: {
             idB: 'B',
           },
@@ -79,26 +79,26 @@ void main() {
       ]);
       expect(
           await assetReader
-              .findAssets(new Glob('lib/*.dart'), package: 'a')
+              .findAssets(Glob('lib/*.dart'), package: 'a')
               .toList(),
           [idA]);
       expect(
           await assetReader
-              .findAssets(new Glob('lib/*.dart'), package: 'b')
+              .findAssets(Glob('lib/*.dart'), package: 'b')
               .toList(),
           [idB]);
     });
 
     test('propagates errors from wrapped readers', () {
-      var idA = new AssetId('a', 'lib/a.dart');
-      assetReader = new MultiAssetReader([
-        new InMemoryAssetReader(
+      var idA = AssetId('a', 'lib/a.dart');
+      assetReader = MultiAssetReader([
+        InMemoryAssetReader(
           sourceAssets: {
             idA: 'A',
           },
         ),
       ]);
-      expect(() => assetReader.findAssets(new Glob('lib/*.dart')),
+      expect(() => assetReader.findAssets(Glob('lib/*.dart')),
           throwsUnsupportedError);
     });
   });

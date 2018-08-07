@@ -23,7 +23,7 @@ class BuildAssetUriResolver implements UriResolver {
     for (var asset in assets.where((asset) => asset.path.endsWith('.dart'))) {
       var uri = assetUri(asset);
       if (!_knownAssets.containsKey(uri)) {
-        _knownAssets[uri] = new AssetSource(asset, await read(asset));
+        _knownAssets[uri] = AssetSource(asset, await read(asset));
       }
     }
   }
@@ -33,7 +33,7 @@ class BuildAssetUriResolver implements UriResolver {
 
   @override
   Uri restoreAbsolute(Source source) {
-    throw new UnimplementedError();
+    throw UnimplementedError();
   }
 }
 
@@ -44,7 +44,7 @@ class AssetSource implements Source {
   AssetSource(this._assetId, this._content);
 
   @override
-  TimestampedData<String> get contents => new TimestampedData(0, _content);
+  TimestampedData<String> get contents => TimestampedData(0, _content);
 
   @override
   String get encoding => '$_assetId';
@@ -91,7 +91,7 @@ class AssetSource implements Source {
 }
 
 Uri assetUri(AssetId assetId) => assetId.path.startsWith('lib/')
-    ? new Uri(
+    ? Uri(
         scheme: 'package',
         path: '${assetId.package}/${assetId.path.replaceFirst('lib/', '')}')
-    : new Uri(scheme: 'asset', path: '${assetId.package}/${assetId.path}');
+    : Uri(scheme: 'asset', path: '${assetId.package}/${assetId.path}');

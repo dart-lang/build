@@ -11,7 +11,7 @@ import 'asset_change.dart';
 import 'node_watcher.dart';
 
 typedef PackageNodeWatcher _NodeWatcherStrategy(PackageNode node);
-PackageNodeWatcher _default(PackageNode node) => new PackageNodeWatcher(node);
+PackageNodeWatcher _default(PackageNode node) => PackageNodeWatcher(node);
 
 /// Allows watching an entire graph of packages to schedule rebuilds.
 class PackageGraphWatcher {
@@ -20,7 +20,7 @@ class PackageGraphWatcher {
   final _NodeWatcherStrategy _strategy;
   final PackageGraph _graph;
 
-  var _readyCompleter = new Completer<Null>();
+  var _readyCompleter = Completer<Null>();
   Future<Null> get ready => _readyCompleter.future;
 
   StreamController<AssetChange> controller;
@@ -33,14 +33,14 @@ class PackageGraphWatcher {
     this._graph, {
     Logger logger,
     PackageNodeWatcher watch(PackageNode node),
-  })  : _logger = logger ?? new Logger('build_runner'),
+  })  : _logger = logger ?? Logger('build_runner'),
         _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that changed in the package graph.
   Stream<AssetChange> watch() {
     if (controller != null) return controller.stream;
     List<StreamSubscription> subscriptions;
-    controller = new StreamController<AssetChange>(
+    controller = StreamController<AssetChange>(
       sync: true,
       onListen: () {
         subscriptions = logTimedSync(
@@ -53,7 +53,7 @@ class PackageGraphWatcher {
         for (final subscription in subscriptions) {
           subscription.cancel();
         }
-        _readyCompleter = new Completer<Null>();
+        _readyCompleter = Completer<Null>();
         var done = controller.close();
         controller = null;
         return done;

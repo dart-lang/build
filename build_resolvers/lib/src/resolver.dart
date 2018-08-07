@@ -29,8 +29,8 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Stream<LibraryElement> get libraries async* {
-    final seen = new Set<LibraryElement>();
-    final toVisit = new Queue<LibraryElement>();
+    final seen = Set<LibraryElement>();
+    final toVisit = Queue<LibraryElement>();
     for (final entryPoint in _entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
       final library = await _delegate.libraryFor(entryPoint);
@@ -81,7 +81,7 @@ class AnalyzerResolver implements ReleasableResolver {
   /// When actions can run out of order an asset can move from being readable
   /// (in the later phase) to being unreadable (in the earlier phase which ran
   /// later). If this happens we don't want to hide the asset from the analyzer.
-  final _seenAssets = new Set<AssetId>();
+  final _seenAssets = Set<AssetId>();
 
   AnalyzerResolver(DartUriResolver dartUriResolver,
       [AnalysisOptions analysisOptions]) {
@@ -89,7 +89,7 @@ class AnalyzerResolver implements ReleasableResolver {
       _context.analysisOptions = analysisOptions;
     }
     _context.sourceFactory =
-        new SourceFactory([dartUriResolver, new _AssetUriResolver(this)]);
+        SourceFactory([dartUriResolver, _AssetUriResolver(this)]);
   }
 
   @override
@@ -105,7 +105,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<LibraryElement> libraryFor(AssetId assetId) async {
     var source = sources[assetId];
     if (source == null || !_isLibrary(source)) {
-      throw new NonLibraryAssetException(assetId);
+      throw NonLibraryAssetException(assetId);
     }
     return _context.computeLibraryElement(source);
   }
@@ -124,8 +124,8 @@ class AnalyzerResolver implements ReleasableResolver {
       BuildStep buildStep, List<AssetId> entryPoints) {
     // Basic approach is to start at the first file, update it's contents
     // and see if it changed, then walk all files accessed by it.
-    var visited = new Set<AssetId>();
-    var visiting = new FutureGroup();
+    var visited = Set<AssetId>();
+    var visiting = FutureGroup();
     var toUpdate = [];
 
     void processAsset(AssetId assetId) {
@@ -135,11 +135,11 @@ class AnalyzerResolver implements ReleasableResolver {
         _seenAssets.add(assetId);
         var source = sources[assetId];
         if (source == null) {
-          source = new AssetBasedSource(assetId);
+          source = AssetBasedSource(assetId);
           sources[assetId] = source;
         }
         source.updateDependencies(contents);
-        toUpdate.add(new _PendingUpdate(source, contents));
+        toUpdate.add(_PendingUpdate(source, contents));
         source.dependentAssets
             .where((id) => !visited.contains(id))
             .forEach(processAsset);
@@ -148,7 +148,7 @@ class AnalyzerResolver implements ReleasableResolver {
         if (source != null &&
             source.exists() &&
             !_seenAssets.contains(assetId)) {
-          _context.applyChanges(new ChangeSet()..removedSource(source));
+          _context.applyChanges(ChangeSet()..removedSource(source));
           sources[assetId].updateContents(null);
         }
       }));
@@ -159,7 +159,7 @@ class AnalyzerResolver implements ReleasableResolver {
     // Once we have all asset sources updated with the new contents then
     // resolve everything.
     return visiting.future.then((_) async {
-      var changeSet = new ChangeSet();
+      var changeSet = ChangeSet();
       for (var pending in toUpdate) {
         pending.apply(changeSet);
       }
@@ -173,14 +173,14 @@ class AnalyzerResolver implements ReleasableResolver {
   Stream<LibraryElement> get libraries {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
-    throw new UnimplementedError();
+    throw UnimplementedError();
   }
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
-    throw new UnimplementedError();
+    throw UnimplementedError();
   }
 }
 
@@ -231,9 +231,9 @@ class AssetBasedSource extends Source {
   /// Contents of the file.
   @override
   TimestampedData<String> get contents {
-    if (!exists()) throw new StateError('$assetId does not exist');
+    if (!exists()) throw StateError('$assetId does not exist');
 
-    return new TimestampedData<String>(modificationStamp, _contents);
+    return TimestampedData<String>(modificationStamp, _contents);
   }
 
   /// Contents of the file.
@@ -293,7 +293,7 @@ class _AssetUriResolver implements UriResolver {
     AssetId assetId;
     if (uri.scheme == 'asset') {
       var parts = uri.pathSegments;
-      assetId = new AssetId(parts[0], path.joinAll(parts.skip(1)));
+      assetId = AssetId(parts[0], path.joinAll(parts.skip(1)));
     } else {
       assetId = _resolve(null, uri.toString());
       if (assetId == null) {
@@ -305,18 +305,18 @@ class _AssetUriResolver implements UriResolver {
     // Analyzer expects that sources which are referenced but do not exist yet
     // still exist, so just make an empty source.
     if (source == null) {
-      source = new AssetBasedSource(assetId);
+      source = AssetBasedSource(assetId);
       _resolver.sources[assetId] = source;
     }
     return source;
   }
 
   Source fromEncoding(UriKind kind, Uri uri) =>
-      throw new UnsupportedError('fromEncoding is not supported');
+      throw UnsupportedError('fromEncoding is not supported');
 
   @override
   Uri restoreAbsolute(Source source) =>
-      throw new UnsupportedError('restoreAbsolute is not supported');
+      throw UnsupportedError('restoreAbsolute is not supported');
 }
 
 /// Get an asset ID for a URL relative to another source asset.
@@ -333,15 +333,15 @@ AssetId _resolve(AssetId source, String url) {
   }
 
   if (uri.scheme == 'package') {
-    var segments = new List<String>.from(uri.pathSegments);
+    var segments = List<String>.from(uri.pathSegments);
     var package = segments[0];
     segments[0] = 'lib';
-    return new AssetId(package, segments.join(path.separator));
+    return AssetId(package, segments.join(path.separator));
   }
   // Dart SDK libraries do not have assets.
   if (uri.scheme == 'dart') return null;
 
-  return new AssetId.resolve(url, from: source);
+  return AssetId.resolve(url, from: source);
 }
 
 /// A completer that waits until all added [Future]s complete.
@@ -352,7 +352,7 @@ class FutureGroup<E> {
 
   int _pending = 0;
   Future _failedTask;
-  final Completer<List<E>> _completer = new Completer<List<E>>();
+  final Completer<List<E>> _completer = Completer<List<E>>();
   final List<E> results = [];
 
   /// The task that failed, if any.
@@ -367,7 +367,7 @@ class FutureGroup<E> {
   /// error has already been signaled.
   void add(Future<E> task) {
     if (_failedTask != null) return;
-    if (_pending == _FINISHED) throw new StateError('Future already completed');
+    if (_pending == _FINISHED) throw StateError('Future already completed');
 
     _pending++;
     var i = results.length;
@@ -427,17 +427,16 @@ class AnalyzerResolvers implements Resolvers {
   factory AnalyzerResolvers([AnalysisOptions analysisOptions]) {
     _initAnalysisEngine();
     var resourceProvider = PhysicalResourceProvider.INSTANCE;
-    var sdk = new FolderBasedDartSdk(
+    var sdk = FolderBasedDartSdk(
         resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()));
-    var uriResolver = new DartUriResolver(sdk);
-    return new AnalyzerResolvers._(
-        new AnalyzerResolver(uriResolver, analysisOptions));
+    var uriResolver = DartUriResolver(sdk);
+    return AnalyzerResolvers._(AnalyzerResolver(uriResolver, analysisOptions));
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) =>
       _resolver._performResolve(buildStep, [buildStep.inputId]).then(
-          (r) => new PerActionResolver(r, [buildStep.inputId]));
+          (r) => PerActionResolver(r, [buildStep.inputId]));
 
   /// Must be called between each build.
   @override

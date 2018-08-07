@@ -39,8 +39,7 @@ class BuildTarget {
             .map((d) => normalizeTargetKeyUsage(d, currentPackage))
             .toList(),
         this.builders = (builders ?? const {}).map((key, config) =>
-            new MapEntry(
-                normalizeBuilderKeyUsage(key, currentPackage), config)),
+            MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
         this.sources = sources ?? InputSet.anything;
 
   factory BuildTarget.fromJson(Map json) => _$BuildTargetFromJson(json);

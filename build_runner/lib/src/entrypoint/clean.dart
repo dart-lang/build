@@ -22,7 +22,7 @@ class CleanCommand extends Command<int> {
       'Cleans up output from previous builds. Does not clean up --output '
       'directories.';
 
-  Logger get logger => new Logger(name);
+  Logger get logger => Logger(name);
 
   @override
   Future<int> run() async {
@@ -36,15 +36,15 @@ class CleanCommand extends Command<int> {
         'to work around an apparent (and reproducible) bug.');
 
     await logTimedAsync(logger, 'Cleaning up source outputs', () async {
-      var assetGraphFile = new File(assetGraphPath);
+      var assetGraphFile = File(assetGraphPath);
       if (!assetGraphFile.existsSync()) {
         logger.warning(
             'No asset graph found, skipping generated to source file cleanup');
       } else {
         var assetGraph =
-            new AssetGraph.deserialize(await assetGraphFile.readAsBytes());
-        var packageGraph = new PackageGraph.forThisPackage();
-        var writer = new FileBasedAssetWriter(packageGraph);
+            AssetGraph.deserialize(await assetGraphFile.readAsBytes());
+        var packageGraph = PackageGraph.forThisPackage();
+        var writer = FileBasedAssetWriter(packageGraph);
         for (var id in assetGraph.outputs) {
           if (id.package != packageGraph.root.name) continue;
           var node = assetGraph.get(id) as GeneratedAssetNode;
@@ -60,7 +60,7 @@ class CleanCommand extends Command<int> {
     });
 
     await logTimedAsync(logger, 'Cleaning up cache directory', () async {
-      var generatedDir = new Directory(cacheDir);
+      var generatedDir = Directory(cacheDir);
       if (await generatedDir.exists()) {
         await generatedDir.delete(recursive: true);
       }

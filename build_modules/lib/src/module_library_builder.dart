@@ -24,7 +24,7 @@ class ModuleLibraryBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    '.dart': const [moduleLibraryExtension]
+    '.dart': [moduleLibraryExtension]
   };
 
   @override

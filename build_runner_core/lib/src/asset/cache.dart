@@ -20,7 +20,7 @@ import 'reader.dart';
 /// Does not implement [findAssets].
 class CachingAssetReader implements AssetReader {
   /// Cached results of [readAsBytes].
-  final _bytesContentCache = new LruCache<AssetId, List<int>>(
+  final _bytesContentCache = LruCache<AssetId, List<int>>(
       1024 * 1024,
       1024 * 1024 * 512,
       (value) => value is Uint8List ? value.lengthInBytes : value.length * 8);
@@ -38,7 +38,7 @@ class CachingAssetReader implements AssetReader {
   /// These are computed and stored lazily using [readAsBytes].
   ///
   /// Only files read with [utf8] encoding (the default) will ever be cached.
-  final _stringContentCache = new LruCache<AssetId, String>(
+  final _stringContentCache = LruCache<AssetId, String>(
       1024 * 1024, 1024 * 1024 * 512, (value) => value.length);
 
   /// Pending `readAsString` operations.
@@ -50,8 +50,8 @@ class CachingAssetReader implements AssetReader {
 
   factory CachingAssetReader(AssetReader delegate) =>
       delegate is PathProvidingAssetReader
-          ? new _PathProvidingCachingAssetReader._(delegate)
-          : new CachingAssetReader._(delegate);
+          ? _PathProvidingCachingAssetReader._(delegate)
+          : CachingAssetReader._(delegate);
 
   @override
   Future<bool> canRead(AssetId id) =>
@@ -62,12 +62,12 @@ class CachingAssetReader implements AssetReader {
 
   @override
   Stream<AssetId> findAssets(Glob glob) =>
-      throw new UnimplementedError('unimplemented!');
+      throw UnimplementedError('unimplemented!');
 
   @override
   Future<List<int>> readAsBytes(AssetId id, {bool cache = true}) {
     var cached = _bytesContentCache[id];
-    if (cached != null) return new Future.value(cached);
+    if (cached != null) return Future.value(cached);
 
     return _pendingBytesContentCache.putIfAbsent(
         id,
@@ -89,7 +89,7 @@ class CachingAssetReader implements AssetReader {
     }
 
     var cached = _stringContentCache[id];
-    if (cached != null) return new Future.value(cached);
+    if (cached != null) return Future.value(cached);
 
     return _pendingStringContentCache.putIfAbsent(
         id,

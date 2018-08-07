@@ -14,7 +14,7 @@ AssetId makeAssetId([String assetIdString]) {
     assetIdString = 'a|web/asset_$_nextId.txt';
     _nextId++;
   }
-  return new AssetId.parse(assetIdString);
+  return AssetId.parse(assetIdString);
 }
 
 void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetWriter writer) {
@@ -24,7 +24,7 @@ void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetWriter writer) {
     } else if (value is List<int>) {
       writer.assets[id] = value;
     } else {
-      throw new ArgumentError(
+      throw ArgumentError(
           '`assets` values must be of type `String` or `List<int>`, got '
           '${value.runtimeType}.');
     }

@@ -10,7 +10,7 @@ import 'options.dart';
 import 'runner.dart';
 
 abstract class BuildRunnerCommand extends Command<int> {
-  Logger get logger => new Logger(name);
+  Logger get logger => Logger(name);
 
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
@@ -93,7 +93,7 @@ abstract class BuildRunnerCommand extends Command<int> {
   /// You may override this to return more specific options if desired, but they
   /// must extend [SharedOptions].
   SharedOptions readOptions() {
-    return new SharedOptions.fromParsedArgs(
+    return SharedOptions.fromParsedArgs(
         argResults, argResults.rest, packageGraph.root.name, this);
   }
 }
