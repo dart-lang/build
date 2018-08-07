@@ -35,8 +35,8 @@ void main() {
     assetGraph =
         await AssetGraph.build([], new Set(), new Set(), packageGraph, reader);
     watchImpl = new MockWatchImpl(
-        new FinalizedReader(
-            reader, assetGraph, new OptionalOutputTracker(assetGraph, [], [])),
+        new FinalizedReader(reader, assetGraph,
+            new OptionalOutputTracker(assetGraph, [], []), 'a'),
         packageGraph,
         assetGraph);
     serveHandler = createServeHandler(watchImpl);
@@ -87,7 +87,7 @@ void main() {
         makeAssetId('a|web/main.ddc.js'),
         builderOptionsId: null,
         phaseNumber: null,
-        state: GeneratedNodeState.upToDate,
+        state: NodeState.upToDate,
         isHidden: false,
         wasOutput: true,
         isFailure: true,
