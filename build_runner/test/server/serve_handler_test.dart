@@ -226,7 +226,7 @@ void main() {
 
     group('WebSocket handler', () {
       BuildUpdatesWebSocketHandler handler;
-      Future<Null> Function(WebSocketChannel, String) createMockConnection;
+      Future<void> Function(WebSocketChannel, String) createMockConnection;
 
       // client to server stream controlllers
       StreamController<List<int>> c2sController1;
@@ -246,7 +246,7 @@ void main() {
 
         createMockConnection =
             (WebSocketChannel serverChannel, String rootDir) async {
-          var mockResponse = await handler.getHandlerByRootDir(rootDir)(null);
+          var mockResponse = await handler.createHandlerByRootDir(rootDir)(null);
           var onConnect = mockResponse.context['onConnect'] as Function;
           onConnect(serverChannel, '');
         };

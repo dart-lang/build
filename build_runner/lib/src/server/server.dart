@@ -75,7 +75,7 @@ class ServeHandler implements BuildState {
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = new shelf.Cascade();
     if (liveReload) {
-      cascade = cascade.add(_webSocketHandler.getHandlerByRootDir(rootDir));
+      cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
     }
     cascade =
         cascade.add(_blockOnCurrentBuild).add((shelf.Request request) async {
@@ -138,7 +138,7 @@ class BuildUpdatesWebSocketHandler {
   BuildUpdatesWebSocketHandler(this._state,
       [this._handlerFactory = webSocketHandler]) {}
 
-  shelf.Handler getHandlerByRootDir(String rootDir) {
+  shelf.Handler createHandlerByRootDir(String rootDir) {
     if (!_internalHandlers.containsKey(rootDir)) {
       var closureForRootDir = (WebSocketChannel webSocket, String protocol) =>
           _handleConnection(webSocket, protocol, rootDir);
