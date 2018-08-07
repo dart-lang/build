@@ -123,7 +123,7 @@ class ServeHandler implements BuildState {
     var resultMap = <String, String>{};
     for (String path in assertPathList) {
       try {
-        var assetId = pathToAssetId(rootPackage, rootDir, path.split('/'));
+        var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
         var digest = await _state.reader.digest(assetId);
         resultMap[path] = digest.toString();
       } on AssetNotFoundException {

@@ -171,7 +171,7 @@ void main() {
     _addSource('a|lib/some.dart.js', 'content2');
     _addSource('a|lib/another.dart.js', 'content3');
     var response = await serveHandler.handlerFor('web')(new Request(
-        'GET', Uri.parse('http://server.com/\$assets'),
+        'GET', Uri.parse('http://server.com/\$assetDigests'),
         body: jsonEncode([
           'index.html',
           'packages/a/some.dart.js',
