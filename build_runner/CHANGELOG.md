@@ -1,4 +1,4 @@
-## 0.10.1-dev
+## 0.10.1
 
 - Added `--live-reload` cli option and appropriate functionality
 - Migrated glob tracking to a specialized node type to fix dart-lang/build#1702.
