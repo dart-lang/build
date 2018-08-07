@@ -21,7 +21,7 @@ import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
-final _assetsDigestPath = r'$assets';
+final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$livereload';
 final _buildUpdatesMessage = 'update';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
