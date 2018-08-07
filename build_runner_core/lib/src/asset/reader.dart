@@ -36,7 +36,6 @@ abstract class PathProvidingAssetReader implements AssetReader {
 class SingleStepReader implements AssetReader {
   final AssetGraph _assetGraph;
   final AssetReader _delegate;
-  final _globsRan = Set<Glob>();
   final int _phaseNumber;
   final String _primaryPackage;
   final FutureOr<bool> Function(
