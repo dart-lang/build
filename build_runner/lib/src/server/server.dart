@@ -120,17 +120,17 @@ class ServeHandler implements BuildState {
       shelf.Request request, String rootDir) async {
     var assertPathList = jsonDecode(await request.readAsString()) as List;
     var rootPackage = _state.packageGraph.root.name;
-    var resultMap = <String, String>{};
+    var results = <String, String>{};
     for (String path in assertPathList) {
       try {
         var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
         var digest = await _state.reader.digest(assetId);
-        resultMap[path] = digest.toString();
+        results[path] = digest.toString();
       } on AssetNotFoundException {
-        resultMap[path] = null;
+        results.remove(path);
       }
     }
-    return new shelf.Response.ok(jsonEncode(resultMap),
+    return new shelf.Response.ok(jsonEncode(results),
         headers: {HttpHeaders.contentTypeHeader: 'application/json'});
   }
 

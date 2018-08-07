@@ -180,7 +180,6 @@ void main() {
     expect(jsonDecode(await response.readAsString()), {
       'index.html': '7e55db001d319a94b0b713529a756623',
       'packages/a/some.dart.js': 'eea670f4ac941df71a3b5f268ebe3eac',
-      'packages/a/absent.dart.js': null
     });
   });
 
