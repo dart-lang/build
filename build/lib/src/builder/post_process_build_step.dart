@@ -16,7 +16,7 @@ PostProcessBuildStep postProcessBuildStep(
         AssetWriter writer,
         void Function(AssetId) addAsset,
         void Function(AssetId) deleteAsset) =>
-    new PostProcessBuildStep._(inputId, reader, writer, addAsset, deleteAsset);
+    PostProcessBuildStep._(inputId, reader, writer, addAsset, deleteAsset);
 
 /// A simplified [BuildStep] which can only read its primary input, and can't
 /// get a [Resolver] or any [Resource]s, at least for now.
@@ -36,7 +36,7 @@ class PostProcessBuildStep {
 
   Future<Digest> digest(AssetId id) => inputId == id
       ? _reader.digest(id)
-      : new Future.error(new InvalidInputException(id));
+      : Future.error(InvalidInputException(id));
 
   Future<List<int>> readInputAsBytes() => _reader.readAsBytes(inputId);
 

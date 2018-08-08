@@ -48,7 +48,7 @@ class TestCommand extends BuildRunnerCommand {
     // arguments after the `--`.
     if (argResults.rest.isNotEmpty) {
       void throwUsageException() {
-        throw new UsageException(
+        throw UsageException(
             'The `test` command does not support positional args before the, '
             '`--` separator, which should separate build args from test args.',
             usage);
@@ -69,7 +69,7 @@ class TestCommand extends BuildRunnerCommand {
       }
     }
 
-    return new SharedOptions.fromParsedArgs(
+    return SharedOptions.fromParsedArgs(
         argResults, ['test'], packageGraph.root.name, this);
   }
 
@@ -116,7 +116,7 @@ class TestCommand extends BuildRunnerCommand {
       return ExitCode.config.code;
     } finally {
       // Clean up the output dir.
-      await new Directory(tempPath).delete(recursive: true);
+      await Directory(tempPath).delete(recursive: true);
     }
   }
 
@@ -141,13 +141,13 @@ bool _packageTestSupportsSymlinks(PackageGraph packageGraph) {
   var testPackage = packageGraph['test'];
   if (testPackage == null) return false;
   var pubspecPath = p.join(testPackage.path, 'pubspec.yaml');
-  var pubspec = Pubspec.parse(new File(pubspecPath).readAsStringSync());
-  return pubspec.version >= new Version(1, 3, 0);
+  var pubspec = Pubspec.parse(File(pubspecPath).readAsStringSync());
+  return pubspec.version >= Version(1, 3, 0);
 }
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
   if (!packageGraph.allPackages.containsKey('build_test')) {
-    throw new _BuildTestDependencyError();
+    throw _BuildTestDependencyError();
   }
 }
 

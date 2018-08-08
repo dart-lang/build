@@ -61,6 +61,11 @@ jobs:
       script: ./tool/travis.sh test_06
       env: PKG="_test"
       dart: be/raw/latest
+    - stage: e2e_test_cron
+      name: "SDK: stable - DIR: _test - TASKS: pub run test"
+      script: ./tool/travis.sh test_06
+      env: PKG="_test"
+      dart: stable
     - stage: analyze_and_format
       name: "SDK: dev - DIR: _test_common - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
       script: ./tool/travis.sh dartanalyzer
@@ -211,7 +216,7 @@ stages:
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
-  only: [master]
+  only: [master, hot-reload]
 
 cache:
   directories:

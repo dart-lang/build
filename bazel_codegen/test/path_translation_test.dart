@@ -9,9 +9,9 @@ import 'package:_bazel_codegen/src/assets/path_translation.dart';
 void main() {
   const packagePath = 'test/package/test_package';
   const packageName = 'test.package.test_package';
-  const packageMap = const {packageName: packagePath};
-  final f1AssetId = new AssetId(packageName, 'lib/filename1.dart');
-  final f2AssetId = new AssetId(packageName, 'lib/src/filename2.dart');
+  const packageMap = {packageName: packagePath};
+  final f1AssetId = AssetId(packageName, 'lib/filename1.dart');
+  final f2AssetId = AssetId(packageName, 'lib/src/filename2.dart');
 
   test('findAssetids translates paths', () {
     final translatedAssets = findAssetIds([

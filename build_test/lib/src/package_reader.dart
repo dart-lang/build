@@ -46,7 +46,7 @@ class PackageAssetReader extends AssetReader
     // This purposefully doesn't use SyncPackageResolver.root, because that is
     // assuming a symlink collection and not directories, and this factory is
     // more useful for a user-created collection of folders for testing.
-    final directory = new Directory(packageRoot);
+    final directory = Directory(packageRoot);
     final packages = <String, String>{};
     for (final entity in directory.listSync()) {
       if (entity is Directory) {
@@ -54,14 +54,14 @@ class PackageAssetReader extends AssetReader
         packages[name] = entity.uri.toString();
       }
     }
-    return new PackageAssetReader.forPackages(packages, rootPackage);
+    return PackageAssetReader.forPackages(packages, rootPackage);
   }
 
   /// Returns a [PackageAssetReader] with a simple [packageToPath] mapping.
   factory PackageAssetReader.forPackages(Map<String, String> packageToPath,
           [String rootPackage]) =>
-      new PackageAssetReader(
-          new SyncPackageResolver.config(mapMap(packageToPath,
+      PackageAssetReader(
+          SyncPackageResolver.config(mapMap(packageToPath,
               value: (_, String v) =>
                   Uri.parse(p.absolute(v, 'lib')).replace(scheme: 'file'))),
           rootPackage);
@@ -71,35 +71,35 @@ class PackageAssetReader extends AssetReader
   /// A [rootPackage] should be provided for full API compatibility.
   static Future<PackageAssetReader> currentIsolate({String rootPackage}) async {
     var resolver = PackageResolver.current;
-    return new PackageAssetReader(await resolver.asSync, rootPackage);
+    return PackageAssetReader(await resolver.asSync, rootPackage);
   }
 
   File _resolve(AssetId id) {
     final uri = id.uri;
     if (uri.isScheme('package')) {
-      return new File.fromUri(_packageResolver.resolveUri(id.uri));
+      return File.fromUri(_packageResolver.resolveUri(id.uri));
     }
     if (id.package == _rootPackage) {
       // TODO this assumes the cwd is the root package
-      return new File(p.canonicalize(p.join(p.current, id.path)));
+      return File(p.canonicalize(p.join(p.current, id.path)));
     }
-    throw new UnsupportedError('Unabled to resolve $id');
+    throw UnsupportedError('Unabled to resolve $id');
   }
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) {
     package ??= _rootPackage;
     if (package == null) {
-      throw new UnsupportedError(
+      throw UnsupportedError(
           'Root package must be provided to use `findAssets` without an '
           'explicit `package`.');
     }
     var packageLibDir = _packageResolver.packageConfigMap[package];
     if (packageLibDir == null) {
-      throw new UnsupportedError('Unable to find package $package');
+      throw UnsupportedError('Unable to find package $package');
     }
 
-    var packageFiles = new Directory.fromUri(packageLibDir)
+    var packageFiles = Directory.fromUri(packageLibDir)
         .list(recursive: true)
         .where((e) => e is File)
         .map((f) =>
@@ -112,14 +112,14 @@ class PackageAssetReader extends AssetReader
           .map((f) => p.relative(f.path, from: Directory.current.path))
           .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/')))));
     }
-    return packageFiles.where(glob.matches).map((p) => new AssetId(package, p));
+    return packageFiles.where(glob.matches).map((p) => AssetId(package, p));
   }
 
   @override
   Future<bool> canRead(AssetId id) {
     final file = _resolve(id);
     if (file == null) {
-      return new Future.value(false);
+      return Future.value(false);
     }
     return file.exists();
   }
@@ -128,7 +128,7 @@ class PackageAssetReader extends AssetReader
   Future<List<int>> readAsBytes(AssetId id) {
     final file = _resolve(id);
     if (file == null) {
-      throw new ArgumentError('Could not read $id.');
+      throw ArgumentError('Could not read $id.');
     }
     return file.readAsBytes();
   }
@@ -137,7 +137,7 @@ class PackageAssetReader extends AssetReader
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     final file = _resolve(id);
     if (file == null) {
-      throw new ArgumentError('Could not read $id.');
+      throw ArgumentError('Could not read $id.');
     }
     return file.readAsString(encoding: encoding);
   }

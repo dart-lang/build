@@ -30,9 +30,9 @@ main() {
 
     // Set up all the other required inputs for this test.
     await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-    await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
-    await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
-    await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
+    await testBuilderAndCollectAssets(ModuleBuilder(), assets);
   });
 
   test('can bootstrap dart entrypoints', () async {
@@ -43,7 +43,7 @@ main() {
       'a|web/index.dart.js.map': anything,
       'a|web/index.dart.js.tar.gz': anything,
     };
-    await testBuilder(new WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
+    await testBuilder(WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
         outputs: expectedOutputs);
   });
 
@@ -53,7 +53,7 @@ main() {
       'a|web/index.dart.js.tar.gz': anything,
     };
     await testBuilder(
-        new WebEntrypointBuilder(WebCompiler.Dart2Js,
+        WebEntrypointBuilder(WebCompiler.Dart2Js,
             dart2JsArgs: ['--no-source-maps']),
         assets,
         outputs: expectedOutputs);

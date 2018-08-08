@@ -50,7 +50,7 @@ class KernelBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var module = new Module.fromJson(
+    var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
@@ -77,7 +77,7 @@ Future<void> _createKernel(
     @required bool summaryOnly,
     @required String outputExtension,
     @required String sdkKernelPath}) async {
-  var request = new WorkRequest();
+  var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
   var outputFile = scratchSpace.fileFor(outputId);
@@ -97,7 +97,7 @@ Future<void> _createKernel(
         buildStep,
         outputExtension)));
 
-    var allAssetIds = new Set<AssetId>()
+    var allAssetIds = Set<AssetId>()
       ..addAll(module.sources)
       ..addAll(transitiveKernelDeps)
       ..addAll(transitiveSourceDeps);
@@ -114,7 +114,7 @@ Future<void> _createKernel(
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
     var response = await analyzer.doWork(request);
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
-      throw new KernelException(
+      throw KernelException(
           outputId, '${request.arguments.join(' ')}\n${response.output}');
     }
 
@@ -167,7 +167,7 @@ void _addRequestArguments(
     bool summaryOnly) {
   request.arguments.addAll([
     '--dart-sdk-summary',
-    new Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
+    Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
     '--output',
     outputFile.path,
     '--packages-file',

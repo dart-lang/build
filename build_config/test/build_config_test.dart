@@ -11,29 +11,28 @@ import 'package:build_config/src/expandos.dart';
 
 void main() {
   test('build.yaml can be parsed', () {
-    var buildConfig = new BuildConfig.parse('example', ['a', 'b'], buildYaml);
+    var buildConfig = BuildConfig.parse('example', ['a', 'b'], buildYaml);
     expectBuildTargets(buildConfig.buildTargets, {
       'example:a': createBuildTarget(
         'example',
         key: 'example:a',
         builders: {
-          'b|b': new TargetBuilderConfig(
-              isEnabled: true,
-              generateFor: new InputSet(include: ['lib/a.dart'])),
-          'c|c': new TargetBuilderConfig(isEnabled: false),
-          'example|h': new TargetBuilderConfig(
-              isEnabled: true, options: new BuilderOptions({'foo': 'bar'})),
-          'example|p': new TargetBuilderConfig(
-              isEnabled: true, options: new BuilderOptions({'baz': 'zap'})),
+          'b|b': TargetBuilderConfig(
+              isEnabled: true, generateFor: InputSet(include: ['lib/a.dart'])),
+          'c|c': TargetBuilderConfig(isEnabled: false),
+          'example|h': TargetBuilderConfig(
+              isEnabled: true, options: BuilderOptions({'foo': 'bar'})),
+          'example|p': TargetBuilderConfig(
+              isEnabled: true, options: BuilderOptions({'baz': 'zap'})),
         },
         // Expecting $default => example:example
         dependencies: ['example:example', 'b:b', 'c:d'],
-        sources: new InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
+        sources: InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
       'example:example': createBuildTarget(
         'example',
         dependencies: ['f:f', 'example:a'],
-        sources: new InputSet(
+        sources: InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
             exclude: ['lib/src/e/g.dart']),
       )
@@ -56,10 +55,10 @@ void main() {
         requiredInputs: ['.dart'],
         runsBefore: ['foo_builder|foo_builder'].toSet(),
         appliesBuilders: ['foo_builder|foo_builder'].toSet(),
-        defaults: new TargetBuilderConfigDefaults(
-          generateFor: const InputSet(include: const ['lib/**']),
-          options: const BuilderOptions(const {'foo': 'bar'}),
-          releaseOptions: const BuilderOptions(const {'baz': 'bop'}),
+        defaults: TargetBuilderConfigDefaults(
+          generateFor: const InputSet(include: ['lib/**']),
+          options: const BuilderOptions({'foo': 'bar'}),
+          releaseOptions: const BuilderOptions({'baz': 'bop'}),
         ),
       ),
     });
@@ -70,30 +69,30 @@ void main() {
         key: 'example|p',
         builderFactory: 'createPostProcessBuilder',
         import: 'package:example/p.dart',
-        defaults: new TargetBuilderConfigDefaults(
-          generateFor: const InputSet(include: const ['web/**']),
-          options: const BuilderOptions(const {'foo': 'bar'}),
-          releaseOptions: const BuilderOptions(const {'baz': 'bop'}),
+        defaults: TargetBuilderConfigDefaults(
+          generateFor: const InputSet(include: ['web/**']),
+          options: const BuilderOptions({'foo': 'bar'}),
+          releaseOptions: const BuilderOptions({'baz': 'bop'}),
         ),
       ),
     });
     expectGlobalOptions(buildConfig.globalOptions, {
-      'example|h': new GlobalBuilderConfig(
-          options: const BuilderOptions(const {'foo': 'global'})),
-      'b|b': new GlobalBuilderConfig(
-          devOptions: const BuilderOptions(const {'foo': 'global_dev'}),
-          releaseOptions: const BuilderOptions(const {'foo': 'global_release'}))
+      'example|h':
+          GlobalBuilderConfig(options: const BuilderOptions({'foo': 'global'})),
+      'b|b': GlobalBuilderConfig(
+          devOptions: const BuilderOptions({'foo': 'global_dev'}),
+          releaseOptions: const BuilderOptions({'foo': 'global_release'}))
     });
   });
 
   test('build.yaml can omit a targets section', () {
     var buildConfig =
-        new BuildConfig.parse('example', ['a', 'b'], buildYamlNoTargets);
+        BuildConfig.parse('example', ['a', 'b'], buildYamlNoTargets);
     expectBuildTargets(buildConfig.buildTargets, {
       'example:example': createBuildTarget(
         'example',
         dependencies: ['a:a', 'b:b'].toSet(),
-        sources: new InputSet(),
+        sources: InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
@@ -112,19 +111,19 @@ void main() {
           ]
         },
         requiredInputs: const [],
-        runsBefore: new Set<String>(),
-        appliesBuilders: new Set<String>(),
+        runsBefore: Set<String>(),
+        appliesBuilders: Set<String>(),
       ),
     });
   });
 
   test('build.yaml can be empty', () {
-    var buildConfig = new BuildConfig.parse('example', ['a', 'b'], '');
+    var buildConfig = BuildConfig.parse('example', ['a', 'b'], '');
     expectBuildTargets(buildConfig.buildTargets, {
       'example:example': createBuildTarget(
         'example',
         dependencies: ['a:a', 'b:b'].toSet(),
-        sources: new InputSet(),
+        sources: InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {});
@@ -235,29 +234,29 @@ void expectGlobalOptions(Map<String, GlobalBuilderConfig> actual,
   }
 }
 
-Matcher _matchesBuilderDefinition(BuilderDefinition definition) =>
-    new TypeMatcher<BuilderDefinition>()
-        .having((d) => d.builderFactories, 'builderFactories',
-            definition.builderFactories)
-        .having((d) => d.buildExtensions, 'buildExtensions',
-            definition.buildExtensions)
-        .having((d) => d.requiredInputs, 'requiredInputs',
-            definition.requiredInputs)
-        .having((d) => d.runsBefore, 'runsBefore', definition.runsBefore)
-        .having((d) => d.appliesBuilders, 'appliesBuilders',
-            definition.appliesBuilders)
-        .having((d) => d.defaults, 'defaults',
-            _matchesBuilderConfigDefaults(definition.defaults))
-        .having((d) => d.autoApply, 'autoApply', definition.autoApply)
-        .having((d) => d.isOptional, 'isOptional', definition.isOptional)
-        .having((d) => d.buildTo, 'buildTo', definition.buildTo)
-        .having((d) => d.import, 'import', definition.import)
-        .having((d) => d.key, 'key', definition.key)
-        .having((d) => d.package, 'package', definition.package);
+Matcher _matchesBuilderDefinition(BuilderDefinition definition) => TypeMatcher<
+        BuilderDefinition>()
+    .having((d) => d.builderFactories, 'builderFactories',
+        definition.builderFactories)
+    .having(
+        (d) => d.buildExtensions, 'buildExtensions', definition.buildExtensions)
+    .having(
+        (d) => d.requiredInputs, 'requiredInputs', definition.requiredInputs)
+    .having((d) => d.runsBefore, 'runsBefore', definition.runsBefore)
+    .having(
+        (d) => d.appliesBuilders, 'appliesBuilders', definition.appliesBuilders)
+    .having((d) => d.defaults, 'defaults',
+        _matchesBuilderConfigDefaults(definition.defaults))
+    .having((d) => d.autoApply, 'autoApply', definition.autoApply)
+    .having((d) => d.isOptional, 'isOptional', definition.isOptional)
+    .having((d) => d.buildTo, 'buildTo', definition.buildTo)
+    .having((d) => d.import, 'import', definition.import)
+    .having((d) => d.key, 'key', definition.key)
+    .having((d) => d.package, 'package', definition.package);
 
 Matcher _matchesPostProcessBuilderDefinition(
         PostProcessBuilderDefinition definition) =>
-    new TypeMatcher<PostProcessBuilderDefinition>()
+    TypeMatcher<PostProcessBuilderDefinition>()
         .having((d) => d.builderFactory, 'builderFactory',
             definition.builderFactory)
         .having((d) => d.defaults, 'defaults',
@@ -267,7 +266,7 @@ Matcher _matchesPostProcessBuilderDefinition(
         .having((d) => d.package, 'package', definition.package);
 
 Matcher _matchesGlobalBuilderConfig(GlobalBuilderConfig config) =>
-    new TypeMatcher<GlobalBuilderConfig>()
+    TypeMatcher<GlobalBuilderConfig>()
         .having(
             (c) => c.options.config, 'options.config', config.options.config)
         .having((c) => c.devOptions.config, 'devOptions.config',
@@ -276,7 +275,7 @@ Matcher _matchesGlobalBuilderConfig(GlobalBuilderConfig config) =>
             config.releaseOptions.config);
 
 Matcher _matchesBuilderConfigDefaults(TargetBuilderConfigDefaults defaults) =>
-    new TypeMatcher<TargetBuilderConfigDefaults>()
+    TypeMatcher<TargetBuilderConfigDefaults>()
         .having((d) => d.generateFor.include, 'generateFor.include',
             defaults.generateFor.include)
         .having((d) => d.generateFor.exclude, 'generateFor.exclude',
@@ -296,22 +295,20 @@ void expectBuildTargets(
   }
 }
 
-Matcher _matchesBuildTarget(BuildTarget target) =>
-    new TypeMatcher<BuildTarget>()
-        .having((t) => t.package, 'package', target.package)
-        .having((t) => t.builders, 'builders',
-            _matchesBuilderConfigs(target.builders))
-        .having((t) => t.dependencies, 'dependencies', target.dependencies)
-        .having(
-            (t) => t.sources.include, 'sources.include', target.sources.include)
-        .having((t) => t.sources.exclude, 'sources.exclude',
-            target.sources.exclude);
+Matcher _matchesBuildTarget(BuildTarget target) => TypeMatcher<BuildTarget>()
+    .having((t) => t.package, 'package', target.package)
+    .having(
+        (t) => t.builders, 'builders', _matchesBuilderConfigs(target.builders))
+    .having((t) => t.dependencies, 'dependencies', target.dependencies)
+    .having((t) => t.sources.include, 'sources.include', target.sources.include)
+    .having(
+        (t) => t.sources.exclude, 'sources.exclude', target.sources.exclude);
 
 Matcher _matchesBuilderConfigs(Map<String, TargetBuilderConfig> configs) =>
-    equals(configs.map((k, v) => new MapEntry(k, _matchesBuilderConfig(v))));
+    equals(configs.map((k, v) => MapEntry(k, _matchesBuilderConfig(v))));
 
 Matcher _matchesBuilderConfig(TargetBuilderConfig expected) =>
-    new TypeMatcher<TargetBuilderConfig>()
+    TypeMatcher<TargetBuilderConfig>()
         .having((c) => c.isEnabled, 'isEnabled', expected.isEnabled)
         .having(
             (c) => c.options.config, 'options.config', expected.options.config)
@@ -330,7 +327,7 @@ BuildTarget createBuildTarget(String package,
     Iterable<String> dependencies,
     InputSet sources}) {
   return runInBuildConfigZone(() {
-    var target = new BuildTarget(
+    var target = BuildTarget(
       builders: builders,
       dependencies: dependencies,
       sources: sources,
@@ -356,7 +353,7 @@ BuilderDefinition createBuilderDefinition(String package,
     Iterable<String> appliesBuilders,
     TargetBuilderConfigDefaults defaults}) {
   return runInBuildConfigZone(() {
-    var definition = new BuilderDefinition(
+    var definition = BuilderDefinition(
         builderFactories: builderFactories,
         autoApply: autoApply,
         isOptional: isOptional,
@@ -379,7 +376,7 @@ PostProcessBuilderDefinition createPostProcessBuilderDefinition(String package,
     String key,
     TargetBuilderConfigDefaults defaults}) {
   return runInBuildConfigZone(() {
-    var definition = new PostProcessBuilderDefinition(
+    var definition = PostProcessBuilderDefinition(
         builderFactory: builderFactory, import: import, defaults: defaults);
     packageExpando[definition] = package;
     builderKeyExpando[definition] = key ?? '$package:$package';

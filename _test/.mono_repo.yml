@@ -17,3 +17,4 @@ stages:
     - test:
       dart:
         - be/raw/latest
+        - stable

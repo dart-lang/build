@@ -28,7 +28,7 @@ abstract class AssetWriter {
 /// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
 class AssetWriterSpy implements AssetWriter {
   final AssetWriter _delegate;
-  final _assetsWritten = new Set<AssetId>();
+  final _assetsWritten = Set<AssetId>();
 
   AssetWriterSpy(this._delegate);
 

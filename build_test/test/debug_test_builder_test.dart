@@ -81,7 +81,7 @@ void main() {
 }
 
 Matcher _equalsTextWithoutWhitespace(String expected) =>
-    decodedMatches(new _IgnoringNewlinesAndWhitespaceMatcher(expected));
+    decodedMatches(_IgnoringNewlinesAndWhitespaceMatcher(expected));
 
 class _IgnoringNewlinesAndWhitespaceMatcher extends Matcher {
   final String _expected;

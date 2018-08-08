@@ -18,7 +18,7 @@ class Terminator {
   final StreamSubscription _subscription;
 
   factory Terminator([Stream terminateEventStream]) {
-    var shouldTerminate = new Completer();
+    var shouldTerminate = Completer();
     terminateEventStream ??= ProcessSignal.sigint.watch();
     var numEventsSeen = 0;
     var terminateListener = terminateEventStream.listen((_) {
@@ -29,7 +29,7 @@ class Terminator {
         exit(2);
       }
     });
-    return new Terminator._(shouldTerminate.future, terminateListener);
+    return Terminator._(shouldTerminate.future, terminateListener);
   }
 
   Terminator._(this.shouldTerminate, this._subscription);

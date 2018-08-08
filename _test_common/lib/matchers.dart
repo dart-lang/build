@@ -8,13 +8,13 @@ import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 
 final Matcher assetGraphVersionException =
-    new TypeMatcher<AssetGraphVersionException>();
+    TypeMatcher<AssetGraphVersionException>();
 final Matcher duplicateAssetNodeException =
-    new TypeMatcher<DuplicateAssetNodeException>();
+    TypeMatcher<DuplicateAssetNodeException>();
 
 Matcher equalsAssetGraph(AssetGraph expected,
         {bool checkPreviousInputsDigest}) =>
-    new _AssetGraphMatcher(expected, checkPreviousInputsDigest ?? true);
+    _AssetGraphMatcher(expected, checkPreviousInputsDigest ?? true);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;

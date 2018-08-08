@@ -20,8 +20,8 @@ class AssetChange {
 
   /// Creates a new change record in [package] from an existing watcher [event].
   factory AssetChange.fromEvent(PackageNode package, WatchEvent event) {
-    return new AssetChange(
-      new AssetId(
+    return AssetChange(
+      AssetId(
         package.name,
         _normalizeRelativePath(package, event),
       ),
@@ -34,7 +34,7 @@ class AssetChange {
     var absoluteEventPath =
         p.isAbsolute(event.path) ? event.path : p.absolute(event.path);
     if (!p.isWithin(pkgPath, absoluteEventPath)) {
-      throw new ArgumentError('"$absoluteEventPath" is not in "$pkgPath".');
+      throw ArgumentError('"$absoluteEventPath" is not in "$pkgPath".');
     }
     return p.relative(absoluteEventPath, from: pkgPath);
   }

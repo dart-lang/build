@@ -14,7 +14,7 @@ import '../builders.dart';
 
 /// Because we hold bytes in memory we don't want to compile to many app entry
 /// points at once.
-final _buildPool = new Pool(16);
+final _buildPool = Pool(16);
 
 /// A builder which combines several [vmKernelModuleExtension] modules into a
 /// single [vmKernelEntrypointExtension] file, which represents an entire
@@ -24,7 +24,7 @@ class VmEntrypointBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    '.dart': const [vmKernelEntrypointExtension],
+    '.dart': [vmKernelEntrypointExtension],
   };
 
   @override
@@ -35,7 +35,7 @@ class VmEntrypointBuilder implements Builder {
       if (!isAppEntrypoint) return;
 
       var moduleId = buildStep.inputId.changeExtension(moduleExtension);
-      var module = new Module.fromJson(
+      var module = Module.fromJson(
           json.decode(await buildStep.readAsString(moduleId))
               as Map<String, dynamic>);
       var transitiveModules =

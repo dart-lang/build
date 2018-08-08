@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
@@ -17,15 +18,15 @@ abstract class AssetNode {
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
-  final Set<AssetId> primaryOutputs = new Set<AssetId>();
+  final Set<AssetId> primaryOutputs = Set<AssetId>();
 
   /// The [AssetId]s of all generated assets which are output by a [Builder]
   /// which reads this asset.
-  final Set<AssetId> outputs = new Set<AssetId>();
+  final Set<AssetId> outputs = Set<AssetId>();
 
   /// The [AssetId]s of all [PostProcessAnchorNode] assets for which this node
   /// is the primary input.
-  final Set<AssetId> anchorOutputs = new Set<AssetId>();
+  final Set<AssetId> anchorOutputs = Set<AssetId>();
 
   /// The [Digest] for this node in its last known state.
   ///
@@ -44,7 +45,7 @@ abstract class AssetNode {
 
   /// The IDs of the [PostProcessAnchorNode] for post process builder which
   /// requested to delete this asset.
-  final Set<AssetId> deletedBy = new Set<AssetId>();
+  final Set<AssetId> deletedBy = Set<AssetId>();
 
   /// Whether the node is deleted.
   ///
@@ -110,8 +111,8 @@ class SourceAssetNode extends AssetNode {
   String toString() => 'SourceAssetNode: $id';
 }
 
-/// States for generated asset nodes.
-enum GeneratedNodeState {
+/// States for nodes that can be invalidated.
+enum NodeState {
   // This node does not need an update, and no checks need to be performed.
   upToDate,
   // This node may need an update, the inputs hash should be checked for
@@ -122,7 +123,7 @@ enum GeneratedNodeState {
 }
 
 /// A generated node in the asset graph.
-class GeneratedAssetNode extends AssetNode {
+class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
   @override
   bool get isGenerated => true;
 
@@ -132,22 +133,19 @@ class GeneratedAssetNode extends AssetNode {
   /// The primary input which generated this node.
   final AssetId primaryInput;
 
-  GeneratedNodeState state;
+  @override
+  NodeState state;
 
   /// Whether the asset was actually output.
   bool wasOutput;
-
-  /// All the [Glob]s that were ran to create this asset.
-  ///
-  /// Any new or deleted files matching this glob should invalidate this node.
-  Set<Glob> globs;
 
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
   ///
   /// This needs to be an ordered set because we compute combined input digests
   /// using this later on.
-  final SplayTreeSet<AssetId> inputs;
+  @override
+  SplayTreeSet<AssetId> inputs;
 
   /// A digest combining all digests of all previous inputs.
   ///
@@ -168,7 +166,6 @@ class GeneratedAssetNode extends AssetNode {
   GeneratedAssetNode(
     AssetId id, {
     Digest lastKnownDigest,
-    Set<Glob> globs,
     Iterable<AssetId> inputs,
     this.previousInputsDigest,
     @required this.isHidden,
@@ -178,10 +175,9 @@ class GeneratedAssetNode extends AssetNode {
     @required this.isFailure,
     @required this.primaryInput,
     @required this.builderOptionsId,
-  })  : this.globs = globs ?? new Set<Glob>(),
-        this.inputs = inputs != null
-            ? new SplayTreeSet.from(inputs)
-            : new SplayTreeSet<AssetId>(),
+  })  : this.inputs = inputs != null
+            ? SplayTreeSet.from(inputs)
+            : SplayTreeSet<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override
@@ -253,10 +249,51 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
 
   factory PostProcessAnchorNode.forInputAndAction(
       AssetId primaryInput, int actionNumber, AssetId builderOptionsId) {
-    return new PostProcessAnchorNode(
+    return PostProcessAnchorNode(
         primaryInput.addExtension('.post_anchor.$actionNumber'),
         primaryInput,
         actionNumber,
         builderOptionsId);
   }
+}
+
+/// A node representing a glob ran from a builder.
+///
+/// The [id] must always be unique to a given package, phase, and glob
+/// pattern.
+class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
+  final Glob glob;
+
+  /// All the potential inputs matching this glob. Whether they appear in
+  /// [results] is dependent on if they were actually created or not.
+  ///
+  /// This needs to be an ordered set because we compute combined input digests
+  /// using this later on.
+  @override
+  SplayTreeSet<AssetId> inputs;
+
+  @override
+  bool get isReadable => false;
+
+  final int phaseNumber;
+
+  /// The actual results of the glob.
+  List<AssetId> results;
+
+  @override
+  NodeState state;
+
+  GlobAssetNode(AssetId id, this.glob, this.phaseNumber, this.state,
+      {this.inputs, Digest lastKnownDigest, this.results})
+      : super(id, lastKnownDigest: lastKnownDigest);
+
+  static AssetId createId(String package, Glob glob, int phaseNum) => AssetId(
+      package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');
+}
+
+/// A node which has [inputs] and a [NodeState].
+abstract class NodeWithInputs implements AssetNode {
+  SplayTreeSet<AssetId> inputs;
+
+  NodeState state;
 }

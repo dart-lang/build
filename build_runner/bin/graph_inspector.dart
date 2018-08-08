@@ -23,32 +23,32 @@ Future main(List<String> args) async {
       'use at your own risk.');
 
   if (args.length != 1) {
-    throw new ArgumentError(
+    throw ArgumentError(
         'Expected exactly one argument, the path to a build script to '
         'analyze.');
   }
   var scriptPath = args.first;
-  var scriptFile = new File(scriptPath);
+  var scriptFile = File(scriptPath);
   if (!scriptFile.existsSync()) {
-    throw new ArgumentError(
+    throw ArgumentError(
         'Expected a build script at $scriptPath but didn\'t find one.');
   }
 
   var assetGraphFile =
-      new File(assetGraphPathFor(p.url.joinAll(p.split(scriptPath))));
+      File(assetGraphPathFor(p.url.joinAll(p.split(scriptPath))));
   if (!assetGraphFile.existsSync()) {
-    throw new ArgumentError(
+    throw ArgumentError(
         'Unable to find AssetGraph for $scriptPath at ${assetGraphFile.path}');
   }
   stdout.writeln('Loading asset graph at ${assetGraphFile.path}...');
 
-  assetGraph = new AssetGraph.deserialize(assetGraphFile.readAsBytesSync());
-  packageGraph = new PackageGraph.forThisPackage();
+  assetGraph = AssetGraph.deserialize(assetGraphFile.readAsBytesSync());
+  packageGraph = PackageGraph.forThisPackage();
 
-  var commandRunner = new CommandRunner(
-      '', 'A tool for inspecting the AssetGraph for your build')
-    ..addCommand(new InspectNodeCommand())
-    ..addCommand(new GraphCommand());
+  var commandRunner =
+      CommandRunner('', 'A tool for inspecting the AssetGraph for your build')
+        ..addCommand(InspectNodeCommand())
+        ..addCommand(GraphCommand());
 
   stdout.writeln('Ready, please type in a command:');
 
@@ -98,7 +98,7 @@ class InspectNodeCommand extends Command {
         continue;
       }
 
-      var description = new StringBuffer()
+      var description = StringBuffer()
         ..writeln('Asset: $stringUri')
         ..writeln('  type: ${node.runtimeType}');
 
@@ -176,7 +176,7 @@ class GraphCommand extends Command {
 
     var pattern = argResults['pattern'] as String;
     if (pattern != null) {
-      var glob = new Glob(pattern);
+      var glob = Glob(pattern);
       assets = assets.where((id) => glob.matches(id.path));
     }
 
@@ -189,10 +189,10 @@ class GraphCommand extends Command {
 AssetId _idFromString(String stringUri) {
   var uri = Uri.parse(stringUri);
   if (uri.scheme == 'package') {
-    return new AssetId(uri.pathSegments.first,
+    return AssetId(uri.pathSegments.first,
         p.url.join('lib', p.url.joinAll(uri.pathSegments.skip(1))));
   } else if (!uri.isAbsolute && (uri.scheme == '' || uri.scheme == 'file')) {
-    return new AssetId(packageGraph.root.name, uri.path);
+    return AssetId(packageGraph.root.name, uri.path);
   } else {
     stderr.writeln('Unrecognized uri $uri, must be a package: uri or a '
         'relative path.');

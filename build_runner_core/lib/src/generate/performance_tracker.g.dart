@@ -7,13 +7,13 @@ part of build_runner.src.generate.performance_tracker;
 // **************************************************************************
 
 BuildPerformance _$BuildPerformanceFromJson(Map<String, dynamic> json) {
-  return new BuildPerformance(
+  return BuildPerformance(
       (json['phases'] as List)?.map((e) => e == null
           ? null
-          : new BuildPhasePerformance.fromJson(e as Map<String, dynamic>)),
+          : BuildPhasePerformance.fromJson(e as Map<String, dynamic>)),
       (json['actions'] as List)?.map((e) => e == null
           ? null
-          : new BuilderActionPerformance.fromJson(e as Map<String, dynamic>)),
+          : BuilderActionPerformance.fromJson(e as Map<String, dynamic>)),
       json['startTime'] == null
           ? null
           : DateTime.parse(json['startTime'] as String),
@@ -32,7 +32,7 @@ Map<String, dynamic> _$BuildPerformanceToJson(BuildPerformance instance) =>
 
 BuildPhasePerformance _$BuildPhasePerformanceFromJson(
     Map<String, dynamic> json) {
-  return new BuildPhasePerformance(
+  return BuildPhasePerformance(
       (json['builderKeys'] as List)?.map((e) => e as String)?.toList(),
       json['startTime'] == null
           ? null
@@ -52,15 +52,14 @@ Map<String, dynamic> _$BuildPhasePerformanceToJson(
 
 BuilderActionPerformance _$BuilderActionPerformanceFromJson(
     Map<String, dynamic> json) {
-  return new BuilderActionPerformance(
+  return BuilderActionPerformance(
       json['builderKey'] as String,
       json['primaryInput'] == null
           ? null
           : _assetIdFromJson(json['primaryInput'] as String),
       (json['phases'] as List)?.map((e) => e == null
           ? null
-          : new BuilderActionPhasePerformance.fromJson(
-              e as Map<String, dynamic>)),
+          : BuilderActionPhasePerformance.fromJson(e as Map<String, dynamic>)),
       json['startTime'] == null
           ? null
           : DateTime.parse(json['startTime'] as String),
@@ -83,7 +82,7 @@ Map<String, dynamic> _$BuilderActionPerformanceToJson(
 
 BuilderActionPhasePerformance _$BuilderActionPhasePerformanceFromJson(
     Map<String, dynamic> json) {
-  return new BuilderActionPhasePerformance(
+  return BuilderActionPhasePerformance(
       json['label'] as String,
       json['startTime'] == null
           ? null

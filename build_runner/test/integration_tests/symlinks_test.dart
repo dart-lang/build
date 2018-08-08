@@ -16,7 +16,7 @@ import 'utils/build_descriptor.dart';
 
 // test-package-start #########################################################
 /// Reads a `.link` asset which is not the primary input and copies it.
-final readThroughLink = new TestBuilder(
+final readThroughLink = TestBuilder(
     buildExtensions: appendExtension('.copy', from: '.txt'),
     build: (buildStep, _) {
       buildStep.writeAsString(buildStep.inputId.addExtension('.copy'),
@@ -33,7 +33,7 @@ main() {
     buildTool = await packageWithBuildScript(builders, contents: [
       d.dir('web', [d.file('a.txt', 'a')]),
     ]);
-    await new Link(p.join(buildTool.rootPackageDir, 'web', 'a.link'))
+    await Link(p.join(buildTool.rootPackageDir, 'web', 'a.link'))
         .create(p.join(buildTool.rootPackageDir, 'outside_build', 'linked'));
   });
 

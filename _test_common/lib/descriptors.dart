@@ -26,7 +26,7 @@ Future<d.FileDescriptor> pubspec(String name,
   pathDependencies ??= {};
   versionDependencies ??= {};
 
-  var buffer = new StringBuffer()
+  var buffer = StringBuffer()
     ..writeln('name: $name')
     // Using dependency_overrides forces the path dependency and silences
     // warnings about hosted vs path dependency conflicts.

@@ -24,7 +24,7 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+        apply('b|cool_builder', [(options) => CoolBuilder(options)],
             toAllPackages())
       ];
       var phases = await createBuildPhases(
@@ -49,17 +49,17 @@ void main() {
       });
       await runInBuildConfigZone(() async {
         var overrides = {
-          'a': new BuildConfig(
+          'a': BuildConfig(
             packageName: 'a',
             buildTargets: {
-              'a:a': new BuildTarget(dependencies: new Set.of(['b:b']))
+              'a:a': BuildTarget(dependencies: Set.of(['b:b']))
             },
             globalOptions: {
-              'b|cool_builder': new GlobalBuilderConfig(
+              'b|cool_builder': GlobalBuilderConfig(
                 options: const BuilderOptions(
-                    const {'option_a': 'global a', 'option_b': 'global b'}),
-                releaseOptions: const BuilderOptions(
-                    const {'option_b': 'release global b'}),
+                    {'option_a': 'global a', 'option_b': 'global b'}),
+                releaseOptions:
+                    const BuilderOptions({'option_b': 'release global b'}),
               ),
             },
           )
@@ -67,7 +67,7 @@ void main() {
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
             overrideBuildConfig: overrides);
         var builderApplications = [
-          apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+          apply('b|cool_builder', [(options) => CoolBuilder(options)],
               toAllPackages())
         ];
         var phases = await createBuildPhases(
@@ -94,7 +94,7 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+        apply('b|cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('b')),
       ];
       var phases =
@@ -110,18 +110,17 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+        apply('b|cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('b'),
             appliesBuilders: ['b|not_by_default']),
-        apply(
-            'b|not_by_default', [(_) => new TestBuilder()], toNoneByDefault()),
+        apply('b|not_by_default', [(_) => TestBuilder()], toNoneByDefault()),
       ];
       var phases =
           await createBuildPhases(targetGraph, builderApplications, {}, false);
       expect(phases, hasLength(2));
       expect(
           phases,
-          everyElement(new TypeMatcher<InBuildPhase>()
+          everyElement(TypeMatcher<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')));
     });
 
@@ -133,7 +132,7 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('c|cool_builder', [(options) => new CoolBuilder(options)],
+        apply('c|cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('c'),
             hideOutput: false),
       ];
@@ -142,7 +141,7 @@ void main() {
       expect(phases, hasLength(1));
       expect(
           phases,
-          everyElement(new TypeMatcher<InBuildPhase>()
+          everyElement(TypeMatcher<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')));
     });
 
@@ -155,10 +154,10 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('c|cool_builder', [(options) => new CoolBuilder(options)],
+        apply('c|cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('c'),
             appliesBuilders: ['c|not_by_default']),
-        apply('c|not_by_default', [(_) => new TestBuilder()], toNoneByDefault(),
+        apply('c|not_by_default', [(_) => TestBuilder()], toNoneByDefault(),
             hideOutput: false),
       ];
       var phases =
@@ -166,7 +165,7 @@ void main() {
       expect(phases, hasLength(2));
       expect(
           phases,
-          everyElement(new TypeMatcher<InBuildPhase>()
+          everyElement(TypeMatcher<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')));
     });
 
@@ -177,24 +176,23 @@ void main() {
       });
       await runInBuildConfigZone(() async {
         var overrides = {
-          'a': new BuildConfig(
+          'a': BuildConfig(
             packageName: 'a',
             buildTargets: {
-              'a:a':
-                  new BuildTarget(dependencies: new Set.of(['b:not_default']))
+              'a:a': BuildTarget(dependencies: Set.of(['b:not_default']))
             },
           )
         };
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
             overrideBuildConfig: overrides);
         var builderApplications = [
-          apply('b|cool_builder', [(options) => new CoolBuilder(options)],
+          apply('b|cool_builder', [(options) => CoolBuilder(options)],
               toAllPackages()),
         ];
         expect(
             () =>
                 createBuildPhases(targetGraph, builderApplications, {}, false),
-            throwsA(new TypeMatcher<CannotBuildException>()));
+            throwsA(TypeMatcher<CannotBuildException>()));
       }, packageGraph.root.name,
           packageGraph.root.dependencies.map((node) => node.name).toList());
     });
@@ -217,5 +215,5 @@ class CoolBuilder extends Builder {
   };
 
   @override
-  Future build(BuildStep buildStep) async => throw new UnimplementedError();
+  Future build(BuildStep buildStep) async => throw UnimplementedError();
 }

@@ -22,17 +22,17 @@ void main() {
     List<String> logs;
 
     setUp(() async {
-      writer = new InMemoryAssetWriter();
-      reader = new InMemoryBazelAssetReader();
-      logger = new Logger('bazel_codegen_test');
+      writer = InMemoryAssetWriter();
+      reader = InMemoryBazelAssetReader();
+      logger = Logger('bazel_codegen_test');
       logs = [];
       Logger.root.clearListeners();
       Logger.root.onRecord.listen((record) => logs.add(record.message));
     });
 
     test('happy case', () async {
-      var builder = new TestBuilder();
-      reader.cacheStringAsset(new AssetId('foo', 'lib/source.txt'), 'source');
+      var builder = TestBuilder();
+      reader.cacheStringAsset(AssetId('foo', 'lib/source.txt'), 'source');
       await runBuilders(
         [(_) => builder],
         'foo',
@@ -40,25 +40,25 @@ void main() {
         {},
         ['foo/lib/source.txt'],
         {'foo': 'foo'},
-        new CodegenTiming()..start(),
+        CodegenTiming()..start(),
         writer,
         reader,
         logger,
-        new AnalyzerResolvers(),
-        const BuilderOptions(const {}),
+        AnalyzerResolvers(),
+        const BuilderOptions({}),
       );
-      expect(writer.assets.keys,
-          contains(new AssetId('foo', 'lib/source.txt.copy')));
+      expect(
+          writer.assets.keys, contains(AssetId('foo', 'lib/source.txt.copy')));
     });
 
     test('multiple input extensions expects correct outputs', () async {
-      final builderFoo = new TestBuilder(
-          buildExtensions: appendExtension('.copy', from: '.foo'));
-      final builderBar = new TestBuilder(
-          buildExtensions: appendExtension('.copy', from: '.bar'));
+      final builderFoo =
+          TestBuilder(buildExtensions: appendExtension('.copy', from: '.foo'));
+      final builderBar =
+          TestBuilder(buildExtensions: appendExtension('.copy', from: '.bar'));
       reader
-        ..cacheStringAsset(new AssetId('a', 'lib/a1.foo'), 'foo content')
-        ..cacheStringAsset(new AssetId('a', 'lib/a2.bar'), 'bar content');
+        ..cacheStringAsset(AssetId('a', 'lib/a1.foo'), 'foo content')
+        ..cacheStringAsset(AssetId('a', 'lib/a2.bar'), 'bar content');
       await runBuilders(
         [(_) => builderFoo, (_) => builderBar],
         'a',
@@ -69,12 +69,12 @@ void main() {
         {},
         ['a/lib/a1.foo', 'a/lib/a2.bar'],
         {'a': 'a'},
-        new CodegenTiming()..start(),
+        CodegenTiming()..start(),
         writer,
         reader,
         logger,
-        new AnalyzerResolvers(),
-        const BuilderOptions(const {}),
+        AnalyzerResolvers(),
+        const BuilderOptions({}),
       );
       expect(logs, isNot(contains(startsWith('Missing expected output'))));
     });

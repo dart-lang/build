@@ -23,9 +23,8 @@ class BuildCacheReader implements AssetReader {
   factory BuildCacheReader(
           AssetReader delegate, AssetGraph assetGraph, String rootPackage) =>
       delegate is PathProvidingAssetReader
-          ? new _PathProvidingBuildCacheReader._(
-              delegate, assetGraph, rootPackage)
-          : new BuildCacheReader._(delegate, assetGraph, rootPackage);
+          ? _PathProvidingBuildCacheReader._(delegate, assetGraph, rootPackage)
+          : BuildCacheReader._(delegate, assetGraph, rootPackage);
 
   @override
   Future<bool> canRead(AssetId id) =>
@@ -45,7 +44,7 @@ class BuildCacheReader implements AssetReader {
           encoding: encoding);
 
   @override
-  Stream<AssetId> findAssets(Glob glob) => throw new UnimplementedError(
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError(
       'Asset globbing should be done per phase with the AssetGraph');
 }
 
@@ -97,8 +96,7 @@ AssetId _cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
   }
   final assetNode = assetGraph.get(id);
   if (assetNode is GeneratedAssetNode && assetNode.isHidden) {
-    return new AssetId(
-        rootPackage, '$cacheDir/generated/${id.package}/${id.path}');
+    return AssetId(rootPackage, '$cacheDir/generated/${id.package}/${id.path}');
   }
   return id;
 }

@@ -15,15 +15,15 @@ import 'package:_bazel_codegen/src/assets/file_system.dart';
 void main() {
   const packagePath = 'test/package/test_package';
   const packageName = 'test.package.test_package';
-  const packageMap = const {packageName: packagePath};
-  final f1AssetId = new AssetId(packageName, 'lib/filename1.dart');
-  final f2AssetId = new AssetId(packageName, 'lib/filename2.dart');
+  const packageMap = {packageName: packagePath};
+  final f1AssetId = AssetId(packageName, 'lib/filename1.dart');
+  final f2AssetId = AssetId(packageName, 'lib/filename2.dart');
   BazelAssetReader reader;
   FakeFileSystem fileSystem;
 
   setUp(() {
-    fileSystem = new FakeFileSystem();
-    reader = new BazelAssetReader.forTest(packageName, packageMap, fileSystem);
+    fileSystem = FakeFileSystem();
+    reader = BazelAssetReader.forTest(packageName, packageMap, fileSystem);
   });
 
   test('canRead', () async {
@@ -40,7 +40,7 @@ void main() {
 
   test('readAsString', () async {
     final content = 'Test File Contents';
-    fileSystem.nextFile = new FakeFile()..content = content;
+    fileSystem.nextFile = FakeFile()..content = content;
     expect(await reader.readAsString(f1AssetId), equals(content));
     expect(fileSystem.calls, isNotEmpty);
     expect(fileSystem.calls.single.memberName, equals(#find));
@@ -48,7 +48,7 @@ void main() {
 
   test('readAsBytes', () async {
     final content = [1, 2, 3];
-    fileSystem.nextFile = new FakeFile()..content = utf8.decode(content);
+    fileSystem.nextFile = FakeFile()..content = utf8.decode(content);
     expect(await reader.readAsBytes(f1AssetId), equals(content));
     expect(fileSystem.calls, isNotEmpty);
     expect(fileSystem.calls.single.memberName, equals(#find));
@@ -56,7 +56,7 @@ void main() {
 
   test('findAssets', () async {
     fileSystem.nextFindAssets = ['lib/filename1.dart', 'lib/filename2.dart'];
-    expect(await reader.findAssets(new Glob('lib/*.dart')).toList(),
+    expect(await reader.findAssets(Glob('lib/*.dart')).toList(),
         [f1AssetId, f2AssetId]);
   });
 }
@@ -65,16 +65,16 @@ class FakeFileSystem implements BazelFileSystem {
   final calls = <Invocation>[];
 
   bool nextExistsReturn = false;
-  File nextFile = new FakeFile();
+  File nextFile = FakeFile();
   Iterable<String> nextFindAssets = const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
     calls.add(invocation);
     if (invocation.memberName == #exists) {
-      return new Future.value(nextExistsReturn);
+      return Future.value(nextExistsReturn);
     } else if (invocation.memberName == #find) {
-      return new Future.value(nextFile);
+      return Future.value(nextFile);
     } else if (invocation.memberName == #findAssets) {
       return nextFindAssets;
     }
@@ -87,10 +87,10 @@ class FakeFile implements File {
 
   @override
   Future<List<int>> readAsBytes({encoding}) =>
-      new Future.value(utf8.encode(content));
+      Future.value(utf8.encode(content));
 
   @override
-  Future<String> readAsString({encoding}) => new Future.value(content);
+  Future<String> readAsString({encoding}) => Future.value(content);
 
   @override
   dynamic noSuchMethod(Invocation invocation) {

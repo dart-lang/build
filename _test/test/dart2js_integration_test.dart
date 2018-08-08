@@ -16,7 +16,7 @@ const _outputDir = 'dart2js_test';
 void main() {
   group('Can run tests using dart2js', () {
     tearDown(() async {
-      var dir = new Directory(_outputDir);
+      var dir = Directory(_outputDir);
       if (await dir.exists()) {
         await dir.delete(recursive: true);
       }
@@ -65,7 +65,7 @@ void main() {
 }
 
 Future<Null> expectWasCompiledWithDart2Js({bool minified = false}) async {
-  var jsFile = new File('$_outputDir/test/hello_world_deferred_test.dart.js');
+  var jsFile = File('$_outputDir/test/hello_world_deferred_test.dart.js');
   expect(await jsFile.exists(), isTrue);
   // sanity check that it was indeed compiled with dart2js
   var content = await jsFile.readAsString();
@@ -77,6 +77,6 @@ Future<Null> expectWasCompiledWithDart2Js({bool minified = false}) async {
   }
 
   var jsDeferredPartFile =
-      new File('$_outputDir/test/hello_world_deferred_test.dart.js_1.part.js');
+      File('$_outputDir/test/hello_world_deferred_test.dart.js_1.part.js');
   expect(await jsDeferredPartFile.exists(), isTrue);
 }

@@ -10,4 +10,4 @@ export 'src/test_bootstrap_builder.dart' show TestBootstrapBuilder;
 
 DebugTestBuilder debugTestBuilder(_) => const DebugTestBuilder();
 DebugIndexBuilder debugIndexBuilder(_) => const DebugIndexBuilder();
-TestBootstrapBuilder testBootstrapBuilder(_) => new TestBootstrapBuilder();
+TestBootstrapBuilder testBootstrapBuilder(_) => TestBootstrapBuilder();

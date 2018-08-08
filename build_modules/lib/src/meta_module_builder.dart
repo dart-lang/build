@@ -24,24 +24,23 @@ class MetaModuleBuilder implements Builder {
   const MetaModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
 
   factory MetaModuleBuilder.forOptions(BuilderOptions options) {
-    return new MetaModuleBuilder(
+    return MetaModuleBuilder(
         isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
   }
 
   @override
   final buildExtensions = const {
-    r'$lib$': const [metaModuleExtension]
+    r'$lib$': [metaModuleExtension]
   };
 
   @override
   Future build(BuildStep buildStep) async {
     if (!_isCoarse) return;
 
-    var libraryAssets = await buildStep
-        .findAssets(new Glob('**$moduleLibraryExtension'))
-        .toList();
+    var libraryAssets =
+        await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
     var metaModule = await MetaModule.forLibraries(buildStep, libraryAssets);
-    var id = new AssetId(buildStep.inputId.package, 'lib/$metaModuleExtension');
+    var id = AssetId(buildStep.inputId.package, 'lib/$metaModuleExtension');
     await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
   }
 }

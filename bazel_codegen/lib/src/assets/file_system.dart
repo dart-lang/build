@@ -13,22 +13,22 @@ class BazelFileSystem {
   final List<String> searchPaths;
 
   BazelFileSystem(this.workspaceDir, this.searchPaths) {
-    if (workspaceDir == null) throw new ArgumentError();
-    if (searchPaths == null) throw new ArgumentError();
+    if (workspaceDir == null) throw ArgumentError();
+    if (searchPaths == null) throw ArgumentError();
   }
 
   Future<bool> exists(String path) async => (await _fileForPath(path)) != null;
 
   Future<File> find(String path) async {
     var file = await _fileForPath(path);
-    if (file == null) throw new FileSystemException('File not found', path);
+    if (file == null) throw FileSystemException('File not found', path);
     return file;
   }
 
   Iterable<String> findAssets(String packagePath, Glob glob) sync* {
     for (var searchPath in searchPaths) {
       var fullPath = p.join(workspaceDir, searchPath, packagePath);
-      if (!new Directory(fullPath).existsSync()) continue;
+      if (!Directory(fullPath).existsSync()) continue;
       yield* glob
           .listSync(root: fullPath)
           .map((e) => e.path)
@@ -38,7 +38,7 @@ class BazelFileSystem {
 
   Future<File> _fileForPath(String path) async {
     for (var searchPath in searchPaths) {
-      var f = new File(p.join(workspaceDir, searchPath, path));
+      var f = File(p.join(workspaceDir, searchPath, path));
       if (await f.exists()) return f;
     }
     return null;

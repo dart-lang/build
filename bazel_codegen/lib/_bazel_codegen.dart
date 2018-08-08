@@ -29,7 +29,7 @@ import 'src/run_phases.dart';
 /// declared outputs.
 Future bazelGenerateMulti(List<BuilderFactory> builders, List<String> args,
     {Map<String, String> defaultContent = const {}}) {
-  var options = new StartupArgs.parse(args);
+  var options = StartupArgs.parse(args);
   return Chain.capture(() {
     if (options.persistentWorker) {
       return generateAsWorker(builders, defaultContent);
