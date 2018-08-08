@@ -1,6 +1,6 @@
 ## 0.4.2
 
-- Add magic comment marker for build_runner to know where to inject 
+- Add magic comment marker for build_runner to know where to inject
   live-reloading client code.
 
 ## 0.4.1
