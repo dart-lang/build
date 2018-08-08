@@ -226,6 +226,10 @@ if(!window.\$dartLoader) {
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
      rootDirectories: new Array(),
+     forceLoadModule: function (moduleName, callback) {
+       requirejs.undef(moduleName);
+       requirejs([moduleName], callback);
+     },
    };
 }
 let customModulePaths = {};

@@ -195,21 +195,24 @@ void main() {
       _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
       var response = await serveHandler.handlerFor('web', liveReload: false)(
           Request('GET', Uri.parse('http://server.com/some.js')));
-      expect(await response.readAsString(), isNot(contains('hot_reload_client.dart')));
+      expect(await response.readAsString(),
+          isNot(contains('hot_reload_client.dart')));
     });
 
     test('doesn\'t inject client code in non-js files', () async {
       _addSource('a|web/some.html', entrypointExtensionMarker + '\n<br>some');
       var response = await serveHandler.handlerFor('web', liveReload: true)(
           Request('GET', Uri.parse('http://server.com/some.html')));
-      expect(await response.readAsString(), isNot(contains('hot_reload_client.dart')));
+      expect(await response.readAsString(),
+          isNot(contains('hot_reload_client.dart')));
     });
 
     test('doesn\'t inject client code in non-marked files', () async {
       _addSource('a|web/some.js', 'alert(1)');
       var response = await serveHandler.handlerFor('web', liveReload: true)(
           Request('GET', Uri.parse('http://server.com/some.js')));
-      expect(await response.readAsString(), isNot(contains('hot_reload_client.dart')));
+      expect(await response.readAsString(),
+          isNot(contains('hot_reload_client.dart')));
     });
 
     test('expect websocket connection if enabled', () async {
