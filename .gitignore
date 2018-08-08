@@ -21,3 +21,6 @@ bazel-*
 packages.bzl
 BUILD
 WORKSPACE
+
+# Deps of checked-in dart2js generated code
+*.dart.js.deps
