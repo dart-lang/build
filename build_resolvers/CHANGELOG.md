@@ -1,3 +1,8 @@
+## 0.2.2
+
+- Use sdk summaries for the analysis context, which makes getting the initial
+  resolver faster.
+
 ## 0.2.1+1
 
 - Increased the upper bound for the sdk to `<3.0.0`.
