@@ -257,6 +257,7 @@ class _Loader {
           deletedSources.add(id);
           return _environment.writer.delete(id);
         }
+        return null;
       }).whereType<Future>());
 
       await _deleteGeneratedDir();
