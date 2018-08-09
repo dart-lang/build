@@ -149,6 +149,13 @@ main() {
       _expectFiles(webFiles, tmpDir);
     });
 
+    test('does not nest packages symlinks with no root', () async {
+      var success = await createMergedOutputDirectories({tmpDir.path: null},
+          packageGraph, environment, assetReader, finalizedAssetsView, false);
+      expect(success, isTrue);
+      _expectNoFiles(Set<String>.of(['packages/packages/a/a.txt']), tmpDir);
+    });
+
     test('only outputs files contained in the provided root', () async {
       var success = await createMergedOutputDirectories(
           {tmpDir.path: 'web', anotherTmpDir.path: 'foo'},

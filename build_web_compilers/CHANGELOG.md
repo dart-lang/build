@@ -1,7 +1,8 @@
 ## 0.4.2
 
-- Add magic comment marker for build_runner to know where to inject 
-  live-reloading client code.
+- Add magic comment marker for build_runner to know where to inject
+  live-reloading client code. This is only present when using the `dartdevc`
+  compiler.
 
 ## 0.4.1
 
