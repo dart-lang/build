@@ -29,7 +29,10 @@ import 'package:_test_common/package_graphs.dart';
 import 'package:_test_common/runner_asset_writer_spy.dart';
 
 main() {
-  final aPackageGraph = buildPackageGraph({rootPackage('a'): []});
+  final aPackageGraph = buildPackageGraph({
+    rootPackage('a'): ['b'],
+    package('b'): []
+  });
 
   group('BuildDefinition.prepareWorkspace', () {
     BuildOptions options;
@@ -65,7 +68,7 @@ main() {
         'pkg_a',
         [
           await pubspec('a'),
-          d.file('.packages', '\na:./lib/'),
+          d.file('.packages', '\na:./lib/\nb:../pkg_b/lib/'),
           d.file('pubspec.lock', 'packages: {}'),
           d.dir('.dart_tool', [
             d.dir('build', [
@@ -85,6 +88,18 @@ targets:
           d.dir('lib'),
         ],
       ).create();
+      await d.dir('pkg_b', [
+        await pubspec('b'),
+        d.file('build.yaml', '''
+targets:
+  \$default:
+    sources:
+      - lib/**
+      - test/**
+'''),
+        d.dir('test', [d.file('some_test.dart')]),
+        d.dir('lib', [d.file('some_lib.dart')]),
+      ]).create();
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       var packageGraph = PackageGraph.forPath(pkgARoot);
       environment =
@@ -313,7 +328,7 @@ targets:
             isFalse);
       });
 
-      test('doesnt include sources not matching the target glob', () async {
+      test('does\'nt include sources not matching the target glob', () async {
         await createFile(p.join('lib', 'a.txt'), 'a');
         await createFile(p.join('lib', 'excluded', 'b.txt'), 'b');
 
@@ -324,6 +339,15 @@ targets:
         expect(assetGraph.contains(AssetId('a', 'lib/a.txt')), isTrue);
         expect(
             assetGraph.contains(AssetId('a', 'lib/excluded/b.txt')), isFalse);
+      });
+
+      test('does\'nt include non-lib sources in targets in deps', () async {
+        var buildDefinition =
+            await BuildDefinition.prepareWorkspace(environment, options, []);
+        var assetGraph = buildDefinition.assetGraph;
+        expect(assetGraph.contains(AssetId('b', 'lib/some_lib.dart')), isTrue);
+        expect(
+            assetGraph.contains(AssetId('b', 'test/some_test.dart')), isFalse);
       });
     });
 

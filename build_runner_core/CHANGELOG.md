@@ -1,3 +1,8 @@
+## 0.3.1+1
+
+- Bug Fix: Don't include any non-lib assets from dependencies in the build, even
+  if they are a source in a target.
+
 ## 0.3.1
 
 - Migrated glob tracking to a specialized node type to fix dart-lang/build#1702.
