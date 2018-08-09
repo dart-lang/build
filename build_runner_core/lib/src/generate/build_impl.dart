@@ -297,17 +297,17 @@ class _SingleBuild {
     for (var phaseNum = 0; phaseNum < _buildPhases.length; phaseNum++) {
       var phase = _buildPhases[phaseNum];
       if (phase.isOptional) continue;
-      await _performanceTracker.trackBuildPhase(phase, () async {
+      outputs.addAll(await _performanceTracker.trackBuildPhase(phase, () async {
         if (phase is InBuildPhase) {
           var primaryInputs =
               await _matchingPrimaryInputs(phase.package, phaseNum);
-          outputs.addAll(await _runBuilder(phaseNum, phase, primaryInputs));
+          return _runBuilder(phaseNum, phase, primaryInputs);
         } else if (phase is PostBuildPhase) {
-          outputs.addAll(await _runPostProcessPhase(phaseNum, phase));
+          return _runPostProcessPhase(phaseNum, phase);
         } else {
           throw StateError('Unrecognized BuildPhase type $phase');
         }
-      });
+      }));
     }
     await Future.forEach(
         _lazyPhases.values,
