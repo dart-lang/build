@@ -14,21 +14,37 @@ final _source = r'''
   export 'package:source_gen/source_gen.dart' show Generator;
   import 'dart:async' show Stream;
 
+  part 'part.dart';
+  
   class Example {}
+''';
+
+final _partSource = r'''
+part of 'source.dart';
+
+class PartClass {}
 ''';
 
 void main() {
   LibraryReader library;
 
   setUpAll(() async {
-    library = await resolveSource(
-      _source,
+    library = await resolveSources(
+      {'a|source.dart': _source, 'a|part.dart': _partSource},
       (r) async => new LibraryReader(await r.findLibraryByName('test_lib')),
     );
   });
 
+  test('class count', () {
+    expect(library.classElements, hasLength(2));
+  });
+
   test('should return a type not exported', () {
     expect(library.findType('Example'), _isClassElement);
+  });
+
+  test('should return a type from a part', () {
+    expect(library.findType('PartClass'), _isClassElement);
   });
 
   test('should return a type exported from dart:', () {

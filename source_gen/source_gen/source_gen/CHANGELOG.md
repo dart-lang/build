@@ -1,3 +1,8 @@
+## 0.9.0+1
+
+* Fix `LibraryReader.classElements` to return classes from parts, if they exist,
+  as well as from the defining library file.
+
 ## 0.9.0
 
 * Introduce `SharedPartBuilder` for creating part files that can be merged

@@ -166,7 +166,7 @@ class LibraryReader {
 
   /// All of the `class` elements in this library.
   Iterable<ClassElement> get classElements =>
-      element.definingCompilationUnit.types;
+      element.units.expand((cu) => cu.types);
 
   static Iterable<Element> _getElements(CompilationUnitMember member) {
     if (member is TopLevelVariableDeclaration) {
