@@ -32,7 +32,9 @@ main(List<String> args) async {
         toAllPackages(),
         isOptional: false,
         hideOutput: false,
-        defaultGenerateFor:
-            InputSet(include: ['lib/src/server/graph_viz_main.dart'])),
+        defaultGenerateFor: InputSet(include: [
+          'lib/src/server/graph_viz_main.dart',
+          'lib/src/server/hot_reload_client.dart',
+        ])),
   ]);
 }
