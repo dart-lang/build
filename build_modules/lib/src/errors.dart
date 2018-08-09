@@ -94,7 +94,7 @@ Future<String> _missingImportMessage(
   var contents = await reader.readAsString(sourceId);
   var parsed = parseDirectives(contents, suppressErrors: true);
   var import = parsed.directives
-      .where((directive) => directive is UriBasedDirective)
+      .whereType<UriBasedDirective>()
       .cast<UriBasedDirective>()
       .firstWhere((directive) {
     var uriString = directive.uri.stringValue;

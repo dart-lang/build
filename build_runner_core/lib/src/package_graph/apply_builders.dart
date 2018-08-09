@@ -293,13 +293,9 @@ Future<List<BuildPhase>> createBuildPhases(
           isReleaseMode))
       .toList();
 
-  final inBuildPhases =
-      expandedPhases.where((p) => p is InBuildPhase).cast<BuildPhase>();
+  final inBuildPhases = expandedPhases.whereType<InBuildPhase>();
 
-  final postBuildPhases = expandedPhases
-      .where((p) => p is PostBuildPhase)
-      .cast<PostBuildPhase>()
-      .toList();
+  final postBuildPhases = expandedPhases.whereType<PostBuildPhase>().toList();
   final collapsedPostBuildPhase = <PostBuildPhase>[];
   if (postBuildPhases.isNotEmpty) {
     collapsedPostBuildPhase.add(postBuildPhases
@@ -309,7 +305,7 @@ Future<List<BuildPhase>> createBuildPhases(
     }));
   }
 
-  return inBuildPhases.followedBy(collapsedPostBuildPhase).toList();
+  return <BuildPhase>[]..addAll(inBuildPhases)..addAll(collapsedPostBuildPhase);
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
