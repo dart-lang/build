@@ -75,10 +75,9 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    outputAssets.addAll(await Future.wait(finalizedOutputsView
-        .allAssets(rootDir: root)
-        .map((id) => _writeAsset(
-            id, outputDir, root, packageGraph, reader, symlinkOnly))));
+    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+    outputAssets.addAll(await Future.wait(builtAssets.map((id) =>
+        _writeAsset(id, outputDir, root, packageGraph, reader, symlinkOnly))));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
@@ -88,7 +87,7 @@ Future<bool> _createMergedOutputDir(
     outputAssets.add(packagesAsset);
 
     if (root == null) {
-      for (var dir in _findRootDirs(outputAssets, outputPath)) {
+      for (var dir in _findRootDirs(builtAssets, outputPath)) {
         var link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
           link.createSync(p.join('..', 'packages'), recursive: true);
