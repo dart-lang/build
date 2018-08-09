@@ -428,7 +428,8 @@ class AnalyzerResolvers implements Resolvers {
     _initAnalysisEngine();
     var resourceProvider = PhysicalResourceProvider.INSTANCE;
     var sdk = FolderBasedDartSdk(
-        resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()));
+        resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()))
+      ..useSummary = true;
     var uriResolver = DartUriResolver(sdk);
     return AnalyzerResolvers._(AnalyzerResolver(uriResolver, analysisOptions));
   }
