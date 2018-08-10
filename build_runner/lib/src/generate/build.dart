@@ -74,9 +74,9 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     List<String> buildDirs,
     String logPerformanceDir}) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= new PackageGraph.forThisPackage();
-  var environment = new OverrideableEnvironment(
-      new IOEnvironment(
+  packageGraph ??= PackageGraph.forThisPackage();
+  var environment = OverrideableEnvironment(
+      IOEnvironment(
         packageGraph,
         assumeTty: assumeTty,
         outputMap: outputMap,
@@ -100,7 +100,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
   );
-  var terminator = new Terminator(terminateEventStream);
+  var terminator = Terminator(terminateEventStream);
   try {
     var build = await BuildRunner.create(
       options,

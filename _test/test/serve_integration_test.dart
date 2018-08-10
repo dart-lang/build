@@ -17,7 +17,7 @@ void main() {
     // These tests depend on running `test` while a `serve` is ongoing.
     await startServer(
         ensureCleanBuild: true, buildArgs: ['--skip-build-script-check']);
-    httpClient = new HttpClient();
+    httpClient = HttpClient();
   });
 
   tearDownAll(() async {

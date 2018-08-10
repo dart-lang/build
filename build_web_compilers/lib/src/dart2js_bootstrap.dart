@@ -25,7 +25,7 @@ Future<Null> bootstrapDart2Js(
   var moduleId = dartEntrypointId.changeExtension(moduleExtension);
   var args = <String>[];
   {
-    var module = new Module.fromJson(
+    var module = Module.fromJson(
         json.decode(await buildStep.readAsString(moduleId))
             as Map<String, dynamic>);
     var allDeps = (await module.computeTransitiveDependencies(buildStep))
@@ -62,8 +62,8 @@ Future<Null> bootstrapDart2Js(
     log.info(result.output);
     var rootDir = p.dirname(jsOutputFile.path);
     var dartFile = p.basename(dartEntrypointId.path);
-    var fileGlob = new Glob('$dartFile.js*');
-    var archive = new Archive();
+    var fileGlob = Glob('$dartFile.js*');
+    var archive = Archive();
     await for (var jsFile in fileGlob.list(root: rootDir)) {
       if (jsFile.path.endsWith(jsEntrypointExtension) ||
           jsFile.path.endsWith(jsEntrypointSourceMapExtension)) {
@@ -73,16 +73,16 @@ Future<Null> bootstrapDart2Js(
       if (jsFile is File) {
         var fileName = p.relative(jsFile.path, from: rootDir);
         var fileStats = await jsFile.stat();
-        archive.addFile(new ArchiveFile(
-            fileName, fileStats.size, await jsFile.readAsBytes())
-          ..mode = fileStats.mode
-          ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
+        archive.addFile(
+            ArchiveFile(fileName, fileStats.size, await jsFile.readAsBytes())
+              ..mode = fileStats.mode
+              ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
       }
     }
     if (archive.isNotEmpty) {
       var archiveId =
           dartEntrypointId.changeExtension(jsEntrypointArchiveExtension);
-      await buildStep.writeAsBytes(archiveId, new TarEncoder().encode(archive));
+      await buildStep.writeAsBytes(archiveId, TarEncoder().encode(archive));
     }
 
     // Explicitly write out the original js file and sourcemap - we can't output
@@ -120,8 +120,8 @@ Future<String> _createPackageFile(Iterable<AssetId> inputSources,
   var inputUri = buildStep.inputId.uri;
   var packageFileName =
       '.package-${md5.convert(inputUri.toString().codeUnits)}';
-  var packagesFile = scratchSpace
-      .fileFor(new AssetId(buildStep.inputId.package, packageFileName));
+  var packagesFile =
+      scratchSpace.fileFor(AssetId(buildStep.inputId.package, packageFileName));
   var packageNames = inputSources.map((s) => s.package).toSet();
   var packagesFileContent =
       packageNames.map((n) => '$n:packages/$n/').join('\n');
@@ -130,12 +130,12 @@ Future<String> _createPackageFile(Iterable<AssetId> inputSources,
   return packageFileName;
 }
 
-final _sdkVersionWithNoSyncAsync = new Version(2, 0, 0, pre: 'dev.51.0');
+final _sdkVersionWithNoSyncAsync = Version(2, 0, 0, pre: 'dev.51.0');
 
 final bool _dart2jsSupportsNoSyncAsync = () {
   // Platform.version looks like `<version> (<date build>) on "<platform>"`
   // We only want the version so we take the substring up to the first space.
-  var version = new Version.parse(
+  var version = Version.parse(
       Platform.version.substring(0, Platform.version.indexOf(' ')));
   return version >= _sdkVersionWithNoSyncAsync;
 }();

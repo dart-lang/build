@@ -22,8 +22,8 @@ Future<Null> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
   // usage information if there is no command provided or the help command was
   // explicitly invoked.
-  var commandRunner = new BuildCommandRunner([])
-    ..addCommand(new _GenerateBuildScript());
+  var commandRunner = BuildCommandRunner([])
+    ..addCommand(_GenerateBuildScript());
 
   ArgResults parsedArgs;
   try {
@@ -57,16 +57,16 @@ Future<Null> main(List<String> args) async {
     logListener = Logger.root.onRecord.listen(stdIOLogListener());
   }
   var buildScript = await generateBuildScript();
-  var scriptFile = new File(scriptLocation)..createSync(recursive: true);
+  var scriptFile = File(scriptLocation)..createSync(recursive: true);
   scriptFile.writeAsStringSync(buildScript);
   if (commandName == _generateCommand) {
     print(p.absolute(scriptLocation));
     return;
   }
 
-  var exitPort = new ReceivePort();
-  var errorPort = new ReceivePort();
-  var messagePort = new ReceivePort();
+  var exitPort = ReceivePort();
+  var errorPort = ReceivePort();
+  var messagePort = ReceivePort();
   var errorListener = errorPort.listen((e) {
     stderr.writeln('\n\nYou have hit a bug in build_runner');
     stderr.writeln('Please file an issue with reproduction steps at '
@@ -74,12 +74,12 @@ Future<Null> main(List<String> args) async {
     final error = e[0];
     final trace = e[1] as String;
     stderr.writeln(error);
-    stderr.writeln(new Trace.parse(trace).terse);
+    stderr.writeln(Trace.parse(trace).terse);
     if (exitCode == 0) exitCode = 1;
   });
   try {
     await Isolate.spawnUri(
-        new Uri.file(p.absolute(scriptLocation)), args, messagePort.sendPort,
+        Uri.file(p.absolute(scriptLocation)), args, messagePort.sendPort,
         onExit: exitPort.sendPort, onError: errorPort.sendPort);
   } on IsolateSpawnException catch (e) {
     print(red.wrap('Failed to launch the build script. '
@@ -92,7 +92,7 @@ Future<Null> main(List<String> args) async {
   StreamSubscription exitCodeListener;
   exitCodeListener = messagePort.listen((isolateExitCode) {
     if (isolateExitCode is! int) {
-      throw new StateError(
+      throw StateError(
           'Bad response from isolate, expected an exit code but got '
           '$isolateExitCode');
     }

@@ -15,7 +15,7 @@ String toJSIdentifier(String name) {
     var ch = name[i];
     var needsEscape = ch == r'$' || _invalidCharInIdentifier.hasMatch(ch);
     if (needsEscape && buffer == null) {
-      buffer = new StringBuffer(name.substring(0, i));
+      buffer = StringBuffer(name.substring(0, i));
     }
     if (buffer != null) {
       buffer.write(needsEscape ? '\$${ch.codeUnits.join("")}' : ch);
@@ -25,7 +25,7 @@ String toJSIdentifier(String name) {
   var result = buffer != null ? '$buffer' : name;
   // Ensure the identifier first character is not numeric and that the whole
   // identifier is not a keyword.
-  if (result.startsWith(new RegExp('[0-9]')) || invalidVariableName(result)) {
+  if (result.startsWith(RegExp('[0-9]')) || invalidVariableName(result)) {
     return '\$$result';
   }
   return result;
@@ -90,4 +90,4 @@ bool invalidVariableName(String keyword, {bool strictMode = true}) {
 }
 
 // Invalid characters for identifiers, which would need to be escaped.
-final _invalidCharInIdentifier = new RegExp(r'[^A-Za-z_$0-9]');
+final _invalidCharInIdentifier = RegExp(r'[^A-Za-z_$0-9]');

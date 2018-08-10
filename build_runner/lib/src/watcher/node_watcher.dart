@@ -11,7 +11,7 @@ import 'package:watcher/watcher.dart';
 import 'asset_change.dart';
 
 typedef Watcher _WatcherStrategy(String path);
-Watcher _default(String path) => new Watcher(path);
+Watcher _default(String path) => Watcher(path);
 
 /// Allows watching significant files and directories in a given package.
 class PackageNodeWatcher {
@@ -49,6 +49,6 @@ class PackageNodeWatcher {
     final absolute = relative != null ? p.join(path, relative) : path;
     _watcher = _strategy(absolute);
     final events = _watcher.events;
-    return events.map((e) => new AssetChange.fromEvent(_node, e));
+    return events.map((e) => AssetChange.fromEvent(_node, e));
   }
 }

@@ -13,11 +13,11 @@ main() {
   group('runPostProcessBuilder', () {
     InMemoryAssetReader reader;
     InMemoryAssetWriter writer;
-    final copyBuilder = new CopyingPostProcessBuilder();
-    final deleteBuilder = new DeletePostProcessBuilder();
+    final copyBuilder = CopyingPostProcessBuilder();
+    final deleteBuilder = DeletePostProcessBuilder();
     final aTxt = makeAssetId('a|lib/a.txt');
     final aTxtCopy = makeAssetId('a|lib/a.txt.copy');
-    final logger = new Logger('test');
+    final logger = Logger('test');
     final adds = <AssetId, bool>{};
     final deletes = <AssetId, bool>{};
 
@@ -30,8 +30,8 @@ main() {
       sourceAssets = {
         aTxt: 'a',
       };
-      reader = new InMemoryAssetReader(sourceAssets: sourceAssets);
-      writer = new InMemoryAssetWriter();
+      reader = InMemoryAssetReader(sourceAssets: sourceAssets);
+      writer = InMemoryAssetWriter();
       adds.clear();
       deletes.clear();
     });
@@ -56,9 +56,9 @@ main() {
     test('throws if addAsset throws', () async {
       expect(
           () => runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
-              addAsset: (id) => throw new InvalidOutputException(id, ''),
+              addAsset: (id) => throw InvalidOutputException(id, ''),
               deleteAsset: deleteAsset),
-          throwsA(new TypeMatcher<InvalidOutputException>()));
+          throwsA(TypeMatcher<InvalidOutputException>()));
     });
   });
 }

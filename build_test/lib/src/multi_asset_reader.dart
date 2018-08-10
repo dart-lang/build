@@ -56,6 +56,6 @@ class MultiAssetReader extends AssetReader implements MultiPackageAssetReader {
         return reader;
       }
     }
-    throw new AssetNotFoundException(id);
+    throw AssetNotFoundException(id);
   }
 }

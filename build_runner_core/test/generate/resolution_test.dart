@@ -13,7 +13,7 @@ import 'package:_test_common/test_phases.dart';
 void main() {
   test('should resolve a dart file with a part file', () async {
     await testBuilders([
-      applyToRoot(new ListClassesAndHierarchyBuilder())
+      applyToRoot(ListClassesAndHierarchyBuilder())
     ], {
       'a|lib/a.dart': r'''
         library a;
@@ -48,7 +48,7 @@ class ListClassesAndHierarchyBuilder implements Builder {
       library.definingCompilationUnit.types,
       library.parts.map((p) => p.types).expand((t) => t),
     ].expand((t) => t);
-    final output = new StringBuffer();
+    final output = StringBuffer();
     final outputId = buildStep.inputId.changeExtension('.txt');
     for (final type in types) {
       output.write('${type.name}: [');
@@ -60,6 +60,6 @@ class ListClassesAndHierarchyBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    'dart': const ['txt'],
+    'dart': ['txt'],
   };
 }

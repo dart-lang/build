@@ -31,7 +31,7 @@ class DevCompilerBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    moduleExtension: const [
+    moduleExtension: [
       jsModuleExtension,
       jsModuleErrorsExtension,
       jsSourceMapExtension
@@ -40,7 +40,7 @@ class DevCompilerBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var module = new Module.fromJson(
+    var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
 
@@ -70,7 +70,7 @@ Future _createDevCompilerModule(
       : module.linkedSummaryId);
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
-  var allAssetIds = new Set<AssetId>()
+  var allAssetIds = Set<AssetId>()
     ..addAll(module.sources)
     ..addAll(transitiveSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
@@ -78,7 +78,7 @@ Future _createDevCompilerModule(
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary = p.url
       .join(_sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
-  var request = new WorkRequest();
+  var request = WorkRequest();
 
   request.arguments.addAll([
     '--dart-sdk-summary=$sdkSummary',
@@ -134,7 +134,7 @@ Future _createDevCompilerModule(
         request.arguments
             .add('--url-mapping=$uri,${scratchSpace.fileFor(id).path}');
       } else {
-        var absoluteFileUri = new Uri.file('/${id.path}');
+        var absoluteFileUri = Uri.file('/${id.path}');
         request.arguments.add('--url-mapping=$absoluteFileUri,${id.path}');
       }
     }
@@ -159,7 +159,7 @@ Future _createDevCompilerModule(
     if (uri.startsWith('package:')) {
       return uri;
     }
-    return useKernel ? id.path : new Uri.file('/${id.path}').toString();
+    return useKernel ? id.path : Uri.file('/${id.path}').toString();
   }));
 
   WorkResponse response;
@@ -178,7 +178,7 @@ Future _createDevCompilerModule(
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
     var message =
         response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-    throw new DartDevcCompilationException(jsId, '$message}');
+    throw DartDevcCompilationException(jsId, '$message}');
   } else {
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);

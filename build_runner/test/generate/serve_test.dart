@@ -21,8 +21,8 @@ void main() {
     InMemoryRunnerAssetWriter writer;
 
     setUp(() async {
-      _terminateServeController = new StreamController();
-      writer = new InMemoryRunnerAssetWriter();
+      _terminateServeController = StreamController();
+      writer = InMemoryRunnerAssetWriter();
       await writer.writeAsString(makeAssetId('a|.packages'), '''
 # Fake packages file
 a:file://fake/pkg/path
@@ -36,8 +36,8 @@ a:file://fake/pkg/path
 
     test('does basic builds', () async {
       var handler = await createHandler(
-          [applyToRoot(new TestBuilder())], {'a|web/a.txt': 'a'}, writer);
-      var results = new StreamQueue(handler.buildResults);
+          [applyToRoot(TestBuilder())], {'a|web/a.txt': 'a'}, writer);
+      var results = StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
@@ -48,21 +48,19 @@ a:file://fake/pkg/path
     });
 
     test('blocks serving files until the build is done', () async {
-      var buildBlocker1 = new Completer();
+      var buildBlocker1 = Completer();
       var nextBuildBlocker = buildBlocker1.future;
 
-      var handler = await createHandler([
-        applyToRoot(new TestBuilder(extraWork: (_, __) => nextBuildBlocker))
-      ], {
-        'a|web/a.txt': 'a'
-      }, writer);
+      var handler = await createHandler(
+          [applyToRoot(TestBuilder(extraWork: (_, __) => nextBuildBlocker))],
+          {'a|web/a.txt': 'a'},
+          writer);
       var webHandler = handler.handlerFor('web');
-      var results = new StreamQueue(handler.buildResults);
+      var results = StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
       await wait(100);
 
-      var request =
-          new Request('GET', Uri.parse('http://localhost:8000/a.txt'));
+      var request = Request('GET', Uri.parse('http://localhost:8000/a.txt'));
       // ignore: unawaited_futures
       (webHandler(request) as Future<Response>).then((Response response) {
         expect(buildBlocker1.isCompleted, isTrue,
@@ -74,7 +72,7 @@ a:file://fake/pkg/path
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       /// Next request completes right away.
-      var buildBlocker2 = new Completer();
+      var buildBlocker2 = Completer();
       // ignore: unawaited_futures
       (webHandler(request) as Future<Response>).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
@@ -86,7 +84,7 @@ a:file://fake/pkg/path
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       // Give the build enough time to get started.
       await wait(500);
-      var done = new Completer();
+      var done = Completer();
       // ignore: unawaited_futures
       (webHandler(request) as Future<Response>).then((response) {
         expect(buildBlocker1.isCompleted, isTrue);
@@ -104,7 +102,7 @@ a:file://fake/pkg/path
   });
 }
 
-final _debounceDelay = new Duration(milliseconds: 10);
+final _debounceDelay = Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
@@ -115,9 +113,9 @@ Future<ServeHandler> createHandler(List<BuilderApplication> builders,
   }));
   final packageGraph =
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
-  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+  final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph.root.name);
-  final watcherFactory = (String path) => new FakeWatcher(path);
+  final watcherFactory = (String path) => FakeWatcher(path);
 
   return watch_impl.watch(builders,
       deleteFilesByDefault: true,

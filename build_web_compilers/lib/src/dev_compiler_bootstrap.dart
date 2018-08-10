@@ -30,7 +30,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   useKernel ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId.changeExtension(moduleExtension);
-  var module = new Module.fromJson(json
+  var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
   if (buildRootAppSummary) await buildStep.canRead(module.linkedSummaryId);
@@ -64,8 +64,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   }());
 
   // Map from module name to module path for custom modules.
-  var modulePaths = new SplayTreeMap.of(
-      {'dart_sdk': r'packages/$sdk/dev_compiler/amd/dart_sdk'});
+  var modulePaths =
+      SplayTreeMap.of({'dart_sdk': r'packages/$sdk/dev_compiler/amd/dart_sdk'});
   var transitiveJsModules = [jsId]
     ..addAll(transitiveDeps.map((dep) => dep.jsId(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
@@ -80,7 +80,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   }
 
   var bootstrapContent =
-      new StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
+      StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
 
@@ -100,7 +100,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
       entrypointJsContent);
 }
 
-final _lazyBuildPool = new Pool(16);
+final _lazyBuildPool = Pool(16);
 
 /// Ensures that all transitive js modules for [module] are available and built.
 Future<List<Module>> _ensureTransitiveModules(

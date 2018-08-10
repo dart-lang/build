@@ -9,7 +9,7 @@ AssetId pathToAssetId(
     String rootPackage, String rootDir, List<String> pathSegments) {
   var packagesIndex = pathSegments.indexOf('packages');
   return packagesIndex >= 0
-      ? new AssetId(pathSegments[packagesIndex + 1],
+      ? AssetId(pathSegments[packagesIndex + 1],
           p.join('lib', p.joinAll(pathSegments.sublist(packagesIndex + 2))))
-      : new AssetId(rootPackage, p.joinAll([rootDir].followedBy(pathSegments)));
+      : AssetId(rootPackage, p.joinAll([rootDir].followedBy(pathSegments)));
 }

@@ -6,6 +6,6 @@ import 'dart:html';
 
 void startApp({String text}) {
   text ??= 'Hello World!';
-  var component = new DivElement()..text = text;
+  var component = DivElement()..text = text;
   document.body.append(component);
 }

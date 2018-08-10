@@ -20,7 +20,7 @@ void main() {
 
   test('should assert something was logged asynchronously', () {
     expect(
-      recordLogs(() => new Future.microtask(() => log.info('Hello World'))),
+      recordLogs(() => Future.microtask(() => log.info('Hello World'))),
       emitsAnyOf([
         anyLogOf('Hello World'),
       ]),

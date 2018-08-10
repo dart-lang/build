@@ -10,7 +10,7 @@ import 'package:build_modules/src/module_cleanup.dart';
 import 'package:build_modules/src/module_library_builder.dart';
 
 Builder moduleBuilder(BuilderOptions options) =>
-    new ModuleBuilder.forOptions(options);
+    ModuleBuilder.forOptions(options);
 Builder unlinkedSummaryBuilder(_) => const UnlinkedSummaryBuilder();
 Builder linkedSummaryBuilder(_) => const LinkedSummaryBuilder();
 Builder metaModuleBuilder(_) => const MetaModuleBuilder();

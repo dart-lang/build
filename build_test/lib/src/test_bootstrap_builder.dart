@@ -15,7 +15,7 @@ import 'package:path/path.dart' as p;
 class TestBootstrapBuilder extends Builder {
   @override
   final buildExtensions = const {
-    '_test.dart': const [
+    '_test.dart': [
       '_test.dart.vm_test.dart',
       '_test.dart.browser_test.dart',
       '_test.dart.node_test.dart',

@@ -32,32 +32,31 @@ void main() {
 
   setUp(() async {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
-    writer = new InMemoryRunnerAssetWriter();
-    reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+    writer = InMemoryRunnerAssetWriter();
+    reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
         rootPackage: 'example');
-    reader.cacheStringAsset(
-        new AssetId('example', 'web/initial.txt'), 'initial');
-    reader.cacheStringAsset(new AssetId('example', '.packages'), '''
+    reader.cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial');
+    reader.cacheStringAsset(AssetId('example', '.packages'), '''
 # Fake packages file
 example:file://fake/pkg/path
 ''');
-    terminateController = new StreamController();
+    terminateController = StreamController();
     final server = (await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],
       packageGraph: graph,
       reader: reader,
       writer: writer,
       logLevel: Level.OFF,
-      directoryWatcherFactory: (path) => new FakeWatcher(path),
+      directoryWatcherFactory: (path) => FakeWatcher(path),
       terminateEventStream: terminateController.stream,
       skipBuildScriptCheck: true,
     ));
     handler = server.handlerFor('web');
 
-    nextBuild = new Completer<BuildResult>();
+    nextBuild = Completer<BuildResult>();
     subscription = server.buildResults.listen((result) {
       nextBuild.complete(result);
-      nextBuild = new Completer<BuildResult>();
+      nextBuild = Completer<BuildResult>();
     });
     await nextBuild.future;
   });
@@ -70,51 +69,50 @@ example:file://fake/pkg/path
 
   test('should serve original files', () async {
     final getHello = Uri.parse('http://localhost/initial.txt');
-    final response = await handler(new Request('GET', getHello));
+    final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'initial');
   });
 
   test('should serve built files', () async {
     final getHello = Uri.parse('http://localhost/initial.g.txt');
-    reader.cacheStringAsset(
-        new AssetId('example', 'web/initial.g.txt'), 'INITIAL');
-    final response = await handler(new Request('GET', getHello));
+    reader.cacheStringAsset(AssetId('example', 'web/initial.g.txt'), 'INITIAL');
+    final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'INITIAL');
   });
 
   test('should 404 on missing files', () async {
     final get404 = Uri.parse('http://localhost/404.txt');
-    final response = await handler(new Request('GET', get404));
+    final response = await handler(Request('GET', get404));
     expect(await response.readAsString(), 'Not Found');
   });
 
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
-    reader.cacheStringAsset(new AssetId('example', 'web/new.txt'), 'New');
-    await new Future.value();
+    reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
+    await Future.value();
     FakeWatcher.notifyWatchers(
-      new WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
+      WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
     await nextBuild.future;
-    final response = await handler(new Request('GET', getNew));
+    final response = await handler(Request('GET', getNew));
     expect(await response.readAsString(), 'New');
   });
 
   test('should serve built newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.g.txt');
-    reader.cacheStringAsset(new AssetId('example', 'web/new.txt'), 'New');
-    await new Future.value();
+    reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
+    await Future.value();
     FakeWatcher.notifyWatchers(
-      new WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
+      WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
     await nextBuild.future;
-    final response = await handler(new Request('GET', getNew));
+    final response = await handler(Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
   });
 
   group(r'/$graph', () {
     FutureOr<Response> getResponse(String path) =>
-        handler(new Request('GET', Uri.parse('http://localhost/\$graph$path')));
+        handler(Request('GET', Uri.parse('http://localhost/\$graph$path')));
 
     for (var slashOrNot in ['', '/']) {
       test('/\$graph$slashOrNot should (try to) send the HTML page', () async {
@@ -122,9 +120,9 @@ example:file://fake/pkg/path
           await getResponse(slashOrNot);
           fail('Assets are not wired up. Expecting this to throw.');
         } catch (e) {
-          expect(e, new TypeMatcher<AssetNotFoundException>());
+          expect(e, TypeMatcher<AssetNotFoundException>());
           expect((e as AssetNotFoundException).assetId,
-              new AssetId.parse('build_runner|lib/src/server/graph_viz.html'));
+              AssetId.parse('build_runner|lib/src/server/graph_viz.html'));
         }
       });
     }
@@ -195,6 +193,6 @@ class UppercaseBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    'txt': const ['g.txt']
+    'txt': ['g.txt']
   };
 }

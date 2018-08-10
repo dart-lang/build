@@ -17,9 +17,9 @@ import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
-final _descriptorPool = new Pool(32);
+final _descriptorPool = Pool(32);
 
-final _logger = new Logger('CreateOutputDir');
+final _logger = Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
 const _manifestSeparator = '\n';
 
@@ -60,7 +60,7 @@ Future<bool> _createMergedOutputDir(
     AssetReader reader,
     FinalizedAssetsView finalizedOutputsView,
     bool symlinkOnly) async {
-  var outputDir = new Directory(outputPath);
+  var outputDir = Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
     var result = await _cleanUpOutputDir(outputDir, environment);
@@ -75,21 +75,20 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    outputAssets.addAll(await Future.wait(finalizedOutputsView
-        .allAssets(rootDir: root)
-        .map((id) => _writeAsset(
-            id, outputDir, root, packageGraph, reader, symlinkOnly))));
+    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+    outputAssets.addAll(await Future.wait(builtAssets.map((id) =>
+        _writeAsset(id, outputDir, root, packageGraph, reader, symlinkOnly))));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
         .join('\r\n');
-    var packagesAsset = new AssetId(packageGraph.root.name, '.packages');
+    var packagesAsset = AssetId(packageGraph.root.name, '.packages');
     await _writeAsString(outputDir, packagesAsset, packagesFileContent);
     outputAssets.add(packagesAsset);
 
     if (root == null) {
-      for (var dir in _findRootDirs(outputAssets, outputPath)) {
-        var link = new Link(p.join(outputDir.path, dir, 'packages'));
+      for (var dir in _findRootDirs(builtAssets, outputPath)) {
+        var link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
           link.createSync(p.join('..', 'packages'), recursive: true);
         }
@@ -101,14 +100,14 @@ Future<bool> _createMergedOutputDir(
     var paths = outputAssets.map((id) => id.path).toList()..sort();
     var content = paths.join(_manifestSeparator);
     await _writeAsString(
-        outputDir, new AssetId(packageGraph.root.name, _manifestName), content);
+        outputDir, AssetId(packageGraph.root.name, _manifestName), content);
   });
 
   return true;
 }
 
 Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
-  var rootDirs = new Set<String>();
+  var rootDirs = Set<String>();
   for (var id in allAssets) {
     var parts = p.url.split(id.path);
     if (parts.length == 1) continue;
@@ -134,10 +133,10 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
       }
     }
 
-    var outputId = new AssetId(packageGraph.root.name, assetPath);
+    var outputId = AssetId(packageGraph.root.name, assetPath);
     try {
       if (symlinkOnly) {
-        await new Link(_filePathFor(outputDir, id)).create(
+        await Link(_filePathFor(outputDir, id)).create(
             // We assert at the top of `createMergedOutputDirectories` that the
             // reader implements this type when requesting symlinks.
             (reader as PathProvidingAssetReader).pathTo(id),
@@ -168,7 +167,7 @@ Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) =>
     _fileFor(outputDir, id).then((file) => file.writeAsString(contents));
 
 Future<File> _fileFor(Directory outputDir, AssetId id) {
-  return new File(_filePathFor(outputDir, id)).create(recursive: true);
+  return File(_filePathFor(outputDir, id)).create(recursive: true);
 }
 
 String _filePathFor(Directory outputDir, AssetId id) {
@@ -190,7 +189,7 @@ String _filePathFor(Directory outputDir, AssetId id) {
 Future<bool> _cleanUpOutputDir(
     Directory outputDir, BuildEnvironment environment) async {
   var outputPath = outputDir.path;
-  var manifestFile = new File(p.join(outputPath, _manifestName));
+  var manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {
     if (outputDir.listSync(recursive: false).isNotEmpty) {
       var choices = [
@@ -236,7 +235,7 @@ Future<bool> _cleanUpOutputDir(
 
     logTimedSync(_logger, 'Deleting previous outputs in `$outputPath`', () {
       for (var path in previousOutputs) {
-        var file = new File(p.join(outputPath, path));
+        var file = File(p.join(outputPath, path));
         if (file.existsSync()) file.deleteSync();
       }
       _cleanEmptyDirectories(outputPath, previousOutputs);
@@ -261,7 +260,7 @@ void _cleanEmptyDirectories(
 void _deleteUp(String from, String to) {
   var directoryPath = from;
   while (p.isWithin(to, directoryPath)) {
-    var directory = new Directory(directoryPath);
+    var directory = Directory(directoryPath);
     if (!directory.existsSync() || directory.listSync().isNotEmpty) return;
     directory.deleteSync();
     directoryPath = p.dirname(directoryPath);

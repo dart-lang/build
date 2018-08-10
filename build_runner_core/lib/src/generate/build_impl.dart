@@ -45,7 +45,7 @@ import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
 
-final _logger = new Logger('Build');
+final _logger = Logger('Build');
 
 class BuildImpl {
   final FinalizedReader _finalizedReader;
@@ -77,7 +77,7 @@ class BuildImpl {
         _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
-            : new CachingAssetReader(buildDefinition.reader),
+            : CachingAssetReader(buildDefinition.reader),
         _resolvers = options.resolvers,
         _writer = buildDefinition.writer,
         _assetGraph = buildDefinition.assetGraph,
@@ -89,7 +89,7 @@ class BuildImpl {
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
-      new _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
+      _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
 
   static Future<BuildImpl> create(
       BuildOptions options,
@@ -101,25 +101,25 @@ class BuildImpl {
         options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
     if (buildPhases.isEmpty) {
       _logger.severe('Nothing can be built, yet a build was requested.');
-      throw new CannotBuildException();
+      throw CannotBuildException();
     }
     var buildDefinition = await BuildDefinition.prepareWorkspace(
         environment, options, buildPhases);
-    var singleStepReader = new SingleStepReader(
+    var singleStepReader = SingleStepReader(
         buildDefinition.reader,
         buildDefinition.assetGraph,
         buildPhases.length,
         options.packageGraph.root.name,
         _isReadableAfterBuildFactory(buildPhases));
-    var optionalOutputTracker = new OptionalOutputTracker(
+    var optionalOutputTracker = OptionalOutputTracker(
         buildDefinition.assetGraph, options.buildDirs, buildPhases);
-    var finalizedReader = new FinalizedReader(
+    var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
         optionalOutputTracker,
         options.packageGraph.root.name);
     var build =
-        new BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
+        BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     return build;
   }
 
@@ -151,12 +151,12 @@ class _SingleBuild {
   final RunnerAssetWriter _writer;
   final List<String> _buildDirs;
   final String _logPerformanceDir;
-  final _failureReporter = new FailureReporter();
+  final _failureReporter = FailureReporter();
 
   int actionsCompletedCount = 0;
   int actionsStartedCount = 0;
 
-  final pendingActions = new SplayTreeMap<int, Set<String>>();
+  final pendingActions = SplayTreeMap<int, Set<String>>();
 
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
@@ -164,12 +164,12 @@ class _SingleBuild {
   _SingleBuild(BuildImpl buildImpl)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
-        _buildPhasePool = new List(buildImpl._buildPhases.length),
+        _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
         _performanceTracker = buildImpl._trackPerformance
-            ? new BuildPerformanceTracker()
-            : new BuildPerformanceTracker.noOp(),
+            ? BuildPerformanceTracker()
+            : BuildPerformanceTracker.noOp(),
         _reader = buildImpl._reader,
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
@@ -177,8 +177,8 @@ class _SingleBuild {
         _writer = buildImpl._writer,
         _buildDirs = buildImpl._buildDirs,
         _logPerformanceDir = buildImpl._logPerformanceDir {
-    hungActionsHeartbeat = new HungActionsHeartbeat(() {
-      final message = new StringBuffer();
+    hungActionsHeartbeat = HungActionsHeartbeat(() {
+      final message = StringBuffer();
       const actionsToLogMax = 5;
       var descriptions = pendingActions.values.fold(
           <String>[],
@@ -197,22 +197,22 @@ class _SingleBuild {
   }
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
-    var watch = new Stopwatch()..start();
+    var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker =
-        new OptionalOutputTracker(_assetGraph, _buildDirs, _buildPhases);
+        OptionalOutputTracker(_assetGraph, _buildDirs, _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
       if (failures.isNotEmpty) {
         await _failureReporter.reportErrors(failures);
-        result = new BuildResult(BuildStatus.failure, result.outputs,
+        result = BuildResult(BuildStatus.failure, result.outputs,
             performance: result.performance);
       }
     }
     await _resourceManager.disposeAll();
     result = await _environment.finalizeBuild(result,
-        new FinalizedAssetsView(_assetGraph, optionalOutputTracker), _reader);
+        FinalizedAssetsView(_assetGraph, optionalOutputTracker), _reader);
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs '
@@ -236,11 +236,11 @@ class _SingleBuild {
   /// Runs a build inside a zone with an error handler and stack chain
   /// capturing.
   Future<BuildResult> _safeBuild(Map<AssetId, ChangeType> updates) {
-    var done = new Completer<BuildResult>();
+    var done = Completer<BuildResult>();
 
-    var heartbeat = new HeartbeatLogger(
+    var heartbeat = HeartbeatLogger(
         transformLog: (original) => '$original, ${_buildProgress()}',
-        waitDuration: new Duration(seconds: 1))
+        waitDuration: Duration(seconds: 1))
       ..start();
     hungActionsHeartbeat.start();
     done.future.whenComplete(() {
@@ -259,7 +259,7 @@ class _SingleBuild {
       await logTimedAsync(_logger, 'Caching finalized dependency graph',
           () async {
         await _writer.writeAsBytes(
-            new AssetId(_packageGraph.root.name, assetGraphPath),
+            AssetId(_packageGraph.root.name, assetGraphPath),
             _assetGraph.serialize());
       });
 
@@ -267,9 +267,9 @@ class _SingleBuild {
       if (_logPerformanceDir != null) {
         assert(result.performance != null);
         var logPath =
-            p.join(_logPerformanceDir, new DateTime.now().toIso8601String());
+            p.join(_logPerformanceDir, DateTime.now().toIso8601String());
         await logTimedAsync(_logger, 'Writing performance log to $logPath', () {
-          var performanceLogId = new AssetId(_packageGraph.root.name, logPath);
+          var performanceLogId = AssetId(_packageGraph.root.name, logPath);
           var serialized = jsonEncode(result.performance);
           return _writer.writeAsString(performanceLogId, serialized);
         });
@@ -279,7 +279,7 @@ class _SingleBuild {
     }, onError: (e, StackTrace st) {
       if (!done.isCompleted) {
         _logger.severe('Unhandled build failure!', e, st);
-        done.complete(new BuildResult(BuildStatus.failure, []));
+        done.complete(BuildResult(BuildStatus.failure, []));
       }
     });
     return done.future;
@@ -297,24 +297,24 @@ class _SingleBuild {
     for (var phaseNum = 0; phaseNum < _buildPhases.length; phaseNum++) {
       var phase = _buildPhases[phaseNum];
       if (phase.isOptional) continue;
-      await _performanceTracker.trackBuildPhase(phase, () async {
+      outputs.addAll(await _performanceTracker.trackBuildPhase(phase, () async {
         if (phase is InBuildPhase) {
           var primaryInputs =
               await _matchingPrimaryInputs(phase.package, phaseNum);
-          outputs.addAll(await _runBuilder(phaseNum, phase, primaryInputs));
+          return _runBuilder(phaseNum, phase, primaryInputs);
         } else if (phase is PostBuildPhase) {
-          outputs.addAll(await _runPostProcessPhase(phaseNum, phase));
+          return _runPostProcessPhase(phaseNum, phase);
         } else {
-          throw new StateError('Unrecognized BuildPhase type $phase');
+          throw StateError('Unrecognized BuildPhase type $phase');
         }
-      });
+      }));
     }
     await Future.forEach(
         _lazyPhases.values,
         (Future<Iterable<AssetId>> lazyOuts) async =>
             outputs.addAll(await lazyOuts));
     // Assume success, `_assetGraph.failedOutputs` will be checked later.
-    return new BuildResult(BuildStatus.success, outputs,
+    return BuildResult(BuildStatus.success, outputs,
         performance: _performanceTracker..stop());
   }
 
@@ -325,7 +325,7 @@ class _SingleBuild {
   /// a primary input to this phase.
   Future<Set<AssetId>> _matchingPrimaryInputs(
       String package, int phaseNumber) async {
-    var ids = new Set<AssetId>();
+    var ids = Set<AssetId>();
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
@@ -406,7 +406,7 @@ class _SingleBuild {
 
   Future<Iterable<AssetId>> _runForInput(
       int phaseNumber, InBuildPhase phase, AssetId input) {
-    var pool = _buildPhasePool[phaseNumber] ??= new Pool(buildPhasePoolSize);
+    var pool = _buildPhasePool[phaseNumber] ??= Pool(buildPhasePoolSize);
     return pool.withResource(() async {
       final builder = phase.builder;
       var tracker =
@@ -427,8 +427,8 @@ class _SingleBuild {
                   .where((id) => !inputNode.primaryOutputs.contains(id))
                   .join(', '));
 
-      var wrappedReader = new SingleStepReader(_reader, _assetGraph,
-          phaseNumber, input.package, _isReadableNode, _getUpdatedGlobNode);
+      var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
+          input.package, _isReadableNode, _getUpdatedGlobNode);
 
       if (!await tracker.track(
           () => _buildShouldRun(builderOutputs, wrappedReader), 'Setup')) {
@@ -443,19 +443,19 @@ class _SingleBuild {
       // to remove those.
       wrappedReader.assetsRead.clear();
 
-      var wrappedWriter = new AssetWriterSpy(_writer);
+      var wrappedWriter = AssetWriterSpy(_writer);
       var actionDescription =
           _actionLoggerName(phase, input, _packageGraph.root.name);
-      var logger = new BuildForInputLogger(new Logger(actionDescription));
+      var logger = BuildForInputLogger(Logger(actionDescription));
 
       actionsStartedCount++;
       pendingActions
-          .putIfAbsent(phaseNumber, () => new Set<String>())
+          .putIfAbsent(phaseNumber, () => Set<String>())
           .add(actionDescription);
 
       await tracker.track(
           () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
-                      new PerformanceTrackingResolvers(_resolvers, tracker),
+                      PerformanceTrackingResolvers(_resolvers, tracker),
                       logger: logger, resourceManager: _resourceManager)
                   .catchError((_) {
                 // Errors tracked through the logger
@@ -518,7 +518,7 @@ class _SingleBuild {
     assert(inputNode != null,
         'Inputs should be known in the static graph. Missing $input');
 
-    var wrappedReader = new SingleStepReader(
+    var wrappedReader = SingleStepReader(
         _reader, _assetGraph, phaseNum, input.package, _isReadableNode);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
@@ -537,22 +537,22 @@ class _SingleBuild {
     anchorNode.outputs.clear();
     inputNode.deletedBy.remove(anchorNode.id);
 
-    var wrappedWriter = new AssetWriterSpy(_writer);
+    var wrappedWriter = AssetWriterSpy(_writer);
     var actionDescription = '$builder on $input';
-    var logger = new BuildForInputLogger(new Logger(actionDescription));
+    var logger = BuildForInputLogger(Logger(actionDescription));
 
     actionsStartedCount++;
     pendingActions
-        .putIfAbsent(phaseNum, () => new Set<String>())
+        .putIfAbsent(phaseNum, () => Set<String>())
         .add(actionDescription);
 
     await runPostProcessBuilder(
         builder, input, wrappedReader, wrappedWriter, logger,
         addAsset: (assetId) {
       if (_assetGraph.contains(assetId)) {
-        throw new InvalidOutputException(assetId, 'Asset already exists');
+        throw InvalidOutputException(assetId, 'Asset already exists');
       }
-      var node = new GeneratedAssetNode(assetId,
+      var node = GeneratedAssetNode(assetId,
           primaryInput: input,
           builderOptionsId: anchorNode.builderOptionsId,
           isHidden: true,
@@ -564,11 +564,10 @@ class _SingleBuild {
       anchorNode.outputs.add(assetId);
     }, deleteAsset: (assetId) {
       if (!_assetGraph.contains(assetId)) {
-        throw new AssetNotFoundException(assetId);
+        throw AssetNotFoundException(assetId);
       }
       if (assetId != input) {
-        throw new InvalidOutputException(
-            assetId, 'Can only delete primary input');
+        throw InvalidOutputException(assetId, 'Can only delete primary input');
       }
       _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
     }).catchError((_) {
@@ -652,7 +651,7 @@ class _SingleBuild {
     await Future.wait(outputs.map((output) {
       var node = _assetGraph.get(output) as GeneratedAssetNode;
       if (node.wasOutput) return _delete(output);
-      return new Future.value(null);
+      return Future.value(null);
     }));
   }
 
@@ -661,7 +660,7 @@ class _SingleBuild {
     var globNodeId = GlobAssetNode.createId(package, glob, phaseNum);
     var globNode = _assetGraph.get(globNodeId) as GlobAssetNode;
     if (globNode == null) {
-      globNode = new GlobAssetNode(
+      globNode = GlobAssetNode(
           globNodeId, glob, phaseNum, NodeState.definitelyNeedsUpdate);
       _assetGraph.add(globNode);
     }
@@ -678,7 +677,7 @@ class _SingleBuild {
           .packageNodes(globNode.id.package)
           .where((n) => globNode.glob.matches(n.id.path))
           .toList();
-      var potentialIds = new SplayTreeSet.of(potentialNodes.map((n) => n.id));
+      var potentialIds = SplayTreeSet.of(potentialNodes.map((n) => n.id));
       globNode.inputs = potentialIds;
       for (var node in potentialNodes) {
         node.outputs.add(globNode.id);
@@ -706,7 +705,7 @@ class _SingleBuild {
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
       AssetId builderOptionsId, AssetReader reader) async {
-    var digestSink = new AccumulatorSink<Digest>();
+    var digestSink = AccumulatorSink<Digest>();
     var bytesSink = md5.startChunkedConversion(digestSink);
 
     var builderOptionsNode = _assetGraph.get(builderOptionsId);
@@ -775,7 +774,7 @@ class _SingleBuild {
 
       if (isFailure) {
         await _failureReporter.markReported(actionDescription, node, errors);
-        var needsMarkAsFailure = new Queue.of(node.primaryOutputs);
+        var needsMarkAsFailure = Queue.of(node.primaryOutputs);
         var allSkippedFailures = <GeneratedAssetNode>[];
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();

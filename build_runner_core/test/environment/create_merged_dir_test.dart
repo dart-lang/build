@@ -24,13 +24,11 @@ main() {
   group('createMergedDir', () {
     AssetGraph graph;
     final phases = [
-      new InBuildPhase(
-          new TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.txt')),
+      InBuildPhase(
+          TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
           'a'),
-      new InBuildPhase(
-          new TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.txt')),
+      InBuildPhase(
+          TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
           'b')
     ];
     final sources = {
@@ -51,13 +49,12 @@ main() {
     FinalizedAssetsView finalizedAssetsView;
 
     setUp(() async {
-      assetReader = new InMemoryRunnerAssetReader(sources);
-      environment = new TestBuildEnvironment(reader: assetReader);
+      assetReader = InMemoryRunnerAssetReader(sources);
+      environment = TestBuildEnvironment(reader: assetReader);
       graph = await AssetGraph.build(phases, sources.keys.toSet(),
-          new Set<AssetId>(), packageGraph, assetReader);
-      optionalOutputTracker = new OptionalOutputTracker(graph, [], phases);
-      finalizedAssetsView =
-          new FinalizedAssetsView(graph, optionalOutputTracker);
+          Set<AssetId>(), packageGraph, assetReader);
+      optionalOutputTracker = OptionalOutputTracker(graph, [], phases);
+      finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode;
         node.state = NodeState.upToDate;
@@ -83,14 +80,14 @@ main() {
 
     test('doesnt write deleted files', () async {
       var node =
-          graph.get(new AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
+          graph.get(AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
 
       var success = await createMergedOutputDirectories({tmpDir.path: null},
           packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isTrue);
 
-      var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
+      var file = File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
       expect(file.existsSync(), isFalse);
     });
 
@@ -128,7 +125,7 @@ main() {
       }, packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isTrue);
 
-      expect(new Directory(p.join(tmpDir.path, 'web')).existsSync(), isFalse);
+      expect(Directory(p.join(tmpDir.path, 'web')).existsSync(), isFalse);
     });
 
     test('outputs the packages when input root is provided', () async {
@@ -152,6 +149,13 @@ main() {
       _expectFiles(webFiles, tmpDir);
     });
 
+    test('does not nest packages symlinks with no root', () async {
+      var success = await createMergedOutputDirectories({tmpDir.path: null},
+          packageGraph, environment, assetReader, finalizedAssetsView, false);
+      expect(success, isTrue);
+      _expectNoFiles(Set<String>.of(['packages/packages/a/a.txt']), tmpDir);
+    });
+
     test('only outputs files contained in the provided root', () async {
       var success = await createMergedOutputDirectories(
           {tmpDir.path: 'web', anotherTmpDir.path: 'foo'},
@@ -167,14 +171,14 @@ main() {
         'b.txt.copy': 'b',
       };
 
-      var webNoFiles = new Set<String>()..addAll(['d.txt', 'd.txt.copy']);
+      var webNoFiles = Set<String>()..addAll(['d.txt', 'd.txt.copy']);
 
       var fooFiles = <String, dynamic>{
         'd.txt': 'd',
         'd.txt.copy': 'd',
       };
 
-      var fooNoFiles = new Set<String>()..addAll(['b.txt', 'b.txt.copy']);
+      var fooNoFiles = Set<String>()..addAll(['b.txt', 'b.txt.copy']);
 
       _expectFiles(webFiles, tmpDir);
       _expectNoFiles(webNoFiles, tmpDir);
@@ -184,7 +188,7 @@ main() {
 
     test('doesnt write files that werent output', () async {
       var node =
-          graph.get(new AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
+          graph.get(AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
       node.wasOutput = false;
       node.isFailure = false;
 
@@ -192,14 +196,13 @@ main() {
           packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isTrue);
 
-      var file = new File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
+      var file = File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
       expect(file.existsSync(), isFalse);
     });
 
     test('doesnt always write files not matching outputDirs', () async {
-      optionalOutputTracker = new OptionalOutputTracker(graph, ['foo'], phases);
-      finalizedAssetsView =
-          new FinalizedAssetsView(graph, optionalOutputTracker);
+      optionalOutputTracker = OptionalOutputTracker(graph, ['foo'], phases);
+      finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
       var success = await createMergedOutputDirectories({tmpDir.path: null},
           packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isTrue);
@@ -219,15 +222,15 @@ main() {
       File garbageFile;
       Directory emptyDirectory;
       setUp(() {
-        garbageFile = new File(p.join(tmpDir.path, 'garbage_file.txt'));
+        garbageFile = File(p.join(tmpDir.path, 'garbage_file.txt'));
         garbageFile.createSync();
-        emptyDirectory = new Directory(p.join(tmpDir.path, 'empty_directory'));
+        emptyDirectory = Directory(p.join(tmpDir.path, 'empty_directory'));
         emptyDirectory.createSync();
       });
 
       test('fails in non-interactive mode', () async {
         environment =
-            new TestBuildEnvironment(reader: assetReader, throwOnPrompt: true);
+            TestBuildEnvironment(reader: assetReader, throwOnPrompt: true);
         var success = await createMergedOutputDirectories({tmpDir.path: null},
             packageGraph, environment, assetReader, finalizedAssetsView, false);
         expect(success, isFalse);
@@ -243,7 +246,7 @@ main() {
 
         expect(garbageFile.existsSync(), isTrue,
             reason: 'Should not delete existing files.');
-        var file = new File(p.join(tmpDir.path, 'web/b.txt'));
+        var file = File(p.join(tmpDir.path, 'web/b.txt'));
         expect(file.existsSync(), isFalse,
             reason: 'Should not copy any files.');
       });
@@ -288,7 +291,7 @@ main() {
             packageGraph, environment, assetReader, finalizedAssetsView, false);
         expect(success, isTrue);
         var packageADir = p.join(tmpDir.path, 'packages', 'a');
-        expect(new Directory(packageADir).existsSync(), isFalse);
+        expect(Directory(packageADir).existsSync(), isFalse);
       });
     });
   });
@@ -298,7 +301,7 @@ void _expectFiles(Map<String, dynamic> expectedFiles, Directory dir) {
   expectedFiles['.build.manifest'] =
       allOf(expectedFiles.keys.map(contains).toList());
   expectedFiles.forEach((path, content) {
-    var file = new File(p.join(dir.path, path));
+    var file = File(p.join(dir.path, path));
     expect(file.existsSync(), isTrue, reason: 'Missing file at $path.');
     expect(file.readAsStringSync(), content,
         reason: 'Incorrect content for file at $path');
@@ -307,7 +310,7 @@ void _expectFiles(Map<String, dynamic> expectedFiles, Directory dir) {
 
 void _expectNoFiles(Set<String> expectedFiles, Directory dir) {
   for (var path in expectedFiles) {
-    var file = new File(p.join(dir.path, path));
+    var file = File(p.join(dir.path, path));
     expect(!file.existsSync(), isTrue, reason: 'File found at $path.');
   }
 }

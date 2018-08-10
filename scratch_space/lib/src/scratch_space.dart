@@ -13,7 +13,7 @@ import 'package:pool/pool.dart';
 import 'util.dart';
 
 /// Pool for async file writes, we don't want to use too many file handles.
-final _descriptorPool = new Pool(32);
+final _descriptorPool = Pool(32);
 
 /// An on-disk temporary environment for running executables that don't have
 /// a standard Dart library API.
@@ -33,13 +33,13 @@ class ScratchSpace {
   final _digests = <AssetId, Digest>{};
 
   ScratchSpace._(this.tempDir)
-      : packagesDir = new Directory(p.join(tempDir.path, 'packages'));
+      : packagesDir = Directory(p.join(tempDir.path, 'packages'));
 
   factory ScratchSpace() {
-    var tempDir = new Directory(Directory.systemTemp
+    var tempDir = Directory(Directory.systemTemp
         .createTempSync('scratch_space')
         .resolveSymbolicLinksSync());
-    return new ScratchSpace._(tempDir);
+    return ScratchSpace._(tempDir);
   }
 
   /// Copies [id] from the tmp dir and writes it back using the [writer].
@@ -62,7 +62,7 @@ class ScratchSpace {
   /// create a new [ScratchSpace].
   Future delete() {
     if (!exists) {
-      throw new StateError(
+      throw StateError(
           'Tried to delete a ScratchSpace which was already deleted');
     }
     exists = false;
@@ -81,7 +81,7 @@ class ScratchSpace {
   /// directly under the temp dir using their unmodified path.
   Future ensureAssets(Iterable<AssetId> assetIds, AssetReader reader) {
     if (!exists) {
-      throw new StateError('Tried to use a deleted ScratchSpace!');
+      throw StateError('Tried to use a deleted ScratchSpace!');
     }
 
     var futures = assetIds.map((id) async {
@@ -117,8 +117,7 @@ class ScratchSpace {
   ///
   /// The returned [File] may or may not already exist. Call [ensureAssets]
   /// with [id] to make sure it is actually present.
-  File fileFor(AssetId id) =>
-      new File(p.join(tempDir.path, _relativePathFor(id)));
+  File fileFor(AssetId id) => File(p.join(tempDir.path, _relativePathFor(id)));
 }
 
 /// Returns a canonical uri for [id].

@@ -1,11 +1,18 @@
+## 0.4.2+2
+
+- Add magic comment marker for build_runner to know where to inject
+  live-reloading client code. This is only present when using the `dartdevc`
+  compiler. (reapplied)
+
 ## 0.4.2+1
 
 - Restore `new` keyword for a working release on Dart 1 VM.
 
 ## 0.4.2
 
-- Add magic comment marker for build_runner to know where to inject 
-  live-reloading client code.
+- Add magic comment marker for build_runner to know where to inject
+  live-reloading client code. This is only present when using the `dartdevc`
+  compiler.
 - Release broken on Dart 1 VM.
 
 ## 0.4.1

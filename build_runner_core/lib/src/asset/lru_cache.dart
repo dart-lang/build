@@ -27,7 +27,7 @@ class LruCache<K, V> {
   }
 
   void operator []=(K key, V value) {
-    var entry = new _Link(key, value, _computeWeight(value));
+    var entry = _Link(key, value, _computeWeight(value));
     // Don't cache at all if above the individual weight max.
     if (entry.weight > _individualWeightMax) {
       return;

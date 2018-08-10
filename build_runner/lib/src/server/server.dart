@@ -25,18 +25,18 @@ final _buildUpdatesProtocol = r'$livereload';
 final _buildUpdatesMessage = 'update';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
-final _logger = new Logger('Serve');
+final _logger = Logger('Serve');
 
 ServeHandler createServeHandler(WatchImpl watch) {
   var rootPackage = watch.packageGraph.root.name;
-  var assetGraphHanderCompleter = new Completer<AssetGraphHandler>();
-  var assetHandlerCompleter = new Completer<AssetHandler>();
+  var assetGraphHanderCompleter = Completer<AssetGraphHandler>();
+  var assetHandlerCompleter = Completer<AssetHandler>();
   watch.ready.then((_) async {
-    assetHandlerCompleter.complete(new AssetHandler(watch.reader, rootPackage));
+    assetHandlerCompleter.complete(AssetHandler(watch.reader, rootPackage));
     assetGraphHanderCompleter.complete(
-        new AssetGraphHandler(watch.reader, rootPackage, watch.assetGraph));
+        AssetGraphHandler(watch.reader, rootPackage, watch.assetGraph));
   });
-  return new ServeHandler._(watch, assetHandlerCompleter.future,
+  return ServeHandler._(watch, assetHandlerCompleter.future,
       assetGraphHanderCompleter.future, rootPackage);
 }
 
@@ -68,11 +68,11 @@ class ServeHandler implements BuildState {
     liveReload ??= false;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
-      throw new ArgumentError.value(
+      throw ArgumentError.value(
           rootDir, 'rootDir', 'Only top level directories are supported');
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
-    var cascade = new shelf.Cascade();
+    var cascade = shelf.Cascade();
     cascade = (liveReload ? cascade.add(_webSocketHandler.handler) : cascade)
         .add(_blockOnCurrentBuild)
         .add((shelf.Request request) async {
@@ -99,7 +99,7 @@ class ServeHandler implements BuildState {
 
   Future<shelf.Response> _blockOnCurrentBuild(_) async {
     await currentBuild;
-    return new shelf.Response.notFound('');
+    return shelf.Response.notFound('');
   }
 
   shelf.Response _performanceHandler(shelf.Request request) {
@@ -107,7 +107,7 @@ class ServeHandler implements BuildState {
     if (request.url.queryParameters['hideSkipped']?.toLowerCase() == 'true') {
       hideSkipped = true;
     }
-    return new shelf.Response.ok(
+    return shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped),
         headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
@@ -193,7 +193,7 @@ class AssetHandler {
   final FinalizedReader _reader;
   final String _rootPackage;
 
-  final _typeResolver = new MimeTypeResolver();
+  final _typeResolver = MimeTypeResolver();
 
   AssetHandler(this._reader, this._rootPackage);
 
@@ -218,22 +218,21 @@ class AssetHandler {
         var reason = await _reader.unreadableReason(assetId);
         switch (reason) {
           case UnreadableReason.failed:
-            return new shelf.Response.internalServerError(
+            return shelf.Response.internalServerError(
                 body: 'Build failed for $assetId');
           case UnreadableReason.notOutput:
-            return new shelf.Response.notFound('$assetId was not output');
+            return shelf.Response.notFound('$assetId was not output');
           case UnreadableReason.notFound:
             if (fallbackToDirectoryList) {
-              return new shelf.Response.notFound(
-                  await _findDirectoryList(assetId));
+              return shelf.Response.notFound(await _findDirectoryList(assetId));
             }
-            return new shelf.Response.notFound('Not Found');
+            return shelf.Response.notFound('Not Found');
           default:
-            return new shelf.Response.notFound('Not Found');
+            return shelf.Response.notFound('Not Found');
         }
       }
     } on ArgumentError catch (_) {
-      return new shelf.Response.notFound('Not Found');
+      return shelf.Response.notFound('Not Found');
     }
 
     var etag = base64.encode((await _reader.digest(assetId)).bytes);
@@ -250,19 +249,19 @@ class AssetHandler {
     if (requestHeaders[HttpHeaders.ifNoneMatchHeader] == etag) {
       // This behavior is still useful for cases where a file is hit
       // without a cache-busting query string.
-      return new shelf.Response.notModified(headers: headers);
+      return shelf.Response.notModified(headers: headers);
     }
 
     var bytes = await _reader.readAsBytes(assetId);
     headers[HttpHeaders.contentLengthHeader] = '${bytes.length}';
-    return new shelf.Response.ok(bytes, headers: headers);
+    return shelf.Response.ok(bytes, headers: headers);
   }
 
   Future<String> _findDirectoryList(AssetId from) async {
     var directoryPath = p.url.dirname(from.path);
     var glob = p.url.join(directoryPath, '*');
     var result =
-        await _reader.findAssets(new Glob(glob)).map((a) => a.path).toList();
+        await _reader.findAssets(Glob(glob)).map((a) => a.path).toList();
     return (result.isEmpty)
         ? 'Could not find ${from.path} or any files in $directoryPath.'
         : 'Could not find ${from.path}. $directoryPath contains:\n'
@@ -272,7 +271,7 @@ class AssetHandler {
 
 String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
   try {
-    var rows = new StringBuffer();
+    var rows = StringBuffer();
     for (var action in performance.actions) {
       if (hideSkipped &&
           !action.phases.any((phase) => phase.label == 'Build')) {
@@ -289,7 +288,7 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
             '          ["$actionKey", "${phase.label}", $start, $end],');
       }
     }
-    if (performance.duration < new Duration(seconds: 1)) {
+    if (performance.duration < Duration(seconds: 1)) {
       rows.writeln('          ['
           '"https://github.com/google/google-visualization-issues/issues/2269"'
           ', "", 0, 1000]');
@@ -396,10 +395,10 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
 /// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
 shelf.Handler _logRequests(shelf.Handler innerHandler) {
   return (shelf.Request request) {
-    var startTime = new DateTime.now();
-    var watch = new Stopwatch()..start();
+    var startTime = DateTime.now();
+    var watch = Stopwatch()..start();
 
-    return new Future.sync(() => innerHandler(request)).then((response) {
+    return Future.sync(() => innerHandler(request)).then((response) {
       var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
       var msg = _getMessage(startTime, response.statusCode,
           request.requestedUri, request.method, watch.elapsed);

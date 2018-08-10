@@ -9,7 +9,7 @@ import 'package:crypto/crypto.dart';
 AssetNode makeAssetNode(
     [String assetIdString, List<AssetId> outputs, Digest lastKnownDigest]) {
   var id = makeAssetId(assetIdString);
-  var node = new SourceAssetNode(id, lastKnownDigest: lastKnownDigest);
+  var node = SourceAssetNode(id, lastKnownDigest: lastKnownDigest);
   if (outputs != null) {
     node.outputs.addAll(outputs);
     node.primaryOutputs.addAll(outputs);

@@ -12,15 +12,15 @@ import 'package:scratch_space/scratch_space.dart';
 
 import 'workers.dart';
 
-final _logger = new Logger('BuildModules');
+final _logger = Logger('BuildModules');
 
 /// A shared [ScratchSpace] for ddc and analyzer workers that persists
 /// throughout builds.
-final scratchSpace = new ScratchSpace();
+final scratchSpace = ScratchSpace();
 
 /// A shared [Resource] for a [ScratchSpace], which cleans up the contents of
 /// the [ScratchSpace] in dispose, but doesn't delete it entirely.
-final scratchSpaceResource = new Resource<ScratchSpace>(() {
+final scratchSpaceResource = Resource<ScratchSpace>(() {
   if (!scratchSpace.exists) {
     scratchSpace.tempDir.createSync(recursive: true);
     scratchSpace.exists = true;
@@ -59,7 +59,7 @@ final scratchSpaceResource = new Resource<ScratchSpace>(() {
       var delayMs = math.pow(10, numTries).floor();
       _logger.info('Failed to delete temp dir ${scratchSpace.tempDir.path}, '
           'retrying in ${delayMs}ms');
-      await new Future.delayed(new Duration(milliseconds: delayMs));
+      await Future.delayed(Duration(milliseconds: delayMs));
     }
   }
 });

@@ -25,7 +25,7 @@ enum WebCompiler {
 
 /// The top level keys supported for the `options` config for the
 /// [WebEntrypointBuilder].
-const _supportedOptions = const [
+const _supportedOptions = [
   _buildRootAppSummary,
   _compiler,
   _dart2jsArgs,
@@ -73,21 +73,21 @@ class WebEntrypointBuilder implements Builder {
         compiler = WebCompiler.Dart2Js;
         break;
       default:
-        throw new ArgumentError.value(compilerOption, _compiler,
+        throw ArgumentError.value(compilerOption, _compiler,
             'Only `dartdevc` and `dart2js` are supported.');
     }
 
     var dart2JsArgs =
         options.config[_dart2jsArgs]?.cast<String>() ?? const <String>[];
     if (dart2JsArgs is! List<String>) {
-      throw new ArgumentError.value(dart2JsArgs, _dart2jsArgs,
+      throw ArgumentError.value(dart2JsArgs, _dart2jsArgs,
           'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
     }
 
     final enableSyncAsync =
         options.config[_enableSyncAsync] as bool ?? enableSyncAsyncDefault;
 
-    return new WebEntrypointBuilder(compiler,
+    return WebEntrypointBuilder(compiler,
         buildRootAppSummary: buildRootAppSummary,
         dart2JsArgs: dart2JsArgs as List<String>,
         enableSyncAsync: enableSyncAsync,
@@ -96,7 +96,7 @@ class WebEntrypointBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    '.dart': const [
+    '.dart': [
       ddcBootstrapExtension,
       jsEntrypointExtension,
       jsEntrypointSourceMapExtension,

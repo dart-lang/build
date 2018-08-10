@@ -17,7 +17,7 @@ void main() {
       // If there is an asset which can't be read by an optional phase, but can
       // be read by a later non-optional phase, and the optional phase starts
       // later we need to avoid hiding that file from the later-phased reader.
-      var optionalWithResolver = new TestBuilder(
+      var optionalWithResolver = TestBuilder(
           buildExtensions: appendExtension('.foo'),
           build: (buildStep, _) async {
             // Use the resolver so ensure that the entry point is crawled
@@ -27,12 +27,12 @@ void main() {
             return buildStep.writeAsString(
                 buildStep.inputId.addExtension('.foo'), 'anything');
           });
-      var nonOptionalWritesImportedFile = new TestBuilder(
+      var nonOptionalWritesImportedFile = TestBuilder(
           buildExtensions: replaceExtension('.dart', '.imported.dart'),
           build: (buildStep, _) => buildStep.writeAsString(
               buildStep.inputId.changeExtension('.imported.dart'),
               'class SomeClass {}'));
-      var nonOptionalResolveImportedFile = new TestBuilder(
+      var nonOptionalResolveImportedFile = TestBuilder(
           buildExtensions: appendExtension('.bar'),
           build: (buildStep, _) async {
             // Fetch the resolver so the imports get crawled.
@@ -52,9 +52,9 @@ void main() {
       await testBuilders([
         applyToRoot(optionalWithResolver, isOptional: true),
         applyToRoot(nonOptionalWritesImportedFile,
-            generateFor: new InputSet(include: ['lib/file.dart'])),
+            generateFor: InputSet(include: ['lib/file.dart'])),
         applyToRoot(nonOptionalResolveImportedFile,
-            generateFor: new InputSet(include: ['lib/file.dart'])),
+            generateFor: InputSet(include: ['lib/file.dart'])),
       ], {
         'a|lib/file.dart': 'import "file.imported.dart";',
       }, outputs: {

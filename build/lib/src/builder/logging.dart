@@ -4,7 +4,7 @@ import 'package:logging/logging.dart';
 
 const Symbol logKey = #buildLog;
 
-final _default = new Logger('build.fallback');
+final _default = Logger('build.fallback');
 
 /// The log instance for the currently running BuildStep.
 ///
@@ -18,10 +18,10 @@ Logger get log => Zone.current[logKey] as Logger ?? _default;
 ///
 /// Completes with the first error or result of `fn`, whichever comes first.
 Future<T> scopeLogAsync<T>(Future<T> fn(), Logger log) {
-  var done = new Completer<T>();
+  var done = Completer<T>();
   runZoned(fn,
       zoneSpecification:
-          new ZoneSpecification(print: (self, parent, zone, message) {
+          ZoneSpecification(print: (self, parent, zone, message) {
         log.warning(message);
       }),
       zoneValues: {logKey: log},

@@ -34,7 +34,7 @@ class BazelAssetReader extends AssetReader {
   BazelAssetReader(
       this._rootPackage, Iterable<String> rootDirs, this._packageMap,
       {AssetFilter assetFilter})
-      : _fileSystem = new BazelFileSystem('.', rootDirs.toList()),
+      : _fileSystem = BazelFileSystem('.', rootDirs.toList()),
         _assetFilter = assetFilter;
 
   BazelAssetReader.forTest(
@@ -58,7 +58,7 @@ class BazelAssetReader extends AssetReader {
   String _filePathForId(AssetId id) {
     final packagePath = _packageMap[id.package];
     if (!_assetFilter.isValid(id) || packagePath == null) {
-      throw new CodegenError('Attempted to read invalid input $id.');
+      throw CodegenError('Attempted to read invalid input $id.');
     }
     return p.join(packagePath, id.path);
   }
@@ -75,9 +75,9 @@ class BazelAssetReader extends AssetReader {
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob) => new Stream.fromIterable(_fileSystem
+  Stream<AssetId> findAssets(Glob glob) => Stream.fromIterable(_fileSystem
       .findAssets(_packageMap[_rootPackage], glob)
-      .map((path) => new AssetId(_rootPackage, path))
+      .map((path) => AssetId(_rootPackage, path))
       .where(_assetFilter.isValid));
 
   void startPhase(AssetWriterSpy assetWriter) =>

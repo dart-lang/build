@@ -15,8 +15,8 @@ void main() {
   FakeIOSink sink;
 
   setUp(() {
-    sink = new FakeIOSink();
-    logHandle = new IOSinkLogHandle(sink);
+    sink = FakeIOSink();
+    logHandle = IOSinkLogHandle(sink);
     logger = logHandle.logger;
   });
 
@@ -88,7 +88,7 @@ class FakeIOSink implements IOSink {
   dynamic noSuchMethod(Invocation invocation) {
     nonWriteCalls.add(invocation);
     if (invocation.memberName == #flush || invocation.memberName == #close) {
-      return new Future.value(null);
+      return Future.value(null);
     }
     return null;
   }

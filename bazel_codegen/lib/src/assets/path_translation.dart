@@ -11,7 +11,7 @@ Iterable<AssetId> findAssetIds(Iterable<String> inputs, String packagePath,
   final packageName = _findPackageName(packageMap, packagePath);
   for (var input in inputs) {
     if (!input.startsWith(packagePath)) {
-      throw new CodegenError(
+      throw CodegenError(
           'Cannot generate files for source "$input" because it is not '
           'in the current package ($packagePath). '
           'If this file is needed to generate other files, please add it to '
@@ -20,7 +20,7 @@ Iterable<AssetId> findAssetIds(Iterable<String> inputs, String packagePath,
     var path = packagePath.isNotEmpty
         ? input.substring(packagePath.length + 1)
         : input;
-    yield new AssetId(packageName, path);
+    yield AssetId(packageName, path);
   }
 }
 
@@ -28,5 +28,5 @@ String _findPackageName(Map<String, String> packageMap, String packagePath) {
   for (var packageName in packageMap.keys) {
     if (packageMap[packageName] == packagePath) return packageName;
   }
-  throw new CodegenError('Could not find package name for path $packagePath');
+  throw CodegenError('Could not find package name for path $packagePath');
 }

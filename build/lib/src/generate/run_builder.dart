@@ -31,13 +31,13 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     ResourceManager resourceManager,
     String rootPackage}) async {
   var shouldDisposeResourceManager = resourceManager == null;
-  resourceManager ??= new ResourceManager();
-  logger ??= new Logger('runBuilder');
+  resourceManager ??= ResourceManager();
+  logger ??= Logger('runBuilder');
   //TODO(nbosch) check overlapping outputs?
   Future<Null> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
-    var buildStep = new BuildStepImpl(input, outputs, reader, writer,
+    var buildStep = BuildStepImpl(input, outputs, reader, writer,
         rootPackage ?? input.package, resolvers, resourceManager);
     try {
       await builder.build(buildStep);

@@ -11,7 +11,7 @@ import 'package:build/build.dart';
 main() {
   ResourceManager resourceManager;
   setUp(() {
-    resourceManager = new ResourceManager();
+    resourceManager = ResourceManager();
   });
 
   tearDown(() async {
@@ -21,7 +21,7 @@ main() {
   group('ResourceManager', () {
     test('gives the same instance until disposed', () async {
       var last = 0;
-      var intResource = new Resource(() => last++);
+      var intResource = Resource(() => last++);
       var first = await resourceManager.fetch(intResource);
       expect(first, 0);
       var second = await resourceManager.fetch(intResource);
@@ -34,7 +34,7 @@ main() {
     test('calls dispose callback with last instance', () async {
       var disposed = false;
       var last = 0;
-      var intResource = new Resource(() => last, dispose: (int instance) {
+      var intResource = Resource(() => last, dispose: (int instance) {
         expect(instance, last);
         last++;
         disposed = true;
@@ -49,15 +49,15 @@ main() {
 
     test('can asynchronously get resources', () async {
       var last = 0;
-      var intResource = new Resource(() => new Future.value(++last));
+      var intResource = Resource(() => Future.value(++last));
       var actual = await resourceManager.fetch(intResource);
       expect(actual, last);
     });
 
     test('can asynchronously dispose resources', () async {
       var disposed = false;
-      var intResource = new Resource(() => 0, dispose: (_) async {
-        await new Future.delayed(new Duration(milliseconds: 20));
+      var intResource = Resource(() => 0, dispose: (_) async {
+        await Future.delayed(Duration(milliseconds: 20));
         disposed = true;
       });
       await resourceManager.fetch(intResource);
@@ -68,23 +68,23 @@ main() {
     test('can fetch and dispose multiple resources', () async {
       var numDisposed = 0;
       final length = 10;
-      var resources = new List<Resource>.generate(
+      var resources = List<Resource>.generate(
           length,
-          (i) => new Resource(() => i, dispose: (instance) {
+          (i) => Resource(() => i, dispose: (instance) {
                 expect(instance, i);
                 numDisposed++;
               }));
       var values =
           await Future.wait(resources.map((r) => resourceManager.fetch(r)));
-      expect(values, new List<int>.generate(length, (i) => i));
+      expect(values, List<int>.generate(length, (i) => i));
       await resourceManager.disposeAll();
       expect(numDisposed, length);
     });
 
     test('doesn\'t share resources with other ResourceManagers', () async {
-      var otherManager = new ResourceManager();
+      var otherManager = ResourceManager();
       var last = 0;
-      var intResource = new Resource(() => last++);
+      var intResource = Resource(() => last++);
 
       var original = await resourceManager.fetch(intResource);
       var other = await otherManager.fetch(intResource);

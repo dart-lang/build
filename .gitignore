@@ -15,6 +15,10 @@ tool/test_all.dart
 !build_runner_core/test/fixtures/**/.packages
 !build_runner_core/test/fixtures/**/pubspec.lock
 
+# Ignore extra files from dart2js that we don't want
+build_runner/lib/src/server/graph_viz_main.dart.js.deps
+build_runner/lib/src/server/graph_viz_main.dart.js.tar.gz
+
 # Ignore dazel generated
 .dazel
 bazel-*

@@ -18,8 +18,8 @@ void main() {
     AssetNode deleted;
 
     setUp(() async {
-      var graph = await AssetGraph.build([], new Set(), new Set(),
-          buildPackageGraph({rootPackage('foo'): []}), null);
+      var graph = await AssetGraph.build(
+          [], Set(), Set(), buildPackageGraph({rootPackage('foo'): []}), null);
 
       notDeleted = makeAssetNode('a|web/a.txt', [], computeDigest('a'));
       deleted = makeAssetNode('a|lib/b.txt', [], computeDigest('b'));
@@ -28,11 +28,11 @@ void main() {
       graph.add(notDeleted);
       graph.add(deleted);
 
-      var delegate = new InMemoryAssetReader();
+      var delegate = InMemoryAssetReader();
       delegate.assets.addAll({notDeleted.id: [], deleted.id: []});
 
-      reader = new FinalizedReader(
-          delegate, graph, new OptionalOutputTracker(graph, [], []), 'a');
+      reader = FinalizedReader(
+          delegate, graph, OptionalOutputTracker(graph, [], []), 'a');
     });
 
     test('can not read deleted files', () async {

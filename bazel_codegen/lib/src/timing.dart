@@ -11,7 +11,7 @@ class CodegenTiming {
   final _watches = <String, Stopwatch>{};
 
   CodegenTiming() {
-    _watches[_mainWatchDescription] = new Stopwatch();
+    _watches[_mainWatchDescription] = Stopwatch();
   }
 
   Stopwatch get _mainWatch => _watches[_mainWatchDescription];
@@ -30,7 +30,7 @@ class CodegenTiming {
   /// executed.
   FutureOr<T> trackOperation<T>(String description, FutureOr<T> operation()) =>
       _trackTiming(
-          operation, _watches.putIfAbsent(description, () => new Stopwatch()));
+          operation, _watches.putIfAbsent(description, () => Stopwatch()));
 
   /// Tracks [operation] that should be totaled using [watch].
   ///

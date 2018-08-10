@@ -20,7 +20,7 @@ Iterable<BuilderDefinition> findBuilderOrder(
       builders, (b) => b.key, dependencies);
   return components.map((component) {
     if (component.length > 1) {
-      throw new ArgumentError('Required input cycle for ${component.toList()}');
+      throw ArgumentError('Required input cycle for ${component.toList()}');
     }
     return component.single;
   }).toList();

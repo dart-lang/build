@@ -15,7 +15,7 @@ import 'package:build_test/build_test.dart';
 main() {
   group('PerformanceTracker', () {
     DateTime time;
-    final startTime = new DateTime(2017);
+    final startTime = DateTime(2017);
     DateTime fakeClock() => time;
 
     BuildPerformanceTracker tracker;
@@ -24,7 +24,7 @@ main() {
       time = startTime;
       tracker = scopeClock(
         fakeClock,
-        () => new BuildPerformanceTracker()..start(),
+        () => BuildPerformanceTracker()..start(),
       );
     });
 
@@ -39,14 +39,14 @@ main() {
     test('can track multiple phases', () async {
       await scopeClock(fakeClock, () async {
         var packages = ['a', 'b', 'c'];
-        var builder = new TestBuilder();
-        var phases = packages.map((p) => new InBuildPhase(builder, p)).toList();
+        var builder = TestBuilder();
+        var phases = packages.map((p) => InBuildPhase(builder, p)).toList();
 
         for (var phase in phases) {
           var package = phase.package;
           await tracker.trackBuildPhase(phase, () async {
             time = time.add(const Duration(seconds: 5));
-            return [new AssetId(package, 'lib/$package.txt')];
+            return [AssetId(package, 'lib/$package.txt')];
           });
         }
 
@@ -58,12 +58,12 @@ main() {
 
         var times = tracker.phases.map((t) => t.stopTime).toList();
         var expectedTimes = [5000, 10000, 15000].map((millis) =>
-            new DateTime.fromMillisecondsSinceEpoch(
+            DateTime.fromMillisecondsSinceEpoch(
                 millis + startTime.millisecondsSinceEpoch));
         expect(times, orderedEquals(expectedTimes));
 
         var total = tracker.phases.fold(
-            new Duration(), (Duration total, phase) => phase.duration + total);
+            Duration(), (Duration total, phase) => phase.duration + total);
         expect(total, const Duration(seconds: 15));
       });
     });
@@ -81,29 +81,29 @@ main() {
         var allActions = performance.actions.toList();
         for (var i = 0; i < inputs.length; i++) {
           var action = allActions[i];
-          expect(action.startTime, startTime.add(new Duration(seconds: i * 3)));
-          expect(action.stopTime,
-              startTime.add(new Duration(seconds: (i + 1) * 3)));
+          expect(action.startTime, startTime.add(Duration(seconds: i * 3)));
+          expect(
+              action.stopTime, startTime.add(Duration(seconds: (i + 1) * 3)));
           var allPhases = action.phases.toList();
           for (var p = 0; p < 3; p++) {
             var phase = allPhases[p];
-            expect(phase.duration, new Duration(seconds: 1));
+            expect(phase.duration, Duration(seconds: 1));
             expect(
                 phase.startTime,
                 startTime
-                    .add(new Duration(seconds: i * 3))
-                    .add(new Duration(seconds: p)));
+                    .add(Duration(seconds: i * 3))
+                    .add(Duration(seconds: p)));
             expect(
                 phase.stopTime,
                 startTime
-                    .add(new Duration(seconds: i * 3))
-                    .add(new Duration(seconds: p + 1)));
+                    .add(Duration(seconds: i * 3))
+                    .add(Duration(seconds: p + 1)));
           }
         }
 
-        var total = performance.actions.fold(new Duration(),
-            (Duration total, action) => action.duration + total);
-        expect(total, new Duration(seconds: inputs.length * 3));
+        var total = performance.actions.fold(
+            Duration(), (Duration total, action) => action.duration + total);
+        expect(total, Duration(seconds: inputs.length * 3));
       }
 
       await scopeClock(fakeClock, () async {
@@ -125,7 +125,7 @@ main() {
 
       checkMatchesExpected(tracker);
 
-      checkMatchesExpected(new BuildPerformance.fromJson(
+      checkMatchesExpected(BuildPerformance.fromJson(
           jsonDecode(jsonEncode(tracker.toJson())) as Map<String, dynamic>));
     });
   });
