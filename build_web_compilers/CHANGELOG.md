@@ -1,7 +1,12 @@
+## 0.4.2+1
+
+- Restore `new` keyword for a working release on Dart 1 VM.
+
 ## 0.4.2
 
 - Add magic comment marker for build_runner to know where to inject 
   live-reloading client code.
+- Release broken on Dart 1 VM.
 
 ## 0.4.1
 

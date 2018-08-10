@@ -1,3 +1,11 @@
+## 0.3.1+2
+
+- Restore `new` keyword for a working release on Dart 1 VM.
+
+## 0.3.1+1
+
+- Release broken on Dart 1 VM.
+
 ## 0.3.1
 
 - Migrated glob tracking to a specialized node type to fix dart-lang/build#1702.
