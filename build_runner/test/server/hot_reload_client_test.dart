@@ -4,15 +4,15 @@
 
 @TestOn('browser')
 import 'dart:html';
-import 'dart:js';
-
-import 'package:test/test.dart';
-import 'package:mockito/mockito.dart';
 
 import 'package:build_runner/src/server/hot_reload_client.dart';
+import 'package:js/js.dart';
+import 'package:js/js_util.dart';
+import 'package:mockito/mockito.dart';
+import 'package:test/test.dart';
 
 abstract class Methods {
-  JsObject reloadModule(String moduleId);
+  Object reloadModule(String moduleId);
 
   main();
 }
@@ -32,10 +32,11 @@ void main() {
     handler = ReloadHandler(
         digests, (path) => pathToModuleId[path], methods.reloadModule);
     when(methods.reloadModule('web/main')).thenAnswer((moduleId) {
-      var object = JsObject.jsify({});
-      object['main'] = JsObject.jsify({});
-      object['main']['main'] = JsFunction.withThis((_) => methods.main());
-      return object;
+      var module = newObject();
+      var main = newObject();
+      setProperty(module, 'main', main);
+      setProperty(main, 'main', allowInterop(methods.main));
+      return module;
     });
   });
 

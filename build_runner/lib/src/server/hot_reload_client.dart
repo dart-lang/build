@@ -2,39 +2,61 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@JS()
+library hot_reload_client;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
-import 'dart:js';
+
+import 'package:js/js.dart';
+import 'package:js/js_util.dart';
 
 final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$livereload';
 
-JsObject _dartLoader = context['\$dartLoader'];
-JsObject _urlToModuleId = _dartLoader['urlToModuleId'];
+@JS('Map')
+abstract class JsMap<K, V> {
+  @JS()
+  external Object keys();
+
+  @JS()
+  external V get(K key);
+}
+
+@anonymous
+@JS()
+class DartLoader {
+  @JS()
+  external JsMap<String, String> get urlToModuleId;
+
+  @JS()
+  external void forceLoadModule(
+      String moduleId, void Function(Object module) callback);
+}
+
+@JS(r'$dartLoader')
+external DartLoader get dartLoader;
+
+@JS('Array.from')
+external List jsArrayFrom(Object any);
 
 List<String> get moduleUrls {
-  JsArray callMethod = context['Array']
-      .callMethod('from', [_urlToModuleId.callMethod('keys', [])]);
-  return List.from(callMethod);
+  return List.from(jsArrayFrom(dartLoader.urlToModuleId.keys()));
 }
 
 String moduleIdByPath(String path) =>
-    _urlToModuleId.callMethod('get', [window.location.origin + '/' + path])
-        as String;
+    dartLoader.urlToModuleId.get(window.location.origin + '/' + path);
 
-Future<JsObject> reloadModule(String moduleId) {
-  var completer = Completer<JsObject>();
-  _dartLoader.callMethod('forceLoadModule', [
-    moduleId,
-    JsFunction.withThis((_this, JsObject module) => completer.complete(module))
-  ]);
+Future<Object> reloadModule(String moduleId) {
+  var completer = Completer<Object>();
+  dartLoader.forceLoadModule(moduleId, allowInterop(completer.complete));
   return completer.future;
 }
 
 class ReloadHandler {
   final String Function(String) _moduleIdByPath;
-  final FutureOr<JsObject> Function(String) _reloadModule;
+  final FutureOr<Object> Function(String) _reloadModule;
   final Map<String, String> _digests;
 
   ReloadHandler(this._digests,
@@ -63,7 +85,7 @@ class ReloadHandler {
           .map((moduleId) => Future.value(_reloadModule(moduleId))));
       // TODO Search through dependency graph for true parents
       var mainModule = await _reloadModule('web/main');
-      mainModule['main'].callMethod('main', []);
+      callMethod(getProperty(mainModule, 'main'), 'main', []);
     }
   }
 }
