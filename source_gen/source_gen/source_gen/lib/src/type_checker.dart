@@ -106,7 +106,7 @@ abstract class TypeChecker {
     final annotation = element.metadata[annotationIndex];
     final result = annotation.computeConstantValue();
     if (result == null && throwOnUnresolved) {
-      throw new UnresolvedAnnotationException._from(element, annotationIndex);
+      throw UnresolvedAnnotationException._from(element, annotationIndex);
     }
     return result;
   }
@@ -219,14 +219,14 @@ class _MirrorTypeChecker extends TypeChecker {
           .replace(fragment: MirrorSystem.getName(mirror.simpleName));
 
   // Precomputed type checker for types that already have been used.
-  static final _cache = new Expando<TypeChecker>();
+  static final _cache = Expando<TypeChecker>();
 
   final Type _type;
 
   const _MirrorTypeChecker(this._type) : super._();
 
   TypeChecker get _computed =>
-      _cache[this] ??= new TypeChecker.fromUrl(_uriOf(reflectClass(_type)));
+      _cache[this] ??= TypeChecker.fromUrl(_uriOf(reflectClass(_type)));
 
   @override
   bool isExactly(Element element) => _computed.isExactly(element);
@@ -240,7 +240,7 @@ class _UriTypeChecker extends TypeChecker {
   final String _url;
 
   // Precomputed cache of String --> Uri.
-  static final _cache = new Expando<Uri>();
+  static final _cache = Expando<Uri>();
 
   const _UriTypeChecker(dynamic url)
       : _url = '$url',
@@ -303,9 +303,9 @@ class UnresolvedAnnotationException implements Exception {
     }
     final start = astNode.offset;
     final end = start + astNode.length;
-    return new SourceSpan(
-      new SourceLocation(start, sourceUrl: annotation.source.uri),
-      new SourceLocation(end, sourceUrl: annotation.source.uri),
+    return SourceSpan(
+      SourceLocation(start, sourceUrl: annotation.source.uri),
+      SourceLocation(end, sourceUrl: annotation.source.uri),
       contents.substring(start, end),
     );
   }
@@ -318,7 +318,7 @@ class UnresolvedAnnotationException implements Exception {
   ) {
     final annotation = annotatedElement.metadata[annotationIndex];
     final sourceSpan = _getSourceSpanFrom(annotation);
-    return new UnresolvedAnnotationException._(annotatedElement, sourceSpan);
+    return UnresolvedAnnotationException._(annotatedElement, sourceSpan);
   }
 
   const UnresolvedAnnotationException._(

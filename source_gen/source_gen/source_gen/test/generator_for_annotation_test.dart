@@ -22,8 +22,8 @@ void main() {
       'list with null, empty, and whitespace items': [null, '', '\n \t']
     }.entries) {
       test(entry.key, () async {
-        final generator = new LiteralOutput(entry.value);
-        var builder = new LibraryBuilder(generator);
+        final generator = LiteralOutput(entry.value);
+        var builder = LibraryBuilder(generator);
         await testBuilder(builder, _inputMap, outputs: {});
       });
     }
@@ -31,7 +31,7 @@ void main() {
 
   test('Supports and dedupes multiple return values', () async {
     final generator = const RepeatingGenerator();
-    var builder = new LibraryBuilder(generator);
+    var builder = LibraryBuilder(generator);
     await testBuilder(builder, _inputMap, outputs: {
       'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
@@ -57,7 +57,7 @@ void main() {
       'from iterable': const FailingIterableGenerator()
     }.entries) {
       test(entry.key, () async {
-        var builder = new LibraryBuilder(entry.value);
+        var builder = LibraryBuilder(entry.value);
         await testBuilder(builder, _inputMap, outputs: {
           'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
@@ -81,7 +81,7 @@ class FailingIterableGenerator extends GeneratorForAnnotation<Deprecated> {
   Iterable<String> generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep) sync* {
     yield '// There are deprecated values in this library!';
-    throw new StateError('not supported!');
+    throw StateError('not supported!');
   }
 
   @override
@@ -94,7 +94,7 @@ class FailingGenerator extends GeneratorForAnnotation<Deprecated> {
   @override
   generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep) {
-    throw new StateError('not supported!');
+    throw StateError('not supported!');
   }
 }
 
@@ -121,7 +121,7 @@ class LiteralOutput<T> extends GeneratorForAnnotation<Deprecated> {
       null;
 }
 
-const _inputMap = const {
+const _inputMap = {
   'a|lib/file.dart': '''
      @deprecated
      final foo = 'foo';

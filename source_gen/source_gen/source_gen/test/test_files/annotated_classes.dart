@@ -10,10 +10,9 @@ import 'annotations.dart';
 
 part 'annotated_classes_part.dart';
 
-const localUntypedAnnotation = const PublicAnnotationClass();
+const localUntypedAnnotation = PublicAnnotationClass();
 
-const PublicAnnotationClass localTypedAnnotation =
-    const PublicAnnotationClass();
+const PublicAnnotationClass localTypedAnnotation = PublicAnnotationClass();
 
 @PublicAnnotationClass()
 class CtorNoParams {}
@@ -31,7 +30,7 @@ class NonDefaultCtorNoParams {}
 class NonDefaultCtorWithPositionalParams {}
 
 @PublicAnnotationClass.withPositionalArgs(43, 'another value',
-    boolArg: true, listArg: const [5, 6, 7])
+    boolArg: true, listArg: [5, 6, 7])
 class NonDefaultCtorWithPositionalAndNamedParams {}
 
 @PublicAnnotationClass.withKids()

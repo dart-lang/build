@@ -24,14 +24,14 @@ const _outputExtensions = '.g.dart';
 const _partFiles = '.g.part';
 
 Builder combiningBuilder([BuilderOptions options]) {
-  var optionsMap = new Map<String, dynamic>.from(options?.config ?? {});
+  var optionsMap = Map<String, dynamic>.from(options?.config ?? {});
 
-  var builder = new CombiningBuilder(
+  var builder = CombiningBuilder(
       includePartName: optionsMap.remove('include_part_name') as bool);
 
   if (optionsMap.isNotEmpty) {
     if (log == null) {
-      throw new StateError('Upgrade `build_runner` to at least 0.8.2.');
+      throw StateError('Upgrade `build_runner` to at least 0.8.2.');
     } else {
       log.warning('These options were ignored: `$optionsMap`.');
     }
@@ -40,7 +40,7 @@ Builder combiningBuilder([BuilderOptions options]) {
 }
 
 PostProcessBuilder partCleanup(BuilderOptions options) =>
-    const FileDeletingBuilder(const ['.g.part']);
+    const FileDeletingBuilder(['.g.part']);
 
 /// A [Builder] which combines part files generated from [SharedPartBuilder].
 ///
@@ -50,7 +50,7 @@ class CombiningBuilder implements Builder {
 
   @override
   Map<String, List<String>> get buildExtensions => const {
-        '.dart': const [_outputExtensions]
+        '.dart': [_outputExtensions]
       };
 
   /// Returns a new [CombiningBuilder].
@@ -71,7 +71,7 @@ class CombiningBuilder implements Builder {
 
     // Pattern used to ensure items are only considered if they match
     // [file name without extension].[valid part id].[part file extension]
-    var restrictedPattern = new RegExp([
+    var restrictedPattern = RegExp([
       '^', // start of string
       RegExp.escape(inputBaseName), // file name, without extension
       '\.', // `.` character
@@ -81,12 +81,12 @@ class CombiningBuilder implements Builder {
     ].join(''));
 
     var assetIds = await buildStep
-        .findAssets(new Glob(pattern))
+        .findAssets(Glob(pattern))
         .where((id) => restrictedPattern.hasMatch(id.pathSegments.last))
         .toList()
       ..sort();
 
-    var assets = await new Stream.fromIterable(assetIds)
+    var assets = await Stream.fromIterable(assetIds)
         .asyncMap((id) async {
           var content = (await buildStep.readAsString(id)).trim();
           if (_includePartName) {

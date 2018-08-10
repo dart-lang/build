@@ -4,10 +4,10 @@
 
 part of source_gen.test.annotation_test.classes;
 
-const localUntypedAnnotationInPart = const PublicAnnotationClass();
+const localUntypedAnnotationInPart = PublicAnnotationClass();
 
 const PublicAnnotationClass localTypedAnnotationInPart =
-    const PublicAnnotationClass();
+    PublicAnnotationClass();
 
 @PublicAnnotationClass()
 class CtorNoParamsInPart {}

@@ -23,19 +23,19 @@ SourceSpan spanForElement(Element element, [SourceFile file]) {
   if (file == null) {
     final contents = element?.source?.contents;
     if (contents == null) {
-      return new SourceSpan(
-        new SourceLocation(
+      return SourceSpan(
+        SourceLocation(
           element.nameOffset,
           sourceUrl: url,
         ),
-        new SourceLocation(
+        SourceLocation(
           element.nameOffset + element.nameLength,
           sourceUrl: url,
         ),
         element.name,
       );
     }
-    file = new SourceFile.fromString(contents.data, url: url);
+    file = SourceFile.fromString(contents.data, url: url);
   }
   return file.span(element.nameOffset, element.nameOffset + element.nameLength);
 }

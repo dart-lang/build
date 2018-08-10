@@ -17,7 +17,7 @@ void main() {
 
       abstract class Example implements List {}
     ''', (resolver) => resolver.findLibraryByName('test_lib'),
-        inputId: new AssetId('test_lib', 'lib/test_lib.dart'));
+        inputId: AssetId('test_lib', 'lib/test_lib.dart'));
   });
 
   test('should highlight the use of "class Example"', () {

@@ -31,7 +31,7 @@ void main() {
   setUpAll(() async {
     library = await resolveSources(
       {'a|source.dart': _source, 'a|part.dart': _partSource},
-      (r) async => new LibraryReader(await r.findLibraryByName('test_lib')),
+      (r) async => LibraryReader(await r.findLibraryByName('test_lib')),
     );
   });
 

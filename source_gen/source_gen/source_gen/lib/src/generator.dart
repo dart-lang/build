@@ -48,7 +48,7 @@ class InvalidGenerationSourceError extends Error {
 
   @override
   String toString() {
-    var buffer = new StringBuffer(message);
+    var buffer = StringBuffer(message);
 
     if (element != null) {
       var span = spanForElement(element);

@@ -39,27 +39,27 @@ void main() {
     ''', (resolver) async {
       core = await resolver.findLibraryByName('dart.core');
       collection = await resolver.findLibraryByName('dart.collection');
-      sourceGen = new LibraryReader(await resolver.libraryFor(
-          new AssetId.resolve('asset:source_gen/lib/source_gen.dart')));
+      sourceGen = LibraryReader(await resolver
+          .libraryFor(AssetId.resolve('asset:source_gen/lib/source_gen.dart')));
     });
 
     var staticIterable = core.getType('Iterable').type;
-    staticIterableChecker = new TypeChecker.fromStatic(staticIterable);
+    staticIterableChecker = TypeChecker.fromStatic(staticIterable);
     staticUri = core.getType('Uri').type;
     staticMap = core.getType('Map').type;
-    staticMapChecker = new TypeChecker.fromStatic(staticMap);
+    staticMapChecker = TypeChecker.fromStatic(staticMap);
 
     staticHashMap = collection.getType('HashMap').type;
-    staticHashMapChecker = new TypeChecker.fromStatic(staticHashMap);
+    staticHashMapChecker = TypeChecker.fromStatic(staticHashMap);
     staticUnmodifiableListView =
         collection.getType('UnmodifiableListView').type;
 
     staticGenerator = sourceGen.findType('Generator').type;
-    staticGeneratorChecker = new TypeChecker.fromStatic(staticGenerator);
+    staticGeneratorChecker = TypeChecker.fromStatic(staticGenerator);
     staticGeneratorForAnnotation =
         sourceGen.findType('GeneratorForAnnotation').type;
     staticGeneratorForAnnotationChecker =
-        new TypeChecker.fromStatic(staticGeneratorForAnnotation);
+        TypeChecker.fromStatic(staticGeneratorForAnnotation);
   });
 
   // Run a common set of type comparison checks with various implementations.
@@ -206,9 +206,9 @@ void main() {
   });
 
   test('should check multiple checkers', () {
-    final listOrMap = const TypeChecker.any(const [
-      const TypeChecker.fromRuntime(List),
-      const TypeChecker.fromRuntime(Map),
+    final listOrMap = const TypeChecker.any([
+      TypeChecker.fromRuntime(List),
+      TypeChecker.fromRuntime(Map),
     ]);
     expect(listOrMap.isExactlyType(staticMap), isTrue);
   });
@@ -254,9 +254,9 @@ void main() {
         const C();
       }
     ''', (resolver) => resolver.findLibraryByName('_test'));
-      $A = new TypeChecker.fromStatic(library.getType('A').type);
-      $B = new TypeChecker.fromStatic(library.getType('B').type);
-      $C = new TypeChecker.fromStatic(library.getType('C').type);
+      $A = TypeChecker.fromStatic(library.getType('A').type);
+      $B = TypeChecker.fromStatic(library.getType('B').type);
+      $C = TypeChecker.fromStatic(library.getType('C').type);
       $ExampleOfA = library.getType('ExampleOfA');
       $ExampleOfMultiA = library.getType('ExampleOfMultiA');
       $ExampleOfAPlusB = library.getType('ExampleOfAPlusB');
@@ -314,7 +314,7 @@ void main() {
         const A();
       }
     ''', (resolver) => resolver.findLibraryByName('_test'));
-      $A = new TypeChecker.fromStatic(library.getType('A').type);
+      $A = TypeChecker.fromStatic(library.getType('A').type);
       $ExampleOfA = library.getType('ExampleOfA');
     });
 

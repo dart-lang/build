@@ -31,7 +31,7 @@ class LibraryReader {
   LibraryReader(this.element);
 
   Namespace get _namespace => _namespaceCache ??=
-      new NamespaceBuilder().createExportNamespaceForLibrary(element);
+      NamespaceBuilder().createExportNamespaceForLibrary(element);
 
   /// Returns a top-level [ClassElement] publicly visible in by [name].
   ///
@@ -56,7 +56,7 @@ class LibraryReader {
       final annotation = checker.firstAnnotationOf(element,
           throwOnUnresolved: throwOnUnresolved);
       if (annotation != null) {
-        yield new AnnotatedElement(new ConstantReader(annotation), element);
+        yield AnnotatedElement(ConstantReader(annotation), element);
       }
     }
   }
@@ -68,7 +68,7 @@ class LibraryReader {
       final annotation = checker.firstAnnotationOfExact(element,
           throwOnUnresolved: throwOnUnresolved);
       if (annotation != null) {
-        yield new AnnotatedElement(new ConstantReader(annotation), element);
+        yield AnnotatedElement(ConstantReader(annotation), element);
       }
     }
   }
@@ -99,7 +99,7 @@ class LibraryReader {
   /// May throw [ArgumentError] if it is not possible to resolve a path.
   Uri pathToUrl(dynamic toUrlOrString) {
     if (toUrlOrString == null) {
-      throw new ArgumentError.notNull('toUrlOrString');
+      throw ArgumentError.notNull('toUrlOrString');
     }
     final to = toUrlOrString is Uri
         ? toUrlOrString
@@ -123,7 +123,7 @@ class LibraryReader {
       }
       var from = element.source.uri;
       if (from == null) {
-        throw new StateError('Current library has no source URL');
+        throw StateError('Current library has no source URL');
       }
       // Normalize (convert to an asset: URL).
       from = normalizeUrl(from);
@@ -131,7 +131,7 @@ class LibraryReader {
         if (from == to) {
           // Edge-case: p.relative('a.dart', 'a.dart') == '.', but that is not
           // a valid import URL in Dart source code.
-          return new Uri(path: to.pathSegments.last);
+          return Uri(path: to.pathSegments.last);
         }
         final relative = p.toUri(p.relative(
           to.toString(),
@@ -142,9 +142,9 @@ class LibraryReader {
           pathSegments: relative.pathSegments.skip(1),
         );
       }
-      throw new ArgumentError.value(to, 'to', 'Not relative to $from');
+      throw ArgumentError.value(to, 'to', 'Not relative to $from');
     }
-    throw new ArgumentError.value(to, 'to', 'Cannot use scheme "${to.scheme}"');
+    throw ArgumentError.value(to, 'to', 'Cannot use scheme "${to.scheme}"');
   }
 
   /// Returns whether both [from] and [to] are in the same package and folder.
@@ -175,8 +175,7 @@ class LibraryReader {
     }
     var element = resolutionMap.elementDeclaredByDeclaration(member);
     if (element == null) {
-      throw new StateError(
-          'Could not find any elements for the provided unit.');
+      throw StateError('Could not find any elements for the provided unit.');
     }
     return [element];
   }

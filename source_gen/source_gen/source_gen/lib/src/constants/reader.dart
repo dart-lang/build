@@ -16,9 +16,8 @@ import 'utils.dart';
 /// Unlike [DartObject.getField], the [read] method attempts to access super
 /// classes for the field value if not found.
 abstract class ConstantReader {
-  factory ConstantReader(DartObject object) => isNullLike(object)
-      ? const _NullConstant()
-      : new _DartObjectConstant(object);
+  factory ConstantReader(DartObject object) =>
+      isNullLike(object) ? const _NullConstant() : _DartObjectConstant(object);
 
   const ConstantReader._();
 
@@ -124,13 +123,13 @@ abstract class ConstantReader {
 class _NullConstant extends ConstantReader {
   @alwaysThrows
   static T _throw<T>(String expected) {
-    throw new FormatException('Not an instance of $expected.');
+    throw FormatException('Not an instance of $expected.');
   }
 
   const _NullConstant() : super._();
 
   @override
-  DartObject get objectValue => throw new UnsupportedError('Null');
+  DartObject get objectValue => throw UnsupportedError('Null');
 
   @override
   bool get boolValue => _throw('bool');
@@ -151,7 +150,7 @@ class _NullConstant extends ConstantReader {
   ConstantReader peek(_) => null;
 
   @override
-  ConstantReader read(_) => throw new UnsupportedError('Null');
+  ConstantReader read(_) => throw UnsupportedError('Null');
 
   @override
   String get stringValue => _throw('String');
@@ -163,7 +162,7 @@ class _NullConstant extends ConstantReader {
   DartType get typeValue => _throw('Type');
 
   @override
-  Revivable revive() => throw new UnsupportedError('Null');
+  Revivable revive() => throw UnsupportedError('Null');
 }
 
 class _DartObjectConstant extends ConstantReader {
@@ -174,7 +173,7 @@ class _DartObjectConstant extends ConstantReader {
 
   T _check<T>(T value, String expected) {
     if (value == null) {
-      throw new FormatException('Not an instance of $expected.', objectValue);
+      throw FormatException('Not an instance of $expected.', objectValue);
     }
     return value;
   }
@@ -187,7 +186,7 @@ class _DartObjectConstant extends ConstantReader {
       objectValue.toDoubleValue() ??
       objectValue.toListValue() ??
       objectValue.toMapValue() ??
-      new Symbol(_check(objectValue.toSymbolValue(), 'literal'));
+      Symbol(_check(objectValue.toSymbolValue(), 'literal'));
 
   @override
   bool get isLiteral =>
@@ -249,7 +248,7 @@ class _DartObjectConstant extends ConstantReader {
 
   @override
   Symbol get symbolValue =>
-      new Symbol(_check(objectValue.toSymbolValue(), 'Symbol'));
+      Symbol(_check(objectValue.toSymbolValue(), 'Symbol'));
 
   @override
   bool get isType => objectValue.toTypeValue() != null;
@@ -259,7 +258,7 @@ class _DartObjectConstant extends ConstantReader {
 
   @override
   ConstantReader peek(String field) {
-    final constant = new ConstantReader(getFieldRecursive(objectValue, field));
+    final constant = ConstantReader(getFieldRecursive(objectValue, field));
     return constant.isNull ? null : constant;
   }
 

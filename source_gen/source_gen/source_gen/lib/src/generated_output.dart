@@ -36,7 +36,7 @@ class GeneratedOutput {
 }
 
 String _outputFromError(Object error) {
-  var buffer = new StringBuffer();
+  var buffer = StringBuffer();
 
   _commentWithHeader(_errorHeader, error.toString(), buffer);
 

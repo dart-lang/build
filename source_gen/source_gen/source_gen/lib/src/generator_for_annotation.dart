@@ -37,11 +37,11 @@ import 'type_checker.dart';
 abstract class GeneratorForAnnotation<T> extends Generator {
   const GeneratorForAnnotation();
 
-  TypeChecker get typeChecker => new TypeChecker.fromRuntime(T);
+  TypeChecker get typeChecker => TypeChecker.fromRuntime(T);
 
   @override
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
-    var values = new Set<String>();
+    var values = Set<String>();
 
     for (var annotatedElement in library.annotatedWith(typeChecker)) {
       var generatedValue = generateForAnnotatedElement(

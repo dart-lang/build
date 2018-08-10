@@ -11,7 +11,7 @@ import 'package:async/async.dart';
 /// exceptions are forwarded through the return value.
 Stream<String> normalizeGeneratorOutput(Object value) {
   if (value == null) {
-    return new Stream.empty();
+    return Stream.empty();
   } else if (value is Future) {
     return StreamCompleter.fromFuture(value.then(normalizeGeneratorOutput));
   } else if (value is String) {
@@ -19,7 +19,7 @@ Stream<String> normalizeGeneratorOutput(Object value) {
   }
 
   if (value is Iterable) {
-    value = new Stream.fromIterable(value as Iterable);
+    value = Stream.fromIterable(value as Iterable);
   }
 
   if (value is Stream) {
@@ -34,6 +34,6 @@ Stream<String> normalizeGeneratorOutput(Object value) {
   throw _argError(value);
 }
 
-ArgumentError _argError(Object value) => new ArgumentError(
+ArgumentError _argError(Object value) => ArgumentError(
     'Must be a String or be an Iterable/Stream containing String values. '
     'Found `${Error.safeToString(value)}` (${value.runtimeType}).');

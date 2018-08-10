@@ -60,7 +60,7 @@ void main() {
       constants = library
           .getType('Example')
           .metadata
-          .map((e) => new ConstantReader(e.computeConstantValue()))
+          .map((e) => ConstantReader(e.computeConstantValue()))
           .toList();
     });
 
@@ -116,7 +116,7 @@ void main() {
     test('should read a list', () {
       expect(constants[6].isList, isTrue, reason: '${constants[6]}');
       expect(constants[6].isLiteral, isTrue);
-      expect(constants[6].listValue.map((c) => new ConstantReader(c).intValue),
+      expect(constants[6].listValue.map((c) => ConstantReader(c).intValue),
           [1, 2, 3]);
     });
 
@@ -125,8 +125,8 @@ void main() {
       expect(constants[7].isLiteral, isTrue);
       expect(
           mapMap<DartObject, DartObject, int, String>(constants[7].mapValue,
-              key: (k, _) => new ConstantReader(k).intValue,
-              value: (_, v) => new ConstantReader(v).stringValue),
+              key: (k, _) => ConstantReader(k).intValue,
+              value: (_, v) => ConstantReader(v).stringValue),
           {1: 'A', 2: 'B'});
     });
 
@@ -252,7 +252,7 @@ void main() {
       constants = library
           .getType('Example')
           .metadata
-          .map((e) => new ConstantReader(e.computeConstantValue()))
+          .map((e) => ConstantReader(e.computeConstantValue()))
           .toList();
     });
 
@@ -268,7 +268,7 @@ void main() {
       expect(duration30s.accessor, isEmpty);
       expect(
           mapMap(duration30s.namedArguments,
-              value: (_, DartObject v) => new ConstantReader(v).literalValue),
+              value: (_, DartObject v) => ConstantReader(v).literalValue),
           {
             'seconds': 30,
           });

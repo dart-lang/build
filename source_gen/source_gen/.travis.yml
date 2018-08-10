@@ -4,17 +4,30 @@ language: dart
 jobs:
   include:
     - stage: analyze_format
+      name: "SDK: dev - DIR: _test_annotations - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="_test_annotations"
       dart: dev
     - stage: analyze_format
+      name: "SDK: dev - DIR: source_gen - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="source_gen"
       dart: dev
+    - stage: analyze_format
+      name: "SDK: stable - DIR: source_gen - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="source_gen"
+      dart: stable
     - stage: unit_test
+      name: "SDK: dev - DIR: source_gen - TASKS: pub run test -j 1"
       script: ./tool/travis.sh test
       env: PKG="source_gen"
       dart: dev
+    - stage: unit_test
+      name: "SDK: stable - DIR: source_gen - TASKS: pub run test -j 1"
+      script: ./tool/travis.sh test
+      env: PKG="source_gen"
+      dart: stable
 
 stages:
   - analyze_format

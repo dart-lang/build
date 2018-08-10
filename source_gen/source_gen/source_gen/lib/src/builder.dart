@@ -46,14 +46,14 @@ class _Builder extends Builder {
         formatOutput = formatOutput ?? _formatter.format,
         _header = (header ?? defaultFileHeader).trim() {
     if (_generatedExtension == null) {
-      throw new ArgumentError.notNull('generatedExtension');
+      throw ArgumentError.notNull('generatedExtension');
     }
     if (_generatedExtension.isEmpty || !_generatedExtension.startsWith('.')) {
-      throw new ArgumentError.value(_generatedExtension, 'generatedExtension',
+      throw ArgumentError.value(_generatedExtension, 'generatedExtension',
           'Extension must be in the format of .*');
     }
     if (_isLibraryBuilder && _generators.length > 1) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'A standalone file can only be generated from a single Generator.');
     }
   }
@@ -79,7 +79,7 @@ class _Builder extends Builder {
     if (generatedOutputs.isEmpty) return;
     final outputId = buildStep.inputId.changeExtension(_generatedExtension);
 
-    var contentBuffer = new StringBuffer();
+    var contentBuffer = StringBuffer();
 
     if (_header.isNotEmpty) {
       contentBuffer.writeln(_header);
@@ -90,7 +90,7 @@ class _Builder extends Builder {
       var name = nameOfPartial(library, asset);
       if (name == null) {
         var suggest = suggestLibraryName(asset);
-        throw new InvalidGenerationSourceError(
+        throw InvalidGenerationSourceError(
             'Could not find library identifier so a "part of" cannot be built.',
             todo: ''
                 'Consider adding the following to your source file:\n\n'
@@ -175,7 +175,7 @@ class SharedPartBuilder extends _Builder {
             additionalOutputExtensions: additionalOutputExtensions,
             header: '') {
     if (!_partIdRegExp.hasMatch(partId)) {
-      throw new ArgumentError.value(
+      throw ArgumentError.value(
           partId,
           'partId',
           '`partId` can only contain letters, numbers, `_` and `.`. '
@@ -241,7 +241,7 @@ class LibraryBuilder extends _Builder {
 
 Stream<GeneratedOutput> _generate(LibraryElement library,
     List<Generator> generators, BuildStep buildStep) async* {
-  var libraryReader = new LibraryReader(library);
+  var libraryReader = LibraryReader(library);
   for (var i = 0; i < generators.length; i++) {
     var gen = generators[i];
     try {
@@ -261,15 +261,15 @@ Stream<GeneratedOutput> _generate(LibraryElement library,
         continue;
       }
 
-      yield new GeneratedOutput(gen, createdUnit);
+      yield GeneratedOutput(gen, createdUnit);
     } catch (e, stack) {
       log.severe('Error running $gen', e, stack);
-      yield new GeneratedOutput.fromError(gen, e, stack);
+      yield GeneratedOutput.fromError(gen, e, stack);
     }
   }
 }
 
-final _formatter = new DartFormatter();
+final _formatter = DartFormatter();
 
 const defaultFileHeader = '// GENERATED CODE - DO NOT MODIFY BY HAND';
 
@@ -277,4 +277,4 @@ final _headerLine = '// '.padRight(77, '*');
 
 const partIdRegExpLiteral = r'[A-Za-z_\d-]+';
 
-final _partIdRegExp = new RegExp('^$partIdRegExpLiteral\$');
+final _partIdRegExp = RegExp('^$partIdRegExpLiteral\$');

@@ -7,12 +7,12 @@ import 'dart:collection' as collection;
 
 part 'annotation_part.dart';
 
-const untypedAnnotation = const PublicAnnotationClass();
+const untypedAnnotation = PublicAnnotationClass();
 
 const untypedAnnotationWithNonDefaultCtor =
-    const PublicAnnotationClass.withPositionalArgs(5, 'field', boolArg: true);
+    PublicAnnotationClass.withPositionalArgs(5, 'field', boolArg: true);
 
-const PublicAnnotationClass typedAnnotation = const PublicAnnotationClass();
+const PublicAnnotationClass typedAnnotation = PublicAnnotationClass();
 
 class PublicAnnotationClass {
   final int anInt;
@@ -59,10 +59,10 @@ class OtherPublicAnnotationClass {
   const OtherPublicAnnotationClass();
 }
 
-const objectAnnotation = const {
+const objectAnnotation = {
   'int': 1,
   'bool': true,
-  'list': const [1, 2, 3],
+  'list': [1, 2, 3],
   'symbol': #foo,
   'double': 3.14,
   'null': null,

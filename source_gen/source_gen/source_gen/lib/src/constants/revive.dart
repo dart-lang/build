@@ -23,13 +23,13 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
   final element = object.type.element;
   var url = Uri.parse(urlOfElement(element));
   if (element is FunctionElement) {
-    return new Revivable._(
+    return Revivable._(
       source: url.removeFragment(),
       accessor: element.name,
     );
   }
   if (element is MethodElement && element.isStatic) {
-    return new Revivable._(
+    return Revivable._(
       source: url.removeFragment(),
       accessor: '${element.enclosingElement.name}.${element.name}',
     );
@@ -39,7 +39,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
   if (clazz.isEnum) {
     for (final e in clazz.fields.where(
         (f) => f.isPublic && f.isConst && f.computeConstantValue() == object)) {
-      return new Revivable._(
+      return Revivable._(
         source: url.removeFragment(),
         accessor: '${clazz.name}.${e.name}',
       );
@@ -49,7 +49,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
       .expand((t) => t.fields)
       .where((f) =>
           f.isPublic && f.isConst && f.computeConstantValue() == object)) {
-    return new Revivable._(
+    return Revivable._(
       source: url.removeFragment(),
       accessor: '${clazz.name}.${e.name}',
     );
@@ -59,7 +59,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
       i.constructor.isPublic &&
       i.constructor.enclosingElement.isPublic) {
     url = Uri.parse(urlOfElement(i.constructor.enclosingElement));
-    return new Revivable._(
+    return Revivable._(
       source: url,
       accessor: i.constructor.name,
       namedArguments: i.namedArguments,
@@ -72,7 +72,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
   for (final e in origin.definingCompilationUnit.topLevelVariables.where(
     (f) => f.isPublic && f.isConst && f.computeConstantValue() == object,
   )) {
-    return new Revivable._(
+    return Revivable._(
       source: Uri.parse(urlOfElement(origin)).replace(fragment: ''),
       accessor: e.name,
     );

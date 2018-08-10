@@ -24,7 +24,7 @@ void main() {
 
   group('from a package URL to', () {
     setUpAll(() {
-      reader = new LibraryReader(new _FakeLibraryElement(packageA));
+      reader = LibraryReader(_FakeLibraryElement(packageA));
     });
 
     test('a dart SDK library', () {
@@ -62,7 +62,7 @@ void main() {
 
   group('from an asset URL representing a package to', () {
     setUpAll(() {
-      reader = new LibraryReader(new _FakeLibraryElement(assetPackageA));
+      reader = LibraryReader(_FakeLibraryElement(assetPackageA));
     });
 
     test('a dart SDK library', () {
@@ -100,7 +100,7 @@ void main() {
 
   group('from an asset URL representing a test directory to', () {
     setUpAll(() {
-      reader = new LibraryReader(new _FakeLibraryElement(packageATestDir));
+      reader = LibraryReader(_FakeLibraryElement(packageATestDir));
     });
 
     test('a dart SDK library', () {
@@ -143,8 +143,8 @@ void main() {
     });
 
     test('in the same package in the test directory, a shallow file', () {
-      reader = new LibraryReader(
-        new _FakeLibraryElement(packageATestDirDeepFile),
+      reader = LibraryReader(
+        _FakeLibraryElement(packageATestDirDeepFile),
       );
       expect(
         reader.pathToUrl(packageATestDir),
@@ -172,7 +172,7 @@ class _FakeLibraryElement implements LibraryElement {
   noSuchMethod(i) => super.noSuchMethod(i);
 
   @override
-  Source get source => new _FakeSource(_sourceUri);
+  Source get source => _FakeSource(_sourceUri);
 }
 
 class _FakeSource implements Source {

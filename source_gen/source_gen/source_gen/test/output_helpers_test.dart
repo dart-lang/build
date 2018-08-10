@@ -13,11 +13,11 @@ void main() {
     _testSimpleValue('String', 'string', ['string']);
     _testSimpleValue('empty List', [], []);
     _testSimpleValue('List', ['a', 'b', 'c'], ['a', 'b', 'c']);
-    _testSimpleValue('Iterable', new Iterable.generate(3, (i) => i.toString()),
-        ['0', '1', '2']);
+    _testSimpleValue(
+        'Iterable', Iterable.generate(3, (i) => i.toString()), ['0', '1', '2']);
 
     _testFunction('Future<Stream>',
-        new Future.value(new Stream.fromIterable(['value'])), ['value']);
+        Future.value(Stream.fromIterable(['value'])), ['value']);
   });
 
   group('invalid values', () {
@@ -25,24 +25,22 @@ void main() {
     _testSimpleValue(
         'mixed good and bad', ['good', 42, 'also good'], throwsArgumentError);
 
-    var badInstance = new _ThrowOnToString();
+    var badInstance = _ThrowOnToString();
     _testSimpleValue('really bad class', badInstance, throwsArgumentError);
 
     _testSimpleValue(
         'iterable with errors', _throwingIterable(), throwsArgumentError);
 
-    _testFunction('sync throw', () => throw new ArgumentError('Error message'),
+    _testFunction('sync throw', () => throw ArgumentError('Error message'),
         throwsArgumentError);
 
     _testFunction(
         'new Future.error',
-        () => new Future.error(new ArgumentError('Error message')),
+        () => Future.error(ArgumentError('Error message')),
         throwsArgumentError);
 
-    _testFunction(
-        'throw in async',
-        () async => throw new ArgumentError('Error message'),
-        throwsArgumentError);
+    _testFunction('throw in async',
+        () async => throw ArgumentError('Error message'), throwsArgumentError);
   });
 }
 
@@ -51,14 +49,14 @@ void _testSimpleValue(String testName, Object value, expected) {
 
   assert(value is! Future);
 
-  _testFunction('Future<$testName>', new Future.value(value), expected);
+  _testFunction('Future<$testName>', Future.value(value), expected);
 
   if (value is Iterable) {
     _testFunction('Stream with values from $testName',
-        new Stream.fromIterable(value), expected);
+        Stream.fromIterable(value), expected);
   } else {
-    _testFunction('Stream single value $testName',
-        new Stream.fromIterable([value]), expected);
+    _testFunction('Stream single value $testName', Stream.fromIterable([value]),
+        expected);
   }
 }
 
@@ -75,12 +73,12 @@ void _testFunction(String testName, value, expected) {
 Iterable<String> _throwingIterable() sync* {
   yield 'a';
   yield 'b';
-  throw new ArgumentError('Error in iterator!');
+  throw ArgumentError('Error in iterator!');
 }
 
 class _ThrowOnToString {
   @override
   String toString() {
-    throw new UnsupportedError('cannot call toString');
+    throw UnsupportedError('cannot call toString');
   }
 }
