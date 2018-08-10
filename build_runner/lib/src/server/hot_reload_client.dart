@@ -41,27 +41,29 @@ external DartLoader get dartLoader;
 @JS('Array.from')
 external List jsArrayFrom(Object any);
 
-List<String> get moduleUrls {
+List<String> get _moduleUrls {
   return List.from(jsArrayFrom(dartLoader.urlToModuleId.keys()));
 }
 
-String moduleIdByPath(String path) =>
+String _moduleIdByPathImpl(String path) =>
     dartLoader.urlToModuleId.get(window.location.origin + '/' + path);
 
-Future<Object> reloadModule(String moduleId) {
+Future<Object> _reloadModuleImpl(String moduleId) {
   var completer = Completer<Object>();
   dartLoader.forceLoadModule(moduleId, allowInterop(completer.complete));
   return completer.future;
 }
 
+/// Provides [listener] to handle web socket connection and reload invalidated
+/// modules
 class ReloadHandler {
   final String Function(String) _moduleIdByPath;
-  final FutureOr<Object> Function(String) _reloadModule;
+  final Future<Object> Function(String) _reloadModule;
   final Map<String, String> _digests;
 
   ReloadHandler(this._digests,
-      [this._moduleIdByPath = moduleIdByPath,
-      this._reloadModule = reloadModule]);
+      [this._moduleIdByPath = _moduleIdByPathImpl,
+      this._reloadModule = _reloadModuleImpl]);
 
   void listener(MessageEvent e) async {
     var updatedAssetDigests =
@@ -81,8 +83,7 @@ class ReloadHandler {
       _digests[path] = updatedAssetDigests[path] as String;
     }
     if (moduleIdsToReload.isNotEmpty) {
-      await Future.wait(moduleIdsToReload
-          .map((moduleId) => Future.value(_reloadModule(moduleId))));
+      await Future.wait(moduleIdsToReload.map(_reloadModule));
       // TODO Search through dependency graph for true parents
       var mainModule = await _reloadModule('web/main');
       callMethod(getProperty(mainModule, 'main'), 'main', []);
@@ -91,7 +92,7 @@ class ReloadHandler {
 }
 
 main() async {
-  var modulePaths = moduleUrls
+  var modulePaths = _moduleUrls
       .map((key) => key.replaceFirst(window.location.origin + '/', ''))
       .toList();
   var modulePathsJson = json.encode(modulePaths);

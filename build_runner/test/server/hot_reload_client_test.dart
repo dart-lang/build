@@ -1,8 +1,9 @@
-// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('browser')
+import 'dart:async';
 import 'dart:html';
 
 import 'package:build_runner/src/server/hot_reload_client.dart';
@@ -12,7 +13,7 @@ import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
 abstract class Methods {
-  Object reloadModule(String moduleId);
+  Future<Object> reloadModule(String moduleId);
 
   main();
 }
@@ -31,7 +32,7 @@ void main() {
     methods = MockMethods();
     handler = ReloadHandler(
         digests, (path) => pathToModuleId[path], methods.reloadModule);
-    when(methods.reloadModule('web/main')).thenAnswer((moduleId) {
+    when(methods.reloadModule('web/main')).thenAnswer((moduleId) async {
       var module = newObject();
       var main = newObject();
       setProperty(module, 'main', main);
@@ -59,7 +60,7 @@ void main() {
     verifyNoMoreInteractions(methods);
   });
 
-  test('dropes .ddc suffix from module id', () async {
+  test('drops .ddc suffix from module id', () async {
     digests['file1'] = 'hash1';
     pathToModuleId['file1'] = 'module1.ddc';
     handler.listener(MessageEvent('', data: '{"file1":"hash2"}'));
