@@ -16,7 +16,7 @@ JsObject _urlToModuleId = _dartLoader['urlToModuleId'];
 List<String> get moduleUrls {
   JsArray callMethod = context['Array']
       .callMethod('from', [_urlToModuleId.callMethod('keys', [])]);
-  return List.castFrom(callMethod);
+  return List.from(callMethod);
 }
 
 String moduleIdByPath(String path) =>
@@ -37,14 +37,15 @@ class ReloadHandler {
   final FutureOr<JsObject> Function(String) _reloadModule;
   final Map<String, String> _digests;
 
-  ReloadHandler(Map<String, String> this._digests,
+  ReloadHandler(this._digests,
       [this._moduleIdByPath = moduleIdByPath,
       this._reloadModule = reloadModule]);
 
   void listener(MessageEvent e) async {
-    Map updatedAssetDigests = json.decode(e.data as String);
+    var updatedAssetDigests =
+        json.decode(e.data as String) as Map<String, dynamic>;
     var moduleIdsToReload = <String>[];
-    for (String path in updatedAssetDigests.keys) {
+    for (var path in updatedAssetDigests.keys) {
       if (_digests[path] == updatedAssetDigests[path]) {
         continue;
       }
@@ -75,8 +76,7 @@ main() async {
 
   var request = await HttpRequest.request('/$_assetsDigestPath',
       responseType: 'json', sendData: modulePathsJson, method: 'POST');
-  var digests =
-      Map.castFrom<dynamic, dynamic, String, String>(request.response as Map);
+  var digests = (request.response as Map).cast<String, String>();
 
   var handler = ReloadHandler(digests);
 
