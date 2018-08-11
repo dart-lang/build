@@ -34,7 +34,7 @@ main(List<String> args) async {
         hideOutput: false,
         defaultGenerateFor: InputSet(include: [
           'lib/src/server/graph_viz_main.dart',
-          'lib/src/server/hot_reload_client.dart',
+          'lib/src/server/hot_reload_client/client.dart',
         ])),
   ]);
 }

@@ -2,13 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@TestOn('browser')
 import 'dart:async';
-import 'dart:html';
 
-import 'package:build_runner/src/server/hot_reload_client.dart';
-import 'package:js/js.dart';
-import 'package:js/js_util.dart';
+import 'package:build_runner/src/server/hot_reload_client/reload_handler.dart';
+
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
@@ -30,26 +27,20 @@ void main() {
     digests = {};
     pathToModuleId = {};
     methods = MockMethods();
-    handler = ReloadHandler(
-        digests, (path) => pathToModuleId[path], methods.reloadModule);
-    when(methods.reloadModule('web/main')).thenAnswer((moduleId) async {
-      var module = newObject();
-      var main = newObject();
-      setProperty(module, 'main', main);
-      setProperty(main, 'main', allowInterop(methods.main));
-      return module;
-    });
+    handler = ReloadHandler(digests, (path) => pathToModuleId[path],
+        methods.reloadModule, (m) => methods.main());
+    when(methods.reloadModule(any)).thenAnswer((moduleId) async => null);
   });
 
   test('do not reload on empty events', () {
-    handler.listener(MessageEvent('', data: '{}'));
+    handler.listener('{}');
     verifyNever(methods.reloadModule(any));
   });
 
   test('reload outdated modules and update digest', () async {
     digests['file1'] = 'hash1';
     pathToModuleId['file1'] = 'module1';
-    handler.listener(MessageEvent('', data: '{"file1":"hash2"}'));
+    handler.listener('{"file1":"hash2"}');
     expect(digests['file1'], 'hash2');
     await untilCalled(methods.main());
     verifyInOrder([
@@ -63,7 +54,7 @@ void main() {
   test('drops .ddc suffix from module id', () async {
     digests['file1'] = 'hash1';
     pathToModuleId['file1'] = 'module1.ddc';
-    handler.listener(MessageEvent('', data: '{"file1":"hash2"}'));
+    handler.listener('{"file1":"hash2"}');
     expect(digests['file1'], 'hash2');
     await untilCalled(methods.main());
     verify(methods.reloadModule('module1'));
@@ -73,14 +64,14 @@ void main() {
   test('do not reload up to date modules', () {
     digests['file1'] = 'hash1';
     pathToModuleId['file1'] = 'module1';
-    handler.listener(MessageEvent('', data: '{"file1":"hash1"}'));
+    handler.listener('{"file1":"hash1"}');
     verifyZeroInteractions(methods);
   });
 
   test('do not reload random non-module files, but remember their digest', () {
     digests['file1'] = 'hash1';
     pathToModuleId['file1'] = 'module1';
-    handler.listener(MessageEvent('', data: '{"file2":"hash2"}'));
+    handler.listener('{"file2":"hash2"}');
     expect(digests['file2'], 'hash2');
     verifyZeroInteractions(methods);
   });

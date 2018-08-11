@@ -226,7 +226,7 @@ shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
 /// Now only live-reload functional - just reload page on update message
 final _buildUpdatesInjectedJS = '''\n
 // Injected by build_runner for live reload support
-window.\$dartLoader.forceLoadModule('packages/build_runner/src/server/hot_reload_client.dart')
+window.\$dartLoader.forceLoadModule('packages/build_runner/src/server/hot_reload_client/client.dart')
 ''';
 
 class AssetHandler {

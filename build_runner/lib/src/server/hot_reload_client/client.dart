@@ -9,6 +9,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
 
+import 'package:build_runner/src/server/hot_reload_client/reload_handler.dart';
+
 import 'package:js/js.dart';
 import 'package:js/js_util.dart';
 
@@ -45,50 +47,13 @@ List<String> get _moduleUrls {
   return List.from(jsArrayFrom(dartLoader.urlToModuleId.keys()));
 }
 
-String _moduleIdByPathImpl(String path) =>
+String _moduleIdByPath(String path) =>
     dartLoader.urlToModuleId.get(window.location.origin + '/' + path);
 
-Future<Object> _reloadModuleImpl(String moduleId) {
+Future<Object> _reloadModule(String moduleId) {
   var completer = Completer<Object>();
   dartLoader.forceLoadModule(moduleId, allowInterop(completer.complete));
   return completer.future;
-}
-
-/// Provides [listener] to handle web socket connection and reload invalidated
-/// modules
-class ReloadHandler {
-  final String Function(String) _moduleIdByPath;
-  final Future<Object> Function(String) _reloadModule;
-  final Map<String, String> _digests;
-
-  ReloadHandler(this._digests,
-      [this._moduleIdByPath = _moduleIdByPathImpl,
-      this._reloadModule = _reloadModuleImpl]);
-
-  void listener(MessageEvent e) async {
-    var updatedAssetDigests =
-        json.decode(e.data as String) as Map<String, dynamic>;
-    var moduleIdsToReload = <String>[];
-    for (var path in updatedAssetDigests.keys) {
-      if (_digests[path] == updatedAssetDigests[path]) {
-        continue;
-      }
-      var moduleId = _moduleIdByPath(path);
-      if (_digests.containsKey(path) && moduleId != null) {
-        if (moduleId.endsWith('.ddc')) {
-          moduleId = moduleId.substring(0, moduleId.length - 4);
-        }
-        moduleIdsToReload.add(moduleId);
-      }
-      _digests[path] = updatedAssetDigests[path] as String;
-    }
-    if (moduleIdsToReload.isNotEmpty) {
-      await Future.wait(moduleIdsToReload.map(_reloadModule));
-      // TODO Search through dependency graph for true parents
-      var mainModule = await _reloadModule('web/main');
-      callMethod(getProperty(mainModule, 'main'), 'main', []);
-    }
-  }
 }
 
 main() async {
@@ -101,9 +66,10 @@ main() async {
       responseType: 'json', sendData: modulePathsJson, method: 'POST');
   var digests = (request.response as Map).cast<String, String>();
 
-  var handler = ReloadHandler(digests);
+  var handler = ReloadHandler(digests, _moduleIdByPath, _reloadModule,
+      (module) => callMethod(getProperty(module, 'main'), 'main', []));
 
   var webSocket =
       WebSocket('ws://' + window.location.host, [_buildUpdatesProtocol]);
-  webSocket.onMessage.listen(handler.listener);
+  webSocket.onMessage.listen((event) => handler.listener(event.data as String));
 }
