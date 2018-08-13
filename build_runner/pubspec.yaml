@@ -26,6 +26,7 @@ dependencies:
   graphs: ^0.1.0
   http_multi_server: ^2.0.0
   io: ^0.3.0
+  js: ^0.6.1+1
   logging: ^0.11.2
   meta: ^1.1.0
   mime: ^0.9.3
@@ -45,6 +46,7 @@ dev_dependencies:
   build_test: ^0.10.0
   build_modules: ^0.3.0
   build_web_compilers: ^0.4.0
+  mockito: ^3.0.0
   package_resolver: ^1.0.2
   stream_channel: ^1.6.0
   test: ^1.0.0
