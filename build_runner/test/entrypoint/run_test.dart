@@ -174,4 +174,17 @@ main() {
             '"foo/bar:build"')));
     await stdoutController.close();
   });
+
+  test('Handles socket errors gracefully', () async {
+    var server = await HttpServer.bind('localhost', 8080);
+    addTearDown(server.close);
+
+    var process =
+        await runPub('a', 'run', args: ['build_runner', 'serve', 'web:8080']);
+    expect(process.exitCode, ExitCode.osError.code);
+    expect(
+        process.stdout,
+        allOf(contains('Error starting server'), contains('8080'),
+            contains('address is already in use')));
+  });
 }
