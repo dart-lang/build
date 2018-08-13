@@ -211,8 +211,8 @@ class AssetBasedSource extends Source {
     _contentsForUpdateDependencies = contents;
     var unit = parseDirectives(contents, suppressErrors: true);
     _dependentAssets = unit.directives
-        .where((d) => d is UriBasedDirective)
-        .map((d) => _resolve(assetId, (d as UriBasedDirective).uri.stringValue))
+        .whereType<UriBasedDirective>()
+        .map((d) => _resolve(assetId, d.uri.stringValue))
         .where((id) => id != null)
         .toSet();
   }

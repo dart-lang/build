@@ -51,7 +51,8 @@ class FileBasedAssetReader extends AssetReader
     return glob
         .list(followLinks: true, root: packageNode.path)
         .where((e) => e is File && !path.basename(e.path).startsWith('._'))
-        .map((file) => _fileToAssetId(file as File, packageNode));
+        .cast<File>()
+        .map((file) => _fileToAssetId(file, packageNode));
   }
 
   @override

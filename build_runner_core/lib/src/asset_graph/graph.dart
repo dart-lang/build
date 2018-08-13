@@ -221,12 +221,12 @@ class AssetGraph {
   /// All the generated outputs for a particular phase.
   Iterable<GeneratedAssetNode> outputsForPhase(String package, int phase) =>
       packageNodes(package)
-          .where((n) => n is GeneratedAssetNode && n.phaseNumber == phase)
-          .cast<GeneratedAssetNode>();
+          .whereType<GeneratedAssetNode>()
+          .where((n) => n.phaseNumber == phase);
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
-      allNodes.where((n) => n is SourceAssetNode).map((n) => n.id);
+      allNodes.whereType<SourceAssetNode>().map((n) => n.id);
 
   /// Updates graph structure, invalidating and deleting any outputs that were
   /// affected.
