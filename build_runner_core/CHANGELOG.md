@@ -1,3 +1,8 @@
+## 0.3.1+4
+
+- Removed the constraint on reading files that output to cache from files that
+  output to source.
+
 ## 0.3.1+3
 
 - Bug Fix: Don't output a `packages` symlink within the `packages` directory.

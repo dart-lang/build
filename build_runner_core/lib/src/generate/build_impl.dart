@@ -387,10 +387,7 @@ class _SingleBuild {
   FutureOr<bool> _isReadableNode(
       AssetNode node, int phaseNum, String fromPackage) {
     if (node is GeneratedAssetNode) {
-      var phase = _buildPhases[phaseNum];
       if (node.phaseNumber >= phaseNum) return false;
-      if (!phase.hideOutput && node.isHidden && node.id.package != fromPackage)
-        return false;
       return doAfter(
           _ensureAssetIsBuilt(node), (_) => node.wasOutput && !node.isFailure);
     }

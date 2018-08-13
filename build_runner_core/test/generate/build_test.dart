@@ -505,7 +505,7 @@ void main() {
       });
 
       test(
-          'disallows reading hidden outputs from another package to create '
+          'allows reading hidden outputs from another package to create '
           'a non-hidden output', () async {
         await testBuilders(
             [
@@ -519,7 +519,7 @@ void main() {
             packageGraph: packageGraph,
             outputs: {
               r'$$b|lib/b.txt.copy': 'b',
-              r'a|lib/a.txt.check_can_read': 'false',
+              r'a|lib/a.txt.check_can_read': 'true',
             });
       });
 
@@ -539,25 +539,6 @@ void main() {
               r'$$a|lib/a.txt.copy': 'a',
               r'a|lib/a.txt.copy.check_can_read': 'true',
               r'a|lib/a.txt.check_can_read': 'true',
-            });
-      });
-
-      test(
-          'disallows reading hidden outputs in dep to create a non-hidden output',
-          () async {
-        await testBuilders(
-            [
-              apply('b|hidden', [(_) => TestBuilder()], toPackage('b'),
-                  hideOutput: true),
-              applyToRoot(TestBuilder(
-                  buildExtensions: appendExtension('.clone'),
-                  build: writeCanRead(makeAssetId('b|lib/b.txt.copy'))))
-            ],
-            {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
-            packageGraph: packageGraph,
-            outputs: {
-              r'$$b|lib/b.txt.copy': 'b',
-              r'a|lib/a.txt.clone': 'false',
             });
       });
 
