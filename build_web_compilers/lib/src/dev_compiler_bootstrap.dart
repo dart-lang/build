@@ -79,20 +79,20 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
             : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
+  var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
+  var bootstrapModuleName = _context.withoutExtension(_context.relative(
+      bootstrapId.path,
+      from: _context.dirname(dartEntrypointId.path)));
+
   var bootstrapContent =
       StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
 
-  bootstrapContent.write(_appBootstrap(
-      appModuleName, appModuleScope, ignoreCastFailures, enableSyncAsync));
+  bootstrapContent.write(_appBootstrap(bootstrapModuleName, appModuleName,
+      appModuleScope, ignoreCastFailures, enableSyncAsync));
 
-  var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
-
-  var bootstrapModuleName = _context.withoutExtension(_context.relative(
-      bootstrapId.path,
-      from: _context.dirname(dartEntrypointId.path)));
 
   var entrypointJsContent = _entryPointJs(bootstrapModuleName);
   await buildStep.writeAsString(
@@ -136,15 +136,23 @@ String _ddcModuleName(AssetId jsId) {
 /// `[moduleScope].main()` function on it.
 ///
 /// Also performs other necessary initialization.
-String _appBootstrap(String moduleName, String moduleScope,
-        bool ignoreCastFailures, bool enableSyncAsync) =>
+String _appBootstrap(String bootstrapModuleName, String moduleName,
+    String moduleScope, bool ignoreCastFailures, bool enableSyncAsync) =>
     '''
-require(["$moduleName", "dart_sdk"], function(app, dart_sdk) {
+define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.ignoreWhitelistedErrors($ignoreCastFailures);
   dart_sdk.dart.setStartAsyncSynchronously($enableSyncAsync);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
 $_initializeTools
   app.$moduleScope.main();
+  return {
+    hot\$onChildUpdate: function(childName, child) {
+      if (childName === "$moduleName") {
+        child.$moduleScope.main();
+        return true;
+      }
+    }
+  };
 });
 })();
 ''';
@@ -225,9 +233,13 @@ if(!window.\$dartLoader) {
    window.\$dartLoader = {
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
+     moduleParentsGraph: new Map(),
      rootDirectories: new Array(),
      forceLoadModule: function (moduleName, callback) {
        requirejs.undef(moduleName);
+       requirejs([moduleName], callback);
+     },
+     loadModule: function (moduleName, callback) {
        requirejs([moduleName], callback);
      },
    };
@@ -324,6 +336,16 @@ require.config({
     waitSeconds: 0,
     paths: customModulePaths
 });
+
+requirejs.onResourceLoad = function (context, map, depArray) {
+  // TODO Handle dynamic changes in module dependancies
+  for (const dep of depArray) {
+    if (!\$dartLoader.moduleParentsGraph.has(dep.name)) {
+      \$dartLoader.moduleParentsGraph.set(dep.name, []);
+    }
+    \$dartLoader.moduleParentsGraph.get(dep.name).push(map.name);
+  }
+};
 ''';
 
 /// Marker comment used by build_runner (or any other thinks) to identify
