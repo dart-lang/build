@@ -1,3 +1,7 @@
+## 0.3.1+3
+
+- Bug Fix: Don't output a `packages` symlink within the `packages` directory.
+
 ## 0.3.1+2
 
 - Restore `new` keyword for a working release on Dart 1 VM.
