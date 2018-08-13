@@ -12,7 +12,7 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
 
 import '../generate/build.dart';
-import '../server/server.dart';
+import '../logging/std_io_logging.dart';
 import 'options.dart';
 import 'watch.dart';
 
@@ -50,6 +50,22 @@ class ServeCommand extends WatchCommand {
   @override
   Future<int> run() async {
     var options = readOptions();
+    final servers = <ServeTarget, HttpServer>{};
+    try {
+      await Future.wait(options.serveTargets.map((target) async {
+        servers[target] = await _bindServer(options, target);
+      }));
+    } on SocketException catch (e) {
+      var listener = Logger.root.onRecord
+          .listen(stdIOLogListener(assumeTty: options.assumeTty));
+      logger.severe(
+          'Error starting server at ${e.address.address}:${e.port}, address '
+          'is already in use. Please kill the server running on that port or '
+          'serve on a different port and restart this process.');
+      await listener.cancel();
+      return ExitCode.osError.code;
+    }
+
     var handler = await watch(
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
@@ -70,9 +86,15 @@ class ServeCommand extends WatchCommand {
 
     if (handler == null) return ExitCode.config.code;
 
+    servers.forEach((target, server) {
+      serveRequests(
+          server,
+          handler.handlerFor(target.dir,
+              logRequests: options.logRequests,
+              liveReload: options.liveReload));
+    });
+
     _ensureBuildWebCompilersDependency(packageGraph, logger);
-    var servers = await Future.wait(options.serveTargets
-        .map((target) => _startServer(options, target, handler)));
     await handler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
@@ -87,20 +109,10 @@ class ServeCommand extends WatchCommand {
       }
     }
     await handler.buildResults.drain();
-    await Future.wait(servers.map((server) => server.close()));
+    await Future.wait(servers.values.map((server) => server.close()));
 
     return ExitCode.success.code;
   }
-}
-
-Future<HttpServer> _startServer(
-    ServeOptions options, ServeTarget target, ServeHandler handler) async {
-  var server = await _bindServer(options, target);
-  serveRequests(
-      server,
-      handler.handlerFor(target.dir,
-          logRequests: options.logRequests, liveReload: options.liveReload));
-  return server;
 }
 
 Future<HttpServer> _bindServer(ServeOptions options, ServeTarget target) {
