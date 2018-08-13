@@ -211,8 +211,8 @@ class AssetBasedSource extends Source {
     _contentsForUpdateDependencies = contents;
     var unit = parseDirectives(contents, suppressErrors: true);
     _dependentAssets = unit.directives
-        .where((d) => d is UriBasedDirective)
-        .map((d) => _resolve(assetId, (d as UriBasedDirective).uri.stringValue))
+        .whereType<UriBasedDirective>()
+        .map((d) => _resolve(assetId, d.uri.stringValue))
         .where((id) => id != null)
         .toSet();
   }
@@ -428,7 +428,8 @@ class AnalyzerResolvers implements Resolvers {
     _initAnalysisEngine();
     var resourceProvider = PhysicalResourceProvider.INSTANCE;
     var sdk = FolderBasedDartSdk(
-        resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()));
+        resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()))
+      ..useSummary = true;
     var uriResolver = DartUriResolver(sdk);
     return AnalyzerResolvers._(AnalyzerResolver(uriResolver, analysisOptions));
   }

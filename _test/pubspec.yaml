@@ -1,8 +1,8 @@
 name: _test
-description: A basic web app
+publish_to: none
 
 environment:
-  sdk: '>=2.0.0-dev.61 <3.0.0'
+  sdk: ">=2.0.0 <3.0.0"
 
 dev_dependencies:
   analyzer: ">=0.30.0 <0.33.0"

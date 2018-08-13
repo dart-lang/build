@@ -1,3 +1,18 @@
+## 0.2.2+2
+
+- Use sdk summaries for the analysis context, which makes getting the initial
+  resolver faster (reapplied).
+
+## 0.2.2+1
+
+- Restore `new` keyword for a working release on Dart 1 VM.
+
+## 0.2.2
+
+- Use sdk summaries for the analysis context, which makes getting the initial
+  resolver faster.
+- Release broken on Dart 1 VM.
+
 ## 0.2.1+1
 
 - Increased the upper bound for the sdk to `<3.0.0`.

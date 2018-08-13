@@ -5,10 +5,10 @@ author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/scratch_space
 
 environment:
-  sdk: '>=2.0.0-dev.9 <3.0.0'
+  sdk: ">=2.0.0 <3.0.0"
 
 dependencies:
-  build: '>=0.10.0 <0.13.0'
+  build: ">=0.10.0 <0.13.0"
   crypto: ">=2.0.3 <3.0.0"
   path: ^1.1.0
   pool: ^1.0.0

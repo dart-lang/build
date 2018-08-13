@@ -93,10 +93,8 @@ Future<String> _missingImportMessage(
     AssetId sourceId, AssetId missingId, AssetReader reader) async {
   var contents = await reader.readAsString(sourceId);
   var parsed = parseDirectives(contents, suppressErrors: true);
-  var import = parsed.directives
-      .where((directive) => directive is UriBasedDirective)
-      .cast<UriBasedDirective>()
-      .firstWhere((directive) {
+  var import =
+      parsed.directives.whereType<UriBasedDirective>().firstWhere((directive) {
     var uriString = directive.uri.stringValue;
     if (uriString.startsWith('dart:')) return false;
     var id = AssetId.resolve(uriString, from: sourceId);

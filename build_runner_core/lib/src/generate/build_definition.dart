@@ -399,12 +399,14 @@ class _Loader {
   Stream<AssetId> _mergeAll(Iterable<Stream<AssetId>> streams) =>
       streams.first.transform(mergeAll(streams.skip(1)));
 
-  Stream<AssetId> _listAssetIds(TargetNode targetNode) =>
-      targetNode.sourceIncludes.isEmpty
-          ? Stream<AssetId>.empty()
-          : _mergeAll(targetNode.sourceIncludes.map((glob) =>
-              _listIdsSafe(glob, package: targetNode.package.name)
-                  .where((id) => !targetNode.excludesSource(id))));
+  Stream<AssetId> _listAssetIds(TargetNode targetNode) => targetNode
+          .sourceIncludes.isEmpty
+      ? Stream<AssetId>.empty()
+      : _mergeAll(targetNode.sourceIncludes.map((glob) =>
+          _listIdsSafe(glob, package: targetNode.package.name)
+              .where((id) =>
+                  targetNode.package.isRoot || id.pathSegments.first == 'lib')
+              .where((id) => !targetNode.excludesSource(id))));
 
   Stream<AssetId> _listGeneratedAssetIds() {
     var glob = Glob('$generatedOutputDirectory/**');

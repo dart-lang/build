@@ -1,3 +1,24 @@
+## 0.3.1+4
+
+- Removed the constraint on reading files that output to cache from files that
+  output to source.
+
+## 0.3.1+3
+
+- Bug Fix: Don't output a `packages` symlink within the `packages` directory.
+
+## 0.3.1+2
+
+- Restore `new` keyword for a working release on Dart 1 VM.
+- Bug Fix: Don't include any non-lib assets from dependencies in the build, even
+  if they are a source in a target.
+
+## 0.3.1+1
+
+- Bug Fix: Don't include any non-lib assets from dependencies in the build, even
+  if they are a source in a target.
+- Release broken on Dart 1 VM.
+
 ## 0.3.1
 
 - Migrated glob tracking to a specialized node type to fix dart-lang/build#1702.
