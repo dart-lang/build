@@ -32,8 +32,8 @@ void main() {
     pathToModuleId['file1'] = 'module1';
     handler.listener('{"file1":"hash2"}');
     expect(digests['file1'], 'hash2');
-    await untilCalled(manager.run(any));
-    verify(manager.run(['module1']));
+    await untilCalled(manager.reload(any));
+    verify(manager.reload(['module1']));
   });
 
   test('drops .ddc suffix from module id', () async {
@@ -41,9 +41,9 @@ void main() {
     pathToModuleId['file1'] = 'module1.ddc';
     handler.listener('{"file1":"hash2"}');
     expect(digests['file1'], 'hash2');
-    await untilCalled(manager.run(any));
-    verify(manager.run(['module1']));
-    verifyNever(manager.run(['module1.ddc']));
+    await untilCalled(manager.reload(any));
+    verify(manager.reload(['module1']));
+    verifyNever(manager.reload(['module1.ddc']));
   });
 
   test('do not reload up to date modules', () {

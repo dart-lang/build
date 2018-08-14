@@ -137,7 +137,7 @@ String _ddcModuleName(AssetId jsId) {
 ///
 /// Also performs other necessary initialization.
 String _appBootstrap(String bootstrapModuleName, String moduleName,
-    String moduleScope, bool ignoreCastFailures, bool enableSyncAsync) =>
+        String moduleScope, bool ignoreCastFailures, bool enableSyncAsync) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.ignoreWhitelistedErrors($ignoreCastFailures);

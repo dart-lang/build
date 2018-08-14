@@ -33,7 +33,7 @@ class ReloadHandler {
     }
     if (moduleIdsToReload.isNotEmpty) {
       _reloadingManager.updateGraph();
-      await _reloadingManager.run(moduleIdsToReload);
+      await _reloadingManager.reload(moduleIdsToReload);
     }
   }
 }

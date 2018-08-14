@@ -14,11 +14,11 @@ abstract class Module {
 
   bool get hasOnChildUpdate;
 
-  void onDestroy(Map data);
+  Object onDestroy();
 
-  bool onSelfUpdate(Map data);
+  bool onSelfUpdate([Object data]);
 
-  bool onChildUpdate(String childId, Module child, [Map data]);
+  bool onChildUpdate(String childId, Module child, [Object data]);
 }
 
 /// Handles reloading order and hooks invocation
@@ -30,7 +30,7 @@ class ReloadingManager {
   final Iterable<String> Function() _allModules;
 
   final Map<String, int> _moduleOrdering = {};
-  SplayTreeSet<String> _dirty;
+  SplayTreeSet<String> _dirtyModules;
   Completer<void> _running = Completer()..complete();
 
   int moduleTopologicalCompare(String module1, String module2) {
@@ -55,11 +55,11 @@ class ReloadingManager {
 
   ReloadingManager(this._reloadModule, this._loadModule, this._reloadPage,
       this._moduleParents, this._allModules) {
-    _dirty = SplayTreeSet(moduleTopologicalCompare);
+    _dirtyModules = SplayTreeSet(moduleTopologicalCompare);
   }
 
-  Future<void> run(List<String> modules) async {
-    _dirty.addAll(modules);
+  Future<void> reload(List<String> modules) async {
+    _dirtyModules.addAll(modules);
 
     // As function is async, it can potentially be called second time while
     // first invocation is still running. In this case just mark as dirty and
@@ -67,15 +67,14 @@ class ReloadingManager {
     if (!_running.isCompleted) return await _running.future;
     _running = Completer();
 
-    while (_dirty.isNotEmpty) {
-      var moduleId = _dirty.first;
-      _dirty.remove(moduleId);
+    while (_dirtyModules.isNotEmpty) {
+      var moduleId = _dirtyModules.first;
+      _dirtyModules.remove(moduleId);
 
       var existing = await _loadModule(moduleId);
-      Map data;
+      Object data;
       if (existing.hasOnDestroy) {
-        data = {};
-        existing.onDestroy(data);
+        data = existing.onDestroy();
       }
 
       var newVersion = await _reloadModule(moduleId);
@@ -92,6 +91,7 @@ class ReloadingManager {
 
       var parentIds = _moduleParents(moduleId);
       if (parentIds == null || parentIds.isEmpty) {
+        // Propagating from root should cause page reload
         _reloadPage();
         _running.complete();
         return;
@@ -108,7 +108,7 @@ class ReloadingManager {
           _running.complete();
           return;
         }
-        _dirty.add(parentId);
+        _dirtyModules.add(parentId);
       }
     }
     _running.complete();

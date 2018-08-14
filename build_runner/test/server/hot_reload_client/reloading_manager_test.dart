@@ -67,7 +67,7 @@ void main() {
 
   test('propagating from root triggers page reload', () async {
     var manager = initManager({'root': []});
-    await manager.run(['root']);
+    await manager.reload(['root']);
     verifyInOrder([methods.reloadModule('root'), methods.reloadPage()]);
   });
 
@@ -81,7 +81,7 @@ void main() {
     });
 
     test('propagate to parent if hooks not implemented', () async {
-      await manager.run(['child']);
+      await manager.reload(['child']);
       verifyInOrder(
           [methods.reloadModule('child'), methods.reloadModule('parent')]);
     });
@@ -97,7 +97,7 @@ void main() {
       test('stop propagation if onSelfUpdate returns true', () async {
         when(newChildModule.onSelfUpdate(any)).thenReturn(true);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verify(methods.reloadModule('child'));
         verifyNever(methods.reloadModule('parent'));
       });
@@ -105,7 +105,7 @@ void main() {
       test('do not stop propagation if onSelfUpdate returns null', () async {
         when(newChildModule.onSelfUpdate(any)).thenReturn(null);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verifyInOrder(
             [methods.reloadModule('child'), methods.reloadModule('parent')]);
       });
@@ -113,7 +113,7 @@ void main() {
       test('reload page if onSelfUpdate returns false', () async {
         when(newChildModule.onSelfUpdate(any)).thenReturn(false);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verifyInOrder([methods.reloadModule('child'), methods.reloadPage()]);
         verifyNever(methods.reloadModule('parent'));
       });
@@ -131,7 +131,7 @@ void main() {
       test('stop propagation if onChildUpdate returns true', () async {
         when(oldParentModule.onChildUpdate('child', any, any)).thenReturn(true);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verify(methods.reloadModule('child'));
         verifyNever(methods.reloadModule('parent'));
       });
@@ -139,7 +139,7 @@ void main() {
       test('do not stop propagation if onChildUpdate returns null', () async {
         when(oldParentModule.onChildUpdate('child', any, any)).thenReturn(null);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verifyInOrder(
             [methods.reloadModule('child'), methods.reloadModule('parent')]);
       });
@@ -148,7 +148,7 @@ void main() {
         when(oldParentModule.onChildUpdate('child', any, any))
             .thenReturn(false);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verifyInOrder([methods.reloadModule('child'), methods.reloadPage()]);
         verifyNever(methods.reloadModule('parent'));
       });
@@ -158,31 +158,26 @@ void main() {
       setUp(() {
         var oldChildModule = mockModuleOld('child');
         when(oldChildModule.hasOnDestroy).thenReturn(true);
-        when(oldChildModule.onDestroy(any) as dynamic).thenAnswer((invocation) {
-          var data = invocation.positionalArguments[0] as Map;
-          data['some_key'] = 'some_value';
-        });
+        when(oldChildModule.onDestroy()).thenReturn({'some_key': 'some_value'});
       });
 
       test('pass onDestroy data to self', () async {
         var newChildModule = mockModuleNew('child');
         when(newChildModule.hasOnSelfUpdate).thenReturn(true);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verify(methods.reloadModule('child'));
-        verify(newChildModule
-            .onSelfUpdate(<dynamic, dynamic>{'some_key': 'some_value'}));
+        verify(newChildModule.onSelfUpdate({'some_key': 'some_value'}));
       });
 
       test('pass onDestroy data to parent', () async {
         var oldParentModule = mockModuleOld('parent');
         when(oldParentModule.hasOnChildUpdate).thenReturn(true);
-        when(oldParentModule.onChildUpdate('child', any, any)).thenReturn(true);
 
-        await manager.run(['child']);
+        await manager.reload(['child']);
         verify(methods.reloadModule('child'));
-        verify(oldParentModule.onChildUpdate(
-            'child', any, <dynamic, dynamic>{'some_key': 'some_value'}));
+        verify(oldParentModule
+            .onChildUpdate('child', any, {'some_key': 'some_value'}));
       });
     });
   });
@@ -213,7 +208,7 @@ void main() {
       when(oldParent.hasOnChildUpdate).thenReturn(true);
       when(oldSubParent.hasOnChildUpdate).thenReturn(true);
       when(oldExtraParent.hasOnChildUpdate).thenReturn(true);
-      await manager.run(['child']);
+      await manager.reload(['child']);
       verifyInOrder([
         oldSubParent.onChildUpdate('child', any, any),
         oldParent.onChildUpdate('child', any, any),
@@ -222,12 +217,12 @@ void main() {
     });
 
     test('reload only once on invalidation and propagation', () async {
-      await manager.run(['child', 'subparent']);
+      await manager.reload(['child', 'subparent']);
       verify(methods.reloadModule('subparent')).called(1);
     });
 
     test('reload only once on multiple propagations', () async {
-      await manager.run(['child']);
+      await manager.reload(['child']);
       verify(methods.reloadModule('parent')).called(1);
     });
 
@@ -236,7 +231,7 @@ void main() {
       when(oldParent.hasOnChildUpdate).thenReturn(true);
       when(oldParent.onChildUpdate('child', any, any)).thenReturn(true);
       when(oldParent.onChildUpdate('subparent', any, any)).thenReturn(null);
-      await manager.run(['child']);
+      await manager.reload(['child']);
       verify(methods.reloadModule('parent')).called(1);
     });
 

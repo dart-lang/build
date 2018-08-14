@@ -23,11 +23,14 @@ final _buildUpdatesProtocol = r'$livereload';
 abstract class HotReloadableModule {
   /// Implement this function with any code to release resources before destroy.
   ///
-  /// If you need to save state of module, you can use [data] for this.
+  /// Any object returned from this function will be passed to update hooks. Use
+  /// it to save any state you need to be preserved between hot reloadings.
+  /// Try do not use any custom types here, as it might prevent their code from
+  /// reloading. Better serialise to JSON or plain types.
   ///
   /// This function will be called on old version of module before unloading.
   @JS()
-  external void hot$onDestroy(Map data);
+  external Object hot$onDestroy();
 
   /// Implement this function to handle update of the module itself.
   ///
@@ -36,12 +39,11 @@ abstract class HotReloadableModule {
   /// will lead to full page reload. If null returned, reloading will be
   /// propagated to parent.
   ///
-  /// If any state was saved from previous state, it will be passed to [data].
-  /// Otherwise null will be passed.
+  /// If any state was saved from previous version, it will be passed to [data].
   ///
   /// This function will be called on new version of module after reloading.
   @JS()
-  external bool hot$onSelfUpdate(Map data);
+  external bool hot$onSelfUpdate([Object data]);
 
   /// Implement this function to handle update of child modules.
   ///
@@ -52,14 +54,13 @@ abstract class HotReloadableModule {
   ///
   /// The name of the child will be provided in [childId]. New version of child
   /// module object will be provided in [child].
-  /// If any state was saved from previous state, it will be passed to [data].
-  /// Otherwise null will be passed.
+  /// If any state was saved from previous version, it will be passed to [data].
   ///
   /// This function will be called on old version of module current after child
   /// reloading.
   @JS()
   external bool hot$onChildUpdate(String childId, HotReloadableModule child,
-      [Map data]);
+      [Object data]);
 }
 
 class ModuleWrapper implements Module {
@@ -80,15 +81,14 @@ class ModuleWrapper implements Module {
       _internal != null && hasProperty(_internal, r'hot$onChildUpdate');
 
   @override
-  void onDestroy(Map data) => _internal.hot$onDestroy(data);
+  Object onDestroy() => _internal.hot$onDestroy();
 
   @override
-  bool onSelfUpdate(Map data) => _internal.hot$onSelfUpdate(data);
+  bool onSelfUpdate([Object data]) => _internal.hot$onSelfUpdate(data);
 
   @override
-  bool onChildUpdate(String childId, Module child, [Map data]) =>
-      _internal
-          .hot$onChildUpdate(childId, (child as ModuleWrapper)._internal, data);
+  bool onChildUpdate(String childId, Module child, [Object data]) => _internal
+      .hot$onChildUpdate(childId, (child as ModuleWrapper)._internal, data);
 }
 
 @JS('Map')
@@ -110,12 +110,12 @@ class DartLoader {
   external JsMap<String, List<String>> get moduleParentsGraph;
 
   @JS()
-  external void forceLoadModule(String moduleId,
-      void Function(HotReloadableModule module) callback);
+  external void forceLoadModule(
+      String moduleId, void Function(HotReloadableModule module) callback);
 
   @JS()
-  external void loadModule(String moduleId,
-      void Function(HotReloadableModule module) callback);
+  external void loadModule(
+      String moduleId, void Function(HotReloadableModule module) callback);
 }
 
 @JS(r'$dartLoader')
@@ -165,12 +165,11 @@ main() async {
       _reloadModule,
       _loadModule,
       _reloadPage,
-          (module) => dartLoader.moduleParentsGraph.get(module),
-          () => keys(dartLoader.moduleParentsGraph));
+      (module) => dartLoader.moduleParentsGraph.get(module),
+      () => keys(dartLoader.moduleParentsGraph));
 
   var handler = ReloadHandler(digests,
-          (path) => dartLoader.urlToModuleId.get(currentOrigin + path),
-      manager);
+      (path) => dartLoader.urlToModuleId.get(currentOrigin + path), manager);
 
   var webSocket =
       WebSocket('ws://' + window.location.host, [_buildUpdatesProtocol]);
