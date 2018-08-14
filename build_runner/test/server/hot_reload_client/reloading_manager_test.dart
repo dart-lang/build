@@ -71,6 +71,13 @@ void main() {
     verifyInOrder([methods.reloadModule('root'), methods.reloadPage()]);
   });
 
+  test('reloadind error triggers page reload', () async {
+    var manager = initManager({'root': []});
+    when(methods.reloadModule('root')).thenThrow(DeferredLoadException(''));
+    await manager.reload(['root']);
+    verify(methods.reloadPage());
+  });
+
   group('basic child-parent propagation', () {
     ReloadingManager manager;
 

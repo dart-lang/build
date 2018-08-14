@@ -67,40 +67,21 @@ class ReloadingManager {
     if (!_running.isCompleted) return await _running.future;
     _running = Completer();
 
-    while (_dirtyModules.isNotEmpty) {
-      var moduleId = _dirtyModules.first;
-      _dirtyModules.remove(moduleId);
+    try {
+      while (_dirtyModules.isNotEmpty) {
+        var moduleId = _dirtyModules.first;
+        _dirtyModules.remove(moduleId);
 
-      var existing = await _loadModule(moduleId);
-      Object data;
-      if (existing.hasOnDestroy) {
-        data = existing.onDestroy();
-      }
+        var existing = await _loadModule(moduleId);
+        Object data;
+        if (existing.hasOnDestroy) {
+          data = existing.onDestroy();
+        }
 
-      var newVersion = await _reloadModule(moduleId);
-      bool success;
-      if (newVersion.hasOnSelfUpdate) {
-        success = newVersion.onSelfUpdate(data);
-      }
-      if (success == true) continue;
-      if (success == false) {
-        _reloadPage();
-        _running.complete();
-        return;
-      }
-
-      var parentIds = _moduleParents(moduleId);
-      if (parentIds == null || parentIds.isEmpty) {
-        // Propagating from root should cause page reload
-        _reloadPage();
-        _running.complete();
-        return;
-      }
-      parentIds.sort(moduleTopologicalCompare);
-      for (var parentId in parentIds) {
-        var parentModule = await _loadModule(parentId);
-        if (parentModule.hasOnChildUpdate) {
-          success = parentModule.onChildUpdate(moduleId, newVersion, data);
+        var newVersion = await _reloadModule(moduleId);
+        bool success;
+        if (newVersion.hasOnSelfUpdate) {
+          success = newVersion.onSelfUpdate(data);
         }
         if (success == true) continue;
         if (success == false) {
@@ -108,8 +89,32 @@ class ReloadingManager {
           _running.complete();
           return;
         }
-        _dirtyModules.add(parentId);
+
+        var parentIds = _moduleParents(moduleId);
+        if (parentIds == null || parentIds.isEmpty) {
+          // Propagating from root should cause page reload
+          _reloadPage();
+          _running.complete();
+          return;
+        }
+        parentIds.sort(moduleTopologicalCompare);
+        for (var parentId in parentIds) {
+          var parentModule = await _loadModule(parentId);
+          if (parentModule.hasOnChildUpdate) {
+            success = parentModule.onChildUpdate(moduleId, newVersion, data);
+          }
+          if (success == true) continue;
+          if (success == false) {
+            _reloadPage();
+            _running.complete();
+            return;
+          }
+          _dirtyModules.add(parentId);
+        }
       }
+    } on DeferredLoadException catch (e) {
+      print('Error during script reloading. Firing full page reload. $e');
+      _reloadPage();
     }
     _running.complete();
   }

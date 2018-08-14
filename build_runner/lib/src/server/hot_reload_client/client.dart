@@ -100,6 +100,15 @@ abstract class JsMap<K, V> {
   external V get(K key);
 }
 
+@JS('Error')
+abstract class JsError {
+  @JS()
+  external String get message;
+
+  @JS()
+  external String get stack;
+}
+
 @anonymous
 @JS()
 class DartLoader {
@@ -111,11 +120,15 @@ class DartLoader {
 
   @JS()
   external void forceLoadModule(
-      String moduleId, void Function(HotReloadableModule module) callback);
+      String moduleId,
+      void Function(HotReloadableModule module) callback,
+      void Function(JsError e) onError);
 
   @JS()
   external void loadModule(
-      String moduleId, void Function(HotReloadableModule module) callback);
+      String moduleId,
+      void Function(HotReloadableModule module) callback,
+      void Function(JsError e) onError);
 }
 
 @JS(r'$dartLoader')
@@ -128,23 +141,24 @@ List<K> keys<K, V>(JsMap<K, V> map) {
   return List.from(_jsArrayFrom(map.keys()));
 }
 
-Future<Module> _reloadModule(String moduleId) {
-  var completer = Completer<Module>();
-  dartLoader.forceLoadModule(
-      moduleId,
-      allowInterop((HotReloadableModule module) =>
-          completer.complete(ModuleWrapper(module))));
-  return completer.future;
-}
+Future<Module> Function(String) _wrapLoaderFunction(
+        void Function(String, void Function(HotReloadableModule),
+                void Function(JsError))
+            loaderFunction) =>
+    (moduleId) {
+      var completer = Completer<Module>();
+      var stackTrace = StackTrace.current;
+      loaderFunction(
+          moduleId,
+          allowInterop((HotReloadableModule module) =>
+              completer.complete(ModuleWrapper(module))),
+          allowInterop((e) => completer.completeError(
+              DeferredLoadException(e.message), stackTrace)));
+      return completer.future;
+    };
 
-Future<Module> _loadModule(String moduleId) {
-  var completer = Completer<Module>();
-  dartLoader.loadModule(
-      moduleId,
-      allowInterop((HotReloadableModule module) =>
-          completer.complete(ModuleWrapper(module))));
-  return completer.future;
-}
+var _reloadModule = _wrapLoaderFunction(dartLoader.forceLoadModule);
+var _loadModule = _wrapLoaderFunction(dartLoader.loadModule);
 
 void _reloadPage() {
   window.location.reload();
