@@ -1,3 +1,7 @@
+## 0.10.1+1
+
+- Added better error handling when a socket is already in use in `serve` mode.
+
 ## 0.10.1
 
 - Added `--live-reload` cli option and appropriate functionality
