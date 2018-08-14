@@ -9,13 +9,87 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
 
-import 'package:build_runner/src/server/hot_reload_client/reload_handler.dart';
-
 import 'package:js/js.dart';
 import 'package:js/js_util.dart';
 
+import 'reload_handler.dart';
+import 'reloading_manager.dart';
+
 final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$livereload';
+
+@anonymous
+@JS()
+abstract class HotReloadableModule {
+  /// Implement this function with any code to release resources before destroy.
+  ///
+  /// Any object returned from this function will be passed to update hooks. Use
+  /// it to save any state you need to be preserved between hot reloadings.
+  /// Try do not use any custom types here, as it might prevent their code from
+  /// reloading. Better serialise to JSON or plain types.
+  ///
+  /// This function will be called on old version of module before unloading.
+  @JS()
+  external Object hot$onDestroy();
+
+  /// Implement this function to handle update of the module itself.
+  ///
+  /// May return nullable bool. To indicate that reload completes successfully
+  /// return true. To indicate that hot-reload is undoable return false - this
+  /// will lead to full page reload. If null returned, reloading will be
+  /// propagated to parent.
+  ///
+  /// If any state was saved from previous version, it will be passed to [data].
+  ///
+  /// This function will be called on new version of module after reloading.
+  @JS()
+  external bool hot$onSelfUpdate([Object data]);
+
+  /// Implement this function to handle update of child modules.
+  ///
+  /// May return nullable bool. To indicate that reload of child completes
+  /// successfully return true. To indicate that hot-reload is undoable for this
+  /// child return false - this will lead to full page reload. If null returned,
+  /// reloading will be propagated to current module itself.
+  ///
+  /// The name of the child will be provided in [childId]. New version of child
+  /// module object will be provided in [child].
+  /// If any state was saved from previous version, it will be passed to [data].
+  ///
+  /// This function will be called on old version of module current after child
+  /// reloading.
+  @JS()
+  external bool hot$onChildUpdate(String childId, HotReloadableModule child,
+      [Object data]);
+}
+
+class ModuleWrapper implements Module {
+  final HotReloadableModule _internal;
+
+  ModuleWrapper(this._internal);
+
+  @override
+  bool get hasOnDestroy =>
+      _internal != null && hasProperty(_internal, r'hot$onDestroy');
+
+  @override
+  bool get hasOnSelfUpdate =>
+      _internal != null && hasProperty(_internal, r'hot$onSelfUpdate');
+
+  @override
+  bool get hasOnChildUpdate =>
+      _internal != null && hasProperty(_internal, r'hot$onChildUpdate');
+
+  @override
+  Object onDestroy() => _internal.hot$onDestroy();
+
+  @override
+  bool onSelfUpdate([Object data]) => _internal.hot$onSelfUpdate(data);
+
+  @override
+  bool onChildUpdate(String childId, Module child, [Object data]) => _internal
+      .hot$onChildUpdate(childId, (child as ModuleWrapper)._internal, data);
+}
 
 @JS('Map')
 abstract class JsMap<K, V> {
@@ -33,32 +107,53 @@ class DartLoader {
   external JsMap<String, String> get urlToModuleId;
 
   @JS()
+  external JsMap<String, List<String>> get moduleParentsGraph;
+
+  @JS()
   external void forceLoadModule(
-      String moduleId, void Function(Object module) callback);
+      String moduleId, void Function(HotReloadableModule module) callback);
+
+  @JS()
+  external void loadModule(
+      String moduleId, void Function(HotReloadableModule module) callback);
 }
 
 @JS(r'$dartLoader')
 external DartLoader get dartLoader;
 
 @JS('Array.from')
-external List jsArrayFrom(Object any);
+external List _jsArrayFrom(Object any);
 
-List<String> get _moduleUrls {
-  return List.from(jsArrayFrom(dartLoader.urlToModuleId.keys()));
+List<K> keys<K, V>(JsMap<K, V> map) {
+  return List.from(_jsArrayFrom(map.keys()));
 }
 
-String _moduleIdByPath(String path) =>
-    dartLoader.urlToModuleId.get(window.location.origin + '/' + path);
-
-Future<Object> _reloadModule(String moduleId) {
-  var completer = Completer<Object>();
-  dartLoader.forceLoadModule(moduleId, allowInterop(completer.complete));
+Future<Module> _reloadModule(String moduleId) {
+  var completer = Completer<Module>();
+  dartLoader.forceLoadModule(
+      moduleId,
+      allowInterop((HotReloadableModule module) =>
+          completer.complete(ModuleWrapper(module))));
   return completer.future;
 }
 
+Future<Module> _loadModule(String moduleId) {
+  var completer = Completer<Module>();
+  dartLoader.loadModule(
+      moduleId,
+      allowInterop((HotReloadableModule module) =>
+          completer.complete(ModuleWrapper(module))));
+  return completer.future;
+}
+
+void _reloadPage() {
+  window.location.reload();
+}
+
 main() async {
-  var modulePaths = _moduleUrls
-      .map((key) => key.replaceFirst(window.location.origin + '/', ''))
+  var currentOrigin = window.location.origin + '/';
+  var modulePaths = keys(dartLoader.urlToModuleId)
+      .map((key) => key.replaceFirst(currentOrigin, ''))
       .toList();
   var modulePathsJson = json.encode(modulePaths);
 
@@ -66,8 +161,15 @@ main() async {
       responseType: 'json', sendData: modulePathsJson, method: 'POST');
   var digests = (request.response as Map).cast<String, String>();
 
-  var handler = ReloadHandler(digests, _moduleIdByPath, _reloadModule,
-      (module) => callMethod(getProperty(module, 'main'), 'main', []));
+  var manager = ReloadingManager(
+      _reloadModule,
+      _loadModule,
+      _reloadPage,
+      (module) => dartLoader.moduleParentsGraph.get(module),
+      () => keys(dartLoader.moduleParentsGraph));
+
+  var handler = ReloadHandler(digests,
+      (path) => dartLoader.urlToModuleId.get(currentOrigin + path), manager);
 
   var webSocket =
       WebSocket('ws://' + window.location.host, [_buildUpdatesProtocol]);
