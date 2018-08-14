@@ -267,7 +267,7 @@ $_baseUrlScript
         return dart.getSourceMap(module);
       });
   }
-  if (typeof Window === 'function') {
+  if (self.document) { // only true for windows and not workers
     window.postMessage({ type: "DDC_STATE_CHANGE", state: "start" }, "*");
   }
 ''';
