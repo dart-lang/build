@@ -10,7 +10,6 @@ import 'dart:convert';
 import 'dart:html';
 
 import 'package:js/js.dart';
-import 'package:js/js_util.dart';
 
 import 'reload_handler.dart';
 import 'reloading_manager.dart';
@@ -69,26 +68,34 @@ class ModuleWrapper implements Module {
   ModuleWrapper(this._internal);
 
   @override
-  bool get hasOnDestroy =>
-      _internal != null && hasProperty(_internal, r'hot$onDestroy');
+  Object onDestroy() {
+    try {
+      return _internal.hot$onDestroy();
+    } on NoSuchMethodError {
+      return null;
+    }
+  }
 
   @override
-  bool get hasOnSelfUpdate =>
-      _internal != null && hasProperty(_internal, r'hot$onSelfUpdate');
+  bool onSelfUpdate([Object data]) {
+    try {
+      return _internal.hot$onSelfUpdate(data);
+    } on NoSuchMethodError {
+      // ignore: avoid_returning_null
+      return null;
+    }
+  }
 
   @override
-  bool get hasOnChildUpdate =>
-      _internal != null && hasProperty(_internal, r'hot$onChildUpdate');
-
-  @override
-  Object onDestroy() => _internal.hot$onDestroy();
-
-  @override
-  bool onSelfUpdate([Object data]) => _internal.hot$onSelfUpdate(data);
-
-  @override
-  bool onChildUpdate(String childId, Module child, [Object data]) => _internal
-      .hot$onChildUpdate(childId, (child as ModuleWrapper)._internal, data);
+  bool onChildUpdate(String childId, Module child, [Object data]) {
+    try {
+      return _internal.hot$onChildUpdate(
+          childId, (child as ModuleWrapper)._internal, data);
+    } on NoSuchMethodError {
+      // ignore: avoid_returning_null
+      return null;
+    }
+  }
 }
 
 @JS('Map')

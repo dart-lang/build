@@ -8,12 +8,6 @@ import 'dart:collection';
 import 'package:graphs/graphs.dart' as graphs;
 
 abstract class Module {
-  bool get hasOnDestroy;
-
-  bool get hasOnSelfUpdate;
-
-  bool get hasOnChildUpdate;
-
   Object onDestroy();
 
   bool onSelfUpdate([Object data]);
@@ -81,16 +75,10 @@ class ReloadingManager {
         _dirtyModules.remove(moduleId);
 
         var existing = await _loadModule(moduleId);
-        Object data;
-        if (existing.hasOnDestroy) {
-          data = existing.onDestroy();
-        }
+        var data = existing.onDestroy();
 
         var newVersion = await _reloadModule(moduleId);
-        bool success;
-        if (newVersion.hasOnSelfUpdate) {
-          success = newVersion.onSelfUpdate(data);
-        }
+        var success = newVersion.onSelfUpdate(data);
         if (success == true) continue;
         if (success == false) {
           _reloadPage();
@@ -108,9 +96,7 @@ class ReloadingManager {
         parentIds.sort(moduleTopologicalCompare);
         for (var parentId in parentIds) {
           var parentModule = await _loadModule(parentId);
-          if (parentModule.hasOnChildUpdate) {
-            success = parentModule.onChildUpdate(moduleId, newVersion, data);
-          }
+          success = parentModule.onChildUpdate(moduleId, newVersion, data);
           if (success == true) continue;
           if (success == false) {
             _reloadPage();
