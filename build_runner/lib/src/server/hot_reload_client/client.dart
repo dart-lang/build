@@ -69,26 +69,31 @@ class ModuleWrapper implements Module {
   ModuleWrapper(this._internal);
 
   @override
-  bool get hasOnDestroy =>
-      _internal != null && hasProperty(_internal, r'hot$onDestroy');
+  Object onDestroy() {
+    if (_internal != null && hasProperty(_internal, r'hot$onDestroy')) {
+      return _internal.hot$onDestroy();
+    }
+    return null;
+  }
 
   @override
-  bool get hasOnSelfUpdate =>
-      _internal != null && hasProperty(_internal, r'hot$onSelfUpdate');
+  bool onSelfUpdate([Object data]) {
+    if (_internal != null && hasProperty(_internal, r'hot$onSelfUpdate')) {
+      return _internal.hot$onSelfUpdate(data);
+    }
+    // ignore: avoid_returning_null
+    return null;
+  }
 
   @override
-  bool get hasOnChildUpdate =>
-      _internal != null && hasProperty(_internal, r'hot$onChildUpdate');
-
-  @override
-  Object onDestroy() => _internal.hot$onDestroy();
-
-  @override
-  bool onSelfUpdate([Object data]) => _internal.hot$onSelfUpdate(data);
-
-  @override
-  bool onChildUpdate(String childId, Module child, [Object data]) => _internal
-      .hot$onChildUpdate(childId, (child as ModuleWrapper)._internal, data);
+  bool onChildUpdate(String childId, Module child, [Object data]) {
+    if (_internal != null && hasProperty(_internal, r'hot$onChildUpdate')) {
+      return _internal.hot$onChildUpdate(
+          childId, (child as ModuleWrapper)._internal, data);
+    }
+    // ignore: avoid_returning_null
+    return null;
+  }
 }
 
 @JS('Map')

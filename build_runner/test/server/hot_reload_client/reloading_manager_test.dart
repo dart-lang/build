@@ -35,14 +35,8 @@ void main() {
     return manager;
   }
 
-  MockModule mockModule(String prefix, String name) =>
-      modules.putIfAbsent('$prefix-$name', () {
-        var module = named(MockModule(), name: '$prefix-$name');
-        when(module.hasOnDestroy).thenReturn(false);
-        when(module.hasOnSelfUpdate).thenReturn(false);
-        when(module.hasOnChildUpdate).thenReturn(false);
-        return module;
-      });
+  MockModule mockModule(String prefix, String name) => modules.putIfAbsent(
+      '$prefix-$name', () => named(MockModule(), name: '$prefix-$name'));
   MockModule mockModuleNew(String name) => mockModule('new', name);
   MockModule mockModuleOld(String name) => mockModule('old', name);
 
@@ -98,7 +92,6 @@ void main() {
 
       setUp(() {
         newChildModule = mockModuleNew('child');
-        when(newChildModule.hasOnSelfUpdate).thenReturn(true);
       });
 
       test('stop propagation if onSelfUpdate returns true', () async {
@@ -131,8 +124,6 @@ void main() {
 
       setUp(() {
         oldParentModule = mockModuleOld('parent');
-        when(oldParentModule.hasOnDestroy).thenReturn(false);
-        when(oldParentModule.hasOnChildUpdate).thenReturn(true);
       });
 
       test('stop propagation if onChildUpdate returns true', () async {
@@ -164,13 +155,11 @@ void main() {
     group('onDestroy', () {
       setUp(() {
         var oldChildModule = mockModuleOld('child');
-        when(oldChildModule.hasOnDestroy).thenReturn(true);
         when(oldChildModule.onDestroy()).thenReturn({'some_key': 'some_value'});
       });
 
       test('pass onDestroy data to self', () async {
         var newChildModule = mockModuleNew('child');
-        when(newChildModule.hasOnSelfUpdate).thenReturn(true);
 
         await manager.reload(['child']);
         verify(methods.reloadModule('child'));
@@ -179,7 +168,6 @@ void main() {
 
       test('pass onDestroy data to parent', () async {
         var oldParentModule = mockModuleOld('parent');
-        when(oldParentModule.hasOnChildUpdate).thenReturn(true);
 
         await manager.reload(['child']);
         verify(methods.reloadModule('child'));
@@ -212,9 +200,6 @@ void main() {
       var oldParent = mockModuleOld('parent');
       var oldSubParent = mockModuleOld('subparent');
       var oldExtraParent = mockModuleOld('extra-parent');
-      when(oldParent.hasOnChildUpdate).thenReturn(true);
-      when(oldSubParent.hasOnChildUpdate).thenReturn(true);
-      when(oldExtraParent.hasOnChildUpdate).thenReturn(true);
       await manager.reload(['child']);
       verifyInOrder([
         oldSubParent.onChildUpdate('child', any, any),
@@ -235,7 +220,6 @@ void main() {
 
     test('reload parent if at least one of childs is not hooked', () async {
       var oldParent = mockModuleOld('parent');
-      when(oldParent.hasOnChildUpdate).thenReturn(true);
       when(oldParent.onChildUpdate('child', any, any)).thenReturn(true);
       when(oldParent.onChildUpdate('subparent', any, any)).thenReturn(null);
       await manager.reload(['child']);
