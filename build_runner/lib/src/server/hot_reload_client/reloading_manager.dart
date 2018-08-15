@@ -23,6 +23,8 @@ abstract class Module {
 
 class HotReloadFailedException implements Exception {
   HotReloadFailedException(this._s);
+
+  @override
   String toString() => "HotReloadFailedException: '$_s'";
   final String _s;
 }
