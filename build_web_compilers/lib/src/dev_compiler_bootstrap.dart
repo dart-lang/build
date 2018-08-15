@@ -233,14 +233,30 @@ if(!window.\$dartLoader) {
    window.\$dartLoader = {
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
+     modulesGraph: new Map(),
      moduleParentsGraph: new Map(),
      rootDirectories: new Array(),
-     forceLoadModule: function (moduleName, callback) {
+     moduleLoadingErrorCallbacks: new Map(),
+     forceLoadModule: function (moduleName, callback, onError) {
        requirejs.undef(moduleName);
-       requirejs([moduleName], callback);
+       \$dartLoader.loadModule(moduleName, callback, onError);
      },
-     loadModule: function (moduleName, callback) {
-       requirejs([moduleName], callback);
+     loadModule: function (moduleName, callback, onError) {
+       if (typeof onError != 'undefined') {
+         var errorCallbacks = \$dartLoader.moduleLoadingErrorCallbacks;
+         if (!errorCallbacks.has(moduleName)) {
+           errorCallbacks.set(moduleName, new Set());
+         }
+         errorCallbacks.get(moduleName).add(onError);
+       }
+       requirejs([moduleName], function(module) {
+         if (typeof onError != 'undefined') {
+           errorCallbacks.get(moduleName).delete(onError);
+         }
+         if (typeof callback != 'undefined') {
+           callback(module);
+         }
+       });
      },
    };
 }
@@ -305,6 +321,20 @@ final _requireJsConfig = '''
 (function() {
   var oldOnError = requirejs.onError;
   requirejs.onError = function(e) {
+    if (e.requireModules) {
+      // If error occurred on loading dependencies, we need to invalidate ancessor too.
+      var ancesor = e.message.match(/needed by: (.*)/);
+      if (ancesor) {
+        e.requireModules.push(ancesor[1]);
+      }
+      for (const module of e.requireModules) {
+        var errorCallbacks = \$dartLoader.moduleLoadingErrorCallbacks.get(module);
+        if (errorCallbacks) {
+          for (const callback of errorCallbacks) callback(e);
+          errorCallbacks.clear();
+        }
+      }
+    }
     if (e.originalError && e.originalError.srcElement) {
       var xhr = new XMLHttpRequest();
       xhr.onreadystatechange = function() {
@@ -338,12 +368,28 @@ require.config({
 });
 
 requirejs.onResourceLoad = function (context, map, depArray) {
-  // TODO Handle dynamic changes in module dependancies
-  for (const dep of depArray) {
-    if (!\$dartLoader.moduleParentsGraph.has(dep.name)) {
-      \$dartLoader.moduleParentsGraph.set(dep.name, []);
+  if (\$dartLoader.modulesGraph.has(map.name)) {
+    // TODO Move this logic to better place
+    var previousDeps = \$dartLoader.modulesGraph.get(map.name);
+    var changed = previousDeps.length != depArray.length;
+    changed = changed || depArray.some(function(dep) {
+      return !previousDeps.includes(dep.name);
+    });
+    if (changed) {
+      console.warn("Dependencies graph change for module '" + map.name + "' detected. " + 
+        "Dependencies was [" + previousDeps + "], now [" +  depArray.map((dep) => dep.name) +"]. " +
+        "Page can't be hot-reloaded, firing full page reload.");
+      window.location.reload();
     }
-    \$dartLoader.moduleParentsGraph.get(dep.name).push(map.name);
+  } else {
+    \$dartLoader.modulesGraph.set(map.name, []);
+    for (const dep of depArray) {
+      if (!\$dartLoader.moduleParentsGraph.has(dep.name)) {
+        \$dartLoader.moduleParentsGraph.set(dep.name, []);
+      }
+      \$dartLoader.moduleParentsGraph.get(dep.name).push(map.name);
+      \$dartLoader.modulesGraph.get(map.name).push(dep.name);
+    }
   }
 };
 ''';
