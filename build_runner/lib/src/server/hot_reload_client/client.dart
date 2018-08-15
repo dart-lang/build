@@ -12,9 +12,9 @@ import 'dart:html';
 import 'package:js/js.dart';
 import 'package:js/js_util.dart';
 
+import 'module.dart';
 import 'reload_handler.dart';
 import 'reloading_manager.dart';
-import 'module.dart';
 
 final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$livereload';
