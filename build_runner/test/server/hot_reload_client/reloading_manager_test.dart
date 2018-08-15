@@ -71,9 +71,9 @@ void main() {
     verifyInOrder([methods.reloadModule('root'), methods.reloadPage()]);
   });
 
-  test('reloadind error triggers page reload', () async {
+  test('reloading error triggers page reload', () async {
     var manager = initManager({'root': []});
-    when(methods.reloadModule('root')).thenThrow(DeferredLoadException(''));
+    when(methods.reloadModule('root')).thenThrow(HotReloadFailedException(''));
     await manager.reload(['root']);
     verify(methods.reloadPage());
   });

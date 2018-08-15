@@ -322,7 +322,7 @@ final _requireJsConfig = '''
   var oldOnError = requirejs.onError;
   requirejs.onError = function(e) {
     if (e.requireModules) {
-      // If error ocuired on loading dependencies, we need to invalidate ancessor too.
+      // If error occurred on loading dependencies, we need to invalidate ancessor too.
       var ancesor = e.message.match(/needed by: (.*)/);
       if (ancesor) {
         e.requireModules.push(ancesor[1]);
@@ -381,14 +381,15 @@ requirejs.onResourceLoad = function (context, map, depArray) {
         "Page can't be hot-reloaded, firing full page reload.");
       window.location.reload();
     }
-  }
-  \$dartLoader.modulesGraph.set(map.name, []);
-  for (const dep of depArray) {
-    if (!\$dartLoader.moduleParentsGraph.has(dep.name)) {
-      \$dartLoader.moduleParentsGraph.set(dep.name, []);
+  } else {
+    \$dartLoader.modulesGraph.set(map.name, []);
+    for (const dep of depArray) {
+      if (!\$dartLoader.moduleParentsGraph.has(dep.name)) {
+        \$dartLoader.moduleParentsGraph.set(dep.name, []);
+      }
+      \$dartLoader.moduleParentsGraph.get(dep.name).push(map.name);
+      \$dartLoader.modulesGraph.get(map.name).push(dep.name);
     }
-    \$dartLoader.moduleParentsGraph.get(dep.name).push(map.name);
-    \$dartLoader.modulesGraph.get(map.name).push(dep.name);
   }
 };
 ''';

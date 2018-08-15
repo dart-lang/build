@@ -21,6 +21,12 @@ abstract class Module {
   bool onChildUpdate(String childId, Module child, [Object data]);
 }
 
+class HotReloadFailedException implements Exception {
+  HotReloadFailedException(this._s);
+  String toString() => "HotReloadFailedException: '$_s'";
+  final String _s;
+}
+
 /// Handles reloading order and hooks invocation
 class ReloadingManager {
   final Future<Module> Function(String) _reloadModule;
@@ -112,7 +118,7 @@ class ReloadingManager {
           _dirtyModules.add(parentId);
         }
       }
-    } on DeferredLoadException catch (e) {
+    } on HotReloadFailedException catch (e) {
       print('Error during script reloading. Firing full page reload. $e');
       _reloadPage();
     }

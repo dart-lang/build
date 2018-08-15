@@ -141,7 +141,7 @@ List<K> keys<K, V>(JsMap<K, V> map) {
   return List.from(_jsArrayFrom(map.keys()));
 }
 
-Future<Module> Function(String) _wrapLoaderFunction(
+Future<Module> Function(String) _futurifyLoaderFunction(
         void Function(String, void Function(HotReloadableModule),
                 void Function(JsError))
             loaderFunction) =>
@@ -153,12 +153,12 @@ Future<Module> Function(String) _wrapLoaderFunction(
           allowInterop((HotReloadableModule module) =>
               completer.complete(ModuleWrapper(module))),
           allowInterop((e) => completer.completeError(
-              DeferredLoadException(e.message), stackTrace)));
+              HotReloadFailedException(e.message), stackTrace)));
       return completer.future;
     };
 
-var _reloadModule = _wrapLoaderFunction(dartLoader.forceLoadModule);
-var _loadModule = _wrapLoaderFunction(dartLoader.loadModule);
+var _reloadModule = _futurifyLoaderFunction(dartLoader.forceLoadModule);
+var _loadModule = _futurifyLoaderFunction(dartLoader.loadModule);
 
 void _reloadPage() {
   window.location.reload();
