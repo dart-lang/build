@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:html';
 
 import 'package:js/js.dart';
+import 'package:js/js_util.dart';
 
 import 'reload_handler.dart';
 import 'reloading_manager.dart';
@@ -69,32 +70,29 @@ class ModuleWrapper implements Module {
 
   @override
   Object onDestroy() {
-    try {
+    if (_internal != null && hasProperty(_internal, r'hot$onDestroy')) {
       return _internal.hot$onDestroy();
-    } on NoSuchMethodError {
-      return null;
     }
+    return null;
   }
 
   @override
   bool onSelfUpdate([Object data]) {
-    try {
+    if (_internal != null && hasProperty(_internal, r'hot$onSelfUpdate')) {
       return _internal.hot$onSelfUpdate(data);
-    } on NoSuchMethodError {
-      // ignore: avoid_returning_null
-      return null;
     }
+    // ignore: avoid_returning_null
+    return null;
   }
 
   @override
   bool onChildUpdate(String childId, Module child, [Object data]) {
-    try {
+    if (_internal != null && hasProperty(_internal, r'hot$onChildUpdate')) {
       return _internal.hot$onChildUpdate(
           childId, (child as ModuleWrapper)._internal, data);
-    } on NoSuchMethodError {
-      // ignore: avoid_returning_null
-      return null;
     }
+    // ignore: avoid_returning_null
+    return null;
   }
 }
 
