@@ -12,10 +12,11 @@ abstract class Library {
   bool onChildUpdate(String childId, Library child, [Object data]);
 }
 
+/// Used for representation of amd modules that wraps several dart libraries
+/// inside
 class Module {
   static String roughLibraryKeyDecode(String moduleId, String key) {
-    key = key.replaceAll('__', '/');
-    key = key.replaceAllMapped(
+    key = key.replaceAll('__', '/').replaceAllMapped(
         RegExp(r'\$(\d+)'), (m) => String.fromCharCode(int.parse(m[1])));
 
     var moduleIdParts = p.url.split(moduleId);
@@ -30,6 +31,7 @@ class Module {
 
   Module(this.libraries);
 
+  /// Calls onDestroy on each of underlined libraries and combines returned data
   Map<String, Object> onDestroy() {
     var data = <String, Object>{};
     for (var key in libraries.keys) {
@@ -38,6 +40,9 @@ class Module {
     return data;
   }
 
+  /// Calls onSelfUpdate on each of underlined libraries, returns aggregated
+  /// result as "maximum" assuming true < null < false. Stops execution on first
+  /// false result
   bool onSelfUpdate(Map<String, Object> data) {
     var result = true;
     for (var key in libraries.keys) {
@@ -51,6 +56,9 @@ class Module {
     return result;
   }
 
+  /// Calls onChildUpdate on each of underlined libraries, returns aggregated
+  /// result as "maximum" assuming true < null < false. Stops execution on first
+  /// false result
   bool onChildUpdate(String childId, Module child, Map<String, Object> data) {
     var result = true;
     // TODO(inayd): This is a rought implementation with lots of false positive
@@ -59,7 +67,7 @@ class Module {
     // depends on unreliable implementation details. Proper implementation
     // should rely on inner graph of dependencies between libraries in module,
     // to require only parent libraries which really depend on child ones to
-    // handle it's updates
+    // handle it's updates. See dart-lang/build#1767.
     for (var parentKey in libraries.keys) {
       for (var childKey in child.libraries.keys) {
         var decodedChildId = roughLibraryKeyDecode(childId, childKey);
