@@ -24,9 +24,6 @@ class ReloadHandler {
       }
       var moduleId = _moduleIdByPath(path);
       if (_digests.containsKey(path) && moduleId != null) {
-        if (moduleId.endsWith('.ddc')) {
-          moduleId = moduleId.substring(0, moduleId.length - 4);
-        }
         moduleIdsToReload.add(moduleId);
       }
       _digests[path] = updatedAssetDigests[path] as String;

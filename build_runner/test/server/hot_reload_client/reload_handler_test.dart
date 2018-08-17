@@ -36,16 +36,6 @@ void main() {
     verify(manager.reload(['module1']));
   });
 
-  test('drops .ddc suffix from module id', () async {
-    digests['file1'] = 'hash1';
-    pathToModuleId['file1'] = 'module1.ddc';
-    handler.listener('{"file1":"hash2"}');
-    expect(digests['file1'], 'hash2');
-    await untilCalled(manager.reload(any));
-    verify(manager.reload(['module1']));
-    verifyNever(manager.reload(['module1.ddc']));
-  });
-
   test('do not reload up to date modules', () {
     digests['file1'] = 'hash1';
     pathToModuleId['file1'] = 'module1';

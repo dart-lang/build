@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:path/path.dart' as p;
-
 abstract class Library {
   Object onDestroy();
 
@@ -15,18 +13,7 @@ abstract class Library {
 /// Used for representation of amd modules that wraps several dart libraries
 /// inside
 class Module {
-  static String roughLibraryKeyDecode(String moduleId, String key) {
-    key = key.replaceAll('__', '/').replaceAllMapped(
-        RegExp(r'\$(\d+)'), (m) => String.fromCharCode(int.parse(m[1])));
-
-    var moduleIdParts = p.url.split(moduleId);
-    if (moduleIdParts[0] == 'packages') {
-      return p.url.join(moduleIdParts[0], moduleIdParts[1], key);
-    } else {
-      return p.url.join(moduleIdParts[0], key);
-    }
-  }
-
+  /// Grouped by absolute library path starting with `package:`
   final Map<String, Library> libraries;
 
   Module(this.libraries);
@@ -70,9 +57,8 @@ class Module {
     // handle it's updates. See dart-lang/build#1767.
     for (var parentKey in libraries.keys) {
       for (var childKey in child.libraries.keys) {
-        var decodedChildId = roughLibraryKeyDecode(childId, childKey);
-        var success = libraries[parentKey].onChildUpdate(
-            decodedChildId, child.libraries[childKey], data[childKey]);
+        var success = libraries[parentKey]
+            .onChildUpdate(childKey, child.libraries[childKey], data[childKey]);
         if (success == false) {
           return false;
         } else if (success == null) {
