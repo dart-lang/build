@@ -146,10 +146,12 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
 $_initializeTools
   app.$moduleScope.main();
   return {
-    hot\$onChildUpdate: function(childName, child) {
-      if (childName === "$moduleName") {
-        child.$moduleScope.main();
-        return true;
+    bootstrap: {
+      hot\$onChildUpdate: function(childName, child) {
+        if (childName === "$moduleName") {
+          child.main();
+          return true;
+        }
       }
     }
   };

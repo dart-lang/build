@@ -12,6 +12,7 @@ import 'dart:html';
 import 'package:js/js.dart';
 import 'package:js/js_util.dart';
 
+import 'module.dart';
 import 'reload_handler.dart';
 import 'reloading_manager.dart';
 
@@ -20,7 +21,7 @@ final _buildUpdatesProtocol = r'$livereload';
 
 @anonymous
 @JS()
-abstract class HotReloadableModule {
+abstract class HotReloadableLibrary {
   /// Implement this function with any code to release resources before destroy.
   ///
   /// Any object returned from this function will be passed to update hooks. Use
@@ -59,14 +60,14 @@ abstract class HotReloadableModule {
   /// This function will be called on old version of module current after child
   /// reloading.
   @JS()
-  external bool hot$onChildUpdate(String childId, HotReloadableModule child,
+  external bool hot$onChildUpdate(String childId, HotReloadableLibrary child,
       [Object data]);
 }
 
-class ModuleWrapper implements Module {
-  final HotReloadableModule _internal;
+class LibraryWrapper implements Library {
+  final HotReloadableLibrary _internal;
 
-  ModuleWrapper(this._internal);
+  LibraryWrapper(this._internal);
 
   @override
   Object onDestroy() {
@@ -86,10 +87,10 @@ class ModuleWrapper implements Module {
   }
 
   @override
-  bool onChildUpdate(String childId, Module child, [Object data]) {
+  bool onChildUpdate(String childId, Library child, [Object data]) {
     if (_internal != null && hasProperty(_internal, r'hot$onChildUpdate')) {
       return _internal.hot$onChildUpdate(
-          childId, (child as ModuleWrapper)._internal, data);
+          childId, (child as LibraryWrapper)._internal, data);
     }
     // ignore: avoid_returning_null
     return null;
@@ -124,16 +125,12 @@ class DartLoader {
   external JsMap<String, List<String>> get moduleParentsGraph;
 
   @JS()
-  external void forceLoadModule(
-      String moduleId,
-      void Function(HotReloadableModule module) callback,
-      void Function(JsError e) onError);
+  external void forceLoadModule(String moduleId,
+      void Function(Object module) callback, void Function(JsError e) onError);
 
   @JS()
-  external void loadModule(
-      String moduleId,
-      void Function(HotReloadableModule module) callback,
-      void Function(JsError e) onError);
+  external void loadModule(String moduleId,
+      void Function(Object module) callback, void Function(JsError e) onError);
 }
 
 @JS(r'$dartLoader')
@@ -142,21 +139,30 @@ external DartLoader get dartLoader;
 @JS('Array.from')
 external List _jsArrayFrom(Object any);
 
+@JS('Object.keys')
+external List _jsObjectKeys(Object any);
+
+@JS('Object.values')
+external List _jsObjectValues(Object any);
+
 List<K> keys<K, V>(JsMap<K, V> map) {
   return List.from(_jsArrayFrom(map.keys()));
 }
 
 Future<Module> Function(String) _futurifyLoaderFunction(
-        void Function(String, void Function(HotReloadableModule),
-                void Function(JsError))
+        void Function(String, void Function(Object), void Function(JsError))
             loaderFunction) =>
     (moduleId) {
       var completer = Completer<Module>();
       var stackTrace = StackTrace.current;
-      loaderFunction(
-          moduleId,
-          allowInterop((HotReloadableModule module) =>
-              completer.complete(ModuleWrapper(module))),
+      loaderFunction(moduleId, allowInterop((Object moduleObj) {
+        var moduleKeys = List<String>.from(_jsObjectKeys(moduleObj));
+        var moduleValues =
+            List<HotReloadableLibrary>.from(_jsObjectValues(moduleObj));
+        var moduleLibraries = moduleValues.map((x) => LibraryWrapper(x));
+        var module = Module(Map.fromIterables(moduleKeys, moduleLibraries));
+        completer.complete(module);
+      }),
           allowInterop((e) => completer.completeError(
               HotReloadFailedException(e.message), stackTrace)));
       return completer.future;

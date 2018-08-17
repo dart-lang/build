@@ -4,16 +4,9 @@
 
 import 'dart:async';
 import 'dart:collection';
-
 import 'package:graphs/graphs.dart' as graphs;
 
-abstract class Module {
-  Object onDestroy();
-
-  bool onSelfUpdate([Object data]);
-
-  bool onChildUpdate(String childId, Module child, [Object data]);
-}
+import 'module.dart';
 
 class HotReloadFailedException implements Exception {
   HotReloadFailedException(this._s);
