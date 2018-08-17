@@ -14,7 +14,7 @@ import 'package:path/path.dart' as p;
 const assumeTtyOption = 'assume-tty';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
-const liveReloadOption = 'live-reload';
+const hotReloadOption = 'hot-reload';
 const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
 const lowResourcesModeOption = 'low-resources-mode';
@@ -131,13 +131,13 @@ class SharedOptions {
 /// Options specific to the `serve` command.
 class ServeOptions extends SharedOptions {
   final String hostName;
-  final bool liveReload;
+  final bool hotReload;
   final bool logRequests;
   final List<ServeTarget> serveTargets;
 
   ServeOptions._({
     @required this.hostName,
-    @required this.liveReload,
+    @required this.hotReload,
     @required this.logRequests,
     @required this.serveTargets,
     @required bool assumeTty,
@@ -203,7 +203,7 @@ class ServeOptions extends SharedOptions {
 
     return ServeOptions._(
       hostName: argResults[hostnameOption] as String,
-      liveReload: argResults[liveReloadOption] as bool,
+      hotReload: argResults[hotReloadOption] as bool,
       logRequests: argResults[logRequestsOption] as bool,
       serveTargets: serveTargets,
       assumeTty: argResults[assumeTtyOption] as bool,

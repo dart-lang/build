@@ -22,7 +22,7 @@ import 'path_to_asset_id.dart';
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
 final _assetsDigestPath = r'$assetDigests';
-final _buildUpdatesProtocol = r'$livereload';
+final _buildUpdatesProtocol = r'$hotreload';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = Logger('Serve');
@@ -65,8 +65,8 @@ class ServeHandler implements BuildState {
   Stream<BuildResult> get buildResults => _state.buildResults;
 
   shelf.Handler handlerFor(String rootDir,
-      {bool logRequests, bool liveReload}) {
-    liveReload ??= false;
+      {bool logRequests, bool hotReload}) {
+    hotReload ??= false;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
       throw ArgumentError.value(
@@ -74,7 +74,7 @@ class ServeHandler implements BuildState {
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = shelf.Cascade();
-    if (liveReload) {
+    if (hotReload) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
     }
     cascade =
@@ -97,7 +97,7 @@ class ServeHandler implements BuildState {
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
-    if (liveReload) {
+    if (hotReload) {
       pipeline = pipeline.addMiddleware(_injectBuildUpdatesClientCode);
     }
     return pipeline.addHandler(cascade.handler);
@@ -222,10 +222,8 @@ shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
 /// Hot-reload config
 ///
 /// Listen WebSocket for updates in build results
-///
-/// Now only live-reload functional - just reload page on update message
 final _buildUpdatesInjectedJS = '''\n
-// Injected by build_runner for live reload support
+// Injected by build_runner for hot-reload support
 window.\$dartLoader.forceLoadModule('packages/build_runner/src/server/hot_reload_client/client.dart')
 ''';
 

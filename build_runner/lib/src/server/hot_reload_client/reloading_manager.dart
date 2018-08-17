@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+
 import 'package:graphs/graphs.dart' as graphs;
 
 import 'module.dart';
@@ -62,10 +63,13 @@ class ReloadingManager {
     if (!_running.isCompleted) return await _running.future;
     _running = Completer();
 
+    var reloadedModules = 0;
+
     try {
       while (_dirtyModules.isNotEmpty) {
         var moduleId = _dirtyModules.first;
         _dirtyModules.remove(moduleId);
+        ++reloadedModules;
 
         var existing = _moduleLibraries(moduleId);
         var data = existing.onDestroy();
@@ -74,6 +78,8 @@ class ReloadingManager {
         var success = newVersion.onSelfUpdate(data);
         if (success == true) continue;
         if (success == false) {
+          print("Module '$moduleId' is marked as unreloadable. "
+              'Firing full page reload.');
           _reloadPage();
           _running.complete();
           return;
@@ -81,7 +87,8 @@ class ReloadingManager {
 
         var parentIds = _moduleParents(moduleId);
         if (parentIds == null || parentIds.isEmpty) {
-          // Propagating from root should cause page reload
+          print("Module reloading wasn't handled by any of parents. "
+              'Firing full page reload.');
           _reloadPage();
           _running.complete();
           return;
@@ -92,6 +99,8 @@ class ReloadingManager {
           success = parentModule.onChildUpdate(moduleId, newVersion, data);
           if (success == true) continue;
           if (success == false) {
+            print("Module '$moduleId' is marked as unreloadable. "
+                'Firing full page reload.');
             _reloadPage();
             _running.complete();
             return;
@@ -99,6 +108,7 @@ class ReloadingManager {
           _dirtyModules.add(parentId);
         }
       }
+      print('$reloadedModules modules was hot-reloaded.');
     } on HotReloadFailedException catch (e) {
       print('Error during script reloading. Firing full page reload. $e');
       _reloadPage();
