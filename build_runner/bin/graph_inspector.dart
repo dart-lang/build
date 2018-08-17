@@ -130,6 +130,7 @@ class InspectNodeCommand extends Command {
 
       stdout.write(description);
     }
+    return null;
   }
 }
 
@@ -183,6 +184,7 @@ class GraphCommand extends Command {
     for (var id in assets) {
       _listAsset(id, stdout, indentation: '  ');
     }
+    return null;
   }
 }
 
