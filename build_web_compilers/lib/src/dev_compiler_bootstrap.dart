@@ -299,7 +299,7 @@ $_baseUrlScript
         return dart.getSourceMap(module);
       });
   }
-  if (window.postMessage) {
+  if (typeof document != 'undefined') {
     window.postMessage({ type: "DDC_STATE_CHANGE", state: "start" }, "*");
   }
 ''';

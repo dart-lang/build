@@ -1,3 +1,8 @@
+## 0.4.3
+
+- Only call `window.postMessage` during initialization if the current context
+  is a `Window`.
+
 ## 0.4.2+2
 
 - Add magic comment marker for build_runner to know where to inject
