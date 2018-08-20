@@ -12,16 +12,17 @@ the state of your application won't be preserved, nevertheless hot-reloading is 
 full page reloading.
      
 ## Turning hot-reloading on
-`build_runner` server has built-in support of hot reloading. To activate it just run `serve` command
-with `--hot-reload` option.
+
+`build_runner` server has built-in support of hot reloading. To activate it just run the `serve`
+command with the `--hot-reload` option.
 
 ## Using hooks to handle module reloading
 
 Each module where changes are detected is marked as invalidated. For each invalidated module three
-hooks will be called to determinate, is it possible to handle it's reloading, or all parents (other
+hooks will be called to determine if it is possible to handle the reload, or if all parents (other
 modules that depends on this one) should be marked as invalidated too. To implement the hook all you
-need to do is to define a top-level publicly exported function with name and signature of a hook.
-These hooks are:
+need to do is to define a top-level publicly exported function with the name and signature of a hook.
+The hooks are:
 
 ### `Object hot$onDestroy();`
 
@@ -31,7 +32,7 @@ Implement this function with any code to release resources before destroy.
 
 Any object returned from this function will be passed to update hooks. Use
 it to save any state you need to be preserved between hot reloadings.
-Try to not use any custom types here, as it might prevent their code from
+Try not to use any custom types here, as it might prevent their code from
 reloading. Better serialise to JSON or plain types.
 
 ### `bool hot$onSelfUpdate([Object data])`
@@ -58,17 +59,17 @@ If any state was saved from previous version, it will be passed to `data`.
 
 Implement this function to handle update of child modules.
 
+Accessing properties of provided `child` object is tricky thing. As dart libraries have no type
+themselves, the provided object is an arbitrary JavaScript object with properties matched with
+exported symbols in the child library. To access them you need to use either
+[`package:js`](https://pub.dartlang.org/packages/js) or 
+[`dart:js_utils`](https://api.dartlang.org/stable/2.0.0/dart-js_util/dart-js_util-library.html).
+See example below for details how to use it.
+
 May return nullable bool. To indicate that reload of child completes
 successfully return `true`. To indicate that hot-reload is undoable for this
 child return `false` - this will lead to full page reload. If `null` returned,
 reloading will be propagated to current module itself.
-
-Accessing properties of provided `child` object is tricky thing. As dart libraries have no type
-themselves, provided object is basically arbitrary JavaScript object with properties matched with
-exported symbols in child library. To access them you need to use either
-[`package:js`](https://pub.dartlang.org/packages/js) or 
-[`dart:js_utils`](https://api.dartlang.org/stable/2.0.0/dart-js_util/dart-js_util-library.html).
-See example below for details how to use it.
 
 ## Examples
 
@@ -79,9 +80,9 @@ module reloadings, but state of your code is not. This may end in a situation wh
 DOM is not in the same state you application will assume it is. 
 
 To resolve this situation you need to implement `hot$onDestroy` hook, to restore the state of DOM
-your application expect. You may also change your initial code to handle all possible stated of DOM,
-but it may have impact on production performance or behavior, while HMR hooks will be just optimized
-out by dart2js as unused.
+to what your application expects. You may also change your initial code to handle all possible
+states of the DOM, but it may have an impact on production performance or behavior, while HMR hooks
+will be just optimized out by dart2js as unused.
 
 ```dart
 import 'dart:html';
@@ -103,11 +104,11 @@ Object hot$onDestroy() {
 ### Handling reloading of child modules
 
 Lets assume you have a builder that transforms your css files into dart code exporting the string.
-As this string doesn't have any impact on your logic, you want to handle reloading of this modules,
+As this string doesn't have any impact on your logic, you want to handle reloading of these modules,
 to prevent parent from reloading
 
-For simplicity of example, lets assume we have `addCss` and `removeCss` methods thad do real DOM
-modifications. In this example it will just operate with `Set`.
+To simplify the example, lets assume we have `addCss` and `removeCss` methods thad do real DOM
+modifications. In this example we will just add and remove the styles from a `Set`.
 
 ```dart
 // your_package/lib/styles.dart
@@ -180,11 +181,23 @@ bool hot$onChildUpdate(String id, Object child) {
   such bundled modules won't work - code will be executed, but parent module will still be reloaded.
   That happens because current requirement is for all libraries in module to know how to handle
   child updates. If you actively use this hook, you may consider turning on `fine` build strategy in
-  your `build.yaml`, work around this issue. But this will also slow down your builds. [#1767](https://github.com/dart-lang/build/issues/1767)
+  your `build.yaml` either globally or only for your root package, to work around this issue. But
+  this will also slow down your builds. [#1767](https://github.com/dart-lang/build/issues/1767)
   
-  ```yaml
-  global_options:
-    build_modules|modules:
-      options:
-        strategy: fine
-  ```   
+  - Globally
+    ```yaml
+    global_options:
+      build_modules|modules:
+        options:
+          strategy: fine
+    ```
+  
+  - For root package
+    ```yaml
+    targets:
+      $default:
+        builders:
+          build_modules|modules:
+            options:
+              strategy: fine
+    ```
