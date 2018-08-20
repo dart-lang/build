@@ -3218,7 +3218,7 @@ i.V(null)
 z=1
 break $async$outer}t.r.S(0,l)}z=10
 break
-case 11:P.cQ(H.b(s)+" modules was hot-reloaded.")
+case 11:P.cQ(H.b(s)+" modules were hot-reloaded.")
 w=2
 z=9
 break

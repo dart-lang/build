@@ -1,15 +1,15 @@
 ## What is Hot Module Reloading?
 
 This is a feature that allows you to speed up development process by reducing time between writing
-code and seeing the result. It detects changes in your code and automatically reloads minimum amount
-js modules on the page for changes to take effect.
+code and seeing the result. It detects changes in your code and automatically reloads the minimum
+amount of js modules on the page for changes to take effect.
 
 If something depends on changed module A, it may have some instances of A's types, functions and
-objects closured, so reloading A itself doesnt invalidate closure. In basic configuration
-hot-reloading reloads all modules in chain from changed module up to the root module of applications
+objects closured, so reloading A itself doesnt invalidate closure. In a basic configuration,
+hot-reloading reloads all the modules from a changed module up to the root module of the application
 and reruns `main()` function for changes to take effect. This means that without special measures
-state of your won't be preserved, nevertheless hot-reloading is much faster than full page
-reloading.
+the state of your application won't be preserved, nevertheless hot-reloading is much faster than
+full page reloading.
      
 ## Turning hot-reloading on
 `build_runner` server has built-in support of hot reloading. To activate it just run `serve` command
@@ -21,7 +21,7 @@ Each module where changes are detected is marked as invalidated. For each invali
 hooks will be called to determinate, is it possible to handle it's reloading, or all parents (other
 modules that depends on this one) should be marked as invalidated too. To implement the hook all you
 need to do is to define a top-level publicly exported function with name and signature of a hook.
-This hooks are:
+These hooks are:
 
 ### `Object hot$onDestroy();`
 
@@ -31,7 +31,7 @@ Implement this function with any code to release resources before destroy.
 
 Any object returned from this function will be passed to update hooks. Use
 it to save any state you need to be preserved between hot reloadings.
-Try do not use any custom types here, as it might prevent their code from
+Try to not use any custom types here, as it might prevent their code from
 reloading. Better serialise to JSON or plain types.
 
 ### `bool hot$onSelfUpdate([Object data])`
@@ -45,7 +45,7 @@ Implement this function to handle update of the module itself.
 May return nullable bool. To indicate that reload completes successfully
 return `true`. To indicate that hot-reload is undoable return `false` - this
 will lead to full page reload. If `null` returned, reloading will be
-propagated to parent.
+propagated to the parent.
 
 ### `bool hot$onChildUpdate(String childPath, Object child, [Object data]);`
 
@@ -79,7 +79,7 @@ module reloadings, but state of your code is not. This may end in a situation wh
 DOM is not in the same state you application will assume it is. 
 
 To resolve this situation you need to implement `hot$onDestroy` hook, to restore the state of DOM
-your application expect. You may allso change your initial code to handle all possible stated of DOM,
+your application expect. You may also change your initial code to handle all possible stated of DOM,
 but it may have impact on production performance or behavior, while HMR hooks will be just optimized
 out by dart2js as unused.
 

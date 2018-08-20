@@ -108,7 +108,7 @@ class ReloadingManager {
           _dirtyModules.add(parentId);
         }
       }
-      print('$reloadedModules modules was hot-reloaded.');
+      print('$reloadedModules modules were hot-reloaded.');
     } on HotReloadFailedException catch (e) {
       print('Error during script reloading. Firing full page reload. $e');
       _reloadPage();
