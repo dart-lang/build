@@ -277,7 +277,7 @@ if(!window.\$dartLoader) {
          }
        });
      },
-     getModuleLibraries: null,
+     getModuleLibraries: null, // set up by _initializeTools
    };
 }
 let customModulePaths = {};
