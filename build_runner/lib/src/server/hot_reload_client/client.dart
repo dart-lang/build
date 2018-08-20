@@ -148,11 +148,12 @@ List<K> keys<K, V>(JsMap<K, V> map) {
   return List.from(_jsArrayFrom(map.keys()));
 }
 
-Module _getModuleLibraries(String moduleId) {
+Module _moduleLibraries(String moduleId) {
   var moduleObj = dartLoader.getModuleLibraries(moduleId);
-  if (moduleObj == null)
+  if (moduleObj == null) {
     throw HotReloadFailedException("Failed to get module '$moduleId'. "
         "This error might appear if such module doesn't exist or isn't alredy loaded");
+  }
   var moduleKeys = List<String>.from(_jsObjectKeys(moduleObj));
   var moduleValues =
       List<HotReloadableLibrary>.from(_jsObjectValues(moduleObj));
@@ -165,7 +166,7 @@ Future<Module> _reloadModule(String moduleId) {
   var completer = Completer<Module>();
   var stackTrace = StackTrace.current;
   dartLoader.forceLoadModule(moduleId, allowInterop(() {
-    completer.complete(_getModuleLibraries(moduleId));
+    completer.complete(_moduleLibraries(moduleId));
   }),
       allowInterop((e) => completer.completeError(
           HotReloadFailedException(e.message), stackTrace)));
@@ -189,7 +190,7 @@ main() async {
 
   var manager = ReloadingManager(
       _reloadModule,
-      _getModuleLibraries,
+      _moduleLibraries,
       _reloadPage,
       (module) => dartLoader.moduleParentsGraph.get(module),
       () => keys(dartLoader.moduleParentsGraph));
