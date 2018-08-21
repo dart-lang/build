@@ -327,6 +327,13 @@ void main() {
         await clientChannel1.sink.close();
       });
 
+      test('closes listners', () async {
+        expect(clientChannel1.stream, emitsDone);
+        await createMockConnection(serverChannel1, 'web');
+        await handler.close();
+        expect(clientChannel1.closeCode, isNotNull);
+      });
+
       test('emmits build results digests', () async {
         _addSource('a|web/index.html', 'content1');
         _addSource('a|lib/some.dart.js', 'content2');
