@@ -56,7 +56,7 @@ class ServeHandler implements BuildState {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
       _webSocketHandler.emitUpdateMessage(result);
-    });
+    }).onDone(_webSocketHandler.close);
   }
 
   @override
@@ -201,6 +201,13 @@ class BuildUpdatesWebSocketHandler {
     if (connectionsByRootDir[rootDir].isEmpty) {
       connectionsByRootDir.remove(rootDir);
     }
+  }
+
+  Future<void> close() async {
+    await Future.wait(connectionsByRootDir.values
+        .expand((x) => x)
+        .map((connection) => connection.sink.close()));
+    return;
   }
 }
 
