@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 abstract class Methods {
   Future<Module> reloadModule(String moduleId);
 
-  Future<Module> loadModule(String moduleId);
+  Module getModuleLibraries(String moduleId);
 
   reloadPage();
 }
@@ -28,7 +28,7 @@ void main() {
   ReloadingManager initManager(Map<String, List<String>> moduleParentsGraph) {
     var manager = ReloadingManager(
         methods.reloadModule,
-        methods.loadModule,
+        methods.getModuleLibraries,
         methods.reloadPage,
         (id) => moduleParentsGraph[id],
         () => moduleParentsGraph.keys);
@@ -49,7 +49,7 @@ void main() {
     when(methods.reloadModule(any)).thenAnswer((invocation) async =>
         mockModuleNew(invocation.positionalArguments[0] as String));
 
-    when(methods.loadModule(any)).thenAnswer((invocation) async =>
+    when(methods.getModuleLibraries(any)).thenAnswer((invocation) =>
         mockModuleOld(invocation.positionalArguments[0] as String));
   });
 
@@ -226,7 +226,5 @@ void main() {
       await manager.reload(['child']);
       verify(methods.reloadModule('parent')).called(1);
     });
-
-//    logInvocations(List.from<Mock>(modules.values)..add(methods));
   });
 }

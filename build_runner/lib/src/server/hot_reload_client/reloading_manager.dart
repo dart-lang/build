@@ -19,7 +19,7 @@ class HotReloadFailedException implements Exception {
 /// Handles reloading order and hooks invocation
 class ReloadingManager {
   final Future<Module> Function(String) _reloadModule;
-  final Future<Module> Function(String) _loadModule;
+  final Module Function(String) _moduleLibraries;
   final void Function() _reloadPage;
   final List<String> Function(String moduleId) _moduleParents;
   final Iterable<String> Function() _allModules;
@@ -48,7 +48,7 @@ class ReloadingManager {
     }
   }
 
-  ReloadingManager(this._reloadModule, this._loadModule, this._reloadPage,
+  ReloadingManager(this._reloadModule, this._moduleLibraries, this._reloadPage,
       this._moduleParents, this._allModules) {
     _dirtyModules = SplayTreeSet(moduleTopologicalCompare);
   }
@@ -67,7 +67,7 @@ class ReloadingManager {
         var moduleId = _dirtyModules.first;
         _dirtyModules.remove(moduleId);
 
-        var existing = await _loadModule(moduleId);
+        var existing = _moduleLibraries(moduleId);
         var data = existing.onDestroy();
 
         var newVersion = await _reloadModule(moduleId);
@@ -88,7 +88,7 @@ class ReloadingManager {
         }
         parentIds.sort(moduleTopologicalCompare);
         for (var parentId in parentIds) {
-          var parentModule = await _loadModule(parentId);
+          var parentModule = _moduleLibraries(parentId);
           success = parentModule.onChildUpdate(moduleId, newVersion, data);
           if (success == true) continue;
           if (success == false) {

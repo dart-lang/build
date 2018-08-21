@@ -19,6 +19,8 @@ import 'web_entrypoint_builder.dart';
 /// Alias `_p.url` to `p`.
 _p.Context get _context => _p.url;
 
+var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
+
 Future<Null> bootstrapDdc(BuildStep buildStep,
     {bool useKernel,
     bool buildRootAppSummary,
@@ -89,8 +91,12 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   bootstrapContent.write(_dartLoaderSetup(modulePaths));
   bootstrapContent.write(_requireJsConfig);
 
+  // Strip top-level directory
+  var appModuleSource =
+      _context.joinAll(_context.split(module.primarySource.path).sublist(1));
+
   bootstrapContent.write(_appBootstrap(bootstrapModuleName, appModuleName,
-      appModuleScope, ignoreCastFailures, enableSyncAsync));
+      appModuleScope, appModuleSource, ignoreCastFailures, enableSyncAsync));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
@@ -136,8 +142,13 @@ String _ddcModuleName(AssetId jsId) {
 /// `[moduleScope].main()` function on it.
 ///
 /// Also performs other necessary initialization.
-String _appBootstrap(String bootstrapModuleName, String moduleName,
-        String moduleScope, bool ignoreCastFailures, bool enableSyncAsync) =>
+String _appBootstrap(
+        String bootstrapModuleName,
+        String moduleName,
+        String moduleScope,
+        String appModuleSource,
+        bool ignoreCastFailures,
+        bool enableSyncAsync) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.ignoreWhitelistedErrors($ignoreCastFailures);
@@ -145,15 +156,19 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
 $_initializeTools
   app.$moduleScope.main();
-  return {
-    bootstrap: {
+  var bootstrap = {
       hot\$onChildUpdate: function(childName, child) {
-        if (childName === "$moduleName") {
+        if (childName === "$appModuleSource") {
           child.main();
           return true;
         }
       }
     }
+  dart_sdk.dart.trackLibraries("$bootstrapModuleName", {
+    "$bootstrapModuleName": bootstrap
+  }, '');
+  return {
+    bootstrap: bootstrap
   };
 });
 })();
@@ -235,15 +250,16 @@ if(!window.\$dartLoader) {
    window.\$dartLoader = {
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
-     modulesGraph: new Map(),
-     moduleParentsGraph: new Map(),
      rootDirectories: new Array(),
+     // Used in package:build_runner/src/server/hot_reload_client/client.dart
+     moduleParentsGraph: new Map(),
      moduleLoadingErrorCallbacks: new Map(),
      forceLoadModule: function (moduleName, callback, onError) {
-       requirejs.undef(moduleName);
-       \$dartLoader.loadModule(moduleName, callback, onError);
-     },
-     loadModule: function (moduleName, callback, onError) {
+       // dartdevc only strips the final extension when adding modules to source
+       // maps, so we need to do the same.
+       if (moduleName.endsWith('$_modulePartialExtension')) {
+         moduleName = moduleName.substring(0, moduleName.length - ${_modulePartialExtension.length});
+       }
        if (typeof onError != 'undefined') {
          var errorCallbacks = \$dartLoader.moduleLoadingErrorCallbacks;
          if (!errorCallbacks.has(moduleName)) {
@@ -251,15 +267,17 @@ if(!window.\$dartLoader) {
          }
          errorCallbacks.get(moduleName).add(onError);
        }
-       requirejs([moduleName], function(module) {
+       requirejs.undef(moduleName);
+       requirejs([moduleName], function() {
          if (typeof onError != 'undefined') {
            errorCallbacks.get(moduleName).delete(onError);
          }
          if (typeof callback != 'undefined') {
-           callback(module);
+           callback();
          }
        });
      },
+     getModuleLibraries: null, // set up by _initializeTools
    };
 }
 let customModulePaths = {};
@@ -273,7 +291,7 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   // dartdevc only strips the final extension when adding modules to source
   // maps, so we need to do the same.
   if (moduleName != 'dart_sdk') {
-    moduleName += '${_context.withoutExtension(jsModuleExtension)}';
+    moduleName += '$_modulePartialExtension';
   }
   if (window.\$dartLoader.moduleIdToUrl.has(moduleName)) {
     continue;
@@ -290,6 +308,7 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
 final _initializeTools = '''
 $_baseUrlScript
   dart_sdk._debugger.registerDevtoolsFormatter();
+  \$dartLoader.getModuleLibraries = dart_sdk.dart.getModuleLibraries;
   if (window.\$dartStackTraceUtility && !window.\$dartStackTraceUtility.ready) {
     window.\$dartStackTraceUtility.ready = true;
     let dart = dart_sdk.dart;
@@ -369,28 +388,37 @@ require.config({
     paths: customModulePaths
 });
 
+const modulesGraph = new Map();
+function getRegisteredModuleName(moduleMap) {
+  if (\$dartLoader.moduleIdToUrl.has(moduleMap.name + '$_modulePartialExtension')) {
+    return moduleMap.name + '$_modulePartialExtension';
+  }
+  return moduleMap.name;
+}
 requirejs.onResourceLoad = function (context, map, depArray) {
-  if (\$dartLoader.modulesGraph.has(map.name)) {
+  const name = getRegisteredModuleName(map);
+  const depNameArray = depArray.map(getRegisteredModuleName);
+  if (modulesGraph.has(name)) {
     // TODO Move this logic to better place
-    var previousDeps = \$dartLoader.modulesGraph.get(map.name);
-    var changed = previousDeps.length != depArray.length;
-    changed = changed || depArray.some(function(dep) {
-      return !previousDeps.includes(dep.name);
+    var previousDeps = modulesGraph.get(name);
+    var changed = previousDeps.length != depNameArray.length;
+    changed = changed || depNameArray.some(function(depName) {
+      return !previousDeps.includes(depName);
     });
     if (changed) {
-      console.warn("Dependencies graph change for module '" + map.name + "' detected. " + 
-        "Dependencies was [" + previousDeps + "], now [" +  depArray.map((dep) => dep.name) +"]. " +
+      console.warn("Dependencies graph change for module '" + name + "' detected. " + 
+        "Dependencies was [" + previousDeps + "], now [" +  depNameArray.map((depName) => depName) +"]. " +
         "Page can't be hot-reloaded, firing full page reload.");
       window.location.reload();
     }
   } else {
-    \$dartLoader.modulesGraph.set(map.name, []);
-    for (const dep of depArray) {
-      if (!\$dartLoader.moduleParentsGraph.has(dep.name)) {
-        \$dartLoader.moduleParentsGraph.set(dep.name, []);
+    modulesGraph.set(name, []);
+    for (const depName of depNameArray) {
+      if (!\$dartLoader.moduleParentsGraph.has(depName)) {
+        \$dartLoader.moduleParentsGraph.set(depName, []);
       }
-      \$dartLoader.moduleParentsGraph.get(dep.name).push(map.name);
-      \$dartLoader.modulesGraph.get(map.name).push(dep.name);
+      \$dartLoader.moduleParentsGraph.get(depName).push(name);
+      modulesGraph.get(name).push(depName);
     }
   }
 };

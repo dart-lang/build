@@ -125,12 +125,11 @@ class DartLoader {
   external JsMap<String, List<String>> get moduleParentsGraph;
 
   @JS()
-  external void forceLoadModule(String moduleId,
-      void Function(Object module) callback, void Function(JsError e) onError);
+  external void forceLoadModule(String moduleId, void Function() callback,
+      void Function(JsError e) onError);
 
   @JS()
-  external void loadModule(String moduleId,
-      void Function(Object module) callback, void Function(JsError e) onError);
+  external Object getModuleLibraries(String moduleId);
 }
 
 @JS(r'$dartLoader')
@@ -149,27 +148,30 @@ List<K> keys<K, V>(JsMap<K, V> map) {
   return List.from(_jsArrayFrom(map.keys()));
 }
 
-Future<Module> Function(String) _futurifyLoaderFunction(
-        void Function(String, void Function(Object), void Function(JsError))
-            loaderFunction) =>
-    (moduleId) {
-      var completer = Completer<Module>();
-      var stackTrace = StackTrace.current;
-      loaderFunction(moduleId, allowInterop((Object moduleObj) {
-        var moduleKeys = List<String>.from(_jsObjectKeys(moduleObj));
-        var moduleValues =
-            List<HotReloadableLibrary>.from(_jsObjectValues(moduleObj));
-        var moduleLibraries = moduleValues.map((x) => LibraryWrapper(x));
-        var module = Module(Map.fromIterables(moduleKeys, moduleLibraries));
-        completer.complete(module);
-      }),
-          allowInterop((e) => completer.completeError(
-              HotReloadFailedException(e.message), stackTrace)));
-      return completer.future;
-    };
+Module _moduleLibraries(String moduleId) {
+  var moduleObj = dartLoader.getModuleLibraries(moduleId);
+  if (moduleObj == null) {
+    throw HotReloadFailedException("Failed to get module '$moduleId'. "
+        "This error might appear if such module doesn't exist or isn't alredy loaded");
+  }
+  var moduleKeys = List<String>.from(_jsObjectKeys(moduleObj));
+  var moduleValues =
+      List<HotReloadableLibrary>.from(_jsObjectValues(moduleObj));
+  var moduleLibraries = moduleValues.map((x) => LibraryWrapper(x));
+  var module = Module(Map.fromIterables(moduleKeys, moduleLibraries));
+  return module;
+}
 
-var _reloadModule = _futurifyLoaderFunction(dartLoader.forceLoadModule);
-var _loadModule = _futurifyLoaderFunction(dartLoader.loadModule);
+Future<Module> _reloadModule(String moduleId) {
+  var completer = Completer<Module>();
+  var stackTrace = StackTrace.current;
+  dartLoader.forceLoadModule(moduleId, allowInterop(() {
+    completer.complete(_moduleLibraries(moduleId));
+  }),
+      allowInterop((e) => completer.completeError(
+          HotReloadFailedException(e.message), stackTrace)));
+  return completer.future;
+}
 
 void _reloadPage() {
   window.location.reload();
@@ -188,7 +190,7 @@ main() async {
 
   var manager = ReloadingManager(
       _reloadModule,
-      _loadModule,
+      _moduleLibraries,
       _reloadPage,
       (module) => dartLoader.moduleParentsGraph.get(module),
       () => keys(dartLoader.moduleParentsGraph));
