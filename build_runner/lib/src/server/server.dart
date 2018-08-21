@@ -61,11 +61,11 @@ class ServeHandler implements BuildState {
 
   @override
   Future<BuildResult> get currentBuild => _state.currentBuild;
+
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
-  shelf.Handler handlerFor(String rootDir,
-      {bool logRequests, bool hotReload}) {
+  shelf.Handler handlerFor(String rootDir, {bool logRequests, bool hotReload}) {
     hotReload ??= false;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
