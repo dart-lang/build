@@ -203,11 +203,10 @@ class BuildUpdatesWebSocketHandler {
     }
   }
 
-  Future<void> close() async {
-    await Future.wait(connectionsByRootDir.values
+  Future<void> close() {
+    return Future.wait(connectionsByRootDir.values
         .expand((x) => x)
         .map((connection) => connection.sink.close()));
-    return;
   }
 }
 
