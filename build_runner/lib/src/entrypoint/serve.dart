@@ -26,10 +26,14 @@ class ServeCommand extends WatchCommand {
           defaultsTo: false,
           negatable: false,
           help: 'Enables logging for each request to the server.')
+      ..addFlag(liveReloadOption,
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables automatic page reloading on rebuilds.')
       ..addFlag(hotReloadOption,
           defaultsTo: false,
           negatable: false,
-          help: 'Enables automatic page reloading on rebuilds.');
+          help: 'Enables automatic reloading of changed modules.');
   }
 
   @override
@@ -90,7 +94,9 @@ class ServeCommand extends WatchCommand {
       serveRequests(
           server,
           handler.handlerFor(target.dir,
-              logRequests: options.logRequests, hotReload: options.hotReload));
+              logRequests: options.logRequests,
+              liveReload: options.liveReload,
+              hotReload: options.hotReload));
     });
 
     _ensureBuildWebCompilersDependency(packageGraph, logger);

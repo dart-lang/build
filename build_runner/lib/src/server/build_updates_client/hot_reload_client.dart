@@ -17,7 +17,7 @@ import 'reload_handler.dart';
 import 'reloading_manager.dart';
 
 final _assetsDigestPath = r'$assetDigests';
-final _buildUpdatesProtocol = r'$hotreload';
+final _buildUpdatesProtocol = r'$buildUpdates';
 
 @anonymous
 @JS()

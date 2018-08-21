@@ -2,8 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_runner/src/server/hot_reload_client/reload_handler.dart';
-import 'package:build_runner/src/server/hot_reload_client/reloading_manager.dart';
+import 'package:build_runner/src/server/build_updates_client/reload_handler.dart';
+import 'package:build_runner/src/server/build_updates_client/reloading_manager.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 

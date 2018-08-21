@@ -698,7 +698,7 @@ b_:function(a){var z=init.mangledGlobalNames[a]
 if(typeof z==="string")return z
 z="minified:"+a
 return z},
-ha:[function(a){return init.types[a]},null,null,4,0,null,6],
+h7:[function(a){return init.types[a]},null,null,4,0,null,6],
 hk:function(a,b){var z
 if(b!=null){z=b.x
 if(z!=null)return z}return!!J.j(a).$isb9},
@@ -874,7 +874,7 @@ if(!e){t=f.length==1&&!0
 s=H.bP(a,z,t)
 s.$reflectionInfo=d}else{w.$static_name=g
 s=z
-t=!1}if(typeof x=="number")r=function(h,i){return function(){return h(i)}}(H.ha,x)
+t=!1}if(typeof x=="number")r=function(h,i){return function(){return h(i)}}(H.h7,x)
 else if(typeof x=="function")if(e)r=x
 else{q=t?H.bM:H.b2
 r=function(h,i){return function(){return h.apply({$receiver:i(this)},arguments)}}(x,q)}else throw H.c("Error in reflectionInfo.")
@@ -990,7 +990,7 @@ return a},
 O:function(a){if(a==null)return
 return a.$ti},
 iE:function(a,b,c){return H.a0(a["$as"+H.b(c)],H.O(b))},
-h9:function(a,b,c,d){var z=H.a0(a["$as"+H.b(c)],H.O(b))
+h6:function(a,b,c,d){var z=H.a0(a["$as"+H.b(c)],H.O(b))
 return z==null?null:z[d]},
 bB:function(a,b,c){var z=H.a0(a["$as"+H.b(b)],H.O(a))
 return z==null?null:z[c]},
@@ -1033,7 +1033,7 @@ n+=m+"["
 for(s=j.length,m="",l=0;l<s;++l,m=", "){k=j[l]
 n=n+m+H.P(k,b)}n+="]"}if("named" in a){i=a.named
 n+=m+"{"
-for(s=H.h5(i),r=s.length,m="",l=0;l<r;++l,m=", "){h=s[l]
+for(s=H.h2(i),r=s.length,m="",l=0;l<r;++l,m=", "){h=s[l]
 n=n+m+H.P(i[h],b)+(" "+H.b(h))}n+="}"}if(y!=null)b.length=y
 return u+"("+n+") => "+p},
 bD:function(a,b,c){var z,y,x,w,v,u
@@ -1509,7 +1509,7 @@ he:{"^":"e:7;a",
 $2:function(a,b){return this.a(a,b)}},
 hf:{"^":"e;a",
 $1:function(a){return this.a(a)}}}],["","",,H,{"^":"",
-h5:function(a){return J.dC(a?Object.keys(a):[],null)}}],["","",,H,{"^":"",
+h2:function(a){return J.dC(a?Object.keys(a):[],null)}}],["","",,H,{"^":"",
 aY:function(a){if(typeof dartPrint=="function"){dartPrint(a)
 return}if(typeof console=="object"&&typeof console.log!="undefined"){console.log(a)
 return}if(typeof window=="object")return
@@ -2195,7 +2195,7 @@ F:function(a,b){return this.k(a,b)},
 gt:function(a){return this.gi(a)===0},
 av:function(a,b){H.c8(a,b)},
 B:function(a,b){var z,y
-z=H.m([],[H.h9(this,a,"as",0)])
+z=H.m([],[H.h6(this,a,"as",0)])
 C.b.si(z,C.c.B(this.gi(a),b.gi(b)))
 y=a.length
 C.b.U(z,0,y,a)
@@ -2427,7 +2427,7 @@ if(typeof a!="object")return a
 if(Object.getPrototypeOf(a)!==Array.prototype)return new P.fa(a,Object.create(null))
 for(z=0;z<a.length;++z)a[z]=P.aR(a[z])
 return a},
-iy:[function(a){return a.ca()},"$1","h4",4,0,0,15],
+iy:[function(a){return a.ca()},"$1","h1",4,0,0,15],
 fa:{"^":"bc;a,b,0c",
 k:function(a,b){var z,y
 z=this.b
@@ -2522,7 +2522,7 @@ $asaK:function(){return[P.f,P.a]}},
 fe:{"^":"a;",
 b0:function(a){var z,y,x,w,v,u,t
 z=a.length
-for(y=J.h8(a),x=this.c,w=0,v=0;v<z;++v){u=y.aB(a,v)
+for(y=J.h5(a),x=this.c,w=0,v=0;v<z;++v){u=y.aB(a,v)
 if(u>92)continue
 if(u<32){if(v>w)x.a+=C.d.P(a,w,v)
 w=v+1
@@ -2630,7 +2630,7 @@ return z.charCodeAt(0)==0?z:z},
 p:{
 fd:function(a,b,c){var z,y,x
 z=new P.ax("")
-y=new P.fc(z,[],P.h4())
+y=new P.fc(z,[],P.h1())
 y.a3(a)
 x=z.a
 return x.charCodeAt(0)==0?x:x}}}}],["","",,P,{"^":"",
@@ -2971,10 +2971,10 @@ ga2:function(a){return W.cr(this.a.top)},
 p:{
 cr:function(a){if(a===window)return a
 else return new W.eS(a)}}}}],["","",,P,{"^":"",
-h1:function(a){var z,y
+fZ:function(a){var z,y
 z=new P.t(0,$.h,[null])
 y=new P.az(z,[null])
-a.then(H.a_(new P.h2(y),1))["catch"](H.a_(new P.h3(y),1))
+a.then(H.a_(new P.h_(y),1))["catch"](H.a_(new P.h0(y),1))
 return z},
 eG:{"^":"a;",
 aT:function(a){var z,y,x,w
@@ -2996,7 +2996,7 @@ if(Math.abs(y)<=864e13)w=!1
 else w=!0
 if(w)H.p(P.bJ("DateTime is outside valid range: "+x.gbN()))
 return x}if(a instanceof RegExp)throw H.c(P.bk("structured clone of RegExp"))
-if(typeof Promise!="undefined"&&a instanceof Promise)return P.h1(a)
+if(typeof Promise!="undefined"&&a instanceof Promise)return P.fZ(a)
 v=Object.getPrototypeOf(a)
 if(v===Object.prototype||v===null){u=this.aT(a)
 x=this.b
@@ -3034,9 +3034,9 @@ co:{"^":"eG;a,b,c",
 bA:function(a,b){var z,y,x,w
 for(z=Object.keys(a),y=z.length,x=0;x<z.length;z.length===y||(0,H.aZ)(z),++x){w=z[x]
 b.$2(w,a[w])}}},
-h2:{"^":"e:1;a",
+h_:{"^":"e:1;a",
 $1:[function(a){return this.a.E(0,a)},null,null,4,0,null,4,"call"]},
-h3:{"^":"e:1;a",
+h0:{"^":"e:1;a",
 $1:[function(a){return this.a.aR(a)},null,null,4,0,null,4,"call"]}}],["","",,P,{"^":""}],["","",,P,{"^":"",
 fD:function(a){var z,y
 z=a.$dart_jsFunction
@@ -3059,15 +3059,15 @@ x=P.at(self.Object.keys(z),!0,y)
 w=P.at(self.Object.values(z),!0,D.bU)
 v=P.dR(null,null,null,y,G.dN)
 P.dW(v,x,new H.c1(w,new D.fL(),[H.i(w,0),D.c_]))
-return new G.a8(v)},"$1","fZ",4,0,19,5],
+return new G.a8(v)},"$1","h8",4,0,19,5],
 iz:[function(a){var z,y,x,w
 z=G.a8
 y=new P.t(0,$.h,[z])
 x=new P.az(y,[z])
 w=P.ew()
 J.d_(self.$dartLoader,a,P.cE(new D.fO(x,a)),P.cE(new D.fP(x,w)))
-return y},"$1","h_",4,0,20,5],
-iA:[function(){window.location.reload()},"$0","h0",0,0,5],
+return y},"$1","h9",4,0,20,5],
+iA:[function(){window.location.reload()},"$0","ha",0,0,5],
 aC:function(){var z=0,y=P.bu(null),x,w,v,u,t,s,r
 var $async$aC=P.bv(function(a,b){if(a===1)return P.bp(b,y)
 while(true)switch(z){case 0:x=window.location
@@ -3082,9 +3082,9 @@ case 2:u=s.hi(r.fF(b.response),"$isM").L(0,x,x)
 v=-1
 v=new P.az(new P.t(0,$.h,[v]),[v])
 v.aj(0)
-t=new L.em(D.h_(),D.fZ(),D.h0(),new D.hn(),new D.ho(),P.ar(x,P.x),v)
+t=new L.em(D.h9(),D.h8(),D.ha(),new D.hn(),new D.ho(),P.ar(x,P.x),v)
 t.r=P.eu(t.gaV(),null,x)
-W.bm(W.eF(C.d.B("ws://",window.location.host),H.m(["$hotreload"],[x])),"message",new D.hp(new S.el(new D.hq(w),u,t)),!1)
+W.bm(W.eF(C.d.B("ws://",window.location.host),H.m(["$buildUpdates"],[x])),"message",new D.hp(new S.el(new D.hq(w),u,t)),!1)
 return P.bq(null,y)}})
 return P.br($async$aC,y)},
 bU:{"^":"T;","%":""},
@@ -3300,7 +3300,7 @@ if(a.constructor==Array)return J.a3.prototype
 if(typeof a!="object"){if(typeof a=="function")return J.a6.prototype
 return a}if(a instanceof P.a)return a
 return J.aB(a)}
-J.h6=function(a){if(typeof a=="number")return J.a4.prototype
+J.h3=function(a){if(typeof a=="number")return J.a4.prototype
 if(typeof a=="string")return J.a5.prototype
 if(a==null)return a
 if(a.constructor==Array)return J.a3.prototype
@@ -3322,12 +3322,12 @@ J.cJ=function(a){if(typeof a=="number")return J.a4.prototype
 if(a==null)return a
 if(!(a instanceof P.a))return J.ay.prototype
 return a}
-J.h7=function(a){if(typeof a=="number")return J.a4.prototype
+J.h4=function(a){if(typeof a=="number")return J.a4.prototype
 if(typeof a=="string")return J.a5.prototype
 if(a==null)return a
 if(!(a instanceof P.a))return J.ay.prototype
 return a}
-J.h8=function(a){if(typeof a=="string")return J.a5.prototype
+J.h5=function(a){if(typeof a=="string")return J.a5.prototype
 if(a==null)return a
 if(!(a instanceof P.a))return J.ay.prototype
 return a}
@@ -3336,7 +3336,7 @@ if(typeof a!="object"){if(typeof a=="function")return J.a6.prototype
 return a}if(a instanceof P.a)return a
 return J.aB(a)}
 J.cV=function(a,b){if(typeof a=="number"&&typeof b=="number")return a+b
-return J.h6(a).B(a,b)}
+return J.h3(a).B(a,b)}
 J.u=function(a,b){if(a==null)return b==null
 if(typeof a!="object")return b!=null&&a===b
 return J.j(a).H(a,b)}
@@ -3347,7 +3347,7 @@ return J.cJ(a).I(a,b)}
 J.cX=function(a,b,c){if(typeof b==="number")if((a.constructor==Array||H.hk(a,a[init.dispatchPropertyName]))&&!a.immutable$list&&b>>>0===b&&b<a.length)return a[b]=c
 return J.aA(a).j(a,b,c)}
 J.cY=function(a,b,c,d){return J.w(a).aO(a,b,c,d)}
-J.b0=function(a,b){return J.h7(a).a_(a,b)}
+J.b0=function(a,b){return J.h4(a).a_(a,b)}
 J.cZ=function(a,b){return J.aA(a).F(a,b)}
 J.d_=function(a,b,c,d){return J.w(a).bB(a,b,c,d)}
 J.aE=function(a){return J.j(a).gA(a)}
@@ -3621,4 +3621,4 @@ function onLoad(b){for(var x=0;x<z.length;++x)z[x].removeEventListener("load",on
 a(b.target)}for(var y=0;y<z.length;++y)z[y].addEventListener("load",onLoad,false)})(function(a){init.currentScript=a
 if(typeof dartMainRunner==="function")dartMainRunner(D.aC,[])
 else D.aC([])})})()
-//# sourceMappingURL=client.dart.js.map
+//# sourceMappingURL=hot_reload_client.dart.js.map

@@ -4,8 +4,8 @@
 
 import 'dart:async';
 
-import 'package:build_runner/src/server/hot_reload_client/module.dart';
-import 'package:build_runner/src/server/hot_reload_client/reloading_manager.dart';
+import 'package:build_runner/src/server/build_updates_client/module.dart';
+import 'package:build_runner/src/server/build_updates_client/reloading_manager.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
