@@ -1,3 +1,7 @@
+## 0.4.4
+
+- Added more javascript code to dev bootstrap for hot-reloading support
+
 ## 0.4.3
 
 - Only call `window.postMessage` during initialization if the current context

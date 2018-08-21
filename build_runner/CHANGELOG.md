@@ -1,3 +1,9 @@
+## 0.10.2
+
+- `--live-reload` cli option is replaced with `--hot-reload` one with appropriate
+functionality. See [hot-module-reloading](../docs/hot_module_reloading.md) for more 
+info.
+
 ## 0.10.1+1
 
 - Added better error handling when a socket is already in use in `serve` mode.

@@ -186,14 +186,14 @@ void main() {
   group('build updates', () {
     test('injects client code if enabled', () async {
       _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
-      var response = await serveHandler.handlerFor('web', liveReload: true)(
+      var response = await serveHandler.handlerFor('web', hotReload: true)(
           Request('GET', Uri.parse('http://server.com/some.js')));
       expect(await response.readAsString(), contains('hot_reload_client'));
     });
 
     test('doesn\'t inject client code if disabled', () async {
       _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
-      var response = await serveHandler.handlerFor('web', liveReload: false)(
+      var response = await serveHandler.handlerFor('web', hotReload: false)(
           Request('GET', Uri.parse('http://server.com/some.js')));
       expect(
           await response.readAsString(), isNot(contains('hot_reload_client')));
@@ -201,7 +201,7 @@ void main() {
 
     test('doesn\'t inject client code in non-js files', () async {
       _addSource('a|web/some.html', entrypointExtensionMarker + '\n<br>some');
-      var response = await serveHandler.handlerFor('web', liveReload: true)(
+      var response = await serveHandler.handlerFor('web', hotReload: true)(
           Request('GET', Uri.parse('http://server.com/some.html')));
       expect(
           await response.readAsString(), isNot(contains('hot_reload_client')));
@@ -209,7 +209,7 @@ void main() {
 
     test('doesn\'t inject client code in non-marked files', () async {
       _addSource('a|web/some.js', 'alert(1)');
-      var response = await serveHandler.handlerFor('web', liveReload: true)(
+      var response = await serveHandler.handlerFor('web', hotReload: true)(
           Request('GET', Uri.parse('http://server.com/some.js')));
       expect(
           await response.readAsString(), isNot(contains('hot_reload_client')));
@@ -218,7 +218,7 @@ void main() {
     test('expect websocket connection if enabled', () async {
       _addSource('a|web/index.html', 'content');
       expect(
-          serveHandler.handlerFor('web', liveReload: true)(
+          serveHandler.handlerFor('web', hotReload: true)(
               Request('GET', Uri.parse('ws://server.com/'),
                   headers: {
                     'Connection': 'Upgrade',
@@ -232,7 +232,7 @@ void main() {
 
     test('reject websocket connection if disabled', () async {
       _addSource('a|web/index.html', 'content');
-      var response = await serveHandler.handlerFor('web', liveReload: false)(
+      var response = await serveHandler.handlerFor('web', hotReload: false)(
           Request('GET', Uri.parse('ws://server.com/'), headers: {
         'Connection': 'Upgrade',
         'Upgrade': 'websocket',
