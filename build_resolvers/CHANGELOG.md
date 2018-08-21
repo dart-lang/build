@@ -1,3 +1,7 @@
+## 0.2.2+3
+
+- Don't log a severe message when a URI cannot be resolved. Just return `null`.
+
 ## 0.2.2+2
 
 - Use sdk summaries for the analysis context, which makes getting the initial

@@ -297,7 +297,6 @@ class _AssetUriResolver implements UriResolver {
     } else {
       assetId = _resolve(null, uri.toString());
       if (assetId == null) {
-        log.severe('Unable to resolve asset ID for "$uri"');
         return null;
       }
     }
