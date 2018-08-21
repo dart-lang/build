@@ -809,7 +809,8 @@ class _SingleBuild {
   /// Adds new inputs to [node] based on [updatedInputs], and adds the
   /// appropriate edges.
   void _addNewInputs(GeneratedAssetNode node, Set<AssetId> updatedInputs) {
-    var newInputs = updatedInputs.difference(node.inputs);
+    var newInputs =
+        updatedInputs.difference(node.inputs).map(_assetGraph.canonicalize);
     node.inputs.addAll(newInputs);
     for (var input in newInputs) {
       var inputNode = _assetGraph.get(input);
