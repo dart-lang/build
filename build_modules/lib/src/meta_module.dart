@@ -9,6 +9,7 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:json_annotation/json_annotation.dart';
 
+import 'common.dart';
 import 'module_library.dart';
 import 'modules.dart';
 
@@ -209,23 +210,47 @@ class MetaModule {
 
   Map<String, dynamic> toJson() => _$MetaModuleToJson(this);
 
-  static Future<MetaModule> forLibraries(
-      AssetReader reader, List<AssetId> libraryAssets) async {
-    var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
-    for (var libraryAsset in libraryAssets) {
-      final library = ModuleLibrary.parse(
-          libraryAsset.changeExtension('').changeExtension('.dart'),
-          await reader.readAsString(libraryAsset));
-      final dir = _topLevelDir(libraryAsset.path);
-      if (!librariesByDirectory.containsKey(dir)) {
-        librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};
-      }
-      librariesByDirectory[dir][library.id] = library;
+  static Future<MetaModule> forLibraries(AssetReader reader,
+      List<AssetId> libraryIds, ModuleStrategy strategy) async {
+    var libraries = <ModuleLibrary>[];
+    for (var id in libraryIds) {
+      libraries.add(ModuleLibrary.parse(
+          id.changeExtension('').changeExtension('.dart'),
+          await reader.readAsString(id)));
     }
-    final modules =
-        librariesByDirectory.values.expand(_computeModules).toList();
-    // Deterministically output the modules.
-    modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
-    return MetaModule(modules);
+    switch (strategy) {
+      case ModuleStrategy.fine:
+        return _fineModulesForLibraries(reader, libraries);
+      case ModuleStrategy.coarse:
+        return _coarseModulesForLibraries(reader, libraries);
+    }
+    throw StateError('Unrecognized module strategy $strategy');
   }
+}
+
+MetaModule _coarseModulesForLibraries(
+    AssetReader reader, List<ModuleLibrary> libraries) {
+  var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
+  for (var library in libraries) {
+    final dir = _topLevelDir(library.id.path);
+    if (!librariesByDirectory.containsKey(dir)) {
+      librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};
+    }
+    librariesByDirectory[dir][library.id] = library;
+  }
+  final modules = librariesByDirectory.values.expand(_computeModules).toList();
+  // Deterministically output the modules.
+  modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
+  return MetaModule(modules);
+}
+
+MetaModule _fineModulesForLibraries(
+    AssetReader reader, List<ModuleLibrary> libraries) {
+  var modules = libraries
+      .map((library) => Module(
+          library.id, library.parts.followedBy([library.id]), library.deps))
+      .toList();
+  // Deterministically output the modules.
+  modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
+  return MetaModule(modules);
 }

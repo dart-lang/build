@@ -10,7 +10,6 @@ import 'package:graphs/graphs.dart';
 
 import 'package:build/build.dart';
 
-import 'common.dart';
 import 'meta_module.dart';
 import 'meta_module_builder.dart';
 import 'modules.dart';
@@ -30,13 +29,7 @@ const metaModuleCleanExtension = '.meta_module.clean';
 /// Note if the raw meta module file can't be found for any of the
 /// module's transitive dependencies there will be no output.
 class MetaModuleCleanBuilder implements Builder {
-  final bool _isCoarse;
-  const MetaModuleCleanBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
-
-  factory MetaModuleCleanBuilder.forOptions(BuilderOptions options) {
-    return MetaModuleCleanBuilder(
-        isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
-  }
+  const MetaModuleCleanBuilder();
 
   @override
   final buildExtensions = const {
@@ -45,33 +38,23 @@ class MetaModuleCleanBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    if (!_isCoarse) return;
-
     var assetToModule = await buildStep.fetchResource(_assetToModule);
     var assetToPrimary = await buildStep.fetchResource(_assetToPrimary);
-    SplayTreeSet<Module> cleanModules;
-    try {
-      var modules = await _transitiveModules(
-          buildStep, buildStep.inputId, assetToModule, assetToPrimary);
-      var connectedComponents = stronglyConnectedComponents<AssetId, Module>(
-          modules,
-          (m) => m.primarySource,
-          (m) => m.directDependencies
-              .map((d) => assetToModule[d])
-              .where((d) => d != null));
-      Module merge(List<Module> c) => _mergeComponent(c, assetToPrimary);
-      bool hasSourceInPackage(Module m) =>
-          m.sources.any((s) => s.package == buildStep.inputId.package);
-      // Ensure deterministic output by sorting the modules.
-      cleanModules = SplayTreeSet<Module>(
-          (a, b) => a.primarySource.compareTo(b.primarySource))
-        ..addAll(connectedComponents.map(merge).where(hasSourceInPackage));
-    } on AssetNotFoundException {
-      // Could not find the raw meta module file for one of this module's
-      // dependency so we will forgo outputing a file to signal to the
-      // module builder that it should use the fine strategy.
-      return;
-    }
+    var modules = await _transitiveModules(
+        buildStep, buildStep.inputId, assetToModule, assetToPrimary);
+    var connectedComponents = stronglyConnectedComponents<AssetId, Module>(
+        modules,
+        (m) => m.primarySource,
+        (m) => m.directDependencies
+            .map((d) => assetToModule[d])
+            .where((d) => d != null));
+    Module merge(List<Module> c) => _mergeComponent(c, assetToPrimary);
+    bool primarySourceInPackage(Module m) =>
+        m.primarySource.package == buildStep.inputId.package;
+    // Ensure deterministic output by sorting the modules.
+    var cleanModules = SplayTreeSet<Module>(
+        (a, b) => a.primarySource.compareTo(b.primarySource))
+      ..addAll(connectedComponents.map(merge).where(primarySourceInPackage));
     await buildStep.writeAsString(
         AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension'),
         json.encode(MetaModule(cleanModules.toList())));

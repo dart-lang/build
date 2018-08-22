@@ -9,11 +9,11 @@ import 'package:build_modules/src/meta_module_clean_builder.dart';
 import 'package:build_modules/src/module_cleanup.dart';
 import 'package:build_modules/src/module_library_builder.dart';
 
-Builder moduleBuilder(BuilderOptions options) =>
-    ModuleBuilder.forOptions(options);
+Builder moduleBuilder(_) => ModuleBuilder();
 Builder unlinkedSummaryBuilder(_) => const UnlinkedSummaryBuilder();
 Builder linkedSummaryBuilder(_) => const LinkedSummaryBuilder();
-Builder metaModuleBuilder(_) => const MetaModuleBuilder();
+Builder metaModuleBuilder(BuilderOptions options) =>
+    MetaModuleBuilder.forOptions(options);
 Builder metaModuleCleanBuilder(BuilderOptions options) =>
     const MetaModuleCleanBuilder();
 Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();

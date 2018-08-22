@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -93,28 +92,6 @@ class Module {
       : this.sources = sources.toSet(),
         this.directDependencies = directDependencies.toSet();
 
-  /// Find the module definition which contains [library].
-  factory Module.forLibrary(LibraryElement library) {
-    final cycle = library.libraryCycle;
-    final cycleUris = cycle.map((l) => l.source.uri).toSet();
-    final dependencyModules = Set<Uri>();
-    final seenDependencies = Set<Uri>();
-    for (var dependency in _cycleDependencies(cycle)) {
-      var uri = dependency.source.uri;
-      if (seenDependencies.contains(uri) || cycleUris.contains(uri)) continue;
-      var cycle = dependency.libraryCycle;
-      dependencyModules.add(_earliest(cycle));
-      seenDependencies.addAll(cycle.map((l) => l.source.uri));
-    }
-
-    AssetId toAssetId(Uri uri) => AssetId.resolve('$uri');
-
-    return Module(
-        toAssetId(_earliest(cycle)),
-        _cycleSources(cycle).map(toAssetId).toSet(),
-        dependencyModules.map(toAssetId).toSet());
-  }
-
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
 
@@ -163,45 +140,6 @@ class Module {
     directDependencies.removeAll(sources);
   }
 }
-
-/// Returns whether [library] owns the module for it's strongly connected import
-/// cycle.
-bool isPrimary(LibraryElement library) =>
-    _earliest(library.libraryCycle) == library.source.uri;
-
-Uri _earliest(Iterable<LibraryElement> libraries) {
-  assert(libraries.isNotEmpty, 'Library cycle should not be empty');
-  if (libraries.length == 1) return libraries.single.source.uri;
-  return libraries.map((l) => l.source.uri).reduce(_earlier);
-}
-
-Uri _earlier(Uri left, Uri right) =>
-    left.path.compareTo(right.path) < 0 ? left : right;
-
-/// All the non-SDK [LibraryElement]s which are imported or exported from
-/// any of [libraries].
-///
-/// There may be duplicates
-Iterable<LibraryElement> _cycleDependencies(
-        Iterable<LibraryElement> libraries) =>
-    libraries.expand(_libraryDependencies);
-
-/// All the non-SDK [LibraryElement]s which are imported or exported from
-/// [library].
-///
-/// There may be duplicates.
-Iterable<LibraryElement> _libraryDependencies(LibraryElement library) => [
-      library.importedLibraries,
-      library.exportedLibraries
-    ].expand((l) => l).where((l) => !l.source.isInSystemLibrary);
-
-/// All sources for a library cycle, including part files.
-Iterable<Uri> _cycleSources(Iterable<LibraryElement> libraries) =>
-    libraries.expand(_libraryUris);
-
-/// All sources for a library, including part files.
-Iterable<Uri> _libraryUris(LibraryElement library) =>
-    library.parts.map((u) => u.source.uri).toList()..add(library.source.uri);
 
 AssetId _assetIdFromJson(List json) => AssetId.deserialize(json);
 
