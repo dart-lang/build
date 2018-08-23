@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -66,9 +67,8 @@ class ServeHandler implements BuildState {
   Stream<BuildResult> get buildResults => _state.buildResults;
 
   shelf.Handler handlerFor(String rootDir,
-      {bool logRequests, bool liveReload, bool hotReload}) {
-    liveReload ??= false;
-    hotReload ??= false;
+      {bool logRequests, BuildUpdatesOption buildUpdates}) {
+    buildUpdates ??= BuildUpdatesOption.none;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
       throw ArgumentError.value(
@@ -76,7 +76,7 @@ class ServeHandler implements BuildState {
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = shelf.Cascade();
-    if (liveReload || hotReload) {
+    if (buildUpdates != BuildUpdatesOption.none) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
     }
     cascade =
@@ -99,10 +99,15 @@ class ServeHandler implements BuildState {
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
-    if (liveReload) {
-      pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
-    } else if (hotReload) {
-      pipeline = pipeline.addMiddleware(_injectHotReloadClientCode);
+    switch (buildUpdates) {
+      case BuildUpdatesOption.liveReload:
+        pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
+        break;
+      case BuildUpdatesOption.hotReload:
+        pipeline = pipeline.addMiddleware(_injectHotReloadClientCode);
+        break;
+      case BuildUpdatesOption.none:
+        break;
     }
     return pipeline.addHandler(cascade.handler);
   }

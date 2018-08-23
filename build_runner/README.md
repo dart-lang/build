@@ -100,8 +100,10 @@ Some commands also have additional options:
 
 - `--hostname`: The host to run the server on.
 - `--live-reload`: Enables automatic page reloading on rebuilds.
-- `--hot-reload`: Enables automatic reloading of changed modules. 
+  Can't be used together with `--hot-reload`.
+- `--hot-reload`: Enables automatic reloading of changed modules on rebuilds.
   See [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
+  Can't be used together with `--live-reload`.
 
 Trailing args of the form `<directory>:<port>` are supported to customize what
 directories are served, and on what ports.

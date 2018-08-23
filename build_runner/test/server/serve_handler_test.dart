@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:stream_channel/stream_channel.dart';
@@ -185,13 +186,13 @@ void main() {
 
   group('build updates', () {
     createBuildUpdatesGroup(String groupName, String injectionMarker,
-            {bool liveReload = false, bool hotReload = false}) =>
+            BuildUpdatesOption buildUpdates) =>
         group(groupName, () {
           test('injects client code if enabled', () async {
             _addSource(
                 'a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
             var response = await serveHandler.handlerFor('web',
-                    liveReload: liveReload, hotReload: hotReload)(
+                    buildUpdates: buildUpdates)(
                 Request('GET', Uri.parse('http://server.com/some.js')));
             expect(await response.readAsString(), contains(injectionMarker));
           });
@@ -209,7 +210,7 @@ void main() {
             _addSource(
                 'a|web/some.html', entrypointExtensionMarker + '\n<br>some');
             var response = await serveHandler.handlerFor('web',
-                    liveReload: liveReload, hotReload: hotReload)(
+                    buildUpdates: buildUpdates)(
                 Request('GET', Uri.parse('http://server.com/some.html')));
             expect(await response.readAsString(),
                 isNot(contains(injectionMarker)));
@@ -218,7 +219,7 @@ void main() {
           test('doesn\'t inject client code in non-marked files', () async {
             _addSource('a|web/some.js', 'alert(1)');
             var response = await serveHandler.handlerFor('web',
-                    liveReload: liveReload, hotReload: hotReload)(
+                    buildUpdates: buildUpdates)(
                 Request('GET', Uri.parse('http://server.com/some.js')));
             expect(await response.readAsString(),
                 isNot(contains(injectionMarker)));
@@ -228,28 +229,27 @@ void main() {
             _addSource('a|web/index.html', 'content');
             var uri = Uri.parse('ws://server.com/');
             expect(
-                serveHandler
-                    .handlerFor('web',
-                        liveReload: liveReload,
-                        hotReload: hotReload)(Request('GET', uri,
-                    headers: {
-                      'Connection': 'Upgrade',
-                      'Upgrade': 'websocket',
-                      'Sec-WebSocket-Version': '13',
-                      'Sec-WebSocket-Key': 'abc',
-                    },
-                    onHijack: (f) {})),
+                serveHandler.handlerFor('web', buildUpdates: buildUpdates)(
+                    Request('GET', uri,
+                        headers: {
+                          'Connection': 'Upgrade',
+                          'Upgrade': 'websocket',
+                          'Sec-WebSocket-Version': '13',
+                          'Sec-WebSocket-Key': 'abc',
+                        },
+                        onHijack: (f) {})),
                 throwsA(TypeMatcher<HijackException>()));
           });
         });
 
-    createBuildUpdatesGroup('hot-reload', 'hot_reload_client', hotReload: true);
-    createBuildUpdatesGroup('live-reload', 'live_reload_client',
-        liveReload: true);
+    createBuildUpdatesGroup(
+        'hot-reload', 'hot_reload_client', BuildUpdatesOption.hotReload);
+    createBuildUpdatesGroup(
+        'live-reload', 'live_reload_client', BuildUpdatesOption.liveReload);
 
     test('reject websocket connection if disabled', () async {
       _addSource('a|web/index.html', 'content');
-      var response = await serveHandler.handlerFor('web', hotReload: false)(
+      var response = await serveHandler.handlerFor('web')(
           Request('GET', Uri.parse('ws://server.com/'), headers: {
         'Connection': 'Upgrade',
         'Upgrade': 'websocket',
