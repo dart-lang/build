@@ -34,7 +34,6 @@ Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
 enum ModuleStrategy { fine, coarse }
 
 ModuleStrategy moduleStrategy(BuilderOptions options) {
-  // if (options.isRoot) {
   var config = options.config['strategy'] as String ?? 'coarse';
   switch (config) {
     case 'coarse':
@@ -44,9 +43,6 @@ ModuleStrategy moduleStrategy(BuilderOptions options) {
     default:
       throw 'Unexpected ModuleBuilder strategy: $config';
   }
-  // } else {
-  //   return ModuleStrategy.coarse;
-  // }
 }
 
 /// Validates that [config] only has the top level keys [supportedOptions].
