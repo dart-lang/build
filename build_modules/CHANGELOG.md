@@ -1,3 +1,11 @@
+## 0.3.2-dev
+
+- Module strategies are now respected for all packages instead of just the root
+  package.
+- Can now mix and match fine and coarse strategies at will, even within package
+  cycles (although this may cause larger modules).
+- Removed analyzer dependency.
+
 ## 0.3.1+1
 
 - Support `package:json_annotation` v1.
