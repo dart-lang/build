@@ -80,9 +80,13 @@ main() {
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
         'a|web/index.dart': 'import "package:a/a.dart";',
+        'a|lib/a.dart': 'import "package:b/b.dart";',
       };
 
       // Set up all the other required inputs for this test.
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
       await testBuilderAndCollectAssets(ModuleBuilder(), assets);
       await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(), assets);
     });

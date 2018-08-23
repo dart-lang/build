@@ -9,6 +9,7 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
+import 'package:build_modules/src/common.dart';
 import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/module_library.dart';
 import 'package:build_modules/src/modules.dart';
@@ -42,7 +43,8 @@ void main() {
         reader,
         libraries
             .map((l) => l.id.changeExtension(moduleLibraryExtension))
-            .toList());
+            .toList(),
+        ModuleStrategy.coarse);
   }
 
   test('no strongly connected components, one shared lib', () async {

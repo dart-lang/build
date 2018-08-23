@@ -8,7 +8,6 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 
-import 'common.dart';
 import 'meta_module.dart';
 import 'meta_module_clean_builder.dart';
 import 'modules.dart';
@@ -37,60 +36,10 @@ class _CleanMetaModuleCache {
   }
 }
 
-/// Updates dependencies from the provided [Module] so that they point to the
-/// primary resource of the dependencies corresponding [Module].
-///
-/// Note that this will process the clean meta modules for the module
-/// dependencies if necessary.
-Future<Module> _cleanModuleDeps(
-    BuildStep buildStep, Module module, _CleanMetaModuleCache cache) async {
-  var cleanedDeps = Set<AssetId>();
-  var depAssetToModules = <AssetId, Module>{};
-  for (var dep in module.directDependencies) {
-    // Since we are not using the course strategy we can safely add
-    // all dependencies in the same package as they will have a
-    // corresponding module file.
-    if (dep.package == module.primarySource.package) {
-      cleanedDeps.add(dep);
-      continue;
-      // It is possible that this dep came from another fine grained
-      // module. Look for the corresponding module file.
-    } else if (await buildStep.canRead(dep.changeExtension(moduleExtension))) {
-      cleanedDeps.add(dep);
-      continue;
-    }
-    var metaModule = await cache.find(dep.package, buildStep);
-    if (metaModule == null) {
-      // The dep is also fine but it's individual modules will come in a later
-      // phase. Need to recompute them.
-      if (!depAssetToModules.containsKey(dep)) {
-        var depLibrary = await buildStep.resolver.libraryFor(dep);
-        var depModule = Module.forLibrary(depLibrary);
-        for (var source in depModule.sources) {
-          depAssetToModules[source] = depModule;
-        }
-      }
-      cleanedDeps.add(depAssetToModules[dep].primarySource);
-    } else {
-      // The dep has a course strategy
-      cleanedDeps.add(metaModule.modules
-          .firstWhere((m) => m.sources.contains(dep))
-          .primarySource);
-    }
-  }
-  return Module(module.primarySource, module.sources, cleanedDeps);
-}
-
 /// Creates `.module` files for any `.dart` file that is the primary dart
 /// source of a [Module].
 class ModuleBuilder implements Builder {
-  final bool _isCoarse;
-  const ModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
-
-  factory ModuleBuilder.forOptions(BuilderOptions options) {
-    return ModuleBuilder(
-        isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
-  }
+  const ModuleBuilder();
 
   @override
   final buildExtensions = const {
@@ -99,29 +48,13 @@ class ModuleBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    Module outputModule;
     var cleanMetaModules = await buildStep.fetchResource(_cleanMetaModules);
-    var cleanMetaAsset =
-        AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension');
-    // If we can't read the clean meta module it is likely that this package
-    // is in a module cycle so fall back to the fine strategy.
-    if (_isCoarse && await buildStep.canRead(cleanMetaAsset)) {
-      var metaModule =
-          await cleanMetaModules.find(buildStep.inputId.package, buildStep);
-      outputModule = metaModule.modules
-          .firstWhere((m) => m.sources.contains(buildStep.inputId));
-    } else {
-      if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
-
-      var library = await buildStep.inputLibrary;
-      if (!isPrimary(library)) return;
-
-      var module = Module.forLibrary(library);
-      outputModule =
-          await _cleanModuleDeps(buildStep, module, cleanMetaModules);
-    }
+    var metaModule =
+        await cleanMetaModules.find(buildStep.inputId.package, buildStep);
+    final outputModule = metaModule.modules.firstWhere(
+        (m) => m.primarySource == buildStep.inputId,
+        orElse: () => null);
     if (outputModule == null) return;
-    if (outputModule.primarySource != buildStep.inputId) return;
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(moduleExtension),
         json.encode(outputModule.toJson()));

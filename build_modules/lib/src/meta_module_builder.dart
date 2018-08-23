@@ -20,13 +20,13 @@ const metaModuleExtension = '.meta_module.raw';
 /// This file contains information about the full computed
 /// module structure for the package.
 class MetaModuleBuilder implements Builder {
-  final bool _isCoarse;
-  const MetaModuleBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
+  final ModuleStrategy strategy;
 
-  factory MetaModuleBuilder.forOptions(BuilderOptions options) {
-    return MetaModuleBuilder(
-        isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
-  }
+  const MetaModuleBuilder({ModuleStrategy strategy})
+      : this.strategy = strategy ?? ModuleStrategy.coarse;
+
+  MetaModuleBuilder.forOptions(BuilderOptions options)
+      : this.strategy = moduleStrategy(options);
 
   @override
   final buildExtensions = const {
@@ -35,11 +35,10 @@ class MetaModuleBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    if (!_isCoarse) return;
-
     var libraryAssets =
         await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
-    var metaModule = await MetaModule.forLibraries(buildStep, libraryAssets);
+    var metaModule =
+        await MetaModule.forLibraries(buildStep, libraryAssets, strategy);
     var id = AssetId(buildStep.inputId.package, 'lib/$metaModuleExtension');
     await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
   }

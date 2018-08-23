@@ -10,11 +10,13 @@ Module _$ModuleFromJson(Map<String, dynamic> json) {
   return Module(
       _assetIdFromJson(json['p'] as List),
       _assetIdsFromJson(json['s'] as List),
-      _assetIdsFromJson(json['d'] as List));
+      _assetIdsFromJson(json['d'] as List),
+      isMissing: json['m'] as bool ?? false);
 }
 
 Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
       'p': _assetIdToJson(instance.primarySource),
       's': _assetIdsToJson(instance.sources),
-      'd': _assetIdsToJson(instance.directDependencies)
+      'd': _assetIdsToJson(instance.directDependencies),
+      'm': instance.isMissing
     };

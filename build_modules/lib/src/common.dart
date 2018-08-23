@@ -34,18 +34,14 @@ Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
 enum ModuleStrategy { fine, coarse }
 
 ModuleStrategy moduleStrategy(BuilderOptions options) {
-  if (options.isRoot) {
-    var config = options.config['strategy'] as String ?? 'coarse';
-    switch (config) {
-      case 'coarse':
-        return ModuleStrategy.coarse;
-      case 'fine':
-        return ModuleStrategy.fine;
-      default:
-        throw 'Unexpected ModuleBuilder strategy: $config';
-    }
-  } else {
-    return ModuleStrategy.coarse;
+  var config = options.config['strategy'] as String ?? 'coarse';
+  switch (config) {
+    case 'coarse':
+      return ModuleStrategy.coarse;
+    case 'fine':
+      return ModuleStrategy.fine;
+    default:
+      throw ArgumentError('Unexpected ModuleBuilder strategy: $config');
   }
 }
 
