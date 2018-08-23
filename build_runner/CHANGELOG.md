@@ -1,8 +1,7 @@
 ## 0.10.2
 
-- `--live-reload` cli option is replaced with `--hot-reload` one with appropriate
-functionality. See [hot-module-reloading](../docs/hot_module_reloading.md) for more 
-info.
+- Added `--hot-reload` cli option and appropriate functionality.
+  See [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
 
 ## 0.10.1+1
 

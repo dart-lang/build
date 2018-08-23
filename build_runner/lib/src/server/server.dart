@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -22,7 +23,7 @@ import 'path_to_asset_id.dart';
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
 final _assetsDigestPath = r'$assetDigests';
-final _buildUpdatesProtocol = r'$hotreload';
+final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = Logger('Serve');
@@ -65,8 +66,9 @@ class ServeHandler implements BuildState {
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
-  shelf.Handler handlerFor(String rootDir, {bool logRequests, bool hotReload}) {
-    hotReload ??= false;
+  shelf.Handler handlerFor(String rootDir,
+      {bool logRequests, BuildUpdatesOption buildUpdates}) {
+    buildUpdates ??= BuildUpdatesOption.none;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
       throw ArgumentError.value(
@@ -74,7 +76,7 @@ class ServeHandler implements BuildState {
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = shelf.Cascade();
-    if (hotReload) {
+    if (buildUpdates != BuildUpdatesOption.none) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
     }
     cascade =
@@ -97,8 +99,15 @@ class ServeHandler implements BuildState {
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
-    if (hotReload) {
-      pipeline = pipeline.addMiddleware(_injectBuildUpdatesClientCode);
+    switch (buildUpdates) {
+      case BuildUpdatesOption.liveReload:
+        pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
+        break;
+      case BuildUpdatesOption.hotReload:
+        pipeline = pipeline.addMiddleware(_injectHotReloadClientCode);
+        break;
+      case BuildUpdatesOption.none:
+        break;
     }
     return pipeline.addHandler(cascade.handler);
   }
@@ -210,27 +219,35 @@ class BuildUpdatesWebSocketHandler {
   }
 }
 
-shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
-  return (shelf.Request request) async {
-    if (!request.url.path.endsWith('.js')) {
-      return innerHandler(request);
-    }
-    var response = await innerHandler(request);
-    // TODO: Find a way how to check and/or modify body without reading it whole
-    var body = await response.readAsString();
-    if (body.startsWith(entrypointExtensionMarker)) {
-      body += _buildUpdatesInjectedJS;
-    }
-    return response.change(body: body);
-  };
-}
+shelf.Handler Function(shelf.Handler) _injectBuildUpdatesClientCode(
+        String scriptName) =>
+    (innerHandler) {
+      return (shelf.Request request) async {
+        if (!request.url.path.endsWith('.js')) {
+          return innerHandler(request);
+        }
+        var response = await innerHandler(request);
+        // TODO: Find a way how to check and/or modify body without reading it whole
+        var body = await response.readAsString();
+        if (body.startsWith(entrypointExtensionMarker)) {
+          body += _buildUpdatesInjectedJS(scriptName);
+        }
+        return response.change(body: body);
+      };
+    };
 
-/// Hot-reload config
+final _injectHotReloadClientCode =
+    _injectBuildUpdatesClientCode('hot_reload_client.dart');
+
+final _injectLiveReloadClientCode =
+    _injectBuildUpdatesClientCode('live_reload_client');
+
+/// Hot-/live- reload config
 ///
 /// Listen WebSocket for updates in build results
-final _buildUpdatesInjectedJS = '''\n
-// Injected by build_runner for hot-reload support
-window.\$dartLoader.forceLoadModule('packages/build_runner/src/server/hot_reload_client/client.dart')
+String _buildUpdatesInjectedJS(String scriptName) => '''\n
+// Injected by build_runner for build updates support
+window.\$dartLoader.forceLoadModule('packages/build_runner/src/server/build_updates_client/$scriptName');
 ''';
 
 class AssetHandler {

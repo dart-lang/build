@@ -251,7 +251,7 @@ if(!window.\$dartLoader) {
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
      rootDirectories: new Array(),
-     // Used in package:build_runner/src/server/hot_reload_client/client.dart
+     // Used in package:build_runner/src/server/build_updates_client/hot_reload_client.dart
      moduleParentsGraph: new Map(),
      moduleLoadingErrorCallbacks: new Map(),
      forceLoadModule: function (moduleName, callback, onError) {
