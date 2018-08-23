@@ -239,8 +239,7 @@ MetaModule _coarseModulesForLibraries(
     librariesByDirectory[dir][library.id] = library;
   }
   final modules = librariesByDirectory.values.expand(_computeModules).toList();
-  // Deterministically output the modules.
-  modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
+  _sortModules(modules);
   return MetaModule(modules);
 }
 
@@ -250,7 +249,11 @@ MetaModule _fineModulesForLibraries(
       .map((library) => Module(
           library.id, library.parts.followedBy([library.id]), library.deps))
       .toList();
-  // Deterministically output the modules.
-  modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
+  _sortModules(modules);
   return MetaModule(modules);
+}
+
+/// Sorts [modules] in place so we get deterministic output.
+void _sortModules(List<Module> modules) {
+  modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
 }

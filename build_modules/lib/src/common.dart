@@ -41,7 +41,7 @@ ModuleStrategy moduleStrategy(BuilderOptions options) {
     case 'fine':
       return ModuleStrategy.fine;
     default:
-      throw 'Unexpected ModuleBuilder strategy: $config';
+      throw ArgumentError('Unexpected ModuleBuilder strategy: $config');
   }
 }
 

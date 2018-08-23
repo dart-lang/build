@@ -87,6 +87,11 @@ class Module {
       fromJson: _assetIdsFromJson)
   final Set<AssetId> directDependencies;
 
+  /// Missing modules are created if a module depends on another non-existent
+  /// module.
+  ///
+  /// We want to report these errors lazily to allow for builds to succeed if it
+  /// won't actually impact any apps negatively.
   @JsonKey(name: 'm', nullable: true, defaultValue: false)
   final bool isMissing;
 
