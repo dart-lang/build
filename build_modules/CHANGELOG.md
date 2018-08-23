@@ -1,4 +1,4 @@
-## 0.3.2-dev
+## 0.3.2
 
 - Module strategies are now respected for all packages instead of just the root
   package.
