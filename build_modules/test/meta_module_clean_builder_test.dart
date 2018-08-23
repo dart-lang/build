@@ -53,22 +53,8 @@ main() {
       'b|lib/b.dart': 'import "package:a/a.dart"',
     }, outputs: {
       'a|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(clean),
-      'b|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(clean),
+      'b|lib/$metaModuleCleanExtension':
+          encodedMatchesMetaModule(MetaModule([])),
     });
-  });
-
-  test('does not output a clean module if the dep\'s meta module is not found',
-      () async {
-    var assetA = AssetId('a', 'lib/a.dart');
-    var assetB = AssetId('b', 'lib/b.dart');
-    var moduleA = Module(assetA, [assetA], [assetB]);
-
-    var metaA = MetaModule([moduleA]);
-
-    await testBuilder(MetaModuleCleanBuilder(), {
-      'a|lib/$metaModuleExtension': json.encode(metaA),
-      'a|lib/a.dart': 'import "package:b/b.dart"',
-      'b|lib/b.dart': 'import "package:a/a.dart"',
-    }, outputs: {});
   });
 }

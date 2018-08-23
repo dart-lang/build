@@ -87,10 +87,15 @@ class Module {
       fromJson: _assetIdsFromJson)
   final Set<AssetId> directDependencies;
 
+  @JsonKey(name: 'm', nullable: true, defaultValue: false)
+  final bool isMissing;
+
   Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies)
+      Iterable<AssetId> directDependencies,
+      {bool isMissing})
       : this.sources = sources.toSet(),
-        this.directDependencies = directDependencies.toSet();
+        this.directDependencies = directDependencies.toSet(),
+        this.isMissing = isMissing ?? false;
 
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
@@ -118,11 +123,15 @@ class Module {
       var module = Module.fromJson(
           json.decode(await reader.readAsString(nextModuleId))
               as Map<String, dynamic>);
+      if (module.isMissing) {
+        missingModuleSources.add(module.primarySource);
+        continue;
+      }
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }
     if (missingModuleSources.isNotEmpty) {
-      throw await MissingModulesException.create(this, missingModuleSources,
+      throw await MissingModulesException.create(missingModuleSources,
           transitiveDeps.values.toList()..add(this), reader);
     }
     var orderedModules = stronglyConnectedComponents<AssetId, Module>(

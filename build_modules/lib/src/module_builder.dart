@@ -48,14 +48,13 @@ class ModuleBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    Module outputModule;
     var cleanMetaModules = await buildStep.fetchResource(_cleanMetaModules);
     var metaModule =
         await cleanMetaModules.find(buildStep.inputId.package, buildStep);
-    outputModule = metaModule.modules
-        .firstWhere((m) => m.sources.contains(buildStep.inputId));
+    final outputModule = metaModule.modules.firstWhere(
+        (m) => m.primarySource == buildStep.inputId,
+        orElse: () => null);
     if (outputModule == null) return;
-    if (outputModule.primarySource != buildStep.inputId) return;
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(moduleExtension),
         json.encode(outputModule.toJson()));

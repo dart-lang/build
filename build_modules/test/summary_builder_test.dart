@@ -83,6 +83,9 @@ main() {
       };
 
       // Set up all the other required inputs for this test.
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
       await testBuilderAndCollectAssets(ModuleBuilder(), assets);
       await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(), assets);
     });

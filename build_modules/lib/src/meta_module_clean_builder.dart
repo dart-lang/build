@@ -45,9 +45,8 @@ class MetaModuleCleanBuilder implements Builder {
     var connectedComponents = stronglyConnectedComponents<AssetId, Module>(
         modules,
         (m) => m.primarySource,
-        (m) => m.directDependencies
-            .map((d) => assetToModule[d])
-            .where((d) => d != null));
+        (m) => m.directDependencies.map(
+            (d) => assetToModule[d] ?? Module(d, [d], [], isMissing: true)));
     Module merge(List<Module> c) => _mergeComponent(c, assetToPrimary);
     bool primarySourceInPackage(Module m) =>
         m.primarySource.package == buildStep.inputId.package;
