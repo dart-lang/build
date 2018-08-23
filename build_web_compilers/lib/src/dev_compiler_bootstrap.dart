@@ -335,7 +335,7 @@ var baseUrl = (function () {
   if (typeof document !== 'undefined') {
     var el = document.getElementsByTagName('base');
     if (el && el[0] && el[0].getAttribute("href") && el[0].getAttribute("href").startsWith("/")){
-      return el[0].href;
+      return el[0].getAttribute("href");
     }
   }
   // Attempt to detect --precompiled mode for tests, and set the base url
