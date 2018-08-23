@@ -80,6 +80,7 @@ main() {
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
         'a|web/index.dart': 'import "package:a/a.dart";',
+        'a|lib/a.dart': 'import "package:b/b.dart";',
       };
 
       // Set up all the other required inputs for this test.

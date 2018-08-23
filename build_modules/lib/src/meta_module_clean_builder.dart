@@ -102,6 +102,12 @@ Future<Set<Module>> _transitiveModules(
         continue;
       }
       seenMetas.add(depMetaAsset);
+      if (!await buildStep.canRead(depMetaAsset)) {
+        log.warning('Unable to read module information for '
+            'package:${depMetaAsset.package}, make sure you have a dependency '
+            'in it in your pubspec.');
+        continue;
+      }
       var depMeta = MetaModule.fromJson(
           json.decode(await buildStep.readAsString(depMetaAsset))
               as Map<String, dynamic>);
