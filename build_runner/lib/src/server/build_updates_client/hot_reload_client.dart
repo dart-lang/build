@@ -152,14 +152,13 @@ Module _moduleLibraries(String moduleId) {
   var moduleObj = dartLoader.getModuleLibraries(moduleId);
   if (moduleObj == null) {
     throw HotReloadFailedException("Failed to get module '$moduleId'. "
-        "This error might appear if such module doesn't exist or isn't alredy loaded");
+        "This error might appear if such module doesn't exist or isn't already loaded");
   }
   var moduleKeys = List<String>.from(_jsObjectKeys(moduleObj));
   var moduleValues =
       List<HotReloadableLibrary>.from(_jsObjectValues(moduleObj));
   var moduleLibraries = moduleValues.map((x) => LibraryWrapper(x));
-  var module = Module(Map.fromIterables(moduleKeys, moduleLibraries));
-  return module;
+  return Module(Map.fromIterables(moduleKeys, moduleLibraries));
 }
 
 Future<Module> _reloadModule(String moduleId) {
@@ -178,7 +177,7 @@ void _reloadPage() {
 }
 
 main() async {
-  var currentOrigin = window.location.origin + '/';
+  var currentOrigin = '${window.location.origin}/';
   var modulePaths = keys(dartLoader.urlToModuleId)
       .map((key) => key.replaceFirst(currentOrigin, ''))
       .toList();
@@ -199,6 +198,6 @@ main() async {
       (path) => dartLoader.urlToModuleId.get(currentOrigin + path), manager);
 
   var webSocket =
-      WebSocket('ws://' + window.location.host, [_buildUpdatesProtocol]);
+      WebSocket('ws://${window.location.host}', [_buildUpdatesProtocol]);
   webSocket.onMessage.listen((event) => handler.listener(event.data as String));
 }
