@@ -5,7 +5,23 @@
 - Modules are now platform specific, and config specific imports are supported,
   but only for `dart.library.*` constants.
 
-### Breaking Changes
+### Breaking Configuration Changes
+
+- Module granularity now has to be configured per platform, so instead of
+  configuring it using the `build_modules|modules` builder, you now need to
+  configure the builder for each specific platform:
+
+```yaml
+targets:
+  $default:
+    build_modules|dartdevc:
+      options:
+        strategy: fine
+```
+
+  The supported platforms are currently `dart2js`, `dartdevc`, and `vm`.
+
+### Breaking API Changes
 
 - Output extensions of builders have changed to include the platform being built
   for.
