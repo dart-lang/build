@@ -22,7 +22,7 @@ Future<Null> bootstrapDart2Js(
     BuildStep buildStep, List<String> dart2JsArgs, bool enableSyncAsync) async {
   var dartEntrypointId = buildStep.inputId;
   enableSyncAsync ??= enableSyncAsyncDefault;
-  var moduleId = dartEntrypointId.changeExtension(moduleExtension);
+  var moduleId = dartEntrypointId.changeExtension(moduleExtension('dart2js'));
   var args = <String>[];
   {
     var module = Module.fromJson(

@@ -19,9 +19,10 @@ Future main(List<String> args) async {
     apply(
         '_test|ddc_kernel',
         [
-          metaModuleBuilder,
-          metaModuleCleanBuilder,
-          moduleBuilder,
+          moduleLibraryBuilder,
+          metaModuleBuilderFactoryForPlatform('dartdevc'),
+          metaModuleCleanBuilderFactoryForPlatform('dartdevc'),
+          moduleBuilderFactoryForPlatform('dartdevc'),
           ddcKernelBuilder,
         ],
         toAllPackages(),

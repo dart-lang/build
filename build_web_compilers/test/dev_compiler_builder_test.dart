@@ -29,15 +29,19 @@ main() {
           print(hello);
         }
       ''',
+        r'$sdk|lib/libraries.json': '{"dartdevc": {}}',
       };
 
       // Set up all the other required inputs for this test.
       await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-      await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
-      await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
-      await testBuilderAndCollectAssets(ModuleBuilder(), assets);
-      await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(), assets);
-      await testBuilderAndCollectAssets(LinkedSummaryBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder('dartdevc'), assets);
+      await testBuilderAndCollectAssets(
+          MetaModuleCleanBuilder('dartdevc'), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder('dartdevc'), assets);
+      await testBuilderAndCollectAssets(
+          UnlinkedSummaryBuilder('dartdevc'), assets);
+      await testBuilderAndCollectAssets(
+          LinkedSummaryBuilder('dartdevc'), assets);
     });
 
     test('can compile ddc modules under lib and web', () async {
@@ -59,16 +63,21 @@ main() {
       setUp(() async {
         assets = {
           'build_modules|lib/src/analysis_options.default.yaml': '',
+          r'$sdk|lib/libraries.json': '{"dartdevc": {}}',
           'a|web/index.dart': 'int x = "hello";',
         };
 
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(), assets);
-        await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(), assets);
-        await testBuilderAndCollectAssets(LinkedSummaryBuilder(), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleBuilder('dartdevc'), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleCleanBuilder('dartdevc'), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder('dartdevc'), assets);
+        await testBuilderAndCollectAssets(
+            UnlinkedSummaryBuilder('dartdevc'), assets);
+        await testBuilderAndCollectAssets(
+            LinkedSummaryBuilder('dartdevc'), assets);
       });
 
       test('reports useful messages', () async {
@@ -93,14 +102,17 @@ main() {
       setUp(() async {
         assets = {
           'build_modules|lib/src/analysis_options.default.yaml': '',
+          r'$sdk|lib/libraries.json': '{"dartdevc": {}}',
           'a|web/index.dart': "import 'package:a/a.dart'",
         };
 
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleBuilder('dartdevc'), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleCleanBuilder('dartdevc'), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder('dartdevc'), assets);
       });
 
       test('reports useful messages', () async {

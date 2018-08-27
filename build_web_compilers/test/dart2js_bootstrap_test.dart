@@ -12,6 +12,7 @@ import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
+  final platform = 'test';
 
   setUp(() async {
     assets = {
@@ -26,13 +27,14 @@ main() {
           print(hello);
         }
       ''',
+      r'$sdk|lib/libraries.json': '{"dart2js": {}}',
     };
 
     // Set up all the other required inputs for this test.
     await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-    await testBuilderAndCollectAssets(MetaModuleBuilder(), assets);
-    await testBuilderAndCollectAssets(MetaModuleCleanBuilder(), assets);
-    await testBuilderAndCollectAssets(ModuleBuilder(), assets);
+    await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+    await testBuilderAndCollectAssets(MetaModuleCleanBuilder(platform), assets);
+    await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
   });
 
   test('can bootstrap dart entrypoints', () async {

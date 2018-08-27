@@ -15,6 +15,7 @@ Builder vmKernelModuleBuilder(_) => KernelBuilder(
       summaryOnly: false,
       sdkKernelPath: p.join('lib', '_internal', 'vm_platform_strong.dill'),
       outputExtension: vmKernelModuleExtension,
+      platform: 'vm',
     );
 
 Builder vmKernelEntrypointBuilder(_) => VmEntrypointBuilder();

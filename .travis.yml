@@ -22,8 +22,8 @@ jobs:
       env: PKG="_test"
       dart: dev
     - stage: unit_test
-      name: "SDK: dev - DIR: _test - TASKS: pub run build_runner test -- -p chrome"
-      script: ./tool/travis.sh command_0
+      name: "SDK: dev - DIR: _test - TASKS: [pub run build_runner test -- -p chrome, pub run build_runner test -- -p vm test/config_specific_import_test.dart]"
+      script: ./tool/travis.sh command_0 command_1
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
@@ -78,7 +78,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: bazel_codegen - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_1
+      script: ./tool/travis.sh command_2
       env: PKG="bazel_codegen"
       dart: dev
     - stage: analyze_and_format
@@ -88,7 +88,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: build - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_1
+      script: ./tool/travis.sh command_2
       env: PKG="build"
       dart: dev
     - stage: analyze_and_format
@@ -98,7 +98,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: build_config - TASKS: pub run build_runner test --delete-conflicting-outputs"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh command_3
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
@@ -108,7 +108,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: build_modules - TASKS: pub run build_runner test --delete-conflicting-outputs -- -P presubmit"
-      script: ./tool/travis.sh command_3
+      script: ./tool/travis.sh command_4
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format
@@ -118,7 +118,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: build_resolvers - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_1
+      script: ./tool/travis.sh command_2
       env: PKG="build_resolvers"
       dart: dev
     - stage: analyze_and_format
@@ -168,7 +168,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: build_test - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_1
+      script: ./tool/travis.sh command_2
       env: PKG="build_test"
       dart: dev
     - stage: analyze_and_format
@@ -203,7 +203,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: scratch_space - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_1
+      script: ./tool/travis.sh command_2
       env: PKG="scratch_space"
       dart: dev
 

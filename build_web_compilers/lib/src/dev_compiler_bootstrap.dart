@@ -29,7 +29,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   ignoreCastFailures ??= false;
   useKernel ??= false;
   var dartEntrypointId = buildStep.inputId;
-  var moduleId = buildStep.inputId.changeExtension(moduleExtension);
+  var moduleId = buildStep.inputId.changeExtension(moduleExtension('dartdevc'));
   var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
