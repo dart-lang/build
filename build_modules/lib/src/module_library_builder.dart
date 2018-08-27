@@ -14,8 +14,8 @@ const moduleLibraryExtension = '.module.library';
 /// Dart library, as well as whether it is an entrypoint.
 ///
 ///
-/// The output format is determined by [ModuleLibrary.toString] and can be
-/// restored by [ModuleLibrary.parse].
+/// The output format is determined by [ModuleLibrary.serialize] and can be
+/// restored by [ModuleLibrary.deserialize].
 ///
 /// Non-importable Dart source files will not get a `.module.library` asset
 /// output. See [ModuleLibrary.isImportable].
@@ -33,6 +33,7 @@ class ModuleLibraryBuilder implements Builder {
         buildStep.inputId, await buildStep.readAsString(buildStep.inputId));
     if (!library.isImportable) return;
     await buildStep.writeAsString(
-        buildStep.inputId.changeExtension(moduleLibraryExtension), '$library');
+        buildStep.inputId.changeExtension(moduleLibraryExtension),
+        library.serialize());
   }
 }

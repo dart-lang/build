@@ -31,6 +31,8 @@ class KernelBuilder implements Builder {
 
   final String outputExtension;
 
+  final String platform;
+
   /// Whether this should create summary kernel files or full kernel files.
   ///
   /// Summary files only contain the "outline" of the module - you can think of
@@ -41,11 +43,12 @@ class KernelBuilder implements Builder {
   final String sdkKernelPath;
 
   KernelBuilder(
-      {@required this.summaryOnly,
+      {@required this.platform,
+      @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension})
       : buildExtensions = {
-          moduleExtension: [outputExtension]
+          moduleExtension(platform): [outputExtension]
         };
 
   @override

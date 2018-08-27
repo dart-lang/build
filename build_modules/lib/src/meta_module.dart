@@ -12,6 +12,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'common.dart';
 import 'module_library.dart';
 import 'modules.dart';
+import 'platform.dart';
 
 part 'meta_module.g.dart';
 
@@ -37,7 +38,8 @@ String _topLevelDir(String path) {
 /// libraries nodes.
 ///
 /// This creates more modules than we want, but we collapse them later on.
-Module _moduleForComponent(List<ModuleLibrary> componentLibraries) {
+Module _moduleForComponent(
+    List<ModuleLibrary> componentLibraries, Platform platform) {
   // Name components based on first alphabetically sorted node, preferring
   // public srcs (not under lib/src).
   var sources = componentLibraries.map((n) => n.id).toSet();
@@ -48,9 +50,9 @@ Module _moduleForComponent(List<ModuleLibrary> componentLibraries) {
   // included as individual `_AssetNodes`s in `connectedComponents`.
   sources.addAll(componentLibraries.expand((n) => n.parts));
   var directDependencies = Set<AssetId>()
-    ..addAll(componentLibraries.expand((n) => n.deps))
+    ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
     ..removeAll(sources);
-  return Module(primaryId, sources, directDependencies);
+  return Module(primaryId, sources, directDependencies, platform.name);
 }
 
 Map<AssetId, Module> _entryPointModules(
@@ -159,7 +161,7 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
 }
 
 Module _withConsistentPrimarySource(Module m) =>
-    Module(m.sources.reduce(_min), m.sources, m.directDependencies);
+    Module(m.sources.reduce(_min), m.sources, m.directDependencies, m.platform);
 
 T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
@@ -177,7 +179,8 @@ T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 /// Part files are also tracked but ignored during computation of strongly
 /// connected components, as they must always be a part of the containing
 /// library's module.
-List<Module> _computeModules(Map<AssetId, ModuleLibrary> libraries) {
+List<Module> _computeModules(
+    Map<AssetId, ModuleLibrary> libraries, Platform platform) {
   assert(() {
     var dir = _topLevelDir(libraries.values.first.id.path);
     return libraries.values.every((l) => _topLevelDir(l.id.path) == dir);
@@ -187,14 +190,17 @@ List<Module> _computeModules(Map<AssetId, ModuleLibrary> libraries) {
       stronglyConnectedComponents<AssetId, ModuleLibrary>(
           libraries.values,
           (n) => n.id,
-          (n) => n.deps
+          (n) => n
+              .depsForPlatform(platform)
               // Only "internal" dependencies
               .where(libraries.containsKey)
               .map((dep) => libraries[dep]));
 
   final entryIds =
       libraries.values.where((l) => l.isEntryPoint).map((l) => l.id).toSet();
-  return _mergeModules(connectedComponents.map(_moduleForComponent), entryIds);
+  return _mergeModules(
+      connectedComponents.map((c) => _moduleForComponent(c, platform)),
+      entryIds);
 }
 
 @JsonSerializable()
@@ -210,26 +216,29 @@ class MetaModule {
 
   Map<String, dynamic> toJson() => _$MetaModuleToJson(this);
 
-  static Future<MetaModule> forLibraries(AssetReader reader,
-      List<AssetId> libraryIds, ModuleStrategy strategy) async {
+  static Future<MetaModule> forLibraries(
+      AssetReader reader,
+      List<AssetId> libraryIds,
+      ModuleStrategy strategy,
+      Platform platform) async {
     var libraries = <ModuleLibrary>[];
     for (var id in libraryIds) {
-      libraries.add(ModuleLibrary.parse(
+      libraries.add(ModuleLibrary.deserialize(
           id.changeExtension('').changeExtension('.dart'),
           await reader.readAsString(id)));
     }
     switch (strategy) {
       case ModuleStrategy.fine:
-        return _fineModulesForLibraries(reader, libraries);
+        return _fineModulesForLibraries(reader, libraries, platform);
       case ModuleStrategy.coarse:
-        return _coarseModulesForLibraries(reader, libraries);
+        return _coarseModulesForLibraries(reader, libraries, platform);
     }
     throw StateError('Unrecognized module strategy $strategy');
   }
 }
 
 MetaModule _coarseModulesForLibraries(
-    AssetReader reader, List<ModuleLibrary> libraries) {
+    AssetReader reader, List<ModuleLibrary> libraries, Platform platform) {
   var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
   for (var library in libraries) {
     final dir = _topLevelDir(library.id.path);
@@ -238,16 +247,21 @@ MetaModule _coarseModulesForLibraries(
     }
     librariesByDirectory[dir][library.id] = library;
   }
-  final modules = librariesByDirectory.values.expand(_computeModules).toList();
+  final modules = librariesByDirectory.values
+      .expand((libs) => _computeModules(libs, platform))
+      .toList();
   _sortModules(modules);
   return MetaModule(modules);
 }
 
 MetaModule _fineModulesForLibraries(
-    AssetReader reader, List<ModuleLibrary> libraries) {
+    AssetReader reader, List<ModuleLibrary> libraries, Platform platform) {
   var modules = libraries
       .map((library) => Module(
-          library.id, library.parts.followedBy([library.id]), library.deps))
+          library.id,
+          library.parts.followedBy([library.id]),
+          library.depsForPlatform(platform),
+          platform.name))
       .toList();
   _sortModules(modules);
   return MetaModule(modules);

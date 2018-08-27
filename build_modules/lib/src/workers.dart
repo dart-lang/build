@@ -10,12 +10,11 @@ import 'dart:math' show min;
 
 import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
-import 'package:cli_util/cli_util.dart' as cli_util;
 import 'package:path/path.dart' as p;
 
 import 'scratch_space.dart';
 
-final sdkDir = cli_util.getSdkPath();
+final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
 /// Completes once the analyzer workers have been shut down.
 Future<Null> get analyzerWorkersAreDone =>

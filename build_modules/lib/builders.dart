@@ -9,13 +9,19 @@ import 'package:build_modules/src/meta_module_clean_builder.dart';
 import 'package:build_modules/src/module_cleanup.dart';
 import 'package:build_modules/src/module_library_builder.dart';
 
-Builder moduleBuilder(_) => ModuleBuilder();
-Builder unlinkedSummaryBuilder(_) => const UnlinkedSummaryBuilder();
-Builder linkedSummaryBuilder(_) => const LinkedSummaryBuilder();
-Builder metaModuleBuilder(BuilderOptions options) =>
-    MetaModuleBuilder.forOptions(options);
-Builder metaModuleCleanBuilder(BuilderOptions options) =>
-    const MetaModuleCleanBuilder();
+typedef Builder _BuilderFactory(BuilderOptions options);
+
 Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
+
+_BuilderFactory metaModuleBuilderFactoryForPlatform(String platform) =>
+    (BuilderOptions options) => MetaModuleBuilder.forOptions(platform, options);
+_BuilderFactory metaModuleCleanBuilderFactoryForPlatform(String platform) =>
+    (_) => MetaModuleCleanBuilder(platform);
+_BuilderFactory moduleBuilderFactoryForPlatform(String platform) =>
+    (_) => ModuleBuilder(platform);
+_BuilderFactory unlinkedSummaryBuilderForPlatform(String platform) =>
+    (BuilderOptions options) => UnlinkedSummaryBuilder(platform);
+_BuilderFactory linkedSummaryBuilderForPlatform(String platform) =>
+    (BuilderOptions options) => LinkedSummaryBuilder(platform);
 
 PostProcessBuilder moduleCleanup(_) => const ModuleCleanup();

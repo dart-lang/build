@@ -18,7 +18,8 @@ import 'modules.dart';
 ///
 /// Clean in this context means all dependencies are primary sources.
 /// Furthermore cyclic modules are merged into a single module.
-const metaModuleCleanExtension = '.meta_module.clean';
+String metaModuleCleanExtension(String platform) =>
+    '.$platform.meta_module.clean';
 
 /// Creates `.meta_module.clean` file for any Dart library.
 ///
@@ -29,25 +30,32 @@ const metaModuleCleanExtension = '.meta_module.clean';
 /// Note if the raw meta module file can't be found for any of the
 /// module's transitive dependencies there will be no output.
 class MetaModuleCleanBuilder implements Builder {
-  const MetaModuleCleanBuilder();
-
   @override
-  final buildExtensions = const {
-    '$metaModuleExtension': [metaModuleCleanExtension]
-  };
+  final Map<String, List<String>> buildExtensions;
+
+  final String _platform;
+
+  MetaModuleCleanBuilder(this._platform)
+      : buildExtensions = {
+          metaModuleExtension(_platform): [metaModuleCleanExtension(_platform)]
+        };
 
   @override
   Future build(BuildStep buildStep) async {
-    var assetToModule = await buildStep.fetchResource(_assetToModule);
-    var assetToPrimary = await buildStep.fetchResource(_assetToPrimary);
+    var assetToModule = (await buildStep.fetchResource(_assetToModule))
+        .putIfAbsent(_platform, () => {});
+    var assetToPrimary = (await buildStep.fetchResource(_assetToPrimary))
+        .putIfAbsent(_platform, () => {});
     var modules = await _transitiveModules(
-        buildStep, buildStep.inputId, assetToModule, assetToPrimary);
+        buildStep, buildStep.inputId, assetToModule, assetToPrimary, _platform);
     var connectedComponents = stronglyConnectedComponents<AssetId, Module>(
         modules,
         (m) => m.primarySource,
-        (m) => m.directDependencies.map(
-            (d) => assetToModule[d] ?? Module(d, [d], [], isMissing: true)));
-    Module merge(List<Module> c) => _mergeComponent(c, assetToPrimary);
+        (m) => m.directDependencies.map((d) =>
+            assetToModule[d] ??
+            Module(d, [d], [], _platform, isMissing: true)));
+    Module merge(List<Module> c) =>
+        _mergeComponent(c, assetToPrimary, _platform);
     bool primarySourceInPackage(Module m) =>
         m.primarySource.package == buildStep.inputId.package;
     // Ensure deterministic output by sorting the modules.
@@ -55,19 +63,21 @@ class MetaModuleCleanBuilder implements Builder {
         (a, b) => a.primarySource.compareTo(b.primarySource))
       ..addAll(connectedComponents.map(merge).where(primarySourceInPackage));
     await buildStep.writeAsString(
-        AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension'),
-        json.encode(MetaModule(cleanModules.toList())));
+        AssetId(buildStep.inputId.package,
+            'lib/${metaModuleCleanExtension(_platform)}'),
+        jsonEncode(MetaModule(cleanModules.toList())));
   }
 }
 
-/// Map of [AssetId] to corresponding non clean containing [Module].
-final _assetToModule =
-    Resource<Map<AssetId, Module>>(() => {}, dispose: (map) => map.clear());
+/// Map of [AssetId] to corresponding non clean containing [Module] per
+/// platform.
+final _assetToModule = Resource<Map<String, Map<AssetId, Module>>>(() => {},
+    dispose: (map) => map.clear());
 
 /// Map of [AssetId] to corresponding primary [AssetId] within the same
-/// clean [Module].
-final _assetToPrimary =
-    Resource<Map<AssetId, AssetId>>(() => {}, dispose: (map) => map.clear());
+/// clean [Module] per platform.
+final _assetToPrimary = Resource<Map<String, Map<AssetId, AssetId>>>(() => {},
+    dispose: (map) => map.clear());
 
 /// Returns a set of all modules transitively reachable from the provided meta
 /// module asset.
@@ -75,12 +85,13 @@ Future<Set<Module>> _transitiveModules(
     BuildStep buildStep,
     AssetId metaAsset,
     Map<AssetId, Module> assetToModule,
-    Map<AssetId, AssetId> assetToPrimary) async {
+    Map<AssetId, AssetId> assetToPrimary,
+    String platform) async {
   var dependentModules = Set<Module>();
   // Ensures we only process a meta file once.
   var seenMetas = Set<AssetId>()..add(metaAsset);
   var meta = MetaModule.fromJson(
-      json.decode(await buildStep.readAsString(buildStep.inputId))
+      jsonDecode(await buildStep.readAsString(buildStep.inputId))
           as Map<String, dynamic>);
   var nextModules = <Module>[];
   nextModules.addAll(meta.modules);
@@ -94,7 +105,8 @@ Future<Set<Module>> _transitiveModules(
       assetToPrimary[source] = module.primarySource;
     }
     for (var dep in module.directDependencies) {
-      var depMetaAsset = AssetId(dep.package, 'lib/$metaModuleExtension');
+      var depMetaAsset =
+          AssetId(dep.package, 'lib/${metaModuleExtension(platform)}');
       // The testing package is an odd package used by package:frontend_end
       // which doesn't really exist.
       // https://github.com/dart-lang/sdk/issues/32952
@@ -109,7 +121,7 @@ Future<Set<Module>> _transitiveModules(
         continue;
       }
       var depMeta = MetaModule.fromJson(
-          json.decode(await buildStep.readAsString(depMetaAsset))
+          jsonDecode(await buildStep.readAsString(depMetaAsset))
               as Map<String, dynamic>);
       nextModules.addAll(depMeta.modules);
     }
@@ -121,8 +133,8 @@ Future<Set<Module>> _transitiveModules(
 ///
 /// Note this will clean the module dependencies as the merge happens.
 /// The result will be that all dependencies are primary sources.
-Module _mergeComponent(
-    List<Module> connectedComponent, Map<AssetId, AssetId> assetToPrimary) {
+Module _mergeComponent(List<Module> connectedComponent,
+    Map<AssetId, AssetId> assetToPrimary, String platform) {
   var sources = Set<AssetId>();
   var deps = Set<AssetId>();
   // Sort the modules to deterministicly select the primary source.
@@ -144,7 +156,7 @@ Module _mergeComponent(
     }
   }
   // Update map so that sources now point to the merged module.
-  var mergedModule = Module(primarySource, sources, deps);
+  var mergedModule = Module(primarySource, sources, deps, platform);
   for (var source in mergedModule.sources) {
     assetToPrimary[source] = mergedModule.primarySource;
   }

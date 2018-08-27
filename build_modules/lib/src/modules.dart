@@ -32,11 +32,11 @@ class Module {
 
   /// The linked summary for this module.
   AssetId get linkedSummaryId =>
-      primarySource.changeExtension(linkedSummaryExtension);
+      primarySource.changeExtension(linkedSummaryExtension(platform));
 
   /// The unlinked summary for this module.
   AssetId get unlinkedSummaryId =>
-      primarySource.changeExtension(unlinkedSummaryExtension);
+      primarySource.changeExtension(unlinkedSummaryExtension(platform));
 
   /// The library which will be used to reference any library in [sources].
   ///
@@ -95,8 +95,11 @@ class Module {
   @JsonKey(name: 'm', nullable: true, defaultValue: false)
   final bool isMissing;
 
+  @JsonKey(name: 'pf', nullable: false)
+  final String platform;
+
   Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies,
+      Iterable<AssetId> directDependencies, this.platform,
       {bool isMissing})
       : this.sources = sources.toSet(),
         this.directDependencies = directDependencies.toSet(),
@@ -120,7 +123,7 @@ class Module {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
       if (transitiveDeps.containsKey(next)) continue;
-      var nextModuleId = next.changeExtension(moduleExtension);
+      var nextModuleId = next.changeExtension(moduleExtension(platform));
       if (!await reader.canRead(nextModuleId)) {
         missingModuleSources.add(next);
         continue;

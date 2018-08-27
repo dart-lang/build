@@ -11,35 +11,50 @@ import 'package:glob/glob.dart';
 import 'common.dart';
 import 'meta_module.dart';
 import 'module_library_builder.dart';
+import 'platform.dart';
 
-/// The extension for serialized meta module assets.
-const metaModuleExtension = '.meta_module.raw';
+/// The extension for serialized meta module assets for a specific platform.
+String metaModuleExtension(String platform) => '.$platform.meta_module.raw';
 
 /// Creates `.meta_module` file for any Dart library.
 ///
 /// This file contains information about the full computed
 /// module structure for the package.
 class MetaModuleBuilder implements Builder {
+  @override
+  final Map<String, List<String>> buildExtensions;
+
   final ModuleStrategy strategy;
 
-  const MetaModuleBuilder({ModuleStrategy strategy})
-      : this.strategy = strategy ?? ModuleStrategy.coarse;
+  final String _platform;
 
-  MetaModuleBuilder.forOptions(BuilderOptions options)
-      : this.strategy = moduleStrategy(options);
+  MetaModuleBuilder(this._platform, {ModuleStrategy strategy})
+      : this.strategy = strategy ?? ModuleStrategy.coarse,
+        buildExtensions = {
+          r'$lib$': [metaModuleExtension(_platform)]
+        };
 
-  @override
-  final buildExtensions = const {
-    r'$lib$': [metaModuleExtension]
-  };
+  factory MetaModuleBuilder.forOptions(
+          String platform, BuilderOptions options) =>
+      MetaModuleBuilder(platform, strategy: moduleStrategy(options));
 
   @override
   Future build(BuildStep buildStep) async {
     var libraryAssets =
         await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
-    var metaModule =
-        await MetaModule.forLibraries(buildStep, libraryAssets, strategy);
-    var id = AssetId(buildStep.inputId.package, 'lib/$metaModuleExtension');
+    var platformLoader = await buildStep.fetchResource(platformsLoaderResource);
+    var platforms = await platformLoader.load(buildStep);
+    var platform = platforms[_platform];
+    if (platform == null) {
+      log.severe(
+          'Unrecognized platform `$platform` not found in lib/libraries.json '
+          'file for your sdk.');
+      return;
+    }
+    var metaModule = await MetaModule.forLibraries(
+        buildStep, libraryAssets, strategy, platform);
+    var id = AssetId(
+        buildStep.inputId.package, 'lib/${metaModuleExtension(_platform)}');
     await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
   }
 }
