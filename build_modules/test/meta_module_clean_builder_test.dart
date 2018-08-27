@@ -17,17 +17,18 @@ import 'matchers.dart';
 main() {
   final assetA = AssetId('a', 'lib/a.dart');
   final assetB = AssetId('b', 'lib/b.dart');
+  final platform = 'test';
 
   test('unconnected components stay disjoint', () async {
-    var moduleA = Module(assetA, [assetA], []);
-    var moduleB = Module(assetB, [assetB], []);
+    var moduleA = Module(assetA, [assetA], [], platform);
+    var moduleB = Module(assetB, [assetB], [], platform);
 
     var metaA = MetaModule([moduleA]);
     var metaB = MetaModule([moduleB]);
 
-    await testBuilder(MetaModuleCleanBuilder(), {
-      'a|lib/$metaModuleExtension': json.encode(metaA),
-      'b|lib/$metaModuleExtension': json.encode(metaB),
+    await testBuilder(MetaModuleCleanBuilder(platform), {
+      'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
+      'b|lib/${metaModuleExtension(platform)}': json.encode(metaB),
       'a|lib/a.dart': 'import "package:b/b.dart"',
       'b|lib/b.dart': 'import "package:a/a.dart"',
     }, outputs: {
@@ -37,37 +38,39 @@ main() {
   });
 
   test('can handle cycles', () async {
-    var moduleA = Module(assetA, [assetA], [assetB]);
-    var moduleB = Module(assetB, [assetB], [assetA]);
+    var moduleA = Module(assetA, [assetA], [assetB], platform);
+    var moduleB = Module(assetB, [assetB], [assetA], platform);
 
     var metaA = MetaModule([moduleA]);
     var metaB = MetaModule([moduleB]);
     var clean = MetaModule([
-      Module(assetA, [assetA, assetB], [])
+      Module(assetA, [assetA, assetB], [], platform)
     ]);
 
-    await testBuilder(MetaModuleCleanBuilder(), {
-      'a|lib/$metaModuleExtension': json.encode(metaA),
-      'b|lib/$metaModuleExtension': json.encode(metaB),
+    await testBuilder(MetaModuleCleanBuilder(platform), {
+      'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
+      'b|lib/${metaModuleExtension(platform)}': json.encode(metaB),
       'a|lib/a.dart': 'import "package:b/b.dart"',
       'b|lib/b.dart': 'import "package:a/a.dart"',
     }, outputs: {
-      'a|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(clean),
-      'b|lib/$metaModuleCleanExtension':
+      'a|lib/${metaModuleCleanExtension(platform)}':
+          encodedMatchesMetaModule(clean),
+      'b|lib/${metaModuleCleanExtension(platform)}':
           encodedMatchesMetaModule(MetaModule([])),
     });
   });
 
   test('Warns about missing .meta_module.raw files from dependencies',
       () async {
-    var moduleA = Module(assetA, [assetA], [assetB]);
+    var moduleA = Module(assetA, [assetA], [assetB], platform);
     var metaA = MetaModule([moduleA]);
     var logs = <LogRecord>[];
-    await testBuilder(MetaModuleCleanBuilder(), {
-      'a|lib/$metaModuleExtension': json.encode(metaA),
+    await testBuilder(MetaModuleCleanBuilder(platform), {
+      'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
       'a|lib/a.dart': 'import "package:b/b.dart"',
     }, outputs: {
-      'a|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(metaA),
+      'a|lib/${metaModuleCleanExtension(platform)}':
+          encodedMatchesMetaModule(metaA),
     }, onLog: (r) {
       if (r.level >= Level.WARNING) logs.add(r);
     });

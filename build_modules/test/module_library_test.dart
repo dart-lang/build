@@ -6,6 +6,7 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'package:build_modules/src/module_library.dart';
+import 'package:build_modules/src/platform.dart';
 
 void main() {
   test('Treats libraries as importable', () async {
@@ -34,7 +35,7 @@ void main() {
         "import 'b.dart';\n"
         "import 'package:dep/dep.dart';\n");
     expect(
-        library.deps,
+        library.depsForPlatform(Platform({}, '')),
         Set.of([
           makeAssetId('myapp|lib/b.dart'),
           makeAssetId('dep|lib/dep.dart')
@@ -47,7 +48,7 @@ void main() {
         "export 'b.dart';\n"
         "export 'package:dep/dep.dart';\n");
     expect(
-        library.deps,
+        library.depsForPlatform(Platform({}, '')),
         Set.of([
           makeAssetId('myapp|lib/b.dart'),
           makeAssetId('dep|lib/dep.dart')
@@ -98,10 +99,27 @@ void main() {
         "    if (dart.library.io) 'for_vm.dart'\n"
         "    if (dart.library.html) 'for_web.dart'\n");
     expect(
-        library.deps,
+        library.depsForPlatform(Platform({
+          'html': CoreLibrary(null, null, false),
+          'vm': CoreLibrary(null, null, false),
+        }, 'io')),
         Set.of([
           makeAssetId('myapp|lib/default.dart'),
+        ]));
+    expect(
+        library.depsForPlatform(Platform({
+          'html': CoreLibrary(null, null, false),
+          'vm': CoreLibrary(null, null, true),
+        }, 'io')),
+        Set.of([
           makeAssetId('myapp|lib/for_vm.dart'),
+        ]));
+    expect(
+        library.depsForPlatform(Platform({
+          'html': CoreLibrary(null, null, true),
+          'vm': CoreLibrary(null, null, false),
+        }, 'dart2js')),
+        Set.of([
           makeAssetId('myapp|lib/for_web.dart'),
         ]));
   });

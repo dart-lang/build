@@ -13,6 +13,7 @@ import 'package:build_modules/src/common.dart';
 import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/module_library.dart';
 import 'package:build_modules/src/modules.dart';
+import 'package:build_modules/src/platform.dart';
 
 import 'matchers.dart';
 
@@ -44,7 +45,8 @@ void main() {
         libraries
             .map((l) => l.id.changeExtension(moduleLibraryExtension))
             .toList(),
-        ModuleStrategy.coarse);
+        ModuleStrategy.coarse,
+        Platform({}, ''));
   }
 
   test('no strongly connected components, one shared lib', () async {
@@ -68,9 +70,9 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c])),
-      matchesModule(Module(b, [b], [c])),
-      matchesModule(Module(c, [c, d], [])),
+      matchesModule(Module(a, [a], [b, c], '')),
+      matchesModule(Module(b, [b], [c], '')),
+      matchesModule(Module(c, [c, d], [], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -96,7 +98,7 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b, c], []))
+      matchesModule(Module(a, [a, b, c], [], ''))
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -140,9 +142,9 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c], [g, e])),
-      matchesModule(Module(b, [b, d], [c, e, g])),
-      matchesModule(Module(e, [e, g, f], [])),
+      matchesModule(Module(a, [a, c], [g, e], '')),
+      matchesModule(Module(b, [b, d], [c, e, g], '')),
+      matchesModule(Module(e, [e, g, f], [], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -160,11 +162,13 @@ void main() {
     var b = AssetId('b', 'lib/b.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [
-        a,
-      ], [
-        b
-      ])),
+      matchesModule(Module(
+          a,
+          [
+            a,
+          ],
+          [b],
+          '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -192,8 +196,8 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c, d], [b])),
-      matchesModule(Module(b, [b], [])),
+      matchesModule(Module(a, [a, c, d], [b], '')),
+      matchesModule(Module(b, [b], [], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -233,12 +237,12 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [d, e, f])),
-      matchesModule(Module(b, [b], [d, e])),
-      matchesModule(Module(c, [c], [d, f])),
-      matchesModule(Module(d, [d], [])),
-      matchesModule(Module(e, [e], [d])),
-      matchesModule(Module(f, [f], [d])),
+      matchesModule(Module(a, [a], [d, e, f], '')),
+      matchesModule(Module(b, [b], [d, e], '')),
+      matchesModule(Module(c, [c], [d, f], '')),
+      matchesModule(Module(d, [d], [], '')),
+      matchesModule(Module(e, [e], [d], '')),
+      matchesModule(Module(f, [f], [d], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -266,7 +270,7 @@ void main() {
     var sap = AssetId('myapp', 'lib/src/a.part.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, ap, sap], [])),
+      matchesModule(Module(a, [a, ap, sap], [], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -294,9 +298,9 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [])),
-      matchesModule(Module(b, [b, c], [])),
-      matchesModule(Module(sa, [sa], [c])),
+      matchesModule(Module(a, [a], [], '')),
+      matchesModule(Module(b, [b, c], [], '')),
+      matchesModule(Module(sa, [sa], [c], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -328,9 +332,9 @@ void main() {
     var d = AssetId('myapp', 'web/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c])),
-      matchesModule(Module(b, [b], [c])),
-      matchesModule(Module(c, [c, d], [])),
+      matchesModule(Module(a, [a], [b, c], '')),
+      matchesModule(Module(b, [b], [c], '')),
+      matchesModule(Module(c, [c, d], [], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -369,9 +373,9 @@ void main() {
     var e = AssetId('myapp', 'web/e.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b], [c])),
-      matchesModule(Module(c, [c, d], [])),
-      matchesModule(Module(e, [e], [d])),
+      matchesModule(Module(a, [a, b], [c], '')),
+      matchesModule(Module(c, [c, d], [], '')),
+      matchesModule(Module(e, [e], [d], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -402,11 +406,11 @@ void main() {
     var b3 = AssetId('myapp', 'web/b3.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, b1, b2, b3])),
-      matchesModule(Module(b, [b], [])),
-      matchesModule(Module(b1, [b1], [])),
-      matchesModule(Module(b2, [b2], [])),
-      matchesModule(Module(b3, [b3], [])),
+      matchesModule(Module(a, [a], [b, b1, b2, b3], '')),
+      matchesModule(Module(b, [b], [], '')),
+      matchesModule(Module(b1, [b1], [], '')),
+      matchesModule(Module(b2, [b2], [], '')),
+      matchesModule(Module(b3, [b3], [], '')),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
