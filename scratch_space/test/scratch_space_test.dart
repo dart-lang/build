@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
+import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 
 import 'package:scratch_space/scratch_space.dart';
@@ -93,15 +94,13 @@ void main() {
     });
 
     test('Can\'t use a ScratchSpace after deleting it', () async {
-      // ignore: unawaited_futures
-      scratchSpace.delete();
+      unawaited(scratchSpace.delete());
       expect(() => scratchSpace.ensureAssets(allAssets.keys, assetReader),
           throwsStateError);
     });
 
     test('Can\'t delete a ScratchSpace twice', () async {
-      // ignore: unawaited_futures
-      scratchSpace.delete();
+      unawaited(scratchSpace.delete());
       expect(scratchSpace.delete, throwsStateError);
     });
 

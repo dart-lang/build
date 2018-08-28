@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner_core/build_runner_core.dart';
@@ -354,12 +355,10 @@ void main() {
 
         // After the first builder runs, delete the asset from the reader and
         // allow the 2nd builder to run.
-        //
-        // ignore: unawaited_futures
-        firstBuilder.buildsCompleted.first.then((_) {
+        unawaited(firstBuilder.buildsCompleted.first.then((_) {
           reader.assets.remove(aTxtId);
           ready.complete();
-        });
+        }));
 
         await testBuilders(
             builders,

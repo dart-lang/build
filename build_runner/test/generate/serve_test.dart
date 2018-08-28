@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:async/async.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:pedantic/pedantic.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -61,11 +62,11 @@ a:file://fake/pkg/path
       await wait(100);
 
       var request = Request('GET', Uri.parse('http://localhost:8000/a.txt'));
-      // ignore: unawaited_futures
-      (webHandler(request) as Future<Response>).then((Response response) {
+      unawaited((webHandler(request) as Future<Response>)
+          .then(expectAsync1((Response response) {
         expect(buildBlocker1.isCompleted, isTrue,
             reason: 'Server shouldn\'t respond until builds are done.');
-      });
+      })));
       await wait(250);
       buildBlocker1.complete();
       var result = await results.next;
@@ -73,11 +74,11 @@ a:file://fake/pkg/path
 
       /// Next request completes right away.
       var buildBlocker2 = Completer();
-      // ignore: unawaited_futures
-      (webHandler(request) as Future<Response>).then((response) {
+      unawaited((webHandler(request) as Future<Response>)
+          .then(expectAsync1((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isFalse);
-      });
+      })));
 
       /// Make an edit to force another build, and we should block again.
       nextBuildBlocker = buildBlocker2.future;
@@ -85,12 +86,12 @@ a:file://fake/pkg/path
       // Give the build enough time to get started.
       await wait(500);
       var done = Completer();
-      // ignore: unawaited_futures
-      (webHandler(request) as Future<Response>).then((response) {
+      unawaited((webHandler(request) as Future<Response>)
+          .then(expectAsync1((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isTrue);
         done.complete();
-      });
+      })));
       await wait(250);
       buildBlocker2.complete();
       result = await results.next;
