@@ -9,8 +9,6 @@ part of 'builder_definition.dart';
 BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
   return $checkedNew('BuilderDefinition', json, () {
     $checkKeys(json, allowedKeys: const [
-      'package',
-      'key',
       'builder_factories',
       'import',
       'build_extensions',
@@ -106,8 +104,6 @@ const _$BuildToEnumMap = <BuildTo, dynamic>{
 PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
   return $checkedNew('PostProcessBuilderDefinition', json, () {
     $checkKeys(json, allowedKeys: const [
-      'package',
-      'key',
       'builder_factory',
       'import',
       'input_extensions',

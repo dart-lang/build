@@ -8,13 +8,8 @@ part of 'build_target.dart';
 
 BuildTarget _$BuildTargetFromJson(Map json) {
   return $checkedNew('BuildTarget', json, () {
-    $checkKeys(json, allowedKeys: const [
-      'builders',
-      'dependencies',
-      'sources',
-      'key',
-      'package'
-    ]);
+    $checkKeys(json,
+        allowedKeys: const ['builders', 'dependencies', 'sources']);
     var val = BuildTarget(
         sources: $checkedConvert(
             json, 'sources', (v) => v == null ? null : InputSet.fromJson(v)),
