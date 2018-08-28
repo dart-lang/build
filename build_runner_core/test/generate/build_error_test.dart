@@ -166,6 +166,7 @@ class _LoggingBuilder implements Builder {
   @override
   Future<Null> build(BuildStep buildStep) async {
     log.log(level, buildStep.inputId.toString());
+    await buildStep.canRead(buildStep.inputId);
     await buildStep.writeAsString(buildStep.inputId.addExtension('.empty'), '');
   }
 

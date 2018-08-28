@@ -209,7 +209,7 @@ void main() {
             ]..addAll(placeholders)));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
-        expect(node.outputs, [primaryOutputId]);
+        expect(node.outputs, []);
         expect(node.lastKnownDigest, isNotNull,
             reason: 'Nodes with outputs should get an eager digest.');
 
@@ -268,8 +268,10 @@ void main() {
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
           // pretend a build happened
-          (graph.get(primaryOutputId) as GeneratedAssetNode).state =
-              NodeState.upToDate;
+          (graph.get(primaryOutputId) as GeneratedAssetNode)
+            ..state = NodeState.upToDate
+            ..inputs.add(primaryInputId);
+          graph.get(primaryInputId).outputs.add(primaryOutputId);
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
