@@ -2,8 +2,8 @@
 
 ### Improvements
 
-- Modules are now platform specific, and config specific imports are supported,
-  but only for `dart.library.*` constants.
+- Modules are now platform specific, and config specific imports using
+  `dart.library.*` constants are supported.
 
 ### Breaking Configuration Changes
 

@@ -41,21 +41,29 @@ class MetaModuleBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     if (buildStep.inputId.package == r'$sdk') return;
+
     var libraryAssets =
         await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
-    var platformLoader = await buildStep.fetchResource(platformsLoaderResource);
-    var platforms = await platformLoader.load(buildStep);
-    var platform = platforms[_platform];
-    if (platform == null) {
-      log.severe(
-          'Unrecognized platform `$platform` not found in lib/libraries.json '
-          'file for your sdk.');
-      return;
-    }
+    var platform = await _loadPlatform(buildStep, _platform);
+    if (platform == null) return;
+
     var metaModule = await MetaModule.forLibraries(
         buildStep, libraryAssets, strategy, platform);
     var id = AssetId(
         buildStep.inputId.package, 'lib/${metaModuleExtension(_platform)}');
     await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
   }
+}
+
+Future<Platform> _loadPlatform(BuildStep buildStep, String name) async {
+  var platformLoader = await buildStep.fetchResource(platformsLoaderResource);
+  var platforms = await platformLoader.load(buildStep);
+  var platform = platforms[name];
+  if (platform == null) {
+    log.severe(
+        'Unrecognized platform `$platform` not found in lib/libraries.json '
+        'file for your sdk.');
+    return null;
+  }
+  return platform;
 }
