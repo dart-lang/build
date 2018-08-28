@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build_modules/src/meta_module_clean_builder.dart';
 import 'package:build_test/build_test.dart';
@@ -32,8 +33,10 @@ main() {
       'a|lib/a.dart': 'import "package:b/b.dart"',
       'b|lib/b.dart': 'import "package:a/a.dart"',
     }, outputs: {
-      'a|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(metaA),
-      'b|lib/$metaModuleCleanExtension': encodedMatchesMetaModule(metaB),
+      'a|lib/${metaModuleCleanExtension(platform)}':
+          encodedMatchesMetaModule(metaA),
+      'b|lib/${metaModuleCleanExtension(platform)}':
+          encodedMatchesMetaModule(metaB),
     });
   });
 

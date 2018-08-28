@@ -23,7 +23,7 @@ builders:
     required_inputs:
       - .dart
       - .vm.dill
-      - .module
+      - .vm.module
     build_to: cache
     auto_apply: root_package
     defaults:

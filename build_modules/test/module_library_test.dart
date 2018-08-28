@@ -101,23 +101,23 @@ void main() {
     expect(
         library.depsForPlatform(Platform({
           'html': CoreLibrary(null, null, false),
-          'vm': CoreLibrary(null, null, false),
-        }, 'io')),
+          'io': CoreLibrary(null, null, false),
+        }, 'default')),
         Set.of([
           makeAssetId('myapp|lib/default.dart'),
         ]));
     expect(
         library.depsForPlatform(Platform({
           'html': CoreLibrary(null, null, false),
-          'vm': CoreLibrary(null, null, true),
-        }, 'io')),
+          'io': CoreLibrary(null, null, true),
+        }, 'vm')),
         Set.of([
           makeAssetId('myapp|lib/for_vm.dart'),
         ]));
     expect(
         library.depsForPlatform(Platform({
           'html': CoreLibrary(null, null, true),
-          'vm': CoreLibrary(null, null, false),
+          'io': CoreLibrary(null, null, false),
         }, 'dart2js')),
         Set.of([
           makeAssetId('myapp|lib/for_web.dart'),

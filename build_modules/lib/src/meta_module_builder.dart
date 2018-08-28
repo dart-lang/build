@@ -40,6 +40,7 @@ class MetaModuleBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
+    if (buildStep.inputId.package == r'$sdk') return;
     var libraryAssets =
         await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
     var platformLoader = await buildStep.fetchResource(platformsLoaderResource);

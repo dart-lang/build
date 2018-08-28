@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/module_library.dart';
 
 import 'matchers.dart';
 
@@ -17,9 +18,12 @@ main() {
     var moduleA = Module(assetA, [assetA], <AssetId>[], 'dart2js');
     var metaA = MetaModule([moduleA]);
     await testBuilder(MetaModuleBuilder('dart2js'), {
-      'a|lib/a.module.library': 'true\n\n',
+      'a|lib/a.module.library':
+          ModuleLibrary.fromSource(assetA, '').serialize(),
+      r'$sdk|lib/libraries.json': '{"dart2js": {}}',
     }, outputs: {
-      'a|lib/$metaModuleExtension': encodedMatchesMetaModule(metaA),
+      'a|lib/${metaModuleExtension("dart2js")}':
+          encodedMatchesMetaModule(metaA),
     });
   });
 }
