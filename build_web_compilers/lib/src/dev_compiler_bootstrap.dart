@@ -432,24 +432,25 @@ final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _baseUrlScript = '''
 var baseUrl = (function () {
-  // Attempt to detect base url using <base href> html tag
-  // base href should start with "/"
-  if (typeof document !== 'undefined') {
-    var el = document.getElementsByTagName('base');
-    if (el && el[0] && el[0].getAttribute("href") && el[0].getAttribute("href").startsWith("/")){
-      return el[0].href;
-    }
-  }
   // Attempt to detect --precompiled mode for tests, and set the base url
   // appropriately, otherwise set it to '/'.
   var pathParts = location.pathname.split("/");
   if (pathParts[0] == "") {
     pathParts.shift();
   }
-  var baseUrl;
   if (pathParts.length > 1 && pathParts[1] == "test") {
     return "/" + pathParts.slice(0, 2).join("/") + "/";
   }
+  // Attempt to detect base url using <base href> html tag
+  // base href should start and end with "/"
+  if (typeof document !== 'undefined') {
+    var el = document.getElementsByTagName('base');
+    if (el && el[0] && el[0].getAttribute("href") && el[0].getAttribute
+    ("href").startsWith("/") && el[0].getAttribute("href").endsWith("/")){
+      return el[0].getAttribute("href");
+    }
+  }
+  // return default value
   return "/";
 }());
 ''';
