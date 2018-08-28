@@ -178,9 +178,6 @@ class AssetGraph {
       if (inputsNode != null) {
         inputsNode.inputs.remove(id);
       }
-      if (inputsNode.state == NodeState.upToDate) {
-        inputsNode.state = NodeState.mayNeedUpdate;
-      }
     }
     if (node is NodeWithInputs) {
       for (var input in node.inputs) {

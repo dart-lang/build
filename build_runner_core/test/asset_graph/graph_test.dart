@@ -476,14 +476,18 @@ void main() {
       test(
           'invalidates generated outputs which read a non-existing asset '
           'that gets replaced with a generated output', () async {
-        final nodeToRead = makeAssetId('foo|lib/a.1');
-        final outputReadingNode = makeAssetId('foo|lib/b.2');
+        final nodeToRead = AssetId('foo', 'lib/a.1');
+        final outputReadingNode = AssetId('foo', 'lib/b.2');
+        final lastPrimaryOutputNode = AssetId('foo', 'lib/b.3');
         final buildPhases = [
           InBuildPhase(
               TestBuilder(buildExtensions: replaceExtension('.txt', '.1')),
               'foo'),
           InBuildPhase(
               TestBuilder(buildExtensions: replaceExtension('.anchor', '.2')),
+              'foo'),
+          InBuildPhase(
+              TestBuilder(buildExtensions: replaceExtension('.2', '.3')),
               'foo'),
         ];
         final graph = await AssetGraph.build(
@@ -498,7 +502,11 @@ void main() {
           ..outputs.add(outputReadingNode));
         (graph.get(outputReadingNode) as GeneratedAssetNode)
           ..state = NodeState.upToDate
-          ..inputs.add(nodeToRead);
+          ..inputs.add(nodeToRead)
+          ..outputs.add(lastPrimaryOutputNode);
+        (graph.get(lastPrimaryOutputNode) as GeneratedAssetNode)
+          ..state = NodeState.upToDate
+          ..inputs.add(outputReadingNode);
 
         final invalidatedNodes = await graph.updateAndInvalidate(
             buildPhases,
@@ -508,6 +516,7 @@ void main() {
             digestReader);
 
         expect(invalidatedNodes, contains(outputReadingNode));
+        expect(invalidatedNodes, contains(lastPrimaryOutputNode));
       });
     });
   });
