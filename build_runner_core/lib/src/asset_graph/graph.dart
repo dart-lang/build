@@ -306,10 +306,8 @@ class AssetGraph {
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
-      if (node is NodeWithInputs) {
-        if (node.state == NodeState.upToDate) {
-          node.state = NodeState.mayNeedUpdate;
-        }
+      if (node is NodeWithInputs && node.state == NodeState.upToDate) {
+        node.state = NodeState.mayNeedUpdate;
       }
 
       // Update all outputs of this asset as well.
