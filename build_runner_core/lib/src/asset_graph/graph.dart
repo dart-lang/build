@@ -56,7 +56,8 @@ class AssetGraph {
         placeholders: placeholders);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
-        sourceNodes.where((node) => node.outputs.isNotEmpty), digestReader);
+        sourceNodes.where((node) => node.primaryOutputs.isNotEmpty),
+        digestReader);
     // Always compute digests for all internal nodes.
     var internalNodes = graph._addInternalSources(internalSources);
     await graph._setLastKnownDigests(internalNodes, digestReader);
@@ -263,7 +264,9 @@ class AssetGraph {
     await _setLastKnownDigests(
         newAndModifiedNodes.where((node) =>
             node.isValidInput &&
-            (node.outputs.isNotEmpty || node.lastKnownDigest != null)),
+            (node.outputs.isNotEmpty ||
+                node.primaryOutputs.isNotEmpty ||
+                node.lastKnownDigest != null)),
         digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,
@@ -419,7 +422,6 @@ class AssetGraph {
       var outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
       node.primaryOutputs.addAll(outputs);
-      node.outputs.addAll(outputs);
       var deleted = _addGeneratedOutputs(
           outputs, phaseNum, builderOptionsNode, buildPhases, rootPackage,
           primaryInput: input, isHidden: phase.hideOutput);

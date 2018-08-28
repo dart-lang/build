@@ -796,10 +796,6 @@ class _SingleBuild {
     var removedInputs = node.inputs.difference(updatedInputs);
     node.inputs.removeAll(removedInputs);
     for (var input in removedInputs) {
-      // TODO: special type of dependency here? This means the primary input
-      // was never actually read.
-      if (input == node.primaryInput) continue;
-
       var inputNode = _assetGraph.get(input);
       assert(inputNode != null, 'Asset Graph is missing $input');
       inputNode.outputs.remove(node.id);
