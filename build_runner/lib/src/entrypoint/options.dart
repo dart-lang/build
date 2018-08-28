@@ -15,6 +15,7 @@ const assumeTtyOption = 'assume-tty';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
 const liveReloadOption = 'live-reload';
+const hotReloadOption = 'hot-reload';
 const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
 const lowResourcesModeOption = 'low-resources-mode';
@@ -27,6 +28,8 @@ const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const skipBuildScriptCheckOption = 'skip-build-script-check';
 const symlinkOption = 'symlink';
+
+enum BuildUpdatesOption { none, liveReload, hotReload }
 
 final _defaultWebDirs = const ['web', 'test', 'example', 'benchmark'];
 
@@ -131,13 +134,13 @@ class SharedOptions {
 /// Options specific to the `serve` command.
 class ServeOptions extends SharedOptions {
   final String hostName;
-  final bool liveReload;
+  final BuildUpdatesOption buildUpdates;
   final bool logRequests;
   final List<ServeTarget> serveTargets;
 
   ServeOptions._({
     @required this.hostName,
-    @required this.liveReload,
+    @required this.buildUpdates,
     @required this.logRequests,
     @required this.serveTargets,
     @required bool assumeTty,
@@ -201,9 +204,22 @@ class ServeOptions extends SharedOptions {
     var buildDirs = _buildDirsFromOutputMap(outputMap)
       ..addAll(serveTargets.map((t) => t.dir));
 
+    BuildUpdatesOption buildUpdates;
+    if (argResults[liveReloadOption] as bool &&
+        argResults[hotReloadOption] as bool) {
+      throw UsageException(
+          'Options --$liveReloadOption and --$hotReloadOption '
+          "can't both be used together",
+          command.usage);
+    } else if (argResults[liveReloadOption] as bool) {
+      buildUpdates = BuildUpdatesOption.liveReload;
+    } else if (argResults[hotReloadOption] as bool) {
+      buildUpdates = BuildUpdatesOption.hotReload;
+    }
+
     return ServeOptions._(
       hostName: argResults[hostnameOption] as String,
-      liveReload: argResults[liveReloadOption] as bool,
+      buildUpdates: buildUpdates,
       logRequests: argResults[logRequestsOption] as bool,
       serveTargets: serveTargets,
       assumeTty: argResults[assumeTtyOption] as bool,
