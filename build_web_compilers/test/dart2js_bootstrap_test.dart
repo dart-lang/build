@@ -12,7 +12,7 @@ import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
-  final platform = 'test';
+  final platform = 'dart2js';
 
   setUp(() async {
     assets = {

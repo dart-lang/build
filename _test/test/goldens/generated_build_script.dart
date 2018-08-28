@@ -31,6 +31,17 @@ final _builders = <_i1.BuilderApplication>[
       hideOutput: true,
       appliesBuilders: ['build_modules|module_cleanup']),
   _i1.apply(
+      'build_modules|vm',
+      [
+        _i5.metaModuleBuilderFactoryForPlatform('vm'),
+        _i5.metaModuleCleanBuilderFactoryForPlatform('vm'),
+        _i5.moduleBuilderFactoryForPlatform('vm')
+      ],
+      _i1.toNoneByDefault(),
+      isOptional: true,
+      hideOutput: true,
+      appliesBuilders: ['build_modules|module_cleanup']),
+  _i1.apply(
       'build_modules|dart2js',
       [
         _i5.metaModuleBuilderFactoryForPlatform('dart2js'),
@@ -81,19 +92,10 @@ final _builders = <_i1.BuilderApplication>[
       defaultReleaseOptions: new _i7.BuilderOptions({'compiler': 'dart2js'}),
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.apply(
-      'build_vm_compilers|modules',
-      [
-        _i5.metaModuleBuilderFactoryForPlatform('vm'),
-        _i5.metaModuleCleanBuilderFactoryForPlatform('vm'),
-        _i5.moduleBuilderFactoryForPlatform('vm')
-      ],
-      _i1.toAllPackages(),
+      'build_vm_compilers|vm', [_i8.vmKernelModuleBuilder], _i1.toAllPackages(),
       isOptional: true,
       hideOutput: true,
-      appliesBuilders: ['build_vm_compilers|module_cleanup']),
-  _i1.apply(
-      'build_vm_compilers|vm', [_i8.vmKernelModuleBuilder], _i1.toAllPackages(),
-      isOptional: true, hideOutput: true),
+      appliesBuilders: ['build_modules|vm']),
   _i1.apply('build_vm_compilers|entrypoint', [_i8.vmKernelEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,

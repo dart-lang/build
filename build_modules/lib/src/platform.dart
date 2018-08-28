@@ -30,26 +30,27 @@ class PlatformsLoader {
   PlatformsLoader._();
 
   Future<Platforms> load(AssetReader reader) async {
-    if (_invalidated) {
-      _invalidated = false;
-      var oldPlatforms = _platforms;
-      var platformsCompleter = Completer<Platforms>();
-      _platforms = platformsCompleter.future;
-      try {
-        var digest = await reader.digest(_librariesId);
-        if (_previousDigest == digest) {
-          platformsCompleter.complete(oldPlatforms);
-        } else {
-          _previousDigest = digest;
-          var encoded = await reader.readAsString(_librariesId);
-          platformsCompleter.complete(
-              Platforms.fromJson(jsonDecode(encoded) as Map<String, dynamic>));
-        }
-      } catch (e, s) {
-        platformsCompleter.completeError(e, s);
-      }
-    } else {
+    if (!_invalidated) {
       await reader.canRead(_librariesId);
+      return _platforms;
+    }
+
+    _invalidated = false;
+    var oldPlatforms = _platforms;
+    var platformsCompleter = Completer<Platforms>();
+    _platforms = platformsCompleter.future;
+    try {
+      var digest = await reader.digest(_librariesId);
+      if (_previousDigest == digest) {
+        platformsCompleter.complete(oldPlatforms);
+      } else {
+        _previousDigest = digest;
+        var encoded = await reader.readAsString(_librariesId);
+        platformsCompleter.complete(
+            Platforms.fromJson(jsonDecode(encoded) as Map<String, dynamic>));
+      }
+    } catch (e, s) {
+      platformsCompleter.completeError(e, s);
     }
     return _platforms;
   }
