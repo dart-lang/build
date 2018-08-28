@@ -51,11 +51,8 @@ class MissingModulesException implements Exception {
 
   MissingModulesException._(this.message);
 
-  static Future<MissingModulesException> create(
-      Module module,
-      Set<AssetId> missingSources,
-      List<Module> transitiveModules,
-      AssetReader reader) async {
+  static Future<MissingModulesException> create(Set<AssetId> missingSources,
+      Iterable<Module> transitiveModules, AssetReader reader) async {
     var buffer = StringBuffer('''
 Unable to find modules for some sources, this is usually the result of either a
 bad import, a missing dependency in a package (or possibly a dev_dependency

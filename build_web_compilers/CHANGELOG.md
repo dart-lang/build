@@ -6,6 +6,7 @@
   when `<base>` tag is used.
 - Value of `<base href="/.../">` tag should start and end with a `/` to be 
   used as the base url for require js. 
+- Added more javascript code to dev bootstrap for hot-reloading support
 
 ## 0.4.2+2
 
