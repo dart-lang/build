@@ -19,7 +19,8 @@ targets:
         strategy: fine
 ```
 
-  The supported platforms are currently `dart2js`, `dartdevc`, and `vm`.
+  The supported platforms are currently `dart2js`, `dartdevc`, `flutter`, and
+  `vm`.
 
 ### Breaking API Changes
 
