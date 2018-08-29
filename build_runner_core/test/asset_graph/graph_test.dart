@@ -209,7 +209,7 @@ void main() {
             ]..addAll(placeholders)));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
-        expect(node.outputs, [primaryOutputId]);
+        expect(node.outputs, []);
         expect(node.lastKnownDigest, isNotNull,
             reason: 'Nodes with outputs should get an eager digest.');
 
@@ -268,8 +268,10 @@ void main() {
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
           // pretend a build happened
-          (graph.get(primaryOutputId) as GeneratedAssetNode).state =
-              NodeState.upToDate;
+          (graph.get(primaryOutputId) as GeneratedAssetNode)
+            ..state = NodeState.upToDate
+            ..inputs.add(primaryInputId);
+          graph.get(primaryInputId).outputs.add(primaryOutputId);
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
@@ -474,14 +476,18 @@ void main() {
       test(
           'invalidates generated outputs which read a non-existing asset '
           'that gets replaced with a generated output', () async {
-        final nodeToRead = makeAssetId('foo|lib/a.1');
-        final outputReadingNode = makeAssetId('foo|lib/b.2');
+        final nodeToRead = AssetId('foo', 'lib/a.1');
+        final outputReadingNode = AssetId('foo', 'lib/b.2');
+        final lastPrimaryOutputNode = AssetId('foo', 'lib/b.3');
         final buildPhases = [
           InBuildPhase(
               TestBuilder(buildExtensions: replaceExtension('.txt', '.1')),
               'foo'),
           InBuildPhase(
               TestBuilder(buildExtensions: replaceExtension('.anchor', '.2')),
+              'foo'),
+          InBuildPhase(
+              TestBuilder(buildExtensions: replaceExtension('.2', '.3')),
               'foo'),
         ];
         final graph = await AssetGraph.build(
@@ -496,7 +502,11 @@ void main() {
           ..outputs.add(outputReadingNode));
         (graph.get(outputReadingNode) as GeneratedAssetNode)
           ..state = NodeState.upToDate
-          ..inputs.add(nodeToRead);
+          ..inputs.add(nodeToRead)
+          ..outputs.add(lastPrimaryOutputNode);
+        (graph.get(lastPrimaryOutputNode) as GeneratedAssetNode)
+          ..state = NodeState.upToDate
+          ..inputs.add(outputReadingNode);
 
         final invalidatedNodes = await graph.updateAndInvalidate(
             buildPhases,
@@ -506,6 +516,7 @@ void main() {
             digestReader);
 
         expect(invalidatedNodes, contains(outputReadingNode));
+        expect(invalidatedNodes, contains(lastPrimaryOutputNode));
       });
     });
   });

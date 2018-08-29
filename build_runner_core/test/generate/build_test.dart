@@ -1131,6 +1131,35 @@ void main() {
           },
           writer: writer);
     });
+
+    test('no implicit dependency on primary input contents', () async {
+      var builders = [applyToRoot(SiblingCopyBuilder())];
+
+      // Initial build.
+      var writer = InMemoryRunnerAssetWriter();
+      await testBuilders(
+          builders, {'a|web/a.txt': 'a', 'a|web/a.txt.sibling': 'sibling'},
+          outputs: {'a|web/a.txt.new': 'sibling'}, writer: writer);
+
+      // Followup build with cached graph and a changed primary input, but the
+      // actual file that was read has not changed.
+      await testBuilders(builders, {
+        'a|web/a.txt': 'b',
+        'a|web/a.txt.sibling': 'sibling',
+        'a|web/a.txt.new': 'sibling',
+        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')],
+      }, outputs: {});
+
+      // And now try modifying the sibling to make sure that still works.
+      await testBuilders(builders, {
+        'a|web/a.txt': 'b',
+        'a|web/a.txt.sibling': 'new!',
+        'a|web/a.txt.new': 'sibling',
+        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')],
+      }, outputs: {
+        'a|web/a.txt.new': 'new!',
+      });
+    });
   });
 
   group('regression tests', () {
@@ -1198,4 +1227,20 @@ void main() {
       );
     });
   });
+}
+
+/// A builder that never actually reads its primary input, but copies from a
+/// sibling file instead.
+class SiblingCopyBuilder extends Builder {
+  @override
+  final buildExtensions = {
+    '.txt': ['.txt.new']
+  };
+
+  @override
+  Future build(BuildStep buildStep) async {
+    var sibling = buildStep.inputId.addExtension('.sibling');
+    await buildStep.writeAsString(buildStep.inputId.addExtension('.new'),
+        await buildStep.readAsString(sibling));
+  }
 }
