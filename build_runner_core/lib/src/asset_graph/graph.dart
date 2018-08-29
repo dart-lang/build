@@ -56,7 +56,8 @@ class AssetGraph {
         placeholders: placeholders);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
-        sourceNodes.where((node) => node.outputs.isNotEmpty), digestReader);
+        sourceNodes.where((node) => node.primaryOutputs.isNotEmpty),
+        digestReader);
     // Always compute digests for all internal nodes.
     var internalNodes = graph._addInternalSources(internalSources);
     await graph._setLastKnownDigests(internalNodes, digestReader);
@@ -263,7 +264,9 @@ class AssetGraph {
     await _setLastKnownDigests(
         newAndModifiedNodes.where((node) =>
             node.isValidInput &&
-            (node.outputs.isNotEmpty || node.lastKnownDigest != null)),
+            (node.outputs.isNotEmpty ||
+                node.primaryOutputs.isNotEmpty ||
+                node.lastKnownDigest != null)),
         digestReader);
 
     // Collects the set of all transitive ids to be removed from the graph,
@@ -289,13 +292,15 @@ class AssetGraph {
       deletedOutput.state = NodeState.definitelyNeedsUpdate;
     }
 
-    var allNewAndDeletedIds =
-        _addOutputsForSources(buildPhases, newIds, rootPackage)
-          ..addAll(transitiveRemovedIds);
-
     // Transitively invalidates all assets. This needs to happen after the
     // structure of the graph has been updated.
     var invalidatedIds = Set<AssetId>();
+
+    var newGeneratedOutputs =
+        _addOutputsForSources(buildPhases, newIds, rootPackage);
+    var allNewAndDeletedIds =
+        Set.of(newGeneratedOutputs.followedBy(transitiveRemovedIds));
+
     void invalidateNodeAndDeps(AssetId id) {
       var node = get(id);
       if (node == null) return;
@@ -311,7 +316,7 @@ class AssetGraph {
       }
     }
 
-    for (var changed in updates.keys) {
+    for (var changed in updates.keys.followedBy(newGeneratedOutputs)) {
       invalidateNodeAndDeps(changed);
     }
 
@@ -336,9 +341,10 @@ class AssetGraph {
 
     // Remove all deleted source assets from the graph, which also recursively
     // removes all their primary outputs.
-    removeIds
-        .where((id) => get(id) is SourceAssetNode)
-        .forEach(_removeRecursive);
+    for (var id in removeIds.where((id) => get(id) is SourceAssetNode)) {
+      invalidateNodeAndDeps(id);
+      _removeRecursive(id);
+    }
 
     return invalidatedIds;
   }
@@ -382,7 +388,12 @@ class AssetGraph {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
         allInputs.addAll(_addInBuildPhaseOutputs(
-            phase, phaseNum, allInputs, buildPhases, rootPackage));
+          phase,
+          phaseNum,
+          allInputs,
+          buildPhases,
+          rootPackage,
+        ));
       } else if (phase is PostBuildPhase) {
         _addPostBuildPhaseAnchors(phase, allInputs);
       } else {
@@ -395,7 +406,7 @@ class AssetGraph {
   /// Adds all [GeneratedAssetNode]s for [phase] given [allInputs].
   ///
   /// May remove some items from [allInputs], if they are deemed to actually be
-  /// outputs of this phase an not original sources.
+  /// outputs of this phase and not original sources.
   ///
   /// Returns all newly created asset ids.
   Set<AssetId> _addInBuildPhaseOutputs(
@@ -419,7 +430,6 @@ class AssetGraph {
       var outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
       node.primaryOutputs.addAll(outputs);
-      node.outputs.addAll(outputs);
       var deleted = _addGeneratedOutputs(
           outputs, phaseNum, builderOptionsNode, buildPhases, rootPackage,
           primaryInput: input, isHidden: phase.hideOutput);
@@ -468,16 +478,17 @@ class AssetGraph {
       @required bool isHidden}) {
     var removed = Set<AssetId>();
     for (var output in outputs) {
+      AssetNode existing;
       // When any outputs aren't hidden we can pick up old generated outputs as
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
-        var node = get(output);
-        if (node is GeneratedAssetNode) {
+        existing = get(output);
+        if (existing is GeneratedAssetNode) {
           throw DuplicateAssetNodeException(
               rootPackage,
-              node.id,
-              (buildPhases[node.phaseNumber] as InBuildPhase).builderLabel,
+              existing.id,
+              (buildPhases[existing.phaseNumber] as InBuildPhase).builderLabel,
               (buildPhases[phaseNumber] as InBuildPhase).builderLabel);
         }
         _removeRecursive(output, removedIds: removed);
@@ -491,6 +502,9 @@ class AssetGraph {
           isFailure: false,
           builderOptionsId: builderOptionsNode.id,
           isHidden: isHidden);
+      if (existing != null) {
+        newNode.outputs.addAll(existing.outputs);
+      }
       builderOptionsNode.outputs.add(output);
       _add(newNode);
     }

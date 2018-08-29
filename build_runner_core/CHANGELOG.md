@@ -1,3 +1,8 @@
+## 0.3.1+5
+
+- Fixed an issue where builders that didn't read their primary input would get
+  invalidated on fresh builds when they shouldn't.
+
 ## 0.3.1+4
 
 - Removed the constraint on reading files that output to cache from files that

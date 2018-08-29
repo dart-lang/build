@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -21,8 +22,8 @@ import 'path_to_asset_id.dart';
 
 const _performancePath = r'$perf';
 final _graphPath = r'$graph';
-final _buildUpdatesProtocol = r'$livereload';
-final _buildUpdatesMessage = 'update';
+final _assetsDigestPath = r'$assetDigests';
+final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = Logger('Serve');
@@ -48,24 +49,26 @@ class ServeHandler implements BuildState {
   final Future<AssetHandler> _assetHandler;
   final Future<AssetGraphHandler> _assetGraphHandler;
 
-  final _webSocketHandler = BuildUpdatesWebSocketHandler();
+  final BuildUpdatesWebSocketHandler _webSocketHandler;
 
   ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
-      this._rootPackage) {
+      this._rootPackage)
+      : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
     _state.buildResults.listen((result) {
       _lastBuildResult = result;
       _webSocketHandler.emitUpdateMessage(result);
-    });
+    }).onDone(_webSocketHandler.close);
   }
 
   @override
   Future<BuildResult> get currentBuild => _state.currentBuild;
+
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
   shelf.Handler handlerFor(String rootDir,
-      {bool logRequests, bool liveReload}) {
-    liveReload ??= false;
+      {bool logRequests, BuildUpdatesOption buildUpdates}) {
+    buildUpdates ??= BuildUpdatesOption.none;
     logRequests ??= false;
     if (p.url.split(rootDir).length != 1) {
       throw ArgumentError.value(
@@ -73,11 +76,16 @@ class ServeHandler implements BuildState {
     }
     _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
     var cascade = shelf.Cascade();
-    cascade = (liveReload ? cascade.add(_webSocketHandler.handler) : cascade)
-        .add(_blockOnCurrentBuild)
-        .add((shelf.Request request) async {
+    if (buildUpdates != BuildUpdatesOption.none) {
+      cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
+    }
+    cascade =
+        cascade.add(_blockOnCurrentBuild).add((shelf.Request request) async {
       if (request.url.path == _performancePath) {
         return _performanceHandler(request);
+      }
+      if (request.url.path == _assetsDigestPath) {
+        return _assetsDigestHandler(request, rootDir);
       }
       if (request.url.path.startsWith(_graphPath)) {
         var graphHandler = await _assetGraphHandler;
@@ -91,8 +99,15 @@ class ServeHandler implements BuildState {
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
-    if (liveReload) {
-      pipeline = pipeline.addMiddleware(_injectBuildUpdatesClientCode);
+    switch (buildUpdates) {
+      case BuildUpdatesOption.liveReload:
+        pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
+        break;
+      case BuildUpdatesOption.hotReload:
+        pipeline = pipeline.addMiddleware(_injectHotReloadClientCode);
+        break;
+      case BuildUpdatesOption.none:
+        break;
     }
     return pipeline.addHandler(cascade.handler);
   }
@@ -112,6 +127,24 @@ class ServeHandler implements BuildState {
         headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
 
+  Future<shelf.Response> _assetsDigestHandler(
+      shelf.Request request, String rootDir) async {
+    var assertPathList = jsonDecode(await request.readAsString()) as List;
+    var rootPackage = _state.packageGraph.root.name;
+    var results = <String, String>{};
+    for (String path in assertPathList) {
+      try {
+        var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
+        var digest = await _state.reader.digest(assetId);
+        results[path] = digest.toString();
+      } on AssetNotFoundException {
+        results.remove(path);
+      }
+    }
+    return shelf.Response.ok(jsonEncode(results),
+        headers: {HttpHeaders.contentTypeHeader: 'application/json'});
+  }
+
   void _warnForEmptyDirectory(String rootDir) {
     if (!_state.assetGraph
         .packageNodes(_rootPackage)
@@ -126,67 +159,95 @@ class ServeHandler implements BuildState {
 /// Class that manages web socket connection handler to inform clients about
 /// build updates
 class BuildUpdatesWebSocketHandler {
-  final activeConnections = <WebSocketChannel>[];
+  final connectionsByRootDir = <String, List<WebSocketChannel>>{};
   final shelf.Handler Function(Function, {Iterable<String> protocols})
       _handlerFactory;
-  shelf.Handler _internalHandler;
+  final _internalHandlers = <String, shelf.Handler>{};
+  final WatchImpl _state;
 
-  BuildUpdatesWebSocketHandler([this._handlerFactory = webSocketHandler]) {
-    // Because of dart-lang/shelf_web_socket#11, webSocketHandler doesn't work
-    // with strongly typed functions. As a workaround diskard type information
-    // wrapping it with lambda for now
-    var untypedTearOff = (webSocket, protocol) =>
-        _handleConnection(webSocket as WebSocketChannel, protocol as String);
-    _internalHandler =
-        _handlerFactory(untypedTearOff, protocols: [_buildUpdatesProtocol]);
+  BuildUpdatesWebSocketHandler(this._state,
+      [this._handlerFactory = webSocketHandler]);
+
+  shelf.Handler createHandlerByRootDir(String rootDir) {
+    if (!_internalHandlers.containsKey(rootDir)) {
+      var closureForRootDir = (WebSocketChannel webSocket, String protocol) =>
+          _handleConnection(webSocket, protocol, rootDir);
+      _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
+          protocols: [_buildUpdatesProtocol]);
+    }
+    return _internalHandlers[rootDir];
   }
 
-  shelf.Handler get handler => _internalHandler;
-
-  void emitUpdateMessage(BuildResult buildResult) {
-    for (var webSocket in activeConnections) {
-      webSocket.sink.add(_buildUpdatesMessage);
+  Future emitUpdateMessage(BuildResult buildResult) async {
+    if (buildResult.status != BuildStatus.success) return;
+    var digests = <AssetId, String>{};
+    for (var assetId in buildResult.outputs) {
+      var digest = await _state.reader.digest(assetId);
+      digests[assetId] = digest.toString();
+    }
+    for (var rootDir in connectionsByRootDir.keys) {
+      var resultMap = <String, String>{};
+      for (var assetId in digests.keys) {
+        var path = assetIdToPath(assetId, rootDir);
+        if (path != null) {
+          resultMap[path] = digests[assetId];
+        }
+      }
+      for (var connection in connectionsByRootDir[rootDir]) {
+        connection.sink.add(jsonEncode(resultMap));
+      }
     }
   }
 
-  void _handleConnection(WebSocketChannel webSocket, String protocol) async {
-    activeConnections.add(webSocket);
+  void _handleConnection(
+      WebSocketChannel webSocket, String protocol, String rootDir) async {
+    if (!connectionsByRootDir.containsKey(rootDir)) {
+      connectionsByRootDir[rootDir] = [];
+    }
+    connectionsByRootDir[rootDir].add(webSocket);
     await webSocket.stream.drain();
-    activeConnections.remove(webSocket);
+    connectionsByRootDir[rootDir].remove(webSocket);
+    if (connectionsByRootDir[rootDir].isEmpty) {
+      connectionsByRootDir.remove(rootDir);
+    }
+  }
+
+  Future<void> close() {
+    return Future.wait(connectionsByRootDir.values
+        .expand((x) => x)
+        .map((connection) => connection.sink.close()));
   }
 }
 
-shelf.Handler _injectBuildUpdatesClientCode(shelf.Handler innerHandler) {
-  return (shelf.Request request) async {
-    if (!request.url.path.endsWith('.js')) {
-      return innerHandler(request);
-    }
-    var response = await innerHandler(request);
-    // TODO: Find a way how to check and/or modify body without reading it whole
-    var body = await response.readAsString();
-    if (body.startsWith(entrypointExtensionMarker)) {
-      body += _buildUpdatesInjectedJS;
-    }
-    return response.change(body: body);
-  };
-}
+shelf.Handler Function(shelf.Handler) _injectBuildUpdatesClientCode(
+        String scriptName) =>
+    (innerHandler) {
+      return (shelf.Request request) async {
+        if (!request.url.path.endsWith('.js')) {
+          return innerHandler(request);
+        }
+        var response = await innerHandler(request);
+        // TODO: Find a way how to check and/or modify body without reading it whole
+        var body = await response.readAsString();
+        if (body.startsWith(entrypointExtensionMarker)) {
+          body += _buildUpdatesInjectedJS(scriptName);
+        }
+        return response.change(body: body);
+      };
+    };
 
-/// Hot-reload config
+final _injectHotReloadClientCode =
+    _injectBuildUpdatesClientCode('hot_reload_client.dart');
+
+final _injectLiveReloadClientCode =
+    _injectBuildUpdatesClientCode('live_reload_client');
+
+/// Hot-/live- reload config
 ///
 /// Listen WebSocket for updates in build results
-///
-/// Now only live-reload functional - just reload page on update message
-final _buildUpdatesInjectedJS = '''\n
-// Injected by build_runner for live reload support
-(function() {
-  var ws = new WebSocket('ws://' + location.host, ['$_buildUpdatesProtocol']);
-  ws.onmessage = function(event) {
-    console.log(event);
-    if(event.data === '$_buildUpdatesMessage'){
-      location.reload();
-    }
-  };
-}());
+String _buildUpdatesInjectedJS(String scriptName) => '''\n
+// Injected by build_runner for build updates support
+window.\$dartLoader.forceLoadModule('packages/build_runner/src/server/build_updates_client/$scriptName');
 ''';
 
 class AssetHandler {

@@ -172,20 +172,19 @@ targets:
       });
 
       test('for changed sources', () async {
+        var aTxt = AssetId('a', 'lib/a.txt');
+        var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
 
-        var originalAssetGraph = await AssetGraph.build(
-            buildPhases,
-            [makeAssetId('a|lib/a.txt')].toSet(),
-            Set(),
-            aPackageGraph,
-            environment.reader);
+        var originalAssetGraph = await AssetGraph.build(buildPhases,
+            [aTxt].toSet(), Set(), aPackageGraph, environment.reader);
 
         // pretend a build happened
-        (originalAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
-                as GeneratedAssetNode)
-            .state = NodeState.upToDate;
+        (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode)
+          ..state = NodeState.upToDate
+          ..inputs.add(aTxt);
+        originalAssetGraph.get(aTxt).outputs.add(aTxtCopy);
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');

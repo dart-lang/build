@@ -54,7 +54,7 @@ main() {
         contains('"packages/a/a": "packages/a/a.ddc"'),
         contains('"packages/b/b": "packages/b/b.ddc"'),
         // Requires the top level module and dart sdk.
-        contains('require(["web/index", "dart_sdk"]'),
+        contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
         // Calls main on the top level module.
         contains('index.main()'),
         isNot(contains('lib/a')),

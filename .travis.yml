@@ -1,18 +1,12 @@
 # Created with https://github.com/dart-lang/mono_repo
 language: dart
 
-####################
-# Begin hand edits #
-####################
+# Custom configuration
 sudo: required
 addons:
   chrome: stable
-
 after_failure:
- - tool/report_failure.sh
-##################
-# End hand edits #
-##################
+  - tool/report_failure.sh
 
 jobs:
   include:
@@ -212,15 +206,16 @@ stages:
   - unit_test
   - e2e_test
   - name: e2e_test_cron
-    if: type IN (api, cron)
+    if: "type IN (api, cron)"
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
-  only: [master]
+  only:
+    - master
 
 cache:
   directories:
-    - $HOME/.pub-cache
+    - "$HOME/.pub-cache"
     - bazel_codegen/.dart_tool/build
     - build/.dart_tool/build
     - build_config/.dart_tool/build
