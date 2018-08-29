@@ -13,15 +13,18 @@ import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
 
-String linkedSummaryExtension(String platform) => '.$platform.linked.sum';
-String unlinkedSummaryExtension(String platform) => '.$platform.unlinked.sum';
+String linkedSummaryExtension(DartPlatform platform) =>
+    '.${platform.name}.linked.sum';
+String unlinkedSummaryExtension(DartPlatform platform) =>
+    '.${platform.name}.unlinked.sum';
 
 /// A builder which can output unlinked summaries!
 class UnlinkedSummaryBuilder implements Builder {
-  UnlinkedSummaryBuilder(String platform)
+  UnlinkedSummaryBuilder(DartPlatform platform)
       : buildExtensions = {
           moduleExtension(platform): [unlinkedSummaryExtension(platform)]
         };
@@ -44,7 +47,7 @@ class UnlinkedSummaryBuilder implements Builder {
 
 /// A builder which can output linked summaries!
 class LinkedSummaryBuilder implements Builder {
-  LinkedSummaryBuilder(String platform)
+  LinkedSummaryBuilder(DartPlatform platform)
       : buildExtensions = {
           moduleExtension(platform): [linkedSummaryExtension(platform)]
         };

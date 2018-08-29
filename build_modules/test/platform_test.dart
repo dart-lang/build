@@ -2,60 +2,43 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:build/build.dart';
-import 'package:build_test/build_test.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-import 'package:build_modules/src/platform.dart';
-import 'package:build_modules/src/workers.dart';
+import 'package:build_modules/build_modules.dart';
 
 main() {
-  String librariesJson;
-
-  setUpAll(() async {
-    var librariesJsonFile = File(p.join(sdkDir, 'lib', 'libraries.json'));
-    librariesJson = await librariesJsonFile.readAsString();
+  test('dartdevc doesnt support mirrors/io/ui, but does support html', () {
+    expect(DartPlatform.dartdevc.supportsLibrary('io'), isFalse);
+    expect(DartPlatform.dartdevc.supportsLibrary('mirrors'), isFalse);
+    expect(DartPlatform.dartdevc.supportsLibrary('ui'), isFalse);
+    expect(DartPlatform.dartdevc.supportsLibrary('html'), isTrue);
   });
 
-  test('can parse libraries.json', () async {
-    var platforms =
-        Platforms.fromJson(jsonDecode(librariesJson) as Map<String, dynamic>);
-    _expectValidPlatforms(platforms);
+  test('dart2js doesnt support mirrors/io/ui, but does support html', () {
+    expect(DartPlatform.dart2js.supportsLibrary('io'), isFalse);
+    expect(DartPlatform.dart2js.supportsLibrary('mirrors'), isFalse);
+    expect(DartPlatform.dart2js.supportsLibrary('ui'), isFalse);
+    expect(DartPlatform.dart2js.supportsLibrary('html'), isTrue);
   });
 
-  test('can load platforms with a resource', () async {
-    var platformsLoaded = <Platforms>[];
-    await testBuilder(
-        TestBuilder(
-            buildExtensions: appendExtension('.copy', from: '.txt'),
-            extraWork: (BuildStep buildStep, _) async {
-              var platforms =
-                  await (await buildStep.fetchResource(platformsLoaderResource))
-                      .load(buildStep);
-              platformsLoaded.add(platforms);
-              _expectValidPlatforms(platforms);
-            }),
-        {
-          'a|lib/a.txt': '',
-          'a|lib/b.txt': '',
-          r'$sdk|lib/libraries.json': librariesJson,
-        });
-    expect(platformsLoaded.length, 2);
-    expect(identical(platformsLoaded[0], platformsLoaded[1]), isTrue);
+  test('dart2jsServer doesnt support mirrors/io/ui/html', () {
+    expect(DartPlatform.dart2jsServer.supportsLibrary('io'), isFalse);
+    expect(DartPlatform.dart2jsServer.supportsLibrary('mirrors'), isFalse);
+    expect(DartPlatform.dart2jsServer.supportsLibrary('ui'), isFalse);
+    expect(DartPlatform.dart2jsServer.supportsLibrary('html'), isFalse);
   });
-}
 
-void _expectValidPlatforms(Platforms platforms) {
-  expect(platforms, isNotNull);
-  var vmPlatform = platforms['vm'];
-  expect(vmPlatform, isNotNull);
-  var vmIoLibrary = vmPlatform.libraries['io'];
-  expect(vmIoLibrary, isNotNull);
-  expect(vmIoLibrary.uri, 'io/io.dart');
-  expect(vmIoLibrary.patches, isNotNull);
-  expect(vmIoLibrary.supported, isTrue);
+  test('vm supports mirrors/io, but doesnt support html/ui', () {
+    expect(DartPlatform.vm.supportsLibrary('io'), isTrue);
+    expect(DartPlatform.vm.supportsLibrary('mirrors'), isTrue);
+    expect(DartPlatform.vm.supportsLibrary('ui'), isFalse);
+    expect(DartPlatform.vm.supportsLibrary('html'), isFalse);
+  });
+
+  test('flutter supports io/ui, but doesnt support html/mirrors', () {
+    expect(DartPlatform.flutter.supportsLibrary('io'), isTrue);
+    expect(DartPlatform.flutter.supportsLibrary('mirrors'), isFalse);
+    expect(DartPlatform.flutter.supportsLibrary('ui'), isTrue);
+    expect(DartPlatform.flutter.supportsLibrary('html'), isFalse);
+  });
 }

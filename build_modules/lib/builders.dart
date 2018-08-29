@@ -14,14 +14,15 @@ typedef Builder _BuilderFactory(BuilderOptions options);
 Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
 
 _BuilderFactory metaModuleBuilderFactoryForPlatform(String platform) =>
-    (BuilderOptions options) => MetaModuleBuilder.forOptions(platform, options);
+    (BuilderOptions options) =>
+        MetaModuleBuilder.forOptions(DartPlatform(platform), options);
 _BuilderFactory metaModuleCleanBuilderFactoryForPlatform(String platform) =>
-    (_) => MetaModuleCleanBuilder(platform);
+    (_) => MetaModuleCleanBuilder(DartPlatform(platform));
 _BuilderFactory moduleBuilderFactoryForPlatform(String platform) =>
-    (_) => ModuleBuilder(platform);
+    (_) => ModuleBuilder(DartPlatform(platform));
 _BuilderFactory unlinkedSummaryBuilderForPlatform(String platform) =>
-    (BuilderOptions options) => UnlinkedSummaryBuilder(platform);
+    (BuilderOptions options) => UnlinkedSummaryBuilder(DartPlatform(platform));
 _BuilderFactory linkedSummaryBuilderForPlatform(String platform) =>
-    (BuilderOptions options) => LinkedSummaryBuilder(platform);
+    (BuilderOptions options) => LinkedSummaryBuilder(DartPlatform(platform));
 
 PostProcessBuilder moduleCleanup(_) => const ModuleCleanup();

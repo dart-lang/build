@@ -12,6 +12,7 @@ import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
+  final platform = DartPlatform.dartdevc;
 
   setUp(() async {
     assets = {
@@ -27,18 +28,15 @@ main() {
           print(hello);
         }
       ''',
-      r'$sdk|lib/libraries.json': '{"dartdevc": {}}',
     };
 
     // Set up all the other required inputs for this test.
     await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-    await testBuilderAndCollectAssets(MetaModuleBuilder('dartdevc'), assets);
-    await testBuilderAndCollectAssets(
-        MetaModuleCleanBuilder('dartdevc'), assets);
-    await testBuilderAndCollectAssets(ModuleBuilder('dartdevc'), assets);
-    await testBuilderAndCollectAssets(
-        UnlinkedSummaryBuilder('dartdevc'), assets);
-    await testBuilderAndCollectAssets(LinkedSummaryBuilder('dartdevc'), assets);
+    await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+    await testBuilderAndCollectAssets(MetaModuleCleanBuilder(platform), assets);
+    await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+    await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(platform), assets);
+    await testBuilderAndCollectAssets(LinkedSummaryBuilder(platform), assets);
     await testBuilderAndCollectAssets(DevCompilerBuilder(), assets);
   });
 

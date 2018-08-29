@@ -14,7 +14,7 @@ import 'package:build_modules/src/modules.dart';
 import 'matchers.dart';
 
 main() {
-  final platform = 'test';
+  final platform = DartPlatform.dart2js;
 
   test('can serialize modules and only output for primary sources', () async {
     var assetA = AssetId('a', 'lib/a.dart');

@@ -11,9 +11,10 @@ import 'package:build/build.dart';
 import 'meta_module.dart';
 import 'meta_module_clean_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 
 /// The extension for serialized module assets.
-String moduleExtension(String platform) => '.$platform.module';
+String moduleExtension(DartPlatform platform) => '.${platform.name}.module';
 
 /// A [Resource] that provides a [_CleanMetaModuleCache].
 final _cleanMetaModules = Resource<_CleanMetaModuleCache>(
@@ -29,7 +30,7 @@ class _CleanMetaModuleCache {
   void dispose() => _modules.clear();
 
   Future<MetaModule> find(
-      String platform, String package, AssetReader reader) async {
+      DartPlatform platform, String package, AssetReader reader) async {
     var cleanMetaAsset =
         AssetId(package, 'lib/${metaModuleCleanExtension(platform)}');
     if (!await reader.canRead(cleanMetaAsset)) return null;
@@ -44,7 +45,7 @@ class _CleanMetaModuleCache {
 /// Creates `.module` files for any `.dart` file that is the primary dart
 /// source of a [Module].
 class ModuleBuilder implements Builder {
-  final String _platform;
+  final DartPlatform _platform;
 
   ModuleBuilder(this._platform)
       : buildExtensions = {

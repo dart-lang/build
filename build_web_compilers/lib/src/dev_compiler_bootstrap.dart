@@ -31,7 +31,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   ignoreCastFailures ??= false;
   useKernel ??= false;
   var dartEntrypointId = buildStep.inputId;
-  var moduleId = buildStep.inputId.changeExtension(moduleExtension('dartdevc'));
+  var moduleId =
+      buildStep.inputId.changeExtension(moduleExtension(DartPlatform.dartdevc));
   var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
@@ -406,7 +407,7 @@ requirejs.onResourceLoad = function (context, map, depArray) {
       return !previousDeps.includes(depName);
     });
     if (changed) {
-      console.warn("Dependencies graph change for module '" + name + "' detected. " + 
+      console.warn("Dependencies graph change for module '" + name + "' detected. " +
         "Dependencies was [" + previousDeps + "], now [" +  depNameArray.map((depName) => depName) +"]. " +
         "Page can't be hot-reloaded, firing full page reload.");
       window.location.reload();

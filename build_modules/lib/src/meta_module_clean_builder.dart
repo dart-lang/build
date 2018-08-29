@@ -6,20 +6,20 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:graphs/graphs.dart';
-
 import 'package:build/build.dart';
+import 'package:graphs/graphs.dart';
 
 import 'meta_module.dart';
 import 'meta_module_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 
 /// The extension for serialized clean meta module assets.
 ///
 /// Clean in this context means all dependencies are primary sources.
 /// Furthermore cyclic modules are merged into a single module.
-String metaModuleCleanExtension(String platform) =>
-    '.$platform.meta_module.clean';
+String metaModuleCleanExtension(DartPlatform platform) =>
+    '.${platform.name}.meta_module.clean';
 
 /// Creates `.meta_module.clean` file for any Dart library.
 ///
@@ -33,7 +33,7 @@ class MetaModuleCleanBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
 
-  final String _platform;
+  final DartPlatform _platform;
 
   MetaModuleCleanBuilder(this._platform)
       : buildExtensions = {
@@ -70,13 +70,15 @@ class MetaModuleCleanBuilder implements Builder {
 }
 
 /// Map of [AssetId] to corresponding non clean containing [Module] per
-/// platform.
-final _assetToModule = Resource<Map<String, Map<AssetId, Module>>>(() => {},
+/// [DartPlatform].
+final _assetToModule = Resource<Map<DartPlatform, Map<AssetId, Module>>>(
+    () => {},
     dispose: (map) => map.clear());
 
 /// Map of [AssetId] to corresponding primary [AssetId] within the same
 /// clean [Module] per platform.
-final _assetToPrimary = Resource<Map<String, Map<AssetId, AssetId>>>(() => {},
+final _assetToPrimary = Resource<Map<DartPlatform, Map<AssetId, AssetId>>>(
+    () => {},
     dispose: (map) => map.clear());
 
 /// Returns a set of all modules transitively reachable from the provided meta
@@ -86,7 +88,7 @@ Future<Set<Module>> _transitiveModules(
     AssetId metaAsset,
     Map<AssetId, Module> assetToModule,
     Map<AssetId, AssetId> assetToPrimary,
-    String platform) async {
+    DartPlatform platform) async {
   var dependentModules = Set<Module>();
   // Ensures we only process a meta file once.
   var seenMetas = Set<AssetId>()..add(metaAsset);
@@ -134,7 +136,7 @@ Future<Set<Module>> _transitiveModules(
 /// Note this will clean the module dependencies as the merge happens.
 /// The result will be that all dependencies are primary sources.
 Module _mergeComponent(List<Module> connectedComponent,
-    Map<AssetId, AssetId> assetToPrimary, String platform) {
+    Map<AssetId, AssetId> assetToPrimary, DartPlatform platform) {
   var sources = Set<AssetId>();
   var deps = Set<AssetId>();
   // Sort the modules to deterministicly select the primary source.

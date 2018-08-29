@@ -24,4 +24,4 @@ Builder ddcKernelBuilder(_) => KernelBuilder(
     summaryOnly: true,
     sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
     outputExtension: ddcKernelExtension,
-    platform: 'dartdevc');
+    platform: DartPlatform.dartdevc);

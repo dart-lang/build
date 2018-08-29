@@ -39,7 +39,7 @@ String _topLevelDir(String path) {
 ///
 /// This creates more modules than we want, but we collapse them later on.
 Module _moduleForComponent(
-    List<ModuleLibrary> componentLibraries, Platform platform) {
+    List<ModuleLibrary> componentLibraries, DartPlatform platform) {
   // Name components based on first alphabetically sorted node, preferring
   // public srcs (not under lib/src).
   var sources = componentLibraries.map((n) => n.id).toSet();
@@ -52,7 +52,7 @@ Module _moduleForComponent(
   var directDependencies = Set<AssetId>()
     ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
     ..removeAll(sources);
-  return Module(primaryId, sources, directDependencies, platform.name);
+  return Module(primaryId, sources, directDependencies, platform);
 }
 
 Map<AssetId, Module> _entryPointModules(
@@ -180,7 +180,7 @@ T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 /// connected components, as they must always be a part of the containing
 /// library's module.
 List<Module> _computeModules(
-    Map<AssetId, ModuleLibrary> libraries, Platform platform) {
+    Map<AssetId, ModuleLibrary> libraries, DartPlatform platform) {
   assert(() {
     var dir = _topLevelDir(libraries.values.first.id.path);
     return libraries.values.every((l) => _topLevelDir(l.id.path) == dir);
@@ -220,7 +220,7 @@ class MetaModule {
       AssetReader reader,
       List<AssetId> libraryIds,
       ModuleStrategy strategy,
-      Platform platform) async {
+      DartPlatform platform) async {
     var libraries = <ModuleLibrary>[];
     for (var id in libraryIds) {
       libraries.add(ModuleLibrary.deserialize(
@@ -238,7 +238,7 @@ class MetaModule {
 }
 
 MetaModule _coarseModulesForLibraries(
-    AssetReader reader, List<ModuleLibrary> libraries, Platform platform) {
+    AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
   var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
   for (var library in libraries) {
     final dir = _topLevelDir(library.id.path);
@@ -255,13 +255,13 @@ MetaModule _coarseModulesForLibraries(
 }
 
 MetaModule _fineModulesForLibraries(
-    AssetReader reader, List<ModuleLibrary> libraries, Platform platform) {
+    AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
   var modules = libraries
       .map((library) => Module(
           library.id,
           library.parts.followedBy([library.id]),
           library.depsForPlatform(platform),
-          platform.name))
+          platform))
       .toList();
   _sortModules(modules);
   return MetaModule(modules);

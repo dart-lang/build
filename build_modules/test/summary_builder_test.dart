@@ -2,29 +2,18 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io' hide Platform;
-
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
-import 'package:build_modules/src/workers.dart';
 
 import 'matchers.dart';
 import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
-  final platform = 'dart2js';
-
-  String librariesJson;
-
-  setUpAll(() async {
-    var librariesJsonFile = File(p.join(sdkDir, 'lib', 'libraries.json'));
-    librariesJson = await librariesJsonFile.readAsString();
-  });
+  final platform = DartPlatform.dart2js;
 
   group('basic project', () {
     setUp(() async {
@@ -41,12 +30,11 @@ main() {
           print(hello);
         }
       ''',
-        r'$sdk|lib/libraries.json': librariesJson,
       };
 
       // Set up all the other required inputs for this test.
       await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-      await testBuilderAndCollectAssets(MetaModuleBuilder('dart2js'), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
       await testBuilderAndCollectAssets(
           MetaModuleCleanBuilder(platform), assets);
       await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
@@ -100,7 +88,6 @@ main() {
         'build_modules|lib/src/analysis_options.default.yaml': '',
         'a|web/index.dart': 'import "package:a/a.dart";',
         'a|lib/a.dart': 'import "package:b/b.dart";',
-        r'$sdk|lib/libraries.json': librariesJson,
       };
 
       // Set up all the other required inputs for this test.

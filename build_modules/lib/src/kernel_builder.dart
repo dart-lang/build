@@ -16,6 +16,7 @@ import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
 
@@ -31,7 +32,7 @@ class KernelBuilder implements Builder {
 
   final String outputExtension;
 
-  final String platform;
+  final DartPlatform platform;
 
   /// Whether this should create summary kernel files or full kernel files.
   ///

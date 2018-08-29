@@ -8,14 +8,12 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_modules/src/errors.dart';
-import 'package:build_modules/src/modules.dart';
-import 'package:build_modules/src/module_builder.dart';
+import 'package:build_modules/build_modules.dart';
 
 String serializeModule(Module module) => jsonEncode(module.toJson());
 
 void main() {
-  final platform = 'test';
+  final platform = DartPlatform.dart2js;
 
   group('computeTransitiveDeps', () {
     final rootId = AssetId('a', 'lib/a.dart');

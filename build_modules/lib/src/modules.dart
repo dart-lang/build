@@ -11,6 +11,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
 import 'module_builder.dart';
+import 'platform.dart';
 import 'summary_builder.dart';
 
 part 'modules.g.dart';
@@ -95,8 +96,12 @@ class Module {
   @JsonKey(name: 'm', nullable: true, defaultValue: false)
   final bool isMissing;
 
-  @JsonKey(name: 'pf', nullable: false)
-  final String platform;
+  @JsonKey(
+      name: 'pf',
+      nullable: false,
+      fromJson: _platformFromJson,
+      toJson: _platformToJson)
+  final DartPlatform platform;
 
   Module(this.primarySource, Iterable<AssetId> sources,
       Iterable<AssetId> directDependencies, this.platform,
@@ -167,3 +172,7 @@ Iterable<AssetId> _assetIdsFromJson(Iterable<dynamic> json) =>
 
 List<List<dynamic>> _assetIdsToJson(Iterable<AssetId> ids) =>
     ids.map(_assetIdToJson).toList();
+
+DartPlatform _platformFromJson(String name) => DartPlatform(name);
+
+String _platformToJson(DartPlatform platform) => platform.name;

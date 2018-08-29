@@ -12,7 +12,7 @@ import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
-  final platform = 'dart2js';
+  final platform = DartPlatform.dart2js;
 
   setUp(() async {
     assets = {
@@ -27,7 +27,6 @@ main() {
           print(hello);
         }
       ''',
-      r'$sdk|lib/libraries.json': '{"dart2js": {}}',
     };
 
     // Set up all the other required inputs for this test.

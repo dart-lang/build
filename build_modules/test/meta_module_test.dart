@@ -3,12 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io' hide Platform;
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
@@ -17,19 +14,12 @@ import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/module_library.dart';
 import 'package:build_modules/src/modules.dart';
 import 'package:build_modules/src/platform.dart';
-import 'package:build_modules/src/workers.dart';
 
 import 'matchers.dart';
 
 void main() {
   InMemoryAssetReader reader;
-
-  String librariesJson;
-
-  setUpAll(() async {
-    var librariesJsonFile = File(p.join(sdkDir, 'lib', 'libraries.json'));
-    librariesJson = await librariesJsonFile.readAsString();
-  });
+  final defaultPlatform = DartPlatform.dart2js;
 
   List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
     reader = InMemoryAssetReader();
@@ -44,8 +34,8 @@ void main() {
 
   Future<MetaModule> metaModuleFromSources(
       InMemoryAssetReader reader, List<AssetId> sources,
-      {Platform platform}) async {
-    platform ??= Platform({}, '');
+      {DartPlatform platform}) async {
+    platform ??= defaultPlatform;
     final libraries = (await Future.wait(sources
             .where((s) => s.package != r'$sdk')
             .map((s) async =>
@@ -86,9 +76,9 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c], '')),
-      matchesModule(Module(b, [b], [c], '')),
-      matchesModule(Module(c, [c, d], [], '')),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform)),
+      matchesModule(Module(b, [b], [c], defaultPlatform)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -114,7 +104,7 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b, c], [], ''))
+      matchesModule(Module(a, [a, b, c], [], defaultPlatform))
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -158,9 +148,9 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c], [g, e], '')),
-      matchesModule(Module(b, [b, d], [c, e, g], '')),
-      matchesModule(Module(e, [e, g, f], [], '')),
+      matchesModule(Module(a, [a, c], [g, e], defaultPlatform)),
+      matchesModule(Module(b, [b, d], [c, e, g], defaultPlatform)),
+      matchesModule(Module(e, [e, g, f], [], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -178,13 +168,7 @@ void main() {
     var b = AssetId('b', 'lib/b.dart');
 
     var expectedModules = [
-      matchesModule(Module(
-          a,
-          [
-            a,
-          ],
-          [b],
-          '')),
+      matchesModule(Module(a, [a], [b], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -212,8 +196,8 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c, d], [b], '')),
-      matchesModule(Module(b, [b], [], '')),
+      matchesModule(Module(a, [a, c, d], [b], defaultPlatform)),
+      matchesModule(Module(b, [b], [], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -253,12 +237,12 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [d, e, f], '')),
-      matchesModule(Module(b, [b], [d, e], '')),
-      matchesModule(Module(c, [c], [d, f], '')),
-      matchesModule(Module(d, [d], [], '')),
-      matchesModule(Module(e, [e], [d], '')),
-      matchesModule(Module(f, [f], [d], '')),
+      matchesModule(Module(a, [a], [d, e, f], defaultPlatform)),
+      matchesModule(Module(b, [b], [d, e], defaultPlatform)),
+      matchesModule(Module(c, [c], [d, f], defaultPlatform)),
+      matchesModule(Module(d, [d], [], defaultPlatform)),
+      matchesModule(Module(e, [e], [d], defaultPlatform)),
+      matchesModule(Module(f, [f], [d], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -286,7 +270,7 @@ void main() {
     var sap = AssetId('myapp', 'lib/src/a.part.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, ap, sap], [], '')),
+      matchesModule(Module(a, [a, ap, sap], [], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -314,9 +298,9 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [], '')),
-      matchesModule(Module(b, [b, c], [], '')),
-      matchesModule(Module(sa, [sa], [c], '')),
+      matchesModule(Module(a, [a], [], defaultPlatform)),
+      matchesModule(Module(b, [b, c], [], defaultPlatform)),
+      matchesModule(Module(sa, [sa], [c], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -348,9 +332,9 @@ void main() {
     var d = AssetId('myapp', 'web/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c], '')),
-      matchesModule(Module(b, [b], [c], '')),
-      matchesModule(Module(c, [c, d], [], '')),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform)),
+      matchesModule(Module(b, [b], [c], defaultPlatform)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -389,9 +373,9 @@ void main() {
     var e = AssetId('myapp', 'web/e.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b], [c], '')),
-      matchesModule(Module(c, [c, d], [], '')),
-      matchesModule(Module(e, [e], [d], '')),
+      matchesModule(Module(a, [a, b], [c], defaultPlatform)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform)),
+      matchesModule(Module(e, [e], [d], defaultPlatform)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -404,6 +388,7 @@ void main() {
     var assets = makeAssets({
       'myapp|web/a.dart': '''
         import 'default.dart'
+        if (dart.library.ui) 'ui.dart'
         if (dart.library.io) 'io.dart'
         if (dart.library.html) 'html.dart';
       ''',
@@ -412,34 +397,48 @@ void main() {
       ''',
       'myapp|web/html.dart': '''
       ''',
-      r'$sdk|lib/libraries.json': librariesJson,
+      'myapp|web/ui.dart': '''
+      ''',
     });
-    var platforms =
-        Platforms.fromJson(jsonDecode(librariesJson) as Map<String, dynamic>);
 
     var primaryId = AssetId('myapp', 'web/a.dart');
     var defaultId = AssetId('myapp', 'web/default.dart');
     var htmlId = AssetId('myapp', 'web/html.dart');
     var ioId = AssetId('myapp', 'web/io.dart');
+    var uiId = AssetId('myapp', 'web/ui.dart');
 
     var expectedModulesForPlatform = {
-      platforms['dart2js']: [
-        matchesModule(Module(primaryId, [primaryId], [htmlId], '')),
-        matchesModule(Module(htmlId, [htmlId], [], '')),
-        matchesModule(Module(ioId, [ioId], [], '')),
-        matchesModule(Module(defaultId, [defaultId], [], '')),
+      DartPlatform.dart2js: [
+        matchesModule(
+            Module(primaryId, [primaryId], [htmlId], DartPlatform.dart2js)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.dart2js)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.dart2js)),
+        matchesModule(Module(defaultId, [defaultId], [], DartPlatform.dart2js)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.dart2js)),
       ],
-      platforms['dartdevc']: [
-        matchesModule(Module(primaryId, [primaryId], [htmlId], '')),
-        matchesModule(Module(htmlId, [htmlId], [], '')),
-        matchesModule(Module(ioId, [ioId], [], '')),
-        matchesModule(Module(defaultId, [defaultId], [], '')),
+      DartPlatform.dartdevc: [
+        matchesModule(
+            Module(primaryId, [primaryId], [htmlId], DartPlatform.dartdevc)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.dartdevc)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.dartdevc)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], DartPlatform.dartdevc)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.dartdevc)),
       ],
-      platforms['vm']: [
-        matchesModule(Module(primaryId, [primaryId], [ioId], '')),
-        matchesModule(Module(htmlId, [htmlId], [], '')),
-        matchesModule(Module(ioId, [ioId], [], '')),
-        matchesModule(Module(defaultId, [defaultId], [], '')),
+      DartPlatform.flutter: [
+        matchesModule(
+            Module(primaryId, [primaryId], [uiId], DartPlatform.flutter)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.flutter)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.flutter)),
+        matchesModule(Module(defaultId, [defaultId], [], DartPlatform.flutter)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.flutter)),
+      ],
+      DartPlatform.vm: [
+        matchesModule(Module(primaryId, [primaryId], [ioId], DartPlatform.vm)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.vm)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.vm)),
+        matchesModule(Module(defaultId, [defaultId], [], DartPlatform.vm)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.vm)),
       ]
     };
 

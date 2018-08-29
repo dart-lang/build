@@ -12,13 +12,14 @@ import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/platform.dart';
 
 import 'matchers.dart';
 
 main() {
   final assetA = AssetId('a', 'lib/a.dart');
   final assetB = AssetId('b', 'lib/b.dart');
-  final platform = 'test';
+  final platform = DartPlatform.dart2js;
 
   test('unconnected components stay disjoint', () async {
     var moduleA = Module(assetA, [assetA], [], platform);
@@ -28,7 +29,7 @@ main() {
     var metaB = MetaModule([moduleB]);
 
     await testBuilder(MetaModuleCleanBuilder(platform), {
-      'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
+      'a|lib/${metaModuleExtension(DartPlatform.dart2js)}': json.encode(metaA),
       'b|lib/${metaModuleExtension(platform)}': json.encode(metaB),
       'a|lib/a.dart': 'import "package:b/b.dart"',
       'b|lib/b.dart': 'import "package:a/a.dart"',

@@ -14,7 +14,8 @@ import 'module_library_builder.dart';
 import 'platform.dart';
 
 /// The extension for serialized meta module assets for a specific platform.
-String metaModuleExtension(String platform) => '.$platform.meta_module.raw';
+String metaModuleExtension(DartPlatform platform) =>
+    '.${platform.name}.meta_module.raw';
 
 /// Creates `.meta_module` file for any Dart library.
 ///
@@ -26,7 +27,7 @@ class MetaModuleBuilder implements Builder {
 
   final ModuleStrategy strategy;
 
-  final String _platform;
+  final DartPlatform _platform;
 
   MetaModuleBuilder(this._platform, {ModuleStrategy strategy})
       : this.strategy = strategy ?? ModuleStrategy.coarse,
@@ -35,7 +36,7 @@ class MetaModuleBuilder implements Builder {
         };
 
   factory MetaModuleBuilder.forOptions(
-          String platform, BuilderOptions options) =>
+          DartPlatform platform, BuilderOptions options) =>
       MetaModuleBuilder(platform, strategy: moduleStrategy(options));
 
   @override
@@ -44,26 +45,11 @@ class MetaModuleBuilder implements Builder {
 
     var libraryAssets =
         await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
-    var platform = await _loadPlatform(buildStep, _platform);
-    if (platform == null) return;
 
     var metaModule = await MetaModule.forLibraries(
-        buildStep, libraryAssets, strategy, platform);
+        buildStep, libraryAssets, strategy, _platform);
     var id = AssetId(
         buildStep.inputId.package, 'lib/${metaModuleExtension(_platform)}');
     await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
   }
-}
-
-Future<Platform> _loadPlatform(BuildStep buildStep, String name) async {
-  var platformLoader = await buildStep.fetchResource(platformsLoaderResource);
-  var platforms = await platformLoader.load(buildStep);
-  var platform = platforms[name];
-  if (platform == null) {
-    log.severe(
-        'Unrecognized platform `$platform` not found in lib/libraries.json '
-        'file for your sdk.');
-    return null;
-  }
-  return platform;
 }

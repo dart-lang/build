@@ -12,6 +12,7 @@ export 'src/module_builder.dart' show ModuleBuilder, moduleExtension;
 export 'src/module_library_builder.dart'
     show ModuleLibraryBuilder, moduleLibraryExtension;
 export 'src/modules.dart';
+export 'src/platform.dart' show DartPlatform;
 export 'src/scratch_space.dart' show scratchSpace, scratchSpaceResource;
 export 'src/summary_builder.dart'
     show

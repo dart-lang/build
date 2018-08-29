@@ -173,7 +173,7 @@ class ModuleLibrary {
         'sdkDeps': sdkDeps.toList(),
       });
 
-  List<AssetId> depsForPlatform(Platform platform) {
+  List<AssetId> depsForPlatform(DartPlatform platform) {
     return _deps.followedBy(conditionalDeps.map((conditions) {
       var selectedImport = conditions[r'$default'];
       assert(selectedImport != null);
@@ -185,10 +185,7 @@ class ModuleLibrary {
               'dart.library.<name> constants are supported.');
         }
         var library = condition.substring('dart.library.'.length);
-        var coreLibSupport = platform.libraries[library];
-        if (coreLibSupport == null || !coreLibSupport.supported) {
-          continue;
-        } else {
+        if (platform.supportsLibrary(library)) {
           selectedImport = conditions[condition];
           break;
         }

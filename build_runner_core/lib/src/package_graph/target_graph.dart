@@ -43,7 +43,6 @@ class TargetGraph {
         defaultInclude = const [
           'lib/dev_compiler/**.js',
           'lib/_internal/**.sum',
-          'lib/libraries.json',
         ];
       } else {
         defaultInclude = const ['lib/**'];

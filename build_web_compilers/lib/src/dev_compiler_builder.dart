@@ -30,7 +30,7 @@ class DevCompilerBuilder implements Builder {
 
   @override
   final buildExtensions = {
-    moduleExtension('dartdevc'): [
+    moduleExtension(DartPlatform.dartdevc): [
       jsModuleExtension,
       jsModuleErrorsExtension,
       jsSourceMapExtension
@@ -90,10 +90,12 @@ Future _createDevCompilerModule(
     // Add the default analysis_options.
     await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
     var libraryRoot = '/${p.split(p.dirname(jsId.path)).first}';
+    var summaryExtension =
+        linkedSummaryExtension(DartPlatform.dartdevc).substring(1);
     request.arguments.addAll([
       '--module-root=.',
       '--library-root=$libraryRoot',
-      '--summary-extension=${linkedSummaryExtension('dartdevc').substring(1)}',
+      '--summary-extension=$summaryExtension',
       '--no-summarize',
       defaultAnalysisOptionsArg(scratchSpace),
     ]);
