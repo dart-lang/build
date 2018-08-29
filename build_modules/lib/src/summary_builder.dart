@@ -13,20 +13,24 @@ import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
 
-const linkedSummaryExtension = '.linked.sum';
-const unlinkedSummaryExtension = '.unlinked.sum';
+String linkedSummaryExtension(DartPlatform platform) =>
+    '.${platform.name}.linked.sum';
+String unlinkedSummaryExtension(DartPlatform platform) =>
+    '.${platform.name}.unlinked.sum';
 
 /// A builder which can output unlinked summaries!
 class UnlinkedSummaryBuilder implements Builder {
-  const UnlinkedSummaryBuilder();
+  UnlinkedSummaryBuilder(DartPlatform platform)
+      : buildExtensions = {
+          moduleExtension(platform): [unlinkedSummaryExtension(platform)]
+        };
 
   @override
-  final buildExtensions = const {
-    moduleExtension: [unlinkedSummaryExtension]
-  };
+  final Map<String, List<String>> buildExtensions;
 
   @override
   Future build(BuildStep buildStep) async {
@@ -43,12 +47,13 @@ class UnlinkedSummaryBuilder implements Builder {
 
 /// A builder which can output linked summaries!
 class LinkedSummaryBuilder implements Builder {
-  const LinkedSummaryBuilder();
+  LinkedSummaryBuilder(DartPlatform platform)
+      : buildExtensions = {
+          moduleExtension(platform): [linkedSummaryExtension(platform)]
+        };
 
   @override
-  final buildExtensions = const {
-    moduleExtension: [linkedSummaryExtension]
-  };
+  final Map<String, List<String>> buildExtensions;
 
   @override
   Future build(BuildStep buildStep) async {

@@ -11,6 +11,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
 import 'module_builder.dart';
+import 'platform.dart';
 import 'summary_builder.dart';
 
 part 'modules.g.dart';
@@ -32,11 +33,11 @@ class Module {
 
   /// The linked summary for this module.
   AssetId get linkedSummaryId =>
-      primarySource.changeExtension(linkedSummaryExtension);
+      primarySource.changeExtension(linkedSummaryExtension(platform));
 
   /// The unlinked summary for this module.
   AssetId get unlinkedSummaryId =>
-      primarySource.changeExtension(unlinkedSummaryExtension);
+      primarySource.changeExtension(unlinkedSummaryExtension(platform));
 
   /// The library which will be used to reference any library in [sources].
   ///
@@ -95,8 +96,15 @@ class Module {
   @JsonKey(name: 'm', nullable: true, defaultValue: false)
   final bool isMissing;
 
+  @JsonKey(
+      name: 'pf',
+      nullable: false,
+      fromJson: _platformFromJson,
+      toJson: _platformToJson)
+  final DartPlatform platform;
+
   Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies,
+      Iterable<AssetId> directDependencies, this.platform,
       {bool isMissing})
       : this.sources = sources.toSet(),
         this.directDependencies = directDependencies.toSet(),
@@ -120,7 +128,7 @@ class Module {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
       if (transitiveDeps.containsKey(next)) continue;
-      var nextModuleId = next.changeExtension(moduleExtension);
+      var nextModuleId = next.changeExtension(moduleExtension(platform));
       if (!await reader.canRead(nextModuleId)) {
         missingModuleSources.add(next);
         continue;
@@ -164,3 +172,7 @@ Iterable<AssetId> _assetIdsFromJson(Iterable<dynamic> json) =>
 
 List<List<dynamic>> _assetIdsToJson(Iterable<AssetId> ids) =>
     ids.map(_assetIdToJson).toList();
+
+DartPlatform _platformFromJson(String name) => DartPlatform(name);
+
+String _platformToJson(DartPlatform platform) => platform.name;

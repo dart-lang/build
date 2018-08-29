@@ -9,7 +9,7 @@ import 'package:build_web_compilers/build_web_compilers.dart';
 
 import 'package:path/path.dart' as p;
 
-Builder devCompilerBuilder(_) => const DevCompilerBuilder();
+Builder devCompilerBuilder(_) => DevCompilerBuilder();
 Builder webEntrypointBuilder(BuilderOptions options) =>
     WebEntrypointBuilder.fromOptions(options);
 PostProcessBuilder dart2JsArchiveExtractor(BuilderOptions options) =>
@@ -23,4 +23,5 @@ const ddcKernelExtension = '.ddc.dill';
 Builder ddcKernelBuilder(_) => KernelBuilder(
     summaryOnly: true,
     sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
-    outputExtension: ddcKernelExtension);
+    outputExtension: ddcKernelExtension,
+    platform: DartPlatform.dartdevc);

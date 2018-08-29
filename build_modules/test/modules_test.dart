@@ -8,37 +8,39 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_modules/src/errors.dart';
-import 'package:build_modules/src/modules.dart';
-import 'package:build_modules/src/module_builder.dart';
+import 'package:build_modules/build_modules.dart';
 
 String serializeModule(Module module) => jsonEncode(module.toJson());
 
 void main() {
+  final platform = DartPlatform.dart2js;
+
   group('computeTransitiveDeps', () {
     final rootId = AssetId('a', 'lib/a.dart');
     final directDepId = AssetId('a', 'lib/src/dep.dart');
     final transitiveDepId = AssetId('b', 'lib/b.dart');
     final deepTransitiveDepId = AssetId('b', 'lib/src/dep.dart');
-    final rootModule = Module(rootId, [rootId], [directDepId]);
+    final rootModule = Module(rootId, [rootId], [directDepId], platform);
     final directDepModule =
-        Module(directDepId, [directDepId], [transitiveDepId]);
-    final transitiveDepModule =
-        Module(transitiveDepId, [transitiveDepId], [deepTransitiveDepId]);
+        Module(directDepId, [directDepId], [transitiveDepId], platform);
+    final transitiveDepModule = Module(
+        transitiveDepId, [transitiveDepId], [deepTransitiveDepId], platform);
     final deepTransitiveDepModule =
-        Module(deepTransitiveDepId, [deepTransitiveDepId], []);
+        Module(deepTransitiveDepId, [deepTransitiveDepId], [], platform);
     InMemoryAssetReader reader;
 
     setUp(() {
       reader = InMemoryAssetReader();
+      reader.cacheStringAsset(rootId.changeExtension(moduleExtension(platform)),
+          serializeModule(rootModule));
       reader.cacheStringAsset(
-          rootId.changeExtension(moduleExtension), serializeModule(rootModule));
-      reader.cacheStringAsset(directDepId.changeExtension(moduleExtension),
+          directDepId.changeExtension(moduleExtension(platform)),
           serializeModule(directDepModule));
-      reader.cacheStringAsset(transitiveDepId.changeExtension(moduleExtension),
+      reader.cacheStringAsset(
+          transitiveDepId.changeExtension(moduleExtension(platform)),
           serializeModule(transitiveDepModule));
       reader.cacheStringAsset(
-          deepTransitiveDepId.changeExtension(moduleExtension),
+          deepTransitiveDepId.changeExtension(moduleExtension(platform)),
           serializeModule(deepTransitiveDepModule));
     });
 
@@ -61,8 +63,8 @@ void main() {
     });
 
     test('missing modules report nice errors', () {
-      reader.assets
-          .remove(deepTransitiveDepId.changeExtension(moduleExtension));
+      reader.assets.remove(
+          deepTransitiveDepId.changeExtension(moduleExtension(platform)));
       reader.cacheStringAsset(transitiveDepId, '''
 import 'src/dep.dart';
 ''');

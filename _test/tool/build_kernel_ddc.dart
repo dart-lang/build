@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build_config/build_config.dart';
 import 'package:build_web_compilers/builders.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/builders.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_test/builder.dart';
@@ -19,9 +20,10 @@ Future main(List<String> args) async {
     apply(
         '_test|ddc_kernel',
         [
-          metaModuleBuilder,
-          metaModuleCleanBuilder,
-          moduleBuilder,
+          moduleLibraryBuilder,
+          metaModuleBuilderFactoryForPlatform(DartPlatform.dartdevc.name),
+          metaModuleCleanBuilderFactoryForPlatform(DartPlatform.dartdevc.name),
+          moduleBuilderFactoryForPlatform(DartPlatform.dartdevc.name),
           ddcKernelBuilder,
         ],
         toAllPackages(),

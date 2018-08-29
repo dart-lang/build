@@ -42,7 +42,7 @@ class TargetGraph {
       } else if (package.name == r'$sdk') {
         defaultInclude = const [
           'lib/dev_compiler/**.js',
-          'lib/_internal/**.sum'
+          'lib/_internal/**.sum',
         ];
       } else {
         defaultInclude = const ['lib/**'];

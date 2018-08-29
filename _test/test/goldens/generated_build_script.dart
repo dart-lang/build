@@ -25,17 +25,43 @@ final _builders = <_i1.BuilderApplication>[
       _i1.toRoot(),
       hideOutput: true,
       defaultGenerateFor: const _i4.InputSet(include: const ['test/**'])),
-  _i1.apply(
-      'build_modules|modules',
-      [
-        _i5.moduleLibraryBuilder,
-        _i5.metaModuleBuilder,
-        _i5.metaModuleCleanBuilder,
-        _i5.moduleBuilder,
-        _i5.unlinkedSummaryBuilder,
-        _i5.linkedSummaryBuilder
-      ],
+  _i1.apply('build_modules|module_library', [_i5.moduleLibraryBuilder],
       _i1.toAllPackages(),
+      isOptional: true,
+      hideOutput: true,
+      appliesBuilders: ['build_modules|module_cleanup']),
+  _i1.apply(
+      'build_modules|vm',
+      [
+        _i5.metaModuleBuilderFactoryForPlatform('vm'),
+        _i5.metaModuleCleanBuilderFactoryForPlatform('vm'),
+        _i5.moduleBuilderFactoryForPlatform('vm')
+      ],
+      _i1.toNoneByDefault(),
+      isOptional: true,
+      hideOutput: true,
+      appliesBuilders: ['build_modules|module_cleanup']),
+  _i1.apply(
+      'build_modules|dart2js',
+      [
+        _i5.metaModuleBuilderFactoryForPlatform('dart2js'),
+        _i5.metaModuleCleanBuilderFactoryForPlatform('dart2js'),
+        _i5.moduleBuilderFactoryForPlatform('dart2js')
+      ],
+      _i1.toNoneByDefault(),
+      isOptional: true,
+      hideOutput: true,
+      appliesBuilders: ['build_modules|module_cleanup']),
+  _i1.apply(
+      'build_modules|dartdevc',
+      [
+        _i5.metaModuleBuilderFactoryForPlatform('dartdevc'),
+        _i5.metaModuleCleanBuilderFactoryForPlatform('dartdevc'),
+        _i5.moduleBuilderFactoryForPlatform('dartdevc'),
+        _i5.unlinkedSummaryBuilderForPlatform('dartdevc'),
+        _i5.linkedSummaryBuilderForPlatform('dartdevc')
+      ],
+      _i1.toNoneByDefault(),
       isOptional: true,
       hideOutput: true,
       appliesBuilders: ['build_modules|module_cleanup']),
@@ -43,7 +69,11 @@ final _builders = <_i1.BuilderApplication>[
       'build_web_compilers|ddc', [_i6.devCompilerBuilder], _i1.toAllPackages(),
       isOptional: true,
       hideOutput: true,
-      appliesBuilders: ['build_web_compilers|dart_source_cleanup']),
+      appliesBuilders: [
+        'build_web_compilers|dart_source_cleanup',
+        'build_modules|dartdevc',
+        'build_modules|dart2js'
+      ]),
   _i1.apply('build_web_compilers|entrypoint', [_i6.webEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,
@@ -63,7 +93,9 @@ final _builders = <_i1.BuilderApplication>[
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.apply(
       'build_vm_compilers|vm', [_i8.vmKernelModuleBuilder], _i1.toAllPackages(),
-      isOptional: true, hideOutput: true),
+      isOptional: true,
+      hideOutput: true,
+      appliesBuilders: ['build_modules|vm']),
   _i1.apply('build_vm_compilers|entrypoint', [_i8.vmKernelEntrypointBuilder],
       _i1.toRoot(),
       hideOutput: true,

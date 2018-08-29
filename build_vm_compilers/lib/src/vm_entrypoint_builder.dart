@@ -34,7 +34,8 @@ class VmEntrypointBuilder implements Builder {
       var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
       if (!isAppEntrypoint) return;
 
-      var moduleId = buildStep.inputId.changeExtension(moduleExtension);
+      var moduleId =
+          buildStep.inputId.changeExtension(moduleExtension(DartPlatform.vm));
       var module = Module.fromJson(
           json.decode(await buildStep.readAsString(moduleId))
               as Map<String, dynamic>);

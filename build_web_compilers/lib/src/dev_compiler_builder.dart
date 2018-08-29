@@ -26,12 +26,11 @@ const jsSourceMapExtension = '.ddc.js.map';
 class DevCompilerBuilder implements Builder {
   final bool useKernel;
 
-  const DevCompilerBuilder({bool useKernel})
-      : this.useKernel = useKernel ?? false;
+  DevCompilerBuilder({bool useKernel}) : this.useKernel = useKernel ?? false;
 
   @override
-  final buildExtensions = const {
-    moduleExtension: [
+  final buildExtensions = {
+    moduleExtension(DartPlatform.dartdevc): [
       jsModuleExtension,
       jsModuleErrorsExtension,
       jsSourceMapExtension
@@ -46,7 +45,7 @@ class DevCompilerBuilder implements Builder {
 
     Future<Null> handleError(e) async {
       await buildStep.writeAsString(
-          buildStep.inputId.changeExtension(jsModuleErrorsExtension), '$e');
+          module.primarySource.changeExtension(jsModuleErrorsExtension), '$e');
       log.severe('$e');
     }
 
@@ -91,10 +90,12 @@ Future _createDevCompilerModule(
     // Add the default analysis_options.
     await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
     var libraryRoot = '/${p.split(p.dirname(jsId.path)).first}';
+    var summaryExtension =
+        linkedSummaryExtension(DartPlatform.dartdevc).substring(1);
     request.arguments.addAll([
       '--module-root=.',
       '--library-root=$libraryRoot',
-      '--summary-extension=${linkedSummaryExtension.substring(1)}',
+      '--summary-extension=$summaryExtension',
       '--no-summarize',
       defaultAnalysisOptionsArg(scratchSpace),
     ]);

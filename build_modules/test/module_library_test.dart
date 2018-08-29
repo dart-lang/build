@@ -6,8 +6,11 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'package:build_modules/src/module_library.dart';
+import 'package:build_modules/src/platform.dart';
 
 void main() {
+  final platform = DartPlatform.dart2js;
+
   test('Treats libraries as importable', () async {
     final library =
         ModuleLibrary.fromSource(makeAssetId('myapp|lib/a.dart'), '');
@@ -34,7 +37,7 @@ void main() {
         "import 'b.dart';\n"
         "import 'package:dep/dep.dart';\n");
     expect(
-        library.deps,
+        library.depsForPlatform(platform),
         Set.of([
           makeAssetId('myapp|lib/b.dart'),
           makeAssetId('dep|lib/dep.dart')
@@ -47,7 +50,7 @@ void main() {
         "export 'b.dart';\n"
         "export 'package:dep/dep.dart';\n");
     expect(
-        library.deps,
+        library.depsForPlatform(platform),
         Set.of([
           makeAssetId('myapp|lib/b.dart'),
           makeAssetId('dep|lib/dep.dart')
@@ -95,14 +98,33 @@ void main() {
     final library = ModuleLibrary.fromSource(
         makeAssetId('myapp|lib/a.dart'),
         "import 'default.dart'\n"
+        "    if (dart.library.ui) 'for_flutter.dart'\n"
         "    if (dart.library.io) 'for_vm.dart'\n"
         "    if (dart.library.html) 'for_web.dart'\n");
     expect(
-        library.deps,
+        library.depsForPlatform(DartPlatform.flutter),
+        Set.of([
+          makeAssetId('myapp|lib/for_flutter.dart'),
+        ]));
+    expect(
+        library.depsForPlatform(DartPlatform.vm),
+        Set.of([
+          makeAssetId('myapp|lib/for_vm.dart'),
+        ]));
+    expect(
+        library.depsForPlatform(DartPlatform.dart2js),
+        Set.of([
+          makeAssetId('myapp|lib/for_web.dart'),
+        ]));
+    expect(
+        library.depsForPlatform(DartPlatform.dartdevc),
+        Set.of([
+          makeAssetId('myapp|lib/for_web.dart'),
+        ]));
+    expect(
+        library.depsForPlatform(DartPlatform.dart2jsServer),
         Set.of([
           makeAssetId('myapp|lib/default.dart'),
-          makeAssetId('myapp|lib/for_vm.dart'),
-          makeAssetId('myapp|lib/for_web.dart'),
         ]));
   });
 }

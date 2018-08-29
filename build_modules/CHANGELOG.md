@@ -1,3 +1,36 @@
+## 0.4.0
+
+### Improvements
+
+- Modules are now platform specific, and config specific imports using
+  `dart.library.*` constants are supported.
+
+### Breaking Configuration Changes
+
+- Module granularity now has to be configured per platform, so instead of
+  configuring it using the `build_modules|modules` builder, you now need to
+  configure the builder for each specific platform:
+
+```yaml
+targets:
+  $default:
+    build_modules|dartdevc:
+      options:
+        strategy: fine
+```
+
+  The supported platforms are currently `dart2js`, `dartdevc`, and `vm`.
+
+### Breaking API Changes
+
+- Output extensions of builders have changed to include the platform being built
+  for.
+  - All the top level file extension getters are now methods that take a
+    platform and return the extension for that platform.
+- Most builders are no longer applied by default, you must manually apply them
+  using applies_builders in your builder.
+- Most builder constructors now require a `platform` argument.
+
 ## 0.3.2
 
 - Module strategies are now respected for all packages instead of just the root

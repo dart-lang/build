@@ -1,5 +1,5 @@
 name: build_modules
-version: 0.3.2
+version: 0.4.0-dev
 description: Builders for Dart modules
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
@@ -13,7 +13,6 @@ dependencies:
   bazel_worker: ^0.1.4
   build: ^0.12.3
   build_config: '>=0.2.1 <0.4.0'
-  cli_util: ^0.1.2
   glob: ^1.0.0
   graphs: ^0.1.0
   json_annotation: ^1.0.0
@@ -34,3 +33,11 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  build_vm_compilers:
+    path: ../build_vm_compilers
+  build_runner_core:
+    path: ../build_runner_core
+  build_runner:
+    path: ../build_runner

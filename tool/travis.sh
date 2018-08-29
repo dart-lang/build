@@ -26,16 +26,21 @@ while (( "$#" )); do
     ;;
   command_1) echo
     echo -e '\033[1mTASK: command_1\033[22m'
-    echo -e 'pub run build_runner test'
-    pub run build_runner test || EXIT_CODE=$?
+    echo -e 'pub run build_runner test -- -p vm test/config_specific_import_test.dart'
+    pub run build_runner test -- -p vm test/config_specific_import_test.dart || EXIT_CODE=$?
     ;;
   command_2) echo
     echo -e '\033[1mTASK: command_2\033[22m'
-    echo -e 'pub run build_runner test --delete-conflicting-outputs'
-    pub run build_runner test --delete-conflicting-outputs || EXIT_CODE=$?
+    echo -e 'pub run build_runner test'
+    pub run build_runner test || EXIT_CODE=$?
     ;;
   command_3) echo
     echo -e '\033[1mTASK: command_3\033[22m'
+    echo -e 'pub run build_runner test --delete-conflicting-outputs'
+    pub run build_runner test --delete-conflicting-outputs || EXIT_CODE=$?
+    ;;
+  command_4) echo
+    echo -e '\033[1mTASK: command_4\033[22m'
     echo -e 'pub run build_runner test --delete-conflicting-outputs -- -P presubmit'
     pub run build_runner test --delete-conflicting-outputs -- -P presubmit || EXIT_CODE=$?
     ;;
