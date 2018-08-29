@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_test/build_test.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 
 import 'package:build/build.dart';
@@ -150,13 +151,11 @@ void main() {
     });
 
     test('Completes only after writes finish', () async {
-      // ignore: unawaited_futures
-      buildStep.writeAsString(outputId, outputContent);
+      unawaited(buildStep.writeAsString(outputId, outputContent));
       var isComplete = false;
-      // ignore: unawaited_futures
-      buildStep.complete().then((_) {
+      unawaited(buildStep.complete().then((_) {
         isComplete = true;
-      });
+      }));
       await Future(() {});
       expect(isComplete, false,
           reason: 'File has not written, should not be complete');
@@ -167,13 +166,11 @@ void main() {
 
     test('Completes only after async writes finish', () async {
       var outputCompleter = Completer<String>();
-      // ignore: unawaited_futures
-      buildStep.writeAsString(outputId, outputCompleter.future);
+      unawaited(buildStep.writeAsString(outputId, outputCompleter.future));
       var isComplete = false;
-      // ignore: unawaited_futures
-      buildStep.complete().then((_) {
+      unawaited(buildStep.complete().then((_) {
         isComplete = true;
-      });
+      }));
       await Future(() {});
       expect(isComplete, false,
           reason: 'File has not resolved, should not be complete');

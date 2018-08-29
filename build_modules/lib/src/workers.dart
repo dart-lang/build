@@ -12,6 +12,7 @@ import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
 import 'package:cli_util/cli_util.dart' as cli_util;
 import 'package:path/path.dart' as p;
+import 'package:pedantic/pedantic.dart';
 
 import 'scratch_space.dart';
 
@@ -213,10 +214,9 @@ class Dart2JsBatchWorkerPool {
           await Future.delayed(Duration(seconds: 1));
           worker = nextWorker();
         }
-        // ignore: unawaited_futures
-        worker
+        unawaited(worker
             .doJob(_workQueue.removeFirst())
-            .whenComplete(() => _availableWorkers.add(worker));
+            .whenComplete(() => _availableWorkers.add(worker)));
       }
       _queueIsActive = false;
     }();
@@ -268,14 +268,13 @@ class _Dart2JsWorker {
         _jobsSinceLastRestartCount = 0;
         __worker ??= await _spawnWorker();
         _spawningWorker = null;
-        // ignore: unawaited_futures
-        __worker.exitCode.then((_) {
+        unawaited(__worker.exitCode.then((_) {
           __worker = null;
           __workerStdoutLines = null;
           __workerStderrLines = null;
           _currentJobResult
               ?.completeError('Dart2js exited with an unknown error');
-        });
+        }));
       }
       return __worker;
     }();

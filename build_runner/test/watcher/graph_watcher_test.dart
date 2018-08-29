@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -83,8 +84,7 @@ void main() {
 
       final watcher = PackageGraphWatcher(graph, watch: noBWatcher);
 
-      // ignore: unawaited_futures
-      watcher.watch().drain();
+      unawaited(watcher.watch().drain());
 
       for (final node in nodes.values) {
         node.markReady();
@@ -107,12 +107,10 @@ void main() {
         return nodes[node.name];
       });
       // We have to listen in order for `ready` to complete.
-      // ignore: unawaited_futures
-      watcher.watch().drain();
+      unawaited(watcher.watch().drain());
 
       var done = false;
-      // ignore: unawaited_futures
-      watcher.ready.then((_) => done = true);
+      unawaited(watcher.ready.then((_) => done = true));
       await Future.value();
 
       for (final node in nodes.values) {

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_resolver/package_resolver.dart';
+import 'package:pedantic/pedantic.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
@@ -193,14 +194,13 @@ Future<T> _resolveAssets<T>(
     rootPackage: rootPackage,
   );
   // We don't care about the results of this build.
-  // ignore: unawaited_futures
-  runBuilder(
+  unawaited(runBuilder(
     resolveBuilder,
     inputAssets.keys,
     MultiAssetReader([inMemory, assetReader]),
     InMemoryAssetWriter(),
     resolvers ?? defaultResolvers,
-  );
+  ));
   return resolveBuilder.onDone.future;
 }
 

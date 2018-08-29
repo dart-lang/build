@@ -11,6 +11,7 @@ dependencies:
   build: ">=0.10.0 <0.13.0"
   crypto: ">=2.0.3 <3.0.0"
   path: ^1.1.0
+  pedantic: ^1.0.0
   pool: ^1.0.0
 
 dev_dependencies:

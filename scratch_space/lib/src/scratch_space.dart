@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
+import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
 
 import 'util.dart';
@@ -105,8 +106,7 @@ class ScratchSpace {
                   await file.writeAsBytes(await reader.readAsBytes(id));
                 }));
       } finally {
-        // ignore: unawaited_futures
-        _pendingWrites.remove(id);
+        unawaited(_pendingWrites.remove(id));
       }
     }).toList();
 

@@ -6,17 +6,18 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/package_graph/target_graph.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/generate/build_impl.dart';
+import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_impl.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
@@ -94,11 +95,10 @@ Future<ServeHandler> watch(
       outputMap?.isNotEmpty == true,
       isReleaseMode: isReleaseBuild ?? false);
 
-  // ignore: unawaited_futures
-  watch.buildResults.drain().then((_) async {
+  unawaited(watch.buildResults.drain().then((_) async {
     await terminator.cancel();
     await options.logListener.cancel();
-  });
+  }));
 
   return createServeHandler(watch);
 }

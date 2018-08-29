@@ -12,6 +12,7 @@ import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
 // TODO(grouma) - remove dependency on ChangeType API to remove the following
 // import.
@@ -693,8 +694,7 @@ class _SingleBuild {
         ..lastKnownDigest =
             md5.convert(utf8.encode(globNode.results.join(' ')));
 
-      // ignore: unawaited_futures
-      _lazyGlobs.remove(globNode.id);
+      unawaited(_lazyGlobs.remove(globNode.id));
     });
   }
 

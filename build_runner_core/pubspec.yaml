@@ -21,6 +21,7 @@ dependencies:
   logging: ^0.11.2
   meta: ^1.1.0
   path: ^1.1.0
+  pedantic: ^1.0.0
   pool: ^1.0.0
   stream_transform: ^0.0.13
   watcher: ^0.9.7
