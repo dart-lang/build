@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
@@ -94,15 +95,18 @@ class PackageGraphWatcher {
     return subscriptions;
   }
 
-  // Returns a set of all packages that are "nested" within a node.
+  // Returns a set of all package paths that are "nested" within a node.
   //
   // This allows the watcher to optimize and avoid duplicate events.
   List<String> _nestedPaths(PackageNode rootNode) {
     return _graph.allPackages.values
         .where((node) {
-          return rootNode != node && node.path.startsWith(rootNode.path);
+          return node.path.length > rootNode.path.length &&
+              node.path.startsWith(rootNode.path);
         })
-        .map((node) => node.path.substring(rootNode.path.length + 1) + '/')
+        .map((node) =>
+            node.path.substring(rootNode.path.length + 1) +
+            Platform.pathSeparator)
         .toList();
   }
 }
