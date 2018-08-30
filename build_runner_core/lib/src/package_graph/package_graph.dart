@@ -123,6 +123,8 @@ class PackageNode {
   final List<PackageNode> dependencies = [];
 
   /// The absolute path of the current version of this package.
+  ///
+  /// Paths are platform dependent.
   final String path;
 
   /// Whether this node is the [PackageGraph.root].
@@ -139,11 +141,10 @@ class PackageNode {
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
 
-  /// Converts [path] to an absolute path, returns `null` if given `null`.
-  static String _toAbsolute(String path) {
-    if (path == null) return null;
-    return p.normalize(p.isAbsolute(path) ? path : p.absolute(path));
-  }
+  /// Converts [path] to a canonical absolute path, returns `null` if given
+  /// `null`.
+  static String _toAbsolute(String path) =>
+      (path == null) ? null : p.canonicalize(path);
 }
 
 /// Parse the `.packages` file and return a Map from package name to the file
@@ -159,22 +160,15 @@ Map<String, String> _parsePackageLocations(String rootPackagePath) {
     var firstColon = line.indexOf(':');
     var name = line.substring(0, firstColon);
     assert(line.endsWith('lib/'));
-    // Start after package_name:, and strip out trailing `lib` dir.
+    // Start after package_name:, and strip out trailing 'lib/'.
     var uriString = line.substring(firstColon + 1, line.length - 4);
     // Strip the trailing slash, if present.
     if (uriString.endsWith('/')) {
       uriString = uriString.substring(0, uriString.length - 1);
     }
-    Uri uri;
-    try {
-      uri = Uri.parse(uriString);
-    } on FormatException catch (_) {
-      /// Some types of deps don't have a scheme, and just point to a relative
-      /// path.
-      uri = Uri.file(uriString);
-    }
+    var uri = Uri.tryParse(uriString) ?? Uri.file(uriString);
     if (!uri.isAbsolute) {
-      uri = Uri.file(p.join(rootPackagePath, uri.path));
+      uri = p.toUri(p.join(rootPackagePath, uri.path));
     }
     packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
   }
