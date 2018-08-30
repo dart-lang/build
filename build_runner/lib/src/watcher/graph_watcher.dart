@@ -100,7 +100,8 @@ class PackageGraphWatcher {
   List<String> _nestedPaths(PackageNode rootNode) {
     return _graph.allPackages.values
         .where((node) {
-          return rootNode != node && node.path.startsWith(rootNode.path);
+          return node.path.length > rootNode.path.length &&
+              node.path.startsWith(rootNode.path);
         })
         .map((node) => node.path.substring(rootNode.path.length + 1) + '/')
         .toList();
