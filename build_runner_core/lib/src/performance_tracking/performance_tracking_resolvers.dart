@@ -16,7 +16,7 @@ class PerformanceTrackingResolvers implements Resolvers {
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) =>
-      _tracker.track(() => _delegate.get(buildStep), 'ResolverGet')
+      _tracker.trackStage(() => _delegate.get(buildStep), 'ResolverGet')
           as Future<ReleasableResolver>;
 
   @override

@@ -137,12 +137,14 @@ void main() {
 
   group(r'/$perf', () {
     test('serves some sort of page if enabled', () async {
-      var tracker = BuildPerformanceTracker()..start();
-      var actionTracker = tracker.startBuilderAction(
-          makeAssetId('a|web/a.txt'), 'test_builder');
-      actionTracker.track(() {}, 'SomeLabel');
-      tracker.stop();
-      actionTracker.stop();
+      var tracker = BuildPerformanceTracker();
+      tracker.track(() {
+        var actionTracker = tracker.addBuilderAction(
+            makeAssetId('a|web/a.txt'), 'test_builder');
+        actionTracker.track(() {
+          actionTracker.trackStage(() {}, 'SomeLabel');
+        });
+      });
       watchImpl.addFutureResult(Future.value(
           BuildResult(BuildStatus.success, [], performance: tracker)));
       await Future(() {});

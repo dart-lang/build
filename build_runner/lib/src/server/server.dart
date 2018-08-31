@@ -335,11 +335,11 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
     var rows = StringBuffer();
     for (var action in performance.actions) {
       if (hideSkipped &&
-          !action.phases.any((phase) => phase.label == 'Build')) {
+          !action.stages.any((phase) => phase.label == 'Build')) {
         continue;
       }
       var actionKey = '${action.builderKey}:${action.primaryInput}';
-      for (var phase in action.phases) {
+      for (var phase in action.stages) {
         var start = phase.startTime.millisecondsSinceEpoch -
             performance.startTime.millisecondsSinceEpoch;
         var end = phase.stopTime.millisecondsSinceEpoch -

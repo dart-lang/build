@@ -292,31 +292,33 @@ class _SingleBuild {
 
   /// Runs the actions in [_buildPhases] and returns a [Future<BuildResult>]
   /// which completes once all [BuildPhase]s are done.
-  Future<BuildResult> _runPhases() async {
-    _performanceTracker.start();
-    final outputs = <AssetId>[];
-    for (var phaseNum = 0; phaseNum < _buildPhases.length; phaseNum++) {
-      var phase = _buildPhases[phaseNum];
-      if (phase.isOptional) continue;
-      outputs.addAll(await _performanceTracker.trackBuildPhase(phase, () async {
-        if (phase is InBuildPhase) {
-          var primaryInputs =
-              await _matchingPrimaryInputs(phase.package, phaseNum);
-          return _runBuilder(phaseNum, phase, primaryInputs);
-        } else if (phase is PostBuildPhase) {
-          return _runPostProcessPhase(phaseNum, phase);
-        } else {
-          throw StateError('Unrecognized BuildPhase type $phase');
-        }
-      }));
-    }
-    await Future.forEach(
-        _lazyPhases.values,
-        (Future<Iterable<AssetId>> lazyOuts) async =>
-            outputs.addAll(await lazyOuts));
-    // Assume success, `_assetGraph.failedOutputs` will be checked later.
-    return BuildResult(BuildStatus.success, outputs,
-        performance: _performanceTracker..stop());
+  Future<BuildResult> _runPhases() {
+    return _performanceTracker.track(() async {
+      final outputs = <AssetId>[];
+      for (var phaseNum = 0; phaseNum < _buildPhases.length; phaseNum++) {
+        var phase = _buildPhases[phaseNum];
+        if (phase.isOptional) continue;
+        outputs
+            .addAll(await _performanceTracker.trackBuildPhase(phase, () async {
+          if (phase is InBuildPhase) {
+            var primaryInputs =
+                await _matchingPrimaryInputs(phase.package, phaseNum);
+            return _runBuilder(phaseNum, phase, primaryInputs);
+          } else if (phase is PostBuildPhase) {
+            return _runPostProcessPhase(phaseNum, phase);
+          } else {
+            throw StateError('Unrecognized BuildPhase type $phase');
+          }
+        }));
+      }
+      await Future.forEach(
+          _lazyPhases.values,
+          (Future<Iterable<AssetId>> lazyOuts) async =>
+              outputs.addAll(await lazyOuts));
+      // Assume success, `_assetGraph.failedOutputs` will be checked later.
+      return BuildResult(BuildStatus.success, outputs,
+          performance: _performanceTracker);
+    });
   }
 
   /// Gets a list of all inputs matching the [phaseNumber], as well as
@@ -405,73 +407,72 @@ class _SingleBuild {
   Future<Iterable<AssetId>> _runForInput(
       int phaseNumber, InBuildPhase phase, AssetId input) {
     var pool = _buildPhasePool[phaseNumber] ??= Pool(buildPhasePoolSize);
-    return pool.withResource(() async {
+    return pool.withResource(() {
       final builder = phase.builder;
       var tracker =
-          _performanceTracker.startBuilderAction(input, phase.builderLabel);
+          _performanceTracker.addBuilderAction(input, phase.builderLabel);
+      return tracker.track(() async {
+        var builderOutputs = expectedOutputs(builder, input);
 
-      var builderOutputs = expectedOutputs(builder, input);
+        // Add `builderOutputs` to the primary outputs of the input.
+        var inputNode = _assetGraph.get(input);
+        assert(inputNode != null,
+            'Inputs should be known in the static graph. Missing $input');
+        assert(
+            inputNode.primaryOutputs.containsAll(builderOutputs),
+            'input $input with builder $builder missing primary outputs: \n'
+                'Got ${inputNode.primaryOutputs.join(', ')} '
+                'which was missing:\n' +
+                builderOutputs
+                    .where((id) => !inputNode.primaryOutputs.contains(id))
+                    .join(', '));
 
-      // Add `builderOutputs` to the primary outputs of the input.
-      var inputNode = _assetGraph.get(input);
-      assert(inputNode != null,
-          'Inputs should be known in the static graph. Missing $input');
-      assert(
-          inputNode.primaryOutputs.containsAll(builderOutputs),
-          'input $input with builder $builder missing primary outputs: \n'
-              'Got ${inputNode.primaryOutputs.join(', ')} '
-              'which was missing:\n' +
-              builderOutputs
-                  .where((id) => !inputNode.primaryOutputs.contains(id))
-                  .join(', '));
+        var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
+            input.package, _isReadableNode, _getUpdatedGlobNode);
 
-      var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
-          input.package, _isReadableNode, _getUpdatedGlobNode);
+        if (!await tracker.trackStage(
+            () => _buildShouldRun(builderOutputs, wrappedReader), 'Setup')) {
+          return <AssetId>[];
+        }
 
-      if (!await tracker.track(
-          () => _buildShouldRun(builderOutputs, wrappedReader), 'Setup')) {
-        tracker.stop();
-        return <AssetId>[];
-      }
+        await _cleanUpStaleOutputs(builderOutputs);
+        await FailureReporter.clean(phaseNumber, input);
 
-      await _cleanUpStaleOutputs(builderOutputs);
-      await FailureReporter.clean(phaseNumber, input);
+        // We may have read some inputs in the call to `_buildShouldRun`, we want
+        // to remove those.
+        wrappedReader.assetsRead.clear();
 
-      // We may have read some inputs in the call to `_buildShouldRun`, we want
-      // to remove those.
-      wrappedReader.assetsRead.clear();
+        var wrappedWriter = AssetWriterSpy(_writer);
+        var actionDescription =
+            _actionLoggerName(phase, input, _packageGraph.root.name);
+        var logger = BuildForInputLogger(Logger(actionDescription));
 
-      var wrappedWriter = AssetWriterSpy(_writer);
-      var actionDescription =
-          _actionLoggerName(phase, input, _packageGraph.root.name);
-      var logger = BuildForInputLogger(Logger(actionDescription));
+        actionsStartedCount++;
+        pendingActions
+            .putIfAbsent(phaseNumber, () => Set<String>())
+            .add(actionDescription);
 
-      actionsStartedCount++;
-      pendingActions
-          .putIfAbsent(phaseNumber, () => Set<String>())
-          .add(actionDescription);
+        await tracker.trackStage(
+            () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
+                        PerformanceTrackingResolvers(_resolvers, tracker),
+                        logger: logger, resourceManager: _resourceManager)
+                    .catchError((_) {
+                  // Errors tracked through the logger
+                }),
+            'Build');
+        actionsCompletedCount++;
+        hungActionsHeartbeat.ping();
+        pendingActions[phaseNumber].remove(actionDescription);
 
-      await tracker.track(
-          () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
-                      PerformanceTrackingResolvers(_resolvers, tracker),
-                      logger: logger, resourceManager: _resourceManager)
-                  .catchError((_) {
-                // Errors tracked through the logger
-              }),
-          'Build');
-      actionsCompletedCount++;
-      hungActionsHeartbeat.ping();
-      pendingActions[phaseNumber].remove(actionDescription);
+        // Reset the state for all the `builderOutputs` nodes based on what was
+        // read and written.
+        await tracker.trackStage(
+            () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
+                actionDescription, logger.errorsSeen),
+            'Finalize');
 
-      // Reset the state for all the `builderOutputs` nodes based on what was
-      // read and written.
-      await tracker.track(
-          () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
-              actionDescription, logger.errorsSeen),
-          'Finalize');
-
-      tracker.stop();
-      return wrappedWriter.assetsWritten;
+        return wrappedWriter.assetsWritten;
+      });
     });
   }
 

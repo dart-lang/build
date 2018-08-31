@@ -55,3 +55,10 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
+
+# Remove when release
+dependency_overrides:
+  timing:
+    path: ../../timing
+  build_runner_core:
+    path: ../build_runner_core

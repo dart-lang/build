@@ -10,31 +10,19 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+import 'package:timing/src/timing.dart';
 
-import '../util/clock.dart';
 import 'phase.dart';
 
 part 'performance_tracker.g.dart';
 
-/// The timings of an operation, including its [startTime], [stopTime], and
-/// [duration].
-abstract class Timings {
-  Duration get duration => stopTime.difference(startTime);
-
-  final DateTime startTime;
-
-  final DateTime stopTime;
-
-  Timings(this.startTime, this.stopTime);
-}
-
-/// The [Timings] of an entire build, including all its [actions].
+/// The [TimeSlice] of an entire build, including all its [actions].
 @JsonSerializable()
-class BuildPerformance extends Timings {
-  /// The [Timings] of each phase ran in this build.
+class BuildPerformance extends TimeSlice {
+  /// The [TimeSlice] of each phase ran in this build.
   final Iterable<BuildPhasePerformance> phases;
 
-  /// The [Timings] of running an individual [Builder] on an individual input.
+  /// The [TimeSlice] of running an individual [Builder] on an individual input.
   final Iterable<BuilderActionPerformance> actions;
 
   BuildPerformance(
@@ -47,9 +35,9 @@ class BuildPerformance extends Timings {
   Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
-/// The [Timings] of a full [BuildPhase] within a larger build.
+/// The [TimeSlice] of a full [BuildPhase] within a larger build.
 @JsonSerializable()
-class BuildPhasePerformance extends Timings {
+class BuildPhasePerformance extends TimeSlice {
   final List<String> builderKeys;
 
   BuildPhasePerformance(this.builderKeys, DateTime startTime, DateTime stopTime)
@@ -61,17 +49,17 @@ class BuildPhasePerformance extends Timings {
   Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
-/// The [Timings] of a [builderKey] running on [primaryInput] within a build.
+/// The [TimeSlice] of a [builderKey] running on [primaryInput] within a build.
 @JsonSerializable()
-class BuilderActionPerformance extends Timings {
+class BuilderActionPerformance extends TimeSlice {
   final String builderKey;
 
   @JsonKey(fromJson: _assetIdFromJson, toJson: _assetIdToJson)
   final AssetId primaryInput;
 
-  final Iterable<BuilderActionPhasePerformance> phases;
+  final Iterable<BuilderActionStagePerformance> stages;
 
-  BuilderActionPerformance(this.builderKey, this.primaryInput, this.phases,
+  BuilderActionPerformance(this.builderKey, this.primaryInput, this.stages,
       DateTime startTime, DateTime stopTime)
       : super(startTime, stopTime);
 
@@ -81,21 +69,24 @@ class BuilderActionPerformance extends Timings {
   Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
-/// The [Timings] of a particular task within a builder action.
+/// The [TimeSlice] of a particular task within a builder action.
 ///
 /// This is some slice of overall [BuilderActionPerformance].
 @JsonSerializable()
-class BuilderActionPhasePerformance extends Timings {
+class BuilderActionStagePerformance extends TimeSliceGroup {
   final String label;
 
-  BuilderActionPhasePerformance(
-      this.label, DateTime startTime, DateTime stopTime)
-      : super(startTime, stopTime);
+  @override
+  @JsonKey(fromJson: _slicesFromJson, toJson: _slicesToJson)
+  List<TimeSlice> get slices => super.slices;
 
-  factory BuilderActionPhasePerformance.fromJson(Map<String, dynamic> json) =>
-      _$BuilderActionPhasePerformanceFromJson(json);
+  BuilderActionStagePerformance(this.label, List<TimeSlice> slices)
+      : super(slices);
 
-  Map<String, dynamic> toJson() => _$BuilderActionPhasePerformanceToJson(this);
+  factory BuilderActionStagePerformance.fromJson(Map<String, dynamic> json) =>
+      _$BuilderActionStagePerformanceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);
 }
 
 /// Interface for tracking the overall performance of a build.
@@ -108,7 +99,7 @@ abstract class BuildPerformanceTracker
 
   /// Returns a [BuilderActionTracker] for tracking [builderKey] on
   /// [primaryInput] and adds it to [actions].
-  BuilderActionTracker startBuilderAction(
+  BuilderActionTracker addBuilderAction(
       AssetId primaryInput, String builderKey);
 
   factory BuildPerformanceTracker() => _BuildPerformanceTrackerImpl();
@@ -122,8 +113,7 @@ abstract class BuildPerformanceTracker
 /// Real implementation of [BuildPerformanceTracker].
 ///
 /// Use [BuildPerformanceTracker] factory to get an instance.
-class _BuildPerformanceTrackerImpl extends Object
-    with _TimeTrackerImpl
+class _BuildPerformanceTrackerImpl extends SimpleAsyncTimeTrackerImpl
     implements BuildPerformanceTracker {
   @override
   Iterable<BuildPhaseTracker> get phases => _phases;
@@ -141,7 +131,7 @@ class _BuildPerformanceTrackerImpl extends Object
   @override
   Future<Iterable<AssetId>> trackBuildPhase(
       BuildPhase action, Future<Iterable<AssetId>> runPhase()) {
-    assert(startTime != null && stopTime == null);
+    assert(isTracking);
     var tracker = BuildPhaseTracker(action);
     _phases.add(tracker);
     return tracker.track(runPhase);
@@ -151,10 +141,10 @@ class _BuildPerformanceTrackerImpl extends Object
   ///
   /// The [BuilderActionTracker] will already be started, but you must stop it.
   @override
-  BuilderActionTracker startBuilderAction(
+  BuilderActionTracker addBuilderAction(
       AssetId primaryInput, String builderKey) {
-    assert(startTime != null && stopTime == null);
-    var tracker = BuilderActionTracker(primaryInput, builderKey)..start();
+    assert(isTracking);
+    var tracker = BuilderActionTracker(primaryInput, builderKey);
     _actions.add(tracker);
     return tracker;
   }
@@ -169,8 +159,7 @@ class _BuildPerformanceTrackerImpl extends Object
 /// closures without tracking anything.
 ///
 /// Use [BuildPerformanceTracker.noOp] to get an instance.
-class _NoOpBuildPerformanceTracker extends Object
-    with _NoOpTimeTracker
+class _NoOpBuildPerformanceTracker extends NoOpSyncTimeTracker
     implements BuildPerformanceTracker {
   static final _NoOpBuildPerformanceTracker sharedInstance =
       _NoOpBuildPerformanceTracker();
@@ -182,7 +171,7 @@ class _NoOpBuildPerformanceTracker extends Object
   Iterable<BuildPhaseTracker> get phases => throw UnimplementedError();
 
   @override
-  BuilderActionTracker startBuilderAction(
+  BuilderActionTracker addBuilderAction(
           AssetId primaryInput, String builderKey) =>
       BuilderActionTracker.noOp();
 
@@ -195,15 +184,14 @@ class _NoOpBuildPerformanceTracker extends Object
   Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
-/// Internal class that tracks the [Timings] of an entire [BuildPhase].
+/// Internal class that tracks the [TimeSlice] of an entire [BuildPhase].
 ///
 /// Tracks total time it took to run on all inputs available to that action.
 ///
 /// Use [track] to start actually tracking an operation.
 ///
 /// This is only meaningful for non-lazy phases.
-class BuildPhaseTracker extends Object
-    with _TimeTrackerImpl
+class BuildPhaseTracker extends SimpleAsyncTimeTrackerImpl
     implements BuildPhasePerformance {
   @override
   List<String> get builderKeys => _builderKeys;
@@ -217,28 +205,16 @@ class BuildPhaseTracker extends Object
                 .map((action) => action.builderLabel)
                 .toList();
 
-  /// Runs [runAction], setting [startTime] and [stopTime] accordingly.
-  ///
-  /// Should never be called more than once.
-  Future<Iterable<AssetId>> track(Future<Iterable<AssetId>> runAction()) {
-    assert(startTime == null && stopTime == null);
-    start();
-    return runAction().then((outputs) {
-      stop();
-      return outputs;
-    });
-  }
-
   @override
   Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
-/// Interface for tracking the [Timings] of an indiviual [Builder] on a given
+/// Interface for tracking the [TimeSlice] of an indiviual [Builder] on a given
 /// primary input.
 abstract class BuilderActionTracker
     implements TimeTracker, BuilderActionPerformance {
   /// Tracks the time of [runPhase] and associates it with [label].
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), String label);
+  FutureOr<T> trackStage<T>(FutureOr<T> runPhase(), String label);
 
   factory BuilderActionTracker(AssetId primaryInput, String builderKey) =>
       _BuilderActionTrackerImpl(primaryInput, builderKey);
@@ -252,8 +228,7 @@ abstract class BuilderActionTracker
 /// Real implementation of [BuilderActionTracker] which records timings.
 ///
 /// Use the [BuilderActionTracker] factory to get an instance.
-class _BuilderActionTrackerImpl extends Object
-    with _TimeTrackerImpl
+class _BuilderActionTrackerImpl extends SimpleAsyncTimeTrackerImpl
     implements BuilderActionTracker {
   @override
   final String builderKey;
@@ -261,25 +236,15 @@ class _BuilderActionTrackerImpl extends Object
   final AssetId primaryInput;
 
   @override
-  final List<BuilderActionPhaseTracker> phases = [];
+  final List<BuilderActionStageTracker> stages = [];
 
   _BuilderActionTrackerImpl(this.primaryInput, this.builderKey);
 
   @override
-  FutureOr<T> track<T>(FutureOr<T> action(), String label) {
-    var tracker = BuilderActionPhaseTracker(label);
-    phases.add(tracker);
-    tracker.start();
-    var result = action();
-    if (result is Future<T>) {
-      return result.then((actualResult) {
-        tracker.stop();
-        return actualResult;
-      });
-    } else {
-      tracker.stop();
-      return result;
-    }
+  FutureOr<T> trackStage<T>(FutureOr<T> action(), String label) {
+    var tracker = BuilderActionStageTracker(label);
+    stages.add(tracker);
+    return tracker.track(action);
   }
 
   @override
@@ -287,12 +252,11 @@ class _BuilderActionTrackerImpl extends Object
 }
 
 /// No-op instance of [BuilderActionTracker] which does nothing and throws an
-/// unimplemented error for everything but [track], which delegates directly to
+/// unimplemented error for everything but [trackStage], which delegates directly to
 /// the wrapped function.
 ///
 /// Use the [BuilderActionTracker.noOp] factory to get an instance.
-class _NoOpBuilderActionTracker extends Object
-    with _NoOpTimeTracker
+class _NoOpBuilderActionTracker extends NoOpSyncTimeTracker
     implements BuilderActionTracker {
   static final _NoOpBuilderActionTracker _sharedInstance =
       _NoOpBuilderActionTracker();
@@ -304,102 +268,45 @@ class _NoOpBuilderActionTracker extends Object
   Duration get duration => throw UnimplementedError();
 
   @override
-  Iterable<BuilderActionPhasePerformance> get phases =>
+  Iterable<BuilderActionStagePerformance> get stages =>
       throw UnimplementedError();
 
   @override
   AssetId get primaryInput => throw UnimplementedError();
 
   @override
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), String label) => runPhase();
+  FutureOr<T> trackStage<T>(FutureOr<T> runPhase(), String label) => runPhase();
 
   @override
   Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
-/// Tracks the [Timings] of an indivual task.
+/// Tracks the [TimeSlice] of an indivual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
-class BuilderActionPhaseTracker extends Object
-    with _TimeTrackerImpl
-    implements BuilderActionPhasePerformance {
+class BuilderActionStageTracker extends AsyncTimeTrackerImpl
+    implements BuilderActionStagePerformance {
   @override
   final String label;
 
-  BuilderActionPhaseTracker(this.label);
+  BuilderActionStageTracker(this.label) : super(false);
 
   @override
-  Map<String, dynamic> toJson() => _$BuilderActionPhasePerformanceToJson(this);
-}
-
-/// Interface for tracking the [Timings] of an operation using the [start] and
-/// [stop] methods.
-abstract class TimeTracker implements Timings {
-  factory TimeTracker() => _TimeTrackerImpl();
-  factory TimeTracker.noOp() => _NoOpTimeTracker.sharedInstance;
-
-  void start();
-  void stop();
-}
-
-/// Implementation of a real [TimeTracker].
-///
-/// Use [TimeTracker] factory to get an instance.
-class _TimeTrackerImpl implements TimeTracker {
-  /// When this operation started, call [start] to set this.
-  @override
-  DateTime get startTime => _startTime;
-  DateTime _startTime;
-
-  /// When this operation stopped, call [stop] to set this.
-  @override
-  DateTime get stopTime => _stopTime;
-  DateTime _stopTime;
-
-  /// The total duration of this operation, equivalent to taking the difference
-  /// between [stopTime] and [startTime].
-  @override
-  Duration get duration {
-    assert(_startTime != null && _stopTime != null);
-    return Duration(
-        microseconds:
-            stopTime.microsecondsSinceEpoch - startTime.microsecondsSinceEpoch);
-  }
-
-  /// Start tracking this operation, must only be called once, before [stop].
-  @override
-  void start() {
-    assert(_startTime == null && _stopTime == null);
-    _startTime = now();
-  }
-
-  /// Stop tracking this operation, must only be called once, after [start].
-  @override
-  void stop() {
-    assert(_startTime != null && _stopTime == null);
-    _stopTime = now();
-  }
-}
-
-/// No-op implementation of [TimeTracker] that does nothing.
-///
-/// Use [TimeTracker.noOp] factory to get an instance.
-class _NoOpTimeTracker implements TimeTracker {
-  static final sharedInstance = _NoOpTimeTracker();
-
-  @override
-  Duration get duration => throw UnimplementedError();
-  @override
-  DateTime get startTime => throw UnimplementedError();
-  @override
-  DateTime get stopTime => throw UnimplementedError();
-
-  @override
-  void start() {}
-
-  @override
-  void stop() {}
+  Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);
 }
 
 AssetId _assetIdFromJson(String json) => AssetId.parse(json);
+
 String _assetIdToJson(AssetId id) => id.toString();
+
+List<TimeSlice> _slicesFromJson(List json) => json
+    .map((e) => TimeSlice(DateTime.parse(e['startTime'].toString()),
+        DateTime.parse(e['stopTime'].toString())))
+    .toList();
+
+List<Map<String, String>> _slicesToJson(List<TimeSlice> slices) => slices
+    .map((e) => {
+          'startTime': e.startTime.toIso8601String(),
+          'stopTime': e.stopTime.toIso8601String()
+        })
+    .toList();
