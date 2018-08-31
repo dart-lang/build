@@ -200,6 +200,16 @@ jobs:
       script: ./tool/travis.sh command_2
       env: PKG="scratch_space"
       dart: dev
+    - stage: analyze_and_format
+      name: "SDK: dev - DIR: timings - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="timings"
+      dart: dev
+    - stage: unit_test
+      name: "SDK: dev - DIR: timings - TASKS: pub run build_runner test"
+      script: ./tool/travis.sh command_2
+      env: PKG="timings"
+      dart: dev
 
 stages:
   - analyze_and_format
