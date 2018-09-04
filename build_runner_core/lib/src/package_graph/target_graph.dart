@@ -94,7 +94,7 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   }
 }
 
-class BuildConfigParseException {
+class BuildConfigParseException implements Exception {
   final String packageName;
   final dynamic exception;
 

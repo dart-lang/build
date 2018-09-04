@@ -511,7 +511,7 @@ a:file://different/fake/pkg/path
                 runCount++;
                 buildStep.writeAsString(buildStep.inputId.addExtension('.copy'),
                     buildStep.readAsString(buildStep.inputId));
-                throw 'Fail';
+                throw StateError('Fail');
               }))
         ], {
           'a|web/a.txt': 'a'

@@ -57,8 +57,9 @@ class PackageGraph {
     /// Read in the pubspec file and parse it as yaml.
     final pubspec = File(p.join(packagePath, 'pubspec.yaml'));
     if (!pubspec.existsSync()) {
-      throw 'Unable to generate package graph, no `pubspec.yaml` found. '
-          'This program must be ran from the root directory of your package.';
+      throw StateError(
+          'Unable to generate package graph, no `pubspec.yaml` found. '
+          'This program must be ran from the root directory of your package.');
     }
     final rootPubspec = _pubspecForPath(packagePath);
     final rootPackageName = rootPubspec['name'] as String;
@@ -152,8 +153,8 @@ class PackageNode {
 Map<String, String> _parsePackageLocations(String rootPackagePath) {
   var packagesFile = File(p.join(rootPackagePath, '.packages'));
   if (!packagesFile.existsSync()) {
-    throw 'Unable to generate package graph, no `.packages` found. '
-        'This program must be ran from the root directory of your package.';
+    throw StateError('Unable to generate package graph, no `.packages` found. '
+        'This program must be ran from the root directory of your package.');
   }
   var packageLocations = <String, String>{};
   for (final line in packagesFile.readAsLinesSync().skip(1)) {
@@ -184,8 +185,9 @@ enum DependencyType { github, path, hosted }
 Map<String, DependencyType> _parseDependencyTypes(String rootPackagePath) {
   final pubspecLock = File(p.join(rootPackagePath, 'pubspec.lock'));
   if (!pubspecLock.existsSync()) {
-    throw 'Unable to generate package graph, no `pubspec.lock` found. '
-        'This program must be ran from the root directory of your package.';
+    throw StateError(
+        'Unable to generate package graph, no `pubspec.lock` found. '
+        'This program must be ran from the root directory of your package.');
   }
   final dependencyTypes = <String, DependencyType>{};
   final dependencies = loadYaml(pubspecLock.readAsStringSync()) as YamlMap;
@@ -207,7 +209,7 @@ DependencyType _dependencyTypeFromSource(String source) {
     case 'sdk': // Until Flutter supports another type, assum same as path.
       return DependencyType.path;
   }
-  throw 'Unable to determine dependency type:\n$source';
+  throw ArgumentError('Unable to determine dependency type:\n$source');
 }
 
 /// Read the pubspec for each package in [packageLocations] and finds it's
@@ -240,7 +242,8 @@ YamlMap _pubspecForPath(String absolutePath) {
   var pubspecPath = p.join(absolutePath, 'pubspec.yaml');
   var pubspec = File(pubspecPath);
   if (!pubspec.existsSync()) {
-    throw 'Unable to generate package graph, no `$pubspecPath` found.';
+    throw StateError(
+        'Unable to generate package graph, no `$pubspecPath` found.');
   }
   return loadYaml(pubspec.readAsStringSync()) as YamlMap;
 }

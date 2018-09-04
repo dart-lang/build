@@ -88,7 +88,7 @@ void main() {
                       '',
                       [
                         (_) {
-                          throw 'some error';
+                          throw StateError('some error');
                         }
                       ],
                       toRoot(),
@@ -545,8 +545,8 @@ void main() {
         var writer = InMemoryRunnerAssetWriter()
           ..onDelete = (AssetId assetId) {
             if (assetId.package != 'a') {
-              throw 'Should not delete outside of package:a, '
-                  'tried to delete $assetId';
+              throw StateError('Should not delete outside of package:a, '
+                  'tried to delete $assetId');
             }
           };
         await testBuilders(
@@ -1178,7 +1178,7 @@ void main() {
         applyToRoot(TestBuilder(
             buildExtensions: replaceExtension('.g1', '.g2'),
             build: (buildStep, _) {
-              throw 'Fails always';
+              throw StateError('Fails always');
             })),
       ];
       var writer = InMemoryRunnerAssetWriter();
