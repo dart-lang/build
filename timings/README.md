@@ -2,4 +2,4 @@
 
 ## Timings
 
-Timings is a simple package for tracking perfomanse of both async and sync actions
+Timings is a simple package for tracking performance of both async and sync actions
