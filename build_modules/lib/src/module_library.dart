@@ -100,8 +100,8 @@ class ModuleLibrary {
         var conditions = <String, AssetId>{r'$default': linkedId};
         for (var condition in conditionalDirectiveConfigurations) {
           if (Uri.parse(condition.uri.stringValue).scheme == 'dart') {
-            throw 'Unsupported conditional import of '
-                '`${condition.uri.stringValue}` found in $id.';
+            throw ArgumentError('Unsupported conditional import of '
+                '`${condition.uri.stringValue}` found in $id.');
           }
           conditions[condition.name.toSource()] =
               AssetId.resolve(condition.uri.stringValue, from: id);

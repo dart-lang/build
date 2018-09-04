@@ -78,7 +78,7 @@ void main() {
         r'$sdk': FakeNodeWatcher(null),
       };
       noBWatcher(PackageNode node) {
-        if (node.name == 'b') throw 'No watcher for B!';
+        if (node.name == 'b') throw StateError('No watcher for B!');
         return nodes[node.name];
       }
 

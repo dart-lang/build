@@ -342,7 +342,7 @@ class _Loader {
       ..addAll(internalSources.where((id) => assetGraph.contains(id)));
     var modifyChecks = preExistingSources.map((id) async {
       var node = assetGraph.get(id);
-      if (node == null) throw id;
+      assert(node == null);
       var originalDigest = node.lastKnownDigest;
       if (originalDigest == null) return;
       var currentDigest = await _environment.reader.digest(id);

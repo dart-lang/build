@@ -283,7 +283,7 @@ class BuildServer {
     while (await _process.stdout.hasNext) {
       if ((await _process.stdout.next).contains(message)) return;
     }
-    throw 'Did not emit line containing [$message]';
+    throw StateError('Did not emit line containing [$message]');
   }
 
   /// Clean up this server.

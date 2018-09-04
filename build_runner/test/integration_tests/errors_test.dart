@@ -16,7 +16,7 @@ final alwaysThrow = TestBuilder(
       '.txt': ['.txt.copy'],
     },
     build: (_, __) {
-      throw 'Build action failure';
+      throw StateError('Build action failure');
     });
 // test-package-end ###########################################################
 
