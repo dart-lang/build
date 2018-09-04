@@ -86,10 +86,10 @@ final _builders = <_i1.BuilderApplication>[
         'test/**.node_test.dart',
         'test/**.vm_test.dart'
       ]),
-      defaultOptions: new _i7.BuilderOptions({
-        'dart2js_args': ['--minify']
+      defaultReleaseOptions: new _i7.BuilderOptions({
+        'dart2js_args': ['-O2'],
+        'compiler': 'dart2js'
       }),
-      defaultReleaseOptions: new _i7.BuilderOptions({'compiler': 'dart2js'}),
       appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.apply(
       'build_vm_compilers|vm', [_i8.vmKernelModuleBuilder], _i1.toAllPackages(),
