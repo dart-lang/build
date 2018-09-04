@@ -1,3 +1,8 @@
+## 0.4.4-dev
+
+- Change the default dart2js arguments in release mode from `--minify` to `-O2`.
+  This is a new argument, which applies all "safe" optimizations.
+
 ## 0.4.3
 
 - Only call `window.postMessage` during initialization if the current context
