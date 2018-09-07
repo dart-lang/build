@@ -2,6 +2,7 @@
 
 - Added `--hot-reload` cli option and appropriate functionality.
   See [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
+- Removed dependency on cli_util.
 
 ## 0.10.1+1
 

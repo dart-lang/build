@@ -1,3 +1,7 @@
+## 0.2.2+4-dev
+
+- Removed dependency on cli_util.
+
 ## 0.2.2+3
 
 - Don't log a severe message when a URI cannot be resolved. Just return `null`.

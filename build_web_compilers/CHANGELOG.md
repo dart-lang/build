@@ -1,3 +1,7 @@
+## 0.4.3+1-dev
+
+- Removed dependency on cli_util.
+
 ## 0.4.3
 
 - Only call `window.postMessage` during initialization if the current context
