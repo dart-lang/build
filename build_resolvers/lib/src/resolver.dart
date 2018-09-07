@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
 
 import 'package:analyzer/analyzer.dart' show parseDirectives;
 import 'package:analyzer/dart/ast/ast.dart';
@@ -13,7 +14,6 @@ import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
-import 'package:cli_util/cli_util.dart' as cli_util;
 import 'package:path/path.dart' as native_path;
 
 // We should always be using url paths here since it's always Dart/pub code.
@@ -427,7 +427,9 @@ class AnalyzerResolvers implements Resolvers {
     _initAnalysisEngine();
     var resourceProvider = PhysicalResourceProvider.INSTANCE;
     var sdk = FolderBasedDartSdk(
-        resourceProvider, resourceProvider.getFolder(cli_util.getSdkPath()))
+        resourceProvider,
+        resourceProvider.getFolder(native_path
+            .dirname(native_path.dirname(Platform.resolvedExecutable))))
       ..useSummary = true;
     var uriResolver = DartUriResolver(sdk);
     return AnalyzerResolvers._(AnalyzerResolver(uriResolver, analysisOptions));
