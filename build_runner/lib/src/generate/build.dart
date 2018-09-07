@@ -10,11 +10,11 @@ import 'package:build_runner/src/generate/terminator.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
+import 'package:watcher/watcher.dart';
 
 import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
-import 'directory_watcher_factory.dart';
 import 'watch_impl.dart' as watch_impl;
 
 /// Runs all of the BuilderApplications in [builders] once.
@@ -153,7 +153,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         Level logLevel,
         onLog(LogRecord record),
         Duration debounceDelay,
-        DirectoryWatcherFactory directoryWatcherFactory,
+        DirectoryWatcher Function(String) directoryWatcherFactory,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
         Map<String, String> outputMap,

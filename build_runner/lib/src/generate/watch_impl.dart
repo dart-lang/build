@@ -23,7 +23,6 @@ import 'package:watcher/watcher.dart';
 
 import '../logging/std_io_logging.dart';
 import '../server/server.dart';
-import 'directory_watcher_factory.dart';
 import 'terminator.dart';
 
 final _logger = Logger('Watch');
@@ -40,7 +39,7 @@ Future<ServeHandler> watch(
   Level logLevel,
   onLog(LogRecord record),
   Duration debounceDelay,
-  DirectoryWatcherFactory directoryWatcherFactory,
+  DirectoryWatcher Function(String) directoryWatcherFactory,
   Stream terminateEventStream,
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
@@ -117,7 +116,7 @@ WatchImpl _runWatch(
         List<BuilderApplication> builders,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
         Future until,
-        DirectoryWatcherFactory directoryWatcherFactory,
+        DirectoryWatcher Function(String) directoryWatcherFactory,
         String configKey,
         bool willCreateOutputDirs,
         {bool isReleaseMode = false}) =>
@@ -163,7 +162,7 @@ class WatchImpl implements BuildState {
   final Duration _debounceDelay;
 
   /// Injectable factory for creating directory watchers.
-  final DirectoryWatcherFactory _directoryWatcherFactory;
+  final DirectoryWatcher Function(String) _directoryWatcherFactory;
 
   /// Whether or not we will be creating any output directories.
   ///
