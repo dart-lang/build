@@ -5,18 +5,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:cli_util/cli_util.dart' as cli_util;
 
 import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
 
-final _sdkDir = cli_util.getSdkPath();
+final _sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
