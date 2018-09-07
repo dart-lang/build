@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
-import 'package:timing/src/timing.dart';
+import 'package:timing/timing.dart';
 
 import 'phase.dart';
 
@@ -113,7 +113,7 @@ abstract class BuildPerformanceTracker
 /// Real implementation of [BuildPerformanceTracker].
 ///
 /// Use [BuildPerformanceTracker] factory to get an instance.
-class _BuildPerformanceTrackerImpl extends SimpleAsyncTimeTrackerImpl
+class _BuildPerformanceTrackerImpl extends SimpleAsyncTimeTracker
     implements BuildPerformanceTracker {
   @override
   Iterable<BuildPhaseTracker> get phases => _phases;
@@ -159,7 +159,7 @@ class _BuildPerformanceTrackerImpl extends SimpleAsyncTimeTrackerImpl
 /// closures without tracking anything.
 ///
 /// Use [BuildPerformanceTracker.noOp] to get an instance.
-class _NoOpBuildPerformanceTracker extends NoOpSyncTimeTracker
+class _NoOpBuildPerformanceTracker extends NoOpTimeTracker
     implements BuildPerformanceTracker {
   static final _NoOpBuildPerformanceTracker sharedInstance =
       _NoOpBuildPerformanceTracker();
@@ -191,7 +191,7 @@ class _NoOpBuildPerformanceTracker extends NoOpSyncTimeTracker
 /// Use [track] to start actually tracking an operation.
 ///
 /// This is only meaningful for non-lazy phases.
-class BuildPhaseTracker extends SimpleAsyncTimeTrackerImpl
+class BuildPhaseTracker extends SimpleAsyncTimeTracker
     implements BuildPhasePerformance {
   @override
   List<String> get builderKeys => _builderKeys;
@@ -209,7 +209,7 @@ class BuildPhaseTracker extends SimpleAsyncTimeTrackerImpl
   Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
-/// Interface for tracking the [TimeSlice] of an indiviual [Builder] on a given
+/// Interface for tracking the [TimeSlice] of an individual [Builder] on a given
 /// primary input.
 abstract class BuilderActionTracker
     implements TimeTracker, BuilderActionPerformance {
@@ -228,7 +228,7 @@ abstract class BuilderActionTracker
 /// Real implementation of [BuilderActionTracker] which records timings.
 ///
 /// Use the [BuilderActionTracker] factory to get an instance.
-class _BuilderActionTrackerImpl extends SimpleAsyncTimeTrackerImpl
+class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
     implements BuilderActionTracker {
   @override
   final String builderKey;
@@ -256,7 +256,7 @@ class _BuilderActionTrackerImpl extends SimpleAsyncTimeTrackerImpl
 /// the wrapped function.
 ///
 /// Use the [BuilderActionTracker.noOp] factory to get an instance.
-class _NoOpBuilderActionTracker extends NoOpSyncTimeTracker
+class _NoOpBuilderActionTracker extends NoOpTimeTracker
     implements BuilderActionTracker {
   static final _NoOpBuilderActionTracker _sharedInstance =
       _NoOpBuilderActionTracker();
@@ -281,15 +281,15 @@ class _NoOpBuilderActionTracker extends NoOpSyncTimeTracker
   Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
-/// Tracks the [TimeSlice] of an indivual task.
+/// Tracks the [TimeSlice] of an individual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
-class BuilderActionStageTracker extends AsyncTimeTrackerImpl
+class BuilderActionStageTracker extends AsyncTimeTracker
     implements BuilderActionStagePerformance {
   @override
   final String label;
 
-  BuilderActionStageTracker(this.label) : super(false);
+  BuilderActionStageTracker(this.label) : super(trackNested: false);
 
   @override
   Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);

@@ -335,18 +335,18 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
     var rows = StringBuffer();
     for (var action in performance.actions) {
       if (hideSkipped &&
-          !action.stages.any((phase) => phase.label == 'Build')) {
+          !action.stages.any((stage) => stage.label == 'Build')) {
         continue;
       }
       var actionKey = '${action.builderKey}:${action.primaryInput}';
-      for (var phase in action.stages) {
-        var start = phase.startTime.millisecondsSinceEpoch -
+      for (var stage in action.stages) {
+        var start = stage.startTime.millisecondsSinceEpoch -
             performance.startTime.millisecondsSinceEpoch;
-        var end = phase.stopTime.millisecondsSinceEpoch -
+        var end = stage.stopTime.millisecondsSinceEpoch -
             performance.startTime.millisecondsSinceEpoch;
 
         rows.writeln(
-            '          ["$actionKey", "${phase.label}", $start, $end],');
+            '          ["$actionKey", "${stage.label}", $start, $end],');
       }
     }
     if (performance.duration < Duration(seconds: 1)) {
@@ -374,7 +374,7 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
           var dataTable = new google.visualization.DataTable();
 
           dataTable.addColumn({ type: 'string', id: 'ActionKey' });
-          dataTable.addColumn({ type: 'string', id: 'Phase' });
+          dataTable.addColumn({ type: 'string', id: 'Stage' });
           dataTable.addColumn({ type: 'number', id: 'Start' });
           dataTable.addColumn({ type: 'number', id: 'End' });
           dataTable.addRows([

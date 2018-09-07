@@ -1,4 +1,4 @@
-## 0.3.2
+## 0.4.0
 
 - Use timings package for performance tracking.
 
