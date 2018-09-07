@@ -8,12 +8,14 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:timing/src/timing.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../generate/watch_impl.dart';
@@ -27,6 +29,17 @@ final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
 final _logger = Logger('Serve');
+
+enum PerfSortOrder {
+  startTimeAsc,
+  startTimeDesc,
+  stopTimeAsc,
+  stopTimeDesc,
+  durationAsc,
+  durationDesc,
+  innerDurationAsc,
+  innerDurationDesc
+}
 
 ServeHandler createServeHandler(WatchImpl watch) {
   var rootPackage = watch.packageGraph.root.name;
@@ -119,11 +132,31 @@ class ServeHandler implements BuildState {
 
   shelf.Response _performanceHandler(shelf.Request request) {
     var hideSkipped = false;
+    var detailedSlices = false;
+    var slicesResolution = 5;
+    var sortOrder = PerfSortOrder.startTimeAsc;
+    String filter;
     if (request.url.queryParameters['hideSkipped']?.toLowerCase() == 'true') {
       hideSkipped = true;
     }
+    if (request.url.queryParameters['detailedSlices']?.toLowerCase() ==
+        'true') {
+      detailedSlices = true;
+    }
+    if (request.url.queryParameters.containsKey('slicesResolution')) {
+      slicesResolution =
+          int.parse(request.url.queryParameters['slicesResolution']);
+    }
+    if (request.url.queryParameters.containsKey('sortOrder')) {
+      sortOrder = PerfSortOrder
+          .values[int.parse(request.url.queryParameters['sortOrder'])];
+    }
+    if (request.url.queryParameters.containsKey('filter')) {
+      filter = request.url.queryParameters['filter'];
+    }
     return shelf.Response.ok(
-        _renderPerformance(_lastBuildResult.performance, hideSkipped),
+        _renderPerformance(_lastBuildResult.performance, hideSkipped,
+            detailedSlices, slicesResolution, sortOrder, filter),
         headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
 
@@ -330,37 +363,177 @@ class AssetHandler {
   }
 }
 
-String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
+String _getPerformancePath(bool hideSkipped, bool detailedSlices,
+    int slicesResolution, PerfSortOrder sortOrder, String filter) {
+  var params = <String, String>{};
+  if (hideSkipped) params['hideSkipped'] = 'true';
+  if (detailedSlices) params['detailedSlices'] = 'true';
+  if (sortOrder.index != 0) params['sortOrder'] = '${sortOrder.index}';
+  if (slicesResolution != 5) params['slicesResolution'] = '$slicesResolution';
+  if (filter != null) params['filter'] = filter;
+  return Uri(path: '/$_performancePath', queryParameters: params).toString();
+}
+
+String _renderPerformance(
+    BuildPerformance performance,
+    bool hideSkipped,
+    bool detailedSlices,
+    int slicesResolution,
+    PerfSortOrder sortOrder,
+    String filter) {
   try {
     var rows = StringBuffer();
-    for (var action in performance.actions) {
+    final resolution = Duration(milliseconds: slicesResolution);
+    var count = 0,
+        maxSlices = 1,
+        max = 0,
+        min = performance.stopTime.millisecondsSinceEpoch -
+            performance.startTime.millisecondsSinceEpoch;
+
+    void writeRow(BuilderActionPerformance action,
+        BuilderActionStagePerformance stage, TimeSlice slice) {
+      var actionKey = '${action.builderKey}:${action.primaryInput}';
+      var tooltip = '<div class=perf-tooltip>'
+          '<p><b>Builder:</b> ${action.builderKey}</p>'
+          '<p><b>Input:</b> ${action.primaryInput}</p>'
+          '<p><b>Stage:</b> ${stage.label}</p>'
+          '<p><b>Stage time:</b> '
+          '${stage.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
+          '${stage.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
+          '<p><b>Stage total duration:</b> ${stage.duration.inMilliseconds / 1000} seconds</p>'
+          '<p><b>Stage async duration:</b> ${stage.innerDuration.inMilliseconds / 1000} seconds</p>';
+      if (slice != stage) {
+        tooltip += '<p><b>Slice time:</b> '
+            '${slice.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
+            '${slice.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
+            '<p><b>Slice duration:</b> ${slice.duration.inMilliseconds / 1000} seconds</p>';
+      }
+      tooltip += '</div>';
+      var start = slice.startTime.millisecondsSinceEpoch -
+          performance.startTime.millisecondsSinceEpoch;
+      var end = slice.stopTime.millisecondsSinceEpoch -
+          performance.startTime.millisecondsSinceEpoch;
+
+      if (min > start) min = start;
+      if (max < end) max = end;
+
+      rows.writeln(
+          '          ["$actionKey", "${stage.label}", "$tooltip", $start, $end],');
+      ++count;
+    }
+
+    RegExp filterRE;
+    if (filter != null) {
+      filterRE = RegExp(filter);
+    }
+
+    final actions = performance.actions
+        .where((action) =>
+            !hideSkipped ||
+            action.stages.any((stage) => stage.label == 'Build'))
+        .where((action) =>
+            filterRE == null ||
+            filterRE.hasMatch('${action.builderKey}:${action.primaryInput}'))
+        .toList();
+
+    int Function(BuilderActionPerformance, BuilderActionPerformance) comparator;
+    switch (sortOrder) {
+      case PerfSortOrder.startTimeAsc:
+        comparator = (a1, a2) => a1.startTime.compareTo(a2.startTime);
+        break;
+      case PerfSortOrder.startTimeDesc:
+        comparator = (a1, a2) => a2.startTime.compareTo(a1.startTime);
+        break;
+      case PerfSortOrder.stopTimeAsc:
+        comparator = (a1, a2) => a1.stopTime.compareTo(a2.stopTime);
+        break;
+      case PerfSortOrder.stopTimeDesc:
+        comparator = (a1, a2) => a2.stopTime.compareTo(a1.stopTime);
+        break;
+      case PerfSortOrder.durationAsc:
+        comparator = (a1, a2) => a1.duration.compareTo(a2.duration);
+        break;
+      case PerfSortOrder.durationDesc:
+        comparator = (a1, a2) => a2.duration.compareTo(a1.duration);
+        break;
+      case PerfSortOrder.innerDurationAsc:
+        comparator = (a1, a2) => a1.innerDuration.compareTo(a2.innerDuration);
+        break;
+      case PerfSortOrder.innerDurationDesc:
+        comparator = (a1, a2) => a2.innerDuration.compareTo(a1.innerDuration);
+        break;
+    }
+    actions.sort(comparator);
+
+    for (var action in actions) {
       if (hideSkipped &&
           !action.stages.any((stage) => stage.label == 'Build')) {
         continue;
       }
-      var actionKey = '${action.builderKey}:${action.primaryInput}';
       for (var stage in action.stages) {
-        var start = stage.startTime.millisecondsSinceEpoch -
-            performance.startTime.millisecondsSinceEpoch;
-        var end = stage.stopTime.millisecondsSinceEpoch -
-            performance.startTime.millisecondsSinceEpoch;
-
-        rows.writeln(
-            '          ["$actionKey", "${stage.label}", $start, $end],');
+        if (!detailedSlices) {
+          writeRow(action, stage, stage);
+          continue;
+        }
+        var slices = stage.slices.fold<List<TimeSlice>>([], (list, slice) {
+          if (list.isNotEmpty &&
+              slice.startTime.difference(list.last.stopTime) < resolution) {
+            // concat with previous if gap less than resolution
+            list.last = TimeSlice(list.last.startTime, slice.stopTime);
+          } else {
+            if (list.length > 1 && list.last.duration < resolution) {
+              // remove previous if its duration less than resolution
+              list.last = slice;
+            } else {
+              list.add(slice);
+            }
+          }
+          return list;
+        });
+        if (slices.isNotEmpty) {
+          for (var slice in slices) {
+            writeRow(action, stage, slice);
+          }
+        } else {
+          writeRow(action, stage, stage);
+        }
+        if (maxSlices < slices.length) maxSlices = slices.length;
       }
     }
-    if (performance.duration < Duration(seconds: 1)) {
+    if (max - min < 1000) {
       rows.writeln('          ['
           '"https://github.com/google/google-visualization-issues/issues/2269"'
-          ', "", 0, 1000]');
+          ', "", "", $min, ${min + 1000}]');
     }
 
-    var showSkippedHref = hideSkipped
-        ? '/$_performancePath'
-        : '/$_performancePath?hideSkipped=true';
+    var showSkippedHref = _getPerformancePath(
+        !hideSkipped, detailedSlices, slicesResolution, sortOrder, filter);
     var showSkippedText =
         hideSkipped ? 'Show Skipped Actions' : 'Hide Skipped Actions';
     var showSkippedLink = '<a href="$showSkippedHref">$showSkippedText</a>';
+
+    var showSlicesHref = _getPerformancePath(
+        hideSkipped, !detailedSlices, slicesResolution, sortOrder, filter);
+    var showSlicesText =
+        detailedSlices ? 'Hide Ascync Slices' : 'Show Ascync Slices';
+    var showSlicesLink = '<a href="$showSlicesHref">$showSlicesText</a>';
+
+    var sortStartTimeAsc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.startTimeAsc, filter);
+    var sortStartTimeDesc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.startTimeDesc, filter);
+    var sortStopTimeAsc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.stopTimeAsc, filter);
+    var sortStopTimeDesc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.stopTimeDesc, filter);
+    var sortDurationAsc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.durationAsc, filter);
+    var sortDurationDesc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.durationDesc, filter);
+    var sortInnerDurationAsc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.innerDurationAsc, filter);
+    var sortInnerDurationDesc = _getPerformancePath(hideSkipped, detailedSlices,
+        slicesResolution, PerfSortOrder.innerDurationDesc, filter);
     return '''
   <html>
     <head>
@@ -375,14 +548,18 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
 
           dataTable.addColumn({ type: 'string', id: 'ActionKey' });
           dataTable.addColumn({ type: 'string', id: 'Stage' });
+          dataTable.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
           dataTable.addColumn({ type: 'number', id: 'Start' });
           dataTable.addColumn({ type: 'number', id: 'End' });
           dataTable.addRows([
   $rows
           ]);
 
+          console.log('rendering', $count, 'blocks, max', $maxSlices,
+            'slices in stage, resolution', $slicesResolution, 'ms');
           var options = {
-            colors: ['#cbb69d', '#603913', '#c69c6e']
+//            colors: ['#cbb69d', '#603913', '#c69c6e'],
+            tooltip: { isHtml: true }
           };
           var statusText = document.getElementById('status');
           var timeoutId;
@@ -428,11 +605,20 @@ String _renderPerformance(BuildPerformance performance, bool hideSkipped) {
         display: inline-block;
         margin: 0.5em;
       }
+      .perf-tooltip {
+        margin: 0.5em;
+      }
       </style>
     </head>
     <body>
       <div class="controls-header">
         <p>$showSkippedLink</p>
+        <p>$showSlicesLink</p>
+        <p><b>Sort by</b>: </p>
+        <p>Start Time (<a href="$sortStartTimeAsc">Asc</a>, <a href="$sortStartTimeDesc">Desc</a>)</p>
+        <p>Stop Time (<a href="$sortStopTimeAsc">Asc</a>, <a href="$sortStopTimeDesc">Desc</a>)</p>
+        <p>Total Duration (<a href="$sortDurationAsc">Asc</a>, <a href="$sortDurationDesc">Desc</a>)</p>
+        <p>Async Duration (<a href="$sortInnerDurationAsc">Asc</a>, <a href="$sortInnerDurationDesc">Desc</a>)</p>
         <p id="status"></p>
       </div>
       <div id="timeline"></div>
