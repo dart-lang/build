@@ -20,7 +20,7 @@ Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
       'p': _assetIdToJson(instance.primarySource),
       's': _assetIdsToJson(instance.sources),
       'd': _assetIdsToJson(instance.directDependencies),
-      'is': instance.isSupported,
       'm': instance.isMissing,
+      'is': instance.isSupported,
       'pf': _platformToJson(instance.platform)
     };
