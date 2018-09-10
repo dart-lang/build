@@ -98,6 +98,9 @@ class Module {
 
   /// Whether or not this module is supported for [platform].
   ///
+  /// Note that this only indicates support for the [sources] within this
+  /// module, and not its transitive (or direct) dependencies.
+  ///
   /// Compilers can use this to either silently skip compilation of this module
   /// or throw early errors or warnings.
   ///

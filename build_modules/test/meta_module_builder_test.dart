@@ -84,5 +84,24 @@ main() {
             encodedMatchesMetaModule(metaA),
       });
     });
+
+    test('does not look at dependencies', () async {
+      var assetA = AssetId('a', 'lib/a.dart');
+      var assetB = AssetId('a', 'lib/b.dart');
+      var moduleA = Module(
+          assetA, [assetA], <AssetId>[assetB], DartPlatform.dart2js, true);
+      var moduleB =
+          Module(assetB, [assetB], <AssetId>[], DartPlatform.dart2js, false);
+      var metaA = MetaModule([moduleA, moduleB]);
+      await testBuilder(MetaModuleBuilder(DartPlatform.dart2js), {
+        'a|lib/a.module.library':
+            ModuleLibrary.fromSource(assetA, "import 'b.dart';").serialize(),
+        'a|lib/b.module.library':
+            ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+      }, outputs: {
+        'a|lib/${metaModuleExtension(DartPlatform.dart2js)}':
+            encodedMatchesMetaModule(metaA),
+      });
+    });
   });
 }
