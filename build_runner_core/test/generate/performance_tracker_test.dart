@@ -109,15 +109,15 @@ main() {
         for (var input in inputs) {
           var actionTracker = tracker.addBuilderAction(input, 'test_builder');
           await actionTracker.track(() async {
-            await actionTracker.trackStage(() async {
+            await actionTracker.trackStage('Setup', () async {
               time = time.add(const Duration(seconds: 1));
-            }, 'Setup');
-            await actionTracker.trackStage(() async {
+            });
+            await actionTracker.trackStage('Build', () async {
               time = time.add(const Duration(seconds: 1));
-            }, 'Build');
-            await actionTracker.trackStage(() async {
+            });
+            await actionTracker.trackStage('Finalize', () async {
               time = time.add(const Duration(seconds: 1));
-            }, 'Finalize');
+            });
           });
         }
       });

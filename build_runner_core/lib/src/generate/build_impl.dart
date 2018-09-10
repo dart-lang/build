@@ -431,7 +431,7 @@ class _SingleBuild {
             input.package, _isReadableNode, _getUpdatedGlobNode);
 
         if (!await tracker.trackStage(
-            () => _buildShouldRun(builderOutputs, wrappedReader), 'Setup')) {
+            'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {
           return <AssetId>[];
         }
 
@@ -453,13 +453,13 @@ class _SingleBuild {
             .add(actionDescription);
 
         await tracker.trackStage(
+            'Build',
             () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
                         PerformanceTrackingResolvers(_resolvers, tracker),
                         logger: logger, resourceManager: _resourceManager)
                     .catchError((_) {
                   // Errors tracked through the logger
-                }),
-            'Build');
+                }));
         actionsCompletedCount++;
         hungActionsHeartbeat.ping();
         pendingActions[phaseNumber].remove(actionDescription);
@@ -467,9 +467,9 @@ class _SingleBuild {
         // Reset the state for all the `builderOutputs` nodes based on what was
         // read and written.
         await tracker.trackStage(
+            'Finalize',
             () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
-                actionDescription, logger.errorsSeen),
-            'Finalize');
+                actionDescription, logger.errorsSeen));
 
         return wrappedWriter.assetsWritten;
       });

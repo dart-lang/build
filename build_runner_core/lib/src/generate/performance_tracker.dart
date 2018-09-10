@@ -214,7 +214,7 @@ class BuildPhaseTracker extends SimpleAsyncTimeTracker
 abstract class BuilderActionTracker
     implements TimeTracker, BuilderActionPerformance {
   /// Tracks the time of [runPhase] and associates it with [label].
-  FutureOr<T> trackStage<T>(FutureOr<T> runPhase(), String label);
+  T trackStage<T>(String label, T runPhase());
 
   factory BuilderActionTracker(AssetId primaryInput, String builderKey) =>
       _BuilderActionTrackerImpl(primaryInput, builderKey);
@@ -241,7 +241,7 @@ class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
   _BuilderActionTrackerImpl(this.primaryInput, this.builderKey);
 
   @override
-  FutureOr<T> trackStage<T>(FutureOr<T> action(), String label) {
+  T trackStage<T>(String label, T action()) {
     var tracker = BuilderActionStageTracker(label);
     stages.add(tracker);
     return tracker.track(action);
@@ -275,7 +275,7 @@ class _NoOpBuilderActionTracker extends NoOpTimeTracker
   AssetId get primaryInput => throw UnimplementedError();
 
   @override
-  FutureOr<T> trackStage<T>(FutureOr<T> runPhase(), String label) => runPhase();
+  T trackStage<T>(String label, T runPhase()) => runPhase();
 
   @override
   Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);

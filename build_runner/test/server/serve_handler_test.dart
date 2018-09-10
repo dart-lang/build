@@ -142,7 +142,7 @@ void main() {
         var actionTracker = tracker.addBuilderAction(
             makeAssetId('a|web/a.txt'), 'test_builder');
         actionTracker.track(() {
-          actionTracker.trackStage(() {}, 'SomeLabel');
+          actionTracker.trackStage('SomeLabel', () {});
         });
       });
       watchImpl.addFutureResult(Future.value(
