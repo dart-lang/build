@@ -50,7 +50,8 @@ Module _moduleForComponent(
     ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
     ..removeAll(sources);
   var isSupported = componentLibraries
-      .every((l) => l.sdkDeps.every((d) => platform.supportsLibrary(d)));
+      .expand((l) => l.sdkDeps)
+      .every(platform.supportsLibrary);
   return Module(primaryId, sources, directDependencies, platform, isSupported);
 }
 
@@ -261,7 +262,7 @@ MetaModule _fineModulesForLibraries(
           library.parts.followedBy([library.id]),
           library.depsForPlatform(platform),
           platform,
-          library.sdkDeps.every((d) => platform.supportsLibrary(d))))
+          library.sdkDeps.every(platform.supportsLibrary)))
       .toList();
   _sortModules(modules);
   return MetaModule(modules);

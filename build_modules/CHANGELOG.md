@@ -3,7 +3,7 @@
 ### Breaking Changes
 
 - The `Module` constructor has an additional required parameter `isSupported`,
-  which indicates if a module is supported on the current platform.
+  which indicates if a module is supported on that module's platform.
 
 ## 0.4.0
 
