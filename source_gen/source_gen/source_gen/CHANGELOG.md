@@ -1,3 +1,16 @@
+## 0.9.1
+
+* The result of `ConstantReader.revive()` now returns a `Revivable` that assumes
+  access to a private class, constructor, or function _instead_ of `null` where
+  possible. This allows generators that use `part` files to still use this
+  functionality _and_ allows generators that use separate libraries to emit more
+  actionable error messages (i.e. `"cannot use private class _X"`).
+
+* `Revivable.isPrivate` now returns `true` when the underyling class was public
+  but the constructor was private, or the `Revivable` was pointing to a
+  top-level or static private field or method. Previously it was only `true`
+  when referencing a private class.
+
 ## 0.9.0+1
 
 * Fix `LibraryReader.classElements` to return classes from parts, if they exist,

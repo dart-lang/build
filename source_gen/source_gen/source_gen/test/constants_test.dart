@@ -197,8 +197,12 @@ void main() {
         @ClassWithStaticField.staticField
         @Wrapper(someFunction)
         @Wrapper(Wrapper.someFunction)
+        @_NotAccessible()
+        @PublicWithPrivateConstructor._()
+        @_privateField
+        @Wrapper(_privateFunction)
         class Example {}
-        
+
         class Int64Like {
           static const Int64Like ZERO = const Int64Like._bits(0, 0, 0);
         
@@ -248,6 +252,16 @@ void main() {
         }
 
         void someFunction(int x, String y) {}
+
+        class _NotAccessible {
+          const _NotAccessible();
+        }
+
+        class PublicWithPrivateConstructor {
+          const PublicWithPrivateConstructor._();
+        }
+
+        void _privateFunction() {}
       ''', (resolver) => resolver.findLibraryByName('test_lib'));
       constants = library
           .getType('Example')
@@ -314,6 +328,26 @@ void main() {
       final fieldOnly = constants[8].read('f').revive();
       expect(fieldOnly.source.fragment, isEmpty);
       expect(fieldOnly.accessor, 'Wrapper.someFunction');
+    });
+
+    test('should decode private classes', () {
+      final notAccessible = constants[9].revive();
+      expect(notAccessible.isPrivate, isTrue);
+      expect(notAccessible.source.fragment, '_NotAccessible');
+    });
+
+    test('should decode private constructors', () {
+      final notAccessible = constants[10].revive();
+      expect(notAccessible.isPrivate, isTrue);
+      expect(notAccessible.source.fragment, 'PublicWithPrivateConstructor');
+      expect(notAccessible.accessor, '_');
+    });
+
+    test('should decode private functions', () {
+      final function = constants[12].read('f').revive();
+      expect(function.isPrivate, isTrue);
+      expect(function.source.fragment, isEmpty);
+      expect(function.accessor, '_privateFunction');
     });
   });
 }

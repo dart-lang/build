@@ -34,8 +34,8 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
       accessor: '${element.enclosingElement.name}.${element.name}',
     );
   }
-  final clazz = element as ClassElement;
   // Enums are not included in .definingCompilationUnit.types.
+  final clazz = element as ClassElement;
   if (clazz.isEnum) {
     for (final e in clazz.fields.where(
         (f) => f.isPublic && f.isConst && f.computeConstantValue() == object)) {
@@ -45,39 +45,55 @@ Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
       );
     }
   }
+
+  // We try and return a public accessor/constructor if available.
+  final allResults = <Revivable>[];
+
+  /// Returns whether [result] is an acceptable result to immediately return.
+  bool tryResult(Revivable result) {
+    allResults.add(result);
+    return !result.isPrivate;
+  }
+
   for (final e in origin.definingCompilationUnit.types
       .expand((t) => t.fields)
-      .where((f) =>
-          f.isPublic && f.isConst && f.computeConstantValue() == object)) {
-    return Revivable._(
+      .where((f) => f.isConst && f.computeConstantValue() == object)) {
+    final result = Revivable._(
       source: url.removeFragment(),
       accessor: '${clazz.name}.${e.name}',
     );
+    if (tryResult(result)) {
+      return result;
+    }
   }
   final i = (object as DartObjectImpl).getInvocation();
-  if (i != null &&
-      i.constructor.isPublic &&
-      i.constructor.enclosingElement.isPublic) {
+  if (i != null) {
     url = Uri.parse(urlOfElement(i.constructor.enclosingElement));
-    return Revivable._(
+    final result = Revivable._(
       source: url,
       accessor: i.constructor.name,
       namedArguments: i.namedArguments,
       positionalArguments: i.positionalArguments,
     );
+    if (tryResult(result)) {
+      return result;
+    }
   }
-  if (origin == null) {
-    return null;
+  if (origin != null) {
+    for (final e in origin.definingCompilationUnit.topLevelVariables.where(
+      (f) => f.isConst && f.computeConstantValue() == object,
+    )) {
+      final result = Revivable._(
+        source: Uri.parse(urlOfElement(origin)).replace(fragment: ''),
+        accessor: e.name,
+      );
+      if (tryResult(result)) {
+        return result;
+      }
+    }
   }
-  for (final e in origin.definingCompilationUnit.topLevelVariables.where(
-    (f) => f.isPublic && f.isConst && f.computeConstantValue() == object,
-  )) {
-    return Revivable._(
-      source: Uri.parse(urlOfElement(origin)).replace(fragment: ''),
-      accessor: e.name,
-    );
-  }
-  return null;
+  // We could try and return the "best" result more intelligently.
+  return allResults.first;
 }
 
 /// Decoded "instructions" for re-creating a const [DartObject] at runtime.
@@ -113,5 +129,18 @@ class Revivable {
   ///
   /// Builds tools may use this to fail when the symbol is expected to be
   /// importable (i.e. isn't used with `part of`).
-  bool get isPrivate => accessor.startsWith('_');
+  bool get isPrivate {
+    return source.fragment.startsWith('_') || accessor.startsWith('_');
+  }
+
+  @override
+  String toString() {
+    if (source.fragment.isNotEmpty) {
+      if (accessor.isEmpty) {
+        return 'const $source';
+      }
+      return 'const $source.$accessor';
+    }
+    return '$source::$accessor';
+  }
 }
