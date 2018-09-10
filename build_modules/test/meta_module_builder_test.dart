@@ -16,7 +16,8 @@ import 'matchers.dart';
 main() {
   test('can serialize meta modules', () async {
     var assetA = AssetId('a', 'lib/a.dart');
-    var moduleA = Module(assetA, [assetA], <AssetId>[], DartPlatform.dart2js);
+    var moduleA =
+        Module(assetA, [assetA], <AssetId>[], DartPlatform.dart2js, true);
     var metaA = MetaModule([moduleA]);
     await testBuilder(MetaModuleBuilder(DartPlatform.dart2js), {
       'a|lib/a.module.library':

@@ -96,6 +96,9 @@ class Module {
   @JsonKey(name: 'm', nullable: true, defaultValue: false)
   final bool isMissing;
 
+  @JsonKey(name: 'is', nullable: false)
+  final bool isSupported;
+
   @JsonKey(
       name: 'pf',
       nullable: false,
@@ -104,7 +107,7 @@ class Module {
   final DartPlatform platform;
 
   Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies, this.platform,
+      Iterable<AssetId> directDependencies, this.platform, this.isSupported,
       {bool isMissing})
       : this.sources = sources.toSet(),
         this.directDependencies = directDependencies.toSet(),

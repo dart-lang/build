@@ -76,9 +76,9 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c], defaultPlatform)),
-      matchesModule(Module(b, [b], [c], defaultPlatform)),
-      matchesModule(Module(c, [c, d], [], defaultPlatform)),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [c], defaultPlatform, true)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -104,7 +104,7 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b, c], [], defaultPlatform))
+      matchesModule(Module(a, [a, b, c], [], defaultPlatform, true))
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -148,9 +148,9 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c], [g, e], defaultPlatform)),
-      matchesModule(Module(b, [b, d], [c, e, g], defaultPlatform)),
-      matchesModule(Module(e, [e, g, f], [], defaultPlatform)),
+      matchesModule(Module(a, [a, c], [g, e], defaultPlatform, true)),
+      matchesModule(Module(b, [b, d], [c, e, g], defaultPlatform, true)),
+      matchesModule(Module(e, [e, g, f], [], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -168,7 +168,7 @@ void main() {
     var b = AssetId('b', 'lib/b.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b], defaultPlatform)),
+      matchesModule(Module(a, [a], [b], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -196,8 +196,8 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c, d], [b], defaultPlatform)),
-      matchesModule(Module(b, [b], [], defaultPlatform)),
+      matchesModule(Module(a, [a, c, d], [b], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -237,12 +237,12 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [d, e, f], defaultPlatform)),
-      matchesModule(Module(b, [b], [d, e], defaultPlatform)),
-      matchesModule(Module(c, [c], [d, f], defaultPlatform)),
-      matchesModule(Module(d, [d], [], defaultPlatform)),
-      matchesModule(Module(e, [e], [d], defaultPlatform)),
-      matchesModule(Module(f, [f], [d], defaultPlatform)),
+      matchesModule(Module(a, [a], [d, e, f], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [d, e], defaultPlatform, true)),
+      matchesModule(Module(c, [c], [d, f], defaultPlatform, true)),
+      matchesModule(Module(d, [d], [], defaultPlatform, true)),
+      matchesModule(Module(e, [e], [d], defaultPlatform, true)),
+      matchesModule(Module(f, [f], [d], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -270,7 +270,7 @@ void main() {
     var sap = AssetId('myapp', 'lib/src/a.part.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, ap, sap], [], defaultPlatform)),
+      matchesModule(Module(a, [a, ap, sap], [], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -298,9 +298,9 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [], defaultPlatform)),
-      matchesModule(Module(b, [b, c], [], defaultPlatform)),
-      matchesModule(Module(sa, [sa], [c], defaultPlatform)),
+      matchesModule(Module(a, [a], [], defaultPlatform, true)),
+      matchesModule(Module(b, [b, c], [], defaultPlatform, true)),
+      matchesModule(Module(sa, [sa], [c], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -332,9 +332,9 @@ void main() {
     var d = AssetId('myapp', 'web/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c], defaultPlatform)),
-      matchesModule(Module(b, [b], [c], defaultPlatform)),
-      matchesModule(Module(c, [c, d], [], defaultPlatform)),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [c], defaultPlatform, true)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -373,9 +373,9 @@ void main() {
     var e = AssetId('myapp', 'web/e.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b], [c], defaultPlatform)),
-      matchesModule(Module(c, [c, d], [], defaultPlatform)),
-      matchesModule(Module(e, [e], [d], defaultPlatform)),
+      matchesModule(Module(a, [a, b], [c], defaultPlatform, true)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
+      matchesModule(Module(e, [e], [d], defaultPlatform, true)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -409,36 +409,41 @@ void main() {
 
     var expectedModulesForPlatform = {
       DartPlatform.dart2js: [
+        matchesModule(Module(
+            primaryId, [primaryId], [htmlId], DartPlatform.dart2js, true)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.dart2js, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.dart2js, true)),
         matchesModule(
-            Module(primaryId, [primaryId], [htmlId], DartPlatform.dart2js)),
-        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.dart2js)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.dart2js)),
-        matchesModule(Module(defaultId, [defaultId], [], DartPlatform.dart2js)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.dart2js)),
+            Module(defaultId, [defaultId], [], DartPlatform.dart2js, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.dart2js, true)),
       ],
       DartPlatform.dartdevc: [
+        matchesModule(Module(
+            primaryId, [primaryId], [htmlId], DartPlatform.dartdevc, true)),
         matchesModule(
-            Module(primaryId, [primaryId], [htmlId], DartPlatform.dartdevc)),
-        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.dartdevc)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.dartdevc)),
+            Module(htmlId, [htmlId], [], DartPlatform.dartdevc, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.dartdevc, true)),
         matchesModule(
-            Module(defaultId, [defaultId], [], DartPlatform.dartdevc)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.dartdevc)),
+            Module(defaultId, [defaultId], [], DartPlatform.dartdevc, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.dartdevc, true)),
       ],
       DartPlatform.flutter: [
         matchesModule(
-            Module(primaryId, [primaryId], [uiId], DartPlatform.flutter)),
-        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.flutter)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.flutter)),
-        matchesModule(Module(defaultId, [defaultId], [], DartPlatform.flutter)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.flutter)),
+            Module(primaryId, [primaryId], [uiId], DartPlatform.flutter, true)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.flutter, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.flutter, true)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], DartPlatform.flutter, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.flutter, true)),
       ],
       DartPlatform.vm: [
-        matchesModule(Module(primaryId, [primaryId], [ioId], DartPlatform.vm)),
-        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.vm)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.vm)),
-        matchesModule(Module(defaultId, [defaultId], [], DartPlatform.vm)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.vm)),
+        matchesModule(
+            Module(primaryId, [primaryId], [ioId], DartPlatform.vm, true)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.vm, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.vm, true)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], DartPlatform.vm, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.vm, true)),
       ]
     };
 

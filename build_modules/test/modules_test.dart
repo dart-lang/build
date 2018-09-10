@@ -20,13 +20,13 @@ void main() {
     final directDepId = AssetId('a', 'lib/src/dep.dart');
     final transitiveDepId = AssetId('b', 'lib/b.dart');
     final deepTransitiveDepId = AssetId('b', 'lib/src/dep.dart');
-    final rootModule = Module(rootId, [rootId], [directDepId], platform);
+    final rootModule = Module(rootId, [rootId], [directDepId], platform, true);
     final directDepModule =
-        Module(directDepId, [directDepId], [transitiveDepId], platform);
-    final transitiveDepModule = Module(
-        transitiveDepId, [transitiveDepId], [deepTransitiveDepId], platform);
+        Module(directDepId, [directDepId], [transitiveDepId], platform, true);
+    final transitiveDepModule = Module(transitiveDepId, [transitiveDepId],
+        [deepTransitiveDepId], platform, true);
     final deepTransitiveDepModule =
-        Module(deepTransitiveDepId, [deepTransitiveDepId], [], platform);
+        Module(deepTransitiveDepId, [deepTransitiveDepId], [], platform, true);
     InMemoryAssetReader reader;
 
     setUp(() {
