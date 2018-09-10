@@ -344,10 +344,12 @@ final _requireJsConfig = '''
   var oldOnError = requirejs.onError;
   requirejs.onError = function(e) {
     if (e.requireModules) {
-      // If error occurred on loading dependencies, we need to invalidate ancessor too.
-      var ancesor = e.message.match(/needed by: (.*)/);
-      if (ancesor) {
-        e.requireModules.push(ancesor[1]);
+      if (e.message) {
+        // If error occurred on loading dependencies, we need to invalidate ancessor too.
+        var ancesor = e.message.match(/needed by: (.*)/);
+        if (ancesor) {
+          e.requireModules.push(ancesor[1]);
+        }
       }
       for (const module of e.requireModules) {
         var errorCallbacks = \$dartLoader.moduleLoadingErrorCallbacks.get(module);
