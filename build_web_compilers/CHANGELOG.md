@@ -1,6 +1,7 @@
 ## 0.4.3+1-dev
 
 - Removed dependency on cli_util.
+- Fix error in require.js error handling code
 
 ## 0.4.3
 
