@@ -1,5 +1,6 @@
-## 0.4.3+1-dev
+## 0.4.4
 
+- Track performance of different builder stages. 
 - Removed dependency on cli_util.
 - Fix error in require.js error handling code
 
