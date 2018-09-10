@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
+import 'package:build/src/builder/build_step.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
@@ -24,6 +25,7 @@ import 'exceptions.dart';
 /// handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
   final Resolvers _resolvers;
+  final StageTracker _stageTracker;
 
   /// The primary input id for this build step.
   @override
@@ -55,8 +57,15 @@ class BuildStepImpl implements BuildStep {
 
   bool _isComplete = false;
 
-  BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage, this._resolvers, this._resourceManager)
+  BuildStepImpl(
+      this.inputId,
+      Iterable<AssetId> expectedOutputs,
+      this._reader,
+      this._writer,
+      this._rootPackage,
+      this._resolvers,
+      this._resourceManager,
+      this._stageTracker)
       : _expectedOutputs = expectedOutputs.toSet();
 
   @override
@@ -132,6 +141,9 @@ class BuildStepImpl implements BuildStep {
     _checkInput(id);
     return _reader.digest(id);
   }
+
+  @override
+  T trackStage<T>(String label, action) => _stageTracker.track(label, action);
 
   Future _futureOrWrite<T>(FutureOr<T> content, Future write(T content)) =>
       (content is Future<T>) ? content.then(write) : write(content as T);

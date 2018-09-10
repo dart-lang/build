@@ -1,3 +1,7 @@
+## 0.12.8
+
+- Add hook method to track performance of separate build stages.
+
 ## 0.12.7+4
 
 - `print` calls inside a Builder will now log at warning instead of info.

@@ -63,4 +63,26 @@ abstract class BuildStep implements AssetReader, AssetWriter {
 
   /// A [Resolver] for [inputId].
   Resolver get resolver;
+
+  /// Tracks performance of [action] separately.
+  ///
+  /// If performance tracking is enabled, tracks [action] as separate stage
+  /// identified by [label]. Otherwise just runs [action].
+  ///
+  /// Returns value returned by [action].
+  /// [action] can be async function returning [Future].
+  T trackStage<T>(String label, T Function() action);
+}
+
+abstract class StageTracker {
+  T track<T>(String label, T Function() action);
+}
+
+class NoOpStageTracker implements StageTracker {
+  static const StageTracker sharedInstance = NoOpStageTracker._();
+
+  @override
+  T track<T>(String label, T Function() action) => action();
+
+  const NoOpStageTracker._();
 }

@@ -9,6 +9,7 @@ import '../analyzer/resolver.dart';
 import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../builder/build_step.dart';
 import '../builder/build_step_impl.dart';
 import '../builder/builder.dart';
 import '../builder/logging.dart';
@@ -29,7 +30,8 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
-    String rootPackage}) async {
+    String rootPackage,
+    StageTracker stageTracker = NoOpStageTracker.sharedInstance}) async {
   var shouldDisposeResourceManager = resourceManager == null;
   resourceManager ??= ResourceManager();
   logger ??= Logger('runBuilder');
@@ -38,7 +40,7 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
     var buildStep = BuildStepImpl(input, outputs, reader, writer,
-        rootPackage ?? input.package, resolvers, resourceManager);
+        rootPackage ?? input.package, resolvers, resourceManager, stageTracker);
     try {
       await builder.build(buildStep);
     } finally {
