@@ -24,10 +24,7 @@ dependencies:
   pedantic: ^1.0.0
   pool: ^1.0.0
   stream_transform: ^0.0.13
-  timing: # Should be ^0.1.0
-    git:
-      url: git://github.com/dart-lang/timing
-      ref: create
+  timing: ^0.1.0
   watcher: ^0.9.7
   yaml: ^2.1.0
 
