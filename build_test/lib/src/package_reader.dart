@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
@@ -61,9 +60,8 @@ class PackageAssetReader extends AssetReader
   factory PackageAssetReader.forPackages(Map<String, String> packageToPath,
           [String rootPackage]) =>
       PackageAssetReader(
-          SyncPackageResolver.config(mapMap(packageToPath,
-              value: (_, String v) =>
-                  Uri.parse(p.absolute(v, 'lib')).replace(scheme: 'file'))),
+          SyncPackageResolver.config(packageToPath.map((k, v) => MapEntry(
+              k, Uri.parse(p.absolute(v, 'lib')).replace(scheme: 'file')))),
           rootPackage);
 
   /// A reader that can resolve files known to the current isolate.
