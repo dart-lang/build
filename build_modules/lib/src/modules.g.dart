@@ -12,6 +12,7 @@ Module _$ModuleFromJson(Map<String, dynamic> json) {
       _assetIdsFromJson(json['s'] as List),
       _assetIdsFromJson(json['d'] as List),
       _platformFromJson(json['pf'] as String),
+      json['is'] as bool,
       isMissing: json['m'] as bool ?? false);
 }
 
@@ -20,5 +21,6 @@ Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
       's': _assetIdsToJson(instance.sources),
       'd': _assetIdsToJson(instance.directDependencies),
       'm': instance.isMissing,
+      'is': instance.isSupported,
       'pf': _platformToJson(instance.platform)
     };

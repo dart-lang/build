@@ -34,10 +34,7 @@ String _topLevelDir(String path) {
   return parts.first;
 }
 
-/// Creates a module based strictly off of a strongly connected component of
-/// libraries nodes.
-///
-/// This creates more modules than we want, but we collapse them later on.
+/// Creates a module containing [componentLibraries].
 Module _moduleForComponent(
     List<ModuleLibrary> componentLibraries, DartPlatform platform) {
   // Name components based on first alphabetically sorted node, preferring
@@ -52,7 +49,10 @@ Module _moduleForComponent(
   var directDependencies = Set<AssetId>()
     ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
     ..removeAll(sources);
-  return Module(primaryId, sources, directDependencies, platform);
+  var isSupported = componentLibraries
+      .expand((l) => l.sdkDeps)
+      .every(platform.supportsLibrary);
+  return Module(primaryId, sources, directDependencies, platform, isSupported);
 }
 
 Map<AssetId, Module> _entryPointModules(
@@ -160,8 +160,8 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
       .toList();
 }
 
-Module _withConsistentPrimarySource(Module m) =>
-    Module(m.sources.reduce(_min), m.sources, m.directDependencies, m.platform);
+Module _withConsistentPrimarySource(Module m) => Module(m.sources.reduce(_min),
+    m.sources, m.directDependencies, m.platform, m.isSupported);
 
 T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
@@ -261,7 +261,8 @@ MetaModule _fineModulesForLibraries(
           library.id,
           library.parts.followedBy([library.id]),
           library.depsForPlatform(platform),
-          platform))
+          platform,
+          library.sdkDeps.every(platform.supportsLibrary)))
       .toList();
   _sortModules(modules);
   return MetaModule(modules);

@@ -1,3 +1,10 @@
+## 0.5.0-dev
+
+### Breaking Changes
+
+- The `Module` constructor has an additional required parameter `isSupported`,
+  which indicates if a module is supported on that module's platform.
+
 ## 0.4.0
 
 ### Improvements

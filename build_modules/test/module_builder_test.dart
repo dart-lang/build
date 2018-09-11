@@ -22,9 +22,10 @@ main() {
     var assetC = AssetId('a', 'lib/c.dart');
     var assetD = AssetId('a', 'lib/d.dart');
     var assetE = AssetId('a', 'lib/e.dart');
-    var moduleA = Module(assetA, [assetA], <AssetId>[], platform);
-    var moduleB = Module(assetB, [assetB, assetC], <AssetId>[], platform);
-    var moduleD = Module(assetD, [assetD, assetE], <AssetId>[], platform);
+    var moduleA = Module(assetA, [assetA], <AssetId>[], platform, true);
+    var moduleB = Module(assetB, [assetB, assetC], <AssetId>[], platform, true);
+    var moduleD =
+        Module(assetD, [assetD, assetE], <AssetId>[], platform, false);
     var metaModule = MetaModule([moduleA, moduleB, moduleD]);
     await testBuilder(ModuleBuilder(platform), {
       'a|lib/a.dart': '',

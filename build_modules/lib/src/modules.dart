@@ -96,6 +96,19 @@ class Module {
   @JsonKey(name: 'm', nullable: true, defaultValue: false)
   final bool isMissing;
 
+  /// Whether or not this module is supported for [platform].
+  ///
+  /// Note that this only indicates support for the [sources] within this
+  /// module, and not its transitive (or direct) dependencies.
+  ///
+  /// Compilers can use this to either silently skip compilation of this module
+  /// or throw early errors or warnings.
+  ///
+  /// Modules are allowed to exist even if they aren't supported, which can help
+  /// with discovering root causes of incompatibility.
+  @JsonKey(name: 'is', nullable: false)
+  final bool isSupported;
+
   @JsonKey(
       name: 'pf',
       nullable: false,
@@ -104,7 +117,7 @@ class Module {
   final DartPlatform platform;
 
   Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies, this.platform,
+      Iterable<AssetId> directDependencies, this.platform, this.isSupported,
       {bool isMissing})
       : this.sources = sources.toSet(),
         this.directDependencies = directDependencies.toSet(),
