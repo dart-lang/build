@@ -2,9 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/dart/constant/value.dart';
 import 'package:build_test/build_test.dart';
-import 'package:collection/collection.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
@@ -15,7 +13,7 @@ void main() {
     setUpAll(() async {
       final library = await resolveSource(r'''
         library test_lib;
-        
+
         const aString = 'Hello';
         const aInt = 1234;
         const aBool = true;
@@ -25,7 +23,7 @@ void main() {
         const aDouble = 1.23;
         const aSymbol = #shanna;
         const aType = DateTime;
-        
+
         @aString    // [0]
         @aInt       // [1]
         @aBool      // [2]
@@ -49,10 +47,10 @@ void main() {
           final int aInt;
           final bool aBool;
           final Example nested;
-          
+
           const Example({this.aString, this.aInt, this.aBool, this.nested});
         }
-        
+
         class Super extends Example {
           const Super() : super(aString: 'Super Hello');
         }
@@ -124,9 +122,8 @@ void main() {
       expect(constants[7].isMap, isTrue, reason: '${constants[7]}');
       expect(constants[7].isLiteral, isTrue);
       expect(
-          mapMap<DartObject, DartObject, int, String>(constants[7].mapValue,
-              key: (k, _) => ConstantReader(k).intValue,
-              value: (_, v) => ConstantReader(v).stringValue),
+          constants[7].mapValue.map((k, v) => MapEntry(
+              ConstantReader(k).intValue, ConstantReader(v).stringValue)),
           {1: 'A', 2: 'B'});
     });
 
@@ -187,7 +184,7 @@ void main() {
     setUpAll(() async {
       final library = await resolveSource(r'''
         library test_lib;
-        
+
         @Int64Like.ZERO
         @Duration(seconds: 30)
         @Enum.field1
@@ -205,35 +202,35 @@ void main() {
 
         class Int64Like {
           static const Int64Like ZERO = const Int64Like._bits(0, 0, 0);
-        
+
           final int _l;
           final int _m;
           final int _h;
-          
+
           const Int64Like._bits(this._l, this._m, this._h);
         }
-        
+
         enum Enum {
           field1,
           field2,
         }
-        
+
         abstract class MapLike {
           const factory MapLike() = LinkedHashMapLike;
         }
-        
+
         class LinkedHashMapLike implements MapLike {
           const LinkedHashMapLike();
         }
-        
+
         class VisibleClass {
           const factory VisbileClass.secret() = _HiddenClass;
         }
-        
+
         class _HiddenClass implements VisibleClass {
           const _HiddenClass();
         }
-        
+
         class _FieldOnlyVisible {
           const _FieldOnlyVisible();
         }
@@ -281,8 +278,8 @@ void main() {
       expect(duration30s.source.toString(), 'dart:core#Duration');
       expect(duration30s.accessor, isEmpty);
       expect(
-          mapMap(duration30s.namedArguments,
-              value: (_, DartObject v) => ConstantReader(v).literalValue),
+          duration30s.namedArguments
+              .map((k, v) => MapEntry(k, ConstantReader(v).literalValue)),
           {
             'seconds': 30,
           });
