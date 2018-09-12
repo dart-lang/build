@@ -57,9 +57,9 @@ BuilderActionPerformance _$BuilderActionPerformanceFromJson(
       json['primaryInput'] == null
           ? null
           : _assetIdFromJson(json['primaryInput'] as String),
-      (json['phases'] as List)?.map((e) => e == null
+      (json['stages'] as List)?.map((e) => e == null
           ? null
-          : BuilderActionPhasePerformance.fromJson(e as Map<String, dynamic>)),
+          : BuilderActionStagePerformance.fromJson(e as Map<String, dynamic>)),
       json['startTime'] == null
           ? null
           : DateTime.parse(json['startTime'] as String),
@@ -77,25 +77,18 @@ Map<String, dynamic> _$BuilderActionPerformanceToJson(
       'primaryInput': instance.primaryInput == null
           ? null
           : _assetIdToJson(instance.primaryInput),
-      'phases': instance.phases?.toList()
+      'stages': instance.stages?.toList()
     };
 
-BuilderActionPhasePerformance _$BuilderActionPhasePerformanceFromJson(
+BuilderActionStagePerformance _$BuilderActionStagePerformanceFromJson(
     Map<String, dynamic> json) {
-  return BuilderActionPhasePerformance(
-      json['label'] as String,
-      json['startTime'] == null
-          ? null
-          : DateTime.parse(json['startTime'] as String),
-      json['stopTime'] == null
-          ? null
-          : DateTime.parse(json['stopTime'] as String));
+  return BuilderActionStagePerformance(json['label'] as String,
+      json['slices'] == null ? null : _slicesFromJson(json['slices'] as List));
 }
 
-Map<String, dynamic> _$BuilderActionPhasePerformanceToJson(
-        BuilderActionPhasePerformance instance) =>
+Map<String, dynamic> _$BuilderActionStagePerformanceToJson(
+        BuilderActionStagePerformance instance) =>
     <String, dynamic>{
-      'startTime': instance.startTime?.toIso8601String(),
-      'stopTime': instance.stopTime?.toIso8601String(),
+      'slices': instance.slices == null ? null : _slicesToJson(instance.slices),
       'label': instance.label
     };

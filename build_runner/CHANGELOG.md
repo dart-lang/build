@@ -1,3 +1,7 @@
+## 0.10.3
+
+- Use timings package for performance tracking.
+
 ## 0.10.2
 
 - Added `--hot-reload` cli option and appropriate functionality.

@@ -1,3 +1,7 @@
+## 0.4.0
+
+- Use timings package for performance tracking.
+
 ## 0.3.1+5
 
 - Fixed an issue where builders that didn't read their primary input would get
