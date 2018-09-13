@@ -88,7 +88,7 @@ class RunCommand extends BuildRunnerCommand {
     ReceivePort onExit, onError;
 
     // Use a completer to determine the exit code.
-    var completer = new Completer<int>();
+    var exitCodeCompleter = new Completer<int>();
 
     try {
       var outputMap = options.outputMap ?? {};
@@ -142,7 +142,7 @@ class RunCommand extends BuildRunnerCommand {
         packageConfig: p.toUri(packageConfigPath),
       );
 
-      return await completer.future;
+      return await exitCodeCompleter.future;
     } on IsolateSpawnException catch (e) {
       logger.severe(
           'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "lib", "web", "test).',
@@ -155,8 +155,8 @@ class RunCommand extends BuildRunnerCommand {
 
       onExit?.close();
       onError?.close();
-      if (!completer.isCompleted) {
-        completer.complete(ExitCode.success.code);
+      if (!exitCodeCompleter.isCompleted) {
+        exitCodeCompleter.complete(ExitCode.success.code);
       }
     }
   }
