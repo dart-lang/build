@@ -7,7 +7,6 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build/src/builder/build_step.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -459,7 +458,7 @@ class _SingleBuild {
                         PerformanceTrackingResolvers(_resolvers, tracker),
                         logger: logger,
                         resourceManager: _resourceManager,
-                        stageTracker: BuildStepStageTracker(tracker))
+                        stageTracker: tracker)
                     .catchError((_) {
                   // Errors tracked through the logger
                 }));
@@ -827,14 +826,4 @@ String _actionLoggerName(
       ? primaryInput.path
       : primaryInput.uri;
   return '${phase.builderLabel} on $asset';
-}
-
-class BuildStepStageTracker implements StageTracker {
-  final BuilderActionTracker _tracker;
-
-  BuildStepStageTracker(this._tracker);
-
-  @override
-  T track<T>(String label, T Function() action) =>
-      _tracker.trackStage(label, action);
 }

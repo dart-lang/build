@@ -1,4 +1,4 @@
-## 0.4.0
+## 0.4.0-dev
 
 - Use timings package for performance tracking.
 - Add hook method to track performance of separate build stages.

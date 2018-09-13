@@ -34,7 +34,6 @@ dev_dependencies:
   b:
     path: test/fixtures/b
 
-# Remove when release
 dependency_overrides:
   build:
     path: ../build

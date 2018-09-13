@@ -33,15 +33,8 @@ void main() {
       var reader = StubAssetReader();
       var writer = StubAssetWriter();
       primary = makeAssetId();
-      buildStep = BuildStepImpl(
-          primary,
-          [],
-          reader,
-          writer,
-          primary.package,
-          AnalyzerResolvers(),
-          resourceManager,
-          NoOpStageTracker.sharedInstance);
+      buildStep = BuildStepImpl(primary, [], reader, writer, primary.package,
+          AnalyzerResolvers(), resourceManager);
     });
 
     test('doesnt allow non-expected outputs', () {
@@ -99,15 +92,8 @@ void main() {
       };
       addAssets(inputs, writer);
       var outputId = AssetId.parse('$primary.copy');
-      var buildStep = BuildStepImpl(
-          primary,
-          [outputId],
-          reader,
-          writer,
-          'a',
-          AnalyzerResolvers(),
-          resourceManager,
-          NoOpStageTracker.sharedInstance);
+      var buildStep = BuildStepImpl(primary, [outputId], reader, writer, 'a',
+          AnalyzerResolvers(), resourceManager);
 
       await builder.build(buildStep);
       await buildStep.complete();
@@ -131,15 +117,8 @@ void main() {
         addAssets(inputs, writer);
 
         var primary = makeAssetId('a|web/a.dart');
-        var buildStep = BuildStepImpl(
-            primary,
-            [],
-            reader,
-            writer,
-            primary.package,
-            AnalyzerResolvers(),
-            resourceManager,
-            NoOpStageTracker.sharedInstance);
+        var buildStep = BuildStepImpl(primary, [], reader, writer,
+            primary.package, AnalyzerResolvers(), resourceManager);
         var resolver = buildStep.resolver;
 
         var aLib = await resolver.libraryFor(primary);
@@ -168,15 +147,8 @@ void main() {
       assetWriter = SlowAssetWriter();
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
-      buildStep = BuildStepImpl(
-          primary,
-          [outputId],
-          StubAssetReader(),
-          assetWriter,
-          primary.package,
-          AnalyzerResolvers(),
-          resourceManager,
-          NoOpStageTracker.sharedInstance);
+      buildStep = BuildStepImpl(primary, [outputId], StubAssetReader(),
+          assetWriter, primary.package, AnalyzerResolvers(), resourceManager);
     });
 
     test('Completes only after writes finish', () async {
@@ -231,7 +203,7 @@ void main() {
           primary.package,
           AnalyzerResolvers(),
           resourceManager,
-          NoOpStageTracker.sharedInstance);
+          NoOpStageTracker.instance);
     });
 
     test('Captures failed asynchronous writes', () {

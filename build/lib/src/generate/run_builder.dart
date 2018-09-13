@@ -31,7 +31,7 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
     {Logger logger,
     ResourceManager resourceManager,
     String rootPackage,
-    StageTracker stageTracker = NoOpStageTracker.sharedInstance}) async {
+    StageTracker stageTracker = NoOpStageTracker.instance}) async {
   var shouldDisposeResourceManager = resourceManager == null;
   resourceManager ??= ResourceManager();
   logger ??= Logger('runBuilder');

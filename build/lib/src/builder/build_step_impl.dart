@@ -57,15 +57,9 @@ class BuildStepImpl implements BuildStep {
 
   bool _isComplete = false;
 
-  BuildStepImpl(
-      this.inputId,
-      Iterable<AssetId> expectedOutputs,
-      this._reader,
-      this._writer,
-      this._rootPackage,
-      this._resolvers,
-      this._resourceManager,
-      this._stageTracker)
+  BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
+      this._writer, this._rootPackage, this._resolvers, this._resourceManager,
+      [this._stageTracker = NoOpStageTracker.instance])
       : _expectedOutputs = expectedOutputs.toSet();
 
   @override
@@ -143,7 +137,8 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  T trackStage<T>(String label, action) => _stageTracker.track(label, action);
+  T trackStage<T>(String label, action, {bool external = false}) =>
+      _stageTracker.trackStage(label, action, external: external);
 
   Future _futureOrWrite<T>(FutureOr<T> content, Future write(T content)) =>
       (content is Future<T>) ? content.then(write) : write(content as T);

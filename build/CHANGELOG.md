@@ -1,6 +1,7 @@
-## 0.12.8
+## 0.12.8-dev
 
-- Add hook method to track performance of separate build stages.
+- Added the `T trackStage<T>(String label, T Function() action);` method to `BuildStep`.
+  Actions that are tracked in this way will show up in the performance timeline at `/$perf`.
 
 ## 0.12.7+4
 
