@@ -137,8 +137,8 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  T trackStage<T>(String label, action, {bool external = false}) =>
-      _stageTracker.trackStage(label, action, external: external);
+  T trackStage<T>(String label, action, {bool isExternal = false}) =>
+      _stageTracker.trackStage(label, action, isExternal: isExternal);
 
   Future _futureOrWrite<T>(FutureOr<T> content, Future write(T content)) =>
       (content is Future<T>) ? content.then(write) : write(content as T);

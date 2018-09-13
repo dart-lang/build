@@ -215,7 +215,7 @@ abstract class BuilderActionTracker
     implements TimeTracker, BuilderActionPerformance, StageTracker {
   /// Tracks the time of [runStage] and associates it with [label].
   ///
-  /// You can specify [runStage] as [external] (waiting for some external
+  /// You can specify [runStage] as [isExternal] (waiting for some external
   /// resource like network, process or file IO). In that case [runStage] will
   /// be tracked as single time slice from the beginning of the stage till
   /// completion of Future returned by [runStage].
@@ -223,7 +223,7 @@ abstract class BuilderActionTracker
   /// Otherwise all separate time slices of asynchronous execution will be
   /// tracked, but waiting for external resources will be a gap.
   @override
-  T trackStage<T>(String label, T runStage(), {bool external = false});
+  T trackStage<T>(String label, T runStage(), {bool isExternal = false});
 
   factory BuilderActionTracker(AssetId primaryInput, String builderKey) =>
       _BuilderActionTrackerImpl(primaryInput, builderKey);
@@ -250,8 +250,8 @@ class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
   _BuilderActionTrackerImpl(this.primaryInput, this.builderKey);
 
   @override
-  T trackStage<T>(String label, T action(), {bool external = false}) {
-    var tracker = external
+  T trackStage<T>(String label, T action(), {bool isExternal = false}) {
+    var tracker = isExternal
         ? BuilderActionStageSimpleTracker(label)
         : BuilderActionStageAsyncTracker(label);
     stages.add(tracker);
@@ -286,7 +286,7 @@ class _NoOpBuilderActionTracker extends NoOpTimeTracker
   AssetId get primaryInput => throw UnimplementedError();
 
   @override
-  T trackStage<T>(String label, T runStage(), {bool external = false}) =>
+  T trackStage<T>(String label, T runStage(), {bool isExternal = false}) =>
       runStage();
 
   @override

@@ -171,7 +171,7 @@ Future _createDevCompilerModule(
         useKernel ? dartdevkDriverResource : dartdevcDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
     response = await buildStep
-        .trackStage('Compile', () => driver.doWork(request), external: true);
+        .trackStage('Compile', () => driver.doWork(request), isExternal: true);
   } finally {
     if (useKernel) await packagesFile.parent.delete(recursive: true);
   }
