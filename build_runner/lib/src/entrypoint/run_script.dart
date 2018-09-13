@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:args/command_runner.dart';
 import 'package:build_runner/build_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
@@ -20,7 +21,7 @@ class RunCommand extends BuildRunnerCommand {
 
   @override
   String get description =>
-      'Performs a single build on the specified targets, and executes a Dart script with the given arguments.';
+      'Performs a single build, and executes a Dart script with the given arguments.';
 
   @override
   String get invocation =>
@@ -29,11 +30,35 @@ class RunCommand extends BuildRunnerCommand {
 
   @override
   SharedOptions readOptions() {
-    // The default option parser will throw if we pass additional arguments,
-    // because it expects positional arguments to be build directories.
+    // This command doesn't allow specifying directories to build, instead it
+    // always builds the `test` directory.
     //
-    // Instead, pass an empty list, and we'll handle positional arguments ourselves.
-    return new SharedOptions.fromParsedArgs(
+    // Here we validate that [argResults.rest] is exactly equal to all the
+    // arguments after the `--`.
+    if (argResults.rest.isNotEmpty) {
+      void throwUsageException() {
+        throw new UsageException(
+            'The `run` command does not support positional args before the, '
+            '`--` separator, which should separate build args from script args.',
+            usage);
+      }
+
+      var separatorPos = argResults.arguments.indexOf('--');
+      if (separatorPos < 0) {
+        throwUsageException();
+      }
+      var expectedRest = argResults.arguments.skip(separatorPos + 1).toList();
+      if (argResults.rest.length != expectedRest.length) {
+        throwUsageException();
+      }
+      for (var i = 0; i < argResults.rest.length; i++) {
+        if (expectedRest[i] != argResults.rest[i]) {
+          throwUsageException();
+        }
+      }
+    }
+
+    return SharedOptions.fromParsedArgs(
         argResults, [], packageGraph.root.name, this);
   }
 
