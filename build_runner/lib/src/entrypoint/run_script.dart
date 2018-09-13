@@ -124,7 +124,7 @@ class RunCommand extends BuildRunnerCommand {
       onExit = new ReceivePort();
       onError = new ReceivePort();
 
-      // On an error, kill the isolate, and rethrow the error.
+      // On an error, kill the isolate, and log the error.
       onError.listen((e) {
         isolate?.kill();
         onExit.close();
