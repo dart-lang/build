@@ -35,7 +35,10 @@ class RunCommand extends BuildRunnerCommand {
     //
     // Here we validate that [argResults.rest] is exactly equal to all the
     // arguments after the `--`.
-    if (argResults.rest.isNotEmpty) {
+
+    var separatorPos = argResults.arguments.indexOf('--');
+
+    if (separatorPos >= 0) {
       void throwUsageException() {
         throw new UsageException(
             'The `run` command does not support positional args before the, '
@@ -43,16 +46,18 @@ class RunCommand extends BuildRunnerCommand {
             usage);
       }
 
-      var separatorPos = argResults.arguments.indexOf('--');
-      if (separatorPos < 0) {
-        throwUsageException();
-      }
       var expectedRest = argResults.arguments.skip(separatorPos + 1).toList();
-      if (argResults.rest.length != expectedRest.length) {
+
+      // Since we expect the first argument to be the name of a script,
+      // we should skip it when comparing extra arguments.
+      var effectiveRest = argResults.rest.skip(1).toList();
+      
+      if (effectiveRest.length != expectedRest.length) {
         throwUsageException();
       }
-      for (var i = 0; i < argResults.rest.length; i++) {
-        if (expectedRest[i] != argResults.rest[i]) {
+
+      for (var i = 0; i < effectiveRest.length; i++) {
+        if (expectedRest[i] != effectiveRest[i]) {
           throwUsageException();
         }
       }
