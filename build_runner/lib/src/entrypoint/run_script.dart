@@ -66,10 +66,7 @@ class RunCommand extends BuildRunnerCommand {
   FutureOr<int> run() async {
     // Ensure that the user passed the name of a file to run.
     if (argResults.rest.isEmpty) {
-      stderr
-        ..writeln('Must specify an executable to run.')
-        ..writeln()
-        ..writeln(usage);
+      logger..severe('Must specify an executable to run.')..severe(usage);
       return ExitCode.usage.code;
     }
 
@@ -115,7 +112,7 @@ class RunCommand extends BuildRunnerCommand {
       );
 
       if (result.status == BuildStatus.failure) {
-        stdout.writeln('Skipping script run due to build failure');
+        logger.warning('Skipping script run due to build failure');
         return result.failureType.exitCode;
       }
 
@@ -147,9 +144,9 @@ class RunCommand extends BuildRunnerCommand {
 
       return await completer.future;
     } on IsolateSpawnException catch (e) {
-      stderr.writeln(e);
-      stderr.writeln(
-          'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "lib", "web", "test).');
+      logger.severe(
+          'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "lib", "web", "test).',
+          e);
       return ExitCode.ioError.code;
     } finally {
       // Clean up the output dir.
