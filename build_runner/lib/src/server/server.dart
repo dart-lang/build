@@ -595,7 +595,13 @@ String _renderPerformance(
   </html>
   ''';
   } on UnimplementedError catch (_) {
-    return '''
+    return _enablePerformanceTracking;
+  } on UnsupportedError catch (_) {
+    return _enablePerformanceTracking;
+  }
+}
+
+final _enablePerformanceTracking = '''
 <html>
   <body>
     <p>
@@ -605,8 +611,6 @@ String _renderPerformance(
   <body>
 </html>
 ''';
-  }
-}
 
 /// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
 shelf.Handler _logRequests(shelf.Handler innerHandler) {
