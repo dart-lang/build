@@ -129,8 +129,8 @@ class RunCommand extends BuildRunnerCommand {
         isolate?.kill();
         onExit.close();
         onError.close();
-        Zone.current.handleUncaughtError(
-            e[0], new StackTrace.fromString(e[1].toString()));
+        logger.severe('Unhandled error from script: $scriptName', e[0],
+            new StackTrace.fromString(e[1].toString()));
       });
 
       isolate = await Isolate.spawnUri(
