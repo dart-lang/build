@@ -135,7 +135,7 @@ class ServeHandler implements BuildState {
     var detailedSlices = false;
     var slicesResolution = 5;
     var sortOrder = PerfSortOrder.startTimeAsc;
-    String filter;
+    var filter = request.url.queryParameters['filter'] ?? '';
     if (request.url.queryParameters['hideSkipped']?.toLowerCase() == 'true') {
       hideSkipped = true;
     }
@@ -150,9 +150,6 @@ class ServeHandler implements BuildState {
     if (request.url.queryParameters.containsKey('sortOrder')) {
       sortOrder = PerfSortOrder
           .values[int.parse(request.url.queryParameters['sortOrder'])];
-    }
-    if (request.url.queryParameters.containsKey('filter')) {
-      filter = request.url.queryParameters['filter'];
     }
     return shelf.Response.ok(
         _renderPerformance(_lastBuildResult.performance, hideSkipped,
@@ -363,17 +360,6 @@ class AssetHandler {
   }
 }
 
-String _getPerformancePath(bool hideSkipped, bool detailedSlices,
-    int slicesResolution, PerfSortOrder sortOrder, String filter) {
-  var params = <String, String>{};
-  if (hideSkipped) params['hideSkipped'] = 'true';
-  if (detailedSlices) params['detailedSlices'] = 'true';
-  if (sortOrder.index != 0) params['sortOrder'] = '${sortOrder.index}';
-  if (slicesResolution != 5) params['slicesResolution'] = '$slicesResolution';
-  if (filter != null) params['filter'] = filter;
-  return Uri(path: '/$_performancePath', queryParameters: params).toString();
-}
-
 String _renderPerformance(
     BuildPerformance performance,
     bool hideSkipped,
@@ -422,18 +408,15 @@ String _renderPerformance(
       ++count;
     }
 
-    RegExp filterRE;
-    if (filter != null) {
-      filterRE = RegExp(filter);
-    }
+    final filterRegex = filter.isNotEmpty ? RegExp(filter) : null;
 
     final actions = performance.actions
         .where((action) =>
             !hideSkipped ||
             action.stages.any((stage) => stage.label == 'Build'))
         .where((action) =>
-            filterRE == null ||
-            filterRE.hasMatch('${action.builderKey}:${action.primaryInput}'))
+            filterRegex == null ||
+            filterRegex.hasMatch('${action.builderKey}:${action.primaryInput}'))
         .toList();
 
     int Function(BuilderActionPerformance, BuilderActionPerformance) comparator;
@@ -505,35 +488,6 @@ String _renderPerformance(
           '"https://github.com/google/google-visualization-issues/issues/2269"'
           ', "", "", $min, ${min + 1000}]');
     }
-
-    var showSkippedHref = _getPerformancePath(
-        !hideSkipped, detailedSlices, slicesResolution, sortOrder, filter);
-    var showSkippedText =
-        hideSkipped ? 'Show Skipped Actions' : 'Hide Skipped Actions';
-    var showSkippedLink = '<a href="$showSkippedHref">$showSkippedText</a>';
-
-    var showSlicesHref = _getPerformancePath(
-        hideSkipped, !detailedSlices, slicesResolution, sortOrder, filter);
-    var showSlicesText =
-        detailedSlices ? 'Hide Ascync Slices' : 'Show Ascync Slices';
-    var showSlicesLink = '<a href="$showSlicesHref">$showSlicesText</a>';
-
-    var sortStartTimeAsc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.startTimeAsc, filter);
-    var sortStartTimeDesc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.startTimeDesc, filter);
-    var sortStopTimeAsc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.stopTimeAsc, filter);
-    var sortStopTimeDesc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.stopTimeDesc, filter);
-    var sortDurationAsc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.durationAsc, filter);
-    var sortDurationDesc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.durationDesc, filter);
-    var sortInnerDurationAsc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.innerDurationAsc, filter);
-    var sortInnerDurationDesc = _getPerformancePath(hideSkipped, detailedSlices,
-        slicesResolution, PerfSortOrder.innerDurationDesc, filter);
     return '''
   <html>
     <head>
@@ -558,7 +512,6 @@ String _renderPerformance(
           console.log('rendering', $count, 'blocks, max', $maxSlices,
             'slices in stage, resolution', $slicesResolution, 'ms');
           var options = {
-//            colors: ['#cbb69d', '#603913', '#c69c6e'],
             tooltip: { isHtml: true }
           };
           var statusText = document.getElementById('status');
@@ -611,16 +564,32 @@ String _renderPerformance(
       </style>
     </head>
     <body>
-      <div class="controls-header">
-        <p>$showSkippedLink</p>
-        <p>$showSlicesLink</p>
-        <p><b>Sort by</b>: </p>
-        <p>Start Time (<a href="$sortStartTimeAsc">Asc</a>, <a href="$sortStartTimeDesc">Desc</a>)</p>
-        <p>Stop Time (<a href="$sortStopTimeAsc">Asc</a>, <a href="$sortStopTimeDesc">Desc</a>)</p>
-        <p>Total Duration (<a href="$sortDurationAsc">Asc</a>, <a href="$sortDurationDesc">Desc</a>)</p>
-        <p>Async Duration (<a href="$sortInnerDurationAsc">Asc</a>, <a href="$sortInnerDurationDesc">Desc</a>)</p>
+      <form class="controls-header" action="/$_performancePath" onchange="this.submit()">
+        <p><label><input type="checkbox" name="hideSkipped" value="true" ${hideSkipped ? 'checked' : ''}> Hide Skipped Actions</label></p>
+        <p><label><input type="checkbox" name="detailedSlices" value="true" ${detailedSlices ? 'checked' : ''}> Show Async Slices</label></p>
+        <p>Sort by: <select name="sortOrder">
+          <option value="0" ${sortOrder.index == 0 ? 'selected' : ''}>Start Time Asc</option>
+          <option value="1" ${sortOrder.index == 1 ? 'selected' : ''}>Start Time Desc</option>
+          <option value="2" ${sortOrder.index == 2 ? 'selected' : ''}>Stop Time Asc</option>
+          <option value="3" ${sortOrder.index == 3 ? 'selected' : ''}>Stop Time Desc</option>
+          <option value="5" ${sortOrder.index == 4 ? 'selected' : ''}>Total Duration Asc</option>
+          <option value="5" ${sortOrder.index == 5 ? 'selected' : ''}>Total Duration Desc</option>
+          <option value="6" ${sortOrder.index == 6 ? 'selected' : ''}>Async Duration Asc</option>
+          <option value="7" ${sortOrder.index == 7 ? 'selected' : ''}>Async Duration Desc</option>
+        </select></p>
+        <p>Slices Resolution: <select name="slicesResolution">
+          <option value="0" ${slicesResolution == 0 ? 'selected' : ''}>0</option>
+          <option value="1" ${slicesResolution == 1 ? 'selected' : ''}>1</option>
+          <option value="3" ${slicesResolution == 3 ? 'selected' : ''}>3</option>
+          <option value="5" ${slicesResolution == 5 ? 'selected' : ''}>5</option>
+          <option value="10" ${slicesResolution == 10 ? 'selected' : ''}>10</option>
+          <option value="15" ${slicesResolution == 15 ? 'selected' : ''}>15</option>
+          <option value="20" ${slicesResolution == 20 ? 'selected' : ''}>20</option>
+          <option value="25" ${slicesResolution == 25 ? 'selected' : ''}>25</option>
+        </select></p>
+        <p>Filter (RegExp): <input type="text" name="filter" value="$filter"></p>
         <p id="status"></p>
-      </div>
+      </form>
       <div id="timeline"></div>
     </body>
   </html>
