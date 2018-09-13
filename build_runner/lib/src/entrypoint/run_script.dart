@@ -90,6 +90,9 @@ class RunCommand extends BuildRunnerCommand {
     // them if there is a spawn exception.
     ReceivePort onExit, onError;
 
+    // Use a completer to determine the exit code.
+    var completer = new Completer<int>();
+
     try {
       var outputMap = options.outputMap ?? {};
       outputMap.addAll({tempPath: null});
@@ -120,9 +123,6 @@ class RunCommand extends BuildRunnerCommand {
       var scriptPath = p.setExtension(p.join(tempPath, scriptName), '.dart');
       var packageConfigPath = p.join(tempPath, '.packages');
 
-      // Use a completer to determine the exit code.
-      var completer = new Completer<int>();
-
       Isolate isolate;
       onExit = new ReceivePort();
       onError = new ReceivePort();
@@ -134,14 +134,6 @@ class RunCommand extends BuildRunnerCommand {
         onError.close();
         Zone.current.handleUncaughtError(
             e[0], new StackTrace.fromString(e[1].toString()));
-      });
-
-      onExit.listen((_) {
-        onExit.close();
-        onError.close();
-        if (!completer.isCompleted) {
-          completer.complete(ExitCode.success.code);
-        }
       });
 
       isolate = await Isolate.spawnUri(
@@ -156,8 +148,6 @@ class RunCommand extends BuildRunnerCommand {
       return await completer.future;
     } on IsolateSpawnException catch (e) {
       stderr.writeln(e);
-      onExit?.close();
-      onError?.close();
       stderr.writeln(
           'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "lib", "web", "test).');
       return ExitCode.ioError.code;
@@ -165,6 +155,12 @@ class RunCommand extends BuildRunnerCommand {
       // Clean up the output dir.
       var dir = new Directory(tempPath);
       if (await dir.exists()) await dir.delete(recursive: true);
+
+      onExit?.close();
+      onError?.close();
+      if (!completer.isCompleted) {
+        completer.complete(ExitCode.success.code);
+      }
     }
   }
 }
