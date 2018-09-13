@@ -145,7 +145,7 @@ class RunCommand extends BuildRunnerCommand {
       return await exitCodeCompleter.future;
     } on IsolateSpawnException catch (e) {
       logger.severe(
-          'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "lib", "web", "test).',
+          'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "bin", "benchmark", "example", "test", "tool").',
           e);
       return ExitCode.ioError.code;
     } finally {
