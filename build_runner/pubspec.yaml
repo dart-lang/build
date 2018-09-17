@@ -55,7 +55,8 @@ dev_dependencies:
   _test_common:
     path: ../_test_common
 
-# Remove when release
 dependency_overrides:
+  build:
+    path: ../build
   build_runner_core:
     path: ../build_runner_core

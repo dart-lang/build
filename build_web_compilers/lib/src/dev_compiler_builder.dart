@@ -8,9 +8,9 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
-import 'package:build_modules/build_modules.dart';
 
 import '../builders.dart';
 import 'common.dart';
@@ -63,7 +63,8 @@ class DevCompilerBuilder implements Builder {
 Future _createDevCompilerModule(
     Module module, BuildStep buildStep, bool useKernel,
     {bool debugMode = true}) async {
-  var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
+  var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
+      () => module.computeTransitiveDependencies(buildStep));
   var transitiveSummaryDeps = transitiveDeps.map((module) => useKernel
       ? module.primarySource.changeExtension(ddcKernelExtension)
       : module.linkedSummaryId);
@@ -72,7 +73,8 @@ Future _createDevCompilerModule(
   var allAssetIds = Set<AssetId>()
     ..addAll(module.sources)
     ..addAll(transitiveSummaryDeps);
-  await scratchSpace.ensureAssets(allAssetIds, buildStep);
+  await buildStep.trackStage(
+      'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.jsId(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary = p.url
@@ -168,7 +170,8 @@ Future _createDevCompilerModule(
     var driverResource =
         useKernel ? dartdevkDriverResource : dartdevcDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
-    response = await driver.doWork(request);
+    response = await buildStep
+        .trackStage('Compile', () => driver.doWork(request), isExternal: true);
   } finally {
     if (useKernel) await packagesFile.parent.delete(recursive: true);
   }

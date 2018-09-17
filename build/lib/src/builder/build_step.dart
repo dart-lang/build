@@ -63,4 +63,36 @@ abstract class BuildStep implements AssetReader, AssetWriter {
 
   /// A [Resolver] for [inputId].
   Resolver get resolver;
+
+  /// Tracks performance of [action] separately.
+  ///
+  /// If performance tracking is enabled, tracks [action] as separate stage
+  /// identified by [label]. Otherwise just runs [action].
+  ///
+  /// You can specify [action] as [isExternal] (waiting for some external
+  /// resource like network, process or file IO). In that case [action] will
+  /// be tracked as single time slice from the beginning of the stage till
+  /// completion of Future returned by [action].
+  ///
+  /// Otherwise all separate time slices of asynchronous execution will be
+  /// tracked, but waiting for external resources will be a gap.
+  ///
+  /// Returns value returned by [action].
+  /// [action] can be async function returning [Future].
+  T trackStage<T>(String label, T Function() action, {bool isExternal = false});
+}
+
+abstract class StageTracker {
+  T trackStage<T>(String label, T Function() action, {bool isExternal = false});
+}
+
+class NoOpStageTracker implements StageTracker {
+  static const StageTracker instance = NoOpStageTracker._();
+
+  @override
+  T trackStage<T>(String label, T Function() action,
+          {bool isExternal = false}) =>
+      action();
+
+  const NoOpStageTracker._();
 }

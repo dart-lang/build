@@ -212,9 +212,18 @@ class BuildPhaseTracker extends SimpleAsyncTimeTracker
 /// Interface for tracking the [TimeSlice] of an individual [Builder] on a given
 /// primary input.
 abstract class BuilderActionTracker
-    implements TimeTracker, BuilderActionPerformance {
-  /// Tracks the time of [runPhase] and associates it with [label].
-  T trackStage<T>(String label, T runPhase());
+    implements TimeTracker, BuilderActionPerformance, StageTracker {
+  /// Tracks the time of [runStage] and associates it with [label].
+  ///
+  /// You can specify [runStage] as [isExternal] (waiting for some external
+  /// resource like network, process or file IO). In that case [runStage] will
+  /// be tracked as single time slice from the beginning of the stage till
+  /// completion of Future returned by [runStage].
+  ///
+  /// Otherwise all separate time slices of asynchronous execution will be
+  /// tracked, but waiting for external resources will be a gap.
+  @override
+  T trackStage<T>(String label, T runStage(), {bool isExternal = false});
 
   factory BuilderActionTracker(AssetId primaryInput, String builderKey) =>
       _BuilderActionTrackerImpl(primaryInput, builderKey);
@@ -241,8 +250,10 @@ class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
   _BuilderActionTrackerImpl(this.primaryInput, this.builderKey);
 
   @override
-  T trackStage<T>(String label, T action()) {
-    var tracker = BuilderActionStageTracker(label);
+  T trackStage<T>(String label, T action(), {bool isExternal = false}) {
+    var tracker = isExternal
+        ? BuilderActionStageSimpleTracker(label)
+        : BuilderActionStageAsyncTracker(label);
     stages.add(tracker);
     return tracker.track(action);
   }
@@ -275,24 +286,42 @@ class _NoOpBuilderActionTracker extends NoOpTimeTracker
   AssetId get primaryInput => throw UnimplementedError();
 
   @override
-  T trackStage<T>(String label, T runPhase()) => runPhase();
+  T trackStage<T>(String label, T runStage(), {bool isExternal = false}) =>
+      runStage();
 
   @override
   Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
-/// Tracks the [TimeSlice] of an individual task.
+/// Tracks the [TimeSliceGroup] of an individual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
-class BuilderActionStageTracker extends AsyncTimeTracker
+abstract class BuilderActionStageTracker
     implements BuilderActionStagePerformance {
+  T track<T>(T Function() action);
+}
+
+class BuilderActionStageAsyncTracker extends AsyncTimeTracker
+    implements BuilderActionStageTracker {
   @override
   final String label;
 
-  BuilderActionStageTracker(this.label) : super(trackNested: false);
+  BuilderActionStageAsyncTracker(this.label) : super(trackNested: false);
 
   @override
   Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);
+}
+
+class BuilderActionStageSimpleTracker extends BuilderActionStagePerformance
+    implements BuilderActionStageTracker {
+  final _tracker = SimpleAsyncTimeTracker();
+
+  BuilderActionStageSimpleTracker(String label) : super(label, []) {
+    slices.add(_tracker);
+  }
+
+  @override
+  T track<T>(T Function() action) => _tracker.track(action);
 }
 
 AssetId _assetIdFromJson(String json) => AssetId.parse(json);

@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:build/src/builder/build_step.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_test/build_test.dart';
 import 'package:pedantic/pedantic.dart';
@@ -194,8 +195,15 @@ void main() {
       var writer = StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
-      buildStep = BuildStepImpl(primary, [output], reader, writer,
-          primary.package, AnalyzerResolvers(), resourceManager);
+      buildStep = BuildStepImpl(
+          primary,
+          [output],
+          reader,
+          writer,
+          primary.package,
+          AnalyzerResolvers(),
+          resourceManager,
+          NoOpStageTracker.instance);
     });
 
     test('Captures failed asynchronous writes', () {

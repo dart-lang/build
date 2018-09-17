@@ -1,3 +1,7 @@
+## 0.4.4-dev
+
+- Track performance of different builder stages. 
+
 ## 0.4.3+1
 
 - Removed dependency on cli_util.

@@ -456,7 +456,9 @@ class _SingleBuild {
             'Build',
             () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
                         PerformanceTrackingResolvers(_resolvers, tracker),
-                        logger: logger, resourceManager: _resourceManager)
+                        logger: logger,
+                        resourceManager: _resourceManager,
+                        stageTracker: tracker)
                     .catchError((_) {
                   // Errors tracked through the logger
                 }));

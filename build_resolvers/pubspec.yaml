@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   analyzer: ">=0.27.1 <0.33.0"
-  build: ">=0.12.7 <0.12.8"
+  build: ">=0.12.7 <0.12.9"
   path: ^1.1.0
 
 dev_dependencies:

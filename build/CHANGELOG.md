@@ -1,3 +1,8 @@
+## 0.12.8-dev
+
+- Added the `T trackStage<T>(String label, T Function() action);` method to `BuildStep`.
+  Actions that are tracked in this way will show up in the performance timeline at `/$perf`.
+
 ## 0.12.7+4
 
 - `print` calls inside a Builder will now log at warning instead of info.
