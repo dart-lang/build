@@ -32,6 +32,7 @@ class BuildPerformance extends TimeSlice {
   factory BuildPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
@@ -46,6 +47,7 @@ class BuildPhasePerformance extends TimeSlice {
   factory BuildPhasePerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPhasePerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
@@ -66,6 +68,7 @@ class BuilderActionPerformance extends TimeSlice {
   factory BuilderActionPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuilderActionPerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
@@ -85,6 +88,7 @@ class BuilderActionStagePerformance extends TimeSliceGroup {
   factory BuilderActionStagePerformance.fromJson(Map<String, dynamic> json) =>
       _$BuilderActionStagePerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);
 }
 
