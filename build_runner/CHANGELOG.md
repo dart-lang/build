@@ -1,6 +1,6 @@
-## 0.10.3
+## 0.10.3-dev
 
-- Use timings package for performance tracking.
+- Improve performance tracking and visualization using timing package
 
 ## 0.10.2
 

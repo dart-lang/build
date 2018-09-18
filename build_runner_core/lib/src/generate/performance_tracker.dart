@@ -61,6 +61,9 @@ class BuilderActionPerformance extends TimeSlice {
 
   final Iterable<BuilderActionStagePerformance> stages;
 
+  Duration get innerDuration => stages.fold(
+      Duration.zero, (duration, stage) => duration + stage.innerDuration);
+
   BuilderActionPerformance(this.builderKey, this.primaryInput, this.stages,
       DateTime startTime, DateTime stopTime)
       : super(startTime, stopTime);
@@ -250,6 +253,10 @@ class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
   @override
   final List<BuilderActionStageTracker> stages = [];
 
+  @override
+  Duration get innerDuration => stages.fold(
+      Duration.zero, (duration, stage) => duration + stage.innerDuration);
+
   _BuilderActionTrackerImpl(this.primaryInput, this.builderKey);
 
   @override
@@ -284,6 +291,9 @@ class _NoOpBuilderActionTracker extends NoOpTimeTracker
   @override
   Iterable<BuilderActionStagePerformance> get stages =>
       throw UnimplementedError();
+
+  @override
+  Duration get innerDuration => throw UnimplementedError();
 
   @override
   AssetId get primaryInput => throw UnimplementedError();
