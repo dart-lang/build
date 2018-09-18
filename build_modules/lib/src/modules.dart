@@ -22,6 +22,8 @@ part 'modules.g.dart';
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
 @JsonSerializable()
+@_AssetIdConverter()
+@_DartPlatformConverter()
 class Module {
   /// The JS file for this module.
   AssetId jsId(String jsModuleExtension) =>
@@ -44,11 +46,7 @@ class Module {
   /// The assets which are built once per module, such as DDC compiled output or
   /// Analyzer summaries, will be named after the primary source and will
   /// encompass everything in [sources].
-  @JsonKey(
-      name: 'p',
-      nullable: false,
-      toJson: _assetIdToJson,
-      fromJson: _assetIdFromJson)
+  @JsonKey(name: 'p', nullable: false)
   final AssetId primarySource;
 
   /// The libraries in the strongly connected import cycle with [primarySource].
@@ -72,20 +70,12 @@ class Module {
   /// Libraries `foo` and `bar` form an import cycle so they would be grouped in
   /// the same module. Every Dart library will only be contained in a single
   /// [Module].
-  @JsonKey(
-      name: 's',
-      nullable: false,
-      toJson: _assetIdsToJson,
-      fromJson: _assetIdsFromJson)
+  @JsonKey(name: 's', nullable: false)
   final Set<AssetId> sources;
 
   /// The [primarySource]s of the [Module]s which contain any library imported
   /// from any of the [sources] in this module.
-  @JsonKey(
-      name: 'd',
-      nullable: false,
-      toJson: _assetIdsToJson,
-      fromJson: _assetIdsFromJson)
+  @JsonKey(name: 'd', nullable: false)
   final Set<AssetId> directDependencies;
 
   /// Missing modules are created if a module depends on another non-existent
@@ -109,11 +99,7 @@ class Module {
   @JsonKey(name: 'is', nullable: false)
   final bool isSupported;
 
-  @JsonKey(
-      name: 'pf',
-      nullable: false,
-      fromJson: _platformFromJson,
-      toJson: _platformToJson)
+  @JsonKey(name: 'pf', nullable: false)
   final DartPlatform platform;
 
   Module(this.primarySource, Iterable<AssetId> sources,
@@ -176,16 +162,23 @@ class Module {
   }
 }
 
-AssetId _assetIdFromJson(List json) => AssetId.deserialize(json);
+class _AssetIdConverter implements JsonConverter<AssetId, List> {
+  const _AssetIdConverter();
 
-List _assetIdToJson(AssetId id) => id.serialize() as List;
+  @override
+  AssetId fromJson(List json) => AssetId.deserialize(json);
 
-Iterable<AssetId> _assetIdsFromJson(Iterable<dynamic> json) =>
-    json.cast<List>().map(_assetIdFromJson);
+  @override
+  List toJson(AssetId object) => object.serialize() as List;
+}
 
-List<List<dynamic>> _assetIdsToJson(Iterable<AssetId> ids) =>
-    ids.map(_assetIdToJson).toList();
+class _DartPlatformConverter implements JsonConverter<DartPlatform, String> {
+  const _DartPlatformConverter();
 
-DartPlatform _platformFromJson(String name) => DartPlatform(name);
+  @override
+  DartPlatform fromJson(String json) => DartPlatform(json);
 
-String _platformToJson(DartPlatform platform) => platform.name;
+  @override
+  String toJson(DartPlatform object) => object.name;
+}
+

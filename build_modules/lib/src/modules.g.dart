@@ -8,19 +8,25 @@ part of 'modules.dart';
 
 Module _$ModuleFromJson(Map<String, dynamic> json) {
   return Module(
-      _assetIdFromJson(json['p'] as List),
-      _assetIdsFromJson(json['s'] as List),
-      _assetIdsFromJson(json['d'] as List),
-      _platformFromJson(json['pf'] as String),
+      const _AssetIdConverter().fromJson(json['p'] as List),
+      (json['s'] as List)
+          .map((e) => const _AssetIdConverter().fromJson(e as List)),
+      (json['d'] as List)
+          .map((e) => const _AssetIdConverter().fromJson(e as List)),
+      const _DartPlatformConverter().fromJson(json['pf'] as String),
       json['is'] as bool,
       isMissing: json['m'] as bool ?? false);
 }
 
 Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
-      'p': _assetIdToJson(instance.primarySource),
-      's': _assetIdsToJson(instance.sources),
-      'd': _assetIdsToJson(instance.directDependencies),
+      'p': const _AssetIdConverter().toJson(instance.primarySource),
+      's': instance.sources
+          .map((e) => const _AssetIdConverter().toJson(e))
+          .toList(),
+      'd': instance.directDependencies
+          .map((e) => const _AssetIdConverter().toJson(e))
+          .toList(),
       'm': instance.isMissing,
       'is': instance.isSupported,
-      'pf': _platformToJson(instance.platform)
+      'pf': const _DartPlatformConverter().toJson(instance.platform)
     };
