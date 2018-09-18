@@ -32,6 +32,7 @@ class BuildPerformance extends TimeSlice {
   factory BuildPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
@@ -46,6 +47,7 @@ class BuildPhasePerformance extends TimeSlice {
   factory BuildPhasePerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPhasePerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
@@ -66,6 +68,7 @@ class BuilderActionPerformance extends TimeSlice {
   factory BuilderActionPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuilderActionPerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
@@ -77,7 +80,6 @@ class BuilderActionStagePerformance extends TimeSliceGroup {
   final String label;
 
   @override
-  @JsonKey(fromJson: _slicesFromJson, toJson: _slicesToJson)
   List<TimeSlice> get slices => super.slices;
 
   BuilderActionStagePerformance(this.label, List<TimeSlice> slices)
@@ -86,6 +88,7 @@ class BuilderActionStagePerformance extends TimeSliceGroup {
   factory BuilderActionStagePerformance.fromJson(Map<String, dynamic> json) =>
       _$BuilderActionStagePerformanceFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);
 }
 
@@ -327,15 +330,3 @@ class BuilderActionStageSimpleTracker extends BuilderActionStagePerformance
 AssetId _assetIdFromJson(String json) => AssetId.parse(json);
 
 String _assetIdToJson(AssetId id) => id.toString();
-
-List<TimeSlice> _slicesFromJson(List json) => json
-    .map((e) => TimeSlice(DateTime.parse(e['startTime'].toString()),
-        DateTime.parse(e['stopTime'].toString())))
-    .toList();
-
-List<Map<String, String>> _slicesToJson(List<TimeSlice> slices) => slices
-    .map((e) => {
-          'startTime': e.startTime.toIso8601String(),
-          'stopTime': e.stopTime.toIso8601String()
-        })
-    .toList();
