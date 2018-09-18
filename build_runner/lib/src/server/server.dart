@@ -386,8 +386,8 @@ String _renderPerformance(
           '<p><b>Stage time:</b> '
           '${stage.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
           '${stage.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
-          '<p><b>Stage total duration:</b> ${stage.duration.inMilliseconds / 1000} seconds</p>'
-          '<p><b>Stage async duration:</b> ${stage.innerDuration.inMilliseconds / 1000} seconds</p>';
+          '<p><b>Stage real duration:</b> ${stage.duration.inMilliseconds / 1000} seconds</p>'
+          '<p><b>Stage user duration:</b> ${stage.innerDuration.inMilliseconds / 1000} seconds</p>';
       if (slice != stage) {
         tooltip += '<p><b>Slice time:</b> '
             '${slice.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
@@ -572,10 +572,10 @@ String _renderPerformance(
           <option value="1" ${sortOrder.index == 1 ? 'selected' : ''}>Start Time Desc</option>
           <option value="2" ${sortOrder.index == 2 ? 'selected' : ''}>Stop Time Asc</option>
           <option value="3" ${sortOrder.index == 3 ? 'selected' : ''}>Stop Time Desc</option>
-          <option value="5" ${sortOrder.index == 4 ? 'selected' : ''}>Total Duration Asc</option>
-          <option value="5" ${sortOrder.index == 5 ? 'selected' : ''}>Total Duration Desc</option>
-          <option value="6" ${sortOrder.index == 6 ? 'selected' : ''}>Async Duration Asc</option>
-          <option value="7" ${sortOrder.index == 7 ? 'selected' : ''}>Async Duration Desc</option>
+          <option value="5" ${sortOrder.index == 4 ? 'selected' : ''}>Real Duration Asc</option>
+          <option value="5" ${sortOrder.index == 5 ? 'selected' : ''}>Real Duration Desc</option>
+          <option value="6" ${sortOrder.index == 6 ? 'selected' : ''}>User Duration Asc</option>
+          <option value="7" ${sortOrder.index == 7 ? 'selected' : ''}>User Duration Desc</option>
         </select></p>
         <p>Slices Resolution: <select name="slicesResolution">
           <option value="0" ${slicesResolution == 0 ? 'selected' : ''}>0</option>
