@@ -77,7 +77,6 @@ class BuilderActionStagePerformance extends TimeSliceGroup {
   final String label;
 
   @override
-  @JsonKey(fromJson: _slicesFromJson, toJson: _slicesToJson)
   List<TimeSlice> get slices => super.slices;
 
   BuilderActionStagePerformance(this.label, List<TimeSlice> slices)
@@ -298,15 +297,3 @@ class BuilderActionStageTracker extends AsyncTimeTracker
 AssetId _assetIdFromJson(String json) => AssetId.parse(json);
 
 String _assetIdToJson(AssetId id) => id.toString();
-
-List<TimeSlice> _slicesFromJson(List json) => json
-    .map((e) => TimeSlice(DateTime.parse(e['startTime'].toString()),
-        DateTime.parse(e['stopTime'].toString())))
-    .toList();
-
-List<Map<String, String>> _slicesToJson(List<TimeSlice> slices) => slices
-    .map((e) => {
-          'startTime': e.startTime.toIso8601String(),
-          'stopTime': e.stopTime.toIso8601String()
-        })
-    .toList();
