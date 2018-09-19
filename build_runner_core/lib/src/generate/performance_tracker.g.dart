@@ -82,13 +82,14 @@ Map<String, dynamic> _$BuilderActionPerformanceToJson(
 
 BuilderActionStagePerformance _$BuilderActionStagePerformanceFromJson(
     Map<String, dynamic> json) {
-  return BuilderActionStagePerformance(json['label'] as String,
-      json['slices'] == null ? null : _slicesFromJson(json['slices'] as List));
+  return BuilderActionStagePerformance(
+      json['label'] as String,
+      (json['slices'] as List)
+          ?.map((e) =>
+              e == null ? null : TimeSlice.fromJson(e as Map<String, dynamic>))
+          ?.toList());
 }
 
 Map<String, dynamic> _$BuilderActionStagePerformanceToJson(
         BuilderActionStagePerformance instance) =>
-    <String, dynamic>{
-      'slices': instance.slices == null ? null : _slicesToJson(instance.slices),
-      'label': instance.label
-    };
+    <String, dynamic>{'label': instance.label, 'slices': instance.slices};
