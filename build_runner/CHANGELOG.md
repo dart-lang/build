@@ -1,6 +1,6 @@
 ## 0.10.3
 
-- Use timings package for performance tracking.
+- Use the `timing` package for performance tracking.
 
 ## 0.10.2
 

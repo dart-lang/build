@@ -3,12 +3,13 @@
 ### Breaking Changes
 
 - The performance tracking apis have changed significantly, and performance
-  tracking now uses the `timings` package.
+  tracking now uses the `timing` package.
 
 ### New Features
 
-- Use timings package for performance tracking.
-- Add hook method to track performance of separate build stages.
+- Use the `timing` package for performance tracking.
+- Added support for `BuildStep.trackStage` to track performance of custom build
+  stages within your builder.
 
 ### Bug Fixes
 
