@@ -1225,6 +1225,50 @@ void main() {
         outputs: {'a|lib/a.hasEntrypoint': 'false'},
       );
     });
+
+    test('primary outputs are reran when failures are fixed', () async {
+      var builders = [
+        applyToRoot(TestBuilder(
+            buildExtensions: replaceExtension('.source', '.g1'),
+            build: (buildStep, _) async {
+              var content = await buildStep.readAsString(buildStep.inputId);
+              if (content == 'true') {
+                throw StateError('Failed!!!');
+              } else {
+                await buildStep.writeAsString(
+                    buildStep.inputId.changeExtension('.g1'), '');
+              }
+            })),
+        applyToRoot(TestBuilder(
+            buildExtensions: replaceExtension('.g1', '.g2'),
+            build: (buildStep, _) async {
+              await buildStep.writeAsString(
+                  buildStep.inputId.changeExtension('.g2'), '');
+            })),
+      ];
+      var writer = InMemoryRunnerAssetWriter();
+      await testBuilders(
+        builders,
+        {'a|lib/a.source': 'true'},
+        status: BuildStatus.failure,
+        writer: writer,
+      );
+
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+
+      await testBuilders(
+          builders,
+          {
+            'a|lib/a.source': 'false',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {
+            'a|lib/a.g1': '',
+            'a|lib/a.g2': '',
+          },
+          writer: writer);
+    });
   });
 }
 
