@@ -59,11 +59,11 @@ Future _focus(String query) async {
   _graphReference.callMethod('setData', [js.JsObject.jsify(graphData)]);
   var primaryNode = nodeInfo['primary'];
   _details.innerHtml = '<strong>ID:</strong> ${primaryNode['id']} <br />'
-      '<strong>Generated:</strong> ${primaryNode['isGenerated']} <br />'
+      '<strong>Type:</strong> ${primaryNode['type']}<br />'
       '<strong>Hidden:</strong> ${primaryNode['hidden']} <br />'
       '<strong>State:</strong> ${primaryNode['state']} <br />'
       '<strong>Was Output:</strong> ${primaryNode['wasOutput']} <br />'
       '<strong>Failed:</strong> ${primaryNode['isFailure']} <br />'
       '<strong>Phase:</strong> ${primaryNode['phaseNumber']} <br />'
-      '<strong>Globs:</strong> ${primaryNode['globs']} <br />';
+      '<strong>Glob:</strong> ${primaryNode['glob']}<br />';
 }
