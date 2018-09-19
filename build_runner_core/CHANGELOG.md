@@ -1,7 +1,19 @@
 ## 0.4.0-dev
 
+### Breaking Changes
+
+- The performance tracking apis have changed significantly, and performance
+  tracking now uses the `timings` package.
+
+### New Features
+
 - Use timings package for performance tracking.
 - Add hook method to track performance of separate build stages.
+
+### Bug Fixes
+
+- Fixed a node invalidation issue when fixing build errors that could cause a
+  situation which was only resolvable with a full rebuild.
 
 ## 0.3.1+5
 

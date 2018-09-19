@@ -787,6 +787,11 @@ class _SingleBuild {
             ..previousInputsDigest = null;
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
+
+          // In the case of a failure, we need to make sure our primary outputs
+          // are linked to this node.
+          node.outputs.add(output);
+          outputNode.inputs.add(node.id);
         }
         await _failureReporter.markSkipped(allSkippedFailures);
       }
