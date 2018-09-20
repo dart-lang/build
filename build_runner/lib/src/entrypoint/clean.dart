@@ -39,7 +39,7 @@ class CleanCommand extends Command<int> {
       var assetGraphFile = File(assetGraphPath);
       if (!assetGraphFile.existsSync()) {
         logger.warning('No asset graph found. '
-            'Skipping cleanup of generated file in source directories.');
+            'Skipping cleanup of generated files in source directories.');
         return;
       }
       AssetGraph assetGraph;
@@ -47,7 +47,7 @@ class CleanCommand extends Command<int> {
         assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
       } catch (_) {
         logger.warning('Failed to deserialize AssetGraph. '
-            'Skipping cleanup of generated file in source directories.');
+            'Skipping cleanup of generated files in source directories.');
         return;
       }
       var packageGraph = PackageGraph.forThisPackage();
