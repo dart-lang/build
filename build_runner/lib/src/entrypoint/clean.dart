@@ -38,23 +38,29 @@ class CleanCommand extends Command<int> {
     await logTimedAsync(logger, 'Cleaning up source outputs', () async {
       var assetGraphFile = File(assetGraphPath);
       if (!assetGraphFile.existsSync()) {
-        logger.warning(
-            'No asset graph found, skipping generated to source file cleanup');
-      } else {
-        var assetGraph =
-            AssetGraph.deserialize(await assetGraphFile.readAsBytes());
-        var packageGraph = PackageGraph.forThisPackage();
-        var writer = FileBasedAssetWriter(packageGraph);
-        for (var id in assetGraph.outputs) {
-          if (id.package != packageGraph.root.name) continue;
-          var node = assetGraph.get(id) as GeneratedAssetNode;
-          if (node.wasOutput) {
-            // Note that this does a file.exists check in the root package and
-            // only tries to delete the file if it exists. This way we only
-            // actually delete to_source outputs, without reading in the build
-            // actions.
-            await writer.delete(id);
-          }
+        logger.warning('No asset graph found. '
+            'Skipping cleanup of generated file in source directories.');
+        return;
+      }
+      AssetGraph assetGraph;
+      try {
+        assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
+      } catch (_) {
+        logger.warning('Failed to deserialize AssetGraph. '
+            'Skipping cleanup of generated file in source directories.');
+        return;
+      }
+      var packageGraph = PackageGraph.forThisPackage();
+      var writer = FileBasedAssetWriter(packageGraph);
+      for (var id in assetGraph.outputs) {
+        if (id.package != packageGraph.root.name) continue;
+        var node = assetGraph.get(id) as GeneratedAssetNode;
+        if (node.wasOutput) {
+          // Note that this does a file.exists check in the root package and
+          // only tries to delete the file if it exists. This way we only
+          // actually delete to_source outputs, without reading in the build
+          // actions.
+          await writer.delete(id);
         }
       }
     });
