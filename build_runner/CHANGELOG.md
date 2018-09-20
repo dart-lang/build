@@ -1,6 +1,6 @@
 ## 0.10.3-dev
 
-- Improve performance tracking and visualization using timing package
+- Improve performance tracking and visualization using the `timing` package.
 
 ## 0.10.2
 
