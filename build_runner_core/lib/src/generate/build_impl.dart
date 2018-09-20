@@ -788,8 +788,8 @@ class _SingleBuild {
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
 
-          // In the case of a failure, we need to make sure our primary outputs
-          // are linked to this node.
+          // Make sure output invalidation follows primary outputs for builds
+          // that won't run.
           node.outputs.add(output);
           outputNode.inputs.add(node.id);
         }
