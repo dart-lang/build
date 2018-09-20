@@ -64,5 +64,6 @@ class NonLibraryAssetException implements Exception {
   const NonLibraryAssetException(this.assetId);
 
   @override
-  String toString() => 'Asset [$assetId] is not a Dart library source file.';
+  String toString() => 'Asset [$assetId] is not a Dart library. '
+      'It may be a part file or a file without Dart source code.';
 }
