@@ -1259,7 +1259,7 @@ void main() {
       var writer = InMemoryRunnerAssetWriter();
       await testBuilders(
         builders,
-        {'a|lib/a.source': 'true'},
+        {'a|web/a.source': 'true'},
         status: BuildStatus.failure,
         writer: writer,
       );
@@ -1270,13 +1270,13 @@ void main() {
       await testBuilders(
           builders,
           {
-            'a|lib/a.source': 'false',
+            'a|web/a.source': 'false',
             'a|$assetGraphPath': serializedGraph,
           },
           outputs: {
-            'a|lib/a.g1': '',
-            'a|lib/a.g2': '',
-            'a|lib/a.g3': '',
+            'a|web/a.g1': '',
+            'a|web/a.g2': '',
+            'a|web/a.g3': '',
           },
           writer: writer);
 
@@ -1284,11 +1284,11 @@ void main() {
       writer.assets.clear();
 
       // Make sure if we mark the original node as a failure again, that we
-      // still mark
+      // also mark all its primary outputs as failures.
       await testBuilders(
           builders,
           {
-            'a|lib/a.source': 'true',
+            'a|web/a.source': 'true',
             'a|$assetGraphPath': serializedGraph,
           },
           outputs: {},
@@ -1299,7 +1299,7 @@ void main() {
           AssetGraph.deserialize(writer.assets[AssetId('a', assetGraphPath)]);
       for (var i = 1; i < 4; i++) {
         var node =
-            finalGraph.get(AssetId('a', 'lib/a.g$i')) as GeneratedAssetNode;
+            finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;
         expect(node.isFailure, isTrue);
       }
     });
