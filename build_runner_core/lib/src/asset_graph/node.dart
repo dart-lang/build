@@ -127,7 +127,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
   @override
   bool get isGenerated => true;
 
-  /// The phase which generated this asset.
+  @override
   final int phaseNumber;
 
   /// The primary input which generated this node.
@@ -275,6 +275,7 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   @override
   bool get isReadable => false;
 
+  @override
   final int phaseNumber;
 
   /// The actual results of the glob.
@@ -291,9 +292,11 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
       package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');
 }
 
-/// A node which has [inputs] and a [NodeState].
+/// A node which has [inputs], a [NodeState], and a [phaseNumber].
 abstract class NodeWithInputs implements AssetNode {
   SplayTreeSet<AssetId> inputs;
+
+  int get phaseNumber;
 
   NodeState state;
 }

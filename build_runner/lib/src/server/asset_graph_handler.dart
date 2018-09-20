@@ -103,7 +103,7 @@ class AssetGraphHandler {
           {'from': '${node.id}', 'to': '$output', 'id': 'e${currentEdge++}'});
       nodes.add({'id': '$output', 'label': '$output'});
     }
-    if (node is GeneratedAssetNode) {
+    if (node is NodeWithInputs) {
       for (final input in node.inputs) {
         edges.add(
             {'from': '$input', 'to': '${node.id}', 'id': 'e${currentEdge++}'});
@@ -113,13 +113,13 @@ class AssetGraphHandler {
     var result = <String, dynamic>{
       'primary': {
         'id': '${node.id}',
-        'isGenerated': node is GeneratedAssetNode,
-        'isGlob': node is GlobAssetNode,
         'hidden': node is GeneratedAssetNode ? node.isHidden : null,
-        'state': node is GeneratedAssetNode ? '${node.state}' : null,
+        'state': node is NodeWithInputs ? '${node.state}' : null,
         'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
         'isFailure': node is GeneratedAssetNode ? node.isFailure : null,
-        'phaseNumber': node is GeneratedAssetNode ? node.phaseNumber : null,
+        'phaseNumber': node is NodeWithInputs ? node.phaseNumber : null,
+        'type': node.runtimeType.toString(),
+        'glob': node is GlobAssetNode ? node.glob.pattern : null,
       },
       'edges': edges,
       'nodes': nodes,
