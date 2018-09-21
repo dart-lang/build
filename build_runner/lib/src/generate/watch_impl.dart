@@ -64,12 +64,12 @@ Future<ServeHandler> watch(
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
-  var logEnvironment =
-      LogEnvironment(environment, verbose: verbose, logLevel: logLevel);
+  var logSubscription =
+      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
   var options = await BuildOptions.create(
-    logEnvironment,
+    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     overrideBuildConfig: overrideBuildConfig,

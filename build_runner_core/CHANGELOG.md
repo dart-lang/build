@@ -4,7 +4,7 @@
 
 - The performance tracking apis have changed significantly, and performance
   tracking now uses the `timing` package.
-- The `BuildOptions` static factory now takes a `LogEnvironment` instead of a
+- The `BuildOptions` static factory now takes a `LogSubscription` instead of a
   `BuildEnvironment`. Logging should be start as early as possible to catch logs
   emitted during setup.
 

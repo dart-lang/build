@@ -32,8 +32,8 @@ const List<String> defaultRootPackageWhitelist = [
 
 final _logger = Logger('BuildOptions');
 
-class LogEnvironment {
-  factory LogEnvironment(BuildEnvironment environment,
+class LogSubscription {
+  factory LogSubscription(BuildEnvironment environment,
       {bool verbose, Level logLevel}) {
     // Set up logging
     verbose ??= false;
@@ -45,10 +45,10 @@ class LogEnvironment {
     Logger.root.level = logLevel;
 
     var logListener = Logger.root.onRecord.listen(environment.onLog);
-    return LogEnvironment._(verbose, logListener);
+    return LogSubscription._(verbose, logListener);
   }
 
-  LogEnvironment._(this.verbose, this.logListener);
+  LogSubscription._(this.verbose, this.logListener);
 
   final bool verbose;
   final StreamSubscription<LogRecord> logListener;
@@ -93,7 +93,7 @@ class BuildOptions {
   });
 
   static Future<BuildOptions> create(
-    LogEnvironment logEnvironment, {
+    LogSubscription logSubscription, {
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
@@ -139,11 +139,11 @@ class BuildOptions {
       debounceDelay: debounceDelay,
       deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,
-      logListener: logEnvironment.logListener,
+      logListener: logSubscription.logListener,
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,
-      verbose: logEnvironment.verbose,
+      verbose: logSubscription.verbose,
       buildDirs: buildDirs,
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,

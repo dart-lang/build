@@ -85,10 +85,10 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
-  var logEnvironment =
-      LogEnvironment(environment, verbose: verbose, logLevel: logLevel);
+  var logSubscription =
+      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   var options = await BuildOptions.create(
-    logEnvironment,
+    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
