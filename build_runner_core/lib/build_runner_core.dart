@@ -15,7 +15,8 @@ export 'src/generate/build_result.dart';
 export 'src/generate/build_runner.dart';
 export 'src/generate/exceptions.dart' show CannotBuildException;
 export 'src/generate/finalized_assets_view.dart' show FinalizedAssetsView;
-export 'src/generate/options.dart';
+export 'src/generate/options.dart'
+    show defaultRootPackageWhitelist, LogEnvironment, BuildOptions;
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuilderActionPerformance, BuildPhasePerformance;
 export 'src/logging/human_readable_duration.dart';

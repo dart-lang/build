@@ -32,6 +32,28 @@ const List<String> defaultRootPackageWhitelist = [
 
 final _logger = Logger('BuildOptions');
 
+class LogEnvironment {
+  factory LogEnvironment(BuildEnvironment environment,
+      {bool verbose, Level logLevel}) {
+    // Set up logging
+    verbose ??= false;
+    logLevel ??= verbose ? Level.ALL : Level.INFO;
+
+    // Severe logs can fail the build and should always be shown.
+    if (logLevel == Level.OFF) logLevel = Level.SEVERE;
+
+    Logger.root.level = logLevel;
+
+    var logListener = Logger.root.onRecord.listen(environment.onLog);
+    return LogEnvironment._(verbose, logListener);
+  }
+
+  LogEnvironment._(this.verbose, this.logListener);
+
+  final bool verbose;
+  final StreamSubscription<LogRecord> logListener;
+}
+
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
   // Build mode options.
@@ -71,31 +93,18 @@ class BuildOptions {
   });
 
   static Future<BuildOptions> create(
-    BuildEnvironment environment, {
+    LogEnvironment logEnvironment, {
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
-    Level logLevel,
     @required PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
     bool skipBuildScriptCheck,
     bool trackPerformance,
-    bool verbose,
     List<String> buildDirs,
     String logPerformanceDir,
     Resolvers resolvers,
   }) async {
-    // Set up logging
-    verbose ??= false;
-    logLevel ??= verbose ? Level.ALL : Level.INFO;
-
-    // Severe logs can fail the build and should always be shown.
-    if (logLevel == Level.OFF) logLevel = Level.SEVERE;
-
-    Logger.root.level = logLevel;
-
-    var logListener = Logger.root.onRecord.listen(environment.onLog);
-
     TargetGraph targetGraph;
     try {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -130,11 +139,11 @@ class BuildOptions {
       debounceDelay: debounceDelay,
       deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,
-      logListener: logListener,
+      logListener: logEnvironment.logListener,
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,
-      verbose: verbose,
+      verbose: logEnvironment.verbose,
       buildDirs: buildDirs,
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,
