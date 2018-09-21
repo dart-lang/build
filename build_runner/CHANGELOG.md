@@ -1,6 +1,7 @@
 ## 0.10.3-dev
 
 - Improve performance tracking and visualization using the `timing` package.
+- Handle bad asset graph in the `clean` command.
 
 ## 0.10.2
 
