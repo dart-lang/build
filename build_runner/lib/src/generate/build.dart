@@ -85,17 +85,17 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
+  var logSubscription =
+      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   var options = await BuildOptions.create(
-    environment,
+    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
-    logLevel: logLevel,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig:
         await findBuildConfigOverrides(packageGraph, configKey),
     enableLowResourcesMode: enableLowResourcesMode,
     trackPerformance: trackPerformance,
-    verbose: verbose,
     buildDirs: buildDirs,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,

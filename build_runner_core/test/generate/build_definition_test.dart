@@ -104,9 +104,9 @@ targets:
       var packageGraph = PackageGraph.forPath(pkgARoot);
       environment =
           OverrideableEnvironment(IOEnvironment(packageGraph), onLog: (_) {});
-      options = await BuildOptions.create(environment,
+      options = await BuildOptions.create(
+          LogSubscription(environment, logLevel: Level.OFF),
           packageGraph: packageGraph,
-          logLevel: Level.OFF,
           skipBuildScriptCheck: true);
     });
 
@@ -358,9 +358,9 @@ targets:
         await options.logListener.cancel();
         logs.clear();
         environment = OverrideableEnvironment(environment, onLog: logs.add);
-        options = await BuildOptions.create(environment,
+        options = await BuildOptions.create(
+            LogSubscription(environment, logLevel: Level.WARNING),
             packageGraph: options.packageGraph,
-            logLevel: Level.WARNING,
             skipBuildScriptCheck: true);
       });
 
@@ -557,7 +557,7 @@ targets:
       // https://github.com/dart-lang/build/issues/1042
       test('a missing sources/include does not cause an error', () async {
         var rootPkg = options.packageGraph.root.name;
-        options = await BuildOptions.create(environment,
+        options = await BuildOptions.create(LogSubscription(environment),
             packageGraph: options.packageGraph,
             overrideBuildConfig: {
               rootPkg: BuildConfig.fromMap(rootPkg, [], {
@@ -585,7 +585,7 @@ targets:
       test('a missing sources/include results in the default whitelist',
           () async {
         var rootPkg = options.packageGraph.root.name;
-        options = await BuildOptions.create(environment,
+        options = await BuildOptions.create(LogSubscription(environment),
             packageGraph: options.packageGraph,
             overrideBuildConfig: {
               rootPkg: BuildConfig.fromMap(rootPkg, [], {
@@ -613,7 +613,7 @@ targets:
 
       test('allows a target config with empty sources list', () async {
         var rootPkg = options.packageGraph.root.name;
-        options = await BuildOptions.create(environment,
+        options = await BuildOptions.create(LogSubscription(environment),
             packageGraph: options.packageGraph,
             overrideBuildConfig: {
               rootPkg: BuildConfig.fromMap(rootPkg, [], {
