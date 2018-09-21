@@ -92,6 +92,7 @@ void main() {
         for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
           globNode.inputs.add(node.id);
+          globNode.results.add(node.id);
           node.outputs.add(globNode.id);
           graph.add(node);
           var phaseNum = n;
