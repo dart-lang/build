@@ -18,13 +18,11 @@ import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
 
-Future<String> generateBuildScript([String configKey]) => logTimedAsync(
-    Logger('Entrypoint'),
-    'Generating build script',
-    () => _generateBuildScript(configKey));
+Future<String> generateBuildScript() => logTimedAsync(
+    Logger('Entrypoint'), 'Generating build script', _generateBuildScript);
 
-Future<String> _generateBuildScript(String configKey) async {
-  final builders = await _findBuilderApplications(configKey);
+Future<String> _generateBuildScript() async {
+  final builders = await _findBuilderApplications();
   final library = Library((b) => b.body.addAll([
         literalList(
                 builders,
@@ -43,14 +41,14 @@ Future<String> _generateBuildScript(String configKey) async {
 ///
 /// Adds `apply` expressions based on the BuildefDefinitions from any package
 /// which has a `build.yaml`.
-Future<Iterable<Expression>> _findBuilderApplications(String configKey) async {
+Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
   final packageGraph = PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
           [packageGraph.root], (node) => node.name, (node) => node.dependencies)
       .expand((c) => c);
   final buildConfigOverrides =
-      await findBuildConfigOverrides(packageGraph, configKey);
+      await findBuildConfigOverrides(packageGraph, null);
   Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
     if (buildConfigOverrides.containsKey(package.name)) {
       return buildConfigOverrides[package.name];
