@@ -110,14 +110,14 @@ Future<BuildResult> testBuilders(
   builderConfigOverrides ??= const {};
   var environment = OverrideableEnvironment(IOEnvironment(packageGraph),
       reader: reader, writer: writer, onLog: onLog);
-  var options = await BuildOptions.create(environment,
+  var logSubscription =
+      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
+  var options = await BuildOptions.create(logSubscription,
       deleteFilesByDefault: deleteFilesByDefault,
       packageGraph: packageGraph,
-      logLevel: logLevel,
       skipBuildScriptCheck: true,
       overrideBuildConfig: overrideBuildConfig,
       enableLowResourcesMode: enableLowResourcesMode,
-      verbose: verbose,
       buildDirs: buildDirs,
       logPerformanceDir: logPerformanceDir);
 
