@@ -3,7 +3,8 @@
 ### Breaking Changes
 
 - Changed the return type of `Builder.build` from `Future<dynamic>` to
-  `FutureOr<void>`.
+  `FutureOr<void>`. This should not be breaking for most `Builder` authors, it
+  is only breaking for build system implementations that run `Builder`s.
 
 ## 0.12.8
 
