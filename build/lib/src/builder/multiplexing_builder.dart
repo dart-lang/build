@@ -17,10 +17,17 @@ class MultiplexingBuilder implements Builder {
   MultiplexingBuilder(this._builders);
 
   @override
-  Future build(BuildStep buildStep) => Future.wait(_builders
-      .where((builder) => builder.buildExtensions.keys
-          .any((extension) => buildStep.inputId.path.endsWith(extension)))
-      .map((builder) => builder.build(buildStep)));
+  Future<List<dynamic>> build(BuildStep buildStep) {
+    var futures = _builders
+        .where((builder) => builder.buildExtensions.keys
+            .any((extension) => buildStep.inputId.path.endsWith(extension)))
+        .map((builder) => builder.build(buildStep))
+        .whereType<Future>();
+    if (futures.isNotEmpty) {
+      return Future.wait(futures);
+    }
+    return null;
+  }
 
   /// Merges output extensions from all builders.
   ///

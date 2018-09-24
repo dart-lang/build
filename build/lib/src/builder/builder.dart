@@ -8,7 +8,7 @@ import 'build_step.dart';
 /// The basic builder class, used to build new files from existing ones.
 abstract class Builder {
   /// Generates the outputs for a given [BuildStep].
-  Future build(BuildStep buildStep);
+  FutureOr<void> build(BuildStep buildStep);
 
   /// Mapping from input file extension to output file extensions.
   ///

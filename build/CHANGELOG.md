@@ -1,4 +1,11 @@
-## 0.12.8-dev
+## 1.0.0-dev
+
+### Breaking Changes
+
+- Changed the return type of `Builder.build` from `Future<dynamic>` to
+  `FutureOr<void>`.
+
+## 0.12.8
 
 - Added the `T trackStage<T>(String label, T Function() action);` method to `BuildStep`.
   Actions that are tracked in this way will show up in the performance timeline at `/$perf`.
@@ -186,6 +193,7 @@ as this is going to inevitably be a required feature. This will hopefully be the
 last breaking change before the `1.0` release, but it is a fairly large one.
 
 ### New Features
+
 - The `AssetWriter` class now has a
   `Future writeAsBytes(AssetId id, List<int> bytes)` method.
 - The `AssetReader` class now has a `Future<List<int>> readAsBytes(AssetId id)`
@@ -199,6 +207,7 @@ last breaking change before the `1.0` release, but it is a fairly large one.
   library source file before trying to resolve it's LibraryElement
 
 ### Breaking Changes
+
 - The `Asset` class has been removed entirely.
 - The `AssetWriter#writeAsString` signature has changed to
   `Future writeAsString(AssetId id, String contents, {Encoding encoding})`.
@@ -256,16 +265,20 @@ and other classes that implement those interfaces.
 - Fix `dev_dependencies` so tests run.
 
 ## 0.4.1+2
+
 - Stop using removed argument `useSharedSources` when constructing Resolvers
 - Support code_transformers 0.5.x
 
 ## 0.4.1+1
+
 - Support analyzer 0.29.x
 
 ## 0.4.1
+
 - Support analyzer 0.28.x
 
 ## 0.4.0
+
 - **BREAKING** BuilderTransformer must be constructed with a List<Builder>
   rather than inherit and override.
 - Simplifies Resolver interface so it is possible to add implementations which
@@ -275,29 +288,36 @@ and other classes that implement those interfaces.
 - Updates some test expectations to match the new behavior of analyzer.
 
 ## 0.3.0+6
+
 - Convert `packages` paths in the file watcher to their absolute paths. This
   fixes [#109](https://github.com/dart-lang/build/issues/109).
 
 ## 0.3.0+5
+
 - Fix duplicate logs issue when running as a BuilderTransformer.
 
 - Support `crypto` 2.0.0.
 
 ## 0.3.0+4
+
 - Add error and stack trace to log messages from the BuilderTransformer.
 
 ## 0.3.0+3
+
 - Fixed BuilderTransformer so that logs are passed on to the TransformLogger.
 
 ## 0.3.0+2
+
 - Enable serving files outside the server root by default (enables serving
   files from other packages).
 
 ## 0.3.0+1
+
 - Fix an AssetGraph bug where generated nodes might be created as non-generated
   nodes if they are attempted to be read from previous build steps.
 
 ## 0.3.0
+
 - **BREAKING** Renamed values of three enums to be lower-case:
   `BuildType`, `BuildStatus`, and `PackageDependencyType`.
 - Updated to crypto ^1.0.0.
@@ -305,6 +325,7 @@ and other classes that implement those interfaces.
 - Added option to pass in a custom `Resolvers` instance.
 
 ## 0.2.1
+
 - Added the `deleteFilesByDefault` option to all top level methods. This will
   skip the prompt to delete files, and instead act as if you responded `y`.
   - Also by default in a non-console environment the prompt no longer exists and
@@ -320,6 +341,7 @@ and other classes that implement those interfaces.
 - Improved logging for non-posix consoles.
 
 ## 0.2.0
+
 - Updated the top level classes to take a `PhaseGroup` instead of a
   `List<List<Phase>>`.
 - Added logic to handle nested package directories.
@@ -330,18 +352,21 @@ and other classes that implement those interfaces.
   may also use this folder.
 
 ## 0.1.4
+
 - Added top level `serve` function.
   - Just like `watch`, but it provides a server which blocks on any ongoing
     builds before responding to requests.
 - Minor bug fixes.
 
 ## 0.1.3
+
 - Builds are now fully incremental, even on startup.
   - Builds will be invalidated if the build script or any of its dependencies
     are updated since there is no way of knowing how that would affect things.
 - Added `lastModified` to `AssetReader` (only matters if you implement it).
 
 ## 0.1.2
+
 - Exposed the top level `watch` function. This can be used to watch the file
   system and run incremental rebuilds on changes.
   - Initial build is still non-incremental.
