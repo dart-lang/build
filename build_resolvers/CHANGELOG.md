@@ -1,4 +1,4 @@
-## 0.2.2+4-dev
+## 0.2.2+4
 
 - Removed dependency on cli_util.
 - Increased the upper bound for the `build` to `<0.12.9`.
