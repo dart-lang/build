@@ -1,4 +1,4 @@
-## 0.10.3-dev
+## 0.10.3
 
 - Improve performance tracking and visualization using the `timing` package.
 - Handle bad asset graph in the `clean` command.
