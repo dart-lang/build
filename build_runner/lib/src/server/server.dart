@@ -15,7 +15,7 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-import 'package:timing/src/timing.dart';
+import 'package:timing/timing.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../generate/watch_impl.dart';
