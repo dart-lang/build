@@ -1,4 +1,4 @@
-## 0.12.8-dev
+## 0.12.8
 
 - Added the `T trackStage<T>(String label, T Function() action);` method to `BuildStep`.
   Actions that are tracked in this way will show up in the performance timeline at `/$perf`.
