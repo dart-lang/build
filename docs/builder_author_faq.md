@@ -2,7 +2,7 @@
 
 Use `build_to: source` when:
 - The generated code _does not_ depend on details outside of the containing
-  package that might change with a different version of it's dependencies. Any
+  package that might change with a different version of its dependencies. Any
   details from the _generating_ package, or any other dependency used by the
   generated code must not change without a major version bump.
 - The generated code should be `pub publish`ed with the package and used by
