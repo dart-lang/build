@@ -14,6 +14,8 @@
     request that we export the api you were using previously. These will be
     considered on an individual basis but the bar for additional exports will be
     high.
+- Removed support for the --[no-]assume-tty command line argument as it is no
+  longer needed.
 
 ## 0.10.3
 
