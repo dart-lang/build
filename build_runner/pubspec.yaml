@@ -10,7 +10,7 @@ environment:
 dependencies:
   args: ">=1.4.0 <2.0.0"
   async: ">=1.13.3 <3.0.0"
-  build: ">=0.12.8 <0.12.9"
+  build: ">=1.0.0 <1.1.0"
   build_config: ^0.3.1
   build_resolvers: ^0.2.0
   build_runner_core: ^1.0.0
@@ -36,6 +36,7 @@ dependencies:
   shelf_web_socket: ^0.2.2+4
   stack_trace: ^1.9.0
   stream_transform: ^0.0.9
+  timing: ^0.1.1
   watcher: ^0.9.7
   web_socket_channel: ^1.0.9
   yaml: ^2.1.0
@@ -56,5 +57,3 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
-  build_runner_core:
-    path: ../build_runner_core
