@@ -1,3 +1,7 @@
+## 0.3.1+3
+
+- Support `package:build` version `1.x.x`.
+
 ## 0.3.1+2
 
 - Support `package:json_annotation` v1.
