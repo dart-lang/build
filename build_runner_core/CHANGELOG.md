@@ -1,4 +1,4 @@
-## 1.0.1-dev
+## 1.0.1
 
 - Update `package:build` version constraint to `>1.0.0 <1.0.1`.
 
