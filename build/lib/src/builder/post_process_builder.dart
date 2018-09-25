@@ -29,7 +29,7 @@ abstract class PostProcessBuilder {
   Iterable<String> get inputExtensions;
 
   /// Generates the outputs and deletes for [buildStep].
-  FutureOr<Null> build(PostProcessBuildStep buildStep);
+  FutureOr<void> build(PostProcessBuildStep buildStep);
 }
 
 typedef PostProcessBuilderFactory = PostProcessBuilder Function(BuilderOptions);
