@@ -27,7 +27,7 @@ Future<String> _generateBuildScript() async {
         literalList(
                 builders,
                 refer('BuilderApplication',
-                    'package:build_runner/build_runner.dart'))
+                    'package:build_runner_core/build_runner_core.dart'))
             .assignFinal('_builders')
             .statement,
         _main()
@@ -152,7 +152,8 @@ Expression _applyBuilder(BuilderDefinition definition) {
     namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
   }
   var import = _buildScriptImport(definition.import);
-  return refer('apply', 'package:build_runner/build_runner.dart').call([
+  return refer('apply', 'package:build_runner_core/build_runner_core.dart')
+      .call([
     literalString(definition.key),
     literalList(
         definition.builderFactories.map((f) => refer(f, import)).toList()),
@@ -191,7 +192,8 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
             .constInstance([], inputSetArgs);
   }
   var import = _buildScriptImport(definition.import);
-  return refer('applyPostProcess', 'package:build_runner/build_runner.dart')
+  return refer('applyPostProcess',
+          'package:build_runner_core/build_runner_core.dart')
       .call([
     literalString(definition.key),
     refer(definition.builderFactory, import),
@@ -216,16 +218,20 @@ String _buildScriptImport(String import) {
 Expression _findToExpression(BuilderDefinition definition) {
   switch (definition.autoApply) {
     case AutoApply.none:
-      return refer('toNoneByDefault', 'package:build_runner/build_runner.dart')
+      return refer('toNoneByDefault',
+              'package:build_runner_core/build_runner_core.dart')
           .call([]);
     case AutoApply.dependents:
-      return refer('toDependentsOf', 'package:build_runner/build_runner.dart')
+      return refer('toDependentsOf',
+              'package:build_runner_core/build_runner_core.dart')
           .call([literalString(definition.package)]);
     case AutoApply.allPackages:
-      return refer('toAllPackages', 'package:build_runner/build_runner.dart')
+      return refer('toAllPackages',
+              'package:build_runner_core/build_runner_core.dart')
           .call([]);
     case AutoApply.rootPackage:
-      return refer('toRoot', 'package:build_runner/build_runner.dart').call([]);
+      return refer('toRoot', 'package:build_runner_core/build_runner_core.dart')
+          .call([]);
   }
   throw ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }

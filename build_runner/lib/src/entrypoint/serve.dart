@@ -62,8 +62,7 @@ class ServeCommand extends WatchCommand {
         servers[target] = await _bindServer(options, target);
       }));
     } on SocketException catch (e) {
-      var listener = Logger.root.onRecord
-          .listen(stdIOLogListener(assumeTty: options.assumeTty));
+      var listener = Logger.root.onRecord.listen(stdIOLogListener());
       logger.severe(
           'Error starting server at ${e.address.address}:${e.port}, address '
           'is already in use. Please kill the server running on that port or '
@@ -77,7 +76,6 @@ class ServeCommand extends WatchCommand {
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      assumeTty: options.assumeTty,
       outputMap: options.outputMap,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,

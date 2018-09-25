@@ -18,13 +18,14 @@ Stream<String> stdOutLines;
 
 final String originalBuildContent = '''
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 
 main() async {
-  await watch([
+  await run(['watch', '--delete-conflicting-outputs', '-o', 'output_dir'], [
     applyToRoot(new TestBuilder(
         buildExtensions: appendExtension('.copy', from: '.txt')))
-  ], deleteFilesByDefault: true, outputMap: {'output_dir' : null});
+  ]);
 }
 ''';
 

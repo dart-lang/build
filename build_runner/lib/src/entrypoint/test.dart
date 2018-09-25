@@ -92,7 +92,6 @@ class TestCommand extends BuildRunnerCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         configKey: options.configKey,
-        assumeTty: options.assumeTty,
         outputMap: outputMap,
         outputSymlinksOnly: options.outputSymlinksOnly,
         packageGraph: packageGraph,
