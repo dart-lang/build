@@ -20,6 +20,7 @@ main() {
       var originalBuildContent = '''
 import 'dart:io';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
