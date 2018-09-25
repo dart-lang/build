@@ -1,4 +1,4 @@
-## 1.0.0-dev
+## 1.0.0
 
 ### Breaking Changes
 
@@ -8,8 +8,9 @@
 
 ## 0.12.8
 
-- Added the `T trackStage<T>(String label, T Function() action);` method to `BuildStep`.
-  Actions that are tracked in this way will show up in the performance timeline at `/$perf`.
+- Added the `T trackStage<T>(String label, T Function() action);` method to
+  `BuildStep`. Actions that are tracked in this way will show up in the
+  performance timeline at `/$perf`.
 
 ## 0.12.7+4
 
