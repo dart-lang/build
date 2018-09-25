@@ -1,3 +1,7 @@
+## 0.9.1+1
+
+* Allow `package:build` version 1.0.0.
+
 ## 0.9.1
 
 * The result of `ConstantReader.revive()` now returns a `Revivable` that assumes
@@ -57,7 +61,7 @@
 
 * Eliminate redundant new lines in the core builder. These were almost removed
   by running the default formatter. Now the unformatted code more closely
-  matches the default output. 
+  matches the default output.
 
 ## 0.8.1+1
 
@@ -65,7 +69,7 @@
 
 ## 0.8.1
 
-* Cleanup logging output that duplicates headers provided by 
+* Cleanup logging output that duplicates headers provided by
   `package:build_runner`.
 
 * `InvalidGenerationSourceError` added an optional `element`
@@ -78,7 +82,7 @@
 
 * `Revivable` no longer throws a type error when attempting to revive a
   reference to a top-level function or static-class method. Now is returns a
-  reference to that function or method, as expected. 
+  reference to that function or method, as expected.
 
 ## 0.7.6
 
