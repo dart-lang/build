@@ -1,3 +1,7 @@
+## 1.0.1-dev
+
+- Update `package:build` version constraint to `>1.0.0 <1.0.1`.
+
 ## 1.0.0
 
 ### Breaking Changes
