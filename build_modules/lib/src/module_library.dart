@@ -174,9 +174,10 @@ class ModuleLibrary {
       });
 
   List<AssetId> depsForPlatform(DartPlatform platform) {
-    return _deps.followedBy(conditionalDeps.map((conditions) {
+    return _deps.followedBy(conditionalDeps.map((conditions) sync* {
       var selectedImport = conditions[r'$default'];
       assert(selectedImport != null);
+      yield(selectedImport);
       for (var condition in conditions.keys) {
         if (condition == r'$default') continue;
         if (!condition.startsWith('dart.library.')) {
@@ -186,12 +187,11 @@ class ModuleLibrary {
         }
         var library = condition.substring('dart.library.'.length);
         if (platform.supportsLibrary(library)) {
-          selectedImport = conditions[condition];
-          break;
+          yield conditions[condition];
+          return;
         }
       }
-      return selectedImport;
-    })).toList();
+    }).expand((assetId) => assetId)).toList();
   }
 }
 
