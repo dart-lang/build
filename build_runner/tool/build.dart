@@ -12,12 +12,12 @@ import 'package:build_web_compilers/builders.dart';
 main(List<String> args) async {
   await run(args, [
     apply(
-        'build_modules|modules',
+        'build_modules|dart2js',
         [
           moduleLibraryBuilder,
-          metaModuleBuilder,
-          metaModuleCleanBuilder,
-          moduleBuilder,
+          metaModuleBuilderFactoryForPlatform('dart2js'),
+          metaModuleCleanBuilderFactoryForPlatform('dart2js'),
+          moduleBuilderFactoryForPlatform('dart2js'),
         ],
         toAllPackages(),
         isOptional: true,
