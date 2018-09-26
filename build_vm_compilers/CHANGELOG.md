@@ -1,3 +1,7 @@
+## 0.1.1+1
+
+Support `package:build` version `1.x.x`.
+
 ## 0.1.1
 
 Support the latest build_modules.
