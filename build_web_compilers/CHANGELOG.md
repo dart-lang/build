@@ -1,3 +1,7 @@
+## 0.4.4+1
+
+- Support `package:build_modules` version `1.x.x`.
+
 ## 0.4.4
 
 - Track performance of different builder stages.
