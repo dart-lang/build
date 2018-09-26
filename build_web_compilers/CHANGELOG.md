@@ -1,6 +1,6 @@
-## 0.4.4-dev
+## 0.4.4
 
-- Track performance of different builder stages. 
+- Track performance of different builder stages.
 
 ## 0.4.3+1
 
