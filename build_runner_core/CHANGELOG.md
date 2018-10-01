@@ -1,7 +1,27 @@
-## 0.4.0-dev
+## 1.0.1
 
-- Use timings package for performance tracking.
-- Add hook method to track performance of separate build stages.
+- Update `package:build` version constraint to `>1.0.0 <1.0.1`.
+
+## 1.0.0
+
+### Breaking Changes
+
+- The performance tracking apis have changed significantly, and performance
+  tracking now uses the `timing` package.
+- The `BuildOptions` static factory now takes a `LogSubscription` instead of a
+  `BuildEnvironment`. Logging should be start as early as possible to catch logs
+  emitted during setup.
+
+### New Features
+
+- Use the `timing` package for performance tracking.
+- Added support for `BuildStep.trackStage` to track performance of custom build
+  stages within your builder.
+
+### Bug Fixes
+
+- Fixed a node invalidation issue when fixing build errors that could cause a
+  situation which was only resolvable with a full rebuild.
 
 ## 0.3.1+5
 

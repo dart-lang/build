@@ -787,6 +787,11 @@ class _SingleBuild {
             ..previousInputsDigest = null;
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
+
+          // Make sure output invalidation follows primary outputs for builds
+          // that won't run.
+          node.outputs.add(output);
+          outputNode.inputs.add(node.id);
         }
         await _failureReporter.markSkipped(allSkippedFailures);
       }

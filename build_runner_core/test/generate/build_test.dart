@@ -1225,6 +1225,84 @@ void main() {
         outputs: {'a|lib/a.hasEntrypoint': 'false'},
       );
     });
+
+    test('primary outputs are reran when failures are fixed', () async {
+      var builders = [
+        applyToRoot(
+            TestBuilder(
+                buildExtensions: replaceExtension('.source', '.g1'),
+                build: (buildStep, _) async {
+                  var content = await buildStep.readAsString(buildStep.inputId);
+                  if (content == 'true') {
+                    throw StateError('Failed!!!');
+                  } else {
+                    await buildStep.writeAsString(
+                        buildStep.inputId.changeExtension('.g1'), '');
+                  }
+                }),
+            isOptional: true),
+        applyToRoot(
+            TestBuilder(
+                buildExtensions: replaceExtension('.g1', '.g2'),
+                build: (buildStep, _) async {
+                  await buildStep.writeAsString(
+                      buildStep.inputId.changeExtension('.g2'), '');
+                }),
+            isOptional: true),
+        applyToRoot(TestBuilder(
+            buildExtensions: replaceExtension('.g2', '.g3'),
+            build: (buildStep, _) async {
+              await buildStep.writeAsString(
+                  buildStep.inputId.changeExtension('.g3'), '');
+            })),
+      ];
+      var writer = InMemoryRunnerAssetWriter();
+      await testBuilders(
+        builders,
+        {'a|web/a.source': 'true'},
+        status: BuildStatus.failure,
+        writer: writer,
+      );
+
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+
+      await testBuilders(
+          builders,
+          {
+            'a|web/a.source': 'false',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {
+            'a|web/a.g1': '',
+            'a|web/a.g2': '',
+            'a|web/a.g3': '',
+          },
+          writer: writer);
+
+      serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      writer.assets.clear();
+
+      // Make sure if we mark the original node as a failure again, that we
+      // also mark all its primary outputs as failures.
+      await testBuilders(
+          builders,
+          {
+            'a|web/a.source': 'true',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {},
+          status: BuildStatus.failure,
+          writer: writer);
+
+      var finalGraph =
+          AssetGraph.deserialize(writer.assets[AssetId('a', assetGraphPath)]);
+      for (var i = 1; i < 4; i++) {
+        var node =
+            finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;
+        expect(node.isFailure, isTrue);
+      }
+    });
   });
 }
 

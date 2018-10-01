@@ -10,6 +10,7 @@ import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/builders.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/builder.dart';
 
 Future main(List<String> args) async {

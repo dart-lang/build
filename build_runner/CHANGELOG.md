@@ -1,6 +1,26 @@
+## 1.0.0
+
+### Breaking Changes
+
+- Massive cleanup of the public api. The only thing exported from this package
+  is now the `run` method. The goal is to reduce the surface area in order to
+  stabilize this package, since it is directly depended on by all users.
+  - Removed all exports from build_runner_core, if you are creating a custom
+    build script you will need to import build_runner_core directly and add a
+    dependency on it.
+  - Stopped exporting the `build` and `watch` functions directly, as well as the
+    `ServeHandler`.
+  - If this has broken your use case please file an issue on the package and
+    request that we export the api you were using previously. These will be
+    considered on an individual basis but the bar for additional exports will be
+    high.
+- Removed support for the --[no-]assume-tty command line argument as it is no
+  longer needed.
+
 ## 0.10.3
 
-- Use timings package for performance tracking.
+- Improve performance tracking and visualization using the `timing` package.
+- Handle bad asset graph in the `clean` command.
 
 ## 0.10.2
 

@@ -120,7 +120,7 @@ class _AssetGraphDeserializer {
               .values[serializedNode[_GlobField.State.index + offset] as int],
           lastKnownDigest: digest,
           results: _deserializeAssetIds(
-                  serializedNode[_GlobField.Results.index] as List)
+                  serializedNode[_GlobField.Results.index + offset] as List)
               ?.toList(),
         );
         break;
