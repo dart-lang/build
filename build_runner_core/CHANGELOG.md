@@ -1,3 +1,9 @@
+## 1.1.0
+
+- Support running the build script as a snapshot. When the original build script
+  changes and running as a snapshot, the build script will exit with an exit
+  code of 75.
+
 ## 1.0.2
 
 - Support the latest `package:json_annotation`.

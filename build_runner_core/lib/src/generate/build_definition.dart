@@ -93,8 +93,14 @@ class _Loader {
           _environment.reader, _options.packageGraph, assetGraph);
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
-        _logger.warning('Invalidating asset graph due to build script update');
+        _logger.warning('Invalidating asset graph due to build script update!');
         var deletedSourceOutputs = await _cleanupOldOutputs(assetGraph);
+
+        if (!Platform.script.path.endsWith('.dart')) {
+          // We have to be regenerated if running from a snapshot.
+          throw BuildScriptChangedException();
+        }
+
         inputSources.removeAll(deletedSourceOutputs);
         assetGraph = null;
         buildScriptUpdates = null;
@@ -180,7 +186,7 @@ class _Loader {
   /// Deletes the generated output directory.
   ///
   /// Typically this should be done whenever an asset graph is thrown away.
-  Future<Null> _deleteGeneratedDir() async {
+  Future<void> _deleteGeneratedDir() async {
     var generatedDir = Directory(generatedOutputDirectory);
     if (await generatedDir.exists()) {
       await generatedDir.delete(recursive: true);

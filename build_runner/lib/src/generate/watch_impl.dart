@@ -240,6 +240,10 @@ class WatchImpl implements BuildState {
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
+
+          /// Intentional unhandled async error here, which will be caught at the
+          /// top level. We want to return a valid BuildResult.
+          unawaited(Future.error(BuildScriptChangedException()));
           return BuildResult(BuildStatus.failure, []);
         }
       }
@@ -302,7 +306,7 @@ class WatchImpl implements BuildState {
         .onDone(() async {
           await currentBuild;
           await _build?.beforeExit();
-          await controller.close();
+          if (!controller.isClosed) await controller.close();
           _logger.info('Builds finished. Safe to exit\n');
         });
 
@@ -322,6 +326,14 @@ class WatchImpl implements BuildState {
 
         firstBuild = await _build.run({});
       } on CannotBuildException {
+        firstBuild = BuildResult(BuildStatus.failure, []);
+      } on BuildScriptChangedException catch (e, s) {
+        _terminateCompleter.complete();
+
+        /// Intentional unhandled async error here, which will be caught at the
+        /// top level. We want to allow the rest of the synchronous cleanup
+        /// logic to happen.
+        unawaited(Future.error(e, s));
         firstBuild = BuildResult(BuildStatus.failure, []);
       }
 

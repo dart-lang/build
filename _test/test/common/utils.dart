@@ -14,6 +14,7 @@ Directory _toolDir = Directory(p.join('.dart_tool', 'build'));
 
 Process _process;
 Stream<String> _stdOutLines;
+Stream<String> get stdOutLines => _stdOutLines;
 
 final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 

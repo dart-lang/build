@@ -8,6 +8,7 @@ import 'dart:isolate';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
@@ -17,6 +18,9 @@ import 'package:stack_trace/stack_trace.dart';
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
+
+const scriptSnapshotLocation = '$scriptLocation.snapshot';
+final logger = Logger('Bootstrap');
 
 Future<Null> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
@@ -64,46 +68,80 @@ Future<Null> main(List<String> args) async {
     return;
   }
 
-  var exitPort = ReceivePort();
-  var errorPort = ReceivePort();
-  var messagePort = ReceivePort();
-  var errorListener = errorPort.listen((e) {
-    stderr.writeln('\n\nYou have hit a bug in build_runner');
-    stderr.writeln('Please file an issue with reproduction steps at '
-        'https://github.com/dart-lang/build/issues\n\n');
-    final error = e[0];
-    final trace = e[1] as String;
-    stderr.writeln(error);
-    stderr.writeln(Trace.parse(trace).terse);
-    if (exitCode == 0) exitCode = 1;
-  });
-  try {
-    await Isolate.spawnUri(
-        Uri.file(p.absolute(scriptLocation)), args, messagePort.sendPort,
-        onExit: exitPort.sendPort, onError: errorPort.sendPort);
-  } on IsolateSpawnException catch (e) {
-    print(red.wrap('Failed to launch the build script. '
-        'This is likely due to a misconfigured builder definition. '
-        'See the generated script at $scriptLocation to find errors.'));
-    print(e);
-    messagePort.sendPort.send(ExitCode.config.code);
-    exitPort.sendPort.send(null);
-  }
-  StreamSubscription exitCodeListener;
-  exitCodeListener = messagePort.listen((isolateExitCode) {
-    if (isolateExitCode is! int) {
-      throw StateError(
-          'Bad response from isolate, expected an exit code but got '
-          '$isolateExitCode');
+  var shouldRerun = true;
+  while (shouldRerun) {
+    shouldRerun = false;
+
+    if (!await _createSnapshotIfMissing()) return;
+
+    var exitPort = ReceivePort();
+    var errorPort = ReceivePort();
+    var messagePort = ReceivePort();
+    var errorListener = errorPort.listen((e) {
+      stderr.writeln('\n\nYou have hit a bug in build_runner');
+      stderr.writeln('Please file an issue with reproduction steps at '
+          'https://github.com/dart-lang/build/issues\n\n');
+      final error = e[0];
+      final trace = e[1] as String;
+      stderr.writeln(error);
+      stderr.writeln(Trace.parse(trace).terse);
+      if (exitCode == 0) exitCode = 1;
+    });
+    try {
+      await Isolate.spawnUri(Uri.file(p.absolute(scriptSnapshotLocation)), args,
+          messagePort.sendPort,
+          onExit: exitPort.sendPort, onError: errorPort.sendPort);
+    } on IsolateSpawnException catch (e) {
+      logger.severe(
+          'Failed to launch the build script. '
+          'This is likely due to a misconfigured builder definition. '
+          'See the generated script at $scriptLocation to find errors.',
+          e);
+      messagePort.sendPort.send(ExitCode.config.code);
+      exitPort.sendPort.send(null);
     }
-    exitCode = isolateExitCode as int;
-    exitCodeListener.cancel();
-    exitCodeListener = null;
-  });
-  await exitPort.first;
-  await errorListener.cancel();
+    StreamSubscription exitCodeListener;
+    exitCodeListener = messagePort.listen((isolateExitCode) {
+      if (isolateExitCode is! int) {
+        throw StateError(
+            'Bad response from isolate, expected an exit code but got '
+            '$isolateExitCode');
+      }
+      if (isolateExitCode == ExitCode.tempFail.code) {
+        shouldRerun = true;
+      } else {
+        exitCode = isolateExitCode as int;
+      }
+      exitCodeListener.cancel();
+      exitCodeListener = null;
+    });
+    await exitPort.first;
+    await errorListener.cancel();
+    await exitCodeListener?.cancel();
+  }
   await logListener?.cancel();
-  await exitCodeListener?.cancel();
+}
+
+/// Creates a script snapshot for the build script.
+///
+/// Returns whether or not the snapshot was successfully created or existed
+/// already.
+///
+/// If the snapshot failed to create a bad exit code is set.
+Future<bool> _createSnapshotIfMissing() async {
+  var snapshotFile = File(scriptSnapshotLocation);
+  if (!await snapshotFile.exists()) {
+    await logTimedAsync(logger, 'Creating build script snapshot...', () async {
+      await Process.run(Platform.executable,
+          ['--snapshot=$scriptSnapshotLocation', scriptLocation]);
+    });
+    if (!await snapshotFile.exists()) {
+      logger.severe('Failed to snapshot build script $scriptLocation');
+      exitCode = ExitCode.software.code;
+      return false;
+    }
+  }
+  return true;
 }
 
 const _generateCommand = 'generate-build-script';
