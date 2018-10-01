@@ -20,11 +20,9 @@ Module _$ModuleFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
       'p': const _AssetIdConverter().toJson(instance.primarySource),
-      's': instance.sources
-          .map((e) => const _AssetIdConverter().toJson(e))
-          .toList(),
+      's': instance.sources.map(const _AssetIdConverter().toJson).toList(),
       'd': instance.directDependencies
-          .map((e) => const _AssetIdConverter().toJson(e))
+          .map(const _AssetIdConverter().toJson)
           .toList(),
       'm': instance.isMissing,
       'is': instance.isSupported,
