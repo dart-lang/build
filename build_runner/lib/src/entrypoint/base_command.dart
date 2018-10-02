@@ -23,11 +23,6 @@ abstract class BuildRunnerCommand extends Command<int> {
 
   void _addBaseFlags(bool symlinksDefault) {
     argParser
-      ..addFlag(assumeTtyOption,
-          help: 'Enables colors and interactive input when the script does not'
-              ' appear to be running directly in a terminal, for instance when it'
-              ' is a subprocess',
-          negatable: true)
       ..addFlag(deleteFilesByDefaultOption,
           help:
               'By default, the user will be prompted to delete any files which '

@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(const ['integration'])
+@Tags(['integration'])
 
 import 'dart:async';
 import 'dart:convert';
@@ -20,6 +20,7 @@ main() {
       var originalBuildContent = '''
 import 'dart:io';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -140,11 +141,13 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 
 main() async {
-  await build(
+  await run(
+    ['build'],
     [applyToRoot(new GlobbingBuilder(new Glob('**.txt')))]);
 }
 ''')
@@ -248,11 +251,13 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 
 main() async {
-  await build(
+  await run(
+    ['build'],
     [applyToRoot(new OverDeclaringGlobbingBuilder(
         new Glob('**.txt')))]);
 }
@@ -308,6 +313,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
       final buildContent = '''
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -395,6 +401,7 @@ targets:
     final buildContent = '''
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
@@ -511,15 +518,20 @@ global_options:
         ]),
         d.dir('tool', [
           d.file('build.dart', '''
+import 'dart:io';
+
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 
 main() async {
-  await build([
-    applyToRoot(new TestBuilder()),
-    applyToRoot(new TestBuilder(
-        buildExtensions: appendExtension('.copy', from: '.txt.copy'))),
-  ]);
+  exitCode = await run(
+    ['build'],
+    [
+      applyToRoot(new TestBuilder()),
+      applyToRoot(new TestBuilder(
+          buildExtensions: appendExtension('.copy', from: '.txt.copy'))),
+    ]);
 }
 ''')
         ]),

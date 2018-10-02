@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(const ['integration'])
+@Tags(['integration'])
 
 import 'dart:async';
 import 'dart:convert';
@@ -14,7 +14,7 @@ import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 
 import 'package:_test_common/common.dart';

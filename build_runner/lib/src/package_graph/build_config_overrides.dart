@@ -8,7 +8,10 @@ import 'dart:io';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+
+final _log = Logger('BuildConfigOverrides');
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     PackageGraph packageGraph, String configKey) async {
@@ -26,6 +29,10 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
   }
   if (configKey != null) {
     final file = File('build.$configKey.yaml');
+    if (!file.existsSync()) {
+      _log.warning('Cannot find build.$configKey.yaml for specified config.');
+      throw CannotBuildException();
+    }
     final yaml = file.readAsStringSync();
     final config = BuildConfig.parse(packageGraph.root.name,
         packageGraph.root.dependencies.map((n) => n.name), yaml);

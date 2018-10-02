@@ -1,9 +1,16 @@
-## 0.4.0-dev
+## 1.0.1
+
+- Update `package:build` version constraint to `>1.0.0 <1.0.1`.
+
+## 1.0.0
 
 ### Breaking Changes
 
 - The performance tracking apis have changed significantly, and performance
   tracking now uses the `timing` package.
+- The `BuildOptions` static factory now takes a `LogSubscription` instead of a
+  `BuildEnvironment`. Logging should be start as early as possible to catch logs
+  emitted during setup.
 
 ### New Features
 

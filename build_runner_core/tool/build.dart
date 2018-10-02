@@ -7,8 +7,8 @@ import 'package:source_gen/builder.dart';
 main() async {
   var packageGraph = PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(IOEnvironment(packageGraph));
-  var options =
-      await BuildOptions.create(environment, packageGraph: packageGraph);
+  var options = await BuildOptions.create(LogSubscription(environment),
+      packageGraph: packageGraph);
 
   BuildResult result;
   var build = await BuildRunner.create(
