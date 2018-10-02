@@ -1,3 +1,7 @@
+# 0.3.3
+
+- Support `package:build` `v1.0.0`.
+
 # 0.3.2
 
 - Increased the upper bound for the sdk to `<3.0.0`.
