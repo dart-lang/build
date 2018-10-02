@@ -8,7 +8,7 @@ environment:
   sdk: ">=2.0.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=0.27.1 <0.33.0"
+  analyzer: ">=0.27.1 <0.34.0"
   build: ">=0.12.7 <0.12.9"
   path: ^1.1.0
 
