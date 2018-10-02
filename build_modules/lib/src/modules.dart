@@ -181,4 +181,3 @@ class _DartPlatformConverter implements JsonConverter<DartPlatform, String> {
   @override
   String toJson(DartPlatform object) => object.name;
 }
-
