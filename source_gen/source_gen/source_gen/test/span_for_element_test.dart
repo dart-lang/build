@@ -13,19 +13,66 @@ void main() {
 
   setUpAll(() async {
     library = await resolveSource(r'''
-      library test_lib;
+library test_lib;
 
-      abstract class Example implements List {}
-    ''', (resolver) => resolver.findLibraryByName('test_lib'),
+abstract class Example implements List {
+  List<A> get getter => null;
+  set setter(int value) {}
+  int field;
+  int get fieldProp => field;
+  set fieldProp(int value) {
+    field = value;
+  }
+}
+''', (resolver) => resolver.findLibraryByName('test_lib'),
         inputId: AssetId('test_lib', 'lib/test_lib.dart'));
   });
 
-  test('should highlight the use of "class Example"', () {
+  test('should highlight the use of "class Example"', () async {
     expect(
-        spanForElement(library.getType('Example')).message('Here it is'),
-        ''
-        'line 3, column 22 of package:test_lib/test_lib.dart: Here it is\n'
-        '      abstract class Example implements List {}\n'
-        '                     ^^^^^^^');
+        spanForElement(library.getType('Example')).message('Here it is'), r'''
+line 3, column 16 of package:test_lib/test_lib.dart: Here it is
+abstract class Example implements List {
+               ^^^^^^^''');
+  });
+
+  test('should correctly highlight getter', () async {
+    expect(
+        spanForElement(library.getType('Example').getField('getter'))
+            .message('Here it is'),
+        r'''
+line 4, column 15 of package:test_lib/test_lib.dart: Here it is
+  List<A> get getter => null;
+              ^^^^^^''');
+  });
+
+  test('should correctly highlight setter', () async {
+    expect(
+        spanForElement(library.getType('Example').getField('setter'))
+            .message('Here it is'),
+        r'''
+line 5, column 7 of package:test_lib/test_lib.dart: Here it is
+  set setter(int value) {}
+      ^^^^^^''');
+  });
+
+  test('should correctly highlight field', () async {
+    expect(
+        spanForElement(library.getType('Example').getField('field'))
+            .message('Here it is'),
+        r'''
+line 6, column 7 of package:test_lib/test_lib.dart: Here it is
+  int field;
+      ^^^^^''');
+  });
+
+  test('highlight getter with getter/setter property', () async {
+    expect(
+        spanForElement(library.getType('Example').getField('fieldProp'))
+            .message('Here it is'),
+        r'''
+line 7, column 11 of package:test_lib/test_lib.dart: Here it is
+  int get fieldProp => field;
+          ^^^^^^^^^''');
   });
 }

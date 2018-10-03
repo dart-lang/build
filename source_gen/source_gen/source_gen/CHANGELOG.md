@@ -1,3 +1,7 @@
+## 0.9.1+2
+
+* Correctly handle properties in `spanForElement`.
+
 ## 0.9.1+1
 
 * Allow `package:build` version 1.0.0.

@@ -37,5 +37,17 @@ SourceSpan spanForElement(Element element, [SourceFile file]) {
     }
     file = SourceFile.fromString(contents.data, url: url);
   }
+  if (element.nameOffset < 0) {
+    if (element is PropertyInducingElement) {
+      if (element.getter != null) {
+        return spanForElement(element.getter);
+      }
+
+      if (element.setter != null) {
+        return spanForElement(element.setter);
+      }
+    }
+  }
+
   return file.span(element.nameOffset, element.nameOffset + element.nameLength);
 }
