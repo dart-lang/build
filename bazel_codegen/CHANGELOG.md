@@ -1,3 +1,7 @@
+# 0.3.3+1
+
+- Increased the upper bound for `package:analyzer` to '<0.34.0'.
+
 # 0.3.3
 
 - Support `package:build` `v1.0.0`.
