@@ -1,3 +1,7 @@
+## 0.4.4+2
+
+- Support `package:analyzer` version `0.33.x`.
+
 ## 0.4.4+1
 
 - Support `package:build_modules` version `1.x.x`.
