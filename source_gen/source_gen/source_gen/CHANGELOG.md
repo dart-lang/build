@@ -1,3 +1,7 @@
+## 0.9.1+3
+
+* Support the latest `pkg:analyzer`.
+
 ## 0.9.1+2
 
 * Correctly handle properties in `spanForElement`.
