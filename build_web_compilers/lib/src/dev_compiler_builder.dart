@@ -26,7 +26,7 @@ const jsSourceMapExtension = '.ddc.js.map';
 class DevCompilerBuilder implements Builder {
   final bool useKernel;
 
-  DevCompilerBuilder({bool useKernel}) : this.useKernel = useKernel ?? false;
+  DevCompilerBuilder({bool useKernel}) : useKernel = useKernel ?? false;
 
   @override
   final buildExtensions = {

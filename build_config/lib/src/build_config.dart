@@ -111,20 +111,20 @@ class BuildConfig {
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
-  })  : this.buildTargets = buildTargets ??
+  })  : buildTargets = buildTargets ??
             {
               _defaultTarget(packageName ?? currentPackage): BuildTarget(
                 dependencies: currentPackageDefaultDependencies,
               )
             },
-        this.globalOptions = (globalOptions ?? const {}).map((key, config) =>
+        globalOptions = (globalOptions ?? const {}).map((key, config) =>
             MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
-        this.builderDefinitions = _normalizeBuilderDefinitions(
+        builderDefinitions = _normalizeBuilderDefinitions(
             builderDefinitions ?? const {}, packageName ?? currentPackage),
-        this.postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
+        postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
             postProcessBuilderDefinitions ?? const {},
             packageName ?? currentPackage),
-        this.packageName = packageName ?? currentPackage {
+        packageName = packageName ?? currentPackage {
     // Set up the expandos for all our build targets and definitions so they
     // can know which package and builder key they refer to.
     this.buildTargets.forEach((key, target) {

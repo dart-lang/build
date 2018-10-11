@@ -35,12 +35,12 @@ class BuildTarget {
     InputSet sources,
     Iterable<String> dependencies,
     Map<String, TargetBuilderConfig> builders,
-  })  : this.dependencies = (dependencies ?? currentPackageDefaultDependencies)
+  })  : dependencies = (dependencies ?? currentPackageDefaultDependencies)
             .map((d) => normalizeTargetKeyUsage(d, currentPackage))
             .toList(),
-        this.builders = (builders ?? const {}).map((key, config) =>
+        builders = (builders ?? const {}).map((key, config) =>
             MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
-        this.sources = sources ?? InputSet.anything;
+        sources = sources ?? InputSet.anything;
 
   factory BuildTarget.fromJson(Map json) => _$BuildTargetFromJson(json);
 

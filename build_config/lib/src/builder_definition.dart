@@ -117,24 +117,24 @@ class BuilderDefinition {
     TargetBuilderConfigDefaults defaults,
   })  :
         // ignore: deprecated_member_use
-        this.target = target != null
+        target = target != null
             ? normalizeTargetKeyUsage(target, currentPackage)
             : null,
-        this.autoApply = autoApply ?? AutoApply.none,
-        this.requiredInputs = requiredInputs?.toList() ?? const [],
-        this.runsBefore = runsBefore
+        autoApply = autoApply ?? AutoApply.none,
+        requiredInputs = requiredInputs?.toList() ?? const [],
+        runsBefore = runsBefore
                 ?.map((builder) =>
                     normalizeBuilderKeyUsage(builder, currentPackage))
                 ?.toList() ??
             const [],
-        this.appliesBuilders = appliesBuilders
+        appliesBuilders = appliesBuilders
                 ?.map((builder) =>
                     normalizeBuilderKeyUsage(builder, currentPackage))
                 ?.toList() ??
             const [],
-        this.isOptional = isOptional ?? false,
-        this.buildTo = buildTo ?? BuildTo.cache,
-        this.defaults = defaults ?? const TargetBuilderConfigDefaults() {
+        isOptional = isOptional ?? false,
+        buildTo = buildTo ?? BuildTo.cache,
+        defaults = defaults ?? const TargetBuilderConfigDefaults() {
     if (builderFactories.isEmpty) {
       throw ArgumentError.value(builderFactories, 'builderFactories',
           'Must have at least one value.');
@@ -202,7 +202,7 @@ class PostProcessBuilderDefinition {
     this.inputExtensions,
     this.target,
     TargetBuilderConfigDefaults defaults,
-  }) : this.defaults = defaults ?? const TargetBuilderConfigDefaults();
+  }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
   factory PostProcessBuilderDefinition.fromJson(Map json) =>
       _$PostProcessBuilderDefinitionFromJson(json);

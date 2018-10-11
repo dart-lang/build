@@ -25,8 +25,8 @@ abstract class Heartbeat {
   final Duration waitDuration;
 
   Heartbeat({Duration checkInterval, Duration waitDuration})
-      : this.checkInterval = checkInterval ?? const Duration(milliseconds: 100),
-        this.waitDuration = waitDuration ?? const Duration(seconds: 5);
+      : checkInterval = checkInterval ?? const Duration(milliseconds: 100),
+        waitDuration = waitDuration ?? const Duration(seconds: 5);
 
   /// Invoked if [waitDuration] time has elapsed since the last call to [ping].
   void onTimeout(Duration elapsed);

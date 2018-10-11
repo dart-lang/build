@@ -27,7 +27,7 @@ class BuildResult {
   BuildResult(this.status, List<AssetId> outputs,
       {this.performance, FailureType failureType})
       : outputs = List.unmodifiable(outputs),
-        this.failureType = failureType == null && status == BuildStatus.failure
+        failureType = failureType == null && status == BuildStatus.failure
             ? FailureType.general
             : failureType;
   @override
