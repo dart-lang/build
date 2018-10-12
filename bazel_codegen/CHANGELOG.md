@@ -1,3 +1,7 @@
+# 0.3.4
+
+- Fix the exceptions thrown when attempting to read invalid assets.
+
 # 0.3.3+1
 
 - Increased the upper bound for `package:analyzer` to '<0.34.0'.

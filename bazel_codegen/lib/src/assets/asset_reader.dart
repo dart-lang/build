@@ -57,9 +57,8 @@ class BazelAssetReader extends AssetReader {
 
   String _filePathForId(AssetId id) {
     final packagePath = _packageMap[id.package];
-    if (!_assetFilter.isValid(id) || packagePath == null) {
-      throw CodegenError('Attempted to read invalid input $id.');
-    }
+    if (packagePath == null) throw PackageNotFoundException(id.package);
+    if (!_assetFilter.isValid(id)) throw AssetNotFoundException(id);
     return p.join(packagePath, id.path);
   }
 
