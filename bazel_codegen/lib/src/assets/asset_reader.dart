@@ -38,8 +38,9 @@ class BazelAssetReader extends AssetReader {
         _assetFilter = assetFilter;
 
   BazelAssetReader.forTest(
-      this._rootPackage, this._packageMap, this._fileSystem)
-      : _assetFilter = const _AllowAllAssets();
+      this._rootPackage, this._packageMap, this._fileSystem,
+      {AssetFilter assetFilter})
+      : _assetFilter = assetFilter ?? const _AllowAllAssets();
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {

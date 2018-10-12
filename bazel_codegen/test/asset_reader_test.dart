@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
+import 'package:_bazel_codegen/src/assets/asset_filter.dart';
 import 'package:_bazel_codegen/src/assets/asset_reader.dart';
 import 'package:_bazel_codegen/src/assets/file_system.dart';
 
@@ -20,10 +21,13 @@ void main() {
   final f2AssetId = AssetId(packageName, 'lib/filename2.dart');
   BazelAssetReader reader;
   FakeFileSystem fileSystem;
+  FakeAssetFilter assetFilter;
 
   setUp(() {
     fileSystem = FakeFileSystem();
-    reader = BazelAssetReader.forTest(packageName, packageMap, fileSystem);
+    assetFilter = FakeAssetFilter();
+    reader = BazelAssetReader.forTest(packageName, packageMap, fileSystem,
+        assetFilter: assetFilter);
   });
 
   test('canRead', () async {
@@ -46,12 +50,42 @@ void main() {
     expect(fileSystem.calls.single.memberName, equals(#find));
   });
 
+  test('readAsString missing asset', () async {
+    assetFilter.returnValid = false;
+
+    expect(reader.readAsString(f1AssetId),
+        throwsA(TypeMatcher<AssetNotFoundException>()));
+  });
+
+  test('readAsString missing package', () async {
+    final missingPackage =
+        AssetId(f1AssetId.package + 'invalid', f1AssetId.path);
+
+    expect(reader.readAsString(missingPackage),
+        throwsA(TypeMatcher<PackageNotFoundException>()));
+  });
+
   test('readAsBytes', () async {
     final content = [1, 2, 3];
     fileSystem.nextFile = FakeFile()..content = utf8.decode(content);
     expect(await reader.readAsBytes(f1AssetId), equals(content));
     expect(fileSystem.calls, isNotEmpty);
     expect(fileSystem.calls.single.memberName, equals(#find));
+  });
+
+  test('readAsBytes missing asset', () async {
+    assetFilter.returnValid = false;
+
+    expect(reader.readAsBytes(f1AssetId),
+        throwsA(TypeMatcher<AssetNotFoundException>()));
+  });
+
+  test('readAsBytes missing package', () async {
+    final missingPackage =
+        AssetId(f1AssetId.package + 'invalid', f1AssetId.path);
+
+    expect(reader.readAsBytes(missingPackage),
+        throwsA(TypeMatcher<PackageNotFoundException>()));
   });
 
   test('findAssets', () async {
@@ -101,4 +135,14 @@ class FakeFile implements File {
 class NullSink implements IOSink {
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class FakeAssetFilter implements AssetFilter {
+  bool returnValid = true;
+
+  @override
+  bool isValid(AssetId id) => returnValid;
+
+  @override
+  void startPhase(AssetWriterSpy assetWriter) {}
 }
