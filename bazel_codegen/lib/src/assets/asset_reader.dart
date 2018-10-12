@@ -8,7 +8,6 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
-import '../errors.dart';
 import 'asset_filter.dart';
 import 'file_system.dart';
 
