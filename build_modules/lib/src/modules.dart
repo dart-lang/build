@@ -105,9 +105,9 @@ class Module {
   Module(this.primarySource, Iterable<AssetId> sources,
       Iterable<AssetId> directDependencies, this.platform, this.isSupported,
       {bool isMissing})
-      : this.sources = sources.toSet(),
-        this.directDependencies = directDependencies.toSet(),
-        this.isMissing = isMissing ?? false;
+      : sources = sources.toSet(),
+        directDependencies = directDependencies.toSet(),
+        isMissing = isMissing ?? false;
 
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);

@@ -30,7 +30,7 @@ class MetaModuleBuilder implements Builder {
   final DartPlatform _platform;
 
   MetaModuleBuilder(this._platform, {ModuleStrategy strategy})
-      : this.strategy = strategy ?? ModuleStrategy.coarse,
+      : strategy = strategy ?? ModuleStrategy.coarse,
         buildExtensions = {
           r'$lib$': [metaModuleExtension(_platform)]
         };

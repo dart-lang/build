@@ -74,8 +74,8 @@ class InBuildPhase extends BuildPhase implements BuildAction {
       @required this.builderLabel,
       bool isOptional,
       bool hideOutput})
-      : this.isOptional = isOptional ?? false,
-        this.hideOutput = hideOutput ?? false;
+      : isOptional = isOptional ?? false,
+        hideOutput = hideOutput ?? false;
 
   /// Creates an [BuildPhase] for a normal [Builder].
   ///

@@ -175,7 +175,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
     @required this.isFailure,
     @required this.primaryInput,
     @required this.builderOptionsId,
-  })  : this.inputs = inputs != null
+  })  : inputs = inputs != null
             ? SplayTreeSet.from(inputs)
             : SplayTreeSet<AssetId>(),
         super(id, lastKnownDigest: lastKnownDigest);

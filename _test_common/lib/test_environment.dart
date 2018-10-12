@@ -45,8 +45,8 @@ class TestBuildEnvironment extends BuildEnvironment {
       {RunnerAssetReader reader,
       RunnerAssetWriter writer,
       this.throwOnPrompt = false})
-      : this.reader = reader ?? InMemoryRunnerAssetReader(),
-        this.writer = writer ?? InMemoryRunnerAssetWriter();
+      : reader = reader ?? InMemoryRunnerAssetReader(),
+        writer = writer ?? InMemoryRunnerAssetWriter();
 
   @override
   void onLog(LogRecord record) => logRecords.add(record);
