@@ -8,6 +8,10 @@ addons:
 after_failure:
   - tool/report_failure.sh
 
+os:
+  - windows
+  - linux
+
 jobs:
   include:
     - stage: analyze_and_format
