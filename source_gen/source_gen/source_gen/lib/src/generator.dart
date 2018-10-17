@@ -44,7 +44,7 @@ class InvalidGenerationSourceError extends Error {
   final Element element;
 
   InvalidGenerationSourceError(this.message, {String todo, this.element})
-      : this.todo = todo ?? '';
+      : todo = todo ?? '';
 
   @override
   String toString() {

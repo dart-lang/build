@@ -23,7 +23,7 @@ class GeneratedOutput {
         assert(output.length == output.trim().length);
 
   GeneratedOutput.fromError(this.generator, this.error, this.stackTrace)
-      : this.output = _outputFromError(error);
+      : output = _outputFromError(error);
 
   @override
   String toString() {
