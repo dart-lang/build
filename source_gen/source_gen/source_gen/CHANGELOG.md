@@ -1,3 +1,7 @@
+## 0.9.2
+
+* Avoid using the AST analyzer model from `LibraryReader`.
+
 ## 0.9.1+3
 
 * Support the latest `pkg:analyzer`.

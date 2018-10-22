@@ -2,11 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/ast/standard_resolution_map.dart';
 import 'package:analyzer/dart/element/element.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/dart/resolver/scope.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
@@ -26,26 +22,27 @@ class AnnotatedElement {
 class LibraryReader {
   final LibraryElement element;
 
-  Namespace _namespaceCache;
-
   LibraryReader(this.element);
-
-  Namespace get _namespace => _namespaceCache ??=
-      NamespaceBuilder().createExportNamespaceForLibrary(element);
 
   /// Returns a top-level [ClassElement] publicly visible in by [name].
   ///
   /// Unlike [LibraryElement.getType], this also correctly traverses identifiers
   /// that are accessible via one or more `export` directives.
-  ClassElement findType(String name) =>
-      element.getType(name) ?? _namespace.get(name) as ClassElement;
+  ClassElement findType(String name) {
+    var type = element.exportNamespace.get(name);
+    return type is ClassElement ? type : null;
+  }
 
   /// All of the declarations in this library.
   Iterable<Element> get allElements sync* {
     for (var cu in element.units) {
-      for (var compUnitMember in cu.unit.declarations) {
-        yield* _getElements(compUnitMember);
-      }
+      yield* cu.accessors;
+      yield* cu.enums;
+      yield* cu.functionTypeAliases;
+      yield* cu.functions;
+      yield* cu.mixins;
+      yield* cu.topLevelVariables;
+      yield* cu.types;
     }
   }
 
@@ -167,16 +164,4 @@ class LibraryReader {
   /// All of the `class` elements in this library.
   Iterable<ClassElement> get classElements =>
       element.units.expand((cu) => cu.types);
-
-  static Iterable<Element> _getElements(CompilationUnitMember member) {
-    if (member is TopLevelVariableDeclaration) {
-      return member.variables.variables
-          .map(resolutionMap.elementDeclaredByVariableDeclaration);
-    }
-    var element = resolutionMap.elementDeclaredByDeclaration(member);
-    if (element == null) {
-      throw StateError('Could not find any elements for the provided unit.');
-    }
-    return [element];
-  }
 }
