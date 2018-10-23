@@ -1,3 +1,7 @@
+## 1.0.2
+
+- Support the latest `package:json_annotation`.
+
 ## 1.0.1
 
 - Update `package:build` version constraint to `>1.0.0 <1.0.1`.
