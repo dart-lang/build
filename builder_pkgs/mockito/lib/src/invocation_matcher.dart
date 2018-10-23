@@ -33,10 +33,10 @@ import 'package:mockito/src/mock.dart';
 /// what a user expects to be called.
 Matcher invokes(
   Symbol memberName, {
-  List<dynamic> positionalArguments: const [],
-  Map<Symbol, dynamic> namedArguments: const {},
-  bool isGetter: false,
-  bool isSetter: false,
+  List<dynamic> positionalArguments = const [],
+  Map<Symbol, dynamic> namedArguments = const {},
+  bool isGetter = false,
+  bool isSetter = false,
 }) {
   if (isGetter && isSetter) {
     throw new ArgumentError('Cannot set isGetter and iSetter');
@@ -80,10 +80,10 @@ class _InvocationSignature extends Invocation {
 
   _InvocationSignature({
     @required this.memberName,
-    this.positionalArguments: const [],
-    this.namedArguments: const {},
-    this.isGetter: false,
-    this.isSetter: false,
+    this.positionalArguments = const [],
+    this.namedArguments = const {},
+    this.isGetter = false,
+    this.isSetter = false,
   });
 
   @override

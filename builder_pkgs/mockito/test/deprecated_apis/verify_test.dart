@@ -63,7 +63,7 @@ void expectFail(String expectedMessage, dynamic expectedToFail()) {
     fail('It was expected to fail!');
   } catch (e) {
     if (!(e is TestFailure)) {
-      throw e;
+      rethrow;
     } else {
       if (expectedMessage != e.message) {
         throw new TestFailure('Failed, but with wrong message: ${e.message}');
