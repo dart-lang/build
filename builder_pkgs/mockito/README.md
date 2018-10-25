@@ -33,7 +33,7 @@ class Cat {
 class MockCat extends Mock implements Cat {}
 
 // mock creation
-var cat = new MockCat();
+var cat = MockCat();
 ```
 
 ## Let's verify some behaviour!
@@ -70,7 +70,7 @@ when(cat.lives).thenReturn(9);
 expect(cat.lives, 9);
 
 // You can stub a method to throw:
-when(cat.lives).thenThrow(new RangeError('Boo'));
+when(cat.lives).thenThrow(RangeError('Boo'));
 expect(() => cat.lives, throwsRangeError);
 
 // We can calculate a response at call time:
@@ -107,15 +107,15 @@ Instead, use `thenAnswer` to stub methods that return a `Future` or `Stream`.
 ```
 // BAD
 when(mock.methodThatReturnsAFuture())
-    .thenReturn(new Future.value('Stub'));
+    .thenReturn(Future.value('Stub'));
 when(mock.methodThatReturnsAStream())
-    .thenReturn(new Stream.fromIterable(['Stub']));
+    .thenReturn(Stream.fromIterable(['Stub']));
 
 // GOOD
 when(mock.methodThatReturnsAFuture())
-    .thenAnswer((_) => new Future.value('Stub'));
+    .thenAnswer((_) => Future.value('Stub'));
 when(mock.methodThatReturnsAStream())
-    .thenAnswer((_) => new Stream.fromIterable(['Stub']));
+    .thenAnswer((_) => Stream.fromIterable(['Stub']));
 
 ````
 
@@ -125,7 +125,7 @@ pre-defined instance.
 ```
 // Use the above method unless you're sure you want to create the Future ahead
 // of time.
-final future = new Future.value('Stub');
+final future = Future.value('Stub');
 when(mock.methodThatReturnsAFuture()).thenAnswer((_) => future);
 ```
 
@@ -263,7 +263,7 @@ expect(verify(cat.eatFood(captureAny)).captured, ["Milk", "Fish"]);
 // Conditional capture:
 cat.eatFood("Milk");
 cat.eatFood("Fish");
-expect(verify(cat.eatFood(captureThat(startsWith("F")).captured, ["Fish"]);
+expect(verify(cat.eatFood(captureThat(startsWith("F")))).captured, ["Fish"]);
 ```
 
 ## Waiting for an interaction
@@ -348,8 +348,8 @@ matcher for an invocation under the name 'foo'.
 The same goes for "chaining" mock objects in a test call. This will fail:
 
 ```dart
-var mockUtils = new MockUtils();
-var mockStringUtils = new MockStringUtils();
+var mockUtils = MockUtils();
+var mockStringUtils = MockStringUtils();
 
 // Setting up mockUtils.stringUtils to return a mock StringUtils implementation
 when(mockUtils.stringUtils).thenReturn(mockStringUtils);
