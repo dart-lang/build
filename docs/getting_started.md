@@ -1,6 +1,6 @@
 # Getting started with `build_runner`
 
-To use `build_runner`, you need a 2.x (dev channel or fresher) version of
+To use `build_runner`, you need a 2.x version of
 the Dart SDK.
 
 * [Automated installers](https://www.dartlang.org/install#automated-installation-and-updates)
