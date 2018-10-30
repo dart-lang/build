@@ -12,13 +12,13 @@ import 'package:test/test.dart';
 import 'common/utils.dart';
 
 void main() {
-  group('Build script changes', () {
-    setUp(() async {
-      ensureCleanGitClient();
-      await startServer(ensureCleanBuild: true, buildArgs: ['lib']);
-      addTearDown(() => stopServer(cleanUp: true));
-    });
+  setUp(() async {
+    ensureCleanGitClient();
+    await startServer(ensureCleanBuild: true, buildArgs: ['lib']);
+    addTearDown(() => stopServer(cleanUp: true));
+  });
 
+  group('Build script changes', () {
     test('while serving prompt the user to restart', () async {
       var filePath = p.join('pkgs', 'provides_builder', 'lib', 'builders.dart');
       var expectedLines = [
@@ -82,5 +82,23 @@ void main() {
           reason: 'The cache dir should get deleted when the asset graph '
               'can\'t be parsed');
     });
+  });
+
+  test('Build config changes rerun but dont invalidate the build', () async {
+    var expectedLines = [
+      'Terminating builds due to _test:build.yaml update',
+      'Builds finished. Safe to exit',
+      'Running build completed',
+      'with 0 outputs',
+    ];
+    expect(stdOutLines, isNotNull);
+    for (var line in expectedLines) {
+      expect(stdOutLines, emitsThrough(contains(line)));
+    }
+    await replaceAllInFile('build.yaml', '''
+      build_vm_compilers|entrypoint:''', '''
+      build_vm_compilers|entrypoint:
+        options:
+          compiler: dartdevc''');
   });
 }
