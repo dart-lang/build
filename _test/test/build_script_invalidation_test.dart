@@ -43,22 +43,24 @@ void main() {
       var filePath = p.join('pkgs', 'provides_builder', 'lib', 'builders.dart');
       await stopServer();
       await replaceAllInFile(filePath, RegExp(r'$'), '// do a build');
-      await startServer(
-        buildArgs: ['lib'],
-        extraExpects: [
-          () => nextStdOutLine(
-              'Invalidating asset graph due to build script update'),
-          () => nextStdOutLine('Creating build script snapshot'),
-          () => nextStdOutLine('Building new asset graph'),
-          () => nextStdOutLine('Succeeded after'),
-        ],
-      );
+      await startServer(buildArgs: [
+        'lib'
+      ], extraExpects: [
+        () => nextStdOutLine(
+            'Invalidating asset graph due to build script update'),
+        () => nextStdOutLine('Creating build script snapshot'),
+        () => nextStdOutLine('Building new asset graph'),
+        () => nextStdOutLine('Succeeded after'),
+      ]);
+      expect(await File(extraFilePath).exists(), isFalse,
+          reason: 'The cache dir should get deleted when the build '
+              'script changes.');
     });
 
     test('Invalid asset graph version causes a new full build', () async {
       await stopServer();
-      var assetGraph = assetGraphPathFor(
-          p.join('.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'));
+      var assetGraph = assetGraphPathFor(p.url
+          .join('.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'));
       // Prepend a 1 to the version number
       await replaceAllInFile(assetGraph, '"version":', '"version":1');
 
@@ -76,6 +78,9 @@ void main() {
         () => nextStdOutLine('Building new asset graph'),
         () => nextStdOutLine('Succeeded after'),
       ]);
+      expect(await File(extraFilePath).exists(), isFalse,
+          reason: 'The cache dir should get deleted when the asset graph '
+              'can\'t be parsed');
     });
   });
 }
