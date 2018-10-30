@@ -243,7 +243,7 @@ class WatchImpl implements BuildState {
 
           /// Intentional unhandled async error here, which will be caught at the
           /// top level. We want to return a valid BuildResult.
-          unawaited(Future.error(BuildScriptChangedException()));
+          unawaited(Future.error(BuildConfigChangedException()));
           return BuildResult(BuildStatus.failure, []);
         }
       }
@@ -290,6 +290,10 @@ class WatchImpl implements BuildState {
               _isPackageBuildYamlOverride(id)) {
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
+
+            /// Intentional unhandled async error here, which will be caught at
+            /// the top level.
+            unawaited(Future.error(BuildConfigChangedException()));
             _logger.severe(
                 'Terminating builds due to ${id.package}:${id.path} update.');
           }

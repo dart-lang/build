@@ -48,6 +48,8 @@ Future<int> run(List<String> args, List<BuilderApplication> builders) async {
       _deleteAssetGraph();
       _deleteSelf();
       safeComplete(ExitCode.tempFail.code);
+    } else if (e is BuildConfigChangedException) {
+      safeComplete(ExitCode.tempFail.code);
     } else if (!resultCompleter.isCompleted) {
       resultCompleter.completeError(e, s);
     }

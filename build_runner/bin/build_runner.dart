@@ -60,17 +60,18 @@ Future<Null> main(List<String> args) async {
   if (commandName != _generateCommand) {
     logListener = Logger.root.onRecord.listen(stdIOLogListener());
   }
-  var buildScript = await generateBuildScript();
-  var scriptFile = File(scriptLocation)..createSync(recursive: true);
-  scriptFile.writeAsStringSync(buildScript);
-  if (commandName == _generateCommand) {
-    print(p.absolute(scriptLocation));
-    return;
-  }
 
   var shouldRerun = true;
   while (shouldRerun) {
     shouldRerun = false;
+
+    var buildScript = await generateBuildScript();
+    var scriptFile = File(scriptLocation)..createSync(recursive: true);
+    scriptFile.writeAsStringSync(buildScript);
+    if (commandName == _generateCommand) {
+      print(p.absolute(scriptLocation));
+      return;
+    }
 
     if (!await _createSnapshotIfMissing()) return;
 
