@@ -100,5 +100,5 @@ void main() {
       build_vm_compilers|entrypoint:
         options:
           compiler: dartdevc''');
-  });
+  }, onPlatform: {'windows': const Skip('flaky on windows')});
 }
