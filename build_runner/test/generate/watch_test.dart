@@ -741,19 +741,24 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       rootPackage: packageGraph.root.name);
   final watcherFactory = (String path) => FakeWatcher(path);
 
-  return watch_impl.watch(builders,
-      configKey: configKey,
-      deleteFilesByDefault: true,
-      debounceDelay: _debounceDelay,
-      directoryWatcherFactory: watcherFactory,
-      overrideBuildConfig: overrideBuildConfig,
-      reader: reader,
-      writer: writer,
-      packageGraph: packageGraph,
-      terminateEventStream: _terminateWatchController.stream,
-      logLevel: logLevel,
-      onLog: onLog,
-      skipBuildScriptCheck: true);
+  return runZoned(
+      () => watch_impl.watch(builders,
+          configKey: configKey,
+          deleteFilesByDefault: true,
+          debounceDelay: _debounceDelay,
+          directoryWatcherFactory: watcherFactory,
+          overrideBuildConfig: overrideBuildConfig,
+          reader: reader,
+          writer: writer,
+          packageGraph: packageGraph,
+          terminateEventStream: _terminateWatchController.stream,
+          logLevel: logLevel,
+          onLog: onLog,
+          skipBuildScriptCheck: true), onError: (e) {
+    // Ignore these exceptions for testing, we watch the logs.
+    if (e is BuildConfigChangedException) return;
+    throw e;
+  });
 }
 
 /// Tells the program to stop watching files and terminate.
