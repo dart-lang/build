@@ -80,7 +80,12 @@ String _loggerName(LogRecord record, bool verbose) {
     'Serve',
     'Watch',
     'build_runner',
+    // commands
+    'build',
     'clean',
+    'serve',
+    'test',
+    'watch',
   ];
   var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
   return verbose || !knownNames.contains(record.loggerName)
