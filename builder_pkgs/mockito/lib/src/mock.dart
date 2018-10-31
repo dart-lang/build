@@ -17,7 +17,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
 import 'package:mockito/src/invocation_matcher.dart';
-import 'package:test/test.dart';
+import 'package:test_api/test_api.dart';
 
 bool _whenInProgress = false;
 bool _untilCalledInProgress = false;
