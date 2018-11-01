@@ -87,7 +87,12 @@ class ServeHandler implements BuildState {
       throw ArgumentError.value(
           rootDir, 'rootDir', 'Only top level directories are supported');
     }
-    _state.currentBuild.then((_) => _warnForEmptyDirectory(rootDir));
+    _state.currentBuild.then((_) {
+      // If the first build fails with a handled exception, we might not have
+      // an asset graph and can't do this check.
+      if (_state.assetGraph == null) return;
+      _warnForEmptyDirectory(rootDir);
+    });
     var cascade = shelf.Cascade();
     if (buildUpdates != BuildUpdatesOption.none) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));

@@ -1,8 +1,10 @@
 ## 1.1.0
 
-- Support running the build script as a snapshot. When the original build script
-  changes and running as a snapshot, the build script will exit with an exit
-  code of 75.
+- Support running the build script as a snapshot.
+- Added new exceptions, `BuildScriptChangedException` and
+  `BuildConfigChangedException`. These should be handled by scripts as described
+  in the documentation.
+- Added new `FailureType`s of `buildScriptChanged` and `buildConfigChanged`.
 
 ## 1.0.2
 

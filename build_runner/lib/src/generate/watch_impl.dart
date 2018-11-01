@@ -240,11 +240,8 @@ class WatchImpl implements BuildState {
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
-
-          /// Intentional unhandled async error here, which will be caught at the
-          /// top level. We want to return a valid BuildResult.
-          unawaited(Future.error(BuildConfigChangedException()));
-          return BuildResult(BuildStatus.failure, []);
+          return BuildResult(BuildStatus.failure, [],
+              failureType: FailureType.buildScriptChanged);
         }
       }
       return _build.run(mergedChanges);
@@ -288,12 +285,11 @@ class WatchImpl implements BuildState {
           } else if (_isBuildYaml(id) ||
               _isConfiguredBuildYaml(id) ||
               _isPackageBuildYamlOverride(id)) {
+            controller.add(BuildResult(BuildStatus.failure, [],
+                failureType: FailureType.buildConfigChanged));
+
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
-
-            /// Intentional unhandled async error here, which will be caught at
-            /// the top level.
-            unawaited(Future.error(BuildConfigChangedException()));
             _logger.severe(
                 'Terminating builds due to ${id.package}:${id.path} update.');
           }
@@ -330,15 +326,14 @@ class WatchImpl implements BuildState {
 
         firstBuild = await _build.run({});
       } on CannotBuildException {
-        firstBuild = BuildResult(BuildStatus.failure, []);
-      } on BuildScriptChangedException catch (e, s) {
         _terminateCompleter.complete();
 
-        /// Intentional unhandled async error here, which will be caught at the
-        /// top level. We want to allow the rest of the synchronous cleanup
-        /// logic to happen.
-        unawaited(Future.error(e, s));
         firstBuild = BuildResult(BuildStatus.failure, []);
+      } on BuildScriptChangedException {
+        _terminateCompleter.complete();
+
+        firstBuild = BuildResult(BuildStatus.failure, [],
+            failureType: FailureType.buildScriptChanged);
       }
 
       _reader = _build?.finalizedReader;

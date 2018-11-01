@@ -393,7 +393,10 @@ a:file://different/fake/pkg/path
           test('to the root package', () async {
             await writer.writeAsString(
                 AssetId('a', 'build.yaml'), '# New build.yaml file');
-            expect(await results.hasNext, isFalse);
+            expect(await results.hasNext, isTrue);
+            var next = await results.next;
+            expect(next.status, BuildStatus.failure);
+            expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
@@ -403,7 +406,10 @@ a:file://different/fake/pkg/path
             await writer.writeAsString(
                 AssetId('b', 'build.yaml'), '# New build.yaml file');
 
-            expect(await results.hasNext, isFalse);
+            expect(await results.hasNext, isTrue);
+            var next = await results.next;
+            expect(next.status, BuildStatus.failure);
+            expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to b:build.yaml update'));
@@ -412,7 +418,10 @@ a:file://different/fake/pkg/path
           test('<package>.build.yaml', () async {
             await writer.writeAsString(
                 AssetId('a', 'b.build.yaml'), '# New b.build.yaml file');
-            expect(await results.hasNext, isFalse);
+            expect(await results.hasNext, isTrue);
+            var next = await results.next;
+            expect(next.status, BuildStatus.failure);
+            expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to a:b.build.yaml update'));
@@ -435,7 +444,10 @@ a:file://different/fake/pkg/path
             await writer.writeAsString(
                 AssetId('a', 'build.yaml'), '# Edited build.yaml file');
 
-            expect(await results.hasNext, isFalse);
+            expect(await results.hasNext, isTrue);
+            var next = await results.next;
+            expect(next.status, BuildStatus.failure);
+            expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
@@ -445,7 +457,10 @@ a:file://different/fake/pkg/path
             await writer.writeAsString(
                 AssetId('b', 'build.yaml'), '# Edited build.yaml file');
 
-            expect(await results.hasNext, isFalse);
+            expect(await results.hasNext, isTrue);
+            var next = await results.next;
+            expect(next.status, BuildStatus.failure);
+            expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to b:build.yaml update'));
@@ -472,7 +487,10 @@ a:file://different/fake/pkg/path
             await writer.writeAsString(
                 AssetId('a', 'build.yaml'), '# Edited build.yaml file');
 
-            expect(await results.hasNext, isFalse);
+            expect(await results.hasNext, isTrue);
+            var next = await results.next;
+            expect(next.status, BuildStatus.failure);
+            expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
@@ -492,7 +510,10 @@ a:file://different/fake/pkg/path
             await writer.writeAsString(AssetId('a', 'build.cool.yaml'),
                 '# Edited build.cool.yaml file');
 
-            expect(await results.hasNext, isFalse);
+            expect(await results.hasNext, isTrue);
+            var next = await results.next;
+            expect(next.status, BuildStatus.failure);
+            expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs.length, 1);
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.cool.yaml update'));
@@ -741,24 +762,19 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       rootPackage: packageGraph.root.name);
   final watcherFactory = (String path) => FakeWatcher(path);
 
-  return runZoned(
-      () => watch_impl.watch(builders,
-          configKey: configKey,
-          deleteFilesByDefault: true,
-          debounceDelay: _debounceDelay,
-          directoryWatcherFactory: watcherFactory,
-          overrideBuildConfig: overrideBuildConfig,
-          reader: reader,
-          writer: writer,
-          packageGraph: packageGraph,
-          terminateEventStream: _terminateWatchController.stream,
-          logLevel: logLevel,
-          onLog: onLog,
-          skipBuildScriptCheck: true), onError: (e) {
-    // Ignore these exceptions for testing, we watch the logs.
-    if (e is BuildConfigChangedException) return;
-    throw e;
-  });
+  return watch_impl.watch(builders,
+      configKey: configKey,
+      deleteFilesByDefault: true,
+      debounceDelay: _debounceDelay,
+      directoryWatcherFactory: watcherFactory,
+      overrideBuildConfig: overrideBuildConfig,
+      reader: reader,
+      writer: writer,
+      packageGraph: packageGraph,
+      terminateEventStream: _terminateWatchController.stream,
+      logLevel: logLevel,
+      onLog: onLog,
+      skipBuildScriptCheck: true);
 }
 
 /// Tells the program to stop watching files and terminate.

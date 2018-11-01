@@ -9,7 +9,6 @@ import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
-import 'package:pedantic/pedantic.dart';
 
 import 'runner.dart';
 
@@ -20,42 +19,27 @@ import 'runner.dart';
 /// implies success.
 Future<int> run(List<String> args, List<BuilderApplication> builders) async {
   var runner = BuildCommandRunner(builders);
-  var resultCompleter = Completer<int>();
-
-  void safeComplete(int exitCode) {
-    if (resultCompleter.isCompleted) return;
-    resultCompleter.complete(exitCode);
+  try {
+    var result = await runner.run(args);
+    return result ?? 0;
+  } on UsageException catch (e) {
+    print(ansi.red.wrap(e.message));
+    print('');
+    print(e.usage);
+    return ExitCode.usage.code;
+  } on ArgumentError catch (e) {
+    print(ansi.red.wrap(e.toString()));
+    return ExitCode.usage.code;
+  } on CannotBuildException {
+    // A message should have already been logged.
+    return ExitCode.config.code;
+  } on BuildScriptChangedException catch (e, s) {
+    _deleteAssetGraph();
+    _deleteSelf();
+    return ExitCode.tempFail.code;
+  } on BuildConfigChangedException catch (e, s) {
+    return ExitCode.tempFail.code;
   }
-
-  unawaited(runZoned(() async {
-    try {
-      var result = await runner.run(args);
-      safeComplete(result ?? 0);
-    } on UsageException catch (e) {
-      print(ansi.red.wrap(e.message));
-      print('');
-      print(e.usage);
-      safeComplete(ExitCode.usage.code);
-    } on ArgumentError catch (e) {
-      print(ansi.red.wrap(e.toString()));
-      safeComplete(ExitCode.usage.code);
-    } on CannotBuildException {
-      // A message should have already been logged.
-      safeComplete(ExitCode.config.code);
-    }
-  }, onError: (Object e, StackTrace s) {
-    if (e is BuildScriptChangedException) {
-      _deleteAssetGraph();
-      _deleteSelf();
-      safeComplete(ExitCode.tempFail.code);
-    } else if (e is BuildConfigChangedException) {
-      safeComplete(ExitCode.tempFail.code);
-    } else if (!resultCompleter.isCompleted) {
-      resultCompleter.completeError(e, s);
-    }
-  }));
-
-  return resultCompleter.future;
 }
 
 /// Deletes the asset graph for the current build script from disk.
