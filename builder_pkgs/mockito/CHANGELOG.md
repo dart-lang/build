@@ -1,3 +1,11 @@
+## 3.0.1
+
+* Replace the dependency on the
+  _[test](https://pub.dartlang.org/packages/test)_ package with a dependency on
+  the new _[test_api](https://pub.dartlang.org/packages/test_api)_ package.
+  This dramatically reduces mockito's transitive dependencies.
+* Internal improvements to tests and examples.
+
 ## 3.0.0
 
 * Deprecate the `typed` API; instead of wrapping other Mockito API calls, like
