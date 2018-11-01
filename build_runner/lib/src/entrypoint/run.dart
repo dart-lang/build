@@ -33,11 +33,11 @@ Future<int> run(List<String> args, List<BuilderApplication> builders) async {
   } on CannotBuildException {
     // A message should have already been logged.
     return ExitCode.config.code;
-  } on BuildScriptChangedException catch (e, s) {
+  } on BuildScriptChangedException {
     _deleteAssetGraph();
     _deleteSelf();
     return ExitCode.tempFail.code;
-  } on BuildConfigChangedException catch (e, s) {
+  } on BuildConfigChangedException {
     return ExitCode.tempFail.code;
   }
 }
