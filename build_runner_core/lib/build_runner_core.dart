@@ -13,7 +13,11 @@ export 'src/environment/io_environment.dart';
 export 'src/environment/overridable_environment.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/build_runner.dart';
-export 'src/generate/exceptions.dart' show CannotBuildException;
+export 'src/generate/exceptions.dart'
+    show
+        BuildConfigChangedException,
+        BuildScriptChangedException,
+        CannotBuildException;
 export 'src/generate/finalized_assets_view.dart' show FinalizedAssetsView;
 export 'src/generate/options.dart'
     show defaultRootPackageWhitelist, LogSubscription, BuildOptions;

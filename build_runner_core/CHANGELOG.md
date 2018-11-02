@@ -1,3 +1,11 @@
+## 1.1.0
+
+- Support running the build script as a snapshot.
+- Added new exceptions, `BuildScriptChangedException` and
+  `BuildConfigChangedException`. These should be handled by scripts as described
+  in the documentation.
+- Added new `FailureType`s of `buildScriptChanged` and `buildConfigChanged`.
+
 ## 1.0.2
 
 - Support the latest `package:json_annotation`.

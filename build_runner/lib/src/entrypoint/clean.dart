@@ -51,29 +51,37 @@ class CleanCommand extends Command<int> {
         return;
       }
       var packageGraph = PackageGraph.forThisPackage();
-      var writer = FileBasedAssetWriter(packageGraph);
-      for (var id in assetGraph.outputs) {
-        if (id.package != packageGraph.root.name) continue;
-        var node = assetGraph.get(id) as GeneratedAssetNode;
-        if (node.wasOutput) {
-          // Note that this does a file.exists check in the root package and
-          // only tries to delete the file if it exists. This way we only
-          // actually delete to_source outputs, without reading in the build
-          // actions.
-          await writer.delete(id);
-        }
-      }
+      await cleanUpSourceOutputs(assetGraph, packageGraph);
     });
 
-    await logTimedAsync(logger, 'Cleaning up cache directory', () async {
-      var generatedDir = Directory(cacheDir);
-      if (await generatedDir.exists()) {
-        await generatedDir.delete(recursive: true);
-      }
-    });
+    await logTimedAsync(
+        logger, 'Cleaning up cache directory', cleanUpGeneratedDirectory);
 
     await logSubscription.cancel();
 
     return 0;
+  }
+}
+
+Future<void> cleanUpSourceOutputs(
+    AssetGraph assetGraph, PackageGraph packageGraph) async {
+  var writer = FileBasedAssetWriter(packageGraph);
+  for (var id in assetGraph.outputs) {
+    if (id.package != packageGraph.root.name) continue;
+    var node = assetGraph.get(id) as GeneratedAssetNode;
+    if (node.wasOutput) {
+      // Note that this does a file.exists check in the root package and
+      // only tries to delete the file if it exists. This way we only
+      // actually delete to_source outputs, without reading in the build
+      // actions.
+      await writer.delete(id);
+    }
+  }
+}
+
+Future<void> cleanUpGeneratedDirectory() async {
+  var generatedDir = Directory(cacheDir);
+  if (await generatedDir.exists()) {
+    await generatedDir.delete(recursive: true);
   }
 }

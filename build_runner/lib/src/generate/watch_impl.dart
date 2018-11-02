@@ -240,7 +240,8 @@ class WatchImpl implements BuildState {
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
-          return BuildResult(BuildStatus.failure, []);
+          return BuildResult(BuildStatus.failure, [],
+              failureType: FailureType.buildScriptChanged);
         }
       }
       return _build.run(mergedChanges);
@@ -284,6 +285,9 @@ class WatchImpl implements BuildState {
           } else if (_isBuildYaml(id) ||
               _isConfiguredBuildYaml(id) ||
               _isPackageBuildYamlOverride(id)) {
+            controller.add(BuildResult(BuildStatus.failure, [],
+                failureType: FailureType.buildConfigChanged));
+
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
             _logger.severe(
@@ -302,7 +306,7 @@ class WatchImpl implements BuildState {
         .onDone(() async {
           await currentBuild;
           await _build?.beforeExit();
-          await controller.close();
+          if (!controller.isClosed) await controller.close();
           _logger.info('Builds finished. Safe to exit\n');
         });
 
@@ -322,7 +326,14 @@ class WatchImpl implements BuildState {
 
         firstBuild = await _build.run({});
       } on CannotBuildException {
+        _terminateCompleter.complete();
+
         firstBuild = BuildResult(BuildStatus.failure, []);
+      } on BuildScriptChangedException {
+        _terminateCompleter.complete();
+
+        firstBuild = BuildResult(BuildStatus.failure, [],
+            failureType: FailureType.buildScriptChanged);
       }
 
       _reader = _build?.finalizedReader;

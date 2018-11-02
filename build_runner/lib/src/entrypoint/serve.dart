@@ -13,6 +13,7 @@ import 'package:shelf/shelf_io.dart';
 
 import '../generate/build.dart';
 import '../logging/std_io_logging.dart';
+import '../server/server.dart';
 import 'options.dart';
 import 'watch.dart';
 
@@ -55,8 +56,15 @@ class ServeCommand extends WatchCommand {
 
   @override
   Future<int> run() async {
-    var options = readOptions();
     final servers = <ServeTarget, HttpServer>{};
+    return _runServe(servers).whenComplete(() async {
+      await Future.wait(
+          servers.values.map((server) => server.close(force: true)));
+    });
+  }
+
+  Future<int> _runServe(Map<ServeTarget, HttpServer> servers) async {
+    var options = readOptions();
     try {
       await Future.wait(options.serveTargets.map((target) async {
         servers[target] = await _bindServer(options, target);
@@ -99,7 +107,16 @@ class ServeCommand extends WatchCommand {
     });
 
     _ensureBuildWebCompilersDependency(packageGraph, logger);
-    await handler.currentBuild;
+
+    final completer = Completer<int>();
+    handleBuildResultsStream(handler.buildResults, completer);
+    _logServerPorts(handler, options, logger);
+    return completer.future;
+  }
+
+  void _logServerPorts(
+      ServeHandler serveHandler, ServeOptions options, Logger logger) async {
+    await serveHandler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
       logger.warning(
@@ -112,10 +129,6 @@ class ServeCommand extends WatchCommand {
             'http://${options.hostName}:${target.port}');
       }
     }
-    await handler.buildResults.drain();
-    await Future.wait(servers.values.map((server) => server.close()));
-
-    return ExitCode.success.code;
   }
 }
 

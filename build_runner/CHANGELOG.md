@@ -1,3 +1,11 @@
+## 1.1.0-dev
+
+### New Features
+
+- The build script will now be ran from snapshot, which improves startup times.
+- The build script will automatically re-run itself when the build script is
+  changed, instead of requiring the user to re-run it manually.
+
 ## 1.0.0
 
 ### Breaking Changes
