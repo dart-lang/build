@@ -96,9 +96,8 @@ void main() {
       expect(stdOutLines, emitsThrough(contains(line)));
     }
     await replaceAllInFile('build.yaml', '''
-      build_vm_compilers|entrypoint:''', '''
-      build_vm_compilers|entrypoint:
-        options:
-          compiler: dartdevc''');
-  }, onPlatform: {'windows': const Skip('flaky on windows')});
+targets:''', '''
+# Test Edit
+targets:''');
+  });
 }

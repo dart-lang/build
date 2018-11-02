@@ -40,9 +40,15 @@ Future<Null> startServer(
         {bool ensureCleanBuild,
         List<Function> extraExpects,
         List<String> buildArgs}) =>
-    _startServer(_pubBinary,
-        ['run', 'build_runner', 'serve']..addAll(buildArgs ?? const []),
-        ensureCleanBuild: ensureCleanBuild, extraExpects: extraExpects);
+    _startServer(
+        'dart',
+        [
+          '--packages=.packages',
+          p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
+          'serve'
+        ],
+        ensureCleanBuild: ensureCleanBuild,
+        extraExpects: extraExpects);
 
 Future<ProcessResult> _runBuild(String command, List<String> args,
     {bool ensureCleanBuild}) async {
