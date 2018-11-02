@@ -2,8 +2,7 @@
 
 ### New Features
 
-- The build script will now be ran from snapshot, which speeds up initial builds
-  significantly.
+- The build script will now be ran from snapshot, which improves startup times.
 - The build script will automatically re-run itself when the build script is
   changed, instead of requiring the user to re-run it manually.
 

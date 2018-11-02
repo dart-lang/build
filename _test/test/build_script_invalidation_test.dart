@@ -55,7 +55,7 @@ void main() {
       expect(await File(extraFilePath).exists(), isFalse,
           reason: 'The cache dir should get deleted when the build '
               'script changes.');
-    });
+    }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('Invalid asset graph version causes a new full build', () async {
       await stopServer();
