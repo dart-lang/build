@@ -7,11 +7,10 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:args/command_runner.dart';
-import 'package:build_runner/build_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
-
+import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
 
@@ -40,7 +39,7 @@ class RunCommand extends BuildRunnerCommand {
 
     if (separatorPos >= 0) {
       void throwUsageException() {
-        throw new UsageException(
+        throw UsageException(
             'The `run` command does not support positional args before the, '
             '`--` separator, which should separate build args from script args.',
             usage);
@@ -51,7 +50,7 @@ class RunCommand extends BuildRunnerCommand {
       // Since we expect the first argument to be the name of a script,
       // we should skip it when comparing extra arguments.
       var effectiveRest = argResults.rest.skip(1).toList();
-      
+
       if (effectiveRest.length != expectedRest.length) {
         throwUsageException();
       }
@@ -93,7 +92,7 @@ class RunCommand extends BuildRunnerCommand {
     ReceivePort onExit, onError;
 
     // Use a completer to determine the exit code.
-    var exitCodeCompleter = new Completer<int>();
+    var exitCodeCompleter = Completer<int>();
 
     try {
       var outputMap = options.outputMap ?? {};
@@ -104,7 +103,6 @@ class RunCommand extends BuildRunnerCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         configKey: options.configKey,
-        assumeTty: options.assumeTty,
         outputMap: outputMap,
         packageGraph: packageGraph,
         verbose: options.verbose,
@@ -126,8 +124,8 @@ class RunCommand extends BuildRunnerCommand {
       var packageConfigPath = p.join(tempPath, '.packages');
 
       Isolate isolate;
-      onExit = new ReceivePort();
-      onError = new ReceivePort();
+      onExit = ReceivePort();
+      onError = ReceivePort();
 
       // On an error, kill the isolate, and log the error.
       onError.listen((e) {
@@ -135,7 +133,7 @@ class RunCommand extends BuildRunnerCommand {
         onExit.close();
         onError.close();
         logger.severe('Unhandled error from script: $scriptName', e[0],
-            new StackTrace.fromString(e[1].toString()));
+            StackTrace.fromString(e[1].toString()));
       });
 
       isolate = await Isolate.spawnUri(
@@ -155,7 +153,7 @@ class RunCommand extends BuildRunnerCommand {
       return ExitCode.ioError.code;
     } finally {
       // Clean up the output dir.
-      var dir = new Directory(tempPath);
+      var dir = Directory(tempPath);
       if (await dir.exists()) await dir.delete(recursive: true);
 
       onExit?.close();
