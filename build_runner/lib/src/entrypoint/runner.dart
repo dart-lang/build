@@ -28,7 +28,7 @@ class BuildCommandRunner extends CommandRunner<int> {
     addCommand(ServeCommand());
     addCommand(TestCommand(packageGraph));
     addCommand(CleanCommand());
-  addCommand(RunCommand());
+    addCommand(RunCommand());
   }
 
   // CommandRunner._usageWithoutDescription is private – this is a reasonable
