@@ -18,14 +18,15 @@ class FinalizedReader implements AssetReader {
   final AssetReader _delegate;
   final AssetGraph _assetGraph;
   final OptionalOutputTracker _optionalOutputTracker;
+  final String _rootPackage;
 
   /// Clears the cache of which assets were required.
   void reset() {
     _optionalOutputTracker.reset();
   }
 
-  FinalizedReader(
-      this._delegate, this._assetGraph, this._optionalOutputTracker);
+  FinalizedReader(this._delegate, this._assetGraph, this._optionalOutputTracker,
+      this._rootPackage);
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason> unreadableReason(AssetId id) async {
@@ -56,13 +57,25 @@ class FinalizedReader implements AssetReader {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (_assetGraph.get(id)?.isDeleted ?? true) {
-      throw new AssetNotFoundException(id);
+      throw AssetNotFoundException(id);
     }
     return _delegate.readAsString(id, encoding: encoding);
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob) => _delegate.findAssets(glob);
+  Stream<AssetId> findAssets(Glob glob) async* {
+    var potentialNodes = _assetGraph
+        .packageNodes(_rootPackage)
+        .where((n) => glob.matches(n.id.path))
+        .toList();
+    var potentialIds = potentialNodes.map((n) => n.id).toList();
+
+    for (var id in potentialIds) {
+      if (await _delegate.canRead(id)) {
+        yield id;
+      }
+    }
+  }
 }
 
 enum UnreadableReason {

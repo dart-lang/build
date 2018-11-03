@@ -23,13 +23,13 @@ import 'timing.dart';
 /// Runs builds as a worker.
 Future generateAsWorker(
     List<BuilderFactory> builders, Map<String, String> defaultContent) {
-  return new _CodegenWorker(builders, defaultContent).run();
+  return _CodegenWorker(builders, defaultContent).run();
 }
 
 /// Runs in single build mode (not as a worker).
 Future generateSingleBuild(List<BuilderFactory> builders, List<String> args,
     Map<String, String> defaultContent) async {
-  var timings = new CodegenTiming()..start();
+  var timings = CodegenTiming()..start();
   IOSinkLogHandle logger;
 
   var buildArgs = _parseArgs(args);
@@ -50,8 +50,8 @@ Future generateSingleBuild(List<BuilderFactory> builders, List<String> args,
 Future<Map<String, String>> _packageMap(
         BuildArgs buildArgs, CodegenTiming timings) =>
     timings.trackOperation('Reading package map', () async {
-      var lines = await new File(buildArgs.packageMapPath).readAsLines();
-      return new Map<String, String>.fromIterable(
+      var lines = await File(buildArgs.packageMapPath).readAsLines();
+      return Map<String, String>.fromIterable(
           lines.map((line) => line.split(':')),
           key: (l) => (l as List<String>)[0],
           value: (l) => (l as List<String>)[1]);
@@ -80,26 +80,26 @@ class _CodegenWorker extends AsyncWorkerLoop {
     var buildArgs = _parseArgs(request.arguments);
     try {
       numRuns++;
-      var timings = new CodegenTiming()..start();
+      var timings = CodegenTiming()..start();
 
       var bazelRelativeInputs = request.inputs
           .map((input) => _bazelRelativePath(input.path, buildArgs.rootDirs));
 
       logHandle = await _runBuilders(
           builders, buildArgs, defaultContent, timings,
-          isWorker: true, validInputs: new Set()..addAll(bazelRelativeInputs));
+          isWorker: true, validInputs: Set()..addAll(bazelRelativeInputs));
       logHandle.logger.info(
           'Completed in worker mode, this worker has ran $numRuns builds');
       await logHandle.close();
       var message = _loggerMessage(logHandle, buildArgs.logPath);
 
-      var response = new WorkResponse()
+      var response = WorkResponse()
         ..exitCode = logHandle.errorCount == 0 ? EXIT_CODE_OK : EXIT_CODE_ERROR;
       if (message.isNotEmpty) response.output = message;
       return response;
     } catch (e, s) {
       await logHandle?.close();
-      return new WorkResponse()
+      return WorkResponse()
         ..exitCode = EXIT_CODE_ERROR
         ..output = 'Dart Codegen worker failed with:\n$e\n$s';
     }
@@ -122,30 +122,29 @@ Future<IOSinkLogHandle> _runBuilders(
   assert(timings.isRunning);
 
   final srcPaths = await timings.trackOperation('Collecting input srcs', () {
-    return new File(buildArgs.srcsPath).readAsLines();
+    return File(buildArgs.srcsPath).readAsLines();
   });
   if (srcPaths.isEmpty) {
-    throw new CodegenError('No input files to process.');
+    throw CodegenError('No input files to process.');
   }
   final packageMap = await _packageMap(buildArgs, timings);
 
   final packageName = packageMap.keys
       .firstWhere((name) => packageMap[name] == buildArgs.packagePath);
-  final writer = new BazelAssetWriter(buildArgs.outDir, packageMap,
-      validInputs: validInputs);
-  final reader = new BazelAssetReader(
-      packageName, buildArgs.rootDirs, packageMap,
-      assetFilter: new AssetFilter(validInputs, packageMap));
-  var logHandle = new IOSinkLogHandle.toFile(buildArgs.logPath,
+  final writer =
+      BazelAssetWriter(buildArgs.outDir, packageMap, validInputs: validInputs);
+  final reader = BazelAssetReader(packageName, buildArgs.rootDirs, packageMap,
+      assetFilter: AssetFilter(validInputs, packageMap));
+  var logHandle = IOSinkLogHandle.toFile(buildArgs.logPath,
       printLevel: buildArgs.logLevel, printToStdErr: !buildArgs.isWorker);
   Resolvers resolvers;
   List<String> builderArgs;
   if (buildArgs.useSummaries) {
-    var summaryOptions = new SummaryOptions.fromArgs(buildArgs.additionalArgs);
-    resolvers = new SummaryResolvers(summaryOptions, packageMap);
+    var summaryOptions = SummaryOptions.fromArgs(buildArgs.additionalArgs);
+    resolvers = SummaryResolvers(summaryOptions, packageMap);
     builderArgs = summaryOptions.additionalArgs;
   } else {
-    resolvers = new AnalyzerResolvers();
+    resolvers = AnalyzerResolvers();
     builderArgs = buildArgs.additionalArgs;
   }
   await runBuilders(
@@ -168,7 +167,7 @@ Future<IOSinkLogHandle> _runBuilders(
 
 /// Parse [BuildArgs] from [args].
 BuildArgs _parseArgs(List<String> args) {
-  var buildArgs = new BuildArgs.parse(args);
+  var buildArgs = BuildArgs.parse(args);
   if (buildArgs.help) {
     buildArgs.printUsage();
     return null;

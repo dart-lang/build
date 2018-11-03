@@ -1,4 +1,49 @@
-## 0.4.1-dev
+## 0.4.4+2
+
+- Support `package:analyzer` version `0.33.x`.
+
+## 0.4.4+1
+
+- Support `package:build_modules` version `1.x.x`.
+
+## 0.4.4
+
+- Track performance of different builder stages.
+
+## 0.4.3+1
+
+- Removed dependency on cli_util.
+- Fix error in require.js error handling code
+
+## 0.4.3
+
+- Only call `window.postMessage` during initialization if the current context
+  is a `Window`.
+- Fixed an error while showing stack traces for DDC generated scripts
+  when `<base>` tag is used.
+- Value of `<base href="/.../">` tag should start and end with a `/` to be
+  used as the base url for require js.
+- Added more javascript code to dev bootstrap for hot-reloading support
+- Support the latest build_modules.
+
+## 0.4.2+2
+
+- Add magic comment marker for build_runner to know where to inject
+  live-reloading client code. This is only present when using the `dartdevc`
+  compiler. (reapplied)
+
+## 0.4.2+1
+
+- Restore `new` keyword for a working release on Dart 1 VM.
+
+## 0.4.2
+
+- Add magic comment marker for build_runner to know where to inject
+  live-reloading client code. This is only present when using the `dartdevc`
+  compiler.
+- Release broken on Dart 1 VM.
+
+## 0.4.1
 
 - Support the latest build_modules, with updated dart2js support so that it can
   do multiple builds concurrently and will restart workers periodically to
@@ -6,6 +51,7 @@
 - Improvements to reduce the memory usage of the dart2js builder, so that
   transitive dependency information can be garbage collected before the dart2js
   compile is completed.
+- Increased the upper bound for the sdk to `<3.0.0`.
 
 ## 0.4.0+5
 

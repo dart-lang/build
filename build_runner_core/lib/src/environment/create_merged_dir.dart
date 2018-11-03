@@ -10,17 +10,16 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 
-import '../asset_graph/graph.dart';
-import '../asset_graph/node.dart';
-import '../asset_graph/optional_output_tracker.dart';
+import '../asset/reader.dart';
 import '../environment/build_environment.dart';
+import '../generate/finalized_assets_view.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
-final _descriptorPool = new Pool(32);
+final _descriptorPool = Pool(32);
 
-final _logger = new Logger('CreateOutputDir');
+final _logger = Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
 const _manifestSeparator = '\n';
 
@@ -29,14 +28,21 @@ const _manifestSeparator = '\n';
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
     Map<String, String> outputMap,
-    AssetGraph assetGraph,
     PackageGraph packageGraph,
-    AssetReader reader,
     BuildEnvironment environment,
-    OptionalOutputTracker optionalOutputTracker) async {
+    AssetReader reader,
+    FinalizedAssetsView finalizedAssetsView,
+    bool outputSymlinksOnly) async {
+  if (outputSymlinksOnly && reader is! PathProvidingAssetReader) {
+    _logger.severe(
+        'The current environment does not support symlinks, but symlinks were '
+        'requested.');
+    return false;
+  }
+
   for (var output in outputMap.keys) {
-    if (!await _createMergedOutputDir(output, outputMap[output], assetGraph,
-        packageGraph, reader, environment, optionalOutputTracker)) {
+    if (!await _createMergedOutputDir(output, outputMap[output], packageGraph,
+        environment, reader, finalizedAssetsView, outputSymlinksOnly)) {
       _logger.severe('Unable to create merged directory for $output.\n'
           'Choose a different directory or delete the contents of that '
           'directory.');
@@ -47,23 +53,21 @@ Future<bool> createMergedOutputDirectories(
 }
 
 Future<bool> _createMergedOutputDir(
-  String outputPath,
-  String root,
-  AssetGraph assetGraph,
-  PackageGraph packageGraph,
-  AssetReader reader,
-  BuildEnvironment environment,
-  OptionalOutputTracker optionalOutputTracker,
-) async {
-  var outputDir = new Directory(outputPath);
+    String outputPath,
+    String root,
+    PackageGraph packageGraph,
+    BuildEnvironment environment,
+    AssetReader reader,
+    FinalizedAssetsView finalizedOutputsView,
+    bool symlinkOnly) async {
+  var outputDir = Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
     var result = await _cleanUpOutputDir(outputDir, environment);
     if (!result) return result;
   }
 
-  var outputAssets = new Set<AssetId>();
-  var originalOutputAssets = new Set<AssetId>();
+  var outputAssets = <AssetId>[];
 
   await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
       () async {
@@ -71,27 +75,20 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    await Future.wait(assetGraph.allNodes.map((node) async {
-      if (_shouldSkipNode(node, root, optionalOutputTracker)) {
-        return;
-      }
-      originalOutputAssets.add(node.id);
-      node.lastKnownDigest ??= await reader.digest(node.id);
-      outputAssets.add(
-          await _writeAsset(node.id, outputDir, root, packageGraph, reader));
-    }));
+    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+    outputAssets.addAll(await Future.wait(builtAssets.map((id) =>
+        _writeAsset(id, outputDir, root, packageGraph, reader, symlinkOnly))));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
         .join('\r\n');
-    var packagesAsset = new AssetId(packageGraph.root.name, '.packages');
+    var packagesAsset = AssetId(packageGraph.root.name, '.packages');
     await _writeAsString(outputDir, packagesAsset, packagesFileContent);
     outputAssets.add(packagesAsset);
 
     if (root == null) {
-      for (var dir in _findRootDirs(
-          outputPath, assetGraph, packageGraph, optionalOutputTracker)) {
-        var link = new Link(p.join(outputDir.path, dir, 'packages'));
+      for (var dir in _findRootDirs(builtAssets, outputPath)) {
+        var link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
           link.createSync(p.join('..', 'packages'), recursive: true);
         }
@@ -103,20 +100,16 @@ Future<bool> _createMergedOutputDir(
     var paths = outputAssets.map((id) => id.path).toList()..sort();
     var content = paths.join(_manifestSeparator);
     await _writeAsString(
-        outputDir, new AssetId(packageGraph.root.name, _manifestName), content);
+        outputDir, AssetId(packageGraph.root.name, _manifestName), content);
   });
 
   return true;
 }
 
-Set<String> _findRootDirs(String outputPath, AssetGraph assetGraph,
-    PackageGraph packageGraph, OptionalOutputTracker optionalOutputTracker) {
-  var rootDirs = new Set<String>();
-  for (var node in assetGraph.packageNodes(packageGraph.root.name)) {
-    if (_shouldSkipNode(node, null, optionalOutputTracker)) {
-      continue;
-    }
-    var parts = p.url.split(node.id.path);
+Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
+  var rootDirs = Set<String>();
+  for (var id in allAssets) {
+    var parts = p.url.split(id.path);
     if (parts.length == 1) continue;
     var dir = parts.first;
     if (dir == outputPath || dir == 'lib') continue;
@@ -125,69 +118,59 @@ Set<String> _findRootDirs(String outputPath, AssetGraph assetGraph,
   return rootDirs;
 }
 
-bool _shouldSkipNode(
-    AssetNode node, String root, OptionalOutputTracker optionalOutputTracker) {
-  if (!node.isReadable) return true;
-  if (node.isDeleted) return true;
-  if (root != null &&
-      !(node.id.path.startsWith('lib/')) &&
-      !p.isWithin(root, node.id.path)) {
-    return true;
-  }
-  if (node is InternalAssetNode) return true;
-  if (node is GeneratedAssetNode) {
-    if (!node.wasOutput ||
-        node.isFailure ||
-        node.state != GeneratedNodeState.upToDate) {
-      return true;
-    }
-    return !optionalOutputTracker.isRequired(node.id);
-  }
-  if (node.id.path == '.packages') return true;
-  return false;
-}
-
 Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
-    PackageGraph packageGraph, AssetReader reader) async {
-  String assetPath;
-  if (id.path.startsWith('lib/')) {
-    assetPath =
-        p.url.join('packages', id.package, id.path.substring('lib/'.length));
-  } else {
-    assetPath = id.path;
-    assert(id.package == packageGraph.root.name);
-    if (root != null && p.isWithin(root, id.path)) {
-      assetPath = p.relative(id.path, from: root);
-    }
-  }
-
-  var outputId = new AssetId(packageGraph.root.name, assetPath);
-  try {
-    await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
-  } on AssetNotFoundException catch (e, __) {
-    if (p.basename(id.path).startsWith('.')) {
-      _logger.fine('Skipping missing hidden file ${id.path}');
+    PackageGraph packageGraph, AssetReader reader, bool symlinkOnly) {
+  return _descriptorPool.withResource(() async {
+    String assetPath;
+    if (id.path.startsWith('lib/')) {
+      assetPath =
+          p.url.join('packages', id.package, id.path.substring('lib/'.length));
     } else {
-      _logger.severe(
-          'Missing asset ${e.assetId}, it may have been deleted during the '
-          'build. Please try rebuilding and if you continue to see the '
-          'error then file a bug at '
-          'https://github.com/dart-lang/build/issues/new.');
-      rethrow;
+      assetPath = id.path;
+      assert(id.package == packageGraph.root.name);
+      if (root != null && p.isWithin(root, id.path)) {
+        assetPath = p.relative(id.path, from: root);
+      }
     }
-  }
-  return outputId;
+
+    var outputId = AssetId(packageGraph.root.name, assetPath);
+    try {
+      if (symlinkOnly) {
+        await Link(_filePathFor(outputDir, id)).create(
+            // We assert at the top of `createMergedOutputDirectories` that the
+            // reader implements this type when requesting symlinks.
+            (reader as PathProvidingAssetReader).pathTo(id),
+            recursive: true);
+      } else {
+        await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
+      }
+    } on AssetNotFoundException catch (e, __) {
+      if (p.basename(id.path).startsWith('.')) {
+        _logger.fine('Skipping missing hidden file ${id.path}');
+      } else {
+        _logger.severe(
+            'Missing asset ${e.assetId}, it may have been deleted during the '
+            'build. Please try rebuilding and if you continue to see the '
+            'error then file a bug at '
+            'https://github.com/dart-lang/build/issues/new.');
+        rethrow;
+      }
+    }
+    return outputId;
+  });
 }
 
 Future<void> _writeAsBytes(Directory outputDir, AssetId id, List<int> bytes) =>
-    _descriptorPool.withResource(
-        () => _fileFor(outputDir, id).then((file) => file.writeAsBytes(bytes)));
+    _fileFor(outputDir, id).then((file) => file.writeAsBytes(bytes));
 
 Future<void> _writeAsString(Directory outputDir, AssetId id, String contents) =>
-    _descriptorPool.withResource(() =>
-        _fileFor(outputDir, id).then((file) => file.writeAsString(contents)));
+    _fileFor(outputDir, id).then((file) => file.writeAsString(contents));
 
 Future<File> _fileFor(Directory outputDir, AssetId id) {
+  return File(_filePathFor(outputDir, id)).create(recursive: true);
+}
+
+String _filePathFor(Directory outputDir, AssetId id) {
   String relativePath;
   if (id.path.startsWith('lib')) {
     relativePath =
@@ -195,7 +178,7 @@ Future<File> _fileFor(Directory outputDir, AssetId id) {
   } else {
     relativePath = id.path;
   }
-  return new File(p.join(outputDir.path, relativePath)).create(recursive: true);
+  return p.join(outputDir.path, relativePath);
 }
 
 /// Checks for a manifest file in [outputDir] and deletes all referenced files.
@@ -206,12 +189,12 @@ Future<File> _fileFor(Directory outputDir, AssetId id) {
 Future<bool> _cleanUpOutputDir(
     Directory outputDir, BuildEnvironment environment) async {
   var outputPath = outputDir.path;
-  var manifestFile = new File(p.join(outputPath, _manifestName));
+  var manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {
     if (outputDir.listSync(recursive: false).isNotEmpty) {
       var choices = [
-        'Skip creating the output directory',
-        'Delete the existing directory entirely',
+        'Leave the directory unchanged and skip writing the build output',
+        'Delete the directory and all contents',
         'Leave the directory in place and write over any existing files',
       ];
       int choice;
@@ -252,7 +235,7 @@ Future<bool> _cleanUpOutputDir(
 
     logTimedSync(_logger, 'Deleting previous outputs in `$outputPath`', () {
       for (var path in previousOutputs) {
-        var file = new File(p.join(outputPath, path));
+        var file = File(p.join(outputPath, path));
         if (file.existsSync()) file.deleteSync();
       }
       _cleanEmptyDirectories(outputPath, previousOutputs);
@@ -277,7 +260,7 @@ void _cleanEmptyDirectories(
 void _deleteUp(String from, String to) {
   var directoryPath = from;
   while (p.isWithin(to, directoryPath)) {
-    var directory = new Directory(directoryPath);
+    var directory = Directory(directoryPath);
     if (!directory.existsSync() || directory.listSync().isNotEmpty) return;
     directory.deleteSync();
     directoryPath = p.dirname(directoryPath);

@@ -40,12 +40,12 @@ class BuildConfig {
   static Future<BuildConfig> fromBuildConfigDir(
       String packageName, Iterable<String> dependencies, String path) async {
     final configPath = p.join(path, 'build.yaml');
-    final file = new File(configPath);
+    final file = File(configPath);
     if (await file.exists()) {
-      return new BuildConfig.parse(
+      return BuildConfig.parse(
           packageName, dependencies, await file.readAsString());
     } else {
-      return new BuildConfig.useDefault(packageName, dependencies);
+      return BuildConfig.useDefault(packageName, dependencies);
     }
   }
 
@@ -72,13 +72,13 @@ class BuildConfig {
       String packageName, Iterable<String> dependencies) {
     return runInBuildConfigZone(() {
       final key = '$packageName:$packageName';
-      final target = new BuildTarget(
+      final target = BuildTarget(
         dependencies: dependencies
             .map((dep) => normalizeTargetKeyUsage(dep, packageName))
             .toList(),
         sources: InputSet.anything,
       );
-      return new BuildConfig(
+      return BuildConfig(
         packageName: packageName,
         buildTargets: {key: target},
         globalOptions: {},
@@ -91,17 +91,16 @@ class BuildConfig {
       String packageName, Iterable<String> dependencies, String configYaml) {
     try {
       var parsed = loadYaml(configYaml) as Map;
-      return new BuildConfig.fromMap(
-          packageName, dependencies, parsed ?? const {});
+      return BuildConfig.fromMap(packageName, dependencies, parsed ?? const {});
     } on CheckedFromJsonException catch (e) {
-      throw new ArgumentError(_prettyPrintCheckedFromJsonException(e));
+      throw ArgumentError(_prettyPrintCheckedFromJsonException(e));
     }
   }
 
   /// Create a [BuildConfig] read a map which was already parsed.
   factory BuildConfig.fromMap(
       String packageName, Iterable<String> dependencies, Map config) {
-    return runInBuildConfigZone(() => new BuildConfig._fromJson(config),
+    return runInBuildConfigZone(() => BuildConfig._fromJson(config),
         packageName, dependencies.toList());
   }
 
@@ -112,21 +111,20 @@ class BuildConfig {
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
-  })  : this.buildTargets = buildTargets ??
+  })  : buildTargets = buildTargets ??
             {
-              _defaultTarget(packageName ?? currentPackage): new BuildTarget(
+              _defaultTarget(packageName ?? currentPackage): BuildTarget(
                 dependencies: currentPackageDefaultDependencies,
               )
             },
-        this.globalOptions = (globalOptions ?? const {}).map((key, config) =>
-            new MapEntry(
-                normalizeBuilderKeyUsage(key, currentPackage), config)),
-        this.builderDefinitions = _normalizeBuilderDefinitions(
+        globalOptions = (globalOptions ?? const {}).map((key, config) =>
+            MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
+        builderDefinitions = _normalizeBuilderDefinitions(
             builderDefinitions ?? const {}, packageName ?? currentPackage),
-        this.postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
+        postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
             postProcessBuilderDefinitions ?? const {},
             packageName ?? currentPackage),
-        this.packageName = packageName ?? currentPackage {
+        packageName = packageName ?? currentPackage {
     // Set up the expandos for all our build targets and definitions so they
     // can know which package and builder key they refer to.
     this.buildTargets.forEach((key, target) {
@@ -150,8 +148,8 @@ String _defaultTarget(String package) => '$package:$package';
 
 Map<String, T> _normalizeBuilderDefinitions<T>(
         Map<String, T> builderDefinitions, String packageName) =>
-    builderDefinitions.map((key, definition) => new MapEntry(
-        normalizeBuilderKeyDefinition(key, packageName), definition));
+    builderDefinitions.map((key, definition) =>
+        MapEntry(normalizeBuilderKeyDefinition(key, packageName), definition));
 
 String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
   var yamlMap = err.map as YamlMap;
@@ -190,12 +188,12 @@ String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
 }
 
 Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
-  var targets = json.map((key, target) => new MapEntry(
+  var targets = json.map((key, target) => MapEntry(
       normalizeTargetKeyDefinition(key as String, currentPackage),
-      new BuildTarget.fromJson(target as Map)));
+      BuildTarget.fromJson(target as Map)));
 
   if (!targets.containsKey(_defaultTarget(currentPackage))) {
-    throw new ArgumentError('Must specify a target with the name '
+    throw ArgumentError('Must specify a target with the name '
         '`$currentPackage` or `\$default`.');
   }
 
@@ -204,9 +202,9 @@ Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
 
 Future<Pubspec> _fromPackageDir(String path) async {
   final pubspec = p.join(path, 'pubspec.yaml');
-  final file = new File(pubspec);
+  final file = File(pubspec);
   if (await file.exists()) {
-    return new Pubspec.parse(await file.readAsString());
+    return Pubspec.parse(await file.readAsString());
   }
-  throw new FileSystemException('No file found', p.absolute(pubspec));
+  throw FileSystemException('No file found', p.absolute(pubspec));
 }

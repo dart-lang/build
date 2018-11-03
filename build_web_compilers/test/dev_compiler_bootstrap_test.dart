@@ -12,6 +12,7 @@ import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
+  final platform = DartPlatform.dartdevc;
 
   setUp(() async {
     assets = {
@@ -30,12 +31,13 @@ main() {
     };
 
     // Set up all the other required inputs for this test.
-    await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
-    await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
-    await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
-    await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
-    await testBuilderAndCollectAssets(new LinkedSummaryBuilder(), assets);
-    await testBuilderAndCollectAssets(new DevCompilerBuilder(), assets);
+    await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+    await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+    await testBuilderAndCollectAssets(MetaModuleCleanBuilder(platform), assets);
+    await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+    await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(platform), assets);
+    await testBuilderAndCollectAssets(LinkedSummaryBuilder(platform), assets);
+    await testBuilderAndCollectAssets(DevCompilerBuilder(), assets);
   });
 
   test('can bootstrap dart entrypoints', () async {
@@ -50,13 +52,13 @@ main() {
         contains('"packages/a/a": "packages/a/a.ddc"'),
         contains('"packages/b/b": "packages/b/b.ddc"'),
         // Requires the top level module and dart sdk.
-        contains('require(["web/index", "dart_sdk"]'),
+        contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
         // Calls main on the top level module.
         contains('index.main()'),
         isNot(contains('lib/a')),
       ])),
     };
-    await testBuilder(new WebEntrypointBuilder(WebCompiler.DartDevc), assets,
+    await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
         outputs: expectedOutputs);
   });
 }

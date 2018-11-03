@@ -10,36 +10,36 @@ import 'dart:math' show min;
 
 import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
-import 'package:cli_util/cli_util.dart' as cli_util;
 import 'package:path/path.dart' as p;
+import 'package:pedantic/pedantic.dart';
 
 import 'scratch_space.dart';
 
-final sdkDir = cli_util.getSdkPath();
+final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
 /// Completes once the analyzer workers have been shut down.
 Future<Null> get analyzerWorkersAreDone =>
-    _analyzerWorkersAreDoneCompleter?.future ?? new Future.value(null);
+    _analyzerWorkersAreDoneCompleter?.future ?? Future.value(null);
 Completer<Null> _analyzerWorkersAreDoneCompleter;
 
 /// Completes once the dartdevc workers have been shut down.
 Future<Null> get dartdevcWorkersAreDone =>
-    _dartdevcWorkersAreDoneCompleter?.future ?? new Future.value(null);
+    _dartdevcWorkersAreDoneCompleter?.future ?? Future.value(null);
 Completer<Null> _dartdevcWorkersAreDoneCompleter;
 
 /// Completes once the dartdevk workers have been shut down.
 Future<Null> get dartdevkWorkersAreDone =>
-    _dartdevkWorkersAreDoneCompleter?.future ?? new Future.value(null);
+    _dartdevkWorkersAreDoneCompleter?.future ?? Future.value(null);
 Completer<Null> _dartdevkWorkersAreDoneCompleter;
 
 /// Completes once the dart2js workers have been shut down.
 Future<Null> get dart2jsWorkersAreDone =>
-    _dart2jsWorkersAreDoneCompleter?.future ?? new Future.value(null);
+    _dart2jsWorkersAreDoneCompleter?.future ?? Future.value(null);
 Completer<Null> _dart2jsWorkersAreDoneCompleter;
 
 /// Completes once the common frontend workers have been shut down.
 Future<Null> get frontendWorkersAreDone =>
-    _frontendWorkersAreDoneCompleter?.future ?? new Future.value(null);
+    _frontendWorkersAreDoneCompleter?.future ?? Future.value(null);
 Completer<Null> _frontendWorkersAreDoneCompleter;
 
 String get _scriptExtension => Platform.isWindows ? '.bat' : '';
@@ -63,8 +63,8 @@ final int _maxWorkersPerTask = () {
 
 /// Manages a shared set of persistent analyzer workers.
 BazelWorkerDriver get _analyzerDriver {
-  _analyzerWorkersAreDoneCompleter ??= new Completer<Null>();
-  return __analyzerDriver ??= new BazelWorkerDriver(
+  _analyzerWorkersAreDoneCompleter ??= Completer<Null>();
+  return __analyzerDriver ??= BazelWorkerDriver(
       () => Process.start(
           p.join(sdkDir, 'bin', 'dartanalyzer$_scriptExtension'),
           ['--build-mode', '--persistent_worker'],
@@ -75,8 +75,8 @@ BazelWorkerDriver get _analyzerDriver {
 BazelWorkerDriver __analyzerDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for dartanalyzer.
-final analyzerDriverResource = new Resource<BazelWorkerDriver>(
-    () => _analyzerDriver, beforeExit: () async {
+final analyzerDriverResource =
+    Resource<BazelWorkerDriver>(() => _analyzerDriver, beforeExit: () async {
   await _analyzerDriver?.terminateWorkers();
   _analyzerWorkersAreDoneCompleter.complete();
   _analyzerWorkersAreDoneCompleter = null;
@@ -85,8 +85,8 @@ final analyzerDriverResource = new Resource<BazelWorkerDriver>(
 
 /// Manages a shared set of persistent dartdevc workers.
 BazelWorkerDriver get _dartdevcDriver {
-  _dartdevcWorkersAreDoneCompleter ??= new Completer<Null>();
-  return __dartdevcDriver ??= new BazelWorkerDriver(
+  _dartdevcWorkersAreDoneCompleter ??= Completer<Null>();
+  return __dartdevcDriver ??= BazelWorkerDriver(
       () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
           ['--persistent_worker'],
           workingDirectory: scratchSpace.tempDir.path),
@@ -96,8 +96,8 @@ BazelWorkerDriver get _dartdevcDriver {
 BazelWorkerDriver __dartdevcDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for dartdevc.
-final dartdevcDriverResource = new Resource<BazelWorkerDriver>(
-    () => _dartdevcDriver, beforeExit: () async {
+final dartdevcDriverResource =
+    Resource<BazelWorkerDriver>(() => _dartdevcDriver, beforeExit: () async {
   await _dartdevcDriver?.terminateWorkers();
   _dartdevcWorkersAreDoneCompleter.complete();
   _dartdevcWorkersAreDoneCompleter = null;
@@ -106,8 +106,8 @@ final dartdevcDriverResource = new Resource<BazelWorkerDriver>(
 
 /// Manages a shared set of persistent dartdevk workers.
 BazelWorkerDriver get _dartdevkDriver {
-  _dartdevkWorkersAreDoneCompleter ??= new Completer<Null>();
-  return __dartdevkDriver ??= new BazelWorkerDriver(
+  _dartdevkWorkersAreDoneCompleter ??= Completer<Null>();
+  return __dartdevkDriver ??= BazelWorkerDriver(
       () => Process.start(p.join(sdkDir, 'bin', 'dartdevk$_scriptExtension'),
           ['--persistent_worker'],
           workingDirectory: scratchSpace.tempDir.path),
@@ -117,8 +117,8 @@ BazelWorkerDriver get _dartdevkDriver {
 BazelWorkerDriver __dartdevkDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for dartdevk.
-final dartdevkDriverResource = new Resource<BazelWorkerDriver>(
-    () => _dartdevkDriver, beforeExit: () async {
+final dartdevkDriverResource =
+    Resource<BazelWorkerDriver>(() => _dartdevkDriver, beforeExit: () async {
   await _dartdevkDriver?.terminateWorkers();
   _dartdevkWorkersAreDoneCompleter.complete();
   _dartdevkWorkersAreDoneCompleter = null;
@@ -127,8 +127,8 @@ final dartdevkDriverResource = new Resource<BazelWorkerDriver>(
 
 /// Manages a shared set of persistent common frontend workers.
 BazelWorkerDriver get _frontendDriver {
-  _frontendWorkersAreDoneCompleter ??= new Completer<Null>();
-  return __frontendDriver ??= new BazelWorkerDriver(
+  _frontendWorkersAreDoneCompleter ??= Completer<Null>();
+  return __frontendDriver ??= BazelWorkerDriver(
       () => Process.start(
           p.join(sdkDir, 'bin', 'dart'),
           [
@@ -142,8 +142,8 @@ BazelWorkerDriver get _frontendDriver {
 BazelWorkerDriver __frontendDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for common frontend.
-final frontendDriverResource = new Resource<BazelWorkerDriver>(
-    () => _frontendDriver, beforeExit: () async {
+final frontendDriverResource =
+    Resource<BazelWorkerDriver>(() => _frontendDriver, beforeExit: () async {
   await _frontendDriver?.terminateWorkers();
   _frontendWorkersAreDoneCompleter.complete();
   _frontendWorkersAreDoneCompleter = null;
@@ -152,8 +152,8 @@ final frontendDriverResource = new Resource<BazelWorkerDriver>(
 
 /// Manages a shared set of persistent dart2js workers.
 Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
-  _dart2jsWorkersAreDoneCompleter ??= new Completer<Null>();
-  return __dart2jsWorkerPool ??= new Dart2JsBatchWorkerPool(() => Process.start(
+  _dart2jsWorkersAreDoneCompleter ??= Completer<Null>();
+  return __dart2jsWorkerPool ??= Dart2JsBatchWorkerPool(() => Process.start(
       p.join(sdkDir, 'bin', 'dart2js$_scriptExtension'), ['--batch'],
       workingDirectory: scratchSpace.tempDir.path));
 }
@@ -161,7 +161,7 @@ Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
 Dart2JsBatchWorkerPool __dart2jsWorkerPool;
 
 /// Resource for fetching the current [Dart2JsBatchWorkerPool] for dart2js.
-final dart2JsWorkerResource = new Resource<Dart2JsBatchWorkerPool>(
+final dart2JsWorkerResource = Resource<Dart2JsBatchWorkerPool>(
     () => _dart2jsWorkerPool, beforeExit: () async {
   await _dart2jsWorkerPool.terminateWorkers();
   _dart2jsWorkersAreDoneCompleter.complete();
@@ -173,18 +173,18 @@ final dart2JsWorkerResource = new Resource<Dart2JsBatchWorkerPool>(
 class Dart2JsBatchWorkerPool {
   final Future<Process> Function() _spawnWorker;
 
-  final _workQueue = new Queue<_Dart2JsJob>();
+  final _workQueue = Queue<_Dart2JsJob>();
 
   bool _queueIsActive = false;
 
-  final _availableWorkers = new Queue<_Dart2JsWorker>();
+  final _availableWorkers = Queue<_Dart2JsWorker>();
 
   final _allWorkers = <_Dart2JsWorker>[];
 
   Dart2JsBatchWorkerPool(this._spawnWorker);
 
   Future<Dart2JsResult> compile(List<String> args) async {
-    var job = new _Dart2JsJob(args);
+    var job = _Dart2JsJob(args);
     _workQueue.add(job);
     if (!_queueIsActive) _startWorkQueue();
     return job.result;
@@ -198,7 +198,7 @@ class Dart2JsBatchWorkerPool {
         _Dart2JsWorker worker;
         if (_availableWorkers.isEmpty &&
             _allWorkers.length < _maxWorkersPerTask) {
-          worker = new _Dart2JsWorker(_spawnWorker);
+          worker = _Dart2JsWorker(_spawnWorker);
           _allWorkers.add(worker);
         }
 
@@ -210,13 +210,12 @@ class Dart2JsBatchWorkerPool {
         while (worker == null) {
           // TODO: something smarter here? in practice this seems to work
           // reasonably well though and simplifies things a lot ¯\_(ツ)_/¯.
-          await new Future.delayed(new Duration(seconds: 1));
+          await Future.delayed(Duration(seconds: 1));
           worker = nextWorker();
         }
-        // ignore: unawaited_futures
-        worker
+        unawaited(worker
             .doJob(_workQueue.removeFirst())
-            .whenComplete(() => _availableWorkers.add(worker));
+            .whenComplete(() => _availableWorkers.add(worker)));
       }
       _queueIsActive = false;
     }();
@@ -262,20 +261,19 @@ class _Dart2JsWorker {
   Process __worker;
   Future<Process> _spawningWorker;
   Future<Process> get _worker {
-    if (__worker != null) return new Future.value(__worker);
+    if (__worker != null) return Future.value(__worker);
     return _spawningWorker ??= () async {
       if (__worker == null) {
         _jobsSinceLastRestartCount = 0;
         __worker ??= await _spawnWorker();
         _spawningWorker = null;
-        // ignore: unawaited_futures
-        __worker.exitCode.then((_) {
+        unawaited(__worker.exitCode.then((_) {
           __worker = null;
           __workerStdoutLines = null;
           __workerStderrLines = null;
           _currentJobResult
               ?.completeError('Dart2js exited with an unknown error');
-        });
+        }));
       }
       return __worker;
     }();
@@ -298,13 +296,13 @@ class _Dart2JsWorker {
       tryCount++;
       _jobsSinceLastRestartCount++;
       var worker = await _worker;
-      var output = new StringBuffer();
-      _currentJobResult = new Completer<Dart2JsResult>();
+      var output = StringBuffer();
+      _currentJobResult = Completer<Dart2JsResult>();
       var sawError = false;
       var stderrListener = _workerStderrLines.listen((line) {
         if (line == '>>> EOF STDERR') {
-          _currentJobResult?.complete(new Dart2JsResult(
-              !sawError, 'Dart2Js finished with:\n\n$output'));
+          _currentJobResult?.complete(
+              Dart2JsResult(!sawError, 'Dart2Js finished with:\n\n$output'));
         }
         if (!line.startsWith('>>> ')) {
           output.writeln(line);
@@ -359,7 +357,7 @@ class _Dart2JsWorker {
 class _Dart2JsJob {
   final List<String> args;
 
-  final resultCompleter = new Completer<Dart2JsResult>();
+  final resultCompleter = Completer<Dart2JsResult>();
   Future<Dart2JsResult> get result => resultCompleter.future;
 
   _Dart2JsJob(this.args);

@@ -3,21 +3,28 @@
 part of 'modules.dart';
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
-Module _$ModuleFromJson(Map<String, dynamic> json) => new Module(
-    new AssetId.deserialize(json['p'] as List),
-    (json['s'] as List).map((e) => new AssetId.deserialize(e as List)),
-    (json['d'] as List).map((e) => new AssetId.deserialize(e as List)));
-
-abstract class _$ModuleSerializerMixin {
-  AssetId get primarySource;
-  Set<AssetId> get sources;
-  Set<AssetId> get directDependencies;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'p': primarySource.serialize(),
-        's': sources.map((e) => e.serialize()).toList(),
-        'd': directDependencies.map((e) => e.serialize()).toList()
-      };
+Module _$ModuleFromJson(Map<String, dynamic> json) {
+  return Module(
+      const _AssetIdConverter().fromJson(json['p'] as List),
+      (json['s'] as List)
+          .map((e) => const _AssetIdConverter().fromJson(e as List)),
+      (json['d'] as List)
+          .map((e) => const _AssetIdConverter().fromJson(e as List)),
+      const _DartPlatformConverter().fromJson(json['pf'] as String),
+      json['is'] as bool,
+      isMissing: json['m'] as bool ?? false);
 }
+
+Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
+      'p': const _AssetIdConverter().toJson(instance.primarySource),
+      's': instance.sources.map(const _AssetIdConverter().toJson).toList(),
+      'd': instance.directDependencies
+          .map(const _AssetIdConverter().toJson)
+          .toList(),
+      'm': instance.isMissing,
+      'is': instance.isSupported,
+      'pf': const _DartPlatformConverter().toJson(instance.platform)
+    };

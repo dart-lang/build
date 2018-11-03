@@ -5,13 +5,13 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
 import 'module_builder.dart';
+import 'platform.dart';
 import 'summary_builder.dart';
 
 part 'modules.g.dart';
@@ -22,7 +22,9 @@ part 'modules.g.dart';
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
 @JsonSerializable()
-class Module extends Object with _$ModuleSerializerMixin {
+@_AssetIdConverter()
+@_DartPlatformConverter()
+class Module {
   /// The JS file for this module.
   AssetId jsId(String jsModuleExtension) =>
       primarySource.changeExtension(jsModuleExtension);
@@ -33,18 +35,17 @@ class Module extends Object with _$ModuleSerializerMixin {
 
   /// The linked summary for this module.
   AssetId get linkedSummaryId =>
-      primarySource.changeExtension(linkedSummaryExtension);
+      primarySource.changeExtension(linkedSummaryExtension(platform));
 
   /// The unlinked summary for this module.
   AssetId get unlinkedSummaryId =>
-      primarySource.changeExtension(unlinkedSummaryExtension);
+      primarySource.changeExtension(unlinkedSummaryExtension(platform));
 
   /// The library which will be used to reference any library in [sources].
   ///
   /// The assets which are built once per module, such as DDC compiled output or
   /// Analyzer summaries, will be named after the primary source and will
   /// encompass everything in [sources].
-  @override
   @JsonKey(name: 'p', nullable: false)
   final AssetId primarySource;
 
@@ -69,45 +70,49 @@ class Module extends Object with _$ModuleSerializerMixin {
   /// Libraries `foo` and `bar` form an import cycle so they would be grouped in
   /// the same module. Every Dart library will only be contained in a single
   /// [Module].
-  @override
   @JsonKey(name: 's', nullable: false)
   final Set<AssetId> sources;
 
   /// The [primarySource]s of the [Module]s which contain any library imported
   /// from any of the [sources] in this module.
-  @override
   @JsonKey(name: 'd', nullable: false)
   final Set<AssetId> directDependencies;
 
+  /// Missing modules are created if a module depends on another non-existent
+  /// module.
+  ///
+  /// We want to report these errors lazily to allow for builds to succeed if it
+  /// won't actually impact any apps negatively.
+  @JsonKey(name: 'm', nullable: true, defaultValue: false)
+  final bool isMissing;
+
+  /// Whether or not this module is supported for [platform].
+  ///
+  /// Note that this only indicates support for the [sources] within this
+  /// module, and not its transitive (or direct) dependencies.
+  ///
+  /// Compilers can use this to either silently skip compilation of this module
+  /// or throw early errors or warnings.
+  ///
+  /// Modules are allowed to exist even if they aren't supported, which can help
+  /// with discovering root causes of incompatibility.
+  @JsonKey(name: 'is', nullable: false)
+  final bool isSupported;
+
+  @JsonKey(name: 'pf', nullable: false)
+  final DartPlatform platform;
+
   Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies)
-      : this.sources = sources.toSet(),
-        this.directDependencies = directDependencies.toSet();
-
-  /// Find the module definition which contains [library].
-  factory Module.forLibrary(LibraryElement library) {
-    final cycle = library.libraryCycle;
-    final cycleUris = cycle.map((l) => l.source.uri).toSet();
-    final dependencyModules = new Set<Uri>();
-    final seenDependencies = new Set<Uri>();
-    for (var dependency in _cycleDependencies(cycle)) {
-      var uri = dependency.source.uri;
-      if (seenDependencies.contains(uri) || cycleUris.contains(uri)) continue;
-      var cycle = dependency.libraryCycle;
-      dependencyModules.add(_earliest(cycle));
-      seenDependencies.addAll(cycle.map((l) => l.source.uri));
-    }
-
-    AssetId toAssetId(Uri uri) => new AssetId.resolve('$uri');
-
-    return new Module(
-        toAssetId(_earliest(cycle)),
-        _cycleSources(cycle).map(toAssetId).toSet(),
-        dependencyModules.map(toAssetId).toSet());
-  }
+      Iterable<AssetId> directDependencies, this.platform, this.isSupported,
+      {bool isMissing})
+      : sources = sources.toSet(),
+        directDependencies = directDependencies.toSet(),
+        isMissing = isMissing ?? false;
 
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ModuleToJson(this);
 
   /// Returns all [Module]s in the transitive dependencies of this module in
   /// reverse dependency order.
@@ -117,24 +122,28 @@ class Module extends Object with _$ModuleSerializerMixin {
   Future<List<Module>> computeTransitiveDependencies(AssetReader reader) async {
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = directDependencies.toSet();
-    var missingModuleSources = new Set<AssetId>();
+    var missingModuleSources = Set<AssetId>();
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
       if (transitiveDeps.containsKey(next)) continue;
-      var nextModuleId = next.changeExtension(moduleExtension);
+      var nextModuleId = next.changeExtension(moduleExtension(platform));
       if (!await reader.canRead(nextModuleId)) {
         missingModuleSources.add(next);
         continue;
       }
-      var module = new Module.fromJson(
+      var module = Module.fromJson(
           json.decode(await reader.readAsString(nextModuleId))
               as Map<String, dynamic>);
+      if (module.isMissing) {
+        missingModuleSources.add(module.primarySource);
+        continue;
+      }
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }
     if (missingModuleSources.isNotEmpty) {
-      throw await MissingModulesException.create(this, missingModuleSources,
+      throw await MissingModulesException.create(missingModuleSources,
           transitiveDeps.values.toList()..add(this), reader);
     }
     var orderedModules = stronglyConnectedComponents<AssetId, Module>(
@@ -153,41 +162,22 @@ class Module extends Object with _$ModuleSerializerMixin {
   }
 }
 
-/// Returns whether [library] owns the module for it's strongly connected import
-/// cycle.
-bool isPrimary(LibraryElement library) =>
-    _earliest(library.libraryCycle) == library.source.uri;
+class _AssetIdConverter implements JsonConverter<AssetId, List> {
+  const _AssetIdConverter();
 
-Uri _earliest(Iterable<LibraryElement> libraries) {
-  assert(libraries.isNotEmpty, 'Library cycle should not be empty');
-  if (libraries.length == 1) return libraries.single.source.uri;
-  return libraries.map((l) => l.source.uri).reduce(_earlier);
+  @override
+  AssetId fromJson(List json) => AssetId.deserialize(json);
+
+  @override
+  List toJson(AssetId object) => object.serialize() as List;
 }
 
-Uri _earlier(Uri left, Uri right) =>
-    left.path.compareTo(right.path) < 0 ? left : right;
+class _DartPlatformConverter implements JsonConverter<DartPlatform, String> {
+  const _DartPlatformConverter();
 
-/// All the non-SDK [LibraryElement]s which are imported or exported from
-/// any of [libraries].
-///
-/// There may be duplicates
-Iterable<LibraryElement> _cycleDependencies(
-        Iterable<LibraryElement> libraries) =>
-    libraries.expand(_libraryDependencies);
+  @override
+  DartPlatform fromJson(String json) => DartPlatform(json);
 
-/// All the non-SDK [LibraryElement]s which are imported or exported from
-/// [library].
-///
-/// There may be duplicates.
-Iterable<LibraryElement> _libraryDependencies(LibraryElement library) => [
-      library.importedLibraries,
-      library.exportedLibraries
-    ].expand((l) => l).where((l) => !l.source.isInSystemLibrary);
-
-/// All sources for a library cycle, including part files.
-Iterable<Uri> _cycleSources(Iterable<LibraryElement> libraries) =>
-    libraries.expand(_libraryUris);
-
-/// All sources for a library, including part files.
-Iterable<Uri> _libraryUris(LibraryElement library) =>
-    library.parts.map((u) => u.source.uri).toList()..add(library.source.uri);
+  @override
+  String toJson(DartPlatform object) => object.name;
+}

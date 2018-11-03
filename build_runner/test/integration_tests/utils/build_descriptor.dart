@@ -39,7 +39,7 @@ class TestBuilderDefinition {
 /// of the `builders` argument determines builder ordering.
 TestBuilderDefinition builder(String key, Builder builder,
         {bool isOptional = false, List<String> requiredInputs = const []}) =>
-    new TestBuilderDefinition(key, isOptional, builder, requiredInputs);
+    TestBuilderDefinition(key, isOptional, builder, requiredInputs);
 
 /// Create a package in [d.sandbox] with a `buid.yaml` file exporting [builders]
 /// and auto applying them to dependents.
@@ -54,7 +54,7 @@ d.Descriptor packageWithBuilders(Iterable<TestBuilderDefinition> builders,
       _pubspec(name),
       d.file('build.yaml', jsonEncode(_buildConfig(builders))),
       d.dir('lib', [
-        d.file('builders.dart', _buildersFile(builders, new Frame.caller().uri))
+        d.file('builders.dart', _buildersFile(builders, Frame.caller().uri))
       ])
     ]);
 
@@ -94,13 +94,13 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                   'build_runner',
                   'build_runner_core',
                 ],
-                pathDependencies: new Map.fromIterable(otherPackages,
+                pathDependencies: Map.fromIterable(otherPackages,
                     key: (o) => (o as d.Descriptor).name,
                     value: (o) => p.join(d.sandbox, (o as d.Descriptor).name))),
           ].followedBy(packageContents))
       .create();
   await pubGet('a');
-  return new BuildTool._('pub', ['run', 'build_runner']);
+  return BuildTool._('pub', ['run', 'build_runner']);
 }
 
 /// Create a package in [d.sandbox] with a `tool/build.dart` script using
@@ -131,13 +131,12 @@ Future<BuildTool> packageWithBuildScript(
               'build_test'
             ]),
             d.dir('tool', [
-              d.file('build.dart',
-                  _buildToolFile(builders, new Frame.caller().uri))
+              d.file('build.dart', _buildToolFile(builders, Frame.caller().uri))
             ])
           ].followedBy(contents))
       .create();
   await pubGet('a');
-  return new BuildTool._('dart', [p.join('tool', 'build.dart')]);
+  return BuildTool._('dart', [p.join('tool', 'build.dart')]);
 }
 
 String _buildersFile(
@@ -161,6 +160,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 
 ${_builders(callingScript)}
@@ -179,7 +179,7 @@ apply('${builder.key}', [${builder.key}Factory], toRoot(),
 ''';
 
 String _builders(Uri callingScript) {
-  final content = new File.fromUri(callingScript).readAsLinesSync();
+  final content = File.fromUri(callingScript).readAsLinesSync();
   final start =
       content.indexWhere((l) => l.startsWith('// test-package-start'));
   final end = content.indexWhere((l) => l.contains('// test-package-end'));
@@ -225,7 +225,7 @@ d.FileDescriptor _pubspec(String name,
   pathDependencies ??= {};
   versionDependencies ??= {};
 
-  var buffer = new StringBuffer()
+  var buffer = StringBuffer()
     ..writeln('name: $name')
     // Using dependency_overrides forces the path dependency and silences
     // warnings about hosted vs path dependency conflicts.
@@ -251,7 +251,7 @@ class BuildTool {
 
   BuildTool._(this._executable, this._baseArgs);
 
-  Future<BuildServer> serve() async => new BuildServer(await TestProcess.start(
+  Future<BuildServer> serve() async => BuildServer(await TestProcess.start(
       _executable, _baseArgs.followedBy(['serve']),
       workingDirectory: rootPackageDir));
 
@@ -270,7 +270,7 @@ class BuildTool {
 /// A process running the `serve` command.
 class BuildServer {
   final TestProcess _process;
-  final HttpClient _client = new HttpClient();
+  final HttpClient _client = HttpClient();
 
   BuildServer(this._process);
 
@@ -284,7 +284,7 @@ class BuildServer {
     while (await _process.stdout.hasNext) {
       if ((await _process.stdout.next).contains(message)) return;
     }
-    throw 'Did not emit line containing [$message]';
+    throw StateError('Did not emit line containing [$message]');
   }
 
   /// Clean up this server.

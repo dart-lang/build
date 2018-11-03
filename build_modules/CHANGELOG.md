@@ -1,16 +1,86 @@
-## 0.3.0-dev
+## 1.0.2
+
+- Support the latest `package:json_annotation`.
+
+## 1.0.1
+
+- Increased the upper bound for `package:analyzer` to '<0.34.0'.
+
+## 1.0.0
+
+### Breaking Changes
+
+- The `Module` constructor has an additional required parameter `isSupported`,
+  which indicates if a module is supported on that module's platform.
+
+## 0.4.0
+
+### Improvements
+
+- Modules are now platform specific, and config specific imports using
+  `dart.library.*` constants are supported.
+
+### Breaking Configuration Changes
+
+- Module granularity now has to be configured per platform, so instead of
+  configuring it using the `build_modules|modules` builder, you now need to
+  configure the builder for each specific platform:
+
+```yaml
+targets:
+  $default:
+    build_modules|dartdevc:
+      options:
+        strategy: fine
+```
+
+  The supported platforms are currently `dart2js`, `dartdevc`, `flutter`, and
+  `vm`.
+
+### Breaking API Changes
+
+- Output extensions of builders have changed to include the platform being built
+  for.
+  - All the top level file extension getters are now methods that take a
+    platform and return the extension for that platform.
+- Most builders are no longer applied by default, you must manually apply them
+  using applies_builders in your builder.
+- Most builder constructors now require a `platform` argument.
+
+## 0.3.2
+
+- Module strategies are now respected for all packages instead of just the root
+  package.
+- Can now mix and match fine and coarse strategies at will, even within package
+  cycles (although this may cause larger modules).
+- Removed analyzer dependency.
+
+## 0.3.1+1
+
+- Support `package:json_annotation` v1.
+
+## 0.3.1
+
+- Change the default module strategy for the root package to `coarse`.
+
+## 0.3.0
 
 ### Improvements
 
 - Updated dart2js support so that it can do multiple builds concurrently and
   will restart workers periodically to mitigate the effects of
   dart-lang/sdk#33708.
+- Increased the upper bound for the sdk to `<3.0.0`.
 
 ### Breaking Changes
 
 - Removed the `kernelSummaryExtension`, and renamed the `KernelSummaryBuilder`
   to `KernelBuilder`. The new builder can be used to create summaries or full
   kernel files, and requires users to give it a custom sdk.
+- Changed `metaModuleCleanBuilder` to read `.module.library` files which are
+  produced by the `moduleLibrayBuilder`. Clients using the automatically
+  generated build script will get this automatically. Clients which have
+  manually written build scripts will need to add it.
 
 ## 0.2.3
 

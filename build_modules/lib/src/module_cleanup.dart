@@ -6,6 +6,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 
+import 'module_library_builder.dart';
+
 class ModuleCleanup implements PostProcessBuilder {
   const ModuleCleanup();
 
@@ -17,6 +19,7 @@ class ModuleCleanup implements PostProcessBuilder {
 
   @override
   final inputExtensions = const [
+    moduleLibraryExtension,
     '.meta_module.raw',
     '.meta_module.clean',
     '.module',

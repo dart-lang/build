@@ -20,8 +20,8 @@ void main() {
         testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
     printOnFailure(result.stderr.toString());
     expect(result.exitCode, isNot(ExitCode.success));
-    expect(result.stdout,
-        matches(new RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
+    expect(
+        result.stdout, matches(RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
     expect(result.stdout, isNot(contains('.js')));
   });
 
@@ -43,12 +43,12 @@ void main() {
 
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
-      await expectTestsPass(expectedNumRan: 5);
+      await expectTestsPass(expectedNumRan: 6);
     });
 
     test('delete test', () async {
       await deleteFile(p.join('test', 'sub-dir', 'subdir_test.dart'));
-      await expectTestsPass(expectedNumRan: 3);
+      await expectTestsPass(expectedNumRan: 4);
     });
   });
 }

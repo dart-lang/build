@@ -24,7 +24,7 @@ import 'in_memory_writer.dart';
 import 'package_graphs.dart';
 
 Future wait(int milliseconds) =>
-    new Future.delayed(new Duration(milliseconds: milliseconds));
+    Future.delayed(Duration(milliseconds: milliseconds));
 
 void _nullLog(_) {}
 
@@ -94,8 +94,8 @@ Future<BuildResult> testBuilders(
   String logPerformanceDir,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
-  writer ??= new InMemoryRunnerAssetWriter();
-  reader ??= new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+  writer ??= InMemoryRunnerAssetWriter();
+  reader ??= InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph?.root?.name);
 
   inputs.forEach((serializedId, contents) {
@@ -108,19 +108,16 @@ Future<BuildResult> testBuilders(
   });
 
   builderConfigOverrides ??= const {};
-  var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, null),
-      reader: reader,
-      writer: writer,
-      onLog: onLog);
-  var options = await BuildOptions.create(environment,
+  var environment = OverrideableEnvironment(IOEnvironment(packageGraph),
+      reader: reader, writer: writer, onLog: onLog);
+  var logSubscription =
+      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
+  var options = await BuildOptions.create(logSubscription,
       deleteFilesByDefault: deleteFilesByDefault,
       packageGraph: packageGraph,
-      logLevel: logLevel,
       skipBuildScriptCheck: true,
       overrideBuildConfig: overrideBuildConfig,
       enableLowResourcesMode: enableLowResourcesMode,
-      verbose: verbose,
       buildDirs: buildDirs,
       logPerformanceDir: logPerformanceDir);
 
@@ -156,7 +153,7 @@ void checkBuild(BuildResult result,
   expect(result.status, status, reason: '$result');
 
   final unhiddenOutputs = <String, dynamic>{};
-  final unhiddenAssets = new Set<AssetId>();
+  final unhiddenAssets = Set<AssetId>();
   for (final id in outputs?.keys ?? const <String>[]) {
     if (id.startsWith(r'$$')) {
       final unhidden = id.substring(2);
@@ -168,7 +165,7 @@ void checkBuild(BuildResult result,
   }
 
   AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
-      ? new AssetId(
+      ? AssetId(
           rootPackage, '.dart_tool/build/generated/${id.package}/${id.path}')
       : id;
 

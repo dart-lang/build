@@ -10,7 +10,9 @@ builders:
     auto_apply: all_packages
     required_inputs:
       - .dart
-      - .module
+      - .vm.module
+    applies_builders:
+      - build_modules|vm
   entrypoint:
     import: "package:build_vm_compilers/builders.dart"
     builder_factories:
@@ -21,7 +23,7 @@ builders:
     required_inputs:
       - .dart
       - .vm.dill
-      - .module
+      - .vm.module
     build_to: cache
     auto_apply: root_package
     defaults:

@@ -51,12 +51,9 @@ class MissingModulesException implements Exception {
 
   MissingModulesException._(this.message);
 
-  static Future<MissingModulesException> create(
-      Module module,
-      Set<AssetId> missingSources,
-      List<Module> transitiveModules,
-      AssetReader reader) async {
-    var buffer = new StringBuffer('''
+  static Future<MissingModulesException> create(Set<AssetId> missingSources,
+      Iterable<Module> transitiveModules, AssetReader reader) async {
+    var buffer = StringBuffer('''
 Unable to find modules for some sources, this is usually the result of either a
 bad import, a missing dependency in a package (or possibly a dev_dependency
 needs to move to a real dependency), or a build failure (if importing a
@@ -70,7 +67,7 @@ Please check the following imports:\n
       var missingIds = module.directDependencies.intersection(missingSources);
       for (var missingId in missingIds) {
         var checkedAlready = checkedSourceDependencies.putIfAbsent(
-            missingId, () => new Set<AssetId>());
+            missingId, () => Set<AssetId>());
         for (var sourceId in module.sources) {
           if (checkedAlready.contains(sourceId)) {
             continue;
@@ -83,7 +80,7 @@ Please check the following imports:\n
       }
     }
 
-    return new MissingModulesException._(buffer.toString());
+    return MissingModulesException._(buffer.toString());
   }
 }
 
@@ -93,13 +90,11 @@ Future<String> _missingImportMessage(
     AssetId sourceId, AssetId missingId, AssetReader reader) async {
   var contents = await reader.readAsString(sourceId);
   var parsed = parseDirectives(contents, suppressErrors: true);
-  var import = parsed.directives
-      .where((directive) => directive is UriBasedDirective)
-      .cast<UriBasedDirective>()
-      .firstWhere((directive) {
+  var import =
+      parsed.directives.whereType<UriBasedDirective>().firstWhere((directive) {
     var uriString = directive.uri.stringValue;
     if (uriString.startsWith('dart:')) return false;
-    var id = new AssetId.resolve(uriString, from: sourceId);
+    var id = AssetId.resolve(uriString, from: sourceId);
     return id == missingId;
   }, orElse: () => null);
   if (import == null) return null;

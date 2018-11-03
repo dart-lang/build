@@ -8,18 +8,100 @@ import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/module_library.dart';
+import 'package:build_modules/src/platform.dart';
 
 import 'matchers.dart';
 
 main() {
   test('can serialize meta modules', () async {
-    var assetA = new AssetId('a', 'lib/a.dart');
-    var moduleA = new Module(assetA, [assetA], <AssetId>[]);
-    var metaA = new MetaModule([moduleA]);
-    await testBuilder(new MetaModuleBuilder(), {
-      'a|lib/a.dart': '',
+    var assetA = AssetId('a', 'lib/a.dart');
+    var moduleA =
+        Module(assetA, [assetA], <AssetId>[], DartPlatform.dart2js, true);
+    var metaA = MetaModule([moduleA]);
+    await testBuilder(MetaModuleBuilder(DartPlatform.dart2js), {
+      'a|lib/a.module.library':
+          ModuleLibrary.fromSource(assetA, '').serialize(),
     }, outputs: {
-      'a|lib/$metaModuleExtension': encodedMatchesMetaModule(metaA),
+      'a|lib/${metaModuleExtension(DartPlatform.dart2js)}':
+          encodedMatchesMetaModule(metaA),
+    });
+  });
+
+  group('isSupported', () {
+    test('is false for libraries that import dart:io on web', () async {
+      var assetA = AssetId('a', 'lib/a.dart');
+      var assetB = AssetId('a', 'lib/b.dart');
+      var moduleA =
+          Module(assetA, [assetA], <AssetId>[], DartPlatform.dart2js, true);
+      var moduleB =
+          Module(assetB, [assetB], <AssetId>[], DartPlatform.dart2js, false);
+      var metaA = MetaModule([moduleA, moduleB]);
+      await testBuilder(MetaModuleBuilder(DartPlatform.dart2js), {
+        'a|lib/a.module.library':
+            ModuleLibrary.fromSource(assetA, '').serialize(),
+        'a|lib/b.module.library':
+            ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+      }, outputs: {
+        'a|lib/${metaModuleExtension(DartPlatform.dart2js)}':
+            encodedMatchesMetaModule(metaA),
+      });
+    });
+
+    test('is false for connected components that import dart:io on web',
+        () async {
+      var assetA = AssetId('a', 'lib/a.dart');
+      var assetB = AssetId('a', 'lib/b.dart');
+      var moduleA = Module(
+          assetA, [assetA, assetB], <AssetId>[], DartPlatform.dart2js, false);
+      var metaA = MetaModule([moduleA]);
+      await testBuilder(MetaModuleBuilder(DartPlatform.dart2js), {
+        'a|lib/a.module.library':
+            ModuleLibrary.fromSource(assetA, "import 'b.dart';").serialize(),
+        'a|lib/b.module.library': ModuleLibrary.fromSource(
+                assetB, "import 'dart:io';import 'a.dart';")
+            .serialize(),
+      }, outputs: {
+        'a|lib/${metaModuleExtension(DartPlatform.dart2js)}':
+            encodedMatchesMetaModule(metaA),
+      });
+    });
+
+    test('is false for coarse modules that import dart:io on web', () async {
+      var assetA = AssetId('a', 'lib/a.dart');
+      var assetB = AssetId('a', 'lib/src/b.dart');
+      var moduleA = Module(
+          assetA, [assetA, assetB], <AssetId>[], DartPlatform.dart2js, false);
+      var metaA = MetaModule([moduleA]);
+      await testBuilder(MetaModuleBuilder(DartPlatform.dart2js), {
+        'a|lib/a.module.library':
+            ModuleLibrary.fromSource(assetA, "import 'src/b.dart';")
+                .serialize(),
+        'a|lib/src/b.module.library':
+            ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+      }, outputs: {
+        'a|lib/${metaModuleExtension(DartPlatform.dart2js)}':
+            encodedMatchesMetaModule(metaA),
+      });
+    });
+
+    test('does not look at dependencies', () async {
+      var assetA = AssetId('a', 'lib/a.dart');
+      var assetB = AssetId('a', 'lib/b.dart');
+      var moduleA = Module(
+          assetA, [assetA], <AssetId>[assetB], DartPlatform.dart2js, true);
+      var moduleB =
+          Module(assetB, [assetB], <AssetId>[], DartPlatform.dart2js, false);
+      var metaA = MetaModule([moduleA, moduleB]);
+      await testBuilder(MetaModuleBuilder(DartPlatform.dart2js), {
+        'a|lib/a.module.library':
+            ModuleLibrary.fromSource(assetA, "import 'b.dart';").serialize(),
+        'a|lib/b.module.library':
+            ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+      }, outputs: {
+        'a|lib/${metaModuleExtension(DartPlatform.dart2js)}':
+            encodedMatchesMetaModule(metaA),
+      });
     });
   });
 }

@@ -1,13 +1,15 @@
 [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
 [![Build Status](https://ci.appveyor.com/api/projects/status/wga4jexvmjih346p?svg=true)](https://ci.appveyor.com/project/kevmoo/build)
 
-These packages provide libraries for generating Dart code.
+These packages provide libraries for generating, compiling and serving Dart code.
 
 <!--
 TODO: bazel_codegen
 -->
 
 [Getting started with build_runner](https://github.com/dart-lang/build/blob/master/docs/getting_started.md)
+
+[Integrating with Travis](https://github.com/dart-lang/build/blob/master/docs/travis.md)
 
 [General FAQ](https://github.com/dart-lang/build/blob/master/docs/faq.md)
 
@@ -23,7 +25,7 @@ Defines the interfaces for creating a `Builder` which is a way of doing codegen
 that is compatible across build systems (pub, bazel, standalone runner).
 
 For packages doing code generation this should generally be the only package
-against which there is a public dependency. Packages may have a dev_depenency on
+against which there is a public dependency. Packages may have a dev_dependency on
 one or more of the other packages.
 
 ## [build_config](https://github.com/dart-lang/build/blob/master/build_config/README.md)

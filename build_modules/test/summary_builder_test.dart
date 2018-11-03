@@ -7,13 +7,13 @@ import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
-import 'package:build_modules/src/meta_module_clean_builder.dart';
 
 import 'matchers.dart';
 import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
+  final platform = DartPlatform.dart2js;
 
   group('basic project', () {
     setUp(() async {
@@ -33,45 +33,51 @@ main() {
       };
 
       // Set up all the other required inputs for this test.
-      await testBuilderAndCollectAssets(new MetaModuleBuilder(), assets);
-      await testBuilderAndCollectAssets(new MetaModuleCleanBuilder(), assets);
-      await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+      await testBuilderAndCollectAssets(
+          MetaModuleCleanBuilder(platform), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
     });
 
     test('can output unlinked analyzer summaries for modules under lib and web',
         () async {
       var expectedOutputs = <String, Matcher>{
-        'b|lib/b.unlinked.sum': new HasUnlinkedUris(['package:b/b.dart']),
-        'a|lib/a.unlinked.sum': new HasUnlinkedUris(['package:a/a.dart']),
-        'a|web/index.unlinked.sum':
-            new HasUnlinkedUris([endsWith('web/index.dart')]),
+        'b|lib/b${unlinkedSummaryExtension(platform)}':
+            HasUnlinkedUris(['package:b/b.dart']),
+        'a|lib/a${unlinkedSummaryExtension(platform)}':
+            HasUnlinkedUris(['package:a/a.dart']),
+        'a|web/index${unlinkedSummaryExtension(platform)}':
+            HasUnlinkedUris([endsWith('web/index.dart')]),
       };
-      await testBuilder(new UnlinkedSummaryBuilder(), assets,
+      await testBuilder(UnlinkedSummaryBuilder(platform), assets,
           outputs: expectedOutputs);
     });
 
     test('can output linked analyzer summaries for modules under lib and web',
         () async {
       // Build the unlinked summaries first.
-      await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
+      await testBuilderAndCollectAssets(
+          UnlinkedSummaryBuilder(platform), assets);
 
       // Actual test for LinkedSummaryBuilder;
       var expectedOutputs = <String, Matcher>{
-        'b|lib/b.linked.sum': allOf(new HasLinkedUris(['package:b/b.dart']),
-            new HasUnlinkedUris(['package:b/b.dart'])),
-        'a|lib/a.linked.sum': allOf(
-            new HasLinkedUris(
+        'b|lib/b${linkedSummaryExtension(platform)}': allOf(
+            HasLinkedUris(['package:b/b.dart']),
+            HasUnlinkedUris(['package:b/b.dart'])),
+        'a|lib/a${linkedSummaryExtension(platform)}': allOf(
+            HasLinkedUris(
                 unorderedEquals(['package:b/b.dart', 'package:a/a.dart'])),
-            new HasUnlinkedUris(['package:a/a.dart'])),
-        'a|web/index.linked.sum': allOf(
-            new HasLinkedUris(unorderedEquals([
+            HasUnlinkedUris(['package:a/a.dart'])),
+        'a|web/index${linkedSummaryExtension(platform)}': allOf(
+            HasLinkedUris(unorderedEquals([
               'package:b/b.dart',
               'package:a/a.dart',
               endsWith('web/index.dart')
             ])),
-            new HasUnlinkedUris([endsWith('web/index.dart')])),
+            HasUnlinkedUris([endsWith('web/index.dart')])),
       };
-      await testBuilder(new LinkedSummaryBuilder(), assets,
+      await testBuilder(LinkedSummaryBuilder(platform), assets,
           outputs: expectedOutputs);
     });
   });
@@ -81,18 +87,24 @@ main() {
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
         'a|web/index.dart': 'import "package:a/a.dart";',
+        'a|lib/a.dart': 'import "package:b/b.dart";',
       };
 
       // Set up all the other required inputs for this test.
-      await testBuilderAndCollectAssets(new ModuleBuilder(), assets);
-      await testBuilderAndCollectAssets(new UnlinkedSummaryBuilder(), assets);
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+      await testBuilderAndCollectAssets(
+          MetaModuleCleanBuilder(platform), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+      await testBuilderAndCollectAssets(
+          UnlinkedSummaryBuilder(platform), assets);
     });
 
     test('print an error if there are any missing transitive modules',
         () async {
       var expectedOutputs = <String, Matcher>{};
       var logs = <LogRecord>[];
-      await testBuilder(new LinkedSummaryBuilder(), assets,
+      await testBuilder(LinkedSummaryBuilder(platform), assets,
           outputs: expectedOutputs, onLog: logs.add);
       expect(
           logs,

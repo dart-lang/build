@@ -1,3 +1,19 @@
+## 0.3.1+4
+
+- Support the latest `package:json_annotation`.
+
+## 0.3.1+3
+
+- Support `package:build` version `1.x.x`.
+
+## 0.3.1+2
+
+- Support `package:json_annotation` v1.
+
+## 0.3.1+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.3.1
 
 - Improve validation and errors when parsing `build.yaml`.

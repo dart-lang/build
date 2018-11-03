@@ -3,11 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'package:analyzer/src/context/context.dart' show AnalysisContextImpl;
 import 'package:analyzer/src/generated/engine.dart'
-    show
-        AnalysisContext,
-        AnalysisEngine,
-        AnalysisOptionsImpl,
-        InternalAnalysisContext;
+    show AnalysisContext, AnalysisEngine, InternalAnalysisContext;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/package_bundle_reader.dart'
     show InSummaryUriResolver, InputPackagesResultProvider, SummaryDataStore;
@@ -25,26 +21,24 @@ import 'arg_parser.dart';
 AnalysisContext summaryAnalysisContext(
     SummaryOptions options, Iterable<UriResolver> additionalResolvers) {
   AnalysisEngine.instance.processRequiredPlugins();
-  var sdk = new SummaryBasedDartSdk(options.sdkSummary, true);
-  var sdkResolver = new DartUriResolver(sdk);
+  var sdk = SummaryBasedDartSdk(options.sdkSummary, true);
+  var sdkResolver = DartUriResolver(sdk);
 
-  var summaryData = new SummaryDataStore(options.summaryPaths)
+  var summaryData = SummaryDataStore(options.summaryPaths)
     ..addBundle(null, sdk.bundle);
   var summaryResolver =
-      new InSummaryUriResolver(PhysicalResourceProvider.INSTANCE, summaryData);
+      InSummaryUriResolver(PhysicalResourceProvider.INSTANCE, summaryData);
 
   var resolvers = <UriResolver>[]
     ..addAll(additionalResolvers)
     ..add(sdkResolver)
     ..add(summaryResolver);
-  var sourceFactory = new SourceFactory(resolvers);
+  var sourceFactory = SourceFactory(resolvers);
 
   var context = AnalysisEngine.instance.createAnalysisContext()
     ..sourceFactory = sourceFactory;
-  (context as AnalysisContextImpl).resultProvider =
-      new InputPackagesResultProvider(
-          context as InternalAnalysisContext, summaryData);
-  context.analysisOptions = new AnalysisOptionsImpl()..strongMode = true;
+  (context as AnalysisContextImpl).resultProvider = InputPackagesResultProvider(
+      context as InternalAnalysisContext, summaryData);
 
   return context;
 }

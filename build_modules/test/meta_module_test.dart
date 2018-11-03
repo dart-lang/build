@@ -2,28 +2,59 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:build/build.dart';
-import 'package:build_modules/src/modules.dart';
-import 'package:build_modules/src/meta_module.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
+import 'package:build_modules/build_modules.dart';
+import 'package:build_modules/src/common.dart';
+import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/module_library.dart';
+import 'package:build_modules/src/modules.dart';
+import 'package:build_modules/src/platform.dart';
+
 import 'matchers.dart';
 
-InMemoryAssetReader reader;
-
-List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
-  reader = new InMemoryAssetReader();
-  var assets = new Set<AssetId>();
-  assetDescriptors.forEach((serializedId, content) {
-    var id = new AssetId.parse(serializedId);
-    reader.cacheStringAsset(id, content);
-    assets.add(id);
-  });
-  return assets.toList();
-}
-
 void main() {
+  InMemoryAssetReader reader;
+  final defaultPlatform = DartPlatform.dart2js;
+
+  List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
+    reader = InMemoryAssetReader();
+    var assets = Set<AssetId>();
+    assetDescriptors.forEach((serializedId, content) {
+      var id = AssetId.parse(serializedId);
+      reader.cacheStringAsset(id, content);
+      assets.add(id);
+    });
+    return assets.toList();
+  }
+
+  Future<MetaModule> metaModuleFromSources(
+      InMemoryAssetReader reader, List<AssetId> sources,
+      {DartPlatform platform}) async {
+    platform ??= defaultPlatform;
+    final libraries = (await Future.wait(sources
+            .where((s) => s.package != r'$sdk')
+            .map((s) async =>
+                ModuleLibrary.fromSource(s, await reader.readAsString(s)))))
+        .where((l) => l.isImportable);
+    for (final library in libraries) {
+      reader.cacheStringAsset(
+          library.id.changeExtension(moduleLibraryExtension),
+          '${library.serialize()}');
+    }
+    return MetaModule.forLibraries(
+        reader,
+        libraries
+            .map((l) => l.id.changeExtension(moduleLibraryExtension))
+            .toList(),
+        ModuleStrategy.coarse,
+        platform);
+  }
+
   test('no strongly connected components, one shared lib', () async {
     var assets = makeAssets({
       'myapp|lib/a.dart': '''
@@ -39,18 +70,18 @@ void main() {
       'myapp|lib/src/d.dart': '',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var b = new AssetId('myapp', 'lib/b.dart');
-    var c = new AssetId('myapp', 'lib/src/c.dart');
-    var d = new AssetId('myapp', 'lib/src/d.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var b = AssetId('myapp', 'lib/b.dart');
+    var c = AssetId('myapp', 'lib/src/c.dart');
+    var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a], [b, c])),
-      matchesModule(new Module(b, [b], [c])),
-      matchesModule(new Module(c, [c, d], [])),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [c], defaultPlatform, true)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -68,15 +99,15 @@ void main() {
           ''',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var b = new AssetId('myapp', 'lib/b.dart');
-    var c = new AssetId('myapp', 'lib/src/c.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var b = AssetId('myapp', 'lib/b.dart');
+    var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, b, c], []))
+      matchesModule(Module(a, [a, b, c], [], defaultPlatform, true))
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -108,21 +139,21 @@ void main() {
       'myapp|lib/src/g.dart': '',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var b = new AssetId('myapp', 'lib/b.dart');
-    var c = new AssetId('myapp', 'lib/src/c.dart');
-    var d = new AssetId('myapp', 'lib/src/d.dart');
-    var e = new AssetId('myapp', 'lib/src/e.dart');
-    var g = new AssetId('myapp', 'lib/src/g.dart');
-    var f = new AssetId('myapp', 'lib/src/f.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var b = AssetId('myapp', 'lib/b.dart');
+    var c = AssetId('myapp', 'lib/src/c.dart');
+    var d = AssetId('myapp', 'lib/src/d.dart');
+    var e = AssetId('myapp', 'lib/src/e.dart');
+    var g = AssetId('myapp', 'lib/src/g.dart');
+    var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, c], [g, e])),
-      matchesModule(new Module(b, [b, d], [c, e, g])),
-      matchesModule(new Module(e, [e, g, f], [])),
+      matchesModule(Module(a, [a, c], [g, e], defaultPlatform, true)),
+      matchesModule(Module(b, [b, d], [c, e, g], defaultPlatform, true)),
+      matchesModule(Module(e, [e, g, f], [], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -133,18 +164,14 @@ void main() {
           ''',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var b = new AssetId('b', 'lib/b.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var b = AssetId('b', 'lib/b.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [
-        a,
-      ], [
-        b
-      ])),
+      matchesModule(Module(a, [a], [b], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -163,17 +190,17 @@ void main() {
       'myapp|lib/src/d.dart': '',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var b = new AssetId('myapp', 'lib/b.dart');
-    var c = new AssetId('myapp', 'lib/src/c.dart');
-    var d = new AssetId('myapp', 'lib/src/d.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var b = AssetId('myapp', 'lib/b.dart');
+    var c = AssetId('myapp', 'lib/src/c.dart');
+    var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, c, d], [b])),
-      matchesModule(new Module(b, [b], [])),
+      matchesModule(Module(a, [a, c, d], [b], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -202,23 +229,23 @@ void main() {
           ''',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var b = new AssetId('myapp', 'lib/b.dart');
-    var c = new AssetId('myapp', 'lib/c.dart');
-    var d = new AssetId('myapp', 'lib/src/d.dart');
-    var e = new AssetId('myapp', 'lib/src/e.dart');
-    var f = new AssetId('myapp', 'lib/src/f.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var b = AssetId('myapp', 'lib/b.dart');
+    var c = AssetId('myapp', 'lib/c.dart');
+    var d = AssetId('myapp', 'lib/src/d.dart');
+    var e = AssetId('myapp', 'lib/src/e.dart');
+    var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a], [d, e, f])),
-      matchesModule(new Module(b, [b], [d, e])),
-      matchesModule(new Module(c, [c], [d, f])),
-      matchesModule(new Module(d, [d], [])),
-      matchesModule(new Module(e, [e], [d])),
-      matchesModule(new Module(f, [f], [d])),
+      matchesModule(Module(a, [a], [d, e, f], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [d, e], defaultPlatform, true)),
+      matchesModule(Module(c, [c], [d, f], defaultPlatform, true)),
+      matchesModule(Module(d, [d], [], defaultPlatform, true)),
+      matchesModule(Module(e, [e], [d], defaultPlatform, true)),
+      matchesModule(Module(f, [f], [d], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -238,15 +265,15 @@ void main() {
           ''',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var ap = new AssetId('myapp', 'lib/a.part.dart');
-    var sap = new AssetId('myapp', 'lib/src/a.part.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var ap = AssetId('myapp', 'lib/a.part.dart');
+    var sap = AssetId('myapp', 'lib/src/a.part.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, ap, sap], [])),
+      matchesModule(Module(a, [a, ap, sap], [], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -265,18 +292,18 @@ void main() {
           ''',
     });
 
-    var a = new AssetId('myapp', 'lib/a.dart');
-    var sa = new AssetId('myapp', 'lib/src/a.dart');
-    var b = new AssetId('myapp', 'lib/src/b.dart');
-    var c = new AssetId('myapp', 'lib/src/c.dart');
+    var a = AssetId('myapp', 'lib/a.dart');
+    var sa = AssetId('myapp', 'lib/src/a.dart');
+    var b = AssetId('myapp', 'lib/src/b.dart');
+    var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a], [])),
-      matchesModule(new Module(b, [b, c], [])),
-      matchesModule(new Module(sa, [sa], [c])),
+      matchesModule(Module(a, [a], [], defaultPlatform, true)),
+      matchesModule(Module(b, [b, c], [], defaultPlatform, true)),
+      matchesModule(Module(sa, [sa], [c], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -299,18 +326,18 @@ void main() {
       'myapp|web/d.dart': '',
     });
 
-    var a = new AssetId('myapp', 'web/a.dart');
-    var b = new AssetId('myapp', 'web/b.dart');
-    var c = new AssetId('myapp', 'web/c.dart');
-    var d = new AssetId('myapp', 'web/d.dart');
+    var a = AssetId('myapp', 'web/a.dart');
+    var b = AssetId('myapp', 'web/b.dart');
+    var c = AssetId('myapp', 'web/c.dart');
+    var d = AssetId('myapp', 'web/d.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a], [b, c])),
-      matchesModule(new Module(b, [b], [c])),
-      matchesModule(new Module(c, [c, d], [])),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
+      matchesModule(Module(b, [b], [c], defaultPlatform, true)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
@@ -339,55 +366,93 @@ void main() {
             void main() {}
           ''',
     });
-    var a = new AssetId('myapp', 'web/a.dart');
-    var b = new AssetId('myapp', 'web/b.dart');
-    var c = new AssetId('myapp', 'web/c.dart');
-    var d = new AssetId('myapp', 'web/d.dart');
-    var e = new AssetId('myapp', 'web/e.dart');
+    var a = AssetId('myapp', 'web/a.dart');
+    var b = AssetId('myapp', 'web/b.dart');
+    var c = AssetId('myapp', 'web/c.dart');
+    var d = AssetId('myapp', 'web/d.dart');
+    var e = AssetId('myapp', 'web/e.dart');
 
     var expectedModules = [
-      matchesModule(new Module(a, [a, b], [c])),
-      matchesModule(new Module(c, [c, d], [])),
-      matchesModule(new Module(e, [e], [d])),
+      matchesModule(Module(a, [a, b], [c], defaultPlatform, true)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
+      matchesModule(Module(e, [e], [d], defaultPlatform, true)),
     ];
 
-    var meta = await MetaModule.forAssets(reader, assets);
+    var meta = await metaModuleFromSources(reader, assets);
     expect(meta.modules, unorderedMatches(expectedModules));
   });
 
-  test('conditional import directive added to module dependencies', () async {
+  test(
+      'conditional import directives are added to module dependencies based '
+      'on platform', () async {
     var assets = makeAssets({
       'myapp|web/a.dart': '''
-        import 'b.dart'
-        if (expression1) 'b1.dart'
-        if (expression2) 'b2.dart'
-        if (expression3) 'b3.dart';
+        import 'default.dart'
+        if (dart.library.ui) 'ui.dart'
+        if (dart.library.io) 'io.dart'
+        if (dart.library.html) 'html.dart';
       ''',
-      'myapp|web/b.dart': '',
-      'myapp|web/b1.dart': '''
+      'myapp|web/default.dart': '',
+      'myapp|web/io.dart': '''
       ''',
-      'myapp|web/b2.dart': '''
+      'myapp|web/html.dart': '''
       ''',
-      'myapp|web/b3.dart': '''
+      'myapp|web/ui.dart': '''
       ''',
     });
 
-    var a = new AssetId('myapp', 'web/a.dart');
-    var b = new AssetId('myapp', 'web/b.dart');
-    var b1 = new AssetId('myapp', 'web/b1.dart');
-    var b2 = new AssetId('myapp', 'web/b2.dart');
-    var b3 = new AssetId('myapp', 'web/b3.dart');
+    var primaryId = AssetId('myapp', 'web/a.dart');
+    var defaultId = AssetId('myapp', 'web/default.dart');
+    var htmlId = AssetId('myapp', 'web/html.dart');
+    var ioId = AssetId('myapp', 'web/io.dart');
+    var uiId = AssetId('myapp', 'web/ui.dart');
 
-    var expectedModules = [
-      matchesModule(new Module(a, [a], [b, b1, b2, b3])),
-      matchesModule(new Module(b, [b], [])),
-      matchesModule(new Module(b1, [b1], [])),
-      matchesModule(new Module(b2, [b2], [])),
-      matchesModule(new Module(b3, [b3], [])),
-    ];
+    var expectedModulesForPlatform = {
+      DartPlatform.dart2js: [
+        matchesModule(Module(
+            primaryId, [primaryId], [htmlId], DartPlatform.dart2js, true)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.dart2js, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.dart2js, true)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], DartPlatform.dart2js, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.dart2js, true)),
+      ],
+      DartPlatform.dartdevc: [
+        matchesModule(Module(
+            primaryId, [primaryId], [htmlId], DartPlatform.dartdevc, true)),
+        matchesModule(
+            Module(htmlId, [htmlId], [], DartPlatform.dartdevc, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.dartdevc, true)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], DartPlatform.dartdevc, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.dartdevc, true)),
+      ],
+      DartPlatform.flutter: [
+        matchesModule(
+            Module(primaryId, [primaryId], [uiId], DartPlatform.flutter, true)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.flutter, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.flutter, true)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], DartPlatform.flutter, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.flutter, true)),
+      ],
+      DartPlatform.vm: [
+        matchesModule(
+            Module(primaryId, [primaryId], [ioId], DartPlatform.vm, true)),
+        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.vm, true)),
+        matchesModule(Module(ioId, [ioId], [], DartPlatform.vm, true)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], DartPlatform.vm, true)),
+        matchesModule(Module(uiId, [uiId], [], DartPlatform.vm, true)),
+      ]
+    };
 
-    var meta = await MetaModule.forAssets(reader, assets);
-
-    expect(meta.modules, unorderedMatches(expectedModules));
+    for (var platform in expectedModulesForPlatform.keys) {
+      var meta =
+          await metaModuleFromSources(reader, assets, platform: platform);
+      expect(
+          meta.modules, unorderedMatches(expectedModulesForPlatform[platform]),
+          reason: meta.modules.map((m) => m.toJson()).toString());
+    }
   });
 }

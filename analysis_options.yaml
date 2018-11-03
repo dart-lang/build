@@ -21,6 +21,7 @@ linter:
     - avoid_function_literals_in_foreach_calls
     - avoid_init_to_null
     - avoid_null_checks_in_equality_operators
+    - avoid_relative_lib_imports
     - avoid_renaming_method_parameters
     - avoid_return_types_on_setters
     - avoid_returning_null
@@ -47,8 +48,9 @@ linter:
     - no_adjacent_strings_in_list
     - no_duplicate_case_values
     - non_constant_identifier_names
+    - null_closures
     - omit_local_variable_types
-    #- only_throw_errors
+    - only_throw_errors
     - overridden_fields
     #- package_api_docs
     - package_names
@@ -74,10 +76,13 @@ linter:
     - type_init_formals
     - unawaited_futures
     - unnecessary_brace_in_string_interps
+    - unnecessary_const
     - unnecessary_getters_setters
     - unnecessary_lambdas
+    - unnecessary_new
     - unnecessary_null_aware_assignments
     - unnecessary_statements
     - unnecessary_this
     - unrelated_type_equality_checks
+    - use_rethrow_when_possible
     - valid_regexps

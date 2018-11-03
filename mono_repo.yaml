@@ -1,0 +1,11 @@
+# See with https://github.com/dart-lang/mono_repo for details on this file
+travis:
+  sudo: required
+  addons:
+    chrome: stable
+
+  after_failure:
+  - tool/report_failure.sh
+  stages:
+    - name: e2e_test_cron
+      if: type IN (api, cron)

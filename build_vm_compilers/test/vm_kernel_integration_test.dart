@@ -40,6 +40,17 @@ void main() {
   print(p.url.join('goodbye', 'world'));
 }
 '''),
+          d.file('sync_async.dart', '''
+void main() async {
+  print('before');
+  printAsync();
+  print('after');
+}
+
+void printAsync() async {
+  print('running');
+}
+'''),
         ]),
       ]).create();
 
@@ -64,5 +75,12 @@ void main() {
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
       expect(runResult.stdout, 'goodbye/world\n');
     });
+
+    test(' and enables sync-async', () async {
+      var runResult = await runDart('a', 'out/bin/sync_async.vm.app.dill');
+
+      expect(runResult.exitCode, 0, reason: runResult.stderr as String);
+      expect(runResult.stdout, 'before\nrunning\nafter\n');
+    }, skip: 'https://github.com/dart-lang/sdk/issues/34852');
   });
 }

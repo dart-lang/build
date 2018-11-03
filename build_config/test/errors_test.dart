@@ -14,7 +14,7 @@ targets:
   not_package_name:
     sources: ["lib/**"]
 ''';
-      expect(() => new BuildConfig.parse('package_name', [], buildYaml),
+      expect(() => BuildConfig.parse('package_name', [], buildYaml),
           throwsArgumentError);
     });
   });

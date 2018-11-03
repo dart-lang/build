@@ -1,11 +1,22 @@
-# 0.3.1+4
+# 0.3.4
 
+- Fix the exceptions thrown when attempting to read invalid assets.
+
+# 0.3.3+1
+
+- Increased the upper bound for `package:analyzer` to '<0.34.0'.
+
+# 0.3.3
+
+- Support `package:build` `v1.0.0`.
+
+# 0.3.2
+
+- Increased the upper bound for the sdk to `<3.0.0`.
 - Drop dependency on `build_barback`.
 - Use the latest `build`.
-
-# 0.3.1+3
-
 - Support `package:analyzer` `0.32.0`.
+- Don't pass any analysis options to the summary resolver - use the defaults.
 
 # 0.3.1+2
 

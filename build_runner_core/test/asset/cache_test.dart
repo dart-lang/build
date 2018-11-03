@@ -10,8 +10,8 @@ import 'package:build_runner_core/src/asset/cache.dart';
 import 'package:_test_common/common.dart';
 
 void main() {
-  var fooTxt = new AssetId('a', 'foo.txt');
-  var missingTxt = new AssetId('a', 'missing.txt');
+  var fooTxt = AssetId('a', 'foo.txt');
+  var missingTxt = AssetId('a', 'missing.txt');
   var fooContent = 'bar';
   var fooutf8Bytes = decodedMatches('bar');
   var assets = <AssetId, dynamic>{
@@ -21,8 +21,8 @@ void main() {
   CachingAssetReader reader;
 
   setUp(() {
-    delegate = new InMemoryRunnerAssetReader(assets);
-    reader = new CachingAssetReader(delegate);
+    delegate = InMemoryRunnerAssetReader(assets);
+    reader = CachingAssetReader(delegate);
   });
 
   group('canRead', () {
@@ -73,13 +73,13 @@ void main() {
       expect(delegate.assetsRead, [fooTxt]);
     });
 
-    test('caches bytes from readAsString calls', () async {
+    test('should not cache bytes during readAsString calls', () async {
       expect(await reader.readAsString(fooTxt), fooContent);
       expect(delegate.assetsRead, [fooTxt]);
       delegate.assetsRead.clear();
 
       expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
-      expect(delegate.assetsRead, []);
+      expect(delegate.assetsRead, [fooTxt]);
     });
   });
 

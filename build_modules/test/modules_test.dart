@@ -3,173 +3,48 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:analyzer/dart/element/element.dart';
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_modules/src/errors.dart';
-import 'package:build_modules/src/modules.dart';
-import 'package:build_modules/src/module_builder.dart';
+import 'package:build_modules/build_modules.dart';
+
+String serializeModule(Module module) => jsonEncode(module.toJson());
 
 void main() {
-  LibraryElement libCycle;
-  LibraryElement libSecondaryInCycle;
-  LibraryElement libNoCycle;
-  LibraryElement libCycleWithB;
-  LibraryElement libCycleWithA;
-  LibraryElement libDepOnNonSdk;
-  LibraryElement libAImportsBNoCycle;
-  LibraryElement libBImportsANoCycle;
-  LibraryElement libBSecondImportsANoCycle;
-  final assetCycle = makeAssetId('a|lib/a_cycle.dart');
-  final assetSecondaryInCycle = makeAssetId('a|lib/a_secondary_in_cycle.dart');
-  final assetPartInCycle = makeAssetId('a|lib/a_part_in_cycle.dart');
-  final assetNoCycle = makeAssetId('a|lib/a_no_cycle.dart');
-  final assetCycleWithB = makeAssetId('a|lib/a_cycle_with_b.dart');
-  final assetCycleWithA = makeAssetId('b|lib/b_cycle_with_a.dart');
-  final assetDepOnNonSdk = makeAssetId('a|lib/a_dep_on_non_sdk.dart');
-  final assetNonSdk = makeAssetId('a|lib/a_non_sdk.dart');
-  final assetAImportsBNoCycle = makeAssetId('a|lib/a_imports_b_no_cycle.dart');
-  final assetAPartLibraryName = makeAssetId('a|lib/a_part_library_name.dart');
-  final assetBImportsANoCycle = makeAssetId('b|lib/b_imports_a_no_cycle.dart');
-  final assetBSecondImportsANoCycle =
-      makeAssetId('b|lib/b_second_import_to_a_no_cycle.dart');
-
-  setUpAll(() async {
-    await resolveAsset(assetCycle, (resolver) async {
-      libCycle = await resolver.libraryFor(assetCycle);
-      libSecondaryInCycle = await resolver.libraryFor(assetSecondaryInCycle);
-    });
-    await resolveAsset(assetNoCycle, (resolver) async {
-      libNoCycle = await resolver.libraryFor(assetNoCycle);
-    });
-    await resolveAsset(assetCycleWithB, (resolver) async {
-      libCycleWithB = await resolver.libraryFor(assetCycleWithB);
-      libCycleWithA = await resolver.libraryFor(assetCycleWithA);
-    });
-    await resolveAsset(assetDepOnNonSdk, (resolver) async {
-      libDepOnNonSdk = await resolver.libraryFor(assetDepOnNonSdk);
-    });
-    await resolveAsset(assetAImportsBNoCycle, (resolver) async {
-      libAImportsBNoCycle = await resolver.libraryFor(assetAImportsBNoCycle);
-    });
-    await resolveAsset(assetBImportsANoCycle, (resolver) async {
-      libBImportsANoCycle = await resolver.libraryFor(assetBImportsANoCycle);
-    });
-    await resolveAsset(assetBSecondImportsANoCycle, (resolver) async {
-      libBSecondImportsANoCycle =
-          await resolver.libraryFor(assetBSecondImportsANoCycle);
-    });
-  });
-
-  group('defineModule.sources', () {
-    test('Finds the assets in a cycle', () {
-      var sources = new Module.forLibrary(libCycle).sources;
-      expect(
-          sources,
-          unorderedEquals(
-              [assetCycle, assetSecondaryInCycle, assetPartInCycle]));
-    });
-
-    test('Finds a single asset with no cycle', () {
-      var sources = new Module.forLibrary(libNoCycle).sources;
-      expect(sources, unorderedEquals([assetNoCycle]));
-    });
-
-    test('Finds the assets in a cycle across packages', () {
-      var sources = new Module.forLibrary(libCycleWithB).sources;
-      expect(sources, unorderedEquals([assetCycleWithA, assetCycleWithB]));
-    });
-  });
-
-  group('defineModule.directDependencies', () {
-    test('Chooses primary from cycle for dependency', () {
-      var dependencies = new Module.forLibrary(libCycle).directDependencies;
-      expect(dependencies, unorderedEquals([assetCycleWithB]));
-    });
-
-    test('Includes libraries that have names starting with "dart."', () {
-      // https://github.com/dart-lang/sdk/issues/31045
-      // `library.isInSdk` is broken - we shouldn't use it
-      var dependencies =
-          new Module.forLibrary(libDepOnNonSdk).directDependencies;
-      expect(dependencies, unorderedEquals([assetNonSdk]));
-    });
-  });
-
-  group('isPrimary', () {
-    group('within package', () {
-      test('Marks library with no cycle as primary', () {
-        expect(isPrimary(libNoCycle), true);
-      });
-
-      test('Marks library with lowest alpha sort as primary', () {
-        expect(isPrimary(libCycle), true);
-      });
-
-      test('Does not mark library with higher alpha sort as primary', () {
-        expect(isPrimary(libSecondaryInCycle), false);
-      });
-    });
-    group('across packages', () {
-      test('Marks library with lowest alpha sort as primary', () {
-        expect(isPrimary(libCycleWithB), true);
-      });
-      test('Does not mark library with later alpha sort as primary', () {
-        expect(isPrimary(libCycleWithA), false);
-      });
-    });
-  });
+  final platform = DartPlatform.dart2js;
 
   group('computeTransitiveDeps', () {
-    Module rootModule;
-    Module immediateDep;
-    Module immediateDep2;
-    Module transitiveDep;
+    final rootId = AssetId('a', 'lib/a.dart');
+    final directDepId = AssetId('a', 'lib/src/dep.dart');
+    final transitiveDepId = AssetId('b', 'lib/b.dart');
+    final deepTransitiveDepId = AssetId('b', 'lib/src/dep.dart');
+    final rootModule = Module(rootId, [rootId], [directDepId], platform, true);
+    final directDepModule =
+        Module(directDepId, [directDepId], [transitiveDepId], platform, true);
+    final transitiveDepModule = Module(transitiveDepId, [transitiveDepId],
+        [deepTransitiveDepId], platform, true);
+    final deepTransitiveDepModule =
+        Module(deepTransitiveDepId, [deepTransitiveDepId], [], platform, true);
     InMemoryAssetReader reader;
 
     setUp(() {
-      rootModule = new Module.forLibrary(libAImportsBNoCycle);
-      immediateDep = new Module.forLibrary(libBImportsANoCycle);
-      immediateDep2 = new Module.forLibrary(libBSecondImportsANoCycle);
-      transitiveDep = new Module.forLibrary(libNoCycle);
-      reader = new InMemoryAssetReader();
+      reader = InMemoryAssetReader();
+      reader.cacheStringAsset(rootId.changeExtension(moduleExtension(platform)),
+          serializeModule(rootModule));
       reader.cacheStringAsset(
-          assetAImportsBNoCycle,
-          new File('test/fixtures/a/${assetAImportsBNoCycle.path}')
-              .readAsStringSync());
+          directDepId.changeExtension(moduleExtension(platform)),
+          serializeModule(directDepModule));
       reader.cacheStringAsset(
-          assetAPartLibraryName,
-          new File('test/fixtures/a/${assetAPartLibraryName.path}')
-              .readAsStringSync());
+          transitiveDepId.changeExtension(moduleExtension(platform)),
+          serializeModule(transitiveDepModule));
       reader.cacheStringAsset(
-          assetBImportsANoCycle,
-          new File('test/fixtures/b/${assetBImportsANoCycle.path}')
-              .readAsStringSync());
-      reader.cacheStringAsset(
-          assetBSecondImportsANoCycle,
-          new File('test/fixtures/b/${assetBSecondImportsANoCycle.path}')
-              .readAsStringSync());
-      reader.cacheStringAsset(assetCycle,
-          new File('test/fixtures/a/${assetCycle.path}').readAsStringSync());
-      reader.cacheStringAsset(
-          assetSecondaryInCycle,
-          new File('test/fixtures/a/${assetSecondaryInCycle.path}')
-              .readAsStringSync());
+          deepTransitiveDepId.changeExtension(moduleExtension(platform)),
+          serializeModule(deepTransitiveDepModule));
     });
 
     test('finds transitive deps', () async {
-      reader.cacheStringAsset(
-          assetBImportsANoCycle.changeExtension(moduleExtension),
-          json.encode(immediateDep.toJson()));
-      reader.cacheStringAsset(
-          assetBSecondImportsANoCycle.changeExtension(moduleExtension),
-          json.encode(immediateDep2.toJson()));
-      reader.cacheStringAsset(assetNoCycle.changeExtension(moduleExtension),
-          json.encode(transitiveDep.toJson()));
-
       var transitiveDeps =
           (await rootModule.computeTransitiveDependencies(reader))
               .map((m) => m.primarySource)
@@ -177,22 +52,25 @@ void main() {
       expect(
           transitiveDeps,
           unorderedEquals([
-            immediateDep.primarySource,
-            immediateDep2.primarySource,
-            transitiveDep.primarySource
+            directDepModule.primarySource,
+            transitiveDepModule.primarySource,
+            deepTransitiveDepModule.primarySource,
           ]));
-      expect(transitiveDeps.indexOf(transitiveDep.primarySource),
-          lessThan(transitiveDeps.indexOf(immediateDep.primarySource)));
-      expect(transitiveDeps.indexOf(transitiveDep.primarySource),
-          lessThan(transitiveDeps.indexOf(immediateDep2.primarySource)));
+      expect(transitiveDeps.indexOf(transitiveDepModule.primarySource),
+          lessThan(transitiveDeps.indexOf(directDepModule.primarySource)));
+      expect(transitiveDeps.indexOf(deepTransitiveDepModule.primarySource),
+          lessThan(transitiveDeps.indexOf(transitiveDepModule.primarySource)));
     });
 
     test('missing modules report nice errors', () {
-      reader.cacheStringAsset(assetCycle.changeExtension(moduleExtension),
-          json.encode(immediateDep.toJson()));
+      reader.assets.remove(
+          deepTransitiveDepId.changeExtension(moduleExtension(platform)));
+      reader.cacheStringAsset(transitiveDepId, '''
+import 'src/dep.dart';
+''');
       expect(
           () => rootModule.computeTransitiveDependencies(reader),
-          allOf(throwsA(new TypeMatcher<MissingModulesException>()), throwsA(
+          allOf(throwsA(TypeMatcher<MissingModulesException>()), throwsA(
             predicate<MissingModulesException>(
               (error) {
                 printOnFailure(error.message);
@@ -204,8 +82,7 @@ generated file).
 
 Please check the following imports:
 
-`import 'package:b/b_second_import_to_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 5:1
-`import 'package:b/b_imports_a_no_cycle.dart';` from a|lib/a_imports_b_no_cycle.dart at 4:1
+`import 'src/dep.dart';` from b|lib/b.dart at 1:1
 ''');
               },
             ),

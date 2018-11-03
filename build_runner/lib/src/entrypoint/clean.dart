@@ -22,7 +22,7 @@ class CleanCommand extends Command<int> {
       'Cleans up output from previous builds. Does not clean up --output '
       'directories.';
 
-  Logger get logger => new Logger(name);
+  Logger get logger => Logger(name);
 
   @override
   Future<int> run() async {
@@ -36,38 +36,52 @@ class CleanCommand extends Command<int> {
         'to work around an apparent (and reproducible) bug.');
 
     await logTimedAsync(logger, 'Cleaning up source outputs', () async {
-      var assetGraphFile = new File(assetGraphPath);
+      var assetGraphFile = File(assetGraphPath);
       if (!assetGraphFile.existsSync()) {
-        logger.warning(
-            'No asset graph found, skipping generated to source file cleanup');
-      } else {
-        var assetGraph =
-            new AssetGraph.deserialize(await assetGraphFile.readAsBytes());
-        var packageGraph = new PackageGraph.forThisPackage();
-        var writer = new FileBasedAssetWriter(packageGraph);
-        for (var id in assetGraph.outputs) {
-          if (id.package != packageGraph.root.name) continue;
-          var node = assetGraph.get(id) as GeneratedAssetNode;
-          if (node.wasOutput) {
-            // Note that this does a file.exists check in the root package and
-            // only tries to delete the file if it exists. This way we only
-            // actually delete to_source outputs, without reading in the build
-            // actions.
-            await writer.delete(id);
-          }
-        }
+        logger.warning('No asset graph found. '
+            'Skipping cleanup of generated files in source directories.');
+        return;
       }
+      AssetGraph assetGraph;
+      try {
+        assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
+      } catch (_) {
+        logger.warning('Failed to deserialize AssetGraph. '
+            'Skipping cleanup of generated files in source directories.');
+        return;
+      }
+      var packageGraph = PackageGraph.forThisPackage();
+      await cleanUpSourceOutputs(assetGraph, packageGraph);
     });
 
-    await logTimedAsync(logger, 'Cleaning up cache directory', () async {
-      var generatedDir = new Directory(cacheDir);
-      if (await generatedDir.exists()) {
-        await generatedDir.delete(recursive: true);
-      }
-    });
+    await logTimedAsync(
+        logger, 'Cleaning up cache directory', cleanUpGeneratedDirectory);
 
     await logSubscription.cancel();
 
     return 0;
+  }
+}
+
+Future<void> cleanUpSourceOutputs(
+    AssetGraph assetGraph, PackageGraph packageGraph) async {
+  var writer = FileBasedAssetWriter(packageGraph);
+  for (var id in assetGraph.outputs) {
+    if (id.package != packageGraph.root.name) continue;
+    var node = assetGraph.get(id) as GeneratedAssetNode;
+    if (node.wasOutput) {
+      // Note that this does a file.exists check in the root package and
+      // only tries to delete the file if it exists. This way we only
+      // actually delete to_source outputs, without reading in the build
+      // actions.
+      await writer.delete(id);
+    }
+  }
+}
+
+Future<void> cleanUpGeneratedDirectory() async {
+  var generatedDir = Directory(cacheDir);
+  if (await generatedDir.exists()) {
+    await generatedDir.delete(recursive: true);
   }
 }

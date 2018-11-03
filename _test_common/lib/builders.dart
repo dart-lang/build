@@ -45,5 +45,5 @@ class DelegatingBuilder implements Builder {
   Map<String, List<String>> get buildExtensions => delegate.buildExtensions;
 
   @override
-  Future build(BuildStep buildStep) => delegate.build(buildStep);
+  Future build(BuildStep buildStep) async => delegate.build(buildStep);
 }

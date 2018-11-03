@@ -6,26 +6,26 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/package_graph/target_graph.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/generate/build_impl.dart';
+import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_impl.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../logging/std_io_logging.dart';
 import '../server/server.dart';
-import 'directory_watcher_factory.dart';
 import 'terminator.dart';
 
-final _logger = new Logger('Watch');
+final _logger = Logger('Watch');
 
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
@@ -39,12 +39,13 @@ Future<ServeHandler> watch(
   Level logLevel,
   onLog(LogRecord record),
   Duration debounceDelay,
-  DirectoryWatcherFactory directoryWatcherFactory,
+  DirectoryWatcher Function(String) directoryWatcherFactory,
   Stream terminateEventStream,
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
   Map<String, BuildConfig> overrideBuildConfig,
   Map<String, String> outputMap,
+  bool outputSymlinksOnly,
   bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
@@ -53,42 +54,50 @@ Future<ServeHandler> watch(
   String logPerformanceDir,
 }) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= new PackageGraph.forThisPackage();
+  packageGraph ??= PackageGraph.forThisPackage();
 
-  var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty),
+  var environment = OverrideableEnvironment(
+      IOEnvironment(packageGraph,
+          assumeTty: assumeTty,
+          outputMap: outputMap,
+          outputSymlinksOnly: outputSymlinksOnly),
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
+  var logSubscription =
+      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   overrideBuildConfig ??=
       await findBuildConfigOverrides(packageGraph, configKey);
   var options = await BuildOptions.create(
-    environment,
+    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     overrideBuildConfig: overrideBuildConfig,
-    logLevel: logLevel,
     debounceDelay: debounceDelay,
     skipBuildScriptCheck: skipBuildScriptCheck,
     enableLowResourcesMode: enableLowResourcesMode,
-    outputMap: outputMap,
     trackPerformance: trackPerformance,
-    verbose: verbose,
     buildDirs: buildDirs,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
   );
-  var terminator = new Terminator(terminateEventStream);
+  var terminator = Terminator(terminateEventStream);
 
-  var watch = _runWatch(options, environment, builders, builderConfigOverrides,
-      terminator.shouldTerminate, directoryWatcherFactory, configKey,
+  var watch = _runWatch(
+      options,
+      environment,
+      builders,
+      builderConfigOverrides,
+      terminator.shouldTerminate,
+      directoryWatcherFactory,
+      configKey,
+      outputMap?.isNotEmpty == true,
       isReleaseMode: isReleaseBuild ?? false);
 
-  // ignore: unawaited_futures
-  watch.buildResults.drain().then((_) async {
+  unawaited(watch.buildResults.drain().then((_) async {
     await terminator.cancel();
     await options.logListener.cancel();
-  });
+  }));
 
   return createServeHandler(watch);
 }
@@ -107,11 +116,12 @@ WatchImpl _runWatch(
         List<BuilderApplication> builders,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
         Future until,
-        DirectoryWatcherFactory directoryWatcherFactory,
+        DirectoryWatcher Function(String) directoryWatcherFactory,
         String configKey,
+        bool willCreateOutputDirs,
         {bool isReleaseMode = false}) =>
-    new WatchImpl(options, environment, builders, builderConfigOverrides, until,
-        directoryWatcherFactory, configKey,
+    WatchImpl(options, environment, builders, builderConfigOverrides, until,
+        directoryWatcherFactory, configKey, willCreateOutputDirs,
         isReleaseMode: isReleaseMode);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
@@ -143,7 +153,7 @@ class WatchImpl implements BuildState {
 
   AssetGraph get assetGraph => _build?.assetGraph;
 
-  final _readyCompleter = new Completer<Null>();
+  final _readyCompleter = Completer<Null>();
   Future<Null> get ready => _readyCompleter.future;
 
   final String _configKey; // may be null
@@ -152,10 +162,15 @@ class WatchImpl implements BuildState {
   final Duration _debounceDelay;
 
   /// Injectable factory for creating directory watchers.
-  final DirectoryWatcherFactory _directoryWatcherFactory;
+  final DirectoryWatcher Function(String) _directoryWatcherFactory;
+
+  /// Whether or not we will be creating any output directories.
+  ///
+  /// If not, then we don't care about source edits that don't have outputs.
+  final bool _willCreateOutputDirs;
 
   /// Should complete when we need to kill the build.
-  final _terminateCompleter = new Completer<Null>();
+  final _terminateCompleter = Completer<Null>();
 
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
@@ -167,7 +182,7 @@ class WatchImpl implements BuildState {
   Future<BuildResult> currentBuild;
 
   /// Pending expected delete events from the build.
-  final Set<AssetId> _expectedDeletes = new Set<AssetId>();
+  final Set<AssetId> _expectedDeletes = Set<AssetId>();
 
   FinalizedReader _reader;
   FinalizedReader get reader => _reader;
@@ -180,6 +195,7 @@ class WatchImpl implements BuildState {
       Future until,
       this._directoryWatcherFactory,
       this._configKey,
+      this._willCreateOutputDirs,
       {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph,
@@ -205,16 +221,16 @@ class WatchImpl implements BuildState {
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       Future until,
       {bool isReleaseMode = false}) {
-    var watcherEnvironment = new OverrideableEnvironment(environment,
-        writer: new _OnDeleteWriter(environment.writer, _expectedDeletes.add));
-    var firstBuildCompleter = new Completer<BuildResult>();
+    var watcherEnvironment = OverrideableEnvironment(environment,
+        writer: _OnDeleteWriter(environment.writer, _expectedDeletes.add));
+    var firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
-    var controller = new StreamController<BuildResult>();
+    var controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(_build != null);
       _build.finalizedReader.reset();
-      _logger.info('${'-'*72}\n');
+      _logger.info('${'-' * 72}\n');
       _logger.info('Starting Build\n');
       var mergedChanges = _collectChanges(changes);
 
@@ -224,7 +240,8 @@ class WatchImpl implements BuildState {
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
-          return new BuildResult(BuildStatus.failure, []);
+          return BuildResult(BuildStatus.failure, [],
+              failureType: FailureType.buildScriptChanged);
         }
       }
       return _build.run(mergedChanges);
@@ -235,13 +252,13 @@ class WatchImpl implements BuildState {
     });
 
     Digest originalRootPackagesDigest;
-    final rootPackagesId = new AssetId(packageGraph.root.name, '.packages');
+    final rootPackagesId = AssetId(packageGraph.root.name, '.packages');
 
     // Start watching files immediately, before the first build is even started.
-    var graphWatcher = new PackageGraphWatcher(packageGraph,
+    var graphWatcher = PackageGraphWatcher(packageGraph,
         logger: _logger,
         watch: (node) =>
-            new PackageNodeWatcher(node, watch: _directoryWatcherFactory));
+            PackageNodeWatcher(node, watch: _directoryWatcherFactory));
     graphWatcher
         .watch()
         .asyncMap<AssetChange>((change) {
@@ -268,6 +285,9 @@ class WatchImpl implements BuildState {
           } else if (_isBuildYaml(id) ||
               _isConfiguredBuildYaml(id) ||
               _isPackageBuildYamlOverride(id)) {
+            controller.add(BuildResult(BuildStatus.failure, [],
+                failureType: FailureType.buildConfigChanged));
+
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
             _logger.severe(
@@ -286,7 +306,7 @@ class WatchImpl implements BuildState {
         .onDone(() async {
           await currentBuild;
           await _build?.beforeExit();
-          await controller.close();
+          if (!controller.isClosed) await controller.close();
           _logger.info('Builds finished. Safe to exit\n');
         });
 
@@ -306,7 +326,14 @@ class WatchImpl implements BuildState {
 
         firstBuild = await _build.run({});
       } on CannotBuildException {
-        firstBuild = new BuildResult(BuildStatus.failure, []);
+        _terminateCompleter.complete();
+
+        firstBuild = BuildResult(BuildStatus.failure, []);
+      } on BuildScriptChangedException {
+        _terminateCompleter.complete();
+
+        firstBuild = BuildResult(BuildStatus.failure, [],
+            failureType: FailureType.buildScriptChanged);
       }
 
       _reader = _build?.finalizedReader;
@@ -330,7 +357,7 @@ class WatchImpl implements BuildState {
   bool _isPackageBuildYamlOverride(AssetId id) =>
       id.package == packageGraph.root.name &&
       id.path.contains(_packageBuildYamlRegexp);
-  final _packageBuildYamlRegexp = new RegExp(r'^[a-z0-9_]+\.build\.yaml$');
+  final _packageBuildYamlRegexp = RegExp(r'^[a-z0-9_]+\.build\.yaml$');
 
   /// Checks if we should skip a watch event for this [change].
   bool _shouldProcess(AssetChange change) {
@@ -338,7 +365,7 @@ class WatchImpl implements BuildState {
     if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
     var node = assetGraph.get(change.id);
     if (node != null) {
-      if (!node.isInteresting) return false;
+      if (!_willCreateOutputDirs && !node.isInteresting) return false;
       if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     } else {
       // We don't care about deletes or modifications outside the asset graph.
@@ -376,7 +403,7 @@ Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
             changeMap[change.id] = ChangeType.MODIFY;
           } else if (change.type == ChangeType.MODIFY) {
             // REMOVE followed by MODIFY isn't sensible, just throw.
-            throw new StateError(
+            throw StateError(
                 'Internal error, got REMOVE event followed by MODIFY event for '
                 '${change.id}.');
           }
@@ -387,7 +414,7 @@ Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
             changeMap[change.id] = change.type;
           } else if (change.type == ChangeType.ADD) {
             // MODIFY followed by ADD isn't sensible, just throw.
-            throw new StateError(
+            throw StateError(
                 'Internal error, got MODIFY event followed by ADD event for '
                 '${change.id}.');
           }

@@ -13,24 +13,28 @@ import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 import 'scratch_space.dart';
 import 'workers.dart';
 
-const linkedSummaryExtension = '.linked.sum';
-const unlinkedSummaryExtension = '.unlinked.sum';
+String linkedSummaryExtension(DartPlatform platform) =>
+    '.${platform.name}.linked.sum';
+String unlinkedSummaryExtension(DartPlatform platform) =>
+    '.${platform.name}.unlinked.sum';
 
 /// A builder which can output unlinked summaries!
 class UnlinkedSummaryBuilder implements Builder {
-  const UnlinkedSummaryBuilder();
+  UnlinkedSummaryBuilder(DartPlatform platform)
+      : buildExtensions = {
+          moduleExtension(platform): [unlinkedSummaryExtension(platform)]
+        };
 
   @override
-  final buildExtensions = const {
-    moduleExtension: const [unlinkedSummaryExtension]
-  };
+  final Map<String, List<String>> buildExtensions;
 
   @override
   Future build(BuildStep buildStep) async {
-    var module = new Module.fromJson(
+    var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
@@ -43,16 +47,17 @@ class UnlinkedSummaryBuilder implements Builder {
 
 /// A builder which can output linked summaries!
 class LinkedSummaryBuilder implements Builder {
-  const LinkedSummaryBuilder();
+  LinkedSummaryBuilder(DartPlatform platform)
+      : buildExtensions = {
+          moduleExtension(platform): [linkedSummaryExtension(platform)]
+        };
 
   @override
-  final buildExtensions = const {
-    moduleExtension: const [linkedSummaryExtension]
-  };
+  final Map<String, List<String>> buildExtensions;
 
   @override
   Future build(BuildStep buildStep) async {
-    var module = new Module.fromJson(
+    var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
@@ -72,7 +77,7 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
   await scratchSpace.ensureAssets(module.sources, buildStep);
 
   var summaryOutputFile = scratchSpace.fileFor(module.unlinkedSummaryId);
-  var request = new WorkRequest();
+  var request = WorkRequest();
   request.arguments.addAll([
     '--build-summary-only',
     '--build-summary-only-unlinked',
@@ -90,8 +95,7 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
   var analyzer = await buildStep.fetchResource(analyzerDriverResource);
   var response = await analyzer.doWork(request);
   if (response.exitCode == EXIT_CODE_ERROR) {
-    throw new AnalyzerSummaryException(
-        module.unlinkedSummaryId, response.output);
+    throw AnalyzerSummaryException(module.unlinkedSummaryId, response.output);
   }
 
   // Copy the output back using the buildStep.
@@ -117,7 +121,7 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
 
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
-  var allAssetIds = new Set<AssetId>()
+  var allAssetIds = Set<AssetId>()
     // TODO: Why can't we just add the unlinked summary?
     // That would help invalidation.
     ..addAll(module.sources)
@@ -125,7 +129,7 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
     ..addAll(transitiveUnlinkedSummaryDeps);
   await scratchSpace.ensureAssets(allAssetIds, buildStep);
   var summaryOutputFile = scratchSpace.fileFor(module.linkedSummaryId);
-  var request = new WorkRequest();
+  var request = WorkRequest();
   request.arguments.addAll([
     '--build-summary-only',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
@@ -148,7 +152,7 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   // Add the [Input]s with `Digest`s.
   await Future.wait(allAssetIds.map((input) {
     return buildStep.digest(input).then((digest) {
-      request.inputs.add(new Input()
+      request.inputs.add(Input()
         ..digest = digest.bytes
         ..path = scratchSpace.fileFor(input).path);
     });
@@ -158,7 +162,7 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   var response = await analyzer.doWork(request);
   var summaryFile = scratchSpace.fileFor(module.linkedSummaryId);
   if (response.exitCode == EXIT_CODE_ERROR || !await summaryFile.exists()) {
-    throw new AnalyzerSummaryException(module.linkedSummaryId, response.output);
+    throw AnalyzerSummaryException(module.linkedSummaryId, response.output);
   }
 
   // Copy the output back using the buildStep.
@@ -171,7 +175,7 @@ Iterable<String> _analyzerSourceArgsForModule(
     var uri = canonicalUriFor(id);
     var file = scratchSpace.fileFor(id);
     if (!uri.startsWith('package:')) {
-      uri = new Uri.file('/${id.path}').toString();
+      uri = Uri.file('/${id.path}').toString();
     }
     return '$uri|${file.path}';
   });

@@ -5,18 +5,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
-import 'package:build_modules/build_modules.dart';
-import 'package:cli_util/cli_util.dart' as cli_util;
 
 import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
 
-final _sdkDir = cli_util.getSdkPath();
+final _sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
@@ -26,12 +26,11 @@ const jsSourceMapExtension = '.ddc.js.map';
 class DevCompilerBuilder implements Builder {
   final bool useKernel;
 
-  const DevCompilerBuilder({bool useKernel})
-      : this.useKernel = useKernel ?? false;
+  DevCompilerBuilder({bool useKernel}) : useKernel = useKernel ?? false;
 
   @override
-  final buildExtensions = const {
-    moduleExtension: const [
+  final buildExtensions = {
+    moduleExtension(DartPlatform.dartdevc): [
       jsModuleExtension,
       jsModuleErrorsExtension,
       jsSourceMapExtension
@@ -40,13 +39,13 @@ class DevCompilerBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var module = new Module.fromJson(
+    var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
 
     Future<Null> handleError(e) async {
       await buildStep.writeAsString(
-          buildStep.inputId.changeExtension(jsModuleErrorsExtension), '$e');
+          module.primarySource.changeExtension(jsModuleErrorsExtension), '$e');
       log.severe('$e');
     }
 
@@ -64,21 +63,23 @@ class DevCompilerBuilder implements Builder {
 Future _createDevCompilerModule(
     Module module, BuildStep buildStep, bool useKernel,
     {bool debugMode = true}) async {
-  var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
+  var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
+      () => module.computeTransitiveDependencies(buildStep));
   var transitiveSummaryDeps = transitiveDeps.map((module) => useKernel
       ? module.primarySource.changeExtension(ddcKernelExtension)
       : module.linkedSummaryId);
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
-  var allAssetIds = new Set<AssetId>()
+  var allAssetIds = Set<AssetId>()
     ..addAll(module.sources)
     ..addAll(transitiveSummaryDeps);
-  await scratchSpace.ensureAssets(allAssetIds, buildStep);
+  await buildStep.trackStage(
+      'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.jsId(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary = p.url
       .join(_sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
-  var request = new WorkRequest();
+  var request = WorkRequest();
 
   request.arguments.addAll([
     '--dart-sdk-summary=$sdkSummary',
@@ -91,10 +92,12 @@ Future _createDevCompilerModule(
     // Add the default analysis_options.
     await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
     var libraryRoot = '/${p.split(p.dirname(jsId.path)).first}';
+    var summaryExtension =
+        linkedSummaryExtension(DartPlatform.dartdevc).substring(1);
     request.arguments.addAll([
       '--module-root=.',
       '--library-root=$libraryRoot',
-      '--summary-extension=${linkedSummaryExtension.substring(1)}',
+      '--summary-extension=$summaryExtension',
       '--no-summarize',
       defaultAnalysisOptionsArg(scratchSpace),
     ]);
@@ -134,7 +137,7 @@ Future _createDevCompilerModule(
         request.arguments
             .add('--url-mapping=$uri,${scratchSpace.fileFor(id).path}');
       } else {
-        var absoluteFileUri = new Uri.file('/${id.path}');
+        var absoluteFileUri = Uri.file('/${id.path}');
         request.arguments.add('--url-mapping=$absoluteFileUri,${id.path}');
       }
     }
@@ -159,7 +162,7 @@ Future _createDevCompilerModule(
     if (uri.startsWith('package:')) {
       return uri;
     }
-    return useKernel ? id.path : new Uri.file('/${id.path}').toString();
+    return useKernel ? id.path : Uri.file('/${id.path}').toString();
   }));
 
   WorkResponse response;
@@ -167,7 +170,8 @@ Future _createDevCompilerModule(
     var driverResource =
         useKernel ? dartdevkDriverResource : dartdevcDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
-    response = await driver.doWork(request);
+    response = await buildStep
+        .trackStage('Compile', () => driver.doWork(request), isExternal: true);
   } finally {
     if (useKernel) await packagesFile.parent.delete(recursive: true);
   }
@@ -178,7 +182,7 @@ Future _createDevCompilerModule(
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
     var message =
         response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-    throw new DartDevcCompilationException(jsId, '$message}');
+    throw DartDevcCompilationException(jsId, '$message}');
   } else {
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);

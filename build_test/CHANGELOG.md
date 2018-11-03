@@ -1,6 +1,20 @@
-## 0.10.2+5-dev
+## 0.10.3+3
+
+- Increased the upper bound for `package:analyzer` to '<0.34.0'.
+
+## 0.10.3+2
+
+- Declare support for `package:build` version 1.0.0.
+
+## 0.10.3+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
+## 0.10.3
 
 - Require test version ^0.12.42 and use `TypeMatcher`.
+- Improve performance of test methods which use a `Resolver` by keeping a cached
+  instance of `AnalyzerResolvers`.
 
 ## 0.10.2+4
 

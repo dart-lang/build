@@ -20,7 +20,7 @@ import 'common.dart';
 /// To handle prompts you must first set `nextPromptResponse`. Alternatively
 /// you can set `throwOnPrompt` to `true` to emulate a
 /// [NonInteractiveBuildException].
-class TestBuildEnvironment implements BuildEnvironment {
+class TestBuildEnvironment extends BuildEnvironment {
   @override
   final RunnerAssetReader reader;
   @override
@@ -45,8 +45,8 @@ class TestBuildEnvironment implements BuildEnvironment {
       {RunnerAssetReader reader,
       RunnerAssetWriter writer,
       this.throwOnPrompt = false})
-      : this.reader = reader ?? new InMemoryRunnerAssetReader(),
-        this.writer = writer ?? new InMemoryRunnerAssetWriter();
+      : reader = reader ?? InMemoryRunnerAssetReader(),
+        writer = writer ?? InMemoryRunnerAssetWriter();
 
   @override
   void onLog(LogRecord record) => logRecords.add(record);
@@ -60,9 +60,9 @@ class TestBuildEnvironment implements BuildEnvironment {
   /// this method should throw [NonInteractiveBuildException].
   @override
   Future<int> prompt(String message, List<String> choices) {
-    if (throwOnPrompt) throw new NonInteractiveBuildException();
+    if (throwOnPrompt) throw NonInteractiveBuildException();
 
     assert(_nextPromptResponse != null);
-    return new Future.value(_nextPromptResponse);
+    return Future.value(_nextPromptResponse);
   }
 }

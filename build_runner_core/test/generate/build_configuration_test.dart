@@ -13,7 +13,7 @@ import 'package:_test_common/common.dart';
 
 void main() {
   test('uses builder options', () async {
-    Builder copyBuilder(BuilderOptions options) => new TestBuilder(
+    Builder copyBuilder(BuilderOptions options) => TestBuilder(
         buildExtensions: replaceExtension(
             options.config['inputExtension'] as String, '.copy'));
 
@@ -46,7 +46,7 @@ void main() {
   });
 
   test('isRoot is applied correctly', () async {
-    Builder copyBuilder(BuilderOptions options) => new TestBuilder(
+    Builder copyBuilder(BuilderOptions options) => TestBuilder(
         buildExtensions: replaceExtension(
             '.txt', options.isRoot ? '.root.copy' : '.dep.copy'));
     var packageGraph = buildPackageGraph({

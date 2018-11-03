@@ -61,7 +61,7 @@ class IOSinkLogHandle {
 
   factory IOSinkLogHandle.toFile(String logFile,
           {Level printLevel, bool printToStdErr = true}) =>
-      new IOSinkLogHandle(new File(logFile).openWrite(),
+      IOSinkLogHandle(File(logFile).openWrite(),
           printLevel: printLevel, printToStdErr: printToStdErr);
 
   /// Must be called to finish writing logs.
@@ -74,14 +74,14 @@ class IOSinkLogHandle {
 
 Logger _createLogger() {
   hierarchicalLoggingEnabled = true;
-  return new Logger.detached('codegen')..level = Level.ALL;
+  return Logger.detached('codegen')..level = Level.ALL;
 }
 
 String _logMessage(LogRecord record) {
-  var buffer = new StringBuffer('[${record.level}]: ${record.message}');
+  var buffer = StringBuffer('[${record.level}]: ${record.message}');
   if (record.error != null) buffer.write('\n${record.error}');
   if (record.stackTrace != null) {
-    buffer.write('\n${new Chain.forTrace(record.stackTrace).terse}');
+    buffer.write('\n${Chain.forTrace(record.stackTrace).terse}');
   }
   return buffer.toString();
 }

@@ -8,13 +8,13 @@ import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 
 final Matcher assetGraphVersionException =
-    new TypeMatcher<AssetGraphVersionException>();
+    TypeMatcher<AssetGraphVersionException>();
 final Matcher duplicateAssetNodeException =
-    new TypeMatcher<DuplicateAssetNodeException>();
+    TypeMatcher<DuplicateAssetNodeException>();
 
 Matcher equalsAssetGraph(AssetGraph expected,
         {bool checkPreviousInputsDigest}) =>
-    new _AssetGraphMatcher(expected, checkPreviousInputsDigest ?? true);
+    _AssetGraphMatcher(expected, checkPreviousInputsDigest ?? true);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
@@ -78,33 +78,12 @@ class _AssetGraphMatcher extends Matcher {
         ];
         matches = false;
       }
-      if (node is GeneratedAssetNode) {
-        if (expectedNode is GeneratedAssetNode) {
-          if (node.primaryInput != expectedNode.primaryInput) {
-            matchState['primaryInput of ${node.id}'] = [
-              node.primaryInput,
-              expectedNode.primaryInput
-            ];
-            matches = false;
-          }
+      if (node is NodeWithInputs) {
+        if (expectedNode is NodeWithInputs) {
           if (node.state != expectedNode.state) {
             matchState['needsUpdate of ${node.id}'] = [
               node.state,
               expectedNode.state
-            ];
-            matches = false;
-          }
-          if (node.wasOutput != expectedNode.wasOutput) {
-            matchState['wasOutput of ${node.id}'] = [
-              node.wasOutput,
-              expectedNode.wasOutput
-            ];
-            matches = false;
-          }
-          if (node.isFailure != expectedNode.isFailure) {
-            matchState['isFailure of ${node.id}'] = [
-              node.isFailure,
-              expectedNode.isFailure
             ];
             matches = false;
           }
@@ -116,20 +95,58 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-          if (checkPreviousInputsDigest &&
-              node.previousInputsDigest != expectedNode.previousInputsDigest) {
-            matchState['previousInputDigest of ${node.id}'] = [
-              node.previousInputsDigest,
-              expectedNode.previousInputsDigest
-            ];
-            matches = false;
+        }
+        if (node is GeneratedAssetNode) {
+          if (expectedNode is GeneratedAssetNode) {
+            if (node.primaryInput != expectedNode.primaryInput) {
+              matchState['primaryInput of ${node.id}'] = [
+                node.primaryInput,
+                expectedNode.primaryInput
+              ];
+              matches = false;
+            }
+            if (node.wasOutput != expectedNode.wasOutput) {
+              matchState['wasOutput of ${node.id}'] = [
+                node.wasOutput,
+                expectedNode.wasOutput
+              ];
+              matches = false;
+            }
+            if (node.isFailure != expectedNode.isFailure) {
+              matchState['isFailure of ${node.id}'] = [
+                node.isFailure,
+                expectedNode.isFailure
+              ];
+              matches = false;
+            }
+            if (checkPreviousInputsDigest &&
+                node.previousInputsDigest !=
+                    expectedNode.previousInputsDigest) {
+              matchState['previousInputDigest of ${node.id}'] = [
+                node.previousInputsDigest,
+                expectedNode.previousInputsDigest
+              ];
+              matches = false;
+            }
           }
-        } else {
-          matchState['Type of ${node.id}'] = [
-            node.runtimeType,
-            expectedNode.runtimeType
-          ];
-          matches = false;
+        } else if (node is GlobAssetNode) {
+          if (expectedNode is GlobAssetNode) {
+            if (!unorderedEquals(node.results)
+                .matches(expectedNode.results, null)) {
+              matchState['results of ${node.id}'] = [
+                node.results,
+                expectedNode.results
+              ];
+              matches = false;
+            }
+            if (node.glob.pattern != expectedNode.glob.pattern) {
+              matchState['glob of ${node.id}'] = [
+                node.glob.pattern,
+                expectedNode.glob.pattern
+              ];
+              matches = false;
+            }
+          }
         }
       } else if (node is PostProcessAnchorNode) {
         if (expectedNode is PostProcessAnchorNode) {
@@ -162,12 +179,6 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-        } else {
-          matchState['Type of ${node.id}'] = [
-            node.runtimeType,
-            expectedNode.runtimeType
-          ];
-          matches = false;
         }
       }
     }

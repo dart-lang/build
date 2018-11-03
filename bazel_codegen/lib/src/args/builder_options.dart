@@ -17,21 +17,21 @@ import 'package:build/build.dart';
 /// Values are JSON decoded when possible, and passed through directly as a
 /// String when the JSON decode fails.
 BuilderOptions optionsFromArgs(List<String> args) {
-  args = new List.from(args);
+  args = List.from(args);
   final options = <String, dynamic>{};
   for (final arg in args) {
     final withoutDash = arg.startsWith('--') ? arg.substring(2) : arg;
     final parts = withoutDash.split('=');
 
     if (parts.length > 2 || parts.first.isEmpty) {
-      throw new ArgumentError('Could not parse argument $arg: $parts');
+      throw ArgumentError('Could not parse argument $arg: $parts');
     }
 
     final option = parts.first;
     final value = parts.length == 2 ? _decode(parts[1]) : true;
     options[option] = value;
   }
-  return new BuilderOptions(options);
+  return BuilderOptions(options);
 }
 
 dynamic _decode(String value) {

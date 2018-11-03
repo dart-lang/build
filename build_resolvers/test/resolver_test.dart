@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -11,7 +10,7 @@ import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_resolvers/src/resolver.dart';
 
 void main() {
-  final entryPoint = new AssetId('a', 'web/main.dart');
+  final entryPoint = AssetId('a', 'web/main.dart');
 
   group('Resolver', () {
     test('should handle initial files', () {
@@ -20,7 +19,7 @@ void main() {
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
         expect(lib, isNotNull);
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
 
     test('should follow imports', () {
@@ -38,7 +37,7 @@ void main() {
         expect(lib.importedLibraries.length, 2);
         var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
         expect(libA.getType('Foo'), isNull);
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
 
     test('should follow package imports', () {
@@ -56,7 +55,7 @@ void main() {
         expect(lib.importedLibraries.length, 2);
         var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
         expect(libB.getType('Foo'), isNull);
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
 
     test('handles missing files', () {
@@ -69,7 +68,7 @@ void main() {
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
         expect(lib.importedLibraries.length, 2);
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
 
     test('should list all libraries', () {
@@ -95,7 +94,7 @@ void main() {
               'a.c',
               'a.d',
             ]));
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
 
     test('should resolve types and library uris', () {
@@ -123,7 +122,7 @@ void main() {
 
         var main = await resolver.findLibraryByName('');
         expect(main, isNotNull);
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
 
     test('does not resolve constants transitively', () {
@@ -144,13 +143,10 @@ void main() {
               class Bar {}''',
       }, (resolver) async {
         var main = await resolver.findLibraryByName('web.main');
-        var meta = (main.unit.declarations[0].element as ClassElement)
-            .supertype
-            .element
-            .metadata[0];
+        var meta = main.getType('Foo').supertype.element.metadata[0];
         expect(meta, isNotNull);
         expect(meta.constantValue, isNull);
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
 
     test('handles circular imports', () {
@@ -168,7 +164,7 @@ void main() {
         var libs = await resolver.libraries.map((lib) => lib.name).toList();
         expect(libs.contains('a'), isTrue);
         expect(libs.contains('b'), isTrue);
-      }, resolvers: new AnalyzerResolvers());
+      }, resolvers: AnalyzerResolvers());
     });
   });
 }

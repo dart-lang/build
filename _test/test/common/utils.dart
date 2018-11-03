@@ -9,11 +9,12 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-Directory _generatedDir = new Directory(p.join(_toolDir.path, 'generated'));
-Directory _toolDir = new Directory(p.join('.dart_tool', 'build'));
+Directory _generatedDir = Directory(p.join(_toolDir.path, 'generated'));
+Directory _toolDir = Directory(p.join('.dart_tool', 'build'));
 
 Process _process;
 Stream<String> _stdOutLines;
+Stream<String> get stdOutLines => _stdOutLines;
 
 final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
@@ -39,9 +40,15 @@ Future<Null> startServer(
         {bool ensureCleanBuild,
         List<Function> extraExpects,
         List<String> buildArgs}) =>
-    _startServer(_pubBinary,
-        ['run', 'build_runner', 'serve']..addAll(buildArgs ?? const []),
-        ensureCleanBuild: ensureCleanBuild, extraExpects: extraExpects);
+    _startServer(
+        'dart',
+        [
+          '--packages=.packages',
+          p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
+          'serve'
+        ],
+        ensureCleanBuild: ensureCleanBuild,
+        extraExpects: extraExpects);
 
 Future<ProcessResult> _runBuild(String command, List<String> args,
     {bool ensureCleanBuild}) async {
@@ -195,26 +202,26 @@ Future<Null> expectTestsPass(
 }
 
 Future<Null> createFile(String path, String contents) async {
-  var file = new File(path);
+  var file = File(path);
   expect(await file.exists(), isFalse);
   await file.create(recursive: true);
   await file.writeAsString(contents);
 }
 
 Future<Null> deleteFile(String path) async {
-  var file = new File(path);
+  var file = File(path);
   expect(await file.exists(), isTrue);
   await file.delete();
 }
 
 Future<String> readGeneratedFileAsString(String path) async {
-  var file = new File(p.join(_generatedDir.path, path));
+  var file = File(p.join(_generatedDir.path, path));
   expect(await file.exists(), isTrue);
   return file.readAsString();
 }
 
 Future<Null> replaceAllInFile(String path, Pattern from, String replace) async {
-  var file = new File(path);
+  var file = File(path);
   expect(await file.exists(), isTrue);
   var content = await file.readAsString();
   await file.writeAsString(content.replaceAll(from, replace));

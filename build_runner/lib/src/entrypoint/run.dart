@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -17,7 +18,7 @@ import 'runner.dart';
 /// Returns the exit code that should be set when the calling process exits. `0`
 /// implies success.
 Future<int> run(List<String> args, List<BuilderApplication> builders) async {
-  var runner = new BuildCommandRunner(builders);
+  var runner = BuildCommandRunner(builders);
   try {
     var result = await runner.run(args);
     return result ?? 0;
@@ -32,5 +33,30 @@ Future<int> run(List<String> args, List<BuilderApplication> builders) async {
   } on CannotBuildException {
     // A message should have already been logged.
     return ExitCode.config.code;
+  } on BuildScriptChangedException {
+    _deleteAssetGraph();
+    _deleteSelf();
+    return ExitCode.tempFail.code;
+  } on BuildConfigChangedException {
+    return ExitCode.tempFail.code;
+  }
+}
+
+/// Deletes the asset graph for the current build script from disk.
+void _deleteAssetGraph() {
+  var graph = File(assetGraphPath);
+  if (graph.existsSync()) {
+    graph.deleteSync();
+  }
+}
+
+/// Deletes the current running script.
+///
+/// This should only happen if the current script is a snapshot, and it has
+/// been invalidated.
+void _deleteSelf() {
+  var self = File(Platform.script.toFilePath());
+  if (self.existsSync()) {
+    self.deleteSync();
   }
 }

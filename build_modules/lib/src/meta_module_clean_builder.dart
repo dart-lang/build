@@ -6,20 +6,20 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
 
-import 'package:build/build.dart';
-
-import 'common.dart';
 import 'meta_module.dart';
 import 'meta_module_builder.dart';
 import 'modules.dart';
+import 'platform.dart';
 
 /// The extension for serialized clean meta module assets.
 ///
 /// Clean in this context means all dependencies are primary sources.
 /// Furthermore cyclic modules are merged into a single module.
-const metaModuleCleanExtension = '.meta_module.clean';
+String metaModuleCleanExtension(DartPlatform platform) =>
+    '.${platform.name}.meta_module.clean';
 
 /// Creates `.meta_module.clean` file for any Dart library.
 ///
@@ -30,61 +30,55 @@ const metaModuleCleanExtension = '.meta_module.clean';
 /// Note if the raw meta module file can't be found for any of the
 /// module's transitive dependencies there will be no output.
 class MetaModuleCleanBuilder implements Builder {
-  final bool _isCoarse;
-  const MetaModuleCleanBuilder({bool isCoarse}) : _isCoarse = isCoarse ?? true;
-
-  factory MetaModuleCleanBuilder.forOptions(BuilderOptions options) {
-    return new MetaModuleCleanBuilder(
-        isCoarse: moduleStrategy(options) == ModuleStrategy.coarse);
-  }
-
   @override
-  final buildExtensions = const {
-    '$metaModuleExtension': const [metaModuleCleanExtension]
-  };
+  final Map<String, List<String>> buildExtensions;
+
+  final DartPlatform _platform;
+
+  MetaModuleCleanBuilder(this._platform)
+      : buildExtensions = {
+          metaModuleExtension(_platform): [metaModuleCleanExtension(_platform)]
+        };
 
   @override
   Future build(BuildStep buildStep) async {
-    if (!_isCoarse) return;
-
-    var assetToModule = await buildStep.fetchResource(_assetToModule);
-    var assetToPrimary = await buildStep.fetchResource(_assetToPrimary);
-    SplayTreeSet<Module> cleanModules;
-    try {
-      var modules = await _transitiveModules(
-          buildStep, buildStep.inputId, assetToModule, assetToPrimary);
-      var connectedComponents = stronglyConnectedComponents<AssetId, Module>(
-          modules,
-          (m) => m.primarySource,
-          (m) => m.directDependencies
-              .map((d) => assetToModule[d])
-              .where((d) => d != null));
-      Module merge(List<Module> c) => _mergeComponent(c, assetToPrimary);
-      bool hasSourceInPackage(Module m) =>
-          m.sources.any((s) => s.package == buildStep.inputId.package);
-      // Ensure deterministic output by sorting the modules.
-      cleanModules = new SplayTreeSet<Module>(
-          (a, b) => a.primarySource.compareTo(b.primarySource))
-        ..addAll(connectedComponents.map(merge).where(hasSourceInPackage));
-    } on AssetNotFoundException {
-      // Could not find the raw meta module file for one of this module's
-      // dependency so we will forgo outputing a file to signal to the
-      // module builder that it should use the fine strategy.
-      return;
-    }
+    var assetToModule = (await buildStep.fetchResource(_assetToModule))
+        .putIfAbsent(_platform, () => {});
+    var assetToPrimary = (await buildStep.fetchResource(_assetToPrimary))
+        .putIfAbsent(_platform, () => {});
+    var modules = await _transitiveModules(
+        buildStep, buildStep.inputId, assetToModule, assetToPrimary, _platform);
+    var connectedComponents = stronglyConnectedComponents<AssetId, Module>(
+        modules,
+        (m) => m.primarySource,
+        (m) => m.directDependencies.map((d) =>
+            assetToModule[d] ??
+            Module(d, [d], [], _platform, false, isMissing: true)));
+    Module merge(List<Module> c) =>
+        _mergeComponent(c, assetToPrimary, _platform);
+    bool primarySourceInPackage(Module m) =>
+        m.primarySource.package == buildStep.inputId.package;
+    // Ensure deterministic output by sorting the modules.
+    var cleanModules = SplayTreeSet<Module>(
+        (a, b) => a.primarySource.compareTo(b.primarySource))
+      ..addAll(connectedComponents.map(merge).where(primarySourceInPackage));
     await buildStep.writeAsString(
-        new AssetId(buildStep.inputId.package, 'lib/$metaModuleCleanExtension'),
-        json.encode(new MetaModule(cleanModules.toList())));
+        AssetId(buildStep.inputId.package,
+            'lib/${metaModuleCleanExtension(_platform)}'),
+        jsonEncode(MetaModule(cleanModules.toList())));
   }
 }
 
-/// Map of [AssetId] to corresponding non clean containing [Module].
-final _assetToModule =
-    new Resource<Map<AssetId, Module>>(() => {}, dispose: (map) => map.clear());
+/// Map of [AssetId] to corresponding non clean containing [Module] per
+/// [DartPlatform].
+final _assetToModule = Resource<Map<DartPlatform, Map<AssetId, Module>>>(
+    () => {},
+    dispose: (map) => map.clear());
 
 /// Map of [AssetId] to corresponding primary [AssetId] within the same
-/// clean [Module].
-final _assetToPrimary = new Resource<Map<AssetId, AssetId>>(() => {},
+/// clean [Module] per platform.
+final _assetToPrimary = Resource<Map<DartPlatform, Map<AssetId, AssetId>>>(
+    () => {},
     dispose: (map) => map.clear());
 
 /// Returns a set of all modules transitively reachable from the provided meta
@@ -93,12 +87,13 @@ Future<Set<Module>> _transitiveModules(
     BuildStep buildStep,
     AssetId metaAsset,
     Map<AssetId, Module> assetToModule,
-    Map<AssetId, AssetId> assetToPrimary) async {
-  var dependentModules = new Set<Module>();
+    Map<AssetId, AssetId> assetToPrimary,
+    DartPlatform platform) async {
+  var dependentModules = Set<Module>();
   // Ensures we only process a meta file once.
-  var seenMetas = new Set<AssetId>()..add(metaAsset);
-  var meta = new MetaModule.fromJson(
-      json.decode(await buildStep.readAsString(buildStep.inputId))
+  var seenMetas = Set<AssetId>()..add(metaAsset);
+  var meta = MetaModule.fromJson(
+      jsonDecode(await buildStep.readAsString(buildStep.inputId))
           as Map<String, dynamic>);
   var nextModules = <Module>[];
   nextModules.addAll(meta.modules);
@@ -112,7 +107,8 @@ Future<Set<Module>> _transitiveModules(
       assetToPrimary[source] = module.primarySource;
     }
     for (var dep in module.directDependencies) {
-      var depMetaAsset = new AssetId(dep.package, 'lib/$metaModuleExtension');
+      var depMetaAsset =
+          AssetId(dep.package, 'lib/${metaModuleExtension(platform)}');
       // The testing package is an odd package used by package:frontend_end
       // which doesn't really exist.
       // https://github.com/dart-lang/sdk/issues/32952
@@ -120,8 +116,14 @@ Future<Set<Module>> _transitiveModules(
         continue;
       }
       seenMetas.add(depMetaAsset);
-      var depMeta = new MetaModule.fromJson(
-          json.decode(await buildStep.readAsString(depMetaAsset))
+      if (!await buildStep.canRead(depMetaAsset)) {
+        log.warning('Unable to read module information for '
+            'package:${depMetaAsset.package}, make sure you have a dependency '
+            'on it in your pubspec.');
+        continue;
+      }
+      var depMeta = MetaModule.fromJson(
+          jsonDecode(await buildStep.readAsString(depMetaAsset))
               as Map<String, dynamic>);
       nextModules.addAll(depMeta.modules);
     }
@@ -133,17 +135,19 @@ Future<Set<Module>> _transitiveModules(
 ///
 /// Note this will clean the module dependencies as the merge happens.
 /// The result will be that all dependencies are primary sources.
-Module _mergeComponent(
-    List<Module> connectedComponent, Map<AssetId, AssetId> assetToPrimary) {
-  var sources = new Set<AssetId>();
-  var deps = new Set<AssetId>();
+Module _mergeComponent(List<Module> connectedComponent,
+    Map<AssetId, AssetId> assetToPrimary, DartPlatform platform) {
+  var sources = Set<AssetId>();
+  var deps = Set<AssetId>();
   // Sort the modules to deterministicly select the primary source.
-  var components = new SplayTreeSet<Module>(
-      (a, b) => a.primarySource.compareTo(b.primarySource))
-    ..addAll(connectedComponent);
+  var components =
+      SplayTreeSet<Module>((a, b) => a.primarySource.compareTo(b.primarySource))
+        ..addAll(connectedComponent);
   var primarySource = components.first.primarySource;
+  var isSupported = true;
   for (var module in connectedComponent) {
     sources.addAll(module.sources);
+    isSupported = isSupported && module.isSupported;
     for (var dep in module.directDependencies) {
       var primaryDep = assetToPrimary[dep];
       if (primaryDep == null) continue;
@@ -156,7 +160,8 @@ Module _mergeComponent(
     }
   }
   // Update map so that sources now point to the merged module.
-  var mergedModule = new Module(primarySource, sources, deps);
+  var mergedModule =
+      Module(primarySource, sources, deps, platform, isSupported);
   for (var source in mergedModule.sources) {
     assetToPrimary[source] = mergedModule.primarySource;
   }

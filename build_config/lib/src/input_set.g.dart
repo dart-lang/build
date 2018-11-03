@@ -3,13 +3,13 @@
 part of 'input_set.dart';
 
 // **************************************************************************
-// Generator: JsonSerializableGenerator
+// JsonSerializableGenerator
 // **************************************************************************
 
 InputSet _$InputSetFromJson(Map json) {
   return $checkedNew('InputSet', json, () {
     $checkKeys(json, allowedKeys: const ['include', 'exclude']);
-    var val = new InputSet(
+    var val = InputSet(
         include: $checkedConvert(json, 'include',
             (v) => (v as List)?.map((e) => e as String)?.toList()),
         exclude: $checkedConvert(json, 'exclude',

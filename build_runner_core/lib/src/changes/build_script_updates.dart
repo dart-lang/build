@@ -24,7 +24,7 @@ class BuildScriptUpdates {
     var supportsIncrementalRebuilds = true;
     var rootPackage = packageGraph.root.name;
     Set<AssetId> allSources;
-    var logger = new Logger('BuildScriptUpdates');
+    var logger = Logger('BuildScriptUpdates');
     try {
       allSources = _urisForThisScript
           .map((id) => _idForUri(id, rootPackage))
@@ -47,9 +47,9 @@ class BuildScriptUpdates {
       }
     } on ArgumentError catch (_) {
       supportsIncrementalRebuilds = false;
-      allSources = new Set<AssetId>();
+      allSources = Set<AssetId>();
     }
-    return new BuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
+    return BuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
   }
 
   static Iterable<Uri> get _urisForThisScript =>
@@ -73,11 +73,11 @@ class BuildScriptUpdates {
         break;
       case 'package':
         var parts = uri.pathSegments;
-        return new AssetId(parts[0],
+        return AssetId(parts[0],
             p.url.joinAll(['lib']..addAll(parts.getRange(1, parts.length))));
       case 'file':
         var relativePath = p.relative(uri.toFilePath(), from: p.current);
-        return new AssetId(_rootPackage, relativePath);
+        return AssetId(_rootPackage, relativePath);
       case 'data':
         // Test runner uses a `data` scheme, don't invalidate for those.
         if (uri.path.contains('package:test')) break;
@@ -86,8 +86,7 @@ class BuildScriptUpdates {
         continue unsupported;
       unsupported:
       default:
-        throw new ArgumentError(
-            'Unsupported uri scheme `${uri.scheme}` found for '
+        throw ArgumentError('Unsupported uri scheme `${uri.scheme}` found for '
             'library in build script.\n'
             'This probably means you are running in an unsupported '
             'context, such as in an isolate or via `pub run`.\n'

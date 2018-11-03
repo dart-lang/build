@@ -8,7 +8,7 @@ const _srcsParam = 'srcs-file';
 const _packagePathParam = 'package-path';
 const _sdkSummaryParam = 'dart-sdk-summary';
 
-final _argParser = new ArgParser()
+final _argParser = ArgParser()
   ..addMultiOption(_summariesParam,
       help: 'List of paths to the files containing analyzer summaries for '
           'transitive dependencies.')
@@ -35,7 +35,7 @@ class SummaryOptions {
 
   factory SummaryOptions.fromArgs(List<String> args) {
     final argResults = _argParser.parse(args);
-    return new SummaryOptions(
+    return SummaryOptions(
         summaryPaths: (_requiredArg(argResults, _summariesParam) as List)
             .map((v) => v as String)
             .toList(),
@@ -48,6 +48,6 @@ class SummaryOptions {
 
 dynamic _requiredArg(ArgResults results, String param) {
   final val = results[param];
-  if (val == null) throw new ArgumentError.notNull(param);
+  if (val == null) throw ArgumentError.notNull(param);
   return val;
 }

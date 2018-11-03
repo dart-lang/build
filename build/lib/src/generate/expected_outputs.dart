@@ -21,7 +21,7 @@ AssetId _replaceExtension(
     AssetId assetId, String oldExtension, String newExtension) {
   var path = assetId.path;
   assert(path.endsWith(oldExtension));
-  return new AssetId(
+  return AssetId(
       assetId.package,
       path.replaceRange(
           path.length - oldExtension.length, path.length, newExtension));

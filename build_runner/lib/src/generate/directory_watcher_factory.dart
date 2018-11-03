@@ -6,12 +6,8 @@ import 'dart:io';
 
 import 'package:watcher/watcher.dart';
 
-typedef DirectoryWatcher DirectoryWatcherFactory(String path);
-
 DirectoryWatcher defaultDirectoryWatcherFactory(String path) =>
     // TODO: Use `DirectoryWatcher` on windows. See the following issues:
     // - https://github.com/dart-lang/build/issues/1031
     // - https://github.com/dart-lang/watcher/issues/52
-    Platform.isWindows
-        ? new PollingDirectoryWatcher(path)
-        : new DirectoryWatcher(path);
+    Platform.isWindows ? PollingDirectoryWatcher(path) : DirectoryWatcher(path);

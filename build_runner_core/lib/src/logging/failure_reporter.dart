@@ -28,7 +28,7 @@ class FailureReporter {
   /// This should be called any time the build phases change since the naming
   /// scheme is dependent on the build phases.
   static Future<void> cleanErrorCache() async {
-    final errorCacheDirectory = new Directory(p.fromUri(errorCachePath));
+    final errorCacheDirectory = Directory(p.fromUri(errorCachePath));
     if (await errorCacheDirectory.exists()) {
       await errorCacheDirectory.delete(recursive: true);
     }
@@ -39,7 +39,7 @@ class FailureReporter {
   /// This should be called anytime the action is being run.
   static Future<void> clean(int phaseNumber, AssetId primaryInput) async {
     final errorFile =
-        new File(_errorPathForPrimaryInput(phaseNumber, primaryInput));
+        File(_errorPathForPrimaryInput(phaseNumber, primaryInput));
     if (await errorFile.exists()) {
       await errorFile.delete();
     }
@@ -47,7 +47,7 @@ class FailureReporter {
 
   /// A set of Strings which uniquely identify a particular build action and
   /// it's primary input.
-  final _reportedActions = new Set<String>();
+  final _reportedActions = Set<String>();
 
   /// Indicate that a failure reason for the build step which would produce
   /// [output] and all other outputs from the same build step has been printed.
@@ -55,7 +55,7 @@ class FailureReporter {
       Iterable<ErrorReport> errors) async {
     if (!_reportedActions.add(_actionKey(output))) return;
     final errorFile =
-        await new File(_errorPathForOutput(output)).create(recursive: true);
+        await File(_errorPathForOutput(output)).create(recursive: true);
     await errorFile.writeAsString(jsonEncode(<dynamic>[actionDescription]
         .followedBy(errors
             .map((e) => [e.message, e.error, e.stackTrace?.toString() ?? '']))
@@ -78,18 +78,18 @@ class FailureReporter {
     for (final failure in failingNodes) {
       final key = _actionKey(failure);
       if (!_reportedActions.add(key)) continue;
-      errorFiles.add(new File(_errorPathForOutput(failure)));
+      errorFiles.add(File(_errorPathForOutput(failure)));
     }
     return Future.wait(errorFiles.map((errorFile) async {
       if (await errorFile.exists()) {
         final errorReports = jsonDecode(await errorFile.readAsString());
-        final actionDescription = (errorReports as List).first as String;
-        final logger = new Logger(actionDescription);
+        final actionDescription = '${(errorReports as List).first} (cached)';
+        final logger = Logger(actionDescription);
         for (final List error in errorReports.skip(1)) {
           final stackTraceString = error[2] as String;
           final stackTrace = stackTraceString.isEmpty
               ? null
-              : new StackTrace.fromString(stackTraceString);
+              : StackTrace.fromString(stackTraceString);
           logger.severe(error[0], error[1], stackTrace);
         }
       }

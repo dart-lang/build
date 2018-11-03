@@ -4,13 +4,15 @@
 
 import 'dart:async';
 
-import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:json_annotation/json_annotation.dart';
 
+import 'common.dart';
+import 'module_library.dart';
 import 'modules.dart';
+import 'platform.dart';
 
 part 'meta_module.g.dart';
 
@@ -26,139 +28,49 @@ String _topLevelDir(String path) {
     error = 'The path `$path` reaches outside the root directory.';
   }
   if (error != null) {
-    throw new ArgumentError(
+    throw ArgumentError(
         'Cannot compute top level dir for path `$path`. $error');
   }
   return parts.first;
 }
 
-/// An [AssetId] and all of its internal/external deps based on it's
-/// Directives.
-///
-/// Used to compute strongly connected components in the import graph for all
-/// "internal" deps. Any "external" deps are ignored during that computation
-/// since they are not allowed to be in a strongly connected component with
-/// internal deps.
-///
-/// External deps are used to compute the dependent modules of each module once
-/// the modules are decided.
-///
-/// Part files are also tracked here but ignored during computation of strongly
-/// connected components, as they must always be a part of this assets module.
-class _AssetNode {
-  final AssetId id;
-
-  /// The other internal sources that this file import or exports.
-  ///
-  /// These may be merged into the same Module as this node, and are used when
-  /// computing strongly connected components.
-  final Set<AssetId> internalDeps;
-
-  /// Part files included by this asset.
-  ///
-  /// These should always be a part of the same connected component.
-  final Set<AssetId> parts;
-
-  /// The deps of this source that are from an external package.
-  ///
-  /// These are not used in computing strongly connected components (they are
-  /// not allowed to be in a strongly connected component with any of our
-  /// internal srcs).
-  final Set<AssetId> externalDeps;
-
-  _AssetNode(this.id, this.internalDeps, this.parts, this.externalDeps);
-
-  /// Creates an [_AssetNode] for [id] given a parsed [CompilationUnit] and some
-  /// [internalSrcs] which represent other assets that may become part of the
-  /// same module.
-  factory _AssetNode.forParsedUnit(
-      AssetId id, CompilationUnit parsed, Set<AssetId> internalSrcs) {
-    var externalDeps = new Set<AssetId>();
-    var internalDeps = new Set<AssetId>();
-    var parts = new Set<AssetId>();
-    for (var directive in parsed.directives) {
-      if (directive is! UriBasedDirective) continue;
-      var path = (directive as UriBasedDirective).uri.stringValue;
-      if (Uri.parse(path).scheme == 'dart') continue;
-      var linkedId = new AssetId.resolve(path, from: id);
-      if (linkedId == null) continue;
-      if (directive is PartDirective) {
-        if (!internalSrcs.contains(linkedId)) {
-          throw new StateError(
-              'Referenced part file $linkedId from $id which is not in the '
-              'same package');
-        }
-        parts.add(linkedId);
-        continue;
-      }
-
-      List<Configuration> conditionalDirectiveConfigurations;
-
-      if (directive is ImportDirective && directive.configurations.isNotEmpty) {
-        conditionalDirectiveConfigurations = directive.configurations;
-      } else if (directive is ExportDirective &&
-          directive.configurations.isNotEmpty) {
-        conditionalDirectiveConfigurations = directive.configurations;
-      }
-
-      final allDeps = <AssetId>[linkedId];
-      if (conditionalDirectiveConfigurations != null) {
-        allDeps.addAll(conditionalDirectiveConfigurations
-            .map((c) => Uri.parse(c.uri.stringValue))
-            .where((u) => u.scheme != 'dart')
-            .map((u) => new AssetId.resolve(u.toString(), from: id)));
-      }
-
-      for (var dep in allDeps) {
-        if (internalSrcs.contains(dep)) {
-          internalDeps.add(dep);
-        } else {
-          externalDeps.add(dep);
-        }
-      }
-    }
-    return new _AssetNode(id, internalDeps, parts, externalDeps);
-  }
-}
-
-/// Creates a module based strictly off of a strongly connected component of
-/// asset nodes.
-///
-/// This creates more modules than we want, but we collapse them later on.
-Module _moduleForComponent(List<_AssetNode> componentNodes) {
+/// Creates a module containing [componentLibraries].
+Module _moduleForComponent(
+    List<ModuleLibrary> componentLibraries, DartPlatform platform) {
   // Name components based on first alphabetically sorted node, preferring
   // public srcs (not under lib/src).
-  var sources = componentNodes.map((n) => n.id).toSet();
+  var sources = componentLibraries.map((n) => n.id).toSet();
   var nonSrcIds = sources.where((id) => !id.path.startsWith('lib/src/'));
   var primaryId =
       nonSrcIds.isNotEmpty ? nonSrcIds.reduce(_min) : sources.reduce(_min);
   // Expand to include all the part files of each node, these aren't
   // included as individual `_AssetNodes`s in `connectedComponents`.
-  sources.addAll(componentNodes.expand((n) => n.parts));
-  var directDependencies = new Set<AssetId>()
-    ..addAll(componentNodes.expand((n) => n.externalDeps))
-    ..addAll(componentNodes.expand((n) => n.internalDeps))
+  sources.addAll(componentLibraries.expand((n) => n.parts));
+  var directDependencies = Set<AssetId>()
+    ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
     ..removeAll(sources);
-  return new Module(primaryId, sources, directDependencies);
+  var isSupported = componentLibraries
+      .expand((l) => l.sdkDeps)
+      .every(platform.supportsLibrary);
+  return Module(primaryId, sources, directDependencies, platform, isSupported);
 }
 
 Map<AssetId, Module> _entryPointModules(
         Iterable<Module> modules, Set<AssetId> entrypoints) =>
-    new Map.fromIterable(
-        modules.where((m) => m.sources.any(entrypoints.contains)),
+    Map.fromIterable(modules.where((m) => m.sources.any(entrypoints.contains)),
         key: (m) => (m as Module).primarySource);
 
 /// Gets the local (same top level dir of the same package) transitive deps of
 /// [module] using [assetsToModules].
 Set<AssetId> _localTransitiveDeps(
     Module module, Map<AssetId, Module> assetsToModules) {
-  var localTransitiveDeps = new Set<AssetId>();
+  var localTransitiveDeps = Set<AssetId>();
   var nextIds = module.directDependencies;
-  var seenIds = new Set<AssetId>();
+  var seenIds = Set<AssetId>();
   while (nextIds.isNotEmpty) {
     var ids = nextIds;
     seenIds.addAll(ids);
-    nextIds = new Set<AssetId>();
+    nextIds = Set<AssetId>();
     for (var id in ids) {
       var module = assetsToModules[id];
       if (module == null) continue; // Skip non-local modules
@@ -184,7 +96,7 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
   for (var module in entrypointModules) {
     for (var moduleDep in _localTransitiveDeps(module, assetsToModules)) {
       reverseDeps
-          .putIfAbsent(moduleDep, () => new Set<AssetId>())
+          .putIfAbsent(moduleDep, () => Set<AssetId>())
           .add(module.primarySource);
     }
   }
@@ -248,93 +160,51 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
       .toList();
 }
 
-Module _withConsistentPrimarySource(Module m) =>
-    new Module(m.sources.reduce(_min), m.sources, m.directDependencies);
+Module _withConsistentPrimarySource(Module m) => Module(m.sources.reduce(_min),
+    m.sources, m.directDependencies, m.platform, m.isSupported);
 
 T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
-// Returns whether [dart] contains a [PartOfDirective].
-bool _isPart(CompilationUnit dart) =>
-    dart.directives.any((directive) => directive is PartOfDirective);
+/// Compute modules for the  internal strongly connected components of
+/// [libraries].
+///
+/// This should only be called with [libraries] all in the same package and top
+/// level directory within the package.
+///
+/// A dependency is considered "internal" if it is within [libraries]. Any
+/// "external" deps are ignored during this computation since we are only
+/// considering the strongly connected components within [libraries], but they
+/// will be maintained as a dependency of the module to be used at a later step.
+///
+/// Part files are also tracked but ignored during computation of strongly
+/// connected components, as they must always be a part of the containing
+/// library's module.
+List<Module> _computeModules(
+    Map<AssetId, ModuleLibrary> libraries, DartPlatform platform) {
+  assert(() {
+    var dir = _topLevelDir(libraries.values.first.id.path);
+    return libraries.values.every((l) => _topLevelDir(l.id.path) == dir);
+  }());
 
-/// Returns whether [dart] looks like an entrypoint file.
-bool _isEntrypoint(CompilationUnit dart) {
-  return dart.declarations.any((node) {
-    return node is FunctionDeclaration &&
-        node.name.name == 'main' &&
-        node.functionExpression.parameters.parameters.length <= 2;
-  });
-}
+  final connectedComponents =
+      stronglyConnectedComponents<AssetId, ModuleLibrary>(
+          libraries.values,
+          (n) => n.id,
+          (n) => n
+              .depsForPlatform(platform)
+              // Only "internal" dependencies
+              .where(libraries.containsKey)
+              .map((dep) => libraries[dep]));
 
-Future<List<Module>> _computeModules(
-    AssetReader reader, List<AssetId> assets, bool public) async {
-  var dir = _topLevelDir(assets.first.path);
-  if (!assets.every((src) => _topLevelDir(src.path) == dir)) {
-    throw new ArgumentError(
-        'All srcs must live in the same top level directory.');
-  }
-
-  // The set of entry points from `srcAssets` based on `mode`.
-  var entryIds = new Set<AssetId>();
-  // All the `srcAssets` that are part files.
-  var partIds = new Set<AssetId>();
-  // Invalid assets that should be removed from `srcAssets` after this loop.
-  var idsToRemove = <AssetId>[];
-  var parsedAssetsById = <AssetId, CompilationUnit>{};
-  for (var asset in assets) {
-    var content = await reader.readAsString(asset);
-    // Skip errors here, dartdevc gives nicer messages.
-    var parsed = public
-        ? parseDirectives(content, name: asset.path, suppressErrors: true)
-        : parseCompilationUnit(content,
-            name: asset.path, suppressErrors: true, parseFunctionBodies: false);
-    parsedAssetsById[asset] = parsed;
-
-    // Skip any files which contain a `dart:_` import.
-    if (parsed.directives.any((d) =>
-        d is UriBasedDirective &&
-        d.uri.stringValue.startsWith('dart:_') &&
-        asset.package != 'dart_internal')) {
-      idsToRemove.add(asset);
-      continue;
-    }
-
-    // Short-circuit for part files.
-    if (_isPart(parsed)) {
-      partIds.add(asset);
-      continue;
-    }
-
-    if (public) {
-      if (!asset.path.startsWith('lib/src/')) entryIds.add(asset);
-    } else {
-      if (_isEntrypoint(parsed)) entryIds.add(asset);
-    }
-  }
-
-  var trimedAssets =
-      assets.where((asset) => !idsToRemove.contains(asset)).toList();
-  assets = trimedAssets;
-  // Build the `_AssetNode`s for each asset, skipping part files.
-  var nodesById = <AssetId, _AssetNode>{};
-  var srcAssetIds = assets.map((asset) => asset).toSet();
-  var nonPartAssets = assets.where((asset) => !partIds.contains(asset));
-  for (var asset in nonPartAssets) {
-    var node = new _AssetNode.forParsedUnit(
-        asset, parsedAssetsById[asset], srcAssetIds);
-    nodesById[asset] = node;
-  }
-
-  var connectedComponents = stronglyConnectedComponents<AssetId, _AssetNode>(
-      nodesById.values,
-      (n) => n.id,
-      (n) => n.internalDeps.map((dep) => nodesById[dep]));
-  return _mergeModules(connectedComponents.map(_moduleForComponent), entryIds);
+  final entryIds =
+      libraries.values.where((l) => l.isEntryPoint).map((l) => l.id).toSet();
+  return _mergeModules(
+      connectedComponents.map((c) => _moduleForComponent(c, platform)),
+      entryIds);
 }
 
 @JsonSerializable()
-class MetaModule extends Object with _$MetaModuleSerializerMixin {
-  @override
+class MetaModule {
   @JsonKey(name: 'm', nullable: false)
   final List<Module> modules;
 
@@ -344,23 +214,61 @@ class MetaModule extends Object with _$MetaModuleSerializerMixin {
   factory MetaModule.fromJson(Map<String, dynamic> json) =>
       _$MetaModuleFromJson(json);
 
-  static Future<MetaModule> forAssets(
-      AssetReader reader, List<AssetId> assets) async {
-    var assetsByTopLevel = <String, List<AssetId>>{};
-    for (var asset in assets) {
-      var dir = _topLevelDir(asset.path);
-      if (!assetsByTopLevel.containsKey(dir)) {
-        assetsByTopLevel[dir] = <AssetId>[];
-      }
-      assetsByTopLevel[dir].add(asset);
+  Map<String, dynamic> toJson() => _$MetaModuleToJson(this);
+
+  static Future<MetaModule> forLibraries(
+      AssetReader reader,
+      List<AssetId> libraryIds,
+      ModuleStrategy strategy,
+      DartPlatform platform) async {
+    var libraries = <ModuleLibrary>[];
+    for (var id in libraryIds) {
+      libraries.add(ModuleLibrary.deserialize(
+          id.changeExtension('').changeExtension('.dart'),
+          await reader.readAsString(id)));
     }
-    var modules = <Module>[];
-    for (var key in assetsByTopLevel.keys) {
-      modules.addAll(
-          await _computeModules(reader, assetsByTopLevel[key], key == 'lib'));
+    switch (strategy) {
+      case ModuleStrategy.fine:
+        return _fineModulesForLibraries(reader, libraries, platform);
+      case ModuleStrategy.coarse:
+        return _coarseModulesForLibraries(reader, libraries, platform);
     }
-    // Deterministically output the modules.
-    modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
-    return new MetaModule(modules);
+    throw StateError('Unrecognized module strategy $strategy');
   }
+}
+
+MetaModule _coarseModulesForLibraries(
+    AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
+  var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
+  for (var library in libraries) {
+    final dir = _topLevelDir(library.id.path);
+    if (!librariesByDirectory.containsKey(dir)) {
+      librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};
+    }
+    librariesByDirectory[dir][library.id] = library;
+  }
+  final modules = librariesByDirectory.values
+      .expand((libs) => _computeModules(libs, platform))
+      .toList();
+  _sortModules(modules);
+  return MetaModule(modules);
+}
+
+MetaModule _fineModulesForLibraries(
+    AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
+  var modules = libraries
+      .map((library) => Module(
+          library.id,
+          library.parts.followedBy([library.id]),
+          library.depsForPlatform(platform),
+          platform,
+          library.sdkDeps.every(platform.supportsLibrary)))
+      .toList();
+  _sortModules(modules);
+  return MetaModule(modules);
+}
+
+/// Sorts [modules] in place so we get deterministic output.
+void _sortModules(List<Module> modules) {
+  modules.sort((a, b) => a.primarySource.compareTo(b.primarySource));
 }

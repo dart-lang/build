@@ -41,11 +41,11 @@ class BazelAssetWriter implements AssetWriter {
     var packageDir = _packageMap[id.package];
     var bazelPath = path.join(packageDir, id.path);
     if (_inputs?.contains(bazelPath) == true) {
-      throw new CodegenError(
+      throw CodegenError(
           'Attempted to output $id which was an input. Bazel does not '
           'allow overwriting of input files.');
     }
 
-    return new File(path.join(_outDir, bazelPath));
+    return File(path.join(_outDir, bazelPath));
   }
 }

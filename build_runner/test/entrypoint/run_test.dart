@@ -1,8 +1,8 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-@Timeout(const Duration(minutes: 1))
-@Tags(const ['integration'])
+@Timeout(Duration(minutes: 1))
+@Tags(['integration'])
 
 import 'dart:async';
 import 'dart:convert';
@@ -59,21 +59,21 @@ main() {
   void expectOutput(String path, {@required bool exists}) {
     path =
         p.join(d.sandbox, 'a', '.dart_tool', 'build', 'generated', 'a', path);
-    expect(new File(path).existsSync(), exists);
+    expect(File(path).existsSync(), exists);
   }
 
   Future<int> runSingleBuild(String command, List<String> args,
       {StreamSink<String> stdoutSink}) async {
     var process = await startPub('a', 'run', args: args);
     var stdoutLines = process.stdout
-        .transform(new Utf8Decoder())
-        .transform(new LineSplitter())
+        .transform(Utf8Decoder())
+        .transform(LineSplitter())
         .asBroadcastStream();
     stdoutLines.listen((line) {
       stdoutSink?.add(line);
       printOnFailure(line);
     });
-    var queue = new StreamQueue(stdoutLines);
+    var queue = StreamQueue(stdoutLines);
     if (command == 'serve' || command == 'watch') {
       while (await queue.hasNext) {
         var nextLine = (await queue.next).toLowerCase();
@@ -87,7 +87,7 @@ main() {
           return 1;
         }
       }
-      throw new StateError('Build process exited without success or failure.');
+      throw StateError('Build process exited without success or failure.');
     }
     var result = await process.exitCode;
     return result;
@@ -117,7 +117,7 @@ main() {
         expectOutput('web/main.dart.js', exists: true);
         expectOutput('test/hello_test.dart.js', exists: true);
 
-        var outputDir = new Directory(p.join(d.sandbox, 'a', 'foo'));
+        var outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
         await outputDir.delete(recursive: true);
       });
     }
@@ -148,7 +148,7 @@ main() {
   test('Duplicate output directories give a nice error', () async {
     var command = 'build';
     var args = ['build_runner', command, '-o', 'web:build', '-o', 'test:build'];
-    var stdoutController = new StreamController<String>();
+    var stdoutController = StreamController<String>();
     expect(
         await runSingleBuild(command, args, stdoutSink: stdoutController.sink),
         ExitCode.usage.code);
@@ -163,7 +163,7 @@ main() {
   test('Build directories have to be top level dirs', () async {
     var command = 'build';
     var args = ['build_runner', command, '-o', 'foo/bar:build'];
-    var stdoutController = new StreamController<String>();
+    var stdoutController = StreamController<String>();
     expect(
         await runSingleBuild(command, args, stdoutSink: stdoutController.sink),
         ExitCode.usage.code);
@@ -173,5 +173,18 @@ main() {
             'Invalid argument (--output): Input root can not be nested: '
             '"foo/bar:build"')));
     await stdoutController.close();
+  });
+
+  test('Handles socket errors gracefully', () async {
+    var server = await HttpServer.bind('localhost', 8080);
+    addTearDown(server.close);
+
+    var process =
+        await runPub('a', 'run', args: ['build_runner', 'serve', 'web:8080']);
+    expect(process.exitCode, ExitCode.osError.code);
+    expect(
+        process.stdout,
+        allOf(contains('Error starting server'), contains('8080'),
+            contains('address is already in use')));
   });
 }

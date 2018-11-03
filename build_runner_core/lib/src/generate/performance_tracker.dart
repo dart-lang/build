@@ -10,35 +10,19 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+import 'package:timing/timing.dart';
 
-import '../util/clock.dart';
 import 'phase.dart';
 
 part 'performance_tracker.g.dart';
 
-/// The timings of an operation, including its [startTime], [stopTime], and
-/// [duration].
-abstract class Timings {
-  Duration get duration => stopTime.difference(startTime);
-
-  final DateTime startTime;
-
-  final DateTime stopTime;
-
-  Timings(this.startTime, this.stopTime);
-}
-
-/// The [Timings] of an entire build, including all its [actions].
+/// The [TimeSlice] of an entire build, including all its [actions].
 @JsonSerializable()
-class BuildPerformance extends Timings with _$BuildPerformanceSerializerMixin {
-  @override
-
-  /// The [Timings] of each phase ran in this build.
+class BuildPerformance extends TimeSlice {
+  /// The [TimeSlice] of each phase ran in this build.
   final Iterable<BuildPhasePerformance> phases;
 
-  @override
-
-  /// The [Timings] of running an individual [Builder] on an individual input.
+  /// The [TimeSlice] of running an individual [Builder] on an individual input.
   final Iterable<BuilderActionPerformance> actions;
 
   BuildPerformance(
@@ -47,13 +31,14 @@ class BuildPerformance extends Timings with _$BuildPerformanceSerializerMixin {
 
   factory BuildPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPerformanceFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
-/// The [Timings] of a full [BuildPhase] within a larger build.
+/// The [TimeSlice] of a full [BuildPhase] within a larger build.
 @JsonSerializable()
-class BuildPhasePerformance extends Timings
-    with _$BuildPhasePerformanceSerializerMixin {
-  @override
+class BuildPhasePerformance extends TimeSlice {
   final List<String> builderKeys;
 
   BuildPhasePerformance(this.builderKeys, DateTime startTime, DateTime stopTime)
@@ -61,43 +46,53 @@ class BuildPhasePerformance extends Timings
 
   factory BuildPhasePerformance.fromJson(Map<String, dynamic> json) =>
       _$BuildPhasePerformanceFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
-/// The [Timings] of a [builderKey] running on [primaryInput] within a build.
+/// The [TimeSlice] of a [builderKey] running on [primaryInput] within a build.
 @JsonSerializable()
-class BuilderActionPerformance extends Timings
-    with _$BuilderActionPerformanceSerializerMixin {
-  @override
+class BuilderActionPerformance extends TimeSlice {
   final String builderKey;
 
-  @override
   @JsonKey(fromJson: _assetIdFromJson, toJson: _assetIdToJson)
   final AssetId primaryInput;
 
-  @override
-  final Iterable<BuilderActionPhasePerformance> phases;
+  final Iterable<BuilderActionStagePerformance> stages;
 
-  BuilderActionPerformance(this.builderKey, this.primaryInput, this.phases,
+  Duration get innerDuration => stages.fold(
+      Duration.zero, (duration, stage) => duration + stage.innerDuration);
+
+  BuilderActionPerformance(this.builderKey, this.primaryInput, this.stages,
       DateTime startTime, DateTime stopTime)
       : super(startTime, stopTime);
 
   factory BuilderActionPerformance.fromJson(Map<String, dynamic> json) =>
       _$BuilderActionPerformanceFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
-/// The [Timings] of a particular task within a builder action.
+/// The [TimeSlice] of a particular task within a builder action.
 ///
 /// This is some slice of overall [BuilderActionPerformance].
 @JsonSerializable()
-class BuilderActionPhasePerformance extends Timings {
+class BuilderActionStagePerformance extends TimeSliceGroup {
   final String label;
 
-  BuilderActionPhasePerformance(
-      this.label, DateTime startTime, DateTime stopTime)
-      : super(startTime, stopTime);
+  @override
+  List<TimeSlice> get slices => super.slices;
 
-  factory BuilderActionPhasePerformance.fromJson(Map<String, dynamic> json) =>
-      _$BuilderActionPhasePerformanceFromJson(json);
+  BuilderActionStagePerformance(this.label, List<TimeSlice> slices)
+      : super(slices);
+
+  factory BuilderActionStagePerformance.fromJson(Map<String, dynamic> json) =>
+      _$BuilderActionStagePerformanceFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);
 }
 
 /// Interface for tracking the overall performance of a build.
@@ -110,10 +105,10 @@ abstract class BuildPerformanceTracker
 
   /// Returns a [BuilderActionTracker] for tracking [builderKey] on
   /// [primaryInput] and adds it to [actions].
-  BuilderActionTracker startBuilderAction(
+  BuilderActionTracker addBuilderAction(
       AssetId primaryInput, String builderKey);
 
-  factory BuildPerformanceTracker() => new _BuildPerformanceTrackerImpl();
+  factory BuildPerformanceTracker() => _BuildPerformanceTrackerImpl();
 
   /// A [BuildPerformanceTracker] with as little overhead as possible. Does no
   /// actual tracking and does not implement many fields/methods.
@@ -124,8 +119,7 @@ abstract class BuildPerformanceTracker
 /// Real implementation of [BuildPerformanceTracker].
 ///
 /// Use [BuildPerformanceTracker] factory to get an instance.
-class _BuildPerformanceTrackerImpl extends Object
-    with _TimeTrackerImpl, _$BuildPerformanceSerializerMixin
+class _BuildPerformanceTrackerImpl extends SimpleAsyncTimeTracker
     implements BuildPerformanceTracker {
   @override
   Iterable<BuildPhaseTracker> get phases => _phases;
@@ -143,8 +137,8 @@ class _BuildPerformanceTrackerImpl extends Object
   @override
   Future<Iterable<AssetId>> trackBuildPhase(
       BuildPhase action, Future<Iterable<AssetId>> runPhase()) {
-    assert(startTime != null && stopTime == null);
-    var tracker = new BuildPhaseTracker(action);
+    assert(isTracking);
+    var tracker = BuildPhaseTracker(action);
     _phases.add(tracker);
     return tracker.track(runPhase);
   }
@@ -153,13 +147,16 @@ class _BuildPerformanceTrackerImpl extends Object
   ///
   /// The [BuilderActionTracker] will already be started, but you must stop it.
   @override
-  BuilderActionTracker startBuilderAction(
+  BuilderActionTracker addBuilderAction(
       AssetId primaryInput, String builderKey) {
-    assert(startTime != null && stopTime == null);
-    var tracker = new BuilderActionTracker(primaryInput, builderKey)..start();
+    assert(isTracking);
+    var tracker = BuilderActionTracker(primaryInput, builderKey);
     _actions.add(tracker);
     return tracker;
   }
+
+  @override
+  Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
 /// No-op implementation of [BuildPerformanceTracker].
@@ -168,38 +165,39 @@ class _BuildPerformanceTrackerImpl extends Object
 /// closures without tracking anything.
 ///
 /// Use [BuildPerformanceTracker.noOp] to get an instance.
-class _NoOpBuildPerformanceTracker extends Object
-    with _NoOpTimeTracker, _$BuildPerformanceSerializerMixin
+class _NoOpBuildPerformanceTracker extends NoOpTimeTracker
     implements BuildPerformanceTracker {
   static final _NoOpBuildPerformanceTracker sharedInstance =
-      new _NoOpBuildPerformanceTracker();
+      _NoOpBuildPerformanceTracker();
 
   @override
-  Iterable<BuilderActionTracker> get actions => throw new UnimplementedError();
+  Iterable<BuilderActionTracker> get actions => throw UnimplementedError();
 
   @override
-  Iterable<BuildPhaseTracker> get phases => throw new UnimplementedError();
+  Iterable<BuildPhaseTracker> get phases => throw UnimplementedError();
 
   @override
-  BuilderActionTracker startBuilderAction(
+  BuilderActionTracker addBuilderAction(
           AssetId primaryInput, String builderKey) =>
-      new BuilderActionTracker.noOp();
+      BuilderActionTracker.noOp();
 
   @override
   Future<Iterable<AssetId>> trackBuildPhase(
           BuildPhase action, Future<Iterable<AssetId>> runPhase()) =>
       runPhase();
+
+  @override
+  Map<String, dynamic> toJson() => _$BuildPerformanceToJson(this);
 }
 
-/// Internal class that tracks the [Timings] of an entire [BuildPhase].
+/// Internal class that tracks the [TimeSlice] of an entire [BuildPhase].
 ///
 /// Tracks total time it took to run on all inputs available to that action.
 ///
 /// Use [track] to start actually tracking an operation.
 ///
 /// This is only meaningful for non-lazy phases.
-class BuildPhaseTracker extends Object
-    with _TimeTrackerImpl, _$BuildPhasePerformanceSerializerMixin
+class BuildPhaseTracker extends SimpleAsyncTimeTracker
     implements BuildPhasePerformance {
   @override
   List<String> get builderKeys => _builderKeys;
@@ -213,28 +211,28 @@ class BuildPhaseTracker extends Object
                 .map((action) => action.builderLabel)
                 .toList();
 
-  /// Runs [runAction], setting [startTime] and [stopTime] accordingly.
-  ///
-  /// Should never be called more than once.
-  Future<Iterable<AssetId>> track(Future<Iterable<AssetId>> runAction()) {
-    assert(startTime == null && stopTime == null);
-    start();
-    return runAction().then((outputs) {
-      stop();
-      return outputs;
-    });
-  }
+  @override
+  Map<String, dynamic> toJson() => _$BuildPhasePerformanceToJson(this);
 }
 
-/// Interface for tracking the [Timings] of an indiviual [Builder] on a given
+/// Interface for tracking the [TimeSlice] of an individual [Builder] on a given
 /// primary input.
 abstract class BuilderActionTracker
-    implements TimeTracker, BuilderActionPerformance {
-  /// Tracks the time of [runPhase] and associates it with [label].
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), String label);
+    implements TimeTracker, BuilderActionPerformance, StageTracker {
+  /// Tracks the time of [runStage] and associates it with [label].
+  ///
+  /// You can specify [runStage] as [isExternal] (waiting for some external
+  /// resource like network, process or file IO). In that case [runStage] will
+  /// be tracked as single time slice from the beginning of the stage till
+  /// completion of Future returned by [runStage].
+  ///
+  /// Otherwise all separate time slices of asynchronous execution will be
+  /// tracked, but waiting for external resources will be a gap.
+  @override
+  T trackStage<T>(String label, T runStage(), {bool isExternal = false});
 
   factory BuilderActionTracker(AssetId primaryInput, String builderKey) =>
-      new _BuilderActionTrackerImpl(primaryInput, builderKey);
+      _BuilderActionTrackerImpl(primaryInput, builderKey);
 
   /// A [BuilderActionTracker] with as little overhead as possible. Does no
   /// actual tracking and does not implement many fields/methods.
@@ -245,8 +243,7 @@ abstract class BuilderActionTracker
 /// Real implementation of [BuilderActionTracker] which records timings.
 ///
 /// Use the [BuilderActionTracker] factory to get an instance.
-class _BuilderActionTrackerImpl extends Object
-    with _TimeTrackerImpl, _$BuilderActionPerformanceSerializerMixin
+class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
     implements BuilderActionTracker {
   @override
   final String builderKey;
@@ -254,136 +251,92 @@ class _BuilderActionTrackerImpl extends Object
   final AssetId primaryInput;
 
   @override
-  final List<BuilderActionPhaseTracker> phases = [];
+  final List<BuilderActionStageTracker> stages = [];
+
+  @override
+  Duration get innerDuration => stages.fold(
+      Duration.zero, (duration, stage) => duration + stage.innerDuration);
 
   _BuilderActionTrackerImpl(this.primaryInput, this.builderKey);
 
   @override
-  FutureOr<T> track<T>(FutureOr<T> action(), String label) {
-    var tracker = new BuilderActionPhaseTracker(label);
-    phases.add(tracker);
-    tracker.start();
-    var result = action();
-    if (result is Future<T>) {
-      return result.then((actualResult) {
-        tracker.stop();
-        return actualResult;
-      });
-    } else {
-      tracker.stop();
-      return result;
-    }
+  T trackStage<T>(String label, T action(), {bool isExternal = false}) {
+    var tracker = isExternal
+        ? BuilderActionStageSimpleTracker(label)
+        : BuilderActionStageAsyncTracker(label);
+    stages.add(tracker);
+    return tracker.track(action);
   }
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
 /// No-op instance of [BuilderActionTracker] which does nothing and throws an
-/// unimplemented error for everything but [track], which delegates directly to
+/// unimplemented error for everything but [trackStage], which delegates directly to
 /// the wrapped function.
 ///
 /// Use the [BuilderActionTracker.noOp] factory to get an instance.
-class _NoOpBuilderActionTracker extends Object
-    with _NoOpTimeTracker, _$BuilderActionPerformanceSerializerMixin
+class _NoOpBuilderActionTracker extends NoOpTimeTracker
     implements BuilderActionTracker {
   static final _NoOpBuilderActionTracker _sharedInstance =
-      new _NoOpBuilderActionTracker();
+      _NoOpBuilderActionTracker();
 
   @override
-  String get builderKey => throw new UnimplementedError();
+  String get builderKey => throw UnimplementedError();
 
   @override
-  Duration get duration => throw new UnimplementedError();
+  Duration get duration => throw UnimplementedError();
 
   @override
-  Iterable<BuilderActionPhasePerformance> get phases =>
-      throw new UnimplementedError();
+  Iterable<BuilderActionStagePerformance> get stages =>
+      throw UnimplementedError();
 
   @override
-  AssetId get primaryInput => throw new UnimplementedError();
+  Duration get innerDuration => throw UnimplementedError();
 
   @override
-  FutureOr<T> track<T>(FutureOr<T> runPhase(), String label) => runPhase();
+  AssetId get primaryInput => throw UnimplementedError();
+
+  @override
+  T trackStage<T>(String label, T runStage(), {bool isExternal = false}) =>
+      runStage();
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionPerformanceToJson(this);
 }
 
-/// Tracks the [Timings] of an indivual task.
+/// Tracks the [TimeSliceGroup] of an individual task.
 ///
 /// These represent a slice of the [BuilderActionPerformance].
-class BuilderActionPhaseTracker extends Object
-    with _TimeTrackerImpl, _$BuilderActionPhasePerformanceSerializerMixin
-    implements BuilderActionPhasePerformance {
+abstract class BuilderActionStageTracker
+    implements BuilderActionStagePerformance {
+  T track<T>(T Function() action);
+}
+
+class BuilderActionStageAsyncTracker extends AsyncTimeTracker
+    implements BuilderActionStageTracker {
   @override
   final String label;
 
-  BuilderActionPhaseTracker(this.label);
+  BuilderActionStageAsyncTracker(this.label) : super(trackNested: false);
+
+  @override
+  Map<String, dynamic> toJson() => _$BuilderActionStagePerformanceToJson(this);
 }
 
-/// Interface for tracking the [Timings] of an operation using the [start] and
-/// [stop] methods.
-abstract class TimeTracker implements Timings {
-  factory TimeTracker() => new _TimeTrackerImpl();
-  factory TimeTracker.noOp() => _NoOpTimeTracker.sharedInstance;
+class BuilderActionStageSimpleTracker extends BuilderActionStagePerformance
+    implements BuilderActionStageTracker {
+  final _tracker = SimpleAsyncTimeTracker();
 
-  void start();
-  void stop();
-}
-
-/// Implementation of a real [TimeTracker].
-///
-/// Use [TimeTracker] factory to get an instance.
-class _TimeTrackerImpl implements TimeTracker {
-  /// When this operation started, call [start] to set this.
-  @override
-  DateTime get startTime => _startTime;
-  DateTime _startTime;
-
-  /// When this operation stopped, call [stop] to set this.
-  @override
-  DateTime get stopTime => _stopTime;
-  DateTime _stopTime;
-
-  /// The total duration of this operation, equivalent to taking the difference
-  /// between [stopTime] and [startTime].
-  @override
-  Duration get duration {
-    assert(_startTime != null && _stopTime != null);
-    return new Duration(
-        microseconds:
-            stopTime.microsecondsSinceEpoch - startTime.microsecondsSinceEpoch);
+  BuilderActionStageSimpleTracker(String label) : super(label, []) {
+    slices.add(_tracker);
   }
 
-  /// Start tracking this operation, must only be called once, before [stop].
   @override
-  void start() {
-    assert(_startTime == null && _stopTime == null);
-    _startTime = now();
-  }
-
-  /// Stop tracking this operation, must only be called once, after [start].
-  @override
-  void stop() {
-    assert(_startTime != null && _stopTime == null);
-    _stopTime = now();
-  }
+  T track<T>(T Function() action) => _tracker.track(action);
 }
 
-/// No-op implementation of [TimeTracker] that does nothing.
-///
-/// Use [TimeTracker.noOp] factory to get an instance.
-class _NoOpTimeTracker implements TimeTracker {
-  static final sharedInstance = new _NoOpTimeTracker();
+AssetId _assetIdFromJson(String json) => AssetId.parse(json);
 
-  @override
-  Duration get duration => throw new UnimplementedError();
-  @override
-  DateTime get startTime => throw new UnimplementedError();
-  @override
-  DateTime get stopTime => throw new UnimplementedError();
-
-  @override
-  void start() {}
-
-  @override
-  void stop() {}
-}
-
-AssetId _assetIdFromJson(String json) => new AssetId.parse(json);
 String _assetIdToJson(AssetId id) => id.toString();

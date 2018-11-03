@@ -8,7 +8,7 @@ import 'package:logging/logging.dart';
 
 import '../logging/human_readable_duration.dart';
 
-var _logger = new Logger('Heartbeat');
+var _logger = Logger('Heartbeat');
 
 /// Base class for a heartbeat implementation.
 ///
@@ -25,8 +25,8 @@ abstract class Heartbeat {
   final Duration waitDuration;
 
   Heartbeat({Duration checkInterval, Duration waitDuration})
-      : this.checkInterval = checkInterval ?? const Duration(milliseconds: 100),
-        this.waitDuration = waitDuration ?? const Duration(seconds: 5);
+      : checkInterval = checkInterval ?? const Duration(milliseconds: 100),
+        waitDuration = waitDuration ?? const Duration(seconds: 5);
 
   /// Invoked if [waitDuration] time has elapsed since the last call to [ping].
   void onTimeout(Duration elapsed);
@@ -44,11 +44,11 @@ abstract class Heartbeat {
   /// to [ping], but you must call `super.start()`.
   void start() {
     if (_intervalWatch != null || _timer != null) {
-      throw new StateError('HeartbeatLogger already started');
+      throw StateError('HeartbeatLogger already started');
     }
-    _intervalWatch = new Stopwatch()..start();
+    _intervalWatch = Stopwatch()..start();
     ping();
-    _timer = new Timer.periodic(checkInterval, _checkDuration);
+    _timer = Timer.periodic(checkInterval, _checkDuration);
   }
 
   /// Stops this heartbeat logger, must already be started.
@@ -57,7 +57,7 @@ abstract class Heartbeat {
   /// purposes, but you must call `super.stop()`.
   void stop() {
     if (_intervalWatch == null || _timer == null) {
-      throw new StateError('HeartbeatLogger was never started');
+      throw StateError('HeartbeatLogger was never started');
     }
     _intervalWatch.stop();
     _intervalWatch = null;
@@ -90,7 +90,7 @@ class HeartbeatLogger extends Heartbeat {
   /// Start listening to logs.
   @override
   void start() {
-    _totalWatch = new Stopwatch()..start();
+    _totalWatch = Stopwatch()..start();
     super.start();
     _listener = Logger.root.onRecord.listen((_) => ping());
   }
@@ -125,7 +125,7 @@ class HungActionsHeartbeat extends Heartbeat {
       {Duration checkInterval, Duration waitDuration})
       : super(
             checkInterval: checkInterval,
-            waitDuration: waitDuration ?? new Duration(seconds: 15));
+            waitDuration: waitDuration ?? Duration(seconds: 15));
 
   @override
   void onTimeout(Duration elapsed) {

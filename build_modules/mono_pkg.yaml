@@ -7,4 +7,8 @@ stages:
         - dartfmt: sdk
         - dartanalyzer: --fatal-infos --fatal-warnings .
   - unit_test:
-    - test
+    - command: pub run build_runner test --delete-conflicting-outputs -- -P presubmit
+
+cache:
+  directories:
+    - .dart_tool/build

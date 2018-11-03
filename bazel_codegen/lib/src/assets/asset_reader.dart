@@ -8,7 +8,6 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
-import '../errors.dart';
 import 'asset_filter.dart';
 import 'file_system.dart';
 
@@ -34,12 +33,13 @@ class BazelAssetReader extends AssetReader {
   BazelAssetReader(
       this._rootPackage, Iterable<String> rootDirs, this._packageMap,
       {AssetFilter assetFilter})
-      : _fileSystem = new BazelFileSystem('.', rootDirs.toList()),
+      : _fileSystem = BazelFileSystem('.', rootDirs.toList()),
         _assetFilter = assetFilter;
 
   BazelAssetReader.forTest(
-      this._rootPackage, this._packageMap, this._fileSystem)
-      : _assetFilter = const _AllowAllAssets();
+      this._rootPackage, this._packageMap, this._fileSystem,
+      {AssetFilter assetFilter})
+      : _assetFilter = assetFilter ?? const _AllowAllAssets();
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
@@ -57,9 +57,8 @@ class BazelAssetReader extends AssetReader {
 
   String _filePathForId(AssetId id) {
     final packagePath = _packageMap[id.package];
-    if (!_assetFilter.isValid(id) || packagePath == null) {
-      throw new CodegenError('Attempted to read invalid input $id.');
-    }
+    if (packagePath == null) throw PackageNotFoundException(id.package);
+    if (!_assetFilter.isValid(id)) throw AssetNotFoundException(id);
     return p.join(packagePath, id.path);
   }
 
@@ -75,9 +74,9 @@ class BazelAssetReader extends AssetReader {
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob) => new Stream.fromIterable(_fileSystem
+  Stream<AssetId> findAssets(Glob glob) => Stream.fromIterable(_fileSystem
       .findAssets(_packageMap[_rootPackage], glob)
-      .map((path) => new AssetId(_rootPackage, path))
+      .map((path) => AssetId(_rootPackage, path))
       .where(_assetFilter.isValid));
 
   void startPhase(AssetWriterSpy assetWriter) =>

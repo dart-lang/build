@@ -18,7 +18,7 @@ const _srcsParam = 'srcs-file';
 const _summariesParam = 'use-summaries';
 
 // All arguments other than `--help` and `--use-summaries` are required.
-final _argParser = new ArgParser()
+final _argParser = ArgParser()
   ..addMultiOption(_rootDirParam,
       help: 'One or more workspace directories to check when reading files.')
   ..addFlag(_helpParam,
@@ -89,7 +89,7 @@ class BuildArgs {
     // When not running as a worker, but that mode is supported, then we get
     // just this arg which points at a file containing the arguments.
     if (args.length == 1 && args.first.startsWith('@')) {
-      args = new File(args.first.substring(1)).readAsLinesSync();
+      args = File(args.first.substring(1)).readAsLinesSync();
     }
 
     final argResults = _argParser.parse(args);
@@ -105,7 +105,7 @@ class BuildArgs {
     final logPath = _requiredArg(argResults, _logPathParam) as String;
     final rawBuildExtensions =
         _requiredArg(argResults, _buildExtensions) as Iterable;
-    final buildExtensions = new Map<String, List<String>>.fromIterable(
+    final buildExtensions = Map<String, List<String>>.fromIterable(
         rawBuildExtensions,
         key: (e) => (e as String).split(':').first,
         value: (e) => (e as String).split(':').last.split(';').toList());
@@ -115,8 +115,8 @@ class BuildArgs {
     final help = argResults[_helpParam] as bool;
     final useSummaries = argResults[_summariesParam] as bool;
 
-    return new BuildArgs._(rootDirs, packagePath, outDir, logPath,
-        buildExtensions, packageMapPath, srcsPath, help, logLevel,
+    return BuildArgs._(rootDirs, packagePath, outDir, logPath, buildExtensions,
+        packageMapPath, srcsPath, help, logLevel,
         additionalArgs: argResults.rest,
         isWorker: isWorker,
         useSummaries: useSummaries);
@@ -132,6 +132,6 @@ class BuildArgs {
 
 dynamic _requiredArg(ArgResults results, String param) {
   final val = results[param];
-  if (val == null) throw new ArgumentError.notNull(param);
+  if (val == null) throw ArgumentError.notNull(param);
   return val;
 }

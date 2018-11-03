@@ -9,18 +9,18 @@ import 'package:test/test.dart';
 void main() {
   group('MultiplexingBuilder', () {
     test('Only passes matching inputs', () async {
-      final builder = new MultiplexingBuilder([
-        new TestBuilder(buildExtensions: replaceExtension('.foo', '.copy')),
-        new TestBuilder(buildExtensions: replaceExtension('.bar', '.copy')),
+      final builder = MultiplexingBuilder([
+        TestBuilder(buildExtensions: replaceExtension('.foo', '.copy')),
+        TestBuilder(buildExtensions: replaceExtension('.bar', '.copy')),
       ]);
       await testBuilder(builder, {'a|lib/a1.foo': 'a1', 'a|lib/a2.bar': 'a2'},
           outputs: {'a|lib/a1.copy': 'a1', 'a|lib/a2.copy': 'a2'});
     });
 
     test('merges non-overlapping extension maps', () {
-      final builder = new MultiplexingBuilder([
-        new TestBuilder(buildExtensions: replaceExtension('.foo', '.copy')),
-        new TestBuilder(buildExtensions: replaceExtension('.bar', '.copy')),
+      final builder = MultiplexingBuilder([
+        TestBuilder(buildExtensions: replaceExtension('.foo', '.copy')),
+        TestBuilder(buildExtensions: replaceExtension('.bar', '.copy')),
       ]);
       expect(builder.buildExtensions, {
         '.foo': ['.copy'],
@@ -29,11 +29,11 @@ void main() {
     });
 
     test('merges overlapping extension maps', () {
-      final builder = new MultiplexingBuilder([
-        new TestBuilder(buildExtensions: {
+      final builder = MultiplexingBuilder([
+        TestBuilder(buildExtensions: {
           '.foo': ['.copy.0', '.copy.1']
         }),
-        new TestBuilder(buildExtensions: replaceExtension('.foo', '.new')),
+        TestBuilder(buildExtensions: replaceExtension('.foo', '.new')),
       ]);
       expect(builder.buildExtensions, {
         '.foo': ['.copy.0', '.copy.1', '.new']

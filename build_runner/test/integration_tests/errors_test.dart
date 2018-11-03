@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(const ['integration'])
+@Tags(['integration'])
 
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -11,12 +11,12 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'utils/build_descriptor.dart';
 
 // test-package-start #########################################################
-final alwaysThrow = new TestBuilder(
+final alwaysThrow = TestBuilder(
     buildExtensions: {
       '.txt': ['.txt.copy'],
     },
     build: (_, __) {
-      throw 'Build action failure';
+      throw StateError('Build action failure');
     });
 // test-package-end ###########################################################
 

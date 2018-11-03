@@ -1,10 +1,9 @@
 name: _test_common
-version: 0.1.0
+publish_to: none
 description: Test infra for writing build tests. Is not published.
-author: Dart Team <misc@dartlang.org>
 
 environment:
-  sdk: '>=2.0.0-dev.54 <2.0.0'
+  sdk: ">=2.0.0 <3.0.0"
 
 dependencies:
   build: any

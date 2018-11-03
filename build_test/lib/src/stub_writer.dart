@@ -11,8 +11,8 @@ class StubAssetWriter implements AssetWriter {
   const StubAssetWriter();
 
   @override
-  Future writeAsBytes(_, __) => new Future.value(null);
+  Future writeAsBytes(_, __) => Future.value(null);
 
   @override
-  Future writeAsString(_, __, {Encoding encoding}) => new Future.value(null);
+  Future writeAsString(_, __, {Encoding encoding}) => Future.value(null);
 }

@@ -8,6 +8,9 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
+import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import '../generate/build.dart';
 import 'base_command.dart';
@@ -16,6 +19,13 @@ import 'options.dart';
 /// A command that does a single build and then runs tests using the compiled
 /// assets.
 class TestCommand extends BuildRunnerCommand {
+  TestCommand(PackageGraph packageGraph)
+      : super(
+          // Use symlinks by default, if package:test supports it.
+          symlinksDefault:
+              _packageTestSupportsSymlinks(packageGraph) && !Platform.isWindows,
+        );
+
   @override
   String get invocation =>
       '${super.invocation.replaceFirst('[arguments]', '[build-arguments]')} '
@@ -38,7 +48,7 @@ class TestCommand extends BuildRunnerCommand {
     // arguments after the `--`.
     if (argResults.rest.isNotEmpty) {
       void throwUsageException() {
-        throw new UsageException(
+        throw UsageException(
             'The `test` command does not support positional args before the, '
             '`--` separator, which should separate build args from test args.',
             usage);
@@ -59,7 +69,7 @@ class TestCommand extends BuildRunnerCommand {
       }
     }
 
-    return new SharedOptions.fromParsedArgs(
+    return SharedOptions.fromParsedArgs(
         argResults, ['test'], packageGraph.root.name, this);
   }
 
@@ -82,8 +92,8 @@ class TestCommand extends BuildRunnerCommand {
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         configKey: options.configKey,
-        assumeTty: options.assumeTty,
         outputMap: outputMap,
+        outputSymlinksOnly: options.outputSymlinksOnly,
         packageGraph: packageGraph,
         trackPerformance: options.trackPerformance,
         skipBuildScriptCheck: options.skipBuildScriptCheck,
@@ -105,7 +115,7 @@ class TestCommand extends BuildRunnerCommand {
       return ExitCode.config.code;
     } finally {
       // Clean up the output dir.
-      await new Directory(tempPath).delete(recursive: true);
+      await Directory(tempPath).delete(recursive: true);
     }
   }
 
@@ -126,9 +136,17 @@ class TestCommand extends BuildRunnerCommand {
   }
 }
 
+bool _packageTestSupportsSymlinks(PackageGraph packageGraph) {
+  var testPackage = packageGraph['test'];
+  if (testPackage == null) return false;
+  var pubspecPath = p.join(testPackage.path, 'pubspec.yaml');
+  var pubspec = Pubspec.parse(File(pubspecPath).readAsStringSync());
+  return pubspec.version >= Version(1, 3, 0);
+}
+
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
   if (!packageGraph.allPackages.containsKey('build_test')) {
-    throw new _BuildTestDependencyError();
+    throw _BuildTestDependencyError();
   }
 }
 

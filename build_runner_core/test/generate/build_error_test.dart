@@ -19,7 +19,7 @@ void main() {
   test('fail if an output is on disk and !deleteFilesByDefault', () async {
     expect(
       testBuilders(
-        [applyToRoot(new TestBuilder())],
+        [applyToRoot(TestBuilder())],
         {
           'a|lib/a.dart': '',
           'a|lib/a.dart.copy': '',
@@ -33,7 +33,7 @@ void main() {
 
   test('should fail if a severe logged', () async {
     await testBuilders(
-      [applyToRoot(new _LoggingBuilder(Level.SEVERE))],
+      [applyToRoot(_LoggingBuilder(Level.SEVERE))],
       {
         'a|lib/a.dart': '',
       },
@@ -48,10 +48,10 @@ void main() {
 
   test('should fail if a severe was logged on a previous build', () async {
     var packageGraph = buildPackageGraph({rootPackage('a'): []});
-    var writer = new InMemoryRunnerAssetWriter();
-    var reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+    var writer = InMemoryRunnerAssetWriter();
+    var reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
         rootPackage: packageGraph.root.name);
-    var builder = new _LoggingBuilder(Level.SEVERE);
+    var builder = _LoggingBuilder(Level.SEVERE);
     var builders = [applyToRoot(builder)];
     await testBuilders(
         builders,
@@ -78,10 +78,10 @@ void main() {
   test('should succeed if a severe log is fixed on a subsequent build',
       () async {
     var packageGraph = buildPackageGraph({rootPackage('a'): []});
-    var writer = new InMemoryRunnerAssetWriter();
-    var reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+    var writer = InMemoryRunnerAssetWriter();
+    var reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
         rootPackage: packageGraph.root.name);
-    var builder = new _LoggingBuilder(Level.SEVERE);
+    var builder = _LoggingBuilder(Level.SEVERE);
     var builders = [applyToRoot(builder)];
     await testBuilders(
         builders,
@@ -115,8 +115,8 @@ void main() {
   test('should fail if an exception is thrown', () async {
     await testBuilders(
       [
-        applyToRoot(new TestBuilder(
-            build: (_, __) => throw new Exception('Some build failure')))
+        applyToRoot(TestBuilder(
+            build: (_, __) => throw Exception('Some build failure')))
       ],
       {
         'a|lib/a.txt': '',
@@ -130,14 +130,14 @@ void main() {
       () async {
     await testBuilders(
       [
-        applyToRoot(new TestBuilder(
+        applyToRoot(TestBuilder(
             buildExtensions: replaceExtension('.txt', '.failed'),
             build: (buildStep, __) async {
               await buildStep.writeAsString(
                   buildStep.inputId.changeExtension('.failed'), 'failed');
               log.severe('Wrote an output then failed');
             })),
-        applyToRoot(new TestBuilder(
+        applyToRoot(TestBuilder(
             buildExtensions: replaceExtension('.txt', '.success'),
             build: expectAsync2((buildStep, __) async {
               // Attempts to read the file that came from a failing build step and
@@ -166,11 +166,12 @@ class _LoggingBuilder implements Builder {
   @override
   Future<Null> build(BuildStep buildStep) async {
     log.log(level, buildStep.inputId.toString());
+    await buildStep.canRead(buildStep.inputId);
     await buildStep.writeAsString(buildStep.inputId.addExtension('.empty'), '');
   }
 
   @override
   final buildExtensions = const {
-    '.dart': const ['.dart.empty'],
+    '.dart': ['.dart.empty'],
   };
 }

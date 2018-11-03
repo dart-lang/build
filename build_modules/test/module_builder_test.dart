@@ -9,61 +9,36 @@ import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
-import 'package:build_modules/src/meta_module_clean_builder.dart';
 import 'package:build_modules/src/modules.dart';
 
 import 'matchers.dart';
 
 main() {
-  test('can serialize fine modules and only output for primary sources',
-      () async {
-    var assetA = new AssetId('a', 'lib/a.dart');
-    var assetB = new AssetId('a', 'lib/b.dart');
-    var assetC = new AssetId('a', 'lib/c.dart');
-    var assetD = new AssetId('a', 'lib/d.dart');
-    var assetE = new AssetId('a', 'lib/e.dart');
-    var moduleA = new Module(assetA, [assetA], <AssetId>[]);
-    var moduleB = new Module(assetB, [assetB, assetC], <AssetId>[]);
-    var moduleD = new Module(assetD, [assetD, assetE], <AssetId>[]);
-    await testBuilder(new ModuleBuilder(), {
-      'a|lib/a.dart': '',
-      'a|lib/b.dart': 'part "c.dart";',
-      'a|lib/c.dart': 'part of "b.dart";',
-      'a|lib/d.dart': 'import "e.dart";',
-      'a|lib/e.dart': 'import "d.dart";',
-    }, outputs: {
-      'a|lib/a.module': encodedMatchesModule(moduleA),
-      'a|lib/b.module': encodedMatchesModule(moduleB),
-      'a|lib/d.module': encodedMatchesModule(moduleD),
-    });
-  });
-  test('can serialize course modules and only output for primary sources',
-      () async {
-    var assetA = new AssetId('a', 'lib/a.dart');
-    var moduleA = new Module(assetA, [assetA], <AssetId>[]);
-    var meta = new MetaModule([moduleA]);
-    await testBuilder(new ModuleBuilder(), {
-      'a|lib/$metaModuleCleanExtension': json.encode(meta),
-      'a|lib/a.dart': '',
-    }, outputs: {
-      'a|lib/a.module': encodedMatchesModule(moduleA),
-    });
-  });
+  final platform = DartPlatform.dart2js;
 
-  test('defaults to the fine strategy if the clean meta module is not found',
-      () async {
-    var assetA = new AssetId('a', 'lib/a.dart');
-    var assetB = new AssetId('a', 'lib/b.dart');
-    var assetC = new AssetId('a', 'lib/c.dart');
-    var moduleA = new Module(assetA, [assetA], <AssetId>[]);
-    var moduleB = new Module(assetB, [assetB, assetC], <AssetId>[]);
-    await testBuilder(new ModuleBuilder(), {
+  test('can serialize modules and only output for primary sources', () async {
+    var assetA = AssetId('a', 'lib/a.dart');
+    var assetB = AssetId('a', 'lib/b.dart');
+    var assetC = AssetId('a', 'lib/c.dart');
+    var assetD = AssetId('a', 'lib/d.dart');
+    var assetE = AssetId('a', 'lib/e.dart');
+    var moduleA = Module(assetA, [assetA], <AssetId>[], platform, true);
+    var moduleB = Module(assetB, [assetB, assetC], <AssetId>[], platform, true);
+    var moduleD =
+        Module(assetD, [assetD, assetE], <AssetId>[], platform, false);
+    var metaModule = MetaModule([moduleA, moduleB, moduleD]);
+    await testBuilder(ModuleBuilder(platform), {
       'a|lib/a.dart': '',
-      'a|lib/b.dart': 'part "c.dart";',
-      'a|lib/c.dart': 'part of "b.dart";',
+      'a|lib/b.dart': '',
+      'a|lib/c.dart': '',
+      'a|lib/d.dart': '',
+      'a|lib/e.dart': '',
+      'a|lib/${metaModuleCleanExtension(platform)}':
+          jsonEncode(metaModule.toJson()),
     }, outputs: {
-      'a|lib/a.module': encodedMatchesModule(moduleA),
-      'a|lib/b.module': encodedMatchesModule(moduleB),
+      'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
+      'a|lib/b${moduleExtension(platform)}': encodedMatchesModule(moduleB),
+      'a|lib/d${moduleExtension(platform)}': encodedMatchesModule(moduleD),
     });
   });
 }

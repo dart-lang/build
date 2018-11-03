@@ -18,7 +18,7 @@ import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not
 /// provided.
-const List<String> defaultRootPackageWhitelist = const [
+const List<String> defaultRootPackageWhitelist = [
   'benchmark/**',
   'bin/**',
   'example/**',
@@ -30,7 +30,29 @@ const List<String> defaultRootPackageWhitelist = const [
   'pubspec.lock',
 ];
 
-final _logger = new Logger('BuildOptions');
+final _logger = Logger('BuildOptions');
+
+class LogSubscription {
+  factory LogSubscription(BuildEnvironment environment,
+      {bool verbose, Level logLevel}) {
+    // Set up logging
+    verbose ??= false;
+    logLevel ??= verbose ? Level.ALL : Level.INFO;
+
+    // Severe logs can fail the build and should always be shown.
+    if (logLevel == Level.OFF) logLevel = Level.SEVERE;
+
+    Logger.root.level = logLevel;
+
+    var logListener = Logger.root.onRecord.listen(environment.onLog);
+    return LogSubscription._(verbose, logListener);
+  }
+
+  LogSubscription._(this.verbose, this.logListener);
+
+  final bool verbose;
+  final StreamSubscription<LogRecord> logListener;
+}
 
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
@@ -40,7 +62,6 @@ class BuildOptions {
 
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
-  final Map<String, String> outputMap;
   final bool trackPerformance;
   final bool verbose;
   final List<String> buildDirs;
@@ -61,7 +82,6 @@ class BuildOptions {
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
     @required this.logListener,
-    @required this.outputMap,
     @required this.packageGraph,
     @required this.skipBuildScriptCheck,
     @required this.trackPerformance,
@@ -73,32 +93,18 @@ class BuildOptions {
   });
 
   static Future<BuildOptions> create(
-    BuildEnvironment environment, {
+    LogSubscription logSubscription, {
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
-    Level logLevel,
-    Map<String, String> outputMap,
     @required PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
     bool skipBuildScriptCheck,
     bool trackPerformance,
-    bool verbose,
     List<String> buildDirs,
     String logPerformanceDir,
     Resolvers resolvers,
   }) async {
-    // Set up logging
-    verbose ??= false;
-    logLevel ??= verbose ? Level.ALL : Level.INFO;
-
-    // Severe logs can fail the build and should always be shown.
-    if (logLevel == Level.OFF) logLevel = Level.SEVERE;
-
-    Logger.root.level = logLevel;
-
-    var logListener = Logger.root.onRecord.listen(environment.onLog);
-
     TargetGraph targetGraph;
     try {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
@@ -107,7 +113,7 @@ class BuildOptions {
     } on BuildConfigParseException catch (e, s) {
       _logger.severe(
           'Failed to parse `build.yaml` for ${e.packageName}.', e.exception, s);
-      throw new CannotBuildException();
+      throw CannotBuildException();
     }
 
     /// Set up other defaults.
@@ -123,22 +129,21 @@ class BuildOptions {
       if (!p.isWithin(p.current, logPerformanceDir)) {
         _logger.severe('Performance logs may only be output under the root '
             'package, but got `$logPerformanceDir` which is not.');
-        throw new CannotBuildException();
+        throw CannotBuildException();
       }
       trackPerformance = true;
     }
-    resolvers ??= new AnalyzerResolvers();
+    resolvers ??= AnalyzerResolvers();
 
-    return new BuildOptions._(
+    return BuildOptions._(
       debounceDelay: debounceDelay,
       deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,
-      logListener: logListener,
-      outputMap: outputMap,
+      logListener: logSubscription.logListener,
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,
-      verbose: verbose,
+      verbose: logSubscription.verbose,
       buildDirs: buildDirs,
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,

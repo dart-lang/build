@@ -17,9 +17,8 @@ void main() {
   setUpAll(() async {
     process = await Process.start(Platform.resolvedExecutable,
         [p.join('test', 'environment', 'simple_prompt.dart')]);
-    stdoutLines = new StreamQueue(process.stdout
-        .transform(new Utf8Decoder())
-        .transform(new LineSplitter()));
+    stdoutLines = StreamQueue(
+        process.stdout.transform(Utf8Decoder()).transform(LineSplitter()));
   });
 
   tearDown(() => stdoutLines.cancel());

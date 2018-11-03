@@ -112,7 +112,7 @@ the following keys:
     on the package exposing the builder.
   - `"all_packages"`: Apply this Builder to all packages in the transitive
     dependency graph.
-  - `"root_package"`; Apply this Builder only to the top-level package.
+  - `"root_package"`: Apply this Builder only to the top-level package.
 - **required_inputs**: Optional, see [adjusting builder ordering][]
 - **runs_before**: Optional, see [adjusting builder ordering][]
 - **applies_builders**: Optional, list of Builder keys. Specifies that other

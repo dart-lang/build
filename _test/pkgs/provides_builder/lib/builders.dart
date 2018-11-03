@@ -11,14 +11,14 @@ class _SomeBuilder implements Builder {
 
   factory _SomeBuilder.fromOptions(BuilderOptions options) {
     if (options.config['throw_in_constructor'] == true) {
-      throw new StateError('Throwing on purpose cause you asked for it!');
+      throw StateError('Throwing on purpose cause you asked for it!');
     }
     return const _SomeBuilder();
   }
 
   @override
   final buildExtensions = const {
-    '.dart': const ['.something.dart']
+    '.dart': ['.something.dart']
   };
 
   @override
@@ -56,13 +56,13 @@ class _ThrowingBuilder extends Builder {
 
   @override
   Future<Null> build(BuildStep buildStep) async {
-    throw await buildStep.readAsString(buildStep.inputId);
+    throw UnsupportedError(await buildStep.readAsString(buildStep.inputId));
   }
 }
 
 Builder someBuilder(BuilderOptions options) =>
-    new _SomeBuilder.fromOptions(options);
+    _SomeBuilder.fromOptions(options);
 Builder notApplied(_) => null;
 PostProcessBuilder somePostProcessBuilder(BuilderOptions options) =>
-    new _SomePostProcessBuilder.fromOptions(options);
-Builder throwingBuilder(_) => new _ThrowingBuilder();
+    _SomePostProcessBuilder.fromOptions(options);
+Builder throwingBuilder(_) => _ThrowingBuilder();

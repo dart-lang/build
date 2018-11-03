@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
 import '../generate/build.dart';
@@ -31,8 +32,8 @@ class WatchCommand extends BuildRunnerCommand {
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      assumeTty: options.assumeTty,
       outputMap: options.outputMap,
+      outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,
@@ -44,8 +45,26 @@ class WatchCommand extends BuildRunnerCommand {
     );
     if (handler == null) return ExitCode.config.code;
 
-    await handler.currentBuild;
-    await handler.buildResults.drain();
-    return ExitCode.success.code;
+    final completer = Completer<int>();
+    handleBuildResultsStream(handler.buildResults, completer);
+    return completer.future;
+  }
+
+  /// Listens to [buildResults], handling certain types of errors and completing
+  /// [completer] appropriately.
+  void handleBuildResultsStream(
+      Stream<BuildResult> buildResults, Completer<int> completer) async {
+    var subscription = buildResults.listen((result) {
+      if (completer.isCompleted) return;
+      if (result.status == BuildStatus.failure) {
+        if (result.failureType == FailureType.buildScriptChanged) {
+          completer.completeError(BuildScriptChangedException());
+        } else if (result.failureType == FailureType.buildConfigChanged) {
+          completer.completeError(BuildConfigChangedException());
+        }
+      }
+    });
+    await subscription.asFuture();
+    if (!completer.isCompleted) completer.complete(ExitCode.success.code);
   }
 }

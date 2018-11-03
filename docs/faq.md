@@ -38,6 +38,27 @@ targets:
           compiler: dart2js
 ```
 
+## How can I include additional sources in my build?
+
+By default, the `build_runner` package only includes some specifically
+whitelisted directories, derived from the [package layout conventions](
+https://www.dartlang.org/tools/pub/package-layout).
+
+If you have some additional files which you would like to be included as part of
+the build, you will need a custom `build.yaml` file. You will want to modify the
+`sources` field on the `$default` target:
+
+```yaml
+targets:
+  $default:
+    sources:
+      - my_custom_sources/**
+      - lib/**
+      - web/**
+      # Note that it is important to include these in the default target.
+      - pubspec.*
+```
+
 ## Why do Builders need unique outputs?
 
 `build_runner` relies on determining a static build graph before starting a
@@ -84,3 +105,13 @@ targets:
         # Example that excludes intellij's swap files
         - **/*___jb_tmp___
 ```
+
+## Why are some logs "(cached)"?
+
+`build_runner` will only run actions that have changes in their inputs. When an
+action fails, and a subsequent build has exactly the same inputs for that action
+it will not be rerun - the previous error messages, however, will get reprinted
+to avoid confusion if a build fails with no printed errors. To force the action
+to run again make an edit to any file that is an input to that action, or throw
+away all cached values with `pub run build_runner clean` before starting the
+next build.

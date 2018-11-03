@@ -1,3 +1,86 @@
+## 1.1.0
+
+### New Features
+
+- The build script will now be ran from snapshot, which improves startup times.
+- The build script will automatically re-run itself when the build script is
+  changed, instead of requiring the user to re-run it manually.
+
+## 1.0.0
+
+### Breaking Changes
+
+- Massive cleanup of the public api. The only thing exported from this package
+  is now the `run` method. The goal is to reduce the surface area in order to
+  stabilize this package, since it is directly depended on by all users.
+  - Removed all exports from build_runner_core, if you are creating a custom
+    build script you will need to import build_runner_core directly and add a
+    dependency on it.
+  - Stopped exporting the `build` and `watch` functions directly, as well as the
+    `ServeHandler`.
+  - If this has broken your use case please file an issue on the package and
+    request that we export the api you were using previously. These will be
+    considered on an individual basis but the bar for additional exports will be
+    high.
+- Removed support for the --[no-]assume-tty command line argument as it is no
+  longer needed.
+
+## 0.10.3
+
+- Improve performance tracking and visualization using the `timing` package.
+- Handle bad asset graph in the `clean` command.
+
+## 0.10.2
+
+- Added `--hot-reload` cli option and appropriate functionality.
+  See [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
+- Removed dependency on cli_util.
+
+## 0.10.1+1
+
+- Added better error handling when a socket is already in use in `serve` mode.
+
+## 0.10.1
+
+- Added `--live-reload` cli option and appropriate functionality
+- Migrated glob tracking to a specialized node type to fix dart-lang/build#1702.
+
+## 0.10.0
+
+### Breaking Changes
+
+- Implementations of `BuildEnvironment` must now implement the `finalizeBuild`
+  method. There is a default implementation if you extend `BuildEnvironment`
+  that is a no-op.
+  - This method is invoked at the end of the build that allows you to do
+    arbitrary additional work, such as creating merged output directories.
+- The `assumeTty` argument on `IOEnvironment` has moved to a named argument
+  since `null` is an accepted value.
+- The `outputMap` field on `BuildOptions` has moved to the `IOEnvironment`
+  class.
+
+### New Features/Updates
+
+- Added a `outputSymlinksOnly` option to `IOEnvironment` constructor, that
+  causes the merged output directories to contain only symlinks, which is much
+  faster than copying files.
+- Added the `FinalizedAssetView` class which provides a list of all available
+  assets to the `BuildEnvironment` during the build finalization phase.
+  - `outputMap` has moved from `BuildOptions` to this constructor, as a named
+    argument.
+- The `OverridableEnvironment` now supports overriding the new `finalizeBuild`
+  api.
+- The number of concurrent actions per phase is now limited (currently to 16),
+  which should help with memory and cpu usage for large builds.
+
+## 0.9.2
+
+- Changed the default file caching logic to use an LRU cache.
+
+## 0.9.1+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.9.1
 
 - The hash dir for the asset graph under `.dart_tool/build` is now based on a
@@ -33,7 +116,6 @@
 - Severe level logs now go to `stdout` along with other logs rather than
   `stderr`. Uncaught exceptions from the `build_runner` system itself still go
   to `stderr`.
-
 
 ## Other
 

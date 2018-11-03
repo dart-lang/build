@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(const ['integration'])
+@Tags(['integration'])
 
 import 'dart:async';
 import 'dart:convert';
@@ -36,8 +36,8 @@ main() {
       await pubGet('a');
       pubProcess = await startPub('a', 'run', args: ['build_runner', 'serve']);
       pubStdOutLines = pubProcess.stdout
-          .transform(new Utf8Decoder())
-          .transform(new LineSplitter())
+          .transform(Utf8Decoder())
+          .transform(LineSplitter())
           .asBroadcastStream();
     });
 

@@ -23,9 +23,9 @@ import 'package:logging/logging.dart';
 /// });
 /// ```
 Stream<LogRecord> recordLogs(dynamic run(), {String name = ''}) {
-  final logger = new Logger(name);
+  final logger = Logger(name);
   Timer.run(() async {
-    await scopeLogAsync(() => new Future.value(run()), logger);
+    await scopeLogAsync(() => Future.value(run()), logger);
     logger.clearListeners();
   });
   return logger.onRecord;
@@ -38,26 +38,26 @@ Stream<LogRecord> recordLogs(dynamic run(), {String name = ''}) {
 /// anyLogOf(contains('ERROR')); // Contains the sub-string 'ERROR'.
 /// ```
 Matcher anyLogOf(dynamic messageOrMatcher) =>
-    new _LogRecordMatcher(anything, messageOrMatcher);
+    _LogRecordMatcher(anything, messageOrMatcher);
 
 /// Matches [LogRecord] of [Level.INFO] where message is [messageOrMatcher].
 Matcher infoLogOf(dynamic messageOrMatcher) =>
-    new _LogRecordMatcher(Level.INFO, messageOrMatcher);
+    _LogRecordMatcher(Level.INFO, messageOrMatcher);
 
 /// Matches [LogRecord] of [Level.WARNING] where message is [messageOrMatcher].
 Matcher warningLogOf(dynamic messageOrMatcher) =>
-    new _LogRecordMatcher(Level.WARNING, messageOrMatcher);
+    _LogRecordMatcher(Level.WARNING, messageOrMatcher);
 
 /// Matches [LogRecord] of [Level.SEVERE] where message is [messageOrMatcher].
 Matcher severeLogOf(dynamic messageOrMatcher) =>
-    new _LogRecordMatcher(Level.SEVERE, messageOrMatcher);
+    _LogRecordMatcher(Level.SEVERE, messageOrMatcher);
 
 class _LogRecordMatcher extends Matcher {
   final Matcher _level;
   final Matcher _message;
 
   factory _LogRecordMatcher(dynamic levelOr, dynamic messageOr) =>
-      new _LogRecordMatcher._(levelOr is Matcher ? levelOr : equals(levelOr),
+      _LogRecordMatcher._(levelOr is Matcher ? levelOr : equals(levelOr),
           messageOr is Matcher ? messageOr : equals(messageOr));
 
   _LogRecordMatcher._(this._level, this._message);

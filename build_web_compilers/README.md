@@ -66,9 +66,6 @@ targets:
           - --checked
 ```
 
-We are working on command line configuration as well, you can follow
-https://github.com/dart-lang/build/issues/801 for updates on that.
-
 ## Manual Usage
 
 If you are using a custom build script, you will need to add the following

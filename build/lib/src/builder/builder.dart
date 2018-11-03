@@ -8,7 +8,7 @@ import 'build_step.dart';
 /// The basic builder class, used to build new files from existing ones.
 abstract class Builder {
   /// Generates the outputs for a given [BuildStep].
-  Future build(BuildStep buildStep);
+  FutureOr<void> build(BuildStep buildStep);
 
   /// Mapping from input file extension to output file extensions.
   ///
@@ -26,10 +26,10 @@ abstract class Builder {
 
 class BuilderOptions {
   /// A configuration with no options set.
-  static const empty = const BuilderOptions(const {});
+  static const empty = BuilderOptions({});
 
   /// A configuration with [isRoot] set to `true`, and no options set.
-  static const forRoot = const BuilderOptions(const {}, isRoot: true);
+  static const forRoot = BuilderOptions({}, isRoot: true);
 
   /// The configuration to apply to a given usage of a [Builder].
   ///
@@ -52,7 +52,7 @@ class BuilderOptions {
   /// The `isRoot` value will also be overridden to value from [other].
   BuilderOptions overrideWith(BuilderOptions other) {
     if (other == null) return this;
-    return new BuilderOptions({}..addAll(config)..addAll(other.config),
+    return BuilderOptions({}..addAll(config)..addAll(other.config),
         isRoot: other.isRoot);
   }
 }

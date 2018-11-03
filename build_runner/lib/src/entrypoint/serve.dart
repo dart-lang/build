@@ -12,6 +12,7 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
 
 import '../generate/build.dart';
+import '../logging/std_io_logging.dart';
 import '../server/server.dart';
 import 'options.dart';
 import 'watch.dart';
@@ -25,7 +26,17 @@ class ServeCommand extends WatchCommand {
       ..addFlag(logRequestsOption,
           defaultsTo: false,
           negatable: false,
-          help: 'Enables logging for each request to the server.');
+          help: 'Enables logging for each request to the server.')
+      ..addFlag(liveReloadOption,
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables automatic page reloading on rebuilds. '
+              "Can't be used together with --$hotReloadOption.")
+      ..addFlag(hotReloadOption,
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables automatic reloading of changed modules on rebuilds. '
+              "Can't be used together with --$liveReloadOption.");
   }
 
   @override
@@ -40,19 +51,41 @@ class ServeCommand extends WatchCommand {
       'builds based on file system updates.';
 
   @override
-  ServeOptions readOptions() => new ServeOptions.fromParsedArgs(
+  ServeOptions readOptions() => ServeOptions.fromParsedArgs(
       argResults, argResults.rest, packageGraph.root.name, this);
 
   @override
   Future<int> run() async {
+    final servers = <ServeTarget, HttpServer>{};
+    return _runServe(servers).whenComplete(() async {
+      await Future.wait(
+          servers.values.map((server) => server.close(force: true)));
+    });
+  }
+
+  Future<int> _runServe(Map<ServeTarget, HttpServer> servers) async {
     var options = readOptions();
+    try {
+      await Future.wait(options.serveTargets.map((target) async {
+        servers[target] = await _bindServer(options, target);
+      }));
+    } on SocketException catch (e) {
+      var listener = Logger.root.onRecord.listen(stdIOLogListener());
+      logger.severe(
+          'Error starting server at ${e.address.address}:${e.port}, address '
+          'is already in use. Please kill the server running on that port or '
+          'serve on a different port and restart this process.');
+      await listener.cancel();
+      return ExitCode.osError.code;
+    }
+
     var handler = await watch(
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      assumeTty: options.assumeTty,
       outputMap: options.outputMap,
+      outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,
@@ -65,10 +98,25 @@ class ServeCommand extends WatchCommand {
 
     if (handler == null) return ExitCode.config.code;
 
+    servers.forEach((target, server) {
+      serveRequests(
+          server,
+          handler.handlerFor(target.dir,
+              logRequests: options.logRequests,
+              buildUpdates: options.buildUpdates));
+    });
+
     _ensureBuildWebCompilersDependency(packageGraph, logger);
-    var servers = await Future.wait(options.serveTargets
-        .map((target) => _startServer(options, target, handler)));
-    await handler.currentBuild;
+
+    final completer = Completer<int>();
+    handleBuildResultsStream(handler.buildResults, completer);
+    _logServerPorts(handler, options, logger);
+    return completer.future;
+  }
+
+  void _logServerPorts(
+      ServeHandler serveHandler, ServeOptions options, Logger logger) async {
+    await serveHandler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
       logger.warning(
@@ -81,19 +129,7 @@ class ServeCommand extends WatchCommand {
             'http://${options.hostName}:${target.port}');
       }
     }
-    await handler.buildResults.drain();
-    await Future.wait(servers.map((server) => server.close()));
-
-    return ExitCode.success.code;
   }
-}
-
-Future<HttpServer> _startServer(
-    ServeOptions options, ServeTarget target, ServeHandler handler) async {
-  var server = await _bindServer(options, target);
-  serveRequests(
-      server, handler.handlerFor(target.dir, logRequests: options.logRequests));
-  return server;
 }
 
 Future<HttpServer> _bindServer(ServeOptions options, ServeTarget target) {

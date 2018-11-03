@@ -26,39 +26,39 @@ void main() {
     });
 
     void initFiles(PackageNode node) {
-      new File(p.join(node.path, 'lib', '2.dart'))
+      File(p.join(node.path, 'lib', '2.dart'))
         ..createSync(recursive: true)
         ..writeAsStringSync('2');
-      new File(p.join(node.path, 'lib', '3.dart'))
+      File(p.join(node.path, 'lib', '3.dart'))
         ..createSync(recursive: true)
         ..writeAsStringSync('3');
     }
 
     void modifyFiles(PackageNode node) {
-      new File(p.join(node.path, 'lib', '1.dart')).createSync(recursive: true);
-      new File(p.join(node.path, 'lib', '2.dart')).writeAsStringSync('2+');
-      new File(p.join(node.path, 'lib', '3.dart')).deleteSync();
+      File(p.join(node.path, 'lib', '1.dart')).createSync(recursive: true);
+      File(p.join(node.path, 'lib', '2.dart')).writeAsStringSync('2+');
+      File(p.join(node.path, 'lib', '3.dart')).deleteSync();
     }
 
     test('should emit a changed asset', () async {
-      var node = new PackageNode('a', p.join(tmpDir.path, 'a'), null);
-      var nodeWatcher = new PackageNodeWatcher(node);
+      var node = PackageNode('a', p.join(tmpDir.path, 'a'), null);
+      var nodeWatcher = PackageNodeWatcher(node);
 
       initFiles(node);
 
       expect(
         nodeWatcher.watch('lib'),
         emitsInAnyOrder([
-          new AssetChange(
-            new AssetId('a', 'lib/1.dart'),
+          AssetChange(
+            AssetId('a', 'lib/1.dart'),
             ChangeType.ADD,
           ),
-          new AssetChange(
-            new AssetId('a', 'lib/2.dart'),
+          AssetChange(
+            AssetId('a', 'lib/2.dart'),
             ChangeType.MODIFY,
           ),
-          new AssetChange(
-            new AssetId('a', 'lib/3.dart'),
+          AssetChange(
+            AssetId('a', 'lib/3.dart'),
             ChangeType.REMOVE,
           ),
         ]),
@@ -69,25 +69,25 @@ void main() {
     });
 
     test('should also respect relative watch URLs', () async {
-      var node = new PackageNode(
+      var node = PackageNode(
           'a', p.relative(p.join(tmpDir.path, 'a'), from: p.current), null);
-      var nodeWatcher = new PackageNodeWatcher(node);
+      var nodeWatcher = PackageNodeWatcher(node);
 
       initFiles(node);
 
       expect(
         nodeWatcher.watch('lib'),
         emitsInAnyOrder([
-          new AssetChange(
-            new AssetId('a', 'lib/1.dart'),
+          AssetChange(
+            AssetId('a', 'lib/1.dart'),
             ChangeType.ADD,
           ),
-          new AssetChange(
-            new AssetId('a', 'lib/2.dart'),
+          AssetChange(
+            AssetId('a', 'lib/2.dart'),
             ChangeType.MODIFY,
           ),
-          new AssetChange(
-            new AssetId('a', 'lib/3.dart'),
+          AssetChange(
+            AssetId('a', 'lib/3.dart'),
             ChangeType.REMOVE,
           ),
         ]),

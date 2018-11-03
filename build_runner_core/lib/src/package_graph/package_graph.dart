@@ -12,7 +12,7 @@ import '../util/constants.dart';
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
 final PackageNode _sdkPackageNode =
-    new PackageNode(r'$sdk', sdkPath, DependencyType.hosted);
+    PackageNode(r'$sdk', sdkPath, DependencyType.hosted);
 
 /// A graph of the package dependencies for an application.
 class PackageGraph {
@@ -23,15 +23,14 @@ class PackageGraph {
   final Map<String, PackageNode> allPackages;
 
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
-      : allPackages = new Map.unmodifiable(
-            new Map<String, PackageNode>.from(allPackages)
+      : allPackages = Map.unmodifiable(
+            Map<String, PackageNode>.from(allPackages)
               ..putIfAbsent(r'$sdk', () => _sdkPackageNode)) {
     if (!root.isRoot) {
-      throw new ArgumentError('Root node must indicate `isRoot`');
+      throw ArgumentError('Root node must indicate `isRoot`');
     }
     if (allPackages.values.where((n) => n != root).any((n) => n.isRoot)) {
-      throw new ArgumentError(
-          'No nodes other than the root may indicate `isRoot`');
+      throw ArgumentError('No nodes other than the root may indicate `isRoot`');
     }
   }
 
@@ -49,17 +48,18 @@ class PackageGraph {
 
     addDeps(root);
 
-    return new PackageGraph._(root, allPackages);
+    return PackageGraph._(root, allPackages);
   }
 
   /// Creates a [PackageGraph] for the package whose top level directory lives
   /// at [packagePath] (no trailing slash).
   factory PackageGraph.forPath(String packagePath) {
     /// Read in the pubspec file and parse it as yaml.
-    final pubspec = new File(p.join(packagePath, 'pubspec.yaml'));
+    final pubspec = File(p.join(packagePath, 'pubspec.yaml'));
     if (!pubspec.existsSync()) {
-      throw 'Unable to generate package graph, no `pubspec.yaml` found. '
-          'This program must be ran from the root directory of your package.';
+      throw StateError(
+          'Unable to generate package graph, no `pubspec.yaml` found. '
+          'This program must be ran from the root directory of your package.');
     }
     final rootPubspec = _pubspecForPath(packagePath);
     final rootPackageName = rootPubspec['name'] as String;
@@ -70,13 +70,13 @@ class PackageGraph {
     final dependencyTypes = _parseDependencyTypes(packagePath);
 
     final nodes = <String, PackageNode>{};
-    final rootNode = new PackageNode(
+    final rootNode = PackageNode(
         rootPackageName, packagePath, DependencyType.path,
         isRoot: true);
     nodes[rootPackageName] = rootNode;
     for (final packageName in packageLocations.keys) {
       if (packageName == rootPackageName) continue;
-      nodes[packageName] = new PackageNode(packageName,
+      nodes[packageName] = PackageNode(packageName,
           packageLocations[packageName], dependencyTypes[packageName],
           isRoot: false);
     }
@@ -90,19 +90,19 @@ class PackageGraph {
           .dependencies
           .addAll(packageDependencies[packageName].map((n) => nodes[n]));
     }
-    return new PackageGraph._(rootNode, nodes);
+    return PackageGraph._(rootNode, nodes);
   }
 
   /// Creates a [PackageGraph] for the package in which you are currently
   /// running.
-  factory PackageGraph.forThisPackage() => new PackageGraph.forPath('./');
+  factory PackageGraph.forThisPackage() => PackageGraph.forPath('./');
 
   /// Shorthand to get a package by name.
   PackageNode operator [](String packageName) => allPackages[packageName];
 
   @override
   String toString() {
-    var buffer = new StringBuffer();
+    var buffer = StringBuffer();
     for (var package in allPackages.values) {
       buffer.writeln('$package');
     }
@@ -124,6 +124,8 @@ class PackageNode {
   final List<PackageNode> dependencies = [];
 
   /// The absolute path of the current version of this package.
+  ///
+  /// Paths are platform dependent.
   final String path;
 
   /// Whether this node is the [PackageGraph.root].
@@ -140,42 +142,34 @@ class PackageNode {
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
 
-  /// Converts [path] to an absolute path, returns `null` if given `null`.
-  static String _toAbsolute(String path) {
-    if (path == null) return null;
-    return p.normalize(p.isAbsolute(path) ? path : p.absolute(path));
-  }
+  /// Converts [path] to a canonical absolute path, returns `null` if given
+  /// `null`.
+  static String _toAbsolute(String path) =>
+      (path == null) ? null : p.canonicalize(path);
 }
 
 /// Parse the `.packages` file and return a Map from package name to the file
 /// location for that package.
 Map<String, String> _parsePackageLocations(String rootPackagePath) {
-  var packagesFile = new File(p.join(rootPackagePath, '.packages'));
+  var packagesFile = File(p.join(rootPackagePath, '.packages'));
   if (!packagesFile.existsSync()) {
-    throw 'Unable to generate package graph, no `.packages` found. '
-        'This program must be ran from the root directory of your package.';
+    throw StateError('Unable to generate package graph, no `.packages` found. '
+        'This program must be ran from the root directory of your package.');
   }
   var packageLocations = <String, String>{};
   for (final line in packagesFile.readAsLinesSync().skip(1)) {
     var firstColon = line.indexOf(':');
     var name = line.substring(0, firstColon);
     assert(line.endsWith('lib/'));
-    // Start after package_name:, and strip out trailing `lib` dir.
+    // Start after package_name:, and strip out trailing 'lib/'.
     var uriString = line.substring(firstColon + 1, line.length - 4);
     // Strip the trailing slash, if present.
     if (uriString.endsWith('/')) {
       uriString = uriString.substring(0, uriString.length - 1);
     }
-    Uri uri;
-    try {
-      uri = Uri.parse(uriString);
-    } on FormatException catch (_) {
-      /// Some types of deps don't have a scheme, and just point to a relative
-      /// path.
-      uri = new Uri.file(uriString);
-    }
+    var uri = Uri.tryParse(uriString) ?? Uri.file(uriString);
     if (!uri.isAbsolute) {
-      uri = new Uri.file(p.join(rootPackagePath, uri.path));
+      uri = p.toUri(p.join(rootPackagePath, uri.path));
     }
     packageLocations[name] = uri.toFilePath(windows: Platform.isWindows);
   }
@@ -189,10 +183,11 @@ enum DependencyType { github, path, hosted }
 /// Parse the `pubspec.lock` file and return a Map from package name to the type
 /// of dependency.
 Map<String, DependencyType> _parseDependencyTypes(String rootPackagePath) {
-  final pubspecLock = new File(p.join(rootPackagePath, 'pubspec.lock'));
+  final pubspecLock = File(p.join(rootPackagePath, 'pubspec.lock'));
   if (!pubspecLock.existsSync()) {
-    throw 'Unable to generate package graph, no `pubspec.lock` found. '
-        'This program must be ran from the root directory of your package.';
+    throw StateError(
+        'Unable to generate package graph, no `pubspec.lock` found. '
+        'This program must be ran from the root directory of your package.');
   }
   final dependencyTypes = <String, DependencyType>{};
   final dependencies = loadYaml(pubspecLock.readAsStringSync()) as YamlMap;
@@ -214,7 +209,7 @@ DependencyType _dependencyTypeFromSource(String source) {
     case 'sdk': // Until Flutter supports another type, assum same as path.
       return DependencyType.path;
   }
-  throw 'Unable to determine dependency type:\n$source';
+  throw ArgumentError('Unable to determine dependency type:\n$source');
 }
 
 /// Read the pubspec for each package in [packageLocations] and finds it's
@@ -231,8 +226,7 @@ Map<String, Set<String>> _parsePackageDependencies(
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
 Set<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
-  var deps = new Set<String>()
-    ..addAll(_stringKeys(yaml['dependencies'] as Map));
+  var deps = Set<String>()..addAll(_stringKeys(yaml['dependencies'] as Map));
   if (isRoot) {
     deps.addAll(_stringKeys(yaml['dev_dependencies'] as Map));
     deps.addAll(_stringKeys(yaml['dependency_overrides'] as Map));
@@ -246,9 +240,10 @@ Iterable<String> _stringKeys(Map m) =>
 /// Should point to the top level directory for the package.
 YamlMap _pubspecForPath(String absolutePath) {
   var pubspecPath = p.join(absolutePath, 'pubspec.yaml');
-  var pubspec = new File(pubspecPath);
+  var pubspec = File(pubspecPath);
   if (!pubspec.existsSync()) {
-    throw 'Unable to generate package graph, no `$pubspecPath` found.';
+    throw StateError(
+        'Unable to generate package graph, no `$pubspecPath` found.');
   }
   return loadYaml(pubspec.readAsStringSync()) as YamlMap;
 }

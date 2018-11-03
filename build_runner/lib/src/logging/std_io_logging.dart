@@ -34,7 +34,7 @@ void _stdIOLogListener(LogRecord record, {bool verbose}) {
   }
   var header = '$eraseLine$level ${_loggerName(record, verbose)}$headerMessage';
   var lines = blankLineCount > 0
-      ? (new List<Object>.generate(blankLineCount, (_) => '')..add(header))
+      ? (List<Object>.generate(blankLineCount, (_) => '')..add(header))
       : <Object>[header];
 
   if (record.error != null) {
@@ -42,14 +42,14 @@ void _stdIOLogListener(LogRecord record, {bool verbose}) {
   }
 
   if (record.stackTrace != null && verbose) {
-    var trace = new Trace.from(record.stackTrace).foldFrames((f) {
+    var trace = Trace.from(record.stackTrace).foldFrames((f) {
       return f.package == 'build_runner' || f.package == 'build';
     }, terse: true);
 
     lines.add(trace);
   }
 
-  var message = new StringBuffer(lines.join('\n'));
+  var message = StringBuffer(lines.join('\n'));
 
   // We always add an extra newline at the end of each message, so it
   // isn't multiline unless we see > 2 lines.
@@ -67,18 +67,25 @@ void _stdIOLogListener(LogRecord record, {bool verbose}) {
 /// header for levels >= WARNING.
 String _loggerName(LogRecord record, bool verbose) {
   var knownNames = const [
+    'ApplyBuilders',
     'Build',
+    'BuildConfigOverrides',
     'BuildDefinition',
     'BuildOptions',
     'BuildScriptUpdates',
     'CreateOutputDir',
     'Entrypoint',
-    'ApplyBuilders',
     'Heartbeat',
+    'IOEnvironment',
     'Serve',
     'Watch',
     'build_runner',
+    // commands
+    'build',
     'clean',
+    'serve',
+    'test',
+    'watch',
   ];
   var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
   return verbose || !knownNames.contains(record.loggerName)

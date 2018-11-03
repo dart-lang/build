@@ -26,8 +26,8 @@ class BuildResult {
 
   BuildResult(this.status, List<AssetId> outputs,
       {this.performance, FailureType failureType})
-      : outputs = new List.unmodifiable(outputs),
-        this.failureType = failureType == null && status == BuildStatus.failure
+      : outputs = List.unmodifiable(outputs),
+        failureType = failureType == null && status == BuildStatus.failure
             ? FailureType.general
             : failureType;
   @override
@@ -54,10 +54,12 @@ enum BuildStatus {
 
 /// The type of failure
 class FailureType {
-  static const general = const FailureType._(1);
-  static const cantCreate = const FailureType._(73);
+  static final general = FailureType._(1);
+  static final cantCreate = FailureType._(73);
+  static final buildConfigChanged = FailureType._(75);
+  static final buildScriptChanged = FailureType._(75);
   final int exitCode;
-  const FailureType._(this.exitCode);
+  FailureType._(this.exitCode);
 }
 
 abstract class BuildState {

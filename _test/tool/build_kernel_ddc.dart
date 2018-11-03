@@ -7,22 +7,24 @@ import 'dart:async';
 import 'package:build_config/build_config.dart';
 import 'package:build_web_compilers/builders.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/builders.dart';
 import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/builder.dart';
 
 Future main(List<String> args) async {
   var builders = [
-    apply('_test|test_bootstrap', [(_) => new TestBootstrapBuilder()], toRoot(),
-        defaultGenerateFor:
-            const InputSet(include: const ['test/**_test.dart']),
+    apply('_test|test_bootstrap', [(_) => TestBootstrapBuilder()], toRoot(),
+        defaultGenerateFor: const InputSet(include: ['test/**_test.dart']),
         hideOutput: true),
     apply(
         '_test|ddc_kernel',
         [
-          metaModuleBuilder,
-          metaModuleCleanBuilder,
-          moduleBuilder,
+          moduleLibraryBuilder,
+          metaModuleBuilderFactoryForPlatform(DartPlatform.dartdevc.name),
+          metaModuleCleanBuilderFactoryForPlatform(DartPlatform.dartdevc.name),
+          moduleBuilderFactoryForPlatform(DartPlatform.dartdevc.name),
           ddcKernelBuilder,
         ],
         toAllPackages(),
@@ -31,18 +33,16 @@ Future main(List<String> args) async {
     apply(
         'build_web_compilers|ddc',
         [
-          (_) => new DevCompilerBuilder(useKernel: true),
+          (_) => DevCompilerBuilder(useKernel: true),
         ],
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
     apply(
         'build_web_compilers|entrypoint',
-        [
-          (_) => new WebEntrypointBuilder(WebCompiler.DartDevc, useKernel: true)
-        ],
+        [(_) => WebEntrypointBuilder(WebCompiler.DartDevc, useKernel: true)],
         toRoot(),
-        defaultGenerateFor: const InputSet(include: const [
+        defaultGenerateFor: const InputSet(include: [
           'web/**.dart',
           'test/**.browser_test.dart',
         ]),

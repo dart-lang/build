@@ -10,11 +10,11 @@ import 'package:build_runner/src/generate/terminator.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
+import 'package:watcher/watcher.dart';
 
 import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
-import 'directory_watcher_factory.dart';
 import 'watch_impl.dart' as watch_impl;
 
 /// Runs all of the BuilderApplications in [builders] once.
@@ -45,6 +45,10 @@ import 'watch_impl.dart' as watch_impl;
 /// will be created for each value in the map which contains all original
 /// sources and built sources contained in the provided path.
 ///
+/// If [outputSymlinksOnly] is `true`, then the merged output directories will
+/// contain only symlinks, which is much faster but not generally suitable for
+/// deployment.
+///
 /// If [verbose] is `true` then verbose logging will be enabled. This changes
 /// the default [logLevel] to [Level.ALL] and removes stack frame folding, among
 /// other things.
@@ -61,6 +65,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     Stream terminateEventStream,
     bool enableLowResourcesMode,
     Map<String, String> outputMap,
+    bool outputSymlinksOnly,
     bool trackPerformance,
     bool skipBuildScriptCheck,
     bool verbose,
@@ -69,29 +74,33 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     List<String> buildDirs,
     String logPerformanceDir}) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= new PackageGraph.forThisPackage();
-  var environment = new OverrideableEnvironment(
-      new IOEnvironment(packageGraph, assumeTty),
+  packageGraph ??= PackageGraph.forThisPackage();
+  var environment = OverrideableEnvironment(
+      IOEnvironment(
+        packageGraph,
+        assumeTty: assumeTty,
+        outputMap: outputMap,
+        outputSymlinksOnly: outputSymlinksOnly,
+      ),
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
+  var logSubscription =
+      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   var options = await BuildOptions.create(
-    environment,
+    logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
-    logLevel: logLevel,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig:
         await findBuildConfigOverrides(packageGraph, configKey),
     enableLowResourcesMode: enableLowResourcesMode,
-    outputMap: outputMap,
     trackPerformance: trackPerformance,
-    verbose: verbose,
     buildDirs: buildDirs,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
   );
-  var terminator = new Terminator(terminateEventStream);
+  var terminator = Terminator(terminateEventStream);
   try {
     var build = await BuildRunner.create(
       options,
@@ -144,10 +153,11 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         Level logLevel,
         onLog(LogRecord record),
         Duration debounceDelay,
-        DirectoryWatcherFactory directoryWatcherFactory,
+        DirectoryWatcher Function(String) directoryWatcherFactory,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
         Map<String, String> outputMap,
+        bool outputSymlinksOnly,
         bool trackPerformance,
         bool skipBuildScriptCheck,
         bool verbose,
@@ -171,6 +181,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       terminateEventStream: terminateEventStream,
       enableLowResourcesMode: enableLowResourcesMode,
       outputMap: outputMap,
+      outputSymlinksOnly: outputSymlinksOnly,
       trackPerformance: trackPerformance,
       skipBuildScriptCheck: skipBuildScriptCheck,
       verbose: verbose,

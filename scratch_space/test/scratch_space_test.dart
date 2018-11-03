@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
+import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 
 import 'package:scratch_space/scratch_space.dart';
@@ -25,13 +26,13 @@ void main() {
       'myapp|lib/myapp.dart',
       'myapp|web/main.dart',
     ].fold<Map<AssetId, List<int>>>({}, (assets, serializedId) {
-      assets[new AssetId.parse(serializedId)] = serializedId.codeUnits;
+      assets[AssetId.parse(serializedId)] = serializedId.codeUnits;
       return assets;
     });
 
     setUp(() async {
-      scratchSpace = new ScratchSpace();
-      assetReader = new InMemoryAssetReader(sourceAssets: allAssets);
+      scratchSpace = ScratchSpace();
+      assetReader = InMemoryAssetReader(sourceAssets: allAssets);
       await scratchSpace.ensureAssets(allAssets.keys, assetReader);
     });
 
@@ -72,12 +73,12 @@ void main() {
 
     test('Can copy outputs back from the ScratchSpace', () async {
       // Write a fake output to the dir.
-      var outputId = new AssetId('myapp', 'lib/output.txt');
+      var outputId = AssetId('myapp', 'lib/output.txt');
       var outputFile = scratchSpace.fileFor(outputId);
       var outputContent = 'test!';
       await outputFile.writeAsString(outputContent);
 
-      var writer = new InMemoryAssetWriter();
+      var writer = InMemoryAssetWriter();
       await scratchSpace.copyOutput(outputId, writer);
 
       expect(writer.assets[outputId], decodedMatches(outputContent));
@@ -93,15 +94,13 @@ void main() {
     });
 
     test('Can\'t use a ScratchSpace after deleting it', () async {
-      // ignore: unawaited_futures
-      scratchSpace.delete();
+      unawaited(scratchSpace.delete());
       expect(() => scratchSpace.ensureAssets(allAssets.keys, assetReader),
           throwsStateError);
     });
 
     test('Can\'t delete a ScratchSpace twice', () async {
-      // ignore: unawaited_futures
-      scratchSpace.delete();
+      unawaited(scratchSpace.delete());
       expect(scratchSpace.delete, throwsStateError);
     });
 
@@ -110,25 +109,24 @@ void main() {
           () async {
         // Recursively "reads" from the previous numeric file until it gets
         // to 0, using the scratchSpace.
-        var reader = new RecursiveScratchSpaceAssetReader(scratchSpace);
-        var first = new AssetId('a', 'lib/100');
+        var reader = RecursiveScratchSpaceAssetReader(scratchSpace);
+        var first = AssetId('a', 'lib/100');
         expect(await reader.readAsBytes(first), utf8.encode('0'));
       });
     });
   });
 
   test('canonicalUriFor', () {
-    expect(canonicalUriFor(new AssetId('a', 'lib/a.dart')),
+    expect(canonicalUriFor(AssetId('a', 'lib/a.dart')),
         equals('package:a/a.dart'));
-    expect(canonicalUriFor(new AssetId('a', 'lib/src/a.dart')),
+    expect(canonicalUriFor(AssetId('a', 'lib/src/a.dart')),
         equals('package:a/src/a.dart'));
-    expect(
-        canonicalUriFor(new AssetId('a', 'web/a.dart')), equals('web/a.dart'));
-    expect(canonicalUriFor(new AssetId('a', 'a.dart')), equals('a.dart'));
+    expect(canonicalUriFor(AssetId('a', 'web/a.dart')), equals('web/a.dart'));
+    expect(canonicalUriFor(AssetId('a', 'a.dart')), equals('a.dart'));
 
-    expect(() => canonicalUriFor(new AssetId('a', 'lib/../../a.dart')),
+    expect(() => canonicalUriFor(AssetId('a', 'lib/../../a.dart')),
         throwsArgumentError);
-    expect(() => canonicalUriFor(new AssetId('a', 'web/../../a.dart')),
+    expect(() => canonicalUriFor(AssetId('a', 'web/../../a.dart')),
         throwsArgumentError);
   });
 }
@@ -147,7 +145,7 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
   Future<List<int>> readAsBytes(AssetId id) async {
     var idNum = int.parse(p.split(id.path).last);
     if (idNum > 0) {
-      var readFrom = new AssetId(id.package, 'lib/${idNum - 1}');
+      var readFrom = AssetId(id.package, 'lib/${idNum - 1}');
       await scratchSpace.ensureAssets([readFrom], this);
       return scratchSpace.fileFor(readFrom).readAsBytes();
     } else {
@@ -156,11 +154,11 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
   }
 
   @override
-  findAssets(_) => throw new UnimplementedError();
+  findAssets(_) => throw UnimplementedError();
 
   @override
-  readAsString(_, {encoding}) => throw new UnimplementedError();
+  readAsString(_, {encoding}) => throw UnimplementedError();
 
   @override
-  Future<Digest> digest(AssetId id) async => new Digest(await readAsBytes(id));
+  Future<Digest> digest(AssetId id) async => Digest(await readAsBytes(id));
 }

@@ -18,17 +18,17 @@ import 'watch.dart';
 class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
 
-  final packageGraph = new PackageGraph.forThisPackage();
+  final packageGraph = PackageGraph.forThisPackage();
 
   BuildCommandRunner(List<BuilderApplication> builderApplications)
-      : this.builderApplications = new List.unmodifiable(builderApplications),
+      : builderApplications = List.unmodifiable(builderApplications),
         super('build_runner', 'Unified interface for running Dart builds.') {
-    addCommand(new BuildCommand());
-    addCommand(new WatchCommand());
-    addCommand(new ServeCommand());
-    addCommand(new TestCommand());
-    addCommand(new CleanCommand());
-    addCommand(new RunCommand());
+    addCommand(BuildCommand());
+    addCommand(WatchCommand());
+    addCommand(ServeCommand());
+    addCommand(TestCommand(packageGraph));
+    addCommand(CleanCommand());
+  addCommand(RunCommand());
   }
 
   // CommandRunner._usageWithoutDescription is private – this is a reasonable

@@ -10,24 +10,19 @@ import 'options.dart';
 import 'runner.dart';
 
 abstract class BuildRunnerCommand extends Command<int> {
-  Logger get logger => new Logger(name);
+  Logger get logger => Logger(name);
 
   List<BuilderApplication> get builderApplications =>
       (runner as BuildCommandRunner).builderApplications;
 
   PackageGraph get packageGraph => (runner as BuildCommandRunner).packageGraph;
 
-  BuildRunnerCommand() {
-    _addBaseFlags();
+  BuildRunnerCommand({bool symlinksDefault}) {
+    _addBaseFlags(symlinksDefault ?? false);
   }
 
-  void _addBaseFlags() {
+  void _addBaseFlags(bool symlinksDefault) {
     argParser
-      ..addFlag(assumeTtyOption,
-          help: 'Enables colors and interactive input when the script does not'
-              ' appear to be running directly in a terminal, for instance when it'
-              ' is a subprocess',
-          negatable: true)
       ..addFlag(deleteFilesByDefaultOption,
           help:
               'By default, the user will be prompted to delete any files which '
@@ -81,7 +76,11 @@ abstract class BuildRunnerCommand extends Command<int> {
           help: 'Build with release mode defaults for builders.')
       ..addMultiOption(defineOption,
           splitCommas: false,
-          help: 'Sets the global `options` config for a builder by key.');
+          help: 'Sets the global `options` config for a builder by key.')
+      ..addFlag(symlinkOption,
+          defaultsTo: symlinksDefault,
+          negatable: true,
+          help: 'Symlink files in the output directories, instead of copying.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.
@@ -89,7 +88,7 @@ abstract class BuildRunnerCommand extends Command<int> {
   /// You may override this to return more specific options if desired, but they
   /// must extend [SharedOptions].
   SharedOptions readOptions() {
-    return new SharedOptions.fromParsedArgs(
+    return SharedOptions.fromParsedArgs(
         argResults, argResults.rest, packageGraph.root.name, this);
   }
 }

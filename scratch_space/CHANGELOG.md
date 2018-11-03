@@ -1,3 +1,11 @@
+## 0.0.3+2
+
+- Declare support for `package:build` version `1.x.x`.
+
+## 0.0.3+1
+
+- Increased the upper bound for the sdk to `<3.0.0`.
+
 ## 0.0.3
 
 - Use digests to improve `ensureAssets` performance.

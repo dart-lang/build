@@ -6,10 +6,12 @@ import 'dart:async';
 import 'package:async/async.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:pedantic/pedantic.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/build_runner.dart';
+import 'package:build_runner/src/server/server.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_test/build_test.dart';
 
@@ -21,8 +23,8 @@ void main() {
     InMemoryRunnerAssetWriter writer;
 
     setUp(() async {
-      _terminateServeController = new StreamController();
-      writer = new InMemoryRunnerAssetWriter();
+      _terminateServeController = StreamController();
+      writer = InMemoryRunnerAssetWriter();
       await writer.writeAsString(makeAssetId('a|.packages'), '''
 # Fake packages file
 a:file://fake/pkg/path
@@ -36,8 +38,8 @@ a:file://fake/pkg/path
 
     test('does basic builds', () async {
       var handler = await createHandler(
-          [applyToRoot(new TestBuilder())], {'a|web/a.txt': 'a'}, writer);
-      var results = new StreamQueue(handler.buildResults);
+          [applyToRoot(TestBuilder())], {'a|web/a.txt': 'a'}, writer);
+      var results = StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
@@ -48,51 +50,49 @@ a:file://fake/pkg/path
     });
 
     test('blocks serving files until the build is done', () async {
-      var buildBlocker1 = new Completer();
+      var buildBlocker1 = Completer();
       var nextBuildBlocker = buildBlocker1.future;
 
-      var handler = await createHandler([
-        applyToRoot(new TestBuilder(extraWork: (_, __) => nextBuildBlocker))
-      ], {
-        'a|web/a.txt': 'a'
-      }, writer);
+      var handler = await createHandler(
+          [applyToRoot(TestBuilder(extraWork: (_, __) => nextBuildBlocker))],
+          {'a|web/a.txt': 'a'},
+          writer);
       var webHandler = handler.handlerFor('web');
-      var results = new StreamQueue(handler.buildResults);
+      var results = StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
       await wait(100);
 
-      var request =
-          new Request('GET', Uri.parse('http://localhost:8000/a.txt'));
-      // ignore: unawaited_futures
-      (webHandler(request) as Future<Response>).then((Response response) {
+      var request = Request('GET', Uri.parse('http://localhost:8000/a.txt'));
+      unawaited((webHandler(request) as Future<Response>)
+          .then(expectAsync1((Response response) {
         expect(buildBlocker1.isCompleted, isTrue,
             reason: 'Server shouldn\'t respond until builds are done.');
-      });
+      })));
       await wait(250);
       buildBlocker1.complete();
       var result = await results.next;
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       /// Next request completes right away.
-      var buildBlocker2 = new Completer();
-      // ignore: unawaited_futures
-      (webHandler(request) as Future<Response>).then((response) {
+      var buildBlocker2 = Completer();
+      unawaited((webHandler(request) as Future<Response>)
+          .then(expectAsync1((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isFalse);
-      });
+      })));
 
       /// Make an edit to force another build, and we should block again.
       nextBuildBlocker = buildBlocker2.future;
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       // Give the build enough time to get started.
       await wait(500);
-      var done = new Completer();
-      // ignore: unawaited_futures
-      (webHandler(request) as Future<Response>).then((response) {
+      var done = Completer();
+      unawaited((webHandler(request) as Future<Response>)
+          .then(expectAsync1((response) {
         expect(buildBlocker1.isCompleted, isTrue);
         expect(buildBlocker2.isCompleted, isTrue);
         done.complete();
-      });
+      })));
       await wait(250);
       buildBlocker2.complete();
       result = await results.next;
@@ -104,7 +104,7 @@ a:file://fake/pkg/path
   });
 }
 
-final _debounceDelay = new Duration(milliseconds: 10);
+final _debounceDelay = Duration(milliseconds: 10);
 StreamController _terminateServeController;
 
 /// Start serving files and running builds.
@@ -115,9 +115,9 @@ Future<ServeHandler> createHandler(List<BuilderApplication> builders,
   }));
   final packageGraph =
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
-  final reader = new InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+  final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph.root.name);
-  final watcherFactory = (String path) => new FakeWatcher(path);
+  final watcherFactory = (String path) => FakeWatcher(path);
 
   return watch_impl.watch(builders,
       deleteFilesByDefault: true,
