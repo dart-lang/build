@@ -40,6 +40,11 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
     messagePort?.close();
     await errorListener?.cancel();
 
+    var buildScript = await generateBuildScript();
+    File(scriptLocation)
+      ..createSync(recursive: true)
+      ..writeAsStringSync(buildScript);
+
     scriptExitCode = await _createSnapshotIfMissing(logger);
     if (scriptExitCode != 0) return scriptExitCode;
 
