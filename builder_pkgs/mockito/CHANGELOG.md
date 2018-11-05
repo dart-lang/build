@@ -1,7 +1,8 @@
 ## 3.0.2
 
-* Update the internal version of _[test_api](https://pub.dartlang.org/packages/test_api)_ to
-  be compatible with _[test_core](https://pub.dartlang.org/packages/test_core)_.
+* Rollback the _[test_api](https://pub.dartlang.org/packages/test_api)_ part of
+  the 3.0.1 release. This was breaking tests that use Flutter's current test
+  tools, and will instead be released as part of Mockito 4.0.0.
 
 ## 3.0.1
 
