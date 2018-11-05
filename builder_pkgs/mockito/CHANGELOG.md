@@ -1,3 +1,8 @@
+## 3.0.2
+
+* Update the internal version of _[test_api](https://pub.dartlang.org/packages/test_api)_ to
+  be compatible with _[test_core](https://pub.dartlang.org/packages/test_core)_.
+
 ## 3.0.1
 
 * Replace the dependency on the
