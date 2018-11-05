@@ -68,6 +68,7 @@ void _stdIOLogListener(LogRecord record, {bool verbose}) {
 String _loggerName(LogRecord record, bool verbose) {
   var knownNames = const [
     'ApplyBuilders',
+    'Bootstrap',
     'Build',
     'BuildConfigOverrides',
     'BuildDefinition',
