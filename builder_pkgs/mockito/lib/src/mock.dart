@@ -17,7 +17,11 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
 import 'package:mockito/src/invocation_matcher.dart';
-import 'package:test/test.dart';
+import 'package:test_api/test_api.dart';
+// TODO(srawlins): Remove this when we no longer need to check for an
+// incompatiblity between test_api and test.
+// https://github.com/dart-lang/mockito/issues/175
+import 'package:test_api/src/backend/invoker.dart';
 
 bool _whenInProgress = false;
 bool _untilCalledInProgress = false;
@@ -659,12 +663,55 @@ class VerificationResult {
   List<dynamic> captured = [];
   int callCount;
 
+  // Whether the test API mismatch has been checked.
+  bool _testApiMismatchHasBeenChecked = false;
+
   VerificationResult(this.callCount) {
     captured = new List<dynamic>.from(_capturedArgs, growable: false);
     _capturedArgs.clear();
   }
 
+  /// Check for a version incompatibility between mockito, test, and test_api.
+  ///
+  /// This incompatibility results in an inscrutible error for users. Catching
+  /// it here allows us to give some steps to fix.
+  // TODO(srawlins): Remove this when we don't need to check for an
+  // incompatiblity between test_api and test any more.
+  // https://github.com/dart-lang/mockito/issues/175
+  void _checkTestApiMismatch() {
+    try {
+      Invoker.current;
+    } on CastError catch (e) {
+      if (!e
+          .toString()
+          .contains("type 'Invoker' is not a subtype of type 'Invoker'")) {
+        // Hmm. This is a different CastError from the one we're trying to
+        // protect against. Let it go.
+        return;
+      }
+      print('Error: Package incompatibility between mockito, test, and '
+          'test_api packages:');
+      print('');
+      print('* mockito ^4.0.0 is incompatible with test <1.4.0');
+      print('* mockito <4.0.0 is incompatible with test ^1.4.0');
+      print('');
+      print('As mockito does not have a dependency on the test package, '
+          'nothing stopped you from landing in this situation. :( '
+          'Apologies.');
+      print('');
+      print('To fix: bump your dependency on the test package to something '
+          'like: ^1.4.0');
+      rethrow;
+    }
+  }
+
   void called(matcher) {
+    if (!_testApiMismatchHasBeenChecked) {
+      // Only execute the check below once. `Invoker.current` may look like a
+      // cheap getter, but it involves Zones and casting.
+      _testApiMismatchHasBeenChecked = true;
+      _checkTestApiMismatch();
+    }
     expect(callCount, wrapMatcher(matcher),
         reason: "Unexpected number of calls");
   }
