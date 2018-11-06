@@ -1,3 +1,10 @@
+## 1.1.1
+
+### Bug Fixes
+
+- Handle re-snapshotting the build script on SDK updates.
+- Suppress header for the `Bootstrap` logger.
+
 ## 1.1.0
 
 ### New Features

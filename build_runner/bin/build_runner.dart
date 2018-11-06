@@ -4,23 +4,18 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:stack_trace/stack_trace.dart';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
+import 'package:build_runner/src/build_script_generate/bootstrap.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
-
-const scriptSnapshotLocation = '$scriptLocation.snapshot';
-final logger = Logger('Bootstrap');
 
 Future<Null> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
@@ -57,92 +52,14 @@ Future<Null> main(List<String> args) async {
   }
 
   StreamSubscription logListener;
-  if (commandName != _generateCommand) {
-    logListener = Logger.root.onRecord.listen(stdIOLogListener());
-  }
-
-  while ((exitCode = await generateAndRun(commandName, args)) ==
-      ExitCode.tempFail.code) {}
-  await logListener?.cancel();
-}
-
-/// Generates the build script, snapshots it if needed, and runs it
-///
-/// Returns the desired exit code from running the build script.
-Future<int> generateAndRun(String commandName, List<String> args) async {
-  var buildScript = await generateBuildScript();
-  var scriptFile = File(scriptLocation)..createSync(recursive: true);
-  scriptFile.writeAsStringSync(buildScript);
   if (commandName == _generateCommand) {
-    print(p.absolute(scriptLocation));
-    return 0;
+    exitCode = await commandRunner.runCommand(parsedArgs);
+    return;
   }
+  logListener = Logger.root.onRecord.listen(stdIOLogListener());
 
-  var scriptExitCode = await _createSnapshotIfMissing();
-  if (scriptExitCode != 0) return scriptExitCode;
-
-  var exitPort = ReceivePort();
-  var errorPort = ReceivePort();
-  var messagePort = ReceivePort();
-  var errorListener = errorPort.listen((e) {
-    stderr.writeln('\n\nYou have hit a bug in build_runner');
-    stderr.writeln('Please file an issue with reproduction steps at '
-        'https://github.com/dart-lang/build/issues\n\n');
-    final error = e[0];
-    final trace = e[1] as String;
-    stderr.writeln(error);
-    stderr.writeln(Trace.parse(trace).terse);
-    if (scriptExitCode == 0) scriptExitCode = 1;
-  });
-  try {
-    await Isolate.spawnUri(Uri.file(p.absolute(scriptSnapshotLocation)), args,
-        messagePort.sendPort,
-        onExit: exitPort.sendPort, onError: errorPort.sendPort);
-  } on IsolateSpawnException catch (e) {
-    logger.severe(
-        'Failed to launch the build script. '
-        'This is likely due to a misconfigured builder definition. '
-        'See the generated script at $scriptLocation to find errors.',
-        e);
-    messagePort.sendPort.send(ExitCode.config.code);
-    exitPort.sendPort.send(null);
-  }
-  StreamSubscription exitCodeListener;
-  exitCodeListener = messagePort.listen((isolateExitCode) {
-    if (isolateExitCode is int) {
-      scriptExitCode = isolateExitCode;
-    } else {
-      throw StateError(
-          'Bad response from isolate, expected an exit code but got '
-          '$isolateExitCode');
-    }
-    exitCodeListener.cancel();
-    exitCodeListener = null;
-  });
-  await exitPort.first;
-  await errorListener.cancel();
-  await exitCodeListener?.cancel();
-
-  return scriptExitCode;
-}
-
-/// Creates a script snapshot for the build script.
-///
-/// Returns zero for success or a number for failure which should be set to the
-/// exit code.
-Future<int> _createSnapshotIfMissing() async {
-  var snapshotFile = File(scriptSnapshotLocation);
-  if (!await snapshotFile.exists()) {
-    await logTimedAsync(logger, 'Creating build script snapshot...', () async {
-      await Process.run(Platform.executable,
-          ['--snapshot=$scriptSnapshotLocation', scriptLocation]);
-    });
-    if (!await snapshotFile.exists()) {
-      logger.severe('Failed to snapshot build script $scriptLocation');
-      return ExitCode.software.code;
-    }
-  }
-  return 0;
+  while ((exitCode = await generateAndRun(args)) == ExitCode.tempFail.code) {}
+  await logListener?.cancel();
 }
 
 const _generateCommand = 'generate-build-script';
@@ -157,4 +74,13 @@ class _GenerateBuildScript extends Command<int> {
 
   @override
   bool get hidden => true;
+
+  @override
+  Future<int> run() async {
+    var buildScript = await generateBuildScript();
+    var scriptFile = File(scriptLocation)..createSync(recursive: true);
+    scriptFile.writeAsStringSync(buildScript);
+    print(p.absolute(scriptLocation));
+    return 0;
+  }
 }
