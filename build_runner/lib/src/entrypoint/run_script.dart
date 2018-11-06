@@ -140,6 +140,7 @@ class RunCommand extends BuildRunnerCommand {
         p.toUri(scriptPath),
         passedArgs,
         null,
+        errorsAreFatal: true,
         onExit: onExit.sendPort,
         onError: onError.sendPort,
         packageConfig: p.toUri(packageConfigPath),
