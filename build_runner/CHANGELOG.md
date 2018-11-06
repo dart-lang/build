@@ -3,7 +3,7 @@
 ### Bug Fixes
 
 - Handle re-snapshotting the build script on SDK updates.
-- Add `Bootstrap` to the list of known loggers.
+- Suppress header for the `Bootstrap` logger.
 
 ## 1.1.0
 
