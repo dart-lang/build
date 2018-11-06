@@ -700,7 +700,8 @@ class VerificationResult {
           'Apologies.');
       print('');
       print('To fix: bump your dependency on the test package to something '
-          'like: ^1.4.0');
+          'like: ^1.4.0, or downgrade your dependency on mockito to something '
+          'like: ^3.0.0');
       rethrow;
     }
   }
