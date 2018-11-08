@@ -18,6 +18,7 @@ import 'errors.dart';
 import 'logging.dart';
 import 'run_builders.dart';
 import 'summaries/summaries.dart';
+import 'resolver/resolvers.dart';
 import 'timing.dart';
 
 /// Runs builds as a worker.
@@ -141,7 +142,9 @@ Future<IOSinkLogHandle> _runBuilders(
   List<String> builderArgs;
   if (buildArgs.useSummaries) {
     var summaryOptions = SummaryOptions.fromArgs(buildArgs.additionalArgs);
-    resolvers = SummaryResolvers(summaryOptions, packageMap);
+    resolvers = buildArgs.useAnalysisDriver
+        ? AnalysisDriverResolvers(summaryOptions, packageMap)
+        : SummaryResolvers(summaryOptions, packageMap);
     builderArgs = summaryOptions.additionalArgs;
   } else {
     resolvers = AnalyzerResolvers();

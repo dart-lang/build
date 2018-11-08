@@ -16,6 +16,7 @@ const _packagePathParam = 'package-path';
 const _packageMapParam = 'package-map';
 const _srcsParam = 'srcs-file';
 const _summariesParam = 'use-summaries';
+const _analysisDriverParam = 'use-analysis-driver';
 
 // All arguments other than `--help` and `--use-summaries` are required.
 final _argParser = ArgParser()
@@ -36,6 +37,10 @@ final _argParser = ArgParser()
       negatable: true,
       defaultsTo: true,
       help: 'Whether to use summaries for analysis')
+  ..addFlag(_analysisDriverParam,
+      negatable: true,
+      defaultsTo: false,
+      help: 'Whether to use the driver model for analysis')
   ..addOption(_packagePathParam,
       help: 'The path of the package we are processing relative to CWD')
   ..addOption(_packageMapParam,
@@ -66,24 +71,27 @@ class BuildArgs {
   final bool help;
   final bool isWorker;
   final bool useSummaries;
+  final bool useAnalysisDriver;
   final List<String> additionalArgs;
 
   BuildArgs._(
-      this.rootDirs,
-      this.packagePath,
-      this.outDir,
-      this.logPath,
-      this.buildExtensions,
-      this.packageMapPath,
-      this.srcsPath,
-      this.help,
-      this.logLevel,
-      {List<String> additionalArgs,
-      bool isWorker,
-      bool useSummaries})
-      : additionalArgs = additionalArgs ?? [],
+    this.rootDirs,
+    this.packagePath,
+    this.outDir,
+    this.logPath,
+    this.buildExtensions,
+    this.packageMapPath,
+    this.srcsPath,
+    this.help,
+    this.logLevel, {
+    List<String> additionalArgs,
+    bool isWorker,
+    bool useSummaries,
+    bool useAnalysisDriver,
+  })  : additionalArgs = additionalArgs ?? [],
         isWorker = isWorker ?? false,
-        useSummaries = useSummaries ?? true;
+        useSummaries = useSummaries ?? true,
+        useAnalysisDriver = useAnalysisDriver ?? false;
 
   factory BuildArgs.parse(List<String> args, {bool isWorker}) {
     // When not running as a worker, but that mode is supported, then we get
@@ -114,12 +122,23 @@ class BuildArgs {
     final srcsPath = _requiredArg(argResults, _srcsParam) as String;
     final help = argResults[_helpParam] as bool;
     final useSummaries = argResults[_summariesParam] as bool;
+    final useAnalysisDriver = argResults[_analysisDriverParam] as bool;
 
-    return BuildArgs._(rootDirs, packagePath, outDir, logPath, buildExtensions,
-        packageMapPath, srcsPath, help, logLevel,
-        additionalArgs: argResults.rest,
-        isWorker: isWorker,
-        useSummaries: useSummaries);
+    return BuildArgs._(
+      rootDirs,
+      packagePath,
+      outDir,
+      logPath,
+      buildExtensions,
+      packageMapPath,
+      srcsPath,
+      help,
+      logLevel,
+      additionalArgs: argResults.rest,
+      isWorker: isWorker,
+      useSummaries: useSummaries,
+      useAnalysisDriver: useAnalysisDriver,
+    );
   }
 
   void printUsage() {
