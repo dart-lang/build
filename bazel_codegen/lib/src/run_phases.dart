@@ -16,9 +16,9 @@ import 'assets/asset_reader.dart';
 import 'assets/asset_writer.dart';
 import 'errors.dart';
 import 'logging.dart';
+import 'resolver/resolvers.dart';
 import 'run_builders.dart';
 import 'summaries/summaries.dart';
-import 'resolver/resolvers.dart';
 import 'timing.dart';
 
 /// Runs builds as a worker.
