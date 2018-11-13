@@ -1,3 +1,9 @@
+## 1.1.2
+
+- Improve error message when the generated build script cannot be parsed or
+  compiled and exit with code `78` to indicate that there is a problem with
+  configuration in the project or a dependency's `build.yaml`.
+
 ## 1.1.1
 
 ### Bug Fixes

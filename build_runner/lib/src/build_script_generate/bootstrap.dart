@@ -40,10 +40,14 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
     messagePort?.close();
     await errorListener?.cancel();
 
-    var buildScript = await generateBuildScript();
-    File(scriptLocation)
-      ..createSync(recursive: true)
-      ..writeAsStringSync(buildScript);
+    try {
+      var buildScript = await generateBuildScript();
+      File(scriptLocation)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(buildScript);
+    } on CannotBuildException {
+      return ExitCode.config.code;
+    }
 
     scriptExitCode = await _createSnapshotIfMissing(logger);
     if (scriptExitCode != 0) return scriptExitCode;
@@ -109,14 +113,20 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
 /// exit code.
 Future<int> _createSnapshotIfMissing(Logger logger) async {
   var snapshotFile = File(scriptSnapshotLocation);
+  String stderr;
   if (!await snapshotFile.exists()) {
     await logTimedAsync(logger, 'Creating build script snapshot...', () async {
-      await Process.run(Platform.executable,
+      var snapshot = await Process.run(Platform.executable,
           ['--snapshot=$scriptSnapshotLocation', scriptLocation]);
+      stderr = snapshot.stderr as String;
     });
     if (!await snapshotFile.exists()) {
-      logger.severe('Failed to snapshot build script $scriptLocation');
-      return ExitCode.software.code;
+      logger.severe('Failed to snapshot build script $scriptLocation.\n'
+          'This is likely caused by a misconfigured builder definition.');
+      if (stderr.isNotEmpty) {
+        logger.severe(stderr);
+      }
+      return ExitCode.config.code;
     }
   }
   return 0;
