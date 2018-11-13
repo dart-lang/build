@@ -73,8 +73,7 @@ class AnalysisResolver implements ReleasableResolver {
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
-    var uri = assetUri(assetId);
-    var source = _analysisDriver.sourceFactory.forUri2(uri);
+    var source = _analysisDriver.sourceFactory.forUri2(assetId.uri);
     return source != null &&
         (await _analysisDriver.getSourceKind(assetPath(assetId))) ==
             SourceKind.LIBRARY;
@@ -83,7 +82,7 @@ class AnalysisResolver implements ReleasableResolver {
   @override
   Future<LibraryElement> libraryFor(AssetId assetId) async {
     var path = assetPath(assetId);
-    var uri = assetUri(assetId);
+    var uri = assetId.uri;
     var source = _analysisDriver.sourceFactory.forUri2(uri);
     if (source == null) throw ArgumentError('missing source for $uri');
     var kind = await _analysisDriver.getSourceKind(path);

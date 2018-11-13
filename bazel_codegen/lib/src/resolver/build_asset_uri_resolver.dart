@@ -34,18 +34,18 @@ class BuildAssetUriResolver implements UriResolver {
     if (uri.isScheme('dart')) return null;
     final id = (uri.isScheme('package') || uri.isScheme('asset'))
         ? AssetId.resolve('$uri')
-        : AssetId(p.split(uri.path).elementAt(1),
-            p.joinAll(p.split(uri.path).skip(2)));
+        : AssetId(p.url.split(uri.path).elementAt(1),
+            p.url.joinAll(p.url.split(uri.path).skip(2)));
     if (!_cachedAssets.contains(id)) return null;
     return resourceProvider.getFile(assetPath(id)).createSource();
   }
 
   @override
-  Uri restoreAbsolute(Source source) => p.toUri(source.fullName);
+  Uri restoreAbsolute(Source source) => AssetId(
+          p.url.split(source.fullName).elementAt(1),
+          p.url.joinAll(p.url.split(source.fullName).skip(2)))
+      .uri;
 }
-
-Uri assetUri(AssetId assetId) =>
-    p.toUri(p.url.join('/${assetId.package}', assetId.path));
 
 String assetPath(AssetId assetId) =>
     p.url.join('/${assetId.package}', assetId.path);
