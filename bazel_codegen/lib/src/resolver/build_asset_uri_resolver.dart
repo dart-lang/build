@@ -1,7 +1,6 @@
 // Copyright (c) 2018, the Dart project authors. Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
 import 'dart:async';
 
 import 'package:analyzer/file_system/memory_file_system.dart';
@@ -31,20 +30,31 @@ class BuildAssetUriResolver implements UriResolver {
 
   @override
   Source resolveAbsolute(Uri uri, [Uri actualUri]) {
-    if (uri.isScheme('dart')) return null;
-    final id = (uri.isScheme('package') || uri.isScheme('asset'))
-        ? AssetId.resolve('$uri')
-        : AssetId(p.url.split(uri.path).elementAt(1),
-            p.url.joinAll(p.url.split(uri.path).skip(2)));
-    if (!_cachedAssets.contains(id)) return null;
-    return resourceProvider.getFile(assetPath(id)).createSource();
+    final cachedId = _lookupAsset(uri);
+    if (cachedId == null) return null;
+    return resourceProvider
+        .getFile(assetPath(cachedId))
+        .createSource(cachedId.uri);
   }
 
   @override
-  Uri restoreAbsolute(Source source) => AssetId(
-          p.url.split(source.fullName).elementAt(1),
-          p.url.joinAll(p.url.split(source.fullName).skip(2)))
-      .uri;
+  Uri restoreAbsolute(Source source) => _lookupAsset(source.uri)?.uri;
+
+  /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
+  ///
+  /// Handles 'package:' or 'asset:' URIs, as well as 'file:' URIs that have the
+  /// same pattern used by [assetPath].
+  ///
+  /// Returns null if the Uri cannot be parsed or is not cached.
+  AssetId _lookupAsset(Uri uri) {
+    if (uri.isScheme('dart')) return null;
+    final id = (uri.isScheme('package') ||
+            uri.isScheme('asset') ||
+            uri.isScheme('file'))
+        ? AssetId.resolve('$uri')
+        : null;
+    return _cachedAssets.lookup(id);
+  }
 }
 
 String assetPath(AssetId assetId) =>
