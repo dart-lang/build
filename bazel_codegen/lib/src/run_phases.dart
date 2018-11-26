@@ -16,6 +16,7 @@ import 'assets/asset_reader.dart';
 import 'assets/asset_writer.dart';
 import 'errors.dart';
 import 'logging.dart';
+import 'resolver/resolvers.dart';
 import 'run_builders.dart';
 import 'summaries/summaries.dart';
 import 'timing.dart';
@@ -141,7 +142,9 @@ Future<IOSinkLogHandle> _runBuilders(
   List<String> builderArgs;
   if (buildArgs.useSummaries) {
     var summaryOptions = SummaryOptions.fromArgs(buildArgs.additionalArgs);
-    resolvers = SummaryResolvers(summaryOptions, packageMap);
+    resolvers = buildArgs.useAnalysisDriver
+        ? AnalysisDriverResolvers(summaryOptions, packageMap)
+        : SummaryResolvers(summaryOptions, packageMap);
     builderArgs = summaryOptions.additionalArgs;
   } else {
     resolvers = AnalyzerResolvers();
