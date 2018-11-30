@@ -102,7 +102,6 @@ class BuildImpl {
         options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
     if (buildPhases.isEmpty) {
       _logger.severe('Nothing can be built, yet a build was requested.');
-      throw CannotBuildException();
     }
     var buildDefinition = await BuildDefinition.prepareWorkspace(
         environment, options, buildPhases);
