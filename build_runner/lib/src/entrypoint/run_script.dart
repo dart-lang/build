@@ -10,6 +10,7 @@ import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
+
 import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
