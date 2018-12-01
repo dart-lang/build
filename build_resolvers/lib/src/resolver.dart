@@ -288,6 +288,9 @@ class _AssetUriResolver implements UriResolver {
   _AssetUriResolver(this._resolver);
 
   @override
+  void clearCache() {}
+
+  @override
   Source resolveAbsolute(Uri uri, [Uri actualUri]) {
     assert(uri.scheme != 'dart');
     AssetId assetId;

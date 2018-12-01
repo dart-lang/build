@@ -29,6 +29,9 @@ class BuildAssetUriResolver implements UriResolver {
   }
 
   @override
+  void clearCache() {}
+
+  @override
   Source resolveAbsolute(Uri uri, [Uri actualUri]) {
     final cachedId = _lookupAsset(uri);
     if (cachedId == null) return null;
