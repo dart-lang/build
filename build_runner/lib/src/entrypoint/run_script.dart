@@ -124,6 +124,11 @@ class RunCommand extends BuildRunnerCommand {
       onExit = ReceivePort();
       onError = ReceivePort();
 
+      // Cleanup after exit.
+      onExit.listen((_) {
+        if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);
+      });
+
       // On an error, kill the isolate, and log the error.
       onError.listen((e) {
         onExit.close();
