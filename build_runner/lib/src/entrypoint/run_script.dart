@@ -76,6 +76,13 @@ class RunCommand extends BuildRunnerCommand {
     var passedArgs = argResults.rest.skip(1).toList();
     var options = readOptions();
 
+    // Ensure the extension is .dart.
+    if (p.extension(scriptName) != '.dart') {
+      logger.severe(
+          '$scriptName is not a valid Dart file, and cannot be run in the VM.');
+      return ExitCode.usage.code;
+    }
+
     // Create a temporary directory in which to execute the script.
     var tempPath = Directory.systemTemp
         .createTempSync('build_runner_run_script')
@@ -118,7 +125,7 @@ class RunCommand extends BuildRunnerCommand {
       }
 
       // Find the path of the script to run.
-      var scriptPath = p.setExtension(p.join(tempPath, scriptName), '.dart');
+      var scriptPath = p.join(tempPath, scriptName);
       var packageConfigPath = p.join(tempPath, '.packages');
 
       onExit = ReceivePort();
