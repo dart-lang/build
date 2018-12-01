@@ -121,20 +121,18 @@ class RunCommand extends BuildRunnerCommand {
       var scriptPath = p.setExtension(p.join(tempPath, scriptName), '.dart');
       var packageConfigPath = p.join(tempPath, '.packages');
 
-      Isolate isolate;
       onExit = ReceivePort();
       onError = ReceivePort();
 
       // On an error, kill the isolate, and log the error.
       onError.listen((e) {
-        isolate?.kill();
         onExit.close();
         onError.close();
         logger.severe('Unhandled error from script: $scriptName', e[0],
             StackTrace.fromString(e[1].toString()));
       });
 
-      isolate = await Isolate.spawnUri(
+      await Isolate.spawnUri(
         p.toUri(scriptPath),
         passedArgs,
         null,
