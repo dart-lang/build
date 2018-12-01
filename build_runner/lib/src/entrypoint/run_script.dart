@@ -30,9 +30,6 @@ class RunCommand extends BuildRunnerCommand {
 
   @override
   SharedOptions readOptions() {
-    // This command doesn't allow specifying directories to build, instead it
-    // always builds the `test` directory.
-    //
     // Here we validate that [argResults.rest] is exactly equal to all the
     // arguments after the `--`.
 
