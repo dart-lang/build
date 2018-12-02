@@ -27,7 +27,7 @@ class BuildAssetUriResolver extends UriResolver {
       }
     }
   }
-  
+
   @override
   Source resolveAbsolute(Uri uri, [Uri actualUri]) => _knownAssets[uri];
 
