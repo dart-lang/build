@@ -14,7 +14,7 @@ typedef Future<String> ReadAsset(AssetId assetId);
 ///
 /// Will only read each asset once. This resolver does not handle cases where
 /// assets may change during a build process.
-class BuildAssetUriResolver implements UriResolver {
+class BuildAssetUriResolver extends UriResolver {
   final _cachedAssets = Set<AssetId>();
   final resourceProvider = MemoryResourceProvider();
 
@@ -27,9 +27,6 @@ class BuildAssetUriResolver implements UriResolver {
       resourceProvider.newFile(assetPath(asset), await read(asset));
     }
   }
-
-  @override
-  void clearCache() {}
 
   @override
   Source resolveAbsolute(Uri uri, [Uri actualUri]) {
