@@ -67,14 +67,21 @@ a:file://fake/pkg/path
         expect(await results.hasNext, isFalse);
       });
 
-      test('emits an error when no builders are specified', () async {
+      test('emits an error message when no builders are specified', () async {
+        var logs = <LogRecord>[];
         var buildState = await startWatch(
           [],
           {'a|web/a.txt.copy': 'a'},
           writer,
+          onLog: logs.add,
+          logLevel: Level.SEVERE,
         );
         var result = await buildState.buildResults.first;
-        expect(result.status, BuildStatus.failure);
+        expect(result.status, BuildStatus.success);
+        expect(
+            logs,
+            contains(predicate((LogRecord record) => record.message.contains(
+                'Nothing can be built, yet a build was requested.'))));
       });
 
       test('rebuilds on file updates outside hardcoded whitelist', () async {
