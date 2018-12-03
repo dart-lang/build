@@ -450,16 +450,13 @@ void main() {
         rootPackage('a', path: 'a/'): ['b'],
         package('b', path: 'a/b'): []
       });
-      expect(
-          () => testBuilders(
-              [
-                apply('', [(_) => TestBuilder()], toPackage('b'),
-                    hideOutput: false)
-              ],
-              {'b|lib/b.txt': 'b'},
-              packageGraph: packageGraph,
-              outputs: {}),
-          throwsA(TypeMatcher<CannotBuildException>()));
+      await testBuilders(
+          [
+            apply('', [(_) => TestBuilder()], toPackage('b'), hideOutput: false)
+          ],
+          {'b|lib/b.txt': 'b'},
+          packageGraph: packageGraph,
+          outputs: {});
     });
 
     group('with `hideOutput: true`', () {

@@ -1,3 +1,8 @@
+## 1.1.1
+
+- Fix a bugs where adding new dependencies or removing dependencies could cause
+  subsequent build errors, requiring a `pub run build_runner clean` to fix.
+
 ## 1.1.0
 
 - Support running the build script as a snapshot.
