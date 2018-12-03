@@ -283,7 +283,7 @@ class AssetBasedSource extends Source {
 }
 
 /// Implementation of Analyzer's UriResolver for Barback based assets.
-class _AssetUriResolver implements UriResolver {
+class _AssetUriResolver extends UriResolver {
   final AnalyzerResolver _resolver;
   _AssetUriResolver(this._resolver);
 

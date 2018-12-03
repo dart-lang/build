@@ -1,6 +1,8 @@
 # 0.3.4
 
 - Fix the exceptions thrown when attempting to read invalid assets.
+- Updated BuildAssetUriResolver classes to prepare for a future release of the
+  analyzer.
 
 # 0.3.3+1
 
