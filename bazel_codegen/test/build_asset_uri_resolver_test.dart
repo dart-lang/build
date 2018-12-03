@@ -23,7 +23,7 @@ main() {
   test('returns an empty source for unknown assets', () {
     var source = resolver.resolveAbsolute(Uri.parse('package:foo/bar.dart'));
     expect(source.exists(), isFalse);
-    expect(() => source.contents, throwsA(const TypeMatcher<StateError>()));
+    expect(() => source.contents, throwsStateError);
   });
 
   test('can resolve known sources', () async {
