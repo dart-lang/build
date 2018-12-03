@@ -23,13 +23,17 @@ class BuildAssetUriResolver implements UriResolver {
     for (var asset in assets.where((asset) => asset.path.endsWith('.dart'))) {
       var uri = assetUri(asset);
       if (!_knownAssets.containsKey(uri)) {
-        _knownAssets[uri] = AssetSource(asset, await read(asset));
+        _knownAssets[uri] = AssetSource(asset, await read(asset), true);
       }
     }
   }
 
   @override
-  Source resolveAbsolute(Uri uri, [Uri actualUri]) => _knownAssets[uri];
+  Source resolveAbsolute(Uri uri, [Uri actualUri]) => _knownAssets.putIfAbsent(
+      uri,
+      () => uri.scheme == 'dart'
+          ? null
+          : AssetSource(AssetId.resolve(uri.toString()), null, false));
 
   @override
   Uri restoreAbsolute(Source source) {
@@ -40,11 +44,14 @@ class BuildAssetUriResolver implements UriResolver {
 class AssetSource implements Source {
   final AssetId _assetId;
   final String _content;
+  final bool _exists;
 
-  AssetSource(this._assetId, this._content);
+  AssetSource(this._assetId, this._content, this._exists);
 
   @override
-  TimestampedData<String> get contents => TimestampedData(0, _content);
+  TimestampedData<String> get contents => _exists
+      ? TimestampedData(0, _content)
+      : throw StateError('Attempted to read non-existent source');
 
   @override
   String get encoding => '$_assetId';
@@ -84,7 +91,7 @@ class AssetSource implements Source {
       other is AssetSource && other._assetId == _assetId;
 
   @override
-  bool exists() => true;
+  bool exists() => _exists;
 
   @override
   String toString() => 'AssetSource[$_assetId]';
