@@ -14,7 +14,7 @@ typedef Future<String> ReadAsset(AssetId assetId);
 ///
 /// Will only read each asset once. This resolver does not handle cases where
 /// assets may change during a build process.
-class BuildAssetUriResolver implements UriResolver {
+class BuildAssetUriResolver extends UriResolver {
   final _cachedAssets = Set<AssetId>();
   final resourceProvider = MemoryResourceProvider();
 

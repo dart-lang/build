@@ -2,6 +2,8 @@
 
 - Fix the exceptions thrown when attempting to read invalid assets.
 - Return empty sources for unknown assets instead of null.
+- Updated BuildAssetUriResolver classes to prepare for a future release of the
+  analyzer.
 
 # 0.3.3+1
 

@@ -7,7 +7,9 @@ stages:
         - dartfmt: sdk
         - dartanalyzer: --fatal-infos --fatal-warnings .
   - unit_test:
-    - command: pub run build_runner test --delete-conflicting-outputs
+    # Run the script directly - running from snapshot has issues for packages
+    # that are depended on by build_runner itself.
+    - command: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs
 
 cache:
   directories:
