@@ -36,7 +36,7 @@ AnalysisDriver summaryAnalysisDriver(
   var summaryResolver =
       InSummaryUriResolver(PhysicalResourceProvider.INSTANCE, summaryData);
 
-  var resolvers = [buildAssetUriResolver, sdkResolver, summaryResolver];
+  var resolvers = [sdkResolver, summaryResolver, buildAssetUriResolver];
   var sourceFactory = SourceFactory(resolvers);
 
   var logger = PerformanceLog(null);
