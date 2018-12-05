@@ -1,6 +1,7 @@
 ## 0.2.2+7
 
 - Updated _AssetUriResolver to prepare for a future release of the analyzer.
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
 
 ## 0.2.2+6
 

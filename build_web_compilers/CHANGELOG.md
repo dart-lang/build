@@ -1,3 +1,7 @@
+## 0.4.4+3
+
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
+
 ## 0.4.4+2
 
 - Support `package:analyzer` version `0.33.x`.
