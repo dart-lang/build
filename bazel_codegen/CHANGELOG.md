@@ -4,6 +4,7 @@
 - Return empty sources for unknown assets instead of null.
 - Updated BuildAssetUriResolver classes to prepare for a future release of the
   analyzer.
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
 
 # 0.3.3+1
 

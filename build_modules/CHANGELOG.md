@@ -1,3 +1,7 @@
+## 1.0.3
+
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
+
 ## 1.0.2
 
 - Support the latest `package:json_annotation`.
