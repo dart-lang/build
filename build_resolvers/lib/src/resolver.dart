@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
+// ignore: deprecated_member_use
 import 'package:analyzer/analyzer.dart' show parseDirectives;
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
