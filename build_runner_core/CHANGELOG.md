@@ -1,6 +1,11 @@
+## 1.1.2
+
+- Fix a `NoSuchMethodError` that the user could get when adding new
+  dependencies.
+
 ## 1.1.1
 
-- Fix a bugs where adding new dependencies or removing dependencies could cause
+- Fix a bug where adding new dependencies or removing dependencies could cause
   subsequent build errors, requiring a `pub run build_runner clean` to fix.
 
 ## 1.1.0
