@@ -227,6 +227,7 @@ class _Loader {
           if (_runningFromSnapshot) {
             throw BuildScriptChangedException();
           }
+          return null;
         }
         if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
           _logger.warning(
@@ -238,6 +239,7 @@ class _Loader {
           if (_runningFromSnapshot) {
             throw BuildScriptChangedException();
           }
+          return null;
         }
         return cachedGraph;
       } on AssetGraphVersionException catch (_) {
