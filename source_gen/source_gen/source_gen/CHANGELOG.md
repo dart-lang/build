@@ -1,6 +1,8 @@
 ## 0.9.2
 
 * Avoid using the AST analyzer model from `LibraryReader`.
+* Don't create part files with no corresponding library.
+* Update analyzer constraint to allow 0.34.x.
 
 ## 0.9.1+3
 

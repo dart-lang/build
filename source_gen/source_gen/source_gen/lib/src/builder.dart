@@ -110,6 +110,7 @@ class _Builder extends Builder {
       if (!library.parts.map((c) => c.uri).contains(part)) {
         // TODO: Upgrade to error in a future breaking change?
         log.warning('Missing "part \'$part\';".');
+        return;
       }
     }
 

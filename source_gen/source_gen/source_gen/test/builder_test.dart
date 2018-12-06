@@ -72,7 +72,7 @@ void main() {
   });
 
   test('Allow no "library"  by default', () async {
-    var sources = _createPackageStub(testLibContent: 'class A {}');
+    var sources = _createPackageStub(testLibContent: _testLibContentNoLibrary);
     var builder = PartBuilder([const CommentGenerator()], '.foo.dart');
 
     await testBuilder(builder, sources,
@@ -87,7 +87,7 @@ void main() {
   });
 
   test('Use new part syntax when no library directive exists', () async {
-    var sources = _createPackageStub(testLibContent: 'class A {}');
+    var sources = _createPackageStub(testLibContent: _testLibContentNoLibrary);
     var builder = PartBuilder([const CommentGenerator()], '.foo.dart');
     await testBuilder(builder, sources,
         outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary});
@@ -171,7 +171,7 @@ void main() {
       () async {
     await testBuilder(
         PartBuilder([const UnformattedCodeGenerator()], '.foo.dart'),
-        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
         generateFor: Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
           '$_pkgName|lib/a.foo.dart':
@@ -183,7 +183,7 @@ void main() {
     await testBuilder(
         PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
             header: _customHeader),
-        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
         generateFor: Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
           '$_pkgName|lib/a.foo.dart':
@@ -195,7 +195,7 @@ void main() {
     await testBuilder(
         PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
             header: ''),
-        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
         generateFor: Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
           '$_pkgName|lib/a.foo.dart': decodedMatches(startsWith('part of')),
@@ -391,7 +391,7 @@ void main() {
     await testBuilder(
         PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
             formatOutput: (s) => s),
-        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
         generateFor: Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
           '$_pkgName|lib/a.foo.dart': decodedMatches(
@@ -404,7 +404,7 @@ void main() {
     await testBuilder(
         PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
             formatOutput: (_) => customOutput),
-        {'$_pkgName|lib/a.dart': 'library a; part "a.part.dart";'},
+        {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
         generateFor: Set.from(['$_pkgName|lib/a.dart']),
         outputs: {
           '$_pkgName|lib/a.foo.dart': decodedMatches(contains(customOutput)),
@@ -477,6 +477,12 @@ final int foo = 42;
 class Person { }
 ''';
 
+const _testLibContentNoLibrary = r'''
+part 'test_lib.foo.dart';
+final int foo = 42;
+class Person { }
+''';
+
 const _testLibContentNoPart = r'''
 library test_lib;
 final int foo = 42;
@@ -485,7 +491,7 @@ class Person { }
 
 const _testLibContentWithError = r'''
 library test_lib;
-part 'test_lib.g.dart';
+part 'test_lib.foo.dart';
 class MyError { }
 class MyGoodError { }
 ''';
@@ -567,7 +573,8 @@ part of 'test_lib.dart';
 // CommentGenerator
 // **************************************************************************
 
-// Code for "class A"
+// Code for "class Person"
+// Code for "class Customer"
 ''';
 
 const _whitespaceTrimmed = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
