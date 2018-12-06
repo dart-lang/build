@@ -52,8 +52,13 @@ class BuildScriptUpdates {
     return BuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
   }
 
-  static Iterable<Uri> get _urisForThisScript =>
-      currentMirrorSystem().libraries.keys;
+  static Set<Uri> get _urisForThisScript => currentMirrorSystem()
+      .libraries
+      .values
+      .expand((l) => l.declarations.values)
+      .map((d) => d.location?.sourceUri)
+      .where((u) => u != null)
+      .toSet();
 
   /// Checks if the current running program has been updated, based on
   /// [updatedIds].
