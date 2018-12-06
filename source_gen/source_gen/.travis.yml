@@ -1,4 +1,4 @@
-# Created with https://github.com/dart-lang/mono_repo
+# Created with package:mono_repo v1.2.1
 language: dart
 
 jobs:
@@ -19,13 +19,13 @@ jobs:
       env: PKG="source_gen"
       dart: stable
     - stage: unit_test
-      name: "SDK: dev - DIR: source_gen - TASKS: pub run test -j 1"
-      script: ./tool/travis.sh test
+      name: "SDK: dev - DIR: source_gen - TASKS: pub run build_runner test -- -j 1"
+      script: ./tool/travis.sh command
       env: PKG="source_gen"
       dart: dev
     - stage: unit_test
-      name: "SDK: stable - DIR: source_gen - TASKS: pub run test -j 1"
-      script: ./tool/travis.sh test
+      name: "SDK: stable - DIR: source_gen - TASKS: pub run build_runner test -- -j 1"
+      script: ./tool/travis.sh command
       env: PKG="source_gen"
       dart: stable
 
@@ -41,3 +41,4 @@ branches:
 cache:
   directories:
     - "$HOME/.pub-cache"
+    - source_gen/.dart_tool/build
