@@ -1,4 +1,4 @@
-# Created with https://github.com/dart-lang/mono_repo
+# Created with package:mono_repo v1.2.1
 language: dart
 
 # Custom configuration
@@ -91,7 +91,7 @@ jobs:
       env: PKG="build_config"
       dart: dev
     - stage: unit_test
-      name: "SDK: dev - DIR: build_config - TASKS: pub run build_runner test --delete-conflicting-outputs"
+      name: "SDK: dev - DIR: build_config - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs"
       script: ./tool/travis.sh command_3
       env: PKG="build_config"
       dart: dev
@@ -101,7 +101,7 @@ jobs:
       env: PKG="build_modules"
       dart: dev
     - stage: unit_test
-      name: "SDK: dev - DIR: build_modules - TASKS: pub run build_runner test --delete-conflicting-outputs -- -P presubmit"
+      name: "SDK: dev - DIR: build_modules - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit"
       script: ./tool/travis.sh command_4
       env: PKG="build_modules"
       dart: dev
