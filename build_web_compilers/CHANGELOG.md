@@ -1,3 +1,9 @@
+## 1.0.0
+
+- Removed the `enable_sync_async` and `ignore_cast_failures` options for the
+  `build_web_compilers|entrypoint` builder. These will no longer have any effect
+  and will give a build time warning if you try to use them.
+
 ## 0.4.4+3
 
 - Increased the upper bound for `package:analyzer` to `<0.35.0`.

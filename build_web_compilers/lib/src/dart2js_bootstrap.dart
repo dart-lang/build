@@ -15,13 +15,11 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:scratch_space/scratch_space.dart';
 
-import 'common.dart';
 import 'web_entrypoint_builder.dart';
 
 Future<Null> bootstrapDart2Js(
-    BuildStep buildStep, List<String> dart2JsArgs, bool enableSyncAsync) async {
+    BuildStep buildStep, List<String> dart2JsArgs) async {
   var dartEntrypointId = buildStep.inputId;
-  enableSyncAsync ??= enableSyncAsyncDefault;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(DartPlatform.dart2js));
   var args = <String>[];
@@ -50,9 +48,6 @@ Future<Null> bootstrapDart2Js(
         '-o$jsOutputPath',
         dartPath,
       ]);
-    if (_shouldAddNoSyncAsyncFlag(enableSyncAsync)) {
-      args.add('--no-sync-async');
-    }
   }
 
   var dart2js = await buildStep.fetchResource(dart2JsWorkerResource);
@@ -140,8 +135,3 @@ final bool _dart2jsSupportsNoSyncAsync = () {
       Platform.version.substring(0, Platform.version.indexOf(' ')));
   return version >= _sdkVersionWithNoSyncAsync;
 }();
-
-bool _shouldAddNoSyncAsyncFlag(bool enableSyncAsync) {
-  if (enableSyncAsync) return false;
-  return _dart2jsSupportsNoSyncAsync;
-}
