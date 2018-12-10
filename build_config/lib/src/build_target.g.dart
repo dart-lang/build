@@ -10,7 +10,7 @@ BuildTarget _$BuildTargetFromJson(Map json) {
   return $checkedNew('BuildTarget', json, () {
     $checkKeys(json,
         allowedKeys: const ['builders', 'dependencies', 'sources']);
-    var val = BuildTarget(
+    final val = BuildTarget(
         sources: $checkedConvert(
             json, 'sources', (v) => v == null ? null : InputSet.fromJson(v)),
         dependencies: $checkedConvert(
@@ -33,7 +33,7 @@ TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
       'dev_options',
       'release_options'
     ]);
-    var val = TargetBuilderConfig(
+    final val = TargetBuilderConfig(
         isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool),
         generateFor: $checkedConvert(json, 'generate_for',
             (v) => v == null ? null : InputSet.fromJson(v)),
@@ -56,7 +56,7 @@ GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) {
   return $checkedNew('GlobalBuilderConfig', json, () {
     $checkKeys(json,
         allowedKeys: const ['options', 'dev_options', 'release_options']);
-    var val = GlobalBuilderConfig(
+    final val = GlobalBuilderConfig(
         options: $checkedConvert(json, 'options',
             (v) => v == null ? null : builderOptionsFromJson(v as Map)),
         devOptions: $checkedConvert(json, 'dev_options',
