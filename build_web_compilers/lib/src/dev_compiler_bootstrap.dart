@@ -11,7 +11,6 @@ import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:pool/pool.dart';
 
-import 'common.dart';
 import 'ddc_names.dart';
 import 'dev_compiler_builder.dart';
 import 'web_entrypoint_builder.dart';
@@ -22,13 +21,8 @@ _p.Context get _context => _p.url;
 var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
 Future<Null> bootstrapDdc(BuildStep buildStep,
-    {bool useKernel,
-    bool buildRootAppSummary,
-    bool enableSyncAsync,
-    bool ignoreCastFailures}) async {
+    {bool useKernel, bool buildRootAppSummary}) async {
   buildRootAppSummary ??= false;
-  enableSyncAsync ??= enableSyncAsyncDefault;
-  ignoreCastFailures ??= false;
   useKernel ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -96,8 +90,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   var appModuleSource =
       _context.joinAll(_context.split(module.primarySource.path).sublist(1));
 
-  bootstrapContent.write(_appBootstrap(bootstrapModuleName, appModuleName,
-      appModuleScope, appModuleSource, ignoreCastFailures, enableSyncAsync));
+  bootstrapContent.write(_appBootstrap(
+      bootstrapModuleName, appModuleName, appModuleScope, appModuleSource));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
@@ -143,17 +137,11 @@ String _ddcModuleName(AssetId jsId) {
 /// `[moduleScope].main()` function on it.
 ///
 /// Also performs other necessary initialization.
-String _appBootstrap(
-        String bootstrapModuleName,
-        String moduleName,
-        String moduleScope,
-        String appModuleSource,
-        bool ignoreCastFailures,
-        bool enableSyncAsync) =>
+String _appBootstrap(String bootstrapModuleName, String moduleName,
+        String moduleScope, String appModuleSource) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
-  dart_sdk.dart.ignoreWhitelistedErrors($ignoreCastFailures);
-  dart_sdk.dart.setStartAsyncSynchronously($enableSyncAsync);
+  dart_sdk.dart.setStartAsyncSynchronously(true);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
 $_initializeTools
   app.$moduleScope.main();

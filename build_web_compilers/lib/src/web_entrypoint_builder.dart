@@ -30,14 +30,17 @@ const _supportedOptions = [
   _buildRootAppSummary,
   _compiler,
   _dart2jsArgs,
-  _enableSyncAsync,
-  _ignoreCastFailures
 ];
+
 const _buildRootAppSummary = 'build_root_app_summary';
 const _compiler = 'compiler';
 const _dart2jsArgs = 'dart2js_args';
-const _enableSyncAsync = 'enable_sync_async';
-const _ignoreCastFailures = 'ignore_cast_failures';
+
+/// The deprecated keys for the `options` config for the [WebEntrypointBuilder].
+const _deprecatedOptions = [
+  'enable_sync_async',
+  'ignore_cast_failures',
+];
 
 /// A builder which compiles entrypoints for the web.
 ///
@@ -47,24 +50,19 @@ class WebEntrypointBuilder implements Builder {
   final List<String> dart2JsArgs;
   final bool buildRootAppSummary;
   final bool useKernel;
-  final bool ignoreCastFailures;
-  final bool enableSyncAsync;
 
   const WebEntrypointBuilder(this.webCompiler,
       {this.dart2JsArgs = const [],
       this.useKernel = false,
-      this.buildRootAppSummary = false,
-      this.ignoreCastFailures = false,
-      this.enableSyncAsync = enableSyncAsyncDefault});
+      this.buildRootAppSummary = false});
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
     validateOptions(
-        options.config, _supportedOptions, 'build_web_compilers|entrypoint');
+        options.config, _supportedOptions, 'build_web_compilers|entrypoint',
+        deprecatedOptions: _deprecatedOptions);
     var compilerOption = options.config[_compiler] as String ?? 'dartdevc';
     var buildRootAppSummary =
         options.config[_buildRootAppSummary] as bool ?? false;
-    var ignoreCastFailures =
-        options.config[_ignoreCastFailures] as bool ?? false;
     WebCompiler compiler;
     switch (compilerOption) {
       case 'dartdevc':
@@ -85,14 +83,9 @@ class WebEntrypointBuilder implements Builder {
           'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
     }
 
-    final enableSyncAsync =
-        options.config[_enableSyncAsync] as bool ?? enableSyncAsyncDefault;
-
     return WebEntrypointBuilder(compiler,
         buildRootAppSummary: buildRootAppSummary,
-        dart2JsArgs: dart2JsArgs as List<String>,
-        enableSyncAsync: enableSyncAsync,
-        ignoreCastFailures: ignoreCastFailures);
+        dart2JsArgs: dart2JsArgs as List<String>);
   }
 
   @override
@@ -113,15 +106,12 @@ class WebEntrypointBuilder implements Builder {
     if (webCompiler == WebCompiler.DartDevc) {
       try {
         await bootstrapDdc(buildStep,
-            useKernel: useKernel,
-            buildRootAppSummary: buildRootAppSummary,
-            enableSyncAsync: enableSyncAsync,
-            ignoreCastFailures: ignoreCastFailures);
+            useKernel: useKernel, buildRootAppSummary: buildRootAppSummary);
       } on MissingModulesException catch (e) {
         log.severe('$e');
       }
     } else if (webCompiler == WebCompiler.Dart2Js) {
-      await bootstrapDart2Js(buildStep, dart2JsArgs, enableSyncAsync);
+      await bootstrapDart2Js(buildStep, dart2JsArgs);
     }
   }
 }
