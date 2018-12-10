@@ -12,7 +12,6 @@ import 'package:build_modules/build_modules.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
 import 'package:scratch_space/scratch_space.dart';
 
 import 'web_entrypoint_builder.dart';
@@ -125,13 +124,3 @@ Future<String> _createPackageFile(Iterable<AssetId> inputSources,
       .writeAsString('# Generated for $inputUri\n$packagesFileContent');
   return packageFileName;
 }
-
-final _sdkVersionWithNoSyncAsync = Version(2, 0, 0, pre: 'dev.51.0');
-
-final bool _dart2jsSupportsNoSyncAsync = () {
-  // Platform.version looks like `<version> (<date build>) on "<platform>"`
-  // We only want the version so we take the substring up to the first space.
-  var version = Version.parse(
-      Platform.version.substring(0, Platform.version.indexOf(' ')));
-  return version >= _sdkVersionWithNoSyncAsync;
-}();
