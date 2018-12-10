@@ -14,7 +14,7 @@ BuildConfig _$BuildConfigFromJson(Map json) {
       'targets',
       'global_options'
     ]);
-    var val = BuildConfig(
+    final val = BuildConfig(
         buildTargets: $checkedConvert(json, 'targets',
             (v) => v == null ? null : _buildTargetsFromJson(v as Map)),
         globalOptions: $checkedConvert(
