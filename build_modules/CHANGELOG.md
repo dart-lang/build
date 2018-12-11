@@ -1,3 +1,7 @@
+## 1.0.4-dev
+
+- Use `Platform.resolvedExecutable` with `Platform.executable`.
+
 ## 1.0.3
 
 - Increased the upper bound for `package:analyzer` to `<0.35.0`.

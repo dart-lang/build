@@ -1,3 +1,7 @@
+## 1.1.3-dev
+
+- Use `Platform.resolvedExecutable` with `Platform.executable`.
+
 ## 1.1.2
 
 - Fix a `NoSuchMethodError` that the user could get when adding new

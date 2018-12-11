@@ -1,3 +1,7 @@
+## 0.2.2+8-dev
+
+- Use `Platform.resolvedExecutable` with `Platform.executable`.
+
 ## 0.2.2+7
 
 - Updated _AssetUriResolver to prepare for a future release of the analyzer.

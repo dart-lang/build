@@ -1,3 +1,7 @@
+## 1.0.0-dev
+
+- Use `Platform.resolvedExecutable` with `Platform.executable`.
+
 ## 1.0.0
 
 - Removed the `enable_sync_async` and `ignore_cast_failures` options for the
