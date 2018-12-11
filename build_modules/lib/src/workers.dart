@@ -15,7 +15,7 @@ import 'package:pedantic/pedantic.dart';
 
 import 'scratch_space.dart';
 
-final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
+final sdkDir = p.dirname(p.dirname(Platform.executable));
 
 /// Completes once the analyzer workers have been shut down.
 Future<Null> get analyzerWorkersAreDone =>

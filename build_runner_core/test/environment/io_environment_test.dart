@@ -15,7 +15,7 @@ void main() {
   StreamQueue<String> stdoutLines;
 
   setUpAll(() async {
-    process = await Process.start(Platform.resolvedExecutable,
+    process = await Process.start(Platform.executable,
         [p.join('test', 'environment', 'simple_prompt.dart')]);
     stdoutLines = StreamQueue(
         process.stdout.transform(Utf8Decoder()).transform(LineSplitter()));

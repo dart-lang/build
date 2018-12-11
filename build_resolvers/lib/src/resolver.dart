@@ -430,7 +430,7 @@ class AnalyzerResolvers implements Resolvers {
     var sdk = FolderBasedDartSdk(
         resourceProvider,
         resourceProvider.getFolder(native_path
-            .dirname(native_path.dirname(Platform.resolvedExecutable))))
+            .dirname(native_path.dirname(Platform.executable))))
       ..useSummary = true;
     var uriResolver = DartUriResolver(sdk);
     return AnalyzerResolvers._(AnalyzerResolver(uriResolver, analysisOptions));
