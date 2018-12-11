@@ -1,6 +1,6 @@
 ## 0.2.2+8-dev
 
-- Use `Platform.resolvedExecutable` with `Platform.executable`.
+- Use `Platform.resolvedExecutable` with `Platform.executable`
 
 ## 0.2.2+7
 
