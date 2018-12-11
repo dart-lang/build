@@ -16,7 +16,7 @@ import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
 
-final _sdkDir = p.dirname(p.dirname(Platform.executable));
+final _sdkDir = p.dirname(p.dirname(p.absolute(Platform.executable)));
 
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
