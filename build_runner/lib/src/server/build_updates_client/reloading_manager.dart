@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:graphs/graphs.dart' as graphs;
+import 'package:logging/logging.dart';
 
 import 'module.dart';
 
@@ -16,6 +17,8 @@ class HotReloadFailedException implements Exception {
   String toString() => "HotReloadFailedException: '$_s'";
   final String _s;
 }
+
+final _log = Logger('HotReload');
 
 /// Handles reloading order and hooks invocation
 class ReloadingManager {
@@ -78,7 +81,7 @@ class ReloadingManager {
         var success = newVersion.onSelfUpdate(data);
         if (success == true) continue;
         if (success == false) {
-          print("Module '$moduleId' is marked as unreloadable. "
+          _log.info("Module '$moduleId' is marked as unreloadable. "
               'Firing full page reload.');
           _reloadPage();
           _running.complete();
@@ -87,7 +90,7 @@ class ReloadingManager {
 
         var parentIds = _moduleParents(moduleId);
         if (parentIds == null || parentIds.isEmpty) {
-          print("Module reloading wasn't handled by any of parents. "
+          _log.info("Module reloading wasn't handled by any of parents. "
               'Firing full page reload.');
           _reloadPage();
           _running.complete();
@@ -99,7 +102,7 @@ class ReloadingManager {
           success = parentModule.onChildUpdate(moduleId, newVersion, data);
           if (success == true) continue;
           if (success == false) {
-            print("Module '$moduleId' is marked as unreloadable. "
+            _log.info("Module '$moduleId' is marked as unreloadable. "
                 'Firing full page reload.');
             _reloadPage();
             _running.complete();
@@ -108,9 +111,9 @@ class ReloadingManager {
           _dirtyModules.add(parentId);
         }
       }
-      print('$reloadedModules modules were hot-reloaded.');
+      _log.info('$reloadedModules modules were hot-reloaded.');
     } on HotReloadFailedException catch (e) {
-      print('Error during script reloading. Firing full page reload. $e');
+      _log.warning('Error during script reloading. Firing full page reload. $e');
       _reloadPage();
     }
     _running.complete();

@@ -77,6 +77,7 @@ String _loggerName(LogRecord record, bool verbose) {
     'CreateOutputDir',
     'Entrypoint',
     'Heartbeat',
+    'HotReload',
     'IOEnvironment',
     'Serve',
     'Watch',
