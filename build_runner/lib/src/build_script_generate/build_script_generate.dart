@@ -53,9 +53,12 @@ Future<String> _generateBuildScript() async {
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
   final packageGraph = PackageGraph.forThisPackage();
-  final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
-          [packageGraph.root], (node) => node.name, (node) => node.dependencies)
-      .expand((c) => c);
+  final orderedPackages = stronglyConnectedComponents<PackageNode>(
+    [packageGraph.root],
+    (node) => node.dependencies,
+    equals: (a, b) => a.name == b.name,
+    hashCode: (n) => n.name.hashCode,
+  ).expand((c) => c);
   final buildConfigOverrides =
       await findBuildConfigOverrides(packageGraph, null);
   Future<BuildConfig> _packageBuildConfig(PackageNode package) async {

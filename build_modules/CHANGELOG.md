@@ -1,3 +1,7 @@
+## 1.0.4
+
+- Update to `package:graphs` version `0.2.0`.
+
 ## 1.0.3
 
 - Increased the upper bound for `package:analyzer` to `<0.35.0`.

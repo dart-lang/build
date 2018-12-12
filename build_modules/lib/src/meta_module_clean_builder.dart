@@ -48,12 +48,13 @@ class MetaModuleCleanBuilder implements Builder {
         .putIfAbsent(_platform, () => {});
     var modules = await _transitiveModules(
         buildStep, buildStep.inputId, assetToModule, assetToPrimary, _platform);
-    var connectedComponents = stronglyConnectedComponents<AssetId, Module>(
+    var connectedComponents = stronglyConnectedComponents<Module>(
         modules,
-        (m) => m.primarySource,
         (m) => m.directDependencies.map((d) =>
             assetToModule[d] ??
-            Module(d, [d], [], _platform, false, isMissing: true)));
+            Module(d, [d], [], _platform, false, isMissing: true)),
+        equals: (a, b) => a.primarySource == b.primarySource,
+        hashCode: (m) => m.primarySource.hashCode);
     Module merge(List<Module> c) =>
         _mergeComponent(c, assetToPrimary, _platform);
     bool primarySourceInPackage(Module m) =>
