@@ -1,3 +1,7 @@
+## 1.1.3
+
+- Update to `package:graphs` version `0.2.0`.
+
 ## 1.1.2
 
 - Improve error message when the generated build script cannot be parsed or

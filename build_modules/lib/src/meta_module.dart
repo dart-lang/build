@@ -186,15 +186,15 @@ List<Module> _computeModules(
     return libraries.values.every((l) => _topLevelDir(l.id.path) == dir);
   }());
 
-  final connectedComponents =
-      stronglyConnectedComponents<AssetId, ModuleLibrary>(
-          libraries.values,
-          (n) => n.id,
-          (n) => n
-              .depsForPlatform(platform)
-              // Only "internal" dependencies
-              .where(libraries.containsKey)
-              .map((dep) => libraries[dep]));
+  final connectedComponents = stronglyConnectedComponents<ModuleLibrary>(
+      libraries.values,
+      (n) => n
+          .depsForPlatform(platform)
+          // Only "internal" dependencies
+          .where(libraries.containsKey)
+          .map((dep) => libraries[dep]),
+      equals: (a, b) => a.id == b.id,
+      hashCode: (l) => l.id.hashCode);
 
   final entryIds =
       libraries.values.where((l) => l.isEntryPoint).map((l) => l.id).toSet();
