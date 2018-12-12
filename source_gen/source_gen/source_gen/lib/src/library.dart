@@ -161,7 +161,12 @@ class LibraryReader {
         fromSegments[1] == toSegments[1];
   }
 
-  /// All of the `class` elements in this library.
-  Iterable<ClassElement> get classElements =>
-      element.units.expand((cu) => cu.types);
+  /// All of the elements reperesenting classes in this library.
+  Iterable<ClassElement> get classes => element.units.expand((cu) => cu.types);
+
+  @Deprecated('Use classes instead')
+  Iterable<ClassElement> get classElements => classes;
+
+  /// All of the elements representing enums in this library.
+  Iterable<ClassElement> get enums => element.units.expand((cu) => cu.enums);
 }

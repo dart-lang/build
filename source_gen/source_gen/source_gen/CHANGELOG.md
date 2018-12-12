@@ -1,3 +1,9 @@
+## 0.9.3
+
+* Rename `LibraryReader.classElements` to `LibraryReader.classes` to better
+  reflect the behavior. Deprecate the old name.
+* Add `LibraryReader.enums`.
+
 ## 0.9.2
 
 * Avoid using the AST analyzer model from `LibraryReader`.
