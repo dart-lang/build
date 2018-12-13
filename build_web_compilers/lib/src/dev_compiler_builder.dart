@@ -118,11 +118,15 @@ Future _createDevCompilerModule(
   }
 
   // Add all the linked summaries as summary inputs.
-  for (var id in transitiveSummaryDeps) {
+  for (var depModule in transitiveDeps) {
+    var summaryId = useKernel
+        ? depModule.primarySource.changeExtension(ddcKernelExtension)
+        : depModule.linkedSummaryId;
     var summaryPath = useKernel
-        ? p.url.relative(scratchSpace.fileFor(id).path,
-            from: scratchSpace.tempDir.path)
-        : scratchSpace.fileFor(id).path;
+        ? p.url.relative(scratchSpace.fileFor(summaryId).path,
+                from: scratchSpace.tempDir.path) +
+            '=${ddcModuleName(depModule.jsId(jsModuleExtension))}'
+        : scratchSpace.fileFor(summaryId).path;
     request.arguments.addAll(['-s', summaryPath]);
   }
 
@@ -152,6 +156,8 @@ Future _createDevCompilerModule(
     request.arguments.addAll([
       '--packages',
       packagesFile.absolute.uri.toString(),
+      '--module-name',
+      ddcModuleName(module.jsId(jsModuleExtension)),
     ]);
   }
 
@@ -191,4 +197,13 @@ Future _createDevCompilerModule(
           module.jsSourceMapId(jsSourceMapExtension), buildStep);
     }
   }
+}
+
+/// The module name according to ddc for [jsId] which represents the real js
+/// module file.
+String ddcModuleName(AssetId jsId) {
+  var jsPath = jsId.path.startsWith('lib/')
+      ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
+      : jsId.path;
+  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
