@@ -35,7 +35,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   // First, ensure all transitive modules are built.
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
   var jsId = module.jsId(jsModuleExtension);
-  var appModuleName = _ddcModuleName(jsId);
+  var appModuleName = ddcModuleName(jsId);
 
   // The name of the entrypoint dart library within the entrypoint JS module.
   //
@@ -52,7 +52,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
       var basename = _context.basename(jsId.path);
       return basename.substring(0, basename.length - jsModuleExtension.length);
     } else {
-      Iterable<String> scope = _context.split(_ddcModuleName(jsId));
+      Iterable<String> scope = _context.split(ddcModuleName(jsId));
       if (scope.first == 'packages') {
         scope = scope.skip(1);
       }
@@ -69,7 +69,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
     // and we only allow you to serve top level directories.
-    var moduleName = _ddcModuleName(jsId);
+    var moduleName = ddcModuleName(jsId);
     modulePaths[moduleName] = _context.withoutExtension(
         jsId.path.startsWith('lib')
             ? '$moduleName$jsModuleExtension'
@@ -122,15 +122,6 @@ Future<List<Module>> _ensureTransitiveModules(
         'log file.');
   }));
   return transitiveDeps;
-}
-
-/// The module name according to ddc for [jsId] which represents the real js
-/// module file.
-String _ddcModuleName(AssetId jsId) {
-  var jsPath = jsId.path.startsWith('lib/')
-      ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
-      : jsId.path;
-  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
 /// Code that actually imports the [moduleName] module, and calls the
