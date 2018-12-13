@@ -66,16 +66,6 @@ jobs:
       env: PKG="_test_common"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: dev - DIR: bazel_codegen - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
-      env: PKG="bazel_codegen"
-      dart: dev
-    - stage: unit_test
-      name: "SDK: dev - DIR: bazel_codegen - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_2
-      env: PKG="bazel_codegen"
-      dart: dev
-    - stage: analyze_and_format
       name: "SDK: dev - DIR: build - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build"
@@ -216,7 +206,6 @@ branches:
 cache:
   directories:
     - "$HOME/.pub-cache"
-    - bazel_codegen/.dart_tool/build
     - build/.dart_tool/build
     - build_config/.dart_tool/build
     - build_modules/.dart_tool/build
