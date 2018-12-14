@@ -35,7 +35,7 @@ Future<int> run(List<String> args, List<BuilderApplication> builders) async {
     return ExitCode.config.code;
   } on BuildScriptChangedException {
     _deleteAssetGraph();
-    _deleteSelf();
+    if (_runningFromSnapshot) _deleteSelf();
     return ExitCode.tempFail.code;
   } on BuildConfigChangedException {
     return ExitCode.tempFail.code;
@@ -60,3 +60,5 @@ void _deleteSelf() {
     self.deleteSync();
   }
 }
+
+bool get _runningFromSnapshot => !Platform.script.path.endsWith('.dart');

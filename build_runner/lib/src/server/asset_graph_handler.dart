@@ -120,6 +120,7 @@ class AssetGraphHandler {
         'phaseNumber': node is NodeWithInputs ? node.phaseNumber : null,
         'type': node.runtimeType.toString(),
         'glob': node is GlobAssetNode ? node.glob.pattern : null,
+        'lastKnownDigest': node.lastKnownDigest.toString(),
       },
       'edges': edges,
       'nodes': nodes,
