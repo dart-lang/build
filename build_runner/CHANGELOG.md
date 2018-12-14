@@ -1,6 +1,9 @@
-## 1.1.3
+## 1.1.3-dev
 
 - Update to `package:graphs` version `0.2.0`.
+- Fix an issue where when running from source in watch mode the script would
+  delete itself when it shouldn't.
+- Add digest string to the asset graph visualization.
 
 ## 1.1.2
 
