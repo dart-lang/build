@@ -65,5 +65,6 @@ Future _focus(String query) async {
       '<strong>Was Output:</strong> ${primaryNode['wasOutput']} <br />'
       '<strong>Failed:</strong> ${primaryNode['isFailure']} <br />'
       '<strong>Phase:</strong> ${primaryNode['phaseNumber']} <br />'
-      '<strong>Glob:</strong> ${primaryNode['glob']}<br />';
+      '<strong>Glob:</strong> ${primaryNode['glob']}<br />'
+      '<strong>Last Digest:</strong> ${primaryNode['lastKnownDigest']}<br />';
 }
