@@ -4,6 +4,7 @@
 - Fix an issue where when running from source in watch mode the script would
   delete itself when it shouldn't.
 - Add digest string to the asset graph visualization.
+- Added a filter box to the asset graph visualization.
 
 ## 1.1.2
 
