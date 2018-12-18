@@ -55,8 +55,7 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      await libraries.firstWhere((l) => l.name == libraryName,
-          orElse: () => null);
+      libraries.firstWhere((l) => l.name == libraryName, orElse: () => null);
 
   @override
   Future<bool> isLibrary(AssetId assetId) => _delegate.isLibrary(assetId);
