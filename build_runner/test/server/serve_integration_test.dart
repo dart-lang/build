@@ -41,7 +41,7 @@ void main() {
 example:file://fake/pkg/path
 ''');
     terminateController = StreamController();
-    final server = (await watch_impl.watch(
+    final server = await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],
       packageGraph: graph,
       reader: reader,
@@ -50,7 +50,7 @@ example:file://fake/pkg/path
       directoryWatcherFactory: (path) => FakeWatcher(path),
       terminateEventStream: terminateController.stream,
       skipBuildScriptCheck: true,
-    ));
+    );
     handler = server.handlerFor('web');
 
     nextBuild = Completer<BuildResult>();

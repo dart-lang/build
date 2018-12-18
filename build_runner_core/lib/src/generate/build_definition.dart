@@ -345,7 +345,7 @@ class _Loader {
           return true;
         })
         .map((n) => n.id)
-        .where((id) => !allSources.contains((id)));
+        .where((id) => !allSources.contains(id));
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
