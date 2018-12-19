@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -22,10 +20,6 @@ void main() {
       reader = await PackageAssetReader.currentIsolate(
         rootPackage: 'build_test',
       );
-      final oldDirectory = Directory.current;
-      addTearDown(() {
-        Directory.current = oldDirectory;
-      });
     });
 
     test('should be able to read `build_test.dart`', () async {
@@ -34,13 +28,7 @@ void main() {
     });
 
     test('should be able to read this file (in test/)', () async {
-      expect(await reader.readAsString(thisFile), isNotEmpty);
-    });
-
-    test('should be able to read this file (in test/) from different cwd',
-        () async {
-      Directory.current = Directory.current.parent;
-      expect(await reader.readAsString(thisFile), isNotEmpty);
+      expect(await reader.canRead(thisFile), isTrue);
     });
 
     test('should not be able to read a missing file', () async {

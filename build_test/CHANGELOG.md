@@ -1,7 +1,7 @@
 ## 0.10.4
 
-- Allow using `PackageAssetReader` when the current working directory is root
-  package's directory. Instead assume the root package uses a pub layout.
+- Allow using `PackageAssetReader` when the current working directory is not the
+  root package directory as long as it uses a pub layout.
 
 ## 0.10.3+4
 
