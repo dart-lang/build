@@ -1,3 +1,8 @@
+## 0.10.4
+
+- Allow using `PackageAssetReader` when the current working directory is root
+  package's directory. Instead assume the root package uses a pub layout.
+
 ## 0.10.3+4
 
 - Increased the upper bound for `package:analyzer` to `<0.35.0`.
