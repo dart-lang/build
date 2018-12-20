@@ -19,6 +19,7 @@ import 'package:analyzer/src/generated/engine.dart'
     show AnalysisEngine, AnalysisOptionsImpl;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:path/path.dart' as p;
+import 'package:analyzer/src/summary/package_bundle_reader.dart';
 
 import 'build_asset_uri_resolver.dart';
 
@@ -30,13 +31,16 @@ import 'build_asset_uri_resolver.dart';
 AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver) {
   AnalysisEngine.instance.processRequiredPlugins();
   var resourceProvider = PhysicalResourceProvider.INSTANCE;
-  var sdk = FolderBasedDartSdk(resourceProvider,
-      resourceProvider.getFolder(p.dirname(p.dirname(Platform.executable))))
-    ..useSummary = true;
+  var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
+  var sdk =
+      FolderBasedDartSdk(resourceProvider, resourceProvider.getFolder(sdkPath));
   var sdkResolver = DartUriResolver(sdk);
 
   var resolvers = [sdkResolver, buildAssetUriResolver];
   var sourceFactory = SourceFactory(resolvers);
+
+  var dataStore =
+      SummaryDataStore([p.join(sdkPath, 'lib', '_internal', 'strong.sum')]);
 
   var logger = PerformanceLog(null);
   var scheduler = AnalysisDriverScheduler(logger);
@@ -49,6 +53,7 @@ AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver) {
     null,
     sourceFactory,
     AnalysisOptionsImpl(),
+    externalSummaries: dataStore,
   );
 
   scheduler.start();
