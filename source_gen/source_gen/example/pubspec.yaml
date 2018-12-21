@@ -1,0 +1,12 @@
+name: source_gen_example
+
+environment:
+  sdk: '>=2.0.0 <3.0.0'
+
+dependencies:
+  build: ^1.0.0
+  source_gen: ^0.9.0
+
+dependency_overrides:
+  source_gen:
+    path: ../source_gen

@@ -9,6 +9,36 @@ jobs:
       env: PKG="_test_annotations"
       dart: dev
     - stage: analyze_format
+      name: "SDK: dev - DIR: example - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="example"
+      dart: dev
+    - stage: analyze_format
+      name: "SDK: stable - DIR: example - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="example"
+      dart: stable
+    - stage: analyze_format
+      name: "SDK: dev - DIR: example_usage - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="example_usage"
+      dart: dev
+    - stage: analyze_format
+      name: "SDK: stable - DIR: example_usage - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="example_usage"
+      dart: stable
+    - stage: unit_test
+      name: "SDK: dev - DIR: example_usage - TASKS: pub run test --run-skipped"
+      script: ./tool/travis.sh test
+      env: PKG="example_usage"
+      dart: dev
+    - stage: unit_test
+      name: "SDK: stable - DIR: example_usage - TASKS: pub run test --run-skipped"
+      script: ./tool/travis.sh test
+      env: PKG="example_usage"
+      dart: stable
+    - stage: analyze_format
       name: "SDK: dev - DIR: source_gen - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="source_gen"
@@ -41,4 +71,5 @@ branches:
 cache:
   directories:
     - "$HOME/.pub-cache"
+    - example_usage/.dart_tool/build
     - source_gen/.dart_tool/build

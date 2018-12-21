@@ -1,0 +1,10 @@
+# Read about `build.yaml` at https://pub.dartlang.org/packages/build_config
+targets:
+  $default:
+    builders:
+      # Configure the builder `pkg_name|builder_name`
+      # In this case, the member_count builder defined in `../example`
+      source_gen_example|member_count:
+        # Only run this builder on the specified input.
+        generate_for:
+          - lib/library_source.dart
