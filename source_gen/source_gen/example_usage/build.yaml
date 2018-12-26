@@ -8,3 +8,9 @@ targets:
         # Only run this builder on the specified input.
         generate_for:
           - lib/library_source.dart
+      source_gen_example|property_sum:
+        generate_for:
+          - lib/*.dart
+      source_gen_example|property_product:
+        generate_for:
+          - lib/*.dart

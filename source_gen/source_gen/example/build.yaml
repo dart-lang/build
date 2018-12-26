@@ -28,3 +28,11 @@ builders:
     auto_apply: dependents
     build_to: cache
     applies_builders: ["source_gen|combining_builder"]
+
+  property_multiply:
+    import: "package:source_gen_example/builder.dart"
+    builder_factories: ["multiplyBuilder"]
+    build_extensions: {".dart": ["multiply.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]
