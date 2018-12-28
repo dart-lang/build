@@ -70,3 +70,12 @@ post_process_builders:
       release_options:
         enabled: true
 ```
+
+## How can I debug my builder?
+
+After running a build, or by running the `generate-build-script` command, a
+build script will be written to `.dart_tool/build/entrypoint/build.dart`. This
+is a Dart VM application that can be run manually, including with the
+observatory enabled. See the [observatory docs][] for usage instructions.
+
+[observatory docs]:https://dart-lang.github.io/observatory/get-started.html
