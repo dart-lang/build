@@ -13,6 +13,15 @@ builders:
     # Generate the output directly into the package, not to a hidden cache dir
     build_to: source
 
+  # The next three builders are `SharedPartBuilder` instances.
+  # Notice they each have
+  # `build_extensions` set to a `NAME.g.part` file.
+  #    NAME corresponds to the second argument to the SharedPartBuilder ctor.
+  #    `.g.part` is the extension expected of SharedPartBuilder.
+  # `build_to: cache` - the output is not put directly into the project
+  # `applies_builders` - uses the `combining_builder` from `source_gen` to
+  #   combine the parts from each builder into one part file.
+
   property_product:
     import: "package:source_gen_example/builder.dart"
     builder_factories: ["productBuilder"]
