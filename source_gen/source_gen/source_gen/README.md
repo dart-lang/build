@@ -117,12 +117,9 @@ wraps a single Generator to make a `Builder` which creates Dart library files.
 [build_runner]: https://pub.dartlang.org/packages/build_runner
 
 <!-- Dartdoc -->
-[api:Builder]: https://www.dartdocs.org/documentation/build/latest/builder/Builder-class.html
-[api:Generator]: https://www.dartdocs.org/documentation/source_gen/latest/builder/Generator-class.html
-[api:PartBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/PartBuilder-class.html
-[api:LibraryBuilder]: https://www.dartdocs.org/documentation/source_gen/latest/builder/LibraryBuilder-class.html
+[api:Builder]: https://pub.dartlang.org/documentation/build/latest/build/Builder-class.html
+[api:Generator]: https://pub.dartlang.org/documentation/source_gen/latest/source_gen/Generator-class.html
+[api:PartBuilder]: https://pub.dartlang.org/documentation/source_gen/latest/source_gen/PartBuilder-class.html
+[api:LibraryBuilder]: https://pub.dartlang.org/documentation/source_gen/latest/source_gen/LibraryBuilder-class.html
 
 [Trivial example]: https://github.com/dart-lang/source_gen/blob/master/source_gen/test/src/comment_generator.dart
-[build.dart]: https://github.com/dart-lang/source_gen/blob/master/build.dart
-[generate]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_generate
-[build]: http://www.dartdocs.org/documentation/source_gen/latest/index.html#source_gen/source_gen@id_build
