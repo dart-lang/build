@@ -9,7 +9,7 @@ import 'package:build_web_compilers/build_web_compilers.dart';
 
 import 'package:path/path.dart' as p;
 
-Builder devCompilerBuilder(_) => DevCompilerBuilder();
+Builder devCompilerBuilder(_) => DevCompilerBuilder(useKernel: true);
 Builder webEntrypointBuilder(BuilderOptions options) =>
     WebEntrypointBuilder.fromOptions(options);
 PostProcessBuilder dart2JsArchiveExtractor(BuilderOptions options) =>
