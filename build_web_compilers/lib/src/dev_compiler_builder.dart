@@ -152,12 +152,16 @@ Future _createDevCompilerModule(
     var allDeps = <AssetId>[]
       ..addAll(module.sources)
       ..addAll(transitiveSummaryDeps);
-    packagesFile = await createPackagesFile(allDeps, scratchSpace);
+    packagesFile = await createPackagesFile(allDeps);
     request.arguments.addAll([
       '--packages',
       packagesFile.absolute.uri.toString(),
       '--module-name',
       ddcModuleName(module.jsId(jsModuleExtension)),
+      '--multi-root-scheme',
+      multiRootScheme,
+      '--multi-root',
+      '.',
     ]);
   }
 
@@ -168,7 +172,9 @@ Future _createDevCompilerModule(
     if (uri.startsWith('package:')) {
       return uri;
     }
-    return useKernel ? id.path : Uri.file('/${id.path}').toString();
+    return useKernel
+        ? '$multiRootScheme:///${id.path}'
+        : Uri.file('/${id.path}').toString();
   }));
 
   WorkResponse response;
