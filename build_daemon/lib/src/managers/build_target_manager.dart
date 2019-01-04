@@ -19,7 +19,7 @@ bool _isBlacklistedPath(String filePath, Set<RegExp> blackListedPatterns) {
 }
 
 class BuildTarget {
-  // The target to build.
+  // The build system identifier for the target.
   final String target;
 
   // Set of channels interested in this target.
@@ -72,7 +72,7 @@ class BuildTargetManager {
   }
 
   void removeChannel(WebSocketChannel channel) {
-    var toRemove = [];
+    var toRemove = <BuildTarget>[];
     // Find the set of Build Targets that no longer have any listeners.
     for (var buildTarget in _buildTargets) {
       buildTarget.listeners.remove(channel);

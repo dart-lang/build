@@ -7,7 +7,7 @@ import 'package:watcher/watcher.dart';
 
 /// Entrypoint for the Dart Build Daemon.
 Future main(List<String> args) async {
-  var workingDirectory = args[0];
+  var workingDirectory = args.first;
 
   var daemon = Daemon(workingDirectory);
 

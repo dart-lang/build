@@ -16,15 +16,13 @@ import 'data/server_log.dart';
 class BuildDaemonClient {
   IOWebSocketChannel _channel;
 
-  final _buildResultsStreamController =
-      StreamController<BuildResults>.broadcast();
+  final _buildResults = StreamController<BuildResults>.broadcast();
 
   final _serverLogStreamController = StreamController<ServerLog>.broadcast();
 
   BuildDaemonClient._();
 
-  Stream<BuildResults> get buildResultsStream =>
-      _buildResultsStreamController.stream;
+  Stream<BuildResults> get buildResults => _buildResults.stream;
   Future<void> get finished async {
     if (_channel != null) await _channel.sink.done;
   }
@@ -51,10 +49,6 @@ class BuildDaemonClient {
   /// Registers a build target to be built upon any file change.
   ///
   /// Changes that match the patterns in [blackListPattern] will be ignored.
-  ///
-  /// Note that you should provide the "fully qualified" target name. For
-  /// example one should provide //some-target:test_run instead of
-  /// //some-target:test.
   void registerBuildTarget(String target, Iterable<String> blackListPattern) {
     var request = BuildTargetRequest((b) => b
       ..target = target
@@ -80,7 +74,7 @@ class BuildDaemonClient {
     if (message is ServerLog) {
       _serverLogStreamController.add(message);
     } else if (message is BuildResults) {
-      _buildResultsStreamController.add(message);
+      _buildResults.add(message);
     } else {
       // In practice we should never reach this state due to the
       // deserialize call.
@@ -112,7 +106,6 @@ class BuildDaemonClient {
     }
 
     var port = _existingPort(workingDirectory);
-    if (port == null) return null;
     var client = BuildDaemonClient._();
     await client._connect(workingDirectory, port);
     return client;
@@ -121,7 +114,7 @@ class BuildDaemonClient {
   static int _existingPort(String workingDirectory) {
     var portFile = File('${daemonWorkspace(workingDirectory)}'
         '/.dart_build_daemon_port');
-    if (!portFile.existsSync()) return null;
+    if (!portFile.existsSync()) throw Exception('Unable to read port file.');
     return int.parse(portFile.readAsStringSync());
   }
 }

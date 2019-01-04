@@ -23,7 +23,7 @@ void main(List<String> args) async {
     client.registerBuildTarget('/some/test/path', []);
     print('Registered test target...');
   }
-  client.buildResultsStream.listen((status) => print('BUILD STATUS: $status'));
+  client.buildResults.listen((status) => print('BUILD STATUS: $status'));
   client.startBuild();
   await client.finished;
 }
