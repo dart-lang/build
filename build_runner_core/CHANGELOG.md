@@ -1,6 +1,7 @@
 ## 1.1.3
 
 - Update to `package:graphs` version `0.2.0`.
+- Allow `build` version `1.1.x`.
 
 ## 1.1.2
 
