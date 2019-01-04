@@ -1,3 +1,8 @@
+## 1.1.0
+
+- Add `Resolver.assetIdForElement` API. This allows finding the Dart source
+  asset which contains the definition of an element found through the analyzer.
+
 ## 1.0.2
 
 - Increased the upper bound for `package:analyzer` to `<0.35.0`.

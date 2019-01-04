@@ -34,6 +34,16 @@ abstract class Resolver {
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
   Future<LibraryElement> findLibraryByName(String libraryName);
+
+  /// Returns the [AssetId] of the Dart library or part declaring [element].
+  ///
+  /// If [element] is defined in the SDK or in a summary throws
+  /// `UnresolvableAssetException`, although a non-throwing return here does not
+  /// guarantee that the asset is readable.
+  ///
+  /// The returned asset is not necessarily the asset that should be imported to
+  /// use the element, it may be a part file instead of the library.
+  Future<AssetId> assetIdForElement(Element element);
 }
 
 /// A resolver that should be manually released at the end of a build step.
