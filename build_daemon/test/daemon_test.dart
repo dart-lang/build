@@ -1,0 +1,129 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:build_daemon/constants.dart';
+// Keep the daemon_builder import so the fake daemon script below
+// can resolve it.
+// ignore: unused_import
+import 'package:build_daemon/daemon_builder.dart';
+import 'package:build_daemon/src/daemon.dart';
+import 'package:package_resolver/package_resolver.dart';
+import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
+import 'package:uuid/uuid.dart';
+
+void main() {
+  var testDaemons = <Process>[];
+  var testWorkspaces = <String>[];
+  var uuid = Uuid();
+
+  group('Daemon', () {
+    setUp(() {
+      testDaemons.clear();
+      testWorkspaces.clear();
+    });
+
+    tearDown(() async {
+      for (var testDaemon in testDaemons) {
+        testDaemon.kill(ProcessSignal.sigkill);
+      }
+      for (var testWorkspace in testWorkspaces) {
+        var workspace = Directory(daemonWorkspace(testWorkspace));
+        if (workspace.existsSync()) {
+          workspace.deleteSync(recursive: true);
+        }
+      }
+    });
+
+    test('can run if no other daemon is running', () async {
+      String workspace = uuid.v1();
+      var daemon = await _runDaemon(workspace);
+      testDaemons.add(daemon);
+      expect(await getOutput(daemon), 'RUNNING');
+    });
+
+    test('can not run if another daemon is running in the same workspace',
+        () async {
+      String workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      var daemonOne = await _runDaemon(workspace);
+      expect(await getOutput(daemonOne), 'RUNNING');
+      var daemonTwo = await _runDaemon(workspace);
+      testDaemons.addAll([daemonOne, daemonTwo]);
+      expect(await getOutput(daemonTwo), 'ALREADY RUNNING');
+    });
+
+    test('can run if another daemon is running in a different workspace',
+        () async {
+      String workspace1 = uuid.v1();
+      String workspace2 = uuid.v1();
+      testWorkspaces.addAll([workspace1, workspace2]);
+      var daemonOne = await _runDaemon(workspace1);
+      expect(await getOutput(daemonOne), 'RUNNING');
+      var daemonTwo = await _runDaemon(workspace2);
+      testDaemons.addAll([daemonOne, daemonTwo]);
+      expect(await getOutput(daemonTwo), 'RUNNING');
+    });
+
+    test('logs the version when running', () async {
+      String workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      var daemon = await _runDaemon(workspace);
+      testDaemons.add(daemon);
+      expect(await getOutput(daemon), 'RUNNING');
+      expect(runningVersion(workspace), currentVersion);
+    });
+
+    test('does not set the current version if not running', () async {
+      String workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      expect(runningVersion(workspace), null);
+    });
+
+    test('cleans up after itself', () async {
+      String workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      var daemon = await _runDaemon(workspace);
+      // Wait for the daemon to be running before checking the workspace exits.
+      expect(await getOutput(daemon), 'RUNNING');
+      expect(Directory(daemonWorkspace(workspace)).existsSync(), isTrue);
+      // Daemon expects sigint twice before quitting.
+      daemon.kill(ProcessSignal.sigint);
+      daemon.kill(ProcessSignal.sigint);
+      await daemon.exitCode;
+      expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
+    });
+  });
+}
+
+Future<String> getOutput(Process daemon) async {
+  return await daemon.stdout
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING');
+}
+
+Future<Process> _runDaemon(String workspace) async {
+  await d.file('test.dart', '''
+    import 'package:build_daemon/src/daemon.dart';
+    import 'package:build_daemon/daemon_builder.dart';
+
+    main() async {
+      var daemon = Daemon('$workspace');
+      if (daemon.tryGetLock()) {
+        await daemon.start(DaemonBuilder(), Stream.empty());
+        print('RUNNING');
+      } else {
+        print('ALREADY RUNNING');
+      }
+    }
+      ''').create();
+
+  var packageArg = await PackageResolver.current.processArgument;
+
+  var process = await Process.start(
+      Platform.resolvedExecutable, [packageArg, 'test.dart'],
+      workingDirectory: d.sandbox);
+
+  return process;
+}
