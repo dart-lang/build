@@ -5,6 +5,7 @@
   delete itself when it shouldn't.
 - Add digest string to the asset graph visualization.
 - Added a filter box to the asset graph visualization.
+- Allow `build` version `1.1.x`.
 
 ## 1.1.2
 

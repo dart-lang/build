@@ -1,3 +1,7 @@
+## 0.2.3
+
+- Update to `build` `1.1.0` and add `assetIdForElement`.
+
 ## 0.2.2+7
 
 - Updated _AssetUriResolver to prepare for a future release of the analyzer.
