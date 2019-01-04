@@ -33,10 +33,14 @@ class BuildTarget {
     listeners.add(listener);
   }
 
-  bool operator ==(o) =>
-      o is BuildTarget &&
-      o.target == target &&
-      o._patterns
+  @override
+  int get hashCode => super.hashCode;
+
+  @override
+  bool operator ==(other) =>
+      other is BuildTarget &&
+      other.target == target &&
+      other._patterns
           .map((p) => p.pattern)
           .toSet()
           .difference(_patterns.map((p) => p.pattern).toSet())

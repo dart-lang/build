@@ -2,7 +2,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// Manages options that are tied to particular web socket channels.
 class ChannelOptionsManager {
-  final _optionToChannels = Map<String, Set<WebSocketChannel>>();
+  final _optionToChannels = <String, Set<WebSocketChannel>>{};
 
   Set<String> get options => _optionToChannels.keys.toSet();
 
