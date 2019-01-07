@@ -1,3 +1,7 @@
+// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'dart:io';
 import 'dart:math';
 
@@ -17,7 +21,7 @@ void main(List<String> args) async {
   print('Connected to Dart Build Daemon');
   if (Random().nextBool()) {
     client.registerBuildTarget('/some/client/path', [r'.*_test\.dart$']);
-    client.addBuildOptions(['--define=DART_CHECKS=none']);
+    client.addBuildOptions(['-r']);
     print('Registered example client target...');
   } else {
     client.registerBuildTarget('/some/test/path', []);
