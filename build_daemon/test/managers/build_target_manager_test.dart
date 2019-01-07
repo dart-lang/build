@@ -1,3 +1,7 @@
+// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'package:build_daemon/data/build_target_request.dart';
 import 'package:build_daemon/src/managers/build_target_manager.dart';
 import 'package:built_collection/built_collection.dart';
