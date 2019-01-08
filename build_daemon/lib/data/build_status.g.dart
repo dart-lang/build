@@ -87,6 +87,12 @@ class _$BuildResultSerializer implements StructuredSerializer<BuildResult> {
         ..add(serializers.serialize(object.isCached,
             specifiedType: const FullType(bool)));
     }
+    if (object.builderDetails != null) {
+      result
+        ..add('builderDetails')
+        ..add(serializers.serialize(object.builderDetails,
+            specifiedType: const FullType(Object)));
+    }
 
     return result;
   }
@@ -121,6 +127,10 @@ class _$BuildResultSerializer implements StructuredSerializer<BuildResult> {
         case 'isCached':
           result.isCached = serializers.deserialize(value,
               specifiedType: const FullType(bool)) as bool;
+          break;
+        case 'builderDetails':
+          result.builderDetails = serializers.deserialize(value,
+              specifiedType: const FullType(Object));
           break;
       }
     }
@@ -183,12 +193,19 @@ class _$BuildResult extends BuildResult {
   final String error;
   @override
   final bool isCached;
+  @override
+  final Object builderDetails;
 
   factory _$BuildResult([void updates(BuildResultBuilder b)]) =>
       (new BuildResultBuilder()..update(updates)).build();
 
   _$BuildResult._(
-      {this.status, this.target, this.buildId, this.error, this.isCached})
+      {this.status,
+      this.target,
+      this.buildId,
+      this.error,
+      this.isCached,
+      this.builderDetails})
       : super._() {
     if (status == null) {
       throw new BuiltValueNullFieldError('BuildResult', 'status');
@@ -213,17 +230,20 @@ class _$BuildResult extends BuildResult {
         target == other.target &&
         buildId == other.buildId &&
         error == other.error &&
-        isCached == other.isCached;
+        isCached == other.isCached &&
+        builderDetails == other.builderDetails;
   }
 
   @override
   int get hashCode {
     return $jf($jc(
         $jc(
-            $jc($jc($jc(0, status.hashCode), target.hashCode),
-                buildId.hashCode),
-            error.hashCode),
-        isCached.hashCode));
+            $jc(
+                $jc($jc($jc(0, status.hashCode), target.hashCode),
+                    buildId.hashCode),
+                error.hashCode),
+            isCached.hashCode),
+        builderDetails.hashCode));
   }
 
   @override
@@ -233,7 +253,8 @@ class _$BuildResult extends BuildResult {
           ..add('target', target)
           ..add('buildId', buildId)
           ..add('error', error)
-          ..add('isCached', isCached))
+          ..add('isCached', isCached)
+          ..add('builderDetails', builderDetails))
         .toString();
   }
 }
@@ -261,6 +282,11 @@ class BuildResultBuilder implements Builder<BuildResult, BuildResultBuilder> {
   bool get isCached => _$this._isCached;
   set isCached(bool isCached) => _$this._isCached = isCached;
 
+  Object _builderDetails;
+  Object get builderDetails => _$this._builderDetails;
+  set builderDetails(Object builderDetails) =>
+      _$this._builderDetails = builderDetails;
+
   BuildResultBuilder();
 
   BuildResultBuilder get _$this {
@@ -270,6 +296,7 @@ class BuildResultBuilder implements Builder<BuildResult, BuildResultBuilder> {
       _buildId = _$v.buildId;
       _error = _$v.error;
       _isCached = _$v.isCached;
+      _builderDetails = _$v.builderDetails;
       _$v = null;
     }
     return this;
@@ -296,7 +323,8 @@ class BuildResultBuilder implements Builder<BuildResult, BuildResultBuilder> {
             target: target,
             buildId: buildId,
             error: error,
-            isCached: isCached);
+            isCached: isCached,
+            builderDetails: builderDetails);
     replace(_$result);
     return _$result;
   }

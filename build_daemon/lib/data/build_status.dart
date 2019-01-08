@@ -35,6 +35,10 @@ abstract class BuildResult implements Built<BuildResult, BuildResultBuilder> {
   String get error;
   @nullable
   bool get isCached;
+
+  /// Arbitrary additional information from daemon builder.
+  @nullable
+  Object get builderDetails;
 }
 
 abstract class BuildResults

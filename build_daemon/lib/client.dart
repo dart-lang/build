@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:built_value/serializer.dart';
 import 'package:web_socket_channel/io.dart';
 
 import 'constants.dart';
@@ -19,6 +20,7 @@ import 'data/server_log.dart';
 
 class BuildDaemonClient {
   IOWebSocketChannel _channel;
+  Serializers _serializers;
 
   final _buildResults = StreamController<BuildResults>.broadcast();
 
@@ -39,7 +41,7 @@ class BuildDaemonClient {
   /// build daemon.
   void addBuildOptions(Iterable<String> options) {
     var request = BuildOptionsRequest((b) => b..options.replace(options));
-    _channel.sink.add(jsonEncode(serializers.serialize(request)));
+    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
   /// Adds paths to write usage logs to.
@@ -47,7 +49,7 @@ class BuildDaemonClient {
   /// When the client disconnects these files will no longer be logged to.
   void logToPaths(Iterable<String> paths) {
     var request = LogToPathsRequest((b) => b..paths.replace(paths));
-    _channel.sink.add(jsonEncode(serializers.serialize(request)));
+    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
   /// Registers a build target to be built upon any file change.
@@ -57,24 +59,26 @@ class BuildDaemonClient {
     var request = BuildTargetRequest((b) => b
       ..target = target
       ..blackListPattern.replace(blackListPattern));
-    _channel.sink.add(jsonEncode(serializers.serialize(request)));
+    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
   /// Builds all registered targets.
   void startBuild() {
     var request = BuildRequest();
-    _channel.sink.add(jsonEncode(serializers.serialize(request)));
+    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
-  Future<void> _connect(String workingDirectory, int port) async {
+  Future<void> _connect(String workingDirectory, int port,
+      Serializers serializersOverride) async {
     _channel = IOWebSocketChannel.connect('ws://localhost:$port');
     _channel.stream.listen(_handleServerMessage)
       // TODO(grouma) - Implement proper error handling.
       ..onError(print);
+    _serializers = serializersOverride ?? serializers;
   }
 
   void _handleServerMessage(dynamic data) {
-    var message = serializers.deserialize(jsonDecode(data as String));
+    var message = _serializers.deserialize(jsonDecode(data as String));
     if (message is ServerLog) {
       _serverLogStreamController.add(message);
     } else if (message is BuildResults) {
@@ -88,7 +92,7 @@ class BuildDaemonClient {
   }
 
   static Future<BuildDaemonClient> connect(String workingDirectory,
-      {String daemonCommand = ''}) async {
+      {String daemonCommand = '', Serializers serializersOverride}) async {
     Process process;
     if (daemonCommand.isEmpty) {
       process = await Process.start(
@@ -111,7 +115,7 @@ class BuildDaemonClient {
 
     var port = _existingPort(workingDirectory);
     var client = BuildDaemonClient._();
-    await client._connect(workingDirectory, port);
+    await client._connect(workingDirectory, port, serializersOverride);
     return client;
   }
 
