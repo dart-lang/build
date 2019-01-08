@@ -84,6 +84,7 @@ Future _createDevCompilerModule(
   request.arguments.addAll([
     '--dart-sdk-summary=$sdkSummary',
     '--modules=amd',
+    '--no-summarize',
     '-o',
     jsOutputFile.path,
   ]);
@@ -98,7 +99,6 @@ Future _createDevCompilerModule(
       '--module-root=.',
       '--library-root=$libraryRoot',
       '--summary-extension=$summaryExtension',
-      '--no-summarize',
       defaultAnalysisOptionsArg(scratchSpace),
     ]);
   }
