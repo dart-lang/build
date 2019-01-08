@@ -20,13 +20,7 @@ class BuildStatus extends EnumClass {
   static BuiltSet<BuildStatus> get values => _$values;
 }
 
-abstract class BuildResult implements Built<BuildResult, BuildResultBuilder> {
-  static Serializer<BuildResult> get serializer => _$buildResultSerializer;
-
-  factory BuildResult([updates(BuildResultBuilder b)]) = _$BuildResult;
-
-  BuildResult._();
-
+abstract class BuildResult {
   BuildStatus get status;
   String get target;
   @nullable
@@ -35,6 +29,19 @@ abstract class BuildResult implements Built<BuildResult, BuildResultBuilder> {
   String get error;
   @nullable
   bool get isCached;
+}
+
+abstract class DefaultBuildResult
+    implements
+        BuildResult,
+        Built<DefaultBuildResult, DefaultBuildResultBuilder> {
+  static Serializer<DefaultBuildResult> get serializer =>
+      _$defaultBuildResultSerializer;
+
+  factory DefaultBuildResult([void Function(DefaultBuildResultBuilder) b]) =
+      _$DefaultBuildResult;
+
+  DefaultBuildResult._();
 }
 
 abstract class BuildResults

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:built_value/serializer.dart';
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -28,6 +29,7 @@ class Server {
   final _buildOptionsManager = ChannelOptionsManager();
   final _logPathsManager = ChannelOptionsManager();
   final _pool = Pool(1);
+  final Serializers _serializers;
 
   HttpServer _server;
   DaemonBuilder _builder;
@@ -37,7 +39,9 @@ class Server {
 
   final _subs = <StreamSubscription>[];
 
-  Server(this._builder, Stream<WatchEvent> changes) {
+  Server(this._builder, Stream<WatchEvent> changes,
+      {Serializers serializersOverride})
+      : _serializers = serializersOverride ?? serializers {
     _forwardData();
     _handleChanges(changes);
   }
@@ -51,7 +55,7 @@ class Server {
       channel.stream.listen((message) async {
         dynamic request;
         try {
-          request = serializers.deserialize(jsonDecode(message as String));
+          request = _serializers.deserialize(jsonDecode(message as String));
         } catch (_) {
           print('Unable to parse message: $message');
           return;
@@ -100,13 +104,13 @@ class Server {
 
   void _forwardData() {
     _subs.add(_builder.logs.listen((log) {
-      var message = jsonEncode(serializers.serialize(log));
+      var message = jsonEncode(_serializers.serialize(log));
       for (var channel in _interestedChannels) {
         channel.sink.add(message);
       }
     }));
     _subs.add(_builder.builds.listen((status) {
-      var message = jsonEncode(serializers.serialize(status));
+      var message = jsonEncode(_serializers.serialize(status));
       for (var channel in _interestedChannels) {
         channel.sink.add(message);
       }

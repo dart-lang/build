@@ -17,10 +17,10 @@ part 'serializers.g.dart';
 @SerializersFor([
   BuildRequest,
   BuildStatus,
-  BuildResult,
   BuildResults,
   BuildTargetRequest,
   BuildOptionsRequest,
+  DefaultBuildResult,
   LogToPathsRequest,
   ServerLog,
 ])
