@@ -101,7 +101,7 @@ Future<void> _createKernel(
 
   File packagesFile;
 
-  {
+  await buildStep.trackStage('CollectDeps', () async {
     var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
     var transitiveKernelDeps = <AssetId>[];
     var transitiveSourceDeps = <AssetId>[];
@@ -124,12 +124,12 @@ Future<void> _createKernel(
 
     _addRequestArguments(request, module, transitiveKernelDeps, dartSdkDir,
         sdkKernelPath, outputFile, packagesFile, summaryOnly);
-  }
+  });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    var analyzer = await buildStep.fetchResource(frontendDriverResource);
-    var response = await analyzer.doWork(request,
+    var frontendWorker = await buildStep.fetchResource(frontendDriverResource);
+    var response = await frontendWorker.doWork(request,
         trackWork: (response) => buildStep
             .trackStage('Kernel Generate', () => response, isExternal: true));
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
