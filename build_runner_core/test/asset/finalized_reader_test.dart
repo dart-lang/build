@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+import 'package:build/build.dart';
 import 'package:build_runner_core/src/asset/finalized_reader.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
@@ -21,8 +22,10 @@ void main() {
       var graph = await AssetGraph.build(
           [], Set(), Set(), buildPackageGraph({rootPackage('foo'): []}), null);
 
-      notDeleted = makeAssetNode('a|web/a.txt', [], computeDigest('a'));
-      deleted = makeAssetNode('a|lib/b.txt', [], computeDigest('b'));
+      notDeleted = makeAssetNode(
+          'a|web/a.txt', [], computeDigest(AssetId('a', 'web/a.txt'), 'a'));
+      deleted = makeAssetNode(
+          'a|lib/b.txt', [], computeDigest(AssetId('a', 'lib/b.txt'), 'b'));
       deleted.deletedBy.add(deleted.id.addExtension('.post_anchor.1'));
 
       graph.add(notDeleted);

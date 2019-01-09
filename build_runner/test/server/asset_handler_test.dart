@@ -4,6 +4,7 @@
 
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -31,7 +32,7 @@ void main() {
   });
 
   void _addAsset(String id, String content, {bool deleted = false}) {
-    var node = makeAssetNode(id, [], computeDigest('a'));
+    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }
