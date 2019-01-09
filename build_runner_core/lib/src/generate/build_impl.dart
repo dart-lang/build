@@ -715,22 +715,25 @@ class _SingleBuild {
     var builderOptionsNode = _assetGraph.get(builderOptionsId);
     _combine(builderOptionsNode.lastKnownDigest.bytes as Uint8List);
 
-    for (var id in ids) {
-      var node = _assetGraph.get(id);
-      if (node is GlobAssetNode) {
-        await _updateGlobNodeIfNecessary(node);
-      } else if (!await reader.canRead(id)) {
-        // We want to add something here, a missing/unreadable input should be
-        // different from no input at all.
-        //
-        // This needs to be unique per input so we use the md5 hash of the id.
-        _combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
-        continue;
-      } else {
-        node.lastKnownDigest ??= await reader.digest(id);
-      }
-      _combine(node.lastKnownDigest.bytes as Uint8List);
-    }
+    // Limit the total number of digests we are computing at a time. Otherwise
+    // this can overload the event queue.
+    var pool = Pool(8);
+    await Future.wait(ids.map((id) => pool.withResource(() async {
+          var node = _assetGraph.get(id);
+          if (node is GlobAssetNode) {
+            await _updateGlobNodeIfNecessary(node);
+          } else if (!await reader.canRead(id)) {
+            // We want to add something here, a missing/unreadable input should be
+            // different from no input at all.
+            //
+            // This needs to be unique per input so we use the md5 hash of the id.
+            _combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
+            return;
+          } else {
+            node.lastKnownDigest ??= await reader.digest(id);
+          }
+          _combine(node.lastKnownDigest.bytes as Uint8List);
+        })));
 
     return Digest(combinedBytes);
   }
