@@ -1,3 +1,7 @@
+## 0.10.5
+
+- Improve error messages for unresolvable URIs in the PackageAssetReader.
+
 ## 0.10.4
 
 - Allow using `PackageAssetReader` when the current working directory is not the
