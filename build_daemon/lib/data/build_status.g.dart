@@ -31,7 +31,8 @@ final BuiltSet<BuildStatus> _$values =
 ]);
 
 Serializer<BuildStatus> _$buildStatusSerializer = new _$BuildStatusSerializer();
-Serializer<BuildResult> _$buildResultSerializer = new _$BuildResultSerializer();
+Serializer<DefaultBuildResult> _$defaultBuildResultSerializer =
+    new _$DefaultBuildResultSerializer();
 Serializer<BuildResults> _$buildResultsSerializer =
     new _$BuildResultsSerializer();
 
@@ -52,14 +53,15 @@ class _$BuildStatusSerializer implements PrimitiveSerializer<BuildStatus> {
       BuildStatus.valueOf(serialized as String);
 }
 
-class _$BuildResultSerializer implements StructuredSerializer<BuildResult> {
+class _$DefaultBuildResultSerializer
+    implements StructuredSerializer<DefaultBuildResult> {
   @override
-  final Iterable<Type> types = const [BuildResult, _$BuildResult];
+  final Iterable<Type> types = const [DefaultBuildResult, _$DefaultBuildResult];
   @override
-  final String wireName = 'BuildResult';
+  final String wireName = 'DefaultBuildResult';
 
   @override
-  Iterable serialize(Serializers serializers, BuildResult object,
+  Iterable serialize(Serializers serializers, DefaultBuildResult object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'status',
@@ -92,9 +94,9 @@ class _$BuildResultSerializer implements StructuredSerializer<BuildResult> {
   }
 
   @override
-  BuildResult deserialize(Serializers serializers, Iterable serialized,
+  DefaultBuildResult deserialize(Serializers serializers, Iterable serialized,
       {FullType specifiedType = FullType.unspecified}) {
-    final result = new BuildResultBuilder();
+    final result = new DefaultBuildResultBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -172,7 +174,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   }
 }
 
-class _$BuildResult extends BuildResult {
+class _$DefaultBuildResult extends DefaultBuildResult {
   @override
   final BuildStatus status;
   @override
@@ -184,31 +186,32 @@ class _$BuildResult extends BuildResult {
   @override
   final bool isCached;
 
-  factory _$BuildResult([void updates(BuildResultBuilder b)]) =>
-      (new BuildResultBuilder()..update(updates)).build();
+  factory _$DefaultBuildResult([void updates(DefaultBuildResultBuilder b)]) =>
+      (new DefaultBuildResultBuilder()..update(updates)).build();
 
-  _$BuildResult._(
+  _$DefaultBuildResult._(
       {this.status, this.target, this.buildId, this.error, this.isCached})
       : super._() {
     if (status == null) {
-      throw new BuiltValueNullFieldError('BuildResult', 'status');
+      throw new BuiltValueNullFieldError('DefaultBuildResult', 'status');
     }
     if (target == null) {
-      throw new BuiltValueNullFieldError('BuildResult', 'target');
+      throw new BuiltValueNullFieldError('DefaultBuildResult', 'target');
     }
   }
 
   @override
-  BuildResult rebuild(void updates(BuildResultBuilder b)) =>
+  DefaultBuildResult rebuild(void updates(DefaultBuildResultBuilder b)) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  BuildResultBuilder toBuilder() => new BuildResultBuilder()..replace(this);
+  DefaultBuildResultBuilder toBuilder() =>
+      new DefaultBuildResultBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is BuildResult &&
+    return other is DefaultBuildResult &&
         status == other.status &&
         target == other.target &&
         buildId == other.buildId &&
@@ -228,7 +231,7 @@ class _$BuildResult extends BuildResult {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('BuildResult')
+    return (newBuiltValueToStringHelper('DefaultBuildResult')
           ..add('status', status)
           ..add('target', target)
           ..add('buildId', buildId)
@@ -238,8 +241,9 @@ class _$BuildResult extends BuildResult {
   }
 }
 
-class BuildResultBuilder implements Builder<BuildResult, BuildResultBuilder> {
-  _$BuildResult _$v;
+class DefaultBuildResultBuilder
+    implements Builder<DefaultBuildResult, DefaultBuildResultBuilder> {
+  _$DefaultBuildResult _$v;
 
   BuildStatus _status;
   BuildStatus get status => _$this._status;
@@ -261,9 +265,9 @@ class BuildResultBuilder implements Builder<BuildResult, BuildResultBuilder> {
   bool get isCached => _$this._isCached;
   set isCached(bool isCached) => _$this._isCached = isCached;
 
-  BuildResultBuilder();
+  DefaultBuildResultBuilder();
 
-  BuildResultBuilder get _$this {
+  DefaultBuildResultBuilder get _$this {
     if (_$v != null) {
       _status = _$v.status;
       _target = _$v.target;
@@ -276,22 +280,22 @@ class BuildResultBuilder implements Builder<BuildResult, BuildResultBuilder> {
   }
 
   @override
-  void replace(BuildResult other) {
+  void replace(DefaultBuildResult other) {
     if (other == null) {
       throw new ArgumentError.notNull('other');
     }
-    _$v = other as _$BuildResult;
+    _$v = other as _$DefaultBuildResult;
   }
 
   @override
-  void update(void updates(BuildResultBuilder b)) {
+  void update(void updates(DefaultBuildResultBuilder b)) {
     if (updates != null) updates(this);
   }
 
   @override
-  _$BuildResult build() {
+  _$DefaultBuildResult build() {
     final _$result = _$v ??
-        new _$BuildResult._(
+        new _$DefaultBuildResult._(
             status: status,
             target: target,
             buildId: buildId,

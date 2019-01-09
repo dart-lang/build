@@ -9,10 +9,10 @@ part of 'serializers.dart';
 Serializers _$serializers = (new Serializers().toBuilder()
       ..add(BuildOptionsRequest.serializer)
       ..add(BuildRequest.serializer)
-      ..add(BuildResult.serializer)
       ..add(BuildResults.serializer)
       ..add(BuildStatus.serializer)
       ..add(BuildTargetRequest.serializer)
+      ..add(DefaultBuildResult.serializer)
       ..add(LogToPathsRequest.serializer)
       ..add(ServerLog.serializer)
       ..addBuilderFactory(

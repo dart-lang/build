@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:built_value/serializer.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:watcher/watcher.dart';
 
@@ -32,13 +33,15 @@ class Daemon {
 
   Future<void> get onDone => _doneCompleter.future;
 
-  Future<void> start(DaemonBuilder builder, Stream<WatchEvent> changes) async {
+  Future<void> start(DaemonBuilder builder, Stream<WatchEvent> changes,
+      {Serializers serializersOverride}) async {
     if (_server != null) return;
     _handleGracefulExit();
 
     _createVersionFile();
 
-    _server = Server(builder, changes);
+    _server =
+        Server(builder, changes, serializersOverride: serializersOverride);
     var port = await _server.listen();
     _createPortFile(port);
 
