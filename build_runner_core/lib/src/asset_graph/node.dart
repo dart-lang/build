@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -145,7 +144,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
   /// This needs to be an ordered set because we compute combined input digests
   /// using this later on.
   @override
-  SplayTreeSet<AssetId> inputs;
+  Set<AssetId> inputs;
 
   /// A digest combining all digests of all previous inputs.
   ///
@@ -175,9 +174,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
     @required this.isFailure,
     @required this.primaryInput,
     @required this.builderOptionsId,
-  })  : inputs = inputs != null
-            ? SplayTreeSet.from(inputs)
-            : SplayTreeSet<AssetId>(),
+  })  : inputs = inputs != null ? Set.from(inputs) : Set(),
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override
@@ -270,7 +267,7 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   /// This needs to be an ordered set because we compute combined input digests
   /// using this later on.
   @override
-  SplayTreeSet<AssetId> inputs;
+  Set<AssetId> inputs;
 
   @override
   bool get isReadable => false;
@@ -294,7 +291,7 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
 
 /// A node which has [inputs], a [NodeState], and a [phaseNumber].
 abstract class NodeWithInputs implements AssetNode {
-  SplayTreeSet<AssetId> inputs;
+  Set<AssetId> inputs;
 
   int get phaseNumber;
 

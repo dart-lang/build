@@ -5,9 +5,9 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
-import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -703,11 +703,17 @@ class _SingleBuild {
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
       AssetId builderOptionsId, AssetReader reader) async {
-    var digestSink = AccumulatorSink<Digest>();
-    var bytesSink = md5.startChunkedConversion(digestSink);
+    var combinedBytes = Uint8List.fromList(List.filled(16, 0));
+    void _combine(Uint8List other) {
+      assert(other.length == 16);
+      assert(other is Uint8List);
+      for (var i = 0; i < 16; i++) {
+        combinedBytes[i] ^= other[i];
+      }
+    }
 
     var builderOptionsNode = _assetGraph.get(builderOptionsId);
-    bytesSink.add(builderOptionsNode.lastKnownDigest.bytes);
+    _combine(builderOptionsNode.lastKnownDigest.bytes as Uint8List);
 
     for (var id in ids) {
       var node = _assetGraph.get(id);
@@ -716,17 +722,17 @@ class _SingleBuild {
       } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
-        bytesSink.add([1]);
+        //
+        // This needs to be unique per input so we use the md5 hash of the id.
+        _combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
         continue;
       } else {
         node.lastKnownDigest ??= await reader.digest(id);
       }
-      bytesSink.add(node.lastKnownDigest.bytes);
+      _combine(node.lastKnownDigest.bytes as Uint8List);
     }
 
-    bytesSink.close();
-    assert(digestSink.events.length == 1);
-    return digestSink.events.first;
+    return Digest(combinedBytes);
   }
 
   /// Sets the state for all [outputs] of a build step, by:

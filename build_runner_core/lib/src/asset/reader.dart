@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:async/async.dart';
@@ -43,8 +42,8 @@ class SingleStepReader implements AssetReader {
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum) _getGlobNode;
 
-  /// The assets read during this step in sorted order.
-  final assetsRead = SplayTreeSet<AssetId>();
+  /// The assets read during this step.
+  final assetsRead = Set<AssetId>();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode,
