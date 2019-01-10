@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -86,7 +87,7 @@ void main() {
       test('serialize/deserialize', () {
         var globNode = GlobAssetNode(makeAssetId(), Glob('**/*.dart'), 0,
             NodeState.definitelyNeedsUpdate,
-            inputs: Set(), results: []);
+            inputs: HashSet(), results: []);
         graph.add(globNode);
         for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
@@ -350,7 +351,7 @@ void main() {
           primaryOutputNode.state = NodeState.upToDate;
           var globNode = GlobAssetNode(primaryInputId.addExtension('.glob'),
               Glob('lib/*.cool'), 0, NodeState.upToDate,
-              inputs: Set());
+              inputs: HashSet());
           primaryOutputNode.inputs.add(globNode.id);
           globNode.outputs.add(primaryOutputId);
           graph.add(globNode);

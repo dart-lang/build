@@ -45,10 +45,10 @@ abstract class AssetReader {
   /// may differ based on the current build system being used.
   Future<Digest> digest(AssetId id) async {
     var digestSink = AccumulatorSink<Digest>();
-    var bytesSink = md5.startChunkedConversion(digestSink);
-    bytesSink.add(await readAsBytes(id));
-    bytesSink.add([id.hashCode]);
-    bytesSink.close();
+    md5.startChunkedConversion(digestSink)
+      ..add(await readAsBytes(id))
+      ..add(id.toString().codeUnits)
+      ..close();
     return digestSink.events.first;
   }
 }

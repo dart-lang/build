@@ -677,7 +677,7 @@ class _SingleBuild {
           .where((n) => globNode.glob.matches(n.id.path))
           .toList();
       var potentialIds = SplayTreeSet.of(potentialNodes.map((n) => n.id));
-      globNode.inputs = potentialIds;
+      globNode.inputs = HashSet.from(potentialIds);
       for (var node in potentialNodes) {
         node.outputs.add(globNode.id);
       }
