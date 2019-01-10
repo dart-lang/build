@@ -1,14 +1,11 @@
-## 1.1.4-dev
-
-- Update the way combined input hashes are computed to not rely on ordering.
-  - Digest implementations must now include the AssetId, not just the contents.
-- Require package:build version 1.1.1, which meets the new requirements for
-  digests.
-
 ## 1.1.3
 
 - Update to `package:graphs` version `0.2.0`.
 - Allow `build` version `1.1.x`.
+- Update the way combined input hashes are computed to not rely on ordering.
+  - Digest implementations must now include the AssetId, not just the contents.
+- Require package:build version 1.1.1, which meets the new requirements for
+  digests.
 
 ## 1.1.2
 
