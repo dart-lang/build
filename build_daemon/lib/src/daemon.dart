@@ -107,7 +107,7 @@ class Daemon {
     _sub = ProcessSignal.sigint.watch().listen((signal) async {
       if (signal == ProcessSignal.sigint) {
         cancelCount++;
-        await _cleanUp();
+        await _server.stop();
         if (cancelCount > 1) exit(1);
       }
     });

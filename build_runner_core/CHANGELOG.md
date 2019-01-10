@@ -1,3 +1,7 @@
+## 2.0.0
+
+- The `build` method now requires a list of `buildDirs`.
+
 ## 1.1.3
 
 - Update to `package:graphs` version `0.2.0`.
