@@ -21,6 +21,14 @@ String runningVersion(String workingDirectory) {
   return versionFile.readAsStringSync();
 }
 
+/// Returns the current options of the running build daemon. Null if one isn't
+/// running.
+Set<String> currentOptions(String workingDirectory) {
+  var optionsFile = File(optionsFilePath(workingDirectory));
+  if (!optionsFile.existsSync()) return Set();
+  return optionsFile.readAsLinesSync().toSet();
+}
+
 class Daemon {
   final String _workingDirectory;
 
@@ -33,12 +41,14 @@ class Daemon {
 
   Future<void> get onDone => _doneCompleter.future;
 
-  Future<void> start(DaemonBuilder builder, Stream<WatchEvent> changes,
+  Future<void> start(
+      Set<String> options, DaemonBuilder builder, Stream<WatchEvent> changes,
       {Serializers serializersOverride}) async {
     if (_server != null) return;
     _handleGracefulExit();
 
     _createVersionFile();
+    _createOptionsFile(options);
 
     _server =
         Server(builder, changes, serializersOverride: serializersOverride);
@@ -85,6 +95,10 @@ class Daemon {
 
   void _createVersionFile() => File(versionFilePath(_workingDirectory))
       .writeAsStringSync(currentVersion);
+
+  void _createOptionsFile(Set<String> options) =>
+      File(optionsFilePath(_workingDirectory))
+          .writeAsStringSync(options.toList().join('\n'));
 
   void _handleGracefulExit() {
     var cancelCount = 0;

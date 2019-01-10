@@ -84,6 +84,21 @@ void main() {
       expect(runningVersion(workspace), null);
     });
 
+    test('logs the options when running', () async {
+      String workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      var daemon = await _runDaemon(workspace);
+      testDaemons.add(daemon);
+      expect(await getOutput(daemon), 'RUNNING');
+      expect(currentOptions(workspace).contains('foo'), isTrue);
+    });
+
+    test('does not log the options if not running', () async {
+      String workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      expect(currentOptions(workspace).isEmpty, isTrue);
+    });
+
     test('cleans up after itself', () async {
       String workspace = uuid.v1();
       testWorkspaces.add(workspace);
@@ -115,7 +130,8 @@ Future<Process> _runDaemon(String workspace) async {
     main() async {
       var daemon = Daemon('$workspace');
       if (daemon.tryGetLock()) {
-        await daemon.start(DaemonBuilder(), Stream.empty());
+        var options = ['foo'].toSet();
+        await daemon.start(options, DaemonBuilder(), Stream.empty());
         print('RUNNING');
       } else {
         print('ALREADY RUNNING');

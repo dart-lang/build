@@ -12,8 +12,7 @@ class DaemonBuilder {
 
   Stream<ServerLog> get logs => Stream.empty();
 
-  Future<void> build(
-      Set<String> targets, Set<String> options, Set<String> logToPaths) async {}
+  Future<void> build(Set<String> targets, Set<String> logToPaths) async {}
 
   Future<void> stop() async {}
 }
