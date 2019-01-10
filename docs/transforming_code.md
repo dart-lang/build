@@ -45,6 +45,11 @@ part 'calculator.g.dart';
 abstract class Calculator {
   // Redirect to a generated class.
   factory Calculator() = _$Calculator;
+  
+  // The generated class needs a super constructor to call.
+  //
+  // Make it private to prevent other libraries from using it.
+  Calculator._();
 
   @memoize
   int doExpensiveCalculation() => ...
@@ -57,8 +62,10 @@ And generate the following:
 // this file = calculator.g.dart
 part of 'calculator.dart';
 
-abstract class _$Calculator extends Calculator {
+class _$Calculator extends Calculator {
   int _memoize1;
+  
+  _$Calculator() : super._();
 
   @override
   int doExpensiveCalculation() => _memoize1 ??= super.doExpensiveCalculation();
