@@ -55,7 +55,7 @@ class _AssetGraphDeserializer {
       for (var output in node.outputs) {
         var inputsNode = graph.get(output) as NodeWithInputs;
         assert(inputsNode != null, 'Asset Graph is missing $output');
-        inputsNode.inputs ??= SplayTreeSet<AssetId>();
+        inputsNode.inputs ??= HashSet<AssetId>();
         inputsNode.inputs.add(node.id);
       }
 

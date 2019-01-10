@@ -46,7 +46,7 @@ void main() {
   });
 
   void _addSource(String id, String content, {bool deleted = false}) {
-    var node = makeAssetNode(id, [], computeDigest('a'));
+    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }
@@ -180,8 +180,11 @@ void main() {
           'packages/a/absent.dart.js'
         ])));
     expect(jsonDecode(await response.readAsString()), {
-      'index.html': '7e55db001d319a94b0b713529a756623',
-      'packages/a/some.dart.js': 'eea670f4ac941df71a3b5f268ebe3eac',
+      'index.html':
+          computeDigest(AssetId('a', 'web/index.html'), 'content1').toString(),
+      'packages/a/some.dart.js':
+          computeDigest(AssetId('a', 'lib/some.dart.js'), 'content2')
+              .toString(),
     });
   });
 
@@ -355,13 +358,18 @@ void main() {
       test('emmits build results digests', () async {
         _addSource('a|web/index.html', 'content1');
         _addSource('a|lib/some.dart.js', 'content2');
+        var indexHash =
+            computeDigest(AssetId('a', 'web/index.html'), 'content1')
+                .toString();
         expect(
             clientChannel1.stream.map((s) => jsonDecode(s.toString())),
             emitsInOrder([
-              {'index.html': '7e55db001d319a94b0b713529a756623'},
+              {'index.html': indexHash},
               {
-                'index.html': '7e55db001d319a94b0b713529a756623',
-                'packages/a/some.dart.js': 'eea670f4ac941df71a3b5f268ebe3eac'
+                'index.html': indexHash,
+                'packages/a/some.dart.js':
+                    computeDigest(AssetId('a', 'lib/some.dart.js'), 'content2')
+                        .toString()
               },
               emitsDone
             ]));
@@ -380,12 +388,17 @@ void main() {
         _addSource('a|web1/index.html', 'content1');
         _addSource('a|web2/index.html', 'content2');
         _addSource('a|lib/some.dart.js', 'content3');
+        var someDartHash =
+            computeDigest(AssetId('a', 'lib/some.dart.js'), 'content3')
+                .toString();
         expect(
             clientChannel1.stream.map((s) => jsonDecode(s.toString())),
             emitsInOrder([
               {
-                'index.html': '7e55db001d319a94b0b713529a756623',
-                'packages/a/some.dart.js': 'c96310e55d9677b978eae0dada47642c'
+                'index.html':
+                    computeDigest(AssetId('a', 'web1/index.html'), 'content1')
+                        .toString(),
+                'packages/a/some.dart.js': someDartHash
               },
               emitsDone
             ]));
@@ -393,8 +406,10 @@ void main() {
             clientChannel2.stream.map((s) => jsonDecode(s.toString())),
             emitsInOrder([
               {
-                'index.html': 'eea670f4ac941df71a3b5f268ebe3eac',
-                'packages/a/some.dart.js': 'c96310e55d9677b978eae0dada47642c'
+                'index.html':
+                    computeDigest(AssetId('a', 'web2/index.html'), 'content2')
+                        .toString(),
+                'packages/a/some.dart.js': someDartHash
               },
               emitsDone
             ]));

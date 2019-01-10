@@ -22,7 +22,16 @@ export 'package_graphs.dart';
 export 'sdk.dart';
 export 'test_phases.dart';
 
-Digest computeDigest(String contents) => md5.convert(utf8.encode(contents));
+Digest computeDigest(AssetId id, String contents) {
+  // Special handling for `$$` assets, these are generated under the .dart_tool
+  // dir and unfortunately that leaks into the digest computations.
+  if (id.package.startsWith(r'$$')) {
+    var package = id.package.substring(2);
+    id = AssetId(package, '.dart_tool/build/generated/$package/${id.path}');
+  }
+  return md5.convert(
+      utf8.encode(contents).followedBy(id.toString().codeUnits).toList());
+}
 
 class PlaceholderBuilder extends Builder {
   final String inputExtension;
