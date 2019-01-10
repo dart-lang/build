@@ -29,7 +29,8 @@ Digest computeDigest(AssetId id, String contents) {
     var package = id.package.substring(2);
     id = AssetId(package, '.dart_tool/build/generated/$package/${id.path}');
   }
-  return md5.convert(utf8.encode(contents).followedBy([id.hashCode]).toList());
+  return md5.convert(
+      utf8.encode(contents).followedBy(id.toString().codeUnits).toList());
 }
 
 class PlaceholderBuilder extends Builder {
