@@ -81,6 +81,9 @@ class BuildDaemonClient {
     }
   }
 
+  static bool _isActionMessage(String line) =>
+      line == versionSkew || line == readyToConnectLog || line == optionsSkew;
+
   static Future<BuildDaemonClient> connect(
       String workingDirectory, List<String> daemonCommand,
       {Serializers serializersOverride}) async {
@@ -88,25 +91,22 @@ class BuildDaemonClient {
         daemonCommand.first, daemonCommand.sublist(1),
         mode: ProcessStartMode.detachedWithStdio,
         workingDirectory: workingDirectory);
+
     // Print errors coming from the Dart Build Daemon to help with debugging.
     process.stderr.transform(utf8.decoder).listen(print);
-    var output = '';
-    var result = await process.stdout
+    var stream = process.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
-        .firstWhere((line) {
-      output = '$output\n$line';
-      return line == versionSkew ||
-          line == readyToConnectLog ||
-          line == optionsSkew;
-    }, orElse: () => null);
+        .asBroadcastStream();
+    var output = stream.where((line) => !_isActionMessage(line)).toList();
+    var result = await stream.firstWhere(_isActionMessage, orElse: () => null);
 
     if (result == null) {
-      throw Exception('Unable to start build daemon: $output');
+      throw Exception('Unable to start build daemon: ${await output}');
     } else if (result == versionSkew) {
-      throw VersionSkew(output);
+      throw VersionSkew('${await output}');
     } else if (result == optionsSkew) {
-      throw OptionsSkew(output);
+      throw OptionsSkew('${await output}');
     }
 
     var port = _existingPort(workingDirectory);
