@@ -10,7 +10,6 @@ import 'package:built_value/serializer.dart';
 import 'package:web_socket_channel/io.dart';
 
 import 'constants.dart';
-import 'data/build_options_request.dart';
 import 'data/build_request.dart';
 import 'data/build_status.dart';
 import 'data/build_target_request.dart';
@@ -34,15 +33,6 @@ class BuildDaemonClient {
   }
 
   Stream<ServerLog> get serverLogs => _serverLogStreamController.stream;
-
-  /// Adds a list of build options to be used for all builds.
-  ///
-  /// When this client disconnects these options will no longer be used by the
-  /// build daemon.
-  void addBuildOptions(Iterable<String> options) {
-    var request = BuildOptionsRequest((b) => b..options.replace(options));
-    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
-  }
 
   /// Adds paths to write usage logs to.
   ///
@@ -91,26 +81,32 @@ class BuildDaemonClient {
     }
   }
 
-  static Future<BuildDaemonClient> connect(String workingDirectory,
-      {String daemonCommand = '', Serializers serializersOverride}) async {
-    Process process;
-    if (daemonCommand.isEmpty) {
-      process = await Process.start(
-          'pub', ['run', 'build_daemon', workingDirectory],
-          mode: ProcessStartMode.detachedWithStdio);
-    } else {
-      process = await Process.start(daemonCommand, [workingDirectory],
-          mode: ProcessStartMode.detachedWithStdio);
-    }
+  static bool _isActionMessage(String line) =>
+      line == versionSkew || line == readyToConnectLog || line == optionsSkew;
+
+  static Future<BuildDaemonClient> connect(
+      String workingDirectory, List<String> daemonCommand,
+      {Serializers serializersOverride}) async {
+    var process = await Process.start(
+        daemonCommand.first, daemonCommand.sublist(1),
+        mode: ProcessStartMode.detachedWithStdio,
+        workingDirectory: workingDirectory);
+
     // Print errors coming from the Dart Build Daemon to help with debugging.
     process.stderr.transform(utf8.decoder).listen(print);
-    var result = await process.stdout
+    var stream = process.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
-        .firstWhere((line) => line == versionSkew || line == readyToConnectLog);
+        .asBroadcastStream();
+    var output = stream.where((line) => !_isActionMessage(line)).toList();
+    var result = await stream.firstWhere(_isActionMessage, orElse: () => null);
 
-    if (result == versionSkew) {
-      throw VersionSkew();
+    if (result == null) {
+      throw Exception('Unable to start build daemon: ${await output}');
+    } else if (result == versionSkew) {
+      throw VersionSkew('${await output}');
+    } else if (result == optionsSkew) {
+      throw OptionsSkew('${await output}');
     }
 
     var port = _existingPort(workingDirectory);
@@ -127,4 +123,12 @@ class BuildDaemonClient {
   }
 }
 
-class VersionSkew extends Error {}
+class VersionSkew extends Error {
+  final String details;
+  VersionSkew(this.details);
+}
+
+class OptionsSkew extends Error {
+  final String details;
+  OptionsSkew(this.details);
+}

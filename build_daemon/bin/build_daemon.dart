@@ -12,22 +12,32 @@ import 'package:watcher/watcher.dart';
 /// Entrypoint for the Dart Build Daemon.
 Future main(List<String> args) async {
   var workingDirectory = args.first;
+  var requestedOptions = args.sublist(1).toSet();
 
   var daemon = Daemon(workingDirectory);
 
   if (!daemon.tryGetLock()) {
-    if (runningVersion(workingDirectory) == currentVersion) {
+    var runningOptions = currentOptions(workingDirectory);
+    var version = runningVersion(workingDirectory);
+    if (version != currentVersion) {
+      print('Running Version: $version');
+      print('Current Version: $currentVersion');
+      print(versionSkew);
+    } else if (!(runningOptions.length == requestedOptions.length &&
+        runningOptions.containsAll(requestedOptions))) {
+      print('Running Options: $runningOptions');
+      print('Requested Options: $requestedOptions');
+      print(optionsSkew);
+    } else {
       print('Daemon is already running.');
       print(readyToConnectLog);
-    } else {
-      print(versionSkew);
     }
   } else {
     print('Starting daemon...');
     // TODO(grouma) - Create a real builder for package:build
     var builder = DaemonBuilder();
     var watcher = Watcher(workingDirectory);
-    await daemon.start(builder, watcher.events);
+    await daemon.start(requestedOptions, builder, watcher.events);
     print(readyToConnectLog);
     await daemon.onDone;
   }

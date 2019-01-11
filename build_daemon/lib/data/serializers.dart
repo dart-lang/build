@@ -4,7 +4,6 @@
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
-import 'build_options_request.dart';
 import 'build_request.dart';
 import 'build_status.dart';
 import 'build_target_request.dart';
@@ -19,7 +18,6 @@ part 'serializers.g.dart';
   BuildStatus,
   BuildResults,
   BuildTargetRequest,
-  BuildOptionsRequest,
   DefaultBuildResult,
   LogToPathsRequest,
   ServerLog,
