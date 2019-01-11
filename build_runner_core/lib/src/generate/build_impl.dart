@@ -715,7 +715,9 @@ class _SingleBuild {
     var builderOptionsNode = _assetGraph.get(builderOptionsId);
     _combine(builderOptionsNode.lastKnownDigest.bytes as Uint8List);
 
-    for (var id in ids) {
+    // Limit the total number of digests we are computing at a time. Otherwise
+    // this can overload the event queue.
+    await Future.wait(ids.map((id) async {
       var node = _assetGraph.get(id);
       if (node is GlobAssetNode) {
         await _updateGlobNodeIfNecessary(node);
@@ -725,12 +727,12 @@ class _SingleBuild {
         //
         // This needs to be unique per input so we use the md5 hash of the id.
         _combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
-        continue;
+        return;
       } else {
         node.lastKnownDigest ??= await reader.digest(id);
       }
       _combine(node.lastKnownDigest.bytes as Uint8List);
-    }
+    }));
 
     return Digest(combinedBytes);
   }
