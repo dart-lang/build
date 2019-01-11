@@ -23,8 +23,8 @@ Future main(List<String> args) async {
       print('Running Version: $version');
       print('Current Version: $currentVersion');
       print(versionSkew);
-    } else if (!(runningOptions.containsAll(requestedOptions) &&
-        runningOptions.length == requestedOptions.length)) {
+    } else if (!(runningOptions.length == requestedOptions.length &&
+        runningOptions.containsAll(requestedOptions))) {
       print('Running Options: $runningOptions');
       print('Requested Options: $requestedOptions');
       print(optionsSkew);
