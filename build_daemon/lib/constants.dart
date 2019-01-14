@@ -9,11 +9,14 @@ const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
 
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '2.0.0';
+const currentVersion = '3.0.0';
 
-String daemonWorkspace(String workingDirectory) =>
-    '${Directory.systemTemp.path}/dart_build_daemon/'
-    '${workingDirectory.replaceAll("/", "_")}';
+var _username = Platform.environment['USER'] ?? '';
+String daemonWorkspace(String workingDirectory) {
+  var prefix = '${Directory.systemTemp.path}';
+  if (_username.isNotEmpty) prefix += '/$_username';
+  return '$prefix/dart_build_daemon/${workingDirectory.replaceAll("/", "_")}';
+}
 
 /// Used to ensure that only one instance of this daemon is running at a time.
 String lockFilePath(String workingDirectory) =>
