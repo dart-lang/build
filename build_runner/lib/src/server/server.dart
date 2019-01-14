@@ -168,7 +168,7 @@ class ServeHandler implements BuildState {
         (jsonDecode(await request.readAsString()) as List).cast<String>();
     var rootPackage = _state.packageGraph.root.name;
     var results = <String, String>{};
-    for (String path in assertPathList) {
+    for (final path in assertPathList) {
       try {
         var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
         var digest = await _state.reader.digest(assetId);
