@@ -25,6 +25,7 @@ main() {
         currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_modules',
           'build_resolvers',
           'build_runner',

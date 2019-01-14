@@ -92,6 +92,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                 currentIsolateDependencies: [
                   'build',
                   'build_config',
+                  'build_daemon',
                   'build_resolvers',
                   'build_runner',
                   'build_runner_core',
@@ -128,6 +129,7 @@ Future<BuildTool> packageWithBuildScript(
             await _pubspecWithDeps('a', currentIsolateDependencies: [
               'build',
               'build_config',
+              'build_daemon',
               'build_resolvers',
               'build_runner',
               'build_runner_core',
