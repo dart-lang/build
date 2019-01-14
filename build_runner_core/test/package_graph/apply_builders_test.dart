@@ -34,7 +34,7 @@ void main() {
             'b|cool_builder': {'option_a': 'a', 'option_c': 'c'},
           },
           false);
-      for (InBuildPhase phase in phases) {
+      for (final phase in phases.cast<InBuildPhase>()) {
         expect((phase.builder as CoolBuilder).optionA, equals('a'));
         expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
         expect((phase.builder as CoolBuilder).optionC, equals('c'));
@@ -77,7 +77,7 @@ void main() {
               'b|cool_builder': {'option_c': '--define c'},
             },
             true);
-        for (InBuildPhase phase in phases) {
+        for (final phase in phases.cast<InBuildPhase>()) {
           expect((phase.builder as CoolBuilder).optionA, equals('global a'));
           expect((phase.builder as CoolBuilder).optionB,
               equals('release global b'));
