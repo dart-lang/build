@@ -76,8 +76,8 @@ class AnalyzerResolver implements ReleasableResolver {
   /// Cache of all asset sources currently referenced.
   final Map<AssetId, AssetBasedSource> sources = {};
 
-  final InternalAnalysisContext _context =
-      AnalysisEngine.instance.createAnalysisContext();
+  final _context = AnalysisEngine.instance.createAnalysisContext()
+      as InternalAnalysisContext;
 
   /// The assets which are known to be readable at some point during the build
   /// before [reset] is called.
