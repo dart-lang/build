@@ -1,5 +1,5 @@
 name: build_modules
-version: 1.0.5
+version: 1.0.4
 description: Builders for Dart modules
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
@@ -33,13 +33,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner:
-    path: ../build_runner
-  build_runner_core:
-    path: ../build_runner_core
