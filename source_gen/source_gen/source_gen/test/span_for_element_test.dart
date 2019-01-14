@@ -32,8 +32,10 @@ abstract class Example implements List {
     expect(
         spanForElement(library.getType('Example')).message('Here it is'), r'''
 line 3, column 16 of package:test_lib/test_lib.dart: Here it is
-abstract class Example implements List {
-               ^^^^^^^''');
+  ╷
+3 │ abstract class Example implements List {
+  │                ^^^^^^^
+  ╵''');
   });
 
   test('should correctly highlight getter', () async {
@@ -42,8 +44,10 @@ abstract class Example implements List {
             .message('Here it is'),
         r'''
 line 4, column 15 of package:test_lib/test_lib.dart: Here it is
-  List<A> get getter => null;
-              ^^^^^^''');
+  ╷
+4 │   List<A> get getter => null;
+  │               ^^^^^^
+  ╵''');
   });
 
   test('should correctly highlight setter', () async {
@@ -52,8 +56,10 @@ line 4, column 15 of package:test_lib/test_lib.dart: Here it is
             .message('Here it is'),
         r'''
 line 5, column 7 of package:test_lib/test_lib.dart: Here it is
-  set setter(int value) {}
-      ^^^^^^''');
+  ╷
+5 │   set setter(int value) {}
+  │       ^^^^^^
+  ╵''');
   });
 
   test('should correctly highlight field', () async {
@@ -62,8 +68,10 @@ line 5, column 7 of package:test_lib/test_lib.dart: Here it is
             .message('Here it is'),
         r'''
 line 6, column 7 of package:test_lib/test_lib.dart: Here it is
-  int field;
-      ^^^^^''');
+  ╷
+6 │   int field;
+  │       ^^^^^
+  ╵''');
   });
 
   test('highlight getter with getter/setter property', () async {
@@ -72,7 +80,9 @@ line 6, column 7 of package:test_lib/test_lib.dart: Here it is
             .message('Here it is'),
         r'''
 line 7, column 11 of package:test_lib/test_lib.dart: Here it is
-  int get fieldProp => field;
-          ^^^^^^^^^''');
+  ╷
+7 │   int get fieldProp => field;
+  │           ^^^^^^^^^
+  ╵''');
   });
 }

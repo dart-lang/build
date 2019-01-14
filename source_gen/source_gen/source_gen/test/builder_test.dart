@@ -560,8 +560,10 @@ part of test_lib;
 
 // Error: Don't use classes with the word 'Error' in the name
 //        package:pkg/test_lib.dart:4:7
-//        class MyGoodError { }
-//              ^^^^^^^^^^^
+//          ╷
+//        4 │ class MyGoodError { }
+//          │       ^^^^^^^^^^^
+//          ╵
 // TODO: Rename MyGoodError to something else.
 ''';
 
