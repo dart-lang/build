@@ -164,7 +164,8 @@ class ServeHandler implements BuildState {
 
   Future<shelf.Response> _assetsDigestHandler(
       shelf.Request request, String rootDir) async {
-    var assertPathList = jsonDecode(await request.readAsString()) as List;
+    var assertPathList =
+        (jsonDecode(await request.readAsString()) as List).cast<String>();
     var rootPackage = _state.packageGraph.root.name;
     var results = <String, String>{};
     for (String path in assertPathList) {
