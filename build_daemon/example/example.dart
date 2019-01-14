@@ -4,13 +4,14 @@
 
 import 'dart:io';
 import 'dart:math';
+import 'package:path/path.dart' as p;
 
 import 'package:build_daemon/client.dart';
 
 void main(List<String> args) async {
   BuildDaemonClient client;
   var workingDirectory =
-      Directory.fromUri(Uri(path: Directory.current.path + '/../example')).path;
+      p.normalize(p.join(Directory.current.path + '/../example'));
 
   try {
     client = await BuildDaemonClient.connect(workingDirectory, [
