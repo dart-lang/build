@@ -1,4 +1,4 @@
-## 1.1.3-dev
+## 1.1.3
 
 - Update to `package:graphs` version `0.2.0`.
 - Fix an issue where when running from source in watch mode the script would

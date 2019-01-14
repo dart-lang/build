@@ -8,7 +8,7 @@
 - Allow `build` version `1.1.x`.
 - Update the way combined input hashes are computed to not rely on ordering.
   - Digest implementations must now include the AssetId, not just the contents.
-- Require package:build version 1.1.1, which meets the new requirements for
+- Require package:build version 1.1.0, which meets the new requirements for
   digests.
 
 ## 1.1.2
