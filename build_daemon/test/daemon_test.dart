@@ -40,7 +40,7 @@ void main() {
     });
 
     test('can run if no other daemon is running', () async {
-      String workspace = uuid.v1();
+      var workspace = uuid.v1() as String;
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await getOutput(daemon), 'RUNNING');
@@ -48,7 +48,7 @@ void main() {
 
     test('can not run if another daemon is running in the same workspace',
         () async {
-      String workspace = uuid.v1();
+      var workspace = uuid.v1() as String;
       testWorkspaces.add(workspace);
       var daemonOne = await _runDaemon(workspace);
       expect(await getOutput(daemonOne), 'RUNNING');
@@ -59,8 +59,8 @@ void main() {
 
     test('can run if another daemon is running in a different workspace',
         () async {
-      String workspace1 = uuid.v1();
-      String workspace2 = uuid.v1();
+      var workspace1 = uuid.v1() as String;
+      var workspace2 = uuid.v1() as String;
       testWorkspaces.addAll([workspace1, workspace2]);
       var daemonOne = await _runDaemon(workspace1);
       expect(await getOutput(daemonOne), 'RUNNING');
@@ -70,7 +70,7 @@ void main() {
     });
 
     test('logs the version when running', () async {
-      String workspace = uuid.v1();
+      var workspace = uuid.v1() as String;
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
@@ -79,13 +79,13 @@ void main() {
     });
 
     test('does not set the current version if not running', () async {
-      String workspace = uuid.v1();
+      var workspace = uuid.v1() as String;
       testWorkspaces.add(workspace);
       expect(runningVersion(workspace), null);
     });
 
     test('logs the options when running', () async {
-      String workspace = uuid.v1();
+      var workspace = uuid.v1() as String;
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
@@ -94,13 +94,13 @@ void main() {
     });
 
     test('does not log the options if not running', () async {
-      String workspace = uuid.v1();
+      var workspace = uuid.v1() as String;
       testWorkspaces.add(workspace);
       expect(currentOptions(workspace).isEmpty, isTrue);
     });
 
     test('cleans up after itself', () async {
-      String workspace = uuid.v1();
+      var workspace = uuid.v1() as String;
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       // Wait for the daemon to be running before checking the workspace exits.
@@ -122,7 +122,7 @@ Future<String> getOutput(Process daemon) async {
       .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING');
 }
 
-Future<Process> _runDaemon(String workspace) async {
+Future<Process> _runDaemon(var workspace) async {
   await d.file('test.dart', '''
     import 'package:build_daemon/src/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
