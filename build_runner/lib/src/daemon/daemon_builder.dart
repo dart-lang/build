@@ -10,6 +10,7 @@ import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart' as daemon;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
+import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -19,6 +20,7 @@ import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/build_impl.dart';
+import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
@@ -98,11 +100,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     await _buildOptions.logListener.cancel();
   }
 
-  void _logMessage(Level level, String message) {
-    // TODO(grouma) - use the logic in std_io_logging.dart to include color.
-    _outputStreamController.add(ServerLog((b) => b.log =
-        LogRecord(level, message, 'BuildRunnerBuildDaemon').toString()));
-  }
+  void _logMessage(Level level, String message) => overrideAnsiOutput(
+      true,
+      () => _outputStreamController.add(ServerLog((b) => b.log = colorLog(
+              LogRecord(level, message, 'BuildRunnerBuildDaemon'),
+              verbose: _buildOptions.verbose)
+          .toString())));
 
   static Future<BuildRunnerDaemonBuilder> create(
     PackageGraph packageGraph,
@@ -117,7 +120,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       // Print here as well so that severe errors can be caught by the
       // daemon client.
       print(record);
-      outputStreamController.add(ServerLog((b) => b.log = '$record'));
+      overrideAnsiOutput(true, () {
+        outputStreamController.add(ServerLog((b) => b.log =
+            colorLog(record, verbose: sharedOptions.verbose).toString()));
+      });
     });
 
     var daemonEnvironment = OverrideableEnvironment(environment,
