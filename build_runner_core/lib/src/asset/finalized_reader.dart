@@ -23,7 +23,6 @@ class FinalizedReader implements AssetReader {
   final List<BuildPhase> _buildPhases;
 
   void updateBuild(List<String> buildDirs) {
-    _optionalOutputTracker.reset();
     _optionalOutputTracker =
         OptionalOutputTracker(_assetGraph, buildDirs, _buildPhases);
   }
