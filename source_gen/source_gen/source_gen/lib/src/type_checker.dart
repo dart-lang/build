@@ -4,12 +4,12 @@
 
 import 'dart:mirrors' hide SourceLocation;
 
+import 'package:analyzer/dart/ast/ast.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/dart/analysis/results.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-// TODO(https://github.com/dart-lang/sdk/issues/32454):
-// ignore: implementation_imports
-import 'package:analyzer/src/dart/element/element.dart';
 import 'package:source_span/source_span.dart';
 
 import 'utils.dart';
@@ -291,22 +291,23 @@ class UnresolvedAnnotationException implements Exception {
   /// May be `null` if the import library was not found.
   final SourceSpan annotationSource;
 
-  // TODO: Remove internal API once ElementAnnotation has source information.
+  // TODO: Remove internal API once AnalysisDriver / AnalysisSession only.
   // https://github.com/dart-lang/sdk/issues/32454
-  static SourceSpan _getSourceSpanFrom(ElementAnnotation annotation) {
-    final internals = annotation as ElementAnnotationImpl;
-    final astNode = internals.annotationAst;
-    final contents = annotation.source.contents.data;
-    if (contents == null || contents.isEmpty) {
-      // If there is no import statement.
-      return null;
-    }
-    final start = astNode.offset;
-    final end = start + astNode.length;
+  static SourceSpan _getSourceSpanFrom(
+    Element annotatedElement,
+    int annotationIndex,
+  ) {
+    // ignore: deprecated_member_use
+    final parsedLibrary = ParsedLibraryResultImpl.tmp(annotatedElement.library);
+    final declaration = parsedLibrary.getElementDeclaration(annotatedElement);
+    final annotatedNode = declaration.node as AnnotatedNode;
+    final annotation = annotatedNode.metadata[annotationIndex];
+    final start = annotation.offset;
+    final end = start + annotation.length;
     return SourceSpan(
-      SourceLocation(start, sourceUrl: annotation.source.uri),
-      SourceLocation(end, sourceUrl: annotation.source.uri),
-      contents.substring(start, end),
+      SourceLocation(start, sourceUrl: declaration.parsedUnit.uri),
+      SourceLocation(end, sourceUrl: declaration.parsedUnit.uri),
+      declaration.parsedUnit.content.substring(start, end),
     );
   }
 
@@ -316,8 +317,7 @@ class UnresolvedAnnotationException implements Exception {
     Element annotatedElement,
     int annotationIndex,
   ) {
-    final annotation = annotatedElement.metadata[annotationIndex];
-    final sourceSpan = _getSourceSpanFrom(annotation);
+    final sourceSpan = _getSourceSpanFrom(annotatedElement, annotationIndex);
     return UnresolvedAnnotationException._(annotatedElement, sourceSpan);
   }
 

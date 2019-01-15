@@ -1,3 +1,7 @@
+## 0.9.4
+
+* Use `ParsedLibraryResult` to find source spans for unresolvable annotations.
+
 ## 0.9.3
 
 * Rename `LibraryReader.classElements` to `LibraryReader.classes` to better
