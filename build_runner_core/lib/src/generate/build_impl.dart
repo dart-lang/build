@@ -110,12 +110,10 @@ class BuildImpl {
         buildPhases.length,
         options.packageGraph.root.name,
         _isReadableAfterBuildFactory(buildPhases));
-    var optionalOutputTracker = OptionalOutputTracker(
-        buildDefinition.assetGraph, options.buildDirs, buildPhases);
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
-        optionalOutputTracker,
+        buildPhases,
         options.packageGraph.root.name);
     var build =
         BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);

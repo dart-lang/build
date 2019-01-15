@@ -6,7 +6,6 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/src/asset/finalized_reader.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
@@ -34,8 +33,7 @@ void main() {
       var delegate = InMemoryAssetReader();
       delegate.assets.addAll({notDeleted.id: [], deleted.id: []});
 
-      reader = FinalizedReader(
-          delegate, graph, OptionalOutputTracker(graph, [], []), 'a');
+      reader = FinalizedReader(delegate, graph, [], 'a');
     });
 
     test('can not read deleted files', () async {
