@@ -32,27 +32,30 @@ class DaemonCommand extends BuildRunnerCommand {
       var runningOptions = currentOptions(workingDirectory);
       var version = runningVersion(workingDirectory);
       if (version != currentVersion) {
-        print('Running Version: $version');
-        print('Current Version: $currentVersion');
-        print(versionSkew);
+        stdout.writeln('Running Version: $version');
+        stdout.writeln('Current Version: $currentVersion');
+        stdout.writeln(versionSkew);
+        return 1;
       } else if (!(runningOptions.length == requestedOptions.length &&
           runningOptions.containsAll(requestedOptions))) {
-        print('Running Options: $runningOptions');
-        print('Requested Options: $requestedOptions');
-        print(optionsSkew);
+        stdout.writeln('Running Options: $runningOptions');
+        stdout.writeln('Requested Options: $requestedOptions');
+        stdout.writeln(optionsSkew);
+        return 1;
       } else {
-        print('Daemon is already running.');
+        stdout.writeln('Daemon is already running.');
         print(readyToConnectLog);
+        return 0;
       }
     } else {
-      print('Starting daemon...');
+      stdout.writeln('Starting daemon...');
       var builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
         builderApplications,
         options,
       );
       await daemon.start(requestedOptions, builder, builder.changes);
-      print(readyToConnectLog);
+      stdout.writeln(readyToConnectLog);
       await daemon.onDone;
     }
     return 0;

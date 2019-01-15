@@ -31,21 +31,24 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
   final Stream<AssetChange> _graphEvents;
+  Stream<WatchEvent> _changes;
 
   BuildRunnerDaemonBuilder._(
     this._builder,
     this._buildOptions,
     this._outputStreamController,
     this._graphEvents,
-  );
+  ) {
+    _changes = _graphEvents.map((data) {
+      _changesFromLastBuild.add(data);
+      return WatchEvent(data.type, data.id.path);
+    });
+  }
 
   @override
   Stream<daemon.BuildResults> get builds => _buildResults.stream;
 
-  Stream<WatchEvent> get changes => _graphEvents.map((data) {
-        _changesFromLastBuild.add(data);
-        return WatchEvent(data.type, data.id.path);
-      });
+  Stream<WatchEvent> get changes => _changes;
 
   @override
   Stream<ServerLog> get logs => _outputStreamController.stream;
