@@ -75,12 +75,15 @@ class PackageAssetReader extends AssetReader
   File _resolve(AssetId id) {
     final uri = id.uri;
     if (uri.isScheme('package')) {
-      return File.fromUri(_packageResolver.resolveUri(id.uri));
+      final uri = _packageResolver.resolveUri(id.uri);
+      if (uri != null) {
+        return File.fromUri(uri);
+      }
     }
     if (id.package == _rootPackage) {
       return File(p.canonicalize(p.join(_rootPackagePath, id.path)));
     }
-    throw UnsupportedError('Unabled to resolve $id');
+    throw UnsupportedError('Unable to resolve $id');
   }
 
   String get _rootPackagePath {

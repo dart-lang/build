@@ -86,10 +86,12 @@ class BuildImpl {
         _trackPerformance = options.trackPerformance,
         _logPerformanceDir = options.logPerformanceDir;
 
-  Future<BuildResult> run(
-          Map<AssetId, ChangeType> updates, List<String> buildDirs) =>
-      _SingleBuild(this, buildDirs).run(updates)
-        ..whenComplete(_resolvers.reset);
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates,
+      {List<String> buildDirs}) {
+    buildDirs ??= [];
+    return _SingleBuild(this, buildDirs).run(updates)
+      ..whenComplete(_resolvers.reset);
+  }
 
   static Future<BuildImpl> create(
       BuildOptions options,
@@ -110,12 +112,10 @@ class BuildImpl {
         buildPhases.length,
         options.packageGraph.root.name,
         _isReadableAfterBuildFactory(buildPhases));
-    var optionalOutputTracker = OptionalOutputTracker(
-        buildDefinition.assetGraph, options.buildDirs, buildPhases);
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
-        optionalOutputTracker,
+        buildPhases,
         options.packageGraph.root.name);
     var build =
         BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);

@@ -55,7 +55,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build $targets...');
     try {
       var mergedChanges = collectChanges([_changesFromLastBuild]);
-      var result = await _builder.run(mergedChanges, targets.toList());
+      var result =
+          await _builder.run(mergedChanges, buildDirs: targets.toList());
       var results = <daemon.BuildResult>[];
       for (var target in targets) {
         if (result.status == BuildStatus.success) {

@@ -19,9 +19,9 @@ class BuildRunner {
 
   Future<Null> beforeExit() => _build.beforeExit();
 
-  Future<BuildResult> run(
-          Map<AssetId, ChangeType> updates, List<String> buildDirs) =>
-      _build.run(updates, buildDirs);
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates,
+          {List<String> buildDirs}) =>
+      _build.run(updates, buildDirs: buildDirs);
 
   static Future<BuildRunner> create(
           BuildOptions options,
