@@ -102,7 +102,8 @@ class BuildDaemonClient {
     var result = await stream.firstWhere(_isActionMessage, orElse: () => null);
 
     if (result == null) {
-      throw Exception('Unable to start build daemon: ${await output}');
+      throw Exception(
+          'Unable to start build daemon: ${(await output).join('\n')}');
     } else if (result == versionSkew) {
       throw VersionSkew('${await output}');
     } else if (result == optionsSkew) {
