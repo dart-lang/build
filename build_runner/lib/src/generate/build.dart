@@ -109,7 +109,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       builderConfigOverrides,
       isReleaseBuild: isReleaseBuild ?? false,
     );
-    var result = await build.run({});
+    var result = await build.run({}, options.buildDirs);
     await build?.beforeExit();
     return result;
   } finally {
