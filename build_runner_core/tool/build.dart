@@ -24,7 +24,7 @@ main() async {
     ],
     const {},
   );
-  result = await build.run({}, []);
+  result = await build.run({});
   if (result.status != BuildStatus.success) {
     print('Build Failed!:\n$result');
   }

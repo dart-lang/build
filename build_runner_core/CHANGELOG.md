@@ -1,6 +1,7 @@
 ## 2.0.0
 
 - The `build` method now requires a list of `buildDirs`.
+- Remove `buildDirs` from `BuildOptions`.
 
 ## 1.1.3
 

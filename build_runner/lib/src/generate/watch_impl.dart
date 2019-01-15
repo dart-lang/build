@@ -249,7 +249,7 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return _build.run(mergedChanges, _buildDirs);
+      return _build.run(mergedChanges, buildDirs: _buildDirs);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -329,7 +329,7 @@ class WatchImpl implements BuildState {
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
-        firstBuild = await _build.run({}, _buildDirs);
+        firstBuild = await _build.run({}, buildDirs: _buildDirs);
       } on CannotBuildException {
         _terminateCompleter.complete();
 

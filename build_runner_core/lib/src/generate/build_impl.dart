@@ -86,10 +86,12 @@ class BuildImpl {
         _trackPerformance = options.trackPerformance,
         _logPerformanceDir = options.logPerformanceDir;
 
-  Future<BuildResult> run(
-          Map<AssetId, ChangeType> updates, List<String> buildDirs) =>
-      _SingleBuild(this, buildDirs).run(updates)
-        ..whenComplete(_resolvers.reset);
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates,
+      {List<String> buildDirs}) {
+    buildDirs ??= [];
+    return _SingleBuild(this, buildDirs).run(updates)
+      ..whenComplete(_resolvers.reset);
+  }
 
   static Future<BuildImpl> create(
       BuildOptions options,

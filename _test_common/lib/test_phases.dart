@@ -128,7 +128,7 @@ Future<BuildResult> testBuilders(
     builderConfigOverrides,
     isReleaseBuild: false,
   );
-  result = await build.run({}, buildDirs ?? []);
+  result = await build.run({}, buildDirs: buildDirs);
   await build.beforeExit();
   await options.logListener.cancel();
 
