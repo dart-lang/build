@@ -38,7 +38,8 @@ class FinalizedReader implements AssetReader {
     if (!node.isReadable) return UnreadableReason.assetType;
     if (node is GeneratedAssetNode) {
       if (node.isFailure) return UnreadableReason.failed;
-      if (!(node.wasOutput && _optionalOutputTracker.isRequired(node.id))) {
+      if (!(node.wasOutput &&
+          (_optionalOutputTracker?.isRequired(node.id) ?? true))) {
         return UnreadableReason.notOutput;
       }
     }
