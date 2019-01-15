@@ -118,7 +118,6 @@ Future<BuildResult> testBuilders(
       skipBuildScriptCheck: true,
       overrideBuildConfig: overrideBuildConfig,
       enableLowResourcesMode: enableLowResourcesMode,
-      buildDirs: buildDirs,
       logPerformanceDir: logPerformanceDir);
 
   BuildResult result;
@@ -129,7 +128,7 @@ Future<BuildResult> testBuilders(
     builderConfigOverrides,
     isReleaseBuild: false,
   );
-  result = await build.run({});
+  result = await build.run({}, buildDirs: buildDirs);
   await build.beforeExit();
   await options.logListener.cancel();
 

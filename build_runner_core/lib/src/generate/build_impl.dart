@@ -66,7 +66,6 @@ class BuildImpl {
   final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
-  final List<String> _buildDirs;
   final String _logPerformanceDir;
 
   Future<Null> beforeExit() => _resourceManager.beforeExit();
@@ -85,11 +84,14 @@ class BuildImpl {
         _verbose = options.verbose,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
-        _buildDirs = options.buildDirs,
         _logPerformanceDir = options.logPerformanceDir;
 
-  Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
-      _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates,
+      {List<String> buildDirs}) {
+    buildDirs ??= [];
+    return _SingleBuild(this, buildDirs).run(updates)
+      ..whenComplete(_resolvers.reset);
+  }
 
   static Future<BuildImpl> create(
       BuildOptions options,
@@ -110,12 +112,10 @@ class BuildImpl {
         buildPhases.length,
         options.packageGraph.root.name,
         _isReadableAfterBuildFactory(buildPhases));
-    var optionalOutputTracker = OptionalOutputTracker(
-        buildDefinition.assetGraph, options.buildDirs, buildPhases);
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
-        optionalOutputTracker,
+        buildPhases,
         options.packageGraph.root.name);
     var build =
         BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
@@ -160,7 +160,7 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl)
+  _SingleBuild(BuildImpl buildImpl, List<String> _buildDirs)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
@@ -174,7 +174,7 @@ class _SingleBuild {
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
-        _buildDirs = buildImpl._buildDirs,
+        _buildDirs = _buildDirs,
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();

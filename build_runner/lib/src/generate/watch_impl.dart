@@ -77,7 +77,6 @@ Future<ServeHandler> watch(
     skipBuildScriptCheck: skipBuildScriptCheck,
     enableLowResourcesMode: enableLowResourcesMode,
     trackPerformance: trackPerformance,
-    buildDirs: buildDirs,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
   );
@@ -92,6 +91,7 @@ Future<ServeHandler> watch(
       directoryWatcherFactory,
       configKey,
       outputMap?.isNotEmpty == true,
+      buildDirs,
       isReleaseMode: isReleaseBuild ?? false);
 
   unawaited(watch.buildResults.drain().then((_) async {
@@ -119,9 +119,10 @@ WatchImpl _runWatch(
         DirectoryWatcher Function(String) directoryWatcherFactory,
         String configKey,
         bool willCreateOutputDirs,
+        List<String> buildDirs,
         {bool isReleaseMode = false}) =>
     WatchImpl(options, environment, builders, builderConfigOverrides, until,
-        directoryWatcherFactory, configKey, willCreateOutputDirs,
+        directoryWatcherFactory, configKey, willCreateOutputDirs, buildDirs,
         isReleaseMode: isReleaseMode);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
@@ -178,6 +179,9 @@ class WatchImpl implements BuildState {
   /// The [TargetGraph] for the current program.
   final TargetGraph _targetGraph;
 
+  /// The directories to build upon file changes.
+  final List<String> _buildDirs;
+
   @override
   Future<BuildResult> currentBuild;
 
@@ -196,6 +200,7 @@ class WatchImpl implements BuildState {
       this._directoryWatcherFactory,
       this._configKey,
       this._willCreateOutputDirs,
+      this._buildDirs,
       {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph,
@@ -229,7 +234,7 @@ class WatchImpl implements BuildState {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(_build != null);
-      _build.finalizedReader.reset();
+      _build.finalizedReader.reset(_buildDirs);
       _logger.info('${'-' * 72}\n');
       _logger.info('Starting Build\n');
       var mergedChanges = _collectChanges(changes);
@@ -244,7 +249,7 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return _build.run(mergedChanges);
+      return _build.run(mergedChanges, buildDirs: _buildDirs);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -324,7 +329,7 @@ class WatchImpl implements BuildState {
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
-        firstBuild = await _build.run({});
+        firstBuild = await _build.run({}, buildDirs: _buildDirs);
       } on CannotBuildException {
         _terminateCompleter.complete();
 

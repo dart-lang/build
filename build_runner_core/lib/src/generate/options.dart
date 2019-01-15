@@ -64,7 +64,6 @@ class BuildOptions {
   final bool enableLowResourcesMode;
   final bool trackPerformance;
   final bool verbose;
-  final List<String> buildDirs;
   final TargetGraph targetGraph;
   final Resolvers resolvers;
 
@@ -86,7 +85,6 @@ class BuildOptions {
     @required this.skipBuildScriptCheck,
     @required this.trackPerformance,
     @required this.verbose,
-    @required this.buildDirs,
     @required this.targetGraph,
     @required this.logPerformanceDir,
     @required this.resolvers,
@@ -101,7 +99,6 @@ class BuildOptions {
     Map<String, BuildConfig> overrideBuildConfig,
     bool skipBuildScriptCheck,
     bool trackPerformance,
-    List<String> buildDirs,
     String logPerformanceDir,
     Resolvers resolvers,
   }) async {
@@ -121,7 +118,6 @@ class BuildOptions {
     deleteFilesByDefault ??= false;
     skipBuildScriptCheck ??= false;
     enableLowResourcesMode ??= false;
-    buildDirs ??= [];
     trackPerformance ??= false;
     if (logPerformanceDir != null) {
       // Requiring this to be under the root package allows us to use an
@@ -144,7 +140,6 @@ class BuildOptions {
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,
       verbose: logSubscription.verbose,
-      buildDirs: buildDirs,
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,
       resolvers: resolvers,
