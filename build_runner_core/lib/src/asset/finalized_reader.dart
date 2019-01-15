@@ -12,21 +12,24 @@ import 'package:glob/glob.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
+import '../generate/phase.dart';
 
 /// An [AssetReader] which ignores deleted files.
 class FinalizedReader implements AssetReader {
   final AssetReader _delegate;
   final AssetGraph _assetGraph;
-  final OptionalOutputTracker _optionalOutputTracker;
+  OptionalOutputTracker _optionalOutputTracker;
   final String _rootPackage;
+  final List<BuildPhase> _buildPhases;
 
   /// Clears the cache of which assets were required.
-  void reset() {
-    _optionalOutputTracker.reset();
+  void updateBuild(List<String> buildDirs) {
+    _optionalOutputTracker =
+        OptionalOutputTracker(_assetGraph, buildDirs, _buildPhases);
   }
 
-  FinalizedReader(this._delegate, this._assetGraph, this._optionalOutputTracker,
-      this._rootPackage);
+  FinalizedReader(
+      this._delegate, this._assetGraph, this._buildPhases, this._rootPackage);
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason> unreadableReason(AssetId id) async {

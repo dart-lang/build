@@ -229,7 +229,7 @@ class WatchImpl implements BuildState {
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(_build != null);
-      _build.finalizedReader.reset();
+      _build.finalizedReader.updateBuild(phases, buidlDirs);
       _logger.info('${'-' * 72}\n');
       _logger.info('Starting Build\n');
       var mergedChanges = _collectChanges(changes);
