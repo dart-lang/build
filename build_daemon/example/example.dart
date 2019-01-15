@@ -4,15 +4,23 @@
 
 import 'dart:io';
 import 'dart:math';
+import 'package:path/path.dart' as p;
 
 import 'package:build_daemon/client.dart';
 
 void main(List<String> args) async {
   BuildDaemonClient client;
-  var workingDirectory = Directory.current.path;
+  var workingDirectory =
+      p.normalize(p.join(Directory.current.path + '/../example'));
+
   try {
-    client = await BuildDaemonClient.connect(workingDirectory,
-        ['pub', 'run', 'build_daemon', workingDirectory, 'some-option']);
+    client = await BuildDaemonClient.connect(workingDirectory, [
+      'pub',
+      'run',
+      'build_runner',
+      'daemon',
+      '--delete-conflicting-outputs',
+    ]);
   } catch (e) {
     if (e is VersionSkew) {
       print('Version skew. Please disconnect all other clients '
@@ -36,6 +44,7 @@ void main(List<String> args) async {
     print('Registered test target...');
   }
   client.buildResults.listen((status) => print('BUILD STATUS: $status'));
+  client.serverLogs.listen((serverLog) => print(serverLog.log));
   client.startBuild();
   await client.finished;
 }
