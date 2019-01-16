@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/src/daemon.dart';
+import 'package:io/ansi.dart';
 
 import '../daemon/daemon_builder.dart';
 import 'base_command.dart';
@@ -49,14 +50,16 @@ class DaemonCommand extends BuildRunnerCommand {
       }
     } else {
       stdout.writeln('Starting daemon...');
-      var builder = await BuildRunnerDaemonBuilder.create(
-        packageGraph,
-        builderApplications,
-        options,
-      );
-      await daemon.start(requestedOptions, builder, builder.changes);
-      stdout.writeln(readyToConnectLog);
-      await daemon.onDone;
+      await overrideAnsiOutput(true, () async {
+        var builder = await BuildRunnerDaemonBuilder.create(
+          packageGraph,
+          builderApplications,
+          options,
+        );
+        await daemon.start(requestedOptions, builder, builder.changes);
+        stdout.writeln(readyToConnectLog);
+        await daemon.onDone;
+      });
     }
     return 0;
   }
