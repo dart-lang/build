@@ -65,7 +65,7 @@ class Server {
             _logPathsManager.addOption(path, channel);
           }
         } else if (request is BuildRequest) {
-          await _build(_buildTargetManager.targets);
+          await _build(_buildTargetManager.targets, <WatchEvent>[]);
         }
       }, onDone: () {
         _channels.remove(channel);
@@ -85,14 +85,16 @@ class Server {
     if (!_isDoneCompleter.isCompleted) _isDoneCompleter.complete();
   }
 
-  Future<void> _build(Set<BuildTarget> buildTargets) => _pool.withResource(() {
+  Future<void> _build(
+          Set<BuildTarget> buildTargets, Iterable<WatchEvent> changes) =>
+      _pool.withResource(() {
         _interestedChannels = Set<WebSocketChannel>();
         var paths = Set<String>();
         for (var buildTarget in buildTargets) {
           paths.add(buildTarget.target);
           _interestedChannels.addAll(buildTarget.listeners.toList());
         }
-        return _builder.build(paths, _logPathsManager.options);
+        return _builder.build(paths, _logPathsManager.options, changes);
       });
 
   void _forwardData() {
@@ -116,7 +118,7 @@ class Server {
       if (_buildTargetManager.targets.isEmpty) return;
       var buildTargets = _buildTargetManager.targetsForChanges(changes);
       if (buildTargets.isEmpty) return;
-      await _build(buildTargets);
+      await _build(buildTargets, changes);
     })).listen((_) {}));
   }
 

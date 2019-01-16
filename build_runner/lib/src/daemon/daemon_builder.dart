@@ -55,7 +55,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   Stream<ServerLog> get logs => _outputStreamController.stream;
 
   @override
-  Future<void> build(Set<String> targets, Set<String> logToPaths) async {
+  Future<void> build(Set<String> targets, Set<String> logToPaths,
+      Iterable<WatchEvent> fileChanges) async {
     _logMessage(Level.INFO, 'About to build $targets...');
     try {
       var mergedChanges = collectChanges([_changesFromLastBuild]);
