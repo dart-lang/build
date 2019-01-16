@@ -9,7 +9,6 @@ import 'package:watcher/watcher.dart';
 
 import '../environment/build_environment.dart';
 import '../package_graph/apply_builders.dart';
-import '../util/constants.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'options.dart';
@@ -30,10 +29,6 @@ class BuildRunner {
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       {bool isReleaseBuild = false}) async {
-    // Don't allow any changes to the generated asset directory after this
-    // point.
-    lockGeneratedOutputDirectory();
-
     return BuildRunner._(await BuildImpl.create(
         options, environment, builders, builderConfigOverrides,
         isReleaseBuild: isReleaseBuild));

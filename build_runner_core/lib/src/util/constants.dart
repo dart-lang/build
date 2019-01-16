@@ -32,13 +32,7 @@ const entryPointDir = '$cacheDir/entrypoint';
 ///
 /// Can not be accessed prior to being locked with
 /// [lockGeneratedOutputDirectory].
-String get generatedOutputDirectory {
-  if (!_generatedOutputDirectoryIsLocked) {
-    throw StateError('Attempted to access the generated directory name before '
-        'it was locked.');
-  }
-  return '$cacheDir/$_generatedOutputDirectory';
-}
+String get generatedOutputDirectory => '$cacheDir/$_generatedOutputDirectory';
 
 /// Locks the generated directory name for the duration of this process.
 ///
