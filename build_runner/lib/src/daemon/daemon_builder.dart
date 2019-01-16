@@ -20,7 +20,6 @@ import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/build_impl.dart';
-import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
@@ -100,12 +99,11 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     await _buildOptions.logListener.cancel();
   }
 
-  void _logMessage(Level level, String message) => overrideAnsiOutput(
-      true,
-      () => _outputStreamController.add(ServerLog((b) => b.log = colorLog(
+  void _logMessage(Level level, String message) =>
+      _outputStreamController.add(ServerLog((b) => b.log = colorLog(
               LogRecord(level, message, 'BuildRunnerBuildDaemon'),
               verbose: _buildOptions.verbose)
-          .toString())));
+          .toString()));
 
   static Future<BuildRunnerDaemonBuilder> create(
     PackageGraph packageGraph,
@@ -120,10 +118,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       // Print here as well so that severe errors can be caught by the
       // daemon client.
       print(record);
-      overrideAnsiOutput(true, () {
-        outputStreamController.add(ServerLog((b) => b.log =
-            colorLog(record, verbose: sharedOptions.verbose).toString()));
-      });
+      outputStreamController.add(ServerLog((b) =>
+          b.log = colorLog(record, verbose: sharedOptions.verbose).toString()));
     });
 
     var daemonEnvironment = OverrideableEnvironment(environment,
