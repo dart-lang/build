@@ -86,13 +86,23 @@ jobs:
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
+      name: "SDK: dev - DIR: build_daemon - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="build_daemon"
+      dart: dev
+    - stage: unit_test
+      name: "SDK: dev - DIR: build_daemon - TASKS: pub run test"
+      script: ./tool/travis.sh test_06
+      env: PKG="build_daemon"
+      dart: dev
+    - stage: analyze_and_format
       name: "SDK: dev - DIR: build_modules - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_modules"
       dart: dev
     - stage: unit_test
       name: "SDK: dev - DIR: build_modules - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit"
-      script: ./tool/travis.sh command_4
+      script: ./tool/travis.sh command_5
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format

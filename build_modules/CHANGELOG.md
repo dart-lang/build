@@ -1,6 +1,7 @@
 ## 1.0.4
 
 - Update to `package:graphs` version `0.2.0`.
+- Use `dartdevc --kernel` instead of `dartdevk`.
 
 ## 1.0.3
 

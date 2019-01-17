@@ -2,19 +2,19 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
+import 'package:build_runner/src/watcher/change_filter.dart';
+import 'package:build_runner/src/watcher/collect_changes.dart';
+import 'package:build_runner/src/watcher/delete_writer.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/build_impl.dart';
-import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:pedantic/pedantic.dart';
@@ -77,7 +77,6 @@ Future<ServeHandler> watch(
     skipBuildScriptCheck: skipBuildScriptCheck,
     enableLowResourcesMode: enableLowResourcesMode,
     trackPerformance: trackPerformance,
-    buildDirs: buildDirs,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
   );
@@ -92,6 +91,7 @@ Future<ServeHandler> watch(
       directoryWatcherFactory,
       configKey,
       outputMap?.isNotEmpty == true,
+      buildDirs,
       isReleaseMode: isReleaseBuild ?? false);
 
   unawaited(watch.buildResults.drain().then((_) async {
@@ -119,34 +119,13 @@ WatchImpl _runWatch(
         DirectoryWatcher Function(String) directoryWatcherFactory,
         String configKey,
         bool willCreateOutputDirs,
+        List<String> buildDirs,
         {bool isReleaseMode = false}) =>
     WatchImpl(options, environment, builders, builderConfigOverrides, until,
-        directoryWatcherFactory, configKey, willCreateOutputDirs,
+        directoryWatcherFactory, configKey, willCreateOutputDirs, buildDirs,
         isReleaseMode: isReleaseMode);
 
 typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
-
-class _OnDeleteWriter implements RunnerAssetWriter {
-  RunnerAssetWriter _writer;
-  Function(AssetId id) _onDelete;
-
-  _OnDeleteWriter(this._writer, this._onDelete);
-
-  @override
-  Future delete(AssetId id) {
-    _onDelete(id);
-    return _writer.delete(id);
-  }
-
-  @override
-  Future writeAsBytes(AssetId id, List<int> bytes) =>
-      _writer.writeAsBytes(id, bytes);
-
-  @override
-  Future writeAsString(AssetId id, String contents,
-          {Encoding encoding = utf8}) =>
-      _writer.writeAsString(id, contents, encoding: encoding);
-}
 
 class WatchImpl implements BuildState {
   BuildImpl _build;
@@ -175,8 +154,8 @@ class WatchImpl implements BuildState {
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
 
-  /// The [TargetGraph] for the current program.
-  final TargetGraph _targetGraph;
+  /// The directories to build upon file changes.
+  final List<String> _buildDirs;
 
   @override
   Future<BuildResult> currentBuild;
@@ -196,10 +175,10 @@ class WatchImpl implements BuildState {
       this._directoryWatcherFactory,
       this._configKey,
       this._willCreateOutputDirs,
+      this._buildDirs,
       {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
-        packageGraph = options.packageGraph,
-        _targetGraph = options.targetGraph {
+        packageGraph = options.packageGraph {
     buildResults = _run(
             options, environment, builders, builderConfigOverrides, until,
             isReleaseMode: isReleaseMode)
@@ -222,17 +201,17 @@ class WatchImpl implements BuildState {
       Future until,
       {bool isReleaseMode = false}) {
     var watcherEnvironment = OverrideableEnvironment(environment,
-        writer: _OnDeleteWriter(environment.writer, _expectedDeletes.add));
+        writer: OnDeleteWriter(environment.writer, _expectedDeletes.add));
     var firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(_build != null);
-      _build.finalizedReader.reset();
+      _build.finalizedReader.reset(_buildDirs);
       _logger.info('${'-' * 72}\n');
       _logger.info('Starting Build\n');
-      var mergedChanges = _collectChanges(changes);
+      var mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
@@ -244,7 +223,7 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return _build.run(mergedChanges);
+      return _build.run(mergedChanges, buildDirs: _buildDirs);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -295,7 +274,16 @@ class WatchImpl implements BuildState {
           }
           return change;
         })
-        .where(_shouldProcess)
+        .where((change) {
+          assert(_readyCompleter.isCompleted);
+          return shouldProcess(
+            change,
+            assetGraph,
+            options,
+            _willCreateOutputDirs,
+            _expectedDeletes,
+          );
+        })
         .transform(debounceBuffer(_debounceDelay))
         .transform(takeUntil(terminate))
         .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
@@ -324,7 +312,7 @@ class WatchImpl implements BuildState {
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
-        firstBuild = await _build.run({});
+        firstBuild = await _build.run({}, buildDirs: _buildDirs);
       } on CannotBuildException {
         _terminateCompleter.complete();
 
@@ -358,71 +346,4 @@ class WatchImpl implements BuildState {
       id.package == packageGraph.root.name &&
       id.path.contains(_packageBuildYamlRegexp);
   final _packageBuildYamlRegexp = RegExp(r'^[a-z0-9_]+\.build\.yaml$');
-
-  /// Checks if we should skip a watch event for this [change].
-  bool _shouldProcess(AssetChange change) {
-    assert(_readyCompleter.isCompleted);
-    if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
-    var node = assetGraph.get(change.id);
-    if (node != null) {
-      if (!_willCreateOutputDirs && !node.isInteresting) return false;
-      if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
-    } else {
-      // We don't care about deletes or modifications outside the asset graph.
-      if (change.type != ChangeType.ADD) return false;
-      if (!_targetGraph.anyMatchesAsset(change.id)) return false;
-    }
-    if (_isExpectedDelete(change)) return false;
-    return true;
-  }
-
-  bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
-
-  bool _isAddOrEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
-      node.isGenerated && changeType != ChangeType.REMOVE;
-
-  bool _isExpectedDelete(AssetChange change) =>
-      _expectedDeletes.remove(change.id);
-}
-
-Map<AssetId, ChangeType> _collectChanges(List<List<AssetChange>> changes) {
-  var changeMap = <AssetId, ChangeType>{};
-  for (var change in changes.expand((l) => l)) {
-    var originalChangeType = changeMap[change.id];
-    if (originalChangeType != null) {
-      switch (originalChangeType) {
-        case ChangeType.ADD:
-          if (change.type == ChangeType.REMOVE) {
-            // ADD followed by REMOVE, just remove the change.
-            changeMap.remove(change.id);
-          }
-          break;
-        case ChangeType.REMOVE:
-          if (change.type == ChangeType.ADD) {
-            // REMOVE followed by ADD, convert to a MODIFY
-            changeMap[change.id] = ChangeType.MODIFY;
-          } else if (change.type == ChangeType.MODIFY) {
-            // REMOVE followed by MODIFY isn't sensible, just throw.
-            throw StateError(
-                'Internal error, got REMOVE event followed by MODIFY event for '
-                '${change.id}.');
-          }
-          break;
-        case ChangeType.MODIFY:
-          if (change.type == ChangeType.REMOVE) {
-            // MODIFY followed by REMOVE, convert to REMOVE
-            changeMap[change.id] = change.type;
-          } else if (change.type == ChangeType.ADD) {
-            // MODIFY followed by ADD isn't sensible, just throw.
-            throw StateError(
-                'Internal error, got MODIFY event followed by ADD event for '
-                '${change.id}.');
-          }
-          break;
-      }
-    } else {
-      changeMap[change.id] = change.type;
-    }
-  }
-  return changeMap;
 }

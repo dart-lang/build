@@ -83,11 +83,21 @@ void main() {
       expect(helloDigest, isNot(equals(aDigest)));
     });
 
-    test('digests are identical for identical file contents', () async {
+    test('digests are identical for identical file contents and assets',
+        () async {
+      var helloDigest =
+          await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
+      var aDigest = await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
+      expect(helloDigest, equals(aDigest));
+    });
+
+    test(
+        'digests are different for identical file contents and different assets',
+        () async {
       var helloDigest =
           await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
       var aDigest = await reader.digest(makeAssetId('basic_pkg|web/hello.txt'));
-      expect(helloDigest, equals(aDigest));
+      expect(helloDigest, isNot(equals(aDigest)));
     });
 
     test('can read from the SDK', () async {

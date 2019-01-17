@@ -166,5 +166,26 @@ void main() {
         expect(libs.contains('b'), isTrue);
       }, resolvers: AnalyzerResolvers());
     });
+
+    test('assetIdForElement', () {
+      return resolveSources({
+        'a|lib/a.dart': '''
+              import 'b.dart';
+
+              main() {
+                SomeClass();
+              } ''',
+        'a|lib/b.dart': '''
+            class SomeClass {}
+              ''',
+      }, (resolver) async {
+        var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
+        var classDefinition = entry.importedLibraries
+            .map((l) => l.getType('SomeClass'))
+            .singleWhere((c) => c != null);
+        expect(await resolver.assetIdForElement(classDefinition),
+            AssetId('a', 'lib/b.dart'));
+      }, resolvers: AnalyzerResolvers());
+    });
   });
 }

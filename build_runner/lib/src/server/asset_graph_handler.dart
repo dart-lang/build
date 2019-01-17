@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:shelf/shelf.dart' as shelf;
 
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -54,7 +55,8 @@ class AssetGraphHandler {
 
         var query = request.url.queryParameters['q']?.trim();
         if (query != null && query.isNotEmpty) {
-          return _handleQuery(query, rootDir);
+          var filter = request.url.queryParameters['f']?.trim();
+          return _handleQuery(query, rootDir, filter: filter);
         }
         break;
       case 'assets.json':
@@ -64,7 +66,9 @@ class AssetGraphHandler {
     return shelf.Response.notFound('Bad request: "${request.url}".');
   }
 
-  Future<shelf.Response> _handleQuery(String query, String rootDir) async {
+  Future<shelf.Response> _handleQuery(String query, String rootDir,
+      {String filter}) async {
+    var filterGlob = filter != null ? Glob(filter) : null;
     var pipeIndex = query.indexOf('|');
 
     AssetId assetId;
@@ -99,12 +103,18 @@ class AssetGraphHandler {
     ];
     var edges = <Map<String, String>>[];
     for (final output in node.outputs) {
+      if (filterGlob != null && !filterGlob.matches(output.toString())) {
+        continue;
+      }
       edges.add(
           {'from': '${node.id}', 'to': '$output', 'id': 'e${currentEdge++}'});
       nodes.add({'id': '$output', 'label': '$output'});
     }
     if (node is NodeWithInputs) {
       for (final input in node.inputs) {
+        if (filterGlob != null && !filterGlob.matches(input.toString())) {
+          continue;
+        }
         edges.add(
             {'from': '$input', 'to': '${node.id}', 'id': 'e${currentEdge++}'});
         nodes.add({'id': '$input', 'label': '$input'});

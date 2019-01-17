@@ -46,3 +46,12 @@ class BuildStepCompletedException implements Exception {
   String toString() => 'BuildStepCompletedException: '
       'Attempt to use a BuildStep after is has completed';
 }
+
+class UnresolvableAssetException implements Exception {
+  final String description;
+
+  const UnresolvableAssetException(this.description);
+
+  @override
+  String toString() => 'Unresolvable Asset from $description.';
+}

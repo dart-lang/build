@@ -1,3 +1,11 @@
+## 1.1.0
+
+- Add `Resolver.assetIdForElement` API. This allows finding the Dart source
+  asset which contains the definition of an element found through the analyzer.
+- Include the AssetId hash code in the default digest implementation.
+  - Any custom implementations of the `AssetReader.digest` method should do the
+    same, and a comment has been added to that effect.
+
 ## 1.0.2
 
 - Increased the upper bound for `package:analyzer` to `<0.35.0`.

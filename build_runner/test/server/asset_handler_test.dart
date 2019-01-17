@@ -4,13 +4,13 @@
 
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner/src/server/server.dart';
 
 import 'package:_test_common/common.dart';
@@ -25,13 +25,12 @@ void main() {
     graph = await AssetGraph.build(
         [], Set(), Set(), buildPackageGraph({rootPackage('foo'): []}), null);
     delegate = InMemoryRunnerAssetReader();
-    reader = FinalizedReader(
-        delegate, graph, OptionalOutputTracker(graph, [], []), 'a');
+    reader = FinalizedReader(delegate, graph, [], 'a');
     handler = AssetHandler(reader, 'a');
   });
 
   void _addAsset(String id, String content, {bool deleted = false}) {
-    var node = makeAssetNode(id, [], computeDigest('a'));
+    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }

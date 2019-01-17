@@ -96,7 +96,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
         await findBuildConfigOverrides(packageGraph, configKey),
     enableLowResourcesMode: enableLowResourcesMode,
     trackPerformance: trackPerformance,
-    buildDirs: buildDirs,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
   );
@@ -109,7 +108,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       builderConfigOverrides,
       isReleaseBuild: isReleaseBuild ?? false,
     );
-    var result = await build.run({});
+    var result = await build.run({}, buildDirs: buildDirs);
     await build?.beforeExit();
     return result;
   } finally {

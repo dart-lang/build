@@ -65,6 +65,10 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   void release() => _delegate.release();
+
+  @override
+  Future<AssetId> assetIdForElement(Element element) =>
+      _delegate.assetIdForElement(element);
 }
 class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
@@ -106,6 +110,16 @@ class AnalyzerResolver implements ReleasableResolver {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
     throw UnimplementedError();
+  }
+
+  @override
+  Future<AssetId> assetIdForElement(Element element) async {
+    final uri = element.source.uri;
+    if (!uri.isScheme('package') && !uri.isScheme('asset')) {
+      throw UnresolvableAssetException(
+          '${element.name} in ${element.source.uri}');
+    }
+    return AssetId.resolve('${element.source.uri}');
   }
 }
 

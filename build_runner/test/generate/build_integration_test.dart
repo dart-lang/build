@@ -33,6 +33,7 @@ main(List<String> args) async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_daemon',
             'build_resolvers',
             'build_runner',
             'build_runner_core',
@@ -129,6 +130,7 @@ main(List<String> args) async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_daemon',
             'build_resolvers',
             'build_runner',
             'build_runner_core',
@@ -239,6 +241,7 @@ main() async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_daemon',
             'build_resolvers',
             'build_runner',
             'build_runner_core',
@@ -363,6 +366,7 @@ main(List<String> args) async {
           await pubspec('a', currentIsolateDependencies: [
             'build',
             'build_config',
+            'build_daemon',
             'build_resolvers',
             'build_runner',
             'build_runner_core',
@@ -427,6 +431,7 @@ main(List<String> args) async {
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',
@@ -456,6 +461,7 @@ targets:
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',
@@ -483,6 +489,7 @@ global_options:
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',
@@ -510,6 +517,7 @@ global_options:
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',
@@ -558,6 +566,7 @@ main() async {
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',
@@ -581,6 +590,7 @@ main() async {
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',

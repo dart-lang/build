@@ -5,9 +5,9 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
-import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -66,7 +66,6 @@ class BuildImpl {
   final bool _trackPerformance;
   final bool _verbose;
   final BuildEnvironment _environment;
-  final List<String> _buildDirs;
   final String _logPerformanceDir;
 
   Future<Null> beforeExit() => _resourceManager.beforeExit();
@@ -85,11 +84,14 @@ class BuildImpl {
         _verbose = options.verbose,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
-        _buildDirs = options.buildDirs,
         _logPerformanceDir = options.logPerformanceDir;
 
-  Future<BuildResult> run(Map<AssetId, ChangeType> updates) =>
-      _SingleBuild(this).run(updates)..whenComplete(_resolvers.reset);
+  Future<BuildResult> run(Map<AssetId, ChangeType> updates,
+      {List<String> buildDirs}) {
+    buildDirs ??= [];
+    return _SingleBuild(this, buildDirs).run(updates)
+      ..whenComplete(_resolvers.reset);
+  }
 
   static Future<BuildImpl> create(
       BuildOptions options,
@@ -110,12 +112,10 @@ class BuildImpl {
         buildPhases.length,
         options.packageGraph.root.name,
         _isReadableAfterBuildFactory(buildPhases));
-    var optionalOutputTracker = OptionalOutputTracker(
-        buildDefinition.assetGraph, options.buildDirs, buildPhases);
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
-        optionalOutputTracker,
+        buildPhases,
         options.packageGraph.root.name);
     var build =
         BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
@@ -160,7 +160,7 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl)
+  _SingleBuild(BuildImpl buildImpl, List<String> _buildDirs)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
@@ -174,7 +174,7 @@ class _SingleBuild {
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
-        _buildDirs = buildImpl._buildDirs,
+        _buildDirs = _buildDirs,
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
@@ -677,7 +677,7 @@ class _SingleBuild {
           .where((n) => globNode.glob.matches(n.id.path))
           .toList();
       var potentialIds = SplayTreeSet.of(potentialNodes.map((n) => n.id));
-      globNode.inputs = potentialIds;
+      globNode.inputs = HashSet.from(potentialIds);
       for (var node in potentialNodes) {
         node.outputs.add(globNode.id);
       }
@@ -703,30 +703,38 @@ class _SingleBuild {
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
       AssetId builderOptionsId, AssetReader reader) async {
-    var digestSink = AccumulatorSink<Digest>();
-    var bytesSink = md5.startChunkedConversion(digestSink);
+    var combinedBytes = Uint8List.fromList(List.filled(16, 0));
+    void _combine(Uint8List other) {
+      assert(other.length == 16);
+      assert(other is Uint8List);
+      for (var i = 0; i < 16; i++) {
+        combinedBytes[i] ^= other[i];
+      }
+    }
 
     var builderOptionsNode = _assetGraph.get(builderOptionsId);
-    bytesSink.add(builderOptionsNode.lastKnownDigest.bytes);
+    _combine(builderOptionsNode.lastKnownDigest.bytes as Uint8List);
 
-    for (var id in ids) {
+    // Limit the total number of digests we are computing at a time. Otherwise
+    // this can overload the event queue.
+    await Future.wait(ids.map((id) async {
       var node = _assetGraph.get(id);
       if (node is GlobAssetNode) {
         await _updateGlobNodeIfNecessary(node);
       } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
-        bytesSink.add([1]);
-        continue;
+        //
+        // This needs to be unique per input so we use the md5 hash of the id.
+        _combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
+        return;
       } else {
         node.lastKnownDigest ??= await reader.digest(id);
       }
-      bytesSink.add(node.lastKnownDigest.bytes);
-    }
+      _combine(node.lastKnownDigest.bytes as Uint8List);
+    }));
 
-    bytesSink.close();
-    assert(digestSink.events.length == 1);
-    return digestSink.events.first;
+    return Digest(combinedBytes);
   }
 
   /// Sets the state for all [outputs] of a build step, by:

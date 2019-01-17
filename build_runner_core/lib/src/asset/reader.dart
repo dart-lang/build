@@ -43,8 +43,8 @@ class SingleStepReader implements AssetReader {
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum) _getGlobNode;
 
-  /// The assets read during this step in sorted order.
-  final assetsRead = SplayTreeSet<AssetId>();
+  /// The assets read during this step.
+  final assetsRead = HashSet<AssetId>();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode,
