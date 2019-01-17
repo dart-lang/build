@@ -7,7 +7,6 @@ import 'package:path/path.dart' as p;
 
 AssetId pathToAssetId(
     String rootPackage, String rootDir, List<String> pathSegments) {
-  rootDir ??= '';
   var packagesIndex = pathSegments.indexOf('packages');
   return packagesIndex >= 0
       ? AssetId(pathSegments[packagesIndex + 1],
