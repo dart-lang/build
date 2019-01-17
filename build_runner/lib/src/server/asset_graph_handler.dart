@@ -75,12 +75,11 @@ class AssetGraphHandler {
     if (pipeIndex < 0) {
       var querySplit = query.split('/');
 
-      assetId = pathToAssetId(_rootPackage, querySplit.skip(1).toList(),
-          rootDir: querySplit.first);
+      assetId = pathToAssetId(
+          _rootPackage, querySplit.first, querySplit.skip(1).toList());
 
       if (!_assetGraph.contains(assetId)) {
-        var secondTry =
-            pathToAssetId(_rootPackage, querySplit, rootDir: rootDir);
+        var secondTry = pathToAssetId(_rootPackage, rootDir, querySplit);
 
         if (!_assetGraph.contains(secondTry)) {
           return shelf.Response.notFound(

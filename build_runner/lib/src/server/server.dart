@@ -170,8 +170,7 @@ class ServeHandler implements BuildState {
     var results = <String, String>{};
     for (final path in assertPathList) {
       try {
-        var assetId =
-            pathToAssetId(rootPackage, p.url.split(path), rootDir: rootDir);
+        var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
         var digest = await _state.reader.digest(assetId);
         results[path] = digest.toString();
       } on AssetNotFoundException {
@@ -301,14 +300,12 @@ class AssetHandler {
               request.headers,
               pathToAssetId(
                   _rootPackage,
+                  rootDir,
                   request.url.pathSegments
-                      .followedBy(const ['index.html']).toList(),
-                  rootDir: rootDir),
+                      .followedBy(const ['index.html']).toList()),
               fallbackToDirectoryList: true)
-          : _handle(
-              request.headers,
-              pathToAssetId(_rootPackage, request.url.pathSegments,
-                  rootDir: rootDir));
+          : _handle(request.headers,
+              pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
 
   Future<shelf.Response> _handle(
       Map<String, String> requestHeaders, AssetId assetId,
