@@ -4,6 +4,7 @@
 - Options are no longer dynamic and are provided upon connecting.
 - Report OptionsSkew.
 - Prefix build daemon directory with username.
+- Forward filesystem changes to daemon builder.
 
 ## 0.0.1
 
