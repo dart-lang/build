@@ -4,22 +4,18 @@
 
 import 'dart:io';
 
-import 'package:analyzer/file_system/physical_file_system.dart'
-    show PhysicalResourceProvider;
-import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart'
     show MemoryByteStore;
 import 'package:analyzer/src/dart/analysis/driver.dart';
 import 'package:analyzer/src/dart/analysis/file_state.dart';
 import 'package:analyzer/src/dart/analysis/performance_logger.dart'
     show PerformanceLog;
-import 'package:analyzer/src/dart/sdk/sdk.dart';
-import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/engine.dart'
-    show AnalysisEngine, AnalysisOptionsImpl;
+    show AnalysisEngine, AnalysisOptionsImpl, AnalysisOptions;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:path/path.dart' as p;
 import 'package:analyzer/src/summary/package_bundle_reader.dart';
+import 'package:analyzer/src/summary/summary_sdk.dart' show SummaryBasedDartSdk;
 
 import 'build_asset_uri_resolver.dart';
 
@@ -28,12 +24,12 @@ import 'build_asset_uri_resolver.dart';
 ///
 /// Any code which is not covered by the summaries must be resolvable through
 /// [buildAssetUriResolver].
-AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver) {
+AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver,
+    AnalysisOptions analysisOptions) {
   AnalysisEngine.instance.processRequiredPlugins();
-  var resourceProvider = PhysicalResourceProvider.INSTANCE;
-  var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-  var sdk =
-      FolderBasedDartSdk(resourceProvider, resourceProvider.getFolder(sdkPath));
+  var sdkPath = p.dirname(p.dirname(Platform.executable));
+  var sdkSummary = p.join(sdkPath, 'lib', '_internal', 'strong.sum');
+  var sdk = SummaryBasedDartSdk(sdkSummary, true);
   var sdkResolver = DartUriResolver(sdk);
 
   var resolvers = [sdkResolver, buildAssetUriResolver];
@@ -52,7 +48,7 @@ AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver) {
     FileContentOverlay(),
     null,
     sourceFactory,
-    AnalysisOptionsImpl(),
+    (analysisOptions as AnalysisOptionsImpl) ?? AnalysisOptionsImpl(),
     externalSummaries: dataStore,
   );
 

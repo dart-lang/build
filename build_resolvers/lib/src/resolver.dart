@@ -53,8 +53,7 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      await libraries.firstWhere((l) => l.name == libraryName,
-          orElse: () => null);
+      libraries.firstWhere((l) => l.name == libraryName, orElse: () => null);
 
   @override
   Future<bool> isLibrary(AssetId assetId) => _delegate.isLibrary(assetId);
@@ -70,6 +69,7 @@ class PerActionResolver implements ReleasableResolver {
   Future<AssetId> assetIdForElement(Element element) =>
       _delegate.assetIdForElement(element);
 }
+
 class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
   final AnalysisDriver _driver;
@@ -134,29 +134,20 @@ class AnalyzerResolvers implements Resolvers {
   ///
   /// If no argument is passed a default AnalysisOptions is used.
   factory AnalyzerResolvers([AnalysisOptions analysisOptions]) {
-    // TODO - handle analysisOptions
-    // TODO - necessary?
-    _initAnalysisEngine();
     var uriResolver = BuildAssetUriResolver();
-    var driver = analysisDriver(uriResolver);
+    var driver = analysisDriver(uriResolver, analysisOptions);
     return AnalyzerResolvers._(
         AnalyzerResolver(driver, uriResolver), uriResolver);
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
-    await _uriResolver.performResolve(buildStep, [buildStep.inputId]);
+    await _uriResolver.performResolve(
+        buildStep, [buildStep.inputId], _resolver._driver);
     return PerActionResolver(_resolver, [buildStep.inputId]);
   }
 
   /// Must be called between each build.
   @override
   void reset() => _uriResolver.seenAssets.clear();
-}
-
-bool _analysisEngineInitialized = false;
-_initAnalysisEngine() {
-  if (_analysisEngineInitialized) return;
-  _analysisEngineInitialized = true;
-  AnalysisEngine.instance.processRequiredPlugins();
 }

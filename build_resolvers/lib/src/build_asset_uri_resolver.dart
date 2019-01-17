@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:analyzer/analyzer.dart' show parseDirectives;
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
+import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:path/path.dart' as p;
@@ -24,7 +25,8 @@ class BuildAssetUriResolver extends UriResolver {
   /// later). If this happens we don't want to hide the asset from the analyzer.
   final seenAssets = Set<AssetId>();
 
-  Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints) {
+  Future<void> performResolve(
+      BuildStep buildStep, List<AssetId> entryPoints, AnalysisDriver driver) {
     // Basic approach is to start at the first file, update it's contents
     // and see if it changed, then walk all files accessed by it.
     var visited = Set<AssetId>();
@@ -34,14 +36,16 @@ class BuildAssetUriResolver extends UriResolver {
       visited.add(assetId);
 
       visiting.add(buildStep.readAsString(assetId).then((contents) {
-        var unit = parseDirectives(contents, suppressErrors: true);
         if (_cachedAssetContents[assetId] != contents) {
           if (_cachedAssetContents.containsKey(assetId)) {
-            resourceProvider.updateFile(assetPath(assetId), contents);
+            var path = assetPath(assetId);
+            resourceProvider.updateFile(path, contents);
+            driver.changeFile(path);
           } else {
             resourceProvider.newFile(assetPath(assetId), contents);
           }
           _cachedAssetContents[assetId] = contents;
+          var unit = parseDirectives(contents, suppressErrors: true);
           var dependencies = unit.directives
               .whereType<UriBasedDirective>()
               .where((d) => !Uri.parse(d.uri.stringValue).isScheme('dart'))
