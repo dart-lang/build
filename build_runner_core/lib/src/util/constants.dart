@@ -29,9 +29,6 @@ final String _scriptPath = Platform.script.scheme == 'file'
 const entryPointDir = '$cacheDir/entrypoint';
 
 /// The directory to which hidden assets will be written.
-///
-/// Can not be accessed prior to being locked with
-/// [lockGeneratedOutputDirectory].
 String get generatedOutputDirectory => '$cacheDir/$_generatedOutputDirectory';
 
 /// Locks the generated directory name for the duration of this process.
