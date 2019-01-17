@@ -96,7 +96,8 @@ AssetId _cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
   }
   final assetNode = assetGraph.get(id);
   if (assetNode is GeneratedAssetNode && assetNode.isHidden) {
-    return AssetId(rootPackage, '$cacheDir/generated/${id.package}/${id.path}');
+    return AssetId(
+        rootPackage, '$generatedOutputDirectory/${id.package}/${id.path}');
   }
   return id;
 }
