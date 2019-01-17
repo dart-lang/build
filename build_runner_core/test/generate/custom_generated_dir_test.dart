@@ -1,21 +1,12 @@
 // Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'dart:async';
-import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
-import 'package:glob/glob.dart';
-import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
 
-import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
 
