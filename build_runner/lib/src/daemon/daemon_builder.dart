@@ -51,6 +51,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   Stream<WatchEvent> get changes => _changes;
 
+  FinalizedReader get reader => _builder.finalizedReader;
+
   @override
   Stream<ServerLog> get logs => _outputStreamController.stream;
 
