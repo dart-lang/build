@@ -46,7 +46,7 @@ void main() {
       var classFoo = libExample.getType('Foo');
       expect(
         classFoo.allSupertypes.map(_toStringId),
-        contains('asset:collection#Equality'),
+        contains(endsWith(':collection#Equality')),
       );
     });
 
@@ -91,7 +91,7 @@ void main() {
       var classFoo = libExample.getType('Foo');
       expect(
         classFoo.allSupertypes.map(_toStringId),
-        contains('asset:collection#Equality'),
+        contains(endsWith(':collection#Equality')),
       );
     });
 
@@ -106,7 +106,7 @@ void main() {
         var libExample = await resolver.findLibraryByName('example');
         var classFoo = libExample.getType('Foo');
         expect(classFoo.allSupertypes.map(_toStringId),
-            contains('asset:collection#Equality'));
+            contains(endsWith(':collection#Equality')));
       });
     });
   });
