@@ -12,6 +12,7 @@ import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
+import 'package:build_runner/src/server/path_to_asset_id.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
 import 'package:build_runner/src/watcher/collect_changes.dart';
@@ -22,29 +23,25 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
+import 'package:path/path.dart' as p;
 
 /// A Daemon Builder that uses build_runner_core for building.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<daemon.BuildResults>();
-  final _changesFromLastBuild = <AssetChange>[];
 
   final BuildImpl _builder;
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
-  final Stream<AssetChange> _graphEvents;
-  Stream<WatchEvent> _changes;
+  final String _rootPackage;
+  final Stream<WatchEvent> _changes;
 
   BuildRunnerDaemonBuilder._(
     this._builder,
     this._buildOptions,
     this._outputStreamController,
-    this._graphEvents,
-  ) {
-    _changes = _graphEvents.map((data) {
-      _changesFromLastBuild.add(data);
-      return WatchEvent(data.type, data.id.path);
-    });
-  }
+    this._changes,
+    this._rootPackage,
+  );
 
   @override
   Stream<daemon.BuildResults> get builds => _buildResults.stream;
@@ -57,9 +54,13 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Future<void> build(Set<String> targets, Set<String> logToPaths,
       Iterable<WatchEvent> fileChanges) async {
+    var changes = fileChanges
+        .map<AssetChange>((change) => AssetChange(
+            pathToAssetId(_rootPackage, p.split(change.path)), change.type))
+        .toList();
     _logMessage(Level.INFO, 'About to build $targets...');
     try {
-      var mergedChanges = collectChanges([_changesFromLastBuild]);
+      var mergedChanges = collectChanges([changes]);
       var result =
           await _builder.run(mergedChanges, buildDirs: targets.toList());
       var results = <daemon.BuildResult>[];
@@ -91,7 +92,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
     }
-    _changesFromLastBuild.clear();
   }
 
   @override
@@ -161,7 +161,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               expectedDeletes,
             ));
 
-    return BuildRunnerDaemonBuilder._(
-        builder, buildOptions, outputStreamController, graphEvents);
+    var changes =
+        graphEvents.map((data) => WatchEvent(data.type, data.id.path));
+    return BuildRunnerDaemonBuilder._(builder, buildOptions,
+        outputStreamController, changes, packageGraph.root.name);
   }
 }
