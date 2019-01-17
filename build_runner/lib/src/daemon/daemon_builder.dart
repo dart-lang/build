@@ -12,7 +12,6 @@ import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
-import 'package:build_runner/src/server/path_to_asset_id.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
 import 'package:build_runner/src/watcher/collect_changes.dart';
@@ -23,7 +22,6 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
-import 'package:path/path.dart' as p;
 
 /// A Daemon Builder that uses build_runner_core for building.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
@@ -32,7 +30,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final BuildImpl _builder;
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
-  final String _rootPackage;
   final Stream<WatchEvent> _changes;
 
   BuildRunnerDaemonBuilder._(
@@ -40,7 +37,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     this._buildOptions,
     this._outputStreamController,
     this._changes,
-    this._rootPackage,
   );
 
   @override
@@ -55,8 +51,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   Future<void> build(Set<String> targets, Set<String> logToPaths,
       Iterable<WatchEvent> fileChanges) async {
     var changes = fileChanges
-        .map<AssetChange>((change) => AssetChange(
-            pathToAssetId(_rootPackage, p.split(change.path)), change.type))
+        .map<AssetChange>(
+            (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
     _logMessage(Level.INFO, 'About to build $targets...');
     try {
@@ -162,8 +158,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             ));
 
     var changes =
-        graphEvents.map((data) => WatchEvent(data.type, data.id.path));
-    return BuildRunnerDaemonBuilder._(builder, buildOptions,
-        outputStreamController, changes, packageGraph.root.name);
+        graphEvents.map((data) => WatchEvent(data.type, '${data.id}'));
+
+    return BuildRunnerDaemonBuilder._(
+        builder, buildOptions, outputStreamController, changes);
   }
 }
