@@ -99,6 +99,10 @@ class BuildImpl {
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       {bool isReleaseBuild = false}) async {
+    // Don't allow any changes to the generated asset directory after this
+    // point.
+    lockGeneratedOutputDirectory();
+
     var buildPhases = await createBuildPhases(
         options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
     if (buildPhases.isEmpty) {
