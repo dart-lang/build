@@ -7,7 +7,6 @@ import 'dart:io';
 
 import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
 class AssetServer {
@@ -22,15 +21,7 @@ class AssetServer {
   static Future<AssetServer> run(
       FinalizedReader reader, String rootPackage) async {
     var server = await HttpServer.bind(InternetAddress.anyIPv6, 0);
-    shelf_io.serveRequests(server, _handler(reader, rootPackage));
+    shelf_io.serveRequests(server, AssetHandler(reader, rootPackage).handle);
     return AssetServer._(server);
-  }
-
-  static Handler _handler(FinalizedReader reader, String rootPackage) {
-    var cascade = Cascade().add((request) {
-      return AssetHandler(reader, rootPackage).handle(request);
-    });
-    var pipeline = Pipeline();
-    return pipeline.addHandler(cascade.handler);
   }
 }

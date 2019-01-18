@@ -64,7 +64,7 @@ class DaemonCommand extends BuildRunnerCommand {
             .writeAsStringSync('${server.port}');
         await daemon.start(requestedOptions, builder, builder.changes);
         stdout.writeln(readyToConnectLog);
-        await daemon.onDone.then((_) => server.stop());
+        await daemon.onDone.whenComplete(server.stop);
       });
     }
     return 0;
