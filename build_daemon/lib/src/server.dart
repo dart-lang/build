@@ -17,15 +17,15 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../daemon_builder.dart';
 import '../data/build_request.dart';
 import '../data/build_target_request.dart';
-import '../data/log_to_paths_request.dart';
+import '../data/client_options.dart';
 import '../data/serializers.dart';
+import '../data/set_client_options_request.dart';
 import 'managers/build_target_manager.dart';
-import 'managers/channel_options_manager.dart';
 
 class Server {
   final _isDoneCompleter = Completer();
   final _buildTargetManager = BuildTargetManager();
-  final _logPathsManager = ChannelOptionsManager();
+  final _clientOptions = <WebSocketChannel, ClientOptions>{};
   final _pool = Pool(1);
   final Serializers _serializers;
 
@@ -60,10 +60,8 @@ class Server {
         }
         if (request is BuildTargetRequest) {
           _buildTargetManager.addBuildTarget(request, channel);
-        } else if (request is LogToPathsRequest) {
-          for (var path in request.paths) {
-            _logPathsManager.addOption(path, channel);
-          }
+        } else if (request is SetClientOptionsRequest) {
+          _clientOptions[channel] = request.options;
         } else if (request is BuildRequest) {
           await _build(_buildTargetManager.targets, <WatchEvent>[]);
         }
@@ -94,7 +92,12 @@ class Server {
           paths.add(buildTarget.target);
           _interestedChannels.addAll(buildTarget.listeners.toList());
         }
-        return _builder.build(paths, _logPathsManager.options, changes);
+        return _builder.build(
+            paths,
+            _interestedChannels
+                .map((channel) => _clientOptions[channel])
+                .toSet(),
+            changes);
       });
 
   void _forwardData() {
@@ -123,6 +126,7 @@ class Server {
   }
 
   void _removeChannel(WebSocketChannel channel) async {
+    _clientOptions.remove(channel);
     _buildTargetManager.removeChannel(channel);
     if (_buildTargetManager.isEmpty) {
       await stop();

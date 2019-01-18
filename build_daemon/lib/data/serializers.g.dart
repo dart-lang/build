@@ -12,7 +12,6 @@ Serializers _$serializers = (new Serializers().toBuilder()
       ..add(BuildStatus.serializer)
       ..add(BuildTargetRequest.serializer)
       ..add(DefaultBuildResult.serializer)
-      ..add(LogToPathsRequest.serializer)
       ..add(ServerLog.serializer)
       ..addBuilderFactory(
           const FullType(BuiltList, const [const FullType(BuildResult)]),

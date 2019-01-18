@@ -7,8 +7,8 @@ import 'package:built_value/serializer.dart';
 import 'build_request.dart';
 import 'build_status.dart';
 import 'build_target_request.dart';
-import 'log_to_paths_request.dart';
 import 'server_log.dart';
+import 'set_client_options_request.dart';
 
 part 'serializers.g.dart';
 
@@ -19,7 +19,7 @@ part 'serializers.g.dart';
   BuildResults,
   BuildTargetRequest,
   DefaultBuildResult,
-  LogToPathsRequest,
   ServerLog,
+  SetClientOptionsRequest,
 ])
 final Serializers serializers = _$serializers;

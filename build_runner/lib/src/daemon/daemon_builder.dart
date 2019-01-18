@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart' as daemon;
+import 'package:build_daemon/data/client_options.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
@@ -50,7 +51,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   Stream<ServerLog> get logs => _outputStreamController.stream;
 
   @override
-  Future<void> build(Set<String> targets, Set<String> logToPaths,
+  Future<void> build(Set<String> targets, Set<ClientOptions> clientOptions,
       Iterable<WatchEvent> fileChanges) async {
     var changes = fileChanges
         .map<AssetChange>(

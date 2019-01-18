@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_daemon/data/client_options.dart';
+import 'package:build_daemon/data/set_client_options_request.dart';
 import 'package:built_value/serializer.dart';
 import 'package:web_socket_channel/io.dart';
 
@@ -13,7 +15,6 @@ import 'constants.dart';
 import 'data/build_request.dart';
 import 'data/build_status.dart';
 import 'data/build_target_request.dart';
-import 'data/log_to_paths_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';
 
@@ -34,11 +35,12 @@ class BuildDaemonClient {
 
   Stream<ServerLog> get serverLogs => _serverLogStreamController.stream;
 
-  /// Adds paths to write usage logs to.
+  /// Sets options for this client.
   ///
-  /// When the client disconnects these files will no longer be logged to.
-  void logToPaths(Iterable<String> paths) {
-    var request = LogToPathsRequest((b) => b..paths.replace(paths));
+  /// When the client disconnects these options will no longer be used by
+  /// daemon.
+  void setOptions(ClientOptions options) {
+    var request = SetClientOptionsRequest((b) => b..options = options);
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
