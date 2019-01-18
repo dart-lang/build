@@ -111,7 +111,7 @@ class ServeHandler implements BuildState {
             request.change(path: _graphPath), rootDir);
       }
       var assetHandler = await _assetHandler;
-      return assetHandler.handle(request, rootDir);
+      return assetHandler.handle(request, rootDir: rootDir);
     });
     var pipeline = shelf.Pipeline();
     if (logRequests) {
@@ -294,7 +294,7 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<shelf.Response> handle(shelf.Request request, String rootDir) =>
+  Future<shelf.Response> handle(shelf.Request request, {String rootDir}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
               request.headers,
