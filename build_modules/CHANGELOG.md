@@ -1,3 +1,8 @@
+## 1.1.0
+
+- Ignore `uri_does_not_exist` errors in DDC. Missing imports are checked while
+  crawling for modules.
+
 ## 1.0.4
 
 - Update to `package:graphs` version `0.2.0`.
