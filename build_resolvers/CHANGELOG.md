@@ -1,3 +1,12 @@
+## 0.3.0
+
+- Migrate to `AnalysisDriver`. There are behavior changes which may be breaking.
+  The `LibraryElement` instances returned by the resolver will now:
+  - Have non-working `context` fields.
+  - Have no source offsets for annotations or their errors.
+  - Have working `session` fields.
+  - Have `Source` instances with different URIs than before.
+
 ## 0.2.3
 
 - Update to `build` `1.1.0` and add `assetIdForElement`.
