@@ -12,6 +12,7 @@ import 'package:_test_common/common.dart';
 import 'package:build_daemon/client.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/data/build_status.dart';
+import 'package:build_daemon/data/build_target.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -20,9 +21,9 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 main() {
   Process daemonProcess;
   Stream<String> stdoutLines;
-
   String workspace() => p.join(d.sandbox, 'a');
-
+  final webTarget = DefaultBuildTarget((b) => b..target = 'web');
+  final testTarget = DefaultBuildTarget((b) => b..target = 'test');
   setUpAll(() async {
     await d.dir('a', [
       await pubspec(
@@ -97,7 +98,7 @@ main() {
     test('can complete builds', () async {
       await _startDaemon();
       var client = await _startClient();
-      client.registerBuildTarget('web', []);
+      client.registerBuildTarget(webTarget);
       client.startBuild();
       var buildResults = await client.buildResults.first;
       expect(buildResults.results.first.status, BuildStatus.succeeded);
@@ -107,10 +108,10 @@ main() {
       await _startDaemon();
 
       var clientA = await _startClient();
-      clientA.registerBuildTarget('web', []);
+      clientA.registerBuildTarget(webTarget);
 
       var clientB = await _startClient();
-      clientB.registerBuildTarget('test', []);
+      clientB.registerBuildTarget(testTarget);
 
       clientB.startBuild();
 

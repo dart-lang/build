@@ -11,6 +11,7 @@ import 'package:watcher/watcher.dart';
 
 import '../constants.dart';
 import '../daemon_builder.dart';
+import '../data/build_target.dart';
 import 'server.dart';
 
 /// Returns the current version of the running build daemon.
@@ -45,15 +46,16 @@ class Daemon {
 
   Future<void> start(
       Set<String> options, DaemonBuilder builder, Stream<WatchEvent> changes,
-      {Serializers serializersOverride}) async {
+      {Serializers serializersOverride,
+      bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild}) async {
     if (_server != null) return;
     _handleGracefulExit();
 
     _createVersionFile();
     _createOptionsFile(options);
 
-    _server =
-        Server(builder, changes, serializersOverride: serializersOverride);
+    _server = Server(builder, changes,
+        serializersOverride: serializersOverride, shouldBuild: shouldBuild);
     var port = await _server.listen();
     _createPortFile(port);
 

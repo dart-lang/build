@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   built_collection: ^4.1.0
-  built_value: ^6.2.0
+  built_value: ^6.3.0
   pedantic: ^1.0.0
   package_resolver: ^1.0.6
   pool: ^1.3.6

@@ -4,6 +4,7 @@
 
 import 'dart:io';
 import 'dart:math';
+import 'package:build_daemon/data/build_target.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:build_daemon/client.dart';
@@ -37,10 +38,13 @@ void main(List<String> args) async {
   if (client == null) throw Exception('Error connecting');
   print('Connected to Dart Build Daemon');
   if (Random().nextBool()) {
-    client.registerBuildTarget('web', [r'.*_test\.dart$']);
+    client.registerBuildTarget(DefaultBuildTarget((b) => b
+      ..target = 'web'
+      ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')])));
     print('Registered example web target...');
   } else {
-    client.registerBuildTarget('test', []);
+    client.registerBuildTarget(DefaultBuildTarget((b) => b..target = 'test'));
+
     print('Registered test target...');
   }
   client.buildResults.listen((status) => print('BUILD STATUS: $status'));

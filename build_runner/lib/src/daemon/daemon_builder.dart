@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart' as daemon;
+import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
@@ -50,8 +51,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   Stream<ServerLog> get logs => _outputStreamController.stream;
 
   @override
-  Future<void> build(Set<String> targets, Set<String> logToPaths,
-      Iterable<WatchEvent> fileChanges) async {
+  Future<void> build(
+      Set<BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
     var changes = fileChanges
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
@@ -59,15 +60,15 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build $targets...');
     try {
       var mergedChanges = collectChanges([changes]);
-      var result =
-          await _builder.run(mergedChanges, buildDirs: targets.toList());
+      var result = await _builder.run(mergedChanges,
+          buildDirs: targets.map((t) => t.target).toSet().toList());
       var results = <daemon.BuildResult>[];
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
           results.add(daemon.DefaultBuildResult((b) => b
             ..status = daemon.BuildStatus.succeeded
-            ..target = target));
+            ..target = target.target));
         } else {
           results.add(daemon.DefaultBuildResult((b) => b
             ..status = daemon.BuildStatus.failed
@@ -75,7 +76,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             // We can use the AssetGraph and FailureReporter to provide a better
             // error message.
             ..error = 'FailureType: ${result.failureType.exitCode}'
-            ..target = target));
+            ..target = target.target));
         }
       }
       _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
@@ -85,7 +86,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         results.add(daemon.DefaultBuildResult((b) => b
           ..status = daemon.BuildStatus.failed
           ..error = '$e'
-          ..target = target));
+          ..target = target.target));
       }
       _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');

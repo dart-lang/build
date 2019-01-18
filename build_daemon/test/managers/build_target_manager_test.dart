@@ -2,9 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build_daemon/data/build_target_request.dart';
+import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/src/managers/build_target_manager.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
@@ -14,11 +13,9 @@ void main() {
   test('can add build targets', () {
     var manager = BuildTargetManager();
     var channel = DummyChannel();
-    var request = BuildTargetRequest((b) => b
-      ..target = 'foo'
-      ..blackListPattern = ListBuilder());
+    var target = DefaultBuildTarget((b) => b..target = 'foo');
     expect(manager.targets.isEmpty, isTrue);
-    manager.addBuildTarget(request, channel);
+    manager.addBuildTarget(target, channel);
     expect(
         manager.targets.map((target) => target.target).toList().contains('foo'),
         isTrue);
@@ -28,25 +25,17 @@ void main() {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
     var channelB = DummyChannel();
-    var requestA = BuildTargetRequest((b) => b
-      ..target = 'foo'
-      ..blackListPattern = ListBuilder());
-    manager.addBuildTarget(requestA, channelA);
+    var targetA = DefaultBuildTarget((b) => b..target = 'foo');
+    manager.addBuildTarget(targetA, channelA);
     expect(
         manager.targets.map((target) => target.target).toList().contains('foo'),
         isTrue);
-    var requestB = BuildTargetRequest((b) => b
-      ..target = 'bar'
-      ..blackListPattern = ListBuilder());
-    manager.addBuildTarget(requestB, channelB);
+    var targetB = DefaultBuildTarget((b) => b..target = 'bar');
+    manager.addBuildTarget(targetB, channelB);
     expect(manager.targets.isNotEmpty, isTrue);
     manager.removeChannel(channelA);
-    expect(
-        manager.targets.map((target) => target.target).toList().contains('foo'),
-        isFalse);
-    expect(
-        manager.targets.map((target) => target.target).toList().contains('bar'),
-        isTrue);
+    expect(manager.targets.map((target) => target.target).toList(),
+        allOf(isNot(contains('foo')), contains('bar')));
   });
 
   test(
@@ -55,18 +44,12 @@ void main() {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
     var channelB = DummyChannel();
-    var request = BuildTargetRequest((b) => b
-      ..target = 'foo'
-      ..blackListPattern = ListBuilder());
-    manager.addBuildTarget(request, channelA);
-    manager.addBuildTarget(request, channelB);
-    expect(
-        manager.targets.map((target) => target.target).toList().contains('foo'),
-        isTrue);
+    var target = DefaultBuildTarget((b) => b..target = 'foo');
+    manager.addBuildTarget(target, channelA);
+    manager.addBuildTarget(target, channelB);
+    expect(manager.targets.map((target) => target.target), contains('foo'));
     manager.removeChannel(channelB);
-    expect(
-        manager.targets.map((target) => target.target).toList().contains('foo'),
-        isTrue);
+    expect(manager.targets.map((target) => target.target), contains('foo'));
     manager.removeChannel(channelA);
     expect(manager.targets.isEmpty, isTrue);
   });
@@ -77,14 +60,14 @@ void main() {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
     var channelB = DummyChannel();
-    var requestA = BuildTargetRequest((b) => b
+    var targetA = DefaultBuildTarget((b) => b
       ..target = 'foo'
-      ..blackListPattern = ListBuilder(['bar']));
-    var requestB = BuildTargetRequest((b) => b
+      ..blackListPatterns.replace([RegExp('bar')]));
+    var targetB = DefaultBuildTarget((b) => b
       ..target = 'foo'
-      ..blackListPattern = ListBuilder(['bar']));
-    manager.addBuildTarget(requestA, channelA);
-    manager.addBuildTarget(requestB, channelB);
+      ..blackListPatterns.replace([RegExp('bar')]));
+    manager.addBuildTarget(targetA, channelA);
+    manager.addBuildTarget(targetB, channelB);
     expect(manager.targets.length, 1);
   });
 
@@ -92,14 +75,12 @@ void main() {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
     var channelB = DummyChannel();
-    var requestA = BuildTargetRequest((b) => b
+    var targetA = DefaultBuildTarget((b) => b..target = 'foo');
+    var targetB = DefaultBuildTarget((b) => b
       ..target = 'foo'
-      ..blackListPattern = ListBuilder());
-    var requestB = BuildTargetRequest((b) => b
-      ..target = 'foo'
-      ..blackListPattern = ListBuilder(['bar']));
-    manager.addBuildTarget(requestA, channelA);
-    manager.addBuildTarget(requestB, channelB);
+      ..blackListPatterns.replace([RegExp('bar')]));
+    manager.addBuildTarget(targetA, channelA);
+    manager.addBuildTarget(targetB, channelB);
     expect(manager.targets.length, 2);
   });
 
@@ -108,10 +89,10 @@ void main() {
       () {
     var manager = BuildTargetManager();
     var channel = DummyChannel();
-    var request = BuildTargetRequest((b) => b
+    var target = DefaultBuildTarget((b) => b
       ..target = 'foo'
-      ..blackListPattern = ListBuilder([r'.*_test\.dart$']));
-    manager.addBuildTarget(request, channel);
+      ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')]));
+    manager.addBuildTarget(target, channel);
     var targets = manager.targetsForChanges(
         [WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_file.dart')]);
     expect(targets.map((target) => target.target).toList().contains('foo'),

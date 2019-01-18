@@ -2,9 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
+import 'build_target.dart';
 
 part 'build_target_request.g.dart';
 
@@ -18,6 +18,5 @@ abstract class BuildTargetRequest
 
   BuildTargetRequest._();
 
-  BuiltList<String> get blackListPattern;
-  String get target;
+  BuildTarget get target;
 }

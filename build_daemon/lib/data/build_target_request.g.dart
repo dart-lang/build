@@ -20,13 +20,9 @@ class _$BuildTargetRequestSerializer
   Iterable serialize(Serializers serializers, BuildTargetRequest object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
-      'blackListPattern',
-      serializers.serialize(object.blackListPattern,
-          specifiedType:
-              const FullType(BuiltList, const [const FullType(String)])),
       'target',
       serializers.serialize(object.target,
-          specifiedType: const FullType(String)),
+          specifiedType: const FullType(BuildTarget)),
     ];
 
     return result;
@@ -43,15 +39,9 @@ class _$BuildTargetRequestSerializer
       iterator.moveNext();
       final dynamic value = iterator.current;
       switch (key) {
-        case 'blackListPattern':
-          result.blackListPattern.replace(serializers.deserialize(value,
-                  specifiedType:
-                      const FullType(BuiltList, const [const FullType(String)]))
-              as BuiltList);
-          break;
         case 'target':
           result.target = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String;
+              specifiedType: const FullType(BuildTarget)) as BuildTarget;
           break;
       }
     }
@@ -62,18 +52,12 @@ class _$BuildTargetRequestSerializer
 
 class _$BuildTargetRequest extends BuildTargetRequest {
   @override
-  final BuiltList<String> blackListPattern;
-  @override
-  final String target;
+  final BuildTarget target;
 
   factory _$BuildTargetRequest([void updates(BuildTargetRequestBuilder b)]) =>
       (new BuildTargetRequestBuilder()..update(updates)).build();
 
-  _$BuildTargetRequest._({this.blackListPattern, this.target}) : super._() {
-    if (blackListPattern == null) {
-      throw new BuiltValueNullFieldError(
-          'BuildTargetRequest', 'blackListPattern');
-    }
+  _$BuildTargetRequest._({this.target}) : super._() {
     if (target == null) {
       throw new BuiltValueNullFieldError('BuildTargetRequest', 'target');
     }
@@ -90,20 +74,17 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is BuildTargetRequest &&
-        blackListPattern == other.blackListPattern &&
-        target == other.target;
+    return other is BuildTargetRequest && target == other.target;
   }
 
   @override
   int get hashCode {
-    return $jf($jc($jc(0, blackListPattern.hashCode), target.hashCode));
+    return $jf($jc(0, target.hashCode));
   }
 
   @override
   String toString() {
     return (newBuiltValueToStringHelper('BuildTargetRequest')
-          ..add('blackListPattern', blackListPattern)
           ..add('target', target))
         .toString();
   }
@@ -113,21 +94,14 @@ class BuildTargetRequestBuilder
     implements Builder<BuildTargetRequest, BuildTargetRequestBuilder> {
   _$BuildTargetRequest _$v;
 
-  ListBuilder<String> _blackListPattern;
-  ListBuilder<String> get blackListPattern =>
-      _$this._blackListPattern ??= new ListBuilder<String>();
-  set blackListPattern(ListBuilder<String> blackListPattern) =>
-      _$this._blackListPattern = blackListPattern;
-
-  String _target;
-  String get target => _$this._target;
-  set target(String target) => _$this._target = target;
+  BuildTarget _target;
+  BuildTarget get target => _$this._target;
+  set target(BuildTarget target) => _$this._target = target;
 
   BuildTargetRequestBuilder();
 
   BuildTargetRequestBuilder get _$this {
     if (_$v != null) {
-      _blackListPattern = _$v.blackListPattern?.toBuilder();
       _target = _$v.target;
       _$v = null;
     }
@@ -149,22 +123,7 @@ class BuildTargetRequestBuilder
 
   @override
   _$BuildTargetRequest build() {
-    _$BuildTargetRequest _$result;
-    try {
-      _$result = _$v ??
-          new _$BuildTargetRequest._(
-              blackListPattern: blackListPattern.build(), target: target);
-    } catch (_) {
-      String _$failedField;
-      try {
-        _$failedField = 'blackListPattern';
-        blackListPattern.build();
-      } catch (e) {
-        throw new BuiltValueNestedFieldError(
-            'BuildTargetRequest', _$failedField, e.toString());
-      }
-      rethrow;
-    }
+    final _$result = _$v ?? new _$BuildTargetRequest._(target: target);
     replace(_$result);
     return _$result;
   }

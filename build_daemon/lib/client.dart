@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_daemon/data/build_target.dart';
 import 'package:built_value/serializer.dart';
 import 'package:web_socket_channel/io.dart';
 
@@ -13,7 +14,6 @@ import 'constants.dart';
 import 'data/build_request.dart';
 import 'data/build_status.dart';
 import 'data/build_target_request.dart';
-import 'data/log_to_paths_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';
 
@@ -34,23 +34,9 @@ class BuildDaemonClient {
 
   Stream<ServerLog> get serverLogs => _serverLogStreamController.stream;
 
-  /// Adds paths to write usage logs to.
-  ///
-  /// When the client disconnects these files will no longer be logged to.
-  void logToPaths(Iterable<String> paths) {
-    var request = LogToPathsRequest((b) => b..paths.replace(paths));
-    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
-  }
-
   /// Registers a build target to be built upon any file change.
-  ///
-  /// Changes that match the patterns in [blackListPattern] will be ignored.
-  void registerBuildTarget(String target, Iterable<String> blackListPattern) {
-    var request = BuildTargetRequest((b) => b
-      ..target = target
-      ..blackListPattern.replace(blackListPattern));
-    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
-  }
+  void registerBuildTarget(BuildTarget target) => _channel.sink.add(jsonEncode(
+      _serializers.serialize(BuildTargetRequest((b) => b..target = target))));
 
   /// Builds all registered targets.
   void startBuild() {
