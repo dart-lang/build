@@ -27,7 +27,7 @@ import 'build_asset_uri_resolver.dart';
 AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver,
     AnalysisOptions analysisOptions) {
   AnalysisEngine.instance.processRequiredPlugins();
-  var sdkPath = p.dirname(p.dirname(Platform.executable));
+  var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
   var sdkSummary = p.join(sdkPath, 'lib', '_internal', 'strong.sum');
   var sdk = SummaryBasedDartSdk(sdkSummary, true);
   var sdkResolver = DartUriResolver(sdk);
