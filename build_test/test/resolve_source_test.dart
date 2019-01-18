@@ -18,7 +18,7 @@ void main() {
         class Foo {}
       ''', (resolver) => resolver.findLibraryByName('example'));
       expect(libExample.getType('Foo'), isNotNull);
-    }, skip: true);
+    });
 
     test('a simple dart file with dart: dependencies', () async {
       var libExample = await resolveSource(r'''
