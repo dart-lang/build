@@ -26,25 +26,18 @@ import 'package:watcher/watcher.dart';
 /// A Daemon Builder that uses build_runner_core for building.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<daemon.BuildResults>();
-  final _changesFromLastBuild = <AssetChange>[];
 
   final BuildImpl _builder;
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
-  final Stream<AssetChange> _graphEvents;
-  Stream<WatchEvent> _changes;
+  final Stream<WatchEvent> _changes;
 
   BuildRunnerDaemonBuilder._(
     this._builder,
     this._buildOptions,
     this._outputStreamController,
-    this._graphEvents,
-  ) {
-    _changes = _graphEvents.map((data) {
-      _changesFromLastBuild.add(data);
-      return WatchEvent(data.type, data.id.path);
-    });
-  }
+    this._changes,
+  );
 
   @override
   Stream<daemon.BuildResults> get builds => _buildResults.stream;
@@ -59,9 +52,13 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Future<void> build(Set<String> targets, Set<String> logToPaths,
       Iterable<WatchEvent> fileChanges) async {
+    var changes = fileChanges
+        .map<AssetChange>(
+            (change) => AssetChange(AssetId.parse(change.path), change.type))
+        .toList();
     _logMessage(Level.INFO, 'About to build $targets...');
     try {
-      var mergedChanges = collectChanges([_changesFromLastBuild]);
+      var mergedChanges = collectChanges([changes]);
       var result =
           await _builder.run(mergedChanges, buildDirs: targets.toList());
       var results = <daemon.BuildResult>[];
@@ -93,7 +90,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
     }
-    _changesFromLastBuild.clear();
   }
 
   @override
@@ -163,7 +159,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               expectedDeletes,
             ));
 
+    var changes =
+        graphEvents.map((data) => WatchEvent(data.type, '${data.id}'));
+
     return BuildRunnerDaemonBuilder._(
-        builder, buildOptions, outputStreamController, graphEvents);
+        builder, buildOptions, outputStreamController, changes);
   }
 }
