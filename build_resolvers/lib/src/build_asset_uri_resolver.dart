@@ -30,7 +30,7 @@ class BuildAssetUriResolver extends UriResolver {
     // Basic approach is to start at the first file, update it's contents
     // and see if it changed, then walk all files accessed by it.
     var visited = Set<AssetId>();
-    var visiting = FutureGroup();
+    var visiting = _FutureGroup();
 
     void processAsset(AssetId assetId) {
       visited.add(assetId);
@@ -109,9 +109,7 @@ String assetPath(AssetId assetId) =>
     p.join('/${assetId.package}', assetId.path);
 
 /// A completer that waits until all added [Future]s complete.
-// TODO(blois): Copied from quiver. Remove from here when it gets
-// added to dart:core. (See #6626.)
-class FutureGroup<E> {
+class _FutureGroup<E> {
   static const _FINISHED = -1;
 
   int _pending = 0;
