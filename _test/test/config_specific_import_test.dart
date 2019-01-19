@@ -4,11 +4,8 @@
 
 import 'package:test/test.dart';
 
-// ignore: uri_does_not_exist
 import 'common/message.dart'
-    // ignore: uri_does_not_exist
     if (dart.library.io) 'common/message_io.dart'
-    // ignore: uri_does_not_exist
     if (dart.library.html) 'common/message_html.dart';
 
 main() {
