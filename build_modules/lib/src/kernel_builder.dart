@@ -122,8 +122,8 @@ Future<void> _createKernel(
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    _addRequestArguments(request, module, transitiveKernelDeps, dartSdkDir,
-        sdkKernelPath, outputFile, packagesFile, summaryOnly);
+    await _addRequestArguments(request, module, transitiveKernelDeps, sdkDir,
+        sdkKernelPath, outputFile, packagesFile, summaryOnly, buildStep);
   });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
@@ -175,7 +175,7 @@ Future<void> _addModuleDeps(
 
 /// Fills in all the required arguments for [request] in order to compile the
 /// kernel file for [module].
-void _addRequestArguments(
+Future<void> _addRequestArguments(
     WorkRequest request,
     Module module,
     Iterable<AssetId> transitiveKernelDeps,
@@ -183,7 +183,8 @@ void _addRequestArguments(
     String sdkKernelPath,
     File outputFile,
     File packagesFile,
-    bool summaryOnly) {
+    bool summaryOnly,
+    AssetReader reader) async {
   request.arguments.addAll([
     '--dart-sdk-summary',
     Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
@@ -198,15 +199,29 @@ void _addRequestArguments(
   ]);
 
   // Add all summaries as summary inputs.
+  //
+  // Also request the digests for each and add those to the inputs.
+  //
+  // This runs synchronously and the digest futures will be awaited later on.
+  var digestFutures = <Future>[];
   request.arguments.addAll(transitiveKernelDeps.map((id) {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
         from: scratchSpace.tempDir.uri.path);
+    var input = Input()..path = relativePath;
+    request.inputs.add(input);
+    digestFutures.add(reader.digest(id).then((digest) {
+      input.digest = digest.bytes;
+    }));
+
     if (summaryOnly) {
       return '--input-summary=$multiRootScheme:///$relativePath';
     } else {
       return '--input-linked=$multiRootScheme:///$relativePath';
     }
   }));
+
+  // Wait for all the digests to complete.
+  await Future.wait(digestFutures);
 
   request.arguments.addAll(module.sources.map((id) {
     var uri = id.path.startsWith('lib')
