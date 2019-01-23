@@ -1,5 +1,10 @@
 ## 1.1.3
 
+- Support building through `package:build_daemon`.
+- Update `package:build_runner_core` to verions `2.0.0`.
+
+## 1.1.3
+
 - Update to `package:graphs` version `0.2.0`.
 - Fix an issue where when running from source in watch mode the script would
   delete itself when it shouldn't.
