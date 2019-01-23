@@ -55,13 +55,7 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
-  build:
-    path: ../build
   build_daemon:
     path: ../build_daemon
-  build_resolvers:
-    path: ../build_resolvers
   build_runner_core:
     path: ../build_runner_core
-  build_modules:
-    path: ../build_modules
