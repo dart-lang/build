@@ -1,4 +1,4 @@
-## 1.1.3
+## 1.2.0
 
 - Support building through `package:build_daemon`.
 - Update `package:build_runner_core` to verions `2.0.0`.
