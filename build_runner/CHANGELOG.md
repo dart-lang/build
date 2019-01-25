@@ -1,3 +1,8 @@
+## 1.2.2
+
+- Change the format of Build Daemon messages.
+
+
 ## 1.2.1
 
 - Update `package:build_runner_core` to version `2.0.1`.

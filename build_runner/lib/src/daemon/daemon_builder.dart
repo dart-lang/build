@@ -57,7 +57,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
-    _logMessage(Level.INFO, 'About to build $targets...');
+    var targetNames = targets.map((t) => t.target);
+    _logMessage(Level.INFO, 'About to build $targetNames...');
     try {
       var mergedChanges = collectChanges([changes]);
       var result = await _builder.run(mergedChanges,
