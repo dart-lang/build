@@ -88,6 +88,9 @@ Future _createDevCompilerModule(
     '-o',
     jsOutputFile.path,
   ]);
+  request.inputs.add(Input()
+    ..path = sdkSummary
+    ..digest = [0]);
 
   if (!useKernel) {
     // Add the default analysis_options.
@@ -117,18 +120,37 @@ Future _createDevCompilerModule(
     request.arguments.add('--no-source-map');
   }
 
-  // Add all the linked summaries as summary inputs.
+  // Add linked summaries as summary inputs.
+  //
+  // Also request the digests for each and add those to the inputs.
+  //
+  // This runs synchronously and the digest futures will be awaited later on.
+  var digestFutures = <Future>[];
   for (var depModule in transitiveDeps) {
     var summaryId = useKernel
         ? depModule.primarySource.changeExtension(ddcKernelExtension)
         : depModule.linkedSummaryId;
-    var summaryPath = useKernel
+    var summaryPath =
+        /*useKernel
         ? p.url.relative(scratchSpace.fileFor(summaryId).path,
-                from: scratchSpace.tempDir.path) +
-            '=${ddcModuleName(depModule.jsId(jsModuleExtension))}'
-        : scratchSpace.fileFor(summaryId).path;
+            from: scratchSpace.tempDir.path)
+        :*/
+        scratchSpace.fileFor(summaryId).path;
+
+    if (useKernel) {
+      var input = Input()..path = summaryPath;
+      request.inputs.add(input);
+      digestFutures.add(buildStep.digest(summaryId).then((digest) {
+        input.digest = digest.bytes;
+      }));
+      summaryPath += '=${ddcModuleName(depModule.jsId(jsModuleExtension))}';
+    }
+
     request.arguments.addAll(['-s', summaryPath]);
   }
+
+  // Wait for all the digests to complete.
+  await Future.wait(digestFutures);
 
   // Add URL mappings for all the package: files to tell DartDevc where to
   // find them.
@@ -192,11 +214,13 @@ Future _createDevCompilerModule(
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
   // status code if something failed. Today we just make sure there is an output
   // JS file to verify it was successful.
+  var message = response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
-    var message =
-        response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
     throw DartDevcCompilationException(jsId, '$message}');
   } else {
+    if (message.isNotEmpty) {
+      log.info(message);
+    }
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {

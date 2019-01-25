@@ -197,6 +197,9 @@ Future<void> _addRequestArguments(
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
   ]);
+  request.inputs.add(Input()
+    ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
+    ..digest = [0]);
 
   // Add all summaries as summary inputs.
   //
@@ -207,16 +210,19 @@ Future<void> _addRequestArguments(
   request.arguments.addAll(transitiveKernelDeps.map((id) {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
         from: scratchSpace.tempDir.uri.path);
-    var input = Input()..path = relativePath;
+
+    var uri = '$multiRootScheme:///$relativePath';
+
+    var input = Input()..path = uri;
     request.inputs.add(input);
     digestFutures.add(reader.digest(id).then((digest) {
       input.digest = digest.bytes;
     }));
 
     if (summaryOnly) {
-      return '--input-summary=$multiRootScheme:///$relativePath';
+      return '--input-summary=$uri';
     } else {
-      return '--input-linked=$multiRootScheme:///$relativePath';
+      return '--input-linked=$uri';
     }
   }));
 
