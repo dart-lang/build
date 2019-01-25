@@ -1,7 +1,11 @@
+## 1.2.1
+
+- Update `package:build_runner_core` to version `2.0.1`.
+
 ## 1.2.0
 
 - Support building through `package:build_daemon`.
-- Update `package:build_runner_core` to verions `2.0.0`.
+- Update `package:build_runner_core` to version `2.0.0`.
 
 ## 1.1.3
 
