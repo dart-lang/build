@@ -108,9 +108,14 @@ final dartdevcDriverResource =
 BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<Null>();
   return __dartdevkDriver ??= BazelWorkerDriver(
-      () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
-          ['--kernel', '--persistent_worker'],
-          workingDirectory: scratchSpace.tempDir.path),
+      () => Process.start(
+            p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
+            [
+              '--kernel',
+              '--persistent_worker',
+            ],
+            workingDirectory: scratchSpace.tempDir.path,
+          ),
       maxWorkers: _maxWorkersPerTask);
 }
 
