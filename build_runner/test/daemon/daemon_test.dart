@@ -117,7 +117,8 @@ main() {
 
       // Both clients should be notified.
       await clientA.buildResults.first;
-      var buildResultsB = await clientB.buildResults.first;
+      var buildResultsB = await clientB.buildResults
+          .firstWhere((b) => b.results.first.status != BuildStatus.started);
 
       expect(buildResultsB.results.first.status, BuildStatus.succeeded);
       expect(buildResultsB.results.length, equals(2));

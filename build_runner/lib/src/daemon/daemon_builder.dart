@@ -33,7 +33,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final StreamController<ServerLog> _outputStreamController;
   final Stream<WatchEvent> _changes;
 
-  var _buildingCompleter = Completer();
+  Completer _buildingCompleter;
 
   BuildRunnerDaemonBuilder._(
     this._builder,
@@ -47,7 +47,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   Stream<WatchEvent> get changes => _changes;
 
-  Future<void> get building => _buildingCompleter.future;
+  /// Waits for a running build to complete before returning.
+  ///
+  /// If there is no running build, it will return immediately.
+  Future<void> get building => _buildingCompleter?.future;
 
   @override
   Stream<ServerLog> get logs => _outputStreamController.stream;
@@ -115,7 +118,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   }
 
   void _signalStart(Iterable<String> targets) {
-    if (_buildingCompleter.isCompleted) _buildingCompleter = Completer();
+    _buildingCompleter = Completer();
     var results = <daemon.BuildResult>[];
     for (var target in targets) {
       results.add(daemon.DefaultBuildResult((b) => b
