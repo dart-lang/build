@@ -103,8 +103,7 @@ class BuildDaemonClient {
   }
 
   static int _existingPort(String workingDirectory) {
-    var portFile = File('${daemonWorkspace(workingDirectory)}'
-        '/.dart_build_daemon_port');
+    var portFile = File(portFilePath(workingDirectory));
     if (!portFile.existsSync()) throw Exception('Unable to read port file.');
     return int.parse(portFile.readAsStringSync());
   }

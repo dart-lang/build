@@ -1,6 +1,7 @@
 ## 1.2.2
 
 - Change the format of Build Daemon messages.
+- Fix path issues with Daemon command under Windows.
 
 
 ## 1.2.1
