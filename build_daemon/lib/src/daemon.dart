@@ -39,6 +39,7 @@ class Daemon {
 
   Server _server;
   StreamSubscription _sub;
+  RandomAccessFile _lock;
 
   Daemon(this._workingDirectory);
 
@@ -67,9 +68,9 @@ class Daemon {
   bool tryGetLock() {
     try {
       _createDaemonWorkspace();
-      File(lockFilePath(_workingDirectory))
-          .openSync(mode: FileMode.write)
-          .lockSync();
+      _lock =
+          File(lockFilePath(_workingDirectory)).openSync(mode: FileMode.write);
+      _lock.lockSync();
       return true;
     } on FileSystemException {
       return false;
@@ -79,6 +80,8 @@ class Daemon {
   Future<void> _cleanUp() async {
     await _server?.stop();
     await _sub?.cancel();
+    // We need to close the lock prior to deleting the file.
+    _lock?.closeSync();
     var workspace = Directory(daemonWorkspace(_workingDirectory));
     if (workspace.existsSync()) {
       workspace.deleteSync(recursive: true);
