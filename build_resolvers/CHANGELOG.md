@@ -1,4 +1,4 @@
-## 0.3.0
+## 1.0.0
 
 - Migrate to `AnalysisDriver`. There are behavior changes which may be breaking.
   The `LibraryElement` instances returned by the resolver will now:
