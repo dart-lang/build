@@ -1,6 +1,8 @@
 ## 1.2.2
 
 - Change the format of Build Daemon messages.
+- Build Daemon asset server now properly waits for build results.
+- Build Daemon now properly signals the start of a build.
 
 
 ## 1.2.1

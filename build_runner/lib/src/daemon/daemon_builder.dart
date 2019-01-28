@@ -33,6 +33,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final StreamController<ServerLog> _outputStreamController;
   final Stream<WatchEvent> _changes;
 
+  var _buildingCompleter = Completer();
+
   BuildRunnerDaemonBuilder._(
     this._builder,
     this._buildOptions,
@@ -45,10 +47,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   Stream<WatchEvent> get changes => _changes;
 
-  FinalizedReader get reader => _builder.finalizedReader;
+  Future<void> get building => _buildingCompleter.future;
 
   @override
   Stream<ServerLog> get logs => _outputStreamController.stream;
+
+  FinalizedReader get reader => _builder.finalizedReader;
 
   @override
   Future<void> build(
@@ -59,11 +63,12 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .toList();
     var targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
+    _signalStart(targetNames);
+    var results = <daemon.BuildResult>[];
     try {
       var mergedChanges = collectChanges([changes]);
       var result =
           await _builder.run(mergedChanges, buildDirs: targetNames.toList());
-      var results = <daemon.BuildResult>[];
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
@@ -80,18 +85,16 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             ..target = target.target));
         }
       }
-      _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
     } catch (e) {
-      var results = <daemon.BuildResult>[];
       for (var target in targets) {
         results.add(daemon.DefaultBuildResult((b) => b
           ..status = daemon.BuildStatus.failed
           ..error = '$e'
           ..target = target.target));
       }
-      _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
     }
+    _signalEnd(results);
   }
 
   @override
@@ -105,6 +108,22 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               LogRecord(level, message, 'BuildRunnerBuildDaemon'),
               verbose: _buildOptions.verbose)
           .toString()));
+
+  void _signalEnd(Iterable<daemon.BuildResult> results) {
+    _buildingCompleter.complete();
+    _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
+  }
+
+  void _signalStart(Iterable<String> targets) {
+    if (_buildingCompleter.isCompleted) _buildingCompleter = Completer();
+    var results = <daemon.BuildResult>[];
+    for (var target in targets) {
+      results.add(daemon.DefaultBuildResult((b) => b
+        ..status = daemon.BuildStatus.started
+        ..target = target));
+    }
+    _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
+  }
 
   static Future<BuildRunnerDaemonBuilder> create(
     PackageGraph packageGraph,
