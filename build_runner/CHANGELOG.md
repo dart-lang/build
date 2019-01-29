@@ -1,3 +1,8 @@
+## 1.2.3
+
+- Fix a bug where changing between `--live-reload` and `--hot-reload` might not
+  work due to the etags for the injected JS not changing when they should.
+
 ## 1.2.2
 
 - Change the format of Build Daemon messages.
