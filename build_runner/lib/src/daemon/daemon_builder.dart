@@ -33,7 +33,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final StreamController<ServerLog> _outputStreamController;
   final Stream<WatchEvent> _changes;
 
-  Completer _buildingCompleter;
+  Completer<Null> _buildingCompleter;
 
   BuildRunnerDaemonBuilder._(
     this._builder,
