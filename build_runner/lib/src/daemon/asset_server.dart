@@ -5,10 +5,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner/src/daemon/daemon_builder.dart';
-import 'package:build_runner/src/server/server.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
+
+import '../server/server.dart';
+import 'daemon_builder.dart';
 
 class AssetServer {
   HttpServer _server;
