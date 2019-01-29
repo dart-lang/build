@@ -95,6 +95,15 @@ main() {
       expect(File(assetServerPortFilePath(workspace())).existsSync(), isTrue);
     });
 
+    test('notifies upon build start', () async {
+      await _startDaemon();
+      var client = await _startClient();
+      client.registerBuildTarget(webTarget);
+      client.startBuild();
+      var buildResults = await client.buildResults.first;
+      expect(buildResults.results.first.status, BuildStatus.started);
+    });
+
     test('can complete builds', () async {
       await _startDaemon();
       var client = await _startClient();
