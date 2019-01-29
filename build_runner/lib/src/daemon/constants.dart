@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_daemon/constants.dart';
+import 'package:path/path.dart' as p;
 
 String assetServerPortFilePath(String workingDirectory) =>
-    '${daemonWorkspace(workingDirectory)}/.asset_server_port';
+    p.join(daemonWorkspace(workingDirectory), '.asset_server_port');

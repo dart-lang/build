@@ -3,7 +3,7 @@
 - Change the format of Build Daemon messages.
 - Build Daemon asset server now properly waits for build results.
 - Build Daemon now properly signals the start of a build.
-
+- Fix path issues with Daemon command under Windows.
 
 ## 1.2.1
 
