@@ -100,7 +100,8 @@ main() {
       var client = await _startClient();
       client.registerBuildTarget(webTarget);
       client.startBuild();
-      var buildResults = await client.buildResults.first;
+      var buildResults = await client.buildResults
+          .firstWhere((b) => b.results.first.status != BuildStatus.started);
       expect(buildResults.results.first.status, BuildStatus.succeeded);
     });
 
