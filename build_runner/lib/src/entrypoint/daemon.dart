@@ -58,8 +58,7 @@ class DaemonCommand extends BuildRunnerCommand {
           builderApplications,
           options,
         );
-        var server =
-            await AssetServer.run(builder.reader, packageGraph.root.name);
+        var server = await AssetServer.run(builder, packageGraph.root.name);
         File(assetServerPortFilePath(workingDirectory))
             .writeAsStringSync('${server.port}');
         await daemon.start(requestedOptions, builder, builder.changes);

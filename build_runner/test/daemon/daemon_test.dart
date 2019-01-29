@@ -95,12 +95,22 @@ main() {
       expect(File(assetServerPortFilePath(workspace())).existsSync(), isTrue);
     });
 
-    test('can complete builds', () async {
+    test('notifies upon build start', () async {
       await _startDaemon();
       var client = await _startClient();
       client.registerBuildTarget(webTarget);
       client.startBuild();
       var buildResults = await client.buildResults.first;
+      expect(buildResults.results.first.status, BuildStatus.started);
+    });
+
+    test('can complete builds', () async {
+      await _startDaemon();
+      var client = await _startClient();
+      client.registerBuildTarget(webTarget);
+      client.startBuild();
+      var buildResults = await client.buildResults
+          .firstWhere((b) => b.results.first.status != BuildStatus.started);
       expect(buildResults.results.first.status, BuildStatus.succeeded);
     });
 
@@ -117,7 +127,8 @@ main() {
 
       // Both clients should be notified.
       await clientA.buildResults.first;
-      var buildResultsB = await clientB.buildResults.first;
+      var buildResultsB = await clientB.buildResults
+          .firstWhere((b) => b.results.first.status != BuildStatus.started);
 
       expect(buildResultsB.results.first.status, BuildStatus.succeeded);
       expect(buildResultsB.results.length, equals(2));
