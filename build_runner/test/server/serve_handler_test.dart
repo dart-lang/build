@@ -73,6 +73,19 @@ void main() {
     expect(await cachedResponse.readAsString(), isEmpty);
   });
 
+  test('caching with etags takes into account injected JS', () async {
+    _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
+    var hotReloadEtag = (await serveHandler.handlerFor('web',
+                buildUpdates: BuildUpdatesOption.hotReload)(
+            Request('GET', Uri.parse('http://server.com/some.js'))))
+        .headers[HttpHeaders.etagHeader];
+    var liveReloadEtag = (await serveHandler.handlerFor('web',
+                buildUpdates: BuildUpdatesOption.liveReload)(
+            Request('GET', Uri.parse('http://server.com/some.js'))))
+        .headers[HttpHeaders.etagHeader];
+    expect(hotReloadEtag, isNot(liveReloadEtag));
+  });
+
   test('throws if you pass a non-root directory', () {
     expect(() => serveHandler.handlerFor('web/sub'), throwsArgumentError);
   });
