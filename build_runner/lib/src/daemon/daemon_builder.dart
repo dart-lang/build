@@ -42,18 +42,20 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     this._changes,
   );
 
-  @override
-  Stream<daemon.BuildResults> get builds => _buildResults.stream;
-
-  Stream<WatchEvent> get changes => _changes;
-
   /// Waits for a running build to complete before returning.
   ///
   /// If there is no running build, it will return immediately.
   Future<void> get building => _buildingCompleter?.future;
 
   @override
+  Stream<daemon.BuildResults> get builds => _buildResults.stream;
+
+  Stream<WatchEvent> get changes => _changes;
+
+  @override
   Stream<ServerLog> get logs => _outputStreamController.stream;
+
+  Iterable<AssetId> get outputs => _builder.assetGraph.outputs;
 
   FinalizedReader get reader => _builder.finalizedReader;
 

@@ -1,3 +1,7 @@
+## 1.2.3
+
+- `daemon` command now serves output asset digests under `/$outputDigests`. 
+
 ## 1.2.2
 
 - Change the format of Build Daemon messages.

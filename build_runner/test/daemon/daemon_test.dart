@@ -14,6 +14,7 @@ import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_runner/src/daemon/constants.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -93,6 +94,25 @@ main() {
     test('writes the asset server port', () async {
       await _startDaemon();
       expect(File(assetServerPortFilePath(workspace())).existsSync(), isTrue);
+    });
+
+    test('serves output digests', () async {
+      await _startDaemon();
+      var client = await _startClient();
+      var port = File(assetServerPortFilePath(workspace())).readAsStringSync();
+      var response = await http.get('http://localhost:$port/\$outputDigests');
+
+      // Nothing built yet, there shouldn't be any asset digest.
+      expect(response.body, '{}');
+
+      // Start a build to create some outputs.
+      client.registerBuildTarget(webTarget);
+      client.startBuild();
+      await client.buildResults
+          .firstWhere((b) => b.results.first.status != BuildStatus.started);
+      response = await http.get('http://localhost:$port/\$outputDigests');
+
+      expect(response.body.contains('packages/a/'), isTrue);
     });
 
     test('notifies upon build start', () async {
