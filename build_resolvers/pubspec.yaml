@@ -21,3 +21,13 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
+  build_runner_core:
+    path:  ../build_runner_core
+  build_modules:
+    path: ../build_modules
+  build_runner:
+    path: ../build_runner
+  build_test:
+    path: ../build_test
+  build_vm_compilers:
+    path: ../build_vm_compilers

@@ -26,5 +26,9 @@ dev_dependencies:
   test: ^1.2.0
 
 dependency_overrides:
+  build_modules:
+    path: ../build_modules
   build_resolvers:
     path: ../build_resolvers
+  build_vm_compilers:
+    path: ../build_vm_compilers

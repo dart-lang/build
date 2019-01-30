@@ -25,11 +25,17 @@ dependencies:
   watcher: ^0.9.7
 
 dev_dependencies:
-  analyzer: ">=0.27.1 <0.35.0"
+  analyzer: ">=0.27.1 <0.36.0"
   build_runner: ^1.0.0
   build_vm_compilers: ^0.1.0
   collection: ^1.14.0
 
 dependency_overrides:
+  build:
+    path: ../build
+  build_modules:
+    path: ../build_modules
   build_resolvers:
     path: ../build_resolvers
+  build_vm_compilers:
+    path: ../build_vm_compilers
