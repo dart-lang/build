@@ -89,6 +89,7 @@ class BuildImpl {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
       {List<String> buildDirs}) {
     buildDirs ??= [];
+    finalizedReader.reset(buildDirs);
     return _SingleBuild(this, buildDirs).run(updates)
       ..whenComplete(_resolvers.reset);
   }
@@ -99,6 +100,10 @@ class BuildImpl {
       List<BuilderApplication> builders,
       Map<String, Map<String, dynamic>> builderConfigOverrides,
       {bool isReleaseBuild = false}) async {
+    // Don't allow any changes to the generated asset directory after this
+    // point.
+    lockGeneratedOutputDirectory();
+
     var buildPhases = await createBuildPhases(
         options.targetGraph, builders, builderConfigOverrides, isReleaseBuild);
     if (buildPhases.isEmpty) {

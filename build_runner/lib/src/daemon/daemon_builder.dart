@@ -8,8 +8,10 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart' as daemon;
+import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
+import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -25,48 +27,57 @@ import 'package:watcher/watcher.dart';
 /// A Daemon Builder that uses build_runner_core for building.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<daemon.BuildResults>();
-  final _changesFromLastBuild = <AssetChange>[];
 
   final BuildImpl _builder;
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
-  final Stream<AssetChange> _graphEvents;
-  Stream<WatchEvent> _changes;
+  final Stream<WatchEvent> _changes;
+
+  Completer<Null> _buildingCompleter;
 
   BuildRunnerDaemonBuilder._(
     this._builder,
     this._buildOptions,
     this._outputStreamController,
-    this._graphEvents,
-  ) {
-    _changes = _graphEvents.map((data) {
-      _changesFromLastBuild.add(data);
-      return WatchEvent(data.type, data.id.path);
-    });
-  }
+    this._changes,
+  );
 
   @override
   Stream<daemon.BuildResults> get builds => _buildResults.stream;
 
   Stream<WatchEvent> get changes => _changes;
 
+  /// Waits for a running build to complete before returning.
+  ///
+  /// If there is no running build, it will return immediately.
+  Future<void> get building => _buildingCompleter?.future;
+
   @override
   Stream<ServerLog> get logs => _outputStreamController.stream;
 
+  FinalizedReader get reader => _builder.finalizedReader;
+
   @override
-  Future<void> build(Set<String> targets, Set<String> logToPaths) async {
-    _logMessage(Level.INFO, 'About to build $targets...');
+  Future<void> build(
+      Set<BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
+    var changes = fileChanges
+        .map<AssetChange>(
+            (change) => AssetChange(AssetId.parse(change.path), change.type))
+        .toList();
+    var targetNames = targets.map((t) => t.target).toSet();
+    _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
+    _signalStart(targetNames);
+    var results = <daemon.BuildResult>[];
     try {
-      var mergedChanges = collectChanges([_changesFromLastBuild]);
+      var mergedChanges = collectChanges([changes]);
       var result =
-          await _builder.run(mergedChanges, buildDirs: targets.toList());
-      var results = <daemon.BuildResult>[];
+          await _builder.run(mergedChanges, buildDirs: targetNames.toList());
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
           results.add(daemon.DefaultBuildResult((b) => b
             ..status = daemon.BuildStatus.succeeded
-            ..target = target));
+            ..target = target.target));
         } else {
           results.add(daemon.DefaultBuildResult((b) => b
             ..status = daemon.BuildStatus.failed
@@ -74,22 +85,19 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             // We can use the AssetGraph and FailureReporter to provide a better
             // error message.
             ..error = 'FailureType: ${result.failureType.exitCode}'
-            ..target = target));
+            ..target = target.target));
         }
       }
-      _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
     } catch (e) {
-      var results = <daemon.BuildResult>[];
       for (var target in targets) {
         results.add(daemon.DefaultBuildResult((b) => b
           ..status = daemon.BuildStatus.failed
           ..error = '$e'
-          ..target = target));
+          ..target = target.target));
       }
-      _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
     }
-    _changesFromLastBuild.clear();
+    _signalEnd(results);
   }
 
   @override
@@ -98,10 +106,26 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     await _buildOptions.logListener.cancel();
   }
 
-  void _logMessage(Level level, String message) {
-    // TODO(grouma) - use the logic in std_io_logging.dart to include color.
-    _outputStreamController.add(ServerLog((b) => b.log =
-        LogRecord(level, message, 'BuildRunnerBuildDaemon').toString()));
+  void _logMessage(Level level, String message) =>
+      _outputStreamController.add(ServerLog((b) => b.log = colorLog(
+              LogRecord(level, message, 'BuildRunnerBuildDaemon'),
+              verbose: _buildOptions.verbose)
+          .toString()));
+
+  void _signalEnd(Iterable<daemon.BuildResult> results) {
+    _buildingCompleter.complete();
+    _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
+  }
+
+  void _signalStart(Iterable<String> targets) {
+    _buildingCompleter = Completer();
+    var results = <daemon.BuildResult>[];
+    for (var target in targets) {
+      results.add(daemon.DefaultBuildResult((b) => b
+        ..status = daemon.BuildStatus.started
+        ..target = target));
+    }
+    _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
   }
 
   static Future<BuildRunnerDaemonBuilder> create(
@@ -117,7 +141,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       // Print here as well so that severe errors can be caught by the
       // daemon client.
       print(record);
-      outputStreamController.add(ServerLog((b) => b.log = '$record'));
+      outputStreamController.add(ServerLog((b) =>
+          b.log = colorLog(record, verbose: sharedOptions.verbose).toString()));
     });
 
     var daemonEnvironment = OverrideableEnvironment(environment,
@@ -158,7 +183,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               expectedDeletes,
             ));
 
+    var changes =
+        graphEvents.map((data) => WatchEvent(data.type, '${data.id}'));
+
     return BuildRunnerDaemonBuilder._(
-        builder, buildOptions, outputStreamController, graphEvents);
+        builder, buildOptions, outputStreamController, changes);
   }
 }

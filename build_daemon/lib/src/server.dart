@@ -16,16 +16,14 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../daemon_builder.dart';
 import '../data/build_request.dart';
+import '../data/build_target.dart';
 import '../data/build_target_request.dart';
-import '../data/log_to_paths_request.dart';
 import '../data/serializers.dart';
 import 'managers/build_target_manager.dart';
-import 'managers/channel_options_manager.dart';
 
 class Server {
   final _isDoneCompleter = Completer();
-  final _buildTargetManager = BuildTargetManager();
-  final _logPathsManager = ChannelOptionsManager();
+  final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
   final Serializers _serializers;
 
@@ -38,8 +36,11 @@ class Server {
   final _subs = <StreamSubscription>[];
 
   Server(this._builder, Stream<WatchEvent> changes,
-      {Serializers serializersOverride})
-      : _serializers = serializersOverride ?? serializers {
+      {Serializers serializersOverride,
+      bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
+      : _serializers = serializersOverride ?? serializers,
+        _buildTargetManager =
+            BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _forwardData();
     _handleChanges(changes);
   }
@@ -59,13 +60,9 @@ class Server {
           return;
         }
         if (request is BuildTargetRequest) {
-          _buildTargetManager.addBuildTarget(request, channel);
-        } else if (request is LogToPathsRequest) {
-          for (var path in request.paths) {
-            _logPathsManager.addOption(path, channel);
-          }
+          _buildTargetManager.addBuildTarget(request.target, channel);
         } else if (request is BuildRequest) {
-          await _build(_buildTargetManager.targets);
+          await _build(_buildTargetManager.targets, <WatchEvent>[]);
         }
       }, onDone: () {
         _channels.remove(channel);
@@ -85,14 +82,12 @@ class Server {
     if (!_isDoneCompleter.isCompleted) _isDoneCompleter.complete();
   }
 
-  Future<void> _build(Set<BuildTarget> buildTargets) => _pool.withResource(() {
-        _interestedChannels = Set<WebSocketChannel>();
-        var paths = Set<String>();
-        for (var buildTarget in buildTargets) {
-          paths.add(buildTarget.target);
-          _interestedChannels.addAll(buildTarget.listeners.toList());
-        }
-        return _builder.build(paths, _logPathsManager.options);
+  Future<void> _build(
+          Set<BuildTarget> buildTargets, Iterable<WatchEvent> changes) =>
+      _pool.withResource(() {
+        _interestedChannels =
+            buildTargets.expand(_buildTargetManager.channels).toSet();
+        return _builder.build(buildTargets, changes);
       });
 
   void _forwardData() {
@@ -116,7 +111,7 @@ class Server {
       if (_buildTargetManager.targets.isEmpty) return;
       var buildTargets = _buildTargetManager.targetsForChanges(changes);
       if (buildTargets.isEmpty) return;
-      await _build(buildTargets);
+      await _build(buildTargets, changes);
     })).listen((_) {}));
   }
 

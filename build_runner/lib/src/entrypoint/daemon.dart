@@ -7,7 +7,10 @@ import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/src/daemon.dart';
+import 'package:build_runner/src/daemon/constants.dart';
+import 'package:io/ansi.dart';
 
+import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
 import 'base_command.dart';
 
@@ -49,14 +52,19 @@ class DaemonCommand extends BuildRunnerCommand {
       }
     } else {
       stdout.writeln('Starting daemon...');
-      var builder = await BuildRunnerDaemonBuilder.create(
-        packageGraph,
-        builderApplications,
-        options,
-      );
-      await daemon.start(requestedOptions, builder, builder.changes);
-      stdout.writeln(readyToConnectLog);
-      await daemon.onDone;
+      await overrideAnsiOutput(true, () async {
+        var builder = await BuildRunnerDaemonBuilder.create(
+          packageGraph,
+          builderApplications,
+          options,
+        );
+        var server = await AssetServer.run(builder, packageGraph.root.name);
+        File(assetServerPortFilePath(workingDirectory))
+            .writeAsStringSync('${server.port}');
+        await daemon.start(requestedOptions, builder, builder.changes);
+        stdout.writeln(readyToConnectLog);
+        await daemon.onDone.whenComplete(server.stop);
+      });
     }
     return 0;
   }

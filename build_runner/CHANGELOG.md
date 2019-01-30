@@ -1,3 +1,24 @@
+## 1.2.3
+
+- Fix a bug where changing between `--live-reload` and `--hot-reload` might not
+  work due to the etags for the injected JS not changing when they should.
+
+## 1.2.2
+
+- Change the format of Build Daemon messages.
+- Build Daemon asset server now properly waits for build results.
+- Build Daemon now properly signals the start of a build.
+- Fix path issues with Daemon command under Windows.
+
+## 1.2.1
+
+- Update `package:build_runner_core` to version `2.0.1`.
+
+## 1.2.0
+
+- Support building through `package:build_daemon`.
+- Update `package:build_runner_core` to version `2.0.0`.
+
 ## 1.1.3
 
 - Update to `package:graphs` version `0.2.0`.

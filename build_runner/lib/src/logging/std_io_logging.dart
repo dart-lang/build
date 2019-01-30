@@ -14,7 +14,7 @@ Function(LogRecord) stdIOLogListener({bool assumeTty, bool verbose}) =>
           _stdIOLogListener(record, verbose: verbose ?? false);
         });
 
-void _stdIOLogListener(LogRecord record, {bool verbose}) {
+StringBuffer colorLog(LogRecord record, {bool verbose}) {
   AnsiCode color;
   if (record.level < Level.WARNING) {
     color = cyan;
@@ -59,9 +59,11 @@ void _stdIOLogListener(LogRecord record, {bool verbose}) {
     // Add an extra line to the output so the last line isn't written over.
     message.writeln('');
   }
-
-  stdout.write(message);
+  return message;
 }
+
+void _stdIOLogListener(LogRecord record, {bool verbose}) =>
+    stdout.write(colorLog(record, verbose: verbose));
 
 /// Filter out the Logger names known to come from `build_runner` and splits the
 /// header for levels >= WARNING.

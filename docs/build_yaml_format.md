@@ -85,7 +85,7 @@ release_options | [BuilderOptions](#builderoptions) | none
 
 ## BuilderOptions
 
-An arbitrary `Map<String, dynamc>` of configuration options exposed by the
+An arbitrary `Map<String, dynamic>` of configuration options exposed by the
 individual builders. See the documentation for the builder you are configuring
 for guidance.
 

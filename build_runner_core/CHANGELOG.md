@@ -1,7 +1,14 @@
+## 2.0.1
+
+- Fix an issue where the `finalizedReader` was not `reset` prior to build.
+
 ## 2.0.0
 
 - The `build` method now requires a list of `buildDirs`.
 - Remove `buildDirs` from `BuildOptions`.
+- Added the `overrideGeneratedDirectory` method which overrides the directory
+  for generated outputs.
+  - Must be invoked before creating a `BuildRunner` instance.
 
 ## 1.1.3
 

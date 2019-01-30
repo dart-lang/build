@@ -4,7 +4,10 @@
 
 import 'dart:async';
 
+import 'package:watcher/src/watch_event.dart';
+
 import 'data/build_status.dart';
+import 'data/build_target.dart';
 import 'data/server_log.dart';
 
 class DaemonBuilder {
@@ -12,7 +15,8 @@ class DaemonBuilder {
 
   Stream<ServerLog> get logs => Stream.empty();
 
-  Future<void> build(Set<String> targets, Set<String> logToPaths) async {}
+  Future<void> build(
+      Set<BuildTarget> targets, Iterable<WatchEvent> changes) async {}
 
   Future<void> stop() async {}
 }

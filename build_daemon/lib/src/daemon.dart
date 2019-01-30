@@ -11,6 +11,7 @@ import 'package:watcher/watcher.dart';
 
 import '../constants.dart';
 import '../daemon_builder.dart';
+import '../data/build_target.dart';
 import 'server.dart';
 
 /// Returns the current version of the running build daemon.
@@ -38,6 +39,7 @@ class Daemon {
 
   Server _server;
   StreamSubscription _sub;
+  RandomAccessFile _lock;
 
   Daemon(this._workingDirectory);
 
@@ -45,15 +47,16 @@ class Daemon {
 
   Future<void> start(
       Set<String> options, DaemonBuilder builder, Stream<WatchEvent> changes,
-      {Serializers serializersOverride}) async {
+      {Serializers serializersOverride,
+      bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild}) async {
     if (_server != null) return;
     _handleGracefulExit();
 
     _createVersionFile();
     _createOptionsFile(options);
 
-    _server =
-        Server(builder, changes, serializersOverride: serializersOverride);
+    _server = Server(builder, changes,
+        serializersOverride: serializersOverride, shouldBuild: shouldBuild);
     var port = await _server.listen();
     _createPortFile(port);
 
@@ -65,9 +68,9 @@ class Daemon {
   bool tryGetLock() {
     try {
       _createDaemonWorkspace();
-      File(lockFilePath(_workingDirectory))
-          .openSync(mode: FileMode.write)
-          .lockSync();
+      _lock =
+          File(lockFilePath(_workingDirectory)).openSync(mode: FileMode.write);
+      _lock.lockSync();
       return true;
     } on FileSystemException {
       return false;
@@ -77,6 +80,8 @@ class Daemon {
   Future<void> _cleanUp() async {
     await _server?.stop();
     await _sub?.cancel();
+    // We need to close the lock prior to deleting the file.
+    _lock?.closeSync();
     var workspace = Directory(daemonWorkspace(_workingDirectory));
     if (workspace.existsSync()) {
       workspace.deleteSync(recursive: true);
