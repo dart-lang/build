@@ -5,8 +5,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/src/daemon.dart';
+import 'package:build_daemon/utilities.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:io/ansi.dart';
 
@@ -32,40 +32,33 @@ class DaemonCommand extends BuildRunnerCommand {
     var daemon = Daemon(workingDirectory);
     var requestedOptions = argResults.arguments.toSet();
     if (!daemon.tryGetLock()) {
-      var runningOptions = currentOptions(workingDirectory);
-      var version = runningVersion(workingDirectory);
-      if (version != currentVersion) {
-        stdout.writeln('Running Version: $version');
-        stdout.writeln('Current Version: $currentVersion');
-        stdout.writeln(versionSkew);
-        return 1;
-      } else if (!(runningOptions.length == requestedOptions.length &&
-          runningOptions.containsAll(requestedOptions))) {
-        stdout.writeln('Running Options: $runningOptions');
-        stdout.writeln('Requested Options: $requestedOptions');
-        stdout.writeln(optionsSkew);
+      if (validateOptions(workingDirectory, requestedOptions) &&
+          validateVersion(workingDirectory)) {
         return 1;
       } else {
-        stdout.writeln('Daemon is already running.');
-        print(readyToConnectLog);
+        notifyReady(workingDirectory);
         return 0;
       }
     } else {
-      stdout.writeln('Starting daemon...');
-      await overrideAnsiOutput(true, () async {
-        var builder = await BuildRunnerDaemonBuilder.create(
-          packageGraph,
-          builderApplications,
-          options,
-        );
-        var server = await AssetServer.run(builder, packageGraph.root.name);
-        File(assetServerPortFilePath(workingDirectory))
-            .writeAsStringSync('${server.port}');
-        await daemon.start(requestedOptions, builder, builder.changes);
-        stdout.writeln(readyToConnectLog);
-        await daemon.onDone.whenComplete(server.stop);
-      });
+      try {
+        await overrideAnsiOutput(true, () async {
+          var builder = await BuildRunnerDaemonBuilder.create(
+            packageGraph,
+            builderApplications,
+            options,
+          );
+          var server = await AssetServer.run(builder, packageGraph.root.name);
+          File(assetServerPortFilePath(workingDirectory))
+              .writeAsStringSync('${server.port}');
+          await daemon.start(requestedOptions, builder, builder.changes);
+          notifyReady(workingDirectory);
+          await daemon.onDone.whenComplete(server.stop);
+        });
+      } catch (e) {
+        notifyError(workingDirectory, '$e');
+        return 1;
+      }
+      return 0;
     }
-    return 0;
   }
 }

@@ -10,7 +10,7 @@ import 'package:build_daemon/constants.dart';
 // can resolve it.
 // ignore: unused_import
 import 'package:build_daemon/daemon_builder.dart';
-import 'package:build_daemon/src/daemon.dart';
+import 'package:build_daemon/utilities.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;

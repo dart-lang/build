@@ -1,3 +1,7 @@
+## 0.3.0
+
+- Fix client issues with Windows.
+
 ## 0.2.2
 
 - Resolve client path issues with running on Windows.

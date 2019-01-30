@@ -7,7 +7,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/data/build_target.dart';
+import 'package:build_daemon/utilities.dart';
 import 'package:built_value/serializer.dart';
+import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/io.dart';
 
 import 'constants.dart';
@@ -67,33 +69,26 @@ class BuildDaemonClient {
     }
   }
 
-  static bool _isActionMessage(String line) =>
-      line == versionSkew || line == readyToConnectLog || line == optionsSkew;
-
   static Future<BuildDaemonClient> connect(
       String workingDirectory, List<String> daemonCommand,
       {Serializers serializersOverride}) async {
-    var process = await Process.start(
-        daemonCommand.first, daemonCommand.sublist(1),
-        mode: ProcessStartMode.detachedWithStdio,
-        workingDirectory: workingDirectory);
+    var communicationFile = createCommunicationFile(workingDirectory);
+    await Process.start(daemonCommand.first, daemonCommand.sublist(1),
+        mode: ProcessStartMode.detached, workingDirectory: workingDirectory);
 
-    // Print errors coming from the Dart Build Daemon to help with debugging.
-    process.stderr.transform(utf8.decoder).listen(print);
-    var stream = process.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .asBroadcastStream();
-    var output = stream.where((line) => !_isActionMessage(line)).toList();
-    var result = await stream.firstWhere(_isActionMessage, orElse: () => null);
+    // The daemon will notify the result of the process through the communication
+    // file. Unfortunate work around for
+    // https://github.com/dart-lang/sdk/issues/35809.
+    await Watcher(communicationFile.path).events.first;
 
-    if (result == null) {
-      throw Exception(
-          'Unable to start build daemon: ${(await output).join('\n')}');
-    } else if (result == versionSkew) {
-      throw VersionSkew('${await output}');
-    } else if (result == optionsSkew) {
-      throw OptionsSkew('${await output}');
+    var result = await communicationFile.readAsString();
+
+    if (result.startsWith(errorLog)) {
+      throw Exception('Unable to start build daemon: $result');
+    } else if (result.startsWith(versionSkew)) {
+      throw VersionSkew(result);
+    } else if (result.startsWith(optionsSkew)) {
+      throw OptionsSkew(result);
     }
 
     var port = _existingPort(workingDirectory);

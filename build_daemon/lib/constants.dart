@@ -8,9 +8,10 @@ import 'package:path/path.dart' as p;
 const readyToConnectLog = 'READY TO CONNECT';
 const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
+const errorLog = 'ERROR';
 
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '4.0.0';
+const currentVersion = '5.0.0';
 
 var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {
@@ -26,6 +27,12 @@ String daemonWorkspace(String workingDirectory) {
 /// Used to ensure that only one instance of this daemon is running at a time.
 String lockFilePath(String workingDirectory) =>
     p.join(daemonWorkspace(workingDirectory), '.dart_build_lock');
+
+/// Used to communicate between daemon and client.
+///
+/// Unfortunate work around for https://github.com/dart-lang/sdk/issues/35809.
+String communicationFilePath(String workingDirectory) => p.join(
+    daemonWorkspace(workingDirectory), '.dart_build_daemon_communication');
 
 /// Used to signal to clients on what port the running daemon is listening.
 String portFilePath(String workingDirectory) =>

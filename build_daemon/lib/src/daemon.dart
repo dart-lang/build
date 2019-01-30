@@ -14,24 +14,6 @@ import '../daemon_builder.dart';
 import '../data/build_target.dart';
 import 'server.dart';
 
-/// Returns the current version of the running build daemon.
-///
-/// Null if one isn't running.
-String runningVersion(String workingDirectory) {
-  var versionFile = File(versionFilePath(workingDirectory));
-  if (!versionFile.existsSync()) return null;
-  return versionFile.readAsStringSync();
-}
-
-/// Returns the current options of the running build daemon.
-///
-/// Null if one isn't running.
-Set<String> currentOptions(String workingDirectory) {
-  var optionsFile = File(optionsFilePath(workingDirectory));
-  if (!optionsFile.existsSync()) return Set();
-  return optionsFile.readAsLinesSync().toSet();
-}
-
 class Daemon {
   final String _workingDirectory;
 

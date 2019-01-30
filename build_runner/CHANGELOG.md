@@ -1,3 +1,7 @@
+## 1.3.0
+
+- Depend on the latest `package:build_daemon`.
+
 ## 1.2.3
 
 - Fix a bug where changing between `--live-reload` and `--hot-reload` might not

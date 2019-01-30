@@ -5,22 +5,22 @@
 @Timeout(Duration(minutes: 2))
 @Tags(['integration'])
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
 import 'package:build_daemon/client.dart';
 import 'package:build_daemon/constants.dart';
+import 'package:build_daemon/utilities.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import 'package:watcher/watcher.dart';
 
 main() {
   Process daemonProcess;
-  Stream<String> stdoutLines;
   String workspace() => p.join(d.sandbox, 'a');
   final webTarget = DefaultBuildTarget((b) => b..target = 'web');
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
@@ -62,7 +62,6 @@ main() {
   });
 
   tearDown(() async {
-    stdoutLines = null;
     daemonProcess?.kill(ProcessSignal.sigkill);
     await runPub('a', 'run', args: ['build_runner', 'clean']);
   });
@@ -76,13 +75,11 @@ main() {
       ]);
 
   Future<void> _startDaemon() async {
+    var file = createCommunicationFile(workspace());
     daemonProcess =
         await startPub('a', 'run', args: ['build_runner', 'daemon']);
-    stdoutLines = daemonProcess.stdout
-        .transform(Utf8Decoder())
-        .transform(LineSplitter())
-        .asBroadcastStream();
-    expect(await stdoutLines.contains(readyToConnectLog), isTrue);
+    await Watcher(file.path).events.first;
+    expect(file.readAsStringSync().startsWith(readyToConnectLog), isTrue);
   }
 
   group('Build Daemon', () {
