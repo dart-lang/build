@@ -26,6 +26,7 @@ class Server {
   final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
   final Serializers _serializers;
+  Timer _timeout;
 
   HttpServer _server;
   DaemonBuilder _builder;
@@ -45,7 +46,7 @@ class Server {
     _handleChanges(changes);
 
     // Stop the server if nobody connects.
-    Future.delayed(Duration(seconds: 30)).then((_) async {
+    _timeout = Timer(Duration(seconds: 30), () async {
       if (_buildTargetManager.isEmpty) {
         await stop();
       }
@@ -81,6 +82,7 @@ class Server {
   }
 
   Future<void> stop() async {
+    _timeout.cancel();
     await _server?.close(force: true);
     await _builder?.stop();
     for (var sub in _subs) {
