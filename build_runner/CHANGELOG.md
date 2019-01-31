@@ -1,4 +1,4 @@
-## 1.2.4
+## 1.2.5
 
 - Fix a bug with the build daemon where the output options were ignored.
 
