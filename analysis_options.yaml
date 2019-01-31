@@ -10,7 +10,6 @@ analyzer:
   exclude:
     # Prevents extra work during e2e test runs.
     - "_test/dart2js_test/**"
-    - "_test/test/goldens/generated_build_script.dart"
     # Common top level directories containing generated files in any package.
     - "*/build/**"
     - "*/.dart_tool/**"

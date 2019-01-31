@@ -37,7 +37,10 @@ Future<String> _generateBuildScript() async {
       ]));
   final emitter = DartEmitter(Allocator.simplePrefixing());
   try {
-    return DartFormatter().format('${library.accept(emitter)}');
+    return DartFormatter().format('''
+      // ignore_for_file: directives_ordering
+
+      ${library.accept(emitter)}''');
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
         'This is likely caused by a misconfigured builder definition.');
