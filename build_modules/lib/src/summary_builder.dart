@@ -93,7 +93,9 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
 
   var analyzer = await buildStep.fetchResource(analyzerDriverResource);
-  var response = await analyzer.doWork(request);
+  var response = await analyzer.doWork(request,
+      trackWork: (response) =>
+          buildStep.trackStage('Summarize', () => response, isExternal: true));
   if (response.exitCode == EXIT_CODE_ERROR) {
     throw AnalyzerSummaryException(module.unlinkedSummaryId, response.output);
   }
