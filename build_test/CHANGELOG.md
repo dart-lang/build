@@ -1,3 +1,7 @@
+## 0.10.6
+
+- Allow build_resolvers version `1.0.0`.
+
 ## 0.10.5
 
 - Improve error messages for unresolvable URIs in the PackageAssetReader.
