@@ -6,6 +6,8 @@
   - Have no source offsets for annotations or their errors.
   - Have working `session` fields.
   - Have `Source` instances with different URIs than before.
+  - Not include missing libraries in the `importedLibraries` getter. You can
+    instead use the `imports` getter to see all the imports.
 
 ## 0.2.3
 
