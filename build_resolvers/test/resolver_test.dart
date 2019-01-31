@@ -63,11 +63,14 @@ void main() {
         'a|web/main.dart': '''
               import 'package:b/missing.dart';
 
+              part 'missing.g.dart';
+
               main() {
               } ''',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        expect(lib.importedLibraries.length, 2);
+        expect(lib.imports.length, 2);
+        expect(lib.parts.length, 1);
       }, resolvers: AnalyzerResolvers());
     });
 
