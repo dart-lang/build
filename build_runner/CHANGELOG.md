@@ -1,3 +1,7 @@
+## 1.2.4
+
+- Update `build_resolvers` to version `1.0.0`.
+
 ## 1.2.3
 
 - Fix a bug where changing between `--live-reload` and `--hot-reload` might not
