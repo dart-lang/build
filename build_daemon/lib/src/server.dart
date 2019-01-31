@@ -43,6 +43,13 @@ class Server {
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _forwardData();
     _handleChanges(changes);
+
+    // Stop the server if nobody connects within a minute.
+    Future.delayed(Duration(seconds: 30)).then((_) async {
+      if (_buildTargetManager.isEmpty) {
+        await stop();
+      }
+    });
   }
 
   Future<void> get onDone => _isDoneCompleter.future;

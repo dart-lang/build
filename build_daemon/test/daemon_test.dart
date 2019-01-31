@@ -46,6 +46,13 @@ void main() {
       expect(await getOutput(daemon), 'RUNNING');
     });
 
+    test('shuts down if no client connects within 30 seconds', () async {
+      var workspace = uuid.v1() as String;
+      var daemon = await _runDaemon(workspace);
+      testDaemons.add(daemon);
+      expect(await daemon.exitCode, isNotNull);
+    }, timeout: Timeout(Duration(minutes: 1)));
+
     test('can not run if another daemon is running in the same workspace',
         () async {
       var workspace = uuid.v1() as String;
