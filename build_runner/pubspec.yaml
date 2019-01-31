@@ -13,7 +13,7 @@ dependencies:
   build: ">=1.0.0 <1.2.0"
   build_config: ^0.3.1
   build_daemon: ^0.2.0
-  build_resolvers: ^0.2.0
+  build_resolvers: "^1.0.0"
   build_runner_core: ^2.0.1
   code_builder: ">2.3.0 <4.0.0"
   collection: ^1.14.0
