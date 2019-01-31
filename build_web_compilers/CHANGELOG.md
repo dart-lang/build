@@ -1,3 +1,7 @@
+## 1.0.1
+
+- Increased the upper bound for `package:analyzer` to `<0.36.0`.
+
 ## 1.0.0
 
 - Removed the `enable_sync_async` and `ignore_cast_failures` options for the

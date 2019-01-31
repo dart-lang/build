@@ -1,3 +1,14 @@
+## 1.1.1
+
+- Requires analyzer version `0.35.0`
+  - `Resolver` implementations in other packages are now backed by an
+    `AnalysisDriver`. There are behavior changes which may be breaking. The
+    `LibraryElement` instances returned by the resolver will now:
+    - Have non-working `context` fields.
+    - Have no source offsets for annotations or their errors.
+    - Have working `session` fields.
+    - Have `Source` instances with different URIs than before.
+
 ## 1.1.0
 
 - Add `Resolver.assetIdForElement` API. This allows finding the Dart source
