@@ -136,8 +136,15 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var expectedDeletes = Set<AssetId>();
     var outputStreamController = StreamController<ServerLog>();
 
-    var environment =
-        OverrideableEnvironment(IOEnvironment(packageGraph), onLog: (record) {
+    var environment = OverrideableEnvironment(
+        IOEnvironment(packageGraph,
+            assumeTty: true,
+            // TODO(grouma) - This should likely moved to the build_impl command
+            // so that different daemon clients can output to different
+            // directories.
+            outputMap: sharedOptions.outputMap,
+            outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
+        onLog: (record) {
       // Print here as well so that severe errors can be caught by the
       // daemon client.
       print(record);

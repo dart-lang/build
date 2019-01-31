@@ -1,3 +1,7 @@
+## 1.2.4
+
+- Fix a bug with the build daemon where the output options were ignored.
+
 ## 1.2.3
 
 - Fix a bug where changing between `--live-reload` and `--hot-reload` might not
