@@ -36,7 +36,7 @@ class Server {
 
   final _subs = <StreamSubscription>[];
 
-  Server(this._builder, Stream<WatchEvent> changes,
+  Server(this._builder, Stream<WatchEvent> changes, Duration timeout,
       {Serializers serializersOverride,
       bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
       : _serializers = serializersOverride ?? serializers,
@@ -46,7 +46,7 @@ class Server {
     _handleChanges(changes);
 
     // Stop the server if nobody connects.
-    _timeout = Timer(Duration(seconds: 30), () async {
+    _timeout = Timer(timeout, () async {
       if (_buildTargetManager.isEmpty) {
         await stop();
       }
