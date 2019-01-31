@@ -1,3 +1,7 @@
+## 2.0.2
+
+- Update `build_resolvers` to version `1.0.0`.
+
 ## 2.0.1
 
 - Fix an issue where the `finalizedReader` was not `reset` prior to build.
