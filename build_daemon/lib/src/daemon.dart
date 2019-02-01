@@ -48,14 +48,15 @@ class Daemon {
   Future<void> start(
       Set<String> options, DaemonBuilder builder, Stream<WatchEvent> changes,
       {Serializers serializersOverride,
-      bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild}) async {
+      bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild,
+      Duration timeout = const Duration(seconds: 30)}) async {
     if (_server != null) return;
     _handleGracefulExit();
 
     _createVersionFile();
     _createOptionsFile(options);
 
-    _server = Server(builder, changes,
+    _server = Server(builder, changes, timeout,
         serializersOverride: serializersOverride, shouldBuild: shouldBuild);
     var port = await _server.listen();
     _createPortFile(port);
