@@ -1,3 +1,7 @@
+## 1.2.5
+
+- Fix a bug with the build daemon where the output options were ignored.
+
 ## 1.2.4
 
 - Update `build_resolvers` to version `1.0.0`.
