@@ -1,3 +1,8 @@
+## 1.0.6
+
+- Improved the time tracking for kernel and analyzer actions by not reporting
+  time spent waiting for a worker to be available.
+
 ## 1.0.5
 
 - Increased the upper bound for `package:analyzer` to `<0.36.0`.
