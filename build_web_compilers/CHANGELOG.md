@@ -1,3 +1,7 @@
+## 1.1.0
+
+- Output a `.digests` file which contains transitive digests for an entrypoint.
+
 ## 1.0.2
 
 - Improved the time tracking for ddc actions by not reporting time spent waiting

@@ -36,6 +36,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
   var jsId = module.jsId(jsModuleExtension);
   var appModuleName = ddcModuleName(jsId);
+  var appDigestsOutput =
+      dartEntrypointId.changeExtension(digestsEntrypointExtension);
 
   // The name of the entrypoint dart library within the entrypoint JS module.
   //
@@ -83,7 +85,10 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
 
   var bootstrapContent =
       StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
-  bootstrapContent.write(_dartLoaderSetup(modulePaths));
+  bootstrapContent.write(_dartLoaderSetup(
+      modulePaths,
+      _p.url.relative(appDigestsOutput.path,
+          from: _p.url.dirname(bootstrapId.path))));
   bootstrapContent.write(_requireJsConfig);
 
   // Strip top-level directory
@@ -99,6 +104,18 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   await buildStep.writeAsString(
       dartEntrypointId.changeExtension(jsEntrypointExtension),
       entrypointJsContent);
+
+  // Output the digests for transitive modules.
+  // These can be consumed for hot reloads.
+  var moduleDigests = <String, String>{};
+  for (var dep in transitiveDeps.followedBy([module])) {
+    var assetId = dep.jsId(jsModuleExtension);
+    moduleDigests[
+            assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')] =
+        (await buildStep.digest(assetId)).toString();
+  }
+
+  await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
 }
 
 final _lazyBuildPool = Pool(16);
@@ -223,11 +240,13 @@ var _currentDirectory = (function () {
 ''';
 
 /// Sets up `window.$dartLoader` based on [modulePaths].
-String _dartLoaderSetup(Map<String, String> modulePaths) => '''
+String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests) =>
+    '''
 $_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
+     appDigests: '$appDigests',
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
      rootDirectories: new Array(),
