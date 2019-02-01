@@ -99,6 +99,20 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   await buildStep.writeAsString(
       dartEntrypointId.changeExtension(jsEntrypointExtension),
       entrypointJsContent);
+
+  // Output the digests for transitive modules.
+  // These can be consumed for hot reloads.
+  var moduleDigests = <String, String>{};
+  for (var dep in transitiveDeps) {
+    var assetId = dep.jsId(jsModuleExtension);
+    moduleDigests[
+            assetId.path.replaceFirst('lib/', 'packages/${assetId.package}')] =
+        (await buildStep.digest(assetId)).toString();
+  }
+
+  await buildStep.writeAsString(
+      dartEntrypointId.changeExtension(digestsEntrypointExtension),
+      jsonEncode(moduleDigests));
 }
 
 final _lazyBuildPool = Pool(16);
