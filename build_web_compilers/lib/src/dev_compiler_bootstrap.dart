@@ -105,9 +105,14 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   var moduleDigests = <String, String>{};
   for (var dep in transitiveDeps) {
     var assetId = dep.jsId(jsModuleExtension);
-    moduleDigests[
-            assetId.path.replaceFirst('lib/', 'packages/${assetId.package}')] =
-        (await buildStep.digest(assetId)).toString();
+    String modulePath;
+    if (assetId.path.startsWith('lib/')) {
+      modulePath =
+          assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/');
+    } else {
+      modulePath = _p.url.joinAll(assetId.pathSegments.sublist(1));
+    }
+    moduleDigests[modulePath] = (await buildStep.digest(assetId)).toString();
   }
 
   await buildStep.writeAsString(
