@@ -40,7 +40,7 @@ void main() {
 
   test('class count', () {
     expect(library.classes.map((c) => c.name), ['Example', 'PartClass']);
-    // ignore: deprecated_member_use
+    // ignore: deprecated_member_use_from_same_package, deprecated_member_use
     expect(library.classElements, orderedEquals(library.classes));
   });
 

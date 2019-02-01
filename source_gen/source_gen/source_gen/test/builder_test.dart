@@ -14,8 +14,9 @@ import 'src/comment_generator.dart';
 import 'src/unformatted_code_generator.dart';
 
 void main() {
-  test('Simple Generator test', () {
-    _generateTest(const CommentGenerator(forClasses: true, forLibrary: false),
+  test('Simple Generator test', () async {
+    await _generateTest(
+        const CommentGenerator(forClasses: true, forLibrary: false),
         _testGenPartContent);
   });
 

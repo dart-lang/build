@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.9.4
+version: 0.9.4+1
 author: Dart Team <misc@dartlang.org>
 description: Automated source code generation for Dart.
 homepage: https://github.com/dart-lang/source_gen
@@ -8,7 +8,7 @@ environment:
   sdk: '>=2.0.0 <3.0.0'
 
 dependencies:
-  analyzer: '>=0.33.0 <0.35.0'
+  analyzer: '>=0.33.3 <0.36.0'
   async: ^2.0.7
   build: '>=0.12.4 <2.0.0'
   dart_style: '>=0.1.7 <2.0.0'

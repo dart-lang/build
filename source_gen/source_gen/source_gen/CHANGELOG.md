@@ -1,3 +1,7 @@
+## 0.9.4+1
+
+* Support the latest `pkg:analyzer`.
+
 ## 0.9.4
 
 * Use `ParsedLibraryResult` to find source spans for unresolvable annotations.
