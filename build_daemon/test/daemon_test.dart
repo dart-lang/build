@@ -46,6 +46,13 @@ void main() {
       expect(await getOutput(daemon), 'RUNNING');
     });
 
+    test('shuts down if no client connects', () async {
+      var workspace = uuid.v1() as String;
+      var daemon = await _runDaemon(workspace, timeout: 1);
+      testDaemons.add(daemon);
+      expect(await daemon.exitCode, isNotNull);
+    });
+
     test('can not run if another daemon is running in the same workspace',
         () async {
       var workspace = uuid.v1() as String;
@@ -122,7 +129,7 @@ Future<String> getOutput(Process daemon) async {
       .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING');
 }
 
-Future<Process> _runDaemon(var workspace) async {
+Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
     import 'package:build_daemon/src/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
@@ -131,7 +138,9 @@ Future<Process> _runDaemon(var workspace) async {
       var daemon = Daemon('$workspace');
       if (daemon.tryGetLock()) {
         var options = ['foo'].toSet();
-        await daemon.start(options, DaemonBuilder(), Stream.empty());
+        var timeout = Duration(seconds: $timeout);
+        await daemon.start(options, DaemonBuilder(), Stream.empty(), 
+        timeout: timeout);
         print('RUNNING');
       } else {
         print('ALREADY RUNNING');

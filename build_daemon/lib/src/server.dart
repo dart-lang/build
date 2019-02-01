@@ -26,6 +26,7 @@ class Server {
   final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
   final Serializers _serializers;
+  Timer _timeout;
 
   HttpServer _server;
   DaemonBuilder _builder;
@@ -35,7 +36,7 @@ class Server {
 
   final _subs = <StreamSubscription>[];
 
-  Server(this._builder, Stream<WatchEvent> changes,
+  Server(this._builder, Stream<WatchEvent> changes, Duration timeout,
       {Serializers serializersOverride,
       bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
       : _serializers = serializersOverride ?? serializers,
@@ -43,6 +44,13 @@ class Server {
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _forwardData();
     _handleChanges(changes);
+
+    // Stop the server if nobody connects.
+    _timeout = Timer(timeout, () async {
+      if (_buildTargetManager.isEmpty) {
+        await stop();
+      }
+    });
   }
 
   Future<void> get onDone => _isDoneCompleter.future;
@@ -74,6 +82,7 @@ class Server {
   }
 
   Future<void> stop() async {
+    _timeout.cancel();
     await _server?.close(force: true);
     await _builder?.stop();
     for (var sub in _subs) {

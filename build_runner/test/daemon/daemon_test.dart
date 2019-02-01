@@ -67,17 +67,24 @@ main() {
     await runPub('a', 'run', args: ['build_runner', 'clean']);
   });
 
-  Future<BuildDaemonClient> _startClient() =>
-      BuildDaemonClient.connect(workspace(), [
-        pubBinary.toString(),
-        'run',
-        'build_runner',
-        'daemon',
-      ]);
+  Future<BuildDaemonClient> _startClient({String outputDir}) {
+    var args = ['run', 'build_runner', 'daemon'];
+    if (outputDir != null) {
+      args.addAll(['--output', 'web:$outputDir']);
+    }
+    return BuildDaemonClient.connect(
+        workspace(),
+        [
+          pubBinary.toString(),
+        ]..addAll(args));
+  }
 
-  Future<void> _startDaemon() async {
-    daemonProcess =
-        await startPub('a', 'run', args: ['build_runner', 'daemon']);
+  Future<void> _startDaemon({String outputDir}) async {
+    var args = ['build_runner', 'daemon'];
+    if (outputDir != null) {
+      args.addAll(['--output', 'web:$outputDir']);
+    }
+    daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
@@ -88,6 +95,20 @@ main() {
   group('Build Daemon', () {
     test('successfully starts', () async {
       await _startDaemon();
+    });
+
+    test('can build to outputs', () async {
+      var outputDir = Directory(p.join(d.sandbox, 'a', 'deploy'));
+      expect(outputDir.existsSync(), isFalse);
+      await _startDaemon(outputDir: 'deploy');
+      // Start the client with the same options to prevent OptionSkew.
+      // In the future this should be an option on the target.
+      var client = await _startClient(outputDir: 'deploy');
+      client.registerBuildTarget(webTarget);
+      client.startBuild();
+      await client.buildResults
+          .firstWhere((b) => b.results.first.status != BuildStatus.started);
+      expect(outputDir.existsSync(), isTrue);
     });
 
     test('writes the asset server port', () async {

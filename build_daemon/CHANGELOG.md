@@ -1,3 +1,7 @@
+## 0.2.3
+
+- Shutdown the daemon if no client connects within 30 seconds.
+
 ## 0.2.2
 
 - Resolve client path issues with running on Windows.

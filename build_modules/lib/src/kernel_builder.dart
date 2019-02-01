@@ -116,7 +116,9 @@ Future<void> _createKernel(
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
     var analyzer = await buildStep.fetchResource(frontendDriverResource);
-    var response = await analyzer.doWork(request);
+    var response = await analyzer.doWork(request,
+        trackWork: (response) => buildStep
+            .trackStage('Kernel Generate', () => response, isExternal: true));
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
       throw KernelException(
           outputId, '${request.arguments.join(' ')}\n${response.output}');
