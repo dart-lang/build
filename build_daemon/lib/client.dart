@@ -84,18 +84,18 @@ class BuildDaemonClient {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .asBroadcastStream();
-    var output = stream.where((line) => !_isActionMessage(line)).toList();
+    // Forward output from the daemon until an action message is provided.
+    // TODO(grouma) - we probably should use a logger here.
+    var sub = stream.where((line) => !_isActionMessage(line)).listen(print);
     var result = await stream.firstWhere(_isActionMessage, orElse: () => null);
-
     if (result == null) {
-      throw Exception(
-          'Unable to start build daemon: ${(await output).join('\n')}');
+      throw Exception('Unable to start build daemon.');
     } else if (result == versionSkew) {
-      throw VersionSkew('${await output}');
+      throw VersionSkew();
     } else if (result == optionsSkew) {
-      throw OptionsSkew('${await output}');
+      throw OptionsSkew();
     }
-
+    await sub.cancel();
     var port = _existingPort(workingDirectory);
     var client = BuildDaemonClient._();
     await client._connect(workingDirectory, port, serializersOverride);
@@ -110,11 +110,9 @@ class BuildDaemonClient {
 }
 
 class VersionSkew extends Error {
-  final String details;
-  VersionSkew(this.details);
+  VersionSkew();
 }
 
 class OptionsSkew extends Error {
-  final String details;
-  OptionsSkew(this.details);
+  OptionsSkew();
 }
