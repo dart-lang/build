@@ -109,10 +109,6 @@ class BuildDaemonClient {
   }
 }
 
-class VersionSkew extends Error {
-  VersionSkew();
-}
+class VersionSkew extends Error {}
 
-class OptionsSkew extends Error {
-  OptionsSkew();
-}
+class OptionsSkew extends Error {}
