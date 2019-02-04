@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 class BuildAssetUriResolver extends UriResolver {
   final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
   final _cachedAssetContents = <AssetId, String>{};
-  final resourceProvider = MemoryResourceProvider(context: p.posix);
+  final resourceProvider = MemoryResourceProvider(context: p.url);
 
   /// The assets which are known to be readable at some point during the build.
   ///
