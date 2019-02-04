@@ -14,6 +14,8 @@ install:
   - pub get
   - cd ..\build_runner
   - pub get
+  - cd ..\build_resolvers
+  - pub get
   - cd ..\
 
 build: off
@@ -21,6 +23,8 @@ build: off
 test_script:
   - cd _test
   - pub run test -j 1
+  - cd ..\build_resolvers
+  - pub run test
   - cd ..\build_runner
   - pub run test test/build_script_generate/build_script_generate_test.dart
 

@@ -1,3 +1,7 @@
+## 1.0.1
+
+- Fix a bug causing crashes on windows.
+
 ## 1.0.0
 
 - Migrate to `AnalysisDriver`. There are behavior changes which may be breaking.
