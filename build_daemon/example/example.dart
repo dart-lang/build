@@ -25,10 +25,10 @@ void main(List<String> args) async {
   } catch (e) {
     if (e is VersionSkew) {
       print('Version skew. Please disconnect all other clients '
-          'before trying to start a new one: ${e.details}');
+          'before trying to start a new one.');
     } else if (e is OptionsSkew) {
       print('Options skew. Please disconnect all other clients '
-          'before trying to start a new one: ${e.details}');
+          'before trying to start a new one.');
     } else {
       print('Unexpected error: $e');
     }

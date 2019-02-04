@@ -1,3 +1,7 @@
+## 0.3.0
+
+- Forward daemon output while starting up / connecting. 
+
 ## 0.2.3
 
 - Shutdown the daemon if no client connects within 30 seconds.
