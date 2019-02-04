@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 class BuildAssetUriResolver extends UriResolver {
   final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
   final _cachedAssetContents = <AssetId, String>{};
-  final resourceProvider = MemoryResourceProvider(context: p.url);
+  final resourceProvider = MemoryResourceProvider(context: p.posix);
 
   /// The assets which are known to be readable at some point during the build.
   ///
@@ -86,7 +86,7 @@ class BuildAssetUriResolver extends UriResolver {
     }
     if (uri.isScheme('file')) {
       final parts = p.split(uri.path);
-      final assetId = AssetId(parts[1], p.joinAll(parts.skip(2)));
+      final assetId = AssetId(parts[1], p.posix.joinAll(parts.skip(2)));
       return _cachedAssetContents.containsKey(assetId) ? assetId : null;
     }
     return null;
@@ -106,7 +106,7 @@ class BuildAssetUriResolver extends UriResolver {
 }
 
 String assetPath(AssetId assetId) =>
-    p.url.join('/${assetId.package}', assetId.path);
+    p.posix.join('/${assetId.package}', assetId.path);
 
 /// A completer that waits until all added [Future]s complete.
 class _FutureGroup<E> {
