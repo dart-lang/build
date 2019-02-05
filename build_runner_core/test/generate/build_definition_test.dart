@@ -377,8 +377,10 @@ targets:
             hideOutput: true));
         logs.clear();
 
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
-            environment, options, buildPhases);
+        await expectLater(
+            () => BuildDefinition.prepareWorkspace(
+                environment, options, buildPhases),
+            throwsA(const TypeMatcher<BuildScriptChangedException>()));
         expect(
             logs.any(
               (log) =>
@@ -386,13 +388,10 @@ targets:
                   log.message.contains('build phases have changed'),
             ),
             isTrue);
-
-        var newAssetGraph = buildDefinition.assetGraph;
-        expect(originalAssetGraph.buildPhasesDigest,
-            isNot(newAssetGraph.buildPhasesDigest));
+        expect(File(assetGraphPath).existsSync(), isFalse);
       });
 
-      test('invalidates the graph a phase has different build extension',
+      test('invalidates the graph if a phase has different build extension',
           () async {
         var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
 
@@ -408,8 +407,10 @@ targets:
         ];
         logs.clear();
 
-        var buildDefinition = await BuildDefinition.prepareWorkspace(
-            environment, options, buildPhases);
+        await expectLater(
+            () => BuildDefinition.prepareWorkspace(
+                environment, options, buildPhases),
+            throwsA(const TypeMatcher<BuildScriptChangedException>()));
         expect(
             logs.any(
               (log) =>
@@ -417,10 +418,7 @@ targets:
                   log.message.contains('build phases have changed'),
             ),
             isTrue);
-
-        var newAssetGraph = buildDefinition.assetGraph;
-        expect(originalAssetGraph.buildPhasesDigest,
-            isNot(newAssetGraph.buildPhasesDigest));
+        expect(File(assetGraphPath).existsSync(), isFalse);
       });
 
       test('invalidates the graph if the dart sdk version changes', () async {
@@ -437,8 +435,11 @@ targets:
 
         logs.clear();
 
-        await BuildDefinition.prepareWorkspace(
-            environment, options, buildPhases);
+        await expectLater(
+            () => BuildDefinition.prepareWorkspace(
+                environment, options, buildPhases),
+            throwsA(const TypeMatcher<BuildScriptChangedException>()));
+
         expect(
             logs.any(
               (log) =>
@@ -446,6 +447,7 @@ targets:
                   log.message.contains('due to Dart SDK update.'),
             ),
             isTrue);
+        expect(File(assetGraphPath).existsSync(), isFalse);
       });
 
       test('does not invalidate if a different Builder has the same extensions',
@@ -540,8 +542,10 @@ targets:
             targetSources: const InputSet(include: ['.copy']),
             hideOutput: true));
 
-        await BuildDefinition.prepareWorkspace(
-            environment, options, buildPhases);
+        await expectLater(
+            () => BuildDefinition.prepareWorkspace(
+                environment, options, buildPhases),
+            throwsA(const TypeMatcher<BuildScriptChangedException>()));
         expect(writerSpy.assetsDeleted, contains(aTxtCopy));
       });
     });

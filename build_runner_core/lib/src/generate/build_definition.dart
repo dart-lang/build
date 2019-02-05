@@ -96,7 +96,7 @@ class _Loader {
         _logger.warning('Invalidating asset graph due to build script update!');
         var deletedSourceOutputs = await _cleanupOldOutputs(assetGraph);
 
-        if (!Platform.script.path.endsWith('.dart')) {
+        if (_runningFromSnapshot) {
           // We have to be regenerated if running from a snapshot.
           throw BuildScriptChangedException();
         }
@@ -224,6 +224,9 @@ class _Loader {
             _cleanupOldOutputs(cachedGraph),
             FailureReporter.cleanErrorCache(),
           ]);
+          if (_runningFromSnapshot) {
+            throw BuildScriptChangedException();
+          }
           return null;
         }
         if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
@@ -233,6 +236,9 @@ class _Loader {
             _cleanupOldOutputs(cachedGraph),
             FailureReporter.cleanErrorCache(),
           ]);
+          if (_runningFromSnapshot) {
+            throw BuildScriptChangedException();
+          }
           return null;
         }
         return cachedGraph;
@@ -339,7 +345,7 @@ class _Loader {
           return true;
         })
         .map((n) => n.id)
-        .where((id) => !allSources.contains((id)));
+        .where((id) => !allSources.contains(id));
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
@@ -489,3 +495,5 @@ class _Loader {
     }
   }
 }
+
+bool get _runningFromSnapshot => !Platform.script.path.endsWith('.dart');

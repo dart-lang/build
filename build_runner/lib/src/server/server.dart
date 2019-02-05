@@ -9,6 +9,7 @@ import 'package:build/build.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
@@ -111,7 +112,7 @@ class ServeHandler implements BuildState {
             request.change(path: _graphPath), rootDir);
       }
       var assetHandler = await _assetHandler;
-      return assetHandler.handle(request, rootDir);
+      return assetHandler.handle(request, rootDir: rootDir);
     });
     var pipeline = shelf.Pipeline();
     if (logRequests) {
@@ -164,10 +165,11 @@ class ServeHandler implements BuildState {
 
   Future<shelf.Response> _assetsDigestHandler(
       shelf.Request request, String rootDir) async {
-    var assertPathList = jsonDecode(await request.readAsString()) as List;
+    var assertPathList =
+        (jsonDecode(await request.readAsString()) as List).cast<String>();
     var rootPackage = _state.packageGraph.root.name;
     var results = <String, String>{};
-    for (String path in assertPathList) {
+    for (final path in assertPathList) {
       try {
         var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
         var digest = await _state.reader.digest(assetId);
@@ -262,10 +264,23 @@ shelf.Handler Function(shelf.Handler) _injectBuildUpdatesClientCode(
           return innerHandler(request);
         }
         var response = await innerHandler(request);
-        // TODO: Find a way how to check and/or modify body without reading it whole
+        // TODO: Find a way how to check and/or modify body without reading it
+        // whole.
         var body = await response.readAsString();
         if (body.startsWith(entrypointExtensionMarker)) {
           body += _buildUpdatesInjectedJS(scriptName);
+          var originalEtag = response.headers[HttpHeaders.etagHeader];
+          if (originalEtag != null) {
+            var newEtag = base64.encode(md5.convert(body.codeUnits).bytes);
+            var newHeaders = Map.of(response.headers);
+            newHeaders[HttpHeaders.etagHeader] = newEtag;
+
+            if (request.headers[HttpHeaders.ifNoneMatchHeader] == newEtag) {
+              return shelf.Response.notModified(headers: newHeaders);
+            }
+
+            response = response.change(headers: newHeaders);
+          }
         }
         return response.change(body: body);
       };
@@ -293,7 +308,7 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<shelf.Response> handle(shelf.Request request, String rootDir) =>
+  Future<shelf.Response> handle(shelf.Request request, {String rootDir}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
               request.headers,

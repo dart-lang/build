@@ -44,6 +44,7 @@ main() {
     // Just do some basic sanity checking, integration tests will validate
     // things actually work.
     var expectedOutputs = {
+      'a|web/index.digests': decodedMatches(contains('packages/')),
       'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
       'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
         // Maps non-lib modules to remove the top level dir.

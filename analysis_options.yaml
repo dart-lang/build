@@ -10,7 +10,6 @@ analyzer:
   exclude:
     # Prevents extra work during e2e test runs.
     - "_test/dart2js_test/**"
-    - "_test/test/goldens/generated_build_script.dart"
     # Common top level directories containing generated files in any package.
     - "*/build/**"
     - "*/.dart_tool/**"
@@ -24,7 +23,8 @@ linter:
     - avoid_relative_lib_imports
     - avoid_renaming_method_parameters
     - avoid_return_types_on_setters
-    - avoid_returning_null
+    #- avoid_returning_null
+    - avoid_shadowing_type_parameters
     - avoid_types_as_parameter_names
     - avoid_unused_constructor_parameters
     - await_only_futures
@@ -81,6 +81,7 @@ linter:
     - unnecessary_lambdas
     - unnecessary_new
     - unnecessary_null_aware_assignments
+    - unnecessary_parenthesis
     - unnecessary_statements
     - unnecessary_this
     - unrelated_type_equality_checks

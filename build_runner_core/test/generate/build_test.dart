@@ -450,16 +450,13 @@ void main() {
         rootPackage('a', path: 'a/'): ['b'],
         package('b', path: 'a/b'): []
       });
-      expect(
-          () => testBuilders(
-              [
-                apply('', [(_) => TestBuilder()], toPackage('b'),
-                    hideOutput: false)
-              ],
-              {'b|lib/b.txt': 'b'},
-              packageGraph: packageGraph,
-              outputs: {}),
-          throwsA(TypeMatcher<CannotBuildException>()));
+      await testBuilders(
+          [
+            apply('', [(_) => TestBuilder()], toPackage('b'), hideOutput: false)
+          ],
+          {'b|lib/b.txt': 'b'},
+          packageGraph: packageGraph,
+          outputs: {});
     });
 
     group('with `hideOutput: true`', () {
@@ -779,8 +776,10 @@ void main() {
         [], Set(), Set(), buildPackageGraph({rootPackage('a'): []}), null);
 
     // Source nodes
-    var aSourceNode = makeAssetNode('a|web/a.txt', [], computeDigest('a'));
-    var bSourceNode = makeAssetNode('a|lib/b.txt', [], computeDigest('b'));
+    var aSourceNode = makeAssetNode(
+        'a|web/a.txt', [], computeDigest(AssetId('a', 'web/a.txt'), 'a'));
+    var bSourceNode = makeAssetNode(
+        'a|lib/b.txt', [], computeDigest(AssetId('a', 'lib/b.txt'), 'b'));
     expectedGraph.add(aSourceNode);
     expectedGraph.add(bSourceNode);
 
@@ -790,14 +789,15 @@ void main() {
         builderOptionsId, computeBuilderOptionsDigest(defaultBuilderOptions));
     expectedGraph.add(builderOptionsNode);
 
-    var aCopyNode = GeneratedAssetNode(makeAssetId('a|web/a.txt.copy'),
+    var aCopyId = makeAssetId('a|web/a.txt.copy');
+    var aCopyNode = GeneratedAssetNode(aCopyId,
         phaseNumber: 0,
         primaryInput: makeAssetId('a|web/a.txt'),
         state: NodeState.upToDate,
         wasOutput: true,
         isFailure: false,
         builderOptionsId: builderOptionsId,
-        lastKnownDigest: computeDigest('a'),
+        lastKnownDigest: computeDigest(aCopyId, 'a'),
         inputs: [makeAssetId('a|web/a.txt')],
         isHidden: false);
     builderOptionsNode.outputs.add(aCopyNode.id);
@@ -805,14 +805,15 @@ void main() {
     aSourceNode.outputs.add(aCopyNode.id);
     aSourceNode.primaryOutputs.add(aCopyNode.id);
 
-    var bCopyNode = GeneratedAssetNode(makeAssetId('a|lib/b.txt.copy'),
+    var bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
+    var bCopyNode = GeneratedAssetNode(bCopyId,
         phaseNumber: 0,
         primaryInput: makeAssetId('a|lib/b.txt'),
         state: NodeState.upToDate,
         wasOutput: true,
         isFailure: false,
         builderOptionsId: builderOptionsId,
-        lastKnownDigest: computeDigest('b'),
+        lastKnownDigest: computeDigest(bCopyId, 'b'),
         inputs: [makeAssetId('a|lib/b.txt')],
         isHidden: false);
     builderOptionsNode.outputs.add(bCopyNode.id);
@@ -840,7 +841,7 @@ void main() {
         wasOutput: true,
         isFailure: false,
         builderOptionsId: postBuilderOptionsId,
-        lastKnownDigest: computeDigest('a'),
+        lastKnownDigest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
         inputs: [makeAssetId('a|web/a.txt'), aAnchorNode.id],
         isHidden: true);
     // Note we don't expect this node to get added to the builder options node
@@ -858,7 +859,7 @@ void main() {
         wasOutput: true,
         isFailure: false,
         builderOptionsId: postBuilderOptionsId,
-        lastKnownDigest: computeDigest('b'),
+        lastKnownDigest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
         inputs: [makeAssetId('a|lib/b.txt'), bAnchorNode.id],
         isHidden: true);
     // Note we don't expect this node to get added to the builder options node

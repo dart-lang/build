@@ -49,7 +49,7 @@ bool _shouldSkipNode(AssetNode node, String rootDir,
   if (!node.isReadable) return true;
   if (node.isDeleted) return true;
   if (rootDir != null &&
-      !(node.id.path.startsWith('lib/')) &&
+      !node.id.path.startsWith('lib/') &&
       !p.isWithin(rootDir, node.id.path)) {
     return true;
   }

@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
 /// Copy contents of a `txt` files into `name.txt.copy`.
@@ -70,7 +71,7 @@ class ResolvingBuilder implements Builder {
 
     await buildStep.writeAsString(info, '''
          Input ID: ${buildStep.inputId}
-     Member count: ${entryLib.unit.declarations.length}
+     Member count: ${allElements(entryLib).length}
 Visible libraries: $visibleLibraries
 ''');
   }
@@ -79,4 +80,14 @@ Visible libraries: $visibleLibraries
   final buildExtensions = const {
     '.dart': ['.dart.info']
   };
+}
+
+Iterable<Element> allElements(LibraryElement element) sync* {
+  for (var cu in element.units) {
+    yield* cu.functionTypeAliases;
+    yield* cu.functions;
+    yield* cu.mixins;
+    yield* cu.topLevelVariables;
+    yield* cu.types;
+  }
 }

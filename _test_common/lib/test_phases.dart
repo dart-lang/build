@@ -92,6 +92,7 @@ Future<BuildResult> testBuilders(
   bool verbose = false,
   List<String> buildDirs,
   String logPerformanceDir,
+  String expectedGeneratedDir,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= InMemoryRunnerAssetWriter();
@@ -118,7 +119,6 @@ Future<BuildResult> testBuilders(
       skipBuildScriptCheck: true,
       overrideBuildConfig: overrideBuildConfig,
       enableLowResourcesMode: enableLowResourcesMode,
-      buildDirs: buildDirs,
       logPerformanceDir: logPerformanceDir);
 
   BuildResult result;
@@ -129,7 +129,7 @@ Future<BuildResult> testBuilders(
     builderConfigOverrides,
     isReleaseBuild: false,
   );
-  result = await build.run({});
+  result = await build.run({}, buildDirs: buildDirs);
   await build.beforeExit();
   await options.logListener.cancel();
 
@@ -138,7 +138,8 @@ Future<BuildResult> testBuilders(
         outputs: outputs,
         writer: writer,
         status: status,
-        rootPackage: packageGraph.root.name);
+        rootPackage: packageGraph.root.name,
+        expectedGeneratedDir: expectedGeneratedDir);
   }
   return result;
 }
@@ -149,7 +150,9 @@ void checkBuild(BuildResult result,
     {Map<String, dynamic> outputs,
     InMemoryAssetWriter writer,
     BuildStatus status = BuildStatus.success,
-    String rootPackage}) {
+    String rootPackage,
+    String expectedGeneratedDir}) {
+  expectedGeneratedDir ??= 'generated';
   expect(result.status, status, reason: '$result');
 
   final unhiddenOutputs = <String, dynamic>{};
@@ -164,13 +167,14 @@ void checkBuild(BuildResult result,
     }
   }
 
-  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
-      ? AssetId(
-          rootPackage, '.dart_tool/build/generated/${id.package}/${id.path}')
-      : id;
+  AssetId mapHidden(AssetId id, String expectedGeneratedDir) =>
+      unhiddenAssets.contains(id)
+          ? AssetId(rootPackage,
+              '.dart_tool/build/$expectedGeneratedDir/${id.package}/${id.path}')
+          : id;
 
   if (status == BuildStatus.success) {
     checkOutputs(unhiddenOutputs, result.outputs, writer,
-        mapAssetIds: mapHidden);
+        mapAssetIds: (id) => mapHidden(id, expectedGeneratedDir));
   }
 }

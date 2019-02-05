@@ -1,3 +1,11 @@
+## 0.1.1+5
+
+- Increased the upper bound for `package:analyzer` to `<0.36.0`.
+
+## 0.1.1+4
+
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
+
 ## 0.1.1+3
 
 - Increased the upper bound for `package:analyzer` to '<0.34.0'.

@@ -10,9 +10,6 @@ import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 import 'package:build_modules/build_modules.dart';
 
-/// Shared default across dart2js/dartdevc.
-const enableSyncAsyncDefault = true;
-
 final defaultAnalysisOptionsId =
     AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
 
@@ -38,11 +35,17 @@ Future<File> createPackagesFile(
 ///
 /// Throws an [ArgumentError] if not.
 void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
-    String builderKey) {
-  var unsupportedOptions =
-      config.keys.where((o) => !supportedOptions.contains(o));
-  if (unsupportedOptions.isNotEmpty) {
-    throw ArgumentError.value(unsupportedOptions.join(', '), builderKey,
+    String builderKey,
+    {List<String> deprecatedOptions}) {
+  var unsupported = config.keys.where(
+      (o) => !supportedOptions.contains(o) && !deprecatedOptions.contains(o));
+  if (unsupported.isNotEmpty) {
+    throw ArgumentError.value(unsupported.join(', '), builderKey,
         'only $supportedOptions are supported options, but got');
+  }
+  var deprecated = config.keys.where(deprecatedOptions.contains);
+  if (deprecated.isNotEmpty) {
+    log.warning('Found deprecated options ${deprecated.join(', ')}. These no '
+        'longer have any effect and should be removed.');
   }
 }

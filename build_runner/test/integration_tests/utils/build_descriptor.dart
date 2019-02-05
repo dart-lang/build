@@ -48,10 +48,12 @@ TestBuilderDefinition builder(String key, Builder builder,
 /// this function is called from will be copied into 'lib/builders.dart'. It
 /// should contain top level fields with names matching they keys in [builders]
 /// and only rely on imports to `package:build_test/build_test.dart`.
-d.Descriptor packageWithBuilders(Iterable<TestBuilderDefinition> builders,
-        {String name = 'provides_builders'}) =>
+Future<d.Descriptor> packageWithBuilders(
+        Iterable<TestBuilderDefinition> builders,
+        {String name = 'provides_builders'}) async =>
     d.dir(name, [
-      _pubspec(name),
+      await _pubspecWithDeps(name,
+          currentIsolateDependencies: ['build', 'build_test']),
       d.file('build.yaml', jsonEncode(_buildConfig(builders))),
       d.dir('lib', [
         d.file('builders.dart', _buildersFile(builders, Frame.caller().uri))
@@ -90,6 +92,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                 currentIsolateDependencies: [
                   'build',
                   'build_config',
+                  'build_daemon',
                   'build_resolvers',
                   'build_runner',
                   'build_runner_core',
@@ -99,6 +102,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
                     value: (o) => p.join(d.sandbox, (o as d.Descriptor).name))),
           ].followedBy(packageContents))
       .create();
+  await Future.wait(otherPackages.map((d) => d.create()));
   await pubGet('a');
   return BuildTool._('pub', ['run', 'build_runner']);
 }
@@ -125,6 +129,7 @@ Future<BuildTool> packageWithBuildScript(
             await _pubspecWithDeps('a', currentIsolateDependencies: [
               'build',
               'build_config',
+              'build_daemon',
               'build_resolvers',
               'build_runner',
               'build_runner_core',
@@ -225,19 +230,24 @@ d.FileDescriptor _pubspec(String name,
   pathDependencies ??= {};
   versionDependencies ??= {};
 
-  var buffer = StringBuffer()
-    ..writeln('name: $name')
-    // Using dependency_overrides forces the path dependency and silences
-    // warnings about hosted vs path dependency conflicts.
-    ..writeln('dependency_overrides:');
+  var buffer = StringBuffer()..writeln('name: $name');
 
-  pathDependencies.forEach((package, path) {
-    buffer..writeln('  $package:')..writeln('    path: $path');
-  });
+  writeDeps(String group) {
+    buffer.writeln(group);
 
-  versionDependencies.forEach((package, version) {
-    buffer..writeln('  $package:$version');
-  });
+    pathDependencies.forEach((package, path) {
+      buffer..writeln('  $package:')..writeln('    path: $path');
+    });
+
+    versionDependencies.forEach((package, version) {
+      buffer..writeln('  $package:$version');
+    });
+  }
+
+  writeDeps('dependencies:');
+  // Using dependency_overrides forces the path dependency and silences
+  // warnings about hosted vs path dependency conflicts.
+  writeDeps('dependency_overrides:');
 
   return d.file('pubspec.yaml', buffer.toString());
 }

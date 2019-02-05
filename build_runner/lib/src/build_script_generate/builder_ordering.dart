@@ -16,8 +16,12 @@ Iterable<BuilderDefinition> findBuilderOrder(
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
       builders.where((child) =>
           _hasInputDependency(parent, child) || _mustRunBefore(parent, child));
-  var components = stronglyConnectedComponents<String, BuilderDefinition>(
-      builders, (b) => b.key, dependencies);
+  var components = stronglyConnectedComponents<BuilderDefinition>(
+    builders,
+    dependencies,
+    equals: (a, b) => a.key == b.key,
+    hashCode: (b) => b.key.hashCode,
+  );
   return components.map((component) {
     if (component.length > 1) {
       throw ArgumentError('Required input cycle for ${component.toList()}');

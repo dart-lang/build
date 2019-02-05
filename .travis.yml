@@ -1,4 +1,4 @@
-# Created with https://github.com/dart-lang/mono_repo
+# Created with package:mono_repo v1.2.1
 language: dart
 
 # Custom configuration
@@ -66,16 +66,6 @@ jobs:
       env: PKG="_test_common"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: dev - DIR: bazel_codegen - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
-      env: PKG="bazel_codegen"
-      dart: dev
-    - stage: unit_test
-      name: "SDK: dev - DIR: bazel_codegen - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_2
-      env: PKG="bazel_codegen"
-      dart: dev
-    - stage: analyze_and_format
       name: "SDK: dev - DIR: build - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build"
@@ -91,9 +81,19 @@ jobs:
       env: PKG="build_config"
       dart: dev
     - stage: unit_test
-      name: "SDK: dev - DIR: build_config - TASKS: pub run build_runner test --delete-conflicting-outputs"
+      name: "SDK: dev - DIR: build_config - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs"
       script: ./tool/travis.sh command_3
       env: PKG="build_config"
+      dart: dev
+    - stage: analyze_and_format
+      name: "SDK: dev - DIR: build_daemon - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="build_daemon"
+      dart: dev
+    - stage: unit_test
+      name: "SDK: dev - DIR: build_daemon - TASKS: pub run test"
+      script: ./tool/travis.sh test_06
+      env: PKG="build_daemon"
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_modules - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
@@ -101,8 +101,8 @@ jobs:
       env: PKG="build_modules"
       dart: dev
     - stage: unit_test
-      name: "SDK: dev - DIR: build_modules - TASKS: pub run build_runner test --delete-conflicting-outputs -- -P presubmit"
-      script: ./tool/travis.sh command_4
+      name: "SDK: dev - DIR: build_modules - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit"
+      script: ./tool/travis.sh command_5
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format
@@ -216,7 +216,6 @@ branches:
 cache:
   directories:
     - "$HOME/.pub-cache"
-    - bazel_codegen/.dart_tool/build
     - build/.dart_tool/build
     - build_config/.dart_tool/build
     - build_modules/.dart_tool/build

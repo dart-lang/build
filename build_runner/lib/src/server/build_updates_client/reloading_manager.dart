@@ -39,8 +39,8 @@ class ReloadingManager {
 
   void updateGraph() {
     var allModules = _allModules();
-    var stronglyConnectedComponents = graphs.stronglyConnectedComponents(
-        allModules, (x) => x, _moduleParents);
+    var stronglyConnectedComponents =
+        graphs.stronglyConnectedComponents(allModules, _moduleParents);
     _moduleOrdering.clear();
     for (var i = 0; i < stronglyConnectedComponents.length; i++) {
       for (var module in stronglyConnectedComponents[i]) {

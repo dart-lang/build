@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+// ignore: deprecated_member_use
 import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:meta/meta.dart';

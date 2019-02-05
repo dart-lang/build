@@ -63,7 +63,7 @@ targets:
           compiler: dart2js
           # List any dart2js specific args here, or omit it.
           dart2js_args:
-          - --checked
+          - -O2
 ```
 
 ## Manual Usage

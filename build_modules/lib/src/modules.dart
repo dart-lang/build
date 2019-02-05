@@ -146,10 +146,11 @@ class Module {
       throw await MissingModulesException.create(missingModuleSources,
           transitiveDeps.values.toList()..add(this), reader);
     }
-    var orderedModules = stronglyConnectedComponents<AssetId, Module>(
+    var orderedModules = stronglyConnectedComponents<Module>(
         transitiveDeps.values,
-        (m) => m.primarySource,
-        (m) => m.directDependencies.map((s) => transitiveDeps[s]));
+        (m) => m.directDependencies.map((s) => transitiveDeps[s]),
+        equals: (a, b) => a.primarySource == b.primarySource,
+        hashCode: (m) => m.primarySource.hashCode);
     return orderedModules.map((c) => c.single).toList();
   }
 

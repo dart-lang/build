@@ -16,6 +16,7 @@ void main() {
         await pubspec('a', currentIsolateDependencies: [
           'build',
           'build_config',
+          'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',
@@ -29,9 +30,8 @@ void main() {
         d.file('build.yaml', '''
 builders:
   fake:
-    import: '../../../tool/builder.dart'
-    builder_factories:
-      - myFactory
+    import: "../../../tool/builder.dart"
+    builder_factories: ["myFactory"]
     build_extensions: {"foo": ["bar"]}
 '''),
       ]).create();
@@ -46,9 +46,8 @@ builders:
         d.file('build.yaml', '''
 builders:
   fake:
-    import: 'tool/builder.dart'
-    builder_factories:
-      - myFactory
+    import: "tool/builder.dart"
+    builder_factories: ["myFactory"]
     build_extensions: {"foo": ["bar"]}
 '''),
       ]).create();
@@ -69,6 +68,20 @@ builders:
           ])
         ])
       ]).validate();
+    });
+
+    test('warns for builder config that leaves unparseable Dart', () async {
+      await d.dir('a', [
+        d.file('build.yaml', '''
+builders:
+  fake:
+    import: "tool/builder.dart"
+    builder_factories: ["not an identifier"]
+    build_extensions: {"foo": ["bar"]}
+''')
+      ]).create();
+      var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+      expect(result.stdout, contains('could not be parsed'));
     });
   });
 }

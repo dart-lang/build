@@ -63,11 +63,14 @@ void main() {
         'a|web/main.dart': '''
               import 'package:b/missing.dart';
 
+              part 'missing.g.dart';
+
               main() {
               } ''',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        expect(lib.importedLibraries.length, 2);
+        expect(lib.imports.length, 2);
+        expect(lib.parts.length, 1);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -164,6 +167,27 @@ void main() {
         var libs = await resolver.libraries.map((lib) => lib.name).toList();
         expect(libs.contains('a'), isTrue);
         expect(libs.contains('b'), isTrue);
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test('assetIdForElement', () {
+      return resolveSources({
+        'a|lib/a.dart': '''
+              import 'b.dart';
+
+              main() {
+                SomeClass();
+              } ''',
+        'a|lib/b.dart': '''
+            class SomeClass {}
+              ''',
+      }, (resolver) async {
+        var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
+        var classDefinition = entry.importedLibraries
+            .map((l) => l.getType('SomeClass'))
+            .singleWhere((c) => c != null);
+        expect(await resolver.assetIdForElement(classDefinition),
+            AssetId('a', 'lib/b.dart'));
       }, resolvers: AnalyzerResolvers());
     });
   });

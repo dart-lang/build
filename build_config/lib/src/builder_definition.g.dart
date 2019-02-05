@@ -29,7 +29,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
       'import',
       'build_extensions'
     ]);
-    var val = BuilderDefinition(
+    final val = BuilderDefinition(
         builderFactories: $checkedConvert(json, 'builder_factories',
             (v) => (v as List).map((e) => e as String).toList()),
         buildExtensions: $checkedConvert(
@@ -116,7 +116,7 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
       'builder_factory',
       'import'
     ]);
-    var val = PostProcessBuilderDefinition(
+    final val = PostProcessBuilderDefinition(
         builderFactory:
             $checkedConvert(json, 'builder_factory', (v) => v as String),
         import: $checkedConvert(json, 'import', (v) => v as String),
@@ -144,7 +144,7 @@ TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) {
       'dev_options',
       'release_options'
     ]);
-    var val = TargetBuilderConfigDefaults(
+    final val = TargetBuilderConfigDefaults(
         generateFor: $checkedConvert(json, 'generate_for',
             (v) => v == null ? null : InputSet.fromJson(v)),
         options: $checkedConvert(json, 'options',

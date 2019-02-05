@@ -11,7 +11,6 @@ import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:pool/pool.dart';
 
-import 'common.dart';
 import 'ddc_names.dart';
 import 'dev_compiler_builder.dart';
 import 'web_entrypoint_builder.dart';
@@ -22,13 +21,8 @@ _p.Context get _context => _p.url;
 var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
 Future<Null> bootstrapDdc(BuildStep buildStep,
-    {bool useKernel,
-    bool buildRootAppSummary,
-    bool enableSyncAsync,
-    bool ignoreCastFailures}) async {
+    {bool useKernel, bool buildRootAppSummary}) async {
   buildRootAppSummary ??= false;
-  enableSyncAsync ??= enableSyncAsyncDefault;
-  ignoreCastFailures ??= false;
   useKernel ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -41,7 +35,9 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   // First, ensure all transitive modules are built.
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
   var jsId = module.jsId(jsModuleExtension);
-  var appModuleName = _ddcModuleName(jsId);
+  var appModuleName = ddcModuleName(jsId);
+  var appDigestsOutput =
+      dartEntrypointId.changeExtension(digestsEntrypointExtension);
 
   // The name of the entrypoint dart library within the entrypoint JS module.
   //
@@ -58,7 +54,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
       var basename = _context.basename(jsId.path);
       return basename.substring(0, basename.length - jsModuleExtension.length);
     } else {
-      Iterable<String> scope = _context.split(_ddcModuleName(jsId));
+      Iterable<String> scope = _context.split(ddcModuleName(jsId));
       if (scope.first == 'packages') {
         scope = scope.skip(1);
       }
@@ -75,7 +71,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
     // and we only allow you to serve top level directories.
-    var moduleName = _ddcModuleName(jsId);
+    var moduleName = ddcModuleName(jsId);
     modulePaths[moduleName] = _context.withoutExtension(
         jsId.path.startsWith('lib')
             ? '$moduleName$jsModuleExtension'
@@ -89,15 +85,18 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
 
   var bootstrapContent =
       StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
-  bootstrapContent.write(_dartLoaderSetup(modulePaths));
+  bootstrapContent.write(_dartLoaderSetup(
+      modulePaths,
+      _p.url.relative(appDigestsOutput.path,
+          from: _p.url.dirname(bootstrapId.path))));
   bootstrapContent.write(_requireJsConfig);
 
   // Strip top-level directory
   var appModuleSource =
       _context.joinAll(_context.split(module.primarySource.path).sublist(1));
 
-  bootstrapContent.write(_appBootstrap(bootstrapModuleName, appModuleName,
-      appModuleScope, appModuleSource, ignoreCastFailures, enableSyncAsync));
+  bootstrapContent.write(_appBootstrap(
+      bootstrapModuleName, appModuleName, appModuleScope, appModuleSource));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
@@ -105,6 +104,18 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   await buildStep.writeAsString(
       dartEntrypointId.changeExtension(jsEntrypointExtension),
       entrypointJsContent);
+
+  // Output the digests for transitive modules.
+  // These can be consumed for hot reloads.
+  var moduleDigests = <String, String>{};
+  for (var dep in transitiveDeps.followedBy([module])) {
+    var assetId = dep.jsId(jsModuleExtension);
+    moduleDigests[
+            assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')] =
+        (await buildStep.digest(assetId)).toString();
+  }
+
+  await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
 }
 
 final _lazyBuildPool = Pool(16);
@@ -130,30 +141,15 @@ Future<List<Module>> _ensureTransitiveModules(
   return transitiveDeps;
 }
 
-/// The module name according to ddc for [jsId] which represents the real js
-/// module file.
-String _ddcModuleName(AssetId jsId) {
-  var jsPath = jsId.path.startsWith('lib/')
-      ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
-      : jsId.path;
-  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
-}
-
 /// Code that actually imports the [moduleName] module, and calls the
 /// `[moduleScope].main()` function on it.
 ///
 /// Also performs other necessary initialization.
-String _appBootstrap(
-        String bootstrapModuleName,
-        String moduleName,
-        String moduleScope,
-        String appModuleSource,
-        bool ignoreCastFailures,
-        bool enableSyncAsync) =>
+String _appBootstrap(String bootstrapModuleName, String moduleName,
+        String moduleScope, String appModuleSource) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
-  dart_sdk.dart.ignoreWhitelistedErrors($ignoreCastFailures);
-  dart_sdk.dart.setStartAsyncSynchronously($enableSyncAsync);
+  dart_sdk.dart.setStartAsyncSynchronously(true);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
 $_initializeTools
   app.$moduleScope.main();
@@ -244,11 +240,13 @@ var _currentDirectory = (function () {
 ''';
 
 /// Sets up `window.$dartLoader` based on [modulePaths].
-String _dartLoaderSetup(Map<String, String> modulePaths) => '''
+String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests) =>
+    '''
 $_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
+     appDigests: '$appDigests',
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
      rootDirectories: new Array(),

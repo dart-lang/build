@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
+import 'package:build/build.dart' show BuilderOptions;
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
@@ -17,9 +17,12 @@ import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
+const scriptSnapshotLocation = '$scriptLocation.snapshot';
 
-Future<String> generateBuildScript() => logTimedAsync(
-    Logger('Entrypoint'), 'Generating build script', _generateBuildScript);
+final _log = Logger('Entrypoint');
+
+Future<String> generateBuildScript() =>
+    logTimedAsync(_log, 'Generating build script', _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
   final builders = await _findBuilderApplications();
@@ -33,7 +36,16 @@ Future<String> _generateBuildScript() async {
         _main()
       ]));
   final emitter = DartEmitter(Allocator.simplePrefixing());
-  return DartFormatter().format('${library.accept(emitter)}');
+  try {
+    return DartFormatter().format('''
+      // ignore_for_file: directives_ordering
+
+      ${library.accept(emitter)}''');
+  } on FormatterException {
+    _log.severe('Generated build script could not be parsed.\n'
+        'This is likely caused by a misconfigured builder definition.');
+    throw CannotBuildException();
+  }
 }
 
 /// Finds expressions to create all the `BuilderApplication` instances that
@@ -44,9 +56,12 @@ Future<String> _generateBuildScript() async {
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
   final packageGraph = PackageGraph.forThisPackage();
-  final orderedPackages = stronglyConnectedComponents<String, PackageNode>(
-          [packageGraph.root], (node) => node.name, (node) => node.dependencies)
-      .expand((c) => c);
+  final orderedPackages = stronglyConnectedComponents<PackageNode>(
+    [packageGraph.root],
+    (node) => node.dependencies,
+    equals: (a, b) => a.name == b.name,
+    hashCode: (n) => n.name.hashCode,
+  ).expand((c) => c);
   final buildConfigOverrides =
       await findBuildConfigOverrides(packageGraph, null);
   Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
@@ -206,7 +221,7 @@ String _buildScriptImport(String import) {
   if (import.startsWith('package:')) {
     return import;
   } else if (import.startsWith('../') || import.startsWith('/')) {
-    log.warning('The `../` import syntax in build.yaml is now deprecated, '
+    _log.warning('The `../` import syntax in build.yaml is now deprecated, '
         'instead do a normal relative import as if it was from the root of '
         'the package. Found `$import` in your `build.yaml` file.');
     return import;

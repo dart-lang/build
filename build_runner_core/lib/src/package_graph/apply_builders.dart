@@ -268,9 +268,8 @@ Future<List<BuildPhase>> createBuildPhases(
         (globalOptions[key] ?? BuilderOptions.empty).overrideWith(overrides);
   }
 
-  final cycles = stronglyConnectedComponents<String, TargetNode>(
+  final cycles = stronglyConnectedComponents<TargetNode>(
       targetGraph.allModules.values,
-      (node) => node.target.key,
       (node) => node.target.dependencies?.map((key) {
             if (!targetGraph.allModules.containsKey(key)) {
               _logger.severe('${node.target.key} declares a dependency on $key '
@@ -278,7 +277,9 @@ Future<List<BuildPhase>> createBuildPhases(
               throw CannotBuildException();
             }
             return targetGraph.allModules[key];
-          })?.where((n) => n != null));
+          })?.where((n) => n != null),
+      equals: (a, b) => a.target.key == b.target.key,
+      hashCode: (node) => node.target.key.hashCode);
   final applyWith = _applyWith(builderApplications);
   final allBuilders = Map<String, BuilderApplication>.fromIterable(
       builderApplications,

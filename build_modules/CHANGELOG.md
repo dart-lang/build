@@ -1,3 +1,21 @@
+## 1.0.6
+
+- Improved the time tracking for kernel and analyzer actions by not reporting
+  time spent waiting for a worker to be available.
+
+## 1.0.5
+
+- Increased the upper bound for `package:analyzer` to `<0.36.0`.
+
+## 1.0.4
+
+- Update to `package:graphs` version `0.2.0`.
+- Use `dartdevc --kernel` instead of `dartdevk`.
+
+## 1.0.3
+
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
+
 ## 1.0.2
 
 - Support the latest `package:json_annotation`.

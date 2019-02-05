@@ -26,10 +26,39 @@ final String _scriptPath = Platform.script.scheme == 'file'
 /// Directory containing automatically generated build entrypoints.
 ///
 /// Files in this directory must be read to do build script invalidation.
-const entryPointDir = '.dart_tool/build/entrypoint';
+const entryPointDir = '$cacheDir/entrypoint';
 
 /// The directory to which hidden assets will be written.
-const generatedOutputDirectory = '$cacheDir/generated';
+String get generatedOutputDirectory => '$cacheDir/$_generatedOutputDirectory';
+
+/// Locks the generated directory name for the duration of this process.
+///
+/// This should be invoked before any builds start.
+void lockGeneratedOutputDirectory() => _generatedOutputDirectoryIsLocked = true;
+
+/// The default generated dir name. Can be modified with
+/// [overrideGeneratedOutputDirectory].
+String _generatedOutputDirectory = 'generated';
+
+/// Whether or not the [generatedOutputDirectory] is locked. This must be `true`
+/// before you can access [generatedOutputDirectory];
+bool _generatedOutputDirectoryIsLocked = false;
+
+/// Overrides the generated directory name.
+///
+/// This is interpreted as a relative path under the [cacheDir].
+void overrideGeneratedOutputDirectory(String path) {
+  if (_generatedOutputDirectory != 'generated') {
+    throw StateError('You can only override the generated dir once.');
+  } else if (_generatedOutputDirectoryIsLocked) {
+    throw StateError(
+        'Attempted to override the generated dir after it was locked.');
+  } else if (!p.isRelative(path)) {
+    throw StateError('Only relative paths are accepted for the generated dir '
+        'but got `$path`.');
+  }
+  _generatedOutputDirectory = path;
+}
 
 /// Relative path to the cache directory from the root package dir.
 const String cacheDir = '.dart_tool/build';

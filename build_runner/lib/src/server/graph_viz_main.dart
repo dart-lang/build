@@ -11,11 +11,13 @@ final _graphReference = js.context[r'$build'];
 final _details = document.getElementById('details');
 
 main() async {
+  var filterBox = document.getElementById('filter') as InputElement;
   var searchBox = document.getElementById('searchbox') as InputElement;
   var searchForm = document.getElementById('searchform');
   searchForm.onSubmit.listen((e) {
     e.preventDefault();
-    _focus(searchBox.value.trim());
+    _focus(searchBox.value.trim(),
+        filter: filterBox.value.isNotEmpty ? filterBox.value : null);
     return null;
   });
   _graphReference.callMethod('initializeGraph', [_focus]);
@@ -26,14 +28,16 @@ void _error(String message, [Object error, StackTrace stack]) {
   _details.innerHtml = '<pre>$msg</pre>';
 }
 
-Future _focus(String query) async {
+Future _focus(String query, {String filter}) async {
   if (query.isEmpty) {
     _error('Provide content in the query.');
     return;
   }
 
   Map nodeInfo;
-  var uri = Uri(queryParameters: {'q': query});
+  var queryParams = {'q': query};
+  if (filter != null) queryParams['f'] = filter;
+  var uri = Uri(queryParameters: queryParams);
   try {
     nodeInfo = json.decode(await HttpRequest.getString(uri.toString()))
         as Map<String, dynamic>;
@@ -65,5 +69,6 @@ Future _focus(String query) async {
       '<strong>Was Output:</strong> ${primaryNode['wasOutput']} <br />'
       '<strong>Failed:</strong> ${primaryNode['isFailure']} <br />'
       '<strong>Phase:</strong> ${primaryNode['phaseNumber']} <br />'
-      '<strong>Glob:</strong> ${primaryNode['glob']}<br />';
+      '<strong>Glob:</strong> ${primaryNode['glob']}<br />'
+      '<strong>Last Digest:</strong> ${primaryNode['lastKnownDigest']}<br />';
 }

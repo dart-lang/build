@@ -1,3 +1,54 @@
+## 1.2.5
+
+- Fix a bug with the build daemon where the output options were ignored.
+
+## 1.2.4
+
+- Update `build_resolvers` to version `1.0.0`.
+
+## 1.2.3
+
+- Fix a bug where changing between `--live-reload` and `--hot-reload` might not
+  work due to the etags for the injected JS not changing when they should.
+
+## 1.2.2
+
+- Change the format of Build Daemon messages.
+- Build Daemon asset server now properly waits for build results.
+- Build Daemon now properly signals the start of a build.
+- Fix path issues with Daemon command under Windows.
+
+## 1.2.1
+
+- Update `package:build_runner_core` to version `2.0.1`.
+
+## 1.2.0
+
+- Support building through `package:build_daemon`.
+- Update `package:build_runner_core` to version `2.0.0`.
+
+## 1.1.3
+
+- Update to `package:graphs` version `0.2.0`.
+- Fix an issue where when running from source in watch mode the script would
+  delete itself when it shouldn't.
+- Add digest string to the asset graph visualization.
+- Added a filter box to the asset graph visualization.
+- Allow `build` version `1.1.x`.
+
+## 1.1.2
+
+- Improve error message when the generated build script cannot be parsed or
+  compiled and exit with code `78` to indicate that there is a problem with
+  configuration in the project or a dependency's `build.yaml`.
+
+## 1.1.1
+
+### Bug Fixes
+
+- Handle re-snapshotting the build script on SDK updates.
+- Suppress header for the `Bootstrap` logger.
+
 ## 1.1.0
 
 ### New Features

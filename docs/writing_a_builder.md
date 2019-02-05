@@ -11,8 +11,7 @@ Having a predictable set of outputs allows:
 - Ability to reason about builds. We've found that arbitrarily complex builds
   tend to become difficult to debug.
 - Compatibility with a wide set of build systems. A Builder that follows these
-  restrictions can run within `pub` as a transformer, in a tool against the
-  files on disk, or in a powerful build system like
+  restrictions can run within `build_runner`, or in a build system like
   [bazel](https://bazel.build).
 
 ## Configuring outputs

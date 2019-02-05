@@ -75,13 +75,25 @@ class PackageAssetReader extends AssetReader
   File _resolve(AssetId id) {
     final uri = id.uri;
     if (uri.isScheme('package')) {
-      return File.fromUri(_packageResolver.resolveUri(id.uri));
+      final uri = _packageResolver.resolveUri(id.uri);
+      if (uri != null) {
+        return File.fromUri(uri);
+      }
     }
     if (id.package == _rootPackage) {
-      // TODO this assumes the cwd is the root package
-      return File(p.canonicalize(p.join(p.current, id.path)));
+      return File(p.canonicalize(p.join(_rootPackagePath, id.path)));
     }
-    throw UnsupportedError('Unabled to resolve $id');
+    throw UnsupportedError('Unable to resolve $id');
+  }
+
+  String get _rootPackagePath {
+    // If the root package has a pub layout, use `packagePath`.
+    final root = _packageResolver.packagePath(_rootPackage);
+    if (Directory(p.join(root, 'lib')).existsSync()) {
+      return root;
+    }
+    // Assume the cwd is the package root.
+    return p.current;
   }
 
   @override
@@ -103,11 +115,10 @@ class PackageAssetReader extends AssetReader
         .map((f) =>
             p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))));
     if (package == _rootPackage) {
-      // TODO this assumes the cwd is the root package
-      packageFiles = packageFiles.transform(merge(Directory.current
+      packageFiles = packageFiles.transform(merge(Directory(_rootPackagePath)
           .list(recursive: true)
           .where((e) => e is File)
-          .map((f) => p.relative(f.path, from: Directory.current.path))
+          .map((f) => p.relative(f.path, from: _rootPackagePath))
           .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/')))));
     }
     return packageFiles.where(glob.matches).map((p) => AssetId(package, p));

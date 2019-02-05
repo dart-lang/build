@@ -90,7 +90,7 @@ that has these files in it.
 ## How can I fix `AssetNotFoundException`s for swap files?
 
 Some editors create swap files during saves, and while build_runner uses some
-hueristics to try and ignore these, it isn't perfect and we can't hardcode
+heuristics to try and ignore these, it isn't perfect and we can't hardcode
 knowledge about all editors.
 
 One option is to disable this feature in your editor. Another option is you can

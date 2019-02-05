@@ -1,3 +1,38 @@
+## 2.0.2
+
+- Update `build_resolvers` to version `1.0.0`.
+
+## 2.0.1
+
+- Fix an issue where the `finalizedReader` was not `reset` prior to build.
+
+## 2.0.0
+
+- The `build` method now requires a list of `buildDirs`.
+- Remove `buildDirs` from `BuildOptions`.
+- Added the `overrideGeneratedDirectory` method which overrides the directory
+  for generated outputs.
+  - Must be invoked before creating a `BuildRunner` instance.
+
+## 1.1.3
+
+- Update to `package:graphs` version `0.2.0`.
+- Allow `build` version `1.1.x`.
+- Update the way combined input hashes are computed to not rely on ordering.
+  - Digest implementations must now include the AssetId, not just the contents.
+- Require package:build version 1.1.0, which meets the new requirements for
+  digests.
+
+## 1.1.2
+
+- Fix a `NoSuchMethodError` that the user could get when adding new
+  dependencies.
+
+## 1.1.1
+
+- Fix a bug where adding new dependencies or removing dependencies could cause
+  subsequent build errors, requiring a `pub run build_runner clean` to fix.
+
 ## 1.1.0
 
 - Support running the build script as a snapshot.

@@ -1,3 +1,20 @@
+## 0.10.6
+
+- Allow build_resolvers version `1.0.0`.
+
+## 0.10.5
+
+- Improve error messages for unresolvable URIs in the PackageAssetReader.
+
+## 0.10.4
+
+- Allow using `PackageAssetReader` when the current working directory is not the
+  root package directory as long as it uses a pub layout.
+
+## 0.10.3+4
+
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
+
 ## 0.10.3+3
 
 - Increased the upper bound for `package:analyzer` to '<0.34.0'.

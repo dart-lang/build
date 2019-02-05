@@ -18,6 +18,8 @@ dependency_overrides:
     path: ../build
   build_config:
     path: ../build_config
+  build_resolvers:
+    path: ../build_resolvers
   build_runner_core:
     path: ../build_runner_core
   build_test:

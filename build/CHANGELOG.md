@@ -1,3 +1,26 @@
+## 1.1.1
+
+- Requires analyzer version `0.35.0`
+  - `Resolver` implementations in other packages are now backed by an
+    `AnalysisDriver`. There are behavior changes which may be breaking. The
+    `LibraryElement` instances returned by the resolver will now:
+    - Have non-working `context` fields.
+    - Have no source offsets for annotations or their errors.
+    - Have working `session` fields.
+    - Have `Source` instances with different URIs than before.
+
+## 1.1.0
+
+- Add `Resolver.assetIdForElement` API. This allows finding the Dart source
+  asset which contains the definition of an element found through the analyzer.
+- Include the AssetId hash code in the default digest implementation.
+  - Any custom implementations of the `AssetReader.digest` method should do the
+    same, and a comment has been added to that effect.
+
+## 1.0.2
+
+- Increased the upper bound for `package:analyzer` to `<0.35.0`.
+
 ## 1.0.1
 
 - Increased the upper bound for `package:analyzer` to '<0.34.0'.
