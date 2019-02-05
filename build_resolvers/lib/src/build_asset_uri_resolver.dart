@@ -102,7 +102,7 @@ class BuildAssetUriResolver extends UriResolver {
   }
 
   @override
-  Uri restoreAbsolute(Source source) => lookupAsset(source.uri)?.uri;
+  Uri restoreAbsolute(Source source) => lookupAsset(source.uri)?.uri ?? source.uri;
 }
 
 String assetPath(AssetId assetId) =>
