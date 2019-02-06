@@ -1,3 +1,9 @@
+## 1.0.2
+
+- Ensure that `BuildAssetUriResolver.restoreAbsolute` never returns null.
+  - Fixes a crash when a resolver is requested but not all transitive sources
+    are available yet.
+
 ## 1.0.1
 
 - Fix a bug causing crashes on windows.
