@@ -96,7 +96,7 @@ Future<Set<Module>> _transitiveModules(
   var meta = MetaModule.fromJson(
       jsonDecode(await buildStep.readAsString(buildStep.inputId))
           as Map<String, dynamic>);
-  var nextModules = <Module>[]..addAll(meta.modules);
+  var nextModules = List.of(meta.modules);
   while (nextModules.isNotEmpty) {
     var module = nextModules.removeLast();
     dependentModules.add(module);
