@@ -285,7 +285,8 @@ class WatchImpl implements BuildState {
         })
         .transform(debounceBuffer(_debounceDelay))
         .transform(takeUntil(terminate))
-        .transform(asyncMapBuffer(_recordCurrentBuild(doBuild)))
+        .transform(asyncMapBuffer((changes) => currentBuild = doBuild(changes)
+          ..whenComplete(() => currentBuild = null)))
         .listen((BuildResult result) {
           if (controller.isClosed) return;
           controller.add(result);
@@ -333,9 +334,6 @@ class WatchImpl implements BuildState {
 
     return controller.stream;
   }
-
-  _BuildAction _recordCurrentBuild(_BuildAction build) => (changes) =>
-      currentBuild = build(changes)..then((_) => currentBuild = null);
 
   bool _isBuildYaml(AssetId id) => id.path == 'build.yaml';
   bool _isConfiguredBuildYaml(AssetId id) =>

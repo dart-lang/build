@@ -11,14 +11,13 @@ import 'package:logging/logging.dart';
 import 'asset_change.dart';
 import 'node_watcher.dart';
 
-typedef PackageNodeWatcher _NodeWatcherStrategy(PackageNode node);
 PackageNodeWatcher _default(PackageNode node) => PackageNodeWatcher(node);
 
 /// Allows watching an entire graph of packages to schedule rebuilds.
 class PackageGraphWatcher {
   // TODO: Consider pulling logging out and providing hooks instead.
   final Logger _logger;
-  final _NodeWatcherStrategy _strategy;
+  final PackageNodeWatcher Function(PackageNode) _strategy;
   final PackageGraph _graph;
 
   var _readyCompleter = Completer<Null>();
