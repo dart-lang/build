@@ -240,7 +240,7 @@ d.FileDescriptor _pubspec(String name,
     });
 
     versionDependencies.forEach((package, version) {
-      buffer..writeln('  $package:$version');
+      buffer.writeln('  $package:$version');
     });
   }
 

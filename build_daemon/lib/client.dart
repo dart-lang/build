@@ -46,10 +46,9 @@ class BuildDaemonClient {
 
   Future<void> _connect(String workingDirectory, int port,
       Serializers serializersOverride) async {
-    _channel = IOWebSocketChannel.connect('ws://localhost:$port');
-    _channel.stream.listen(_handleServerMessage)
+    _channel = IOWebSocketChannel.connect('ws://localhost:$port')
       // TODO(grouma) - Implement proper error handling.
-      ..onError(print);
+      ..stream.listen(_handleServerMessage).onError(print);
     _serializers = serializersOverride ?? serializers;
   }
 
