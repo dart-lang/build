@@ -17,7 +17,7 @@ import 'scratch_space.dart';
 
 final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
-// If no terminal is attached, prevent a new one from launcing.
+// If no terminal is attached, prevent a new one from launching.
 final _processMode = stdin.hasTerminal
     ? ProcessStartMode.normal
     : ProcessStartMode.detachedWithStdio;
