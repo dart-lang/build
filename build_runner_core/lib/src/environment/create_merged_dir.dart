@@ -63,19 +63,25 @@ Future<bool> _createMergedOutputDir(
   var outputDir = Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
-    var result = await _cleanUpOutputDir(outputDir, environment);
-    if (!result) return result;
+    if (!await _cleanUpOutputDir(outputDir, environment)) return false;
   }
 
   var outputAssets = <AssetId>[];
 
-  await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
-      () async {
+  var assetWriteResult = await logTimedAsync(
+      _logger, 'Creating merged output dir `$outputPath`', () async {
+    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+    if (root != null &&
+        !builtAssets
+            .where((id) => id.package == packageGraph.root.name)
+            .any((id) => p.isWithin(root, id.path))) {
+      _logger.severe('No assets exist in $root, skipping output');
+      return false;
+    }
     if (!outputDirExists) {
       await outputDir.create(recursive: true);
     }
 
-    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
     outputAssets.addAll(await Future.wait(builtAssets.map((id) =>
         _writeAsset(id, outputDir, root, packageGraph, reader, symlinkOnly))));
 
@@ -94,7 +100,9 @@ Future<bool> _createMergedOutputDir(
         }
       }
     }
+    return true;
   });
+  if (!assetWriteResult) return false;
 
   await logTimedAsync(_logger, 'Writing asset manifest', () async {
     var paths = outputAssets.map((id) => id.path).toList()..sort();
