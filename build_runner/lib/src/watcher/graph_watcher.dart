@@ -72,7 +72,6 @@ class PackageGraphWatcher {
         return;
       }
       final nestedPackages = _nestedPaths(node);
-      _logger.fine('Setting up watcher at ${node.path}');
       final nodeWatcher = _strategy(node);
       allWatchers.add(nodeWatcher);
       subscriptions.add(nodeWatcher.watch().listen((event) {
@@ -80,8 +79,6 @@ class PackageGraphWatcher {
         if (nestedPackages.any((path) => event.id.path.startsWith(path))) {
           return;
         }
-        _logger.finest(
-            'Got ${event.type} event for "${event.id.uri} in ${node.path}');
         sink.add(event);
       }));
     });
