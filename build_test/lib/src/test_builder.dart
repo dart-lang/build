@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
@@ -11,6 +10,7 @@ import 'package:test/test.dart';
 import 'assets.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
+import 'matchers.dart';
 import 'resolve_source.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -55,18 +55,17 @@ void checkOutputs(Map<String, /*List<int>|String|Matcher*/ dynamic> outputs,
 /// The returned matcher should be used to compare to the contents of the assets
 /// that were actually written during a build.
 Matcher hasOutputs(Map<String, /*List<int>|String|Matcher*/ Object> expected) {
-  if (expected == null || expected.isEmpty) return isEmpty;
-  return equals(expected.map<AssetId, Matcher>(
-      (id, expected) => MapEntry(makeAssetId(id), _contentMatcher(expected))));
+  assert(expected != null);
+  return (expected.isEmpty)
+      ? isEmpty
+      : equals(expected.map<AssetId, Matcher>((id, expected) =>
+          MapEntry(makeAssetId(id), _contentMatcher(expected))));
 }
 
 Matcher _contentMatcher(Object expected) {
   if (expected is Matcher) return expected;
   if (expected is List<int>) return equals(expected);
-  if (expected is String) {
-    return TypeMatcher<List<int>>()
-        .having(utf8.decode, 'decoded value', expected);
-  }
+  if (expected is String) return decodedMatches(expected);
   throw ArgumentError('Expected values for `outputs` to be of type '
       '`String`, `List<int>`, or `Matcher`, but got `$expected`.');
 }
@@ -138,5 +137,5 @@ Future testBuilder(
   await logSubscription.cancel();
   var actualOutputs = Map.fromIterable(writerSpy.assetsWritten,
       value: (id) => writer.assets[id]);
-  expect(actualOutputs, hasOutputs(outputs));
+  if (outputs != null) expect(actualOutputs, hasOutputs(outputs));
 }
