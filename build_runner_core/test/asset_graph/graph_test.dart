@@ -147,13 +147,19 @@ void main() {
         expect(graph, equalsAssetGraph(decoded));
       });
 
-      test('Throws an AssetGraphVersionError if versions dont match up', () {
+      test('Throws an AssetGraphCorruptedException if versions dont match up',
+          () {
         var bytes = graph.serialize();
         var serialized = json.decode(utf8.decode(bytes));
         serialized['version'] = -1;
         var encoded = utf8.encode(json.encode(serialized));
-        expect(() => AssetGraph.deserialize(encoded),
-            throwsA(assetGraphVersionException));
+        expect(() => AssetGraph.deserialize(encoded), throwsCorruptedException);
+      });
+
+      test('Throws an AssetGraphCorruptedException on invalid json', () {
+        var bytes = graph.serialize();
+        bytes.removeLast();
+        expect(() => AssetGraph.deserialize(bytes), throwsCorruptedException);
       });
     });
 
