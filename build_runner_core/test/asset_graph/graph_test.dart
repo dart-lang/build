@@ -350,7 +350,7 @@ void main() {
               Glob('lib/*.cool'), 0, NodeState.upToDate,
               inputs: HashSet());
           var primaryOutputNode =
-              (graph.get(primaryOutputId) as GeneratedAssetNode)
+              graph.get(primaryOutputId) as GeneratedAssetNode
                 ..state = NodeState.upToDate
                 ..inputs.add(globNode.id);
           globNode.outputs.add(primaryOutputId);
