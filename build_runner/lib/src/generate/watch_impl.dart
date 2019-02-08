@@ -125,8 +125,6 @@ WatchImpl _runWatch(
         directoryWatcherFactory, configKey, willCreateOutputDirs, buildDirs,
         isReleaseMode: isReleaseMode);
 
-typedef Future<BuildResult> _BuildAction(List<List<AssetChange>> changes);
-
 class WatchImpl implements BuildState {
   BuildImpl _build;
 

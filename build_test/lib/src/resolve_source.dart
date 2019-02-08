@@ -209,7 +209,7 @@ Future<T> _resolveAssets<T>(
 /// It simulates what a user builder would do in order to resolve a primary
 /// input given a set of dependencies to also use. See `resolveSource`.
 class _ResolveSourceBuilder<T> implements Builder {
-  final FutureOr<T> Function(Resolver)  _action;
+  final FutureOr<T> Function(Resolver) _action;
   final Future _tearDown;
   final AssetId _resolverFor;
 
