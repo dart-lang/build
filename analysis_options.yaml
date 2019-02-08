@@ -16,6 +16,8 @@ analyzer:
 linter:
   rules:
     - annotate_overrides
+    - avoid_bool_literals_in_conditional_expressions
+    - avoid_classes_with_only_static_members
     - avoid_empty_else
     - avoid_function_literals_in_foreach_calls
     - avoid_init_to_null
@@ -24,7 +26,10 @@ linter:
     - avoid_renaming_method_parameters
     - avoid_return_types_on_setters
     #- avoid_returning_null
+    - avoid_returning_null_for_void
+    - avoid_returning_this
     - avoid_shadowing_type_parameters
+    - avoid_single_cascade_in_expression_statements
     - avoid_types_as_parameter_names
     - avoid_unused_constructor_parameters
     - await_only_futures
@@ -38,10 +43,12 @@ linter:
     - empty_catches
     - empty_constructor_bodies
     - empty_statements
+    - file_names
     - hash_and_equals
     #- implementation_imports
     - invariant_booleans
     - iterable_contains_unrelated_type
+    - join_return_with_assignment
     - library_names
     - library_prefixes
     - list_remove_unrelated_type
@@ -66,6 +73,7 @@ linter:
     #- prefer_interpolation_to_compose_strings
     - prefer_is_empty
     - prefer_is_not_empty
+    - prefer_null_aware_operators
     - prefer_single_quotes
     - prefer_typing_uninitialized_variables
     - recursive_getters
@@ -87,3 +95,4 @@ linter:
     - unrelated_type_equality_checks
     - use_rethrow_when_possible
     - valid_regexps
+    - void_checks
