@@ -1,3 +1,7 @@
+## 1.2.6
+
+- Prevent terminals being launched when running the daemon command on Windows.
+
 ## 1.2.5
 
 - Fix a bug with the build daemon where the output options were ignored.

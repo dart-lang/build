@@ -17,6 +17,11 @@ import 'scratch_space.dart';
 
 final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
+// If no terminal is attached, prevent a new one from launcing.
+final _processMode = stdin.hasTerminal
+    ? ProcessStartMode.normal
+    : ProcessStartMode.detachedWithStdio;
+
 /// Completes once the analyzer workers have been shut down.
 Future<Null> get analyzerWorkersAreDone =>
     _analyzerWorkersAreDoneCompleter?.future ?? Future.value(null);
@@ -42,8 +47,6 @@ Future<Null> get frontendWorkersAreDone =>
     _frontendWorkersAreDoneCompleter?.future ?? Future.value(null);
 Completer<Null> _frontendWorkersAreDoneCompleter;
 
-String get _scriptExtension => Platform.isWindows ? '.bat' : '';
-
 final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
 
 const _maxWorkersEnvVar = 'BUILD_MAX_WORKERS_PER_TASK';
@@ -66,8 +69,14 @@ BazelWorkerDriver get _analyzerDriver {
   _analyzerWorkersAreDoneCompleter ??= Completer<Null>();
   return __analyzerDriver ??= BazelWorkerDriver(
       () => Process.start(
-          p.join(sdkDir, 'bin', 'dartanalyzer$_scriptExtension'),
-          ['--build-mode', '--persistent_worker'],
+          p.join(sdkDir, 'bin', 'dart'),
+          [
+            p.join(sdkDir, 'bin', 'snapshots', 'dartanalyzer.dart.snapshot'),
+            '--dart-sdk=$sdkDir',
+            '--build-mode',
+            '--persistent_worker'
+          ],
+          mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
       maxWorkers: _maxWorkersPerTask);
 }
@@ -87,8 +96,14 @@ final analyzerDriverResource =
 BazelWorkerDriver get _dartdevcDriver {
   _dartdevcWorkersAreDoneCompleter ??= Completer<Null>();
   return __dartdevcDriver ??= BazelWorkerDriver(
-      () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
-          ['--persistent_worker'],
+      () => Process.start(
+          p.join(sdkDir, 'bin', 'dart'),
+          [
+            p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
+            '--dart-sdk=$sdkDir',
+            '--persistent_worker'
+          ],
+          mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
       maxWorkers: _maxWorkersPerTask);
 }
@@ -107,9 +122,17 @@ final dartdevcDriverResource =
 /// Manages a shared set of persistent dartdevk workers.
 BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<Null>();
+  var packages = p.joinAll([sdkDir, '..', '..', '..', '.packageas']);
   return __dartdevkDriver ??= BazelWorkerDriver(
-      () => Process.start(p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
-          ['--kernel', '--persistent_worker'],
+      () => Process.start(
+          p.join(sdkDir, 'bin', 'dart'),
+          [
+            p.join(sdkDir, 'bin', 'snapshots', 'dartdevk.dart.snapshot'),
+            '--packages=$packages',
+            '--kernel',
+            '--persistent_worker'
+          ],
+          mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
       maxWorkers: _maxWorkersPerTask);
 }
@@ -135,6 +158,7 @@ BazelWorkerDriver get _frontendDriver {
             p.join(sdkDir, 'bin', 'snapshots', 'kernel_worker.dart.snapshot'),
             '--persistent_worker'
           ],
+          mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
       maxWorkers: _maxWorkersPerTask);
 }
@@ -154,7 +178,13 @@ final frontendDriverResource =
 Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
   _dart2jsWorkersAreDoneCompleter ??= Completer<Null>();
   return __dart2jsWorkerPool ??= Dart2JsBatchWorkerPool(() => Process.start(
-      p.join(sdkDir, 'bin', 'dart2js$_scriptExtension'), ['--batch'],
+      p.join(sdkDir, 'bin', 'dart'),
+      [
+        p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
+        '--batch',
+        '--library-root=$sdkDir'
+      ],
+      mode: _processMode,
       workingDirectory: scratchSpace.tempDir.path));
 }
 

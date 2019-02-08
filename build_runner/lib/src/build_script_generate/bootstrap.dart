@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -115,10 +116,18 @@ Future<int> _createSnapshotIfMissing(Logger logger) async {
   var snapshotFile = File(scriptSnapshotLocation);
   String stderr;
   if (!await snapshotFile.exists()) {
+    var mode = stdin.hasTerminal
+        ? ProcessStartMode.normal
+        : ProcessStartMode.detachedWithStdio;
     await logTimedAsync(logger, 'Creating build script snapshot...', () async {
-      var snapshot = await Process.run(Platform.executable,
-          ['--snapshot=$scriptSnapshotLocation', scriptLocation]);
-      stderr = snapshot.stderr as String;
+      var snapshot = await Process.start(Platform.executable,
+          ['--snapshot=$scriptSnapshotLocation', scriptLocation],
+          mode: mode);
+      stderr = (await snapshot.stderr
+              .transform(utf8.decoder)
+              .transform(LineSplitter())
+              .toList())
+          .join('');
     });
     if (!await snapshotFile.exists()) {
       logger.severe('Failed to snapshot build script $scriptLocation.\n'
