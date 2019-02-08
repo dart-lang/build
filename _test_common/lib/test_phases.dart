@@ -167,14 +167,13 @@ void checkBuild(BuildResult result,
     }
   }
 
-  AssetId mapHidden(AssetId id, String expectedGeneratedDir) =>
-      unhiddenAssets.contains(id)
-          ? AssetId(rootPackage,
-              '.dart_tool/build/$expectedGeneratedDir/${id.package}/${id.path}')
-          : id;
-
   if (status == BuildStatus.success) {
-    checkOutputs(unhiddenOutputs, result.outputs, writer,
-        mapAssetIds: (id) => mapHidden(id, expectedGeneratedDir));
+    final actualOutputs = Map.fromIterable(
+        result.outputs.map((id) => unhiddenAssets.contains(id)
+            ? AssetId(rootPackage,
+                '.dart_tool/build/$expectedGeneratedDir/${id.package}/${id.path}')
+            : id),
+        value: (id) => writer.assets[id]);
+    expect(actualOutputs, hasOutputs(unhiddenOutputs));
   }
 }

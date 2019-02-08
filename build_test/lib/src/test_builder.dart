@@ -31,44 +31,44 @@ AssetId _passThrough(AssetId id) => id;
 /// If assets are written to a location that does not match their logical
 /// association to a package pass `[mapAssetIds]` to translate from the logical
 /// location to the actual written location.
-void checkOutputs(
-    Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
-    Iterable<AssetId> actualAssets,
-    RecordingAssetWriter writer,
+@Deprecated('Create a Map<AssetId, List<int>> of the written assets '
+    'and match with `hasOutputs`')
+void checkOutputs(Map<String, /*List<int>|String|Matcher*/ dynamic> outputs,
+    Iterable<AssetId> actualAssets, RecordingAssetWriter writer,
     {AssetId mapAssetIds(AssetId id) = _passThrough}) {
-  var modifiableActualAssets = Set.from(actualAssets);
-  if (outputs != null) {
-    outputs.forEach((serializedId, contentsMatcher) {
-      assert(contentsMatcher is String ||
-          contentsMatcher is List<int> ||
-          contentsMatcher is Matcher);
+  var actual = Map.fromIterable(actualAssets,
+      value: (id) => writer.assets[mapAssetIds(id as AssetId)]);
+  expect(actual, hasOutputs(outputs));
+}
 
-      var assetId = makeAssetId(serializedId);
+/// A Matcher that validates a Map<AssetId, List<int>> with flexible ways to
+/// match each asset content.
+///
+/// The keys in [expected] should be serialized AssetIds in the form
+/// `'package|path'`. The values should match the expected content for the
+/// written asset and may be a String (for `writeAsString`), a `List<int>` (for
+/// `writeAsBytes`) or a [Matcher] for bytes.
+///
+/// If [expected] is null or empty the only match will be for a build with no
+/// assets written.
+///
+/// The returned matcher should be used to compare to the contents of the assets
+/// that were actually written during a build.
+Matcher hasOutputs(Map<String, /*List<int>|String|Matcher*/ Object> expected) {
+  if (expected == null || expected.isEmpty) return isEmpty;
+  return equals(expected.map<AssetId, Matcher>(
+      (id, expected) => MapEntry(makeAssetId(id), _contentMatcher(expected))));
+}
 
-      // Check that the asset was produced.
-      expect(modifiableActualAssets, contains(assetId),
-          reason: 'Builder failed to write asset $assetId');
-      modifiableActualAssets.remove(assetId);
-      var actual = writer.assets[mapAssetIds(assetId)];
-      Object expected;
-      if (contentsMatcher is String) {
-        expected = utf8.decode(actual);
-      } else if (contentsMatcher is List<int>) {
-        expected = actual;
-      } else if (contentsMatcher is Matcher) {
-        expected = actual;
-      } else {
-        throw ArgumentError('Expected values for `outputs` to be of type '
-            '`String`, `List<int>`, or `Matcher`, but got `$contentsMatcher`.');
-      }
-      expect(expected, contentsMatcher,
-          reason: 'Unexpected content for $assetId in result.outputs.');
-    });
-    // Check that no extra assets were produced.
-    expect(modifiableActualAssets, isEmpty,
-        reason:
-            'Unexpected outputs found `$actualAssets`. Only expected $outputs');
+Matcher _contentMatcher(Object expected) {
+  if (expected is Matcher) return expected;
+  if (expected is List<int>) return equals(expected);
+  if (expected is String) {
+    return TypeMatcher<List<int>>()
+        .having(utf8.decode, 'decoded value', expected);
   }
+  throw ArgumentError('Expected values for `outputs` to be of type '
+      '`String`, `List<int>`, or `Matcher`, but got `$expected`.');
 }
 
 /// Runs [builder] in a test environment.
@@ -136,6 +136,7 @@ Future testBuilder(
   await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
       logger: logger);
   await logSubscription.cancel();
-  var actualOutputs = writerSpy.assetsWritten;
-  checkOutputs(outputs, actualOutputs, writer);
+  var actualOutputs = Map.fromIterable(writerSpy.assetsWritten,
+      value: (id) => writer.assets[id]);
+  expect(actualOutputs, hasOutputs(outputs));
 }
