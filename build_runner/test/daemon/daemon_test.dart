@@ -103,9 +103,9 @@ main() {
       await _startDaemon(outputDir: 'deploy');
       // Start the client with the same options to prevent OptionSkew.
       // In the future this should be an option on the target.
-      var client = await _startClient(outputDir: 'deploy');
-      client.registerBuildTarget(webTarget);
-      client.startBuild();
+      var client = await _startClient(outputDir: 'deploy')
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
       await client.buildResults
           .firstWhere((b) => b.results.first.status != BuildStatus.started);
       expect(outputDir.existsSync(), isTrue);
@@ -118,18 +118,18 @@ main() {
 
     test('notifies upon build start', () async {
       await _startDaemon();
-      var client = await _startClient();
-      client.registerBuildTarget(webTarget);
-      client.startBuild();
+      var client = await _startClient()
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
       var buildResults = await client.buildResults.first;
       expect(buildResults.results.first.status, BuildStatus.started);
     });
 
     test('can complete builds', () async {
       await _startDaemon();
-      var client = await _startClient();
-      client.registerBuildTarget(webTarget);
-      client.startBuild();
+      var client = await _startClient()
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
       var buildResults = await client.buildResults
           .firstWhere((b) => b.results.first.status != BuildStatus.started);
       expect(buildResults.results.first.status, BuildStatus.succeeded);
@@ -141,10 +141,9 @@ main() {
       var clientA = await _startClient();
       clientA.registerBuildTarget(webTarget);
 
-      var clientB = await _startClient();
-      clientB.registerBuildTarget(testTarget);
-
-      clientB.startBuild();
+      var clientB = await _startClient()
+        ..registerBuildTarget(testTarget)
+        ..startBuild();
 
       // Both clients should be notified.
       await clientA.buildResults.first;

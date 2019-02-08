@@ -34,12 +34,12 @@ void main() {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
     writer = InMemoryRunnerAssetWriter();
     reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-        rootPackage: 'example');
-    reader.cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial');
-    reader.cacheStringAsset(AssetId('example', '.packages'), '''
-# Fake packages file
-example:file://fake/pkg/path
-''');
+        rootPackage: 'example')
+      ..cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial')
+      ..cacheStringAsset(
+          AssetId('example', '.packages'),
+          '# Fake packages file\n'
+          'example:file://fake/pkg/path');
     terminateController = StreamController();
     final server = await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],

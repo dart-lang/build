@@ -67,8 +67,7 @@ void main() {
         for (var i = 0; i < 5; i++) {
           nodes.add(testAddNode());
         }
-        graph.remove(nodes[1].id);
-        graph.remove(nodes[4].id);
+        graph..remove(nodes[1].id)..remove(nodes[4].id);
 
         expectNodeExists(nodes[0]);
         expectNodeDoesNotExist(nodes[1]);
@@ -76,11 +75,11 @@ void main() {
         expectNodeDoesNotExist(nodes[4]);
         expectNodeExists(nodes[3]);
 
-        // Doesn't throw.
-        graph.remove(nodes[1].id);
-
-        // Can be added back
-        graph.add(nodes[1]);
+        graph
+          // Doesn't throw.
+          ..remove(nodes[1].id)
+          // Can be added back
+          ..add(nodes[1]);
         expectNodeExists(nodes[1]);
       });
 
@@ -135,9 +134,10 @@ void main() {
                   md5.convert(utf8.encode(generatedNode.id.toString()));
             }
 
-            graph.add(syntheticNode);
-            graph.add(generatedNode);
-            graph.add(builderOptionsNode);
+            graph
+              ..add(syntheticNode)
+              ..add(generatedNode)
+              ..add(builderOptionsNode);
           }
         }
 
@@ -346,13 +346,13 @@ void main() {
         test(
             'a new, modified, or deleted asset matching a glob invalidates the '
             'glob node and its outputs', () async {
-          var primaryOutputNode =
-              graph.get(primaryOutputId) as GeneratedAssetNode;
-          primaryOutputNode.state = NodeState.upToDate;
           var globNode = GlobAssetNode(primaryInputId.addExtension('.glob'),
               Glob('lib/*.cool'), 0, NodeState.upToDate,
               inputs: HashSet());
-          primaryOutputNode.inputs.add(globNode.id);
+          var primaryOutputNode =
+              (graph.get(primaryOutputId) as GeneratedAssetNode)
+                ..state = NodeState.upToDate
+                ..inputs.add(globNode.id);
           globNode.outputs.add(primaryOutputId);
           graph.add(globNode);
 

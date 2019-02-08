@@ -56,10 +56,10 @@ main() {
       optionalOutputTracker = OptionalOutputTracker(graph, [], phases);
       finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
       for (var id in graph.outputs) {
-        var node = graph.get(id) as GeneratedAssetNode;
-        node.state = NodeState.upToDate;
-        node.wasOutput = true;
-        node.isFailure = false;
+        var node = graph.get(id) as GeneratedAssetNode
+          ..state = NodeState.upToDate
+          ..wasOutput = true
+          ..isFailure = false;
         assetReader.cacheStringAsset(id, sources[node.primaryInput]);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -187,10 +187,9 @@ main() {
     });
 
     test('doesnt write files that werent output', () async {
-      var node =
-          graph.get(AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
-      node.wasOutput = false;
-      node.isFailure = false;
+      graph.get(AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode
+        ..wasOutput = false
+        ..isFailure = false;
 
       var success = await createMergedOutputDirectories({tmpDir.path: null},
           packageGraph, environment, assetReader, finalizedAssetsView, false);
@@ -222,10 +221,10 @@ main() {
       File garbageFile;
       Directory emptyDirectory;
       setUp(() {
-        garbageFile = File(p.join(tmpDir.path, 'garbage_file.txt'));
-        garbageFile.createSync();
-        emptyDirectory = Directory(p.join(tmpDir.path, 'empty_directory'));
-        emptyDirectory.createSync();
+        garbageFile = File(p.join(tmpDir.path, 'garbage_file.txt'))
+          ..createSync();
+        emptyDirectory = Directory(p.join(tmpDir.path, 'empty_directory'))
+          ..createSync();
       });
 
       test('fails in non-interactive mode', () async {
