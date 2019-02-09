@@ -101,7 +101,7 @@ class RunCommand extends BuildRunnerCommand {
 
     try {
       var outputMap = options.outputMap ?? {};
-      outputMap.addAll({tempPath: null});
+      outputMap.addAll({tempPath: '.'});
 
       var result = await build(
         builderApplications,
