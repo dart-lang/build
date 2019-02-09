@@ -42,7 +42,7 @@ Future<d.FileDescriptor> pubspec(String name,
   });
 
   versionDependencies.forEach((package, version) {
-    buffer..writeln('  $package: $version');
+    buffer.writeln('  $package: $version');
   });
 
   return d.file('pubspec.yaml', buffer.toString());

@@ -100,18 +100,19 @@ class Server {
       });
 
   void _forwardData() {
-    _subs.add(_builder.logs.listen((log) {
-      var message = jsonEncode(_serializers.serialize(log));
-      for (var channel in _interestedChannels) {
-        channel.sink.add(message);
-      }
-    }));
-    _subs.add(_builder.builds.listen((status) {
-      var message = jsonEncode(_serializers.serialize(status));
-      for (var channel in _interestedChannels) {
-        channel.sink.add(message);
-      }
-    }));
+    _subs
+      ..add(_builder.logs.listen((log) {
+        var message = jsonEncode(_serializers.serialize(log));
+        for (var channel in _interestedChannels) {
+          channel.sink.add(message);
+        }
+      }))
+      ..add(_builder.builds.listen((status) {
+        var message = jsonEncode(_serializers.serialize(status));
+        for (var channel in _interestedChannels) {
+          channel.sink.add(message);
+        }
+      }));
   }
 
   void _handleChanges(Stream<WatchEvent> changes) {

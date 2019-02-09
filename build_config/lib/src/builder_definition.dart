@@ -139,6 +139,13 @@ class BuilderDefinition {
       throw ArgumentError.value(builderFactories, 'builderFactories',
           'Must have at least one value.');
     }
+    if (buildExtensions.entries.any((e) => e.value.contains(e.key))) {
+      throw ArgumentError.value(
+          buildExtensions,
+          'buildExtensions',
+          'May not overwrite an input, '
+          'the output extensions must not contain the input extension');
+    }
   }
 
   factory BuilderDefinition.fromJson(Map json) =>

@@ -53,8 +53,9 @@ Future main(List<String> args) async {
   stdout.writeln('Ready, please type in a command:');
 
   while (true) {
-    stdout.writeln('');
-    stdout.write('> ');
+    stdout
+      ..writeln('')
+      ..write('> ');
     var nextCommand = stdin.readLineSync();
     stdout.writeln('');
     try {
@@ -103,10 +104,11 @@ class InspectNodeCommand extends Command {
         ..writeln('  type: ${node.runtimeType}');
 
       if (node is GeneratedAssetNode) {
-        description.writeln('  state: ${node.state}');
-        description.writeln('  wasOutput: ${node.wasOutput}');
-        description.writeln('  phase: ${node.phaseNumber}');
-        description.writeln('  isFailure: ${node.isFailure}');
+        description
+          ..writeln('  state: ${node.state}')
+          ..writeln('  wasOutput: ${node.wasOutput}')
+          ..writeln('  phase: ${node.phaseNumber}')
+          ..writeln('  isFailure: ${node.isFailure}');
       }
 
       _printAsset(AssetId asset) =>
@@ -121,10 +123,10 @@ class InspectNodeCommand extends Command {
 
         if (node is GeneratedAssetNode) {
           description.writeln('  inputs:');
-          var inputs = assetGraph.allNodes
+          assetGraph.allNodes
               .where((n) => n.outputs.contains(node.id))
-              .map((n) => n.id);
-          inputs.forEach(_printAsset);
+              .map((n) => n.id)
+              .forEach(_printAsset);
         }
       }
 
@@ -145,16 +147,16 @@ class GraphCommand extends Command {
   String get invocation => '${super.invocation} <dart-uri>';
 
   GraphCommand() {
-    argParser.addFlag('generated',
-        abbr: 'g', help: 'Show only generated assets.', defaultsTo: false);
-    argParser.addFlag('original',
-        abbr: 'o',
-        help: 'Show only original source assets.',
-        defaultsTo: false);
-    argParser.addOption('package',
-        abbr: 'p', help: 'Filters nodes to a certain package');
-    argParser.addOption('pattern',
-        abbr: 'm', help: 'glob pattern for path matching');
+    argParser
+      ..addFlag('generated',
+          abbr: 'g', help: 'Show only generated assets.', defaultsTo: false)
+      ..addFlag('original',
+          abbr: 'o',
+          help: 'Show only original source assets.',
+          defaultsTo: false)
+      ..addOption('package',
+          abbr: 'p', help: 'Filters nodes to a certain package')
+      ..addOption('pattern', abbr: 'm', help: 'glob pattern for path matching');
   }
 
   @override

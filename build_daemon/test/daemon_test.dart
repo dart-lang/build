@@ -114,8 +114,7 @@ void main() {
       expect(await getOutput(daemon), 'RUNNING');
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isTrue);
       // Daemon expects sigint twice before quitting.
-      daemon.kill(ProcessSignal.sigint);
-      daemon.kill(ProcessSignal.sigint);
+      daemon..kill(ProcessSignal.sigint)..kill(ProcessSignal.sigint);
       await daemon.exitCode;
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
     });

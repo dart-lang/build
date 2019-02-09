@@ -71,11 +71,11 @@ main() {
     var stdoutLines = process.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
-        .asBroadcastStream();
-    stdoutLines.listen((line) {
-      stdoutSink?.add(line);
-      printOnFailure(line);
-    });
+        .asBroadcastStream()
+          ..listen((line) {
+            stdoutSink?.add(line);
+            printOnFailure(line);
+          });
     var queue = StreamQueue(stdoutLines);
     if (command == 'serve' || command == 'watch') {
       while (await queue.hasNext) {

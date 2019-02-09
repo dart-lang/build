@@ -127,11 +127,10 @@ targets:
             aPackageGraph,
             environment.reader);
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
-        var generatedANode =
-            originalAssetGraph.get(generatedAId) as GeneratedAssetNode;
-        generatedANode.wasOutput = true;
-        generatedANode.isFailure = false;
-        generatedANode.state = NodeState.upToDate;
+        originalAssetGraph.get(generatedAId) as GeneratedAssetNode
+          ..wasOutput = true
+          ..isFailure = false
+          ..state = NodeState.upToDate;
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -140,7 +139,8 @@ targets:
             environment, options, buildPhases);
         var newAssetGraph = buildDefinition.assetGraph;
 
-        generatedANode = newAssetGraph.get(generatedAId) as GeneratedAssetNode;
+        var generatedANode =
+            newAssetGraph.get(generatedAId) as GeneratedAssetNode;
         expect(generatedANode, isNotNull);
         expect(generatedANode.state, NodeState.definitelyNeedsUpdate);
 
@@ -211,10 +211,9 @@ targets:
             aPackageGraph,
             environment.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
-        var generatedNode =
-            originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode;
-        generatedNode.wasOutput = false;
-        generatedNode.isFailure = false;
+        originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode
+          ..wasOutput = false
+          ..isFailure = false;
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -245,10 +244,10 @@ targets:
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
         for (var id in [generatedACopyId, generatedACloneId]) {
-          var node = originalAssetGraph.get(id) as GeneratedAssetNode;
-          node.wasOutput = true;
-          node.isFailure = false;
-          node.state = NodeState.upToDate;
+          originalAssetGraph.get(id) as GeneratedAssetNode
+            ..wasOutput = true
+            ..isFailure = false
+            ..state = NodeState.upToDate;
         }
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());

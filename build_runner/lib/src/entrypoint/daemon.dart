@@ -35,15 +35,17 @@ class DaemonCommand extends BuildRunnerCommand {
       var runningOptions = currentOptions(workingDirectory);
       var version = runningVersion(workingDirectory);
       if (version != currentVersion) {
-        stdout.writeln('Running Version: $version');
-        stdout.writeln('Current Version: $currentVersion');
-        stdout.writeln(versionSkew);
+        stdout
+          ..writeln('Running Version: $version')
+          ..writeln('Current Version: $currentVersion')
+          ..writeln(versionSkew);
         return 1;
       } else if (!(runningOptions.length == requestedOptions.length &&
           runningOptions.containsAll(requestedOptions))) {
-        stdout.writeln('Running Options: $runningOptions');
-        stdout.writeln('Requested Options: $requestedOptions');
-        stdout.writeln(optionsSkew);
+        stdout
+          ..writeln('Running Options: $runningOptions')
+          ..writeln('Requested Options: $requestedOptions')
+          ..writeln(optionsSkew);
         return 1;
       } else {
         stdout.writeln('Daemon is already running.');

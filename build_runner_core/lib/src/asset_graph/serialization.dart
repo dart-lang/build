@@ -165,7 +165,7 @@ class _AssetGraphDeserializer {
   Iterable<AssetId> _deserializeAssetIds(List serializedIds) =>
       serializedIds.map((id) => _idToAssetId[id]);
 
-  bool _deserializeBool(int value) => value == 0 ? false : true;
+  bool _deserializeBool(int value) => value != 0;
 }
 
 /// Serializes an [AssetGraph] into a [Map].
@@ -186,8 +186,7 @@ class _AssetGraphSerializer {
     for (var node in _graph.allNodes) {
       _assetIdToId[node.id] = pathId;
       pathId++;
-      assetPaths.add(node.id.path);
-      assetPaths.add(packages.indexOf(node.id.package));
+      assetPaths..add(node.id.path)..add(packages.indexOf(node.id.package));
     }
 
     var result = <String, dynamic>{
