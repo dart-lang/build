@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
@@ -43,29 +44,29 @@ void main() {
           ]));
     });
 
-    test('should avoid duplicate changes with nested packages', () {
+    test('should avoid duplicate changes with nested packages', () async {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
         package('b', path: '/g/a/b'): []
       });
       final nodes = {
-        'a': FakeNodeWatcher(graph['a']),
-        'b': FakeNodeWatcher(graph['b']),
-        r'$sdk': FakeNodeWatcher(null),
+        'a': FakeNodeWatcher(graph['a'])..markReady(),
+        'b': FakeNodeWatcher(graph['b'])..markReady(),
       };
       final watcher = PackageGraphWatcher(graph, watch: (node) {
         return nodes[node.name];
       });
 
-      nodes['a'].emitAdd('lib/a.dart');
+      final events = <AssetChange>[];
+      unawaited(watcher.watch().forEach(events.add));
+      await watcher.ready;
+
+      nodes['a'].emitAdd('b/lib/b.dart');
       nodes['b'].emitAdd('lib/b.dart');
 
-      expect(
-          watcher.watch(),
-          emitsInOrder([
-            AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
-            AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
-          ]));
+      await pumpEventQueue();
+
+      expect(events, [AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD)]);
     });
 
     test('should avoid watchers on pub dependencies', () {
@@ -126,10 +127,11 @@ void main() {
 }
 
 class FakeNodeWatcher implements PackageNodeWatcher {
-  final PackageNode _package;
+  @override
+  final PackageNode node;
   final _events = StreamController<AssetChange>();
 
-  FakeNodeWatcher(this._package);
+  FakeNodeWatcher(this.node);
 
   @override
   Watcher get watcher => _watcher;
@@ -140,7 +142,7 @@ class FakeNodeWatcher implements PackageNodeWatcher {
   void emitAdd(String path) {
     _events.add(
       AssetChange(
-        AssetId(_package.name, path),
+        AssetId(node.name, path),
         ChangeType.ADD,
       ),
     );
