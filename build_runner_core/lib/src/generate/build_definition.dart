@@ -5,10 +5,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
@@ -408,13 +408,10 @@ class _Loader {
     return targets.asyncExpand(_listAssetIds).toSet();
   }
 
-  Stream<AssetId> _mergeAll(Iterable<Stream<AssetId>> streams) =>
-      streams.first.transform(mergeAll(streams.skip(1)));
-
   Stream<AssetId> _listAssetIds(TargetNode targetNode) => targetNode
           .sourceIncludes.isEmpty
       ? Stream<AssetId>.empty()
-      : _mergeAll(targetNode.sourceIncludes.map((glob) =>
+      : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
           _listIdsSafe(glob, package: targetNode.package.name)
               .where((id) =>
                   targetNode.package.isRoot || id.pathSegments.first == 'lib')
