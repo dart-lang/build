@@ -133,7 +133,8 @@ class RunCommand extends BuildRunnerCommand {
 
       // Cleanup after exit.
       onExit.listen((_) {
-        if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);
+        // If no error was thrown, return 0.
+        if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(0);
       });
 
       // On an error, kill the isolate, and log the error.
@@ -142,6 +143,7 @@ class RunCommand extends BuildRunnerCommand {
         onError.close();
         logger.severe('Unhandled error from script: $scriptName', e[0],
             StackTrace.fromString(e[1].toString()));
+        if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);
       });
 
       await Isolate.spawnUri(
