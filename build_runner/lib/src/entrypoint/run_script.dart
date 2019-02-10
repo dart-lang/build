@@ -100,9 +100,7 @@ class RunCommand extends BuildRunnerCommand {
     var exitCodeCompleter = Completer<int>();
 
     try {
-      var outputMap = options.outputMap ?? {};
-      outputMap.addAll({tempPath: '.'});
-
+      var outputMap = (options.outputMap ?? {})..addAll({tempPath: '.'});
       var result = await build(
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
