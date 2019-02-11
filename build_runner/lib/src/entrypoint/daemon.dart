@@ -66,6 +66,11 @@ class DaemonCommand extends BuildRunnerCommand {
         await daemon.start(requestedOptions, builder, builder.changes);
         stdout.writeln(readyToConnectLog);
         await daemon.onDone.whenComplete(server.stop);
+        // Clients can disconnect from the daemon mid build.
+        // As a result we try to relinquish resources which can
+        // cause the build to hang. To ensure there are no ghost processes
+        // fast exit.
+        exit(0);
       });
     }
     return 0;

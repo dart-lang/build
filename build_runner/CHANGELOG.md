@@ -1,6 +1,10 @@
 ## 1.2.6
 
+<<<<<<< HEAD
 - Prevent terminals being launched when running the daemon command on Windows.
+=======
+- Ensure the daemon command always exits.
+>>>>>>> master
 
 ## 1.2.5
 
