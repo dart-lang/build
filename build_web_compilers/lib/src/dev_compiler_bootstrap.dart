@@ -83,20 +83,19 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
       bootstrapId.path,
       from: _context.dirname(dartEntrypointId.path)));
 
-  var bootstrapContent =
-      StringBuffer('$_entrypointExtensionMarker\n(function() {\n');
-  bootstrapContent.write(_dartLoaderSetup(
-      modulePaths,
-      _p.url.relative(appDigestsOutput.path,
-          from: _p.url.dirname(bootstrapId.path))));
-  bootstrapContent.write(_requireJsConfig);
-
   // Strip top-level directory
   var appModuleSource =
       _context.joinAll(_context.split(module.primarySource.path).sublist(1));
 
-  bootstrapContent.write(_appBootstrap(
-      bootstrapModuleName, appModuleName, appModuleScope, appModuleSource));
+  var bootstrapContent =
+      StringBuffer('$_entrypointExtensionMarker\n(function() {\n')
+        ..write(_dartLoaderSetup(
+            modulePaths,
+            _p.url.relative(appDigestsOutput.path,
+                from: _p.url.dirname(bootstrapId.path))))
+        ..write(_requireJsConfig)
+        ..write(_appBootstrap(bootstrapModuleName, appModuleName,
+            appModuleScope, appModuleSource));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 

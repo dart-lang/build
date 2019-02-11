@@ -78,8 +78,9 @@ class _GenerateBuildScript extends Command<int> {
   @override
   Future<int> run() async {
     var buildScript = await generateBuildScript();
-    var scriptFile = File(scriptLocation)..createSync(recursive: true);
-    scriptFile.writeAsStringSync(buildScript);
+    File(scriptLocation)
+      ..createSync(recursive: true)
+      ..writeAsStringSync(buildScript);
     print(p.absolute(scriptLocation));
     return 0;
   }

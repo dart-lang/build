@@ -789,8 +789,7 @@ class _SingleBuild {
         var allSkippedFailures = <GeneratedAssetNode>[];
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
-          var outputNode = _assetGraph.get(output) as GeneratedAssetNode;
-          outputNode
+          var outputNode = _assetGraph.get(output) as GeneratedAssetNode
             ..state = NodeState.upToDate
             ..wasOutput = false
             ..isFailure = true

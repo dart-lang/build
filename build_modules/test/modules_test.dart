@@ -30,18 +30,18 @@ void main() {
     InMemoryAssetReader reader;
 
     setUp(() {
-      reader = InMemoryAssetReader();
-      reader.cacheStringAsset(rootId.changeExtension(moduleExtension(platform)),
-          serializeModule(rootModule));
-      reader.cacheStringAsset(
-          directDepId.changeExtension(moduleExtension(platform)),
-          serializeModule(directDepModule));
-      reader.cacheStringAsset(
-          transitiveDepId.changeExtension(moduleExtension(platform)),
-          serializeModule(transitiveDepModule));
-      reader.cacheStringAsset(
-          deepTransitiveDepId.changeExtension(moduleExtension(platform)),
-          serializeModule(deepTransitiveDepModule));
+      reader = InMemoryAssetReader()
+        ..cacheStringAsset(rootId.changeExtension(moduleExtension(platform)),
+            serializeModule(rootModule))
+        ..cacheStringAsset(
+            directDepId.changeExtension(moduleExtension(platform)),
+            serializeModule(directDepModule))
+        ..cacheStringAsset(
+            transitiveDepId.changeExtension(moduleExtension(platform)),
+            serializeModule(transitiveDepModule))
+        ..cacheStringAsset(
+            deepTransitiveDepId.changeExtension(moduleExtension(platform)),
+            serializeModule(deepTransitiveDepModule));
     });
 
     test('finds transitive deps', () async {

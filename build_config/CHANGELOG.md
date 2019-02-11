@@ -1,3 +1,8 @@
+## 0.3.2
+
+- Add an explicit error when `buildExtensions` is configured to overwrite it's
+  input.
+
 ## 0.3.1+4
 
 - Support the latest `package:json_annotation`.

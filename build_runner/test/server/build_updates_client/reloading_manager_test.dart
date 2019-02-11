@@ -25,16 +25,14 @@ void main() {
   MockMethods methods;
   Map<String, MockModule> modules;
 
-  ReloadingManager initManager(Map<String, List<String>> moduleParentsGraph) {
-    var manager = ReloadingManager(
-        methods.reloadModule,
-        methods.getModuleLibraries,
-        methods.reloadPage,
-        (id) => moduleParentsGraph[id],
-        () => moduleParentsGraph.keys);
-    manager.updateGraph();
-    return manager;
-  }
+  ReloadingManager initManager(Map<String, List<String>> moduleParentsGraph) =>
+      ReloadingManager(
+          methods.reloadModule,
+          methods.getModuleLibraries,
+          methods.reloadPage,
+          (id) => moduleParentsGraph[id],
+          () => moduleParentsGraph.keys)
+        ..updateGraph();
 
   MockModule mockModule(String prefix, String name) => modules.putIfAbsent(
       '$prefix-$name', () => named(MockModule(), name: '$prefix-$name'));

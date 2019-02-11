@@ -51,9 +51,10 @@ class AssetGraph {
         AssetGraph._(computeBuildPhasesDigest(buildPhases), Platform.version);
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
-    graph._addBuilderOptionsNodes(buildPhases);
-    graph._addOutputsForSources(buildPhases, sources, packageGraph.root.name,
-        placeholders: placeholders);
+    graph
+      .._addBuilderOptionsNodes(buildPhases)
+      .._addOutputsForSources(buildPhases, sources, packageGraph.root.name,
+          placeholders: placeholders);
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
         sourceNodes.where((node) => node.primaryOutputs.isNotEmpty),
@@ -523,9 +524,9 @@ class AssetGraph {
 /// of [BuildPhase]s against another.
 Digest computeBuildPhasesDigest(Iterable<BuildPhase> buildPhases) {
   var digestSink = AccumulatorSink<Digest>();
-  var bytesSink = md5.startChunkedConversion(digestSink);
-  bytesSink.add(buildPhases.map((phase) => phase.identity).toList());
-  bytesSink.close();
+  md5.startChunkedConversion(digestSink)
+    ..add(buildPhases.map((phase) => phase.identity).toList())
+    ..close();
   assert(digestSink.events.length == 1);
   return digestSink.events.first;
 }

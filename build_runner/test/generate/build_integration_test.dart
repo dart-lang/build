@@ -190,8 +190,7 @@ main() async {
 
       test('picks up deleted files that match the glob', () async {
         // Delete a file matching the glob.
-        var aTxtFile = File(p.join(d.sandbox, 'a', 'web', 'a.txt'));
-        aTxtFile.deleteSync();
+        File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
         // Run a new build and validate.
         var result = await runDart('a', 'tool/build.dart', args: ['build']);

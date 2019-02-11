@@ -10,12 +10,11 @@ import 'package:watcher/watcher.dart';
 
 import 'asset_change.dart';
 
-typedef Watcher _WatcherStrategy(String path);
 Watcher _default(String path) => Watcher(path);
 
 /// Allows watching significant files and directories in a given package.
 class PackageNodeWatcher {
-  final _WatcherStrategy _strategy;
+  final Watcher Function(String) _strategy;
   final PackageNode _node;
 
   /// The actual watcher instance.

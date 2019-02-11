@@ -51,9 +51,10 @@ class ListClassesAndHierarchyBuilder implements Builder {
     final output = StringBuffer();
     final outputId = buildStep.inputId.changeExtension('.txt');
     for (final type in types) {
-      output.write('${type.name}: [');
-      output.writeAll(type.allSupertypes.map((t) => t.name), ', ');
-      output.writeln(']');
+      output
+        ..write('${type.name}: [')
+        ..writeAll(type.allSupertypes.map((t) => t.name), ', ')
+        ..writeln(']');
     }
     await buildStep.writeAsString(outputId, output.toString());
   }

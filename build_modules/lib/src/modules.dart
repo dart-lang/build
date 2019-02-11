@@ -158,8 +158,9 @@ class Module {
   /// module's primary source.
   void merge(Module other) {
     sources.addAll(other.sources);
-    directDependencies.addAll(other.directDependencies);
-    directDependencies.removeAll(sources);
+    directDependencies
+      ..addAll(other.directDependencies)
+      ..removeAll(sources);
   }
 }
 

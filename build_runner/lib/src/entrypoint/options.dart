@@ -257,8 +257,9 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
           '$expectedFormat');
     } else if (parts.length > 3) {
       var rest = parts.sublist(2);
-      parts.removeRange(2, parts.length);
-      parts.add(rest.join('='));
+      parts
+        ..removeRange(2, parts.length)
+        ..add(rest.join('='));
     }
     final builderKey = normalizeBuilderKeyUsage(parts[0], rootPackage);
     final option = parts[1];

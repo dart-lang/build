@@ -64,8 +64,8 @@ class PackageGraph {
     final rootPubspec = _pubspecForPath(packagePath);
     final rootPackageName = rootPubspec['name'] as String;
 
-    final packageLocations = _parsePackageLocations(packagePath);
-    packageLocations.remove(rootPackageName);
+    final packageLocations = _parsePackageLocations(packagePath)
+      ..remove(rootPackageName);
 
     final dependencyTypes = _parseDependencyTypes(packagePath);
 
@@ -228,8 +228,9 @@ Map<String, Set<String>> _parsePackageDependencies(
 Set<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
   var deps = Set<String>()..addAll(_stringKeys(yaml['dependencies'] as Map));
   if (isRoot) {
-    deps.addAll(_stringKeys(yaml['dev_dependencies'] as Map));
-    deps.addAll(_stringKeys(yaml['dependency_overrides'] as Map));
+    deps
+      ..addAll(_stringKeys(yaml['dev_dependencies'] as Map))
+      ..addAll(_stringKeys(yaml['dependency_overrides'] as Map));
   }
   return deps;
 }
