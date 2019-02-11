@@ -56,13 +56,14 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
     errorPort = ReceivePort();
     messagePort = ReceivePort();
     errorListener = errorPort.listen((e) {
-      stderr.writeln('\n\nYou have hit a bug in build_runner');
-      stderr.writeln('Please file an issue with reproduction steps at '
-          'https://github.com/dart-lang/build/issues\n\n');
       final error = e[0];
       final trace = e[1] as String;
-      stderr.writeln(error);
-      stderr.writeln(Trace.parse(trace).terse);
+      stderr
+        ..writeln('\n\nYou have hit a bug in build_runner')
+        ..writeln('Please file an issue with reproduction steps at '
+            'https://github.com/dart-lang/build/issues\n\n')
+        ..writeln(error)
+        ..writeln(Trace.parse(trace).terse);
       if (scriptExitCode == 0) scriptExitCode = 1;
     });
     try {

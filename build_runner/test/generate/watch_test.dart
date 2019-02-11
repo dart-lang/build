@@ -276,9 +276,10 @@ a:file://fake/pkg/path
             inputs: [makeAssetId('a|web/b.txt')],
             isHidden: false);
         builderOptionsNode.outputs.add(bCopyNode.id);
-        expectedGraph.add(bCopyNode);
-        expectedGraph.add(makeAssetNode(
-            'a|web/b.txt', [bCopyNode.id], computeDigest(bTxtId, 'b2')));
+        expectedGraph
+          ..add(bCopyNode)
+          ..add(makeAssetNode(
+              'a|web/b.txt', [bCopyNode.id], computeDigest(bTxtId, 'b2')));
 
         var cCopyId = makeAssetId('a|web/c.txt.copy');
         var cTxtId = makeAssetId('a|web/c.txt');
@@ -293,9 +294,10 @@ a:file://fake/pkg/path
             inputs: [makeAssetId('a|web/c.txt')],
             isHidden: false);
         builderOptionsNode.outputs.add(cCopyNode.id);
-        expectedGraph.add(cCopyNode);
-        expectedGraph.add(makeAssetNode(
-            'a|web/c.txt', [cCopyNode.id], computeDigest(cTxtId, 'c')));
+        expectedGraph
+          ..add(cCopyNode)
+          ..add(makeAssetNode(
+              'a|web/c.txt', [cCopyNode.id], computeDigest(cTxtId, 'c')));
 
         // TODO: We dont have a shared way of computing the combined input
         // hashes today, but eventually we should test those here too.

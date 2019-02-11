@@ -57,3 +57,5 @@ dev_dependencies:
 dependency_overrides:
   build_daemon:
     path: ../build_daemon
+  build_runner_core:
+    path: ../build_runner_core

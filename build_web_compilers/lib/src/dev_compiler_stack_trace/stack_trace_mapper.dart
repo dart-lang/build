@@ -78,8 +78,7 @@ class LazyMapping extends Mapping {
       var rawMap = _provider(uri);
       if (rawMap != null) {
         var strMap = rawMap is String ? rawMap : _stringify(rawMap);
-        var mapping = parse(strMap) as SingleMapping;
-        mapping
+        var mapping = parse(strMap) as SingleMapping
           ..targetUrl = uri
           ..sourceRoot = '${path.dirname(uri)}/';
         _bundle.addMapping(mapping);

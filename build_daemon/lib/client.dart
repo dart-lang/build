@@ -71,22 +71,22 @@ class BuildDaemonClient {
     this._serializers,
     DaemonLogHandler logHandler,
   ) {
-    _channel = IOWebSocketChannel.connect('ws://localhost:$port');
-    _channel.stream.listen((data) {
-      var message = _serializers.deserialize(jsonDecode(data as String));
-      if (message is ServerLog) {
-        logHandler(message);
-      } else if (message is BuildResults) {
-        _buildResults.add(message);
-      } else {
-        // In practice we should never reach this state due to the
-        // deserialize call.
-        throw StateError(
-            'Unexpected message from the Dart Build Daemon\n $message');
-      }
-    })
-      // TODO(grouma) - Implement proper error handling.
-      ..onError(print);
+    _channel = IOWebSocketChannel.connect('ws://localhost:$port')
+      ..stream.listen((data) {
+        var message = _serializers.deserialize(jsonDecode(data as String));
+        if (message is ServerLog) {
+          logHandler(message);
+        } else if (message is BuildResults) {
+          _buildResults.add(message);
+        } else {
+          // In practice we should never reach this state due to the
+          // deserialize call.
+          throw StateError(
+              'Unexpected message from the Dart Build Daemon\n $message');
+        }
+      })
+          // TODO(grouma) - Implement proper error handling.
+          .onError(print);
   }
 
   Stream<BuildResults> get buildResults => _buildResults.stream;

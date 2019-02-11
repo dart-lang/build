@@ -2,11 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library example.web;
-
 import 'dart:html';
 
-main() async {
-  final content = querySelector('#content');
-  content.appendText('Script running!');
+void main() {
+  querySelector('#content').appendText('Script running!');
 }

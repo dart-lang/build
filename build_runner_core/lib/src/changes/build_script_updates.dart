@@ -41,8 +41,7 @@ class BuildScriptUpdates {
       } else {
         // Make sure we are tracking changes for all ids in [allSources].
         for (var id in allSources) {
-          var node = graph.get(id);
-          node.lastKnownDigest ??= await reader.digest(id);
+          graph.get(id).lastKnownDigest ??= await reader.digest(id);
         }
       }
     } on ArgumentError catch (_) {

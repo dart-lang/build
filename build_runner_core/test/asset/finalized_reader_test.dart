@@ -27,8 +27,7 @@ void main() {
           'a|lib/b.txt', [], computeDigest(AssetId('a', 'lib/b.txt'), 'b'));
       deleted.deletedBy.add(deleted.id.addExtension('.post_anchor.1'));
 
-      graph.add(notDeleted);
-      graph.add(deleted);
+      graph..add(notDeleted)..add(deleted);
 
       var delegate = InMemoryAssetReader();
       delegate.assets.addAll({notDeleted.id: [], deleted.id: []});

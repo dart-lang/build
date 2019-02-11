@@ -11,11 +11,9 @@ import 'package:watcher/watcher.dart';
 
 import 'package:build_runner_core/build_runner_core.dart';
 
-typedef void OnDelete(AssetId id);
-
 class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     implements RunnerAssetWriter {
-  OnDelete onDelete;
+  void Function(AssetId) onDelete;
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {

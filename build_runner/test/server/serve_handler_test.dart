@@ -471,8 +471,8 @@ class MockWatchImpl implements WatchImpl {
       if (!firstBuild.isCompleted) {
         firstBuild.complete(futureBuildResult);
       }
-      _currentBuild = _currentBuild.then((_) => futureBuildResult);
-      _currentBuild.then(_buildResultsController.add);
+      _currentBuild = _currentBuild.then((_) => futureBuildResult)
+        ..then(_buildResultsController.add);
     });
   }
 
