@@ -24,7 +24,9 @@ int _existingPort(String workingDirectory) {
 }
 
 Future<void> _handleDaemonStartup(
-    Process process, DaemonLogHandler logHandler) async {
+  Process process,
+  void Function(ServerLog) logHandler,
+) async {
   process.stderr
       .transform(utf8.decoder)
       .transform(const LineSplitter())
@@ -46,7 +48,7 @@ Future<void> _handleDaemonStartup(
       await stream.firstWhere(_isActionMessage, orElse: () => null);
 
   if (daemonAction == null) {
-    throw Exception('Unable to start build daemon.');
+    throw StateError('Unable to start build daemon.');
   } else if (daemonAction == versionSkew) {
     throw VersionSkew();
   } else if (daemonAction == optionsSkew) {
@@ -58,8 +60,6 @@ Future<void> _handleDaemonStartup(
 bool _isActionMessage(String line) =>
     line == versionSkew || line == readyToConnectLog || line == optionsSkew;
 
-typedef void DaemonLogHandler(ServerLog serverLog);
-
 class BuildDaemonClient {
   final _buildResults = StreamController<BuildResults>.broadcast();
   final Serializers _serializers;
@@ -69,7 +69,7 @@ class BuildDaemonClient {
   BuildDaemonClient._(
     int port,
     this._serializers,
-    DaemonLogHandler logHandler,
+    void Function(ServerLog) logHandler,
   ) {
     _channel = IOWebSocketChannel.connect('ws://localhost:$port')
       ..stream.listen((data) {
@@ -104,7 +104,8 @@ class BuildDaemonClient {
 
   static Future<BuildDaemonClient> connect(
       String workingDirectory, List<String> daemonCommand,
-      {Serializers serializersOverride, DaemonLogHandler logHandler}) async {
+      {Serializers serializersOverride,
+      void Function(ServerLog) logHandler}) async {
     logHandler ??= (_) {};
     var daemonSerializers = serializersOverride ?? serializers;
 
