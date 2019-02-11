@@ -157,7 +157,7 @@ void main() {
       });
 
       test('Throws an AssetGraphCorruptedException on invalid json', () {
-        var bytes = graph.serialize()..removeLast();
+        var bytes = List.of(graph.serialize())..removeLast();
         expect(() => AssetGraph.deserialize(bytes), throwsCorruptedException);
       });
     });
