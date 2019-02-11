@@ -74,7 +74,7 @@ void main() {
         'lib'
       ], extraExpects: [
         () => nextStdOutLine(
-            'Throwing away cached asset graph due to version mismatch.'),
+            'Throwing away cached asset graph due to version mismatch'),
         () => nextStdOutLine('Building new asset graph'),
         () => nextStdOutLine('Succeeded after'),
       ]);

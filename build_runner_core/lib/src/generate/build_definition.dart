@@ -242,11 +242,10 @@ class _Loader {
           return null;
         }
         return cachedGraph;
-      } on AssetGraphVersionException catch (_) {
-        // Start fresh if the cached asset_graph version doesn't match up with
-        // the current version. We don't currently support old graph versions.
-        _logger.warning(
-            'Throwing away cached asset graph due to version mismatch.');
+      } on AssetGraphCorruptedException catch (_) {
+        // Start fresh if the cached asset_graph cannot be deserialized
+        _logger.warning('Throwing away cached asset graph due to '
+            'version mismatch or corrupted asset graph.');
         await Future.wait([
           _deleteGeneratedDir(),
           FailureReporter.cleanErrorCache(),
