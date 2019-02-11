@@ -1,3 +1,7 @@
+## 1.2.6
+
+- Ensure the daemon command always exits.
+
 ## 1.2.5
 
 - Fix a bug with the build daemon where the output options were ignored.
