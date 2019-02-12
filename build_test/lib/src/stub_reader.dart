@@ -19,7 +19,7 @@ class StubAssetReader extends AssetReader implements MultiPackageAssetReader {
   Future<List<int>> readAsBytes(AssetId id) => Future.value(null);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) =>
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
       Future.value(null);
 
   @override
