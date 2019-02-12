@@ -1,3 +1,8 @@
+## 1.0.3
+
+- Fixes a bug where transitive `dart-ext:` imports would cause the resolver
+  to fail. These uris will now be ignored.
+
 ## 1.0.2
 
 - Ensure that `BuildAssetUriResolver.restoreAbsolute` never returns null.
