@@ -19,9 +19,7 @@ import 'data/server_log.dart';
 
 int _existingPort(String workingDirectory) {
   var portFile = File(portFilePath(workingDirectory));
-  if (!portFile.existsSync()) {
-    throw FileSystemException('Unable to read port file.');
-  }
+  if (!portFile.existsSync()) throw MissingPortFileException();
   return int.parse(portFile.readAsStringSync());
 }
 
@@ -122,6 +120,8 @@ class BuildDaemonClient {
         _existingPort(workingDirectory), daemonSerializers, logHandler);
   }
 }
+
+class MissingPortFileException extends Error {}
 
 class OptionsSkew extends Error {}
 
