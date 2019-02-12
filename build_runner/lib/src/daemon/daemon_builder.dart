@@ -35,17 +35,15 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   Completer<Null> _buildingCompleter;
 
+  @override
+  final Stream<ServerLog> logs;
+
   BuildRunnerDaemonBuilder._(
     this._builder,
     this._buildOptions,
     this._outputStreamController,
     this._changes,
-  );
-
-  @override
-  Stream<daemon.BuildResults> get builds => _buildResults.stream;
-
-  Stream<WatchEvent> get changes => _changes;
+  ) : logs = _outputStreamController.stream.asBroadcastStream();
 
   /// Waits for a running build to complete before returning.
   ///
@@ -53,7 +51,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   Future<void> get building => _buildingCompleter?.future;
 
   @override
-  Stream<ServerLog> get logs => _outputStreamController.stream;
+  Stream<daemon.BuildResults> get builds => _buildResults.stream;
+
+  Stream<WatchEvent> get changes => _changes;
 
   FinalizedReader get reader => _builder.finalizedReader;
 
@@ -145,11 +145,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             outputMap: sharedOptions.outputMap,
             outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
         onLog: (record) {
-      // Print here as well so that severe errors can be caught by the
-      // daemon client.
-      print(record);
-      outputStreamController.add(ServerLog((b) =>
-          b.log = colorLog(record, verbose: sharedOptions.verbose).toString()));
+      outputStreamController.add(ServerLog((b) => b.log = record.toString()));
     });
 
     var daemonEnvironment = OverrideableEnvironment(environment,

@@ -1,5 +1,7 @@
 ## 1.2.6
 
+- No longer assumeTty when logging through the daemon command.
+- Update `build_daemon` to version `0.4.0`. 
 - Ensure the daemon command always exits.
 
 ## 1.2.5
