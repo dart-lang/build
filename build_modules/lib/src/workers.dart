@@ -122,13 +122,11 @@ final dartdevcDriverResource =
 /// Manages a shared set of persistent dartdevk workers.
 BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<Null>();
-  var packages = p.joinAll([sdkDir, '..', '..', '..', '.packages']);
   return __dartdevkDriver ??= BazelWorkerDriver(
       () => Process.start(
           p.join(sdkDir, 'bin', 'dart'),
           [
-            p.join(sdkDir, 'bin', 'snapshots', 'dartdevk.dart.snapshot'),
-            '--packages=$packages',
+            p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
             '--kernel',
             '--persistent_worker'
           ],
