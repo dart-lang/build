@@ -19,7 +19,7 @@ import 'data/server_log.dart';
 
 int _existingPort(String workingDirectory) {
   var portFile = File(portFilePath(workingDirectory));
-  if (!portFile.existsSync()) throw MissingPortFileException();
+  if (!portFile.existsSync()) throw MissingPortFile();
   return int.parse(portFile.readAsStringSync());
 }
 
@@ -121,8 +121,8 @@ class BuildDaemonClient {
   }
 }
 
-class MissingPortFileException extends Error {}
+class MissingPortFile implements Exception {}
 
-class OptionsSkew extends Error {}
+class OptionsSkew implements Exception {}
 
-class VersionSkew extends Error {}
+class VersionSkew implements Exception {}
