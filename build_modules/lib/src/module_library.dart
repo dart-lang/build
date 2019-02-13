@@ -78,6 +78,10 @@ class ModuleLibrary {
       if (directive is! UriBasedDirective) continue;
       var path = (directive as UriBasedDirective).uri.stringValue;
       var uri = Uri.parse(path);
+      if (uri.isScheme('dart-ext')) {
+        // TODO: What should we do for native extensions?
+        continue;
+      }
       if (uri.scheme == 'dart') {
         sdkDeps.add(uri.path);
         continue;

@@ -1,3 +1,8 @@
+## 1.0.7
+
+- Explicitly skip dart-ext uris during module creation.
+  - Filed Issue #2047 to track real support for native extensions.
+
 ## 1.0.6
 
 - Improved the time tracking for kernel and analyzer actions by not reporting
