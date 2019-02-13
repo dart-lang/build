@@ -1,3 +1,7 @@
+## 1.0.7
+
+- Run workers with mode `detachedWithStdio` if no terminal is connected. 
+
 ## 1.0.6
 
 - Improved the time tracking for kernel and analyzer actions by not reporting

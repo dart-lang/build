@@ -1,5 +1,6 @@
 ## 1.2.6
 
+- Prevent terminals being launched when running the daemon command on Windows.
 - No longer assumeTty when logging through the daemon command.
 - Update `build_daemon` to version `0.4.0`. 
 - Ensure the daemon command always exits.
