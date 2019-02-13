@@ -1,3 +1,7 @@
+## 2.0.3
+
+- Handle asset graph decode failures.
+
 ## 2.0.2
 
 - Update `build_resolvers` to version `1.0.0`.
