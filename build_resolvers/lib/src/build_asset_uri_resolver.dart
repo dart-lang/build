@@ -13,6 +13,8 @@ import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:path/path.dart' as p;
 
+const _ignoredSchemes = ['dart', 'dart-ext'];
+
 class BuildAssetUriResolver extends UriResolver {
   final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
   final _cachedAssetContents = <AssetId, String>{};
@@ -48,7 +50,10 @@ class BuildAssetUriResolver extends UriResolver {
           var unit = parseDirectives(contents, suppressErrors: true);
           var dependencies = unit.directives
               .whereType<UriBasedDirective>()
-              .where((d) => !Uri.parse(d.uri.stringValue).isScheme('dart'))
+              .where((directive) {
+                var uri = Uri.parse(directive.uri.stringValue);
+                return !_ignoredSchemes.any(uri.isScheme);
+              })
               .map((d) => AssetId.resolve(d.uri.stringValue, from: assetId))
               .where((id) => id != null)
               .toSet();
@@ -79,7 +84,7 @@ class BuildAssetUriResolver extends UriResolver {
   ///
   /// Returns null if the Uri cannot be parsed or is not cached.
   AssetId lookupAsset(Uri uri) {
-    if (uri.isScheme('dart')) return null;
+    if (_ignoredSchemes.any(uri.isScheme)) return null;
     if (uri.isScheme('package') || uri.isScheme('asset')) {
       final assetId = AssetId.resolve('$uri');
       return _cachedAssetContents.containsKey(assetId) ? assetId : null;

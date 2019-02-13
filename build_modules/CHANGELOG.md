@@ -1,5 +1,7 @@
 ## 1.0.7
 
+- Explicitly skip dart-ext uris during module creation.
+  - Filed Issue #2047 to track real support for native extensions.
 - Run workers with mode `detachedWithStdio` if no terminal is connected. 
 
 ## 1.0.6
