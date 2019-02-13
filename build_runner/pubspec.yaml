@@ -12,7 +12,7 @@ dependencies:
   async: ">=1.13.3 <3.0.0"
   build: ">=1.0.0 <1.2.0"
   build_config: ^0.3.1
-  build_daemon: ^0.2.0
+  build_daemon: ^0.4.0
   build_resolvers: "^1.0.0"
   build_runner_core: ^2.0.1
   code_builder: ">2.3.0 <4.0.0"
@@ -55,5 +55,7 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
+  build_daemon:
+    path: ../build_daemon
   build_runner_core:
     path: ../build_runner_core
