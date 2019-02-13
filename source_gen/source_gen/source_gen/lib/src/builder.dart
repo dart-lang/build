@@ -151,10 +151,18 @@ class _Builder extends Builder {
   }
 }
 
-/// A [Builder] which generates `part of` files.
+/// A [Builder] which generates content intended for `part of` files.
 ///
 /// Generated files will be prefixed with a `partId` to ensure multiple
-/// [SharedPartBuilder]s can produce non conflicting `part of` files.
+/// [SharedPartBuilder]s can produce non conflicting `part of` files. When the
+/// `source_gen|combining_builder` is applied to the primary input these
+/// snippets will be conacatenated into the final `.g.dart` output.
+///
+/// This builder can be used when multiple generators may need to output to the
+/// same part file but [PartBuilder] can't be used because the generators are
+/// not all defined in the same location. As a convention most codegen which
+/// generates code should use this approach to get content into a `.g.dart` file
+/// instead of having individual outputs for each building package.
 class SharedPartBuilder extends _Builder {
   /// Wrap [generators] as a [Builder] that generates `part of` files.
   ///
@@ -186,6 +194,17 @@ class SharedPartBuilder extends _Builder {
 }
 
 /// A [Builder] which generates `part of` files.
+///
+/// This builder should be avoided - prefer using [SharedPartBuilder] and
+/// generating content that can be merged with output from other builders into a
+/// common `.g.dart` part file.
+///
+/// Each output should correspond to a `part` directive in the primary input,
+/// this will be validated.
+///
+/// Content output by each generator is concatenated and written to the output.
+/// A `part of` directive will automatically be included in the output and
+/// should not need be written by any of the generators.
 class PartBuilder extends _Builder {
   /// Wrap [generators] as a [Builder] that generates `part of` files.
   ///
@@ -213,14 +232,20 @@ class PartBuilder extends _Builder {
             header: header);
 }
 
-/// A [Builder] which generates Dart library files.
+/// A [Builder] which generates standalone Dart library files.
+///
+/// A single [Generator] is responsible for generating the entirety of the
+/// output since it must also output any relevant import directives at the
+/// beginning of it's output.
 class LibraryBuilder extends _Builder {
   /// Wrap [generator] as a [Builder] that generates Dart library files.
   ///
   /// [generatedExtension] indicates what files will be created for each `.dart`
-  /// input. Defaults to `.g.dart`. If [generator] will create additional
-  /// outputs through the [BuildStep] they should be indicated in
-  /// [additionalOutputExtensions].
+  /// input.
+  /// Defaults to `.g.dart`, however this should usually be changed to
+  /// avoid conflicts with outputs from a [SharedPartBuilder].
+  /// If [generator] will create additional outputs through the [BuildStep] they
+  /// should be indicated in [additionalOutputExtensions].
   ///
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
