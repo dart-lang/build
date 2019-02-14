@@ -1,3 +1,8 @@
+## 1.0.7+1
+
+- Fix broken release by updating `dart2js` worker and restricting sdk version. 
+
+
 ## 1.0.7
 
 - Explicitly skip dart-ext uris during module creation.
