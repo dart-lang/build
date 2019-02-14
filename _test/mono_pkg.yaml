@@ -1,5 +1,4 @@
 dart:
-  - dev
   - stable
 
 stages:
