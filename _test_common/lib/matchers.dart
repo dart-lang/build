@@ -7,8 +7,8 @@ import 'package:build_runner_core/src/asset_graph/exceptions.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 
-final Matcher assetGraphVersionException =
-    TypeMatcher<AssetGraphVersionException>();
+final Matcher throwsCorruptedException =
+    throwsA(TypeMatcher<AssetGraphCorruptedException>());
 final Matcher duplicateAssetNodeException =
     TypeMatcher<DuplicateAssetNodeException>();
 

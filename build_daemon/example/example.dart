@@ -48,7 +48,6 @@ void main(List<String> args) async {
     print('Registered test target...');
   }
   client.buildResults.listen((status) => print('BUILD STATUS: $status'));
-  client.serverLogs.listen((serverLog) => print(serverLog.log));
   client.startBuild();
   await client.finished;
 }

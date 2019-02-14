@@ -69,9 +69,9 @@ class Daemon {
   bool tryGetLock() {
     try {
       _createDaemonWorkspace();
-      _lock =
-          File(lockFilePath(_workingDirectory)).openSync(mode: FileMode.write);
-      _lock.lockSync();
+      _lock = File(lockFilePath(_workingDirectory))
+          .openSync(mode: FileMode.write)
+            ..lockSync();
       return true;
     } on FileSystemException {
       return false;

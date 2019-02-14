@@ -8,7 +8,6 @@ import 'dart:io';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
-import 'package:io/ansi.dart';
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
@@ -35,15 +34,17 @@ class DaemonCommand extends BuildRunnerCommand {
       var runningOptions = currentOptions(workingDirectory);
       var version = runningVersion(workingDirectory);
       if (version != currentVersion) {
-        stdout.writeln('Running Version: $version');
-        stdout.writeln('Current Version: $currentVersion');
-        stdout.writeln(versionSkew);
+        stdout
+          ..writeln('Running Version: $version')
+          ..writeln('Current Version: $currentVersion')
+          ..writeln(versionSkew);
         return 1;
       } else if (!(runningOptions.length == requestedOptions.length &&
           runningOptions.containsAll(requestedOptions))) {
-        stdout.writeln('Running Options: $runningOptions');
-        stdout.writeln('Requested Options: $requestedOptions');
-        stdout.writeln(optionsSkew);
+        stdout
+          ..writeln('Running Options: $runningOptions')
+          ..writeln('Requested Options: $requestedOptions')
+          ..writeln(optionsSkew);
         return 1;
       } else {
         stdout.writeln('Daemon is already running.');
@@ -52,19 +53,28 @@ class DaemonCommand extends BuildRunnerCommand {
       }
     } else {
       stdout.writeln('Starting daemon...');
-      await overrideAnsiOutput(true, () async {
-        var builder = await BuildRunnerDaemonBuilder.create(
-          packageGraph,
-          builderApplications,
-          options,
-        );
-        var server = await AssetServer.run(builder, packageGraph.root.name);
-        File(assetServerPortFilePath(workingDirectory))
-            .writeAsStringSync('${server.port}');
-        await daemon.start(requestedOptions, builder, builder.changes);
-        stdout.writeln(readyToConnectLog);
-        await daemon.onDone.whenComplete(server.stop);
+      var builder = await BuildRunnerDaemonBuilder.create(
+        packageGraph,
+        builderApplications,
+        options,
+      );
+      // Forward server logs to daemon command STDIO.
+      var logSub =
+          builder.logs.listen((serverLog) => stdout.writeln(serverLog.log));
+      var server = await AssetServer.run(builder, packageGraph.root.name);
+      File(assetServerPortFilePath(workingDirectory))
+          .writeAsStringSync('${server.port}');
+      await daemon.start(requestedOptions, builder, builder.changes);
+      stdout.writeln(readyToConnectLog);
+      await daemon.onDone.whenComplete(() async {
+        await server.stop();
+        await logSub.cancel();
       });
+      // Clients can disconnect from the daemon mid build.
+      // As a result we try to relinquish resources which can
+      // cause the build to hang. To ensure there are no ghost processes
+      // fast exit.
+      exit(0);
     }
     return 0;
   }

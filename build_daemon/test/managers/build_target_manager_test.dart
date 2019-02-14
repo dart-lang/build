@@ -45,8 +45,7 @@ void main() {
     var channelA = DummyChannel();
     var channelB = DummyChannel();
     var target = DefaultBuildTarget((b) => b..target = 'foo');
-    manager.addBuildTarget(target, channelA);
-    manager.addBuildTarget(target, channelB);
+    manager..addBuildTarget(target, channelA)..addBuildTarget(target, channelB);
     expect(manager.targets.map((target) => target.target), contains('foo'));
     manager.removeChannel(channelB);
     expect(manager.targets.map((target) => target.target), contains('foo'));
@@ -66,8 +65,9 @@ void main() {
     var targetB = DefaultBuildTarget((b) => b
       ..target = 'foo'
       ..blackListPatterns.replace([RegExp('bar')]));
-    manager.addBuildTarget(targetA, channelA);
-    manager.addBuildTarget(targetB, channelB);
+    manager
+      ..addBuildTarget(targetA, channelA)
+      ..addBuildTarget(targetB, channelB);
     expect(manager.targets.length, 1);
   });
 
@@ -79,8 +79,9 @@ void main() {
     var targetB = DefaultBuildTarget((b) => b
       ..target = 'foo'
       ..blackListPatterns.replace([RegExp('bar')]));
-    manager.addBuildTarget(targetA, channelA);
-    manager.addBuildTarget(targetB, channelB);
+    manager
+      ..addBuildTarget(targetA, channelA)
+      ..addBuildTarget(targetB, channelB);
     expect(manager.targets.length, 2);
   });
 

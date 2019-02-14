@@ -1,3 +1,11 @@
+## 1.2.6
+
+- Prevent terminals being launched when running the daemon command on Windows.
+- No longer assumeTty when logging through the daemon command.
+- Update `build_daemon` to version `0.4.0`. 
+- Update `build_runner_core` to version `2.0.3`.
+- Ensure the daemon command always exits.
+
 ## 1.2.5
 
 - Fix a bug with the build daemon where the output options were ignored.
