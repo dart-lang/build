@@ -119,6 +119,14 @@ main() {
       _expectFiles(webFiles, tmpDir);
     });
 
+    test('skips output directories with no assets', () async {
+      var success = await createMergedOutputDirectories({
+        tmpDir.path: 'no_assets_here',
+      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+      expect(success, isFalse);
+      expect(Directory(tmpDir.path).listSync(), isEmpty);
+    });
+
     test('does not output the input directory', () async {
       var success = await createMergedOutputDirectories({
         tmpDir.path: 'web',

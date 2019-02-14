@@ -1,3 +1,7 @@
+## 2.1.0
+
+- Warn when there are no assets to write in a specified output directory.
+
 ## 2.0.3
 
 - Handle asset graph decode failures.

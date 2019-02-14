@@ -43,9 +43,7 @@ Future<bool> createMergedOutputDirectories(
   for (var output in outputMap.keys) {
     if (!await _createMergedOutputDir(output, outputMap[output], packageGraph,
         environment, reader, finalizedAssetsView, outputSymlinksOnly)) {
-      _logger.severe('Unable to create merged directory for $output.\n'
-          'Choose a different directory or delete the contents of that '
-          'directory.');
+      _logger.severe('Unable to create merged directory for $output.');
       return false;
     }
   }
@@ -63,8 +61,15 @@ Future<bool> _createMergedOutputDir(
   var outputDir = Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
-    var result = await _cleanUpOutputDir(outputDir, environment);
-    if (!result) return result;
+    if (!await _cleanUpOutputDir(outputDir, environment)) return false;
+  }
+  var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+  if (root != null &&
+      !builtAssets
+          .where((id) => id.package == packageGraph.root.name)
+          .any((id) => p.isWithin(root, id.path))) {
+    _logger.severe('No assets exist in $root, skipping output');
+    return false;
   }
 
   var outputAssets = <AssetId>[];
@@ -75,7 +80,6 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
     outputAssets.addAll(await Future.wait(builtAssets.map((id) =>
         _writeAsset(id, outputDir, root, packageGraph, reader, symlinkOnly))));
 
@@ -200,15 +204,18 @@ Future<bool> _cleanUpOutputDir(
       int choice;
       try {
         choice = await environment.prompt(
-            'Found existing output directory `$outputPath` but no manifest '
-            'file. Please choose one of the following options:',
+            'Found existing directory `$outputPath` but no manifest file.\n'
+            'Please choose one of the following options:',
             choices);
       } on NonInteractiveBuildException catch (_) {
-        choice = 0;
+        _logger.severe('Unable to create merged directory at $outputPath.\n'
+            'Choose a different directory or delete the contents of that '
+            'directory.');
+        return false;
       }
       switch (choice) {
         case 0:
-          _logger.warning('Skipped creation of the merged output directory.');
+          _logger.severe('Skipped creation of the merged output directory.');
           return false;
         case 1:
           try {
