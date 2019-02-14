@@ -11,45 +11,45 @@ after_failure:
 jobs:
   include:
     - stage: analyze_and_format
-      name: "SDK: dev - DIR: _test - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
+      name: "SDK: stable - DIR: _test - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
       script: ./tool/travis.sh dartanalyzer
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: unit_test
-      name: "SDK: dev - DIR: _test - TASKS: [pub run build_runner test -- -p chrome, pub run build_runner test -- -p vm test/config_specific_import_test.dart]"
+      name: "SDK: stable - DIR: _test - TASKS: [pub run build_runner test -- -p chrome, pub run build_runner test -- -p vm test/config_specific_import_test.dart]"
       script: ./tool/travis.sh command_0 command_1
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: e2e_test
-      name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 0"
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 0"
       script: ./tool/travis.sh test_00
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: e2e_test
-      name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 1"
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 1"
       script: ./tool/travis.sh test_01
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: e2e_test
-      name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 2"
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 2"
       script: ./tool/travis.sh test_02
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: e2e_test
-      name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 3"
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 3"
       script: ./tool/travis.sh test_03
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: e2e_test
-      name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 4"
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 4"
       script: ./tool/travis.sh test_04
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: e2e_test
-      name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 5"
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 5"
       script: ./tool/travis.sh test_05
       env: PKG="_test"
-      dart: dev
+      dart: stable
     - stage: e2e_test_cron
       name: "SDK: be/raw/latest - DIR: _test - TASKS: pub run test"
       script: ./tool/travis.sh test_06
@@ -96,15 +96,15 @@ jobs:
       env: PKG="build_daemon"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: dev - DIR: build_modules - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      name: "SDK: stable - DIR: build_modules - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_modules"
-      dart: dev
+      dart: stable
     - stage: unit_test
-      name: "SDK: dev - DIR: build_modules - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit"
+      name: "SDK: stable - DIR: build_modules - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit"
       script: ./tool/travis.sh command_5
       env: PKG="build_modules"
-      dart: dev
+      dart: stable
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_resolvers - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
