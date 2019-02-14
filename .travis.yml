@@ -176,15 +176,15 @@ jobs:
       env: PKG="build_vm_compilers"
       dart: stable
     - stage: analyze_and_format
-      name: "SDK: stable - DIR: build_web_compilers - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      name: "SDK: dev - DIR: build_web_compilers - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="build_web_compilers"
-      dart: stable
+      dart: dev
     - stage: unit_test
-      name: "SDK: stable - DIR: build_web_compilers - TASKS: [pub run test -x presubmit-only, pub run test -t presubmit-only --run-skipped]"
+      name: "SDK: dev - DIR: build_web_compilers - TASKS: [pub run test -x presubmit-only, pub run test -t presubmit-only --run-skipped]"
       script: ./tool/travis.sh test_12 test_13
       env: PKG="build_web_compilers"
-      dart: stable
+      dart: dev
     - stage: analyze_and_format
       name: "SDK: stable - DIR: example - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
