@@ -74,8 +74,8 @@ Future<bool> _createMergedOutputDir(
 
   var outputAssets = <AssetId>[];
 
-  var assetWriteResult = await logTimedAsync(
-      _logger, 'Creating merged output dir `$outputPath`', () async {
+  await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
+      () async {
     if (!outputDirExists) {
       await outputDir.create(recursive: true);
     }
@@ -98,9 +98,7 @@ Future<bool> _createMergedOutputDir(
         }
       }
     }
-    return true;
   });
-  if (!assetWriteResult) return false;
 
   await logTimedAsync(_logger, 'Writing asset manifest', () async {
     var paths = outputAssets.map((id) => id.path).toList()..sort();
