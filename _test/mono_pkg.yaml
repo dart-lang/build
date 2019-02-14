@@ -1,5 +1,6 @@
 dart:
   - dev
+  - stable
 
 stages:
   - analyze_and_format:

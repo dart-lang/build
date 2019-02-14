@@ -15,41 +15,81 @@ jobs:
       script: ./tool/travis.sh dartanalyzer
       env: PKG="_test"
       dart: dev
+    - stage: analyze_and_format
+      name: "SDK: stable - DIR: _test - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer
+      env: PKG="_test"
+      dart: stable
     - stage: unit_test
       name: "SDK: dev - DIR: _test - TASKS: [pub run build_runner test -- -p chrome, pub run build_runner test -- -p vm test/config_specific_import_test.dart]"
       script: ./tool/travis.sh command_0 command_1
       env: PKG="_test"
       dart: dev
+    - stage: unit_test
+      name: "SDK: stable - DIR: _test - TASKS: [pub run build_runner test -- -p chrome, pub run build_runner test -- -p vm test/config_specific_import_test.dart]"
+      script: ./tool/travis.sh command_0 command_1
+      env: PKG="_test"
+      dart: stable
     - stage: e2e_test
       name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 0"
       script: ./tool/travis.sh test_00
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 0"
+      script: ./tool/travis.sh test_00
+      env: PKG="_test"
+      dart: stable
+    - stage: e2e_test
       name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 1"
       script: ./tool/travis.sh test_01
       env: PKG="_test"
       dart: dev
+    - stage: e2e_test
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 1"
+      script: ./tool/travis.sh test_01
+      env: PKG="_test"
+      dart: stable
     - stage: e2e_test
       name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 2"
       script: ./tool/travis.sh test_02
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 2"
+      script: ./tool/travis.sh test_02
+      env: PKG="_test"
+      dart: stable
+    - stage: e2e_test
       name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 3"
       script: ./tool/travis.sh test_03
       env: PKG="_test"
       dart: dev
+    - stage: e2e_test
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 3"
+      script: ./tool/travis.sh test_03
+      env: PKG="_test"
+      dart: stable
     - stage: e2e_test
       name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 4"
       script: ./tool/travis.sh test_04
       env: PKG="_test"
       dart: dev
     - stage: e2e_test
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 4"
+      script: ./tool/travis.sh test_04
+      env: PKG="_test"
+      dart: stable
+    - stage: e2e_test
       name: "SDK: dev - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 5"
       script: ./tool/travis.sh test_05
       env: PKG="_test"
       dart: dev
+    - stage: e2e_test
+      name: "SDK: stable - DIR: _test - TASKS: pub run test --total-shards 6 --shard-index 5"
+      script: ./tool/travis.sh test_05
+      env: PKG="_test"
+      dart: stable
     - stage: e2e_test_cron
       name: "SDK: be/raw/latest - DIR: _test - TASKS: pub run test"
       script: ./tool/travis.sh test_06
