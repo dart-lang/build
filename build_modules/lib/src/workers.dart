@@ -175,11 +175,12 @@ final frontendDriverResource =
 /// Manages a shared set of persistent dart2js workers.
 Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
   _dart2jsWorkersAreDoneCompleter ??= Completer<Null>();
+  var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
   return __dart2jsWorkerPool ??= Dart2JsBatchWorkerPool(() => Process.start(
       p.join(sdkDir, 'bin', 'dart'),
       [
         p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
-        '--library-root=$sdkDir',
+        '--libraries-spec=$librariesSpec',
         '--batch',
       ],
       mode: _processMode,
