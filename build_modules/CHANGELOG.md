@@ -1,3 +1,7 @@
+## 1.0.7+2
+
+- Update `dart2js` snapshot arguments for upcoming SDK. 
+
 ## 1.0.7+1
 
 - Fix broken release by updating `dart2js` worker and restricting sdk version. 
