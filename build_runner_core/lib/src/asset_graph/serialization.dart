@@ -16,16 +16,25 @@ class _AssetGraphDeserializer {
   final _idToAssetId = HashMap<int, AssetId>();
   final Map _serializedGraph;
 
-  _AssetGraphDeserializer(List<int> bytes)
-      : _serializedGraph = json.decode(utf8.decode(bytes)) as Map;
+  _AssetGraphDeserializer._(this._serializedGraph);
+
+  factory _AssetGraphDeserializer(List<int> bytes) {
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(utf8.decode(bytes));
+    } on FormatException {
+      throw AssetGraphCorruptedException();
+    }
+    if (decoded is! Map) throw AssetGraphCorruptedException();
+    final serializedGraph = decoded as Map;
+    if (serializedGraph['version'] != _version) {
+      throw AssetGraphCorruptedException();
+    }
+    return _AssetGraphDeserializer._(serializedGraph);
+  }
 
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
-    if (_serializedGraph['version'] != _version) {
-      throw AssetGraphVersionException(
-          _serializedGraph['version'] as int, _version);
-    }
-
     var graph = AssetGraph._(
         _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
         _serializedGraph['dart_version'] as String);

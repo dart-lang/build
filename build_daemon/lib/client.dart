@@ -17,22 +17,80 @@ import 'data/build_target_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';
 
+int _existingPort(String workingDirectory) {
+  var portFile = File(portFilePath(workingDirectory));
+  if (!portFile.existsSync()) throw MissingPortFile();
+  return int.parse(portFile.readAsStringSync());
+}
+
+Future<void> _handleDaemonStartup(
+  Process process,
+  void Function(ServerLog) logHandler,
+) async {
+  process.stderr
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .listen((line) {
+    logHandler(ServerLog((b) => b..log = line));
+  });
+  var stream = process.stdout
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .asBroadcastStream();
+
+  // The daemon may log critical information prior to it successfully
+  // starting. Capture this data and forward to the logHandler.
+  var sub = stream.where((line) => !_isActionMessage(line)).listen((line) {
+    logHandler(ServerLog((b) => b..log = line));
+  });
+
+  var daemonAction =
+      await stream.firstWhere(_isActionMessage, orElse: () => null);
+
+  if (daemonAction == null) {
+    throw StateError('Unable to start build daemon.');
+  } else if (daemonAction == versionSkew) {
+    throw VersionSkew();
+  } else if (daemonAction == optionsSkew) {
+    throw OptionsSkew();
+  }
+  await sub.cancel();
+}
+
+bool _isActionMessage(String line) =>
+    line == versionSkew || line == readyToConnectLog || line == optionsSkew;
+
 class BuildDaemonClient {
-  IOWebSocketChannel _channel;
-  Serializers _serializers;
-
   final _buildResults = StreamController<BuildResults>.broadcast();
+  final Serializers _serializers;
 
-  final _serverLogStreamController = StreamController<ServerLog>.broadcast();
+  IOWebSocketChannel _channel;
 
-  BuildDaemonClient._();
-
-  Stream<BuildResults> get buildResults => _buildResults.stream;
-  Future<void> get finished async {
-    if (_channel != null) await _channel.sink.done;
+  BuildDaemonClient._(
+    int port,
+    this._serializers,
+    void Function(ServerLog) logHandler,
+  ) {
+    _channel = IOWebSocketChannel.connect('ws://localhost:$port')
+      ..stream.listen((data) {
+        var message = _serializers.deserialize(jsonDecode(data as String));
+        if (message is ServerLog) {
+          logHandler(message);
+        } else if (message is BuildResults) {
+          _buildResults.add(message);
+        } else {
+          // In practice we should never reach this state due to the
+          // deserialize call.
+          throw StateError(
+              'Unexpected message from the Dart Build Daemon\n $message');
+        }
+      })
+          // TODO(grouma) - Implement proper error handling.
+          .onError(print);
   }
 
-  Stream<ServerLog> get serverLogs => _serverLogStreamController.stream;
+  Stream<BuildResults> get buildResults => _buildResults.stream;
+  Future<void> get finished async => await _channel.sink.done;
 
   /// Registers a build target to be built upon any file change.
   void registerBuildTarget(BuildTarget target) => _channel.sink.add(jsonEncode(
@@ -44,70 +102,27 @@ class BuildDaemonClient {
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
-  Future<void> _connect(String workingDirectory, int port,
-      Serializers serializersOverride) async {
-    _channel = IOWebSocketChannel.connect('ws://localhost:$port')
-      // TODO(grouma) - Implement proper error handling.
-      ..stream.listen(_handleServerMessage).onError(print);
-    _serializers = serializersOverride ?? serializers;
-  }
-
-  void _handleServerMessage(dynamic data) {
-    var message = _serializers.deserialize(jsonDecode(data as String));
-    if (message is ServerLog) {
-      _serverLogStreamController.add(message);
-    } else if (message is BuildResults) {
-      _buildResults.add(message);
-    } else {
-      // In practice we should never reach this state due to the
-      // deserialize call.
-      throw StateError(
-          'Unexpected message from the Dart Build Daemon\n $message');
-    }
-  }
-
-  static bool _isActionMessage(String line) =>
-      line == versionSkew || line == readyToConnectLog || line == optionsSkew;
-
   static Future<BuildDaemonClient> connect(
       String workingDirectory, List<String> daemonCommand,
-      {Serializers serializersOverride}) async {
+      {Serializers serializersOverride,
+      void Function(ServerLog) logHandler}) async {
+    logHandler ??= (_) {};
+    var daemonSerializers = serializersOverride ?? serializers;
+
     var process = await Process.start(
         daemonCommand.first, daemonCommand.sublist(1),
         mode: ProcessStartMode.detachedWithStdio,
         workingDirectory: workingDirectory);
 
-    // Print errors coming from the Dart Build Daemon to help with debugging.
-    process.stderr.transform(utf8.decoder).listen(print);
-    var stream = process.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .asBroadcastStream();
-    // Forward output from the daemon until an action message is provided.
-    // TODO(grouma) - we probably should use a logger here.
-    var sub = stream.where((line) => !_isActionMessage(line)).listen(print);
-    var result = await stream.firstWhere(_isActionMessage, orElse: () => null);
-    if (result == null) {
-      throw Exception('Unable to start build daemon.');
-    } else if (result == versionSkew) {
-      throw VersionSkew();
-    } else if (result == optionsSkew) {
-      throw OptionsSkew();
-    }
-    await sub.cancel();
-    var port = _existingPort(workingDirectory);
-    var client = BuildDaemonClient._();
-    await client._connect(workingDirectory, port, serializersOverride);
-    return client;
-  }
+    await _handleDaemonStartup(process, logHandler);
 
-  static int _existingPort(String workingDirectory) {
-    var portFile = File(portFilePath(workingDirectory));
-    if (!portFile.existsSync()) throw Exception('Unable to read port file.');
-    return int.parse(portFile.readAsStringSync());
+    return BuildDaemonClient._(
+        _existingPort(workingDirectory), daemonSerializers, logHandler);
   }
 }
 
-class VersionSkew extends Error {}
+class MissingPortFile implements Exception {}
 
-class OptionsSkew extends Error {}
+class OptionsSkew implements Exception {}
+
+class VersionSkew implements Exception {}

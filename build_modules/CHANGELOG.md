@@ -1,3 +1,17 @@
+## 1.0.7+2
+
+- Update `dart2js` snapshot arguments for upcoming SDK.
+
+## 1.0.7+1
+
+- Fix broken release by updating `dart2js` worker and restricting sdk version.
+
+## 1.0.7
+
+- Explicitly skip dart-ext uris during module creation.
+  - Filed Issue #2047 to track real support for native extensions.
+- Run workers with mode `detachedWithStdio` if no terminal is connected.
+
 ## 1.0.6
 
 - Improved the time tracking for kernel and analyzer actions by not reporting

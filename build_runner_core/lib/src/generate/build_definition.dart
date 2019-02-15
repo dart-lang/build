@@ -5,10 +5,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
@@ -242,11 +242,10 @@ class _Loader {
           return null;
         }
         return cachedGraph;
-      } on AssetGraphVersionException catch (_) {
-        // Start fresh if the cached asset_graph version doesn't match up with
-        // the current version. We don't currently support old graph versions.
-        _logger.warning(
-            'Throwing away cached asset graph due to version mismatch.');
+      } on AssetGraphCorruptedException catch (_) {
+        // Start fresh if the cached asset_graph cannot be deserialized
+        _logger.warning('Throwing away cached asset graph due to '
+            'version mismatch or corrupted asset graph.');
         await Future.wait([
           _deleteGeneratedDir(),
           FailureReporter.cleanErrorCache(),
@@ -408,13 +407,10 @@ class _Loader {
     return targets.asyncExpand(_listAssetIds).toSet();
   }
 
-  Stream<AssetId> _mergeAll(Iterable<Stream<AssetId>> streams) =>
-      streams.first.transform(mergeAll(streams.skip(1)));
-
   Stream<AssetId> _listAssetIds(TargetNode targetNode) => targetNode
           .sourceIncludes.isEmpty
       ? Stream<AssetId>.empty()
-      : _mergeAll(targetNode.sourceIncludes.map((glob) =>
+      : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
           _listIdsSafe(glob, package: targetNode.package.name)
               .where((id) =>
                   targetNode.package.isRoot || id.pathSegments.first == 'lib')

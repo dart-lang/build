@@ -103,7 +103,11 @@ void main() {
     test('should resolve types and library uris', () {
       return resolveSources({
         'a|web/main.dart': '''
+              // dart and dart-ext uris should be ignored
               import 'dart:core';
+              import 'dart-ext:some-ext';
+
+              // package: and relative uris should be available
               import 'package:a/a.dart';
               import 'package:a/b.dart';
               import 'sub_dir/d.dart';

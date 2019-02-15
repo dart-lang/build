@@ -1,3 +1,8 @@
+## 0.4.0
+
+- Replace the client log stream with an optional logHandler. This simplifies the
+  logging logic and prevents the need for the client to print to stdio.
+
 ## 0.3.0
 
 - Forward daemon output while starting up / connecting. 
