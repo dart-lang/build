@@ -107,8 +107,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   void _logMessage(Level level, String message) =>
       _outputStreamController.add(ServerLog(
-        (b) => b.log =
-            LogRecord(level, message, 'BuildRunnerBuildDaemon').toString(),
+        (b) => b.log = '[$level] $message',
       ));
 
   void _signalEnd(Iterable<daemon.BuildResult> results) {
