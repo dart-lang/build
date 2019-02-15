@@ -9,8 +9,11 @@ import 'package:logging/logging.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../asset_graph/graph.dart';
+import '../changes/build_script_updates.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
+import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
 
 /// A [BuildEnvironment] which can have individual features overridden.
@@ -27,6 +30,12 @@ class OverrideableEnvironment implements BuildEnvironment {
       FinalizedAssetsView finalizedAssetsView,
       AssetReader reader) _finalizeBuild;
 
+  final Future<BuildScriptUpdates> Function(
+    RunnerAssetReader assetReader,
+    PackageGraph packageGraph,
+    AssetGraph graph,
+  ) _buildScriptUpdates;
+
   OverrideableEnvironment(
     this._default, {
     RunnerAssetReader reader,
@@ -35,9 +44,15 @@ class OverrideableEnvironment implements BuildEnvironment {
     Future<BuildResult> Function(BuildResult result,
             FinalizedAssetsView finalizedAssetsView, AssetReader reader)
         finalizeBuild,
+    Future<BuildScriptUpdates> Function(
+    AssetReader assetReader,
+    PackageGraph packageGraph,
+    AssetGraph graph,
+      ) buildScriptUpdates,
   })  : _reader = reader,
         _writer = writer,
         _onLog = onLog,
+        _buildScriptUpdates = buildScriptUpdates,
         _finalizeBuild = finalizeBuild;
 
   @override
@@ -64,4 +79,12 @@ class OverrideableEnvironment implements BuildEnvironment {
   @override
   Future<int> prompt(String message, List<String> choices) =>
       _default.prompt(message, choices);
+
+  @override
+  Future<BuildScriptUpdates> buildScriptUpdates(PackageGraph packageGraph, AssetGraph graph) {
+    if (_buildScriptUpdates != null) {
+      return _buildScriptUpdates(reader, packageGraph, graph);
+    }
+    return _default.buildScriptUpdates(packageGraph, graph);
+  }
 }

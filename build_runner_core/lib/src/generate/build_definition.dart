@@ -89,8 +89,8 @@ class _Loader {
           () => _updateAssetGraph(assetGraph, _buildPhases, inputSources,
               cacheDirSources, internalSources));
 
-      buildScriptUpdates = await BuildScriptUpdates.create(
-          _environment.reader, _options.packageGraph, assetGraph);
+      buildScriptUpdates = await _environment.buildScriptUpdates(
+          _options.packageGraph, assetGraph);
       if (!_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
         _logger.warning('Invalidating asset graph due to build script update!');
@@ -118,8 +118,8 @@ class _Loader {
           _logger.severe('Conflicting outputs', e, st);
           throw CannotBuildException();
         }
-        buildScriptUpdates = await BuildScriptUpdates.create(
-            _environment.reader, _options.packageGraph, assetGraph);
+        buildScriptUpdates = await _environment.buildScriptUpdates(
+            _options.packageGraph, assetGraph);
         conflictingOutputs = assetGraph.outputs
             .where((n) => n.package == _options.packageGraph.root.name)
             .where(inputSources.contains)

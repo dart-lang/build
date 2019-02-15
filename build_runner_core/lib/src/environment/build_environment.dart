@@ -9,8 +9,11 @@ import 'package:logging/logging.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../asset_graph/graph.dart';
+import '../changes/build_script_updates.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
+import '../package_graph/package_graph.dart';
 
 /// Utilities to interact with the environment in which a build is running.
 ///
@@ -23,6 +26,13 @@ abstract class BuildEnvironment {
   RunnerAssetWriter get writer;
 
   void onLog(LogRecord record);
+
+  /// Determines whether current build script needs to be updated.
+  ///
+  /// Defaults to [BuildScriptUpdates].
+  Future<BuildScriptUpdates> buildScriptUpdates(PackageGraph packageGraph, AssetGraph graph) {
+    return BuildScriptUpdates.create(reader, packageGraph, graph);
+  }
 
   /// Prompt the user for input.
   ///

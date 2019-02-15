@@ -11,6 +11,8 @@ import 'package:logging/logging.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../asset_graph/graph.dart';
+import '../changes/build_script_updates.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
 import '../package_graph/package_graph.dart';
@@ -85,6 +87,11 @@ class IOEnvironment implements BuildEnvironment {
       }
     }
     return buildResult;
+  }
+
+  @override
+  Future<BuildScriptUpdates> buildScriptUpdates(PackageGraph packageGraph, AssetGraph graph) {
+    return BuildScriptUpdates.create(reader, packageGraph, graph);
   }
 }
 
