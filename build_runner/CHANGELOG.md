@@ -1,4 +1,4 @@
-## 1.2.6+1
+## 1.2.7
 
 - Fix issue where daemon command would occasionally color a log.
 
