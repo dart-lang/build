@@ -40,6 +40,7 @@ class BuildCommand extends BuildRunnerCommand {
       skipBuildScriptCheck: options.skipBuildScriptCheck,
       buildDirs: options.buildDirs,
       logPerformanceDir: options.logPerformanceDir,
+      overrideEnvironment: overrideEnvironment,
     );
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;

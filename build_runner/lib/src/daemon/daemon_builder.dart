@@ -132,12 +132,13 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     PackageGraph packageGraph,
     List<BuilderApplication> builders,
     SharedOptions sharedOptions,
+    BuildEnvironment overrideEnvironment,
   ) async {
     var expectedDeletes = Set<AssetId>();
     var outputStreamController = StreamController<ServerLog>();
 
     var environment = OverrideableEnvironment(
-        IOEnvironment(packageGraph,
+        overrideEnvironment ?? IOEnvironment(packageGraph,
             assumeTty: true,
             // TODO(grouma) - This should likely moved to the build_impl command
             // so that different daemon clients can output to different

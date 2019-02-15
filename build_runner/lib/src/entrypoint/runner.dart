@@ -17,10 +17,11 @@ import 'watch.dart';
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
+  final BuildEnvironment overrideEnvironment;
 
   final packageGraph = PackageGraph.forThisPackage();
 
-  BuildCommandRunner(List<BuilderApplication> builderApplications)
+  BuildCommandRunner(List<BuilderApplication> builderApplications, {this.overrideEnvironment})
       : builderApplications = List.unmodifiable(builderApplications),
         super('build_runner', 'Unified interface for running Dart builds.') {
     addCommand(DaemonCommand());

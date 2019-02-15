@@ -17,6 +17,8 @@ abstract class BuildRunnerCommand extends Command<int> {
 
   PackageGraph get packageGraph => (runner as BuildCommandRunner).packageGraph;
 
+  BuildEnvironment get overrideEnvironment => (runner as BuildCommandRunner).overrideEnvironment;
+
   BuildRunnerCommand({bool symlinksDefault}) {
     _addBaseFlags(symlinksDefault ?? false);
   }

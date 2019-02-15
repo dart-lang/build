@@ -72,11 +72,12 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
     List<String> buildDirs,
-    String logPerformanceDir}) async {
+    String logPerformanceDir,
+    BuildEnvironment overrideEnvironment}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(
-      IOEnvironment(
+      overrideEnvironment ?? IOEnvironment(
         packageGraph,
         assumeTty: assumeTty,
         outputMap: outputMap,
