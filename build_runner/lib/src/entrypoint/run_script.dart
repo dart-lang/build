@@ -68,8 +68,6 @@ class RunCommand extends BuildRunnerCommand {
 
   @override
   FutureOr<int> run() async {
-    var logSubscription = Logger.root.onRecord.listen(stdIOLogListener());
-
     // Ensure that the user passed the name of a file to run.
     if (argResults.rest.isEmpty) {
       logger..severe('Must specify an executable to run.')..severe(usage);
@@ -79,6 +77,8 @@ class RunCommand extends BuildRunnerCommand {
     var scriptName = argResults.rest[0];
     var passedArgs = argResults.rest.skip(1).toList();
     var options = readOptions();
+    var logSubscription =
+        Logger.root.onRecord.listen(stdIOLogListener(verbose: options.verbose));
 
     // Ensure the extension is .dart.
     if (p.extension(scriptName) != '.dart') {

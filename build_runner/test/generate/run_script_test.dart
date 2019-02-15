@@ -148,5 +148,24 @@ main(List<String> args) async {
     });
 
     // TODO (thosakwe): Test for stack trace
+    test('stack trace from errors is displayed in verbose mode', () async {
+      // Run the generated script, and examine its output.
+      var result = await runDart('a', 'tool/build.dart', args: [
+        'run',
+        'bin/main.copy.dart',
+        '--verbose',
+        '--output',
+        'build',
+        '--',
+        'throw'
+      ]);
+      expect(result.exitCode, 1, reason: result.stderr as String);
+      expect(result.stdout, contains('Unhandled error from script:'));
+      expect(result.stdout, contains('Bad state: oh no!'));
+      // bin/main.copy.dart 5:5  main
+      expect(result.stdout, contains('bin/main.copy.dart'));
+      expect(result.stdout, contains('5:5'));
+      expect(result.stdout, contains('main'));
+    });
   });
 }
