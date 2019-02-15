@@ -25,17 +25,9 @@ StringBuffer colorLog(LogRecord record, {bool verbose}) {
   }
   final level = color.wrap('[${record.level}]');
   final eraseLine = ansiOutputEnabled && !verbose ? '\x1b[2K\r' : '';
-  var headerMessage = record.message;
-  var blankLineCount = 0;
-  if (headerMessage.startsWith('\n')) {
-    blankLineCount =
-        headerMessage.split('\n').takeWhile((line) => line.isEmpty).length;
-    headerMessage = headerMessage.substring(blankLineCount);
-  }
-  var header = '$eraseLine$level ${_loggerName(record, verbose)}$headerMessage';
-  var lines = blankLineCount > 0
-      ? (List<Object>.generate(blankLineCount, (_) => '')..add(header))
-      : <Object>[header];
+  var lines = <Object>[
+    '$eraseLine$level ${_loggerName(record, verbose)}${record.message}'
+  ];
 
   if (record.error != null) {
     lines.add(record.error);
