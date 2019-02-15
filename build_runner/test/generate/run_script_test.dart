@@ -78,6 +78,8 @@ main(List<String> args) async {
           args: ['run', '--output', 'build']);
       expect(result.exitCode, ExitCode.usage.code,
           reason: result.stderr as String);
+      expect(result.stdout, contains('Must specify an executable to run.'));
+      expect(result.stdout, contains('Usage: build_runner run'));
     });
 
     test('extension must be .dart', () async {
@@ -86,14 +88,20 @@ main(List<String> args) async {
           args: ['run', 'bin/main.txt.copy', '--output', 'build']);
       expect(result.exitCode, ExitCode.usage.code,
           reason: result.stderr as String);
+      expect(result.stdout,
+          contains('is not a valid Dart file, and cannot be run in the VM.'));
     });
 
     test('target file must actually exist', () async {
       // Should throw error 64.
       var result = await runDart('a', 'tool/build.dart',
-          args: ['run', 'bin/nonexistent.txt', '--output', 'build']);
-      expect(result.exitCode, ExitCode.usage.code,
+          args: ['run', 'bin/nonexistent.dart', '--output', 'build']);
+      expect(result.exitCode, ExitCode.ioError.code,
           reason: result.stderr as String);
+      expect(
+          result.stdout,
+          contains(
+              'Could not spawn isolate. Ensure that your file is in a valid directory'));
     });
 
     test('runs the built version of the desired script', () async {
@@ -135,6 +143,10 @@ main(List<String> args) async {
         'throw'
       ]);
       expect(result.exitCode, 1, reason: result.stderr as String);
+      expect(result.stdout, contains('Unhandled error from script:'));
+      expect(result.stdout, contains('Bad state: oh no!'));
     });
+
+    // TODO (thosakwe): Test for stack trace
   });
 }
