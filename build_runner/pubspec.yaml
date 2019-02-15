@@ -1,5 +1,5 @@
 name: build_runner
-version: 1.2.6
+version: 1.2.6+1
 description: Tools to write binaries that run builders.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_runner

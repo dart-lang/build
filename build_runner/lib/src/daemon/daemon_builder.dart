@@ -11,7 +11,6 @@ import 'package:build_daemon/data/build_status.dart' as daemon;
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
-import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -107,10 +106,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   }
 
   void _logMessage(Level level, String message) =>
-      _outputStreamController.add(ServerLog((b) => b.log = colorLog(
-              LogRecord(level, message, 'BuildRunnerBuildDaemon'),
-              verbose: _buildOptions.verbose)
-          .toString()));
+      _outputStreamController.add(ServerLog(
+        (b) => b.log =
+            LogRecord(level, message, 'BuildRunnerBuildDaemon').toString(),
+      ));
 
   void _signalEnd(Iterable<daemon.BuildResult> results) {
     _buildingCompleter.complete();

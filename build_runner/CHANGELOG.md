@@ -1,3 +1,7 @@
+## 1.2.6+1
+
+- Fix issue where daemon command would occasionally color a log.
+
 ## 1.2.6
 
 - Prevent terminals being launched when running the daemon command on Windows.
