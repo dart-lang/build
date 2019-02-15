@@ -33,5 +33,18 @@ builders:
       expect(() => BuildConfig.parse('package_name', [], buildYaml),
           throwsError('May not overwrite an input'));
     });
+
+    test('for empty include globs', () {
+      var buildYaml = r'''
+targets:
+  $default:
+    builders:
+      some_package|some_builder:
+        generate_for:
+        -
+''';
+      expect(() => BuildConfig.parse('package_name', [], buildYaml),
+          throwsError('Include globs must not be empty'));
+    });
   });
 }
