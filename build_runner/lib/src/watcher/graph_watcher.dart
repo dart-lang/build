@@ -41,7 +41,8 @@ class PackageGraphWatcher {
   Stream<AssetChange> watch() {
     assert(!_isWatching);
     _isWatching = true;
-    return logTimedSync(_logger, 'Setting up file watchers', _watch);
+    return LazyStream(
+        () => logTimedSync(_logger, 'Setting up file watchers', _watch));
   }
 
   Stream<AssetChange> _watch() {
