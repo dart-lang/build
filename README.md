@@ -34,7 +34,7 @@ Support for discovering the sub-modules within packages and creating summaries
 of those modules. Used by `build_web_compilers` but should not be used directly
 by most users.
 
-## [build_resolvers](https://github.com/dart-lang/build/blob/master/build_resolers/README.md)
+## [build_resolvers](https://github.com/dart-lang/build/blob/master/build_resolvers/README.md)
 
 An implementation of the `Resolver` interface to use the analyzer during build
 steps.
