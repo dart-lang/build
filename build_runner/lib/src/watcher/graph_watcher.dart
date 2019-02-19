@@ -47,8 +47,7 @@ class PackageGraphWatcher {
 
   Stream<AssetChange> _watch() {
     final allWatchers = _graph.allPackages.values
-        .where((node) => !(node.dependencyType == DependencyType.hosted ||
-            node.dependencyType == DependencyType.github))
+        .where((node) => node.dependencyType == DependencyType.path)
         .map(_strategy)
         .toList();
     final filteredEvents = allWatchers

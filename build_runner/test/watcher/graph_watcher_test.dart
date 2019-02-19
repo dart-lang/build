@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
